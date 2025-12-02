@@ -2,6 +2,15 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'workspace_tool.freezed.dart';
 
+/// Permission mode for tool execution
+enum ToolPermissionMode {
+  /// Always ask user for permission before executing
+  alwaysAsk,
+
+  /// Always allow tool execution without asking
+  alwaysAllow,
+}
+
 /// Entity representing a tool setting for a specific workspace.
 ///
 /// This represents user preferences for tools at the workspace level,
@@ -21,6 +30,9 @@ abstract class WorkspaceToolEntity with _$WorkspaceToolEntity {
 
     /// Whether the tool is enabled for this workspace
     required bool isEnabled,
+
+    /// Permission mode for this tool (always ask or always allow)
+    required ToolPermissionMode permissionMode,
 
     /// Timestamp when this setting was created
     required DateTime createdAt,

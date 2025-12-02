@@ -113,6 +113,18 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
     }
     return success;
   }
+
+  /// Set the permission mode for a workspace tool
+  Future<void> setToolPermissionMode(
+    String id, {
+    required ToolPermissionMode permissionMode,
+  }) async {
+    final newTool = await _repository.setToolPermissionMode(
+      id,
+      permissionMode: permissionMode,
+    );
+    _replaceTools([newTool]);
+  }
 }
 
 /// Provider that returns the list of available tools

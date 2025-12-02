@@ -1,5 +1,6 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_tools_dao.dart';
+import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/domain/entities/workspace_tool.dart';
 import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/services/tools/tool_service.dart';
@@ -223,8 +224,43 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
       toolId: table.toolId,
       config: table.config,
       isEnabled: table.isEnabled,
+      permissionMode: _mapPermissionAccess(table.permissions),
       createdAt: table.createdAt,
       updatedAt: table.updatedAt,
     );
+  }
+
+  ToolPermissionMode _mapPermissionAccess(PermissionAccess access) {
+    return switch (access) {
+      PermissionAccess.ask => ToolPermissionMode.alwaysAsk,
+      PermissionAccess.granted => ToolPermissionMode.alwaysAllow,
+    };
+  }
+
+  PermissionAccess _mapPermissionMode(ToolPermissionMode mode) {
+    return switch (mode) {
+      ToolPermissionMode.alwaysAsk => PermissionAccess.ask,
+      ToolPermissionMode.alwaysAllow => PermissionAccess.granted,
+    };
+  }
+
+  @override
+  Future<WorkspaceToolEntity> setToolPermissionMode(
+    String id, {
+    required ToolPermissionMode permissionMode,
+  }) async {
+    try {
+      return await _dao
+          .setWorkspaceToolPermission(
+            id,
+            permission: _mapPermissionMode(permissionMode),
+          )
+          .then(_tableToEntity);
+    } catch (e) {
+      throw WorkspaceToolsException(
+        'Failed to set workspace tool permission: $e',
+        e is Exception ? e : null,
+      );
+    }
   }
 }

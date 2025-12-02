@@ -144,4 +144,19 @@ class WorkspaceToolsDao extends DatabaseAccessor<AppDatabase>
             ))
           .map((row) => row.read(tools.id.count()) ?? 0)
           .getSingle();
+
+  Future<ToolsTable> setWorkspaceToolPermission(
+    String id, {
+    required PermissionAccess permission,
+  }) async {
+    await (update(tools)..where((tbl) => tbl.id.equals(id))).write(
+      ToolsCompanion(
+        permissions: Value(permission),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+    return (select(
+      tools,
+    )..where((tbl) => tbl.id.equals(id))).getSingle();
+  }
 }

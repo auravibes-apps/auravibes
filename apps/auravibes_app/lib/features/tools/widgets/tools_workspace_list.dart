@@ -1,3 +1,4 @@
+import 'package:auravibes_app/domain/entities/workspace_tool.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_provider.dart';
 import 'package:auravibes_app/features/tools/widgets/tool_description.dart';
 import 'package:auravibes_app/features/tools/widgets/tool_icon.dart';
@@ -84,6 +85,7 @@ class WorkspaceToolCard extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final workspaceToolRow = ref.watch(workspaceToolRowProvider);
+    final isExpanded = useState(false);
 
     final onToggle = useCallback((bool value) {
       final toolType = workspaceToolRow?.$1;
@@ -126,10 +128,20 @@ class WorkspaceToolCard extends HookConsumerWidget {
       }
     }, []);
 
+    final onPermissionChanged = useCallback((ToolPermissionMode? mode) {
+      final toolEntity = workspaceToolRow?.$2;
+      if (toolEntity == null || mode == null) return;
+      ref
+          .read(workspaceToolsProvider.notifier)
+          .setToolPermissionMode(toolEntity.id, permissionMode: mode);
+    }, []);
+
     if (workspaceToolRow == null) return const SizedBox.shrink();
     final (toolType, workspaceTool) = workspaceToolRow;
     final isEnabled = workspaceTool?.isEnabled ?? false;
     final hasConfig = workspaceTool?.hasConfig ?? false;
+    final permissionMode =
+        workspaceTool?.permissionMode ?? ToolPermissionMode.alwaysAsk;
 
     return Padding(
       padding: EdgeInsets.only(bottom: context.auraTheme.spacing.md),
@@ -156,7 +168,6 @@ class WorkspaceToolCard extends HookConsumerWidget {
                     color: isEnabled
                         ? AuraTextColor.onPrimary
                         : AuraTextColor.onSurfaceVariant,
-
                     child: ToolIconWidget(toolType: toolType),
                   ),
                 ),
@@ -185,60 +196,173 @@ class WorkspaceToolCard extends HookConsumerWidget {
                   ),
                 ),
 
-                // Toggle switch
-                Transform.scale(
-                  scale: 0.8,
-                  child: Switch(
-                    value: isEnabled,
-                    onChanged: onToggle,
-                    activeThumbColor: context.auraColors.primary,
-                    activeTrackColor: context.auraColors.primary.withValues(
-                      alpha: 0.3,
-                    ),
-                    inactiveThumbColor: context.auraColors.onSurfaceVariant,
-                    inactiveTrackColor: context.auraColors.outline,
-                  ),
-                ),
-
-                // Remove button
+                // Expand/collapse arrow
                 IconButton(
-                  onPressed: onRemove,
-                  icon: AuraIcon(
-                    Icons.delete_outline,
-                    color: context.auraColors.error,
+                  onPressed: () => isExpanded.value = !isExpanded.value,
+                  icon: AnimatedRotation(
+                    turns: isExpanded.value ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 200),
+                    child: AuraIcon(
+                      Icons.keyboard_arrow_down,
+                      color: context.auraColors.onSurfaceVariant,
+                    ),
                   ),
-                  tooltip: LocaleKeys.tools_screen_remove_tool_tooltip,
                 ),
               ],
             ),
 
-            // Additional info
-            if (hasConfig) ...[
-              SizedBox(height: context.auraTheme.spacing.sm),
-              AuraRow(
-                spacing: AuraSpacing.sm,
-                children: [
-                  if (hasConfig)
-                    AuraBadge.text(
-                      variant: AuraBadgeVariant.warning,
-                      size: AuraBadgeSize.small,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const AuraIcon(
-                            Icons.settings,
-                            size: AuraIconSize.extraSmall,
-                          ),
-                          SizedBox(width: context.auraTheme.spacing.xs),
-                          const TextLocale(LocaleKeys.tools_screen_configured),
-                        ],
-                      ),
-                    ),
-                ],
+            // Expandable options section - only show when expanded
+            if (isExpanded.value) ...[
+              const AuraDivider(),
+              _ToolOptionsSection(
+                isEnabled: isEnabled,
+                permissionMode: permissionMode,
+                hasConfig: hasConfig,
+                onToggle: onToggle,
+                onPermissionChanged: onPermissionChanged,
+                onRemove: onRemove,
               ),
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _ToolOptionsSection extends StatelessWidget {
+  const _ToolOptionsSection({
+    required this.isEnabled,
+    required this.permissionMode,
+    required this.hasConfig,
+    required this.onToggle,
+    required this.onPermissionChanged,
+    required this.onRemove,
+  });
+
+  final bool isEnabled;
+  final ToolPermissionMode permissionMode;
+  final bool hasConfig;
+  final void Function(bool value) onToggle;
+  final void Function(ToolPermissionMode?) onPermissionChanged;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    return AuraColumn(
+      spacing: AuraSpacing.md,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Enabled/Disabled toggle row
+        AuraRow(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const AuraText(
+              child: TextLocale(LocaleKeys.tools_screen_enabled_label),
+            ),
+            Transform.scale(
+              scale: 0.8,
+              child: Switch(
+                value: isEnabled,
+                onChanged: onToggle,
+                activeThumbColor: context.auraColors.primary,
+                activeTrackColor: context.auraColors.primary.withValues(
+                  alpha: 0.3,
+                ),
+                inactiveThumbColor: context.auraColors.onSurfaceVariant,
+                inactiveTrackColor: context.auraColors.outline,
+              ),
+            ),
+          ],
+        ),
+
+        // Permission selector - only show when enabled
+        if (isEnabled)
+          AuraRow(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const AuraText(
+                child: TextLocale(LocaleKeys.tools_screen_permission_label),
+              ),
+              _PermissionSelector(
+                value: permissionMode,
+                onChanged: onPermissionChanged,
+              ),
+            ],
+          ),
+
+        // Config badge if has config
+        if (hasConfig)
+          AuraBadge.text(
+            variant: AuraBadgeVariant.warning,
+            size: AuraBadgeSize.small,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const AuraIcon(
+                  Icons.settings,
+                  size: AuraIconSize.extraSmall,
+                ),
+                SizedBox(width: context.auraTheme.spacing.xs),
+                const TextLocale(LocaleKeys.tools_screen_configured),
+              ],
+            ),
+          ),
+
+        // Delete button
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton.icon(
+            onPressed: onRemove,
+            icon: AuraIcon(
+              Icons.delete_outline,
+              size: AuraIconSize.small,
+              color: context.auraColors.error,
+            ),
+            label: AuraText(
+              style: AuraTextStyle.bodySmall,
+              child: Text(
+                'Remove',
+                style: TextStyle(color: context.auraColors.error),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PermissionSelector extends StatelessWidget {
+  const _PermissionSelector({
+    required this.value,
+    required this.onChanged,
+  });
+
+  final ToolPermissionMode value;
+  final void Function(ToolPermissionMode?) onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return SegmentedButton<ToolPermissionMode>(
+      segments: const [
+        ButtonSegment(
+          value: ToolPermissionMode.alwaysAsk,
+          label: TextLocale(LocaleKeys.tools_screen_permission_always_ask),
+        ),
+        ButtonSegment(
+          value: ToolPermissionMode.alwaysAllow,
+          label: TextLocale(LocaleKeys.tools_screen_permission_always_allow),
+        ),
+      ],
+      selected: {value},
+      onSelectionChanged: (selected) {
+        if (selected.isNotEmpty) {
+          onChanged(selected.first);
+        }
+      },
+      style: const ButtonStyle(
+        visualDensity: VisualDensity.compact,
       ),
     );
   }

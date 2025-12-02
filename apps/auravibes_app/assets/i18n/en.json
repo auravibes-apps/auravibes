@@ -68,7 +68,11 @@
     "no_tools_found": "No tools match your search",
     "remove_tool_title": "Remove Tool",
     "remove_tool_confirm": "Are you sure you want to remove this tool from the workspace?",
-    "remove_tool_tooltip": "Remove tool"
+    "remove_tool_tooltip": "Remove tool",
+    "permission_always_ask": "Always Ask",
+    "permission_always_allow": "Always Allow",
+    "permission_label": "Permission",
+    "enabled_label": "Enabled"
   },
   "common": {
     "cancel": "Cancel",

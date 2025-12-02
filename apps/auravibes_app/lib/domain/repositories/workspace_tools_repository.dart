@@ -138,6 +138,17 @@ abstract class WorkspaceToolsRepository {
     required bool isEnabled,
     String? config,
   });
+
+  /// Sets the permission mode for a workspace tool.
+  ///
+  /// [id] The unique ID of the tool record in the database.
+  /// [permissionMode] The permission mode to set.
+  /// Returns the updated workspace tool entity.
+  /// Throws [WorkspaceToolsException] if there's an error updating the tool.
+  Future<WorkspaceToolEntity> setToolPermissionMode(
+    String id, {
+    required ToolPermissionMode permissionMode,
+  });
 }
 
 /// Base exception for workspace tools-related operations.
