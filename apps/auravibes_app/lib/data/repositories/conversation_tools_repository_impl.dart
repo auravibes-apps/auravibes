@@ -1,6 +1,8 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/conversation_tools_dao.dart';
+import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/domain/entities/conversation_tool.dart';
+import 'package:auravibes_app/domain/entities/workspace_tool.dart';
 import 'package:auravibes_app/domain/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/services/tools/tool_service.dart';
@@ -21,18 +23,8 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
   Future<List<ConversationToolEntity>> getConversationTools(
     String conversationId,
   ) async {
-    final results = await _dao.getDisabledConversationTools(conversationId);
-    return results
-        .map(
-          (table) => ConversationToolEntity(
-            conversationId: table.conversationId,
-            toolId: table.toolId,
-            isEnabled: false, // All records in this table are disabled tools
-            createdAt: table.createdAt,
-            updatedAt: table.updatedAt,
-          ),
-        )
-        .toList();
+    final results = await _dao.getConversationTools(conversationId);
+    return results.map(_tableToEntity).toList();
   }
 
   @override
@@ -52,6 +44,7 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
             conversationId: conversationId,
             toolId: toolId,
             isEnabled: true, // These are computed enabled tools
+            permissionMode: ToolPermissionMode.alwaysAsk,
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
           ),
@@ -64,19 +57,13 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
     String conversationId,
     String toolType,
   ) async {
-    final result = await _dao.getDisabledConversationTool(
+    final result = await _dao.getConversationTool(
       conversationId,
       toolType,
     );
     if (result == null) return null;
 
-    return ConversationToolEntity(
-      conversationId: result.conversationId,
-      toolId: result.toolId,
-      isEnabled: false, // All records in this table are disabled tools
-      createdAt: result.createdAt,
-      updatedAt: result.updatedAt,
-    );
+    return _tableToEntity(result);
   }
 
   @override
@@ -86,14 +73,12 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
     required bool isEnabled,
   }) async {
     try {
-      if (isEnabled) {
-        // Enable the tool by removing it from disabled table
-        return await _dao.enableConversationTool(conversationId, toolType);
-      } else {
-        // Disable the tool by adding it to disabled table
-        await _dao.disableConversationTool(conversationId, toolType);
-        return true;
-      }
+      await _dao.setConversationToolEnabled(
+        conversationId,
+        toolType,
+        isEnabled: isEnabled,
+      );
+      return true;
     } catch (e) {
       throw ConversationToolsException(
         'Failed to set conversation tool enabled: $e',
@@ -108,6 +93,27 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
     List<String> toolTypes,
   ) {
     return _dao.disableConversationTools(conversationId, toolTypes);
+  }
+
+  @override
+  Future<bool> setConversationToolPermission(
+    String conversationId,
+    String toolType, {
+    required ToolPermissionMode permissionMode,
+  }) async {
+    try {
+      await _dao.setConversationToolPermission(
+        conversationId,
+        toolType,
+        permission: _mapPermissionMode(permissionMode),
+      );
+      return true;
+    } catch (e) {
+      throw ConversationToolsException(
+        'Failed to set conversation tool permission: $e',
+        e is Exception ? e : null,
+      );
+    }
   }
 
   @override
@@ -131,15 +137,10 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
     String toolType,
   ) async {
     try {
-      // Check if the tool is disabled for this conversation
-      final isDisabled = await _dao.isConversationToolDisabled(
+      return await _dao.isConversationToolEnabled(
         conversationId,
         toolType,
       );
-
-      // If it's not disabled, it's considered enabled
-      //(based on workspace defaults)
-      return !isDisabled;
     } catch (e) {
       throw ConversationToolsException(
         'Failed to check conversation tool status: $e',
@@ -154,8 +155,7 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
     String toolType,
   ) async {
     try {
-      // Remove the disabled tool record (reverts to workspace setting)
-      return await _dao.enableConversationTool(conversationId, toolType);
+      return await _dao.deleteConversationTool(conversationId, toolType);
     } catch (e) {
       throw ConversationToolsException(
         'Failed to remove conversation tool: $e',
@@ -167,7 +167,7 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
   @override
   Future<int> getConversationToolsCount(String conversationId) async {
     try {
-      return await _dao.getDisabledConversationToolsCount(conversationId);
+      return await _dao.getConversationToolsCount(conversationId);
     } catch (e) {
       throw ConversationToolsException(
         'Failed to count conversation tools: $e',
@@ -310,5 +310,30 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
         e is Exception ? e : null,
       );
     }
+  }
+
+  ConversationToolEntity _tableToEntity(ConversationToolsTable table) {
+    return ConversationToolEntity(
+      conversationId: table.conversationId,
+      toolId: table.toolId,
+      isEnabled: table.isEnabled,
+      permissionMode: _mapPermissionAccess(table.permissions),
+      createdAt: table.createdAt,
+      updatedAt: table.updatedAt,
+    );
+  }
+
+  ToolPermissionMode _mapPermissionAccess(PermissionAccess access) {
+    return switch (access) {
+      PermissionAccess.ask => ToolPermissionMode.alwaysAsk,
+      PermissionAccess.granted => ToolPermissionMode.alwaysAllow,
+    };
+  }
+
+  PermissionAccess _mapPermissionMode(ToolPermissionMode mode) {
+    return switch (mode) {
+      ToolPermissionMode.alwaysAsk => PermissionAccess.ask,
+      ToolPermissionMode.alwaysAllow => PermissionAccess.granted,
+    };
   }
 }

@@ -1,4 +1,5 @@
 import 'package:auravibes_app/domain/entities/conversation_tool.dart';
+import 'package:auravibes_app/domain/entities/workspace_tool.dart';
 
 /// Repository interface for conversation tool data operations.
 ///
@@ -56,6 +57,19 @@ abstract class ConversationToolsRepository {
     String conversationId,
     List<String> toolTypes,
   );
+
+  /// Sets the permission mode for a conversation tool.
+  ///
+  /// [conversationId] The ID of the conversation.
+  /// [toolType] The type of tool to update.
+  /// [permissionMode] The permission mode to set.
+  /// Returns true if the operation was successful.
+  /// Throws [ConversationToolsException] if there's an error updating the tool.
+  Future<bool> setConversationToolPermission(
+    String conversationId,
+    String toolType, {
+    required ToolPermissionMode permissionMode,
+  });
 
   /// Toggles the enabled status of a conversation tool.
   ///

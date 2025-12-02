@@ -58,15 +58,25 @@ final class ConversationToolsRepositoryProvider
 String _$conversationToolsRepositoryHash() =>
     r'e3e65f8c9feab2c64ec51fc9ae9464e124258a26';
 
+/// Provider for managing conversation tool settings
+///
+/// Returns a list of all workspace tools with their conversation-level states.
+
 @ProviderFor(ConversationToolsNotifier)
 const conversationToolsProvider = ConversationToolsNotifierFamily._();
 
+/// Provider for managing conversation tool settings
+///
+/// Returns a list of all workspace tools with their conversation-level states.
 final class ConversationToolsNotifierProvider
     extends
         $AsyncNotifierProvider<
           ConversationToolsNotifier,
-          Map<UserToolType, bool>
+          List<ConversationToolState>
         > {
+  /// Provider for managing conversation tool settings
+  ///
+  /// Returns a list of all workspace tools with their conversation-level states.
   const ConversationToolsNotifierProvider._({
     required ConversationToolsNotifierFamily super.from,
     required ({String workspaceId, String? conversationId}) super.argument,
@@ -105,15 +115,19 @@ final class ConversationToolsNotifierProvider
 }
 
 String _$conversationToolsNotifierHash() =>
-    r'4452d34942bca1c1f867ab9af81016730f9d3f52';
+    r'a21b2b8e607e818c5273be0e11471b21604c0a20';
+
+/// Provider for managing conversation tool settings
+///
+/// Returns a list of all workspace tools with their conversation-level states.
 
 final class ConversationToolsNotifierFamily extends $Family
     with
         $ClassFamilyOverride<
           ConversationToolsNotifier,
-          AsyncValue<Map<UserToolType, bool>>,
-          Map<UserToolType, bool>,
-          FutureOr<Map<UserToolType, bool>>,
+          AsyncValue<List<ConversationToolState>>,
+          List<ConversationToolState>,
+          FutureOr<List<ConversationToolState>>,
           ({String workspaceId, String? conversationId})
         > {
   const ConversationToolsNotifierFamily._()
@@ -124,6 +138,10 @@ final class ConversationToolsNotifierFamily extends $Family
         $allTransitiveDependencies: null,
         isAutoDispose: true,
       );
+
+  /// Provider for managing conversation tool settings
+  ///
+  /// Returns a list of all workspace tools with their conversation-level states.
 
   ConversationToolsNotifierProvider call({
     required String workspaceId,
@@ -137,14 +155,18 @@ final class ConversationToolsNotifierFamily extends $Family
   String toString() => r'conversationToolsProvider';
 }
 
+/// Provider for managing conversation tool settings
+///
+/// Returns a list of all workspace tools with their conversation-level states.
+
 abstract class _$ConversationToolsNotifier
-    extends $AsyncNotifier<Map<UserToolType, bool>> {
+    extends $AsyncNotifier<List<ConversationToolState>> {
   late final _$args =
       ref.$arg as ({String workspaceId, String? conversationId});
   String get workspaceId => _$args.workspaceId;
   String? get conversationId => _$args.conversationId;
 
-  FutureOr<Map<UserToolType, bool>> build({
+  FutureOr<List<ConversationToolState>> build({
     required String workspaceId,
     String? conversationId,
   });
@@ -158,17 +180,17 @@ abstract class _$ConversationToolsNotifier
     final ref =
         this.ref
             as $Ref<
-              AsyncValue<Map<UserToolType, bool>>,
-              Map<UserToolType, bool>
+              AsyncValue<List<ConversationToolState>>,
+              List<ConversationToolState>
             >;
     final element =
         ref.element
             as $ClassProviderElement<
               AnyNotifier<
-                AsyncValue<Map<UserToolType, bool>>,
-                Map<UserToolType, bool>
+                AsyncValue<List<ConversationToolState>>,
+                List<ConversationToolState>
               >,
-              AsyncValue<Map<UserToolType, bool>>,
+              AsyncValue<List<ConversationToolState>>,
               Object?,
               Object?
             >;
@@ -226,7 +248,7 @@ final class ContextAwareToolsNotifierProvider
 }
 
 String _$contextAwareToolsNotifierHash() =>
-    r'ef76e017661567f6a783e010b6808c4064b90144';
+    r'39112a1f954d004b0ddc41787f7d7c91b64cf73e';
 
 /// Provider to get context-aware tools for chat
 /// (conversation -> workspace -> app defaults)
