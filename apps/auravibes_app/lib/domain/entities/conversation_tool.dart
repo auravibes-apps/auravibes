@@ -13,8 +13,8 @@ abstract class ConversationToolEntity with _$ConversationToolEntity {
     /// ID of the conversation this tool setting belongs to
     required String conversationId,
 
-    /// Type of tool (e.g., 'web_search', 'calculator', etc.)
-    required String type,
+    /// tool identificator (e.g., 'web_search', 'calculator', etc.)
+    required String toolId,
 
     /// Whether the tool is enabled for this conversation
     required bool isEnabled,
@@ -36,8 +36,8 @@ abstract class ConversationToolEntity with _$ConversationToolEntity {
 abstract class ConversationToolToCreate with _$ConversationToolToCreate {
   /// Creates a new ConversationToolToCreate instance
   const factory ConversationToolToCreate({
-    /// Type of tool (e.g., 'web_search', 'calculator', etc.)
-    required String type,
+    /// tool identificator (e.g., 'web_search', 'calculator', etc.)
+    required String toolId,
 
     /// Whether the tool should be enabled (defaults to true)
     bool? isEnabled,
@@ -45,7 +45,7 @@ abstract class ConversationToolToCreate with _$ConversationToolToCreate {
   const ConversationToolToCreate._();
 
   /// Returns true if the tool type is valid
-  bool get hasValidType => type.isNotEmpty;
+  bool get hasValidToolId => toolId.isNotEmpty;
 
   /// Returns the default enabled status (true if not specified)
   bool get defaultEnabled => isEnabled ?? true;

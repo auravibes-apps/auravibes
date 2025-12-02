@@ -3468,12 +3468,12 @@ class MessagesCompanion extends UpdateCompanion<MessagesTable> {
   }
 }
 
-class $WorkspaceToolsTable extends WorkspaceTools
-    with TableInfo<$WorkspaceToolsTable, WorkspaceToolsTable> {
+class $ToolsGroupsTable extends ToolsGroups
+    with TableInfo<$ToolsGroupsTable, ToolsGroupsTable> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
-  $WorkspaceToolsTable(this.attachedDatabase, [this._alias]);
+  $ToolsGroupsTable(this.attachedDatabase, [this._alias]);
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
   late final GeneratedColumn<String> id = GeneratedColumn<String>(
@@ -3522,23 +3522,14 @@ class $WorkspaceToolsTable extends WorkspaceTools
       'REFERENCES workspaces (id)',
     ),
   );
-  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
   @override
-  late final GeneratedColumn<String> type = GeneratedColumn<String>(
-    'type',
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
     aliasedName,
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
-  );
-  static const VerificationMeta _configMeta = const VerificationMeta('config');
-  @override
-  late final GeneratedColumn<String> config = GeneratedColumn<String>(
-    'config',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
   );
   static const VerificationMeta _isEnabledMeta = const VerificationMeta(
     'isEnabled',
@@ -3553,26 +3544,35 @@ class $WorkspaceToolsTable extends WorkspaceTools
     defaultConstraints: GeneratedColumn.constraintIsAlways(
       'CHECK ("is_enabled" IN (0, 1))',
     ),
-    defaultValue: const Constant(false),
+    defaultValue: const Constant(true),
   );
+  @override
+  late final GeneratedColumnWithTypeConverter<PermissionAccess, String>
+  permissions = GeneratedColumn<String>(
+    'permissions',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  ).withConverter<PermissionAccess>($ToolsGroupsTable.$converterpermissions);
   @override
   List<GeneratedColumn> get $columns => [
     id,
     createdAt,
     updatedAt,
     workspaceId,
-    type,
-    config,
+    name,
     isEnabled,
+    permissions,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
-  static const String $name = 'workspace_tools';
+  static const String $name = 'tools_groups';
   @override
   VerificationContext validateIntegrity(
-    Insertable<WorkspaceToolsTable> instance, {
+    Insertable<ToolsGroupsTable> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
@@ -3603,19 +3603,13 @@ class $WorkspaceToolsTable extends WorkspaceTools
     } else if (isInserting) {
       context.missing(_workspaceIdMeta);
     }
-    if (data.containsKey('type')) {
+    if (data.containsKey('name')) {
       context.handle(
-        _typeMeta,
-        type.isAcceptableOrUnknown(data['type']!, _typeMeta),
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
       );
     } else if (isInserting) {
-      context.missing(_typeMeta);
-    }
-    if (data.containsKey('config')) {
-      context.handle(
-        _configMeta,
-        config.isAcceptableOrUnknown(data['config']!, _configMeta),
-      );
+      context.missing(_nameMeta);
     }
     if (data.containsKey('is_enabled')) {
       context.handle(
@@ -3627,11 +3621,11 @@ class $WorkspaceToolsTable extends WorkspaceTools
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {workspaceId, type};
+  Set<GeneratedColumn> get $primaryKey => {workspaceId, id};
   @override
-  WorkspaceToolsTable map(Map<String, dynamic> data, {String? tablePrefix}) {
+  ToolsGroupsTable map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return WorkspaceToolsTable(
+    return ToolsGroupsTable(
       id: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}id'],
@@ -3648,29 +3642,36 @@ class $WorkspaceToolsTable extends WorkspaceTools
         DriftSqlType.string,
         data['${effectivePrefix}workspace_id'],
       )!,
-      type: attachedDatabase.typeMapping.read(
+      name: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}type'],
+        data['${effectivePrefix}name'],
       )!,
-      config: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}config'],
-      ),
       isEnabled: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_enabled'],
       )!,
+      permissions: $ToolsGroupsTable.$converterpermissions.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}permissions'],
+        )!,
+      ),
     );
   }
 
   @override
-  $WorkspaceToolsTable createAlias(String alias) {
-    return $WorkspaceToolsTable(attachedDatabase, alias);
+  $ToolsGroupsTable createAlias(String alias) {
+    return $ToolsGroupsTable(attachedDatabase, alias);
   }
+
+  static JsonTypeConverter2<PermissionAccess, String, String>
+  $converterpermissions = const EnumNameConverter<PermissionAccess>(
+    PermissionAccess.values,
+  );
 }
 
-class WorkspaceToolsTable extends DataClass
-    implements Insertable<WorkspaceToolsTable> {
+class ToolsGroupsTable extends DataClass
+    implements Insertable<ToolsGroupsTable> {
   ///Primary key column as string
   final String id;
 
@@ -3680,25 +3681,21 @@ class WorkspaceToolsTable extends DataClass
   /// when was last updated timestamp
   final DateTime updatedAt;
 
-  /// Reference to the workspace this tool setting belongs to
+  /// Reference to the workspace this tools group belongs to
   final String workspaceId;
-
-  /// Type of tool (e.g., 'web_search', 'calculator', etc.)
-  final String type;
-
-  /// Tool configuration as JSON (optional)
-  final String? config;
+  final String name;
 
   /// Whether the tool is enabled for this workspace
   final bool isEnabled;
-  const WorkspaceToolsTable({
+  final PermissionAccess permissions;
+  const ToolsGroupsTable({
     required this.id,
     required this.createdAt,
     required this.updatedAt,
     required this.workspaceId,
-    required this.type,
-    this.config,
+    required this.name,
     required this.isEnabled,
+    required this.permissions,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3707,41 +3704,43 @@ class WorkspaceToolsTable extends DataClass
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     map['workspace_id'] = Variable<String>(workspaceId);
-    map['type'] = Variable<String>(type);
-    if (!nullToAbsent || config != null) {
-      map['config'] = Variable<String>(config);
-    }
+    map['name'] = Variable<String>(name);
     map['is_enabled'] = Variable<bool>(isEnabled);
+    {
+      map['permissions'] = Variable<String>(
+        $ToolsGroupsTable.$converterpermissions.toSql(permissions),
+      );
+    }
     return map;
   }
 
-  WorkspaceToolsCompanion toCompanion(bool nullToAbsent) {
-    return WorkspaceToolsCompanion(
+  ToolsGroupsCompanion toCompanion(bool nullToAbsent) {
+    return ToolsGroupsCompanion(
       id: Value(id),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       workspaceId: Value(workspaceId),
-      type: Value(type),
-      config: config == null && nullToAbsent
-          ? const Value.absent()
-          : Value(config),
+      name: Value(name),
       isEnabled: Value(isEnabled),
+      permissions: Value(permissions),
     );
   }
 
-  factory WorkspaceToolsTable.fromJson(
+  factory ToolsGroupsTable.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return WorkspaceToolsTable(
+    return ToolsGroupsTable(
       id: serializer.fromJson<String>(json['id']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       workspaceId: serializer.fromJson<String>(json['workspaceId']),
-      type: serializer.fromJson<String>(json['type']),
-      config: serializer.fromJson<String?>(json['config']),
+      name: serializer.fromJson<String>(json['name']),
       isEnabled: serializer.fromJson<bool>(json['isEnabled']),
+      permissions: $ToolsGroupsTable.$converterpermissions.fromJson(
+        serializer.fromJson<String>(json['permissions']),
+      ),
     );
   }
   @override
@@ -3752,53 +3751,57 @@ class WorkspaceToolsTable extends DataClass
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'workspaceId': serializer.toJson<String>(workspaceId),
-      'type': serializer.toJson<String>(type),
-      'config': serializer.toJson<String?>(config),
+      'name': serializer.toJson<String>(name),
       'isEnabled': serializer.toJson<bool>(isEnabled),
+      'permissions': serializer.toJson<String>(
+        $ToolsGroupsTable.$converterpermissions.toJson(permissions),
+      ),
     };
   }
 
-  WorkspaceToolsTable copyWith({
+  ToolsGroupsTable copyWith({
     String? id,
     DateTime? createdAt,
     DateTime? updatedAt,
     String? workspaceId,
-    String? type,
-    Value<String?> config = const Value.absent(),
+    String? name,
     bool? isEnabled,
-  }) => WorkspaceToolsTable(
+    PermissionAccess? permissions,
+  }) => ToolsGroupsTable(
     id: id ?? this.id,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     workspaceId: workspaceId ?? this.workspaceId,
-    type: type ?? this.type,
-    config: config.present ? config.value : this.config,
+    name: name ?? this.name,
     isEnabled: isEnabled ?? this.isEnabled,
+    permissions: permissions ?? this.permissions,
   );
-  WorkspaceToolsTable copyWithCompanion(WorkspaceToolsCompanion data) {
-    return WorkspaceToolsTable(
+  ToolsGroupsTable copyWithCompanion(ToolsGroupsCompanion data) {
+    return ToolsGroupsTable(
       id: data.id.present ? data.id.value : this.id,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       workspaceId: data.workspaceId.present
           ? data.workspaceId.value
           : this.workspaceId,
-      type: data.type.present ? data.type.value : this.type,
-      config: data.config.present ? data.config.value : this.config,
+      name: data.name.present ? data.name.value : this.name,
       isEnabled: data.isEnabled.present ? data.isEnabled.value : this.isEnabled,
+      permissions: data.permissions.present
+          ? data.permissions.value
+          : this.permissions,
     );
   }
 
   @override
   String toString() {
-    return (StringBuffer('WorkspaceToolsTable(')
+    return (StringBuffer('ToolsGroupsTable(')
           ..write('id: $id, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('workspaceId: $workspaceId, ')
-          ..write('type: $type, ')
-          ..write('config: $config, ')
-          ..write('isEnabled: $isEnabled')
+          ..write('name: $name, ')
+          ..write('isEnabled: $isEnabled, ')
+          ..write('permissions: $permissions')
           ..write(')'))
         .toString();
   }
@@ -3809,61 +3812,62 @@ class WorkspaceToolsTable extends DataClass
     createdAt,
     updatedAt,
     workspaceId,
-    type,
-    config,
+    name,
     isEnabled,
+    permissions,
   );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is WorkspaceToolsTable &&
+      (other is ToolsGroupsTable &&
           other.id == this.id &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.workspaceId == this.workspaceId &&
-          other.type == this.type &&
-          other.config == this.config &&
-          other.isEnabled == this.isEnabled);
+          other.name == this.name &&
+          other.isEnabled == this.isEnabled &&
+          other.permissions == this.permissions);
 }
 
-class WorkspaceToolsCompanion extends UpdateCompanion<WorkspaceToolsTable> {
+class ToolsGroupsCompanion extends UpdateCompanion<ToolsGroupsTable> {
   final Value<String> id;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<String> workspaceId;
-  final Value<String> type;
-  final Value<String?> config;
+  final Value<String> name;
   final Value<bool> isEnabled;
+  final Value<PermissionAccess> permissions;
   final Value<int> rowid;
-  const WorkspaceToolsCompanion({
+  const ToolsGroupsCompanion({
     this.id = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.workspaceId = const Value.absent(),
-    this.type = const Value.absent(),
-    this.config = const Value.absent(),
+    this.name = const Value.absent(),
     this.isEnabled = const Value.absent(),
+    this.permissions = const Value.absent(),
     this.rowid = const Value.absent(),
   });
-  WorkspaceToolsCompanion.insert({
+  ToolsGroupsCompanion.insert({
     this.id = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     required String workspaceId,
-    required String type,
-    this.config = const Value.absent(),
+    required String name,
     this.isEnabled = const Value.absent(),
+    required PermissionAccess permissions,
     this.rowid = const Value.absent(),
   }) : workspaceId = Value(workspaceId),
-       type = Value(type);
-  static Insertable<WorkspaceToolsTable> custom({
+       name = Value(name),
+       permissions = Value(permissions);
+  static Insertable<ToolsGroupsTable> custom({
     Expression<String>? id,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<String>? workspaceId,
-    Expression<String>? type,
-    Expression<String>? config,
+    Expression<String>? name,
     Expression<bool>? isEnabled,
+    Expression<String>? permissions,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -3871,31 +3875,31 @@ class WorkspaceToolsCompanion extends UpdateCompanion<WorkspaceToolsTable> {
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (workspaceId != null) 'workspace_id': workspaceId,
-      if (type != null) 'type': type,
-      if (config != null) 'config': config,
+      if (name != null) 'name': name,
       if (isEnabled != null) 'is_enabled': isEnabled,
+      if (permissions != null) 'permissions': permissions,
       if (rowid != null) 'rowid': rowid,
     });
   }
 
-  WorkspaceToolsCompanion copyWith({
+  ToolsGroupsCompanion copyWith({
     Value<String>? id,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<String>? workspaceId,
-    Value<String>? type,
-    Value<String?>? config,
+    Value<String>? name,
     Value<bool>? isEnabled,
+    Value<PermissionAccess>? permissions,
     Value<int>? rowid,
   }) {
-    return WorkspaceToolsCompanion(
+    return ToolsGroupsCompanion(
       id: id ?? this.id,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       workspaceId: workspaceId ?? this.workspaceId,
-      type: type ?? this.type,
-      config: config ?? this.config,
+      name: name ?? this.name,
       isEnabled: isEnabled ?? this.isEnabled,
+      permissions: permissions ?? this.permissions,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -3915,14 +3919,16 @@ class WorkspaceToolsCompanion extends UpdateCompanion<WorkspaceToolsTable> {
     if (workspaceId.present) {
       map['workspace_id'] = Variable<String>(workspaceId.value);
     }
-    if (type.present) {
-      map['type'] = Variable<String>(type.value);
-    }
-    if (config.present) {
-      map['config'] = Variable<String>(config.value);
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
     }
     if (isEnabled.present) {
       map['is_enabled'] = Variable<bool>(isEnabled.value);
+    }
+    if (permissions.present) {
+      map['permissions'] = Variable<String>(
+        $ToolsGroupsTable.$converterpermissions.toSql(permissions.value),
+      );
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -3932,30 +3938,733 @@ class WorkspaceToolsCompanion extends UpdateCompanion<WorkspaceToolsTable> {
 
   @override
   String toString() {
-    return (StringBuffer('WorkspaceToolsCompanion(')
+    return (StringBuffer('ToolsGroupsCompanion(')
           ..write('id: $id, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('workspaceId: $workspaceId, ')
-          ..write('type: $type, ')
-          ..write('config: $config, ')
+          ..write('name: $name, ')
           ..write('isEnabled: $isEnabled, ')
+          ..write('permissions: $permissions, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
   }
 }
 
-class $ConversationDisabledToolsTable extends ConversationDisabledTools
-    with
-        TableInfo<
-          $ConversationDisabledToolsTable,
-          ConversationDisabledToolsTable
-        > {
+class $ToolsTable extends Tools with TableInfo<$ToolsTable, ToolsTable> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
-  $ConversationDisabledToolsTable(this.attachedDatabase, [this._alias]);
+  $ToolsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: () => const UuidV7().generate(),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _workspaceIdMeta = const VerificationMeta(
+    'workspaceId',
+  );
+  @override
+  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
+    'workspace_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES workspaces (id)',
+    ),
+  );
+  static const VerificationMeta _workspaceToolsGroupIdMeta =
+      const VerificationMeta('workspaceToolsGroupId');
+  @override
+  late final GeneratedColumn<String> workspaceToolsGroupId =
+      GeneratedColumn<String>(
+        'workspace_tools_group_id',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES tools_groups (id) ON DELETE CASCADE',
+        ),
+      );
+  static const VerificationMeta _toolIdMeta = const VerificationMeta('toolId');
+  @override
+  late final GeneratedColumn<String> toolId = GeneratedColumn<String>(
+    'tool_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _customNameMeta = const VerificationMeta(
+    'customName',
+  );
+  @override
+  late final GeneratedColumn<String> customName = GeneratedColumn<String>(
+    'custom_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _additionalPromptMeta = const VerificationMeta(
+    'additionalPrompt',
+  );
+  @override
+  late final GeneratedColumn<String> additionalPrompt = GeneratedColumn<String>(
+    'additional_prompt',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _configMeta = const VerificationMeta('config');
+  @override
+  late final GeneratedColumn<String> config = GeneratedColumn<String>(
+    'config',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isEnabledMeta = const VerificationMeta(
+    'isEnabled',
+  );
+  @override
+  late final GeneratedColumn<bool> isEnabled = GeneratedColumn<bool>(
+    'is_enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_enabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<PermissionAccess, String>
+  permissions = GeneratedColumn<String>(
+    'permissions',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: Constant(PermissionAccess.ask.name),
+  ).withConverter<PermissionAccess>($ToolsTable.$converterpermissions);
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    createdAt,
+    updatedAt,
+    workspaceId,
+    workspaceToolsGroupId,
+    toolId,
+    customName,
+    additionalPrompt,
+    config,
+    isEnabled,
+    permissions,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'tools';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ToolsTable> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+        _workspaceIdMeta,
+        workspaceId.isAcceptableOrUnknown(
+          data['workspace_id']!,
+          _workspaceIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_workspaceIdMeta);
+    }
+    if (data.containsKey('workspace_tools_group_id')) {
+      context.handle(
+        _workspaceToolsGroupIdMeta,
+        workspaceToolsGroupId.isAcceptableOrUnknown(
+          data['workspace_tools_group_id']!,
+          _workspaceToolsGroupIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('tool_id')) {
+      context.handle(
+        _toolIdMeta,
+        toolId.isAcceptableOrUnknown(data['tool_id']!, _toolIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_toolIdMeta);
+    }
+    if (data.containsKey('custom_name')) {
+      context.handle(
+        _customNameMeta,
+        customName.isAcceptableOrUnknown(data['custom_name']!, _customNameMeta),
+      );
+    }
+    if (data.containsKey('additional_prompt')) {
+      context.handle(
+        _additionalPromptMeta,
+        additionalPrompt.isAcceptableOrUnknown(
+          data['additional_prompt']!,
+          _additionalPromptMeta,
+        ),
+      );
+    }
+    if (data.containsKey('config')) {
+      context.handle(
+        _configMeta,
+        config.isAcceptableOrUnknown(data['config']!, _configMeta),
+      );
+    }
+    if (data.containsKey('is_enabled')) {
+      context.handle(
+        _isEnabledMeta,
+        isEnabled.isAcceptableOrUnknown(data['is_enabled']!, _isEnabledMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {workspaceId, id};
+  @override
+  ToolsTable map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ToolsTable(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      workspaceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}workspace_id'],
+      )!,
+      workspaceToolsGroupId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}workspace_tools_group_id'],
+      ),
+      toolId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tool_id'],
+      )!,
+      customName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}custom_name'],
+      ),
+      additionalPrompt: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}additional_prompt'],
+      ),
+      config: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}config'],
+      ),
+      isEnabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_enabled'],
+      )!,
+      permissions: $ToolsTable.$converterpermissions.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}permissions'],
+        )!,
+      ),
+    );
+  }
+
+  @override
+  $ToolsTable createAlias(String alias) {
+    return $ToolsTable(attachedDatabase, alias);
+  }
+
+  static JsonTypeConverter2<PermissionAccess, String, String>
+  $converterpermissions = const EnumNameConverter<PermissionAccess>(
+    PermissionAccess.values,
+  );
+}
+
+class ToolsTable extends DataClass implements Insertable<ToolsTable> {
+  ///Primary key column as string
+  final String id;
+
+  /// when was created timestamp
+  final DateTime createdAt;
+
+  /// when was last updated timestamp
+  final DateTime updatedAt;
+
+  /// Reference to the workspace this tool belongs to
+  final String workspaceId;
+  final String? workspaceToolsGroupId;
+
+  /// Type of tool (e.g., 'web_search', 'calculator', etc.)
+  final String toolId;
+  final String? customName;
+  final String? additionalPrompt;
+
+  /// Tool configuration as JSON (optional)
+  final String? config;
+
+  /// Whether the tool is enabled for this workspace
+  final bool isEnabled;
+  final PermissionAccess permissions;
+  const ToolsTable({
+    required this.id,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.workspaceId,
+    this.workspaceToolsGroupId,
+    required this.toolId,
+    this.customName,
+    this.additionalPrompt,
+    this.config,
+    required this.isEnabled,
+    required this.permissions,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['workspace_id'] = Variable<String>(workspaceId);
+    if (!nullToAbsent || workspaceToolsGroupId != null) {
+      map['workspace_tools_group_id'] = Variable<String>(workspaceToolsGroupId);
+    }
+    map['tool_id'] = Variable<String>(toolId);
+    if (!nullToAbsent || customName != null) {
+      map['custom_name'] = Variable<String>(customName);
+    }
+    if (!nullToAbsent || additionalPrompt != null) {
+      map['additional_prompt'] = Variable<String>(additionalPrompt);
+    }
+    if (!nullToAbsent || config != null) {
+      map['config'] = Variable<String>(config);
+    }
+    map['is_enabled'] = Variable<bool>(isEnabled);
+    {
+      map['permissions'] = Variable<String>(
+        $ToolsTable.$converterpermissions.toSql(permissions),
+      );
+    }
+    return map;
+  }
+
+  ToolsCompanion toCompanion(bool nullToAbsent) {
+    return ToolsCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      workspaceId: Value(workspaceId),
+      workspaceToolsGroupId: workspaceToolsGroupId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(workspaceToolsGroupId),
+      toolId: Value(toolId),
+      customName: customName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(customName),
+      additionalPrompt: additionalPrompt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(additionalPrompt),
+      config: config == null && nullToAbsent
+          ? const Value.absent()
+          : Value(config),
+      isEnabled: Value(isEnabled),
+      permissions: Value(permissions),
+    );
+  }
+
+  factory ToolsTable.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ToolsTable(
+      id: serializer.fromJson<String>(json['id']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      workspaceId: serializer.fromJson<String>(json['workspaceId']),
+      workspaceToolsGroupId: serializer.fromJson<String?>(
+        json['workspaceToolsGroupId'],
+      ),
+      toolId: serializer.fromJson<String>(json['toolId']),
+      customName: serializer.fromJson<String?>(json['customName']),
+      additionalPrompt: serializer.fromJson<String?>(json['additionalPrompt']),
+      config: serializer.fromJson<String?>(json['config']),
+      isEnabled: serializer.fromJson<bool>(json['isEnabled']),
+      permissions: $ToolsTable.$converterpermissions.fromJson(
+        serializer.fromJson<String>(json['permissions']),
+      ),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'workspaceId': serializer.toJson<String>(workspaceId),
+      'workspaceToolsGroupId': serializer.toJson<String?>(
+        workspaceToolsGroupId,
+      ),
+      'toolId': serializer.toJson<String>(toolId),
+      'customName': serializer.toJson<String?>(customName),
+      'additionalPrompt': serializer.toJson<String?>(additionalPrompt),
+      'config': serializer.toJson<String?>(config),
+      'isEnabled': serializer.toJson<bool>(isEnabled),
+      'permissions': serializer.toJson<String>(
+        $ToolsTable.$converterpermissions.toJson(permissions),
+      ),
+    };
+  }
+
+  ToolsTable copyWith({
+    String? id,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    String? workspaceId,
+    Value<String?> workspaceToolsGroupId = const Value.absent(),
+    String? toolId,
+    Value<String?> customName = const Value.absent(),
+    Value<String?> additionalPrompt = const Value.absent(),
+    Value<String?> config = const Value.absent(),
+    bool? isEnabled,
+    PermissionAccess? permissions,
+  }) => ToolsTable(
+    id: id ?? this.id,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    workspaceId: workspaceId ?? this.workspaceId,
+    workspaceToolsGroupId: workspaceToolsGroupId.present
+        ? workspaceToolsGroupId.value
+        : this.workspaceToolsGroupId,
+    toolId: toolId ?? this.toolId,
+    customName: customName.present ? customName.value : this.customName,
+    additionalPrompt: additionalPrompt.present
+        ? additionalPrompt.value
+        : this.additionalPrompt,
+    config: config.present ? config.value : this.config,
+    isEnabled: isEnabled ?? this.isEnabled,
+    permissions: permissions ?? this.permissions,
+  );
+  ToolsTable copyWithCompanion(ToolsCompanion data) {
+    return ToolsTable(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      workspaceId: data.workspaceId.present
+          ? data.workspaceId.value
+          : this.workspaceId,
+      workspaceToolsGroupId: data.workspaceToolsGroupId.present
+          ? data.workspaceToolsGroupId.value
+          : this.workspaceToolsGroupId,
+      toolId: data.toolId.present ? data.toolId.value : this.toolId,
+      customName: data.customName.present
+          ? data.customName.value
+          : this.customName,
+      additionalPrompt: data.additionalPrompt.present
+          ? data.additionalPrompt.value
+          : this.additionalPrompt,
+      config: data.config.present ? data.config.value : this.config,
+      isEnabled: data.isEnabled.present ? data.isEnabled.value : this.isEnabled,
+      permissions: data.permissions.present
+          ? data.permissions.value
+          : this.permissions,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ToolsTable(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('workspaceToolsGroupId: $workspaceToolsGroupId, ')
+          ..write('toolId: $toolId, ')
+          ..write('customName: $customName, ')
+          ..write('additionalPrompt: $additionalPrompt, ')
+          ..write('config: $config, ')
+          ..write('isEnabled: $isEnabled, ')
+          ..write('permissions: $permissions')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    createdAt,
+    updatedAt,
+    workspaceId,
+    workspaceToolsGroupId,
+    toolId,
+    customName,
+    additionalPrompt,
+    config,
+    isEnabled,
+    permissions,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ToolsTable &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.workspaceId == this.workspaceId &&
+          other.workspaceToolsGroupId == this.workspaceToolsGroupId &&
+          other.toolId == this.toolId &&
+          other.customName == this.customName &&
+          other.additionalPrompt == this.additionalPrompt &&
+          other.config == this.config &&
+          other.isEnabled == this.isEnabled &&
+          other.permissions == this.permissions);
+}
+
+class ToolsCompanion extends UpdateCompanion<ToolsTable> {
+  final Value<String> id;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<String> workspaceId;
+  final Value<String?> workspaceToolsGroupId;
+  final Value<String> toolId;
+  final Value<String?> customName;
+  final Value<String?> additionalPrompt;
+  final Value<String?> config;
+  final Value<bool> isEnabled;
+  final Value<PermissionAccess> permissions;
+  final Value<int> rowid;
+  const ToolsCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.workspaceId = const Value.absent(),
+    this.workspaceToolsGroupId = const Value.absent(),
+    this.toolId = const Value.absent(),
+    this.customName = const Value.absent(),
+    this.additionalPrompt = const Value.absent(),
+    this.config = const Value.absent(),
+    this.isEnabled = const Value.absent(),
+    this.permissions = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ToolsCompanion.insert({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    required String workspaceId,
+    this.workspaceToolsGroupId = const Value.absent(),
+    required String toolId,
+    this.customName = const Value.absent(),
+    this.additionalPrompt = const Value.absent(),
+    this.config = const Value.absent(),
+    this.isEnabled = const Value.absent(),
+    this.permissions = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : workspaceId = Value(workspaceId),
+       toolId = Value(toolId);
+  static Insertable<ToolsTable> custom({
+    Expression<String>? id,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? workspaceId,
+    Expression<String>? workspaceToolsGroupId,
+    Expression<String>? toolId,
+    Expression<String>? customName,
+    Expression<String>? additionalPrompt,
+    Expression<String>? config,
+    Expression<bool>? isEnabled,
+    Expression<String>? permissions,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (workspaceToolsGroupId != null)
+        'workspace_tools_group_id': workspaceToolsGroupId,
+      if (toolId != null) 'tool_id': toolId,
+      if (customName != null) 'custom_name': customName,
+      if (additionalPrompt != null) 'additional_prompt': additionalPrompt,
+      if (config != null) 'config': config,
+      if (isEnabled != null) 'is_enabled': isEnabled,
+      if (permissions != null) 'permissions': permissions,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ToolsCompanion copyWith({
+    Value<String>? id,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<String>? workspaceId,
+    Value<String?>? workspaceToolsGroupId,
+    Value<String>? toolId,
+    Value<String?>? customName,
+    Value<String?>? additionalPrompt,
+    Value<String?>? config,
+    Value<bool>? isEnabled,
+    Value<PermissionAccess>? permissions,
+    Value<int>? rowid,
+  }) {
+    return ToolsCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      workspaceId: workspaceId ?? this.workspaceId,
+      workspaceToolsGroupId:
+          workspaceToolsGroupId ?? this.workspaceToolsGroupId,
+      toolId: toolId ?? this.toolId,
+      customName: customName ?? this.customName,
+      additionalPrompt: additionalPrompt ?? this.additionalPrompt,
+      config: config ?? this.config,
+      isEnabled: isEnabled ?? this.isEnabled,
+      permissions: permissions ?? this.permissions,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<String>(workspaceId.value);
+    }
+    if (workspaceToolsGroupId.present) {
+      map['workspace_tools_group_id'] = Variable<String>(
+        workspaceToolsGroupId.value,
+      );
+    }
+    if (toolId.present) {
+      map['tool_id'] = Variable<String>(toolId.value);
+    }
+    if (customName.present) {
+      map['custom_name'] = Variable<String>(customName.value);
+    }
+    if (additionalPrompt.present) {
+      map['additional_prompt'] = Variable<String>(additionalPrompt.value);
+    }
+    if (config.present) {
+      map['config'] = Variable<String>(config.value);
+    }
+    if (isEnabled.present) {
+      map['is_enabled'] = Variable<bool>(isEnabled.value);
+    }
+    if (permissions.present) {
+      map['permissions'] = Variable<String>(
+        $ToolsTable.$converterpermissions.toSql(permissions.value),
+      );
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ToolsCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('workspaceToolsGroupId: $workspaceToolsGroupId, ')
+          ..write('toolId: $toolId, ')
+          ..write('customName: $customName, ')
+          ..write('additionalPrompt: $additionalPrompt, ')
+          ..write('config: $config, ')
+          ..write('isEnabled: $isEnabled, ')
+          ..write('permissions: $permissions, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ConversationToolsTable extends ConversationTools
+    with TableInfo<$ConversationToolsTable, ConversationToolsTable> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ConversationToolsTable(this.attachedDatabase, [this._alias]);
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
   late final GeneratedColumn<String> id = GeneratedColumn<String>(
@@ -4004,31 +4713,64 @@ class $ConversationDisabledToolsTable extends ConversationDisabledTools
       'REFERENCES conversations (id)',
     ),
   );
-  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  static const VerificationMeta _toolIdMeta = const VerificationMeta('toolId');
   @override
-  late final GeneratedColumn<String> type = GeneratedColumn<String>(
-    'type',
+  late final GeneratedColumn<String> toolId = GeneratedColumn<String>(
+    'tool_id',
     aliasedName,
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES tools (id)',
+    ),
   );
+  static const VerificationMeta _isEnabledMeta = const VerificationMeta(
+    'isEnabled',
+  );
+  @override
+  late final GeneratedColumn<bool> isEnabled = GeneratedColumn<bool>(
+    'is_enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_enabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<PermissionAccess, String>
+  permissions =
+      GeneratedColumn<String>(
+        'permissions',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: Constant(PermissionAccess.ask.name),
+      ).withConverter<PermissionAccess>(
+        $ConversationToolsTable.$converterpermissions,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
     createdAt,
     updatedAt,
     conversationId,
-    type,
+    toolId,
+    isEnabled,
+    permissions,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
-  static const String $name = 'conversation_disabled_tools';
+  static const String $name = 'conversation_tools';
   @override
   VerificationContext validateIntegrity(
-    Insertable<ConversationDisabledToolsTable> instance, {
+    Insertable<ConversationToolsTable> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
@@ -4059,26 +4801,29 @@ class $ConversationDisabledToolsTable extends ConversationDisabledTools
     } else if (isInserting) {
       context.missing(_conversationIdMeta);
     }
-    if (data.containsKey('type')) {
+    if (data.containsKey('tool_id')) {
       context.handle(
-        _typeMeta,
-        type.isAcceptableOrUnknown(data['type']!, _typeMeta),
+        _toolIdMeta,
+        toolId.isAcceptableOrUnknown(data['tool_id']!, _toolIdMeta),
       );
     } else if (isInserting) {
-      context.missing(_typeMeta);
+      context.missing(_toolIdMeta);
+    }
+    if (data.containsKey('is_enabled')) {
+      context.handle(
+        _isEnabledMeta,
+        isEnabled.isAcceptableOrUnknown(data['is_enabled']!, _isEnabledMeta),
+      );
     }
     return context;
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {conversationId, type};
+  Set<GeneratedColumn> get $primaryKey => {conversationId, toolId};
   @override
-  ConversationDisabledToolsTable map(
-    Map<String, dynamic> data, {
-    String? tablePrefix,
-  }) {
+  ConversationToolsTable map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return ConversationDisabledToolsTable(
+    return ConversationToolsTable(
       id: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}id'],
@@ -4095,21 +4840,36 @@ class $ConversationDisabledToolsTable extends ConversationDisabledTools
         DriftSqlType.string,
         data['${effectivePrefix}conversation_id'],
       )!,
-      type: attachedDatabase.typeMapping.read(
+      toolId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}type'],
+        data['${effectivePrefix}tool_id'],
       )!,
+      isEnabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_enabled'],
+      )!,
+      permissions: $ConversationToolsTable.$converterpermissions.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}permissions'],
+        )!,
+      ),
     );
   }
 
   @override
-  $ConversationDisabledToolsTable createAlias(String alias) {
-    return $ConversationDisabledToolsTable(attachedDatabase, alias);
+  $ConversationToolsTable createAlias(String alias) {
+    return $ConversationToolsTable(attachedDatabase, alias);
   }
+
+  static JsonTypeConverter2<PermissionAccess, String, String>
+  $converterpermissions = const EnumNameConverter<PermissionAccess>(
+    PermissionAccess.values,
+  );
 }
 
-class ConversationDisabledToolsTable extends DataClass
-    implements Insertable<ConversationDisabledToolsTable> {
+class ConversationToolsTable extends DataClass
+    implements Insertable<ConversationToolsTable> {
   ///Primary key column as string
   final String id;
 
@@ -4121,15 +4881,19 @@ class ConversationDisabledToolsTable extends DataClass
 
   /// Reference to the conversation this tool setting belongs to
   final String conversationId;
+  final String toolId;
 
-  /// Type of tool (e.g., 'web_search', 'calculator', etc.)
-  final String type;
-  const ConversationDisabledToolsTable({
+  /// Whether the tool is enabled for this workspace
+  final bool isEnabled;
+  final PermissionAccess permissions;
+  const ConversationToolsTable({
     required this.id,
     required this.createdAt,
     required this.updatedAt,
     required this.conversationId,
-    required this.type,
+    required this.toolId,
+    required this.isEnabled,
+    required this.permissions,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -4138,31 +4902,43 @@ class ConversationDisabledToolsTable extends DataClass
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     map['conversation_id'] = Variable<String>(conversationId);
-    map['type'] = Variable<String>(type);
+    map['tool_id'] = Variable<String>(toolId);
+    map['is_enabled'] = Variable<bool>(isEnabled);
+    {
+      map['permissions'] = Variable<String>(
+        $ConversationToolsTable.$converterpermissions.toSql(permissions),
+      );
+    }
     return map;
   }
 
-  ConversationDisabledToolsCompanion toCompanion(bool nullToAbsent) {
-    return ConversationDisabledToolsCompanion(
+  ConversationToolsCompanion toCompanion(bool nullToAbsent) {
+    return ConversationToolsCompanion(
       id: Value(id),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       conversationId: Value(conversationId),
-      type: Value(type),
+      toolId: Value(toolId),
+      isEnabled: Value(isEnabled),
+      permissions: Value(permissions),
     );
   }
 
-  factory ConversationDisabledToolsTable.fromJson(
+  factory ConversationToolsTable.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return ConversationDisabledToolsTable(
+    return ConversationToolsTable(
       id: serializer.fromJson<String>(json['id']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       conversationId: serializer.fromJson<String>(json['conversationId']),
-      type: serializer.fromJson<String>(json['type']),
+      toolId: serializer.fromJson<String>(json['toolId']),
+      isEnabled: serializer.fromJson<bool>(json['isEnabled']),
+      permissions: $ConversationToolsTable.$converterpermissions.fromJson(
+        serializer.fromJson<String>(json['permissions']),
+      ),
     );
   }
   @override
@@ -4173,94 +4949,123 @@ class ConversationDisabledToolsTable extends DataClass
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'conversationId': serializer.toJson<String>(conversationId),
-      'type': serializer.toJson<String>(type),
+      'toolId': serializer.toJson<String>(toolId),
+      'isEnabled': serializer.toJson<bool>(isEnabled),
+      'permissions': serializer.toJson<String>(
+        $ConversationToolsTable.$converterpermissions.toJson(permissions),
+      ),
     };
   }
 
-  ConversationDisabledToolsTable copyWith({
+  ConversationToolsTable copyWith({
     String? id,
     DateTime? createdAt,
     DateTime? updatedAt,
     String? conversationId,
-    String? type,
-  }) => ConversationDisabledToolsTable(
+    String? toolId,
+    bool? isEnabled,
+    PermissionAccess? permissions,
+  }) => ConversationToolsTable(
     id: id ?? this.id,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     conversationId: conversationId ?? this.conversationId,
-    type: type ?? this.type,
+    toolId: toolId ?? this.toolId,
+    isEnabled: isEnabled ?? this.isEnabled,
+    permissions: permissions ?? this.permissions,
   );
-  ConversationDisabledToolsTable copyWithCompanion(
-    ConversationDisabledToolsCompanion data,
-  ) {
-    return ConversationDisabledToolsTable(
+  ConversationToolsTable copyWithCompanion(ConversationToolsCompanion data) {
+    return ConversationToolsTable(
       id: data.id.present ? data.id.value : this.id,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       conversationId: data.conversationId.present
           ? data.conversationId.value
           : this.conversationId,
-      type: data.type.present ? data.type.value : this.type,
+      toolId: data.toolId.present ? data.toolId.value : this.toolId,
+      isEnabled: data.isEnabled.present ? data.isEnabled.value : this.isEnabled,
+      permissions: data.permissions.present
+          ? data.permissions.value
+          : this.permissions,
     );
   }
 
   @override
   String toString() {
-    return (StringBuffer('ConversationDisabledToolsTable(')
+    return (StringBuffer('ConversationToolsTable(')
           ..write('id: $id, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('conversationId: $conversationId, ')
-          ..write('type: $type')
+          ..write('toolId: $toolId, ')
+          ..write('isEnabled: $isEnabled, ')
+          ..write('permissions: $permissions')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, createdAt, updatedAt, conversationId, type);
+  int get hashCode => Object.hash(
+    id,
+    createdAt,
+    updatedAt,
+    conversationId,
+    toolId,
+    isEnabled,
+    permissions,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is ConversationDisabledToolsTable &&
+      (other is ConversationToolsTable &&
           other.id == this.id &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.conversationId == this.conversationId &&
-          other.type == this.type);
+          other.toolId == this.toolId &&
+          other.isEnabled == this.isEnabled &&
+          other.permissions == this.permissions);
 }
 
-class ConversationDisabledToolsCompanion
-    extends UpdateCompanion<ConversationDisabledToolsTable> {
+class ConversationToolsCompanion
+    extends UpdateCompanion<ConversationToolsTable> {
   final Value<String> id;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<String> conversationId;
-  final Value<String> type;
+  final Value<String> toolId;
+  final Value<bool> isEnabled;
+  final Value<PermissionAccess> permissions;
   final Value<int> rowid;
-  const ConversationDisabledToolsCompanion({
+  const ConversationToolsCompanion({
     this.id = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.conversationId = const Value.absent(),
-    this.type = const Value.absent(),
+    this.toolId = const Value.absent(),
+    this.isEnabled = const Value.absent(),
+    this.permissions = const Value.absent(),
     this.rowid = const Value.absent(),
   });
-  ConversationDisabledToolsCompanion.insert({
+  ConversationToolsCompanion.insert({
     this.id = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     required String conversationId,
-    required String type,
+    required String toolId,
+    this.isEnabled = const Value.absent(),
+    this.permissions = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : conversationId = Value(conversationId),
-       type = Value(type);
-  static Insertable<ConversationDisabledToolsTable> custom({
+       toolId = Value(toolId);
+  static Insertable<ConversationToolsTable> custom({
     Expression<String>? id,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<String>? conversationId,
-    Expression<String>? type,
+    Expression<String>? toolId,
+    Expression<bool>? isEnabled,
+    Expression<String>? permissions,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -4268,25 +5073,31 @@ class ConversationDisabledToolsCompanion
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (conversationId != null) 'conversation_id': conversationId,
-      if (type != null) 'type': type,
+      if (toolId != null) 'tool_id': toolId,
+      if (isEnabled != null) 'is_enabled': isEnabled,
+      if (permissions != null) 'permissions': permissions,
       if (rowid != null) 'rowid': rowid,
     });
   }
 
-  ConversationDisabledToolsCompanion copyWith({
+  ConversationToolsCompanion copyWith({
     Value<String>? id,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<String>? conversationId,
-    Value<String>? type,
+    Value<String>? toolId,
+    Value<bool>? isEnabled,
+    Value<PermissionAccess>? permissions,
     Value<int>? rowid,
   }) {
-    return ConversationDisabledToolsCompanion(
+    return ConversationToolsCompanion(
       id: id ?? this.id,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       conversationId: conversationId ?? this.conversationId,
-      type: type ?? this.type,
+      toolId: toolId ?? this.toolId,
+      isEnabled: isEnabled ?? this.isEnabled,
+      permissions: permissions ?? this.permissions,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -4306,8 +5117,16 @@ class ConversationDisabledToolsCompanion
     if (conversationId.present) {
       map['conversation_id'] = Variable<String>(conversationId.value);
     }
-    if (type.present) {
-      map['type'] = Variable<String>(type.value);
+    if (toolId.present) {
+      map['tool_id'] = Variable<String>(toolId.value);
+    }
+    if (isEnabled.present) {
+      map['is_enabled'] = Variable<bool>(isEnabled.value);
+    }
+    if (permissions.present) {
+      map['permissions'] = Variable<String>(
+        $ConversationToolsTable.$converterpermissions.toSql(permissions.value),
+      );
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -4317,12 +5136,14 @@ class ConversationDisabledToolsCompanion
 
   @override
   String toString() {
-    return (StringBuffer('ConversationDisabledToolsCompanion(')
+    return (StringBuffer('ConversationToolsCompanion(')
           ..write('id: $id, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('conversationId: $conversationId, ')
-          ..write('type: $type, ')
+          ..write('toolId: $toolId, ')
+          ..write('isEnabled: $isEnabled, ')
+          ..write('permissions: $permissions, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4342,9 +5163,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $ConversationsTable conversations = $ConversationsTable(this);
   late final $MessagesTable messages = $MessagesTable(this);
-  late final $WorkspaceToolsTable workspaceTools = $WorkspaceToolsTable(this);
-  late final $ConversationDisabledToolsTable conversationDisabledTools =
-      $ConversationDisabledToolsTable(this);
+  late final $ToolsGroupsTable toolsGroups = $ToolsGroupsTable(this);
+  late final $ToolsTable tools = $ToolsTable(this);
+  late final $ConversationToolsTable conversationTools =
+      $ConversationToolsTable(this);
   late final WorkspaceDao workspaceDao = WorkspaceDao(this as AppDatabase);
   late final CredentialsDao credentialsDao = CredentialsDao(
     this as AppDatabase,
@@ -4378,9 +5200,20 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     credentialModels,
     conversations,
     messages,
-    workspaceTools,
-    conversationDisabledTools,
+    toolsGroups,
+    tools,
+    conversationTools,
   ];
+  @override
+  StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'tools_groups',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('tools', kind: UpdateKind.delete)],
+    ),
+  ]);
 }
 
 typedef $$WorkspacesTableCreateCompanionBuilder =
@@ -4450,22 +5283,41 @@ final class $$WorkspacesTableReferences
     );
   }
 
-  static MultiTypedResultKey<$WorkspaceToolsTable, List<WorkspaceToolsTable>>
-  _workspaceToolsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
-    db.workspaceTools,
+  static MultiTypedResultKey<$ToolsGroupsTable, List<ToolsGroupsTable>>
+  _toolsGroupsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.toolsGroups,
     aliasName: $_aliasNameGenerator(
       db.workspaces.id,
-      db.workspaceTools.workspaceId,
+      db.toolsGroups.workspaceId,
     ),
   );
 
-  $$WorkspaceToolsTableProcessedTableManager get workspaceToolsRefs {
-    final manager = $$WorkspaceToolsTableTableManager(
+  $$ToolsGroupsTableProcessedTableManager get toolsGroupsRefs {
+    final manager = $$ToolsGroupsTableTableManager(
       $_db,
-      $_db.workspaceTools,
+      $_db.toolsGroups,
     ).filter((f) => f.workspaceId.id.sqlEquals($_itemColumn<String>('id')!));
 
-    final cache = $_typedResult.readTableOrNull(_workspaceToolsRefsTable($_db));
+    final cache = $_typedResult.readTableOrNull(_toolsGroupsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$ToolsTable, List<ToolsTable>> _toolsRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.tools,
+    aliasName: $_aliasNameGenerator(db.workspaces.id, db.tools.workspaceId),
+  );
+
+  $$ToolsTableProcessedTableManager get toolsRefs {
+    final manager = $$ToolsTableTableManager(
+      $_db,
+      $_db.tools,
+    ).filter((f) => f.workspaceId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_toolsRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -4562,22 +5414,47 @@ class $$WorkspacesTableFilterComposer
     return f(composer);
   }
 
-  Expression<bool> workspaceToolsRefs(
-    Expression<bool> Function($$WorkspaceToolsTableFilterComposer f) f,
+  Expression<bool> toolsGroupsRefs(
+    Expression<bool> Function($$ToolsGroupsTableFilterComposer f) f,
   ) {
-    final $$WorkspaceToolsTableFilterComposer composer = $composerBuilder(
+    final $$ToolsGroupsTableFilterComposer composer = $composerBuilder(
       composer: this,
       getCurrentColumn: (t) => t.id,
-      referencedTable: $db.workspaceTools,
+      referencedTable: $db.toolsGroups,
       getReferencedColumn: (t) => t.workspaceId,
       builder:
           (
             joinBuilder, {
             $addJoinBuilderToRootComposer,
             $removeJoinBuilderFromRootComposer,
-          }) => $$WorkspaceToolsTableFilterComposer(
+          }) => $$ToolsGroupsTableFilterComposer(
             $db: $db,
-            $table: $db.workspaceTools,
+            $table: $db.toolsGroups,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> toolsRefs(
+    Expression<bool> Function($$ToolsTableFilterComposer f) f,
+  ) {
+    final $$ToolsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.tools,
+      getReferencedColumn: (t) => t.workspaceId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ToolsTableFilterComposer(
+            $db: $db,
+            $table: $db.tools,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -4705,22 +5582,47 @@ class $$WorkspacesTableAnnotationComposer
     return f(composer);
   }
 
-  Expression<T> workspaceToolsRefs<T extends Object>(
-    Expression<T> Function($$WorkspaceToolsTableAnnotationComposer a) f,
+  Expression<T> toolsGroupsRefs<T extends Object>(
+    Expression<T> Function($$ToolsGroupsTableAnnotationComposer a) f,
   ) {
-    final $$WorkspaceToolsTableAnnotationComposer composer = $composerBuilder(
+    final $$ToolsGroupsTableAnnotationComposer composer = $composerBuilder(
       composer: this,
       getCurrentColumn: (t) => t.id,
-      referencedTable: $db.workspaceTools,
+      referencedTable: $db.toolsGroups,
       getReferencedColumn: (t) => t.workspaceId,
       builder:
           (
             joinBuilder, {
             $addJoinBuilderToRootComposer,
             $removeJoinBuilderFromRootComposer,
-          }) => $$WorkspaceToolsTableAnnotationComposer(
+          }) => $$ToolsGroupsTableAnnotationComposer(
             $db: $db,
-            $table: $db.workspaceTools,
+            $table: $db.toolsGroups,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> toolsRefs<T extends Object>(
+    Expression<T> Function($$ToolsTableAnnotationComposer a) f,
+  ) {
+    final $$ToolsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.tools,
+      getReferencedColumn: (t) => t.workspaceId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ToolsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.tools,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -4747,7 +5649,8 @@ class $$WorkspacesTableTableManager
           PrefetchHooks Function({
             bool credentialsRefs,
             bool conversationsRefs,
-            bool workspaceToolsRefs,
+            bool toolsGroupsRefs,
+            bool toolsRefs,
           })
         > {
   $$WorkspacesTableTableManager(_$AppDatabase db, $WorkspacesTable table)
@@ -4809,14 +5712,16 @@ class $$WorkspacesTableTableManager
               ({
                 credentialsRefs = false,
                 conversationsRefs = false,
-                workspaceToolsRefs = false,
+                toolsGroupsRefs = false,
+                toolsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (credentialsRefs) db.credentials,
                     if (conversationsRefs) db.conversations,
-                    if (workspaceToolsRefs) db.workspaceTools,
+                    if (toolsGroupsRefs) db.toolsGroups,
+                    if (toolsRefs) db.tools,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -4863,21 +5768,42 @@ class $$WorkspacesTableTableManager
                               ),
                           typedResults: items,
                         ),
-                      if (workspaceToolsRefs)
+                      if (toolsGroupsRefs)
                         await $_getPrefetchedData<
                           WorkspacesTable,
                           $WorkspacesTable,
-                          WorkspaceToolsTable
+                          ToolsGroupsTable
                         >(
                           currentTable: table,
                           referencedTable: $$WorkspacesTableReferences
-                              ._workspaceToolsRefsTable(db),
+                              ._toolsGroupsRefsTable(db),
                           managerFromTypedResult: (p0) =>
                               $$WorkspacesTableReferences(
                                 db,
                                 table,
                                 p0,
-                              ).workspaceToolsRefs,
+                              ).toolsGroupsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.workspaceId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (toolsRefs)
+                        await $_getPrefetchedData<
+                          WorkspacesTable,
+                          $WorkspacesTable,
+                          ToolsTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$WorkspacesTableReferences
+                              ._toolsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$WorkspacesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).toolsRefs,
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.workspaceId == item.id,
@@ -4907,7 +5833,8 @@ typedef $$WorkspacesTableProcessedTableManager =
       PrefetchHooks Function({
         bool credentialsRefs,
         bool conversationsRefs,
-        bool workspaceToolsRefs,
+        bool toolsGroupsRefs,
+        bool toolsRefs,
       })
     >;
 typedef $$ApiModelProvidersTableCreateCompanionBuilder =
@@ -7097,27 +8024,26 @@ final class $$ConversationsTableReferences
   }
 
   static MultiTypedResultKey<
-    $ConversationDisabledToolsTable,
-    List<ConversationDisabledToolsTable>
+    $ConversationToolsTable,
+    List<ConversationToolsTable>
   >
-  _conversationDisabledToolsRefsTable(_$AppDatabase db) =>
+  _conversationToolsRefsTable(_$AppDatabase db) =>
       MultiTypedResultKey.fromTable(
-        db.conversationDisabledTools,
+        db.conversationTools,
         aliasName: $_aliasNameGenerator(
           db.conversations.id,
-          db.conversationDisabledTools.conversationId,
+          db.conversationTools.conversationId,
         ),
       );
 
-  $$ConversationDisabledToolsTableProcessedTableManager
-  get conversationDisabledToolsRefs {
-    final manager = $$ConversationDisabledToolsTableTableManager(
+  $$ConversationToolsTableProcessedTableManager get conversationToolsRefs {
+    final manager = $$ConversationToolsTableTableManager(
       $_db,
-      $_db.conversationDisabledTools,
+      $_db.conversationTools,
     ).filter((f) => f.conversationId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(
-      _conversationDisabledToolsRefsTable($_db),
+      _conversationToolsRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -7230,30 +8156,28 @@ class $$ConversationsTableFilterComposer
     return f(composer);
   }
 
-  Expression<bool> conversationDisabledToolsRefs(
-    Expression<bool> Function($$ConversationDisabledToolsTableFilterComposer f)
-    f,
+  Expression<bool> conversationToolsRefs(
+    Expression<bool> Function($$ConversationToolsTableFilterComposer f) f,
   ) {
-    final $$ConversationDisabledToolsTableFilterComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.id,
-          referencedTable: $db.conversationDisabledTools,
-          getReferencedColumn: (t) => t.conversationId,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
+    final $$ConversationToolsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.conversationTools,
+      getReferencedColumn: (t) => t.conversationId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationToolsTableFilterComposer(
+            $db: $db,
+            $table: $db.conversationTools,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
                 $removeJoinBuilderFromRootComposer,
-              }) => $$ConversationDisabledToolsTableFilterComposer(
-                $db: $db,
-                $table: $db.conversationDisabledTools,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
+          ),
+    );
     return f(composer);
   }
 }
@@ -7434,24 +8358,23 @@ class $$ConversationsTableAnnotationComposer
     return f(composer);
   }
 
-  Expression<T> conversationDisabledToolsRefs<T extends Object>(
-    Expression<T> Function($$ConversationDisabledToolsTableAnnotationComposer a)
-    f,
+  Expression<T> conversationToolsRefs<T extends Object>(
+    Expression<T> Function($$ConversationToolsTableAnnotationComposer a) f,
   ) {
-    final $$ConversationDisabledToolsTableAnnotationComposer composer =
+    final $$ConversationToolsTableAnnotationComposer composer =
         $composerBuilder(
           composer: this,
           getCurrentColumn: (t) => t.id,
-          referencedTable: $db.conversationDisabledTools,
+          referencedTable: $db.conversationTools,
           getReferencedColumn: (t) => t.conversationId,
           builder:
               (
                 joinBuilder, {
                 $addJoinBuilderToRootComposer,
                 $removeJoinBuilderFromRootComposer,
-              }) => $$ConversationDisabledToolsTableAnnotationComposer(
+              }) => $$ConversationToolsTableAnnotationComposer(
                 $db: $db,
-                $table: $db.conversationDisabledTools,
+                $table: $db.conversationTools,
                 $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
                 joinBuilder: joinBuilder,
                 $removeJoinBuilderFromRootComposer:
@@ -7479,7 +8402,7 @@ class $$ConversationsTableTableManager
             bool workspaceId,
             bool modelId,
             bool messagesRefs,
-            bool conversationDisabledToolsRefs,
+            bool conversationToolsRefs,
           })
         > {
   $$ConversationsTableTableManager(_$AppDatabase db, $ConversationsTable table)
@@ -7546,14 +8469,13 @@ class $$ConversationsTableTableManager
                 workspaceId = false,
                 modelId = false,
                 messagesRefs = false,
-                conversationDisabledToolsRefs = false,
+                conversationToolsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (messagesRefs) db.messages,
-                    if (conversationDisabledToolsRefs)
-                      db.conversationDisabledTools,
+                    if (conversationToolsRefs) db.conversationTools,
                   ],
                   addJoins:
                       <
@@ -7627,21 +8549,21 @@ class $$ConversationsTableTableManager
                               ),
                           typedResults: items,
                         ),
-                      if (conversationDisabledToolsRefs)
+                      if (conversationToolsRefs)
                         await $_getPrefetchedData<
                           ConversationsTable,
                           $ConversationsTable,
-                          ConversationDisabledToolsTable
+                          ConversationToolsTable
                         >(
                           currentTable: table,
                           referencedTable: $$ConversationsTableReferences
-                              ._conversationDisabledToolsRefsTable(db),
+                              ._conversationToolsRefsTable(db),
                           managerFromTypedResult: (p0) =>
                               $$ConversationsTableReferences(
                                 db,
                                 table,
                                 p0,
-                              ).conversationDisabledToolsRefs,
+                              ).conversationToolsRefs,
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.conversationId == item.id,
@@ -7672,7 +8594,7 @@ typedef $$ConversationsTableProcessedTableManager =
         bool workspaceId,
         bool modelId,
         bool messagesRefs,
-        bool conversationDisabledToolsRefs,
+        bool conversationToolsRefs,
       })
     >;
 typedef $$MessagesTableCreateCompanionBuilder =
@@ -8075,45 +8997,36 @@ typedef $$MessagesTableProcessedTableManager =
       MessagesTable,
       PrefetchHooks Function({bool conversationId})
     >;
-typedef $$WorkspaceToolsTableCreateCompanionBuilder =
-    WorkspaceToolsCompanion Function({
+typedef $$ToolsGroupsTableCreateCompanionBuilder =
+    ToolsGroupsCompanion Function({
       Value<String> id,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       required String workspaceId,
-      required String type,
-      Value<String?> config,
+      required String name,
       Value<bool> isEnabled,
+      required PermissionAccess permissions,
       Value<int> rowid,
     });
-typedef $$WorkspaceToolsTableUpdateCompanionBuilder =
-    WorkspaceToolsCompanion Function({
+typedef $$ToolsGroupsTableUpdateCompanionBuilder =
+    ToolsGroupsCompanion Function({
       Value<String> id,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<String> workspaceId,
-      Value<String> type,
-      Value<String?> config,
+      Value<String> name,
       Value<bool> isEnabled,
+      Value<PermissionAccess> permissions,
       Value<int> rowid,
     });
 
-final class $$WorkspaceToolsTableReferences
-    extends
-        BaseReferences<
-          _$AppDatabase,
-          $WorkspaceToolsTable,
-          WorkspaceToolsTable
-        > {
-  $$WorkspaceToolsTableReferences(
-    super.$_db,
-    super.$_table,
-    super.$_typedResult,
-  );
+final class $$ToolsGroupsTableReferences
+    extends BaseReferences<_$AppDatabase, $ToolsGroupsTable, ToolsGroupsTable> {
+  $$ToolsGroupsTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
   static $WorkspacesTable _workspaceIdTable(_$AppDatabase db) =>
       db.workspaces.createAlias(
-        $_aliasNameGenerator(db.workspaceTools.workspaceId, db.workspaces.id),
+        $_aliasNameGenerator(db.toolsGroups.workspaceId, db.workspaces.id),
       );
 
   $$WorkspacesTableProcessedTableManager get workspaceId {
@@ -8129,11 +9042,32 @@ final class $$WorkspaceToolsTableReferences
       manager.$state.copyWith(prefetchedData: [item]),
     );
   }
+
+  static MultiTypedResultKey<$ToolsTable, List<ToolsTable>> _toolsRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.tools,
+    aliasName: $_aliasNameGenerator(
+      db.toolsGroups.id,
+      db.tools.workspaceToolsGroupId,
+    ),
+  );
+
+  $$ToolsTableProcessedTableManager get toolsRefs {
+    final manager = $$ToolsTableTableManager($_db, $_db.tools).filter(
+      (f) => f.workspaceToolsGroupId.id.sqlEquals($_itemColumn<String>('id')!),
+    );
+
+    final cache = $_typedResult.readTableOrNull(_toolsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
-class $$WorkspaceToolsTableFilterComposer
-    extends Composer<_$AppDatabase, $WorkspaceToolsTable> {
-  $$WorkspaceToolsTableFilterComposer({
+class $$ToolsGroupsTableFilterComposer
+    extends Composer<_$AppDatabase, $ToolsGroupsTable> {
+  $$ToolsGroupsTableFilterComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -8155,19 +9089,20 @@ class $$WorkspaceToolsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get type => $composableBuilder(
-    column: $table.type,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get config => $composableBuilder(
-    column: $table.config,
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
     builder: (column) => ColumnFilters(column),
   );
 
   ColumnFilters<bool> get isEnabled => $composableBuilder(
     column: $table.isEnabled,
     builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<PermissionAccess, PermissionAccess, String>
+  get permissions => $composableBuilder(
+    column: $table.permissions,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
   );
 
   $$WorkspacesTableFilterComposer get workspaceId {
@@ -8192,11 +9127,36 @@ class $$WorkspaceToolsTableFilterComposer
     );
     return composer;
   }
+
+  Expression<bool> toolsRefs(
+    Expression<bool> Function($$ToolsTableFilterComposer f) f,
+  ) {
+    final $$ToolsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.tools,
+      getReferencedColumn: (t) => t.workspaceToolsGroupId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ToolsTableFilterComposer(
+            $db: $db,
+            $table: $db.tools,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
-class $$WorkspaceToolsTableOrderingComposer
-    extends Composer<_$AppDatabase, $WorkspaceToolsTable> {
-  $$WorkspaceToolsTableOrderingComposer({
+class $$ToolsGroupsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ToolsGroupsTable> {
+  $$ToolsGroupsTableOrderingComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -8218,18 +9178,18 @@ class $$WorkspaceToolsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get type => $composableBuilder(
-    column: $table.type,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get config => $composableBuilder(
-    column: $table.config,
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
     builder: (column) => ColumnOrderings(column),
   );
 
   ColumnOrderings<bool> get isEnabled => $composableBuilder(
     column: $table.isEnabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get permissions => $composableBuilder(
+    column: $table.permissions,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -8257,9 +9217,9 @@ class $$WorkspaceToolsTableOrderingComposer
   }
 }
 
-class $$WorkspaceToolsTableAnnotationComposer
-    extends Composer<_$AppDatabase, $WorkspaceToolsTable> {
-  $$WorkspaceToolsTableAnnotationComposer({
+class $$ToolsGroupsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ToolsGroupsTable> {
+  $$ToolsGroupsTableAnnotationComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -8275,14 +9235,17 @@ class $$WorkspaceToolsTableAnnotationComposer
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
 
-  GeneratedColumn<String> get type =>
-      $composableBuilder(column: $table.type, builder: (column) => column);
-
-  GeneratedColumn<String> get config =>
-      $composableBuilder(column: $table.config, builder: (column) => column);
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
 
   GeneratedColumn<bool> get isEnabled =>
       $composableBuilder(column: $table.isEnabled, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<PermissionAccess, String> get permissions =>
+      $composableBuilder(
+        column: $table.permissions,
+        builder: (column) => column,
+      );
 
   $$WorkspacesTableAnnotationComposer get workspaceId {
     final $$WorkspacesTableAnnotationComposer composer = $composerBuilder(
@@ -8306,54 +9269,77 @@ class $$WorkspaceToolsTableAnnotationComposer
     );
     return composer;
   }
+
+  Expression<T> toolsRefs<T extends Object>(
+    Expression<T> Function($$ToolsTableAnnotationComposer a) f,
+  ) {
+    final $$ToolsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.tools,
+      getReferencedColumn: (t) => t.workspaceToolsGroupId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ToolsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.tools,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
-class $$WorkspaceToolsTableTableManager
+class $$ToolsGroupsTableTableManager
     extends
         RootTableManager<
           _$AppDatabase,
-          $WorkspaceToolsTable,
-          WorkspaceToolsTable,
-          $$WorkspaceToolsTableFilterComposer,
-          $$WorkspaceToolsTableOrderingComposer,
-          $$WorkspaceToolsTableAnnotationComposer,
-          $$WorkspaceToolsTableCreateCompanionBuilder,
-          $$WorkspaceToolsTableUpdateCompanionBuilder,
-          (WorkspaceToolsTable, $$WorkspaceToolsTableReferences),
-          WorkspaceToolsTable,
-          PrefetchHooks Function({bool workspaceId})
+          $ToolsGroupsTable,
+          ToolsGroupsTable,
+          $$ToolsGroupsTableFilterComposer,
+          $$ToolsGroupsTableOrderingComposer,
+          $$ToolsGroupsTableAnnotationComposer,
+          $$ToolsGroupsTableCreateCompanionBuilder,
+          $$ToolsGroupsTableUpdateCompanionBuilder,
+          (ToolsGroupsTable, $$ToolsGroupsTableReferences),
+          ToolsGroupsTable,
+          PrefetchHooks Function({bool workspaceId, bool toolsRefs})
         > {
-  $$WorkspaceToolsTableTableManager(
-    _$AppDatabase db,
-    $WorkspaceToolsTable table,
-  ) : super(
+  $$ToolsGroupsTableTableManager(_$AppDatabase db, $ToolsGroupsTable table)
+    : super(
         TableManagerState(
           db: db,
           table: table,
           createFilteringComposer: () =>
-              $$WorkspaceToolsTableFilterComposer($db: db, $table: table),
+              $$ToolsGroupsTableFilterComposer($db: db, $table: table),
           createOrderingComposer: () =>
-              $$WorkspaceToolsTableOrderingComposer($db: db, $table: table),
+              $$ToolsGroupsTableOrderingComposer($db: db, $table: table),
           createComputedFieldComposer: () =>
-              $$WorkspaceToolsTableAnnotationComposer($db: db, $table: table),
+              $$ToolsGroupsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<String> id = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<String> workspaceId = const Value.absent(),
-                Value<String> type = const Value.absent(),
-                Value<String?> config = const Value.absent(),
+                Value<String> name = const Value.absent(),
                 Value<bool> isEnabled = const Value.absent(),
+                Value<PermissionAccess> permissions = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
-              }) => WorkspaceToolsCompanion(
+              }) => ToolsGroupsCompanion(
                 id: id,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 workspaceId: workspaceId,
-                type: type,
-                config: config,
+                name: name,
                 isEnabled: isEnabled,
+                permissions: permissions,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -8362,32 +9348,32 @@ class $$WorkspaceToolsTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 required String workspaceId,
-                required String type,
-                Value<String?> config = const Value.absent(),
+                required String name,
                 Value<bool> isEnabled = const Value.absent(),
+                required PermissionAccess permissions,
                 Value<int> rowid = const Value.absent(),
-              }) => WorkspaceToolsCompanion.insert(
+              }) => ToolsGroupsCompanion.insert(
                 id: id,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 workspaceId: workspaceId,
-                type: type,
-                config: config,
+                name: name,
                 isEnabled: isEnabled,
+                permissions: permissions,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
                   e.readTable(table),
-                  $$WorkspaceToolsTableReferences(db, table, e),
+                  $$ToolsGroupsTableReferences(db, table, e),
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({workspaceId = false}) {
+          prefetchHooksCallback: ({workspaceId = false, toolsRefs = false}) {
             return PrefetchHooks(
               db: db,
-              explicitlyWatchedTables: [],
+              explicitlyWatchedTables: [if (toolsRefs) db.tools],
               addJoins:
                   <
                     T extends TableManagerState<
@@ -8409,12 +9395,11 @@ class $$WorkspaceToolsTableTableManager
                           state.withJoin(
                                 currentTable: table,
                                 currentColumn: table.workspaceId,
-                                referencedTable: $$WorkspaceToolsTableReferences
+                                referencedTable: $$ToolsGroupsTableReferences
                                     ._workspaceIdTable(db),
-                                referencedColumn:
-                                    $$WorkspaceToolsTableReferences
-                                        ._workspaceIdTable(db)
-                                        .id,
+                                referencedColumn: $$ToolsGroupsTableReferences
+                                    ._workspaceIdTable(db)
+                                    .id,
                               )
                               as T;
                     }
@@ -8422,7 +9407,25 @@ class $$WorkspaceToolsTableTableManager
                     return state;
                   },
               getPrefetchedDataCallback: (items) async {
-                return [];
+                return [
+                  if (toolsRefs)
+                    await $_getPrefetchedData<
+                      ToolsGroupsTable,
+                      $ToolsGroupsTable,
+                      ToolsTable
+                    >(
+                      currentTable: table,
+                      referencedTable: $$ToolsGroupsTableReferences
+                          ._toolsRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$ToolsGroupsTableReferences(db, table, p0).toolsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where(
+                            (e) => e.workspaceToolsGroupId == item.id,
+                          ),
+                      typedResults: items,
+                    ),
+                ];
               },
             );
           },
@@ -8430,78 +9433,125 @@ class $$WorkspaceToolsTableTableManager
       );
 }
 
-typedef $$WorkspaceToolsTableProcessedTableManager =
+typedef $$ToolsGroupsTableProcessedTableManager =
     ProcessedTableManager<
       _$AppDatabase,
-      $WorkspaceToolsTable,
-      WorkspaceToolsTable,
-      $$WorkspaceToolsTableFilterComposer,
-      $$WorkspaceToolsTableOrderingComposer,
-      $$WorkspaceToolsTableAnnotationComposer,
-      $$WorkspaceToolsTableCreateCompanionBuilder,
-      $$WorkspaceToolsTableUpdateCompanionBuilder,
-      (WorkspaceToolsTable, $$WorkspaceToolsTableReferences),
-      WorkspaceToolsTable,
-      PrefetchHooks Function({bool workspaceId})
+      $ToolsGroupsTable,
+      ToolsGroupsTable,
+      $$ToolsGroupsTableFilterComposer,
+      $$ToolsGroupsTableOrderingComposer,
+      $$ToolsGroupsTableAnnotationComposer,
+      $$ToolsGroupsTableCreateCompanionBuilder,
+      $$ToolsGroupsTableUpdateCompanionBuilder,
+      (ToolsGroupsTable, $$ToolsGroupsTableReferences),
+      ToolsGroupsTable,
+      PrefetchHooks Function({bool workspaceId, bool toolsRefs})
     >;
-typedef $$ConversationDisabledToolsTableCreateCompanionBuilder =
-    ConversationDisabledToolsCompanion Function({
+typedef $$ToolsTableCreateCompanionBuilder =
+    ToolsCompanion Function({
       Value<String> id,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
-      required String conversationId,
-      required String type,
+      required String workspaceId,
+      Value<String?> workspaceToolsGroupId,
+      required String toolId,
+      Value<String?> customName,
+      Value<String?> additionalPrompt,
+      Value<String?> config,
+      Value<bool> isEnabled,
+      Value<PermissionAccess> permissions,
       Value<int> rowid,
     });
-typedef $$ConversationDisabledToolsTableUpdateCompanionBuilder =
-    ConversationDisabledToolsCompanion Function({
+typedef $$ToolsTableUpdateCompanionBuilder =
+    ToolsCompanion Function({
       Value<String> id,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
-      Value<String> conversationId,
-      Value<String> type,
+      Value<String> workspaceId,
+      Value<String?> workspaceToolsGroupId,
+      Value<String> toolId,
+      Value<String?> customName,
+      Value<String?> additionalPrompt,
+      Value<String?> config,
+      Value<bool> isEnabled,
+      Value<PermissionAccess> permissions,
       Value<int> rowid,
     });
 
-final class $$ConversationDisabledToolsTableReferences
-    extends
-        BaseReferences<
-          _$AppDatabase,
-          $ConversationDisabledToolsTable,
-          ConversationDisabledToolsTable
-        > {
-  $$ConversationDisabledToolsTableReferences(
-    super.$_db,
-    super.$_table,
-    super.$_typedResult,
-  );
+final class $$ToolsTableReferences
+    extends BaseReferences<_$AppDatabase, $ToolsTable, ToolsTable> {
+  $$ToolsTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
-  static $ConversationsTable _conversationIdTable(_$AppDatabase db) =>
-      db.conversations.createAlias(
-        $_aliasNameGenerator(
-          db.conversationDisabledTools.conversationId,
-          db.conversations.id,
-        ),
+  static $WorkspacesTable _workspaceIdTable(_$AppDatabase db) =>
+      db.workspaces.createAlias(
+        $_aliasNameGenerator(db.tools.workspaceId, db.workspaces.id),
       );
 
-  $$ConversationsTableProcessedTableManager get conversationId {
-    final $_column = $_itemColumn<String>('conversation_id')!;
+  $$WorkspacesTableProcessedTableManager get workspaceId {
+    final $_column = $_itemColumn<String>('workspace_id')!;
 
-    final manager = $$ConversationsTableTableManager(
+    final manager = $$WorkspacesTableTableManager(
       $_db,
-      $_db.conversations,
+      $_db.workspaces,
     ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_conversationIdTable($_db));
+    final item = $_typedResult.readTableOrNull(_workspaceIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
     );
   }
+
+  static $ToolsGroupsTable _workspaceToolsGroupIdTable(_$AppDatabase db) =>
+      db.toolsGroups.createAlias(
+        $_aliasNameGenerator(db.tools.workspaceToolsGroupId, db.toolsGroups.id),
+      );
+
+  $$ToolsGroupsTableProcessedTableManager? get workspaceToolsGroupId {
+    final $_column = $_itemColumn<String>('workspace_tools_group_id');
+    if ($_column == null) return null;
+    final manager = $$ToolsGroupsTableTableManager(
+      $_db,
+      $_db.toolsGroups,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(
+      _workspaceToolsGroupIdTable($_db),
+    );
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $ConversationToolsTable,
+    List<ConversationToolsTable>
+  >
+  _conversationToolsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.conversationTools,
+        aliasName: $_aliasNameGenerator(
+          db.tools.id,
+          db.conversationTools.toolId,
+        ),
+      );
+
+  $$ConversationToolsTableProcessedTableManager get conversationToolsRefs {
+    final manager = $$ConversationToolsTableTableManager(
+      $_db,
+      $_db.conversationTools,
+    ).filter((f) => f.toolId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _conversationToolsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
-class $$ConversationDisabledToolsTableFilterComposer
-    extends Composer<_$AppDatabase, $ConversationDisabledToolsTable> {
-  $$ConversationDisabledToolsTableFilterComposer({
+class $$ToolsTableFilterComposer extends Composer<_$AppDatabase, $ToolsTable> {
+  $$ToolsTableFilterComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -8523,9 +9573,633 @@ class $$ConversationDisabledToolsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get type => $composableBuilder(
-    column: $table.type,
+  ColumnFilters<String> get toolId => $composableBuilder(
+    column: $table.toolId,
     builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get customName => $composableBuilder(
+    column: $table.customName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get additionalPrompt => $composableBuilder(
+    column: $table.additionalPrompt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get config => $composableBuilder(
+    column: $table.config,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isEnabled => $composableBuilder(
+    column: $table.isEnabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<PermissionAccess, PermissionAccess, String>
+  get permissions => $composableBuilder(
+    column: $table.permissions,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  $$WorkspacesTableFilterComposer get workspaceId {
+    final $$WorkspacesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableFilterComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ToolsGroupsTableFilterComposer get workspaceToolsGroupId {
+    final $$ToolsGroupsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceToolsGroupId,
+      referencedTable: $db.toolsGroups,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ToolsGroupsTableFilterComposer(
+            $db: $db,
+            $table: $db.toolsGroups,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> conversationToolsRefs(
+    Expression<bool> Function($$ConversationToolsTableFilterComposer f) f,
+  ) {
+    final $$ConversationToolsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.conversationTools,
+      getReferencedColumn: (t) => t.toolId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationToolsTableFilterComposer(
+            $db: $db,
+            $table: $db.conversationTools,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$ToolsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ToolsTable> {
+  $$ToolsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get toolId => $composableBuilder(
+    column: $table.toolId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get customName => $composableBuilder(
+    column: $table.customName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get additionalPrompt => $composableBuilder(
+    column: $table.additionalPrompt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get config => $composableBuilder(
+    column: $table.config,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isEnabled => $composableBuilder(
+    column: $table.isEnabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get permissions => $composableBuilder(
+    column: $table.permissions,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$WorkspacesTableOrderingComposer get workspaceId {
+    final $$WorkspacesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableOrderingComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ToolsGroupsTableOrderingComposer get workspaceToolsGroupId {
+    final $$ToolsGroupsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceToolsGroupId,
+      referencedTable: $db.toolsGroups,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ToolsGroupsTableOrderingComposer(
+            $db: $db,
+            $table: $db.toolsGroups,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ToolsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ToolsTable> {
+  $$ToolsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get toolId =>
+      $composableBuilder(column: $table.toolId, builder: (column) => column);
+
+  GeneratedColumn<String> get customName => $composableBuilder(
+    column: $table.customName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get additionalPrompt => $composableBuilder(
+    column: $table.additionalPrompt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get config =>
+      $composableBuilder(column: $table.config, builder: (column) => column);
+
+  GeneratedColumn<bool> get isEnabled =>
+      $composableBuilder(column: $table.isEnabled, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<PermissionAccess, String> get permissions =>
+      $composableBuilder(
+        column: $table.permissions,
+        builder: (column) => column,
+      );
+
+  $$WorkspacesTableAnnotationComposer get workspaceId {
+    final $$WorkspacesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ToolsGroupsTableAnnotationComposer get workspaceToolsGroupId {
+    final $$ToolsGroupsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceToolsGroupId,
+      referencedTable: $db.toolsGroups,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ToolsGroupsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.toolsGroups,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> conversationToolsRefs<T extends Object>(
+    Expression<T> Function($$ConversationToolsTableAnnotationComposer a) f,
+  ) {
+    final $$ConversationToolsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.conversationTools,
+          getReferencedColumn: (t) => t.toolId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ConversationToolsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.conversationTools,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$ToolsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ToolsTable,
+          ToolsTable,
+          $$ToolsTableFilterComposer,
+          $$ToolsTableOrderingComposer,
+          $$ToolsTableAnnotationComposer,
+          $$ToolsTableCreateCompanionBuilder,
+          $$ToolsTableUpdateCompanionBuilder,
+          (ToolsTable, $$ToolsTableReferences),
+          ToolsTable,
+          PrefetchHooks Function({
+            bool workspaceId,
+            bool workspaceToolsGroupId,
+            bool conversationToolsRefs,
+          })
+        > {
+  $$ToolsTableTableManager(_$AppDatabase db, $ToolsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ToolsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ToolsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ToolsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<String> workspaceId = const Value.absent(),
+                Value<String?> workspaceToolsGroupId = const Value.absent(),
+                Value<String> toolId = const Value.absent(),
+                Value<String?> customName = const Value.absent(),
+                Value<String?> additionalPrompt = const Value.absent(),
+                Value<String?> config = const Value.absent(),
+                Value<bool> isEnabled = const Value.absent(),
+                Value<PermissionAccess> permissions = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ToolsCompanion(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                workspaceId: workspaceId,
+                workspaceToolsGroupId: workspaceToolsGroupId,
+                toolId: toolId,
+                customName: customName,
+                additionalPrompt: additionalPrompt,
+                config: config,
+                isEnabled: isEnabled,
+                permissions: permissions,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                required String workspaceId,
+                Value<String?> workspaceToolsGroupId = const Value.absent(),
+                required String toolId,
+                Value<String?> customName = const Value.absent(),
+                Value<String?> additionalPrompt = const Value.absent(),
+                Value<String?> config = const Value.absent(),
+                Value<bool> isEnabled = const Value.absent(),
+                Value<PermissionAccess> permissions = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ToolsCompanion.insert(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                workspaceId: workspaceId,
+                workspaceToolsGroupId: workspaceToolsGroupId,
+                toolId: toolId,
+                customName: customName,
+                additionalPrompt: additionalPrompt,
+                config: config,
+                isEnabled: isEnabled,
+                permissions: permissions,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) =>
+                    (e.readTable(table), $$ToolsTableReferences(db, table, e)),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                workspaceId = false,
+                workspaceToolsGroupId = false,
+                conversationToolsRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (conversationToolsRefs) db.conversationTools,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (workspaceId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.workspaceId,
+                                    referencedTable: $$ToolsTableReferences
+                                        ._workspaceIdTable(db),
+                                    referencedColumn: $$ToolsTableReferences
+                                        ._workspaceIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+                        if (workspaceToolsGroupId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.workspaceToolsGroupId,
+                                    referencedTable: $$ToolsTableReferences
+                                        ._workspaceToolsGroupIdTable(db),
+                                    referencedColumn: $$ToolsTableReferences
+                                        ._workspaceToolsGroupIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (conversationToolsRefs)
+                        await $_getPrefetchedData<
+                          ToolsTable,
+                          $ToolsTable,
+                          ConversationToolsTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ToolsTableReferences
+                              ._conversationToolsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ToolsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).conversationToolsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.toolId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$ToolsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ToolsTable,
+      ToolsTable,
+      $$ToolsTableFilterComposer,
+      $$ToolsTableOrderingComposer,
+      $$ToolsTableAnnotationComposer,
+      $$ToolsTableCreateCompanionBuilder,
+      $$ToolsTableUpdateCompanionBuilder,
+      (ToolsTable, $$ToolsTableReferences),
+      ToolsTable,
+      PrefetchHooks Function({
+        bool workspaceId,
+        bool workspaceToolsGroupId,
+        bool conversationToolsRefs,
+      })
+    >;
+typedef $$ConversationToolsTableCreateCompanionBuilder =
+    ConversationToolsCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      required String conversationId,
+      required String toolId,
+      Value<bool> isEnabled,
+      Value<PermissionAccess> permissions,
+      Value<int> rowid,
+    });
+typedef $$ConversationToolsTableUpdateCompanionBuilder =
+    ConversationToolsCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<String> conversationId,
+      Value<String> toolId,
+      Value<bool> isEnabled,
+      Value<PermissionAccess> permissions,
+      Value<int> rowid,
+    });
+
+final class $$ConversationToolsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $ConversationToolsTable,
+          ConversationToolsTable
+        > {
+  $$ConversationToolsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ConversationsTable _conversationIdTable(_$AppDatabase db) =>
+      db.conversations.createAlias(
+        $_aliasNameGenerator(
+          db.conversationTools.conversationId,
+          db.conversations.id,
+        ),
+      );
+
+  $$ConversationsTableProcessedTableManager get conversationId {
+    final $_column = $_itemColumn<String>('conversation_id')!;
+
+    final manager = $$ConversationsTableTableManager(
+      $_db,
+      $_db.conversations,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_conversationIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $ToolsTable _toolIdTable(_$AppDatabase db) => db.tools.createAlias(
+    $_aliasNameGenerator(db.conversationTools.toolId, db.tools.id),
+  );
+
+  $$ToolsTableProcessedTableManager get toolId {
+    final $_column = $_itemColumn<String>('tool_id')!;
+
+    final manager = $$ToolsTableTableManager(
+      $_db,
+      $_db.tools,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_toolIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ConversationToolsTableFilterComposer
+    extends Composer<_$AppDatabase, $ConversationToolsTable> {
+  $$ConversationToolsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isEnabled => $composableBuilder(
+    column: $table.isEnabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<PermissionAccess, PermissionAccess, String>
+  get permissions => $composableBuilder(
+    column: $table.permissions,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
   );
 
   $$ConversationsTableFilterComposer get conversationId {
@@ -8550,11 +10224,34 @@ class $$ConversationDisabledToolsTableFilterComposer
     );
     return composer;
   }
+
+  $$ToolsTableFilterComposer get toolId {
+    final $$ToolsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.toolId,
+      referencedTable: $db.tools,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ToolsTableFilterComposer(
+            $db: $db,
+            $table: $db.tools,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
-class $$ConversationDisabledToolsTableOrderingComposer
-    extends Composer<_$AppDatabase, $ConversationDisabledToolsTable> {
-  $$ConversationDisabledToolsTableOrderingComposer({
+class $$ConversationToolsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ConversationToolsTable> {
+  $$ConversationToolsTableOrderingComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -8576,8 +10273,13 @@ class $$ConversationDisabledToolsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get type => $composableBuilder(
-    column: $table.type,
+  ColumnOrderings<bool> get isEnabled => $composableBuilder(
+    column: $table.isEnabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get permissions => $composableBuilder(
+    column: $table.permissions,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -8603,11 +10305,34 @@ class $$ConversationDisabledToolsTableOrderingComposer
     );
     return composer;
   }
+
+  $$ToolsTableOrderingComposer get toolId {
+    final $$ToolsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.toolId,
+      referencedTable: $db.tools,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ToolsTableOrderingComposer(
+            $db: $db,
+            $table: $db.tools,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
-class $$ConversationDisabledToolsTableAnnotationComposer
-    extends Composer<_$AppDatabase, $ConversationDisabledToolsTable> {
-  $$ConversationDisabledToolsTableAnnotationComposer({
+class $$ConversationToolsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ConversationToolsTable> {
+  $$ConversationToolsTableAnnotationComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -8623,8 +10348,14 @@ class $$ConversationDisabledToolsTableAnnotationComposer
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
 
-  GeneratedColumn<String> get type =>
-      $composableBuilder(column: $table.type, builder: (column) => column);
+  GeneratedColumn<bool> get isEnabled =>
+      $composableBuilder(column: $table.isEnabled, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<PermissionAccess, String> get permissions =>
+      $composableBuilder(
+        column: $table.permissions,
+        builder: (column) => column,
+      );
 
   $$ConversationsTableAnnotationComposer get conversationId {
     final $$ConversationsTableAnnotationComposer composer = $composerBuilder(
@@ -8648,45 +10379,59 @@ class $$ConversationDisabledToolsTableAnnotationComposer
     );
     return composer;
   }
+
+  $$ToolsTableAnnotationComposer get toolId {
+    final $$ToolsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.toolId,
+      referencedTable: $db.tools,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ToolsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.tools,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
-class $$ConversationDisabledToolsTableTableManager
+class $$ConversationToolsTableTableManager
     extends
         RootTableManager<
           _$AppDatabase,
-          $ConversationDisabledToolsTable,
-          ConversationDisabledToolsTable,
-          $$ConversationDisabledToolsTableFilterComposer,
-          $$ConversationDisabledToolsTableOrderingComposer,
-          $$ConversationDisabledToolsTableAnnotationComposer,
-          $$ConversationDisabledToolsTableCreateCompanionBuilder,
-          $$ConversationDisabledToolsTableUpdateCompanionBuilder,
-          (
-            ConversationDisabledToolsTable,
-            $$ConversationDisabledToolsTableReferences,
-          ),
-          ConversationDisabledToolsTable,
-          PrefetchHooks Function({bool conversationId})
+          $ConversationToolsTable,
+          ConversationToolsTable,
+          $$ConversationToolsTableFilterComposer,
+          $$ConversationToolsTableOrderingComposer,
+          $$ConversationToolsTableAnnotationComposer,
+          $$ConversationToolsTableCreateCompanionBuilder,
+          $$ConversationToolsTableUpdateCompanionBuilder,
+          (ConversationToolsTable, $$ConversationToolsTableReferences),
+          ConversationToolsTable,
+          PrefetchHooks Function({bool conversationId, bool toolId})
         > {
-  $$ConversationDisabledToolsTableTableManager(
+  $$ConversationToolsTableTableManager(
     _$AppDatabase db,
-    $ConversationDisabledToolsTable table,
+    $ConversationToolsTable table,
   ) : super(
         TableManagerState(
           db: db,
           table: table,
           createFilteringComposer: () =>
-              $$ConversationDisabledToolsTableFilterComposer(
-                $db: db,
-                $table: table,
-              ),
+              $$ConversationToolsTableFilterComposer($db: db, $table: table),
           createOrderingComposer: () =>
-              $$ConversationDisabledToolsTableOrderingComposer(
-                $db: db,
-                $table: table,
-              ),
+              $$ConversationToolsTableOrderingComposer($db: db, $table: table),
           createComputedFieldComposer: () =>
-              $$ConversationDisabledToolsTableAnnotationComposer(
+              $$ConversationToolsTableAnnotationComposer(
                 $db: db,
                 $table: table,
               ),
@@ -8696,14 +10441,18 @@ class $$ConversationDisabledToolsTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<String> conversationId = const Value.absent(),
-                Value<String> type = const Value.absent(),
+                Value<String> toolId = const Value.absent(),
+                Value<bool> isEnabled = const Value.absent(),
+                Value<PermissionAccess> permissions = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
-              }) => ConversationDisabledToolsCompanion(
+              }) => ConversationToolsCompanion(
                 id: id,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 conversationId: conversationId,
-                type: type,
+                toolId: toolId,
+                isEnabled: isEnabled,
+                permissions: permissions,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -8712,25 +10461,29 @@ class $$ConversationDisabledToolsTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 required String conversationId,
-                required String type,
+                required String toolId,
+                Value<bool> isEnabled = const Value.absent(),
+                Value<PermissionAccess> permissions = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
-              }) => ConversationDisabledToolsCompanion.insert(
+              }) => ConversationToolsCompanion.insert(
                 id: id,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 conversationId: conversationId,
-                type: type,
+                toolId: toolId,
+                isEnabled: isEnabled,
+                permissions: permissions,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
                   e.readTable(table),
-                  $$ConversationDisabledToolsTableReferences(db, table, e),
+                  $$ConversationToolsTableReferences(db, table, e),
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({conversationId = false}) {
+          prefetchHooksCallback: ({conversationId = false, toolId = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [],
@@ -8756,11 +10509,26 @@ class $$ConversationDisabledToolsTableTableManager
                                 currentTable: table,
                                 currentColumn: table.conversationId,
                                 referencedTable:
-                                    $$ConversationDisabledToolsTableReferences
+                                    $$ConversationToolsTableReferences
                                         ._conversationIdTable(db),
                                 referencedColumn:
-                                    $$ConversationDisabledToolsTableReferences
+                                    $$ConversationToolsTableReferences
                                         ._conversationIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+                    if (toolId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.toolId,
+                                referencedTable:
+                                    $$ConversationToolsTableReferences
+                                        ._toolIdTable(db),
+                                referencedColumn:
+                                    $$ConversationToolsTableReferences
+                                        ._toolIdTable(db)
                                         .id,
                               )
                               as T;
@@ -8777,22 +10545,19 @@ class $$ConversationDisabledToolsTableTableManager
       );
 }
 
-typedef $$ConversationDisabledToolsTableProcessedTableManager =
+typedef $$ConversationToolsTableProcessedTableManager =
     ProcessedTableManager<
       _$AppDatabase,
-      $ConversationDisabledToolsTable,
-      ConversationDisabledToolsTable,
-      $$ConversationDisabledToolsTableFilterComposer,
-      $$ConversationDisabledToolsTableOrderingComposer,
-      $$ConversationDisabledToolsTableAnnotationComposer,
-      $$ConversationDisabledToolsTableCreateCompanionBuilder,
-      $$ConversationDisabledToolsTableUpdateCompanionBuilder,
-      (
-        ConversationDisabledToolsTable,
-        $$ConversationDisabledToolsTableReferences,
-      ),
-      ConversationDisabledToolsTable,
-      PrefetchHooks Function({bool conversationId})
+      $ConversationToolsTable,
+      ConversationToolsTable,
+      $$ConversationToolsTableFilterComposer,
+      $$ConversationToolsTableOrderingComposer,
+      $$ConversationToolsTableAnnotationComposer,
+      $$ConversationToolsTableCreateCompanionBuilder,
+      $$ConversationToolsTableUpdateCompanionBuilder,
+      (ConversationToolsTable, $$ConversationToolsTableReferences),
+      ConversationToolsTable,
+      PrefetchHooks Function({bool conversationId, bool toolId})
     >;
 
 class $AppDatabaseManager {
@@ -8812,11 +10577,10 @@ class $AppDatabaseManager {
       $$ConversationsTableTableManager(_db, _db.conversations);
   $$MessagesTableTableManager get messages =>
       $$MessagesTableTableManager(_db, _db.messages);
-  $$WorkspaceToolsTableTableManager get workspaceTools =>
-      $$WorkspaceToolsTableTableManager(_db, _db.workspaceTools);
-  $$ConversationDisabledToolsTableTableManager get conversationDisabledTools =>
-      $$ConversationDisabledToolsTableTableManager(
-        _db,
-        _db.conversationDisabledTools,
-      );
+  $$ToolsGroupsTableTableManager get toolsGroups =>
+      $$ToolsGroupsTableTableManager(_db, _db.toolsGroups);
+  $$ToolsTableTableManager get tools =>
+      $$ToolsTableTableManager(_db, _db.tools);
+  $$ConversationToolsTableTableManager get conversationTools =>
+      $$ConversationToolsTableTableManager(_db, _db.conversationTools);
 }

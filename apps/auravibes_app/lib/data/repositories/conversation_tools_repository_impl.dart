@@ -26,7 +26,7 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
         .map(
           (table) => ConversationToolEntity(
             conversationId: table.conversationId,
-            type: table.type,
+            toolId: table.toolId,
             isEnabled: false, // All records in this table are disabled tools
             createdAt: table.createdAt,
             updatedAt: table.updatedAt,
@@ -48,9 +48,9 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
 
     return availableToolTypes
         .map(
-          (toolType) => ConversationToolEntity(
+          (toolId) => ConversationToolEntity(
             conversationId: conversationId,
-            type: toolType,
+            toolId: toolId,
             isEnabled: true, // These are computed enabled tools
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
@@ -72,7 +72,7 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
 
     return ConversationToolEntity(
       conversationId: result.conversationId,
-      type: result.type,
+      toolId: result.toolId,
       isEnabled: false, // All records in this table are disabled tools
       createdAt: result.createdAt,
       updatedAt: result.updatedAt,
@@ -283,18 +283,19 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
           .getEnabledWorkspaceTools(workspaceId);
 
       // Get conversation disabled tools
-      final conversationDisabledTools = await _dao.getDisabledConversationTools(
+      final conversationTools = await _dao.getDisabledConversationTools(
         conversationId,
       );
 
       // Extract tool types from workspace enabled tools
       final workspaceEnabledToolTypes = workspaceEnabledTools
-          .map((tool) => tool.type)
+          .map((tool) => tool.toolId)
           .toList();
 
       // Extract tool types from disabled tools
-      final disabledToolTypes = conversationDisabledTools
-          .map((tool) => tool.type)
+      final disabledToolTypes = conversationTools
+          .where((tool) => !tool.isEnabled)
+          .map((tool) => tool.toolId)
           .toSet();
 
       // Available tools = workspace enabled tools - disabled tools

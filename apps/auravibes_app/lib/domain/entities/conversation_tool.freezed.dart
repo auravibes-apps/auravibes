@@ -15,8 +15,8 @@ T _$identity<T>(T value) => value;
 mixin _$ConversationToolEntity {
 
 /// ID of the conversation this tool setting belongs to
- String get conversationId;/// Type of tool (e.g., 'web_search', 'calculator', etc.)
- String get type;/// Whether the tool is enabled for this conversation
+ String get conversationId;/// tool identificator (e.g., 'web_search', 'calculator', etc.)
+ String get toolId;/// Whether the tool is enabled for this conversation
  bool get isEnabled;/// Timestamp when this setting was created
  DateTime get createdAt;/// Timestamp when this setting was last updated
  DateTime get updatedAt;
@@ -30,16 +30,16 @@ $ConversationToolEntityCopyWith<ConversationToolEntity> get copyWith => _$Conver
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationToolEntity&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.type, type) || other.type == type)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationToolEntity&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.toolId, toolId) || other.toolId == toolId)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,conversationId,type,isEnabled,createdAt,updatedAt);
+int get hashCode => Object.hash(runtimeType,conversationId,toolId,isEnabled,createdAt,updatedAt);
 
 @override
 String toString() {
-  return 'ConversationToolEntity(conversationId: $conversationId, type: $type, isEnabled: $isEnabled, createdAt: $createdAt, updatedAt: $updatedAt)';
+  return 'ConversationToolEntity(conversationId: $conversationId, toolId: $toolId, isEnabled: $isEnabled, createdAt: $createdAt, updatedAt: $updatedAt)';
 }
 
 
@@ -50,7 +50,7 @@ abstract mixin class $ConversationToolEntityCopyWith<$Res>  {
   factory $ConversationToolEntityCopyWith(ConversationToolEntity value, $Res Function(ConversationToolEntity) _then) = _$ConversationToolEntityCopyWithImpl;
 @useResult
 $Res call({
- String conversationId, String type, bool isEnabled, DateTime createdAt, DateTime updatedAt
+ String conversationId, String toolId, bool isEnabled, DateTime createdAt, DateTime updatedAt
 });
 
 
@@ -67,10 +67,10 @@ class _$ConversationToolEntityCopyWithImpl<$Res>
 
 /// Create a copy of ConversationToolEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? conversationId = null,Object? type = null,Object? isEnabled = null,Object? createdAt = null,Object? updatedAt = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? conversationId = null,Object? toolId = null,Object? isEnabled = null,Object? createdAt = null,Object? updatedAt = null,}) {
   return _then(_self.copyWith(
 conversationId: null == conversationId ? _self.conversationId : conversationId // ignore: cast_nullable_to_non_nullable
-as String,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
+as String,toolId: null == toolId ? _self.toolId : toolId // ignore: cast_nullable_to_non_nullable
 as String,isEnabled: null == isEnabled ? _self.isEnabled : isEnabled // ignore: cast_nullable_to_non_nullable
 as bool,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
@@ -159,10 +159,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String conversationId,  String type,  bool isEnabled,  DateTime createdAt,  DateTime updatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String conversationId,  String toolId,  bool isEnabled,  DateTime createdAt,  DateTime updatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ConversationToolEntity() when $default != null:
-return $default(_that.conversationId,_that.type,_that.isEnabled,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.conversationId,_that.toolId,_that.isEnabled,_that.createdAt,_that.updatedAt);case _:
   return orElse();
 
 }
@@ -180,10 +180,10 @@ return $default(_that.conversationId,_that.type,_that.isEnabled,_that.createdAt,
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String conversationId,  String type,  bool isEnabled,  DateTime createdAt,  DateTime updatedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String conversationId,  String toolId,  bool isEnabled,  DateTime createdAt,  DateTime updatedAt)  $default,) {final _that = this;
 switch (_that) {
 case _ConversationToolEntity():
-return $default(_that.conversationId,_that.type,_that.isEnabled,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.conversationId,_that.toolId,_that.isEnabled,_that.createdAt,_that.updatedAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -200,10 +200,10 @@ return $default(_that.conversationId,_that.type,_that.isEnabled,_that.createdAt,
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String conversationId,  String type,  bool isEnabled,  DateTime createdAt,  DateTime updatedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String conversationId,  String toolId,  bool isEnabled,  DateTime createdAt,  DateTime updatedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _ConversationToolEntity() when $default != null:
-return $default(_that.conversationId,_that.type,_that.isEnabled,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.conversationId,_that.toolId,_that.isEnabled,_that.createdAt,_that.updatedAt);case _:
   return null;
 
 }
@@ -215,13 +215,13 @@ return $default(_that.conversationId,_that.type,_that.isEnabled,_that.createdAt,
 
 
 class _ConversationToolEntity extends ConversationToolEntity {
-  const _ConversationToolEntity({required this.conversationId, required this.type, required this.isEnabled, required this.createdAt, required this.updatedAt}): super._();
+  const _ConversationToolEntity({required this.conversationId, required this.toolId, required this.isEnabled, required this.createdAt, required this.updatedAt}): super._();
   
 
 /// ID of the conversation this tool setting belongs to
 @override final  String conversationId;
-/// Type of tool (e.g., 'web_search', 'calculator', etc.)
-@override final  String type;
+/// tool identificator (e.g., 'web_search', 'calculator', etc.)
+@override final  String toolId;
 /// Whether the tool is enabled for this conversation
 @override final  bool isEnabled;
 /// Timestamp when this setting was created
@@ -239,16 +239,16 @@ _$ConversationToolEntityCopyWith<_ConversationToolEntity> get copyWith => __$Con
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationToolEntity&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.type, type) || other.type == type)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationToolEntity&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.toolId, toolId) || other.toolId == toolId)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,conversationId,type,isEnabled,createdAt,updatedAt);
+int get hashCode => Object.hash(runtimeType,conversationId,toolId,isEnabled,createdAt,updatedAt);
 
 @override
 String toString() {
-  return 'ConversationToolEntity(conversationId: $conversationId, type: $type, isEnabled: $isEnabled, createdAt: $createdAt, updatedAt: $updatedAt)';
+  return 'ConversationToolEntity(conversationId: $conversationId, toolId: $toolId, isEnabled: $isEnabled, createdAt: $createdAt, updatedAt: $updatedAt)';
 }
 
 
@@ -259,7 +259,7 @@ abstract mixin class _$ConversationToolEntityCopyWith<$Res> implements $Conversa
   factory _$ConversationToolEntityCopyWith(_ConversationToolEntity value, $Res Function(_ConversationToolEntity) _then) = __$ConversationToolEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String conversationId, String type, bool isEnabled, DateTime createdAt, DateTime updatedAt
+ String conversationId, String toolId, bool isEnabled, DateTime createdAt, DateTime updatedAt
 });
 
 
@@ -276,10 +276,10 @@ class __$ConversationToolEntityCopyWithImpl<$Res>
 
 /// Create a copy of ConversationToolEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? conversationId = null,Object? type = null,Object? isEnabled = null,Object? createdAt = null,Object? updatedAt = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? conversationId = null,Object? toolId = null,Object? isEnabled = null,Object? createdAt = null,Object? updatedAt = null,}) {
   return _then(_ConversationToolEntity(
 conversationId: null == conversationId ? _self.conversationId : conversationId // ignore: cast_nullable_to_non_nullable
-as String,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
+as String,toolId: null == toolId ? _self.toolId : toolId // ignore: cast_nullable_to_non_nullable
 as String,isEnabled: null == isEnabled ? _self.isEnabled : isEnabled // ignore: cast_nullable_to_non_nullable
 as bool,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
@@ -293,8 +293,8 @@ as DateTime,
 /// @nodoc
 mixin _$ConversationToolToCreate {
 
-/// Type of tool (e.g., 'web_search', 'calculator', etc.)
- String get type;/// Whether the tool should be enabled (defaults to true)
+/// tool identificator (e.g., 'web_search', 'calculator', etc.)
+ String get toolId;/// Whether the tool should be enabled (defaults to true)
  bool? get isEnabled;
 /// Create a copy of ConversationToolToCreate
 /// with the given fields replaced by the non-null parameter values.
@@ -306,16 +306,16 @@ $ConversationToolToCreateCopyWith<ConversationToolToCreate> get copyWith => _$Co
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationToolToCreate&&(identical(other.type, type) || other.type == type)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationToolToCreate&&(identical(other.toolId, toolId) || other.toolId == toolId)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,type,isEnabled);
+int get hashCode => Object.hash(runtimeType,toolId,isEnabled);
 
 @override
 String toString() {
-  return 'ConversationToolToCreate(type: $type, isEnabled: $isEnabled)';
+  return 'ConversationToolToCreate(toolId: $toolId, isEnabled: $isEnabled)';
 }
 
 
@@ -326,7 +326,7 @@ abstract mixin class $ConversationToolToCreateCopyWith<$Res>  {
   factory $ConversationToolToCreateCopyWith(ConversationToolToCreate value, $Res Function(ConversationToolToCreate) _then) = _$ConversationToolToCreateCopyWithImpl;
 @useResult
 $Res call({
- String type, bool? isEnabled
+ String toolId, bool? isEnabled
 });
 
 
@@ -343,9 +343,9 @@ class _$ConversationToolToCreateCopyWithImpl<$Res>
 
 /// Create a copy of ConversationToolToCreate
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? type = null,Object? isEnabled = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? toolId = null,Object? isEnabled = freezed,}) {
   return _then(_self.copyWith(
-type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
+toolId: null == toolId ? _self.toolId : toolId // ignore: cast_nullable_to_non_nullable
 as String,isEnabled: freezed == isEnabled ? _self.isEnabled : isEnabled // ignore: cast_nullable_to_non_nullable
 as bool?,
   ));
@@ -432,10 +432,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String type,  bool? isEnabled)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String toolId,  bool? isEnabled)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ConversationToolToCreate() when $default != null:
-return $default(_that.type,_that.isEnabled);case _:
+return $default(_that.toolId,_that.isEnabled);case _:
   return orElse();
 
 }
@@ -453,10 +453,10 @@ return $default(_that.type,_that.isEnabled);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String type,  bool? isEnabled)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String toolId,  bool? isEnabled)  $default,) {final _that = this;
 switch (_that) {
 case _ConversationToolToCreate():
-return $default(_that.type,_that.isEnabled);case _:
+return $default(_that.toolId,_that.isEnabled);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -473,10 +473,10 @@ return $default(_that.type,_that.isEnabled);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String type,  bool? isEnabled)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String toolId,  bool? isEnabled)?  $default,) {final _that = this;
 switch (_that) {
 case _ConversationToolToCreate() when $default != null:
-return $default(_that.type,_that.isEnabled);case _:
+return $default(_that.toolId,_that.isEnabled);case _:
   return null;
 
 }
@@ -488,11 +488,11 @@ return $default(_that.type,_that.isEnabled);case _:
 
 
 class _ConversationToolToCreate extends ConversationToolToCreate {
-  const _ConversationToolToCreate({required this.type, this.isEnabled}): super._();
+  const _ConversationToolToCreate({required this.toolId, this.isEnabled}): super._();
   
 
-/// Type of tool (e.g., 'web_search', 'calculator', etc.)
-@override final  String type;
+/// tool identificator (e.g., 'web_search', 'calculator', etc.)
+@override final  String toolId;
 /// Whether the tool should be enabled (defaults to true)
 @override final  bool? isEnabled;
 
@@ -506,16 +506,16 @@ _$ConversationToolToCreateCopyWith<_ConversationToolToCreate> get copyWith => __
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationToolToCreate&&(identical(other.type, type) || other.type == type)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationToolToCreate&&(identical(other.toolId, toolId) || other.toolId == toolId)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,type,isEnabled);
+int get hashCode => Object.hash(runtimeType,toolId,isEnabled);
 
 @override
 String toString() {
-  return 'ConversationToolToCreate(type: $type, isEnabled: $isEnabled)';
+  return 'ConversationToolToCreate(toolId: $toolId, isEnabled: $isEnabled)';
 }
 
 
@@ -526,7 +526,7 @@ abstract mixin class _$ConversationToolToCreateCopyWith<$Res> implements $Conver
   factory _$ConversationToolToCreateCopyWith(_ConversationToolToCreate value, $Res Function(_ConversationToolToCreate) _then) = __$ConversationToolToCreateCopyWithImpl;
 @override @useResult
 $Res call({
- String type, bool? isEnabled
+ String toolId, bool? isEnabled
 });
 
 
@@ -543,9 +543,9 @@ class __$ConversationToolToCreateCopyWithImpl<$Res>
 
 /// Create a copy of ConversationToolToCreate
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? type = null,Object? isEnabled = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? toolId = null,Object? isEnabled = freezed,}) {
   return _then(_ConversationToolToCreate(
-type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
+toolId: null == toolId ? _self.toolId : toolId // ignore: cast_nullable_to_non_nullable
 as String,isEnabled: freezed == isEnabled ? _self.isEnabled : isEnabled // ignore: cast_nullable_to_non_nullable
 as bool?,
   ));

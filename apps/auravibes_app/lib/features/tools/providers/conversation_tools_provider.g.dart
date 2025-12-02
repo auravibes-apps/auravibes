@@ -105,7 +105,7 @@ final class ConversationToolsNotifierProvider
 }
 
 String _$conversationToolsNotifierHash() =>
-    r'63b7937d64ac5d90df7d644f5ef254b30a9282d0';
+    r'4452d34942bca1c1f867ab9af81016730f9d3f52';
 
 final class ConversationToolsNotifierFamily extends $Family
     with
@@ -176,106 +176,6 @@ abstract class _$ConversationToolsNotifier
   }
 }
 
-@ProviderFor(AvailableConversationToolsNotifier)
-const availableConversationToolsProvider =
-    AvailableConversationToolsNotifierFamily._();
-
-final class AvailableConversationToolsNotifierProvider
-    extends
-        $AsyncNotifierProvider<
-          AvailableConversationToolsNotifier,
-          List<String>
-        > {
-  const AvailableConversationToolsNotifierProvider._({
-    required AvailableConversationToolsNotifierFamily super.from,
-    required (String, String) super.argument,
-  }) : super(
-         retry: null,
-         name: r'availableConversationToolsProvider',
-         isAutoDispose: true,
-         dependencies: null,
-         $allTransitiveDependencies: null,
-       );
-
-  @override
-  String debugGetCreateSourceHash() =>
-      _$availableConversationToolsNotifierHash();
-
-  @override
-  String toString() {
-    return r'availableConversationToolsProvider'
-        ''
-        '($argument)';
-  }
-
-  @$internal
-  @override
-  AvailableConversationToolsNotifier create() =>
-      AvailableConversationToolsNotifier();
-
-  @override
-  bool operator ==(Object other) {
-    return other is AvailableConversationToolsNotifierProvider &&
-        other.argument == argument;
-  }
-
-  @override
-  int get hashCode {
-    return argument.hashCode;
-  }
-}
-
-String _$availableConversationToolsNotifierHash() =>
-    r'c71130a9cd701b4d11e50df287fbc019ebf70a9c';
-
-final class AvailableConversationToolsNotifierFamily extends $Family
-    with
-        $ClassFamilyOverride<
-          AvailableConversationToolsNotifier,
-          AsyncValue<List<String>>,
-          List<String>,
-          FutureOr<List<String>>,
-          (String, String)
-        > {
-  const AvailableConversationToolsNotifierFamily._()
-    : super(
-        retry: null,
-        name: r'availableConversationToolsProvider',
-        dependencies: null,
-        $allTransitiveDependencies: null,
-        isAutoDispose: true,
-      );
-
-  AvailableConversationToolsNotifierProvider call((String, String) ids) =>
-      AvailableConversationToolsNotifierProvider._(argument: ids, from: this);
-
-  @override
-  String toString() => r'availableConversationToolsProvider';
-}
-
-abstract class _$AvailableConversationToolsNotifier
-    extends $AsyncNotifier<List<String>> {
-  late final _$args = ref.$arg as (String, String);
-  (String, String) get ids => _$args;
-
-  FutureOr<List<String>> build((String, String) ids);
-  @$mustCallSuper
-  @override
-  void runBuild() {
-    final created = build(_$args);
-    final ref = this.ref as $Ref<AsyncValue<List<String>>, List<String>>;
-    final element =
-        ref.element
-            as $ClassProviderElement<
-              AnyNotifier<AsyncValue<List<String>>, List<String>>,
-              AsyncValue<List<String>>,
-              Object?,
-              Object?
-            >;
-    element.handleValue(ref, created);
-  }
-}
-
 /// Provider to get context-aware tools for chat
 /// (conversation -> workspace -> app defaults)
 
@@ -290,7 +190,7 @@ final class ContextAwareToolsNotifierProvider
   /// (conversation -> workspace -> app defaults)
   const ContextAwareToolsNotifierProvider._({
     required ContextAwareToolsNotifierFamily super.from,
-    required (String, String) super.argument,
+    required ({String conversationId, String workspaceId}) super.argument,
   }) : super(
          retry: null,
          name: r'contextAwareToolsProvider',
@@ -306,7 +206,7 @@ final class ContextAwareToolsNotifierProvider
   String toString() {
     return r'contextAwareToolsProvider'
         ''
-        '($argument)';
+        '$argument';
   }
 
   @$internal
@@ -326,7 +226,7 @@ final class ContextAwareToolsNotifierProvider
 }
 
 String _$contextAwareToolsNotifierHash() =>
-    r'b3a2ca0a27424d9df1f7e470e5ff1687eb36a64f';
+    r'ef76e017661567f6a783e010b6808c4064b90144';
 
 /// Provider to get context-aware tools for chat
 /// (conversation -> workspace -> app defaults)
@@ -338,7 +238,7 @@ final class ContextAwareToolsNotifierFamily extends $Family
           AsyncValue<List<String>>,
           List<String>,
           FutureOr<List<String>>,
-          (String, String)
+          ({String conversationId, String workspaceId})
         > {
   const ContextAwareToolsNotifierFamily._()
     : super(
@@ -352,8 +252,13 @@ final class ContextAwareToolsNotifierFamily extends $Family
   /// Provider to get context-aware tools for chat
   /// (conversation -> workspace -> app defaults)
 
-  ContextAwareToolsNotifierProvider call((String, String) ids) =>
-      ContextAwareToolsNotifierProvider._(argument: ids, from: this);
+  ContextAwareToolsNotifierProvider call({
+    required String conversationId,
+    required String workspaceId,
+  }) => ContextAwareToolsNotifierProvider._(
+    argument: (conversationId: conversationId, workspaceId: workspaceId),
+    from: this,
+  );
 
   @override
   String toString() => r'contextAwareToolsProvider';
@@ -364,14 +269,21 @@ final class ContextAwareToolsNotifierFamily extends $Family
 
 abstract class _$ContextAwareToolsNotifier
     extends $AsyncNotifier<List<String>> {
-  late final _$args = ref.$arg as (String, String);
-  (String, String) get ids => _$args;
+  late final _$args = ref.$arg as ({String conversationId, String workspaceId});
+  String get conversationId => _$args.conversationId;
+  String get workspaceId => _$args.workspaceId;
 
-  FutureOr<List<String>> build((String, String) ids);
+  FutureOr<List<String>> build({
+    required String conversationId,
+    required String workspaceId,
+  });
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build(_$args);
+    final created = build(
+      conversationId: _$args.conversationId,
+      workspaceId: _$args.workspaceId,
+    );
     final ref = this.ref as $Ref<AsyncValue<List<String>>, List<String>>;
     final element =
         ref.element

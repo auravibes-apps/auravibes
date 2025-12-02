@@ -57,6 +57,25 @@ abstract class LocaleKeys {
       'tools_screen.enable_configure_description';
   static const tools_screen_enabled_count = 'tools_screen.enabled_count';
   static const tools_screen_configured = 'tools_screen.configured';
+  static const tools_screen_add_tool_title = 'tools_screen.add_tool_title';
+  static const tools_screen_add_tool_tooltip = 'tools_screen.add_tool_tooltip';
+  static const tools_screen_search_tools = 'tools_screen.search_tools';
+  static const tools_screen_no_tools_added = 'tools_screen.no_tools_added';
+  static const tools_screen_add_tools_hint = 'tools_screen.add_tools_hint';
+  static const tools_screen_all_tools_added = 'tools_screen.all_tools_added';
+  static const tools_screen_no_tools_found = 'tools_screen.no_tools_found';
+  static const tools_screen_remove_tool_title =
+      'tools_screen.remove_tool_title';
+  static const tools_screen_remove_tool_confirm =
+      'tools_screen.remove_tool_confirm';
+  static const tools_screen_remove_tool_tooltip =
+      'tools_screen.remove_tool_tooltip';
+  static const common_cancel = 'common.cancel';
+  static const common_remove = 'common.remove';
+  static const common_add = 'common.add';
+  static const common_save = 'common.save';
+  static const common_delete = 'common.delete';
+  static const common_confirm = 'common.confirm';
   static const tools_names_calculator_name = 'tools_names.calculator.name';
   static const tools_names_calculator_description =
       'tools_names.calculator.description';

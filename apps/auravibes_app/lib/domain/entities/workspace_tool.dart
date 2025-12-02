@@ -10,11 +10,14 @@ part 'workspace_tool.freezed.dart';
 abstract class WorkspaceToolEntity with _$WorkspaceToolEntity {
   /// Creates a new WorkspaceTool instance
   const factory WorkspaceToolEntity({
+    /// Unique ID of this tool record in the database
+    required String id,
+
     /// ID of the workspace this tool setting belongs to
     required String workspaceId,
 
-    /// Type of tool (e.g., 'web_search', 'calculator', etc.)
-    required String type,
+    /// Tool identifier (e.g., 'web_search', 'calculator', etc.)
+    required String toolId,
 
     /// Whether the tool is enabled for this workspace
     required bool isEnabled,
@@ -42,8 +45,8 @@ abstract class WorkspaceToolEntity with _$WorkspaceToolEntity {
 abstract class WorkspaceToolToCreate with _$WorkspaceToolToCreate {
   /// Creates a new WorkspaceToolToCreate instance
   const factory WorkspaceToolToCreate({
-    /// Type of tool (e.g., 'web_search', 'calculator', etc.)
-    required String type,
+    /// Tool identifier (e.g., 'web_search', 'calculator', etc.)
+    required String toolId,
 
     /// Tool configuration as JSON (optional)
     String? config,
@@ -54,11 +57,11 @@ abstract class WorkspaceToolToCreate with _$WorkspaceToolToCreate {
   const WorkspaceToolToCreate._();
 
   /// Returns true if the tool type is valid
-  bool get hasValidType => type.isNotEmpty;
+  bool get hasValidToolId => toolId.isNotEmpty;
 
   /// Returns the default enabled status (true if not specified)
   bool get defaultEnabled => isEnabled ?? true;
 
   /// Returns true if the tool configuration is valid
-  bool get hasValidConfig => hasValidType;
+  bool get hasValidConfig => hasValidToolId;
 }

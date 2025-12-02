@@ -24,6 +24,8 @@ class ToolsWorkspaceListWidget extends HookConsumerWidget {
     return switch (workspaceToolsAsync) {
       AsyncLoading() => const AuraSpinner(),
 
+      AsyncData(:final value) when value == 0 => _EmptyToolsState(),
+
       AsyncData(:final value) => ListView.builder(
         itemCount: value,
         itemBuilder: (context, index) {
@@ -42,6 +44,40 @@ class ToolsWorkspaceListWidget extends HookConsumerWidget {
   }
 }
 
+class _EmptyToolsState extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(context.auraTheme.spacing.xl),
+        child: AuraColumn(
+          mainAxisSize: MainAxisSize.min,
+          spacing: AuraSpacing.md,
+          children: [
+            AuraIcon(
+              Icons.build_circle_outlined,
+              size: AuraIconSize.extraLarge,
+              color: context.auraColors.onSurfaceVariant.withValues(alpha: 0.5),
+            ),
+            const AuraText(
+              style: AuraTextStyle.heading6,
+              color: AuraTextColor.onSurfaceVariant,
+              textAlign: TextAlign.center,
+              child: TextLocale(LocaleKeys.tools_screen_no_tools_added),
+            ),
+            const AuraText(
+              style: AuraTextStyle.bodySmall,
+              color: AuraTextColor.onSurfaceVariant,
+              textAlign: TextAlign.center,
+              child: TextLocale(LocaleKeys.tools_screen_add_tools_hint),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class WorkspaceToolCard extends HookConsumerWidget {
   const WorkspaceToolCard({super.key});
 
@@ -55,6 +91,39 @@ class WorkspaceToolCard extends HookConsumerWidget {
       ref
           .read(workspaceToolsProvider.notifier)
           .setToolEnabled(toolType.value, isEnabled: value);
+    }, []);
+
+    final onRemove = useCallback(() async {
+      final toolType = workspaceToolRow?.$1;
+      final toolEntity = workspaceToolRow?.$2;
+      if (toolType == null || toolEntity == null) return;
+
+      // Show confirmation dialog
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const TextLocale(LocaleKeys.tools_screen_remove_tool_title),
+          content: const TextLocale(
+            LocaleKeys.tools_screen_remove_tool_confirm,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const TextLocale(LocaleKeys.common_cancel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const TextLocale(LocaleKeys.common_remove),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed ?? false) {
+        await ref
+            .read(workspaceToolsProvider.notifier)
+            .removeToolById(toolEntity.id, toolType);
+      }
     }, []);
 
     if (workspaceToolRow == null) return const SizedBox.shrink();
@@ -129,6 +198,16 @@ class WorkspaceToolCard extends HookConsumerWidget {
                     inactiveThumbColor: context.auraColors.onSurfaceVariant,
                     inactiveTrackColor: context.auraColors.outline,
                   ),
+                ),
+
+                // Remove button
+                IconButton(
+                  onPressed: onRemove,
+                  icon: AuraIcon(
+                    Icons.delete_outline,
+                    color: context.auraColors.error,
+                  ),
+                  tooltip: LocaleKeys.tools_screen_remove_tool_tooltip,
                 ),
               ],
             ),

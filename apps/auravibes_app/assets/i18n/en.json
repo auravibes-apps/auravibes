@@ -58,7 +58,25 @@
       "zero": "no tools enabled",
       "other":"{} enabled"
     },
-    "configured": "Configured"
+    "configured": "Configured",
+    "add_tool_title": "Add Tool",
+    "add_tool_tooltip": "Add a new tool",
+    "search_tools": "Search tools...",
+    "no_tools_added": "No tools added",
+    "add_tools_hint": "Tap the + button to add tools to this workspace",
+    "all_tools_added": "All available tools have been added",
+    "no_tools_found": "No tools match your search",
+    "remove_tool_title": "Remove Tool",
+    "remove_tool_confirm": "Are you sure you want to remove this tool from the workspace?",
+    "remove_tool_tooltip": "Remove tool"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "remove": "Remove",
+    "add": "Add",
+    "save": "Save",
+    "delete": "Delete",
+    "confirm": "Confirm"
   },
   "tools_names": {
     "calculator": {

@@ -1,116 +1,116 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/data/database/drift/tables/conversation_disabled_tools_table.dart';
+import 'package:auravibes_app/data/database/drift/tables/conversation_tools_table.dart';
 import 'package:drift/drift.dart';
 
 part 'conversation_tools_dao.g.dart';
 
-@DriftAccessor(tables: [ConversationDisabledTools])
+@DriftAccessor(tables: [ConversationTools])
 class ConversationToolsDao extends DatabaseAccessor<AppDatabase>
     with _$ConversationToolsDaoMixin {
   ConversationToolsDao(super.attachedDatabase);
 
   // Core operations for disabled tools
-  Future<ConversationDisabledToolsTable?> getDisabledConversationTool(
+  Future<ConversationToolsTable?> getDisabledConversationTool(
     String conversationId,
-    String toolType,
+    String toolId,
   ) =>
-      (select(conversationDisabledTools)..where(
+      (select(conversationTools)..where(
             (tbl) =>
                 tbl.conversationId.equals(conversationId) &
-                tbl.type.equals(toolType),
+                tbl.toolId.equals(toolId),
           ))
           .getSingleOrNull();
 
-  Future<ConversationDisabledToolsTable> disableConversationTool(
+  Future<ConversationToolsTable> disableConversationTool(
     String conversationId,
-    String toolType,
+    String toolId,
   ) {
-    return into(conversationDisabledTools).insertReturning(
-      ConversationDisabledToolsCompanion(
+    return into(conversationTools).insertReturning(
+      ConversationToolsCompanion(
         conversationId: Value(conversationId),
-        type: Value(toolType),
+        toolId: Value(toolId),
       ),
     );
   }
 
   Future<void> disableConversationTools(
     String conversationId,
-    List<String> toolTypes,
+    List<String> toolIds,
   ) {
     return batch((batch) {
-      batch.insertAllOnConflictUpdate(conversationDisabledTools, [
-        for (final toolType in toolTypes)
-          ConversationDisabledToolsCompanion(
+      batch.insertAllOnConflictUpdate(conversationTools, [
+        for (final toolId in toolIds)
+          ConversationToolsCompanion(
             conversationId: Value(conversationId),
-            type: Value(toolType),
+            toolId: Value(toolId),
           ),
       ]);
     });
   }
 
-  Future<bool> enableConversationTool(String conversationId, String toolType) =>
-      (delete(conversationDisabledTools)..where(
+  Future<bool> enableConversationTool(String conversationId, String toolId) =>
+      (delete(conversationTools)..where(
             (tbl) =>
                 tbl.conversationId.equals(conversationId) &
-                tbl.type.equals(toolType),
+                tbl.toolId.equals(toolId),
           ))
           .go()
           .then((count) => count > 0);
 
   Future<bool> toggleConversationTool(
     String conversationId,
-    String toolType,
+    String toolId,
   ) async {
     final isCurrentlyDisabled = await isConversationToolDisabled(
       conversationId,
-      toolType,
+      toolId,
     );
     if (isCurrentlyDisabled) {
-      return enableConversationTool(conversationId, toolType);
+      return enableConversationTool(conversationId, toolId);
     } else {
-      await disableConversationTool(conversationId, toolType);
+      await disableConversationTool(conversationId, toolId);
       return true;
     }
   }
 
   Future<bool> isConversationToolDisabled(
     String conversationId,
-    String toolType,
+    String toolId,
   ) =>
-      (selectOnly(conversationDisabledTools)
-            ..addColumns([conversationDisabledTools.id.count()])
+      (selectOnly(conversationTools)
+            ..addColumns([conversationTools.id.count()])
             ..where(
-              conversationDisabledTools.conversationId.equals(conversationId) &
-                  conversationDisabledTools.type.equals(toolType),
+              conversationTools.conversationId.equals(conversationId) &
+                  conversationTools.toolId.equals(toolId),
             ))
-          .map((row) => row.read(conversationDisabledTools.id.count()) ?? 0)
+          .map((row) => row.read(conversationTools.id.count()) ?? 0)
           .getSingle()
           .then((result) => result > 0);
 
   // Query operations for disabled tools
-  Future<List<ConversationDisabledToolsTable>> getDisabledConversationTools(
+  Future<List<ConversationToolsTable>> getDisabledConversationTools(
     String conversationId,
   ) =>
-      (select(conversationDisabledTools)
+      (select(conversationTools)
             ..where((tbl) => tbl.conversationId.equals(conversationId))
             ..orderBy([
-              (tbl) => OrderingTerm(expression: tbl.type),
+              (tbl) => OrderingTerm(expression: tbl.toolId),
             ]))
           .get();
 
   Future<int> getDisabledConversationToolsCount(String conversationId) =>
-      (selectOnly(conversationDisabledTools)
-            ..addColumns([conversationDisabledTools.id.count()])
+      (selectOnly(conversationTools)
+            ..addColumns([conversationTools.id.count()])
             ..where(
-              conversationDisabledTools.conversationId.equals(conversationId),
+              conversationTools.conversationId.equals(conversationId),
             ))
-          .map((row) => row.read(conversationDisabledTools.id.count()) ?? 0)
+          .map((row) => row.read(conversationTools.id.count()) ?? 0)
           .getSingle();
 
   // Bulk operations
   Future<void> removeDisabledToolsForConversation(String conversationId) =>
       (delete(
-        conversationDisabledTools,
+        conversationTools,
       )..where((tbl) => tbl.conversationId.equals(conversationId))).go();
 
   Future<void> copyConversationTools(
@@ -123,7 +123,7 @@ class ConversationToolsDao extends DatabaseAccessor<AppDatabase>
     );
 
     for (final tool in sourceDisabledTools) {
-      await disableConversationTool(targetConversationId, tool.type);
+      await disableConversationTool(targetConversationId, tool.toolId);
     }
   }
 }

@@ -54,7 +54,7 @@ class ConversationToolsNotifier extends _$ConversationToolsNotifier {
 
     final workspaceEnabeldTools = availableToolTypes.where(
       (toolType) =>
-          workspaceTools.any((element) => element.type == toolType.value),
+          workspaceTools.any((element) => element.toolId == toolType.value),
     );
 
     final toolStates = {
@@ -67,7 +67,7 @@ class ConversationToolsNotifier extends _$ConversationToolsNotifier {
         conversationId,
       );
       final disabledTools = conversationTools
-          .map((e) => UserToolType.fromValue(e.type))
+          .map((e) => UserToolType.fromValue(e.toolId))
           .nonNulls;
 
       toolStates.addAll({
@@ -117,69 +117,36 @@ class ConversationToolsNotifier extends _$ConversationToolsNotifier {
   }
 }
 
-@riverpod
-class AvailableConversationToolsNotifier
-    extends _$AvailableConversationToolsNotifier {
-  late ConversationToolsRepository _repository;
-  late String _conversationId;
-  late String _workspaceId;
-
-  @override
-  Future<List<String>> build((String, String) ids) async {
-    _repository = ref.read(conversationToolsRepositoryProvider);
-    _conversationId = ids.$1;
-    _workspaceId = ids.$2;
-    return _getAvailableTools();
-  }
-
-  Future<List<String>> _getAvailableTools() async {
-    return _repository.getAvailableToolsForConversation(
-      _conversationId,
-      _workspaceId,
-    );
-  }
-
-  /// Refresh the available tools list
-  Future<void> refresh() async {
-    state = const AsyncValue.loading();
-    try {
-      state = AsyncValue.data(await _getAvailableTools());
-    } on Exception catch (e, stack) {
-      state = AsyncValue.error(e, stack);
-    }
-  }
-}
-
 /// Provider to get context-aware tools for chat
 /// (conversation -> workspace -> app defaults)
 @riverpod
 class ContextAwareToolsNotifier extends _$ContextAwareToolsNotifier {
   late ConversationToolsRepository _repository;
-  late String _conversationId;
-  late String _workspaceId;
 
   @override
-  Future<List<String>> build((String, String) ids) async {
+  Future<List<String>> build({
+    required String conversationId,
+    required String workspaceId,
+  }) async {
     _repository = ref.read(conversationToolsRepositoryProvider);
-    _conversationId = ids.$1;
-    _workspaceId = ids.$2;
+
     return _getContextAwareTools();
   }
 
   Future<List<String>> _getContextAwareTools() async {
     return _repository.getAvailableToolsForConversation(
-      _conversationId,
-      _workspaceId,
+      conversationId,
+      workspaceId,
     );
   }
 
   /// Refresh the context-aware tools list
   Future<void> refresh() async {
-    state = const AsyncValue.loading();
+    state = const .loading();
     try {
-      state = AsyncValue.data(await _getContextAwareTools());
-    } on Exception catch (e, stack) {
-      state = AsyncValue.error(e, stack);
+      state = .data(await _getContextAwareTools());
+    } on Exception catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
     }
   }
 }

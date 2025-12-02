@@ -87,6 +87,18 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
   }
 
   @override
+  Future<bool> removeWorkspaceToolById(String id) async {
+    try {
+      return await _dao.deleteWorkspaceToolById(id);
+    } catch (e) {
+      throw WorkspaceToolsException(
+        'Failed to remove workspace tool by ID: $e',
+        e is Exception ? e : null,
+      );
+    }
+  }
+
+  @override
   Future<int> getWorkspaceToolsCount(String workspaceId) async {
     try {
       return await _dao.getWorkspaceToolsCount(workspaceId);
@@ -204,10 +216,11 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
         .then((value) => value.map(_tableToEntity).toList());
   }
 
-  WorkspaceToolEntity _tableToEntity(WorkspaceToolsTable table) {
+  WorkspaceToolEntity _tableToEntity(ToolsTable table) {
     return WorkspaceToolEntity(
+      id: table.id,
       workspaceId: table.workspaceId,
-      type: table.type,
+      toolId: table.toolId,
       config: table.config,
       isEnabled: table.isEnabled,
       createdAt: table.createdAt,

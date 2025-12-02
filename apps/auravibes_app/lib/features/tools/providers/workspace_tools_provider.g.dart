@@ -125,7 +125,7 @@ final class WorkspaceToolsNotifierProvider
 }
 
 String _$workspaceToolsNotifierHash() =>
-    r'05379ce8ec9dd661d6894012dab1db482349149e';
+    r'cccf0ef1b874734dcb22463dff55530dd1929e00';
 
 abstract class _$WorkspaceToolsNotifier
     extends $AsyncNotifier<List<WorkspaceTool>> {
@@ -147,6 +147,56 @@ abstract class _$WorkspaceToolsNotifier
     element.handleValue(ref, created);
   }
 }
+
+/// Provider that returns the list of available tools
+/// that can be added to the workspace
+
+@ProviderFor(availableToolsToAdd)
+const availableToolsToAddProvider = AvailableToolsToAddProvider._();
+
+/// Provider that returns the list of available tools
+/// that can be added to the workspace
+
+final class AvailableToolsToAddProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<UserToolType>>,
+          List<UserToolType>,
+          FutureOr<List<UserToolType>>
+        >
+    with
+        $FutureModifier<List<UserToolType>>,
+        $FutureProvider<List<UserToolType>> {
+  /// Provider that returns the list of available tools
+  /// that can be added to the workspace
+  const AvailableToolsToAddProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'availableToolsToAddProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$availableToolsToAddHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<List<UserToolType>> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<List<UserToolType>> create(Ref ref) {
+    return availableToolsToAdd(ref);
+  }
+}
+
+String _$availableToolsToAddHash() =>
+    r'5a55ff720023c75671664d183b5a023708e2581a';
 
 @ProviderFor(workspaceToolRow)
 const workspaceToolRowProvider = WorkspaceToolRowProvider._();
