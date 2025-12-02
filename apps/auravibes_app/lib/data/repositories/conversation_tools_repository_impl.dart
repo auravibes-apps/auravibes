@@ -3,6 +3,7 @@ import 'package:auravibes_app/data/database/drift/daos/conversation_tools_dao.da
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/domain/entities/conversation_tool.dart';
 import 'package:auravibes_app/domain/entities/workspace_tool.dart';
+import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
 import 'package:auravibes_app/domain/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/services/tools/tool_service.dart';
@@ -335,5 +336,57 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
       ToolPermissionMode.alwaysAsk => PermissionAccess.ask,
       ToolPermissionMode.alwaysAllow => PermissionAccess.granted,
     };
+  }
+
+  @override
+  Future<ToolPermissionResult> checkToolPermission({
+    required String conversationId,
+    required String workspaceId,
+    required String toolId,
+  }) async {
+    try {
+      // 1. Check workspace - tool must exist and be enabled
+      final workspaceTool = await _workspaceToolsRepository.getWorkspaceTool(
+        workspaceId,
+        toolId,
+      );
+
+      // Tool not in workspace or disabled = cannot run
+      if (workspaceTool == null || !workspaceTool.isEnabled) {
+        return ToolPermissionResult.notConfigured;
+      }
+
+      // 2. Check conversation override (takes priority)
+      final conversationTool = await getConversationTool(
+        conversationId,
+        toolId,
+      );
+
+      if (conversationTool != null) {
+        // Conversation rule exists - it takes priority
+        if (!conversationTool.isEnabled) {
+          return ToolPermissionResult.disabledInConversation;
+        }
+
+        if (conversationTool.permissionMode == ToolPermissionMode.alwaysAsk) {
+          return ToolPermissionResult.needsConfirmation;
+        }
+
+        // Conversation says GRANTED (alwaysAllow)
+        return ToolPermissionResult.granted;
+      }
+
+      // 3. No conversation override - use workspace permission
+      if (workspaceTool.permissionMode == ToolPermissionMode.alwaysAsk) {
+        return ToolPermissionResult.needsConfirmation;
+      }
+
+      return ToolPermissionResult.granted;
+    } catch (e) {
+      throw ConversationToolsException(
+        'Failed to check tool permission: $e',
+        e is Exception ? e : null,
+      );
+    }
   }
 }

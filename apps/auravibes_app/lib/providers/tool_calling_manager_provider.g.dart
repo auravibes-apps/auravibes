@@ -20,7 +20,8 @@ Map<String, dynamic> _$ToolResponseItemToJson(_ToolResponseItem instance) =>
 const toolCallingManagerProvider = ToolCallingManagerNotifierProvider._();
 
 final class ToolCallingManagerNotifierProvider
-    extends $NotifierProvider<ToolCallingManagerNotifier, List<ToolExecution>> {
+    extends
+        $NotifierProvider<ToolCallingManagerNotifier, List<TrackedToolCall>> {
   const ToolCallingManagerNotifierProvider._()
     : super(
         from: null,
@@ -40,30 +41,30 @@ final class ToolCallingManagerNotifierProvider
   ToolCallingManagerNotifier create() => ToolCallingManagerNotifier();
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(List<ToolExecution> value) {
+  Override overrideWithValue(List<TrackedToolCall> value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<List<ToolExecution>>(value),
+      providerOverride: $SyncValueProvider<List<TrackedToolCall>>(value),
     );
   }
 }
 
 String _$toolCallingManagerNotifierHash() =>
-    r'4332e7dc3ba23e77cefc84d42e88f423c380d489';
+    r'd942ee6b8eef41dd32f7a4554e2c6874181ca193';
 
 abstract class _$ToolCallingManagerNotifier
-    extends $Notifier<List<ToolExecution>> {
-  List<ToolExecution> build();
+    extends $Notifier<List<TrackedToolCall>> {
+  List<TrackedToolCall> build();
   @$mustCallSuper
   @override
   void runBuild() {
     final created = build();
-    final ref = this.ref as $Ref<List<ToolExecution>, List<ToolExecution>>;
+    final ref = this.ref as $Ref<List<TrackedToolCall>, List<TrackedToolCall>>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<List<ToolExecution>, List<ToolExecution>>,
-              List<ToolExecution>,
+              AnyNotifier<List<TrackedToolCall>, List<TrackedToolCall>>,
+              List<TrackedToolCall>,
               Object?,
               Object?
             >;

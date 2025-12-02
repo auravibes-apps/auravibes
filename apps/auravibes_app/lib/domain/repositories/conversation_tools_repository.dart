@@ -1,5 +1,6 @@
 import 'package:auravibes_app/domain/entities/conversation_tool.dart';
 import 'package:auravibes_app/domain/entities/workspace_tool.dart';
+import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
 
 /// Repository interface for conversation tool data operations.
 ///
@@ -172,6 +173,27 @@ abstract class ConversationToolsRepository {
     String conversationId,
     String workspaceId,
   );
+
+  /// Checks the permission for a specific tool in a conversation context.
+  ///
+  /// This method implements the permission logic:
+  /// 1. Tool must exist and be enabled in workspace (isEnabled = true)
+  /// 2. Conversation rules take priority over workspace rules
+  /// 3. Conversation can restrict (disable/ask) but cannot enable a disabled
+  ///    workspace tool
+  ///
+  /// [conversationId] The ID of the conversation.
+  /// [workspaceId] The ID of the workspace the conversation belongs to.
+  /// [toolId] The identifier of the tool to check.
+  /// Returns [ToolPermissionResult] indicating whether the tool can be
+  /// executed, needs confirmation, or should be skipped.
+  /// Throws [ConversationToolsException] if there's an error checking
+  /// permissions.
+  Future<ToolPermissionResult> checkToolPermission({
+    required String conversationId,
+    required String workspaceId,
+    required String toolId,
+  });
 }
 
 /// Base exception for conversation tools-related operations.
