@@ -149,7 +149,7 @@ class _AvailableToolsList extends StatelessWidget {
                 color: context.auraColors.onSurfaceVariant,
               ),
               AuraText(
-                color: AuraTextColor.onSurfaceVariant,
+                color: AuraColorVariant.onSurfaceVariant,
                 textAlign: TextAlign.center,
                 child: TextLocale(
                   tools.isEmpty
@@ -218,7 +218,7 @@ class _AvailableToolTile extends ConsumerWidget {
           ),
           AuraText(
             style: AuraTextStyle.bodySmall,
-            color: AuraTextColor.onSurfaceVariant,
+            color: AuraColorVariant.onSurfaceVariant,
             child: DefaultTextStyle.merge(
               maxLines: 2,
               overflow: TextOverflow.ellipsis,

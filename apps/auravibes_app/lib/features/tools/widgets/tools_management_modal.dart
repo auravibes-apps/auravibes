@@ -85,7 +85,7 @@ class ToolsManagementModal extends HookConsumerWidget {
                 ),
                 AsyncError(:final error) => Center(
                   child: AuraText(
-                    color: AuraTextColor.error,
+                    color: AuraColorVariant.error,
                     child: Text('Error loading tools: $error'),
                   ),
                 ),
@@ -131,13 +131,13 @@ class _ToolsList extends StatelessWidget {
               ),
               const AuraText(
                 style: AuraTextStyle.heading6,
-                color: AuraTextColor.onSurfaceVariant,
+                color: AuraColorVariant.onSurfaceVariant,
                 textAlign: TextAlign.center,
                 child: TextLocale(LocaleKeys.tools_screen_no_tools_added),
               ),
               const AuraText(
                 style: AuraTextStyle.bodySmall,
-                color: AuraTextColor.onSurfaceVariant,
+                color: AuraColorVariant.onSurfaceVariant,
                 textAlign: TextAlign.center,
                 child: TextLocale(LocaleKeys.tools_screen_add_tools_hint),
               ),
@@ -243,14 +243,14 @@ class _ToolTile extends HookConsumerWidget {
                     children: [
                       AuraText(
                         color: isWorkspaceEnabled
-                            ? AuraTextColor.onSurface
-                            : AuraTextColor.onSurfaceVariant,
+                            ? AuraColorVariant.onSurface
+                            : AuraColorVariant.onSurfaceVariant,
                         child: ToolNameWidget(toolType: toolState.toolType),
                       ),
                       if (!isWorkspaceEnabled)
                         AuraText(
                           style: AuraTextStyle.bodySmall,
-                          color: AuraTextColor.onSurfaceVariant,
+                          color: AuraColorVariant.onSurfaceVariant,
                           child: DefaultTextStyle.merge(
                             style: const TextStyle(
                               fontStyle: FontStyle.italic,
@@ -261,7 +261,7 @@ class _ToolTile extends HookConsumerWidget {
                       else
                         AuraText(
                           style: AuraTextStyle.bodySmall,
-                          color: AuraTextColor.onSurfaceVariant,
+                          color: AuraColorVariant.onSurfaceVariant,
                           child: DefaultTextStyle.merge(
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -305,7 +305,7 @@ class _ToolTile extends HookConsumerWidget {
                 children: [
                   const AuraText(
                     style: AuraTextStyle.bodySmall,
-                    color: AuraTextColor.onSurfaceVariant,
+                    color: AuraColorVariant.onSurfaceVariant,
                     child: TextLocale(LocaleKeys.tools_screen_permission_label),
                   ),
                   _PermissionSelector(

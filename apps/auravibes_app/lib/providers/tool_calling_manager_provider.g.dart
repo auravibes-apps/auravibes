@@ -15,6 +15,77 @@ Map<String, dynamic> _$ToolResponseItemToJson(_ToolResponseItem instance) =>
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// A trigger that increments whenever tool call results are updated.
+///
+/// UI components can watch this to know when to refresh message data
+/// after tool calls are resolved (stopped, skipped, or completed).
+
+@ProviderFor(ToolUpdateRefreshTrigger)
+const toolUpdateRefreshTriggerProvider = ToolUpdateRefreshTriggerProvider._();
+
+/// A trigger that increments whenever tool call results are updated.
+///
+/// UI components can watch this to know when to refresh message data
+/// after tool calls are resolved (stopped, skipped, or completed).
+final class ToolUpdateRefreshTriggerProvider
+    extends $NotifierProvider<ToolUpdateRefreshTrigger, int> {
+  /// A trigger that increments whenever tool call results are updated.
+  ///
+  /// UI components can watch this to know when to refresh message data
+  /// after tool calls are resolved (stopped, skipped, or completed).
+  const ToolUpdateRefreshTriggerProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'toolUpdateRefreshTriggerProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$toolUpdateRefreshTriggerHash();
+
+  @$internal
+  @override
+  ToolUpdateRefreshTrigger create() => ToolUpdateRefreshTrigger();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(int value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<int>(value),
+    );
+  }
+}
+
+String _$toolUpdateRefreshTriggerHash() =>
+    r'b63c1f5a0dad6e6479dd962d649e67c4874d9945';
+
+/// A trigger that increments whenever tool call results are updated.
+///
+/// UI components can watch this to know when to refresh message data
+/// after tool calls are resolved (stopped, skipped, or completed).
+
+abstract class _$ToolUpdateRefreshTrigger extends $Notifier<int> {
+  int build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final created = build();
+    final ref = this.ref as $Ref<int, int>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<int, int>,
+              int,
+              Object?,
+              Object?
+            >;
+    element.handleValue(ref, created);
+  }
+}
 
 @ProviderFor(ToolCallingManagerNotifier)
 const toolCallingManagerProvider = ToolCallingManagerNotifierProvider._();
@@ -50,7 +121,7 @@ final class ToolCallingManagerNotifierProvider
 }
 
 String _$toolCallingManagerNotifierHash() =>
-    r'd942ee6b8eef41dd32f7a4554e2c6874181ca193';
+    r'4db168b044ce40951b8db33201c14944c3894691';
 
 abstract class _$ToolCallingManagerNotifier
     extends $Notifier<List<TrackedToolCall>> {

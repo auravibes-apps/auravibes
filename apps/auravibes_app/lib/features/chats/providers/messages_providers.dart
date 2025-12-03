@@ -4,6 +4,7 @@ import 'package:auravibes_app/domain/enums/message_types.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/providers/messages_manager_provider.dart';
+import 'package:auravibes_app/providers/tool_calling_manager_provider.dart';
 import 'package:collection/collection.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod/experimental/mutation.dart';
@@ -46,6 +47,10 @@ class ChatMessages extends _$ChatMessages {
   @override
   Future<List<MessageEntity>> build() async {
     final conversationId = ref.watch(conversationSelectedProvider);
+
+    // Watch the tool update trigger to refresh when tool calls are resolved
+    ref.watch(toolUpdateRefreshTriggerProvider);
+
     final messages = await ref
         .watch(messageRepositoryProvider)
         .getMessagesByConversation(conversationId);

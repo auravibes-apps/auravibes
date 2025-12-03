@@ -1,4 +1,6 @@
 import 'package:auravibes_app/domain/entities/conversation.dart';
+import 'package:auravibes_app/domain/entities/workspace_tool.dart';
+import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/tools/providers/conversation_tools_provider.dart';
@@ -10,6 +12,27 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'tool_calling_manager_provider.freezed.dart';
 part 'tool_calling_manager_provider.g.dart';
+
+/// A trigger that increments whenever tool call results are updated.
+///
+/// UI components can watch this to know when to refresh message data
+/// after tool calls are resolved (stopped, skipped, or completed).
+@Riverpod(keepAlive: true)
+class ToolUpdateRefreshTrigger extends _$ToolUpdateRefreshTrigger {
+  @override
+  int build() => 0;
+
+  void trigger() => state++;
+}
+
+/// Permission level when user grants a tool call.
+enum ToolGrantLevel {
+  /// Run this tool once, but ask again next time
+  once,
+
+  /// Grant permission for this conversation (persists to DB)
+  conversation,
+}
 
 @freezed
 abstract class ToolCallItem with _$ToolCallItem {
@@ -50,12 +73,73 @@ abstract class TrackedToolCall with _$TrackedToolCall {
   }) = _TrackedToolCall;
 }
 
+// ============================================================
+// Internal helper classes
+// ============================================================
+
+/// Internal class to hold message and conversation context.
+class _MessageContext {
+  const _MessageContext({
+    required this.message,
+    required this.conversation,
+  });
+
+  final MessageEntity message;
+  final ConversationEntity conversation;
+}
+
+/// Internal class to hold tool resolution result.
+class _ToolResolution {
+  const _ToolResolution({
+    required this.tool,
+    required this.failureStatus,
+  });
+
+  final UserToolEntity<Object, Object, Object>? tool;
+
+  /// The status to use if tool resolution failed (null if resolved)
+  final ToolCallResultStatus? failureStatus;
+}
+
+/// Internal class to hold categorized tools after permission check.
+class _CategorizedTools {
+  const _CategorizedTools({
+    required this.grantedTools,
+    required this.resolvedToolUpdates,
+    required this.hasPendingConfirmation,
+  });
+
+  final List<(UserToolEntity<dynamic, dynamic, dynamic>, MessageToolCallEntity)>
+  grantedTools;
+
+  /// Tool updates for tools that were immediately resolved (skipped/disabled).
+  final List<_ToolUpdate> resolvedToolUpdates;
+  final bool hasPendingConfirmation;
+}
+
+/// Internal class to represent an update to a tool call.
+class _ToolUpdate {
+  const _ToolUpdate({
+    required this.toolCallId,
+    required this.resultStatus,
+    this.responseRaw,
+  });
+
+  final String toolCallId;
+  final ToolCallResultStatus resultStatus;
+  final String? responseRaw;
+}
+
 @Riverpod(keepAlive: true)
 class ToolCallingManagerNotifier extends _$ToolCallingManagerNotifier {
   @override
   List<TrackedToolCall> build() {
     return [];
   }
+
+  // ============================================================
+  // Public query methods
+  // ============================================================
 
   /// Check if a specific tool call is currently running.
   ///
@@ -74,63 +158,228 @@ class ToolCallingManagerNotifier extends _$ToolCallingManagerNotifier {
     return state.where((t) => t.messageId == messageId).toList();
   }
 
+  // ============================================================
+  // Main public API
+  // ============================================================
+
+  /// Process tool calls from an AI response.
+  ///
+  /// Checks permissions for each tool, executes granted ones,
+  /// and handles pending confirmations.
   Future<void> runTask(
     List<MessageToolCallEntity> toolCalling,
     String responseMessageId,
   ) async {
-    // Get message to find conversation/workspace context
+    final context = await _getMessageContext(responseMessageId);
+    if (context == null) return;
+
+    final conversationId = context.message.conversationId;
+    final workspaceId = context.conversation.workspaceId;
+
+    // Categorize tools by permission
+    final categorized = await _categorizeToolsByPermission(
+      toolCalling,
+      conversationId: conversationId,
+      workspaceId: workspaceId,
+    );
+
+    // Execute granted tools and get their updates
+    final executedUpdates = await _executeToolsBatch(
+      categorized.grantedTools,
+      responseMessageId,
+    );
+
+    // Combine all resolved updates
+    final allUpdates = [
+      ...executedUpdates,
+      ...categorized.resolvedToolUpdates,
+    ];
+
+    // Store updates in message metadata
+    await _updateToolResults(responseMessageId, allUpdates);
+
+    // Don't respond to AI if there are tools pending confirmation
+    if (categorized.hasPendingConfirmation) {
+      return;
+    }
+
+    // All tools resolved - respond to AI
+    await _sendAllResponsesToAI(responseMessageId);
+  }
+
+  /// Grant permission and execute a specific tool call.
+  ///
+  /// After granting, re-evaluates all pending tools for this message
+  /// and runs any that are now granted. If all tools are resolved,
+  /// sends response to AI.
+  Future<void> grantToolCall({
+    required String toolCallId,
+    required String messageId,
+    required ToolGrantLevel level,
+  }) async {
+    final context = await _getMessageContext(messageId);
+    if (context == null) return;
+
+    final conversationId = context.message.conversationId;
+    final metadata = context.message.metadata ?? const MessageMetadataEntity();
+    final toolCall = metadata.toolCalls
+        .where((t) => t.id == toolCallId)
+        .firstOrNull;
+    if (toolCall == null) return;
+
+    // If granting for conversation, persist the permission
+    if (level == ToolGrantLevel.conversation) {
+      await ref
+          .read(conversationToolsRepositoryProvider)
+          .setConversationToolPermission(
+            conversationId,
+            toolCall.name,
+            permissionMode: ToolPermissionMode.alwaysAllow,
+          );
+    }
+
+    // Execute the tool (bypasses permission check for "once" grants)
+    final update = await _executeSingleTool(toolCall, messageId);
+    await _updateToolResults(messageId, [update]);
+
+    // Check if all tools are now resolved
+    await _checkAndRespondToAI(messageId);
+  }
+
+  /// Skip a specific tool call (mark as skipped).
+  ///
+  /// After skipping, checks if all tools are resolved and sends
+  /// response to AI if so.
+  Future<void> skipToolCall({
+    required String toolCallId,
+    required String messageId,
+  }) async {
+    await _updateToolResults(messageId, [
+      _ToolUpdate(
+        toolCallId: toolCallId,
+        resultStatus: ToolCallResultStatus.skippedByUser,
+      ),
+    ]);
+
+    await _checkAndRespondToAI(messageId);
+  }
+
+  /// Stop all pending tool calls for this message.
+  ///
+  /// All pending tools will be marked as stopped and NO response is sent
+  /// to the AI. This effectively stops the agent loop entirely.
+  Future<void> stopAllToolCalls({
+    required String messageId,
+  }) async {
     final message = await ref
         .read(messageRepositoryProvider)
-        .getMessageById(responseMessageId);
-
+        .getMessageById(messageId);
     if (message == null) return;
+
+    final metadata = message.metadata ?? const MessageMetadataEntity();
+
+    // Find all pending tools (not resolved and not running)
+    final pendingToolIds = metadata.toolCalls
+        .where((t) => t.isPending && !isToolRunning(t.id))
+        .map((t) => t.id)
+        .toList();
+
+    // Mark all as stopped
+    final stoppedUpdates = pendingToolIds
+        .map(
+          (id) => _ToolUpdate(
+            toolCallId: id,
+            resultStatus: ToolCallResultStatus.stoppedByUser,
+          ),
+        )
+        .toList();
+
+    // Save updates but do NOT send to AI - this stops the agent loop
+    await _updateToolResults(messageId, stoppedUpdates);
+  }
+
+  // ============================================================
+  // Helper: Context retrieval
+  // ============================================================
+
+  /// Retrieves message and its associated conversation.
+  ///
+  /// Returns null if either message or conversation is not found.
+  Future<_MessageContext?> _getMessageContext(String messageId) async {
+    final message = await ref
+        .read(messageRepositoryProvider)
+        .getMessageById(messageId);
+    if (message == null) return null;
 
     final conversation = await ref
         .read(conversationRepositoryProvider)
         .getConversationById(message.conversationId);
+    if (conversation == null) return null;
 
-    if (conversation == null) return;
+    return _MessageContext(message: message, conversation: conversation);
+  }
 
-    final conversationId = message.conversationId;
-    final workspaceId = conversation.workspaceId;
+  // ============================================================
+  // Helper: Tool resolution
+  // ============================================================
 
+  /// Resolves a tool name to its implementation.
+  ///
+  /// Returns the tool and null failureStatus, or null tool with failureStatus.
+  _ToolResolution _resolveTool(String toolName) {
+    final toolType = UserToolType.fromValue(toolName);
+    if (toolType == null) {
+      return const _ToolResolution(
+        tool: null,
+        failureStatus: ToolCallResultStatus.toolNotFound,
+      );
+    }
+
+    final userTool = ToolService.getTool(toolType);
+    if (userTool == null) {
+      return const _ToolResolution(
+        tool: null,
+        failureStatus: ToolCallResultStatus.toolNotFound,
+      );
+    }
+
+    return _ToolResolution(tool: userTool, failureStatus: null);
+  }
+
+  // ============================================================
+  // Helper: Tool categorization by permission
+  // ============================================================
+
+  /// Categorizes tool calls by their permission status.
+  ///
+  /// Returns granted tools to execute, resolved tool updates, and
+  /// whether any tools are pending confirmation.
+  Future<_CategorizedTools> _categorizeToolsByPermission(
+    List<MessageToolCallEntity> toolCalls, {
+    required String conversationId,
+    required String workspaceId,
+  }) async {
     final grantedTools =
         <(UserToolEntity<dynamic, dynamic, dynamic>, MessageToolCallEntity)>[];
-    final skippedToolResponses = <ToolResponseItem>[];
+    final resolvedToolUpdates = <_ToolUpdate>[];
     var hasPendingConfirmation = false;
 
-    // Check permissions for each tool
-    for (final tool in toolCalling) {
-      final toolType = UserToolType.fromValue(tool.name);
+    final conversationToolsRepo = ref.read(conversationToolsRepositoryProvider);
 
-      // Unknown tool type - skip
-      if (toolType == null) {
-        skippedToolResponses.add(
-          ToolResponseItem(
-            id: tool.id,
-            content: 'skipped: unknown_tool',
-          ),
-        );
-        continue;
-      }
-
-      final userTool = ToolService.getTool(toolType);
-
-      // Tool implementation not found - skip
-      if (userTool == null) {
-        skippedToolResponses.add(
-          ToolResponseItem(
-            id: tool.id,
-            content: 'skipped: tool_not_available',
+    for (final tool in toolCalls) {
+      // First resolve the tool implementation
+      final resolution = _resolveTool(tool.name);
+      if (resolution.tool == null) {
+        resolvedToolUpdates.add(
+          _ToolUpdate(
+            toolCallId: tool.id,
+            resultStatus: resolution.failureStatus!,
           ),
         );
         continue;
       }
 
       // Check permission
-      final conversationToolsRepo = ref.read(
-        conversationToolsRepositoryProvider,
-      );
       final permission = await conversationToolsRepo.checkToolPermission(
         conversationId: conversationId,
         workspaceId: workspaceId,
@@ -139,90 +388,163 @@ class ToolCallingManagerNotifier extends _$ToolCallingManagerNotifier {
 
       switch (permission) {
         case ToolPermissionResult.granted:
-          grantedTools.add((userTool, tool));
+          grantedTools.add((resolution.tool!, tool));
 
         case ToolPermissionResult.needsConfirmation:
           hasPendingConfirmation = true;
-        // Don't add to skipped - leave responseRaw as null (pending)
+        // Don't add to resolved - leave as pending
 
         case ToolPermissionResult.notConfigured:
+          resolvedToolUpdates.add(
+            _ToolUpdate(
+              toolCallId: tool.id,
+              resultStatus: ToolCallResultStatus.notConfigured,
+            ),
+          );
+
         case ToolPermissionResult.disabledInConversation:
+          resolvedToolUpdates.add(
+            _ToolUpdate(
+              toolCallId: tool.id,
+              resultStatus: ToolCallResultStatus.disabledInConversation,
+            ),
+          );
+
         case ToolPermissionResult.disabledInWorkspace:
-          skippedToolResponses.add(
-            ToolResponseItem(
-              id: tool.id,
-              content: 'skipped: ${permission.skipReason}',
+          resolvedToolUpdates.add(
+            _ToolUpdate(
+              toolCallId: tool.id,
+              resultStatus: ToolCallResultStatus.disabledInWorkspace,
             ),
           );
       }
     }
 
+    return _CategorizedTools(
+      grantedTools: grantedTools,
+      resolvedToolUpdates: resolvedToolUpdates,
+      hasPendingConfirmation: hasPendingConfirmation,
+    );
+  }
+
+  // ============================================================
+  // Helper: Tool execution
+  // ============================================================
+
+  /// Executes a batch of granted tools and returns their updates.
+  Future<List<_ToolUpdate>> _executeToolsBatch(
+    List<(UserToolEntity<dynamic, dynamic, dynamic>, MessageToolCallEntity)>
+    grantedTools,
+    String messageId,
+  ) async {
+    if (grantedTools.isEmpty) return [];
+
     // Track running tools in state
-    state = [
-      ...state,
-      ...grantedTools.map(
+    _addRunningTools(
+      grantedTools.map(
         (t) => TrackedToolCall(
           id: t.$2.id,
           toolName: t.$2.name,
-          messageId: responseMessageId,
+          messageId: messageId,
           isRunning: true,
         ),
       ),
-    ];
+    );
 
-    // Execute granted tools
-    final executedResponses = <ToolResponseItem>[];
+    // Execute all tools
+    final updates = <_ToolUpdate>[];
     for (final (userTool, toolCall) in grantedTools) {
-      try {
-        final input = toolCall.arguments['input'] as Object;
-        final result = await userTool.runner(input).value;
-        executedResponses.add(
-          ToolResponseItem(
-            id: toolCall.id,
-            content: result.toString(),
-          ),
-        );
-      } on Exception {
-        executedResponses.add(
-          ToolResponseItem(
-            id: toolCall.id,
-            content: 'aborted: execution_error',
-          ),
-        );
-      }
+      final update = await _runToolExecution(userTool, toolCall);
+      updates.add(update);
     }
 
     // Remove from running state
-    state = state.where((t) => t.messageId != responseMessageId).toList();
+    _removeRunningToolsForMessage(messageId);
 
-    // Combine all resolved responses (executed + skipped)
-    final allResponses = [...executedResponses, ...skippedToolResponses];
-
-    // Store responses in message metadata
-    await _updateToolResponses(responseMessageId, allResponses);
-
-    // DON'T respond to AI if there are tools pending confirmation
-    // The UI will show a confirmation dialog, and when user approves/denies,
-    // a separate method will be called to complete the flow.
-    if (hasPendingConfirmation) {
-      return;
-    }
-
-    // All tools resolved - respond to AI
-    ref
-        .read(messagesManagerProvider.notifier)
-        .sendToolsResponse(allResponses, responseMessageId);
+    return updates;
   }
 
-  /// Update tool responses in message metadata.
+  /// Executes a single tool call with running state management.
   ///
-  /// This stores the responseRaw for each tool call, including:
-  /// - Executed tool results
-  /// - Skipped tool reasons (e.g., "skipped: not_configured")
-  /// - Aborted tool reasons (e.g., "aborted: execution_error")
-  Future<void> _updateToolResponses(
+  /// Used when granting individual tool calls after confirmation.
+  Future<_ToolUpdate> _executeSingleTool(
+    MessageToolCallEntity toolCall,
     String messageId,
-    List<ToolResponseItem> responses,
+  ) async {
+    final resolution = _resolveTool(toolCall.name);
+    if (resolution.tool == null) {
+      return _ToolUpdate(
+        toolCallId: toolCall.id,
+        resultStatus: resolution.failureStatus!,
+      );
+    }
+
+    // Track as running
+    _addRunningTools([
+      TrackedToolCall(
+        id: toolCall.id,
+        toolName: toolCall.name,
+        messageId: messageId,
+        isRunning: true,
+      ),
+    ]);
+
+    // Execute the tool
+    final update = await _runToolExecution(resolution.tool!, toolCall);
+
+    // Remove from running state
+    _removeRunningTool(toolCall.id);
+
+    return update;
+  }
+
+  /// Runs a tool and returns its update (success or error).
+  Future<_ToolUpdate> _runToolExecution(
+    UserToolEntity<dynamic, dynamic, dynamic> userTool,
+    MessageToolCallEntity toolCall,
+  ) async {
+    try {
+      final input = toolCall.arguments['input'] as Object;
+      final result = await userTool.runner(input).value;
+      return _ToolUpdate(
+        toolCallId: toolCall.id,
+        resultStatus: ToolCallResultStatus.success,
+        responseRaw: result.toString(),
+      );
+    } on Exception {
+      return _ToolUpdate(
+        toolCallId: toolCall.id,
+        resultStatus: ToolCallResultStatus.executionError,
+      );
+    }
+  }
+
+  // ============================================================
+  // Helper: State management
+  // ============================================================
+
+  void _addRunningTools(Iterable<TrackedToolCall> tools) {
+    state = [...state, ...tools];
+  }
+
+  void _removeRunningToolsForMessage(String messageId) {
+    state = state.where((t) => t.messageId != messageId).toList();
+  }
+
+  void _removeRunningTool(String toolCallId) {
+    state = state.where((t) => t.id != toolCallId).toList();
+  }
+
+  // ============================================================
+  // Helper: Result persistence
+  // ============================================================
+
+  /// Update tool results in message metadata.
+  ///
+  /// This stores the resultStatus and optionally responseRaw for each tool.
+  Future<void> _updateToolResults(
+    String messageId,
+    List<_ToolUpdate> updates,
   ) async {
     final repo = ref.read(messageRepositoryProvider);
     final message = await repo.getMessageById(messageId);
@@ -230,9 +552,14 @@ class ToolCallingManagerNotifier extends _$ToolCallingManagerNotifier {
 
     final metadata = message.metadata ?? const MessageMetadataEntity();
     final updatedToolCalls = metadata.toolCalls.map((toolCall) {
-      final response = responses.where((r) => r.id == toolCall.id).firstOrNull;
-      if (response != null) {
-        return toolCall.copyWith(responseRaw: response.content);
+      final update = updates
+          .where((u) => u.toolCallId == toolCall.id)
+          .firstOrNull;
+      if (update != null) {
+        return toolCall.copyWith(
+          resultStatus: update.resultStatus,
+          responseRaw: update.responseRaw,
+        );
       }
       return toolCall;
     }).toList();
@@ -243,5 +570,67 @@ class ToolCallingManagerNotifier extends _$ToolCallingManagerNotifier {
         metadata: metadata.copyWith(toolCalls: updatedToolCalls),
       ),
     );
+
+    // Trigger UI refresh for chat messages
+    ref.read(toolUpdateRefreshTriggerProvider.notifier).trigger();
+  }
+
+  // ============================================================
+  // Helper: AI response flow
+  // ============================================================
+
+  /// Checks if all tools are resolved and sends response to AI if so.
+  Future<void> _checkAndRespondToAI(String messageId) async {
+    final message = await ref
+        .read(messageRepositoryProvider)
+        .getMessageById(messageId);
+    if (message == null) return;
+
+    final metadata = message.metadata ?? const MessageMetadataEntity();
+
+    // Check if any tools are still pending
+    final hasPending = metadata.toolCalls.any(
+      (t) => t.isPending && !isToolRunning(t.id),
+    );
+
+    if (!hasPending && !hasRunningToolsForMessage(messageId)) {
+      await _sendAllResponsesToAI(messageId);
+    }
+  }
+
+  /// Sends all tool responses to AI.
+  ///
+  /// Skips sending if any tool has a status that stops the agent loop.
+  Future<void> _sendAllResponsesToAI(String messageId) async {
+    final message = await ref
+        .read(messageRepositoryProvider)
+        .getMessageById(messageId);
+    if (message == null) return;
+
+    final metadata = message.metadata ?? const MessageMetadataEntity();
+
+    // Check if any tool stopped the agent loop
+    final shouldStop = metadata.toolCalls.any(
+      (t) => t.resultStatus?.stopsAgentLoop ?? false,
+    );
+    if (shouldStop) {
+      // Don't send to AI - agent loop is stopped
+      return;
+    }
+
+    // Build responses using getResponseForAI() which uses
+    // responseRaw if available, otherwise resultStatus.toResponseString()
+    final allResponses = metadata.toolCalls
+        .where((t) => t.isResolved)
+        .map((t) => ToolResponseItem(id: t.id, content: t.getResponseForAI()))
+        .toList();
+
+    _sendResponsesToAI(allResponses, messageId);
+  }
+
+  void _sendResponsesToAI(List<ToolResponseItem> responses, String messageId) {
+    ref
+        .read(messagesManagerProvider.notifier)
+        .sendToolsResponse(responses, messageId);
   }
 }

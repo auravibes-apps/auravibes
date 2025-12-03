@@ -96,6 +96,30 @@ abstract class LocaleKeys {
   static const tools_screen_permission_label = 'tools_screen.permission_label';
   static const tools_screen_enabled_label = 'tools_screen.enabled_label';
   static const tools_screen = 'tools_screen';
+  static const tool_confirmation_allow_once = 'tool_confirmation.allow_once';
+  static const tool_confirmation_allow_conversation =
+      'tool_confirmation.allow_conversation';
+  static const tool_confirmation_skip = 'tool_confirmation.skip';
+  static const tool_confirmation_stop_all = 'tool_confirmation.stop_all';
+  static const tool_confirmation = 'tool_confirmation';
+  static const tool_call_status_success = 'tool_call_status.success';
+  static const tool_call_status_skipped_by_user =
+      'tool_call_status.skipped_by_user';
+  static const tool_call_status_stopped_by_user =
+      'tool_call_status.stopped_by_user';
+  static const tool_call_status_tool_not_found =
+      'tool_call_status.tool_not_found';
+  static const tool_call_status_disabled_in_workspace =
+      'tool_call_status.disabled_in_workspace';
+  static const tool_call_status_disabled_in_conversation =
+      'tool_call_status.disabled_in_conversation';
+  static const tool_call_status_not_configured =
+      'tool_call_status.not_configured';
+  static const tool_call_status_execution_error =
+      'tool_call_status.execution_error';
+  static const tool_call_status_running = 'tool_call_status.running';
+  static const tool_call_status_pending = 'tool_call_status.pending';
+  static const tool_call_status = 'tool_call_status';
   static const common_cancel = 'common.cancel';
   static const common_remove = 'common.remove';
   static const common_add = 'common.add';

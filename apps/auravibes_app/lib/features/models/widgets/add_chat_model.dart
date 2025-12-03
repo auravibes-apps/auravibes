@@ -343,7 +343,7 @@ class _SelectModelProvider extends HookConsumerWidget {
                       SizedBox(height: context.auraTheme.spacing.sm),
                       const AuraText(
                         style: AuraTextStyle.bodyLarge,
-                        color: AuraTextColor.onSurfaceVariant,
+                        color: AuraColorVariant.onSurfaceVariant,
                         child: TextLocale(
                           AddModelProviderWidget._noModelsFoundKey,
                         ),

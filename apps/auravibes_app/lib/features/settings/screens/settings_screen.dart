@@ -30,14 +30,14 @@ class SettingsScreen extends ConsumerWidget {
                 children: [
                   const AuraText(
                     style: AuraTextStyle.heading6,
-                    color: AuraTextColor.onSurface,
+                    color: AuraColorVariant.onSurface,
                     child: TextLocale(
                       LocaleKeys.settings_screen_app_settings_title,
                     ),
                   ),
                   const AuraText(
                     style: AuraTextStyle.bodySmall,
-                    color: AuraTextColor.onSurfaceVariant,
+                    color: AuraColorVariant.onSurfaceVariant,
                     child: TextLocale(
                       LocaleKeys.settings_screen_app_settings_subtitle,
                     ),

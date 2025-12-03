@@ -74,6 +74,24 @@
     "permission_label": "Permiso",
     "enabled_label": "Activado"
   },
+  "tool_confirmation": {
+    "allow_once": "Permitir una vez",
+    "allow_conversation": "Permitir en conversación",
+    "skip": "Omitir",
+    "stop_all": "Detener todo"
+  },
+  "tool_call_status": {
+    "success": "Completado",
+    "skipped_by_user": "Omitido",
+    "stopped_by_user": "Detenido",
+    "tool_not_found": "Herramienta no encontrada",
+    "disabled_in_workspace": "Desactivada en espacio de trabajo",
+    "disabled_in_conversation": "Desactivada en conversación",
+    "not_configured": "No configurada",
+    "execution_error": "Error de ejecución",
+    "running": "Ejecutando...",
+    "pending": "Esperando confirmación"
+  },
   "common": {
     "cancel": "Cancelar",
     "remove": "Eliminar",

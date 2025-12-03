@@ -121,7 +121,7 @@ class _ChatTile extends ConsumerWidget {
                     const SizedBox(height: 4),
                     AuraText(
                       style: AuraTextStyle.bodySmall,
-                      color: AuraTextColor.onSurfaceVariant,
+                      color: AuraColorVariant.onSurfaceVariant,
                       child: Text(
                         _formatDate(chat.updatedAt),
                         overflow: TextOverflow.ellipsis,

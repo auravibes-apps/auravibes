@@ -62,13 +62,13 @@ class _EmptyToolsState extends StatelessWidget {
             ),
             const AuraText(
               style: AuraTextStyle.heading6,
-              color: AuraTextColor.onSurfaceVariant,
+              color: AuraColorVariant.onSurfaceVariant,
               textAlign: TextAlign.center,
               child: TextLocale(LocaleKeys.tools_screen_no_tools_added),
             ),
             const AuraText(
               style: AuraTextStyle.bodySmall,
-              color: AuraTextColor.onSurfaceVariant,
+              color: AuraColorVariant.onSurfaceVariant,
               textAlign: TextAlign.center,
               child: TextLocale(LocaleKeys.tools_screen_add_tools_hint),
             ),
@@ -166,8 +166,8 @@ class WorkspaceToolCard extends HookConsumerWidget {
                   ),
                   child: AuraText(
                     color: isEnabled
-                        ? AuraTextColor.onPrimary
-                        : AuraTextColor.onSurfaceVariant,
+                        ? AuraColorVariant.onPrimary
+                        : AuraColorVariant.onSurfaceVariant,
                     child: ToolIconWidget(toolType: toolType),
                   ),
                 ),
@@ -184,7 +184,7 @@ class WorkspaceToolCard extends HookConsumerWidget {
                       ),
                       AuraText(
                         style: AuraTextStyle.bodySmall,
-                        color: AuraTextColor.onPrimary,
+                        color: AuraColorVariant.onPrimary,
                         child: DefaultTextStyle.merge(
                           style: const TextStyle(),
                           maxLines: 2,

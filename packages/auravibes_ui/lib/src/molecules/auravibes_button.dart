@@ -16,6 +16,7 @@ class AuraButton extends StatelessWidget {
     required this.child,
     super.key,
     this.variant = AuraButtonVariant.primary,
+    this.colorVariant,
     this.size = AuraButtonSize.medium,
     this.isLoading = false,
     this.isFullWidth = false,
@@ -42,6 +43,9 @@ class AuraButton extends StatelessWidget {
 
   /// Whether the button is disabled.
   final bool disabled;
+
+  /// The color variant of the button.
+  final AuraColorVariant? colorVariant;
 
   @override
   Widget build(BuildContext context) {
@@ -86,11 +90,13 @@ class AuraButton extends StatelessWidget {
     if (disabled) return colors.outlineVariant;
 
     return switch (variant) {
-      AuraButtonVariant.primary => colors.primary,
+      AuraButtonVariant.primary =>
+        colors.getColor(colorVariant) ?? colors.primary,
       AuraButtonVariant.secondary => colors.secondary,
       AuraButtonVariant.outlined => DesignColors.transparent,
       AuraButtonVariant.ghost => DesignColors.transparent,
-      AuraButtonVariant.elevated => colors.primary,
+      AuraButtonVariant.elevated =>
+        colors.getColor(colorVariant) ?? colors.primary,
     };
   }
 
@@ -100,8 +106,10 @@ class AuraButton extends StatelessWidget {
     return switch (variant) {
       AuraButtonVariant.primary => colors.onPrimary,
       AuraButtonVariant.secondary => colors.onSecondary,
-      AuraButtonVariant.outlined => colors.primary,
-      AuraButtonVariant.ghost => colors.primary,
+      AuraButtonVariant.outlined =>
+        colors.getColor(colorVariant) ?? colors.primary,
+      AuraButtonVariant.ghost =>
+        colors.getColor(colorVariant) ?? colors.primary,
       AuraButtonVariant.elevated => colors.onPrimary,
     };
   }
@@ -112,8 +120,10 @@ class AuraButton extends StatelessWidget {
     return switch (variant) {
       AuraButtonVariant.primary => colors.onPrimary,
       AuraButtonVariant.secondary => colors.onSecondary,
-      AuraButtonVariant.outlined => colors.primary,
-      AuraButtonVariant.ghost => colors.primary,
+      AuraButtonVariant.outlined =>
+        colors.getColor(colorVariant) ?? colors.primary,
+      AuraButtonVariant.ghost =>
+        colors.getColor(colorVariant) ?? colors.primary,
       AuraButtonVariant.elevated => colors.onPrimary,
     };
   }
@@ -129,7 +139,9 @@ class AuraButton extends StatelessWidget {
   Border? _getBorder(AuraColorScheme colors) {
     if (variant == AuraButtonVariant.outlined) {
       return Border.all(
-        color: disabled ? colors.outlineVariant : colors.primary,
+        color: disabled
+            ? colors.outlineVariant
+            : colors.getColor(colorVariant) ?? colors.primary,
       );
     }
     return null;

@@ -132,7 +132,7 @@ final class ChatMessagesProvider
   ChatMessages create() => ChatMessages();
 }
 
-String _$chatMessagesHash() => r'f35648a34b72e1816820bbc67c601af0d0cbb926';
+String _$chatMessagesHash() => r'71b0e2817a082b3c5ebce184da6b57bafe206b58';
 
 abstract class _$ChatMessages extends $AsyncNotifier<List<MessageEntity>> {
   FutureOr<List<MessageEntity>> build();
