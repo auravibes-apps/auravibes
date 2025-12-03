@@ -14,7 +14,7 @@ abstract class ConversationToolEntity with _$ConversationToolEntity {
     /// ID of the conversation this tool setting belongs to
     required String conversationId,
 
-    /// tool identificator (e.g., 'web_search', 'calculator', etc.)
+    /// tool identifier (e.g., 'web_search', 'calculator', etc.)
     required String toolId,
 
     /// Whether the tool is enabled for this conversation
@@ -40,7 +40,7 @@ abstract class ConversationToolEntity with _$ConversationToolEntity {
 abstract class ConversationToolToCreate with _$ConversationToolToCreate {
   /// Creates a new ConversationToolToCreate instance
   const factory ConversationToolToCreate({
-    /// tool identificator (e.g., 'web_search', 'calculator', etc.)
+    /// tool identifier (e.g., 'web_search', 'calculator', etc.)
     required String toolId,
 
     /// Whether the tool should be enabled (defaults to true)
