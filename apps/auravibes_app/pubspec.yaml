@@ -61,6 +61,7 @@ dev_dependencies:
 
   flutter_flavorizr: ^2.4.1
   flutter_launcher_icons: ^0.14.4
+  flutter_riverpod: any
   flutter_test:
     sdk: flutter
   freezed: ^3.2.3
@@ -71,10 +72,6 @@ dev_dependencies:
   riverpod_lint: ^3.0.3
   very_good_analysis: ^10.0.0
 
-# For information on the generic Dart part of this file, see the
-# following page: https://dart.dev/tools/pub/pubspec
-# The following section is specific to Flutter packages.
-  flutter_riverpod: any
 flutter:
   assets:
     - assets/i18n/

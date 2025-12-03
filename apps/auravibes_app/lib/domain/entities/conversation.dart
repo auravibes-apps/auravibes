@@ -128,7 +128,8 @@ abstract class MessageToolCallEntity with _$MessageToolCallEntity {
   /// Whether this tool call has been resolved (success or failure).
   bool get isResolved => resultStatus != null;
 
-  /// Whether this tool call is still pending (waiting for permission or execution).
+  /// Whether this tool call is still pending
+  /// (waiting for permission or execution).
   bool get isPending => resultStatus == null;
 
   /// Gets the response to send to the AI.

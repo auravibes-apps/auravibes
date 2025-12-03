@@ -243,6 +243,7 @@ class _ToolOptionsSection extends StatelessWidget {
   final bool isEnabled;
   final ToolPermissionMode permissionMode;
   final bool hasConfig;
+  // ignore: avoid_positional_boolean_parameters
   final void Function(bool value) onToggle;
   final void Function(ToolPermissionMode?) onPermissionChanged;
   final VoidCallback onRemove;
