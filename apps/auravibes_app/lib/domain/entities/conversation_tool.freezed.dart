@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 mixin _$ConversationToolEntity {
 
 /// ID of the conversation this tool setting belongs to
- String get conversationId;/// tool identificator (e.g., 'web_search', 'calculator', etc.)
+ String get conversationId;/// tool identifier (e.g., 'web_search', 'calculator', etc.)
  String get toolId;/// Whether the tool is enabled for this conversation
  bool get isEnabled;/// Permission mode for this tool (always ask or always allow)
  ToolPermissionMode get permissionMode;/// Timestamp when this setting was created
@@ -222,7 +222,7 @@ class _ConversationToolEntity extends ConversationToolEntity {
 
 /// ID of the conversation this tool setting belongs to
 @override final  String conversationId;
-/// tool identificator (e.g., 'web_search', 'calculator', etc.)
+/// tool identifier (e.g., 'web_search', 'calculator', etc.)
 @override final  String toolId;
 /// Whether the tool is enabled for this conversation
 @override final  bool isEnabled;
@@ -298,7 +298,7 @@ as DateTime,
 /// @nodoc
 mixin _$ConversationToolToCreate {
 
-/// tool identificator (e.g., 'web_search', 'calculator', etc.)
+/// tool identifier (e.g., 'web_search', 'calculator', etc.)
  String get toolId;/// Whether the tool should be enabled (defaults to true)
  bool? get isEnabled;/// Permission mode for this tool (defaults to alwaysAsk)
  ToolPermissionMode? get permissionMode;
@@ -498,7 +498,7 @@ class _ConversationToolToCreate extends ConversationToolToCreate {
   const _ConversationToolToCreate({required this.toolId, this.isEnabled, this.permissionMode}): super._();
   
 
-/// tool identificator (e.g., 'web_search', 'calculator', etc.)
+/// tool identifier (e.g., 'web_search', 'calculator', etc.)
 @override final  String toolId;
 /// Whether the tool should be enabled (defaults to true)
 @override final  bool? isEnabled;
