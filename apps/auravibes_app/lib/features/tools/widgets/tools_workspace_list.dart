@@ -189,7 +189,7 @@ class WorkspaceToolCard extends HookConsumerWidget {
                           style: const TextStyle(),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          child: ToolDescriptionidget(toolType: toolType),
+                          child: ToolDescriptionWidget(toolType: toolType),
                         ),
                       ),
                     ],

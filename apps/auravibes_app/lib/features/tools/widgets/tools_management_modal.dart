@@ -265,7 +265,7 @@ class _ToolTile extends HookConsumerWidget {
                           child: DefaultTextStyle.merge(
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            child: ToolDescriptionidget(
+                            child: ToolDescriptionWidget(
                               toolType: toolState.toolType,
                             ),
                           ),
