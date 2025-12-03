@@ -13,6 +13,7 @@ _MessageToolCallEntity _$MessageToolCallEntityFromJson(
   name: json['name'] as String,
   argumentsRaw: json['argumentsRaw'] as String,
   responseRaw: json['responseRaw'] as String?,
+  resultStatus: _toolCallResultStatusFromJson(json['resultStatus'] as String?),
 );
 
 Map<String, dynamic> _$MessageToolCallEntityToJson(
@@ -22,6 +23,7 @@ Map<String, dynamic> _$MessageToolCallEntityToJson(
   'name': instance.name,
   'argumentsRaw': instance.argumentsRaw,
   'responseRaw': instance.responseRaw,
+  'resultStatus': _toolCallResultStatusToJson(instance.resultStatus),
 };
 
 _MessageMetadataEntity _$MessageMetadataEntityFromJson(

@@ -26,17 +26,17 @@ class AuraText extends StatelessWidget {
   final TextAlign? textAlign;
 
   /// enum color options
-  final AuraTextColor? color;
+  final AuraColorVariant? color;
 
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
     final textStyle = _getTextStyle(
       auraColors,
-    ).copyWith(color: _getColor(context));
+    ).copyWith(color: context.auraColors.getColor(color));
 
     final iconData = IconThemeData(
-      color: _getColor(context),
+      color: context.auraColors.getColor(color),
       size: textStyle.fontSize,
     );
 
@@ -156,18 +156,6 @@ class AuraText extends StatelessWidget {
       ),
     };
   }
-
-  Color? _getColor(BuildContext context) {
-    final auraColors = context.auraColors;
-    return switch (color) {
-      null => auraColors.onSurface,
-      AuraTextColor.primary => auraColors.primary,
-      AuraTextColor.onSurface => auraColors.onSurface,
-      AuraTextColor.error => auraColors.error,
-      AuraTextColor.onSurfaceVariant => auraColors.onSurfaceVariant,
-      AuraTextColor.onPrimary => auraColors.onSurfaceVariant,
-    };
-  }
 }
 
 /// The style variant for [AuraText].
@@ -210,22 +198,4 @@ enum AuraTextStyle {
 
   /// Code text (14px, monospace).
   code,
-}
-
-/// Options for colors
-enum AuraTextColor {
-  /// primary
-  primary,
-
-  /// on surface option
-  onSurface,
-
-  /// on surface variant option
-  onSurfaceVariant,
-
-  /// error option
-  error,
-
-  /// on primary option
-  onPrimary,
 }

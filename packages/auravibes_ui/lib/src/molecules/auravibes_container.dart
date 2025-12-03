@@ -91,7 +91,7 @@ class AuraContainer extends StatelessWidget {
     if (margin != null) {
       container = AuraPadding(
         padding: margin!,
-        child: child,
+        child: container,
       );
     }
 

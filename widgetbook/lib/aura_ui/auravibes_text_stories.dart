@@ -14,7 +14,7 @@ Widget textStylesUseCase(BuildContext context) {
     ),
     color: context.knobs.objectOrNull.dropdown(
       label: 'Color',
-      options: AuraTextColor.values,
+      options: AuraColorVariant.values,
       labelBuilder: (value) => value.name,
       initialOption: null,
     ),

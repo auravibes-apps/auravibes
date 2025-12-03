@@ -30,7 +30,7 @@ class HomeScreen extends ConsumerWidget {
                   ),
                   AuraText(
                     style: AuraTextStyle.bodyLarge,
-                    color: AuraTextColor.onSurfaceVariant,
+                    color: AuraColorVariant.onSurfaceVariant,
                     child: TextLocale(
                       LocaleKeys.home_screen_welcome_subtitle,
                     ),

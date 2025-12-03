@@ -1,4 +1,6 @@
 import 'package:auravibes_app/domain/entities/conversation_tool.dart';
+import 'package:auravibes_app/domain/entities/workspace_tool.dart';
+import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
 
 /// Repository interface for conversation tool data operations.
 ///
@@ -29,63 +31,76 @@ abstract class ConversationToolsRepository {
   /// Retrieves a specific conversation tool setting.
   ///
   /// [conversationId] The ID of the conversation.
-  /// [toolType] The type of tool to retrieve.
+  /// [toolId] The type of tool to retrieve.
   /// Returns the conversation tool setting, or null if not found.
   /// Throws [ConversationToolsException] if there's an error
   /// retrieving the tool.
   Future<ConversationToolEntity?> getConversationTool(
     String conversationId,
-    String toolType,
+    String toolId,
   );
 
   /// Enables or disables a tool for a conversation.
   ///
   /// [conversationId] The ID of the conversation.
-  /// [toolType] The type of tool to toggle.
+  /// [toolId] The type of tool to toggle.
   /// [isEnabled] Whether the tool should be enabled.
   /// Returns true if the operation was successful, false if the
   ///  tool was not found.
   /// Throws [ConversationToolsException] if there's an error updating the tool.
   Future<bool> setConversationToolEnabled(
     String conversationId,
-    String toolType, {
+    String toolId, {
     required bool isEnabled,
   });
 
   Future<void> setConversationToolsDisabled(
     String conversationId,
-    List<String> toolTypes,
+    List<String> toolIds,
   );
+
+  /// Sets the permission mode for a conversation tool.
+  ///
+  /// [conversationId] The ID of the conversation.
+  /// [toolId] The type of tool to update.
+  /// [permissionMode] The permission mode to set.
+  /// Returns true if the operation was successful.
+  /// Throws [ConversationToolsException] if there's an error updating the tool.
+  Future<bool> setConversationToolPermission(
+    String conversationId,
+    String toolId, {
+    required ToolPermissionMode permissionMode,
+  });
 
   /// Toggles the enabled status of a conversation tool.
   ///
   /// [conversationId] The ID of the conversation.
-  /// [toolType] The type of tool to toggle.
+  /// [toolId] The type of tool to toggle.
   /// Returns true if the operation was successful, false if the
   /// tool was not found.
   /// Throws [ConversationToolsException] if there's an error toggling the tool.
-  Future<bool> toggleConversationTool(String conversationId, String toolType);
+  Future<bool> toggleConversationTool(String conversationId, String toolId);
 
   /// Checks if a specific tool is enabled for a conversation.
   ///
   /// [conversationId] The ID of the conversation.
-  /// [toolType] The type of tool to check.
+  /// [toolId] The type of tool to check.
   /// Returns true if the tool is enabled, false otherwise.
   /// Throws [ConversationToolsException] if there's an error
   /// checking the tool status.
   Future<bool> isConversationToolEnabled(
     String conversationId,
-    String toolType,
+    String toolId,
   );
 
   /// Removes a tool setting for a conversation.
   ///
   /// [conversationId] The ID of the conversation.
-  /// [toolType] The type of tool to remove.
+  /// [toolId] The type of tool to remove.
   /// Returns true if the operation was successful, false
   /// if the tool was not found.
   /// Throws [ConversationToolsException] if there's an error removing the tool.
-  Future<bool> removeConversationTool(String conversationId, String toolType);
+  Future<bool> removeConversationTool(String conversationId, String toolId);
 
   /// Gets the total count of tools configured for a conversation.
   ///
@@ -115,14 +130,14 @@ abstract class ConversationToolsRepository {
   /// Validates a conversation tool setting before creation or update.
   ///
   /// [conversationId] The ID of the conversation (for validation).
-  /// [toolType] The type of tool to validate.
+  /// [toolId] The type of tool to validate.
   /// [isEnabled] Whether the tool should be enabled.
   /// Returns true if the tool setting is valid.
   /// Throws [ConversationToolsValidationException] if
   /// the tool setting is invalid.
   Future<bool> validateConversationToolSetting(
     String conversationId,
-    String toolType, {
+    String toolId, {
     required bool isEnabled,
   });
 
@@ -133,14 +148,14 @@ abstract class ConversationToolsRepository {
   /// both conversation-level overrides and workspace-level settings.
   /// [conversationId] The ID of the conversation.
   /// [workspaceId] The ID of the workspace the conversation belongs to.
-  /// [toolType] The type of tool to check.
+  /// [toolId] The type of tool to check.
   /// Returns true if the tool is available for the conversation.
   /// Throws [ConversationToolsException] if there's an
   /// error checking tool availability.
   Future<bool> isToolAvailableForConversation(
     String conversationId,
     String workspaceId,
-    String toolType,
+    String toolId,
   );
 
   /// Gets all available tools for a conversation.
@@ -158,6 +173,27 @@ abstract class ConversationToolsRepository {
     String conversationId,
     String workspaceId,
   );
+
+  /// Checks the permission for a specific tool in a conversation context.
+  ///
+  /// This method implements the permission logic:
+  /// 1. Tool must exist and be enabled in workspace (isEnabled = true)
+  /// 2. Conversation rules take priority over workspace rules
+  /// 3. Conversation can restrict (disable/ask) but cannot enable a disabled
+  ///    workspace tool
+  ///
+  /// [conversationId] The ID of the conversation.
+  /// [workspaceId] The ID of the workspace the conversation belongs to.
+  /// [toolId] The identifier of the tool to check.
+  /// Returns [ToolPermissionResult] indicating whether the tool can be
+  /// executed, needs confirmation, or should be skipped.
+  /// Throws [ConversationToolsException] if there's an error checking
+  /// permissions.
+  Future<ToolPermissionResult> checkToolPermission({
+    required String conversationId,
+    required String workspaceId,
+    required String toolId,
+  });
 }
 
 /// Base exception for conversation tools-related operations.
@@ -189,11 +225,11 @@ class ConversationToolNotFoundException extends ConversationToolsException {
   /// Creates a new ConversationToolNotFoundException
   const ConversationToolNotFoundException(
     this.conversationId,
-    this.toolType, [
+    this.toolId, [
     Exception? cause,
   ]) : super(
          '''
-Conversation tool "$toolType" not found in conversation "$conversationId"
+Conversation tool "$toolId" not found in conversation "$conversationId"
 ''',
          cause,
        );
@@ -202,5 +238,5 @@ Conversation tool "$toolType" not found in conversation "$conversationId"
   final String conversationId;
 
   /// Type of the tool that was not found
-  final String toolType;
+  final String toolId;
 }

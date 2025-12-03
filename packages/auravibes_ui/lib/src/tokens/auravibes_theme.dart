@@ -330,6 +330,19 @@ class AuraColorScheme {
       inversePrimary: Color.lerp(inversePrimary, other.inversePrimary, t)!,
     );
   }
+
+  /// Get color by variant
+  Color? getColor(AuraColorVariant? variant) {
+    return switch (variant) {
+      null => null,
+      AuraColorVariant.primary => primary,
+      AuraColorVariant.onSurface => onSurface,
+      AuraColorVariant.error => error,
+      AuraColorVariant.onSurfaceVariant => onSurfaceVariant,
+      AuraColorVariant.onPrimary => onPrimary,
+      AuraColorVariant.secondary => secondary,
+    };
+  }
 }
 
 /// Typography theme that maintains consistency across themes.

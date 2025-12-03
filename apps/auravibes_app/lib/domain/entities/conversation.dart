@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:auravibes_app/domain/enums/message_types.dart';
+import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/utils/encode.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -100,7 +101,20 @@ abstract class MessageToolCallEntity with _$MessageToolCallEntity {
     required String id,
     required String name,
     required String argumentsRaw,
+
+    /// The raw response from tool execution, if successful.
     String? responseRaw,
+
+    /// The result status of this tool call.
+    ///
+    /// - null: Tool is pending or currently running
+    /// - non-null: Tool has completed with this result status
+    // ignore: invalid_annotation_target
+    @JsonKey(
+      fromJson: _toolCallResultStatusFromJson,
+      toJson: _toolCallResultStatusToJson,
+    )
+    ToolCallResultStatus? resultStatus,
   }) = _MessageToolCallEntity;
   const MessageToolCallEntity._();
 
@@ -110,6 +124,29 @@ abstract class MessageToolCallEntity with _$MessageToolCallEntity {
   Map<String, dynamic> get arguments {
     return safeJsonDecode(argumentsRaw) ?? {};
   }
+
+  /// Whether this tool call has been resolved (success or failure).
+  bool get isResolved => resultStatus != null;
+
+  /// Whether this tool call is still pending
+  /// (waiting for permission or execution).
+  bool get isPending => resultStatus == null;
+
+  /// Gets the response to send to the AI.
+  ///
+  /// Returns [responseRaw] if available, otherwise falls back to
+  /// the result status's response string.
+  String getResponseForAI() {
+    return responseRaw ?? resultStatus?.toResponseString() ?? '';
+  }
+}
+
+ToolCallResultStatus? _toolCallResultStatusFromJson(String? json) {
+  return const ToolCallResultStatusConverter().fromJson(json);
+}
+
+String? _toolCallResultStatusToJson(ToolCallResultStatus? status) {
+  return const ToolCallResultStatusConverter().toJson(status);
 }
 
 @freezed

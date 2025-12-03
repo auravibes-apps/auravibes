@@ -1,25 +1,26 @@
 import 'package:auravibes_app/data/repositories/conversation_tools_repository_impl.dart';
+import 'package:auravibes_app/domain/entities/workspace_tool.dart';
 import 'package:auravibes_app/domain/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
-import 'package:auravibes_app/services/tools/tool_service.dart';
 import 'package:auravibes_app/services/tools/user_tools_entity.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+part 'conversation_tools_provider.freezed.dart';
 part 'conversation_tools_provider.g.dart';
 
-/// Combined state for workspace tools with their conversation-specific
-/// toggle states
-class ConversationToolsState {
-  // toolType -> isEnabled for conversation
+/// State for a single tool in a conversation context
+@freezed
+abstract class ConversationToolState with _$ConversationToolState {
+  const factory ConversationToolState({
+    required UserToolType toolType,
+    required bool isEnabled,
+    required ToolPermissionMode permissionMode,
 
-  const ConversationToolsState({required this.toolStates});
-  final Map<UserToolType, bool> toolStates;
-
-  /// Get the enabled state for a specific tool
-  bool isToolEnabled(UserToolType toolType) {
-    return toolStates[toolType] ?? true; // Default to enabled for new chats
-  }
+    /// Whether this tool is enabled at the workspace level
+    required bool isWorkspaceEnabled,
+  }) = _ConversationToolState;
 }
 
 @riverpod
@@ -29,6 +30,9 @@ ConversationToolsRepository conversationToolsRepository(Ref ref) {
   return ConversationToolsRepositoryImpl(appDatabase, workspaceToolsRepository);
 }
 
+/// Provider for managing conversation tool settings
+///
+/// Returns a list of all workspace tools with their conversation-level states.
 @riverpod
 class ConversationToolsNotifier extends _$ConversationToolsNotifier {
   late final ConversationToolsRepository _repository = ref.read(
@@ -36,43 +40,56 @@ class ConversationToolsNotifier extends _$ConversationToolsNotifier {
   );
 
   @override
-  Future<Map<UserToolType, bool>> build({
+  Future<List<ConversationToolState>> build({
     required String workspaceId,
     String? conversationId,
   }) async {
-    final repository = ref.watch(conversationToolsRepositoryProvider);
-
     final workspaceToolsRepository = ref.watch(
       workspaceToolsRepositoryProvider,
     );
 
-    final workspaceTools = await workspaceToolsRepository
-        .getEnabledWorkspaceTools(workspaceId);
-
-    // Get available tool types from service
-    final availableToolTypes = ToolService.getTypes();
-
-    final workspaceEnabeldTools = availableToolTypes.where(
-      (toolType) =>
-          workspaceTools.any((element) => element.type == toolType.value),
+    // Get ALL workspace tools (not just enabled ones)
+    final workspaceTools = await workspaceToolsRepository.getWorkspaceTools(
+      workspaceId,
     );
 
-    final toolStates = {
-      for (final typeTool in workspaceEnabeldTools) typeTool: true,
-    };
+    // Build initial tool states from workspace tools
+    final toolStates = workspaceTools
+        .map(
+          (workspaceTool) {
+            final toolType = UserToolType.fromValue(workspaceTool.toolId);
+            if (toolType == null) return null;
 
+            return ConversationToolState(
+              toolType: toolType,
+              // Default: enabled if workspace has it enabled
+              isEnabled: workspaceTool.isEnabled,
+              // Default: inherit workspace permission
+              permissionMode: workspaceTool.permissionMode,
+              isWorkspaceEnabled: workspaceTool.isEnabled,
+            );
+          },
+        )
+        .nonNulls
+        .toList();
+
+    // If we have a conversation, get conversation-level overrides
     if (conversationId != null && conversationId.isNotEmpty) {
-      // Get conversation tool overrides
-      final conversationTools = await repository.getConversationTools(
+      final conversationTools = await _repository.getConversationTools(
         conversationId,
       );
-      final disabledTools = conversationTools
-          .map((e) => UserToolType.fromValue(e.type))
-          .nonNulls;
 
-      toolStates.addAll({
-        for (final typeTool in disabledTools) typeTool: false,
-      });
+      for (final tool in conversationTools) {
+        final index = toolStates.indexWhere(
+          (t) => t.toolType.value == tool.toolId,
+        );
+        if (index != -1) {
+          toolStates[index] = toolStates[index].copyWith(
+            isEnabled: tool.isEnabled,
+            permissionMode: tool.permissionMode,
+          );
+        }
+      }
     }
 
     return toolStates;
@@ -83,11 +100,11 @@ class ConversationToolsNotifier extends _$ConversationToolsNotifier {
     final currentState = state.value;
     if (currentState == null) return false;
 
-    if (currentState.containsKey(UserToolType.fromValue(toolType))) {
-      final newEnabledState = currentState[UserToolType.fromValue(toolType)]!;
-      return setToolEnabled(toolType, isEnabled: newEnabledState);
-    }
-    return false;
+    final index = currentState.indexWhere((t) => t.toolType.value == toolType);
+    if (index == -1) return false;
+
+    final currentToolState = currentState[index];
+    return setToolEnabled(toolType, isEnabled: !currentToolState.isEnabled);
   }
 
   /// Enable or disable a conversation tool
@@ -96,7 +113,7 @@ class ConversationToolsNotifier extends _$ConversationToolsNotifier {
     required bool isEnabled,
   }) async {
     var success = true;
-    if (conversationId != null) {
+    if (conversationId != null && conversationId!.isNotEmpty) {
       success = await _repository.setConversationToolEnabled(
         conversationId!,
         toolType,
@@ -104,49 +121,58 @@ class ConversationToolsNotifier extends _$ConversationToolsNotifier {
       );
     }
     if (success && state.value != null) {
-      state = AsyncData(
-        state.value!.map((key, value) {
-          if (key.value == toolType) {
-            return MapEntry(key, isEnabled);
-          }
-          return MapEntry(key, value);
-        }),
-      );
+      final currentList = state.value!;
+      final index = currentList.indexWhere((t) => t.toolType.value == toolType);
+      if (index != -1) {
+        final updatedList = List<ConversationToolState>.from(currentList);
+        updatedList[index] = currentList[index].copyWith(isEnabled: isEnabled);
+        state = AsyncData(updatedList);
+      }
     }
     return success;
   }
-}
 
-@riverpod
-class AvailableConversationToolsNotifier
-    extends _$AvailableConversationToolsNotifier {
-  late ConversationToolsRepository _repository;
-  late String _conversationId;
-  late String _workspaceId;
-
-  @override
-  Future<List<String>> build((String, String) ids) async {
-    _repository = ref.read(conversationToolsRepositoryProvider);
-    _conversationId = ids.$1;
-    _workspaceId = ids.$2;
-    return _getAvailableTools();
-  }
-
-  Future<List<String>> _getAvailableTools() async {
-    return _repository.getAvailableToolsForConversation(
-      _conversationId,
-      _workspaceId,
-    );
-  }
-
-  /// Refresh the available tools list
-  Future<void> refresh() async {
-    state = const AsyncValue.loading();
-    try {
-      state = AsyncValue.data(await _getAvailableTools());
-    } on Exception catch (e, stack) {
-      state = AsyncValue.error(e, stack);
+  /// Set the permission mode for a conversation tool
+  Future<bool> setToolPermission(
+    String toolType, {
+    required ToolPermissionMode permissionMode,
+  }) async {
+    var success = true;
+    if (conversationId != null && conversationId!.isNotEmpty) {
+      success = await _repository.setConversationToolPermission(
+        conversationId!,
+        toolType,
+        permissionMode: permissionMode,
+      );
     }
+    if (success && state.value != null) {
+      final currentList = state.value!;
+      final index = currentList.indexWhere((t) => t.toolType.value == toolType);
+      if (index != -1) {
+        final updatedList = List<ConversationToolState>.from(currentList);
+        updatedList[index] = currentList[index].copyWith(
+          permissionMode: permissionMode,
+        );
+        state = AsyncData(updatedList);
+      }
+    }
+    return success;
+  }
+
+  /// Get the current enabled tools as a list of UserToolType
+  List<UserToolType> getEnabledTools() {
+    final currentState = state.value;
+    if (currentState == null) return [];
+
+    return currentState
+        .where((tool) => tool.isEnabled)
+        .map((tool) => tool.toolType)
+        .toList();
+  }
+
+  /// Get the current tool states list
+  List<ConversationToolState> getToolStates() {
+    return state.value ?? [];
   }
 }
 
@@ -155,21 +181,21 @@ class AvailableConversationToolsNotifier
 @riverpod
 class ContextAwareToolsNotifier extends _$ContextAwareToolsNotifier {
   late ConversationToolsRepository _repository;
-  late String _conversationId;
-  late String _workspaceId;
 
   @override
-  Future<List<String>> build((String, String) ids) async {
+  Future<List<String>> build({
+    required String conversationId,
+    required String workspaceId,
+  }) async {
     _repository = ref.read(conversationToolsRepositoryProvider);
-    _conversationId = ids.$1;
-    _workspaceId = ids.$2;
+
     return _getContextAwareTools();
   }
 
   Future<List<String>> _getContextAwareTools() async {
     return _repository.getAvailableToolsForConversation(
-      _conversationId,
-      _workspaceId,
+      conversationId,
+      workspaceId,
     );
   }
 
@@ -178,8 +204,8 @@ class ContextAwareToolsNotifier extends _$ContextAwareToolsNotifier {
     state = const AsyncValue.loading();
     try {
       state = AsyncValue.data(await _getContextAwareTools());
-    } on Exception catch (e, stack) {
-      state = AsyncValue.error(e, stack);
+    } on Exception catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
     }
   }
 }

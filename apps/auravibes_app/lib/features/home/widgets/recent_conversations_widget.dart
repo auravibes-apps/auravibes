@@ -39,7 +39,7 @@ class RecentConversationsWidget extends ConsumerWidget {
       AsyncLoading() => const Center(child: AuraSpinner()),
       AsyncError(error: final error, stackTrace: _) => Center(
         child: AuraText(
-          color: AuraTextColor.error,
+          color: AuraColorVariant.error,
           child: TextLocale(
             LocaleKeys
                 .home_screen_conversation_states_error_loading_conversations,
@@ -69,7 +69,7 @@ class RecentConversationsWidget extends ConsumerWidget {
             ),
             const AuraText(
               style: AuraTextStyle.bodySmall,
-              color: AuraTextColor.onSurfaceVariant,
+              color: AuraColorVariant.onSurfaceVariant,
               child: TextLocale(
                 LocaleKeys
                     .home_screen_conversation_states_start_first_conversation,
@@ -143,7 +143,7 @@ class _RecentChatTile extends ConsumerWidget {
                       ),
                       AuraText(
                         style: AuraTextStyle.bodySmall,
-                        color: AuraTextColor.onSurfaceVariant,
+                        color: AuraColorVariant.onSurfaceVariant,
                         child: Text(
                           _formatDate(chat.updatedAt),
                           overflow: TextOverflow.ellipsis,

@@ -15,12 +15,84 @@ Map<String, dynamic> _$ToolResponseItemToJson(_ToolResponseItem instance) =>
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// A trigger that increments whenever tool call results are updated.
+///
+/// UI components can watch this to know when to refresh message data
+/// after tool calls are resolved (stopped, skipped, or completed).
+
+@ProviderFor(ToolUpdateRefreshTrigger)
+const toolUpdateRefreshTriggerProvider = ToolUpdateRefreshTriggerProvider._();
+
+/// A trigger that increments whenever tool call results are updated.
+///
+/// UI components can watch this to know when to refresh message data
+/// after tool calls are resolved (stopped, skipped, or completed).
+final class ToolUpdateRefreshTriggerProvider
+    extends $NotifierProvider<ToolUpdateRefreshTrigger, int> {
+  /// A trigger that increments whenever tool call results are updated.
+  ///
+  /// UI components can watch this to know when to refresh message data
+  /// after tool calls are resolved (stopped, skipped, or completed).
+  const ToolUpdateRefreshTriggerProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'toolUpdateRefreshTriggerProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$toolUpdateRefreshTriggerHash();
+
+  @$internal
+  @override
+  ToolUpdateRefreshTrigger create() => ToolUpdateRefreshTrigger();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(int value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<int>(value),
+    );
+  }
+}
+
+String _$toolUpdateRefreshTriggerHash() =>
+    r'b63c1f5a0dad6e6479dd962d649e67c4874d9945';
+
+/// A trigger that increments whenever tool call results are updated.
+///
+/// UI components can watch this to know when to refresh message data
+/// after tool calls are resolved (stopped, skipped, or completed).
+
+abstract class _$ToolUpdateRefreshTrigger extends $Notifier<int> {
+  int build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final created = build();
+    final ref = this.ref as $Ref<int, int>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<int, int>,
+              int,
+              Object?,
+              Object?
+            >;
+    element.handleValue(ref, created);
+  }
+}
 
 @ProviderFor(ToolCallingManagerNotifier)
 const toolCallingManagerProvider = ToolCallingManagerNotifierProvider._();
 
 final class ToolCallingManagerNotifierProvider
-    extends $NotifierProvider<ToolCallingManagerNotifier, List<ToolExecution>> {
+    extends
+        $NotifierProvider<ToolCallingManagerNotifier, List<TrackedToolCall>> {
   const ToolCallingManagerNotifierProvider._()
     : super(
         from: null,
@@ -40,30 +112,30 @@ final class ToolCallingManagerNotifierProvider
   ToolCallingManagerNotifier create() => ToolCallingManagerNotifier();
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(List<ToolExecution> value) {
+  Override overrideWithValue(List<TrackedToolCall> value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<List<ToolExecution>>(value),
+      providerOverride: $SyncValueProvider<List<TrackedToolCall>>(value),
     );
   }
 }
 
 String _$toolCallingManagerNotifierHash() =>
-    r'4332e7dc3ba23e77cefc84d42e88f423c380d489';
+    r'4db168b044ce40951b8db33201c14944c3894691';
 
 abstract class _$ToolCallingManagerNotifier
-    extends $Notifier<List<ToolExecution>> {
-  List<ToolExecution> build();
+    extends $Notifier<List<TrackedToolCall>> {
+  List<TrackedToolCall> build();
   @$mustCallSuper
   @override
   void runBuild() {
     final created = build();
-    final ref = this.ref as $Ref<List<ToolExecution>, List<ToolExecution>>;
+    final ref = this.ref as $Ref<List<TrackedToolCall>, List<TrackedToolCall>>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<List<ToolExecution>, List<ToolExecution>>,
-              List<ToolExecution>,
+              AnyNotifier<List<TrackedToolCall>, List<TrackedToolCall>>,
+              List<TrackedToolCall>,
               Object?,
               Object?
             >;

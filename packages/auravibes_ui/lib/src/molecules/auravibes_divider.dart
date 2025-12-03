@@ -142,7 +142,7 @@ class AuraDivider extends StatelessWidget {
             ),
             child: AuraText(
               style: AuraTextStyle.caption,
-              color: AuraTextColor.onSurfaceVariant,
+              color: AuraColorVariant.onSurfaceVariant,
               child: label!,
             ),
           ),

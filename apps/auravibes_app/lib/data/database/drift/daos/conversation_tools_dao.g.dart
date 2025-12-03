@@ -12,6 +12,8 @@ mixin _$ConversationToolsDaoMixin on DatabaseAccessor<AppDatabase> {
   $CredentialModelsTable get credentialModels =>
       attachedDatabase.credentialModels;
   $ConversationsTable get conversations => attachedDatabase.conversations;
-  $ConversationDisabledToolsTable get conversationDisabledTools =>
-      attachedDatabase.conversationDisabledTools;
+  $ToolsGroupsTable get toolsGroups => attachedDatabase.toolsGroups;
+  $ToolsTable get tools => attachedDatabase.tools;
+  $ConversationToolsTable get conversationTools =>
+      attachedDatabase.conversationTools;
 }

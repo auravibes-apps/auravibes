@@ -494,7 +494,10 @@ class MessagesManagerNotifier extends _$MessagesManagerNotifier {
     // Get conversation tools
     final workspaceId = conversation?.workspaceId ?? '';
     final contextAwareTools = await ref.read(
-      contextAwareToolsProvider((conversationId, workspaceId)).future,
+      contextAwareToolsProvider(
+        conversationId: conversationId,
+        workspaceId: workspaceId,
+      ).future,
     );
 
     // Convert tool strings to UserToolType and get enabled tools
@@ -531,7 +534,10 @@ class MessagesManagerNotifier extends _$MessagesManagerNotifier {
     // Get conversation tools
     final workspaceId = conversation.workspaceId;
     final contextAwareTools = await ref.read(
-      contextAwareToolsProvider((conversation.id, workspaceId)).future,
+      contextAwareToolsProvider(
+        conversationId: message.conversationId,
+        workspaceId: workspaceId,
+      ).future,
     );
 
     // Convert tool strings to UserToolType and get enabled tools

@@ -153,7 +153,7 @@ class _AuraSidebarWrapperState extends State<AuraSidebarWrapper>
       child: Center(
         child: AuraText(
           style: AuraTextStyle.heading5,
-          color: AuraTextColor.onPrimary,
+          color: AuraColorVariant.onPrimary,
           child: Text(isDrawer ? 'AURA' : (_isExpanded ? 'AURA' : 'T')),
         ),
       ),
@@ -178,8 +178,8 @@ class _AuraSidebarWrapperState extends State<AuraSidebarWrapper>
           ? AuraText(
               style: AuraTextStyle.bodySmall,
               color: isActive
-                  ? AuraTextColor.onPrimary
-                  : AuraTextColor.onSurface,
+                  ? AuraColorVariant.onPrimary
+                  : AuraColorVariant.onSurface,
               child: const Text('Settings'),
             )
           : const SizedBox.shrink(),

@@ -567,3 +567,24 @@ enum AuraSpacing {
   /// 3x extra large spacing
   xl3,
 }
+
+/// Options for colors
+enum AuraColorVariant {
+  /// primary
+  primary,
+
+  /// on surface option
+  onSurface,
+
+  /// on surface variant option
+  onSurfaceVariant,
+
+  /// error option
+  error,
+
+  /// on primary option
+  onPrimary,
+
+  /// secondary option
+  secondary,
+}

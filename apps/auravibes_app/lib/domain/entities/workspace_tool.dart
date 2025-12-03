@@ -2,6 +2,15 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'workspace_tool.freezed.dart';
 
+/// Permission mode for tool execution
+enum ToolPermissionMode {
+  /// Always ask user for permission before executing
+  alwaysAsk,
+
+  /// Always allow tool execution without asking
+  alwaysAllow,
+}
+
 /// Entity representing a tool setting for a specific workspace.
 ///
 /// This represents user preferences for tools at the workspace level,
@@ -10,14 +19,20 @@ part 'workspace_tool.freezed.dart';
 abstract class WorkspaceToolEntity with _$WorkspaceToolEntity {
   /// Creates a new WorkspaceTool instance
   const factory WorkspaceToolEntity({
+    /// Unique ID of this tool record in the database
+    required String id,
+
     /// ID of the workspace this tool setting belongs to
     required String workspaceId,
 
-    /// Type of tool (e.g., 'web_search', 'calculator', etc.)
-    required String type,
+    /// Tool identifier (e.g., 'web_search', 'calculator', etc.)
+    required String toolId,
 
     /// Whether the tool is enabled for this workspace
     required bool isEnabled,
+
+    /// Permission mode for this tool (always ask or always allow)
+    required ToolPermissionMode permissionMode,
 
     /// Timestamp when this setting was created
     required DateTime createdAt,
@@ -42,8 +57,8 @@ abstract class WorkspaceToolEntity with _$WorkspaceToolEntity {
 abstract class WorkspaceToolToCreate with _$WorkspaceToolToCreate {
   /// Creates a new WorkspaceToolToCreate instance
   const factory WorkspaceToolToCreate({
-    /// Type of tool (e.g., 'web_search', 'calculator', etc.)
-    required String type,
+    /// Tool identifier (e.g., 'web_search', 'calculator', etc.)
+    required String toolId,
 
     /// Tool configuration as JSON (optional)
     String? config,
@@ -54,11 +69,11 @@ abstract class WorkspaceToolToCreate with _$WorkspaceToolToCreate {
   const WorkspaceToolToCreate._();
 
   /// Returns true if the tool type is valid
-  bool get hasValidType => type.isNotEmpty;
+  bool get hasValidToolId => toolId.isNotEmpty;
 
   /// Returns the default enabled status (true if not specified)
   bool get defaultEnabled => isEnabled ?? true;
 
   /// Returns true if the tool configuration is valid
-  bool get hasValidConfig => hasValidType;
+  bool get hasValidConfig => hasValidToolId;
 }

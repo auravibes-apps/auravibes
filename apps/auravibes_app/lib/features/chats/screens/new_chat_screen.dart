@@ -19,7 +19,7 @@ class NewChatScreen extends HookConsumerWidget {
       selectedWorkspaceProvider.select((data) => data.value?.id),
     );
 
-    final toolsMap = ref.watch(
+    final toolsList = ref.watch(
       conversationToolsProvider(
         workspaceId: workspaceId ?? '',
       ),
@@ -58,10 +58,11 @@ class NewChatScreen extends HookConsumerWidget {
           throw Exception('no model id value');
         }
 
+        // Get enabled tools from the list
         final tools =
-            toolsMap.value?.entries
-                .where((element) => element.value)
-                .map((e) => e.key)
+            toolsList.value
+                ?.where((tool) => tool.isEnabled)
+                .map((tool) => tool.toolType)
                 .toList() ??
             [];
 

@@ -1,4 +1,5 @@
 import 'package:auravibes_app/features/tools/providers/workspace_tools_provider.dart';
+import 'package:auravibes_app/features/tools/widgets/add_tool_modal.dart';
 import 'package:auravibes_app/features/tools/widgets/tool_count_enabled.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_workspace_list.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -28,71 +29,87 @@ class ToolsScreen extends ConsumerWidget {
           ),
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: AuraColumn(
-          children: [
-            // Header section
-            AuraCard(
-              child: AuraColumn(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                spacing: AuraSpacing.sm,
-                children: [
-                  const AuraRow(
+      child: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: AuraColumn(
+              children: [
+                // Header section
+                AuraCard(
+                  child: AuraColumn(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: AuraSpacing.sm,
                     children: [
-                      AuraText(
-                        style: AuraTextStyle.heading3,
-                        color: AuraTextColor.primary,
-                        child: Icon(Icons.build_circle_outlined),
-                      ),
-                      AuraText(
-                        style: AuraTextStyle.heading4,
-                        child: TextLocale(
-                          LocaleKeys.tools_screen_workspace_ai_tools,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const AuraText(
-                    color: AuraTextColor.onSurfaceVariant,
-                    child: TextLocale(
-                      LocaleKeys.tools_screen_enable_configure_description,
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.green[100],
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.check_circle,
-                              size: 16,
-                              color: Colors.green[700],
+                      const AuraRow(
+                        children: [
+                          AuraText(
+                            style: AuraTextStyle.heading3,
+                            color: AuraColorVariant.primary,
+                            child: Icon(Icons.build_circle_outlined),
+                          ),
+                          AuraText(
+                            style: AuraTextStyle.heading4,
+                            child: TextLocale(
+                              LocaleKeys.tools_screen_workspace_ai_tools,
                             ),
-                            const SizedBox(width: 4),
-                            const ToolCountEnabledWidget(),
-                          ],
+                          ),
+                        ],
+                      ),
+                      const AuraText(
+                        color: AuraColorVariant.onSurfaceVariant,
+                        child: TextLocale(
+                          LocaleKeys.tools_screen_enable_configure_description,
                         ),
+                      ),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.green[100],
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.check_circle,
+                                  size: 16,
+                                  color: Colors.green[700],
+                                ),
+                                const SizedBox(width: 4),
+                                const ToolCountEnabledWidget(),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
+                ),
+
+                // Tools list
+                const Expanded(child: ToolsWorkspaceListWidget()),
+              ],
+            ),
+          ),
+          // Floating Action Button
+          Positioned(
+            right: context.auraTheme.spacing.md,
+            bottom: context.auraTheme.spacing.md,
+            child: AuraFloatingActionButton(
+              icon: Icons.add,
+              onPressed: () => AddToolModal.show(context),
+              tooltip: LocaleKeys.tools_screen_add_tool_tooltip.tr(
+                context: context,
               ),
             ),
-
-            // Tools list
-            const Expanded(child: ToolsWorkspaceListWidget()),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

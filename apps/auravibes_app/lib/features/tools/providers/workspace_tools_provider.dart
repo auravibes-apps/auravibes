@@ -37,12 +37,24 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
 
     final workspaceTools = await _repository.getWorkspaceTools(_workspaceId);
 
-    return ToolService.getTypes().map((toolType) {
-      final workspaceTool = workspaceTools.firstWhereOrNull(
-        (wt) => wt.type == toolType.value,
-      );
-      return (toolType, workspaceTool);
-    }).toList();
+    // Only return tools that have been explicitly added to the workspace
+    return workspaceTools
+        .map((wt) {
+          final toolType = UserToolType.fromValue(wt.toolId);
+          return toolType != null ? (toolType, wt) : null;
+        })
+        .whereType<WorkspaceTool>()
+        .toList();
+  }
+
+  /// Add a new tool to the workspace
+  Future<void> addTool(UserToolType toolType) async {
+    await _repository.setWorkspaceToolEnabled(
+      _workspaceId,
+      toolType.value,
+      isEnabled: true,
+    );
+    ref.invalidateSelf();
   }
 
   void _replaceTools(List<WorkspaceToolEntity> workspaceTools) {
@@ -50,7 +62,7 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
       state = AsyncData(
         value.map((wt) {
           final workspaceTool = workspaceTools.firstWhereOrNull(
-            (element) => element.type == wt.$1.value,
+            (element) => element.toolId == wt.$1.value,
           );
           if (workspaceTool != null) {
             return (wt.$1, workspaceTool);
@@ -64,12 +76,7 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
   void _removeTools(List<UserToolType> toolTypes) {
     if (state case AsyncData(:final value)) {
       state = AsyncData(
-        value.map((wt) {
-          if (toolTypes.contains(wt.$1)) {
-            return (wt.$1, null);
-          }
-          return wt;
-        }).toList(),
+        value.where((wt) => !toolTypes.contains(wt.$1)).toList(),
       );
     }
   }
@@ -98,15 +105,38 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
     _replaceTools(success);
   }
 
-  /// Remove a workspace tool
-  Future<bool> removeTool(UserToolType toolType) async {
-    final success = await _repository.removeWorkspaceTool(
-      _workspaceId,
-      toolType.value,
-    );
-    _removeTools([toolType]);
+  /// Remove a workspace tool by its database ID
+  Future<bool> removeToolById(String id, UserToolType toolType) async {
+    final success = await _repository.removeWorkspaceToolById(id);
+    if (success) {
+      _removeTools([toolType]);
+    }
     return success;
   }
+
+  /// Set the permission mode for a workspace tool
+  Future<void> setToolPermissionMode(
+    String id, {
+    required ToolPermissionMode permissionMode,
+  }) async {
+    final newTool = await _repository.setToolPermissionMode(
+      id,
+      permissionMode: permissionMode,
+    );
+    _replaceTools([newTool]);
+  }
+}
+
+/// Provider that returns the list of available tools
+/// that can be added to the workspace
+@riverpod
+Future<List<UserToolType>> availableToolsToAdd(Ref ref) async {
+  final workspaceTools = await ref.watch(workspaceToolsProvider.future);
+  final addedToolTypes = workspaceTools.map((wt) => wt.$1).toSet();
+
+  return ToolService.getTypes()
+      .where((UserToolType type) => !addedToolTypes.contains(type))
+      .toList();
 }
 
 @Riverpod(dependencies: [workspaceToolIndexNotifier])

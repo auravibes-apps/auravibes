@@ -289,7 +289,7 @@
     }
   },
   "lsp": {
-    "dart": {
+    "custom-dart": {
       "disabled": false,
       "command": [
         "fvm",

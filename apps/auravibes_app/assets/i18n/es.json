@@ -58,7 +58,47 @@
       "zero": "No hay herramientas activadas",
       "other":"{} activadas"
     },
-    "configured": "Configurado"
+    "configured": "Configurado",
+    "add_tool_title": "Agregar Herramienta",
+    "add_tool_tooltip": "Agregar una nueva herramienta",
+    "search_tools": "Buscar herramientas...",
+    "no_tools_added": "No hay herramientas agregadas",
+    "add_tools_hint": "Toca el botón + para agregar herramientas a este espacio de trabajo",
+    "all_tools_added": "Todas las herramientas disponibles han sido agregadas",
+    "no_tools_found": "Ninguna herramienta coincide con tu búsqueda",
+    "remove_tool_title": "Eliminar Herramienta",
+    "remove_tool_confirm": "¿Estás seguro de que deseas eliminar esta herramienta del espacio de trabajo?",
+    "remove_tool_tooltip": "Eliminar herramienta",
+    "permission_always_ask": "Siempre Preguntar",
+    "permission_always_allow": "Siempre Permitir",
+    "permission_label": "Permiso",
+    "enabled_label": "Activado"
+  },
+  "tool_confirmation": {
+    "allow_once": "Permitir una vez",
+    "allow_conversation": "Permitir en conversación",
+    "skip": "Omitir",
+    "stop_all": "Detener todo"
+  },
+  "tool_call_status": {
+    "success": "Completado",
+    "skipped_by_user": "Omitido",
+    "stopped_by_user": "Detenido",
+    "tool_not_found": "Herramienta no encontrada",
+    "disabled_in_workspace": "Desactivada en espacio de trabajo",
+    "disabled_in_conversation": "Desactivada en conversación",
+    "not_configured": "No configurada",
+    "execution_error": "Error de ejecución",
+    "running": "Ejecutando...",
+    "pending": "Esperando confirmación"
+  },
+  "common": {
+    "cancel": "Cancelar",
+    "remove": "Eliminar",
+    "add": "Agregar",
+    "save": "Guardar",
+    "delete": "Borrar",
+    "confirm": "Confirmar"
   },
   "tools_names": {
     "calculator": {

@@ -60,7 +60,7 @@ class _ModelStatus extends ConsumerWidget {
           const AuraSpinner(size: AuraSpinnerSize.small),
           AuraText(
             style: AuraTextStyle.bodySmall,
-            color: AuraTextColor.onSurfaceVariant,
+            color: AuraColorVariant.onSurfaceVariant,
             child: Text(LocaleKeys.status_bar_loading_models.tr()),
           ),
         ],

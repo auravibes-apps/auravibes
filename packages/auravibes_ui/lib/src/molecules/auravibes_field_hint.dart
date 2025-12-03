@@ -1,4 +1,4 @@
-import 'package:auravibes_ui/src/atoms/auravibes_text.dart';
+import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 
 /// A customizable field hint component following the Aura design system.
@@ -40,8 +40,8 @@ class AuraFieldHint extends StatelessWidget {
 
     final isError = error != null;
     final color = isError
-        ? AuraTextColor.error
-        : AuraTextColor.onSurfaceVariant;
+        ? AuraColorVariant.error
+        : AuraColorVariant.onSurfaceVariant;
     final textStyle = isError
         ? (errorStyle ?? AuraTextStyle.caption)
         : (style ?? AuraTextStyle.caption);

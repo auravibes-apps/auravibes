@@ -90,6 +90,14 @@ abstract class WorkspaceToolsRepository {
   /// Throws [WorkspaceToolsException] if there's an error removing the tool.
   Future<bool> removeWorkspaceTool(String workspaceId, String toolType);
 
+  /// Removes a tool setting by its unique database ID.
+  ///
+  /// [id] The unique ID of the tool record in the database.
+  /// Returns true if the operation was successful, false if the
+  /// tool was not found.
+  /// Throws [WorkspaceToolsException] if there's an error removing the tool.
+  Future<bool> removeWorkspaceToolById(String id);
+
   /// Gets the total count of tools configured for a workspace.
   ///
   /// [workspaceId] The ID of the workspace.
@@ -129,6 +137,17 @@ abstract class WorkspaceToolsRepository {
     String toolType, {
     required bool isEnabled,
     String? config,
+  });
+
+  /// Sets the permission mode for a workspace tool.
+  ///
+  /// [id] The unique ID of the tool record in the database.
+  /// [permissionMode] The permission mode to set.
+  /// Returns the updated workspace tool entity.
+  /// Throws [WorkspaceToolsException] if there's an error updating the tool.
+  Future<WorkspaceToolEntity> setToolPermissionMode(
+    String id, {
+    required ToolPermissionMode permissionMode,
   });
 }
 

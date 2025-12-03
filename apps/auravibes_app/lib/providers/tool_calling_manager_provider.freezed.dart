@@ -549,40 +549,44 @@ as String,
 }
 
 /// @nodoc
-mixin _$ToolExecution {
+mixin _$TrackedToolCall {
 
- String get id;
-/// Create a copy of ToolExecution
+/// The unique ID of the tool call
+ String get id;/// The name/type of the tool
+ String get toolName;/// The message ID this tool call belongs to
+ String get messageId;/// Whether this tool is currently running
+ bool get isRunning;
+/// Create a copy of TrackedToolCall
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
-$ToolExecutionCopyWith<ToolExecution> get copyWith => _$ToolExecutionCopyWithImpl<ToolExecution>(this as ToolExecution, _$identity);
+$TrackedToolCallCopyWith<TrackedToolCall> get copyWith => _$TrackedToolCallCopyWithImpl<TrackedToolCall>(this as TrackedToolCall, _$identity);
 
 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ToolExecution&&(identical(other.id, id) || other.id == id));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TrackedToolCall&&(identical(other.id, id) || other.id == id)&&(identical(other.toolName, toolName) || other.toolName == toolName)&&(identical(other.messageId, messageId) || other.messageId == messageId)&&(identical(other.isRunning, isRunning) || other.isRunning == isRunning));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id);
+int get hashCode => Object.hash(runtimeType,id,toolName,messageId,isRunning);
 
 @override
 String toString() {
-  return 'ToolExecution(id: $id)';
+  return 'TrackedToolCall(id: $id, toolName: $toolName, messageId: $messageId, isRunning: $isRunning)';
 }
 
 
 }
 
 /// @nodoc
-abstract mixin class $ToolExecutionCopyWith<$Res>  {
-  factory $ToolExecutionCopyWith(ToolExecution value, $Res Function(ToolExecution) _then) = _$ToolExecutionCopyWithImpl;
+abstract mixin class $TrackedToolCallCopyWith<$Res>  {
+  factory $TrackedToolCallCopyWith(TrackedToolCall value, $Res Function(TrackedToolCall) _then) = _$TrackedToolCallCopyWithImpl;
 @useResult
 $Res call({
- String id
+ String id, String toolName, String messageId, bool isRunning
 });
 
 
@@ -590,27 +594,30 @@ $Res call({
 
 }
 /// @nodoc
-class _$ToolExecutionCopyWithImpl<$Res>
-    implements $ToolExecutionCopyWith<$Res> {
-  _$ToolExecutionCopyWithImpl(this._self, this._then);
+class _$TrackedToolCallCopyWithImpl<$Res>
+    implements $TrackedToolCallCopyWith<$Res> {
+  _$TrackedToolCallCopyWithImpl(this._self, this._then);
 
-  final ToolExecution _self;
-  final $Res Function(ToolExecution) _then;
+  final TrackedToolCall _self;
+  final $Res Function(TrackedToolCall) _then;
 
-/// Create a copy of ToolExecution
+/// Create a copy of TrackedToolCall
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? toolName = null,Object? messageId = null,Object? isRunning = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
-as String,
+as String,toolName: null == toolName ? _self.toolName : toolName // ignore: cast_nullable_to_non_nullable
+as String,messageId: null == messageId ? _self.messageId : messageId // ignore: cast_nullable_to_non_nullable
+as String,isRunning: null == isRunning ? _self.isRunning : isRunning // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 
 }
 
 
-/// Adds pattern-matching-related methods to [ToolExecution].
-extension ToolExecutionPatterns on ToolExecution {
+/// Adds pattern-matching-related methods to [TrackedToolCall].
+extension TrackedToolCallPatterns on TrackedToolCall {
 /// A variant of `map` that fallback to returning `orElse`.
 ///
 /// It is equivalent to doing:
@@ -623,10 +630,10 @@ extension ToolExecutionPatterns on ToolExecution {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _ToolExecution value)?  $default,{required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _TrackedToolCall value)?  $default,{required TResult orElse(),}){
 final _that = this;
 switch (_that) {
-case _ToolExecution() when $default != null:
+case _TrackedToolCall() when $default != null:
 return $default(_that);case _:
   return orElse();
 
@@ -645,10 +652,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _ToolExecution value)  $default,){
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _TrackedToolCall value)  $default,){
 final _that = this;
 switch (_that) {
-case _ToolExecution():
+case _TrackedToolCall():
 return $default(_that);case _:
   throw StateError('Unexpected subclass');
 
@@ -666,10 +673,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _ToolExecution value)?  $default,){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _TrackedToolCall value)?  $default,){
 final _that = this;
 switch (_that) {
-case _ToolExecution() when $default != null:
+case _TrackedToolCall() when $default != null:
 return $default(_that);case _:
   return null;
 
@@ -687,10 +694,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String toolName,  String messageId,  bool isRunning)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
-case _ToolExecution() when $default != null:
-return $default(_that.id);case _:
+case _TrackedToolCall() when $default != null:
+return $default(_that.id,_that.toolName,_that.messageId,_that.isRunning);case _:
   return orElse();
 
 }
@@ -708,10 +715,10 @@ return $default(_that.id);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String toolName,  String messageId,  bool isRunning)  $default,) {final _that = this;
 switch (_that) {
-case _ToolExecution():
-return $default(_that.id);case _:
+case _TrackedToolCall():
+return $default(_that.id,_that.toolName,_that.messageId,_that.isRunning);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -728,10 +735,10 @@ return $default(_that.id);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String toolName,  String messageId,  bool isRunning)?  $default,) {final _that = this;
 switch (_that) {
-case _ToolExecution() when $default != null:
-return $default(_that.id);case _:
+case _TrackedToolCall() when $default != null:
+return $default(_that.id,_that.toolName,_that.messageId,_that.isRunning);case _:
   return null;
 
 }
@@ -742,43 +749,50 @@ return $default(_that.id);case _:
 /// @nodoc
 
 
-class _ToolExecution implements ToolExecution {
-  const _ToolExecution({required this.id});
+class _TrackedToolCall implements TrackedToolCall {
+  const _TrackedToolCall({required this.id, required this.toolName, required this.messageId, required this.isRunning});
   
 
+/// The unique ID of the tool call
 @override final  String id;
+/// The name/type of the tool
+@override final  String toolName;
+/// The message ID this tool call belongs to
+@override final  String messageId;
+/// Whether this tool is currently running
+@override final  bool isRunning;
 
-/// Create a copy of ToolExecution
+/// Create a copy of TrackedToolCall
 /// with the given fields replaced by the non-null parameter values.
 @override @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
-_$ToolExecutionCopyWith<_ToolExecution> get copyWith => __$ToolExecutionCopyWithImpl<_ToolExecution>(this, _$identity);
+_$TrackedToolCallCopyWith<_TrackedToolCall> get copyWith => __$TrackedToolCallCopyWithImpl<_TrackedToolCall>(this, _$identity);
 
 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ToolExecution&&(identical(other.id, id) || other.id == id));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _TrackedToolCall&&(identical(other.id, id) || other.id == id)&&(identical(other.toolName, toolName) || other.toolName == toolName)&&(identical(other.messageId, messageId) || other.messageId == messageId)&&(identical(other.isRunning, isRunning) || other.isRunning == isRunning));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id);
+int get hashCode => Object.hash(runtimeType,id,toolName,messageId,isRunning);
 
 @override
 String toString() {
-  return 'ToolExecution(id: $id)';
+  return 'TrackedToolCall(id: $id, toolName: $toolName, messageId: $messageId, isRunning: $isRunning)';
 }
 
 
 }
 
 /// @nodoc
-abstract mixin class _$ToolExecutionCopyWith<$Res> implements $ToolExecutionCopyWith<$Res> {
-  factory _$ToolExecutionCopyWith(_ToolExecution value, $Res Function(_ToolExecution) _then) = __$ToolExecutionCopyWithImpl;
+abstract mixin class _$TrackedToolCallCopyWith<$Res> implements $TrackedToolCallCopyWith<$Res> {
+  factory _$TrackedToolCallCopyWith(_TrackedToolCall value, $Res Function(_TrackedToolCall) _then) = __$TrackedToolCallCopyWithImpl;
 @override @useResult
 $Res call({
- String id
+ String id, String toolName, String messageId, bool isRunning
 });
 
 
@@ -786,19 +800,22 @@ $Res call({
 
 }
 /// @nodoc
-class __$ToolExecutionCopyWithImpl<$Res>
-    implements _$ToolExecutionCopyWith<$Res> {
-  __$ToolExecutionCopyWithImpl(this._self, this._then);
+class __$TrackedToolCallCopyWithImpl<$Res>
+    implements _$TrackedToolCallCopyWith<$Res> {
+  __$TrackedToolCallCopyWithImpl(this._self, this._then);
 
-  final _ToolExecution _self;
-  final $Res Function(_ToolExecution) _then;
+  final _TrackedToolCall _self;
+  final $Res Function(_TrackedToolCall) _then;
 
-/// Create a copy of ToolExecution
+/// Create a copy of TrackedToolCall
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,}) {
-  return _then(_ToolExecution(
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? toolName = null,Object? messageId = null,Object? isRunning = null,}) {
+  return _then(_TrackedToolCall(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
-as String,
+as String,toolName: null == toolName ? _self.toolName : toolName // ignore: cast_nullable_to_non_nullable
+as String,messageId: null == messageId ? _self.messageId : messageId // ignore: cast_nullable_to_non_nullable
+as String,isRunning: null == isRunning ? _self.isRunning : isRunning // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 

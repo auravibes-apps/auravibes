@@ -1,3 +1,4 @@
+import 'package:auravibes_app/domain/entities/workspace_tool.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'conversation_tool.freezed.dart';
@@ -13,11 +14,14 @@ abstract class ConversationToolEntity with _$ConversationToolEntity {
     /// ID of the conversation this tool setting belongs to
     required String conversationId,
 
-    /// Type of tool (e.g., 'web_search', 'calculator', etc.)
-    required String type,
+    /// tool identifier (e.g., 'web_search', 'calculator', etc.)
+    required String toolId,
 
     /// Whether the tool is enabled for this conversation
     required bool isEnabled,
+
+    /// Permission mode for this tool (always ask or always allow)
+    required ToolPermissionMode permissionMode,
 
     /// Timestamp when this setting was created
     required DateTime createdAt,
@@ -36,17 +40,24 @@ abstract class ConversationToolEntity with _$ConversationToolEntity {
 abstract class ConversationToolToCreate with _$ConversationToolToCreate {
   /// Creates a new ConversationToolToCreate instance
   const factory ConversationToolToCreate({
-    /// Type of tool (e.g., 'web_search', 'calculator', etc.)
-    required String type,
+    /// tool identifier (e.g., 'web_search', 'calculator', etc.)
+    required String toolId,
 
     /// Whether the tool should be enabled (defaults to true)
     bool? isEnabled,
+
+    /// Permission mode for this tool (defaults to alwaysAsk)
+    ToolPermissionMode? permissionMode,
   }) = _ConversationToolToCreate;
   const ConversationToolToCreate._();
 
   /// Returns true if the tool type is valid
-  bool get hasValidType => type.isNotEmpty;
+  bool get hasValidToolId => toolId.isNotEmpty;
 
   /// Returns the default enabled status (true if not specified)
   bool get defaultEnabled => isEnabled ?? true;
+
+  /// Returns the default permission mode (alwaysAsk if not specified)
+  ToolPermissionMode get defaultPermissionMode =>
+      permissionMode ?? ToolPermissionMode.alwaysAsk;
 }

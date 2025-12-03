@@ -113,7 +113,7 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
     if (widget.value == null) {
       if (widget.placeholder != null) {
         return AuraText(
-          color: AuraTextColor.onSurfaceVariant,
+          color: AuraColorVariant.onSurfaceVariant,
           child: widget.placeholder!,
         );
       }
