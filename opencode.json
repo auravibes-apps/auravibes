@@ -361,10 +361,10 @@
         "git+https://github.com/oraios/serena",
         "serena",
         "start-mcp-server",
-        "--context",
-        "ide-assistant",
-        "--project",
-        "$(pwd)"
+        "--enable-web-dashboard", "false",
+        "--enable-gui-log-window", "false",
+        "--context", "ide-assistant",
+        "--project", "auravibes"
       ]
     }
   }
