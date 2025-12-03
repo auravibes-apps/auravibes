@@ -19,6 +19,8 @@ import 'package:widgetbook_workspace/aura_ui/auravibes_avatar_stories.dart'
     as _widgetbook_workspace_aura_ui_auravibes_avatar_stories;
 import 'package:widgetbook_workspace/aura_ui/auravibes_badge_stories.dart'
     as _widgetbook_workspace_aura_ui_auravibes_badge_stories;
+import 'package:widgetbook_workspace/aura_ui/auravibes_button_group_stories.dart'
+    as _widgetbook_workspace_aura_ui_auravibes_button_group_stories;
 import 'package:widgetbook_workspace/aura_ui/auravibes_button_stories.dart'
     as _widgetbook_workspace_aura_ui_auravibes_button_stories;
 import 'package:widgetbook_workspace/aura_ui/auravibes_card_stories.dart'
@@ -45,6 +47,8 @@ import 'package:widgetbook_workspace/aura_ui/auravibes_screen_stories.dart'
     as _widgetbook_workspace_aura_ui_auravibes_screen_stories;
 import 'package:widgetbook_workspace/aura_ui/auravibes_spinner_stories.dart'
     as _widgetbook_workspace_aura_ui_auravibes_spinner_stories;
+import 'package:widgetbook_workspace/aura_ui/auravibes_switch_stories.dart'
+    as _widgetbook_workspace_aura_ui_auravibes_switch_stories;
 import 'package:widgetbook_workspace/aura_ui/auravibes_tab_item_stories.dart'
     as _widgetbook_workspace_aura_ui_auravibes_tab_item_stories;
 import 'package:widgetbook_workspace/aura_ui/auravibes_text_stories.dart'
@@ -317,6 +321,29 @@ final directories = <_widgetbook.WidgetbookNode>[
         ],
       ),
       _widgetbook.WidgetbookComponent(
+        name: 'AuraButtonGroup',
+        useCases: [
+          _widgetbook.WidgetbookUseCase(
+            name: 'Action (Clickable)',
+            builder:
+                _widgetbook_workspace_aura_ui_auravibes_button_group_stories
+                    .buttonGroupActionUseCase,
+          ),
+          _widgetbook.WidgetbookUseCase(
+            name: 'Multi Selection (Toggle)',
+            builder:
+                _widgetbook_workspace_aura_ui_auravibes_button_group_stories
+                    .buttonGroupMultiUseCase,
+          ),
+          _widgetbook.WidgetbookUseCase(
+            name: 'Single Selection (Radio)',
+            builder:
+                _widgetbook_workspace_aura_ui_auravibes_button_group_stories
+                    .buttonGroupSingleUseCase,
+          ),
+        ],
+      ),
+      _widgetbook.WidgetbookComponent(
         name: 'AuraInput',
         useCases: [
           _widgetbook.WidgetbookUseCase(
@@ -334,6 +361,16 @@ final directories = <_widgetbook.WidgetbookNode>[
             builder:
                 _widgetbook_workspace_aura_ui_auravibes_navigation_item_stories
                     .activeNavigationItemUseCase,
+          ),
+        ],
+      ),
+      _widgetbook.WidgetbookComponent(
+        name: 'AuraSwitch',
+        useCases: [
+          _widgetbook.WidgetbookUseCase(
+            name: 'Default',
+            builder: _widgetbook_workspace_aura_ui_auravibes_switch_stories
+                .auraSwitchUseCase,
           ),
         ],
       ),
