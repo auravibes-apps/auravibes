@@ -12,9 +12,11 @@
 
 // Export all organism components here
 export 'auravibes_app_bar_action.dart';
+export 'auravibes_button_group.dart';
 export 'auravibes_dropdown_selector.dart';
 export 'auravibes_field_wrapper.dart';
 export 'auravibes_input.dart';
 export 'auravibes_navigation_item.dart';
 export 'auravibes_sidebar.dart';
+export 'auravibes_switch.dart';
 export 'auravibes_tab_item.dart';
