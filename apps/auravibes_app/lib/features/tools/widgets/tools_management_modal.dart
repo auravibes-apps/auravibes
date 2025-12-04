@@ -333,26 +333,20 @@ class _PermissionSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SegmentedButton<ToolPermissionMode>(
-      segments: const [
-        ButtonSegment(
+    return AuraButtonGroup<ToolPermissionMode>.single(
+      items: const [
+        AuraButtonGroupItem(
           value: ToolPermissionMode.alwaysAsk,
-          label: TextLocale(LocaleKeys.tools_screen_permission_always_ask),
+          child: TextLocale(LocaleKeys.tools_screen_permission_always_ask),
         ),
-        ButtonSegment(
+        AuraButtonGroupItem(
           value: ToolPermissionMode.alwaysAllow,
-          label: TextLocale(LocaleKeys.tools_screen_permission_always_allow),
+          child: TextLocale(LocaleKeys.tools_screen_permission_always_allow),
         ),
       ],
-      selected: {value},
-      onSelectionChanged: (selected) {
-        if (selected.isNotEmpty) {
-          onChanged(selected.first);
-        }
-      },
-      style: const ButtonStyle(
-        visualDensity: VisualDensity.compact,
-      ),
+      selectedValue: value,
+      onChanged: onChanged,
+      size: AuraButtonGroupSize.sm,
     );
   }
 }
