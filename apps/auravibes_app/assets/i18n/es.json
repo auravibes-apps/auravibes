@@ -159,5 +159,62 @@
     "actions": {
       "cancel": "Cancelar"
     }
+  },
+  "mcp_modal": {
+    "title": "Agregar Servidor MCP",
+    "add_mcp_tooltip": "Agregar Servidor MCP",
+    "transport": {
+      "sse": "SSE",
+      "streamable_http": "HTTP Streamable"
+    },
+    "auth": {
+      "none": "Ninguna",
+      "oauth": "OAuth",
+      "bearer_token": "Token Bearer"
+    },
+    "oauth_section_title": "Configuración OAuth",
+    "bearer_section_title": "Token Bearer",
+    "fields": {
+      "name": {
+        "label": "Nombre",
+        "placeholder": "Mi Servidor MCP"
+      },
+      "description": {
+        "label": "Descripción (opcional)",
+        "placeholder": "¿Qué proporciona este servidor?"
+      },
+      "url": {
+        "label": "URL del Servidor",
+        "placeholder": "https://mcp.ejemplo.com",
+        "hint": "La URL del endpoint del servidor MCP"
+      },
+      "transport": {
+        "label": "Transporte"
+      },
+      "authentication": {
+        "label": "Autenticación"
+      },
+      "use_http2": {
+        "label": "Usar HTTP/2",
+        "hint": "Habilitar protocolo HTTP/2 para mejor rendimiento"
+      },
+      "client_id": {
+        "label": "ID de Cliente",
+        "placeholder": "tu-client-id"
+      },
+      "token_endpoint": {
+        "label": "Endpoint de Token",
+        "placeholder": "https://auth.ejemplo.com/oauth/token"
+      },
+      "auth_endpoint": {
+        "label": "Endpoint de Autorización",
+        "placeholder": "https://auth.ejemplo.com/oauth/authorize"
+      },
+      "bearer_token": {
+        "label": "Token Bearer",
+        "placeholder": "Ingresa tu token bearer",
+        "hint": "Este token se almacenará de forma segura"
+      }
+    }
   }
 }

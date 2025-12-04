@@ -159,5 +159,62 @@
     "actions": {
       "cancel": "Cancel"
     }
+  },
+  "mcp_modal": {
+    "title": "Add MCP Server",
+    "add_mcp_tooltip": "Add MCP Server",
+    "transport": {
+      "sse": "SSE",
+      "streamable_http": "Streamable HTTP"
+    },
+    "auth": {
+      "none": "None",
+      "oauth": "OAuth",
+      "bearer_token": "Bearer Token"
+    },
+    "oauth_section_title": "OAuth Configuration",
+    "bearer_section_title": "Bearer Token",
+    "fields": {
+      "name": {
+        "label": "Name",
+        "placeholder": "My MCP Server"
+      },
+      "description": {
+        "label": "Description (optional)",
+        "placeholder": "What does this server provide?"
+      },
+      "url": {
+        "label": "Server URL",
+        "placeholder": "https://mcp.example.com",
+        "hint": "The MCP server endpoint URL"
+      },
+      "transport": {
+        "label": "Transport"
+      },
+      "authentication": {
+        "label": "Authentication"
+      },
+      "use_http2": {
+        "label": "Use HTTP/2",
+        "hint": "Enable HTTP/2 protocol for better performance"
+      },
+      "client_id": {
+        "label": "Client ID",
+        "placeholder": "your-client-id"
+      },
+      "token_endpoint": {
+        "label": "Token Endpoint",
+        "placeholder": "https://auth.example.com/oauth/token"
+      },
+      "auth_endpoint": {
+        "label": "Authorization Endpoint",
+        "placeholder": "https://auth.example.com/oauth/authorize"
+      },
+      "bearer_token": {
+        "label": "Bearer Token",
+        "placeholder": "Enter your bearer token",
+        "hint": "This token will be stored securely"
+      }
+    }
   }
 }
