@@ -18,6 +18,11 @@ class AuraSwitch extends StatelessWidget {
     this.isLoading = false,
   });
 
+  /// The padding between the track edge and the thumb.
+  /// This creates the visual gap that makes the thumb appear to float
+  /// inside the track, consistent across all sizes.
+  static const double _thumbPadding = 2;
+
   /// Whether the switch is on or off.
   final bool value;
 
@@ -131,9 +136,7 @@ class AuraSwitch extends StatelessWidget {
     };
   }
 
-  double _getThumbPadding() {
-    return 2;
-  }
+  double _getThumbPadding() => _thumbPadding;
 
   Color _getTrackColor(AuraColorScheme colors) {
     if (disabled) {
@@ -142,12 +145,7 @@ class AuraSwitch extends StatelessWidget {
     return value ? colors.primary : colors.outline;
   }
 
-  Color _getThumbColor(AuraColorScheme colors) {
-    if (disabled) {
-      return colors.surface;
-    }
-    return colors.surface;
-  }
+  Color _getThumbColor(AuraColorScheme colors) => colors.surface;
 }
 
 /// The size of an [AuraSwitch].
