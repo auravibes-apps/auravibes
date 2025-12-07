@@ -555,6 +555,23 @@ class MockConversationToolsRepository extends _i1.Mock
           as _i4.Future<List<String>>);
 
   @override
+  _i4.Future<List<_i9.WorkspaceToolEntity>>
+  getAvailableToolEntitiesForConversation(
+    String? conversationId,
+    String? workspaceId,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#getAvailableToolEntitiesForConversation, [
+              conversationId,
+              workspaceId,
+            ]),
+            returnValue: _i4.Future<List<_i9.WorkspaceToolEntity>>.value(
+              <_i9.WorkspaceToolEntity>[],
+            ),
+          )
+          as _i4.Future<List<_i9.WorkspaceToolEntity>>);
+
+  @override
   _i4.Future<_i10.ToolPermissionResult> checkToolPermission({
     required String? conversationId,
     required String? workspaceId,

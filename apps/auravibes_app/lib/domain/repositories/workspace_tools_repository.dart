@@ -48,6 +48,22 @@ abstract class WorkspaceToolsRepository {
     required bool isEnabled,
   });
 
+  Future<WorkspaceToolEntity?> getWorkspaceToolByToolName({
+    required String toolGroupId,
+    required String toolName,
+  });
+
+  /// Enables or disables a tool by its unique database ID.
+  ///
+  /// [id] The unique ID of the tool record in the database.
+  /// [isEnabled] Whether the tool should be enabled.
+  /// Returns the updated workspace tool entity.
+  /// Throws [WorkspaceToolsException] if there's an error updating the tool.
+  Future<WorkspaceToolEntity> setToolEnabledById(
+    String id, {
+    required bool isEnabled,
+  });
+
   /// Updates the configuration for a workspace tool.
   ///
   /// [workspaceId] The ID of the workspace.

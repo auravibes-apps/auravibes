@@ -186,16 +186,6 @@ class ConversationToolsDao extends DatabaseAccessor<AppDatabase>
     String toolId,
   ) => getConversationTool(conversationId, toolId);
 
-  Future<ConversationToolsTable> disableConversationTool(
-    String conversationId,
-    String toolId,
-  ) => upsertConversationTool(
-    conversationId,
-    toolId,
-    isEnabled: false,
-    permission: PermissionAccess.ask,
-  );
-
   Future<void> disableConversationTools(
     String conversationId,
     List<String> toolIds,

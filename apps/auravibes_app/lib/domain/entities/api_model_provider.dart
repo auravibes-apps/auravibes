@@ -52,6 +52,8 @@ abstract class ApiModelProviderEntity with _$ApiModelProviderEntity {
     switch (npm) {
       case '@ai-sdk/openai-compatible':
         return ModelProvidersType.openai;
+      case '@ai-sdk/anthropic':
+        return ModelProvidersType.anthropic;
     }
     return null;
   }

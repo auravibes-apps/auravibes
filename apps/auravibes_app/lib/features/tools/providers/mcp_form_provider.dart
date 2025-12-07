@@ -1,4 +1,5 @@
 import 'package:auravibes_app/domain/entities/mcp_server.dart';
+import 'package:auravibes_app/providers/mcp_manager_provider.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -170,6 +171,11 @@ class McpFormNotifier extends _$McpFormNotifier {
   }
 
   /// Submit the form
+  ///
+  /// Validates the form and submits to the MCP manager to:
+  /// 1. Save the MCP server to the database (TODO)
+  /// 2. Connect to the MCP server
+  /// 3. Load and register the MCP's tools
   Future<bool> submit() async {
     if (!state.isValid) {
       setError(state.validationErrors.join('\n'));
@@ -180,12 +186,8 @@ class McpFormNotifier extends _$McpFormNotifier {
     clearError();
 
     try {
-      // TODO: Implement actual MCP connection and saving to database
-      // final mcpToCreate = state.toCreateEntity();
-      // await ref.read(mcpServersProvider.notifier).addMcpServer(mcpToCreate);
-
-      // Simulate success for now
-      await Future<void>.delayed(const Duration(milliseconds: 500));
+      final mcpToCreate = state.toCreateEntity();
+      await ref.read(mcpManagerProvider.notifier).addMcpServer(mcpToCreate);
 
       setSubmitting(value: false);
       return true;

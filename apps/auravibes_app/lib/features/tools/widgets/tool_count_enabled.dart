@@ -15,8 +15,7 @@ class ToolCountEnabledWidget extends ConsumerWidget {
     final countAsync = ref.watch(
       workspaceToolsProvider.select(
         (asyncValue) => asyncValue.whenData(
-          (value) =>
-              value.where((e) => e.$2?.isAvailable ?? false).nonNulls.length,
+          (value) => value.where((e) => e.isAvailable).nonNulls.length,
         ),
       ),
     );

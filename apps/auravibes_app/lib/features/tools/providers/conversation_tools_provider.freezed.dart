@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ConversationToolState {
 
- UserToolType get toolType; bool get isEnabled; ToolPermissionMode get permissionMode;/// Whether this tool is enabled at the workspace level
+ WorkspaceToolEntity get tool; bool get isEnabled; ToolPermissionMode get permissionMode;/// Whether this tool is enabled at the workspace level
  bool get isWorkspaceEnabled;
 /// Create a copy of ConversationToolState
 /// with the given fields replaced by the non-null parameter values.
@@ -26,16 +26,16 @@ $ConversationToolStateCopyWith<ConversationToolState> get copyWith => _$Conversa
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationToolState&&(identical(other.toolType, toolType) || other.toolType == toolType)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.permissionMode, permissionMode) || other.permissionMode == permissionMode)&&(identical(other.isWorkspaceEnabled, isWorkspaceEnabled) || other.isWorkspaceEnabled == isWorkspaceEnabled));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationToolState&&(identical(other.tool, tool) || other.tool == tool)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.permissionMode, permissionMode) || other.permissionMode == permissionMode)&&(identical(other.isWorkspaceEnabled, isWorkspaceEnabled) || other.isWorkspaceEnabled == isWorkspaceEnabled));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,toolType,isEnabled,permissionMode,isWorkspaceEnabled);
+int get hashCode => Object.hash(runtimeType,tool,isEnabled,permissionMode,isWorkspaceEnabled);
 
 @override
 String toString() {
-  return 'ConversationToolState(toolType: $toolType, isEnabled: $isEnabled, permissionMode: $permissionMode, isWorkspaceEnabled: $isWorkspaceEnabled)';
+  return 'ConversationToolState(tool: $tool, isEnabled: $isEnabled, permissionMode: $permissionMode, isWorkspaceEnabled: $isWorkspaceEnabled)';
 }
 
 
@@ -46,11 +46,11 @@ abstract mixin class $ConversationToolStateCopyWith<$Res>  {
   factory $ConversationToolStateCopyWith(ConversationToolState value, $Res Function(ConversationToolState) _then) = _$ConversationToolStateCopyWithImpl;
 @useResult
 $Res call({
- UserToolType toolType, bool isEnabled, ToolPermissionMode permissionMode, bool isWorkspaceEnabled
+ WorkspaceToolEntity tool, bool isEnabled, ToolPermissionMode permissionMode, bool isWorkspaceEnabled
 });
 
 
-
+$WorkspaceToolEntityCopyWith<$Res> get tool;
 
 }
 /// @nodoc
@@ -63,16 +63,25 @@ class _$ConversationToolStateCopyWithImpl<$Res>
 
 /// Create a copy of ConversationToolState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? toolType = null,Object? isEnabled = null,Object? permissionMode = null,Object? isWorkspaceEnabled = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? tool = null,Object? isEnabled = null,Object? permissionMode = null,Object? isWorkspaceEnabled = null,}) {
   return _then(_self.copyWith(
-toolType: null == toolType ? _self.toolType : toolType // ignore: cast_nullable_to_non_nullable
-as UserToolType,isEnabled: null == isEnabled ? _self.isEnabled : isEnabled // ignore: cast_nullable_to_non_nullable
+tool: null == tool ? _self.tool : tool // ignore: cast_nullable_to_non_nullable
+as WorkspaceToolEntity,isEnabled: null == isEnabled ? _self.isEnabled : isEnabled // ignore: cast_nullable_to_non_nullable
 as bool,permissionMode: null == permissionMode ? _self.permissionMode : permissionMode // ignore: cast_nullable_to_non_nullable
 as ToolPermissionMode,isWorkspaceEnabled: null == isWorkspaceEnabled ? _self.isWorkspaceEnabled : isWorkspaceEnabled // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }
-
+/// Create a copy of ConversationToolState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$WorkspaceToolEntityCopyWith<$Res> get tool {
+  
+  return $WorkspaceToolEntityCopyWith<$Res>(_self.tool, (value) {
+    return _then(_self.copyWith(tool: value));
+  });
+}
 }
 
 
@@ -154,10 +163,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( UserToolType toolType,  bool isEnabled,  ToolPermissionMode permissionMode,  bool isWorkspaceEnabled)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( WorkspaceToolEntity tool,  bool isEnabled,  ToolPermissionMode permissionMode,  bool isWorkspaceEnabled)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ConversationToolState() when $default != null:
-return $default(_that.toolType,_that.isEnabled,_that.permissionMode,_that.isWorkspaceEnabled);case _:
+return $default(_that.tool,_that.isEnabled,_that.permissionMode,_that.isWorkspaceEnabled);case _:
   return orElse();
 
 }
@@ -175,10 +184,10 @@ return $default(_that.toolType,_that.isEnabled,_that.permissionMode,_that.isWork
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( UserToolType toolType,  bool isEnabled,  ToolPermissionMode permissionMode,  bool isWorkspaceEnabled)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( WorkspaceToolEntity tool,  bool isEnabled,  ToolPermissionMode permissionMode,  bool isWorkspaceEnabled)  $default,) {final _that = this;
 switch (_that) {
 case _ConversationToolState():
-return $default(_that.toolType,_that.isEnabled,_that.permissionMode,_that.isWorkspaceEnabled);case _:
+return $default(_that.tool,_that.isEnabled,_that.permissionMode,_that.isWorkspaceEnabled);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -195,10 +204,10 @@ return $default(_that.toolType,_that.isEnabled,_that.permissionMode,_that.isWork
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( UserToolType toolType,  bool isEnabled,  ToolPermissionMode permissionMode,  bool isWorkspaceEnabled)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( WorkspaceToolEntity tool,  bool isEnabled,  ToolPermissionMode permissionMode,  bool isWorkspaceEnabled)?  $default,) {final _that = this;
 switch (_that) {
 case _ConversationToolState() when $default != null:
-return $default(_that.toolType,_that.isEnabled,_that.permissionMode,_that.isWorkspaceEnabled);case _:
+return $default(_that.tool,_that.isEnabled,_that.permissionMode,_that.isWorkspaceEnabled);case _:
   return null;
 
 }
@@ -210,10 +219,10 @@ return $default(_that.toolType,_that.isEnabled,_that.permissionMode,_that.isWork
 
 
 class _ConversationToolState implements ConversationToolState {
-  const _ConversationToolState({required this.toolType, required this.isEnabled, required this.permissionMode, required this.isWorkspaceEnabled});
+  const _ConversationToolState({required this.tool, required this.isEnabled, required this.permissionMode, required this.isWorkspaceEnabled});
   
 
-@override final  UserToolType toolType;
+@override final  WorkspaceToolEntity tool;
 @override final  bool isEnabled;
 @override final  ToolPermissionMode permissionMode;
 /// Whether this tool is enabled at the workspace level
@@ -229,16 +238,16 @@ _$ConversationToolStateCopyWith<_ConversationToolState> get copyWith => __$Conve
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationToolState&&(identical(other.toolType, toolType) || other.toolType == toolType)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.permissionMode, permissionMode) || other.permissionMode == permissionMode)&&(identical(other.isWorkspaceEnabled, isWorkspaceEnabled) || other.isWorkspaceEnabled == isWorkspaceEnabled));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationToolState&&(identical(other.tool, tool) || other.tool == tool)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.permissionMode, permissionMode) || other.permissionMode == permissionMode)&&(identical(other.isWorkspaceEnabled, isWorkspaceEnabled) || other.isWorkspaceEnabled == isWorkspaceEnabled));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,toolType,isEnabled,permissionMode,isWorkspaceEnabled);
+int get hashCode => Object.hash(runtimeType,tool,isEnabled,permissionMode,isWorkspaceEnabled);
 
 @override
 String toString() {
-  return 'ConversationToolState(toolType: $toolType, isEnabled: $isEnabled, permissionMode: $permissionMode, isWorkspaceEnabled: $isWorkspaceEnabled)';
+  return 'ConversationToolState(tool: $tool, isEnabled: $isEnabled, permissionMode: $permissionMode, isWorkspaceEnabled: $isWorkspaceEnabled)';
 }
 
 
@@ -249,11 +258,11 @@ abstract mixin class _$ConversationToolStateCopyWith<$Res> implements $Conversat
   factory _$ConversationToolStateCopyWith(_ConversationToolState value, $Res Function(_ConversationToolState) _then) = __$ConversationToolStateCopyWithImpl;
 @override @useResult
 $Res call({
- UserToolType toolType, bool isEnabled, ToolPermissionMode permissionMode, bool isWorkspaceEnabled
+ WorkspaceToolEntity tool, bool isEnabled, ToolPermissionMode permissionMode, bool isWorkspaceEnabled
 });
 
 
-
+@override $WorkspaceToolEntityCopyWith<$Res> get tool;
 
 }
 /// @nodoc
@@ -266,17 +275,26 @@ class __$ConversationToolStateCopyWithImpl<$Res>
 
 /// Create a copy of ConversationToolState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? toolType = null,Object? isEnabled = null,Object? permissionMode = null,Object? isWorkspaceEnabled = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? tool = null,Object? isEnabled = null,Object? permissionMode = null,Object? isWorkspaceEnabled = null,}) {
   return _then(_ConversationToolState(
-toolType: null == toolType ? _self.toolType : toolType // ignore: cast_nullable_to_non_nullable
-as UserToolType,isEnabled: null == isEnabled ? _self.isEnabled : isEnabled // ignore: cast_nullable_to_non_nullable
+tool: null == tool ? _self.tool : tool // ignore: cast_nullable_to_non_nullable
+as WorkspaceToolEntity,isEnabled: null == isEnabled ? _self.isEnabled : isEnabled // ignore: cast_nullable_to_non_nullable
 as bool,permissionMode: null == permissionMode ? _self.permissionMode : permissionMode // ignore: cast_nullable_to_non_nullable
 as ToolPermissionMode,isWorkspaceEnabled: null == isWorkspaceEnabled ? _self.isWorkspaceEnabled : isWorkspaceEnabled // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }
 
-
+/// Create a copy of ConversationToolState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$WorkspaceToolEntityCopyWith<$Res> get tool {
+  
+  return $WorkspaceToolEntityCopyWith<$Res>(_self.tool, (value) {
+    return _then(_self.copyWith(tool: value));
+  });
+}
 }
 
 // dart format on

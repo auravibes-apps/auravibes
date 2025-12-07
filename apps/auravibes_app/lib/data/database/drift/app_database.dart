@@ -6,7 +6,9 @@ import 'package:auravibes_app/data/database/drift/daos/conversation_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/conversation_tools_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/credential_models_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/credentials_dao.dart';
+import 'package:auravibes_app/data/database/drift/daos/mcp_servers_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/message_dao.dart';
+import 'package:auravibes_app/data/database/drift/daos/tools_groups_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_tools_dao.dart';
 import 'package:auravibes_app/data/database/drift/tables/api_model_provider_table.dart';
@@ -15,6 +17,7 @@ import 'package:auravibes_app/data/database/drift/tables/conversation_tools_tabl
 import 'package:auravibes_app/data/database/drift/tables/conversations_table.dart';
 import 'package:auravibes_app/data/database/drift/tables/credentials_models_table.dart';
 import 'package:auravibes_app/data/database/drift/tables/credentials_table.dart';
+import 'package:auravibes_app/data/database/drift/tables/mcp_servers_table.dart';
 import 'package:auravibes_app/data/database/drift/tables/messages_table.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools_groups_table.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools_table.dart';
@@ -43,6 +46,7 @@ part 'app_database.g.dart';
     Tools,
     ToolsGroups,
     ConversationTools,
+    McpServers,
   ],
   daos: [
     WorkspaceDao,
@@ -53,7 +57,9 @@ part 'app_database.g.dart';
     ConversationDao,
     MessageDao,
     WorkspaceToolsDao,
+    ToolsGroupsDao,
     ConversationToolsDao,
+    McpServersDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {

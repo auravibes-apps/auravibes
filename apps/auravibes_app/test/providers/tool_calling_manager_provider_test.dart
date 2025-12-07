@@ -47,7 +47,10 @@ void main() {
   const testConversationId = 'test-conversation-id';
   const testWorkspaceId = 'test-workspace-id';
   const testToolCallId = 'test-tool-call-id';
-  const testToolName = 'calculator';
+  // Composite ID format: built_in::<table_id>::<tool_identifier>
+  const testToolTableId = 'tool-table-id';
+  const testToolIdentifier = 'calculator';
+  const testToolName = 'built_in::$testToolTableId::$testToolIdentifier';
 
   MessageEntity createTestMessage({
     String? id,
@@ -220,12 +223,8 @@ void main() {
         ToolCallResultStatus.toolNotFound,
       );
 
-      // Verify AI response was sent
-      expect(fakeMessagesManagerNotifier.sendToolsResponseCalls.length, 1);
-      expect(
-        fakeMessagesManagerNotifier.sendToolsResponseCalls.first.$2,
-        testMessageId,
-      );
+      // Verify AI response was NOT sent (not all tools granted)
+      expect(fakeMessagesManagerNotifier.sendToolsResponseCalls, isEmpty);
     });
 
     test('skips disabled tools with appropriate response', () async {
@@ -245,7 +244,7 @@ void main() {
         mockConversationToolsRepository.checkToolPermission(
           conversationId: testConversationId,
           workspaceId: testWorkspaceId,
-          toolId: testToolName,
+          toolId: testToolTableId,
         ),
       ).thenAnswer((_) async => ToolPermissionResult.disabledInConversation);
       when(
@@ -288,7 +287,7 @@ void main() {
         mockConversationToolsRepository.checkToolPermission(
           conversationId: testConversationId,
           workspaceId: testWorkspaceId,
-          toolId: testToolName,
+          toolId: testToolTableId,
         ),
       ).thenAnswer((_) async => ToolPermissionResult.needsConfirmation);
       when(
@@ -347,8 +346,9 @@ void main() {
         testMessageId,
       );
 
-      // Both tools should have been processed and AI response sent
-      expect(fakeMessagesManagerNotifier.sendToolsResponseCalls.length, 1);
+      // AI response should NOT be sent because not all tools were granted
+      // (unknown_tool was skipped, so we stop the AI loop)
+      expect(fakeMessagesManagerNotifier.sendToolsResponseCalls, isEmpty);
     });
   });
 
@@ -562,7 +562,7 @@ void main() {
       when(
         mockConversationToolsRepository.setConversationToolPermission(
           testConversationId,
-          testToolName,
+          testToolTableId,
           permissionMode: ToolPermissionMode.alwaysAllow,
         ),
       ).thenAnswer((_) async => true);
@@ -583,7 +583,7 @@ void main() {
       verify(
         mockConversationToolsRepository.setConversationToolPermission(
           testConversationId,
-          testToolName,
+          testToolTableId,
           permissionMode: ToolPermissionMode.alwaysAllow,
         ),
       ).called(1);
@@ -698,7 +698,7 @@ void main() {
         mockConversationToolsRepository.checkToolPermission(
           conversationId: testConversationId,
           workspaceId: testWorkspaceId,
-          toolId: testToolName,
+          toolId: testToolTableId,
         ),
       ).thenAnswer((_) async => ToolPermissionResult.granted);
       when(

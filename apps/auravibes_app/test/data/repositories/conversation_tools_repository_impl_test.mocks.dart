@@ -101,6 +101,44 @@ class MockWorkspaceToolsRepository extends _i1.Mock
           as _i4.Future<_i2.WorkspaceToolEntity>);
 
   @override
+  _i4.Future<_i2.WorkspaceToolEntity?> getWorkspaceToolByToolName({
+    required String? toolGroupId,
+    required String? toolName,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#getWorkspaceToolByToolName, [], {
+              #toolGroupId: toolGroupId,
+              #toolName: toolName,
+            }),
+            returnValue: _i4.Future<_i2.WorkspaceToolEntity?>.value(),
+          )
+          as _i4.Future<_i2.WorkspaceToolEntity?>);
+
+  @override
+  _i4.Future<_i2.WorkspaceToolEntity> setToolEnabledById(
+    String? id, {
+    required bool? isEnabled,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(
+              #setToolEnabledById,
+              [id],
+              {#isEnabled: isEnabled},
+            ),
+            returnValue: _i4.Future<_i2.WorkspaceToolEntity>.value(
+              _FakeWorkspaceToolEntity_0(
+                this,
+                Invocation.method(
+                  #setToolEnabledById,
+                  [id],
+                  {#isEnabled: isEnabled},
+                ),
+              ),
+            ),
+          )
+          as _i4.Future<_i2.WorkspaceToolEntity>);
+
+  @override
   _i4.Future<List<_i2.WorkspaceToolEntity>> updateWorkspaceToolConfig(
     String? workspaceId,
     String? toolType,

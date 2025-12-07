@@ -104,6 +104,7 @@ class AuraButtonGroup<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
     final auraTheme = context.auraTheme;
+    final borderRadius = auraTheme.borderRadius.md;
 
     final children = <Widget>[];
 
@@ -116,37 +117,56 @@ class AuraButtonGroup<T> extends StatelessWidget {
       final isItemDisabled = disabled || item.disabled;
       final isItemLoading = isLoading || item.isLoading;
 
-      children.add(
-        _AuraButtonGroupItem(
-          item: item,
-          isSelected: isSelected,
-          isFirst: isFirst,
-          isLast: isLast,
-          size: size,
-          variant: variant,
-          orientation: orientation,
-          disabled: isItemDisabled,
-          isLoading: isItemLoading,
-          mode: _mode,
-          onTap: isItemDisabled || isItemLoading ? null : () => _onTap(item),
-          auraColors: auraColors,
-          auraTheme: auraTheme,
-        ),
+      // Use Transform.translate to collapse double borders between items
+      // by shifting non-first items back by 1px (the border width)
+      Widget child = _AuraButtonGroupItem(
+        item: item,
+        isSelected: isSelected,
+        isFirst: isFirst,
+        isLast: isLast,
+        size: size,
+        variant: variant,
+        orientation: orientation,
+        disabled: isItemDisabled,
+        isLoading: isItemLoading,
+        mode: _mode,
+        onTap: isItemDisabled || isItemLoading ? null : () => _onTap(item),
+        auraColors: auraColors,
+        auraTheme: auraTheme,
       );
+
+      // Shift non-first items to collapse the double border
+      if (!isFirst && variant != AuraButtonGroupVariant.ghost) {
+        child = Transform.translate(
+          offset: orientation == Axis.horizontal
+              ? const Offset(-1, 0)
+              : const Offset(0, -1),
+          child: child,
+        );
+      }
+
+      children.add(child);
     }
 
+    Widget content;
     if (orientation == Axis.horizontal) {
-      return Row(
+      content = Row(
         mainAxisSize: MainAxisSize.min,
         children: children,
       );
     } else {
-      return Column(
+      content = Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: children,
       );
     }
+
+    // Wrap entire group in ClipRRect for rounded corners
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(borderRadius),
+      child: content,
+    );
   }
 
   bool _isSelected(T value) {
@@ -217,7 +237,6 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
 
   @override
   Widget build(BuildContext context) {
-    final borderRadius = _getBorderRadius();
     final padding = _getPadding();
     final backgroundColor = _getBackgroundColor();
     final foregroundColor = _getForegroundColor();
@@ -239,7 +258,6 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
           padding: padding,
           decoration: BoxDecoration(
             color: backgroundColor,
-            borderRadius: borderRadius,
             border: border,
           ),
           child: widget.isLoading
@@ -268,26 +286,6 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
         ),
       ),
     );
-  }
-
-  BorderRadius _getBorderRadius() {
-    final radius = widget.auraTheme.borderRadius.md;
-
-    if (widget.orientation == Axis.horizontal) {
-      return BorderRadius.only(
-        topLeft: widget.isFirst ? Radius.circular(radius) : Radius.zero,
-        bottomLeft: widget.isFirst ? Radius.circular(radius) : Radius.zero,
-        topRight: widget.isLast ? Radius.circular(radius) : Radius.zero,
-        bottomRight: widget.isLast ? Radius.circular(radius) : Radius.zero,
-      );
-    } else {
-      return BorderRadius.only(
-        topLeft: widget.isFirst ? Radius.circular(radius) : Radius.zero,
-        topRight: widget.isFirst ? Radius.circular(radius) : Radius.zero,
-        bottomLeft: widget.isLast ? Radius.circular(radius) : Radius.zero,
-        bottomRight: widget.isLast ? Radius.circular(radius) : Radius.zero,
-      );
-    }
   }
 
   EdgeInsets _getPadding() {
@@ -367,25 +365,10 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
         ? colors.outlineVariant
         : colors.primary;
 
-    // For outlined and filled variants, we need borders
-    // Handle the overlapping borders for adjacent items
-    if (widget.orientation == Axis.horizontal) {
-      return Border(
-        top: BorderSide(color: borderColor),
-        bottom: BorderSide(color: borderColor),
-        left: BorderSide(color: borderColor),
-        right: widget.isLast ? BorderSide(color: borderColor) : BorderSide.none,
-      );
-    } else {
-      return Border(
-        left: BorderSide(color: borderColor),
-        right: BorderSide(color: borderColor),
-        top: BorderSide(color: borderColor),
-        bottom: widget.isLast
-            ? BorderSide(color: borderColor)
-            : BorderSide.none,
-      );
-    }
+    // Use uniform border on all sides to support the parent ClipRRect
+    // The double borders between items are collapsed using Transform.translate
+    // in the parent widget
+    return Border.all(color: borderColor);
   }
 
   double _getFontSize() {

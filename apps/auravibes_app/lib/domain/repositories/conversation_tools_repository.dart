@@ -174,6 +174,21 @@ abstract class ConversationToolsRepository {
     String workspaceId,
   );
 
+  /// Gets all available tools for a conversation as full entities.
+  ///
+  /// This method returns the workspace tool entities with their table IDs,
+  /// which is needed for generating composite tool IDs.
+  /// [conversationId] The ID of the conversation.
+  /// [workspaceId] The ID of the workspace the conversation belongs to.
+  /// Returns a list of [WorkspaceToolEntity] that are available for the
+  /// conversation.
+  /// Throws [ConversationToolsException] if there's an error
+  /// getting available tools.
+  Future<List<WorkspaceToolEntity>> getAvailableToolEntitiesForConversation(
+    String conversationId,
+    String workspaceId,
+  );
+
   /// Checks the permission for a specific tool in a conversation context.
   ///
   /// This method implements the permission logic:

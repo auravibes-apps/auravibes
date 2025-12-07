@@ -65,6 +65,10 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.select_model_selctor';
   static const chats_screens_chat_conversation_message_placeholder =
       'chats_screens.chat_conversation.message_placeholder';
+  static const chats_screens_chat_conversation_waiting_for_tools =
+      'chats_screens.chat_conversation.waiting_for_tools';
+  static const chats_screens_chat_conversation_waiting_for_tools_named =
+      'chats_screens.chat_conversation.waiting_for_tools_named';
   static const chats_screens_chat_conversation =
       'chats_screens.chat_conversation';
   static const chats_screens = 'chats_screens';
@@ -95,6 +99,19 @@ abstract class LocaleKeys {
       'tools_screen.permission_always_allow';
   static const tools_screen_permission_label = 'tools_screen.permission_label';
   static const tools_screen_enabled_label = 'tools_screen.enabled_label';
+  static const tools_screen_default_group = 'tools_screen.default_group';
+  static const tools_screen_mcp_connecting = 'tools_screen.mcp_connecting';
+  static const tools_screen_mcp_connected = 'tools_screen.mcp_connected';
+  static const tools_screen_mcp_error = 'tools_screen.mcp_error';
+  static const tools_screen_mcp_disconnected = 'tools_screen.mcp_disconnected';
+  static const tools_screen_mcp_reconnect = 'tools_screen.mcp_reconnect';
+  static const tools_screen_mcp_view_error = 'tools_screen.mcp_view_error';
+  static const tools_screen_tools_count = 'tools_screen.tools_count';
+  static const tools_screen_delete_mcp_title = 'tools_screen.delete_mcp_title';
+  static const tools_screen_delete_mcp_confirm =
+      'tools_screen.delete_mcp_confirm';
+  static const tools_screen_no_tools_in_group =
+      'tools_screen.no_tools_in_group';
   static const tools_screen = 'tools_screen';
   static const tool_confirmation_allow_once = 'tool_confirmation.allow_once';
   static const tool_confirmation_allow_conversation =
@@ -126,6 +143,8 @@ abstract class LocaleKeys {
   static const common_save = 'common.save';
   static const common_delete = 'common.delete';
   static const common_confirm = 'common.confirm';
+  static const common_close = 'common.close';
+  static const common_show_more = 'common.show_more';
   static const common = 'common';
   static const tools_names_calculator_name = 'tools_names.calculator.name';
   static const tools_names_calculator_description =

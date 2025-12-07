@@ -1,3 +1,4 @@
+import 'package:auravibes_app/services/tools/user_tools_entity.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'workspace_tool.freezed.dart';
@@ -42,6 +43,15 @@ abstract class WorkspaceToolEntity with _$WorkspaceToolEntity {
 
     /// Tool configuration as JSON (optional)
     String? config,
+
+    /// Optional description of the tool (from MCP or user-defined)
+    String? description,
+
+    /// JSON Schema for input parameters (for MCP tools)
+    String? inputSchema,
+
+    /// Optional reference to the tools group this tool belongs to
+    String? workspaceToolsGroupId,
   }) = _WorkspaceToolEntity;
   const WorkspaceToolEntity._();
 
@@ -50,6 +60,21 @@ abstract class WorkspaceToolEntity with _$WorkspaceToolEntity {
 
   /// Returns true if the tool is currently enabled
   bool get isAvailable => isEnabled;
+
+  /// Returns true if this tool belongs to a group
+  bool get belongsToGroup =>
+      workspaceToolsGroupId != null && workspaceToolsGroupId!.isNotEmpty;
+
+  /// Returns true if this tool has a description
+  bool get hasDescription => description != null && description!.isNotEmpty;
+
+  /// Returns true if this tool has an input schema (MCP tool)
+  bool get hasInputSchema => inputSchema != null && inputSchema!.isNotEmpty;
+
+  UserToolType? get buildInType {
+    final type = UserToolType.fromValue(toolId);
+    return type;
+  }
 }
 
 /// Entity for creating/updating workspace tool settings
@@ -65,6 +90,15 @@ abstract class WorkspaceToolToCreate with _$WorkspaceToolToCreate {
 
     /// Whether the tool should be enabled (defaults to true)
     bool? isEnabled,
+
+    /// Optional description of the tool
+    String? description,
+
+    /// JSON Schema for input parameters (for MCP tools)
+    String? inputSchema,
+
+    /// Optional reference to the tools group this tool belongs to
+    String? workspaceToolsGroupId,
   }) = _WorkspaceToolToCreate;
   const WorkspaceToolToCreate._();
 

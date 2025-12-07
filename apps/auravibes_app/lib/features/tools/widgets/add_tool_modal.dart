@@ -1,7 +1,5 @@
 import 'package:auravibes_app/features/tools/providers/workspace_tools_provider.dart';
-import 'package:auravibes_app/features/tools/widgets/tool_description.dart';
-import 'package:auravibes_app/features/tools/widgets/tool_icon.dart';
-import 'package:auravibes_app/features/tools/widgets/tool_name.dart';
+import 'package:auravibes_app/features/tools/widgets/tool_extensions_widgets.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/services/tools/user_tools_entity.dart';
 import 'package:auravibes_app/widgets/app_error.dart';
@@ -203,7 +201,7 @@ class _AvailableToolTile extends ConsumerWidget {
             context.auraTheme.borderRadius.md,
           ),
         ),
-        child: ToolIconWidget(toolType: toolType),
+        child: toolType.getIconWidget(),
       ),
       trailing: AuraIcon(
         Icons.add_circle_outline,
@@ -214,7 +212,7 @@ class _AvailableToolTile extends ConsumerWidget {
         spacing: AuraSpacing.xs,
         children: [
           AuraText(
-            child: ToolNameWidget(toolType: toolType),
+            child: toolType.getNameWidget(),
           ),
           AuraText(
             style: AuraTextStyle.bodySmall,
@@ -222,7 +220,7 @@ class _AvailableToolTile extends ConsumerWidget {
             child: DefaultTextStyle.merge(
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              child: ToolDescriptionWidget(toolType: toolType),
+              child: toolType.getDescriptionWidget(),
             ),
           ),
         ],

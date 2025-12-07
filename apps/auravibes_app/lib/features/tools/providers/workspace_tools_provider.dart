@@ -11,8 +11,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'workspace_tools_provider.g.dart';
 
-typedef WorkspaceTool = (UserToolType, WorkspaceToolEntity?);
-
 @riverpod
 WorkspaceToolsRepository workspaceToolsRepository(Ref ref) {
   final appDatabase = ref.watch(appDatabaseProvider);
@@ -29,7 +27,7 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
   late String _workspaceId;
 
   @override
-  Future<List<WorkspaceTool>> build() async {
+  Future<List<WorkspaceToolEntity>> build() async {
     _repository = ref.watch(workspaceToolsRepositoryProvider);
     _workspaceId = await ref.watch(
       selectedWorkspaceProvider.selectAsync((w) => w.id),
@@ -37,17 +35,11 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
 
     final workspaceTools = await _repository.getWorkspaceTools(_workspaceId);
 
-    // Only return tools that have been explicitly added to the workspace
-    return workspaceTools
-        .map((wt) {
-          final toolType = UserToolType.fromValue(wt.toolId);
-          return toolType != null ? (toolType, wt) : null;
-        })
-        .whereType<WorkspaceTool>()
-        .toList();
+    // Return all tools (both built-in and MCP)
+    return workspaceTools;
   }
 
-  /// Add a new tool to the workspace
+  /// Add a new built-in tool to the workspace
   Future<void> addTool(UserToolType toolType) async {
     await _repository.setWorkspaceToolEnabled(
       _workspaceId,
@@ -62,54 +54,49 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
       state = AsyncData(
         value.map((wt) {
           final workspaceTool = workspaceTools.firstWhereOrNull(
-            (element) => element.toolId == wt.$1.value,
+            (element) => element.id == wt.id,
           );
-          if (workspaceTool != null) {
-            return (wt.$1, workspaceTool);
-          }
-          return wt;
+          return workspaceTool ?? wt;
         }).toList(),
       );
     }
   }
 
-  void _removeTools(List<UserToolType> toolTypes) {
+  void _removeToolsByIds(List<String> toolIds) {
     if (state case AsyncData(:final value)) {
       state = AsyncData(
-        value.where((wt) => !toolTypes.contains(wt.$1)).toList(),
+        value.where((wt) => !toolIds.contains(wt.id)).toList(),
       );
     }
   }
 
-  /// Enable or disable a workspace tool
+  /// Enable or disable a workspace tool by its database ID
   Future<void> setToolEnabled(
-    String toolType, {
+    String id, {
     required bool isEnabled,
   }) async {
-    final newTool = await _repository.setWorkspaceToolEnabled(
-      _workspaceId,
-      toolType,
+    final newTool = await _repository.setToolEnabledById(
+      id,
       isEnabled: isEnabled,
     );
     _replaceTools([newTool]);
-    return;
   }
 
   /// Update workspace tool configuration
-  Future<void> updateToolConfig(String toolType, String? config) async {
+  Future<void> updateToolConfig(String toolId, String? config) async {
     final success = await _repository.updateWorkspaceToolConfig(
       _workspaceId,
-      toolType,
+      toolId,
       config,
     );
     _replaceTools(success);
   }
 
   /// Remove a workspace tool by its database ID
-  Future<bool> removeToolById(String id, UserToolType toolType) async {
+  Future<bool> removeToolById(String id) async {
     final success = await _repository.removeWorkspaceToolById(id);
     if (success) {
-      _removeTools([toolType]);
+      _removeToolsByIds([id]);
     }
     return success;
   }
@@ -127,20 +114,23 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
   }
 }
 
-/// Provider that returns the list of available tools
+/// Provider that returns the list of available built-in tools
 /// that can be added to the workspace
 @riverpod
 Future<List<UserToolType>> availableToolsToAdd(Ref ref) async {
   final workspaceTools = await ref.watch(workspaceToolsProvider.future);
-  final addedToolTypes = workspaceTools.map((wt) => wt.$1).toSet();
 
+  // Get IDs of tools already added
+  final addedToolIds = workspaceTools.map((wt) => wt.id).toSet();
+
+  // Return built-in tools that haven't been added yet
   return ToolService.getTypes()
-      .where((UserToolType type) => !addedToolTypes.contains(type))
+      .where((UserToolType type) => !addedToolIds.contains(type.value))
       .toList();
 }
 
 @Riverpod(dependencies: [workspaceToolIndexNotifier])
-WorkspaceTool? workspaceToolRow(Ref ref) {
+WorkspaceToolEntity? workspaceToolRow(Ref ref) {
   final workspaceToolIndex = ref.watch(workspaceToolIndexProvider);
   return ref.watch(
     workspaceToolsProvider.select((e) => e.value?[workspaceToolIndex]),

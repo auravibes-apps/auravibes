@@ -5,6 +5,7 @@ import 'package:auravibes_app/features/tools/widgets/tools_management_modal.dart
 import 'package:auravibes_app/features/workspaces/providers/selected_workspace.dart';
 import 'package:auravibes_app/providers/messages_manager_provider.dart';
 import 'package:auravibes_app/router/app_router.dart';
+import 'package:auravibes_app/services/tools/user_tools_entity.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -59,10 +60,12 @@ class NewChatScreen extends HookConsumerWidget {
         }
 
         // Get enabled tools from the list
+        // Extract UserToolType from BuiltInTool identifiers
         final tools =
             toolsList.value
                 ?.where((tool) => tool.isEnabled)
-                .map((tool) => tool.toolType)
+                .map((tool) => tool.tool.buildInType)
+                .whereType<UserToolType>()
                 .toList() ??
             [];
 
