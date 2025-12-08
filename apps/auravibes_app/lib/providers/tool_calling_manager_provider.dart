@@ -437,7 +437,7 @@ class ToolCallingManagerNotifier extends _$ToolCallingManagerNotifier {
   _ToolResolution _resolveTool(String compositeToolName) {
     // Check if it's an MCP tool
     if (compositeToolName.startsWith('mcp::')) {
-      final components = McpManagerNotifier.parseCompositeToolId(
+      final components = McpToolIdComponents.fromComposite(
         compositeToolName,
       );
       if (components == null) {
@@ -458,7 +458,7 @@ class ToolCallingManagerNotifier extends _$ToolCallingManagerNotifier {
       }
 
       final toolExists = connection.tools.any(
-        (t) => t.originalName == components.toolIdentifier,
+        (t) => t.toolName == components.toolIdentifier,
       );
       if (!toolExists) {
         return const _ToolResolution(

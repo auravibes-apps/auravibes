@@ -9,8 +9,8 @@ import 'package:auravibes_app/data/database/drift/tables/mcp_servers_table.dart'
 import 'package:auravibes_app/data/database/drift/tables/tools_groups_table.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools_table.dart';
 import 'package:auravibes_app/domain/entities/mcp_server.dart';
+import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 import 'package:auravibes_app/domain/repositories/mcp_servers_repository.dart';
-import 'package:auravibes_app/providers/mcp_manager_provider.dart';
 import 'package:drift/drift.dart';
 
 /// Implementation of the McpServersRepository
@@ -69,7 +69,7 @@ class McpServersRepositoryImpl implements McpServersRepository {
             return ToolsCompanion.insert(
               workspaceId: workspaceId,
               workspaceToolsGroupId: Value(toolsGroup.id),
-              toolId: tool.originalName,
+              toolId: tool.toolName,
               description: Value(tool.description),
               inputSchema: Value(jsonEncode(tool.inputSchema)),
               isEnabled: const Value(true),
@@ -122,11 +122,11 @@ class McpServersRepositoryImpl implements McpServersRepository {
         group.id,
       );
       final existingToolIds = existingTools.map((t) => t.toolId).toSet();
-      final currentToolIds = currentTools.map((t) => t.originalName).toSet();
+      final currentToolIds = currentTools.map((t) => t.toolName).toSet();
 
       // 3. Find tools to add (in current but not in existing)
       final toolsToAdd = currentTools
-          .where((t) => !existingToolIds.contains(t.originalName))
+          .where((t) => !existingToolIds.contains(t.toolName))
           .toList();
 
       // 4. Find tools to remove (in existing but not in current)
@@ -140,7 +140,7 @@ class McpServersRepositoryImpl implements McpServersRepository {
           return ToolsCompanion.insert(
             workspaceId: group.workspaceId,
             workspaceToolsGroupId: Value(group.id),
-            toolId: tool.originalName,
+            toolId: tool.toolName,
             description: Value(tool.description),
             inputSchema: Value(jsonEncode(tool.inputSchema)),
             isEnabled: const Value(true),

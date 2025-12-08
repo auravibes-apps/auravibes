@@ -87,7 +87,7 @@ final class McpManagerNotifierProvider
 }
 
 String _$mcpManagerNotifierHash() =>
-    r'de6e3d288fddfecc52cdb77eab53d8724f2f4bf6';
+    r'bd1a048a7515ed011c91a4b1d9beae593ebf02a9';
 
 /// Manages MCP server connections and their tools.
 ///
@@ -126,301 +126,49 @@ abstract class _$McpManagerNotifier
   }
 }
 
-/// Provides a flat list of all available MCP tools.
+@ProviderFor(mcpManagerService)
+const mcpManagerServiceProvider = McpManagerServiceProvider._();
 
-@ProviderFor(allMcpTools)
-const allMcpToolsProvider = AllMcpToolsProvider._();
-
-/// Provides a flat list of all available MCP tools.
-
-final class AllMcpToolsProvider
+final class McpManagerServiceProvider
     extends
         $FunctionalProvider<
-          List<McpToolInfo>,
-          List<McpToolInfo>,
-          List<McpToolInfo>
+          McpManagerService,
+          McpManagerService,
+          McpManagerService
         >
-    with $Provider<List<McpToolInfo>> {
-  /// Provides a flat list of all available MCP tools.
-  const AllMcpToolsProvider._()
+    with $Provider<McpManagerService> {
+  const McpManagerServiceProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'allMcpToolsProvider',
+        name: r'mcpManagerServiceProvider',
         isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$allMcpToolsHash();
+  String debugGetCreateSourceHash() => _$mcpManagerServiceHash();
 
   @$internal
   @override
-  $ProviderElement<List<McpToolInfo>> $createElement(
+  $ProviderElement<McpManagerService> $createElement(
     $ProviderPointer pointer,
   ) => $ProviderElement(pointer);
 
   @override
-  List<McpToolInfo> create(Ref ref) {
-    return allMcpTools(ref);
+  McpManagerService create(Ref ref) {
+    return mcpManagerService(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(List<McpToolInfo> value) {
+  Override overrideWithValue(McpManagerService value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<List<McpToolInfo>>(value),
+      providerOverride: $SyncValueProvider<McpManagerService>(value),
     );
   }
 }
 
-String _$allMcpToolsHash() => r'bd827b0afddde31e5cd9f97733b8d8cba871290e';
-
-/// Provides MCP tools as ToolSpec for the chatbot service.
-
-@ProviderFor(mcpToolSpecs)
-const mcpToolSpecsProvider = McpToolSpecsProvider._();
-
-/// Provides MCP tools as ToolSpec for the chatbot service.
-
-final class McpToolSpecsProvider
-    extends $FunctionalProvider<List<ToolSpec>, List<ToolSpec>, List<ToolSpec>>
-    with $Provider<List<ToolSpec>> {
-  /// Provides MCP tools as ToolSpec for the chatbot service.
-  const McpToolSpecsProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'mcpToolSpecsProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$mcpToolSpecsHash();
-
-  @$internal
-  @override
-  $ProviderElement<List<ToolSpec>> $createElement($ProviderPointer pointer) =>
-      $ProviderElement(pointer);
-
-  @override
-  List<ToolSpec> create(Ref ref) {
-    return mcpToolSpecs(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(List<ToolSpec> value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<List<ToolSpec>>(value),
-    );
-  }
-}
-
-String _$mcpToolSpecsHash() => r'6714cc0f15e367e2093a5317a138057eaf1504f7';
-
-/// Provides the list of MCP connection states that are currently connecting
-/// from the specified server IDs.
-///
-/// This is useful for UI to show which specific MCPs are being waited on.
-
-@ProviderFor(connectingMcpServers)
-const connectingMcpServersProvider = ConnectingMcpServersFamily._();
-
-/// Provides the list of MCP connection states that are currently connecting
-/// from the specified server IDs.
-///
-/// This is useful for UI to show which specific MCPs are being waited on.
-
-final class ConnectingMcpServersProvider
-    extends
-        $FunctionalProvider<
-          List<McpConnectionState>,
-          List<McpConnectionState>,
-          List<McpConnectionState>
-        >
-    with $Provider<List<McpConnectionState>> {
-  /// Provides the list of MCP connection states that are currently connecting
-  /// from the specified server IDs.
-  ///
-  /// This is useful for UI to show which specific MCPs are being waited on.
-  const ConnectingMcpServersProvider._({
-    required ConnectingMcpServersFamily super.from,
-    required List<String> super.argument,
-  }) : super(
-         retry: null,
-         name: r'connectingMcpServersProvider',
-         isAutoDispose: true,
-         dependencies: null,
-         $allTransitiveDependencies: null,
-       );
-
-  @override
-  String debugGetCreateSourceHash() => _$connectingMcpServersHash();
-
-  @override
-  String toString() {
-    return r'connectingMcpServersProvider'
-        ''
-        '($argument)';
-  }
-
-  @$internal
-  @override
-  $ProviderElement<List<McpConnectionState>> $createElement(
-    $ProviderPointer pointer,
-  ) => $ProviderElement(pointer);
-
-  @override
-  List<McpConnectionState> create(Ref ref) {
-    final argument = this.argument as List<String>;
-    return connectingMcpServers(ref, mcpServerIds: argument);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(List<McpConnectionState> value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<List<McpConnectionState>>(value),
-    );
-  }
-
-  @override
-  bool operator ==(Object other) {
-    return other is ConnectingMcpServersProvider && other.argument == argument;
-  }
-
-  @override
-  int get hashCode {
-    return argument.hashCode;
-  }
-}
-
-String _$connectingMcpServersHash() =>
-    r'59551d121917907b02dcc89feb7908c6a0c31bbb';
-
-/// Provides the list of MCP connection states that are currently connecting
-/// from the specified server IDs.
-///
-/// This is useful for UI to show which specific MCPs are being waited on.
-
-final class ConnectingMcpServersFamily extends $Family
-    with $FunctionalFamilyOverride<List<McpConnectionState>, List<String>> {
-  const ConnectingMcpServersFamily._()
-    : super(
-        retry: null,
-        name: r'connectingMcpServersProvider',
-        dependencies: null,
-        $allTransitiveDependencies: null,
-        isAutoDispose: true,
-      );
-
-  /// Provides the list of MCP connection states that are currently connecting
-  /// from the specified server IDs.
-  ///
-  /// This is useful for UI to show which specific MCPs are being waited on.
-
-  ConnectingMcpServersProvider call({required List<String> mcpServerIds}) =>
-      ConnectingMcpServersProvider._(argument: mcpServerIds, from: this);
-
-  @override
-  String toString() => r'connectingMcpServersProvider';
-}
-
-/// Provider that returns true if any of the specified MCP servers are
-/// connecting.
-
-@ProviderFor(isMcpConnectionsPending)
-const isMcpConnectionsPendingProvider = IsMcpConnectionsPendingFamily._();
-
-/// Provider that returns true if any of the specified MCP servers are
-/// connecting.
-
-final class IsMcpConnectionsPendingProvider
-    extends $FunctionalProvider<bool, bool, bool>
-    with $Provider<bool> {
-  /// Provider that returns true if any of the specified MCP servers are
-  /// connecting.
-  const IsMcpConnectionsPendingProvider._({
-    required IsMcpConnectionsPendingFamily super.from,
-    required List<String> super.argument,
-  }) : super(
-         retry: null,
-         name: r'isMcpConnectionsPendingProvider',
-         isAutoDispose: true,
-         dependencies: null,
-         $allTransitiveDependencies: null,
-       );
-
-  @override
-  String debugGetCreateSourceHash() => _$isMcpConnectionsPendingHash();
-
-  @override
-  String toString() {
-    return r'isMcpConnectionsPendingProvider'
-        ''
-        '($argument)';
-  }
-
-  @$internal
-  @override
-  $ProviderElement<bool> $createElement($ProviderPointer pointer) =>
-      $ProviderElement(pointer);
-
-  @override
-  bool create(Ref ref) {
-    final argument = this.argument as List<String>;
-    return isMcpConnectionsPending(ref, mcpServerIds: argument);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(bool value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<bool>(value),
-    );
-  }
-
-  @override
-  bool operator ==(Object other) {
-    return other is IsMcpConnectionsPendingProvider &&
-        other.argument == argument;
-  }
-
-  @override
-  int get hashCode {
-    return argument.hashCode;
-  }
-}
-
-String _$isMcpConnectionsPendingHash() =>
-    r'b2aef2d729f922c1d79aa067b60e635f93154e73';
-
-/// Provider that returns true if any of the specified MCP servers are
-/// connecting.
-
-final class IsMcpConnectionsPendingFamily extends $Family
-    with $FunctionalFamilyOverride<bool, List<String>> {
-  const IsMcpConnectionsPendingFamily._()
-    : super(
-        retry: null,
-        name: r'isMcpConnectionsPendingProvider',
-        dependencies: null,
-        $allTransitiveDependencies: null,
-        isAutoDispose: true,
-      );
-
-  /// Provider that returns true if any of the specified MCP servers are
-  /// connecting.
-
-  IsMcpConnectionsPendingProvider call({required List<String> mcpServerIds}) =>
-      IsMcpConnectionsPendingProvider._(argument: mcpServerIds, from: this);
-
-  @override
-  String toString() => r'isMcpConnectionsPendingProvider';
-}
+String _$mcpManagerServiceHash() => r'84a42758d3ad321cd0fdbd06703e0e0d7343bbbb';
