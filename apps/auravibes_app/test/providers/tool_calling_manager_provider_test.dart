@@ -14,10 +14,10 @@ import 'package:auravibes_app/features/tools/providers/grouped_tools_provider.da
 import 'package:auravibes_app/features/tools/providers/workspace_tools_provider.dart';
 import 'package:auravibes_app/providers/messages_manager_provider.dart';
 import 'package:auravibes_app/providers/tool_calling_manager_provider.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
+import 'package:riverpod/riverpod.dart';
 
 import 'tool_calling_manager_provider_test.mocks.dart';
 
