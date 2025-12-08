@@ -19,7 +19,7 @@ dependencies:
   # Database dependencies
   dio: ^5.9.0
   dio_smart_retry: ^7.0.1
-  drift: ^2.29.0
+  drift: ^2.30.0
   drift_flutter: ^0.2.7
   easy_localization: ^3.0.8
   easy_localization_loader: ^2.0.2
