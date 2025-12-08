@@ -32,9 +32,9 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
   @override
   Future<WorkspaceToolEntity?> getWorkspaceTool(
     String workspaceId,
-    String toolType,
+    String toolId,
   ) async {
-    final result = await _dao.getWorkspaceTool(workspaceId, toolType);
+    final result = await _dao.getWorkspaceTool(workspaceId, toolId);
     if (result == null) return null;
 
     return _tableToEntity(result);
@@ -53,6 +53,23 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
     } catch (e) {
       throw WorkspaceToolsException(
         'Failed to set workspace tool enabled: $e',
+        e is Exception ? e : null,
+      );
+    }
+  }
+
+  @override
+  Future<WorkspaceToolEntity> setToolEnabledById(
+    String id, {
+    required bool isEnabled,
+  }) async {
+    try {
+      return await _dao
+          .setWorkspaceToolEnabledById(id, isEnabled: isEnabled)
+          .then(_tableToEntity);
+    } catch (e) {
+      throw WorkspaceToolsException(
+        'Failed to set workspace tool enabled by ID: $e',
         e is Exception ? e : null,
       );
     }
@@ -227,6 +244,9 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
       permissionMode: _mapPermissionAccess(table.permissions),
       createdAt: table.createdAt,
       updatedAt: table.updatedAt,
+      description: table.description,
+      inputSchema: table.inputSchema,
+      workspaceToolsGroupId: table.workspaceToolsGroupId,
     );
   }
 
@@ -262,5 +282,18 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
         e is Exception ? e : null,
       );
     }
+  }
+
+  @override
+  Future<WorkspaceToolEntity?> getWorkspaceToolByToolName({
+    required String toolGroupId,
+    required String toolName,
+  }) {
+    return _dao
+        .getEnabledToolByToolName(toolGroupId: toolGroupId, toolName: toolName)
+        .then((value) {
+          if (value == null) return null;
+          return _tableToEntity(value);
+        });
   }
 }

@@ -104,7 +104,10 @@ const workspaceToolsProvider = WorkspaceToolsNotifierProvider._();
 
 final class WorkspaceToolsNotifierProvider
     extends
-        $AsyncNotifierProvider<WorkspaceToolsNotifier, List<WorkspaceTool>> {
+        $AsyncNotifierProvider<
+          WorkspaceToolsNotifier,
+          List<WorkspaceToolEntity>
+        > {
   const WorkspaceToolsNotifierProvider._()
     : super(
         from: null,
@@ -125,22 +128,29 @@ final class WorkspaceToolsNotifierProvider
 }
 
 String _$workspaceToolsNotifierHash() =>
-    r'f36ed5837b5b51859557cf609d45ccf43520c375';
+    r'f539015ef35618899c3dee8045ee335a6c6ae0bb';
 
 abstract class _$WorkspaceToolsNotifier
-    extends $AsyncNotifier<List<WorkspaceTool>> {
-  FutureOr<List<WorkspaceTool>> build();
+    extends $AsyncNotifier<List<WorkspaceToolEntity>> {
+  FutureOr<List<WorkspaceToolEntity>> build();
   @$mustCallSuper
   @override
   void runBuild() {
     final created = build();
     final ref =
-        this.ref as $Ref<AsyncValue<List<WorkspaceTool>>, List<WorkspaceTool>>;
+        this.ref
+            as $Ref<
+              AsyncValue<List<WorkspaceToolEntity>>,
+              List<WorkspaceToolEntity>
+            >;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<AsyncValue<List<WorkspaceTool>>, List<WorkspaceTool>>,
-              AsyncValue<List<WorkspaceTool>>,
+              AnyNotifier<
+                AsyncValue<List<WorkspaceToolEntity>>,
+                List<WorkspaceToolEntity>
+              >,
+              AsyncValue<List<WorkspaceToolEntity>>,
               Object?,
               Object?
             >;
@@ -148,13 +158,13 @@ abstract class _$WorkspaceToolsNotifier
   }
 }
 
-/// Provider that returns the list of available tools
+/// Provider that returns the list of available built-in tools
 /// that can be added to the workspace
 
 @ProviderFor(availableToolsToAdd)
 const availableToolsToAddProvider = AvailableToolsToAddProvider._();
 
-/// Provider that returns the list of available tools
+/// Provider that returns the list of available built-in tools
 /// that can be added to the workspace
 
 final class AvailableToolsToAddProvider
@@ -167,7 +177,7 @@ final class AvailableToolsToAddProvider
     with
         $FutureModifier<List<UserToolType>>,
         $FutureProvider<List<UserToolType>> {
-  /// Provider that returns the list of available tools
+  /// Provider that returns the list of available built-in tools
   /// that can be added to the workspace
   const AvailableToolsToAddProvider._()
     : super(
@@ -196,14 +206,19 @@ final class AvailableToolsToAddProvider
 }
 
 String _$availableToolsToAddHash() =>
-    r'5a55ff720023c75671664d183b5a023708e2581a';
+    r'c11342fe74c0606bb77f2b4941351c12cf81babf';
 
 @ProviderFor(workspaceToolRow)
 const workspaceToolRowProvider = WorkspaceToolRowProvider._();
 
 final class WorkspaceToolRowProvider
-    extends $FunctionalProvider<WorkspaceTool?, WorkspaceTool?, WorkspaceTool?>
-    with $Provider<WorkspaceTool?> {
+    extends
+        $FunctionalProvider<
+          WorkspaceToolEntity?,
+          WorkspaceToolEntity?,
+          WorkspaceToolEntity?
+        >
+    with $Provider<WorkspaceToolEntity?> {
   const WorkspaceToolRowProvider._()
     : super(
         from: null,
@@ -224,21 +239,22 @@ final class WorkspaceToolRowProvider
 
   @$internal
   @override
-  $ProviderElement<WorkspaceTool?> $createElement($ProviderPointer pointer) =>
-      $ProviderElement(pointer);
+  $ProviderElement<WorkspaceToolEntity?> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
 
   @override
-  WorkspaceTool? create(Ref ref) {
+  WorkspaceToolEntity? create(Ref ref) {
     return workspaceToolRow(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(WorkspaceTool? value) {
+  Override overrideWithValue(WorkspaceToolEntity? value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<WorkspaceTool?>(value),
+      providerOverride: $SyncValueProvider<WorkspaceToolEntity?>(value),
     );
   }
 }
 
-String _$workspaceToolRowHash() => r'bcf968412f4c082c55edb56652a30aea119aa916';
+String _$workspaceToolRowHash() => r'02af8404a679663c25fa95b15607cfb78f1b8d40';

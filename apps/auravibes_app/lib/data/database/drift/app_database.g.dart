@@ -3468,12 +3468,12 @@ class MessagesCompanion extends UpdateCompanion<MessagesTable> {
   }
 }
 
-class $ToolsGroupsTable extends ToolsGroups
-    with TableInfo<$ToolsGroupsTable, ToolsGroupsTable> {
+class $McpServersTable extends McpServers
+    with TableInfo<$McpServersTable, McpServersTable> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
-  $ToolsGroupsTable(this.attachedDatabase, [this._alias]);
+  $McpServersTable(this.attachedDatabase, [this._alias]);
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
   late final GeneratedColumn<String> id = GeneratedColumn<String>(
@@ -3531,6 +3531,957 @@ class $ToolsGroupsTable extends ToolsGroups
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _urlMeta = const VerificationMeta('url');
+  @override
+  late final GeneratedColumn<String> url = GeneratedColumn<String>(
+    'url',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<McpTransportType, String>
+  transport = GeneratedColumn<String>(
+    'transport',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  ).withConverter<McpTransportType>($McpServersTable.$convertertransport);
+  @override
+  late final GeneratedColumnWithTypeConverter<McpAuthenticationType, String>
+  authenticationType =
+      GeneratedColumn<String>(
+        'authentication_type',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<McpAuthenticationType>(
+        $McpServersTable.$converterauthenticationType,
+      );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+    'description',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _clientIdMeta = const VerificationMeta(
+    'clientId',
+  );
+  @override
+  late final GeneratedColumn<String> clientId = GeneratedColumn<String>(
+    'client_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _tokenEndpointMeta = const VerificationMeta(
+    'tokenEndpoint',
+  );
+  @override
+  late final GeneratedColumn<String> tokenEndpoint = GeneratedColumn<String>(
+    'token_endpoint',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _authorizationEndpointMeta =
+      const VerificationMeta('authorizationEndpoint');
+  @override
+  late final GeneratedColumn<String> authorizationEndpoint =
+      GeneratedColumn<String>(
+        'authorization_endpoint',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _bearerTokenMeta = const VerificationMeta(
+    'bearerToken',
+  );
+  @override
+  late final GeneratedColumn<String> bearerToken = GeneratedColumn<String>(
+    'bearer_token',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _useHttp2Meta = const VerificationMeta(
+    'useHttp2',
+  );
+  @override
+  late final GeneratedColumn<bool> useHttp2 = GeneratedColumn<bool>(
+    'use_http2',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("use_http2" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _isEnabledMeta = const VerificationMeta(
+    'isEnabled',
+  );
+  @override
+  late final GeneratedColumn<bool> isEnabled = GeneratedColumn<bool>(
+    'is_enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_enabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    createdAt,
+    updatedAt,
+    workspaceId,
+    name,
+    url,
+    transport,
+    authenticationType,
+    description,
+    clientId,
+    tokenEndpoint,
+    authorizationEndpoint,
+    bearerToken,
+    useHttp2,
+    isEnabled,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'mcp_servers';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<McpServersTable> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+        _workspaceIdMeta,
+        workspaceId.isAcceptableOrUnknown(
+          data['workspace_id']!,
+          _workspaceIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_workspaceIdMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('url')) {
+      context.handle(
+        _urlMeta,
+        url.isAcceptableOrUnknown(data['url']!, _urlMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_urlMeta);
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
+          _descriptionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('client_id')) {
+      context.handle(
+        _clientIdMeta,
+        clientId.isAcceptableOrUnknown(data['client_id']!, _clientIdMeta),
+      );
+    }
+    if (data.containsKey('token_endpoint')) {
+      context.handle(
+        _tokenEndpointMeta,
+        tokenEndpoint.isAcceptableOrUnknown(
+          data['token_endpoint']!,
+          _tokenEndpointMeta,
+        ),
+      );
+    }
+    if (data.containsKey('authorization_endpoint')) {
+      context.handle(
+        _authorizationEndpointMeta,
+        authorizationEndpoint.isAcceptableOrUnknown(
+          data['authorization_endpoint']!,
+          _authorizationEndpointMeta,
+        ),
+      );
+    }
+    if (data.containsKey('bearer_token')) {
+      context.handle(
+        _bearerTokenMeta,
+        bearerToken.isAcceptableOrUnknown(
+          data['bearer_token']!,
+          _bearerTokenMeta,
+        ),
+      );
+    }
+    if (data.containsKey('use_http2')) {
+      context.handle(
+        _useHttp2Meta,
+        useHttp2.isAcceptableOrUnknown(data['use_http2']!, _useHttp2Meta),
+      );
+    }
+    if (data.containsKey('is_enabled')) {
+      context.handle(
+        _isEnabledMeta,
+        isEnabled.isAcceptableOrUnknown(data['is_enabled']!, _isEnabledMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  McpServersTable map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return McpServersTable(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      workspaceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}workspace_id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      url: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}url'],
+      )!,
+      transport: $McpServersTable.$convertertransport.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}transport'],
+        )!,
+      ),
+      authenticationType: $McpServersTable.$converterauthenticationType.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}authentication_type'],
+        )!,
+      ),
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      ),
+      clientId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}client_id'],
+      ),
+      tokenEndpoint: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}token_endpoint'],
+      ),
+      authorizationEndpoint: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}authorization_endpoint'],
+      ),
+      bearerToken: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bearer_token'],
+      ),
+      useHttp2: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}use_http2'],
+      )!,
+      isEnabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_enabled'],
+      )!,
+    );
+  }
+
+  @override
+  $McpServersTable createAlias(String alias) {
+    return $McpServersTable(attachedDatabase, alias);
+  }
+
+  static JsonTypeConverter2<McpTransportType, String, String>
+  $convertertransport = const EnumNameConverter<McpTransportType>(
+    McpTransportType.values,
+  );
+  static JsonTypeConverter2<McpAuthenticationType, String, String>
+  $converterauthenticationType = const EnumNameConverter<McpAuthenticationType>(
+    McpAuthenticationType.values,
+  );
+}
+
+class McpServersTable extends DataClass implements Insertable<McpServersTable> {
+  ///Primary key column as string
+  final String id;
+
+  /// when was created timestamp
+  final DateTime createdAt;
+
+  /// when was last updated timestamp
+  final DateTime updatedAt;
+
+  /// Reference to the workspace this MCP server belongs to
+  final String workspaceId;
+
+  /// User-friendly name for the MCP server
+  final String name;
+
+  /// URL endpoint for the MCP server
+  final String url;
+
+  /// Transport type: 'sse' or 'streamable_http'
+  final McpTransportType transport;
+
+  /// Authentication type: 'none', 'oauth', or 'bearer_token'
+  final McpAuthenticationType authenticationType;
+
+  /// Optional description of what this MCP server provides
+  final String? description;
+
+  /// OAuth client ID (required when authenticationType is oauth)
+  final String? clientId;
+
+  /// OAuth token endpoint URL (required when authenticationType is oauth)
+  final String? tokenEndpoint;
+
+  /// OAuth authorization endpoint URL
+  /// (required when authenticationType is oauth)
+  final String? authorizationEndpoint;
+
+  /// Bearer token (required when authenticationType is bearerToken)
+  /// TODO: Consider moving to secure storage instead of database
+  final String? bearerToken;
+
+  /// Whether to use HTTP/2 (only applicable for streamableHttp transport)
+  final bool useHttp2;
+
+  /// Whether the MCP server is enabled for connections
+  final bool isEnabled;
+  const McpServersTable({
+    required this.id,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.workspaceId,
+    required this.name,
+    required this.url,
+    required this.transport,
+    required this.authenticationType,
+    this.description,
+    this.clientId,
+    this.tokenEndpoint,
+    this.authorizationEndpoint,
+    this.bearerToken,
+    required this.useHttp2,
+    required this.isEnabled,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['workspace_id'] = Variable<String>(workspaceId);
+    map['name'] = Variable<String>(name);
+    map['url'] = Variable<String>(url);
+    {
+      map['transport'] = Variable<String>(
+        $McpServersTable.$convertertransport.toSql(transport),
+      );
+    }
+    {
+      map['authentication_type'] = Variable<String>(
+        $McpServersTable.$converterauthenticationType.toSql(authenticationType),
+      );
+    }
+    if (!nullToAbsent || description != null) {
+      map['description'] = Variable<String>(description);
+    }
+    if (!nullToAbsent || clientId != null) {
+      map['client_id'] = Variable<String>(clientId);
+    }
+    if (!nullToAbsent || tokenEndpoint != null) {
+      map['token_endpoint'] = Variable<String>(tokenEndpoint);
+    }
+    if (!nullToAbsent || authorizationEndpoint != null) {
+      map['authorization_endpoint'] = Variable<String>(authorizationEndpoint);
+    }
+    if (!nullToAbsent || bearerToken != null) {
+      map['bearer_token'] = Variable<String>(bearerToken);
+    }
+    map['use_http2'] = Variable<bool>(useHttp2);
+    map['is_enabled'] = Variable<bool>(isEnabled);
+    return map;
+  }
+
+  McpServersCompanion toCompanion(bool nullToAbsent) {
+    return McpServersCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      workspaceId: Value(workspaceId),
+      name: Value(name),
+      url: Value(url),
+      transport: Value(transport),
+      authenticationType: Value(authenticationType),
+      description: description == null && nullToAbsent
+          ? const Value.absent()
+          : Value(description),
+      clientId: clientId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(clientId),
+      tokenEndpoint: tokenEndpoint == null && nullToAbsent
+          ? const Value.absent()
+          : Value(tokenEndpoint),
+      authorizationEndpoint: authorizationEndpoint == null && nullToAbsent
+          ? const Value.absent()
+          : Value(authorizationEndpoint),
+      bearerToken: bearerToken == null && nullToAbsent
+          ? const Value.absent()
+          : Value(bearerToken),
+      useHttp2: Value(useHttp2),
+      isEnabled: Value(isEnabled),
+    );
+  }
+
+  factory McpServersTable.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return McpServersTable(
+      id: serializer.fromJson<String>(json['id']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      workspaceId: serializer.fromJson<String>(json['workspaceId']),
+      name: serializer.fromJson<String>(json['name']),
+      url: serializer.fromJson<String>(json['url']),
+      transport: $McpServersTable.$convertertransport.fromJson(
+        serializer.fromJson<String>(json['transport']),
+      ),
+      authenticationType: $McpServersTable.$converterauthenticationType
+          .fromJson(serializer.fromJson<String>(json['authenticationType'])),
+      description: serializer.fromJson<String?>(json['description']),
+      clientId: serializer.fromJson<String?>(json['clientId']),
+      tokenEndpoint: serializer.fromJson<String?>(json['tokenEndpoint']),
+      authorizationEndpoint: serializer.fromJson<String?>(
+        json['authorizationEndpoint'],
+      ),
+      bearerToken: serializer.fromJson<String?>(json['bearerToken']),
+      useHttp2: serializer.fromJson<bool>(json['useHttp2']),
+      isEnabled: serializer.fromJson<bool>(json['isEnabled']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'workspaceId': serializer.toJson<String>(workspaceId),
+      'name': serializer.toJson<String>(name),
+      'url': serializer.toJson<String>(url),
+      'transport': serializer.toJson<String>(
+        $McpServersTable.$convertertransport.toJson(transport),
+      ),
+      'authenticationType': serializer.toJson<String>(
+        $McpServersTable.$converterauthenticationType.toJson(
+          authenticationType,
+        ),
+      ),
+      'description': serializer.toJson<String?>(description),
+      'clientId': serializer.toJson<String?>(clientId),
+      'tokenEndpoint': serializer.toJson<String?>(tokenEndpoint),
+      'authorizationEndpoint': serializer.toJson<String?>(
+        authorizationEndpoint,
+      ),
+      'bearerToken': serializer.toJson<String?>(bearerToken),
+      'useHttp2': serializer.toJson<bool>(useHttp2),
+      'isEnabled': serializer.toJson<bool>(isEnabled),
+    };
+  }
+
+  McpServersTable copyWith({
+    String? id,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    String? workspaceId,
+    String? name,
+    String? url,
+    McpTransportType? transport,
+    McpAuthenticationType? authenticationType,
+    Value<String?> description = const Value.absent(),
+    Value<String?> clientId = const Value.absent(),
+    Value<String?> tokenEndpoint = const Value.absent(),
+    Value<String?> authorizationEndpoint = const Value.absent(),
+    Value<String?> bearerToken = const Value.absent(),
+    bool? useHttp2,
+    bool? isEnabled,
+  }) => McpServersTable(
+    id: id ?? this.id,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    workspaceId: workspaceId ?? this.workspaceId,
+    name: name ?? this.name,
+    url: url ?? this.url,
+    transport: transport ?? this.transport,
+    authenticationType: authenticationType ?? this.authenticationType,
+    description: description.present ? description.value : this.description,
+    clientId: clientId.present ? clientId.value : this.clientId,
+    tokenEndpoint: tokenEndpoint.present
+        ? tokenEndpoint.value
+        : this.tokenEndpoint,
+    authorizationEndpoint: authorizationEndpoint.present
+        ? authorizationEndpoint.value
+        : this.authorizationEndpoint,
+    bearerToken: bearerToken.present ? bearerToken.value : this.bearerToken,
+    useHttp2: useHttp2 ?? this.useHttp2,
+    isEnabled: isEnabled ?? this.isEnabled,
+  );
+  McpServersTable copyWithCompanion(McpServersCompanion data) {
+    return McpServersTable(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      workspaceId: data.workspaceId.present
+          ? data.workspaceId.value
+          : this.workspaceId,
+      name: data.name.present ? data.name.value : this.name,
+      url: data.url.present ? data.url.value : this.url,
+      transport: data.transport.present ? data.transport.value : this.transport,
+      authenticationType: data.authenticationType.present
+          ? data.authenticationType.value
+          : this.authenticationType,
+      description: data.description.present
+          ? data.description.value
+          : this.description,
+      clientId: data.clientId.present ? data.clientId.value : this.clientId,
+      tokenEndpoint: data.tokenEndpoint.present
+          ? data.tokenEndpoint.value
+          : this.tokenEndpoint,
+      authorizationEndpoint: data.authorizationEndpoint.present
+          ? data.authorizationEndpoint.value
+          : this.authorizationEndpoint,
+      bearerToken: data.bearerToken.present
+          ? data.bearerToken.value
+          : this.bearerToken,
+      useHttp2: data.useHttp2.present ? data.useHttp2.value : this.useHttp2,
+      isEnabled: data.isEnabled.present ? data.isEnabled.value : this.isEnabled,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('McpServersTable(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('name: $name, ')
+          ..write('url: $url, ')
+          ..write('transport: $transport, ')
+          ..write('authenticationType: $authenticationType, ')
+          ..write('description: $description, ')
+          ..write('clientId: $clientId, ')
+          ..write('tokenEndpoint: $tokenEndpoint, ')
+          ..write('authorizationEndpoint: $authorizationEndpoint, ')
+          ..write('bearerToken: $bearerToken, ')
+          ..write('useHttp2: $useHttp2, ')
+          ..write('isEnabled: $isEnabled')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    createdAt,
+    updatedAt,
+    workspaceId,
+    name,
+    url,
+    transport,
+    authenticationType,
+    description,
+    clientId,
+    tokenEndpoint,
+    authorizationEndpoint,
+    bearerToken,
+    useHttp2,
+    isEnabled,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is McpServersTable &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.workspaceId == this.workspaceId &&
+          other.name == this.name &&
+          other.url == this.url &&
+          other.transport == this.transport &&
+          other.authenticationType == this.authenticationType &&
+          other.description == this.description &&
+          other.clientId == this.clientId &&
+          other.tokenEndpoint == this.tokenEndpoint &&
+          other.authorizationEndpoint == this.authorizationEndpoint &&
+          other.bearerToken == this.bearerToken &&
+          other.useHttp2 == this.useHttp2 &&
+          other.isEnabled == this.isEnabled);
+}
+
+class McpServersCompanion extends UpdateCompanion<McpServersTable> {
+  final Value<String> id;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<String> workspaceId;
+  final Value<String> name;
+  final Value<String> url;
+  final Value<McpTransportType> transport;
+  final Value<McpAuthenticationType> authenticationType;
+  final Value<String?> description;
+  final Value<String?> clientId;
+  final Value<String?> tokenEndpoint;
+  final Value<String?> authorizationEndpoint;
+  final Value<String?> bearerToken;
+  final Value<bool> useHttp2;
+  final Value<bool> isEnabled;
+  final Value<int> rowid;
+  const McpServersCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.workspaceId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.url = const Value.absent(),
+    this.transport = const Value.absent(),
+    this.authenticationType = const Value.absent(),
+    this.description = const Value.absent(),
+    this.clientId = const Value.absent(),
+    this.tokenEndpoint = const Value.absent(),
+    this.authorizationEndpoint = const Value.absent(),
+    this.bearerToken = const Value.absent(),
+    this.useHttp2 = const Value.absent(),
+    this.isEnabled = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  McpServersCompanion.insert({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    required String workspaceId,
+    required String name,
+    required String url,
+    required McpTransportType transport,
+    required McpAuthenticationType authenticationType,
+    this.description = const Value.absent(),
+    this.clientId = const Value.absent(),
+    this.tokenEndpoint = const Value.absent(),
+    this.authorizationEndpoint = const Value.absent(),
+    this.bearerToken = const Value.absent(),
+    this.useHttp2 = const Value.absent(),
+    this.isEnabled = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : workspaceId = Value(workspaceId),
+       name = Value(name),
+       url = Value(url),
+       transport = Value(transport),
+       authenticationType = Value(authenticationType);
+  static Insertable<McpServersTable> custom({
+    Expression<String>? id,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? workspaceId,
+    Expression<String>? name,
+    Expression<String>? url,
+    Expression<String>? transport,
+    Expression<String>? authenticationType,
+    Expression<String>? description,
+    Expression<String>? clientId,
+    Expression<String>? tokenEndpoint,
+    Expression<String>? authorizationEndpoint,
+    Expression<String>? bearerToken,
+    Expression<bool>? useHttp2,
+    Expression<bool>? isEnabled,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (name != null) 'name': name,
+      if (url != null) 'url': url,
+      if (transport != null) 'transport': transport,
+      if (authenticationType != null) 'authentication_type': authenticationType,
+      if (description != null) 'description': description,
+      if (clientId != null) 'client_id': clientId,
+      if (tokenEndpoint != null) 'token_endpoint': tokenEndpoint,
+      if (authorizationEndpoint != null)
+        'authorization_endpoint': authorizationEndpoint,
+      if (bearerToken != null) 'bearer_token': bearerToken,
+      if (useHttp2 != null) 'use_http2': useHttp2,
+      if (isEnabled != null) 'is_enabled': isEnabled,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  McpServersCompanion copyWith({
+    Value<String>? id,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<String>? workspaceId,
+    Value<String>? name,
+    Value<String>? url,
+    Value<McpTransportType>? transport,
+    Value<McpAuthenticationType>? authenticationType,
+    Value<String?>? description,
+    Value<String?>? clientId,
+    Value<String?>? tokenEndpoint,
+    Value<String?>? authorizationEndpoint,
+    Value<String?>? bearerToken,
+    Value<bool>? useHttp2,
+    Value<bool>? isEnabled,
+    Value<int>? rowid,
+  }) {
+    return McpServersCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      workspaceId: workspaceId ?? this.workspaceId,
+      name: name ?? this.name,
+      url: url ?? this.url,
+      transport: transport ?? this.transport,
+      authenticationType: authenticationType ?? this.authenticationType,
+      description: description ?? this.description,
+      clientId: clientId ?? this.clientId,
+      tokenEndpoint: tokenEndpoint ?? this.tokenEndpoint,
+      authorizationEndpoint:
+          authorizationEndpoint ?? this.authorizationEndpoint,
+      bearerToken: bearerToken ?? this.bearerToken,
+      useHttp2: useHttp2 ?? this.useHttp2,
+      isEnabled: isEnabled ?? this.isEnabled,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<String>(workspaceId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (url.present) {
+      map['url'] = Variable<String>(url.value);
+    }
+    if (transport.present) {
+      map['transport'] = Variable<String>(
+        $McpServersTable.$convertertransport.toSql(transport.value),
+      );
+    }
+    if (authenticationType.present) {
+      map['authentication_type'] = Variable<String>(
+        $McpServersTable.$converterauthenticationType.toSql(
+          authenticationType.value,
+        ),
+      );
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (clientId.present) {
+      map['client_id'] = Variable<String>(clientId.value);
+    }
+    if (tokenEndpoint.present) {
+      map['token_endpoint'] = Variable<String>(tokenEndpoint.value);
+    }
+    if (authorizationEndpoint.present) {
+      map['authorization_endpoint'] = Variable<String>(
+        authorizationEndpoint.value,
+      );
+    }
+    if (bearerToken.present) {
+      map['bearer_token'] = Variable<String>(bearerToken.value);
+    }
+    if (useHttp2.present) {
+      map['use_http2'] = Variable<bool>(useHttp2.value);
+    }
+    if (isEnabled.present) {
+      map['is_enabled'] = Variable<bool>(isEnabled.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('McpServersCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('name: $name, ')
+          ..write('url: $url, ')
+          ..write('transport: $transport, ')
+          ..write('authenticationType: $authenticationType, ')
+          ..write('description: $description, ')
+          ..write('clientId: $clientId, ')
+          ..write('tokenEndpoint: $tokenEndpoint, ')
+          ..write('authorizationEndpoint: $authorizationEndpoint, ')
+          ..write('bearerToken: $bearerToken, ')
+          ..write('useHttp2: $useHttp2, ')
+          ..write('isEnabled: $isEnabled, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ToolsGroupsTable extends ToolsGroups
+    with TableInfo<$ToolsGroupsTable, ToolsGroupsTable> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ToolsGroupsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: () => const UuidV7().generate(),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _workspaceIdMeta = const VerificationMeta(
+    'workspaceId',
+  );
+  @override
+  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
+    'workspace_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES workspaces (id)',
+    ),
+  );
+  static const VerificationMeta _mcpServerIdMeta = const VerificationMeta(
+    'mcpServerId',
+  );
+  @override
+  late final GeneratedColumn<String> mcpServerId = GeneratedColumn<String>(
+    'mcp_server_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES mcp_servers (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
   static const VerificationMeta _isEnabledMeta = const VerificationMeta(
     'isEnabled',
   );
@@ -3561,6 +4512,7 @@ class $ToolsGroupsTable extends ToolsGroups
     createdAt,
     updatedAt,
     workspaceId,
+    mcpServerId,
     name,
     isEnabled,
     permissions,
@@ -3603,6 +4555,15 @@ class $ToolsGroupsTable extends ToolsGroups
     } else if (isInserting) {
       context.missing(_workspaceIdMeta);
     }
+    if (data.containsKey('mcp_server_id')) {
+      context.handle(
+        _mcpServerIdMeta,
+        mcpServerId.isAcceptableOrUnknown(
+          data['mcp_server_id']!,
+          _mcpServerIdMeta,
+        ),
+      );
+    }
     if (data.containsKey('name')) {
       context.handle(
         _nameMeta,
@@ -3642,6 +4603,10 @@ class $ToolsGroupsTable extends ToolsGroups
         DriftSqlType.string,
         data['${effectivePrefix}workspace_id'],
       )!,
+      mcpServerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}mcp_server_id'],
+      ),
       name: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}name'],
@@ -3683,6 +4648,10 @@ class ToolsGroupsTable extends DataClass
 
   /// Reference to the workspace this tools group belongs to
   final String workspaceId;
+
+  /// Optional reference to the MCP server this group belongs to.
+  /// When the MCP server is deleted, this group and its tools are also deleted.
+  final String? mcpServerId;
   final String name;
 
   /// Whether the tool is enabled for this workspace
@@ -3693,6 +4662,7 @@ class ToolsGroupsTable extends DataClass
     required this.createdAt,
     required this.updatedAt,
     required this.workspaceId,
+    this.mcpServerId,
     required this.name,
     required this.isEnabled,
     required this.permissions,
@@ -3704,6 +4674,9 @@ class ToolsGroupsTable extends DataClass
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     map['workspace_id'] = Variable<String>(workspaceId);
+    if (!nullToAbsent || mcpServerId != null) {
+      map['mcp_server_id'] = Variable<String>(mcpServerId);
+    }
     map['name'] = Variable<String>(name);
     map['is_enabled'] = Variable<bool>(isEnabled);
     {
@@ -3720,6 +4693,9 @@ class ToolsGroupsTable extends DataClass
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       workspaceId: Value(workspaceId),
+      mcpServerId: mcpServerId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(mcpServerId),
       name: Value(name),
       isEnabled: Value(isEnabled),
       permissions: Value(permissions),
@@ -3736,6 +4712,7 @@ class ToolsGroupsTable extends DataClass
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       workspaceId: serializer.fromJson<String>(json['workspaceId']),
+      mcpServerId: serializer.fromJson<String?>(json['mcpServerId']),
       name: serializer.fromJson<String>(json['name']),
       isEnabled: serializer.fromJson<bool>(json['isEnabled']),
       permissions: $ToolsGroupsTable.$converterpermissions.fromJson(
@@ -3751,6 +4728,7 @@ class ToolsGroupsTable extends DataClass
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'workspaceId': serializer.toJson<String>(workspaceId),
+      'mcpServerId': serializer.toJson<String?>(mcpServerId),
       'name': serializer.toJson<String>(name),
       'isEnabled': serializer.toJson<bool>(isEnabled),
       'permissions': serializer.toJson<String>(
@@ -3764,6 +4742,7 @@ class ToolsGroupsTable extends DataClass
     DateTime? createdAt,
     DateTime? updatedAt,
     String? workspaceId,
+    Value<String?> mcpServerId = const Value.absent(),
     String? name,
     bool? isEnabled,
     PermissionAccess? permissions,
@@ -3772,6 +4751,7 @@ class ToolsGroupsTable extends DataClass
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     workspaceId: workspaceId ?? this.workspaceId,
+    mcpServerId: mcpServerId.present ? mcpServerId.value : this.mcpServerId,
     name: name ?? this.name,
     isEnabled: isEnabled ?? this.isEnabled,
     permissions: permissions ?? this.permissions,
@@ -3784,6 +4764,9 @@ class ToolsGroupsTable extends DataClass
       workspaceId: data.workspaceId.present
           ? data.workspaceId.value
           : this.workspaceId,
+      mcpServerId: data.mcpServerId.present
+          ? data.mcpServerId.value
+          : this.mcpServerId,
       name: data.name.present ? data.name.value : this.name,
       isEnabled: data.isEnabled.present ? data.isEnabled.value : this.isEnabled,
       permissions: data.permissions.present
@@ -3799,6 +4782,7 @@ class ToolsGroupsTable extends DataClass
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('workspaceId: $workspaceId, ')
+          ..write('mcpServerId: $mcpServerId, ')
           ..write('name: $name, ')
           ..write('isEnabled: $isEnabled, ')
           ..write('permissions: $permissions')
@@ -3812,6 +4796,7 @@ class ToolsGroupsTable extends DataClass
     createdAt,
     updatedAt,
     workspaceId,
+    mcpServerId,
     name,
     isEnabled,
     permissions,
@@ -3824,6 +4809,7 @@ class ToolsGroupsTable extends DataClass
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.workspaceId == this.workspaceId &&
+          other.mcpServerId == this.mcpServerId &&
           other.name == this.name &&
           other.isEnabled == this.isEnabled &&
           other.permissions == this.permissions);
@@ -3834,6 +4820,7 @@ class ToolsGroupsCompanion extends UpdateCompanion<ToolsGroupsTable> {
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<String> workspaceId;
+  final Value<String?> mcpServerId;
   final Value<String> name;
   final Value<bool> isEnabled;
   final Value<PermissionAccess> permissions;
@@ -3843,6 +4830,7 @@ class ToolsGroupsCompanion extends UpdateCompanion<ToolsGroupsTable> {
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.workspaceId = const Value.absent(),
+    this.mcpServerId = const Value.absent(),
     this.name = const Value.absent(),
     this.isEnabled = const Value.absent(),
     this.permissions = const Value.absent(),
@@ -3853,6 +4841,7 @@ class ToolsGroupsCompanion extends UpdateCompanion<ToolsGroupsTable> {
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     required String workspaceId,
+    this.mcpServerId = const Value.absent(),
     required String name,
     this.isEnabled = const Value.absent(),
     required PermissionAccess permissions,
@@ -3865,6 +4854,7 @@ class ToolsGroupsCompanion extends UpdateCompanion<ToolsGroupsTable> {
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<String>? workspaceId,
+    Expression<String>? mcpServerId,
     Expression<String>? name,
     Expression<bool>? isEnabled,
     Expression<String>? permissions,
@@ -3875,6 +4865,7 @@ class ToolsGroupsCompanion extends UpdateCompanion<ToolsGroupsTable> {
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (workspaceId != null) 'workspace_id': workspaceId,
+      if (mcpServerId != null) 'mcp_server_id': mcpServerId,
       if (name != null) 'name': name,
       if (isEnabled != null) 'is_enabled': isEnabled,
       if (permissions != null) 'permissions': permissions,
@@ -3887,6 +4878,7 @@ class ToolsGroupsCompanion extends UpdateCompanion<ToolsGroupsTable> {
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<String>? workspaceId,
+    Value<String?>? mcpServerId,
     Value<String>? name,
     Value<bool>? isEnabled,
     Value<PermissionAccess>? permissions,
@@ -3897,6 +4889,7 @@ class ToolsGroupsCompanion extends UpdateCompanion<ToolsGroupsTable> {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       workspaceId: workspaceId ?? this.workspaceId,
+      mcpServerId: mcpServerId ?? this.mcpServerId,
       name: name ?? this.name,
       isEnabled: isEnabled ?? this.isEnabled,
       permissions: permissions ?? this.permissions,
@@ -3918,6 +4911,9 @@ class ToolsGroupsCompanion extends UpdateCompanion<ToolsGroupsTable> {
     }
     if (workspaceId.present) {
       map['workspace_id'] = Variable<String>(workspaceId.value);
+    }
+    if (mcpServerId.present) {
+      map['mcp_server_id'] = Variable<String>(mcpServerId.value);
     }
     if (name.present) {
       map['name'] = Variable<String>(name.value);
@@ -3943,6 +4939,7 @@ class ToolsGroupsCompanion extends UpdateCompanion<ToolsGroupsTable> {
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('workspaceId: $workspaceId, ')
+          ..write('mcpServerId: $mcpServerId, ')
           ..write('name: $name, ')
           ..write('isEnabled: $isEnabled, ')
           ..write('permissions: $permissions, ')
@@ -4039,6 +5036,17 @@ class $ToolsTable extends Tools with TableInfo<$ToolsTable, ToolsTable> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+    'description',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _additionalPromptMeta = const VerificationMeta(
     'additionalPrompt',
   );
@@ -4054,6 +5062,17 @@ class $ToolsTable extends Tools with TableInfo<$ToolsTable, ToolsTable> {
   @override
   late final GeneratedColumn<String> config = GeneratedColumn<String>(
     'config',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _inputSchemaMeta = const VerificationMeta(
+    'inputSchema',
+  );
+  @override
+  late final GeneratedColumn<String> inputSchema = GeneratedColumn<String>(
+    'input_schema',
     aliasedName,
     true,
     type: DriftSqlType.string,
@@ -4093,8 +5112,10 @@ class $ToolsTable extends Tools with TableInfo<$ToolsTable, ToolsTable> {
     workspaceToolsGroupId,
     toolId,
     customName,
+    description,
     additionalPrompt,
     config,
+    inputSchema,
     isEnabled,
     permissions,
   ];
@@ -4159,6 +5180,15 @@ class $ToolsTable extends Tools with TableInfo<$ToolsTable, ToolsTable> {
         customName.isAcceptableOrUnknown(data['custom_name']!, _customNameMeta),
       );
     }
+    if (data.containsKey('description')) {
+      context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
+          _descriptionMeta,
+        ),
+      );
+    }
     if (data.containsKey('additional_prompt')) {
       context.handle(
         _additionalPromptMeta,
@@ -4172,6 +5202,15 @@ class $ToolsTable extends Tools with TableInfo<$ToolsTable, ToolsTable> {
       context.handle(
         _configMeta,
         config.isAcceptableOrUnknown(data['config']!, _configMeta),
+      );
+    }
+    if (data.containsKey('input_schema')) {
+      context.handle(
+        _inputSchemaMeta,
+        inputSchema.isAcceptableOrUnknown(
+          data['input_schema']!,
+          _inputSchemaMeta,
+        ),
       );
     }
     if (data.containsKey('is_enabled')) {
@@ -4217,6 +5256,10 @@ class $ToolsTable extends Tools with TableInfo<$ToolsTable, ToolsTable> {
         DriftSqlType.string,
         data['${effectivePrefix}custom_name'],
       ),
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      ),
       additionalPrompt: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}additional_prompt'],
@@ -4224,6 +5267,10 @@ class $ToolsTable extends Tools with TableInfo<$ToolsTable, ToolsTable> {
       config: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}config'],
+      ),
+      inputSchema: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}input_schema'],
       ),
       isEnabled: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
@@ -4266,10 +5313,16 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
   /// Type of tool (e.g., 'web_search', 'calculator', etc.)
   final String toolId;
   final String? customName;
+
+  /// Optional description of the tool (from MCP or user-defined)
+  final String? description;
   final String? additionalPrompt;
 
   /// Tool configuration as JSON (optional)
   final String? config;
+
+  /// JSON Schema for the tool's input parameters (for MCP tools)
+  final String? inputSchema;
 
   /// Whether the tool is enabled for this workspace
   final bool isEnabled;
@@ -4282,8 +5335,10 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
     this.workspaceToolsGroupId,
     required this.toolId,
     this.customName,
+    this.description,
     this.additionalPrompt,
     this.config,
+    this.inputSchema,
     required this.isEnabled,
     required this.permissions,
   });
@@ -4301,11 +5356,17 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
     if (!nullToAbsent || customName != null) {
       map['custom_name'] = Variable<String>(customName);
     }
+    if (!nullToAbsent || description != null) {
+      map['description'] = Variable<String>(description);
+    }
     if (!nullToAbsent || additionalPrompt != null) {
       map['additional_prompt'] = Variable<String>(additionalPrompt);
     }
     if (!nullToAbsent || config != null) {
       map['config'] = Variable<String>(config);
+    }
+    if (!nullToAbsent || inputSchema != null) {
+      map['input_schema'] = Variable<String>(inputSchema);
     }
     map['is_enabled'] = Variable<bool>(isEnabled);
     {
@@ -4329,12 +5390,18 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
       customName: customName == null && nullToAbsent
           ? const Value.absent()
           : Value(customName),
+      description: description == null && nullToAbsent
+          ? const Value.absent()
+          : Value(description),
       additionalPrompt: additionalPrompt == null && nullToAbsent
           ? const Value.absent()
           : Value(additionalPrompt),
       config: config == null && nullToAbsent
           ? const Value.absent()
           : Value(config),
+      inputSchema: inputSchema == null && nullToAbsent
+          ? const Value.absent()
+          : Value(inputSchema),
       isEnabled: Value(isEnabled),
       permissions: Value(permissions),
     );
@@ -4355,8 +5422,10 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
       ),
       toolId: serializer.fromJson<String>(json['toolId']),
       customName: serializer.fromJson<String?>(json['customName']),
+      description: serializer.fromJson<String?>(json['description']),
       additionalPrompt: serializer.fromJson<String?>(json['additionalPrompt']),
       config: serializer.fromJson<String?>(json['config']),
+      inputSchema: serializer.fromJson<String?>(json['inputSchema']),
       isEnabled: serializer.fromJson<bool>(json['isEnabled']),
       permissions: $ToolsTable.$converterpermissions.fromJson(
         serializer.fromJson<String>(json['permissions']),
@@ -4376,8 +5445,10 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
       ),
       'toolId': serializer.toJson<String>(toolId),
       'customName': serializer.toJson<String?>(customName),
+      'description': serializer.toJson<String?>(description),
       'additionalPrompt': serializer.toJson<String?>(additionalPrompt),
       'config': serializer.toJson<String?>(config),
+      'inputSchema': serializer.toJson<String?>(inputSchema),
       'isEnabled': serializer.toJson<bool>(isEnabled),
       'permissions': serializer.toJson<String>(
         $ToolsTable.$converterpermissions.toJson(permissions),
@@ -4393,8 +5464,10 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
     Value<String?> workspaceToolsGroupId = const Value.absent(),
     String? toolId,
     Value<String?> customName = const Value.absent(),
+    Value<String?> description = const Value.absent(),
     Value<String?> additionalPrompt = const Value.absent(),
     Value<String?> config = const Value.absent(),
+    Value<String?> inputSchema = const Value.absent(),
     bool? isEnabled,
     PermissionAccess? permissions,
   }) => ToolsTable(
@@ -4407,10 +5480,12 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
         : this.workspaceToolsGroupId,
     toolId: toolId ?? this.toolId,
     customName: customName.present ? customName.value : this.customName,
+    description: description.present ? description.value : this.description,
     additionalPrompt: additionalPrompt.present
         ? additionalPrompt.value
         : this.additionalPrompt,
     config: config.present ? config.value : this.config,
+    inputSchema: inputSchema.present ? inputSchema.value : this.inputSchema,
     isEnabled: isEnabled ?? this.isEnabled,
     permissions: permissions ?? this.permissions,
   );
@@ -4429,10 +5504,16 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
       customName: data.customName.present
           ? data.customName.value
           : this.customName,
+      description: data.description.present
+          ? data.description.value
+          : this.description,
       additionalPrompt: data.additionalPrompt.present
           ? data.additionalPrompt.value
           : this.additionalPrompt,
       config: data.config.present ? data.config.value : this.config,
+      inputSchema: data.inputSchema.present
+          ? data.inputSchema.value
+          : this.inputSchema,
       isEnabled: data.isEnabled.present ? data.isEnabled.value : this.isEnabled,
       permissions: data.permissions.present
           ? data.permissions.value
@@ -4450,8 +5531,10 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
           ..write('workspaceToolsGroupId: $workspaceToolsGroupId, ')
           ..write('toolId: $toolId, ')
           ..write('customName: $customName, ')
+          ..write('description: $description, ')
           ..write('additionalPrompt: $additionalPrompt, ')
           ..write('config: $config, ')
+          ..write('inputSchema: $inputSchema, ')
           ..write('isEnabled: $isEnabled, ')
           ..write('permissions: $permissions')
           ..write(')'))
@@ -4467,8 +5550,10 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
     workspaceToolsGroupId,
     toolId,
     customName,
+    description,
     additionalPrompt,
     config,
+    inputSchema,
     isEnabled,
     permissions,
   );
@@ -4483,8 +5568,10 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
           other.workspaceToolsGroupId == this.workspaceToolsGroupId &&
           other.toolId == this.toolId &&
           other.customName == this.customName &&
+          other.description == this.description &&
           other.additionalPrompt == this.additionalPrompt &&
           other.config == this.config &&
+          other.inputSchema == this.inputSchema &&
           other.isEnabled == this.isEnabled &&
           other.permissions == this.permissions);
 }
@@ -4497,8 +5584,10 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
   final Value<String?> workspaceToolsGroupId;
   final Value<String> toolId;
   final Value<String?> customName;
+  final Value<String?> description;
   final Value<String?> additionalPrompt;
   final Value<String?> config;
+  final Value<String?> inputSchema;
   final Value<bool> isEnabled;
   final Value<PermissionAccess> permissions;
   final Value<int> rowid;
@@ -4510,8 +5599,10 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
     this.workspaceToolsGroupId = const Value.absent(),
     this.toolId = const Value.absent(),
     this.customName = const Value.absent(),
+    this.description = const Value.absent(),
     this.additionalPrompt = const Value.absent(),
     this.config = const Value.absent(),
+    this.inputSchema = const Value.absent(),
     this.isEnabled = const Value.absent(),
     this.permissions = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -4524,8 +5615,10 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
     this.workspaceToolsGroupId = const Value.absent(),
     required String toolId,
     this.customName = const Value.absent(),
+    this.description = const Value.absent(),
     this.additionalPrompt = const Value.absent(),
     this.config = const Value.absent(),
+    this.inputSchema = const Value.absent(),
     this.isEnabled = const Value.absent(),
     this.permissions = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -4539,8 +5632,10 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
     Expression<String>? workspaceToolsGroupId,
     Expression<String>? toolId,
     Expression<String>? customName,
+    Expression<String>? description,
     Expression<String>? additionalPrompt,
     Expression<String>? config,
+    Expression<String>? inputSchema,
     Expression<bool>? isEnabled,
     Expression<String>? permissions,
     Expression<int>? rowid,
@@ -4554,8 +5649,10 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
         'workspace_tools_group_id': workspaceToolsGroupId,
       if (toolId != null) 'tool_id': toolId,
       if (customName != null) 'custom_name': customName,
+      if (description != null) 'description': description,
       if (additionalPrompt != null) 'additional_prompt': additionalPrompt,
       if (config != null) 'config': config,
+      if (inputSchema != null) 'input_schema': inputSchema,
       if (isEnabled != null) 'is_enabled': isEnabled,
       if (permissions != null) 'permissions': permissions,
       if (rowid != null) 'rowid': rowid,
@@ -4570,8 +5667,10 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
     Value<String?>? workspaceToolsGroupId,
     Value<String>? toolId,
     Value<String?>? customName,
+    Value<String?>? description,
     Value<String?>? additionalPrompt,
     Value<String?>? config,
+    Value<String?>? inputSchema,
     Value<bool>? isEnabled,
     Value<PermissionAccess>? permissions,
     Value<int>? rowid,
@@ -4585,8 +5684,10 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
           workspaceToolsGroupId ?? this.workspaceToolsGroupId,
       toolId: toolId ?? this.toolId,
       customName: customName ?? this.customName,
+      description: description ?? this.description,
       additionalPrompt: additionalPrompt ?? this.additionalPrompt,
       config: config ?? this.config,
+      inputSchema: inputSchema ?? this.inputSchema,
       isEnabled: isEnabled ?? this.isEnabled,
       permissions: permissions ?? this.permissions,
       rowid: rowid ?? this.rowid,
@@ -4619,11 +5720,17 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
     if (customName.present) {
       map['custom_name'] = Variable<String>(customName.value);
     }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
     if (additionalPrompt.present) {
       map['additional_prompt'] = Variable<String>(additionalPrompt.value);
     }
     if (config.present) {
       map['config'] = Variable<String>(config.value);
+    }
+    if (inputSchema.present) {
+      map['input_schema'] = Variable<String>(inputSchema.value);
     }
     if (isEnabled.present) {
       map['is_enabled'] = Variable<bool>(isEnabled.value);
@@ -4649,8 +5756,10 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
           ..write('workspaceToolsGroupId: $workspaceToolsGroupId, ')
           ..write('toolId: $toolId, ')
           ..write('customName: $customName, ')
+          ..write('description: $description, ')
           ..write('additionalPrompt: $additionalPrompt, ')
           ..write('config: $config, ')
+          ..write('inputSchema: $inputSchema, ')
           ..write('isEnabled: $isEnabled, ')
           ..write('permissions: $permissions, ')
           ..write('rowid: $rowid')
@@ -5163,6 +6272,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $ConversationsTable conversations = $ConversationsTable(this);
   late final $MessagesTable messages = $MessagesTable(this);
+  late final $McpServersTable mcpServers = $McpServersTable(this);
   late final $ToolsGroupsTable toolsGroups = $ToolsGroupsTable(this);
   late final $ToolsTable tools = $ToolsTable(this);
   late final $ConversationToolsTable conversationTools =
@@ -5185,9 +6295,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final WorkspaceToolsDao workspaceToolsDao = WorkspaceToolsDao(
     this as AppDatabase,
   );
+  late final ToolsGroupsDao toolsGroupsDao = ToolsGroupsDao(
+    this as AppDatabase,
+  );
   late final ConversationToolsDao conversationToolsDao = ConversationToolsDao(
     this as AppDatabase,
   );
+  late final McpServersDao mcpServersDao = McpServersDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -5200,12 +6314,20 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     credentialModels,
     conversations,
     messages,
+    mcpServers,
     toolsGroups,
     tools,
     conversationTools,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'mcp_servers',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('tools_groups', kind: UpdateKind.delete)],
+    ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
         'tools_groups',
@@ -5278,6 +6400,27 @@ final class $$WorkspacesTableReferences
     ).filter((f) => f.workspaceId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_conversationsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$McpServersTable, List<McpServersTable>>
+  _mcpServersRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.mcpServers,
+    aliasName: $_aliasNameGenerator(
+      db.workspaces.id,
+      db.mcpServers.workspaceId,
+    ),
+  );
+
+  $$McpServersTableProcessedTableManager get mcpServersRefs {
+    final manager = $$McpServersTableTableManager(
+      $_db,
+      $_db.mcpServers,
+    ).filter((f) => f.workspaceId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_mcpServersRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -5405,6 +6548,31 @@ class $$WorkspacesTableFilterComposer
           }) => $$ConversationsTableFilterComposer(
             $db: $db,
             $table: $db.conversations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> mcpServersRefs(
+    Expression<bool> Function($$McpServersTableFilterComposer f) f,
+  ) {
+    final $$McpServersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.mcpServers,
+      getReferencedColumn: (t) => t.workspaceId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$McpServersTableFilterComposer(
+            $db: $db,
+            $table: $db.mcpServers,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -5582,6 +6750,31 @@ class $$WorkspacesTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> mcpServersRefs<T extends Object>(
+    Expression<T> Function($$McpServersTableAnnotationComposer a) f,
+  ) {
+    final $$McpServersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.mcpServers,
+      getReferencedColumn: (t) => t.workspaceId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$McpServersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.mcpServers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> toolsGroupsRefs<T extends Object>(
     Expression<T> Function($$ToolsGroupsTableAnnotationComposer a) f,
   ) {
@@ -5649,6 +6842,7 @@ class $$WorkspacesTableTableManager
           PrefetchHooks Function({
             bool credentialsRefs,
             bool conversationsRefs,
+            bool mcpServersRefs,
             bool toolsGroupsRefs,
             bool toolsRefs,
           })
@@ -5712,6 +6906,7 @@ class $$WorkspacesTableTableManager
               ({
                 credentialsRefs = false,
                 conversationsRefs = false,
+                mcpServersRefs = false,
                 toolsGroupsRefs = false,
                 toolsRefs = false,
               }) {
@@ -5720,6 +6915,7 @@ class $$WorkspacesTableTableManager
                   explicitlyWatchedTables: [
                     if (credentialsRefs) db.credentials,
                     if (conversationsRefs) db.conversations,
+                    if (mcpServersRefs) db.mcpServers,
                     if (toolsGroupsRefs) db.toolsGroups,
                     if (toolsRefs) db.tools,
                   ],
@@ -5762,6 +6958,27 @@ class $$WorkspacesTableTableManager
                                 table,
                                 p0,
                               ).conversationsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.workspaceId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (mcpServersRefs)
+                        await $_getPrefetchedData<
+                          WorkspacesTable,
+                          $WorkspacesTable,
+                          McpServersTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$WorkspacesTableReferences
+                              ._mcpServersRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$WorkspacesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).mcpServersRefs,
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.workspaceId == item.id,
@@ -5833,6 +7050,7 @@ typedef $$WorkspacesTableProcessedTableManager =
       PrefetchHooks Function({
         bool credentialsRefs,
         bool conversationsRefs,
+        bool mcpServersRefs,
         bool toolsGroupsRefs,
         bool toolsRefs,
       })
@@ -8997,12 +10215,637 @@ typedef $$MessagesTableProcessedTableManager =
       MessagesTable,
       PrefetchHooks Function({bool conversationId})
     >;
+typedef $$McpServersTableCreateCompanionBuilder =
+    McpServersCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      required String workspaceId,
+      required String name,
+      required String url,
+      required McpTransportType transport,
+      required McpAuthenticationType authenticationType,
+      Value<String?> description,
+      Value<String?> clientId,
+      Value<String?> tokenEndpoint,
+      Value<String?> authorizationEndpoint,
+      Value<String?> bearerToken,
+      Value<bool> useHttp2,
+      Value<bool> isEnabled,
+      Value<int> rowid,
+    });
+typedef $$McpServersTableUpdateCompanionBuilder =
+    McpServersCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<String> workspaceId,
+      Value<String> name,
+      Value<String> url,
+      Value<McpTransportType> transport,
+      Value<McpAuthenticationType> authenticationType,
+      Value<String?> description,
+      Value<String?> clientId,
+      Value<String?> tokenEndpoint,
+      Value<String?> authorizationEndpoint,
+      Value<String?> bearerToken,
+      Value<bool> useHttp2,
+      Value<bool> isEnabled,
+      Value<int> rowid,
+    });
+
+final class $$McpServersTableReferences
+    extends BaseReferences<_$AppDatabase, $McpServersTable, McpServersTable> {
+  $$McpServersTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $WorkspacesTable _workspaceIdTable(_$AppDatabase db) =>
+      db.workspaces.createAlias(
+        $_aliasNameGenerator(db.mcpServers.workspaceId, db.workspaces.id),
+      );
+
+  $$WorkspacesTableProcessedTableManager get workspaceId {
+    final $_column = $_itemColumn<String>('workspace_id')!;
+
+    final manager = $$WorkspacesTableTableManager(
+      $_db,
+      $_db.workspaces,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_workspaceIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$ToolsGroupsTable, List<ToolsGroupsTable>>
+  _toolsGroupsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.toolsGroups,
+    aliasName: $_aliasNameGenerator(
+      db.mcpServers.id,
+      db.toolsGroups.mcpServerId,
+    ),
+  );
+
+  $$ToolsGroupsTableProcessedTableManager get toolsGroupsRefs {
+    final manager = $$ToolsGroupsTableTableManager(
+      $_db,
+      $_db.toolsGroups,
+    ).filter((f) => f.mcpServerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_toolsGroupsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$McpServersTableFilterComposer
+    extends Composer<_$AppDatabase, $McpServersTable> {
+  $$McpServersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get url => $composableBuilder(
+    column: $table.url,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<McpTransportType, McpTransportType, String>
+  get transport => $composableBuilder(
+    column: $table.transport,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<
+    McpAuthenticationType,
+    McpAuthenticationType,
+    String
+  >
+  get authenticationType => $composableBuilder(
+    column: $table.authenticationType,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get clientId => $composableBuilder(
+    column: $table.clientId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tokenEndpoint => $composableBuilder(
+    column: $table.tokenEndpoint,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get authorizationEndpoint => $composableBuilder(
+    column: $table.authorizationEndpoint,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bearerToken => $composableBuilder(
+    column: $table.bearerToken,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get useHttp2 => $composableBuilder(
+    column: $table.useHttp2,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isEnabled => $composableBuilder(
+    column: $table.isEnabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$WorkspacesTableFilterComposer get workspaceId {
+    final $$WorkspacesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableFilterComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> toolsGroupsRefs(
+    Expression<bool> Function($$ToolsGroupsTableFilterComposer f) f,
+  ) {
+    final $$ToolsGroupsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.toolsGroups,
+      getReferencedColumn: (t) => t.mcpServerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ToolsGroupsTableFilterComposer(
+            $db: $db,
+            $table: $db.toolsGroups,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$McpServersTableOrderingComposer
+    extends Composer<_$AppDatabase, $McpServersTable> {
+  $$McpServersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get url => $composableBuilder(
+    column: $table.url,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get transport => $composableBuilder(
+    column: $table.transport,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get authenticationType => $composableBuilder(
+    column: $table.authenticationType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get clientId => $composableBuilder(
+    column: $table.clientId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tokenEndpoint => $composableBuilder(
+    column: $table.tokenEndpoint,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get authorizationEndpoint => $composableBuilder(
+    column: $table.authorizationEndpoint,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get bearerToken => $composableBuilder(
+    column: $table.bearerToken,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get useHttp2 => $composableBuilder(
+    column: $table.useHttp2,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isEnabled => $composableBuilder(
+    column: $table.isEnabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$WorkspacesTableOrderingComposer get workspaceId {
+    final $$WorkspacesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableOrderingComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$McpServersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $McpServersTable> {
+  $$McpServersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get url =>
+      $composableBuilder(column: $table.url, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<McpTransportType, String> get transport =>
+      $composableBuilder(column: $table.transport, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<McpAuthenticationType, String>
+  get authenticationType => $composableBuilder(
+    column: $table.authenticationType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get clientId =>
+      $composableBuilder(column: $table.clientId, builder: (column) => column);
+
+  GeneratedColumn<String> get tokenEndpoint => $composableBuilder(
+    column: $table.tokenEndpoint,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get authorizationEndpoint => $composableBuilder(
+    column: $table.authorizationEndpoint,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get bearerToken => $composableBuilder(
+    column: $table.bearerToken,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get useHttp2 =>
+      $composableBuilder(column: $table.useHttp2, builder: (column) => column);
+
+  GeneratedColumn<bool> get isEnabled =>
+      $composableBuilder(column: $table.isEnabled, builder: (column) => column);
+
+  $$WorkspacesTableAnnotationComposer get workspaceId {
+    final $$WorkspacesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> toolsGroupsRefs<T extends Object>(
+    Expression<T> Function($$ToolsGroupsTableAnnotationComposer a) f,
+  ) {
+    final $$ToolsGroupsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.toolsGroups,
+      getReferencedColumn: (t) => t.mcpServerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ToolsGroupsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.toolsGroups,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$McpServersTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $McpServersTable,
+          McpServersTable,
+          $$McpServersTableFilterComposer,
+          $$McpServersTableOrderingComposer,
+          $$McpServersTableAnnotationComposer,
+          $$McpServersTableCreateCompanionBuilder,
+          $$McpServersTableUpdateCompanionBuilder,
+          (McpServersTable, $$McpServersTableReferences),
+          McpServersTable,
+          PrefetchHooks Function({bool workspaceId, bool toolsGroupsRefs})
+        > {
+  $$McpServersTableTableManager(_$AppDatabase db, $McpServersTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$McpServersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$McpServersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$McpServersTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<String> workspaceId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> url = const Value.absent(),
+                Value<McpTransportType> transport = const Value.absent(),
+                Value<McpAuthenticationType> authenticationType =
+                    const Value.absent(),
+                Value<String?> description = const Value.absent(),
+                Value<String?> clientId = const Value.absent(),
+                Value<String?> tokenEndpoint = const Value.absent(),
+                Value<String?> authorizationEndpoint = const Value.absent(),
+                Value<String?> bearerToken = const Value.absent(),
+                Value<bool> useHttp2 = const Value.absent(),
+                Value<bool> isEnabled = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => McpServersCompanion(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                workspaceId: workspaceId,
+                name: name,
+                url: url,
+                transport: transport,
+                authenticationType: authenticationType,
+                description: description,
+                clientId: clientId,
+                tokenEndpoint: tokenEndpoint,
+                authorizationEndpoint: authorizationEndpoint,
+                bearerToken: bearerToken,
+                useHttp2: useHttp2,
+                isEnabled: isEnabled,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                required String workspaceId,
+                required String name,
+                required String url,
+                required McpTransportType transport,
+                required McpAuthenticationType authenticationType,
+                Value<String?> description = const Value.absent(),
+                Value<String?> clientId = const Value.absent(),
+                Value<String?> tokenEndpoint = const Value.absent(),
+                Value<String?> authorizationEndpoint = const Value.absent(),
+                Value<String?> bearerToken = const Value.absent(),
+                Value<bool> useHttp2 = const Value.absent(),
+                Value<bool> isEnabled = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => McpServersCompanion.insert(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                workspaceId: workspaceId,
+                name: name,
+                url: url,
+                transport: transport,
+                authenticationType: authenticationType,
+                description: description,
+                clientId: clientId,
+                tokenEndpoint: tokenEndpoint,
+                authorizationEndpoint: authorizationEndpoint,
+                bearerToken: bearerToken,
+                useHttp2: useHttp2,
+                isEnabled: isEnabled,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$McpServersTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({workspaceId = false, toolsGroupsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (toolsGroupsRefs) db.toolsGroups,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (workspaceId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.workspaceId,
+                                    referencedTable: $$McpServersTableReferences
+                                        ._workspaceIdTable(db),
+                                    referencedColumn:
+                                        $$McpServersTableReferences
+                                            ._workspaceIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (toolsGroupsRefs)
+                        await $_getPrefetchedData<
+                          McpServersTable,
+                          $McpServersTable,
+                          ToolsGroupsTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$McpServersTableReferences
+                              ._toolsGroupsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$McpServersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).toolsGroupsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.mcpServerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$McpServersTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $McpServersTable,
+      McpServersTable,
+      $$McpServersTableFilterComposer,
+      $$McpServersTableOrderingComposer,
+      $$McpServersTableAnnotationComposer,
+      $$McpServersTableCreateCompanionBuilder,
+      $$McpServersTableUpdateCompanionBuilder,
+      (McpServersTable, $$McpServersTableReferences),
+      McpServersTable,
+      PrefetchHooks Function({bool workspaceId, bool toolsGroupsRefs})
+    >;
 typedef $$ToolsGroupsTableCreateCompanionBuilder =
     ToolsGroupsCompanion Function({
       Value<String> id,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       required String workspaceId,
+      Value<String?> mcpServerId,
       required String name,
       Value<bool> isEnabled,
       required PermissionAccess permissions,
@@ -9014,6 +10857,7 @@ typedef $$ToolsGroupsTableUpdateCompanionBuilder =
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<String> workspaceId,
+      Value<String?> mcpServerId,
       Value<String> name,
       Value<bool> isEnabled,
       Value<PermissionAccess> permissions,
@@ -9037,6 +10881,25 @@ final class $$ToolsGroupsTableReferences
       $_db.workspaces,
     ).filter((f) => f.id.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_workspaceIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $McpServersTable _mcpServerIdTable(_$AppDatabase db) =>
+      db.mcpServers.createAlias(
+        $_aliasNameGenerator(db.toolsGroups.mcpServerId, db.mcpServers.id),
+      );
+
+  $$McpServersTableProcessedTableManager? get mcpServerId {
+    final $_column = $_itemColumn<String>('mcp_server_id');
+    if ($_column == null) return null;
+    final manager = $$McpServersTableTableManager(
+      $_db,
+      $_db.mcpServers,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_mcpServerIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
@@ -9119,6 +10982,29 @@ class $$ToolsGroupsTableFilterComposer
           }) => $$WorkspacesTableFilterComposer(
             $db: $db,
             $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$McpServersTableFilterComposer get mcpServerId {
+    final $$McpServersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.mcpServerId,
+      referencedTable: $db.mcpServers,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$McpServersTableFilterComposer(
+            $db: $db,
+            $table: $db.mcpServers,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -9215,6 +11101,29 @@ class $$ToolsGroupsTableOrderingComposer
     );
     return composer;
   }
+
+  $$McpServersTableOrderingComposer get mcpServerId {
+    final $$McpServersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.mcpServerId,
+      referencedTable: $db.mcpServers,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$McpServersTableOrderingComposer(
+            $db: $db,
+            $table: $db.mcpServers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$ToolsGroupsTableAnnotationComposer
@@ -9270,6 +11179,29 @@ class $$ToolsGroupsTableAnnotationComposer
     return composer;
   }
 
+  $$McpServersTableAnnotationComposer get mcpServerId {
+    final $$McpServersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.mcpServerId,
+      referencedTable: $db.mcpServers,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$McpServersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.mcpServers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
   Expression<T> toolsRefs<T extends Object>(
     Expression<T> Function($$ToolsTableAnnotationComposer a) f,
   ) {
@@ -9309,7 +11241,11 @@ class $$ToolsGroupsTableTableManager
           $$ToolsGroupsTableUpdateCompanionBuilder,
           (ToolsGroupsTable, $$ToolsGroupsTableReferences),
           ToolsGroupsTable,
-          PrefetchHooks Function({bool workspaceId, bool toolsRefs})
+          PrefetchHooks Function({
+            bool workspaceId,
+            bool mcpServerId,
+            bool toolsRefs,
+          })
         > {
   $$ToolsGroupsTableTableManager(_$AppDatabase db, $ToolsGroupsTable table)
     : super(
@@ -9328,6 +11264,7 @@ class $$ToolsGroupsTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<String> workspaceId = const Value.absent(),
+                Value<String?> mcpServerId = const Value.absent(),
                 Value<String> name = const Value.absent(),
                 Value<bool> isEnabled = const Value.absent(),
                 Value<PermissionAccess> permissions = const Value.absent(),
@@ -9337,6 +11274,7 @@ class $$ToolsGroupsTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 workspaceId: workspaceId,
+                mcpServerId: mcpServerId,
                 name: name,
                 isEnabled: isEnabled,
                 permissions: permissions,
@@ -9348,6 +11286,7 @@ class $$ToolsGroupsTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 required String workspaceId,
+                Value<String?> mcpServerId = const Value.absent(),
                 required String name,
                 Value<bool> isEnabled = const Value.absent(),
                 required PermissionAccess permissions,
@@ -9357,6 +11296,7 @@ class $$ToolsGroupsTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 workspaceId: workspaceId,
+                mcpServerId: mcpServerId,
                 name: name,
                 isEnabled: isEnabled,
                 permissions: permissions,
@@ -9370,65 +11310,87 @@ class $$ToolsGroupsTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({workspaceId = false, toolsRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [if (toolsRefs) db.tools],
-              addJoins:
-                  <
-                    T extends TableManagerState<
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic
-                    >
-                  >(state) {
-                    if (workspaceId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.workspaceId,
-                                referencedTable: $$ToolsGroupsTableReferences
-                                    ._workspaceIdTable(db),
-                                referencedColumn: $$ToolsGroupsTableReferences
-                                    ._workspaceIdTable(db)
-                                    .id,
-                              )
-                              as T;
-                    }
+          prefetchHooksCallback:
+              ({workspaceId = false, mcpServerId = false, toolsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [if (toolsRefs) db.tools],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (workspaceId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.workspaceId,
+                                    referencedTable:
+                                        $$ToolsGroupsTableReferences
+                                            ._workspaceIdTable(db),
+                                    referencedColumn:
+                                        $$ToolsGroupsTableReferences
+                                            ._workspaceIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (mcpServerId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.mcpServerId,
+                                    referencedTable:
+                                        $$ToolsGroupsTableReferences
+                                            ._mcpServerIdTable(db),
+                                    referencedColumn:
+                                        $$ToolsGroupsTableReferences
+                                            ._mcpServerIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
 
-                    return state;
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (toolsRefs)
+                        await $_getPrefetchedData<
+                          ToolsGroupsTable,
+                          $ToolsGroupsTable,
+                          ToolsTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ToolsGroupsTableReferences
+                              ._toolsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ToolsGroupsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).toolsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.workspaceToolsGroupId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
                   },
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (toolsRefs)
-                    await $_getPrefetchedData<
-                      ToolsGroupsTable,
-                      $ToolsGroupsTable,
-                      ToolsTable
-                    >(
-                      currentTable: table,
-                      referencedTable: $$ToolsGroupsTableReferences
-                          ._toolsRefsTable(db),
-                      managerFromTypedResult: (p0) =>
-                          $$ToolsGroupsTableReferences(db, table, p0).toolsRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where(
-                            (e) => e.workspaceToolsGroupId == item.id,
-                          ),
-                      typedResults: items,
-                    ),
-                ];
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -9445,7 +11407,11 @@ typedef $$ToolsGroupsTableProcessedTableManager =
       $$ToolsGroupsTableUpdateCompanionBuilder,
       (ToolsGroupsTable, $$ToolsGroupsTableReferences),
       ToolsGroupsTable,
-      PrefetchHooks Function({bool workspaceId, bool toolsRefs})
+      PrefetchHooks Function({
+        bool workspaceId,
+        bool mcpServerId,
+        bool toolsRefs,
+      })
     >;
 typedef $$ToolsTableCreateCompanionBuilder =
     ToolsCompanion Function({
@@ -9456,8 +11422,10 @@ typedef $$ToolsTableCreateCompanionBuilder =
       Value<String?> workspaceToolsGroupId,
       required String toolId,
       Value<String?> customName,
+      Value<String?> description,
       Value<String?> additionalPrompt,
       Value<String?> config,
+      Value<String?> inputSchema,
       Value<bool> isEnabled,
       Value<PermissionAccess> permissions,
       Value<int> rowid,
@@ -9471,8 +11439,10 @@ typedef $$ToolsTableUpdateCompanionBuilder =
       Value<String?> workspaceToolsGroupId,
       Value<String> toolId,
       Value<String?> customName,
+      Value<String?> description,
       Value<String?> additionalPrompt,
       Value<String?> config,
+      Value<String?> inputSchema,
       Value<bool> isEnabled,
       Value<PermissionAccess> permissions,
       Value<int> rowid,
@@ -9583,6 +11553,11 @@ class $$ToolsTableFilterComposer extends Composer<_$AppDatabase, $ToolsTable> {
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<String> get additionalPrompt => $composableBuilder(
     column: $table.additionalPrompt,
     builder: (column) => ColumnFilters(column),
@@ -9590,6 +11565,11 @@ class $$ToolsTableFilterComposer extends Composer<_$AppDatabase, $ToolsTable> {
 
   ColumnFilters<String> get config => $composableBuilder(
     column: $table.config,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get inputSchema => $composableBuilder(
+    column: $table.inputSchema,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -9710,6 +11690,11 @@ class $$ToolsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get additionalPrompt => $composableBuilder(
     column: $table.additionalPrompt,
     builder: (column) => ColumnOrderings(column),
@@ -9717,6 +11702,11 @@ class $$ToolsTableOrderingComposer
 
   ColumnOrderings<String> get config => $composableBuilder(
     column: $table.config,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get inputSchema => $composableBuilder(
+    column: $table.inputSchema,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -9803,6 +11793,11 @@ class $$ToolsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get additionalPrompt => $composableBuilder(
     column: $table.additionalPrompt,
     builder: (column) => column,
@@ -9810,6 +11805,11 @@ class $$ToolsTableAnnotationComposer
 
   GeneratedColumn<String> get config =>
       $composableBuilder(column: $table.config, builder: (column) => column);
+
+  GeneratedColumn<String> get inputSchema => $composableBuilder(
+    column: $table.inputSchema,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<bool> get isEnabled =>
       $composableBuilder(column: $table.isEnabled, builder: (column) => column);
@@ -9932,8 +11932,10 @@ class $$ToolsTableTableManager
                 Value<String?> workspaceToolsGroupId = const Value.absent(),
                 Value<String> toolId = const Value.absent(),
                 Value<String?> customName = const Value.absent(),
+                Value<String?> description = const Value.absent(),
                 Value<String?> additionalPrompt = const Value.absent(),
                 Value<String?> config = const Value.absent(),
+                Value<String?> inputSchema = const Value.absent(),
                 Value<bool> isEnabled = const Value.absent(),
                 Value<PermissionAccess> permissions = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -9945,8 +11947,10 @@ class $$ToolsTableTableManager
                 workspaceToolsGroupId: workspaceToolsGroupId,
                 toolId: toolId,
                 customName: customName,
+                description: description,
                 additionalPrompt: additionalPrompt,
                 config: config,
+                inputSchema: inputSchema,
                 isEnabled: isEnabled,
                 permissions: permissions,
                 rowid: rowid,
@@ -9960,8 +11964,10 @@ class $$ToolsTableTableManager
                 Value<String?> workspaceToolsGroupId = const Value.absent(),
                 required String toolId,
                 Value<String?> customName = const Value.absent(),
+                Value<String?> description = const Value.absent(),
                 Value<String?> additionalPrompt = const Value.absent(),
                 Value<String?> config = const Value.absent(),
+                Value<String?> inputSchema = const Value.absent(),
                 Value<bool> isEnabled = const Value.absent(),
                 Value<PermissionAccess> permissions = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -9973,8 +11979,10 @@ class $$ToolsTableTableManager
                 workspaceToolsGroupId: workspaceToolsGroupId,
                 toolId: toolId,
                 customName: customName,
+                description: description,
                 additionalPrompt: additionalPrompt,
                 config: config,
+                inputSchema: inputSchema,
                 isEnabled: isEnabled,
                 permissions: permissions,
                 rowid: rowid,
@@ -10577,6 +12585,8 @@ class $AppDatabaseManager {
       $$ConversationsTableTableManager(_db, _db.conversations);
   $$MessagesTableTableManager get messages =>
       $$MessagesTableTableManager(_db, _db.messages);
+  $$McpServersTableTableManager get mcpServers =>
+      $$McpServersTableTableManager(_db, _db.mcpServers);
   $$ToolsGroupsTableTableManager get toolsGroups =>
       $$ToolsGroupsTableTableManager(_db, _db.toolsGroups);
   $$ToolsTableTableManager get tools =>

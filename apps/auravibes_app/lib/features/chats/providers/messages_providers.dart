@@ -148,6 +148,28 @@ MessageEntity? messageConversation(Ref ref) {
       StreamingMessageStatus.error => MessageStatus.error,
       StreamingMessageStatus.awaitingToolConfirmation => MessageStatus.sent,
       StreamingMessageStatus.executingTools => MessageStatus.sending,
+      StreamingMessageStatus.waitingForMcpConnections => MessageStatus.sending,
     },
   );
+}
+
+/// Provides the pending MCP server IDs for the current conversation.
+///
+/// Returns a list of MCP server IDs that are being waited on for connection,
+/// or an empty list if not waiting.
+@Riverpod(dependencies: [conversationSelectedNotifier])
+List<String> pendingMcpConnections(Ref ref) {
+  final conversationId = ref.watch(conversationSelectedProvider);
+
+  final waitingMessage = ref.watch(
+    messagesManagerProvider.select(
+      (messages) => messages.firstWhereOrNull(
+        (msg) =>
+            msg.conversationId == conversationId &&
+            msg.status == StreamingMessageStatus.waitingForMcpConnections,
+      ),
+    ),
+  );
+
+  return waitingMessage?.pendingMcpServerIds ?? [];
 }

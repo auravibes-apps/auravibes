@@ -4,6 +4,7 @@ import 'package:auravibes_app/domain/enums/message_types.dart';
 import 'package:auravibes_app/features/chats/providers/messages_providers.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_messages_widget.dart';
+import 'package:auravibes_app/features/chats/widgets/mcp_connecting_indicator.dart';
 import 'package:auravibes_app/features/models/widgets/select_chat_model.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_management_modal.dart';
 import 'package:auravibes_app/widgets/app_error.dart';
@@ -77,6 +78,7 @@ class _ChatConversationScreen extends HookConsumerWidget {
         AsyncData(value: final messages) => Column(
           children: [
             Expanded(child: ChatMessagesWidget(messages: messages)),
+            const McpConnectingIndicator(),
             ChatInputWidget(
               onToolsPress: onToolsPress,
               onSendMessage: (message) {

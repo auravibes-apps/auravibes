@@ -4,9 +4,12 @@ import 'package:auravibes_app/domain/entities/conversation.dart';
 import 'package:auravibes_app/domain/enums/message_types.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/providers/messages_providers.dart';
+import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
 import 'package:auravibes_app/features/chats/widgets/tool_call_confirmation_widget.dart';
+import 'package:auravibes_app/features/chats/widgets/tool_call_response_preview.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/providers/tool_calling_manager_provider.dart';
+import 'package:auravibes_app/utils/tool_name_formatter.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
@@ -154,6 +157,16 @@ class _ToolCallWidget extends ConsumerWidget {
     final isPendingConfirmation =
         toolCall.isPending && !isRunning && isLastMessage;
 
+    // Get human-readable display name for the tool
+    final displayNameAsync = ref.watch(toolDisplayNameProvider(toolCall.name));
+    final displayName = displayNameAsync.maybeWhen(
+      data: (name) => name,
+      // Fallback to formatted name while loading or on error
+      orElse: () => ToolNameFormatter.formatDisplayName(
+        ToolNameFormatter.parse(toolCall.name),
+      ),
+    );
+
     return AuraContainer(
       backgroundColor: context.auraColors.primary.withValues(alpha: 0.2),
       borderRadius: 10,
@@ -166,7 +179,7 @@ class _ToolCallWidget extends ConsumerWidget {
             text: TextSpan(
               children: [
                 TextSpan(
-                  text: toolCall.name,
+                  text: displayName,
                   style: const .new(
                     fontWeight: FontWeight.bold,
                   ),
@@ -212,7 +225,10 @@ class _ToolCallWidget extends ConsumerWidget {
           if (_tryDecode(toolCall.responseRaw) != null)
             Padding(
               padding: EdgeInsets.only(top: context.auraTheme.spacing.xs),
-              child: Text(_tryDecode(toolCall.responseRaw)!),
+              child: ToolCallResponsePreview(
+                toolName: toolCall.name,
+                content: _tryDecode(toolCall.responseRaw)!,
+              ),
             ),
         ],
       ),

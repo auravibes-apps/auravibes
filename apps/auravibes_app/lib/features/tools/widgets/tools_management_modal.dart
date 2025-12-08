@@ -1,20 +1,20 @@
-import 'package:auravibes_app/domain/entities/workspace_tool.dart';
-import 'package:auravibes_app/features/tools/providers/conversation_tools_provider.dart';
-import 'package:auravibes_app/features/tools/widgets/tool_description.dart';
-import 'package:auravibes_app/features/tools/widgets/tool_icon.dart';
-import 'package:auravibes_app/features/tools/widgets/tool_name.dart';
+import 'package:auravibes_app/features/tools/models/conversation_tools_group_with_tools.dart';
+import 'package:auravibes_app/features/tools/providers/grouped_conversation_tools_provider.dart';
+import 'package:auravibes_app/features/tools/widgets/conversation_tools_group_card.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 /// Modal for managing conversation tools
 ///
-/// Shows ALL workspace tools (enabled and disabled at workspace level)
-/// and allows toggling and permission changes at conversation level.
-class ToolsManagementModal extends HookConsumerWidget {
+/// Shows ALL workspace tools organized by group (Built-in Tools, MCP servers).
+/// Each group is collapsible (collapsed by default) with:
+/// - MCP status indicators for MCP groups
+/// - Group-level toggle to enable/disable all tools at once
+/// - Reconnect button for MCP groups with connection issues
+class ToolsManagementModal extends ConsumerWidget {
   const ToolsManagementModal({
     required this.workspaceId,
     super.key,
@@ -26,8 +26,8 @@ class ToolsManagementModal extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final conversationToolsAsync = ref.watch(
-      conversationToolsProvider(
+    final groupedToolsAsync = ref.watch(
+      groupedConversationToolsProvider(
         workspaceId: workspaceId,
         conversationId: conversationId,
       ),
@@ -41,7 +41,7 @@ class ToolsManagementModal extends HookConsumerWidget {
         width: MediaQuery.of(context).size.width * 0.9,
         constraints: BoxConstraints(
           maxHeight: MediaQuery.of(context).size.height * 0.7,
-          maxWidth: 400,
+          maxWidth: 500,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -74,12 +74,12 @@ class ToolsManagementModal extends HookConsumerWidget {
               ),
             ),
 
-            // Tools list
+            // Tools groups list
             Flexible(
-              child: switch (conversationToolsAsync) {
+              child: switch (groupedToolsAsync) {
                 AsyncLoading() => const Center(child: AuraSpinner()),
-                AsyncData(:final value) => _ToolsList(
-                  toolsState: value,
+                AsyncData(:final value) => _GroupedToolsList(
+                  groups: value,
                   conversationId: conversationId,
                   workspaceId: workspaceId,
                 ),
@@ -101,20 +101,21 @@ class ToolsManagementModal extends HookConsumerWidget {
   }
 }
 
-class _ToolsList extends StatelessWidget {
-  const _ToolsList({
-    required this.toolsState,
+/// List of grouped conversation tools.
+class _GroupedToolsList extends StatelessWidget {
+  const _GroupedToolsList({
+    required this.groups,
     required this.workspaceId,
     this.conversationId,
   });
 
-  final List<ConversationToolState> toolsState;
+  final List<ConversationToolsGroupWithTools> groups;
   final String? conversationId;
   final String workspaceId;
 
   @override
   Widget build(BuildContext context) {
-    if (toolsState.isEmpty) {
+    if (groups.isEmpty) {
       return Padding(
         padding: const EdgeInsets.all(DesignSpacing.lg),
         child: Center(
@@ -147,206 +148,19 @@ class _ToolsList extends StatelessWidget {
       );
     }
 
-    return ListView.separated(
+    return ListView.builder(
       shrinkWrap: true,
       padding: const EdgeInsets.all(DesignSpacing.md),
-      itemCount: toolsState.length,
-      separatorBuilder: (context, index) =>
-          const SizedBox(height: DesignSpacing.sm),
+      itemCount: groups.length,
       itemBuilder: (context, index) {
-        final toolState = toolsState[index];
+        final group = groups[index];
 
-        return _ToolTile(
-          toolState: toolState,
-          conversationId: conversationId,
+        return ConversationToolsGroupCard(
+          groupWithTools: group,
           workspaceId: workspaceId,
+          conversationId: conversationId,
         );
       },
-    );
-  }
-}
-
-class _ToolTile extends HookConsumerWidget {
-  const _ToolTile({
-    required this.toolState,
-    required this.conversationId,
-    required this.workspaceId,
-  });
-
-  final ConversationToolState toolState;
-  final String? conversationId;
-  final String workspaceId;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final onToggle = useCallback(() async {
-      final notifier = ref.read(
-        conversationToolsProvider(
-          workspaceId: workspaceId,
-          conversationId: conversationId,
-        ).notifier,
-      );
-      await notifier.toggleTool(toolState.toolType.value);
-    }, [conversationId, workspaceId, toolState.toolType]);
-
-    final onPermissionChanged = useCallback((ToolPermissionMode? mode) async {
-      if (mode == null) return;
-      final notifier = ref.read(
-        conversationToolsProvider(
-          workspaceId: workspaceId,
-          conversationId: conversationId,
-        ).notifier,
-      );
-      await notifier.setToolPermission(
-        toolState.toolType.value,
-        permissionMode: mode,
-      );
-    }, [conversationId, workspaceId, toolState.toolType]);
-
-    final isEnabled = toolState.isEnabled;
-    final isWorkspaceEnabled = toolState.isWorkspaceEnabled;
-
-    return AuraCard(
-      padding: .none,
-      style: AuraCardStyle.border,
-      onTap: isWorkspaceEnabled ? onToggle : null,
-      child: AuraColumn(
-        spacing: AuraSpacing.none,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Main tool row
-          AuraPadding(
-            padding: .medium,
-            child: AuraRow(
-              spacing: AuraSpacing.md,
-              children: [
-                // Tool icon
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: isEnabled && isWorkspaceEnabled
-                        ? context.auraColors.primary.withValues(alpha: 0.1)
-                        : context.auraColors.surfaceVariant,
-                    borderRadius: BorderRadius.circular(
-                      DesignBorderRadius.md,
-                    ),
-                  ),
-                  child: ToolIconWidget(toolType: toolState.toolType),
-                ),
-
-                // Tool name and description
-                Expanded(
-                  child: AuraColumn(
-                    spacing: AuraSpacing.xs,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      AuraText(
-                        color: isWorkspaceEnabled
-                            ? AuraColorVariant.onSurface
-                            : AuraColorVariant.onSurfaceVariant,
-                        child: ToolNameWidget(toolType: toolState.toolType),
-                      ),
-                      if (!isWorkspaceEnabled)
-                        AuraText(
-                          style: AuraTextStyle.bodySmall,
-                          color: AuraColorVariant.onSurfaceVariant,
-                          child: DefaultTextStyle.merge(
-                            style: const TextStyle(
-                              fontStyle: FontStyle.italic,
-                            ),
-                            child: const Text('Disabled in workspace'),
-                          ),
-                        )
-                      else
-                        AuraText(
-                          style: AuraTextStyle.bodySmall,
-                          color: AuraColorVariant.onSurfaceVariant,
-                          child: DefaultTextStyle.merge(
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            child: ToolDescriptionWidget(
-                              toolType: toolState.toolType,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-
-                // Toggle indicator
-                if (isWorkspaceEnabled)
-                  AuraIcon(
-                    isEnabled ? Icons.check_circle : Icons.circle_outlined,
-                    color: isEnabled
-                        ? context.auraColors.primary
-                        : context.auraColors.onSurfaceVariant,
-                  )
-                else
-                  AuraIcon(
-                    Icons.block,
-                    size: AuraIconSize.small,
-                    color: context.auraColors.onSurfaceVariant.withValues(
-                      alpha: 0.5,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-
-          // Permission selector - always visible when tool is enabled
-          if (isEnabled && isWorkspaceEnabled) ...[
-            const AuraDivider(),
-            AuraPadding(
-              padding: .medium,
-              child: AuraColumn(
-                spacing: AuraSpacing.sm,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const AuraText(
-                    style: AuraTextStyle.bodySmall,
-                    color: AuraColorVariant.onSurfaceVariant,
-                    child: TextLocale(LocaleKeys.tools_screen_permission_label),
-                  ),
-                  _PermissionSelector(
-                    value: toolState.permissionMode,
-                    onChanged: onPermissionChanged,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _PermissionSelector extends StatelessWidget {
-  const _PermissionSelector({
-    required this.value,
-    required this.onChanged,
-  });
-
-  final ToolPermissionMode value;
-  final void Function(ToolPermissionMode?) onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return AuraButtonGroup<ToolPermissionMode>.single(
-      items: const [
-        AuraButtonGroupItem(
-          value: ToolPermissionMode.alwaysAsk,
-          child: TextLocale(LocaleKeys.tools_screen_permission_always_ask),
-        ),
-        AuraButtonGroupItem(
-          value: ToolPermissionMode.alwaysAllow,
-          child: TextLocale(LocaleKeys.tools_screen_permission_always_allow),
-        ),
-      ],
-      selectedValue: value,
-      onChanged: onChanged,
-      size: AuraButtonGroupSize.sm,
     );
   }
 }

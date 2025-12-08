@@ -6,6 +6,7 @@
 library;
 
 export 'package:flutter_portal/flutter_portal.dart' show Portal;
+export 'package:gpt_markdown/gpt_markdown.dart' show GptMarkdown;
 
 // Export atomic design components
 export 'src/atoms/atoms.dart';

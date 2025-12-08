@@ -301,4 +301,64 @@ final class MessageConversationProvider
 }
 
 String _$messageConversationHash() =>
-    r'77d5537987da903337a62ccacc21a1adde5985cc';
+    r'cbdedc6af2c7a25c3be4a46787770fbfe0d1e6e2';
+
+/// Provides the pending MCP server IDs for the current conversation.
+///
+/// Returns a list of MCP server IDs that are being waited on for connection,
+/// or an empty list if not waiting.
+
+@ProviderFor(pendingMcpConnections)
+const pendingMcpConnectionsProvider = PendingMcpConnectionsProvider._();
+
+/// Provides the pending MCP server IDs for the current conversation.
+///
+/// Returns a list of MCP server IDs that are being waited on for connection,
+/// or an empty list if not waiting.
+
+final class PendingMcpConnectionsProvider
+    extends $FunctionalProvider<List<String>, List<String>, List<String>>
+    with $Provider<List<String>> {
+  /// Provides the pending MCP server IDs for the current conversation.
+  ///
+  /// Returns a list of MCP server IDs that are being waited on for connection,
+  /// or an empty list if not waiting.
+  const PendingMcpConnectionsProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'pendingMcpConnectionsProvider',
+        isAutoDispose: true,
+        dependencies: const <ProviderOrFamily>[conversationSelectedProvider],
+        $allTransitiveDependencies: const <ProviderOrFamily>[
+          PendingMcpConnectionsProvider.$allTransitiveDependencies0,
+        ],
+      );
+
+  static const $allTransitiveDependencies0 = conversationSelectedProvider;
+
+  @override
+  String debugGetCreateSourceHash() => _$pendingMcpConnectionsHash();
+
+  @$internal
+  @override
+  $ProviderElement<List<String>> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  List<String> create(Ref ref) {
+    return pendingMcpConnections(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(List<String> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<List<String>>(value),
+    );
+  }
+}
+
+String _$pendingMcpConnectionsHash() =>
+    r'5592133c4118f304ea40f46c4eb669d69cbb833a';

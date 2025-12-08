@@ -46,7 +46,9 @@
     },
     "chat_conversation": {
       "select_model_selctor": "Selecionar Modelo",
-      "message_placeholder": "Escribe tu mensaje..."
+      "message_placeholder": "Escribe tu mensaje...",
+      "waiting_for_tools": "Esperando a que las herramientas se conecten...",
+      "waiting_for_tools_named": "Esperando a que {tools} se conecte..."
     }
   },
   "tools_screen": {
@@ -72,7 +74,18 @@
     "permission_always_ask": "Siempre Preguntar",
     "permission_always_allow": "Siempre Permitir",
     "permission_label": "Permiso",
-    "enabled_label": "Activado"
+    "enabled_label": "Activado",
+    "default_group": "Herramientas Integradas",
+    "mcp_connecting": "Conectando...",
+    "mcp_connected": "Conectado",
+    "mcp_error": "Error de conexión",
+    "mcp_disconnected": "Desconectado",
+    "mcp_reconnect": "Reconectar",
+    "mcp_view_error": "Ver detalles",
+    "tools_count": "{enabled} de {total} activadas",
+    "delete_mcp_title": "Eliminar Servidor MCP",
+    "delete_mcp_confirm": "Esto eliminará el servidor MCP y todas sus herramientas. ¿Continuar?",
+    "no_tools_in_group": "No hay herramientas disponibles"
   },
   "tool_confirmation": {
     "allow_once": "Permitir una vez",
@@ -98,7 +111,9 @@
     "add": "Agregar",
     "save": "Guardar",
     "delete": "Borrar",
-    "confirm": "Confirmar"
+    "confirm": "Confirmar",
+    "close": "Cerrar",
+    "show_more": "Ver más"
   },
   "tools_names": {
     "calculator": {
@@ -158,6 +173,63 @@
     },
     "actions": {
       "cancel": "Cancelar"
+    }
+  },
+  "mcp_modal": {
+    "title": "Agregar Servidor MCP",
+    "add_mcp_tooltip": "Agregar Servidor MCP",
+    "transport": {
+      "sse": "SSE",
+      "streamable_http": "HTTP Streamable"
+    },
+    "auth": {
+      "none": "Ninguna",
+      "oauth": "OAuth",
+      "bearer_token": "Token Bearer"
+    },
+    "oauth_section_title": "Configuración OAuth",
+    "bearer_section_title": "Token Bearer",
+    "fields": {
+      "name": {
+        "label": "Nombre",
+        "placeholder": "Mi Servidor MCP"
+      },
+      "description": {
+        "label": "Descripción (opcional)",
+        "placeholder": "¿Qué proporciona este servidor?"
+      },
+      "url": {
+        "label": "URL del Servidor",
+        "placeholder": "https://mcp.ejemplo.com",
+        "hint": "La URL del endpoint del servidor MCP"
+      },
+      "transport": {
+        "label": "Transporte"
+      },
+      "authentication": {
+        "label": "Autenticación"
+      },
+      "use_http2": {
+        "label": "Usar HTTP/2",
+        "hint": "Habilitar protocolo HTTP/2 para mejor rendimiento"
+      },
+      "client_id": {
+        "label": "ID de Cliente",
+        "placeholder": "tu-client-id"
+      },
+      "token_endpoint": {
+        "label": "Endpoint de Token",
+        "placeholder": "https://auth.ejemplo.com/oauth/token"
+      },
+      "auth_endpoint": {
+        "label": "Endpoint de Autorización",
+        "placeholder": "https://auth.ejemplo.com/oauth/authorize"
+      },
+      "bearer_token": {
+        "label": "Token Bearer",
+        "placeholder": "Ingresa tu token bearer",
+        "hint": "Este token se almacenará de forma segura"
+      }
     }
   }
 }

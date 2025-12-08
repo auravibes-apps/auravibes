@@ -21,10 +21,16 @@ class Tools extends Table with TableMixin {
 
   TextColumn get customName => text().nullable()();
 
+  /// Optional description of the tool (from MCP or user-defined)
+  TextColumn get description => text().nullable()();
+
   TextColumn get additionalPrompt => text().nullable()();
 
   /// Tool configuration as JSON (optional)
   TextColumn get config => text().nullable()();
+
+  /// JSON Schema for the tool's input parameters (for MCP tools)
+  TextColumn get inputSchema => text().nullable()();
 
   /// Whether the tool is enabled for this workspace
   BoolColumn get isEnabled => boolean().withDefault(const Constant(false))();

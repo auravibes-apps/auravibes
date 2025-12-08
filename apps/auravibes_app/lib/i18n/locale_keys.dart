@@ -65,6 +65,10 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.select_model_selctor';
   static const chats_screens_chat_conversation_message_placeholder =
       'chats_screens.chat_conversation.message_placeholder';
+  static const chats_screens_chat_conversation_waiting_for_tools =
+      'chats_screens.chat_conversation.waiting_for_tools';
+  static const chats_screens_chat_conversation_waiting_for_tools_named =
+      'chats_screens.chat_conversation.waiting_for_tools_named';
   static const chats_screens_chat_conversation =
       'chats_screens.chat_conversation';
   static const chats_screens = 'chats_screens';
@@ -95,6 +99,19 @@ abstract class LocaleKeys {
       'tools_screen.permission_always_allow';
   static const tools_screen_permission_label = 'tools_screen.permission_label';
   static const tools_screen_enabled_label = 'tools_screen.enabled_label';
+  static const tools_screen_default_group = 'tools_screen.default_group';
+  static const tools_screen_mcp_connecting = 'tools_screen.mcp_connecting';
+  static const tools_screen_mcp_connected = 'tools_screen.mcp_connected';
+  static const tools_screen_mcp_error = 'tools_screen.mcp_error';
+  static const tools_screen_mcp_disconnected = 'tools_screen.mcp_disconnected';
+  static const tools_screen_mcp_reconnect = 'tools_screen.mcp_reconnect';
+  static const tools_screen_mcp_view_error = 'tools_screen.mcp_view_error';
+  static const tools_screen_tools_count = 'tools_screen.tools_count';
+  static const tools_screen_delete_mcp_title = 'tools_screen.delete_mcp_title';
+  static const tools_screen_delete_mcp_confirm =
+      'tools_screen.delete_mcp_confirm';
+  static const tools_screen_no_tools_in_group =
+      'tools_screen.no_tools_in_group';
   static const tools_screen = 'tools_screen';
   static const tool_confirmation_allow_once = 'tool_confirmation.allow_once';
   static const tool_confirmation_allow_conversation =
@@ -126,6 +143,8 @@ abstract class LocaleKeys {
   static const common_save = 'common.save';
   static const common_delete = 'common.delete';
   static const common_confirm = 'common.confirm';
+  static const common_close = 'common.close';
+  static const common_show_more = 'common.show_more';
   static const common = 'common';
   static const tools_names_calculator_name = 'tools_names.calculator.name';
   static const tools_names_calculator_description =
@@ -189,4 +208,69 @@ abstract class LocaleKeys {
       'settings_screen.actions.cancel';
   static const settings_screen_actions = 'settings_screen.actions';
   static const settings_screen = 'settings_screen';
+  static const mcp_modal_title = 'mcp_modal.title';
+  static const mcp_modal_add_mcp_tooltip = 'mcp_modal.add_mcp_tooltip';
+  static const mcp_modal_transport_sse = 'mcp_modal.transport.sse';
+  static const mcp_modal_transport_streamable_http =
+      'mcp_modal.transport.streamable_http';
+  static const mcp_modal_transport = 'mcp_modal.transport';
+  static const mcp_modal_auth_none = 'mcp_modal.auth.none';
+  static const mcp_modal_auth_oauth = 'mcp_modal.auth.oauth';
+  static const mcp_modal_auth_bearer_token = 'mcp_modal.auth.bearer_token';
+  static const mcp_modal_auth = 'mcp_modal.auth';
+  static const mcp_modal_oauth_section_title = 'mcp_modal.oauth_section_title';
+  static const mcp_modal_bearer_section_title =
+      'mcp_modal.bearer_section_title';
+  static const mcp_modal_fields_name_label = 'mcp_modal.fields.name.label';
+  static const mcp_modal_fields_name_placeholder =
+      'mcp_modal.fields.name.placeholder';
+  static const mcp_modal_fields_name = 'mcp_modal.fields.name';
+  static const mcp_modal_fields_description_label =
+      'mcp_modal.fields.description.label';
+  static const mcp_modal_fields_description_placeholder =
+      'mcp_modal.fields.description.placeholder';
+  static const mcp_modal_fields_description = 'mcp_modal.fields.description';
+  static const mcp_modal_fields_url_label = 'mcp_modal.fields.url.label';
+  static const mcp_modal_fields_url_placeholder =
+      'mcp_modal.fields.url.placeholder';
+  static const mcp_modal_fields_url_hint = 'mcp_modal.fields.url.hint';
+  static const mcp_modal_fields_url = 'mcp_modal.fields.url';
+  static const mcp_modal_fields_transport_label =
+      'mcp_modal.fields.transport.label';
+  static const mcp_modal_fields_transport = 'mcp_modal.fields.transport';
+  static const mcp_modal_fields_authentication_label =
+      'mcp_modal.fields.authentication.label';
+  static const mcp_modal_fields_authentication =
+      'mcp_modal.fields.authentication';
+  static const mcp_modal_fields_use_http2_label =
+      'mcp_modal.fields.use_http2.label';
+  static const mcp_modal_fields_use_http2_hint =
+      'mcp_modal.fields.use_http2.hint';
+  static const mcp_modal_fields_use_http2 = 'mcp_modal.fields.use_http2';
+  static const mcp_modal_fields_client_id_label =
+      'mcp_modal.fields.client_id.label';
+  static const mcp_modal_fields_client_id_placeholder =
+      'mcp_modal.fields.client_id.placeholder';
+  static const mcp_modal_fields_client_id = 'mcp_modal.fields.client_id';
+  static const mcp_modal_fields_token_endpoint_label =
+      'mcp_modal.fields.token_endpoint.label';
+  static const mcp_modal_fields_token_endpoint_placeholder =
+      'mcp_modal.fields.token_endpoint.placeholder';
+  static const mcp_modal_fields_token_endpoint =
+      'mcp_modal.fields.token_endpoint';
+  static const mcp_modal_fields_auth_endpoint_label =
+      'mcp_modal.fields.auth_endpoint.label';
+  static const mcp_modal_fields_auth_endpoint_placeholder =
+      'mcp_modal.fields.auth_endpoint.placeholder';
+  static const mcp_modal_fields_auth_endpoint =
+      'mcp_modal.fields.auth_endpoint';
+  static const mcp_modal_fields_bearer_token_label =
+      'mcp_modal.fields.bearer_token.label';
+  static const mcp_modal_fields_bearer_token_placeholder =
+      'mcp_modal.fields.bearer_token.placeholder';
+  static const mcp_modal_fields_bearer_token_hint =
+      'mcp_modal.fields.bearer_token.hint';
+  static const mcp_modal_fields_bearer_token = 'mcp_modal.fields.bearer_token';
+  static const mcp_modal_fields = 'mcp_modal.fields';
+  static const mcp_modal = 'mcp_modal';
 }

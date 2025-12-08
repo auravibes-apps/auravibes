@@ -3,7 +3,6 @@ import 'package:auravibes_app/domain/entities/workspace_tool.dart';
 import 'package:auravibes_app/domain/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
-import 'package:auravibes_app/services/tools/user_tools_entity.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -14,7 +13,7 @@ part 'conversation_tools_provider.g.dart';
 @freezed
 abstract class ConversationToolState with _$ConversationToolState {
   const factory ConversationToolState({
-    required UserToolType toolType,
+    required WorkspaceToolEntity tool,
     required bool isEnabled,
     required ToolPermissionMode permissionMode,
 
@@ -54,24 +53,16 @@ class ConversationToolsNotifier extends _$ConversationToolsNotifier {
     );
 
     // Build initial tool states from workspace tools
-    final toolStates = workspaceTools
-        .map(
-          (workspaceTool) {
-            final toolType = UserToolType.fromValue(workspaceTool.toolId);
-            if (toolType == null) return null;
-
-            return ConversationToolState(
-              toolType: toolType,
-              // Default: enabled if workspace has it enabled
-              isEnabled: workspaceTool.isEnabled,
-              // Default: inherit workspace permission
-              permissionMode: workspaceTool.permissionMode,
-              isWorkspaceEnabled: workspaceTool.isEnabled,
-            );
-          },
-        )
-        .nonNulls
-        .toList();
+    final toolStates = workspaceTools.map((workspaceTool) {
+      return ConversationToolState(
+        tool: workspaceTool,
+        // Default: enabled if workspace has it enabled
+        isEnabled: workspaceTool.isEnabled,
+        // Default: inherit workspace permission
+        permissionMode: workspaceTool.permissionMode,
+        isWorkspaceEnabled: workspaceTool.isEnabled,
+      );
+    }).toList();
 
     // If we have a conversation, get conversation-level overrides
     if (conversationId != null && conversationId.isNotEmpty) {
@@ -81,7 +72,7 @@ class ConversationToolsNotifier extends _$ConversationToolsNotifier {
 
       for (final tool in conversationTools) {
         final index = toolStates.indexWhere(
-          (t) => t.toolType.value == tool.toolId,
+          (t) => t.tool.id == tool.toolId,
         );
         if (index != -1) {
           toolStates[index] = toolStates[index].copyWith(
@@ -96,33 +87,37 @@ class ConversationToolsNotifier extends _$ConversationToolsNotifier {
   }
 
   /// Toggle a conversation tool's enabled status
-  Future<bool> toggleTool(String toolType) async {
+  Future<bool> toggleTool(String toolId) async {
     final currentState = state.value;
     if (currentState == null) return false;
 
-    final index = currentState.indexWhere((t) => t.toolType.value == toolType);
+    final index = currentState.indexWhere(
+      (t) => t.tool.id == toolId,
+    );
     if (index == -1) return false;
 
     final currentToolState = currentState[index];
-    return setToolEnabled(toolType, isEnabled: !currentToolState.isEnabled);
+    return setToolEnabled(toolId, isEnabled: !currentToolState.isEnabled);
   }
 
   /// Enable or disable a conversation tool
   Future<bool> setToolEnabled(
-    String toolType, {
+    String toolId, {
     required bool isEnabled,
   }) async {
     var success = true;
     if (conversationId != null && conversationId!.isNotEmpty) {
       success = await _repository.setConversationToolEnabled(
         conversationId!,
-        toolType,
+        toolId,
         isEnabled: isEnabled,
       );
     }
     if (success && state.value != null) {
       final currentList = state.value!;
-      final index = currentList.indexWhere((t) => t.toolType.value == toolType);
+      final index = currentList.indexWhere(
+        (t) => t.tool.id == toolId,
+      );
       if (index != -1) {
         final updatedList = List<ConversationToolState>.from(currentList);
         updatedList[index] = currentList[index].copyWith(isEnabled: isEnabled);
@@ -134,20 +129,22 @@ class ConversationToolsNotifier extends _$ConversationToolsNotifier {
 
   /// Set the permission mode for a conversation tool
   Future<bool> setToolPermission(
-    String toolType, {
+    String toolId, {
     required ToolPermissionMode permissionMode,
   }) async {
     var success = true;
     if (conversationId != null && conversationId!.isNotEmpty) {
       success = await _repository.setConversationToolPermission(
         conversationId!,
-        toolType,
+        toolId,
         permissionMode: permissionMode,
       );
     }
     if (success && state.value != null) {
       final currentList = state.value!;
-      final index = currentList.indexWhere((t) => t.toolType.value == toolType);
+      final index = currentList.indexWhere(
+        (t) => t.tool.id == toolId,
+      );
       if (index != -1) {
         final updatedList = List<ConversationToolState>.from(currentList);
         updatedList[index] = currentList[index].copyWith(
@@ -159,14 +156,14 @@ class ConversationToolsNotifier extends _$ConversationToolsNotifier {
     return success;
   }
 
-  /// Get the current enabled tools as a list of UserToolType
-  List<UserToolType> getEnabledTools() {
+  /// Get the current enabled tools as a list of tool IDs
+  List<String> getEnabledToolIds() {
     final currentState = state.value;
     if (currentState == null) return [];
 
     return currentState
         .where((tool) => tool.isEnabled)
-        .map((tool) => tool.toolType)
+        .map((tool) => tool.tool.id)
         .toList();
   }
 
@@ -204,6 +201,60 @@ class ContextAwareToolsNotifier extends _$ContextAwareToolsNotifier {
     state = const AsyncValue.loading();
     try {
       state = AsyncValue.data(await _getContextAwareTools());
+    } on Exception catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
+    }
+  }
+}
+
+// ============================================================
+// Composite Tool ID Generation
+// ============================================================
+
+/// Generates a composite ID for a built-in tool.
+///
+/// Format: `built_in::<table_id>::<tool_identifier>`
+/// - table_id: Database ID of the workspace tool (for permission checks)
+/// - tool_identifier: The tool type value (e.g., "calculator")
+String generateBuiltInCompositeId({
+  required String tableId,
+  required String toolIdentifier,
+}) {
+  return 'built_in::$tableId::$toolIdentifier';
+}
+
+/// Provider to get context-aware tools as full entities for chat.
+///
+/// Returns [WorkspaceToolEntity] list with table IDs needed for
+/// generating composite tool IDs.
+/// (conversation -> workspace -> app defaults)
+@riverpod
+class ContextAwareToolEntitiesNotifier
+    extends _$ContextAwareToolEntitiesNotifier {
+  late ConversationToolsRepository _repository;
+
+  @override
+  Future<List<WorkspaceToolEntity>> build({
+    required String conversationId,
+    required String workspaceId,
+  }) async {
+    _repository = ref.read(conversationToolsRepositoryProvider);
+
+    return _getContextAwareToolEntities();
+  }
+
+  Future<List<WorkspaceToolEntity>> _getContextAwareToolEntities() async {
+    return _repository.getAvailableToolEntitiesForConversation(
+      conversationId,
+      workspaceId,
+    );
+  }
+
+  /// Refresh the context-aware tools list
+  Future<void> refresh() async {
+    state = const AsyncValue.loading();
+    try {
+      state = AsyncValue.data(await _getContextAwareToolEntities());
     } on Exception catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
     }

@@ -12,12 +12,10 @@ class WorkspaceToolsDao extends DatabaseAccessor<AppDatabase>
   // Core operations
   Future<ToolsTable?> getWorkspaceTool(
     String workspaceId,
-    String toolType,
+    String id,
   ) =>
       (select(tools)..where(
-            (tbl) =>
-                tbl.workspaceId.equals(workspaceId) &
-                tbl.toolId.equals(toolType),
+            (tbl) => tbl.workspaceId.equals(workspaceId) & tbl.id.equals(id),
           ))
           .getSingleOrNull();
 
@@ -55,6 +53,24 @@ class WorkspaceToolsDao extends DatabaseAccessor<AppDatabase>
     }
   }
 
+  /// Sets the enabled status of a workspace tool by its unique table ID.
+  ///
+  /// [id] The unique ID of the tool record in the database.
+  /// [isEnabled] Whether the tool should be enabled.
+  /// Returns the updated tool record.
+  Future<ToolsTable> setWorkspaceToolEnabledById(
+    String id, {
+    required bool isEnabled,
+  }) async {
+    await (update(tools)..where((tbl) => tbl.id.equals(id))).write(
+      ToolsCompanion(
+        isEnabled: Value(isEnabled),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+    return (select(tools)..where((tbl) => tbl.id.equals(id))).getSingle();
+  }
+
   Future<List<ToolsTable>> updateWorkspaceToolConfig(
     String workspaceId,
     String toolId,
@@ -69,11 +85,9 @@ class WorkspaceToolsDao extends DatabaseAccessor<AppDatabase>
     );
   }
 
-  Future<bool> deleteWorkspaceTool(String workspaceId, String toolType) =>
+  Future<bool> deleteWorkspaceTool(String workspaceId, String id) =>
       (delete(tools)..where(
-            (tbl) =>
-                tbl.workspaceId.equals(workspaceId) &
-                tbl.toolId.equals(toolType),
+            (tbl) => tbl.workspaceId.equals(workspaceId) & tbl.id.equals(id),
           ))
           .go()
           .then((count) => count > 0);
@@ -106,24 +120,39 @@ class WorkspaceToolsDao extends DatabaseAccessor<AppDatabase>
             ]))
           .get();
 
-  Future<bool> isWorkspaceToolEnabled(String workspaceId, String toolType) =>
+  Future<ToolsTable?> getEnabledToolByToolName({
+    required String toolGroupId,
+    required String toolName,
+  }) =>
+      (select(tools)
+            ..where(
+              (tbl) =>
+                  tbl.workspaceToolsGroupId.equals(toolGroupId) &
+                  tbl.toolId.equals(toolName) &
+                  tbl.isEnabled.equals(true),
+            )
+            ..orderBy([
+              (tbl) => OrderingTerm(expression: tbl.toolId),
+            ]))
+          .getSingleOrNull();
+
+  Future<bool> isWorkspaceToolEnabled(String workspaceId, String id) =>
       (selectOnly(tools)
             ..addColumns([tools.id.count()])
             ..where(
               tools.workspaceId.equals(workspaceId) &
-                  tools.toolId.equals(toolType) &
+                  tools.id.equals(id) &
                   tools.isEnabled.equals(true),
             ))
           .map((row) => row.read(tools.id.count()) ?? 0)
           .getSingle()
           .then((result) => result > 0);
 
-  Future<String?> getWorkspaceToolConfig(String workspaceId, String toolType) =>
+  Future<String?> getWorkspaceToolConfig(String workspaceId, String id) =>
       (selectOnly(tools)
             ..addColumns([tools.config])
             ..where(
-              tools.workspaceId.equals(workspaceId) &
-                  tools.toolId.equals(toolType),
+              tools.workspaceId.equals(workspaceId) & tools.id.equals(id),
             ))
           .map((row) => row.read(tools.config))
           .getSingleOrNull();
@@ -159,4 +188,30 @@ class WorkspaceToolsDao extends DatabaseAccessor<AppDatabase>
       tools,
     )..where((tbl) => tbl.id.equals(id))).getSingle();
   }
+
+  // ============================================================
+  // Batch Operations (for MCP tools)
+  // ============================================================
+
+  /// Insert multiple tools at once (batch insert).
+  ///
+  /// Used when adding tools from an MCP server.
+  Future<void> insertToolsBatch(List<ToolsCompanion> companions) =>
+      batch((b) => b.insertAll(tools, companions));
+
+  /// Delete all tools belonging to a specific group.
+  ///
+  /// Returns the number of deleted rows.
+  Future<int> deleteToolsByGroupId(String groupId) => (delete(
+    tools,
+  )..where((tbl) => tbl.workspaceToolsGroupId.equals(groupId))).go();
+
+  /// Get all tools for a specific group.
+  ///
+  /// Used to compare existing tools with new tools from MCP.
+  Future<List<ToolsTable>> getToolsByGroupId(String groupId) =>
+      (select(tools)
+            ..where((tbl) => tbl.workspaceToolsGroupId.equals(groupId))
+            ..orderBy([(tbl) => OrderingTerm(expression: tbl.toolId)]))
+          .get();
 }

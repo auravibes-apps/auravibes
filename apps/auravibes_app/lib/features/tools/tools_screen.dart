@@ -1,4 +1,5 @@
 import 'package:auravibes_app/features/tools/providers/workspace_tools_provider.dart';
+import 'package:auravibes_app/features/tools/widgets/add_mcp_modal.dart';
 import 'package:auravibes_app/features/tools/widgets/add_tool_modal.dart';
 import 'package:auravibes_app/features/tools/widgets/tool_count_enabled.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_workspace_list.dart';
@@ -18,6 +19,12 @@ class ToolsScreen extends ConsumerWidget {
       appBar: AuraAppBar(
         title: const TextLocale(LocaleKeys.tools_screen_title),
         actions: [
+          // Add MCP Server button
+          AuraIconButton(
+            icon: Icons.extension,
+            onPressed: () => AddMcpModal.show(context),
+            tooltip: LocaleKeys.mcp_modal_add_mcp_tooltip.tr(context: context),
+          ),
           AuraIconButton(
             icon: Icons.refresh,
             onPressed: () {
