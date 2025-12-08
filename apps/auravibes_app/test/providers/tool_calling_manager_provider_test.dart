@@ -6,8 +6,12 @@ import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
+import 'package:auravibes_app/domain/repositories/tools_groups_repository.dart';
+import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/tools/providers/conversation_tools_provider.dart';
+import 'package:auravibes_app/features/tools/providers/grouped_tools_provider.dart';
+import 'package:auravibes_app/features/tools/providers/workspace_tools_provider.dart';
 import 'package:auravibes_app/providers/messages_manager_provider.dart';
 import 'package:auravibes_app/providers/tool_calling_manager_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -34,11 +38,15 @@ class FakeMessagesManagerNotifier extends MessagesManagerNotifier {
   MessageRepository,
   ConversationRepository,
   ConversationToolsRepository,
+  ToolsGroupsRepository,
+  WorkspaceToolsRepository,
 ])
 void main() {
   late MockMessageRepository mockMessageRepository;
   late MockConversationRepository mockConversationRepository;
   late MockConversationToolsRepository mockConversationToolsRepository;
+  late MockToolsGroupsRepository mockToolsGroupsRepository;
+  late MockWorkspaceToolsRepository mockWorkspaceToolsRepository;
   late FakeMessagesManagerNotifier fakeMessagesManagerNotifier;
   late ProviderContainer container;
 
@@ -104,6 +112,8 @@ void main() {
     mockMessageRepository = MockMessageRepository();
     mockConversationRepository = MockConversationRepository();
     mockConversationToolsRepository = MockConversationToolsRepository();
+    mockToolsGroupsRepository = MockToolsGroupsRepository();
+    mockWorkspaceToolsRepository = MockWorkspaceToolsRepository();
     fakeMessagesManagerNotifier = FakeMessagesManagerNotifier();
 
     container = ProviderContainer(
@@ -114,6 +124,12 @@ void main() {
         ),
         conversationToolsRepositoryProvider.overrideWithValue(
           mockConversationToolsRepository,
+        ),
+        toolsGroupsRepositoryProvider.overrideWithValue(
+          mockToolsGroupsRepository,
+        ),
+        workspaceToolsRepositoryProvider.overrideWithValue(
+          mockWorkspaceToolsRepository,
         ),
         messagesManagerProvider.overrideWith(() => fakeMessagesManagerNotifier),
       ],
