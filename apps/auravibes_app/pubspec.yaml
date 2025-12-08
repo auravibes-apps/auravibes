@@ -58,7 +58,7 @@ dev_dependencies:
   custom_lint: ^0.8.1
 
   # Code generation for Drift
-  drift_dev: ^2.29.0
+  drift_dev: ^2.30.0
 
   flutter_flavorizr: ^2.4.1
   flutter_launcher_icons: ^0.14.4
