@@ -3,8 +3,11 @@ import 'package:auravibes_app/utils/string_extensions.dart';
 /// Parses a tool's composite ID and provides display-friendly formatting.
 ///
 /// Tool composite IDs follow these formats:
-/// - MCP tools: `mcp::<mcp_id>::<slug_name>::<tool_identifier>`
-/// - Built-in tools: `built_in::<table_id>::<tool_identifier>`
+/// - MCP tools: `mcp_<mcp_id>_<slug_name>_<tool_identifier>`
+/// - Built-in tools: `built_in_<table_id>_<tool_identifier>`
+///
+/// Note: Tool names must match pattern ^[a-zA-Z0-9_-]{1,128}$
+/// so we use underscores as separators instead of colons.
 class ToolNameFormatter {
   const ToolNameFormatter._();
 
@@ -13,28 +16,45 @@ class ToolNameFormatter {
   /// Returns a [ParsedToolId] with the parsed components,
   /// or a fallback if the format is unrecognized.
   static ParsedToolId parse(String compositeId) {
-    // Try parsing as MCP tool
-    if (compositeId.startsWith('mcp::')) {
-      final withoutPrefix = compositeId.substring(5);
-      final parts = withoutPrefix.split('::');
-      if (parts.length == 3) {
-        return ParsedToolId.mcp(
-          mcpServerId: parts[0],
-          slugName: parts[1],
-          toolIdentifier: parts[2],
-        );
+    // Try parsing as MCP tool (format: mcp_<id>_<slug>_<tool>)
+    if (compositeId.startsWith('mcp_')) {
+      final withoutPrefix = compositeId.substring(4);
+      // Split by underscore, but we need exactly 3 parts after prefix
+      // Since slug and tool can contain underscores, we need to be careful
+      // Format: <id>_<slug>_<tool> where id is numeric
+      final firstUnderscoreIdx = withoutPrefix.indexOf('_');
+      if (firstUnderscoreIdx > 0) {
+        final mcpId = withoutPrefix.substring(0, firstUnderscoreIdx);
+        final rest = withoutPrefix.substring(firstUnderscoreIdx + 1);
+        final secondUnderscoreIdx = rest.indexOf('_');
+        if (secondUnderscoreIdx > 0) {
+          final slug = rest.substring(0, secondUnderscoreIdx);
+          final tool = rest.substring(secondUnderscoreIdx + 1);
+          if (mcpId.isNotEmpty && slug.isNotEmpty && tool.isNotEmpty) {
+            return ParsedToolId.mcp(
+              mcpServerId: mcpId,
+              slugName: slug,
+              toolIdentifier: tool,
+            );
+          }
+        }
       }
     }
 
-    // Try parsing as built-in tool
-    if (compositeId.startsWith('built_in::')) {
-      final withoutPrefix = compositeId.substring(10);
-      final parts = withoutPrefix.split('::');
-      if (parts.length == 2) {
-        return ParsedToolId.builtIn(
-          tableId: parts[0],
-          toolIdentifier: parts[1],
-        );
+    // Try parsing as built-in tool (format: built_in_<table_id>_<tool>)
+    if (compositeId.startsWith('built_in_')) {
+      final withoutPrefix = compositeId.substring(9);
+      // Split to get table_id and tool_identifier
+      final firstUnderscoreIdx = withoutPrefix.indexOf('_');
+      if (firstUnderscoreIdx > 0) {
+        final tableId = withoutPrefix.substring(0, firstUnderscoreIdx);
+        final toolIdentifier = withoutPrefix.substring(firstUnderscoreIdx + 1);
+        if (tableId.isNotEmpty && toolIdentifier.isNotEmpty) {
+          return ParsedToolId.builtIn(
+            tableId: tableId,
+            toolIdentifier: toolIdentifier,
+          );
+        }
       }
     }
 

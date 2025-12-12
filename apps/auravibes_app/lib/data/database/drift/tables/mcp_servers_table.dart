@@ -5,6 +5,20 @@ import 'package:drift/drift.dart';
 
 export 'package:auravibes_app/domain/entities/mcp_server.dart';
 
+JsonTypeConverter2<McpTransportType, String, Object?> transportTypeConverter =
+    TypeConverter.json2(
+      fromJson: (json) =>
+          McpTransportType.fromJson(json! as Map<String, dynamic>),
+      toJson: (column) => column.toJson(),
+    );
+
+JsonTypeConverter2<McpAuthenticationType, String, Object?>
+authenticationTypeConverter = TypeConverter.json2(
+  fromJson: (json) =>
+      McpAuthenticationType.fromJson(json! as Map<String, dynamic>),
+  toJson: (column) => column.toJson(),
+);
+
 /// Database table for storing MCP (Model Context Protocol) server
 /// configurations.
 ///
@@ -22,36 +36,17 @@ class McpServers extends Table with TableMixin {
   TextColumn get url => text()();
 
   /// Transport type: 'sse' or 'streamable_http'
-  TextColumn get transport => textEnum<McpTransportType>()();
+  TextColumn get transport => text().map(transportTypeConverter)();
 
   /// Authentication type: 'none', 'oauth', or 'bearer_token'
-  TextColumn get authenticationType => textEnum<McpAuthenticationType>()();
+  TextColumn get authenticationType =>
+      text().map(authenticationTypeConverter)();
 
   /// Optional description of what this MCP server provides
   TextColumn get description => text().nullable()();
 
-  /// OAuth client ID (required when authenticationType is oauth)
-  TextColumn get clientId => text().nullable()();
-
-  /// OAuth token endpoint URL (required when authenticationType is oauth)
-  TextColumn get tokenEndpoint => text().nullable()();
-
-  /// OAuth authorization endpoint URL
-  /// (required when authenticationType is oauth)
-  TextColumn get authorizationEndpoint => text().nullable()();
-
-  /// Bearer token (required when authenticationType is bearerToken)
-  /// TODO: Consider moving to secure storage instead of database
-  TextColumn get bearerToken => text().nullable()();
-
-  /// Whether to use HTTP/2 (only applicable for streamableHttp transport)
-  BoolColumn get useHttp2 => boolean().withDefault(const Constant(false))();
-
   /// Whether the MCP server is enabled for connections
   BoolColumn get isEnabled => boolean().withDefault(const Constant(true))();
-
-  // TODO: Add metadata column when needed for additional configuration
-  // TextColumn get metadata => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};

@@ -55,10 +55,10 @@ void main() {
   const testConversationId = 'test-conversation-id';
   const testWorkspaceId = 'test-workspace-id';
   const testToolCallId = 'test-tool-call-id';
-  // Composite ID format: built_in::<table_id>::<tool_identifier>
+  // Composite ID format: built_in_<table_id>_<tool_identifier>
   const testToolTableId = 'tool-table-id';
   const testToolIdentifier = 'calculator';
-  const testToolName = 'built_in::$testToolTableId::$testToolIdentifier';
+  const testToolName = 'built_in_${testToolTableId}_$testToolIdentifier';
 
   MessageEntity createTestMessage({
     String? id,

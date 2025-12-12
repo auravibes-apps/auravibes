@@ -13,12 +13,10 @@ abstract class McpFormState with _$McpFormState {
     @Default('') String name,
     @Default('') String description,
     @Default('') String url,
-    @Default(McpTransportType.sse) McpTransportType transport,
-    @Default(McpAuthenticationType.none)
-    McpAuthenticationType authenticationType,
-    @Default('') String clientId,
-    @Default('') String tokenEndpoint,
-    @Default('') String authorizationEndpoint,
+    @Default(McpTransportTypeOptions.streamableHttp)
+    McpTransportTypeOptions transport,
+    @Default(McpAuthenticationTypeOptions.none)
+    McpAuthenticationTypeOptions authenticationType,
     @Default('') String bearerToken,
     @Default(false) bool useHttp2,
     @Default(false) bool isSubmitting,
@@ -28,46 +26,48 @@ abstract class McpFormState with _$McpFormState {
   const McpFormState._();
 
   /// Get available authentication types based on current transport
-  List<McpAuthenticationType> get availableAuthTypes {
+  List<McpAuthenticationTypeOptions> get availableAuthTypes {
     switch (transport) {
-      case McpTransportType.sse:
+      case .sse:
         // SSE supports: none, oauth, bearer token
-        return McpAuthenticationType.values;
-      case McpTransportType.streamableHttp:
+        return McpAuthenticationTypeOptions.values;
+      case .streamableHttp:
         // Streamable HTTP supports: none, oauth (no bearer token)
         return [
-          McpAuthenticationType.none,
-          McpAuthenticationType.oauth,
+          McpAuthenticationTypeOptions.none,
+          McpAuthenticationTypeOptions.oauth,
         ];
     }
   }
 
   /// Whether to show OAuth fields
-  bool get showOAuthFields => authenticationType == McpAuthenticationType.oauth;
+  bool get showOAuthFields => authenticationType == .oauth;
 
   /// Whether to show bearer token field
-  bool get showBearerTokenField =>
-      authenticationType == McpAuthenticationType.bearerToken;
+  bool get showBearerTokenField => authenticationType == .bearerToken;
 
   /// Whether to show HTTP/2 toggle
-  bool get showHttp2Toggle => transport == McpTransportType.streamableHttp;
+  bool get showHttp2Toggle => transport == .streamableHttp;
 
   /// Convert to McpServerToCreate for validation and saving
-  McpServerToCreate toCreateEntity() {
-    return McpServerToCreate(
+  McpServerFormToCreate toCreateEntity() {
+    return McpServerFormToCreate(
       name: name.trim(),
       description: description.trim().isEmpty ? null : description.trim(),
       url: url.trim(),
-      transport: transport,
+      transport: _tranport(),
       authenticationType: authenticationType,
-      clientId: clientId.trim().isEmpty ? null : clientId.trim(),
-      tokenEndpoint: tokenEndpoint.trim().isEmpty ? null : tokenEndpoint.trim(),
-      authorizationEndpoint: authorizationEndpoint.trim().isEmpty
-          ? null
-          : authorizationEndpoint.trim(),
       bearerToken: bearerToken.trim().isEmpty ? null : bearerToken.trim(),
-      useHttp2: useHttp2,
     );
+  }
+
+  McpTransportType _tranport() {
+    switch (transport) {
+      case McpTransportTypeOptions.streamableHttp:
+        return McpTransportTypeStreamableHttp(useHttp2: useHttp2);
+      case McpTransportTypeOptions.sse:
+        return const McpTransportTypeSSE();
+    }
   }
 
   /// Check if the form is valid
@@ -101,11 +101,12 @@ class McpFormNotifier extends _$McpFormNotifier {
   }
 
   /// Update the transport type
-  void setTransport(McpTransportType value) {
+  void setTransport(McpTransportTypeOptions? value) {
+    if (value == null) return;
     var newState = state.copyWith(transport: value);
 
     // Reset HTTP/2 when switching away from streamableHttp
-    if (value != McpTransportType.streamableHttp) {
+    if (value != .streamableHttp) {
       newState = newState.copyWith(useHttp2: false);
     }
 
@@ -113,7 +114,7 @@ class McpFormNotifier extends _$McpFormNotifier {
     final availableTypes = newState.availableAuthTypes;
     if (!availableTypes.contains(newState.authenticationType)) {
       newState = newState.copyWith(
-        authenticationType: McpAuthenticationType.none,
+        authenticationType: .none,
       );
     }
 
@@ -121,23 +122,8 @@ class McpFormNotifier extends _$McpFormNotifier {
   }
 
   /// Update the authentication type
-  void setAuthenticationType(McpAuthenticationType value) {
+  void setAuthenticationType(McpAuthenticationTypeOptions value) {
     state = state.copyWith(authenticationType: value);
-  }
-
-  /// Update the client ID field
-  void setClientId(String value) {
-    state = state.copyWith(clientId: value);
-  }
-
-  /// Update the token endpoint field
-  void setTokenEndpoint(String value) {
-    state = state.copyWith(tokenEndpoint: value);
-  }
-
-  /// Update the authorization endpoint field
-  void setAuthorizationEndpoint(String value) {
-    state = state.copyWith(authorizationEndpoint: value);
   }
 
   /// Update the bearer token field

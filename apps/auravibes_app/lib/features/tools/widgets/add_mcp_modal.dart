@@ -31,11 +31,6 @@ class AddMcpModal extends HookConsumerWidget {
       [formState.transport],
     );
 
-    final showOAuthFields = useMemoized(
-      () => formState.showOAuthFields,
-      [formState.authenticationType],
-    );
-
     final showBearerTokenField = useMemoized(
       () => formState.showBearerTokenField,
       [formState.authenticationType],
@@ -52,15 +47,7 @@ class AddMcpModal extends HookConsumerWidget {
       text: formState.description,
     );
     final urlController = useTextEditingController(text: formState.url);
-    final clientIdController = useTextEditingController(
-      text: formState.clientId,
-    );
-    final tokenEndpointController = useTextEditingController(
-      text: formState.tokenEndpoint,
-    );
-    final authEndpointController = useTextEditingController(
-      text: formState.authorizationEndpoint,
-    );
+
     final bearerTokenController = useTextEditingController(
       text: formState.bearerToken,
     );
@@ -164,18 +151,6 @@ class AddMcpModal extends HookConsumerWidget {
                       availableTypes: availableAuthTypes,
                       onChanged: formNotifier.setAuthenticationType,
                     ),
-
-                    // OAuth fields
-                    if (showOAuthFields)
-                      _OAuthFields(
-                        clientIdController: clientIdController,
-                        tokenEndpointController: tokenEndpointController,
-                        authEndpointController: authEndpointController,
-                        onClientIdChanged: formNotifier.setClientId,
-                        onTokenEndpointChanged: formNotifier.setTokenEndpoint,
-                        onAuthEndpointChanged:
-                            formNotifier.setAuthorizationEndpoint,
-                      ),
 
                     // Bearer token field
                     if (showBearerTokenField)
@@ -321,8 +296,8 @@ class _TransportSelector extends StatelessWidget {
     required this.onChanged,
   });
 
-  final McpTransportType value;
-  final ValueChanged<McpTransportType> onChanged;
+  final McpTransportTypeOptions? value;
+  final ValueChanged<McpTransportTypeOptions?> onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -335,20 +310,20 @@ class _TransportSelector extends StatelessWidget {
           color: AuraColorVariant.onSurfaceVariant,
           child: TextLocale(LocaleKeys.mcp_modal_fields_transport_label),
         ),
-        AuraButtonGroup<McpTransportType>.single(
-          selectedValue: value,
+        AuraDropdownSelector<McpTransportTypeOptions>(
+          value: value,
           onChanged: onChanged,
-          items: const [
-            AuraButtonGroupItem(
-              value: McpTransportType.sse,
-              child: TextLocale(
-                LocaleKeys.mcp_modal_transport_sse,
-              ),
-            ),
-            AuraButtonGroupItem(
-              value: McpTransportType.streamableHttp,
+          options: const [
+            AuraDropdownOption(
+              value: McpTransportTypeOptions.streamableHttp,
               child: TextLocale(
                 LocaleKeys.mcp_modal_transport_streamable_http,
+              ),
+            ),
+            AuraDropdownOption(
+              value: McpTransportTypeOptions.sse,
+              child: TextLocale(
+                LocaleKeys.mcp_modal_transport_sse,
               ),
             ),
           ],
@@ -405,9 +380,9 @@ class _AuthenticationSelector extends StatelessWidget {
     required this.onChanged,
   });
 
-  final McpAuthenticationType value;
-  final List<McpAuthenticationType> availableTypes;
-  final ValueChanged<McpAuthenticationType> onChanged;
+  final McpAuthenticationTypeOptions value;
+  final List<McpAuthenticationTypeOptions> availableTypes;
+  final ValueChanged<McpAuthenticationTypeOptions> onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -420,7 +395,7 @@ class _AuthenticationSelector extends StatelessWidget {
           color: AuraColorVariant.onSurfaceVariant,
           child: TextLocale(LocaleKeys.mcp_modal_fields_authentication_label),
         ),
-        AuraButtonGroup<McpAuthenticationType>.single(
+        AuraButtonGroup<McpAuthenticationTypeOptions>.single(
           selectedValue: value,
           onChanged: onChanged,
           items: availableTypes.map((type) {
@@ -434,92 +409,15 @@ class _AuthenticationSelector extends StatelessWidget {
     );
   }
 
-  String _getAuthTypeLocaleKey(McpAuthenticationType type) {
+  String _getAuthTypeLocaleKey(McpAuthenticationTypeOptions type) {
     switch (type) {
-      case McpAuthenticationType.none:
+      case .none:
         return LocaleKeys.mcp_modal_auth_none;
-      case McpAuthenticationType.oauth:
+      case .oauth:
         return LocaleKeys.mcp_modal_auth_oauth;
-      case McpAuthenticationType.bearerToken:
+      case .bearerToken:
         return LocaleKeys.mcp_modal_auth_bearer_token;
     }
-  }
-}
-
-/// Widget containing OAuth configuration fields
-class _OAuthFields extends StatelessWidget {
-  const _OAuthFields({
-    required this.clientIdController,
-    required this.tokenEndpointController,
-    required this.authEndpointController,
-    required this.onClientIdChanged,
-    required this.onTokenEndpointChanged,
-    required this.onAuthEndpointChanged,
-  });
-
-  final TextEditingController clientIdController;
-  final TextEditingController tokenEndpointController;
-  final TextEditingController authEndpointController;
-  final ValueChanged<String> onClientIdChanged;
-  final ValueChanged<String> onTokenEndpointChanged;
-  final ValueChanged<String> onAuthEndpointChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return AuraCard(
-      style: AuraCardStyle.border,
-      child: AuraColumn(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: AuraSpacing.md,
-        children: [
-          AuraRow(
-            spacing: AuraSpacing.sm,
-            children: [
-              AuraIcon(
-                Icons.lock_outline,
-                size: AuraIconSize.small,
-                color: context.auraColors.primary,
-              ),
-              const AuraText(
-                style: AuraTextStyle.bodySmall,
-                color: AuraColorVariant.primary,
-                child: TextLocale(LocaleKeys.mcp_modal_oauth_section_title),
-              ),
-            ],
-          ),
-          AuraInput(
-            controller: clientIdController,
-            onChanged: onClientIdChanged,
-            label: const TextLocale(
-              LocaleKeys.mcp_modal_fields_client_id_label,
-            ),
-            placeholder: const TextLocale(
-              LocaleKeys.mcp_modal_fields_client_id_placeholder,
-            ),
-          ),
-          AuraInput(
-            controller: tokenEndpointController,
-            onChanged: onTokenEndpointChanged,
-            label: const TextLocale(
-              LocaleKeys.mcp_modal_fields_token_endpoint_label,
-            ),
-            placeholder: const TextLocale(
-              LocaleKeys.mcp_modal_fields_token_endpoint_placeholder,
-            ),
-          ),
-          AuraInput(
-            controller: authEndpointController,
-            onChanged: onAuthEndpointChanged,
-            label: const TextLocale(
-              LocaleKeys.mcp_modal_fields_auth_endpoint_label,
-            ),
-            placeholder: const TextLocale(
-              LocaleKeys.mcp_modal_fields_auth_endpoint_placeholder,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
 
