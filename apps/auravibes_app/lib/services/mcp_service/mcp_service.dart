@@ -3,8 +3,24 @@ import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 import 'package:mcp_client/mcp_client.dart' as mcp;
 
 class McpManagerClient {
-  McpManagerClient._(this._client);
+  McpManagerClient._(
+    this._client, {
+    mcp.OAuthTokenManager? tokenManager,
+  }) : _tokenManager = tokenManager;
   final mcp.Client _client;
+  final mcp.OAuthTokenManager? _tokenManager;
+
+  Stream<OAutTokenEntity>? get onTokenUpdate =>
+      _tokenManager?.onTokenUpdate.map(
+        (mcpToken) => OAutTokenEntity(
+          accessToken: mcpToken.accessToken,
+          issuedAt: mcpToken.issuedAt,
+          refreshToken: mcpToken.refreshToken,
+          expiresIn: mcpToken.expiresIn,
+          tokenType: mcpToken.tokenType,
+          scopes: mcpToken.scopes,
+        ),
+      );
 }
 
 class McpManagerService {
@@ -33,7 +49,7 @@ class McpManagerService {
   }
 
   Future<McpManagerClient> connectMcp(
-    McpServerEntity serverInfo,
+    McpServerToCreate serverInfo,
   ) async {
     // Create client configuration
     final config = mcp.McpClient.simpleConfig(
@@ -41,109 +57,153 @@ class McpManagerService {
       version: '1.0.0',
     );
 
-    // Create transport configuration based on server settings
-    final transportConfig = _createTransportConfig(serverInfo);
-
     // Create and connect client
-    final clientResult = await mcp.McpClient.createAndConnect(
-      config: config,
-      transportConfig: transportConfig,
+    final clientResult = mcp.McpClient.createClient(
+      config,
     );
 
-    final client = clientResult.fold(
-      (c) => c,
-      (error) => throw Exception('Failed to connect: $error'),
-    );
+    // clientResult.connect(transport)
 
-    return McpManagerClient._(client);
+    // Create transport configuration based on server settings
+    final clientTransport = await _createTransportConfig(serverInfo);
+    await clientResult.connect(clientTransport);
+
+    final tokenManager = _tokenManager(serverInfo);
+
+    return McpManagerClient._(clientResult, tokenManager: tokenManager);
   }
 
   Future<List<McpToolInfo>> getTools(
     McpManagerClient client,
-    McpServerEntity serverInfo,
   ) async {
     // List available tools from the MCP server
     final tools = await client._client.listTools();
-    return _convertTools(tools, serverInfo);
+    return _convertTools(tools);
   }
 
   /// Create transport configuration based on server settings.
-  mcp.TransportConfig _createTransportConfig(McpServerEntity server) {
+  Future<mcp.ClientTransport> _createTransportConfig(McpServerToCreate server) {
     switch (server.transport) {
-      case McpTransportType.sse:
+      case McpTransportTypeSSE():
         return _createSseTransportConfig(server);
-      case McpTransportType.streamableHttp:
+      case McpTransportTypeStreamableHttp():
         return _createHttpTransportConfig(server);
     }
   }
 
-  mcp.TransportConfig _createSseTransportConfig(McpServerEntity server) {
-    switch (server.authenticationType) {
-      case McpAuthenticationType.none:
-        return mcp.TransportConfig.sse(serverUrl: server.url);
+  Future<mcp.ClientTransport> _createSseTransportConfig(
+    McpServerToCreate server,
+  ) async {
+    final authType = server.authenticationType;
 
-      case McpAuthenticationType.bearerToken:
-        return mcp.TransportConfig.sse(
-          serverUrl: server.url,
-          bearerToken: server.bearerToken,
-        );
-
-      case McpAuthenticationType.oauth:
-        return mcp.TransportConfig.sse(
-          serverUrl: server.url,
-          oauthConfig: mcp.OAuthConfig(
-            authorizationEndpoint: server.authorizationEndpoint!,
-            tokenEndpoint: server.tokenEndpoint!,
-            clientId: server.clientId!,
-          ),
-        );
+    if (authType is McpAuthenticationTypeNone) {
+      return mcp.SseClientTransport.create(
+        serverUrl: server.url,
+      );
     }
+    String? bearerToken;
+    if (authType is McpAuthenticationTypeBearerToken) {
+      bearerToken = authType.bearerToken;
+    }
+
+    final oAuthConfig = _getOauthConfig(authType);
+    return mcp.SseAuthClientTransport.create(
+      serverUrl: server.url,
+      bearerToken: bearerToken,
+      oauthToken: _getOauthToken(authType),
+      oauthClient: oAuthConfig != null
+          ? mcp.HttpOAuthClient(
+              config: oAuthConfig,
+            )
+          : null,
+    );
   }
 
-  mcp.TransportConfig _createHttpTransportConfig(McpServerEntity server) {
-    switch (server.authenticationType) {
-      case McpAuthenticationType.none:
-        return mcp.TransportConfig.streamableHttp(
-          baseUrl: server.url,
-          useHttp2: server.useHttp2,
-        );
+  Future<mcp.ClientTransport> _createHttpTransportConfig(
+    McpServerToCreate server,
+  ) async {
+    final headers = <String, String>{};
+    final authType = server.authenticationType;
+    final transportType = server.transport;
 
-      case McpAuthenticationType.bearerToken:
-        // Streamable HTTP doesn't support bearer token, fall back to no auth
-        return mcp.TransportConfig.streamableHttp(
-          baseUrl: server.url,
-          useHttp2: server.useHttp2,
-        );
-
-      case McpAuthenticationType.oauth:
-        return mcp.TransportConfig.streamableHttp(
-          baseUrl: server.url,
-          useHttp2: server.useHttp2,
-          oauthConfig: mcp.OAuthConfig(
-            authorizationEndpoint: server.authorizationEndpoint!,
-            tokenEndpoint: server.tokenEndpoint!,
-            clientId: server.clientId!,
-          ),
-        );
+    if (transportType is! McpTransportTypeStreamableHttp) {
+      throw Exception('Invalid transport type for HTTP transport');
     }
+
+    if (authType is McpAuthenticationTypeBearerToken) {
+      if (authType.bearerToken.isNotEmpty) {
+        headers['Authorization'] = 'Bearer ${authType.bearerToken}';
+      } else {
+        throw Exception(
+          'Bearer token is required'
+          ' for bearer token authentication.',
+        );
+      }
+    }
+
+    final oauthConfig = _getOauthConfig(authType);
+
+    final transport = await mcp.StreamableHttpClientTransport.create(
+      baseUrl: server.url,
+      useHttp2: transportType.useHttp2,
+      headers: headers,
+      oauthConfig: oauthConfig,
+    );
+    final authToken = _getOauthToken(authType);
+
+    if (authToken != null) {
+      transport.setOAuthToken(authToken);
+    }
+    return transport;
+  }
+
+  mcp.OAuthConfig? _getOauthConfig(McpAuthenticationType authType) {
+    if (authType is McpAuthenticationTypeOAuth) {
+      return mcp.OAuthConfig(
+        authorizationEndpoint: authType.authorizationEndpoint,
+        tokenEndpoint: authType.tokenEndpoint,
+        clientId: authType.clientId,
+      );
+    }
+    return null;
+  }
+
+  mcp.OAuthToken? _getOauthToken(McpAuthenticationType authType) {
+    if (authType is McpAuthenticationTypeOAuth) {
+      return mcp.OAuthToken(
+        accessToken: authType.token.accessToken,
+        refreshToken: authType.token.refreshToken,
+        expiresIn: authType.token.expiresIn,
+        issuedAt: authType.token.issuedAt,
+        scopes: authType.token.scopes,
+      );
+    }
+    return null;
   }
 
   /// Convert MCP tools to our McpToolInfo format with prefixed names.
   List<McpToolInfo> _convertTools(
     List<mcp.Tool> tools,
-    McpServerEntity server,
   ) {
     return tools.map((mcp.Tool tool) {
       return McpToolInfo(
         toolName: tool.name,
-        serverName: server.name,
         description: tool.description,
         inputSchema: tool.inputSchema,
-        mcpServerId: server.id,
         metadata: tool.metadata,
         supportsCancellation: tool.supportsCancellation,
         supportsProgress: tool.supportsProgress,
       );
     }).toList();
+  }
+
+  mcp.OAuthTokenManager? _tokenManager(McpServerToCreate server) {
+    final authType = server.authenticationType;
+    final config = _getOauthConfig(authType);
+    final token = _getOauthToken(authType);
+    if (config == null || token == null) return null;
+
+    final oauthClient = mcp.HttpOAuthClient(config: config);
+    return mcp.OAuthTokenManager(oauthClient)..setToken(token);
   }
 }

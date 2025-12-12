@@ -1,38 +1,201 @@
+import 'package:auravibes_app/utils/json.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'mcp_server.freezed.dart';
+part 'mcp_server.g.dart';
 
-/// Transport type for MCP server connections
-enum McpTransportType {
-  /// Server-Sent Events transport
-  sse('sse'),
+sealed class McpTransportType {
+  const McpTransportType();
 
-  /// Streamable HTTP transport
-  streamableHttp('streamable_http')
-  ;
+  factory McpTransportType.fromJson(Map<String, dynamic> json) {
+    final type = json.get<String>('type');
+    switch (type) {
+      case 'sse':
+        return McpTransportTypeSSE.fromJson(json);
+      case 'streamableHttp':
+        return McpTransportTypeStreamableHttp.fromJson(json);
+      default:
+        throw UnsupportedError('Unsupported MCP transport type: $type');
+    }
+  }
 
-  const McpTransportType(this.value);
-
-  /// The string value of the transport type
-  final String value;
+  Map<String, dynamic> toJson();
 }
 
-/// Authentication type for MCP server connections
-enum McpAuthenticationType {
-  /// No authentication required
-  none('none'),
+class McpTransportTypeSSE extends McpTransportType {
+  const McpTransportTypeSSE();
 
-  /// OAuth 2.0 authentication
-  oauth('oauth'),
+  factory McpTransportTypeSSE.fromJson(Map<String, dynamic> _) {
+    return const McpTransportTypeSSE();
+  }
 
-  /// Bearer token authentication (only available for SSE transport)
-  bearerToken('bearer_token')
-  ;
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      'type': 'sse',
+    };
+  }
+}
 
-  const McpAuthenticationType(this.value);
+class McpTransportTypeStreamableHttp extends McpTransportType {
+  const McpTransportTypeStreamableHttp({
+    this.useHttp2 = false,
+  });
 
-  /// The string value of the authentication type
-  final String value;
+  factory McpTransportTypeStreamableHttp.fromJson(Map<String, dynamic> json) {
+    return McpTransportTypeStreamableHttp(
+      useHttp2: json.get('useHttp2'),
+    );
+  }
+
+  final bool useHttp2;
+
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      'type': 'streamableHttp',
+      'useHttp2': useHttp2,
+    };
+  }
+}
+
+@freezed
+abstract class OAutTokenModel with _$OAutTokenModel {
+  // ignore: invalid_annotation_target
+  @JsonSerializable(fieldRename: .snake)
+  const factory OAutTokenModel({
+    required String accessToken,
+    String? refreshToken,
+    int? expiresIn,
+    String? tokenType,
+    String? scope,
+  }) = _OAutTokenModel;
+
+  factory OAutTokenModel.fromJson(Map<String, dynamic> json) =>
+      _$OAutTokenModelFromJson(json);
+  const OAutTokenModel._();
+
+  OAutTokenEntity toEntity() {
+    return OAutTokenEntity(
+      accessToken: accessToken,
+      issuedAt: DateTime.now(),
+      refreshToken: refreshToken,
+      expiresIn: expiresIn,
+      tokenType: tokenType,
+      scopes: scope?.split(' '),
+    );
+  }
+}
+
+@freezed
+abstract class OAutTokenEntity with _$OAutTokenEntity {
+  const factory OAutTokenEntity({
+    required String accessToken,
+    required DateTime issuedAt,
+    String? refreshToken,
+    int? expiresIn,
+    String? tokenType,
+    List<String>? scopes,
+  }) = _OAutTokenEntity;
+
+  const OAutTokenEntity._();
+
+  factory OAutTokenEntity.fromJson(Map<String, dynamic> json) =>
+      _$OAutTokenEntityFromJson(json);
+
+  /// Returns true if the stored OAuth token is expired or unavailable.
+  bool get isOAuthTokenExpired {
+    if (expiresIn == null) return true;
+    final expiresAt = issuedAt.add(Duration(seconds: expiresIn!));
+    // Consider expired if within 5 minutes of expiry (buffer for refresh)
+    return DateTime.now().isAfter(
+      expiresAt.subtract(const Duration(minutes: 5)),
+    );
+  }
+
+  /// Returns true if OAuth token needs refresh
+  /// (has token but it's expired or about to expire)
+  bool get needsOAuthTokenRefresh =>
+      isOAuthTokenExpired && refreshToken != null;
+
+  Future<OAutTokenEntity> copyCryptor(
+    Future<String> Function(String) encryptor,
+  ) async {
+    return OAutTokenEntity(
+      accessToken: await encryptor(accessToken),
+      issuedAt: issuedAt,
+      refreshToken: refreshToken != null
+          ? await encryptor(refreshToken!)
+          : null,
+      expiresIn: expiresIn,
+      tokenType: tokenType,
+      scopes: scopes,
+    );
+  }
+}
+
+@freezed
+sealed class McpAuthenticationType with _$McpAuthenticationType {
+  const McpAuthenticationType._();
+  const factory McpAuthenticationType.none() = McpAuthenticationTypeNone;
+
+  const factory McpAuthenticationType.oauth({
+    required OAutTokenEntity token,
+    required String clientId,
+    required String authorizationEndpoint,
+    required String tokenEndpoint,
+  }) = McpAuthenticationTypeOAuth;
+
+  const factory McpAuthenticationType.bearerToken({
+    required String bearerToken,
+  }) = McpAuthenticationTypeBearerToken;
+
+  factory McpAuthenticationType.fromJson(Map<String, dynamic> json) =>
+      _$McpAuthenticationTypeFromJson(json);
+
+  Future<McpAuthenticationType> copyCryptor(
+    Future<String> Function(String) encryptor,
+  ) async {
+    switch (this) {
+      case McpAuthenticationTypeNone():
+        return this;
+      case McpAuthenticationTypeOAuth(token: final token):
+        return (this as McpAuthenticationTypeOAuth).copyWith(
+          token: await token.copyCryptor(encryptor),
+        );
+      case McpAuthenticationTypeBearerToken(bearerToken: final bearerToken):
+        return McpAuthenticationType.bearerToken(
+          bearerToken: await encryptor(bearerToken),
+        );
+    }
+  }
+}
+
+/// Entity for creating/updating MCP server configurations
+@freezed
+abstract class McpServerToCreate with _$McpServerToCreate {
+  /// Creates a new McpServerToCreate instance
+  const factory McpServerToCreate({
+    /// User-friendly name for the MCP server
+    required String name,
+
+    /// URL endpoint for the MCP server
+    required String url,
+
+    /// Transport type used for communication
+    required McpTransportType transport,
+
+    /// Authentication type for the MCP server
+    required McpAuthenticationType authenticationType,
+
+    /// Optional description of what this MCP server provides
+    String? description,
+  }) = _McpServerToCreate;
+  const McpServerToCreate._();
+
+  String get slugServerName {
+    return name.toLowerCase().replaceAll(RegExp('[^a-z0-9]+'), '_');
+  }
 }
 
 /// Entity representing an MCP (Model Context Protocol) server configuration.
@@ -40,7 +203,8 @@ enum McpAuthenticationType {
 /// This represents user-configured MCP servers that can be connected to
 /// for extending AI capabilities with external tools and resources.
 @freezed
-abstract class McpServerEntity with _$McpServerEntity {
+abstract class McpServerEntity extends McpServerToCreate
+    with _$McpServerEntity {
   /// Creates a new McpServerEntity instance
   const factory McpServerEntity({
     /// Unique ID of this MCP server record in the database
@@ -70,165 +234,78 @@ abstract class McpServerEntity with _$McpServerEntity {
     /// Optional description of what this MCP server provides
     String? description,
 
-    /// OAuth client ID (required when authenticationType is oauth)
-    String? clientId,
-
-    /// OAuth token endpoint URL (required when authenticationType is oauth)
-    String? tokenEndpoint,
-
-    /// OAuth authorization endpoint URL
-    /// (required when authenticationType is oauth)
-    String? authorizationEndpoint,
-
-    /// Bearer token (required when authenticationType is bearerToken)
-    String? bearerToken,
-
-    /// Whether to use HTTP/2 (only applicable for streamableHttp transport)
-    @Default(false) bool useHttp2,
-
     /// Whether the MCP server is enabled
     @Default(true) bool isEnabled,
   }) = _McpServerEntity;
-  const McpServerEntity._();
-
-  /// Returns true if the server uses OAuth authentication
-  bool get usesOAuth => authenticationType == McpAuthenticationType.oauth;
-
-  /// Returns true if the server uses bearer token authentication
-  bool get usesBearerToken =>
-      authenticationType == McpAuthenticationType.bearerToken;
-
-  /// Returns true if OAuth configuration is complete
-  bool get hasCompleteOAuthConfig =>
-      usesOAuth &&
-      clientId != null &&
-      clientId!.isNotEmpty &&
-      tokenEndpoint != null &&
-      tokenEndpoint!.isNotEmpty &&
-      authorizationEndpoint != null &&
-      authorizationEndpoint!.isNotEmpty;
-
-  /// Returns true if bearer token is configured
-  bool get hasBearerToken =>
-      usesBearerToken && bearerToken != null && bearerToken!.isNotEmpty;
-
-  /// Returns true if the server configuration is valid for connection
-  bool get isValidConfiguration {
-    if (name.isEmpty || url.isEmpty) return false;
-
-    switch (authenticationType) {
-      case McpAuthenticationType.none:
-        return true;
-      case McpAuthenticationType.oauth:
-        return hasCompleteOAuthConfig;
-      case McpAuthenticationType.bearerToken:
-        return hasBearerToken;
-    }
-  }
+  const McpServerEntity._() : super._();
 }
 
-/// Entity for creating/updating MCP server configurations
+enum McpAuthenticationTypeOptions {
+  none,
+  oauth,
+  bearerToken,
+}
+
+enum McpTransportTypeOptions {
+  streamableHttp,
+  sse,
+}
+
 @freezed
-abstract class McpServerToCreate with _$McpServerToCreate {
-  /// Creates a new McpServerToCreate instance
-  const factory McpServerToCreate({
-    /// User-friendly name for the MCP server
+abstract class McpServerFormToCreate with _$McpServerFormToCreate {
+  const factory McpServerFormToCreate({
     required String name,
 
-    /// URL endpoint for the MCP server
     required String url,
 
-    /// Transport type used for communication
     required McpTransportType transport,
 
-    /// Authentication type for the MCP server
-    required McpAuthenticationType authenticationType,
+    required McpAuthenticationTypeOptions authenticationType,
 
-    /// Optional description of what this MCP server provides
+    required String? bearerToken,
+
     String? description,
+  }) = _McpServerFormToCreate;
+  const McpServerFormToCreate._();
 
-    /// OAuth client ID (required when authenticationType is oauth)
-    String? clientId,
-
-    /// OAuth token endpoint URL (required when authenticationType is oauth)
-    String? tokenEndpoint,
-
-    /// OAuth authorization endpoint URL
-    /// (required when authenticationType is oauth)
-    String? authorizationEndpoint,
-
-    /// Bearer token (required when authenticationType is bearerToken)
-    String? bearerToken,
-
-    /// Whether to use HTTP/2 (only applicable for streamableHttp transport)
-    @Default(false) bool useHttp2,
-  }) = _McpServerToCreate;
-  const McpServerToCreate._();
-
-  /// Returns true if the name is valid
-  bool get hasValidName => name.isNotEmpty;
-
-  /// Returns true if the URL is valid
-  bool get hasValidUrl => url.isNotEmpty && Uri.tryParse(url) != null;
-
-  /// Returns true if OAuth configuration is complete
-  bool get hasCompleteOAuthConfig =>
-      authenticationType == McpAuthenticationType.oauth &&
-      clientId != null &&
-      clientId!.isNotEmpty &&
-      tokenEndpoint != null &&
-      tokenEndpoint!.isNotEmpty &&
-      authorizationEndpoint != null &&
-      authorizationEndpoint!.isNotEmpty;
-
-  /// Returns true if bearer token is configured
-  bool get hasBearerToken =>
-      authenticationType == McpAuthenticationType.bearerToken &&
-      bearerToken != null &&
-      bearerToken!.isNotEmpty;
-
-  /// Returns true if the configuration is valid for saving
   bool get isValid {
-    if (!hasValidName || !hasValidUrl) return false;
+    if (name.isEmpty || url.isEmpty) {
+      return false;
+    }
 
     switch (authenticationType) {
-      case McpAuthenticationType.none:
+      case McpAuthenticationTypeOptions.none:
         return true;
-      case McpAuthenticationType.oauth:
-        return hasCompleteOAuthConfig;
-      case McpAuthenticationType.bearerToken:
-        return hasBearerToken;
+      case McpAuthenticationTypeOptions.oauth:
+        // OAuth requires no additional fields here
+        return true;
+      case McpAuthenticationTypeOptions.bearerToken:
+        return bearerToken != null && bearerToken!.isNotEmpty;
     }
   }
 
-  /// Returns a list of validation error messages
   List<String> get validationErrors {
     final errors = <String>[];
 
-    if (!hasValidName) {
-      errors.add('Name is required');
+    if (name.isEmpty) {
+      errors.add('Name is required.');
+    }
+    if (url.isEmpty) {
+      errors.add('URL is required.');
     }
 
-    if (!hasValidUrl) {
-      errors.add('Valid URL is required');
-    }
-
-    if (authenticationType == McpAuthenticationType.oauth) {
-      if (clientId == null || clientId!.isEmpty) {
-        errors.add('Client ID is required for OAuth');
-      }
-      if (tokenEndpoint == null || tokenEndpoint!.isEmpty) {
-        errors.add('Token endpoint is required for OAuth');
-      }
-      if (authorizationEndpoint == null || authorizationEndpoint!.isEmpty) {
-        errors.add('Authorization endpoint is required for OAuth');
-      }
-    }
-
-    if (authenticationType == McpAuthenticationType.bearerToken) {
-      if (bearerToken == null || bearerToken!.isEmpty) {
-        errors.add('Bearer token is required');
-      }
+    switch (authenticationType) {
+      case McpAuthenticationTypeOptions.none:
+        break;
+      case McpAuthenticationTypeOptions.oauth:
+        // No additional fields to validate here
+        break;
+      case McpAuthenticationTypeOptions.bearerToken:
+        if (bearerToken == null || bearerToken!.isEmpty) {
+          errors.add(
+            'Bearer token is required for Bearer Token authentication.',
+          );
+        }
     }
 
     return errors;

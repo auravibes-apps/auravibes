@@ -3572,65 +3572,6 @@ class $McpServersTable extends McpServers
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _clientIdMeta = const VerificationMeta(
-    'clientId',
-  );
-  @override
-  late final GeneratedColumn<String> clientId = GeneratedColumn<String>(
-    'client_id',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _tokenEndpointMeta = const VerificationMeta(
-    'tokenEndpoint',
-  );
-  @override
-  late final GeneratedColumn<String> tokenEndpoint = GeneratedColumn<String>(
-    'token_endpoint',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _authorizationEndpointMeta =
-      const VerificationMeta('authorizationEndpoint');
-  @override
-  late final GeneratedColumn<String> authorizationEndpoint =
-      GeneratedColumn<String>(
-        'authorization_endpoint',
-        aliasedName,
-        true,
-        type: DriftSqlType.string,
-        requiredDuringInsert: false,
-      );
-  static const VerificationMeta _bearerTokenMeta = const VerificationMeta(
-    'bearerToken',
-  );
-  @override
-  late final GeneratedColumn<String> bearerToken = GeneratedColumn<String>(
-    'bearer_token',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _useHttp2Meta = const VerificationMeta(
-    'useHttp2',
-  );
-  @override
-  late final GeneratedColumn<bool> useHttp2 = GeneratedColumn<bool>(
-    'use_http2',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("use_http2" IN (0, 1))',
-    ),
-    defaultValue: const Constant(false),
-  );
   static const VerificationMeta _isEnabledMeta = const VerificationMeta(
     'isEnabled',
   );
@@ -3657,11 +3598,6 @@ class $McpServersTable extends McpServers
     transport,
     authenticationType,
     description,
-    clientId,
-    tokenEndpoint,
-    authorizationEndpoint,
-    bearerToken,
-    useHttp2,
     isEnabled,
   ];
   @override
@@ -3727,45 +3663,6 @@ class $McpServersTable extends McpServers
         ),
       );
     }
-    if (data.containsKey('client_id')) {
-      context.handle(
-        _clientIdMeta,
-        clientId.isAcceptableOrUnknown(data['client_id']!, _clientIdMeta),
-      );
-    }
-    if (data.containsKey('token_endpoint')) {
-      context.handle(
-        _tokenEndpointMeta,
-        tokenEndpoint.isAcceptableOrUnknown(
-          data['token_endpoint']!,
-          _tokenEndpointMeta,
-        ),
-      );
-    }
-    if (data.containsKey('authorization_endpoint')) {
-      context.handle(
-        _authorizationEndpointMeta,
-        authorizationEndpoint.isAcceptableOrUnknown(
-          data['authorization_endpoint']!,
-          _authorizationEndpointMeta,
-        ),
-      );
-    }
-    if (data.containsKey('bearer_token')) {
-      context.handle(
-        _bearerTokenMeta,
-        bearerToken.isAcceptableOrUnknown(
-          data['bearer_token']!,
-          _bearerTokenMeta,
-        ),
-      );
-    }
-    if (data.containsKey('use_http2')) {
-      context.handle(
-        _useHttp2Meta,
-        useHttp2.isAcceptableOrUnknown(data['use_http2']!, _useHttp2Meta),
-      );
-    }
     if (data.containsKey('is_enabled')) {
       context.handle(
         _isEnabledMeta,
@@ -3821,26 +3718,6 @@ class $McpServersTable extends McpServers
         DriftSqlType.string,
         data['${effectivePrefix}description'],
       ),
-      clientId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}client_id'],
-      ),
-      tokenEndpoint: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}token_endpoint'],
-      ),
-      authorizationEndpoint: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}authorization_endpoint'],
-      ),
-      bearerToken: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}bearer_token'],
-      ),
-      useHttp2: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}use_http2'],
-      )!,
       isEnabled: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_enabled'],
@@ -3853,14 +3730,10 @@ class $McpServersTable extends McpServers
     return $McpServersTable(attachedDatabase, alias);
   }
 
-  static JsonTypeConverter2<McpTransportType, String, String>
-  $convertertransport = const EnumNameConverter<McpTransportType>(
-    McpTransportType.values,
-  );
-  static JsonTypeConverter2<McpAuthenticationType, String, String>
-  $converterauthenticationType = const EnumNameConverter<McpAuthenticationType>(
-    McpAuthenticationType.values,
-  );
+  static JsonTypeConverter2<McpTransportType, String, Object?>
+  $convertertransport = transportTypeConverter;
+  static JsonTypeConverter2<McpAuthenticationType, String, Object?>
+  $converterauthenticationType = authenticationTypeConverter;
 }
 
 class McpServersTable extends DataClass implements Insertable<McpServersTable> {
@@ -3891,23 +3764,6 @@ class McpServersTable extends DataClass implements Insertable<McpServersTable> {
   /// Optional description of what this MCP server provides
   final String? description;
 
-  /// OAuth client ID (required when authenticationType is oauth)
-  final String? clientId;
-
-  /// OAuth token endpoint URL (required when authenticationType is oauth)
-  final String? tokenEndpoint;
-
-  /// OAuth authorization endpoint URL
-  /// (required when authenticationType is oauth)
-  final String? authorizationEndpoint;
-
-  /// Bearer token (required when authenticationType is bearerToken)
-  /// TODO: Consider moving to secure storage instead of database
-  final String? bearerToken;
-
-  /// Whether to use HTTP/2 (only applicable for streamableHttp transport)
-  final bool useHttp2;
-
   /// Whether the MCP server is enabled for connections
   final bool isEnabled;
   const McpServersTable({
@@ -3920,11 +3776,6 @@ class McpServersTable extends DataClass implements Insertable<McpServersTable> {
     required this.transport,
     required this.authenticationType,
     this.description,
-    this.clientId,
-    this.tokenEndpoint,
-    this.authorizationEndpoint,
-    this.bearerToken,
-    required this.useHttp2,
     required this.isEnabled,
   });
   @override
@@ -3949,19 +3800,6 @@ class McpServersTable extends DataClass implements Insertable<McpServersTable> {
     if (!nullToAbsent || description != null) {
       map['description'] = Variable<String>(description);
     }
-    if (!nullToAbsent || clientId != null) {
-      map['client_id'] = Variable<String>(clientId);
-    }
-    if (!nullToAbsent || tokenEndpoint != null) {
-      map['token_endpoint'] = Variable<String>(tokenEndpoint);
-    }
-    if (!nullToAbsent || authorizationEndpoint != null) {
-      map['authorization_endpoint'] = Variable<String>(authorizationEndpoint);
-    }
-    if (!nullToAbsent || bearerToken != null) {
-      map['bearer_token'] = Variable<String>(bearerToken);
-    }
-    map['use_http2'] = Variable<bool>(useHttp2);
     map['is_enabled'] = Variable<bool>(isEnabled);
     return map;
   }
@@ -3979,19 +3817,6 @@ class McpServersTable extends DataClass implements Insertable<McpServersTable> {
       description: description == null && nullToAbsent
           ? const Value.absent()
           : Value(description),
-      clientId: clientId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(clientId),
-      tokenEndpoint: tokenEndpoint == null && nullToAbsent
-          ? const Value.absent()
-          : Value(tokenEndpoint),
-      authorizationEndpoint: authorizationEndpoint == null && nullToAbsent
-          ? const Value.absent()
-          : Value(authorizationEndpoint),
-      bearerToken: bearerToken == null && nullToAbsent
-          ? const Value.absent()
-          : Value(bearerToken),
-      useHttp2: Value(useHttp2),
       isEnabled: Value(isEnabled),
     );
   }
@@ -4009,18 +3834,11 @@ class McpServersTable extends DataClass implements Insertable<McpServersTable> {
       name: serializer.fromJson<String>(json['name']),
       url: serializer.fromJson<String>(json['url']),
       transport: $McpServersTable.$convertertransport.fromJson(
-        serializer.fromJson<String>(json['transport']),
+        serializer.fromJson<Object?>(json['transport']),
       ),
       authenticationType: $McpServersTable.$converterauthenticationType
-          .fromJson(serializer.fromJson<String>(json['authenticationType'])),
+          .fromJson(serializer.fromJson<Object?>(json['authenticationType'])),
       description: serializer.fromJson<String?>(json['description']),
-      clientId: serializer.fromJson<String?>(json['clientId']),
-      tokenEndpoint: serializer.fromJson<String?>(json['tokenEndpoint']),
-      authorizationEndpoint: serializer.fromJson<String?>(
-        json['authorizationEndpoint'],
-      ),
-      bearerToken: serializer.fromJson<String?>(json['bearerToken']),
-      useHttp2: serializer.fromJson<bool>(json['useHttp2']),
       isEnabled: serializer.fromJson<bool>(json['isEnabled']),
     );
   }
@@ -4034,22 +3852,15 @@ class McpServersTable extends DataClass implements Insertable<McpServersTable> {
       'workspaceId': serializer.toJson<String>(workspaceId),
       'name': serializer.toJson<String>(name),
       'url': serializer.toJson<String>(url),
-      'transport': serializer.toJson<String>(
+      'transport': serializer.toJson<Object?>(
         $McpServersTable.$convertertransport.toJson(transport),
       ),
-      'authenticationType': serializer.toJson<String>(
+      'authenticationType': serializer.toJson<Object?>(
         $McpServersTable.$converterauthenticationType.toJson(
           authenticationType,
         ),
       ),
       'description': serializer.toJson<String?>(description),
-      'clientId': serializer.toJson<String?>(clientId),
-      'tokenEndpoint': serializer.toJson<String?>(tokenEndpoint),
-      'authorizationEndpoint': serializer.toJson<String?>(
-        authorizationEndpoint,
-      ),
-      'bearerToken': serializer.toJson<String?>(bearerToken),
-      'useHttp2': serializer.toJson<bool>(useHttp2),
       'isEnabled': serializer.toJson<bool>(isEnabled),
     };
   }
@@ -4064,11 +3875,6 @@ class McpServersTable extends DataClass implements Insertable<McpServersTable> {
     McpTransportType? transport,
     McpAuthenticationType? authenticationType,
     Value<String?> description = const Value.absent(),
-    Value<String?> clientId = const Value.absent(),
-    Value<String?> tokenEndpoint = const Value.absent(),
-    Value<String?> authorizationEndpoint = const Value.absent(),
-    Value<String?> bearerToken = const Value.absent(),
-    bool? useHttp2,
     bool? isEnabled,
   }) => McpServersTable(
     id: id ?? this.id,
@@ -4080,15 +3886,6 @@ class McpServersTable extends DataClass implements Insertable<McpServersTable> {
     transport: transport ?? this.transport,
     authenticationType: authenticationType ?? this.authenticationType,
     description: description.present ? description.value : this.description,
-    clientId: clientId.present ? clientId.value : this.clientId,
-    tokenEndpoint: tokenEndpoint.present
-        ? tokenEndpoint.value
-        : this.tokenEndpoint,
-    authorizationEndpoint: authorizationEndpoint.present
-        ? authorizationEndpoint.value
-        : this.authorizationEndpoint,
-    bearerToken: bearerToken.present ? bearerToken.value : this.bearerToken,
-    useHttp2: useHttp2 ?? this.useHttp2,
     isEnabled: isEnabled ?? this.isEnabled,
   );
   McpServersTable copyWithCompanion(McpServersCompanion data) {
@@ -4108,17 +3905,6 @@ class McpServersTable extends DataClass implements Insertable<McpServersTable> {
       description: data.description.present
           ? data.description.value
           : this.description,
-      clientId: data.clientId.present ? data.clientId.value : this.clientId,
-      tokenEndpoint: data.tokenEndpoint.present
-          ? data.tokenEndpoint.value
-          : this.tokenEndpoint,
-      authorizationEndpoint: data.authorizationEndpoint.present
-          ? data.authorizationEndpoint.value
-          : this.authorizationEndpoint,
-      bearerToken: data.bearerToken.present
-          ? data.bearerToken.value
-          : this.bearerToken,
-      useHttp2: data.useHttp2.present ? data.useHttp2.value : this.useHttp2,
       isEnabled: data.isEnabled.present ? data.isEnabled.value : this.isEnabled,
     );
   }
@@ -4135,11 +3921,6 @@ class McpServersTable extends DataClass implements Insertable<McpServersTable> {
           ..write('transport: $transport, ')
           ..write('authenticationType: $authenticationType, ')
           ..write('description: $description, ')
-          ..write('clientId: $clientId, ')
-          ..write('tokenEndpoint: $tokenEndpoint, ')
-          ..write('authorizationEndpoint: $authorizationEndpoint, ')
-          ..write('bearerToken: $bearerToken, ')
-          ..write('useHttp2: $useHttp2, ')
           ..write('isEnabled: $isEnabled')
           ..write(')'))
         .toString();
@@ -4156,11 +3937,6 @@ class McpServersTable extends DataClass implements Insertable<McpServersTable> {
     transport,
     authenticationType,
     description,
-    clientId,
-    tokenEndpoint,
-    authorizationEndpoint,
-    bearerToken,
-    useHttp2,
     isEnabled,
   );
   @override
@@ -4176,11 +3952,6 @@ class McpServersTable extends DataClass implements Insertable<McpServersTable> {
           other.transport == this.transport &&
           other.authenticationType == this.authenticationType &&
           other.description == this.description &&
-          other.clientId == this.clientId &&
-          other.tokenEndpoint == this.tokenEndpoint &&
-          other.authorizationEndpoint == this.authorizationEndpoint &&
-          other.bearerToken == this.bearerToken &&
-          other.useHttp2 == this.useHttp2 &&
           other.isEnabled == this.isEnabled);
 }
 
@@ -4194,11 +3965,6 @@ class McpServersCompanion extends UpdateCompanion<McpServersTable> {
   final Value<McpTransportType> transport;
   final Value<McpAuthenticationType> authenticationType;
   final Value<String?> description;
-  final Value<String?> clientId;
-  final Value<String?> tokenEndpoint;
-  final Value<String?> authorizationEndpoint;
-  final Value<String?> bearerToken;
-  final Value<bool> useHttp2;
   final Value<bool> isEnabled;
   final Value<int> rowid;
   const McpServersCompanion({
@@ -4211,11 +3977,6 @@ class McpServersCompanion extends UpdateCompanion<McpServersTable> {
     this.transport = const Value.absent(),
     this.authenticationType = const Value.absent(),
     this.description = const Value.absent(),
-    this.clientId = const Value.absent(),
-    this.tokenEndpoint = const Value.absent(),
-    this.authorizationEndpoint = const Value.absent(),
-    this.bearerToken = const Value.absent(),
-    this.useHttp2 = const Value.absent(),
     this.isEnabled = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -4229,11 +3990,6 @@ class McpServersCompanion extends UpdateCompanion<McpServersTable> {
     required McpTransportType transport,
     required McpAuthenticationType authenticationType,
     this.description = const Value.absent(),
-    this.clientId = const Value.absent(),
-    this.tokenEndpoint = const Value.absent(),
-    this.authorizationEndpoint = const Value.absent(),
-    this.bearerToken = const Value.absent(),
-    this.useHttp2 = const Value.absent(),
     this.isEnabled = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : workspaceId = Value(workspaceId),
@@ -4251,11 +4007,6 @@ class McpServersCompanion extends UpdateCompanion<McpServersTable> {
     Expression<String>? transport,
     Expression<String>? authenticationType,
     Expression<String>? description,
-    Expression<String>? clientId,
-    Expression<String>? tokenEndpoint,
-    Expression<String>? authorizationEndpoint,
-    Expression<String>? bearerToken,
-    Expression<bool>? useHttp2,
     Expression<bool>? isEnabled,
     Expression<int>? rowid,
   }) {
@@ -4269,12 +4020,6 @@ class McpServersCompanion extends UpdateCompanion<McpServersTable> {
       if (transport != null) 'transport': transport,
       if (authenticationType != null) 'authentication_type': authenticationType,
       if (description != null) 'description': description,
-      if (clientId != null) 'client_id': clientId,
-      if (tokenEndpoint != null) 'token_endpoint': tokenEndpoint,
-      if (authorizationEndpoint != null)
-        'authorization_endpoint': authorizationEndpoint,
-      if (bearerToken != null) 'bearer_token': bearerToken,
-      if (useHttp2 != null) 'use_http2': useHttp2,
       if (isEnabled != null) 'is_enabled': isEnabled,
       if (rowid != null) 'rowid': rowid,
     });
@@ -4290,11 +4035,6 @@ class McpServersCompanion extends UpdateCompanion<McpServersTable> {
     Value<McpTransportType>? transport,
     Value<McpAuthenticationType>? authenticationType,
     Value<String?>? description,
-    Value<String?>? clientId,
-    Value<String?>? tokenEndpoint,
-    Value<String?>? authorizationEndpoint,
-    Value<String?>? bearerToken,
-    Value<bool>? useHttp2,
     Value<bool>? isEnabled,
     Value<int>? rowid,
   }) {
@@ -4308,12 +4048,6 @@ class McpServersCompanion extends UpdateCompanion<McpServersTable> {
       transport: transport ?? this.transport,
       authenticationType: authenticationType ?? this.authenticationType,
       description: description ?? this.description,
-      clientId: clientId ?? this.clientId,
-      tokenEndpoint: tokenEndpoint ?? this.tokenEndpoint,
-      authorizationEndpoint:
-          authorizationEndpoint ?? this.authorizationEndpoint,
-      bearerToken: bearerToken ?? this.bearerToken,
-      useHttp2: useHttp2 ?? this.useHttp2,
       isEnabled: isEnabled ?? this.isEnabled,
       rowid: rowid ?? this.rowid,
     );
@@ -4355,23 +4089,6 @@ class McpServersCompanion extends UpdateCompanion<McpServersTable> {
     if (description.present) {
       map['description'] = Variable<String>(description.value);
     }
-    if (clientId.present) {
-      map['client_id'] = Variable<String>(clientId.value);
-    }
-    if (tokenEndpoint.present) {
-      map['token_endpoint'] = Variable<String>(tokenEndpoint.value);
-    }
-    if (authorizationEndpoint.present) {
-      map['authorization_endpoint'] = Variable<String>(
-        authorizationEndpoint.value,
-      );
-    }
-    if (bearerToken.present) {
-      map['bearer_token'] = Variable<String>(bearerToken.value);
-    }
-    if (useHttp2.present) {
-      map['use_http2'] = Variable<bool>(useHttp2.value);
-    }
     if (isEnabled.present) {
       map['is_enabled'] = Variable<bool>(isEnabled.value);
     }
@@ -4393,11 +4110,6 @@ class McpServersCompanion extends UpdateCompanion<McpServersTable> {
           ..write('transport: $transport, ')
           ..write('authenticationType: $authenticationType, ')
           ..write('description: $description, ')
-          ..write('clientId: $clientId, ')
-          ..write('tokenEndpoint: $tokenEndpoint, ')
-          ..write('authorizationEndpoint: $authorizationEndpoint, ')
-          ..write('bearerToken: $bearerToken, ')
-          ..write('useHttp2: $useHttp2, ')
           ..write('isEnabled: $isEnabled, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -10226,11 +9938,6 @@ typedef $$McpServersTableCreateCompanionBuilder =
       required McpTransportType transport,
       required McpAuthenticationType authenticationType,
       Value<String?> description,
-      Value<String?> clientId,
-      Value<String?> tokenEndpoint,
-      Value<String?> authorizationEndpoint,
-      Value<String?> bearerToken,
-      Value<bool> useHttp2,
       Value<bool> isEnabled,
       Value<int> rowid,
     });
@@ -10245,11 +9952,6 @@ typedef $$McpServersTableUpdateCompanionBuilder =
       Value<McpTransportType> transport,
       Value<McpAuthenticationType> authenticationType,
       Value<String?> description,
-      Value<String?> clientId,
-      Value<String?> tokenEndpoint,
-      Value<String?> authorizationEndpoint,
-      Value<String?> bearerToken,
-      Value<bool> useHttp2,
       Value<bool> isEnabled,
       Value<int> rowid,
     });
@@ -10351,31 +10053,6 @@ class $$McpServersTableFilterComposer
 
   ColumnFilters<String> get description => $composableBuilder(
     column: $table.description,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get clientId => $composableBuilder(
-    column: $table.clientId,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get tokenEndpoint => $composableBuilder(
-    column: $table.tokenEndpoint,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get authorizationEndpoint => $composableBuilder(
-    column: $table.authorizationEndpoint,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get bearerToken => $composableBuilder(
-    column: $table.bearerToken,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get useHttp2 => $composableBuilder(
-    column: $table.useHttp2,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -10482,31 +10159,6 @@ class $$McpServersTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get clientId => $composableBuilder(
-    column: $table.clientId,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get tokenEndpoint => $composableBuilder(
-    column: $table.tokenEndpoint,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get authorizationEndpoint => $composableBuilder(
-    column: $table.authorizationEndpoint,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get bearerToken => $composableBuilder(
-    column: $table.bearerToken,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get useHttp2 => $composableBuilder(
-    column: $table.useHttp2,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<bool> get isEnabled => $composableBuilder(
     column: $table.isEnabled,
     builder: (column) => ColumnOrderings(column),
@@ -10573,27 +10225,6 @@ class $$McpServersTableAnnotationComposer
     column: $table.description,
     builder: (column) => column,
   );
-
-  GeneratedColumn<String> get clientId =>
-      $composableBuilder(column: $table.clientId, builder: (column) => column);
-
-  GeneratedColumn<String> get tokenEndpoint => $composableBuilder(
-    column: $table.tokenEndpoint,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get authorizationEndpoint => $composableBuilder(
-    column: $table.authorizationEndpoint,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get bearerToken => $composableBuilder(
-    column: $table.bearerToken,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<bool> get useHttp2 =>
-      $composableBuilder(column: $table.useHttp2, builder: (column) => column);
 
   GeneratedColumn<bool> get isEnabled =>
       $composableBuilder(column: $table.isEnabled, builder: (column) => column);
@@ -10685,11 +10316,6 @@ class $$McpServersTableTableManager
                 Value<McpAuthenticationType> authenticationType =
                     const Value.absent(),
                 Value<String?> description = const Value.absent(),
-                Value<String?> clientId = const Value.absent(),
-                Value<String?> tokenEndpoint = const Value.absent(),
-                Value<String?> authorizationEndpoint = const Value.absent(),
-                Value<String?> bearerToken = const Value.absent(),
-                Value<bool> useHttp2 = const Value.absent(),
                 Value<bool> isEnabled = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => McpServersCompanion(
@@ -10702,11 +10328,6 @@ class $$McpServersTableTableManager
                 transport: transport,
                 authenticationType: authenticationType,
                 description: description,
-                clientId: clientId,
-                tokenEndpoint: tokenEndpoint,
-                authorizationEndpoint: authorizationEndpoint,
-                bearerToken: bearerToken,
-                useHttp2: useHttp2,
                 isEnabled: isEnabled,
                 rowid: rowid,
               ),
@@ -10721,11 +10342,6 @@ class $$McpServersTableTableManager
                 required McpTransportType transport,
                 required McpAuthenticationType authenticationType,
                 Value<String?> description = const Value.absent(),
-                Value<String?> clientId = const Value.absent(),
-                Value<String?> tokenEndpoint = const Value.absent(),
-                Value<String?> authorizationEndpoint = const Value.absent(),
-                Value<String?> bearerToken = const Value.absent(),
-                Value<bool> useHttp2 = const Value.absent(),
                 Value<bool> isEnabled = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => McpServersCompanion.insert(
@@ -10738,11 +10354,6 @@ class $$McpServersTableTableManager
                 transport: transport,
                 authenticationType: authenticationType,
                 description: description,
-                clientId: clientId,
-                tokenEndpoint: tokenEndpoint,
-                authorizationEndpoint: authorizationEndpoint,
-                bearerToken: bearerToken,
-                useHttp2: useHttp2,
                 isEnabled: isEnabled,
                 rowid: rowid,
               ),

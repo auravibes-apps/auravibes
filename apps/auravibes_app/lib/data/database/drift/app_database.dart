@@ -72,7 +72,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// Database schema version.
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 1;
 
   /// Migration logic for database schema upgrades.
   ///
@@ -84,14 +84,6 @@ class AppDatabase extends _$AppDatabase {
         await m.createAll();
         // No default tools initialization needed
         // Tools are defined in the app code via ToolService, not the database
-      },
-      onUpgrade: (Migrator m, int from, int to) async {
-        if (from < 2) {
-          // Add new tables for API models and providers
-          // TODO: Uncomment after DAOs are created
-          // await m.createTable(apiModelProviders);
-          // await m.createTable(apiModels);
-        }
       },
     );
   }

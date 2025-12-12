@@ -429,14 +429,17 @@ class ToolCallingManagerNotifier extends _$ToolCallingManagerNotifier {
   /// Resolves a composite tool name to its implementation.
   ///
   /// Composite tool name formats:
-  /// - Built-in: `built_in::<table_id>::<tool_identifier>`
-  /// - MCP: `mcp::<mcp_id>::<slug_name>::<tool_identifier>`
+  /// - Built-in: `built_in_<table_id>_<tool_identifier>`
+  /// - MCP: `mcp_<mcp_id>_<slug_name>_<tool_identifier>`
+  ///
+  /// Note: Tool names must match pattern ^[a-zA-Z0-9_-]{1,128}$
+  /// so we use underscores as separators instead of colons.
   ///
   /// Returns the resolved tool and null failureStatus, or null tool with
   /// failureStatus.
   _ToolResolution _resolveTool(String compositeToolName) {
     // Check if it's an MCP tool
-    if (compositeToolName.startsWith('mcp::')) {
+    if (compositeToolName.startsWith('mcp_')) {
       final components = McpToolIdComponents.fromComposite(
         compositeToolName,
       );
@@ -478,7 +481,7 @@ class ToolCallingManagerNotifier extends _$ToolCallingManagerNotifier {
     }
 
     // Check if it's a built-in tool
-    if (compositeToolName.startsWith('built_in::')) {
+    if (compositeToolName.startsWith('built_in_')) {
       final components = _parseBuiltInToolId(compositeToolName);
       if (components == null) {
         return const _ToolResolution(
@@ -522,25 +525,31 @@ class ToolCallingManagerNotifier extends _$ToolCallingManagerNotifier {
 
   /// Parses a built-in tool composite ID.
   ///
-  /// Format: `built_in::<table_id>::<tool_identifier>`
+  /// Format: `built_in_<table_id>_<tool_identifier>`
   /// Returns null if the format is invalid.
+  ///
+  /// Note: Tool names must match pattern ^[a-zA-Z0-9_-]{1,128}$
+  /// so we use underscores as separators instead of colons.
   static _BuiltInToolIdComponents? _parseBuiltInToolId(String compositeId) {
-    if (!compositeId.startsWith('built_in::')) {
+    if (!compositeId.startsWith('built_in_')) {
       return null;
     }
 
-    // Remove 'built_in::' prefix
-    final withoutPrefix = compositeId.substring(10);
+    // Remove 'built_in_' prefix
+    final withoutPrefix = compositeId.substring(9);
 
-    // Split by '::' delimiter - we need exactly 2 parts:
-    // table_id, tool_identifier
-    final parts = withoutPrefix.split('::');
-    if (parts.length != 2) {
+    // Parse format: <table_id>_<tool_identifier>
+    final firstUnderscoreIdx = withoutPrefix.indexOf('_');
+    if (firstUnderscoreIdx <= 0) {
       return null;
     }
 
-    final tableId = parts[0];
-    final toolIdentifier = parts[1];
+    final tableId = withoutPrefix.substring(0, firstUnderscoreIdx);
+    final toolIdentifier = withoutPrefix.substring(firstUnderscoreIdx + 1);
+
+    if (tableId.isEmpty || toolIdentifier.isEmpty) {
+      return null;
+    }
 
     return _BuiltInToolIdComponents(
       tableId: tableId,

@@ -4,7 +4,9 @@ import 'package:auravibes_app/domain/entities/mcp_server.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/selected_workspace.dart';
+import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_service.dart';
+import 'package:auravibes_app/services/mcp_service/oauth_authenticate.dart';
 import 'package:collection/collection.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:langchain/langchain.dart';
@@ -66,9 +68,9 @@ abstract class McpConnectionState with _$McpConnectionState {
 }
 
 extension _McpToolInfoSpec on McpToolInfo {
-  ToolSpec get _spec {
+  ToolSpec _spec(McpServerEntity server) {
     return .new(
-      name: finalToolName,
+      name: finalToolName(server),
       description: description,
       inputJsonSchema: inputSchema,
     );
@@ -80,7 +82,10 @@ extension _McpToolInfoSpec on McpToolInfo {
 
 /// Parsed components of a composite MCP tool ID.
 ///
-/// The composite ID format is: `mcp::<mcp_id>::<slug_name>::<tool_identifier>`
+/// The composite ID format is: `mcp_<mcp_id>_<slug_name>_<tool_identifier>`
+///
+/// Note: Tool names must match pattern ^[a-zA-Z0-9_-]{1,128}$
+/// so we use underscores as separators instead of colons.
 class McpToolIdComponents {
   const McpToolIdComponents({
     required this.mcpServerId,
@@ -98,22 +103,34 @@ class McpToolIdComponents {
   final String toolIdentifier;
 
   static McpToolIdComponents? fromComposite(String compositeId) {
-    if (!compositeId.startsWith('mcp::')) {
+    if (!compositeId.startsWith('mcp_')) {
       return null;
     }
 
-    // Remove 'mcp::' prefix
-    final withoutPrefix = compositeId.substring(5);
+    // Remove 'mcp_' prefix
+    final withoutPrefix = compositeId.substring(4);
 
-    // Split by '::' delimiter - we need exactly 3 parts: id, slug, tool
-    final parts = withoutPrefix.split('::');
-    if (parts.length != 3) {
+    // Parse format: <id>_<slug>_<tool>
+    // Since slug and tool can contain underscores, we parse carefully
+    final firstUnderscoreIdx = withoutPrefix.indexOf('_');
+    if (firstUnderscoreIdx <= 0) {
       return null;
     }
 
-    final mcpServerId = parts[0];
-    final slugName = parts[1];
-    final toolIdentifier = parts[2];
+    final mcpServerId = withoutPrefix.substring(0, firstUnderscoreIdx);
+    final rest = withoutPrefix.substring(firstUnderscoreIdx + 1);
+
+    final secondUnderscoreIdx = rest.indexOf('_');
+    if (secondUnderscoreIdx <= 0) {
+      return null;
+    }
+
+    final slugName = rest.substring(0, secondUnderscoreIdx);
+    final toolIdentifier = rest.substring(secondUnderscoreIdx + 1);
+
+    if (mcpServerId.isEmpty || slugName.isEmpty || toolIdentifier.isEmpty) {
+      return null;
+    }
 
     return McpToolIdComponents(
       mcpServerId: mcpServerId,
@@ -147,7 +164,7 @@ class McpManagerNotifier extends _$McpManagerNotifier {
   late final McpManagerService _mcpManagerService;
   @override
   List<McpConnectionState> build() {
-    _mcpManagerService = ref.read(mcpManagerServiceProvider);
+    _mcpManagerService = ref.watch(mcpManagerServiceProvider);
     ref.onDispose(_disposeAllConnections);
 
     // Load MCPs from database on initialization
@@ -166,21 +183,81 @@ class McpManagerNotifier extends _$McpManagerNotifier {
   /// 1. Save the server to the database
   /// 2. Connect to the MCP server
   /// 3. Persist tools to database if connection successful
-  Future<void> addMcpServer(McpServerToCreate serverToCreate) async {
+  Future<void> addMcpServer(McpServerFormToCreate serverToCreate) async {
     // Get the current workspace ID
     final workspace = await ref.read(selectedWorkspaceProvider.future);
     final workspaceId = workspace.id;
 
+    var serverInfo = McpServerToCreate(
+      name: serverToCreate.name,
+      url: serverToCreate.url,
+      transport: serverToCreate.transport,
+      authenticationType: const McpAuthenticationTypeNone(),
+      description: serverToCreate.description,
+    );
+
+    if (serverToCreate.authenticationType == .bearerToken) {
+      if (serverToCreate.bearerToken == null) {
+        throw Exception('Bearer token is required');
+      }
+      serverInfo = serverInfo.copyWith(
+        authenticationType: McpAuthenticationTypeBearerToken(
+          bearerToken: serverToCreate.bearerToken!,
+        ),
+      );
+    }
+
+    if (serverToCreate.authenticationType == .oauth) {
+      // Discover OAuth endpoints
+
+      final authenticator = OauthAuthenticate(
+        callbackUrlScheme: 'me-auravibes',
+        clientName: 'Aura Vibes MCP Client',
+      );
+      final discover = await authenticator.discover(serverToCreate.url);
+
+      if (discover == null) {
+        throw Exception('Failed to discover OAuth endpoints');
+      }
+
+      final token = await authenticator.authenticate(discover);
+
+      serverInfo = serverInfo.copyWith(
+        authenticationType: McpAuthenticationTypeOAuth(
+          clientId: discover.clientId ?? 'app-client-id',
+          authorizationEndpoint: discover.authorizationUrl,
+          tokenEndpoint: discover.tokenUrl,
+          token: token.toEntity(),
+        ),
+      );
+    }
+
     // Save to database using the repository
+
+    final client = await _mcpManagerService.connectMcp(serverInfo);
+
+    final mcpTools = await _mcpManagerService.getTools(client);
+
     final repository = ref.read(mcpServersRepositoryProvider);
     final savedServer = await repository.addMcpServerWithTools(
       workspaceId: workspaceId,
-      serverToCreate: serverToCreate,
-      tools: [], // Initially empty, will be updated after connection
+      serverToCreate: serverInfo.copyWith(
+        authenticationType: await serverInfo.authenticationType.copyCryptor(
+          ref.read(encryptionServiceProvider).encrypt,
+        ),
+      ),
+      tools: mcpTools,
     );
 
-    // Add to state and connect
-    await _connectToMcp(savedServer);
+    state = [
+      ...state,
+      McpConnectionState(
+        server: savedServer,
+        status: McpConnectionStatus.connected,
+        tools: mcpTools,
+        client: client,
+      ),
+    ];
   }
 
   /// Delete an MCP server by ID.
@@ -267,7 +344,7 @@ class McpManagerNotifier extends _$McpManagerNotifier {
       return null;
     }
 
-    return toolInfo._spec;
+    return toolInfo._spec(connection.server);
   }
 
   /// Check if any MCP servers are currently connecting.
@@ -394,7 +471,13 @@ class McpManagerNotifier extends _$McpManagerNotifier {
       );
 
       for (final server in servers) {
-        await _connectToMcp(server);
+        await _connectToMcp(
+          server.copyWith(
+            authenticationType: await server.authenticationType.copyCryptor(
+              ref.read(encryptionServiceProvider).decrypt,
+            ),
+          ),
+        );
       }
     } on Exception catch (e) {
       // Log error but don't crash - MCP loading is not critical
@@ -436,7 +519,7 @@ class McpManagerNotifier extends _$McpManagerNotifier {
     try {
       final client = await _mcpManagerService.connectMcp(server);
 
-      final mcpTools = await _mcpManagerService.getTools(client, server);
+      final mcpTools = await _mcpManagerService.getTools(client);
 
       // Update state with connected client and tools
       _updateConnectionState(

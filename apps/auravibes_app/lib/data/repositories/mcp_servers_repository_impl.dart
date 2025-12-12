@@ -45,11 +45,6 @@ class McpServersRepositoryImpl implements McpServersRepository {
             transport: serverToCreate.transport,
             authenticationType: serverToCreate.authenticationType,
             description: Value(serverToCreate.description),
-            clientId: Value(serverToCreate.clientId),
-            tokenEndpoint: Value(serverToCreate.tokenEndpoint),
-            authorizationEndpoint: Value(serverToCreate.authorizationEndpoint),
-            bearerToken: Value(serverToCreate.bearerToken),
-            useHttp2: Value(serverToCreate.useHttp2),
           ),
         );
 
@@ -227,11 +222,6 @@ class McpServersRepositoryImpl implements McpServersRepository {
       createdAt: table.createdAt,
       updatedAt: table.updatedAt,
       description: table.description,
-      clientId: table.clientId,
-      tokenEndpoint: table.tokenEndpoint,
-      authorizationEndpoint: table.authorizationEndpoint,
-      bearerToken: table.bearerToken,
-      useHttp2: table.useHttp2,
       isEnabled: table.isEnabled,
     );
   }

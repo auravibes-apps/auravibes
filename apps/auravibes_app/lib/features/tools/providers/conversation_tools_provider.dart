@@ -213,14 +213,17 @@ class ContextAwareToolsNotifier extends _$ContextAwareToolsNotifier {
 
 /// Generates a composite ID for a built-in tool.
 ///
-/// Format: `built_in::<table_id>::<tool_identifier>`
+/// Format: `built_in_<table_id>_<tool_identifier>`
 /// - table_id: Database ID of the workspace tool (for permission checks)
 /// - tool_identifier: The tool type value (e.g., "calculator")
+///
+/// Note: Tool names must match pattern ^[a-zA-Z0-9_-]{1,128}$
+/// so we use underscores as separators instead of colons.
 String generateBuiltInCompositeId({
   required String tableId,
   required String toolIdentifier,
 }) {
-  return 'built_in::$tableId::$toolIdentifier';
+  return 'built_in_${tableId}_$toolIdentifier';
 }
 
 /// Provider to get context-aware tools as full entities for chat.
