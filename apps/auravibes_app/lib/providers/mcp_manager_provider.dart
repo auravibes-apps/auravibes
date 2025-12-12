@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:auravibes_app/domain/entities/mcp_server.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';
+import 'package:auravibes_app/features/tools/providers/workspace_tools_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/selected_workspace.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_service.dart';
@@ -258,6 +259,10 @@ class McpManagerNotifier extends _$McpManagerNotifier {
         client: client,
       ),
     ];
+
+    // Invalidate workspace tools provider so the UI refreshes with the new
+    // tools
+    ref.invalidate(workspaceToolsProvider);
   }
 
   /// Delete an MCP server by ID.
