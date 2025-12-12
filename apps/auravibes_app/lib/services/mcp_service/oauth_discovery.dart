@@ -25,8 +25,8 @@ class OAuthDiscoveryResult {
   final String? scope;
 }
 
-class OAuthRegistrer {
-  const OAuthRegistrer({
+class OAuthConnector {
+  const OAuthConnector({
     required this.clientName,
     required this.serverUrl,
     required this.redirectUrl,
@@ -45,7 +45,7 @@ class OAuthDiscoveryService {
 
   /// Automatically discovers OAuth configuration for an MCP server URL
   static Future<OAuthDiscoveryResult?> discoverOAuth(
-    OAuthRegistrer registrer,
+    OAuthConnector registrer,
   ) async {
     try {
       _logger.info(

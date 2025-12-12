@@ -6,7 +6,7 @@ import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.d
 import 'package:auravibes_app/features/workspaces/providers/selected_workspace.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_service.dart';
-import 'package:auravibes_app/services/mcp_service/oauth_autenticate.dart';
+import 'package:auravibes_app/services/mcp_service/oauth_authenticate.dart';
 import 'package:collection/collection.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:langchain/langchain.dart';
@@ -188,7 +188,6 @@ class McpManagerNotifier extends _$McpManagerNotifier {
     final workspace = await ref.read(selectedWorkspaceProvider.future);
     final workspaceId = workspace.id;
 
-    // await OauthAutenticate().autenticate(serverToCreate.url);
     var serverInfo = McpServerToCreate(
       name: serverToCreate.name,
       url: serverToCreate.url,
@@ -211,17 +210,17 @@ class McpManagerNotifier extends _$McpManagerNotifier {
     if (serverToCreate.authenticationType == .oauth) {
       // Discover OAuth endpoints
 
-      final autenticator = OauthAutenticate(
+      final authenticator = OauthAuthenticate(
         callbackUrlScheme: 'me-auravibes',
         clientName: 'Aura Vibes MCP Client',
       );
-      final discover = await autenticator.discover(serverToCreate.url);
+      final discover = await authenticator.discover(serverToCreate.url);
 
       if (discover == null) {
         throw Exception('Failed to discover OAuth endpoints');
       }
 
-      final token = await autenticator.authenticate(discover);
+      final token = await authenticator.authenticate(discover);
 
       serverInfo = serverInfo.copyWith(
         authenticationType: McpAuthenticationTypeOAuth(

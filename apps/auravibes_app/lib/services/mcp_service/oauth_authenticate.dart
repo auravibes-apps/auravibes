@@ -22,8 +22,8 @@ class OAuthException implements Exception {
   }
 }
 
-class OauthAutenticate {
-  OauthAutenticate({
+class OauthAuthenticate {
+  OauthAuthenticate({
     required this.callbackUrlScheme,
     required this.clientName,
   });
@@ -60,7 +60,7 @@ class OauthAutenticate {
 
   Future<OAuthDiscoveryResult?> discover(String url) async {
     final oAuthResult = await OAuthDiscoveryService.discoverOAuth(
-      OAuthRegistrer(
+      OAuthConnector(
         clientName: clientName,
         serverUrl: url,
         redirectUrl: '$callbackUrlScheme:/',

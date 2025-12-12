@@ -96,14 +96,14 @@ class McpManagerService {
   ) async {
     final authType = server.authenticationType;
 
-    if (authType is! McpAuthenticationTypeNone) {
+    if (authType is McpAuthenticationTypeNone) {
       return mcp.SseClientTransport.create(
         serverUrl: server.url,
       );
     }
     String? bearerToken;
     if (authType is McpAuthenticationTypeBearerToken) {
-      bearerToken = (authType as McpAuthenticationTypeBearerToken).bearerToken;
+      bearerToken = authType.bearerToken;
     }
 
     final oAuthConfig = _getOauthConfig(authType);

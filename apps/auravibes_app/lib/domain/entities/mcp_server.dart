@@ -103,8 +103,7 @@ abstract class OAutTokenEntity with _$OAutTokenEntity {
   factory OAutTokenEntity.fromJson(Map<String, dynamic> json) =>
       _$OAutTokenEntityFromJson(json);
 
-  /// Returns true if the stored OAuth token is expired
-  /// Returns true if no token info available (consider expired)
+  /// Returns true if the stored OAuth token is expired or unavailable.
   bool get isOAuthTokenExpired {
     if (expiresIn == null) return true;
     final expiresAt = issuedAt.add(Duration(seconds: expiresIn!));
