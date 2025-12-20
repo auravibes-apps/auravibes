@@ -576,6 +576,7 @@ class MessagesManagerNotifier extends _$MessagesManagerNotifier {
     required String modelId,
     required String message,
     required List<UserToolType> toolTypes,
+    Map<String, ToolPermissionMode>? conversationToolPermissions,
   }) async {
     // generate a title
     // store conversation
@@ -615,6 +616,17 @@ class MessagesManagerNotifier extends _$MessagesManagerNotifier {
       conversation.id,
       toolsToRemove,
     );
+
+    if (conversationToolPermissions != null &&
+        conversationToolPermissions.isNotEmpty) {
+      for (final entry in conversationToolPermissions.entries) {
+        await conversationToolsRepository.setConversationToolPermission(
+          conversation.id,
+          entry.key,
+          permissionMode: entry.value,
+        );
+      }
+    }
 
     // Get enabled tool entities after conversation is created
     final enabledTools = await conversationToolsRepository

@@ -1,3 +1,5 @@
+import 'package:auravibes_app/domain/entities/workspace_tool.dart'
+    show ToolPermissionMode;
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/models/widgets/select_chat_model.dart';
 import 'package:auravibes_app/features/tools/providers/conversation_tools_provider.dart';
@@ -16,15 +18,6 @@ class NewChatScreen extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final workspaceId = ref.watch(
-      selectedWorkspaceProvider.select((data) => data.value?.id),
-    );
-
-    final toolsList = ref.watch(
-      conversationToolsProvider(
-        workspaceId: workspaceId ?? '',
-      ),
-    );
     final modelIdState = useState<String?>(null);
     final isLoading = useState(false);
     final onToolsPress = useCallback(() async {
@@ -61,13 +54,27 @@ class NewChatScreen extends HookConsumerWidget {
 
         // Get enabled tools from the list
         // Extract UserToolType from BuiltInTool identifiers
-        final tools =
-            toolsList.value
-                ?.where((tool) => tool.isEnabled)
-                .map((tool) => tool.tool.buildInType)
-                .whereType<UserToolType>()
-                .toList() ??
-            [];
+
+        final toolsList = await ref.watch(
+          conversationToolsProvider(
+            workspaceId: workspaceId,
+          ).future,
+        );
+        final enabledToolStates = toolsList
+            .where((tool) => tool.isEnabled)
+            .toList();
+        final tools = enabledToolStates
+            .map((tool) => tool.tool.buildInType)
+            .whereType<UserToolType>()
+            .toList();
+
+        final conversationToolPermissions = <String, ToolPermissionMode>{};
+        for (final toolState in enabledToolStates) {
+          if (toolState.permissionMode != toolState.tool.permissionMode) {
+            conversationToolPermissions[toolState.tool.id] =
+                toolState.permissionMode;
+          }
+        }
 
         final createdConversation = await ref
             .read(messagesManagerProvider.notifier)
@@ -76,6 +83,10 @@ class NewChatScreen extends HookConsumerWidget {
               modelId: modelIdState.value!,
               message: message,
               toolTypes: tools,
+              conversationToolPermissions:
+                  conversationToolPermissions.isNotEmpty
+                  ? conversationToolPermissions
+                  : null,
             );
 
         if (context.mounted) {
