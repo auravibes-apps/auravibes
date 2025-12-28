@@ -646,8 +646,7 @@ void main() {
             otherMessageId,
             captureAny,
           ),
-        );
-        verification.called(1);
+        )..called(1);
         final capturedUpdate = verification.captured.single as MessageToUpdate;
         expect(
           capturedUpdate.metadata?.toolCalls.first.resultStatus,
