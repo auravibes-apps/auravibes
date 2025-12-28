@@ -75,7 +75,6 @@ String? _tryDecode(Object? metadata) {
 class _ChatMessageRow extends HookConsumerWidget {
   const _ChatMessageRow({
     required this.isLastMessage,
-    super.key,
   });
 
   final bool isLastMessage;
