@@ -154,7 +154,7 @@ class ToolCallingManagerNotifier extends _$ToolCallingManagerNotifier {
     final workspaceId = conversation.workspaceId;
 
     // Categorize tools by permission
-    final grantedTools = await _filterToolsGaranted(
+    final grantedTools = await _filterToolsGranted(
       toolCalling,
       conversationId: conversationId,
       workspaceId: workspaceId,
@@ -375,7 +375,7 @@ class ToolCallingManagerNotifier extends _$ToolCallingManagerNotifier {
   ///
   /// Returns granted tools to execute, resolved tool updates, and
   /// whether any tools are pending confirmation.
-  Future<List<ToolToCall>> _filterToolsGaranted(
+  Future<List<ToolToCall>> _filterToolsGranted(
     List<ToolToCall> toolCalls, {
     required String conversationId,
     required String workspaceId,
