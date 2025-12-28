@@ -1,6 +1,6 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/enums/message_table_enums.dart';
-import 'package:auravibes_app/domain/entities/conversation.dart';
+import 'package:auravibes_app/domain/entities/messages.dart';
 import 'package:auravibes_app/domain/enums/message_types.dart';
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
 import 'package:auravibes_app/utils/encode.dart';

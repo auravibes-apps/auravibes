@@ -121,7 +121,7 @@ final class ToolCallingManagerNotifierProvider
 }
 
 String _$toolCallingManagerNotifierHash() =>
-    r'c04cbae410b8b78a05f0ac1173e165440391dc73';
+    r'c75330138503efc32c9d61bad9e44319ce970cb0';
 
 abstract class _$ToolCallingManagerNotifier
     extends $Notifier<List<TrackedToolCall>> {

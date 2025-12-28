@@ -3,24 +3,25 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i5;
+import 'dart:async' as _i6;
 
-import 'package:auravibes_app/domain/entities/conversation.dart' as _i2;
-import 'package:auravibes_app/domain/entities/conversation_tool.dart' as _i9;
-import 'package:auravibes_app/domain/entities/tools_group.dart' as _i12;
-import 'package:auravibes_app/domain/entities/workspace_tool.dart' as _i3;
-import 'package:auravibes_app/domain/enums/message_types.dart' as _i6;
-import 'package:auravibes_app/domain/enums/tool_permission_result.dart' as _i10;
+import 'package:auravibes_app/domain/entities/conversation.dart' as _i3;
+import 'package:auravibes_app/domain/entities/conversation_tool.dart' as _i10;
+import 'package:auravibes_app/domain/entities/messages.dart' as _i2;
+import 'package:auravibes_app/domain/entities/tools_group.dart' as _i13;
+import 'package:auravibes_app/domain/entities/workspace_tool.dart' as _i4;
+import 'package:auravibes_app/domain/enums/message_types.dart' as _i7;
+import 'package:auravibes_app/domain/enums/tool_permission_result.dart' as _i11;
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart'
-    as _i7;
-import 'package:auravibes_app/domain/repositories/conversation_tools_repository.dart'
     as _i8;
+import 'package:auravibes_app/domain/repositories/conversation_tools_repository.dart'
+    as _i9;
 import 'package:auravibes_app/domain/repositories/message_repository.dart'
-    as _i4;
+    as _i5;
 import 'package:auravibes_app/domain/repositories/tools_groups_repository.dart'
-    as _i11;
+    as _i12;
 import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dart'
-    as _i13;
+    as _i14;
 import 'package:mockito/mockito.dart' as _i1;
 
 // ignore_for_file: type=lint
@@ -44,13 +45,13 @@ class _FakeMessageEntity_0 extends _i1.SmartFake implements _i2.MessageEntity {
 }
 
 class _FakeConversationEntity_1 extends _i1.SmartFake
-    implements _i2.ConversationEntity {
+    implements _i3.ConversationEntity {
   _FakeConversationEntity_1(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
 class _FakeWorkspaceToolEntity_2 extends _i1.SmartFake
-    implements _i3.WorkspaceToolEntity {
+    implements _i4.WorkspaceToolEntity {
   _FakeWorkspaceToolEntity_2(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
@@ -58,25 +59,25 @@ class _FakeWorkspaceToolEntity_2 extends _i1.SmartFake
 /// A class which mocks [MessageRepository].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockMessageRepository extends _i1.Mock implements _i4.MessageRepository {
+class MockMessageRepository extends _i1.Mock implements _i5.MessageRepository {
   MockMessageRepository() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i5.Future<List<_i2.MessageEntity>> getMessagesByConversation(
+  _i6.Future<List<_i2.MessageEntity>> getMessagesByConversation(
     String? conversationId,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getMessagesByConversation, [conversationId]),
-            returnValue: _i5.Future<List<_i2.MessageEntity>>.value(
+            returnValue: _i6.Future<List<_i2.MessageEntity>>.value(
               <_i2.MessageEntity>[],
             ),
           )
-          as _i5.Future<List<_i2.MessageEntity>>);
+          as _i6.Future<List<_i2.MessageEntity>>);
 
   @override
-  _i5.Future<List<_i2.MessageEntity>> getMessagesByConversationPaginated(
+  _i6.Future<List<_i2.MessageEntity>> getMessagesByConversationPaginated(
     String? conversationId,
     int? limit,
     int? offset,
@@ -87,231 +88,231 @@ class MockMessageRepository extends _i1.Mock implements _i4.MessageRepository {
               limit,
               offset,
             ]),
-            returnValue: _i5.Future<List<_i2.MessageEntity>>.value(
+            returnValue: _i6.Future<List<_i2.MessageEntity>>.value(
               <_i2.MessageEntity>[],
             ),
           )
-          as _i5.Future<List<_i2.MessageEntity>>);
+          as _i6.Future<List<_i2.MessageEntity>>);
 
   @override
-  _i5.Future<List<_i2.MessageEntity>> getMessagesByType(
+  _i6.Future<List<_i2.MessageEntity>> getMessagesByType(
     String? conversationId,
-    _i6.MessageType? messageType,
+    _i7.MessageType? messageType,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getMessagesByType, [
               conversationId,
               messageType,
             ]),
-            returnValue: _i5.Future<List<_i2.MessageEntity>>.value(
+            returnValue: _i6.Future<List<_i2.MessageEntity>>.value(
               <_i2.MessageEntity>[],
             ),
           )
-          as _i5.Future<List<_i2.MessageEntity>>);
+          as _i6.Future<List<_i2.MessageEntity>>);
 
   @override
-  _i5.Future<List<_i2.MessageEntity>> getUserMessages(String? conversationId) =>
+  _i6.Future<List<_i2.MessageEntity>> getUserMessages(String? conversationId) =>
       (super.noSuchMethod(
             Invocation.method(#getUserMessages, [conversationId]),
-            returnValue: _i5.Future<List<_i2.MessageEntity>>.value(
+            returnValue: _i6.Future<List<_i2.MessageEntity>>.value(
               <_i2.MessageEntity>[],
             ),
           )
-          as _i5.Future<List<_i2.MessageEntity>>);
+          as _i6.Future<List<_i2.MessageEntity>>);
 
   @override
-  _i5.Future<List<_i2.MessageEntity>> getSystemMessages(
+  _i6.Future<List<_i2.MessageEntity>> getSystemMessages(
     String? conversationId,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getSystemMessages, [conversationId]),
-            returnValue: _i5.Future<List<_i2.MessageEntity>>.value(
+            returnValue: _i6.Future<List<_i2.MessageEntity>>.value(
               <_i2.MessageEntity>[],
             ),
           )
-          as _i5.Future<List<_i2.MessageEntity>>);
+          as _i6.Future<List<_i2.MessageEntity>>);
 
   @override
-  _i5.Future<_i2.MessageEntity?> getMessageById(String? id) =>
+  _i6.Future<_i2.MessageEntity?> getMessageById(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#getMessageById, [id]),
-            returnValue: _i5.Future<_i2.MessageEntity?>.value(),
+            returnValue: _i6.Future<_i2.MessageEntity?>.value(),
           )
-          as _i5.Future<_i2.MessageEntity?>);
+          as _i6.Future<_i2.MessageEntity?>);
 
   @override
-  _i5.Future<_i2.MessageEntity> createMessage(_i2.MessageToCreate? message) =>
+  _i6.Future<_i2.MessageEntity> createMessage(_i2.MessageToCreate? message) =>
       (super.noSuchMethod(
             Invocation.method(#createMessage, [message]),
-            returnValue: _i5.Future<_i2.MessageEntity>.value(
+            returnValue: _i6.Future<_i2.MessageEntity>.value(
               _FakeMessageEntity_0(
                 this,
                 Invocation.method(#createMessage, [message]),
               ),
             ),
           )
-          as _i5.Future<_i2.MessageEntity>);
+          as _i6.Future<_i2.MessageEntity>);
 
   @override
-  _i5.Future<_i2.MessageEntity> updateMessage(
+  _i6.Future<_i2.MessageEntity> updateMessage(
     String? id,
     _i2.MessageToUpdate? message,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#updateMessage, [id, message]),
-            returnValue: _i5.Future<_i2.MessageEntity>.value(
+            returnValue: _i6.Future<_i2.MessageEntity>.value(
               _FakeMessageEntity_0(
                 this,
                 Invocation.method(#updateMessage, [id, message]),
               ),
             ),
           )
-          as _i5.Future<_i2.MessageEntity>);
+          as _i6.Future<_i2.MessageEntity>);
 
   @override
-  _i5.Future<_i2.MessageEntity?> appendToMessage(String? id, String? delta) =>
+  _i6.Future<_i2.MessageEntity?> appendToMessage(String? id, String? delta) =>
       (super.noSuchMethod(
             Invocation.method(#appendToMessage, [id, delta]),
-            returnValue: _i5.Future<_i2.MessageEntity?>.value(),
+            returnValue: _i6.Future<_i2.MessageEntity?>.value(),
           )
-          as _i5.Future<_i2.MessageEntity?>);
+          as _i6.Future<_i2.MessageEntity?>);
 
   @override
-  _i5.Future<bool> deleteMessage(String? id) =>
+  _i6.Future<bool> deleteMessage(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#deleteMessage, [id]),
-            returnValue: _i5.Future<bool>.value(false),
+            returnValue: _i6.Future<bool>.value(false),
           )
-          as _i5.Future<bool>);
+          as _i6.Future<bool>);
 
   @override
-  _i5.Future<bool> messageExists(String? id) =>
+  _i6.Future<bool> messageExists(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#messageExists, [id]),
-            returnValue: _i5.Future<bool>.value(false),
+            returnValue: _i6.Future<bool>.value(false),
           )
-          as _i5.Future<bool>);
+          as _i6.Future<bool>);
 
   @override
-  _i5.Future<List<_i2.MessageEntity>> getMessagesByStatus(
+  _i6.Future<List<_i2.MessageEntity>> getMessagesByStatus(
     String? conversationId,
-    _i6.MessageStatus? status,
+    _i7.MessageStatus? status,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getMessagesByStatus, [conversationId, status]),
-            returnValue: _i5.Future<List<_i2.MessageEntity>>.value(
+            returnValue: _i6.Future<List<_i2.MessageEntity>>.value(
               <_i2.MessageEntity>[],
             ),
           )
-          as _i5.Future<List<_i2.MessageEntity>>);
+          as _i6.Future<List<_i2.MessageEntity>>);
 
   @override
-  _i5.Future<int> getMessageCountByConversation(String? conversationId) =>
+  _i6.Future<int> getMessageCountByConversation(String? conversationId) =>
       (super.noSuchMethod(
             Invocation.method(#getMessageCountByConversation, [conversationId]),
-            returnValue: _i5.Future<int>.value(0),
+            returnValue: _i6.Future<int>.value(0),
           )
-          as _i5.Future<int>);
+          as _i6.Future<int>);
 
   @override
-  _i5.Future<bool> validateMessage(_i2.MessageToCreate? message) =>
+  _i6.Future<bool> validateMessage(_i2.MessageToCreate? message) =>
       (super.noSuchMethod(
             Invocation.method(#validateMessage, [message]),
-            returnValue: _i5.Future<bool>.value(false),
+            returnValue: _i6.Future<bool>.value(false),
           )
-          as _i5.Future<bool>);
+          as _i6.Future<bool>);
 }
 
 /// A class which mocks [ConversationRepository].
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockConversationRepository extends _i1.Mock
-    implements _i7.ConversationRepository {
+    implements _i8.ConversationRepository {
   MockConversationRepository() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i5.Future<List<_i2.ConversationEntity>> getConversationsByWorkspace(
+  _i6.Future<List<_i3.ConversationEntity>> getConversationsByWorkspace(
     String? workspaceId,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getConversationsByWorkspace, [workspaceId]),
-            returnValue: _i5.Future<List<_i2.ConversationEntity>>.value(
-              <_i2.ConversationEntity>[],
+            returnValue: _i6.Future<List<_i3.ConversationEntity>>.value(
+              <_i3.ConversationEntity>[],
             ),
           )
-          as _i5.Future<List<_i2.ConversationEntity>>);
+          as _i6.Future<List<_i3.ConversationEntity>>);
 
   @override
-  _i5.Future<_i2.ConversationEntity?> getConversationById(String? id) =>
+  _i6.Future<_i3.ConversationEntity?> getConversationById(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#getConversationById, [id]),
-            returnValue: _i5.Future<_i2.ConversationEntity?>.value(),
+            returnValue: _i6.Future<_i3.ConversationEntity?>.value(),
           )
-          as _i5.Future<_i2.ConversationEntity?>);
+          as _i6.Future<_i3.ConversationEntity?>);
 
   @override
-  _i5.Future<List<_i2.ConversationEntity>> getPinnedConversations(
+  _i6.Future<List<_i3.ConversationEntity>> getPinnedConversations(
     String? workspaceId,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getPinnedConversations, [workspaceId]),
-            returnValue: _i5.Future<List<_i2.ConversationEntity>>.value(
-              <_i2.ConversationEntity>[],
+            returnValue: _i6.Future<List<_i3.ConversationEntity>>.value(
+              <_i3.ConversationEntity>[],
             ),
           )
-          as _i5.Future<List<_i2.ConversationEntity>>);
+          as _i6.Future<List<_i3.ConversationEntity>>);
 
   @override
-  _i5.Future<_i2.ConversationEntity> createConversation(
-    _i2.ConversationToCreate? conversation,
+  _i6.Future<_i3.ConversationEntity> createConversation(
+    _i3.ConversationToCreate? conversation,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#createConversation, [conversation]),
-            returnValue: _i5.Future<_i2.ConversationEntity>.value(
+            returnValue: _i6.Future<_i3.ConversationEntity>.value(
               _FakeConversationEntity_1(
                 this,
                 Invocation.method(#createConversation, [conversation]),
               ),
             ),
           )
-          as _i5.Future<_i2.ConversationEntity>);
+          as _i6.Future<_i3.ConversationEntity>);
 
   @override
-  _i5.Future<_i2.ConversationEntity> updateConversation(
+  _i6.Future<_i3.ConversationEntity> updateConversation(
     String? id,
-    _i2.ConversationToUpdate? conversation,
+    _i3.ConversationToUpdate? conversation,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#updateConversation, [id, conversation]),
-            returnValue: _i5.Future<_i2.ConversationEntity>.value(
+            returnValue: _i6.Future<_i3.ConversationEntity>.value(
               _FakeConversationEntity_1(
                 this,
                 Invocation.method(#updateConversation, [id, conversation]),
               ),
             ),
           )
-          as _i5.Future<_i2.ConversationEntity>);
+          as _i6.Future<_i3.ConversationEntity>);
 
   @override
-  _i5.Future<bool> deleteConversation(String? id) =>
+  _i6.Future<bool> deleteConversation(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#deleteConversation, [id]),
-            returnValue: _i5.Future<bool>.value(false),
+            returnValue: _i6.Future<bool>.value(false),
           )
-          as _i5.Future<bool>);
+          as _i6.Future<bool>);
 
   @override
-  _i5.Future<bool> conversationExists(String? id) =>
+  _i6.Future<bool> conversationExists(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#conversationExists, [id]),
-            returnValue: _i5.Future<bool>.value(false),
+            returnValue: _i6.Future<bool>.value(false),
           )
-          as _i5.Future<bool>);
+          as _i6.Future<bool>);
 
   @override
-  _i5.Future<List<_i2.ConversationEntity>> searchConversationsByTitle(
+  _i6.Future<List<_i3.ConversationEntity>> searchConversationsByTitle(
     String? workspaceId,
     String? query,
   ) =>
@@ -320,85 +321,85 @@ class MockConversationRepository extends _i1.Mock
               workspaceId,
               query,
             ]),
-            returnValue: _i5.Future<List<_i2.ConversationEntity>>.value(
-              <_i2.ConversationEntity>[],
+            returnValue: _i6.Future<List<_i3.ConversationEntity>>.value(
+              <_i3.ConversationEntity>[],
             ),
           )
-          as _i5.Future<List<_i2.ConversationEntity>>);
+          as _i6.Future<List<_i3.ConversationEntity>>);
 
   @override
-  _i5.Future<int> getConversationCountByWorkspace(String? workspaceId) =>
+  _i6.Future<int> getConversationCountByWorkspace(String? workspaceId) =>
       (super.noSuchMethod(
             Invocation.method(#getConversationCountByWorkspace, [workspaceId]),
-            returnValue: _i5.Future<int>.value(0),
+            returnValue: _i6.Future<int>.value(0),
           )
-          as _i5.Future<int>);
+          as _i6.Future<int>);
 
   @override
-  _i5.Future<bool> validateConversation(
-    _i2.ConversationToCreate? conversation,
+  _i6.Future<bool> validateConversation(
+    _i3.ConversationToCreate? conversation,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#validateConversation, [conversation]),
-            returnValue: _i5.Future<bool>.value(false),
+            returnValue: _i6.Future<bool>.value(false),
           )
-          as _i5.Future<bool>);
+          as _i6.Future<bool>);
 
   @override
-  _i5.Future<bool> updateConversationTimestamp(String? id) =>
+  _i6.Future<bool> updateConversationTimestamp(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#updateConversationTimestamp, [id]),
-            returnValue: _i5.Future<bool>.value(false),
+            returnValue: _i6.Future<bool>.value(false),
           )
-          as _i5.Future<bool>);
+          as _i6.Future<bool>);
 }
 
 /// A class which mocks [ConversationToolsRepository].
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockConversationToolsRepository extends _i1.Mock
-    implements _i8.ConversationToolsRepository {
+    implements _i9.ConversationToolsRepository {
   MockConversationToolsRepository() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i5.Future<List<_i9.ConversationToolEntity>> getConversationTools(
+  _i6.Future<List<_i10.ConversationToolEntity>> getConversationTools(
     String? conversationId,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getConversationTools, [conversationId]),
-            returnValue: _i5.Future<List<_i9.ConversationToolEntity>>.value(
-              <_i9.ConversationToolEntity>[],
+            returnValue: _i6.Future<List<_i10.ConversationToolEntity>>.value(
+              <_i10.ConversationToolEntity>[],
             ),
           )
-          as _i5.Future<List<_i9.ConversationToolEntity>>);
+          as _i6.Future<List<_i10.ConversationToolEntity>>);
 
   @override
-  _i5.Future<List<_i9.ConversationToolEntity>> getEnabledConversationTools(
+  _i6.Future<List<_i10.ConversationToolEntity>> getEnabledConversationTools(
     String? conversationId,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getEnabledConversationTools, [conversationId]),
-            returnValue: _i5.Future<List<_i9.ConversationToolEntity>>.value(
-              <_i9.ConversationToolEntity>[],
+            returnValue: _i6.Future<List<_i10.ConversationToolEntity>>.value(
+              <_i10.ConversationToolEntity>[],
             ),
           )
-          as _i5.Future<List<_i9.ConversationToolEntity>>);
+          as _i6.Future<List<_i10.ConversationToolEntity>>);
 
   @override
-  _i5.Future<_i9.ConversationToolEntity?> getConversationTool(
+  _i6.Future<_i10.ConversationToolEntity?> getConversationTool(
     String? conversationId,
     String? toolId,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getConversationTool, [conversationId, toolId]),
-            returnValue: _i5.Future<_i9.ConversationToolEntity?>.value(),
+            returnValue: _i6.Future<_i10.ConversationToolEntity?>.value(),
           )
-          as _i5.Future<_i9.ConversationToolEntity?>);
+          as _i6.Future<_i10.ConversationToolEntity?>);
 
   @override
-  _i5.Future<bool> setConversationToolEnabled(
+  _i6.Future<bool> setConversationToolEnabled(
     String? conversationId,
     String? toolId, {
     required bool? isEnabled,
@@ -409,12 +410,12 @@ class MockConversationToolsRepository extends _i1.Mock
               [conversationId, toolId],
               {#isEnabled: isEnabled},
             ),
-            returnValue: _i5.Future<bool>.value(false),
+            returnValue: _i6.Future<bool>.value(false),
           )
-          as _i5.Future<bool>);
+          as _i6.Future<bool>);
 
   @override
-  _i5.Future<void> setConversationToolsDisabled(
+  _i6.Future<void> setConversationToolsDisabled(
     String? conversationId,
     List<String>? toolIds,
   ) =>
@@ -423,16 +424,16 @@ class MockConversationToolsRepository extends _i1.Mock
               conversationId,
               toolIds,
             ]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
+            returnValue: _i6.Future<void>.value(),
+            returnValueForMissingStub: _i6.Future<void>.value(),
           )
-          as _i5.Future<void>);
+          as _i6.Future<void>);
 
   @override
-  _i5.Future<bool> setConversationToolPermission(
+  _i6.Future<bool> setConversationToolPermission(
     String? conversationId,
     String? toolId, {
-    required _i3.ToolPermissionMode? permissionMode,
+    required _i4.ToolPermissionMode? permissionMode,
   }) =>
       (super.noSuchMethod(
             Invocation.method(
@@ -440,12 +441,12 @@ class MockConversationToolsRepository extends _i1.Mock
               [conversationId, toolId],
               {#permissionMode: permissionMode},
             ),
-            returnValue: _i5.Future<bool>.value(false),
+            returnValue: _i6.Future<bool>.value(false),
           )
-          as _i5.Future<bool>);
+          as _i6.Future<bool>);
 
   @override
-  _i5.Future<bool> toggleConversationTool(
+  _i6.Future<bool> toggleConversationTool(
     String? conversationId,
     String? toolId,
   ) =>
@@ -454,12 +455,12 @@ class MockConversationToolsRepository extends _i1.Mock
               conversationId,
               toolId,
             ]),
-            returnValue: _i5.Future<bool>.value(false),
+            returnValue: _i6.Future<bool>.value(false),
           )
-          as _i5.Future<bool>);
+          as _i6.Future<bool>);
 
   @override
-  _i5.Future<bool> isConversationToolEnabled(
+  _i6.Future<bool> isConversationToolEnabled(
     String? conversationId,
     String? toolId,
   ) =>
@@ -468,12 +469,12 @@ class MockConversationToolsRepository extends _i1.Mock
               conversationId,
               toolId,
             ]),
-            returnValue: _i5.Future<bool>.value(false),
+            returnValue: _i6.Future<bool>.value(false),
           )
-          as _i5.Future<bool>);
+          as _i6.Future<bool>);
 
   @override
-  _i5.Future<bool> removeConversationTool(
+  _i6.Future<bool> removeConversationTool(
     String? conversationId,
     String? toolId,
   ) =>
@@ -482,30 +483,30 @@ class MockConversationToolsRepository extends _i1.Mock
               conversationId,
               toolId,
             ]),
-            returnValue: _i5.Future<bool>.value(false),
+            returnValue: _i6.Future<bool>.value(false),
           )
-          as _i5.Future<bool>);
+          as _i6.Future<bool>);
 
   @override
-  _i5.Future<int> getConversationToolsCount(String? conversationId) =>
+  _i6.Future<int> getConversationToolsCount(String? conversationId) =>
       (super.noSuchMethod(
             Invocation.method(#getConversationToolsCount, [conversationId]),
-            returnValue: _i5.Future<int>.value(0),
+            returnValue: _i6.Future<int>.value(0),
           )
-          as _i5.Future<int>);
+          as _i6.Future<int>);
 
   @override
-  _i5.Future<int> getEnabledConversationToolsCount(String? conversationId) =>
+  _i6.Future<int> getEnabledConversationToolsCount(String? conversationId) =>
       (super.noSuchMethod(
             Invocation.method(#getEnabledConversationToolsCount, [
               conversationId,
             ]),
-            returnValue: _i5.Future<int>.value(0),
+            returnValue: _i6.Future<int>.value(0),
           )
-          as _i5.Future<int>);
+          as _i6.Future<int>);
 
   @override
-  _i5.Future<void> copyConversationTools(
+  _i6.Future<void> copyConversationTools(
     String? sourceConversationId,
     String? targetConversationId,
   ) =>
@@ -514,13 +515,13 @@ class MockConversationToolsRepository extends _i1.Mock
               sourceConversationId,
               targetConversationId,
             ]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
+            returnValue: _i6.Future<void>.value(),
+            returnValueForMissingStub: _i6.Future<void>.value(),
           )
-          as _i5.Future<void>);
+          as _i6.Future<void>);
 
   @override
-  _i5.Future<bool> validateConversationToolSetting(
+  _i6.Future<bool> validateConversationToolSetting(
     String? conversationId,
     String? toolId, {
     required bool? isEnabled,
@@ -531,12 +532,12 @@ class MockConversationToolsRepository extends _i1.Mock
               [conversationId, toolId],
               {#isEnabled: isEnabled},
             ),
-            returnValue: _i5.Future<bool>.value(false),
+            returnValue: _i6.Future<bool>.value(false),
           )
-          as _i5.Future<bool>);
+          as _i6.Future<bool>);
 
   @override
-  _i5.Future<bool> isToolAvailableForConversation(
+  _i6.Future<bool> isToolAvailableForConversation(
     String? conversationId,
     String? workspaceId,
     String? toolId,
@@ -547,12 +548,12 @@ class MockConversationToolsRepository extends _i1.Mock
               workspaceId,
               toolId,
             ]),
-            returnValue: _i5.Future<bool>.value(false),
+            returnValue: _i6.Future<bool>.value(false),
           )
-          as _i5.Future<bool>);
+          as _i6.Future<bool>);
 
   @override
-  _i5.Future<List<String>> getAvailableToolsForConversation(
+  _i6.Future<List<String>> getAvailableToolsForConversation(
     String? conversationId,
     String? workspaceId,
   ) =>
@@ -561,12 +562,12 @@ class MockConversationToolsRepository extends _i1.Mock
               conversationId,
               workspaceId,
             ]),
-            returnValue: _i5.Future<List<String>>.value(<String>[]),
+            returnValue: _i6.Future<List<String>>.value(<String>[]),
           )
-          as _i5.Future<List<String>>);
+          as _i6.Future<List<String>>);
 
   @override
-  _i5.Future<List<_i3.WorkspaceToolEntity>>
+  _i6.Future<List<_i4.WorkspaceToolEntity>>
   getAvailableToolEntitiesForConversation(
     String? conversationId,
     String? workspaceId,
@@ -576,14 +577,14 @@ class MockConversationToolsRepository extends _i1.Mock
               conversationId,
               workspaceId,
             ]),
-            returnValue: _i5.Future<List<_i3.WorkspaceToolEntity>>.value(
-              <_i3.WorkspaceToolEntity>[],
+            returnValue: _i6.Future<List<_i4.WorkspaceToolEntity>>.value(
+              <_i4.WorkspaceToolEntity>[],
             ),
           )
-          as _i5.Future<List<_i3.WorkspaceToolEntity>>);
+          as _i6.Future<List<_i4.WorkspaceToolEntity>>);
 
   @override
-  _i5.Future<_i10.ToolPermissionResult> checkToolPermission({
+  _i6.Future<_i11.ToolPermissionResult> checkToolPermission({
     required String? conversationId,
     required String? workspaceId,
     required String? toolId,
@@ -594,54 +595,54 @@ class MockConversationToolsRepository extends _i1.Mock
               #workspaceId: workspaceId,
               #toolId: toolId,
             }),
-            returnValue: _i5.Future<_i10.ToolPermissionResult>.value(
-              _i10.ToolPermissionResult.granted,
+            returnValue: _i6.Future<_i11.ToolPermissionResult>.value(
+              _i11.ToolPermissionResult.granted,
             ),
           )
-          as _i5.Future<_i10.ToolPermissionResult>);
+          as _i6.Future<_i11.ToolPermissionResult>);
 }
 
 /// A class which mocks [ToolsGroupsRepository].
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockToolsGroupsRepository extends _i1.Mock
-    implements _i11.ToolsGroupsRepository {
+    implements _i12.ToolsGroupsRepository {
   MockToolsGroupsRepository() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i5.Future<List<_i12.ToolsGroupEntity>> getToolsGroupsForWorkspace(
+  _i6.Future<List<_i13.ToolsGroupEntity>> getToolsGroupsForWorkspace(
     String? workspaceId,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getToolsGroupsForWorkspace, [workspaceId]),
-            returnValue: _i5.Future<List<_i12.ToolsGroupEntity>>.value(
-              <_i12.ToolsGroupEntity>[],
+            returnValue: _i6.Future<List<_i13.ToolsGroupEntity>>.value(
+              <_i13.ToolsGroupEntity>[],
             ),
           )
-          as _i5.Future<List<_i12.ToolsGroupEntity>>);
+          as _i6.Future<List<_i13.ToolsGroupEntity>>);
 
   @override
-  _i5.Future<_i12.ToolsGroupEntity?> getToolsGroupById(String? id) =>
+  _i6.Future<_i13.ToolsGroupEntity?> getToolsGroupById(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#getToolsGroupById, [id]),
-            returnValue: _i5.Future<_i12.ToolsGroupEntity?>.value(),
+            returnValue: _i6.Future<_i13.ToolsGroupEntity?>.value(),
           )
-          as _i5.Future<_i12.ToolsGroupEntity?>);
+          as _i6.Future<_i13.ToolsGroupEntity?>);
 
   @override
-  _i5.Future<_i12.ToolsGroupEntity?> getToolsGroupByMcpServerId(
+  _i6.Future<_i13.ToolsGroupEntity?> getToolsGroupByMcpServerId(
     String? mcpServerId,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getToolsGroupByMcpServerId, [mcpServerId]),
-            returnValue: _i5.Future<_i12.ToolsGroupEntity?>.value(),
+            returnValue: _i6.Future<_i13.ToolsGroupEntity?>.value(),
           )
-          as _i5.Future<_i12.ToolsGroupEntity?>);
+          as _i6.Future<_i13.ToolsGroupEntity?>);
 
   @override
-  _i5.Future<bool> setToolsGroupEnabled(
+  _i6.Future<bool> setToolsGroupEnabled(
     String? groupId, {
     required bool? isEnabled,
   }) =>
@@ -651,65 +652,65 @@ class MockToolsGroupsRepository extends _i1.Mock
               [groupId],
               {#isEnabled: isEnabled},
             ),
-            returnValue: _i5.Future<bool>.value(false),
+            returnValue: _i6.Future<bool>.value(false),
           )
-          as _i5.Future<bool>);
+          as _i6.Future<bool>);
 
   @override
-  _i5.Future<bool> deleteToolsGroup(String? id) =>
+  _i6.Future<bool> deleteToolsGroup(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#deleteToolsGroup, [id]),
-            returnValue: _i5.Future<bool>.value(false),
+            returnValue: _i6.Future<bool>.value(false),
           )
-          as _i5.Future<bool>);
+          as _i6.Future<bool>);
 }
 
 /// A class which mocks [WorkspaceToolsRepository].
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockWorkspaceToolsRepository extends _i1.Mock
-    implements _i13.WorkspaceToolsRepository {
+    implements _i14.WorkspaceToolsRepository {
   MockWorkspaceToolsRepository() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i5.Future<List<_i3.WorkspaceToolEntity>> getWorkspaceTools(
+  _i6.Future<List<_i4.WorkspaceToolEntity>> getWorkspaceTools(
     String? workspaceId,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getWorkspaceTools, [workspaceId]),
-            returnValue: _i5.Future<List<_i3.WorkspaceToolEntity>>.value(
-              <_i3.WorkspaceToolEntity>[],
+            returnValue: _i6.Future<List<_i4.WorkspaceToolEntity>>.value(
+              <_i4.WorkspaceToolEntity>[],
             ),
           )
-          as _i5.Future<List<_i3.WorkspaceToolEntity>>);
+          as _i6.Future<List<_i4.WorkspaceToolEntity>>);
 
   @override
-  _i5.Future<List<_i3.WorkspaceToolEntity>> getEnabledWorkspaceTools(
+  _i6.Future<List<_i4.WorkspaceToolEntity>> getEnabledWorkspaceTools(
     String? workspaceId,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getEnabledWorkspaceTools, [workspaceId]),
-            returnValue: _i5.Future<List<_i3.WorkspaceToolEntity>>.value(
-              <_i3.WorkspaceToolEntity>[],
+            returnValue: _i6.Future<List<_i4.WorkspaceToolEntity>>.value(
+              <_i4.WorkspaceToolEntity>[],
             ),
           )
-          as _i5.Future<List<_i3.WorkspaceToolEntity>>);
+          as _i6.Future<List<_i4.WorkspaceToolEntity>>);
 
   @override
-  _i5.Future<_i3.WorkspaceToolEntity?> getWorkspaceTool(
+  _i6.Future<_i4.WorkspaceToolEntity?> getWorkspaceTool(
     String? workspaceId,
     String? toolType,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getWorkspaceTool, [workspaceId, toolType]),
-            returnValue: _i5.Future<_i3.WorkspaceToolEntity?>.value(),
+            returnValue: _i6.Future<_i4.WorkspaceToolEntity?>.value(),
           )
-          as _i5.Future<_i3.WorkspaceToolEntity?>);
+          as _i6.Future<_i4.WorkspaceToolEntity?>);
 
   @override
-  _i5.Future<_i3.WorkspaceToolEntity> setWorkspaceToolEnabled(
+  _i6.Future<_i4.WorkspaceToolEntity> setWorkspaceToolEnabled(
     String? workspaceId,
     String? toolType, {
     required bool? isEnabled,
@@ -720,7 +721,7 @@ class MockWorkspaceToolsRepository extends _i1.Mock
               [workspaceId, toolType],
               {#isEnabled: isEnabled},
             ),
-            returnValue: _i5.Future<_i3.WorkspaceToolEntity>.value(
+            returnValue: _i6.Future<_i4.WorkspaceToolEntity>.value(
               _FakeWorkspaceToolEntity_2(
                 this,
                 Invocation.method(
@@ -731,10 +732,10 @@ class MockWorkspaceToolsRepository extends _i1.Mock
               ),
             ),
           )
-          as _i5.Future<_i3.WorkspaceToolEntity>);
+          as _i6.Future<_i4.WorkspaceToolEntity>);
 
   @override
-  _i5.Future<_i3.WorkspaceToolEntity?> getWorkspaceToolByToolName({
+  _i6.Future<_i4.WorkspaceToolEntity?> getWorkspaceToolByToolName({
     required String? toolGroupId,
     required String? toolName,
   }) =>
@@ -743,12 +744,12 @@ class MockWorkspaceToolsRepository extends _i1.Mock
               #toolGroupId: toolGroupId,
               #toolName: toolName,
             }),
-            returnValue: _i5.Future<_i3.WorkspaceToolEntity?>.value(),
+            returnValue: _i6.Future<_i4.WorkspaceToolEntity?>.value(),
           )
-          as _i5.Future<_i3.WorkspaceToolEntity?>);
+          as _i6.Future<_i4.WorkspaceToolEntity?>);
 
   @override
-  _i5.Future<_i3.WorkspaceToolEntity> setToolEnabledById(
+  _i6.Future<_i4.WorkspaceToolEntity> setToolEnabledById(
     String? id, {
     required bool? isEnabled,
   }) =>
@@ -758,7 +759,7 @@ class MockWorkspaceToolsRepository extends _i1.Mock
               [id],
               {#isEnabled: isEnabled},
             ),
-            returnValue: _i5.Future<_i3.WorkspaceToolEntity>.value(
+            returnValue: _i6.Future<_i4.WorkspaceToolEntity>.value(
               _FakeWorkspaceToolEntity_2(
                 this,
                 Invocation.method(
@@ -769,10 +770,10 @@ class MockWorkspaceToolsRepository extends _i1.Mock
               ),
             ),
           )
-          as _i5.Future<_i3.WorkspaceToolEntity>);
+          as _i6.Future<_i4.WorkspaceToolEntity>);
 
   @override
-  _i5.Future<List<_i3.WorkspaceToolEntity>> updateWorkspaceToolConfig(
+  _i6.Future<List<_i4.WorkspaceToolEntity>> updateWorkspaceToolConfig(
     String? workspaceId,
     String? toolType,
     String? config,
@@ -783,68 +784,68 @@ class MockWorkspaceToolsRepository extends _i1.Mock
               toolType,
               config,
             ]),
-            returnValue: _i5.Future<List<_i3.WorkspaceToolEntity>>.value(
-              <_i3.WorkspaceToolEntity>[],
+            returnValue: _i6.Future<List<_i4.WorkspaceToolEntity>>.value(
+              <_i4.WorkspaceToolEntity>[],
             ),
           )
-          as _i5.Future<List<_i3.WorkspaceToolEntity>>);
+          as _i6.Future<List<_i4.WorkspaceToolEntity>>);
 
   @override
-  _i5.Future<bool> isWorkspaceToolEnabled(
+  _i6.Future<bool> isWorkspaceToolEnabled(
     String? workspaceId,
     String? toolType,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#isWorkspaceToolEnabled, [workspaceId, toolType]),
-            returnValue: _i5.Future<bool>.value(false),
+            returnValue: _i6.Future<bool>.value(false),
           )
-          as _i5.Future<bool>);
+          as _i6.Future<bool>);
 
   @override
-  _i5.Future<String?> getWorkspaceToolConfig(
+  _i6.Future<String?> getWorkspaceToolConfig(
     String? workspaceId,
     String? toolType,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getWorkspaceToolConfig, [workspaceId, toolType]),
-            returnValue: _i5.Future<String?>.value(),
+            returnValue: _i6.Future<String?>.value(),
           )
-          as _i5.Future<String?>);
+          as _i6.Future<String?>);
 
   @override
-  _i5.Future<bool> removeWorkspaceTool(String? workspaceId, String? toolType) =>
+  _i6.Future<bool> removeWorkspaceTool(String? workspaceId, String? toolType) =>
       (super.noSuchMethod(
             Invocation.method(#removeWorkspaceTool, [workspaceId, toolType]),
-            returnValue: _i5.Future<bool>.value(false),
+            returnValue: _i6.Future<bool>.value(false),
           )
-          as _i5.Future<bool>);
+          as _i6.Future<bool>);
 
   @override
-  _i5.Future<bool> removeWorkspaceToolById(String? id) =>
+  _i6.Future<bool> removeWorkspaceToolById(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#removeWorkspaceToolById, [id]),
-            returnValue: _i5.Future<bool>.value(false),
+            returnValue: _i6.Future<bool>.value(false),
           )
-          as _i5.Future<bool>);
+          as _i6.Future<bool>);
 
   @override
-  _i5.Future<int> getWorkspaceToolsCount(String? workspaceId) =>
+  _i6.Future<int> getWorkspaceToolsCount(String? workspaceId) =>
       (super.noSuchMethod(
             Invocation.method(#getWorkspaceToolsCount, [workspaceId]),
-            returnValue: _i5.Future<int>.value(0),
+            returnValue: _i6.Future<int>.value(0),
           )
-          as _i5.Future<int>);
+          as _i6.Future<int>);
 
   @override
-  _i5.Future<int> getEnabledWorkspaceToolsCount(String? workspaceId) =>
+  _i6.Future<int> getEnabledWorkspaceToolsCount(String? workspaceId) =>
       (super.noSuchMethod(
             Invocation.method(#getEnabledWorkspaceToolsCount, [workspaceId]),
-            returnValue: _i5.Future<int>.value(0),
+            returnValue: _i6.Future<int>.value(0),
           )
-          as _i5.Future<int>);
+          as _i6.Future<int>);
 
   @override
-  _i5.Future<void> copyWorkspaceToolsToConversation(
+  _i6.Future<void> copyWorkspaceToolsToConversation(
     String? workspaceId,
     String? conversationId,
   ) =>
@@ -853,13 +854,13 @@ class MockWorkspaceToolsRepository extends _i1.Mock
               workspaceId,
               conversationId,
             ]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
+            returnValue: _i6.Future<void>.value(),
+            returnValueForMissingStub: _i6.Future<void>.value(),
           )
-          as _i5.Future<void>);
+          as _i6.Future<void>);
 
   @override
-  _i5.Future<bool> validateWorkspaceToolSetting(
+  _i6.Future<bool> validateWorkspaceToolSetting(
     String? workspaceId,
     String? toolType, {
     required bool? isEnabled,
@@ -871,14 +872,14 @@ class MockWorkspaceToolsRepository extends _i1.Mock
               [workspaceId, toolType],
               {#isEnabled: isEnabled, #config: config},
             ),
-            returnValue: _i5.Future<bool>.value(false),
+            returnValue: _i6.Future<bool>.value(false),
           )
-          as _i5.Future<bool>);
+          as _i6.Future<bool>);
 
   @override
-  _i5.Future<_i3.WorkspaceToolEntity> setToolPermissionMode(
+  _i6.Future<_i4.WorkspaceToolEntity> setToolPermissionMode(
     String? id, {
-    required _i3.ToolPermissionMode? permissionMode,
+    required _i4.ToolPermissionMode? permissionMode,
   }) =>
       (super.noSuchMethod(
             Invocation.method(
@@ -886,7 +887,7 @@ class MockWorkspaceToolsRepository extends _i1.Mock
               [id],
               {#permissionMode: permissionMode},
             ),
-            returnValue: _i5.Future<_i3.WorkspaceToolEntity>.value(
+            returnValue: _i6.Future<_i4.WorkspaceToolEntity>.value(
               _FakeWorkspaceToolEntity_2(
                 this,
                 Invocation.method(
@@ -897,5 +898,5 @@ class MockWorkspaceToolsRepository extends _i1.Mock
               ),
             ),
           )
-          as _i5.Future<_i3.WorkspaceToolEntity>);
+          as _i6.Future<_i4.WorkspaceToolEntity>);
 }

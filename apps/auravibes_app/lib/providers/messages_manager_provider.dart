@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/conversation.dart';
+import 'package:auravibes_app/domain/entities/messages.dart';
 import 'package:auravibes_app/domain/entities/workspace_tool.dart';
 import 'package:auravibes_app/domain/enums/message_types.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
@@ -12,6 +13,7 @@ import 'package:auravibes_app/providers/chatbot_service_provider.dart';
 import 'package:auravibes_app/providers/mcp_manager_provider.dart';
 import 'package:auravibes_app/providers/tool_calling_manager_provider.dart';
 import 'package:auravibes_app/services/chatbot_service/models/chat_message_models.dart';
+import 'package:auravibes_app/services/tools/tool_resolution.dart';
 import 'package:auravibes_app/services/tools/tool_service.dart';
 import 'package:auravibes_app/services/tools/user_tools_entity.dart';
 import 'package:auravibes_app/utils/drain.dart';
@@ -320,9 +322,38 @@ class MessagesManagerNotifier extends _$MessagesManagerNotifier {
 
     final toolsToCall = _getTools(chatResult);
     if (toolsToCall.isNotEmpty) {
-      ref
-          .read(toolCallingManagerProvider.notifier)
-          .runTask(_getTools(chatResult), responseMessageId);
+      final resolver = ToolResolverUtil();
+      final mapedToolsResolved = toolsToCall.asMap().map(
+        (key, value) {
+          final tool = resolver.resolveTool(value.name);
+
+          if (tool == null) return MapEntry(value.name, null);
+
+          return MapEntry(
+            value.id,
+            ToolToCall(
+              tool: tool,
+              argumentsRaw: value.argumentsRaw,
+              id: value.id,
+            ),
+          );
+        },
+      );
+
+      final toolsNoFound = mapedToolsResolved.entries
+          .where(
+            (element) => element.value == null,
+          )
+          .map(
+            (e) => e.key,
+          )
+          .toList();
+      final toolManager = ref.read(toolCallingManagerProvider.notifier);
+
+      await toolManager.setToolsToNotFound(responseMessageId, toolsNoFound);
+
+      final foundToolsToRun = mapedToolsResolved.values.nonNulls.toList();
+      toolManager.runTask(foundToolsToRun, responseMessageId);
     }
 
     await repo.updateMessage(

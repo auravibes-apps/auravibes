@@ -1,4 +1,6 @@
-import 'package:auravibes_app/domain/entities/conversation.dart';
+import 'dart:convert';
+
+import 'package:auravibes_app/domain/entities/messages.dart';
 import 'package:auravibes_app/domain/entities/workspace_tool.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
@@ -8,8 +10,9 @@ import 'package:auravibes_app/features/tools/providers/grouped_tools_provider.da
 import 'package:auravibes_app/features/tools/providers/workspace_tools_provider.dart';
 import 'package:auravibes_app/providers/mcp_manager_provider.dart';
 import 'package:auravibes_app/providers/messages_manager_provider.dart';
+import 'package:auravibes_app/services/tools/models/resolved_tool.dart';
+import 'package:auravibes_app/services/tools/tool_resolution.dart';
 import 'package:auravibes_app/services/tools/tool_service.dart';
-import 'package:auravibes_app/services/tools/user_tools_entity.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -80,134 +83,6 @@ abstract class TrackedToolCall with _$TrackedToolCall {
 // Internal helper classes
 // ============================================================
 
-/// Type of resolved tool.
-enum _ResolvedToolType {
-  /// A built-in tool (e.g., calculator)
-  builtIn,
-
-  /// An MCP tool from an external MCP server
-  mcp,
-}
-
-/// Internal class to hold message and conversation context.
-class _MessageContext {
-  const _MessageContext({
-    required this.message,
-    required this.conversation,
-  });
-
-  final MessageEntity message;
-  final ConversationEntity conversation;
-}
-
-/// Represents a resolved tool that can be either built-in or MCP.
-///
-/// This abstraction allows the tool calling manager to handle both types
-/// uniformly while preserving the necessary information for execution.
-class _ResolvedTool {
-  const _ResolvedTool._({
-    required this.type,
-    required this.tableId,
-    required this.toolIdentifier,
-    this.builtInTool,
-    this.mcpServerId,
-  });
-
-  /// Creates a resolved built-in tool.
-  factory _ResolvedTool.builtIn({
-    required String tableId,
-    required String toolIdentifier,
-    required UserToolEntity<Object, Object, Object> tool,
-  }) {
-    return _ResolvedTool._(
-      type: _ResolvedToolType.builtIn,
-      tableId: tableId,
-      toolIdentifier: toolIdentifier,
-      builtInTool: tool,
-    );
-  }
-
-  /// Creates a resolved MCP tool.
-  factory _ResolvedTool.mcp({
-    required String tableId,
-    required String toolIdentifier,
-    required String mcpServerId,
-  }) {
-    return _ResolvedTool._(
-      type: _ResolvedToolType.mcp,
-      tableId: tableId,
-      toolIdentifier: toolIdentifier,
-      mcpServerId: mcpServerId,
-    );
-  }
-
-  /// The type of tool (built-in or MCP)
-  final _ResolvedToolType type;
-
-  /// The database table ID for permission checks
-  final String tableId;
-
-  /// The tool identifier (e.g., "calculator" or original MCP tool name)
-  final String toolIdentifier;
-
-  /// The built-in tool implementation (only for built-in tools)
-  final UserToolEntity<Object, Object, Object>? builtInTool;
-
-  /// The MCP server ID (only for MCP tools)
-  final String? mcpServerId;
-
-  /// Whether this is a built-in tool
-  bool get isBuiltIn => type == _ResolvedToolType.builtIn;
-
-  /// Whether this is an MCP tool
-  bool get isMcp => type == _ResolvedToolType.mcp;
-}
-
-/// Parsed components of a built-in tool composite ID.
-///
-/// The composite ID format is: `built_in_<table_id>_<tool_identifier>`
-class _BuiltInToolIdComponents {
-  const _BuiltInToolIdComponents({
-    required this.tableId,
-    required this.toolIdentifier,
-  });
-
-  /// The database table ID for permission checks
-  final String tableId;
-
-  /// The tool identifier (e.g., "calculator")
-  final String toolIdentifier;
-}
-
-/// Internal class to hold tool resolution result.
-class _ToolResolution {
-  const _ToolResolution({
-    required this.resolvedTool,
-    required this.failureStatus,
-  });
-
-  final _ResolvedTool? resolvedTool;
-
-  /// The status to use if tool resolution failed (null if resolved)
-  final ToolCallResultStatus? failureStatus;
-}
-
-/// Internal class to hold categorized tools after permission check.
-class _CategorizedTools {
-  const _CategorizedTools({
-    required this.grantedTools,
-    required this.resolvedToolUpdates,
-    required this.hasPendingConfirmation,
-  });
-
-  /// Granted tools ready for execution: (resolved tool, original tool call)
-  final List<(_ResolvedTool, MessageToolCallEntity)> grantedTools;
-
-  /// Tool updates for tools that were immediately resolved (skipped/disabled).
-  final List<_ToolUpdate> resolvedToolUpdates;
-  final bool hasPendingConfirmation;
-}
-
 /// Internal class to represent an update to a tool call.
 class _ToolUpdate {
   const _ToolUpdate({
@@ -261,48 +136,60 @@ class ToolCallingManagerNotifier extends _$ToolCallingManagerNotifier {
   /// the granted tools are still executed but the AI is not called.
   /// The user will handle pending tools via the conversation UI.
   Future<void> runTask(
-    List<MessageToolCallEntity> toolCalling,
+    List<ToolToCall> toolCalling,
     String responseMessageId,
   ) async {
-    final context = await _getMessageContext(responseMessageId);
-    if (context == null) return;
+    final message = await ref
+        .read(messageRepositoryProvider)
+        .getMessageById(responseMessageId);
+    if (message == null) return;
 
-    final conversationId = context.message.conversationId;
-    final workspaceId = context.conversation.workspaceId;
+    final conversation = await ref
+        .read(conversationRepositoryProvider)
+        .getConversationById(message.conversationId);
+
+    if (conversation == null) return;
+
+    final conversationId = message.conversationId;
+    final workspaceId = conversation.workspaceId;
 
     // Categorize tools by permission
-    final categorized = await _categorizeToolsByPermission(
+    final grantedTools = await _filterToolsGaranted(
       toolCalling,
       conversationId: conversationId,
       workspaceId: workspaceId,
+      responseMessageId: responseMessageId,
     );
 
     // Execute granted tools and get their updates
     final executedUpdates = await _executeToolsBatch(
-      categorized.grantedTools,
+      grantedTools,
       responseMessageId,
     );
 
-    // Combine all resolved updates
-    final allUpdates = [
-      ...executedUpdates,
-      ...categorized.resolvedToolUpdates,
-    ];
-
     // Store updates in message metadata
-    await _updateToolResults(responseMessageId, allUpdates);
+    await _updateToolResults(responseMessageId, executedUpdates);
 
     // Only continue AI loop if ALL tools were granted.
     // If any tool is not granted (needs confirmation, not found, disabled,
     // etc.) stop here and let the user handle via conversation UI.
-    final allToolsGranted =
-        categorized.grantedTools.length == toolCalling.length;
+    final allToolsGranted = grantedTools.length == toolCalling.length;
     if (!allToolsGranted) {
       return;
     }
 
     // All tools granted and executed - respond to AI
     await _sendAllResponsesToAI(responseMessageId);
+  }
+
+  Future<void> setToolsToNotFound(
+    String responseMessageId,
+    List<String> toolIds,
+  ) async {
+    await _updateToolResults(responseMessageId, [
+      for (final id in toolIds)
+        .new(toolCallId: id, resultStatus: .toolNotFound),
+    ]);
   }
 
   /// Grant permission and execute a specific tool call.
@@ -315,38 +202,68 @@ class ToolCallingManagerNotifier extends _$ToolCallingManagerNotifier {
     required String messageId,
     required ToolGrantLevel level,
   }) async {
-    final context = await _getMessageContext(messageId);
-    if (context == null) return;
+    final message = await ref
+        .read(messageRepositoryProvider)
+        .getMessageById(messageId);
+    if (message == null) return;
 
-    final conversationId = context.message.conversationId;
-    final metadata = context.message.metadata ?? const MessageMetadataEntity();
+    final conversationId = message.conversationId;
+    final metadata = message.metadata ?? const MessageMetadataEntity();
     final toolCall = metadata.toolCalls
         .where((t) => t.id == toolCallId)
         .firstOrNull;
     if (toolCall == null) return;
 
+    final resolvedTool = ToolResolverUtil().resolveTool(toolCall.name);
+
+    if (resolvedTool == null) {
+      await _updateToolResults(messageId, [
+        _ToolUpdate(
+          toolCallId: toolCallId,
+          resultStatus: ToolCallResultStatus.toolNotFound,
+        ),
+      ]);
+      return;
+    }
+
     // If granting for conversation, persist the permission using the table ID
+    String? grantedPermissionTableId;
     if (level == ToolGrantLevel.conversation) {
       // Parse the composite ID to get the table ID for permission storage
-      final resolution = _resolveTool(toolCall.name);
-      final tableId = resolution.resolvedTool?.tableId;
-      if (tableId != null) {
+      grantedPermissionTableId = await _resolvePermissionTableId(
+        resolvedTool,
+      );
+      if (grantedPermissionTableId != null) {
         await ref
             .read(conversationToolsRepositoryProvider)
             .setConversationToolPermission(
               conversationId,
-              tableId,
+              grantedPermissionTableId,
               permissionMode: ToolPermissionMode.alwaysAllow,
             );
       }
     }
 
-    // Execute the tool (bypasses permission check for "once" grants)
-    final update = await _executeSingleTool(toolCall, messageId);
-    await _updateToolResults(messageId, [update]);
-
-    // Check if all tools are now resolved
-    await _checkAndRespondToAI(messageId);
+    if (level == ToolGrantLevel.conversation &&
+        grantedPermissionTableId != null) {
+      await _runPendingToolsForConversation(
+        conversationId: conversationId,
+        permissionTableId: grantedPermissionTableId,
+      );
+    } else {
+      // Execute the tool (bypasses permission check for "once" grants)
+      final update = await _executeSingleTool(
+        .new(
+          tool: resolvedTool,
+          id: toolCallId,
+          argumentsRaw: toolCall.argumentsRaw,
+        ),
+        messageId,
+      );
+      await _updateToolResults(messageId, [update]);
+      // Check if all tools are now resolved
+      await _checkAndRespondToAI(messageId);
+    }
   }
 
   /// Skip a specific tool call (mark as skipped).
@@ -401,199 +318,52 @@ class ToolCallingManagerNotifier extends _$ToolCallingManagerNotifier {
     await _updateToolResults(messageId, stoppedUpdates);
   }
 
-  // ============================================================
-  // Helper: Context retrieval
-  // ============================================================
-
-  /// Retrieves message and its associated conversation.
-  ///
-  /// Returns null if either message or conversation is not found.
-  Future<_MessageContext?> _getMessageContext(String messageId) async {
-    final message = await ref
-        .read(messageRepositoryProvider)
-        .getMessageById(messageId);
-    if (message == null) return null;
-
-    final conversation = await ref
-        .read(conversationRepositoryProvider)
-        .getConversationById(message.conversationId);
-    if (conversation == null) return null;
-
-    return _MessageContext(message: message, conversation: conversation);
-  }
-
-  // ============================================================
-  // Helper: Tool resolution
-  // ============================================================
-
-  /// Resolves a composite tool name to its implementation.
-  ///
-  /// Composite tool name formats:
-  /// - Built-in: `built_in_<table_id>_<tool_identifier>`
-  /// - MCP: `mcp_<mcp_id>_<slug_name>_<tool_identifier>`
-  ///
-  /// Note: Tool names must match pattern ^[a-zA-Z0-9_-]{1,128}$
-  /// so we use underscores as separators instead of colons.
-  ///
-  /// Returns the resolved tool and null failureStatus, or null tool with
-  /// failureStatus.
-  _ToolResolution _resolveTool(String compositeToolName) {
-    // Check if it's an MCP tool
-    if (compositeToolName.startsWith('mcp_')) {
-      final components = McpToolIdComponents.fromComposite(
-        compositeToolName,
-      );
-      if (components == null) {
-        return const _ToolResolution(
-          resolvedTool: null,
-          failureStatus: ToolCallResultStatus.toolNotFound,
-        );
-      }
-
-      // Verify MCP server is connected and has the tool
-      final mcpManager = ref.read(mcpManagerProvider.notifier);
-      final connection = mcpManager.getConnection(components.mcpServerId);
-      if (connection == null || !connection.isReady) {
-        return const _ToolResolution(
-          resolvedTool: null,
-          failureStatus: ToolCallResultStatus.toolNotFound,
-        );
-      }
-
-      final toolExists = connection.tools.any(
-        (t) => t.toolName == components.toolIdentifier,
-      );
-      if (!toolExists) {
-        return const _ToolResolution(
-          resolvedTool: null,
-          failureStatus: ToolCallResultStatus.toolNotFound,
-        );
-      }
-
-      return _ToolResolution(
-        resolvedTool: _ResolvedTool.mcp(
-          tableId: components.mcpServerId, // MCP server ID serves as table ID
-          toolIdentifier: components.toolIdentifier,
-          mcpServerId: components.mcpServerId,
-        ),
-        failureStatus: null,
-      );
+  Future<String?> _resolvePermissionTableId(
+    ResolvedTool resolvedTool,
+  ) async {
+    // Built-in tools already include the workspace tool table ID in the
+    // composite identifier, so we can return early.
+    if (resolvedTool.mcpServerId == null) {
+      return resolvedTool.tableId;
     }
 
-    // Check if it's a built-in tool
-    if (compositeToolName.startsWith('built_in_')) {
-      final components = _parseBuiltInToolId(compositeToolName);
-      if (components == null) {
-        return const _ToolResolution(
-          resolvedTool: null,
-          failureStatus: ToolCallResultStatus.toolNotFound,
-        );
-      }
+    final toolsGroupsRepository = ref.read(toolsGroupsRepositoryProvider);
+    final workspaceToolsRepository = ref.read(workspaceToolsRepositoryProvider);
 
-      final toolType = UserToolType.fromValue(components.toolIdentifier);
-      if (toolType == null) {
-        return const _ToolResolution(
-          resolvedTool: null,
-          failureStatus: ToolCallResultStatus.toolNotFound,
-        );
-      }
-
-      final userTool = ToolService.getTool(toolType);
-      if (userTool == null) {
-        return const _ToolResolution(
-          resolvedTool: null,
-          failureStatus: ToolCallResultStatus.toolNotFound,
-        );
-      }
-
-      return _ToolResolution(
-        resolvedTool: _ResolvedTool.builtIn(
-          tableId: components.tableId,
-          toolIdentifier: components.toolIdentifier,
-          tool: userTool,
-        ),
-        failureStatus: null,
-      );
-    }
-
-    // Unknown format - tool not found
-    return const _ToolResolution(
-      resolvedTool: null,
-      failureStatus: ToolCallResultStatus.toolNotFound,
+    final toolGroup = await toolsGroupsRepository.getToolsGroupByMcpServerId(
+      resolvedTool.mcpServerId!,
     );
-  }
 
-  /// Parses a built-in tool composite ID.
-  ///
-  /// Format: `built_in_<table_id>_<tool_identifier>`
-  /// Returns null if the format is invalid.
-  ///
-  /// Note: Tool names must match pattern ^[a-zA-Z0-9_-]{1,128}$
-  /// so we use underscores as separators instead of colons.
-  static _BuiltInToolIdComponents? _parseBuiltInToolId(String compositeId) {
-    if (!compositeId.startsWith('built_in_')) {
+    if (toolGroup == null) {
       return null;
     }
 
-    // Remove 'built_in_' prefix
-    final withoutPrefix = compositeId.substring(9);
+    final workspaceTool = await workspaceToolsRepository
+        .getWorkspaceToolByToolName(
+          toolGroupId: toolGroup.id,
+          toolName: resolvedTool.toolIdentifier,
+        );
 
-    // Parse format: <table_id>_<tool_identifier>
-    final firstUnderscoreIdx = withoutPrefix.indexOf('_');
-    if (firstUnderscoreIdx <= 0) {
-      return null;
-    }
-
-    final tableId = withoutPrefix.substring(0, firstUnderscoreIdx);
-    final toolIdentifier = withoutPrefix.substring(firstUnderscoreIdx + 1);
-
-    if (tableId.isEmpty || toolIdentifier.isEmpty) {
-      return null;
-    }
-
-    return _BuiltInToolIdComponents(
-      tableId: tableId,
-      toolIdentifier: toolIdentifier,
-    );
+    return workspaceTool?.id;
   }
 
   Future<ToolPermissionResult> _checkPermission({
     required String conversationId,
     required String workspaceId,
-    required _ResolvedTool resolvedTool,
+    required ResolvedTool resolvedTool,
   }) async {
     final conversationToolsRepo = ref.read(conversationToolsRepositoryProvider);
-    final toolsGroupsRepository = ref.read(toolsGroupsRepositoryProvider);
-    final workspaceToolsRepository = ref.read(workspaceToolsRepositoryProvider);
+    final permissionTableId = await _resolvePermissionTableId(resolvedTool);
 
-    var toolId = resolvedTool.tableId;
-
-    if (resolvedTool.mcpServerId != null) {
-      final toolGroup = await toolsGroupsRepository.getToolsGroupByMcpServerId(
-        resolvedTool.mcpServerId!,
-      );
-
-      if (toolGroup == null) {
-        return ToolPermissionResult.notConfigured;
-      }
-
-      final workspaceTool = await workspaceToolsRepository
-          .getWorkspaceToolByToolName(
-            toolGroupId: toolGroup.id,
-            toolName: resolvedTool.toolIdentifier,
-          );
-
-      if (workspaceTool == null) {
-        return ToolPermissionResult.notConfigured;
-      }
-      toolId = workspaceTool.id;
+    if (permissionTableId == null) {
+      return ToolPermissionResult.notConfigured;
     }
 
     // Check permission using the table ID for granular permissions
     return conversationToolsRepo.checkToolPermission(
       conversationId: conversationId,
       workspaceId: workspaceId,
-      toolId: toolId,
+      toolId: permissionTableId,
     );
   }
 
@@ -605,23 +375,21 @@ class ToolCallingManagerNotifier extends _$ToolCallingManagerNotifier {
   ///
   /// Returns granted tools to execute, resolved tool updates, and
   /// whether any tools are pending confirmation.
-  Future<_CategorizedTools> _categorizeToolsByPermission(
-    List<MessageToolCallEntity> toolCalls, {
+  Future<List<ToolToCall>> _filterToolsGaranted(
+    List<ToolToCall> toolCalls, {
     required String conversationId,
     required String workspaceId,
+    required String responseMessageId,
   }) async {
-    final grantedTools = <(_ResolvedTool, MessageToolCallEntity)>[];
+    final grantedTools = <ToolToCall>[];
     final resolvedToolUpdates = <_ToolUpdate>[];
-    var hasPendingConfirmation = false;
 
-    for (final tool in toolCalls) {
-      // First resolve the tool implementation
-      final resolution = _resolveTool(tool.name);
-      if (resolution.resolvedTool == null) {
+    for (final toolToCall in toolCalls) {
+      if (toolToCall.tool.isBuiltIn && toolToCall.tool.builtInTool == null) {
         resolvedToolUpdates.add(
           _ToolUpdate(
-            toolCallId: tool.id,
-            resultStatus: resolution.failureStatus!,
+            toolCallId: toolToCall.id,
+            resultStatus: ToolCallResultStatus.toolNotFound,
           ),
         );
         continue;
@@ -630,21 +398,21 @@ class ToolCallingManagerNotifier extends _$ToolCallingManagerNotifier {
       final permission = await _checkPermission(
         conversationId: conversationId,
         workspaceId: workspaceId,
-        resolvedTool: resolution.resolvedTool!,
+        resolvedTool: toolToCall.tool,
       );
 
       switch (permission) {
         case ToolPermissionResult.granted:
-          grantedTools.add((resolution.resolvedTool!, tool));
+          grantedTools.add(toolToCall);
 
         case ToolPermissionResult.needsConfirmation:
-          hasPendingConfirmation = true;
-        // Don't add to resolved - leave as pending
+          // Don't add to resolved - leave as pending
+          continue;
 
         case ToolPermissionResult.notConfigured:
           resolvedToolUpdates.add(
             _ToolUpdate(
-              toolCallId: tool.id,
+              toolCallId: toolToCall.id,
               resultStatus: ToolCallResultStatus.notConfigured,
             ),
           );
@@ -652,7 +420,7 @@ class ToolCallingManagerNotifier extends _$ToolCallingManagerNotifier {
         case ToolPermissionResult.disabledInConversation:
           resolvedToolUpdates.add(
             _ToolUpdate(
-              toolCallId: tool.id,
+              toolCallId: toolToCall.id,
               resultStatus: ToolCallResultStatus.disabledInConversation,
             ),
           );
@@ -660,18 +428,16 @@ class ToolCallingManagerNotifier extends _$ToolCallingManagerNotifier {
         case ToolPermissionResult.disabledInWorkspace:
           resolvedToolUpdates.add(
             _ToolUpdate(
-              toolCallId: tool.id,
+              toolCallId: toolToCall.id,
               resultStatus: ToolCallResultStatus.disabledInWorkspace,
             ),
           );
       }
     }
 
-    return _CategorizedTools(
-      grantedTools: grantedTools,
-      resolvedToolUpdates: resolvedToolUpdates,
-      hasPendingConfirmation: hasPendingConfirmation,
-    );
+    await _updateToolResults(responseMessageId, resolvedToolUpdates);
+
+    return grantedTools;
   }
 
   // ============================================================
@@ -680,17 +446,17 @@ class ToolCallingManagerNotifier extends _$ToolCallingManagerNotifier {
 
   /// Executes a batch of granted tools and returns their updates.
   Future<List<_ToolUpdate>> _executeToolsBatch(
-    List<(_ResolvedTool, MessageToolCallEntity)> grantedTools,
+    List<ToolToCall> toolsToCall,
     String messageId,
   ) async {
-    if (grantedTools.isEmpty) return [];
+    if (toolsToCall.isEmpty) return [];
 
     // Track running tools in state
     _addRunningTools(
-      grantedTools.map(
+      toolsToCall.map(
         (t) => TrackedToolCall(
-          id: t.$2.id,
-          toolName: t.$2.name,
+          id: t.id,
+          toolName: t.tool.toolIdentifier,
           messageId: messageId,
           isRunning: true,
         ),
@@ -699,8 +465,8 @@ class ToolCallingManagerNotifier extends _$ToolCallingManagerNotifier {
 
     // Execute all tools
     final updates = <_ToolUpdate>[];
-    for (final (resolvedTool, toolCall) in grantedTools) {
-      final update = await _runToolExecution(resolvedTool, toolCall);
+    for (final toolToCall in toolsToCall) {
+      final update = await _runToolExecution(toolToCall);
       updates.add(update);
     }
 
@@ -714,29 +480,21 @@ class ToolCallingManagerNotifier extends _$ToolCallingManagerNotifier {
   ///
   /// Used when granting individual tool calls after confirmation.
   Future<_ToolUpdate> _executeSingleTool(
-    MessageToolCallEntity toolCall,
+    ToolToCall toolCall,
     String messageId,
   ) async {
-    final resolution = _resolveTool(toolCall.name);
-    if (resolution.resolvedTool == null) {
-      return _ToolUpdate(
-        toolCallId: toolCall.id,
-        resultStatus: resolution.failureStatus!,
-      );
-    }
-
     // Track as running
     _addRunningTools([
       TrackedToolCall(
         id: toolCall.id,
-        toolName: toolCall.name,
+        toolName: toolCall.tool.toolIdentifier,
         messageId: messageId,
         isRunning: true,
       ),
     ]);
 
     // Execute the tool
-    final update = await _runToolExecution(resolution.resolvedTool!, toolCall);
+    final update = await _runToolExecution(toolCall);
 
     // Remove from running state
     _removeRunningTool(toolCall.id);
@@ -744,40 +502,104 @@ class ToolCallingManagerNotifier extends _$ToolCallingManagerNotifier {
     return update;
   }
 
+  Future<void> _runPendingToolsForConversation({
+    required String conversationId,
+    required String permissionTableId,
+  }) async {
+    final repo = ref.read(messageRepositoryProvider);
+    // TODO(optimize): Limit to only the last message
+    final messages = await repo.getMessagesByConversation(conversationId);
+
+    for (final message in messages) {
+      final metadata = message.metadata ?? const MessageMetadataEntity();
+      final pendingToolCalls = <ToolToCall>[];
+
+      for (final toolCall in metadata.toolCalls) {
+        if (!toolCall.isPending) {
+          continue;
+        }
+        if (isToolRunning(toolCall.id)) {
+          continue;
+        }
+
+        final resolvedTool = ToolResolverUtil().resolveTool(toolCall.name);
+
+        if (resolvedTool == null) {
+          continue;
+        }
+
+        final tableId = await _resolvePermissionTableId(resolvedTool);
+        if (tableId != permissionTableId) {
+          continue;
+        }
+
+        pendingToolCalls.add(
+          .new(
+            tool: resolvedTool,
+            id: toolCall.id,
+            argumentsRaw: toolCall.argumentsRaw,
+          ),
+        );
+      }
+
+      if (pendingToolCalls.isEmpty) {
+        continue;
+      }
+
+      await Future.wait(
+        pendingToolCalls.map(
+          (toolCall) async {
+            final update = await _executeSingleTool(toolCall, message.id);
+            await _updateToolResults(message.id, [update]);
+          },
+        ),
+      );
+
+      await _checkAndRespondToAI(message.id);
+    }
+  }
+
   /// Runs a tool and returns its update (success or error).
   ///
   /// Handles both built-in tools and MCP tools.
   Future<_ToolUpdate> _runToolExecution(
-    _ResolvedTool resolvedTool,
-    MessageToolCallEntity toolCall,
+    ToolToCall resolvedTool,
   ) async {
     try {
       String result;
 
-      if (resolvedTool.isBuiltIn) {
-        // Execute built-in tool
-        final userTool = resolvedTool.builtInTool!;
-        final input = toolCall.arguments['input'] as Object;
-        final toolResult = await userTool.runner(input).value;
+      final argumentsJson =
+          jsonDecode(resolvedTool.argumentsRaw) as Map<String, dynamic>;
+      if (resolvedTool.tool.isBuiltIn) {
+        final toolType = resolvedTool.tool.builtInTool;
+        if (toolType == null) {
+          return _ToolUpdate(
+            toolCallId: resolvedTool.id,
+            resultStatus: ToolCallResultStatus.toolNotFound,
+          );
+        }
+        final input = argumentsJson['input'] as Object;
+        final tools = ToolService.getTool(toolType);
+        final toolResult = await tools?.runner(input).value;
         result = toolResult.toString();
       } else {
         // Execute MCP tool
         final mcpManager = ref.read(mcpManagerProvider.notifier);
         result = await mcpManager.callTool(
-          mcpServerId: resolvedTool.mcpServerId!,
-          toolIdentifier: resolvedTool.toolIdentifier,
-          arguments: toolCall.arguments,
+          mcpServerId: resolvedTool.tool.mcpServerId!,
+          toolIdentifier: resolvedTool.tool.toolIdentifier,
+          arguments: argumentsJson,
         );
       }
 
       return _ToolUpdate(
-        toolCallId: toolCall.id,
+        toolCallId: resolvedTool.id,
         resultStatus: ToolCallResultStatus.success,
         responseRaw: result,
       );
     } on Exception {
       return _ToolUpdate(
-        toolCallId: toolCall.id,
+        toolCallId: resolvedTool.id,
         resultStatus: ToolCallResultStatus.executionError,
       );
     }
