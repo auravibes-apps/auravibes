@@ -1,4 +1,4 @@
-import 'package:auravibes_app/domain/entities/conversation.dart';
+import 'package:auravibes_app/domain/entities/messages.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/providers/tool_calling_manager_provider.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';

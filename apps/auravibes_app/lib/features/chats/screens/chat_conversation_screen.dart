@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:auravibes_app/domain/entities/messages.dart';
 import 'package:auravibes_app/domain/enums/message_types.dart';
 import 'package:auravibes_app/features/chats/providers/messages_providers.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
@@ -30,8 +31,6 @@ class ChatConversationScreen extends ConsumerWidget {
 class _ChatConversationScreen extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final messagesAsync = ref.watch(messageListProvider);
-
     final modelId = ref.watch(
       conversationChatProvider.select((c) => c.value?.modelId),
     );
@@ -74,30 +73,61 @@ class _ChatConversationScreen extends HookConsumerWidget {
               .setModel,
         ),
       ),
-      child: switch (messagesAsync) {
-        AsyncData(value: final messages) => Column(
-          children: [
-            Expanded(child: ChatMessagesWidget(messages: messages)),
-            const McpConnectingIndicator(),
-            ChatInputWidget(
-              onToolsPress: onToolsPress,
-              onSendMessage: (message) {
-                ref
-                    .read(chatMessagesProvider.notifier)
-                    .addMessage(
-                      content: message,
-                      messageType: MessageType.text,
-                    );
-              },
-            ),
-          ],
-        ),
-        AsyncLoading() => const Center(child: AuraSpinner()),
-        AsyncError(:final error, :final stackTrace) => AppErrorWidget(
-          error: error,
-          stackTrace: stackTrace,
-        ),
-      },
+      child: Column(
+        children: [
+          Expanded(child: _ChatList()),
+          const McpConnectingIndicator(),
+          ChatInputWidget(
+            onToolsPress: onToolsPress,
+            onSendMessage: (message) {
+              ref
+                  .read(chatMessagesProvider.notifier)
+                  .addMessage(
+                    content: message,
+                    messageType: MessageType.text,
+                  );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ChatList extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isLoading = ref.watch(
+      chatMessagesProvider.select(
+        (value) => value.isLoading && value.value == null,
+      ),
+    );
+
+    if (isLoading) {
+      return const Center(child: AuraSpinner());
+    }
+
+    final messages = ref.watch(
+      chatMessagesProvider.select(
+        (value) => [
+          for (final message in value.value ?? <MessageEntity>[]) message.id,
+        ],
+      ),
+    );
+    final asyncError = ref.watch(
+      chatMessagesProvider.select(
+        (value) => value.asError,
+      ),
+    );
+    if (asyncError != null) {
+      return AppErrorWidget(
+        error: asyncError.error,
+        stackTrace: asyncError.stackTrace,
+      );
+    }
+
+    return ChatMessagesWidget(
+      messages: messages,
     );
   }
 }

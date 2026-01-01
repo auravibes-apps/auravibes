@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:auravibes_app/domain/entities/conversation.dart';
+import 'package:auravibes_app/domain/entities/messages.dart';
 import 'package:auravibes_app/domain/enums/message_types.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/providers/messages_providers.dart';
@@ -42,7 +42,6 @@ class ChatMessagesWidget extends HookConsumerWidget {
         return ProviderScope(
           overrides: [messageIdProvider.overrideWithValue(messageId)],
           child: _ChatMessageRow(
-            key: ValueKey(messageId),
             isLastMessage: isLastMessage,
           ),
         );
@@ -76,7 +75,6 @@ String? _tryDecode(Object? metadata) {
 class _ChatMessageRow extends HookConsumerWidget {
   const _ChatMessageRow({
     required this.isLastMessage,
-    super.key,
   });
 
   final bool isLastMessage;

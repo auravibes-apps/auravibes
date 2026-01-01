@@ -1,4 +1,5 @@
 import 'package:auravibes_app/domain/entities/conversation.dart';
+import 'package:auravibes_app/domain/entities/messages.dart';
 import 'package:auravibes_app/domain/entities/workspace_tool.dart';
 import 'package:auravibes_app/domain/enums/message_types.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
@@ -14,6 +15,8 @@ import 'package:auravibes_app/features/tools/providers/grouped_tools_provider.da
 import 'package:auravibes_app/features/tools/providers/workspace_tools_provider.dart';
 import 'package:auravibes_app/providers/messages_manager_provider.dart';
 import 'package:auravibes_app/providers/tool_calling_manager_provider.dart';
+import 'package:auravibes_app/services/tools/models/resolved_tool.dart';
+import 'package:auravibes_app/services/tools/user_tools_entity.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
@@ -108,6 +111,24 @@ void main() {
     );
   }
 
+  ToolToCall createTestToolToCall({
+    String? id,
+    String? tableId,
+    String? toolIdentifier,
+    UserToolType? toolType,
+    String? argumentsRaw,
+  }) {
+    return ToolToCall(
+      tool: ResolvedTool.builtIn(
+        tableId: tableId ?? testToolTableId,
+        toolIdentifier: toolIdentifier ?? testToolIdentifier,
+        tooltype: toolType ?? UserToolType.calculator,
+      ),
+      id: id ?? testToolCallId,
+      argumentsRaw: argumentsRaw ?? '{"input": "2+2"}',
+    );
+  }
+
   setUp(() {
     mockMessageRepository = MockMessageRepository();
     mockConversationRepository = MockConversationRepository();
@@ -171,7 +192,7 @@ void main() {
 
       final notifier = container.read(toolCallingManagerProvider.notifier);
       await notifier.runTask(
-        [createTestToolCall()],
+        [createTestToolToCall()],
         testMessageId,
       );
 
@@ -188,7 +209,7 @@ void main() {
 
       final notifier = container.read(toolCallingManagerProvider.notifier);
       await notifier.runTask(
-        [createTestToolCall()],
+        [createTestToolToCall()],
         testMessageId,
       );
 
@@ -201,49 +222,8 @@ void main() {
       );
     });
 
-    test('skips unknown tool types with appropriate response', () async {
-      final toolCall = createTestToolCall(name: 'unknown_tool_xyz');
-      final message = createTestMessage(
-        metadata: MessageMetadataEntity(toolCalls: [toolCall]),
-      );
-      final conversation = createTestConversation();
-
-      when(
-        mockMessageRepository.getMessageById(testMessageId),
-      ).thenAnswer((_) async => message);
-      when(
-        mockConversationRepository.getConversationById(testConversationId),
-      ).thenAnswer((_) async => conversation);
-      when(
-        mockMessageRepository.updateMessage(
-          any,
-          any,
-        ),
-      ).thenAnswer((_) async => message);
-
-      final notifier = container.read(toolCallingManagerProvider.notifier);
-      await notifier.runTask([toolCall], testMessageId);
-
-      // Verify that updateMessage was called with toolNotFound status
-      final captured = verify(
-        mockMessageRepository.updateMessage(
-          captureAny,
-          captureAny,
-        ),
-      ).captured;
-      expect(captured.length, 2);
-
-      final messageToUpdate = captured[1] as MessageToUpdate;
-      expect(
-        messageToUpdate.metadata?.toolCalls.first.resultStatus,
-        ToolCallResultStatus.toolNotFound,
-      );
-
-      // Verify AI response was NOT sent (not all tools granted)
-      expect(fakeMessagesManagerNotifier.sendToolsResponseCalls, isEmpty);
-    });
-
     test('skips disabled tools with appropriate response', () async {
+      final toolToCall = createTestToolToCall();
       final toolCall = createTestToolCall();
       final message = createTestMessage(
         metadata: MessageMetadataEntity(toolCalls: [toolCall]),
@@ -271,7 +251,7 @@ void main() {
       ).thenAnswer((_) async => message);
 
       final notifier = container.read(toolCallingManagerProvider.notifier);
-      await notifier.runTask([toolCall], testMessageId);
+      await notifier.runTask([toolToCall], testMessageId);
 
       final captured = verify(
         mockMessageRepository.updateMessage(
@@ -287,6 +267,7 @@ void main() {
     });
 
     test('does not send AI response when tools need confirmation', () async {
+      final toolToCall = createTestToolToCall();
       final toolCall = createTestToolCall();
       final message = createTestMessage(
         metadata: MessageMetadataEntity(toolCalls: [toolCall]),
@@ -314,21 +295,16 @@ void main() {
       ).thenAnswer((_) async => message);
 
       final notifier = container.read(toolCallingManagerProvider.notifier);
-      await notifier.runTask([toolCall], testMessageId);
+      await notifier.runTask([toolToCall], testMessageId);
 
-      // Verify AI response was NOT sent due to pending confirmation
       expect(fakeMessagesManagerNotifier.sendToolsResponseCalls, isEmpty);
     });
 
     test('processes mix of granted and skipped tools correctly', () async {
-      final grantedToolCall = createTestToolCall(
-        id: 'granted-tool-id',
-        name: 'calculator',
-      );
-      final skippedToolCall = createTestToolCall(
-        id: 'skipped-tool-id',
-        name: 'unknown_tool',
-      );
+      final grantedToolToCall = createTestToolToCall(id: 'granted-tool-id');
+      final skippedToolToCall = createTestToolToCall(id: 'skipped-tool-id');
+      final grantedToolCall = createTestToolCall(id: 'granted-tool-id');
+      final skippedToolCall = createTestToolCall(id: 'skipped-tool-id');
       final message = createTestMessage(
         metadata: MessageMetadataEntity(
           toolCalls: [grantedToolCall, skippedToolCall],
@@ -350,6 +326,13 @@ void main() {
         ),
       ).thenAnswer((_) async => ToolPermissionResult.granted);
       when(
+        mockConversationToolsRepository.checkToolPermission(
+          conversationId: testConversationId,
+          workspaceId: testWorkspaceId,
+          toolId: testToolTableId,
+        ),
+      ).thenAnswer((_) async => ToolPermissionResult.needsConfirmation);
+      when(
         mockMessageRepository.updateMessage(
           any,
           any,
@@ -358,12 +341,10 @@ void main() {
 
       final notifier = container.read(toolCallingManagerProvider.notifier);
       await notifier.runTask(
-        [grantedToolCall, skippedToolCall],
+        [grantedToolToCall, skippedToolToCall],
         testMessageId,
       );
 
-      // AI response should NOT be sent because not all tools were granted
-      // (unknown_tool was skipped, so we stop the AI loop)
       expect(fakeMessagesManagerNotifier.sendToolsResponseCalls, isEmpty);
     });
   });
@@ -406,7 +387,6 @@ void main() {
 
     test('sends AI response when all tools are resolved after skip', () async {
       final toolCall = createTestToolCall();
-      // Message with a single tool that is now resolved
       final messageAfterSkip = createTestMessage(
         metadata: MessageMetadataEntity(
           toolCalls: [
@@ -417,7 +397,6 @@ void main() {
         ),
       );
 
-      // First call for skipToolCall update
       when(
         mockMessageRepository.getMessageById(testMessageId),
       ).thenAnswer((_) async => messageAfterSkip);
@@ -434,7 +413,6 @@ void main() {
         messageId: testMessageId,
       );
 
-      // Verify AI response was sent
       expect(fakeMessagesManagerNotifier.sendToolsResponseCalls.length, 1);
     });
   });
@@ -486,7 +464,6 @@ void main() {
         true,
       );
 
-      // Verify AI response was NOT sent (stopAll stops the agent loop)
       expect(fakeMessagesManagerNotifier.sendToolsResponseCalls.length, 0);
     });
 
@@ -576,6 +553,9 @@ void main() {
         mockConversationRepository.getConversationById(testConversationId),
       ).thenAnswer((_) async => conversation);
       when(
+        mockMessageRepository.getMessagesByConversation(testConversationId),
+      ).thenAnswer((_) async => [message]);
+      when(
         mockConversationToolsRepository.setConversationToolPermission(
           testConversationId,
           testToolTableId,
@@ -604,6 +584,76 @@ void main() {
         ),
       ).called(1);
     });
+
+    test(
+      'runs pending tools with same table ID when granting for conversation',
+      () async {
+        const otherMessageId = 'other-message-id';
+        const otherToolCallId = 'other-tool-call-id';
+        final toolCall = createTestToolCall();
+        final otherToolCall = createTestToolCall(id: otherToolCallId);
+        final message = createTestMessage(
+          metadata: MessageMetadataEntity(toolCalls: [toolCall]),
+        );
+        final otherMessage = createTestMessage(
+          id: otherMessageId,
+          metadata: MessageMetadataEntity(toolCalls: [otherToolCall]),
+        );
+        final conversation = createTestConversation();
+
+        when(
+          mockMessageRepository.getMessageById(testMessageId),
+        ).thenAnswer((_) async => message);
+        when(
+          mockMessageRepository.getMessageById(otherMessageId),
+        ).thenAnswer((_) async => otherMessage);
+        when(
+          mockConversationRepository.getConversationById(testConversationId),
+        ).thenAnswer((_) async => conversation);
+        when(
+          mockMessageRepository.getMessagesByConversation(testConversationId),
+        ).thenAnswer((_) async => [message, otherMessage]);
+        when(
+          mockConversationToolsRepository.setConversationToolPermission(
+            testConversationId,
+            testToolTableId,
+            permissionMode: ToolPermissionMode.alwaysAllow,
+          ),
+        ).thenAnswer((_) async => true);
+        when(
+          mockConversationToolsRepository.checkToolPermission(
+            conversationId: testConversationId,
+            workspaceId: testWorkspaceId,
+            toolId: testToolTableId,
+          ),
+        ).thenAnswer((_) async => ToolPermissionResult.granted);
+        when(
+          mockMessageRepository.updateMessage(
+            any,
+            any,
+          ),
+        ).thenAnswer((_) async => message);
+
+        final notifier = container.read(toolCallingManagerProvider.notifier);
+        await notifier.grantToolCall(
+          toolCallId: testToolCallId,
+          messageId: testMessageId,
+          level: ToolGrantLevel.conversation,
+        );
+
+        final verification = verify(
+          mockMessageRepository.updateMessage(
+            otherMessageId,
+            captureAny,
+          ),
+        )..called(1);
+        final capturedUpdate = verification.captured.single as MessageToUpdate;
+        expect(
+          capturedUpdate.metadata?.toolCalls.first.resultStatus,
+          ToolCallResultStatus.success,
+        );
+      },
+    );
 
     test('does not persist permission when level is once', () async {
       final toolCall = createTestToolCall();
@@ -698,6 +748,7 @@ void main() {
 
   group('ToolCallingManagerNotifier - TrackedToolCall state', () {
     test('tracking state is updated during tool execution', () async {
+      final toolToCall = createTestToolToCall();
       final toolCall = createTestToolCall();
       final message = createTestMessage(
         metadata: MessageMetadataEntity(toolCalls: [toolCall]),
@@ -726,14 +777,10 @@ void main() {
 
       final notifier = container.read(toolCallingManagerProvider.notifier);
 
-      // Before execution, state should be empty
       expect(container.read(toolCallingManagerProvider), isEmpty);
 
-      // Start execution (we can't easily test during execution,
-      // but we can verify state is clean after)
-      await notifier.runTask([toolCall], testMessageId);
+      await notifier.runTask([toolToCall], testMessageId);
 
-      // After execution completes, running state should be cleared
       expect(container.read(toolCallingManagerProvider), isEmpty);
       expect(notifier.isToolRunning(testToolCallId), false);
       expect(notifier.hasRunningToolsForMessage(testMessageId), false);
