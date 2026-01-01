@@ -53,10 +53,10 @@ packages:
     dependency: transitive
     description:
       name: anthropic_sdk_dart
-      sha256: ea5775add9f3f9a92f9f2d28eb655fa72708cbbcf30df9ea1630eb92eeda0549
+      sha256: "30162d70384f38f98f22e2402776f28d260b721fef684893dbed2a3108e72428"
       url: "https://pub.dev"
     source: hosted
-    version: "0.3.0+1"
+    version: "0.3.1"
   archive:
     dependency: transitive
     description:
@@ -793,34 +793,34 @@ packages:
     dependency: transitive
     description:
       name: langchain
-      sha256: "15ceb288038a34f94250d8eec7378fa70589ad8c626d5aefa0238f3d47a9e1f9"
+      sha256: b7035e0903953cb065734499296e66d9fa0f6e15934aa2f57389b9fb6b001aab
       url: "https://pub.dev"
     source: hosted
-    version: "0.8.0+1"
+    version: "0.8.1"
   langchain_anthropic:
     dependency: transitive
     description:
       name: langchain_anthropic
-      sha256: "47339d2f6068d53362bf0995949d873066cf38a46cf5c10869e4d89a82e95be6"
+      sha256: e78c81064733f6dbc67b5ea06cc62454581bede69a4f06abe7ebf1347716be78
       url: "https://pub.dev"
     source: hosted
-    version: "0.3.0+1"
+    version: "0.3.1"
   langchain_core:
     dependency: transitive
     description:
       name: langchain_core
-      sha256: "9179f40c816f4c59644840f64ef884612530906e9bf4057de298d7454005a242"
+      sha256: fce3cd0e31dcbac80d209f6361207936a58b05506b800f13227cbe83f6e3e721
       url: "https://pub.dev"
     source: hosted
-    version: "0.4.0+1"
+    version: "0.4.1"
   langchain_openai:
     dependency: transitive
     description:
       name: langchain_openai
-      sha256: "2def12c10ec9d27bb27d9627adb82900e97c307198f229696020128bf18a22fe"
+      sha256: "430d27ff3c0dc7b0180e2e4eb21a05133087a00493e3483ff9c2a85a2533a245"
       url: "https://pub.dev"
     source: hosted
-    version: "0.8.0+1"
+    version: "0.8.1"
   langchain_tiktoken:
     dependency: transitive
     description:
@@ -977,10 +977,10 @@ packages:
     dependency: transitive
     description:
       name: openai_dart
-      sha256: "9c74e1ff38243c8987890d9fe4d03f5298352576d4db3a90402625f3f21e2164"
+      sha256: "0c392263f5aeadf93c9bef0ce9f4781f4ce45de4e4b84858d5508148dfbfd637"
       url: "https://pub.dev"
     source: hosted
-    version: "0.6.0+1"
+    version: "0.6.1"
   package_config:
     dependency: transitive
     description:
@@ -1700,4 +1700,4 @@ packages:
     version: "2.2.2"
 sdks:
   dart: ">=3.10.0 <4.0.0"
-  flutter: ">=3.38.3 <4.0.0"
+  flutter: ">=3.38.3"
