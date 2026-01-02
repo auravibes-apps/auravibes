@@ -4,12 +4,6 @@ import 'package:uuid/uuid.dart';
 /// Service for secure storage of API keys using UUID references
 class SecureStorageService {
   static const FlutterSecureStorage _secureStorage = FlutterSecureStorage(
-    aOptions: AndroidOptions(
-      encryptedSharedPreferences: true,
-      keyCipherAlgorithm:
-          KeyCipherAlgorithm.RSA_ECB_OAEPwithSHA_256andMGF1Padding,
-      storageCipherAlgorithm: StorageCipherAlgorithm.AES_GCM_NoPadding,
-    ),
     iOptions: IOSOptions(
       accessibility: .first_unlock,
     ),
