@@ -21,7 +21,7 @@ plugins:
       riverpod_syntax_error: true
       async_value_nullable_pattern: true
       protected_notifier_properties: true
-      # temproal disabled
+      # temporal disabled
       provider_dependencies: false
       only_use_keep_alive_inside_keep_alive: false
       
