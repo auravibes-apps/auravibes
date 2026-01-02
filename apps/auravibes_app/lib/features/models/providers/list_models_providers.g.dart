@@ -10,7 +10,7 @@ part of 'list_models_providers.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(listCredentials)
-const listCredentialsProvider = ListCredentialsProvider._();
+final listCredentialsProvider = ListCredentialsProvider._();
 
 final class ListCredentialsProvider
     extends
@@ -22,7 +22,7 @@ final class ListCredentialsProvider
     with
         $FutureModifier<List<CredentialsEntity>>,
         $FutureProvider<List<CredentialsEntity>> {
-  const ListCredentialsProvider._()
+  ListCredentialsProvider._()
     : super(
         from: null,
         argument: null,

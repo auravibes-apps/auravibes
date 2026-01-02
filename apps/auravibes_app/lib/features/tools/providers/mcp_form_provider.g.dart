@@ -11,13 +11,13 @@ part of 'mcp_form_provider.dart';
 /// Notifier for managing MCP form state
 
 @ProviderFor(McpFormNotifier)
-const mcpFormProvider = McpFormNotifierProvider._();
+final mcpFormProvider = McpFormNotifierProvider._();
 
 /// Notifier for managing MCP form state
 final class McpFormNotifierProvider
     extends $NotifierProvider<McpFormNotifier, McpFormState> {
   /// Notifier for managing MCP form state
-  const McpFormNotifierProvider._()
+  McpFormNotifierProvider._()
     : super(
         from: null,
         argument: null,
@@ -53,7 +53,6 @@ abstract class _$McpFormNotifier extends $Notifier<McpFormState> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref = this.ref as $Ref<McpFormState, McpFormState>;
     final element =
         ref.element
@@ -63,6 +62,6 @@ abstract class _$McpFormNotifier extends $Notifier<McpFormState> {
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }

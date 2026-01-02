@@ -12,7 +12,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'grouped_tools_provider.g.dart';
 
 /// Provider for the tools groups repository.
-@riverpod
+@Riverpod(keepAlive: true)
 ToolsGroupsRepository toolsGroupsRepository(Ref ref) {
   final appDatabase = ref.watch(appDatabaseProvider);
   return ToolsGroupsRepositoryImpl(appDatabase);

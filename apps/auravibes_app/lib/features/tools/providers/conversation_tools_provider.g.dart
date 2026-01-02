@@ -10,7 +10,7 @@ part of 'conversation_tools_provider.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(conversationToolsRepository)
-const conversationToolsRepositoryProvider =
+final conversationToolsRepositoryProvider =
     ConversationToolsRepositoryProvider._();
 
 final class ConversationToolsRepositoryProvider
@@ -21,13 +21,13 @@ final class ConversationToolsRepositoryProvider
           ConversationToolsRepository
         >
     with $Provider<ConversationToolsRepository> {
-  const ConversationToolsRepositoryProvider._()
+  ConversationToolsRepositoryProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'conversationToolsRepositoryProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -56,14 +56,14 @@ final class ConversationToolsRepositoryProvider
 }
 
 String _$conversationToolsRepositoryHash() =>
-    r'e3e65f8c9feab2c64ec51fc9ae9464e124258a26';
+    r'f01d06fe031c840ef6a9cc8ca75fd0dd30303eca';
 
 /// Provider for managing conversation tool settings
 ///
 /// Returns a list of all workspace tools with their conversation-level states.
 
 @ProviderFor(ConversationToolsNotifier)
-const conversationToolsProvider = ConversationToolsNotifierFamily._();
+final conversationToolsProvider = ConversationToolsNotifierFamily._();
 
 /// Provider for managing conversation tool settings
 ///
@@ -77,7 +77,7 @@ final class ConversationToolsNotifierProvider
   /// Provider for managing conversation tool settings
   ///
   /// Returns a list of all workspace tools with their conversation-level states.
-  const ConversationToolsNotifierProvider._({
+  ConversationToolsNotifierProvider._({
     required ConversationToolsNotifierFamily super.from,
     required ({String workspaceId, String? conversationId}) super.argument,
   }) : super(
@@ -130,7 +130,7 @@ final class ConversationToolsNotifierFamily extends $Family
           FutureOr<List<ConversationToolState>>,
           ({String workspaceId, String? conversationId})
         > {
-  const ConversationToolsNotifierFamily._()
+  ConversationToolsNotifierFamily._()
     : super(
         retry: null,
         name: r'conversationToolsProvider',
@@ -173,10 +173,6 @@ abstract class _$ConversationToolsNotifier
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build(
-      workspaceId: _$args.workspaceId,
-      conversationId: _$args.conversationId,
-    );
     final ref =
         this.ref
             as $Ref<
@@ -194,7 +190,13 @@ abstract class _$ConversationToolsNotifier
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(
+      ref,
+      () => build(
+        workspaceId: _$args.workspaceId,
+        conversationId: _$args.conversationId,
+      ),
+    );
   }
 }
 
@@ -202,7 +204,7 @@ abstract class _$ConversationToolsNotifier
 /// (conversation -> workspace -> app defaults)
 
 @ProviderFor(ContextAwareToolsNotifier)
-const contextAwareToolsProvider = ContextAwareToolsNotifierFamily._();
+final contextAwareToolsProvider = ContextAwareToolsNotifierFamily._();
 
 /// Provider to get context-aware tools for chat
 /// (conversation -> workspace -> app defaults)
@@ -210,7 +212,7 @@ final class ContextAwareToolsNotifierProvider
     extends $AsyncNotifierProvider<ContextAwareToolsNotifier, List<String>> {
   /// Provider to get context-aware tools for chat
   /// (conversation -> workspace -> app defaults)
-  const ContextAwareToolsNotifierProvider._({
+  ContextAwareToolsNotifierProvider._({
     required ContextAwareToolsNotifierFamily super.from,
     required ({String conversationId, String workspaceId}) super.argument,
   }) : super(
@@ -262,7 +264,7 @@ final class ContextAwareToolsNotifierFamily extends $Family
           FutureOr<List<String>>,
           ({String conversationId, String workspaceId})
         > {
-  const ContextAwareToolsNotifierFamily._()
+  ContextAwareToolsNotifierFamily._()
     : super(
         retry: null,
         name: r'contextAwareToolsProvider',
@@ -302,10 +304,6 @@ abstract class _$ContextAwareToolsNotifier
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build(
-      conversationId: _$args.conversationId,
-      workspaceId: _$args.workspaceId,
-    );
     final ref = this.ref as $Ref<AsyncValue<List<String>>, List<String>>;
     final element =
         ref.element
@@ -315,7 +313,13 @@ abstract class _$ContextAwareToolsNotifier
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(
+      ref,
+      () => build(
+        conversationId: _$args.conversationId,
+        workspaceId: _$args.workspaceId,
+      ),
+    );
   }
 }
 
@@ -326,7 +330,7 @@ abstract class _$ContextAwareToolsNotifier
 /// (conversation -> workspace -> app defaults)
 
 @ProviderFor(ContextAwareToolEntitiesNotifier)
-const contextAwareToolEntitiesProvider =
+final contextAwareToolEntitiesProvider =
     ContextAwareToolEntitiesNotifierFamily._();
 
 /// Provider to get context-aware tools as full entities for chat.
@@ -345,7 +349,7 @@ final class ContextAwareToolEntitiesNotifierProvider
   /// Returns [WorkspaceToolEntity] list with table IDs needed for
   /// generating composite tool IDs.
   /// (conversation -> workspace -> app defaults)
-  const ContextAwareToolEntitiesNotifierProvider._({
+  ContextAwareToolEntitiesNotifierProvider._({
     required ContextAwareToolEntitiesNotifierFamily super.from,
     required ({String conversationId, String workspaceId}) super.argument,
   }) : super(
@@ -401,7 +405,7 @@ final class ContextAwareToolEntitiesNotifierFamily extends $Family
           FutureOr<List<WorkspaceToolEntity>>,
           ({String conversationId, String workspaceId})
         > {
-  const ContextAwareToolEntitiesNotifierFamily._()
+  ContextAwareToolEntitiesNotifierFamily._()
     : super(
         retry: null,
         name: r'contextAwareToolEntitiesProvider',
@@ -447,10 +451,6 @@ abstract class _$ContextAwareToolEntitiesNotifier
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build(
-      conversationId: _$args.conversationId,
-      workspaceId: _$args.workspaceId,
-    );
     final ref =
         this.ref
             as $Ref<
@@ -468,6 +468,12 @@ abstract class _$ContextAwareToolEntitiesNotifier
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(
+      ref,
+      () => build(
+        conversationId: _$args.conversationId,
+        workspaceId: _$args.workspaceId,
+      ),
+    );
   }
 }

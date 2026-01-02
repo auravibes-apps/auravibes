@@ -22,7 +22,7 @@ abstract class ConversationToolState with _$ConversationToolState {
   }) = _ConversationToolState;
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 ConversationToolsRepository conversationToolsRepository(Ref ref) {
   final appDatabase = ref.watch(appDatabaseProvider);
   final workspaceToolsRepository = ref.watch(workspaceToolsRepositoryProvider);

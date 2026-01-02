@@ -1,9 +1,6 @@
-include: package:very_good_analysis/analysis_options.yaml
+include: ../../analysis_options.yaml
 
 analyzer:
-  plugins:
-    - custom_lint
-
   exclude:
     - "**/**.g.dart"
     - "lib/**.g.dart"
@@ -12,9 +9,8 @@ analyzer:
     - "lib/i18n/*"
     - "build/**"
     - "lib/generated/**"
-    
-linter:
 
+linter:
   rules:
     public_member_api_docs: false
     ## temporal off

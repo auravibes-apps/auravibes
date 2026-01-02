@@ -17,7 +17,7 @@ final addMessageMutation = Mutation<MessageEntity>();
 final deleteMessageMutation = Mutation<void>();
 final updateMessageMutation = Mutation<MessageEntity>();
 
-@riverpod
+@Riverpod(dependencies: [])
 String conversationSelectedNotifier(Ref ref) =>
     throw const NoConversationSelectedException();
 
@@ -100,7 +100,7 @@ Future<List<String>> messageList(Ref ref) async {
   return messages;
 }
 
-@Riverpod(dependencies: [ChatMessages])
+@Riverpod(dependencies: [])
 String messageIdNotifier(Ref ref) =>
     throw Exception('implement messageIdNotifier');
 

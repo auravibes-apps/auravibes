@@ -10,11 +10,11 @@ part of 'selected_workspace.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(SelectedWorkspace)
-const selectedWorkspaceProvider = SelectedWorkspaceProvider._();
+final selectedWorkspaceProvider = SelectedWorkspaceProvider._();
 
 final class SelectedWorkspaceProvider
     extends $AsyncNotifierProvider<SelectedWorkspace, WorkspaceEntity> {
-  const SelectedWorkspaceProvider._()
+  SelectedWorkspaceProvider._()
     : super(
         from: null,
         argument: null,
@@ -40,7 +40,6 @@ abstract class _$SelectedWorkspace extends $AsyncNotifier<WorkspaceEntity> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref = this.ref as $Ref<AsyncValue<WorkspaceEntity>, WorkspaceEntity>;
     final element =
         ref.element
@@ -50,6 +49,6 @@ abstract class _$SelectedWorkspace extends $AsyncNotifier<WorkspaceEntity> {
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }

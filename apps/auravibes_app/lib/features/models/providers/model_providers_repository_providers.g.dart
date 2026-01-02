@@ -10,7 +10,7 @@ part of 'model_providers_repository_providers.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(modelProvidersRepository)
-const modelProvidersRepositoryProvider = ModelProvidersRepositoryProvider._();
+final modelProvidersRepositoryProvider = ModelProvidersRepositoryProvider._();
 
 final class ModelProvidersRepositoryProvider
     extends
@@ -20,13 +20,13 @@ final class ModelProvidersRepositoryProvider
           CredentialsRepository
         >
     with $Provider<CredentialsRepository> {
-  const ModelProvidersRepositoryProvider._()
+  ModelProvidersRepositoryProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'modelProvidersRepositoryProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -55,10 +55,10 @@ final class ModelProvidersRepositoryProvider
 }
 
 String _$modelProvidersRepositoryHash() =>
-    r'57a0ff0d598b47a00a75bf57222b36239ecf8306';
+    r'5ecb2ac2aa9e7c0b04d90f00d8de103f70de50e3';
 
 @ProviderFor(credentialsModelsRepository)
-const credentialsModelsRepositoryProvider =
+final credentialsModelsRepositoryProvider =
     CredentialsModelsRepositoryProvider._();
 
 final class CredentialsModelsRepositoryProvider
@@ -69,13 +69,13 @@ final class CredentialsModelsRepositoryProvider
           CredentialsModelsRepository
         >
     with $Provider<CredentialsModelsRepository> {
-  const CredentialsModelsRepositoryProvider._()
+  CredentialsModelsRepositoryProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'credentialsModelsRepositoryProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -104,4 +104,4 @@ final class CredentialsModelsRepositoryProvider
 }
 
 String _$credentialsModelsRepositoryHash() =>
-    r'468b0c39af77df56af751f9d8496be40c42d1378';
+    r'f0bd8801789cee3831fe7a8dbbe78310f3a314f3';

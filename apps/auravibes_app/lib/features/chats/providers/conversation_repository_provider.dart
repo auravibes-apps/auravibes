@@ -7,14 +7,14 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'conversation_repository_provider.g.dart';
 
-@riverpod
+@Riverpod(keepAlive: true)
 ConversationRepository conversationRepository(Ref ref) {
   final appDatabase = ref.watch(appDatabaseProvider);
 
   return ConversationRepositoryImpl(appDatabase);
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 MessageRepository messageRepository(Ref ref) {
   final appDatabase = ref.watch(appDatabaseProvider);
 

@@ -10,12 +10,12 @@ part of 'conversation_providers.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(ConversationsList)
-const conversationsListProvider = ConversationsListProvider._();
+final conversationsListProvider = ConversationsListProvider._();
 
 final class ConversationsListProvider
     extends
         $AsyncNotifierProvider<ConversationsList, List<ConversationEntity>> {
-  const ConversationsListProvider._()
+  ConversationsListProvider._()
     : super(
         from: null,
         argument: null,
@@ -42,7 +42,6 @@ abstract class _$ConversationsList
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref =
         this.ref
             as $Ref<
@@ -60,6 +59,6 @@ abstract class _$ConversationsList
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }

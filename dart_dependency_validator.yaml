@@ -1,3 +1,4 @@
 ignore:
   - import_sorter   # Development tool with executables
   - melos          # Development tool with executables
+  - riverpod_lint  # Analyzer plugin for Riverpod linting rules

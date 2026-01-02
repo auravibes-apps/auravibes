@@ -12,7 +12,7 @@ part of 'chatbot_service_provider.dart';
 /// (for title generation, etc.)
 
 @ProviderFor(chatbotService)
-const chatbotServiceProvider = ChatbotServiceProvider._();
+final chatbotServiceProvider = ChatbotServiceProvider._();
 
 /// Provider that creates a ChatbotService without tools
 /// (for title generation, etc.)
@@ -22,13 +22,13 @@ final class ChatbotServiceProvider
     with $Provider<ChatbotService> {
   /// Provider that creates a ChatbotService without tools
   /// (for title generation, etc.)
-  const ChatbotServiceProvider._()
+  ChatbotServiceProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'chatbotServiceProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -55,4 +55,4 @@ final class ChatbotServiceProvider
   }
 }
 
-String _$chatbotServiceHash() => r'2060db7e1bb02ee67faa4e1a9ff1c3de623f0075';
+String _$chatbotServiceHash() => r'880890fb23885445a8ccd15cfd6ce4cbfd958591';

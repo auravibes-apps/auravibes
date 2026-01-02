@@ -15,7 +15,7 @@ part of 'tool_display_name_provider.dart';
 /// Uses Riverpod's family caching to avoid repeated lookups.
 
 @ProviderFor(toolDisplayName)
-const toolDisplayNameProvider = ToolDisplayNameFamily._();
+final toolDisplayNameProvider = ToolDisplayNameFamily._();
 
 /// Provides a human-friendly display name for a tool composite ID.
 ///
@@ -31,7 +31,7 @@ final class ToolDisplayNameProvider
   /// For MCP tools, fetches the original server name from the database.
   /// For built-in tools, formats the tool identifier.
   /// Uses Riverpod's family caching to avoid repeated lookups.
-  const ToolDisplayNameProvider._({
+  ToolDisplayNameProvider._({
     required ToolDisplayNameFamily super.from,
     required String super.argument,
   }) : super(
@@ -84,7 +84,7 @@ String _$toolDisplayNameHash() => r'565aa772eed3419d17a63e266556d35494c6ed07';
 
 final class ToolDisplayNameFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<String>, String> {
-  const ToolDisplayNameFamily._()
+  ToolDisplayNameFamily._()
     : super(
         retry: null,
         name: r'toolDisplayNameProvider',
@@ -112,7 +112,7 @@ final class ToolDisplayNameFamily extends $Family
 /// Cached per server ID via Riverpod's family mechanism.
 
 @ProviderFor(mcpServerName)
-const mcpServerNameProvider = McpServerNameFamily._();
+final mcpServerNameProvider = McpServerNameFamily._();
 
 /// Provides the name of an MCP server by its ID.
 ///
@@ -126,7 +126,7 @@ final class McpServerNameProvider
   ///
   /// Returns null if the server is not found.
   /// Cached per server ID via Riverpod's family mechanism.
-  const McpServerNameProvider._({
+  McpServerNameProvider._({
     required McpServerNameFamily super.from,
     required String super.argument,
   }) : super(
@@ -178,7 +178,7 @@ String _$mcpServerNameHash() => r'a4f0fbf1e58c5c298f62f11c76f1a829d545853a';
 
 final class McpServerNameFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<String?>, String> {
-  const McpServerNameFamily._()
+  McpServerNameFamily._()
     : super(
         retry: null,
         name: r'mcpServerNameProvider',

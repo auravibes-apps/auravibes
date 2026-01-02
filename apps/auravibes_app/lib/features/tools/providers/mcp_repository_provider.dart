@@ -6,7 +6,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'mcp_repository_provider.g.dart';
 
 /// Provides the MCP servers repository instance.
-@riverpod
+@Riverpod(keepAlive: true)
 McpServersRepository mcpServersRepository(Ref ref) {
   final appDatabase = ref.watch(appDatabaseProvider);
   return McpServersRepositoryImpl(appDatabase);

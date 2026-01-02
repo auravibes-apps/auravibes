@@ -10,11 +10,11 @@ part of 'add_model_provider_providers.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(AddModelProviderState)
-const addModelProviderStateProvider = AddModelProviderStateProvider._();
+final addModelProviderStateProvider = AddModelProviderStateProvider._();
 
 final class AddModelProviderStateProvider
     extends $NotifierProvider<AddModelProviderState, AddModelProviderModel> {
-  const AddModelProviderStateProvider._()
+  AddModelProviderStateProvider._()
     : super(
         from: null,
         argument: null,
@@ -50,7 +50,6 @@ abstract class _$AddModelProviderState
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref = this.ref as $Ref<AddModelProviderModel, AddModelProviderModel>;
     final element =
         ref.element
@@ -60,6 +59,6 @@ abstract class _$AddModelProviderState
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }

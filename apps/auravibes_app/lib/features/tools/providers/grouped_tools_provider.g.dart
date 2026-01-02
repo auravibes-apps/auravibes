@@ -11,7 +11,7 @@ part of 'grouped_tools_provider.dart';
 /// Provider for the tools groups repository.
 
 @ProviderFor(toolsGroupsRepository)
-const toolsGroupsRepositoryProvider = ToolsGroupsRepositoryProvider._();
+final toolsGroupsRepositoryProvider = ToolsGroupsRepositoryProvider._();
 
 /// Provider for the tools groups repository.
 
@@ -24,13 +24,13 @@ final class ToolsGroupsRepositoryProvider
         >
     with $Provider<ToolsGroupsRepository> {
   /// Provider for the tools groups repository.
-  const ToolsGroupsRepositoryProvider._()
+  ToolsGroupsRepositoryProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'toolsGroupsRepositoryProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -59,7 +59,7 @@ final class ToolsGroupsRepositoryProvider
 }
 
 String _$toolsGroupsRepositoryHash() =>
-    r'2cd1bbd7e89ccf78b38467f66d2bb02ddfc91f8a';
+    r'5f6c759f37826b765d3f11898e4dabb4e1e42afb';
 
 /// Provider that groups tools by their workspaceToolsGroupId.
 ///
@@ -71,7 +71,7 @@ String _$toolsGroupsRepositoryHash() =>
 /// - Sorts groups: Default first, then MCP errors, then by creation date
 
 @ProviderFor(GroupedToolsNotifier)
-const groupedToolsProvider = GroupedToolsNotifierProvider._();
+final groupedToolsProvider = GroupedToolsNotifierProvider._();
 
 /// Provider that groups tools by their workspaceToolsGroupId.
 ///
@@ -95,7 +95,7 @@ final class GroupedToolsNotifierProvider
   /// - Creates a "Built-in Tools" virtual group for tools without a group
   /// - Enriches MCP groups with their connection state
   /// - Sorts groups: Default first, then MCP errors, then by creation date
-  const GroupedToolsNotifierProvider._()
+  GroupedToolsNotifierProvider._()
     : super(
         from: null,
         argument: null,
@@ -132,7 +132,6 @@ abstract class _$GroupedToolsNotifier
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref =
         this.ref
             as $Ref<
@@ -150,14 +149,14 @@ abstract class _$GroupedToolsNotifier
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }
 
 /// Provider that returns the count of enabled tools across all groups.
 
 @ProviderFor(enabledToolsCount)
-const enabledToolsCountProvider = EnabledToolsCountProvider._();
+final enabledToolsCountProvider = EnabledToolsCountProvider._();
 
 /// Provider that returns the count of enabled tools across all groups.
 
@@ -165,7 +164,7 @@ final class EnabledToolsCountProvider
     extends $FunctionalProvider<AsyncValue<int>, int, FutureOr<int>>
     with $FutureModifier<int>, $FutureProvider<int> {
   /// Provider that returns the count of enabled tools across all groups.
-  const EnabledToolsCountProvider._()
+  EnabledToolsCountProvider._()
     : super(
         from: null,
         argument: null,
@@ -195,7 +194,7 @@ String _$enabledToolsCountHash() => r'236aa0dd26328a7461e4efe5f77b6f203ffaf1c3';
 /// Provider that returns the total count of tools across all groups.
 
 @ProviderFor(totalToolsCount)
-const totalToolsCountProvider = TotalToolsCountProvider._();
+final totalToolsCountProvider = TotalToolsCountProvider._();
 
 /// Provider that returns the total count of tools across all groups.
 
@@ -203,7 +202,7 @@ final class TotalToolsCountProvider
     extends $FunctionalProvider<AsyncValue<int>, int, FutureOr<int>>
     with $FutureModifier<int>, $FutureProvider<int> {
   /// Provider that returns the total count of tools across all groups.
-  const TotalToolsCountProvider._()
+  TotalToolsCountProvider._()
     : super(
         from: null,
         argument: null,

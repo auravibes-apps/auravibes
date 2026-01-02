@@ -11,7 +11,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'workspace_tools_provider.g.dart';
 
-@riverpod
+@Riverpod(keepAlive: true)
 WorkspaceToolsRepository workspaceToolsRepository(Ref ref) {
   final appDatabase = ref.watch(appDatabaseProvider);
   return WorkspaceToolsRepositoryImpl(appDatabase);

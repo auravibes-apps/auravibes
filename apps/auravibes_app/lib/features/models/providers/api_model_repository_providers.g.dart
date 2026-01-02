@@ -11,7 +11,7 @@ part of 'api_model_repository_providers.dart';
 /// Provider for the API model repository
 
 @ProviderFor(apiModelRepository)
-const apiModelRepositoryProvider = ApiModelRepositoryProvider._();
+final apiModelRepositoryProvider = ApiModelRepositoryProvider._();
 
 /// Provider for the API model repository
 
@@ -24,7 +24,7 @@ final class ApiModelRepositoryProvider
         >
     with $Provider<ApiModelRepository> {
   /// Provider for the API model repository
-  const ApiModelRepositoryProvider._()
+  ApiModelRepositoryProvider._()
     : super(
         from: null,
         argument: null,
@@ -64,7 +64,7 @@ String _$apiModelRepositoryHash() =>
 /// Provider for the model API service
 
 @ProviderFor(modelApiService)
-const modelApiServiceProvider = ModelApiServiceProvider._();
+final modelApiServiceProvider = ModelApiServiceProvider._();
 
 /// Provider for the model API service
 
@@ -73,7 +73,7 @@ final class ModelApiServiceProvider
         $FunctionalProvider<ModelApiService, ModelApiService, ModelApiService>
     with $Provider<ModelApiService> {
   /// Provider for the model API service
-  const ModelApiServiceProvider._()
+  ModelApiServiceProvider._()
     : super(
         from: null,
         argument: null,
@@ -111,7 +111,7 @@ String _$modelApiServiceHash() => r'70c8085560c48e76c15e205f4614b8c731ed1099';
 /// Provider for the model sync service
 
 @ProviderFor(modelSyncService)
-const modelSyncServiceProvider = ModelSyncServiceProvider._();
+final modelSyncServiceProvider = ModelSyncServiceProvider._();
 
 /// Provider for the model sync service
 
@@ -124,7 +124,7 @@ final class ModelSyncServiceProvider
         >
     with $Provider<ModelSyncService> {
   /// Provider for the model sync service
-  const ModelSyncServiceProvider._()
+  ModelSyncServiceProvider._()
     : super(
         from: null,
         argument: null,
@@ -160,7 +160,7 @@ final class ModelSyncServiceProvider
 String _$modelSyncServiceHash() => r'858309c7530c0e52cb6fc7aecc5099033ac8a34b';
 
 @ProviderFor(modelProvidersNotifier)
-const modelProvidersProvider = ModelProvidersNotifierProvider._();
+final modelProvidersProvider = ModelProvidersNotifierProvider._();
 
 final class ModelProvidersNotifierProvider
     extends
@@ -172,7 +172,7 @@ final class ModelProvidersNotifierProvider
     with
         $FutureModifier<List<ApiModelProviderEntity>>,
         $FutureProvider<List<ApiModelProviderEntity>> {
-  const ModelProvidersNotifierProvider._()
+  ModelProvidersNotifierProvider._()
     : super(
         from: null,
         argument: null,

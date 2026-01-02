@@ -13,6 +13,7 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
 class ChatConversationScreen extends ConsumerWidget {
   const ChatConversationScreen({required this.chatId, super.key});
@@ -28,6 +29,11 @@ class ChatConversationScreen extends ConsumerWidget {
   }
 }
 
+@Dependencies([
+  ConversationChatNotifier,
+  ChatMessages,
+  pendingMcpConnections,
+])
 class _ChatConversationScreen extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -94,6 +100,7 @@ class _ChatConversationScreen extends HookConsumerWidget {
   }
 }
 
+@Dependencies([ChatMessages])
 class _ChatList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
