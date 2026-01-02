@@ -25,7 +25,7 @@ part of 'mcp_manager_provider.dart';
 /// - toolName: Original tool identifier from the MCP server
 
 @ProviderFor(McpManagerNotifier)
-const mcpManagerProvider = McpManagerNotifierProvider._();
+final mcpManagerProvider = McpManagerNotifierProvider._();
 
 /// Manages MCP server connections and their tools.
 ///
@@ -59,7 +59,7 @@ final class McpManagerNotifierProvider
   /// - mcpId: Database ID for uniqueness
   /// - slugName: URL-safe server name for LLM readability
   /// - toolName: Original tool identifier from the MCP server
-  const McpManagerNotifierProvider._()
+  McpManagerNotifierProvider._()
     : super(
         from: null,
         argument: null,
@@ -111,7 +111,6 @@ abstract class _$McpManagerNotifier
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref =
         this.ref as $Ref<List<McpConnectionState>, List<McpConnectionState>>;
     final element =
@@ -122,12 +121,12 @@ abstract class _$McpManagerNotifier
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }
 
 @ProviderFor(mcpManagerService)
-const mcpManagerServiceProvider = McpManagerServiceProvider._();
+final mcpManagerServiceProvider = McpManagerServiceProvider._();
 
 final class McpManagerServiceProvider
     extends
@@ -137,7 +136,7 @@ final class McpManagerServiceProvider
           McpManagerService
         >
     with $Provider<McpManagerService> {
-  const McpManagerServiceProvider._()
+  McpManagerServiceProvider._()
     : super(
         from: null,
         argument: null,

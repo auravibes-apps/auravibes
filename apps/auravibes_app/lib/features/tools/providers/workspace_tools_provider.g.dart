@@ -10,7 +10,7 @@ part of 'workspace_tools_provider.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(workspaceToolsRepository)
-const workspaceToolsRepositoryProvider = WorkspaceToolsRepositoryProvider._();
+final workspaceToolsRepositoryProvider = WorkspaceToolsRepositoryProvider._();
 
 final class WorkspaceToolsRepositoryProvider
     extends
@@ -20,7 +20,7 @@ final class WorkspaceToolsRepositoryProvider
           WorkspaceToolsRepository
         >
     with $Provider<WorkspaceToolsRepository> {
-  const WorkspaceToolsRepositoryProvider._()
+  WorkspaceToolsRepositoryProvider._()
     : super(
         from: null,
         argument: null,
@@ -58,20 +58,20 @@ String _$workspaceToolsRepositoryHash() =>
     r'05b45d859d765fce6925970a59333568bd0be637';
 
 @ProviderFor(workspaceToolIndexNotifier)
-const workspaceToolIndexProvider = WorkspaceToolIndexNotifierProvider._();
+final workspaceToolIndexProvider = WorkspaceToolIndexNotifierProvider._();
 
 final class WorkspaceToolIndexNotifierProvider
     extends $FunctionalProvider<int, int, int>
     with $Provider<int> {
-  const WorkspaceToolIndexNotifierProvider._()
+  WorkspaceToolIndexNotifierProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'workspaceToolIndexProvider',
         isAutoDispose: true,
-        dependencies: const <ProviderOrFamily>[],
-        $allTransitiveDependencies: const <ProviderOrFamily>[],
+        dependencies: <ProviderOrFamily>[],
+        $allTransitiveDependencies: <ProviderOrFamily>[],
       );
 
   @override
@@ -100,7 +100,7 @@ String _$workspaceToolIndexNotifierHash() =>
     r'd73774534b1ad72a1f843ffde7301d9a87ae9b97';
 
 @ProviderFor(WorkspaceToolsNotifier)
-const workspaceToolsProvider = WorkspaceToolsNotifierProvider._();
+final workspaceToolsProvider = WorkspaceToolsNotifierProvider._();
 
 final class WorkspaceToolsNotifierProvider
     extends
@@ -108,7 +108,7 @@ final class WorkspaceToolsNotifierProvider
           WorkspaceToolsNotifier,
           List<WorkspaceToolEntity>
         > {
-  const WorkspaceToolsNotifierProvider._()
+  WorkspaceToolsNotifierProvider._()
     : super(
         from: null,
         argument: null,
@@ -136,7 +136,6 @@ abstract class _$WorkspaceToolsNotifier
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref =
         this.ref
             as $Ref<
@@ -154,7 +153,7 @@ abstract class _$WorkspaceToolsNotifier
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }
 
@@ -162,7 +161,7 @@ abstract class _$WorkspaceToolsNotifier
 /// that can be added to the workspace
 
 @ProviderFor(availableToolsToAdd)
-const availableToolsToAddProvider = AvailableToolsToAddProvider._();
+final availableToolsToAddProvider = AvailableToolsToAddProvider._();
 
 /// Provider that returns the list of available built-in tools
 /// that can be added to the workspace
@@ -179,7 +178,7 @@ final class AvailableToolsToAddProvider
         $FutureProvider<List<UserToolType>> {
   /// Provider that returns the list of available built-in tools
   /// that can be added to the workspace
-  const AvailableToolsToAddProvider._()
+  AvailableToolsToAddProvider._()
     : super(
         from: null,
         argument: null,
@@ -209,7 +208,7 @@ String _$availableToolsToAddHash() =>
     r'c11342fe74c0606bb77f2b4941351c12cf81babf';
 
 @ProviderFor(workspaceToolRow)
-const workspaceToolRowProvider = WorkspaceToolRowProvider._();
+final workspaceToolRowProvider = WorkspaceToolRowProvider._();
 
 final class WorkspaceToolRowProvider
     extends
@@ -219,20 +218,20 @@ final class WorkspaceToolRowProvider
           WorkspaceToolEntity?
         >
     with $Provider<WorkspaceToolEntity?> {
-  const WorkspaceToolRowProvider._()
+  WorkspaceToolRowProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'workspaceToolRowProvider',
         isAutoDispose: true,
-        dependencies: const <ProviderOrFamily>[workspaceToolIndexProvider],
-        $allTransitiveDependencies: const <ProviderOrFamily>[
+        dependencies: <ProviderOrFamily>[workspaceToolIndexProvider],
+        $allTransitiveDependencies: <ProviderOrFamily>[
           WorkspaceToolRowProvider.$allTransitiveDependencies0,
         ],
       );
 
-  static const $allTransitiveDependencies0 = workspaceToolIndexProvider;
+  static final $allTransitiveDependencies0 = workspaceToolIndexProvider;
 
   @override
   String debugGetCreateSourceHash() => _$workspaceToolRowHash();

@@ -11,7 +11,7 @@ part of 'mcp_repository_provider.dart';
 /// Provides the MCP servers repository instance.
 
 @ProviderFor(mcpServersRepository)
-const mcpServersRepositoryProvider = McpServersRepositoryProvider._();
+final mcpServersRepositoryProvider = McpServersRepositoryProvider._();
 
 /// Provides the MCP servers repository instance.
 
@@ -24,7 +24,7 @@ final class McpServersRepositoryProvider
         >
     with $Provider<McpServersRepository> {
   /// Provides the MCP servers repository instance.
-  const McpServersRepositoryProvider._()
+  McpServersRepositoryProvider._()
     : super(
         from: null,
         argument: null,

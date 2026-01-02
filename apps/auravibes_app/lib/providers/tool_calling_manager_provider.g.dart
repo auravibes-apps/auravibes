@@ -21,7 +21,7 @@ Map<String, dynamic> _$ToolResponseItemToJson(_ToolResponseItem instance) =>
 /// after tool calls are resolved (stopped, skipped, or completed).
 
 @ProviderFor(ToolUpdateRefreshTrigger)
-const toolUpdateRefreshTriggerProvider = ToolUpdateRefreshTriggerProvider._();
+final toolUpdateRefreshTriggerProvider = ToolUpdateRefreshTriggerProvider._();
 
 /// A trigger that increments whenever tool call results are updated.
 ///
@@ -33,7 +33,7 @@ final class ToolUpdateRefreshTriggerProvider
   ///
   /// UI components can watch this to know when to refresh message data
   /// after tool calls are resolved (stopped, skipped, or completed).
-  const ToolUpdateRefreshTriggerProvider._()
+  ToolUpdateRefreshTriggerProvider._()
     : super(
         from: null,
         argument: null,
@@ -73,7 +73,6 @@ abstract class _$ToolUpdateRefreshTrigger extends $Notifier<int> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref = this.ref as $Ref<int, int>;
     final element =
         ref.element
@@ -83,17 +82,17 @@ abstract class _$ToolUpdateRefreshTrigger extends $Notifier<int> {
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }
 
 @ProviderFor(ToolCallingManagerNotifier)
-const toolCallingManagerProvider = ToolCallingManagerNotifierProvider._();
+final toolCallingManagerProvider = ToolCallingManagerNotifierProvider._();
 
 final class ToolCallingManagerNotifierProvider
     extends
         $NotifierProvider<ToolCallingManagerNotifier, List<TrackedToolCall>> {
-  const ToolCallingManagerNotifierProvider._()
+  ToolCallingManagerNotifierProvider._()
     : super(
         from: null,
         argument: null,
@@ -121,7 +120,7 @@ final class ToolCallingManagerNotifierProvider
 }
 
 String _$toolCallingManagerNotifierHash() =>
-    r'c75330138503efc32c9d61bad9e44319ce970cb0';
+    r'51ddc9747953c9303733bd865089eff846661383';
 
 abstract class _$ToolCallingManagerNotifier
     extends $Notifier<List<TrackedToolCall>> {
@@ -129,7 +128,6 @@ abstract class _$ToolCallingManagerNotifier
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref = this.ref as $Ref<List<TrackedToolCall>, List<TrackedToolCall>>;
     final element =
         ref.element
@@ -139,6 +137,6 @@ abstract class _$ToolCallingManagerNotifier
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }

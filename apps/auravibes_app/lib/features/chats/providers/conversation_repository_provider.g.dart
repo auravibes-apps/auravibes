@@ -10,7 +10,7 @@ part of 'conversation_repository_provider.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(conversationRepository)
-const conversationRepositoryProvider = ConversationRepositoryProvider._();
+final conversationRepositoryProvider = ConversationRepositoryProvider._();
 
 final class ConversationRepositoryProvider
     extends
@@ -20,7 +20,7 @@ final class ConversationRepositoryProvider
           ConversationRepository
         >
     with $Provider<ConversationRepository> {
-  const ConversationRepositoryProvider._()
+  ConversationRepositoryProvider._()
     : super(
         from: null,
         argument: null,
@@ -58,7 +58,7 @@ String _$conversationRepositoryHash() =>
     r'308fc979526015eb59b1d3ab8274a013e54b19a6';
 
 @ProviderFor(messageRepository)
-const messageRepositoryProvider = MessageRepositoryProvider._();
+final messageRepositoryProvider = MessageRepositoryProvider._();
 
 final class MessageRepositoryProvider
     extends
@@ -68,7 +68,7 @@ final class MessageRepositoryProvider
           MessageRepository
         >
     with $Provider<MessageRepository> {
-  const MessageRepositoryProvider._()
+  MessageRepositoryProvider._()
     : super(
         from: null,
         argument: null,

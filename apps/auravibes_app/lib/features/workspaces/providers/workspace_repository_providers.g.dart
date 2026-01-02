@@ -10,7 +10,7 @@ part of 'workspace_repository_providers.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(workspaceRepository)
-const workspaceRepositoryProvider = WorkspaceRepositoryProvider._();
+final workspaceRepositoryProvider = WorkspaceRepositoryProvider._();
 
 final class WorkspaceRepositoryProvider
     extends
@@ -20,7 +20,7 @@ final class WorkspaceRepositoryProvider
           WorkspaceRepository
         >
     with $Provider<WorkspaceRepository> {
-  const WorkspaceRepositoryProvider._()
+  WorkspaceRepositoryProvider._()
     : super(
         from: null,
         argument: null,

@@ -10,11 +10,11 @@ part of 'theme_provider.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(ThemeController)
-const themeControllerProvider = ThemeControllerProvider._();
+final themeControllerProvider = ThemeControllerProvider._();
 
 final class ThemeControllerProvider
     extends $AsyncNotifierProvider<ThemeController, AppTheme> {
-  const ThemeControllerProvider._()
+  ThemeControllerProvider._()
     : super(
         from: null,
         argument: null,
@@ -40,7 +40,6 @@ abstract class _$ThemeController extends $AsyncNotifier<AppTheme> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref = this.ref as $Ref<AsyncValue<AppTheme>, AppTheme>;
     final element =
         ref.element
@@ -50,6 +49,6 @@ abstract class _$ThemeController extends $AsyncNotifier<AppTheme> {
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }

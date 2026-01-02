@@ -10,7 +10,7 @@ part of 'list_chat_models_providers.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(listCredentialsCredentials)
-const listCredentialsCredentialsProvider =
+final listCredentialsCredentialsProvider =
     ListCredentialsCredentialsProvider._();
 
 final class ListCredentialsCredentialsProvider
@@ -23,7 +23,7 @@ final class ListCredentialsCredentialsProvider
     with
         $FutureModifier<List<CredentialsModelWithProviderEntity>>,
         $FutureProvider<List<CredentialsModelWithProviderEntity>> {
-  const ListCredentialsCredentialsProvider._()
+  ListCredentialsCredentialsProvider._()
     : super(
         from: null,
         argument: null,

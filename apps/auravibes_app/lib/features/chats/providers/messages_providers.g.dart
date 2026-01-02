@@ -10,12 +10,12 @@ part of 'messages_providers.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(conversationSelectedNotifier)
-const conversationSelectedProvider = ConversationSelectedNotifierProvider._();
+final conversationSelectedProvider = ConversationSelectedNotifierProvider._();
 
 final class ConversationSelectedNotifierProvider
     extends $FunctionalProvider<String, String, String>
     with $Provider<String> {
-  const ConversationSelectedNotifierProvider._()
+  ConversationSelectedNotifierProvider._()
     : super(
         from: null,
         argument: null,
@@ -52,25 +52,25 @@ String _$conversationSelectedNotifierHash() =>
     r'54748a3e8db30c85e1c6305f967878aa4dc83be0';
 
 @ProviderFor(ConversationChatNotifier)
-const conversationChatProvider = ConversationChatNotifierProvider._();
+final conversationChatProvider = ConversationChatNotifierProvider._();
 
 final class ConversationChatNotifierProvider
     extends
         $AsyncNotifierProvider<ConversationChatNotifier, ConversationEntity?> {
-  const ConversationChatNotifierProvider._()
+  ConversationChatNotifierProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'conversationChatProvider',
         isAutoDispose: true,
-        dependencies: const <ProviderOrFamily>[conversationSelectedProvider],
-        $allTransitiveDependencies: const <ProviderOrFamily>[
+        dependencies: <ProviderOrFamily>[conversationSelectedProvider],
+        $allTransitiveDependencies: <ProviderOrFamily>[
           ConversationChatNotifierProvider.$allTransitiveDependencies0,
         ],
       );
 
-  static const $allTransitiveDependencies0 = conversationSelectedProvider;
+  static final $allTransitiveDependencies0 = conversationSelectedProvider;
 
   @override
   String debugGetCreateSourceHash() => _$conversationChatNotifierHash();
@@ -89,7 +89,6 @@ abstract class _$ConversationChatNotifier
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref =
         this.ref as $Ref<AsyncValue<ConversationEntity?>, ConversationEntity?>;
     final element =
@@ -100,29 +99,29 @@ abstract class _$ConversationChatNotifier
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }
 
 @ProviderFor(ChatMessages)
-const chatMessagesProvider = ChatMessagesProvider._();
+final chatMessagesProvider = ChatMessagesProvider._();
 
 final class ChatMessagesProvider
     extends $AsyncNotifierProvider<ChatMessages, List<MessageEntity>> {
-  const ChatMessagesProvider._()
+  ChatMessagesProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'chatMessagesProvider',
         isAutoDispose: true,
-        dependencies: const <ProviderOrFamily>[conversationSelectedProvider],
-        $allTransitiveDependencies: const <ProviderOrFamily>[
+        dependencies: <ProviderOrFamily>[conversationSelectedProvider],
+        $allTransitiveDependencies: <ProviderOrFamily>[
           ChatMessagesProvider.$allTransitiveDependencies0,
         ],
       );
 
-  static const $allTransitiveDependencies0 = conversationSelectedProvider;
+  static final $allTransitiveDependencies0 = conversationSelectedProvider;
 
   @override
   String debugGetCreateSourceHash() => _$chatMessagesHash();
@@ -139,7 +138,6 @@ abstract class _$ChatMessages extends $AsyncNotifier<List<MessageEntity>> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref =
         this.ref as $Ref<AsyncValue<List<MessageEntity>>, List<MessageEntity>>;
     final element =
@@ -150,12 +148,12 @@ abstract class _$ChatMessages extends $AsyncNotifier<List<MessageEntity>> {
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }
 
 @ProviderFor(messageList)
-const messageListProvider = MessageListProvider._();
+final messageListProvider = MessageListProvider._();
 
 final class MessageListProvider
     extends
@@ -165,22 +163,22 @@ final class MessageListProvider
           FutureOr<List<String>>
         >
     with $FutureModifier<List<String>>, $FutureProvider<List<String>> {
-  const MessageListProvider._()
+  MessageListProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'messageListProvider',
         isAutoDispose: true,
-        dependencies: const <ProviderOrFamily>[chatMessagesProvider],
-        $allTransitiveDependencies: const <ProviderOrFamily>[
+        dependencies: <ProviderOrFamily>[chatMessagesProvider],
+        $allTransitiveDependencies: <ProviderOrFamily>[
           MessageListProvider.$allTransitiveDependencies0,
           MessageListProvider.$allTransitiveDependencies1,
         ],
       );
 
-  static const $allTransitiveDependencies0 = chatMessagesProvider;
-  static const $allTransitiveDependencies1 =
+  static final $allTransitiveDependencies0 = chatMessagesProvider;
+  static final $allTransitiveDependencies1 =
       ChatMessagesProvider.$allTransitiveDependencies0;
 
   @override
@@ -201,27 +199,27 @@ final class MessageListProvider
 String _$messageListHash() => r'57066aa84a313090aad3d3d0f1601dec58b2ef69';
 
 @ProviderFor(messageIdNotifier)
-const messageIdProvider = MessageIdNotifierProvider._();
+final messageIdProvider = MessageIdNotifierProvider._();
 
 final class MessageIdNotifierProvider
     extends $FunctionalProvider<String, String, String>
     with $Provider<String> {
-  const MessageIdNotifierProvider._()
+  MessageIdNotifierProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'messageIdProvider',
         isAutoDispose: true,
-        dependencies: const <ProviderOrFamily>[chatMessagesProvider],
-        $allTransitiveDependencies: const <ProviderOrFamily>[
+        dependencies: <ProviderOrFamily>[chatMessagesProvider],
+        $allTransitiveDependencies: <ProviderOrFamily>[
           MessageIdNotifierProvider.$allTransitiveDependencies0,
           MessageIdNotifierProvider.$allTransitiveDependencies1,
         ],
       );
 
-  static const $allTransitiveDependencies0 = chatMessagesProvider;
-  static const $allTransitiveDependencies1 =
+  static final $allTransitiveDependencies0 = chatMessagesProvider;
+  static final $allTransitiveDependencies1 =
       ChatMessagesProvider.$allTransitiveDependencies0;
 
   @override
@@ -249,33 +247,33 @@ final class MessageIdNotifierProvider
 String _$messageIdNotifierHash() => r'f7c3dc6b42482a1be42673d362f74081840a66e1';
 
 @ProviderFor(messageConversation)
-const messageConversationProvider = MessageConversationProvider._();
+final messageConversationProvider = MessageConversationProvider._();
 
 final class MessageConversationProvider
     extends $FunctionalProvider<MessageEntity?, MessageEntity?, MessageEntity?>
     with $Provider<MessageEntity?> {
-  const MessageConversationProvider._()
+  MessageConversationProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'messageConversationProvider',
         isAutoDispose: true,
-        dependencies: const <ProviderOrFamily>[
+        dependencies: <ProviderOrFamily>[
           messageIdProvider,
           chatMessagesProvider,
         ],
-        $allTransitiveDependencies: const <ProviderOrFamily>[
+        $allTransitiveDependencies: <ProviderOrFamily>[
           MessageConversationProvider.$allTransitiveDependencies0,
           MessageConversationProvider.$allTransitiveDependencies1,
           MessageConversationProvider.$allTransitiveDependencies2,
         ],
       );
 
-  static const $allTransitiveDependencies0 = messageIdProvider;
-  static const $allTransitiveDependencies1 =
+  static final $allTransitiveDependencies0 = messageIdProvider;
+  static final $allTransitiveDependencies1 =
       MessageIdNotifierProvider.$allTransitiveDependencies0;
-  static const $allTransitiveDependencies2 =
+  static final $allTransitiveDependencies2 =
       MessageIdNotifierProvider.$allTransitiveDependencies1;
 
   @override
@@ -309,7 +307,7 @@ String _$messageConversationHash() =>
 /// or an empty list if not waiting.
 
 @ProviderFor(pendingMcpConnections)
-const pendingMcpConnectionsProvider = PendingMcpConnectionsProvider._();
+final pendingMcpConnectionsProvider = PendingMcpConnectionsProvider._();
 
 /// Provides the pending MCP server IDs for the current conversation.
 ///
@@ -323,20 +321,20 @@ final class PendingMcpConnectionsProvider
   ///
   /// Returns a list of MCP server IDs that are being waited on for connection,
   /// or an empty list if not waiting.
-  const PendingMcpConnectionsProvider._()
+  PendingMcpConnectionsProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'pendingMcpConnectionsProvider',
         isAutoDispose: true,
-        dependencies: const <ProviderOrFamily>[conversationSelectedProvider],
-        $allTransitiveDependencies: const <ProviderOrFamily>[
+        dependencies: <ProviderOrFamily>[conversationSelectedProvider],
+        $allTransitiveDependencies: <ProviderOrFamily>[
           PendingMcpConnectionsProvider.$allTransitiveDependencies0,
         ],
       );
 
-  static const $allTransitiveDependencies0 = conversationSelectedProvider;
+  static final $allTransitiveDependencies0 = conversationSelectedProvider;
 
   @override
   String debugGetCreateSourceHash() => _$pendingMcpConnectionsHash();

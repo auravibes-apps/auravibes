@@ -10,7 +10,7 @@ part of 'model_providers_repository_providers.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(modelProvidersRepository)
-const modelProvidersRepositoryProvider = ModelProvidersRepositoryProvider._();
+final modelProvidersRepositoryProvider = ModelProvidersRepositoryProvider._();
 
 final class ModelProvidersRepositoryProvider
     extends
@@ -20,7 +20,7 @@ final class ModelProvidersRepositoryProvider
           CredentialsRepository
         >
     with $Provider<CredentialsRepository> {
-  const ModelProvidersRepositoryProvider._()
+  ModelProvidersRepositoryProvider._()
     : super(
         from: null,
         argument: null,
@@ -58,7 +58,7 @@ String _$modelProvidersRepositoryHash() =>
     r'57a0ff0d598b47a00a75bf57222b36239ecf8306';
 
 @ProviderFor(credentialsModelsRepository)
-const credentialsModelsRepositoryProvider =
+final credentialsModelsRepositoryProvider =
     CredentialsModelsRepositoryProvider._();
 
 final class CredentialsModelsRepositoryProvider
@@ -69,7 +69,7 @@ final class CredentialsModelsRepositoryProvider
           CredentialsModelsRepository
         >
     with $Provider<CredentialsModelsRepository> {
-  const CredentialsModelsRepositoryProvider._()
+  CredentialsModelsRepositoryProvider._()
     : super(
         from: null,
         argument: null,

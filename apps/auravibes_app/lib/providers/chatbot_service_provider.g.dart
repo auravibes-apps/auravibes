@@ -12,7 +12,7 @@ part of 'chatbot_service_provider.dart';
 /// (for title generation, etc.)
 
 @ProviderFor(chatbotService)
-const chatbotServiceProvider = ChatbotServiceProvider._();
+final chatbotServiceProvider = ChatbotServiceProvider._();
 
 /// Provider that creates a ChatbotService without tools
 /// (for title generation, etc.)
@@ -22,7 +22,7 @@ final class ChatbotServiceProvider
     with $Provider<ChatbotService> {
   /// Provider that creates a ChatbotService without tools
   /// (for title generation, etc.)
-  const ChatbotServiceProvider._()
+  ChatbotServiceProvider._()
     : super(
         from: null,
         argument: null,

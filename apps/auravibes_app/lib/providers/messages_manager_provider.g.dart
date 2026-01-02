@@ -10,11 +10,11 @@ part of 'messages_manager_provider.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(MessagesManagerNotifier)
-const messagesManagerProvider = MessagesManagerNotifierProvider._();
+final messagesManagerProvider = MessagesManagerNotifierProvider._();
 
 final class MessagesManagerNotifierProvider
     extends $NotifierProvider<MessagesManagerNotifier, List<StreamingMessage>> {
-  const MessagesManagerNotifierProvider._()
+  MessagesManagerNotifierProvider._()
     : super(
         from: null,
         argument: null,
@@ -50,7 +50,6 @@ abstract class _$MessagesManagerNotifier
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref =
         this.ref as $Ref<List<StreamingMessage>, List<StreamingMessage>>;
     final element =
@@ -61,6 +60,6 @@ abstract class _$MessagesManagerNotifier
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }

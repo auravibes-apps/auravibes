@@ -20,7 +20,7 @@ part of 'grouped_conversation_tools_provider.dart';
 /// - Sorts groups: Default first, then MCP errors, then by creation date
 
 @ProviderFor(GroupedConversationToolsNotifier)
-const groupedConversationToolsProvider =
+final groupedConversationToolsProvider =
     GroupedConversationToolsNotifierFamily._();
 
 /// Provider that groups conversation tools by their workspaceToolsGroupId.
@@ -49,7 +49,7 @@ final class GroupedConversationToolsNotifierProvider
   /// - Enriches MCP groups with their connection state
   /// - Filters out empty groups
   /// - Sorts groups: Default first, then MCP errors, then by creation date
-  const GroupedConversationToolsNotifierProvider._({
+  GroupedConversationToolsNotifierProvider._({
     required GroupedConversationToolsNotifierFamily super.from,
     required ({String workspaceId, String? conversationId}) super.argument,
   }) : super(
@@ -110,7 +110,7 @@ final class GroupedConversationToolsNotifierFamily extends $Family
           FutureOr<List<ConversationToolsGroupWithTools>>,
           ({String workspaceId, String? conversationId})
         > {
-  const GroupedConversationToolsNotifierFamily._()
+  GroupedConversationToolsNotifierFamily._()
     : super(
         retry: null,
         name: r'groupedConversationToolsProvider',
@@ -167,10 +167,6 @@ abstract class _$GroupedConversationToolsNotifier
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build(
-      workspaceId: _$args.workspaceId,
-      conversationId: _$args.conversationId,
-    );
     final ref =
         this.ref
             as $Ref<
@@ -188,6 +184,12 @@ abstract class _$GroupedConversationToolsNotifier
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(
+      ref,
+      () => build(
+        workspaceId: _$args.workspaceId,
+        conversationId: _$args.conversationId,
+      ),
+    );
   }
 }
