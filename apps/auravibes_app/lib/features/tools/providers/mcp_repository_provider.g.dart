@@ -30,7 +30,7 @@ final class McpServersRepositoryProvider
         argument: null,
         retry: null,
         name: r'mcpServersRepositoryProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -59,4 +59,4 @@ final class McpServersRepositoryProvider
 }
 
 String _$mcpServersRepositoryHash() =>
-    r'a99f7fa57fe033da3ac8a66351decac6f3ec167c';
+    r'bee4c8c1c586891c5843ba456c8315984bca173a';

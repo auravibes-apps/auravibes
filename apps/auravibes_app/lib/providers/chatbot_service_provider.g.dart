@@ -28,7 +28,7 @@ final class ChatbotServiceProvider
         argument: null,
         retry: null,
         name: r'chatbotServiceProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -55,4 +55,4 @@ final class ChatbotServiceProvider
   }
 }
 
-String _$chatbotServiceHash() => r'2060db7e1bb02ee67faa4e1a9ff1c3de623f0075';
+String _$chatbotServiceHash() => r'880890fb23885445a8ccd15cfd6ce4cbfd958591';

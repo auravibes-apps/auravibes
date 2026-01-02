@@ -6,7 +6,7 @@ part 'chatbot_service_provider.g.dart';
 
 /// Provider that creates a ChatbotService without tools
 /// (for title generation, etc.)
-@riverpod
+@Riverpod(keepAlive: true)
 ChatbotService chatbotService(
   Ref ref,
 ) {

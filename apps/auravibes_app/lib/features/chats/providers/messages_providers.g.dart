@@ -22,8 +22,8 @@ final class ConversationSelectedNotifierProvider
         retry: null,
         name: r'conversationSelectedProvider',
         isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
+        dependencies: <ProviderOrFamily>[],
+        $allTransitiveDependencies: <ProviderOrFamily>[],
       );
 
   @override
@@ -49,7 +49,7 @@ final class ConversationSelectedNotifierProvider
 }
 
 String _$conversationSelectedNotifierHash() =>
-    r'54748a3e8db30c85e1c6305f967878aa4dc83be0';
+    r'30d28792df8d75acc432efeae609623be3e5c231';
 
 @ProviderFor(ConversationChatNotifier)
 final conversationChatProvider = ConversationChatNotifierProvider._();
@@ -211,16 +211,9 @@ final class MessageIdNotifierProvider
         retry: null,
         name: r'messageIdProvider',
         isAutoDispose: true,
-        dependencies: <ProviderOrFamily>[chatMessagesProvider],
-        $allTransitiveDependencies: <ProviderOrFamily>[
-          MessageIdNotifierProvider.$allTransitiveDependencies0,
-          MessageIdNotifierProvider.$allTransitiveDependencies1,
-        ],
+        dependencies: <ProviderOrFamily>[],
+        $allTransitiveDependencies: <ProviderOrFamily>[],
       );
-
-  static final $allTransitiveDependencies0 = chatMessagesProvider;
-  static final $allTransitiveDependencies1 =
-      ChatMessagesProvider.$allTransitiveDependencies0;
 
   @override
   String debugGetCreateSourceHash() => _$messageIdNotifierHash();
@@ -244,7 +237,7 @@ final class MessageIdNotifierProvider
   }
 }
 
-String _$messageIdNotifierHash() => r'f7c3dc6b42482a1be42673d362f74081840a66e1';
+String _$messageIdNotifierHash() => r'ca5c5d602ce2500fd6de1130348613aa34fc04ed';
 
 @ProviderFor(messageConversation)
 final messageConversationProvider = MessageConversationProvider._();
@@ -271,10 +264,9 @@ final class MessageConversationProvider
       );
 
   static final $allTransitiveDependencies0 = messageIdProvider;
-  static final $allTransitiveDependencies1 =
-      MessageIdNotifierProvider.$allTransitiveDependencies0;
+  static final $allTransitiveDependencies1 = chatMessagesProvider;
   static final $allTransitiveDependencies2 =
-      MessageIdNotifierProvider.$allTransitiveDependencies1;
+      ChatMessagesProvider.$allTransitiveDependencies0;
 
   @override
   String debugGetCreateSourceHash() => _$messageConversationHash();

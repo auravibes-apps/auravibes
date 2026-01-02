@@ -30,7 +30,7 @@ final class ToolsGroupsRepositoryProvider
         argument: null,
         retry: null,
         name: r'toolsGroupsRepositoryProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -59,7 +59,7 @@ final class ToolsGroupsRepositoryProvider
 }
 
 String _$toolsGroupsRepositoryHash() =>
-    r'2cd1bbd7e89ccf78b38467f66d2bb02ddfc91f8a';
+    r'5f6c759f37826b765d3f11898e4dabb4e1e42afb';
 
 /// Provider that groups tools by their workspaceToolsGroupId.
 ///

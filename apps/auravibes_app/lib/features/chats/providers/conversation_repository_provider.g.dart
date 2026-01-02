@@ -26,7 +26,7 @@ final class ConversationRepositoryProvider
         argument: null,
         retry: null,
         name: r'conversationRepositoryProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -55,7 +55,7 @@ final class ConversationRepositoryProvider
 }
 
 String _$conversationRepositoryHash() =>
-    r'308fc979526015eb59b1d3ab8274a013e54b19a6';
+    r'6c31068530da229269885eedc3c1925b9b22701f';
 
 @ProviderFor(messageRepository)
 final messageRepositoryProvider = MessageRepositoryProvider._();
@@ -74,7 +74,7 @@ final class MessageRepositoryProvider
         argument: null,
         retry: null,
         name: r'messageRepositoryProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -102,4 +102,4 @@ final class MessageRepositoryProvider
   }
 }
 
-String _$messageRepositoryHash() => r'a7ce28463fba3f5ad809016288c7b42b8ff10e49';
+String _$messageRepositoryHash() => r'c5783220430bd59803e20c9d782f65df426ffa66';

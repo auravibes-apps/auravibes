@@ -27,7 +27,7 @@ final class ConversationToolsRepositoryProvider
         argument: null,
         retry: null,
         name: r'conversationToolsRepositoryProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -56,7 +56,7 @@ final class ConversationToolsRepositoryProvider
 }
 
 String _$conversationToolsRepositoryHash() =>
-    r'e3e65f8c9feab2c64ec51fc9ae9464e124258a26';
+    r'f01d06fe031c840ef6a9cc8ca75fd0dd30303eca';
 
 /// Provider for managing conversation tool settings
 ///

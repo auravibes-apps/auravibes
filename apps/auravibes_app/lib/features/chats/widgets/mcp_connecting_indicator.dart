@@ -5,7 +5,9 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
+@Dependencies([pendingMcpConnections])
 /// Widget that shows a "Waiting for tools to connect..." indicator
 /// when MCP servers are still connecting before a message can be sent.
 class McpConnectingIndicator extends ConsumerWidget {

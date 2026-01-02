@@ -352,18 +352,6 @@ class McpManagerNotifier extends _$McpManagerNotifier {
     return toolInfo._spec(connection.server);
   }
 
-  /// Check if any MCP servers are currently connecting.
-  bool get isConnecting => state.any(
-    (McpConnectionState c) => c.status == McpConnectionStatus.connecting,
-  );
-
-  /// Get count of connected MCP servers.
-  int get connectedCount => state
-      .where(
-        (McpConnectionState c) => c.status == McpConnectionStatus.connected,
-      )
-      .length;
-
   /// Get the timeout duration for waiting for MCP connections.
   ///
   /// This is exposed as a method to allow future configuration via settings.
@@ -606,7 +594,7 @@ class McpManagerNotifier extends _$McpManagerNotifier {
   }
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 McpManagerService mcpManagerService(Ref ref) {
   return McpManagerService();
 }

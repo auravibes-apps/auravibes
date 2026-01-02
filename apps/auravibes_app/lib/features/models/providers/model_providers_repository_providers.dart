@@ -7,14 +7,14 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'model_providers_repository_providers.g.dart';
 
-@riverpod
+@Riverpod(keepAlive: true)
 CredentialsRepository modelProvidersRepository(Ref ref) {
   final appDatabase = ref.watch(appDatabaseProvider);
 
   return CredentialsRepositoryImpl(appDatabase);
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 CredentialsModelsRepository credentialsModelsRepository(Ref ref) {
   final appDatabase = ref.watch(appDatabaseProvider);
 

@@ -87,7 +87,7 @@ final class McpManagerNotifierProvider
 }
 
 String _$mcpManagerNotifierHash() =>
-    r'bb51cbf190af7b016b3a2d401f18aeadd9d69b12';
+    r'5021c10b561562dc3fa0afe15113705a5b09f26a';
 
 /// Manages MCP server connections and their tools.
 ///
@@ -142,7 +142,7 @@ final class McpManagerServiceProvider
         argument: null,
         retry: null,
         name: r'mcpManagerServiceProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -170,4 +170,4 @@ final class McpManagerServiceProvider
   }
 }
 
-String _$mcpManagerServiceHash() => r'84a42758d3ad321cd0fdbd06703e0e0d7343bbbb';
+String _$mcpManagerServiceHash() => r'd1f412f8c54aa7a16cf655a10544e230235dac3e';

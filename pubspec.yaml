@@ -12,6 +12,7 @@ dev_dependencies:
   dependency_validator: ^5.0.3
   import_sorter: ^4.6.0
   melos: ^7.3.0
+  riverpod_lint: ^3.1.0
   very_good_analysis: ^10.0.0
 
 melos:

@@ -26,7 +26,7 @@ final class WorkspaceToolsRepositoryProvider
         argument: null,
         retry: null,
         name: r'workspaceToolsRepositoryProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -55,7 +55,7 @@ final class WorkspaceToolsRepositoryProvider
 }
 
 String _$workspaceToolsRepositoryHash() =>
-    r'05b45d859d765fce6925970a59333568bd0be637';
+    r'8408a4229d3f4d6624c8b4a6521ea2b7f76b7889';
 
 @ProviderFor(workspaceToolIndexNotifier)
 final workspaceToolIndexProvider = WorkspaceToolIndexNotifierProvider._();
