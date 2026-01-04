@@ -151,11 +151,6 @@ class McpFormNotifier extends _$McpFormNotifier {
     state = state.copyWith(errorMessage: null);
   }
 
-  /// Reset the form to initial state
-  void reset() {
-    state = const McpFormState();
-  }
-
   /// Submit the form
   ///
   /// Validates the form and submits to the MCP manager to:
