@@ -1,6 +1,11 @@
 import 'package:auravibes_app/domain/entities/mcp_server.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_form_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/widgets/app_dropdown_base.dart';
+import 'package:auravibes_app/widgets/app_group_button_single_base.dart';
+import 'package:auravibes_app/widgets/app_input_base.dart';
+import 'package:auravibes_app/widgets/app_toggle_base.dart';
+import 'package:auravibes_app/widgets/app_visibility_base.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
@@ -21,49 +26,6 @@ class AddMcpModal extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Watch the form state
-    final formState = ref.watch(mcpFormProvider);
-    final formNotifier = ref.read(mcpFormProvider.notifier);
-
-    // Memoized computed values - no delay, instant recalculation
-    final availableAuthTypes = useMemoized(
-      () => formState.availableAuthTypes,
-      [formState.transport],
-    );
-
-    final showBearerTokenField = useMemoized(
-      () => formState.showBearerTokenField,
-      [formState.authenticationType],
-    );
-
-    final showHttp2Toggle = useMemoized(
-      () => formState.showHttp2Toggle,
-      [formState.transport],
-    );
-
-    // Text controllers synced with provider state
-    final nameController = useTextEditingController(text: formState.name);
-    final descriptionController = useTextEditingController(
-      text: formState.description,
-    );
-    final urlController = useTextEditingController(text: formState.url);
-
-    final bearerTokenController = useTextEditingController(
-      text: formState.bearerToken,
-    );
-
-    // Reset form when modal opens
-    useEffect(
-      () {
-        // Reset form state when modal is first built
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          formNotifier.reset();
-        });
-        return null;
-      },
-      const [],
-    );
-
     return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(context.auraTheme.borderRadius.xl),
@@ -81,95 +43,58 @@ class AddMcpModal extends HookConsumerWidget {
             _buildHeader(context),
 
             // Error message
-            if (formState.errorMessage != null)
-              _buildErrorBanner(context, formState.errorMessage!),
+            const _ErrorBanner(),
 
             // Scrollable form content
             Flexible(
               child: SingleChildScrollView(
                 padding: EdgeInsets.all(context.auraTheme.spacing.md),
-                child: AuraColumn(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  spacing: AuraSpacing.md,
+                child: Stack(
                   children: [
-                    // Name field (required)
-                    AuraInput(
-                      controller: nameController,
-                      onChanged: formNotifier.setName,
-                      label: const TextLocale(
-                        LocaleKeys.mcp_modal_fields_name_label,
-                      ),
-                      placeholder: const TextLocale(
-                        LocaleKeys.mcp_modal_fields_name_placeholder,
-                      ),
+                    AuraColumn(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      spacing: AuraSpacing.md,
+                      children: [
+                        // Name field (required)
+                        const _NameInput(),
+
+                        // Description field (optional)
+                        const _DescriptionInput(),
+
+                        // URL field (required)
+                        const _UrlInput(),
+
+                        // Transport selector
+                        const _TransportSelector(),
+
+                        // HTTP/2 toggle (only for streamableHttp)
+                        AppVisibilityBase(
+                          visible: mcpFormProvider.select(
+                            (value) => value.showHttp2Toggle,
+                          ),
+                          child: const _Http2Toggle(),
+                        ),
+
+                        // Authentication selector
+                        const _AuthenticationSelector(),
+
+                        // Bearer token field
+                        AppVisibilityBase(
+                          visible: mcpFormProvider.select(
+                            (value) => value.showBearerTokenField,
+                          ),
+                          child: const _BearerTokenField(),
+                        ),
+                      ],
                     ),
-
-                    // Description field (optional)
-                    AuraInput(
-                      controller: descriptionController,
-                      onChanged: formNotifier.setDescription,
-                      label: const TextLocale(
-                        LocaleKeys.mcp_modal_fields_description_label,
-                      ),
-                      placeholder: const TextLocale(
-                        LocaleKeys.mcp_modal_fields_description_placeholder,
-                      ),
-                    ),
-
-                    // URL field (required)
-                    AuraInput(
-                      controller: urlController,
-                      onChanged: formNotifier.setUrl,
-                      label: const TextLocale(
-                        LocaleKeys.mcp_modal_fields_url_label,
-                      ),
-                      placeholder: const TextLocale(
-                        LocaleKeys.mcp_modal_fields_url_placeholder,
-                      ),
-                      hint: const TextLocale(
-                        LocaleKeys.mcp_modal_fields_url_hint,
-                      ),
-                    ),
-
-                    // Transport selector
-                    _TransportSelector(
-                      value: formState.transport,
-                      onChanged: formNotifier.setTransport,
-                    ),
-
-                    // HTTP/2 toggle (only for streamableHttp)
-                    if (showHttp2Toggle)
-                      _Http2Toggle(
-                        value: formState.useHttp2,
-                        onChanged: (value) =>
-                            formNotifier.setUseHttp2(value: value),
-                      ),
-
-                    // Authentication selector
-                    _AuthenticationSelector(
-                      value: formState.authenticationType,
-                      availableTypes: availableAuthTypes,
-                      onChanged: formNotifier.setAuthenticationType,
-                    ),
-
-                    // Bearer token field
-                    if (showBearerTokenField)
-                      _BearerTokenField(
-                        controller: bearerTokenController,
-                        onChanged: formNotifier.setBearerToken,
-                      ),
+                    const _LoadingOverlay(),
                   ],
                 ),
               ),
             ),
 
             // Footer with action buttons
-            _buildFooter(
-              context,
-              isLoading: formState.isSubmitting,
-              onCancel: () => Navigator.of(context).pop(),
-              onSave: () => _handleSave(context, ref),
-            ),
+            const _Footer(),
           ],
         ),
       ),
@@ -186,32 +111,68 @@ class AddMcpModal extends HookConsumerWidget {
           ),
         ),
       ),
-      child: Row(
+      child: AuraRow(
         children: [
           AuraIcon(
             Icons.extension,
             color: context.auraColors.primary,
           ),
-          SizedBox(width: context.auraTheme.spacing.sm),
           const Expanded(
             child: AuraText(
               style: AuraTextStyle.heading6,
               child: TextLocale(LocaleKeys.mcp_modal_title),
             ),
           ),
-          IconButton(
+          AuraIconButton(
             onPressed: () => Navigator.of(context).pop(),
-            icon: const AuraIcon(Icons.close),
-            style: IconButton.styleFrom(
-              foregroundColor: context.auraColors.onSurfaceVariant,
-            ),
+            icon: Icons.close,
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildErrorBanner(BuildContext context, String message) {
+class _LoadingOverlay extends ConsumerWidget {
+  const _LoadingOverlay();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isSubmitting = ref.watch(
+      mcpFormProvider.select(
+        (value) => value.isSubmitting,
+      ),
+    );
+
+    if (!isSubmitting) {
+      return const SizedBox.shrink();
+    }
+
+    return Positioned.fill(
+      child: ColoredBox(
+        color: context.auraColors.surface.withValues(alpha: 0.6),
+        child: const Center(
+          child: AuraLoadingOverlay(),
+        ),
+      ),
+    );
+  }
+}
+
+class _ErrorBanner extends ConsumerWidget {
+  const _ErrorBanner();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final errorMessage = ref.watch(
+      mcpFormProvider.select(
+        (value) => value.errorMessage,
+      ),
+    );
+
+    if (errorMessage == null) {
+      return const SizedBox.shrink();
+    }
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: context.auraTheme.spacing.md,
@@ -228,7 +189,7 @@ class AddMcpModal extends HookConsumerWidget {
           SizedBox(width: context.auraTheme.spacing.sm),
           Expanded(
             child: Text(
-              message,
+              errorMessage,
               style: TextStyle(color: context.auraColors.error),
             ),
           ),
@@ -236,13 +197,31 @@ class AddMcpModal extends HookConsumerWidget {
       ),
     );
   }
+}
 
-  Widget _buildFooter(
-    BuildContext context, {
-    required bool isLoading,
-    required VoidCallback onCancel,
-    required VoidCallback onSave,
-  }) {
+class _Footer extends HookConsumerWidget {
+  const _Footer();
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isSubmitting = ref.watch(
+      mcpFormProvider.select(
+        (value) => value.isSubmitting,
+      ),
+    );
+
+    final onSave = useCallback(() async {
+      final notifier = ref.read(mcpFormProvider.notifier);
+      final success = await notifier.submit();
+
+      if (success && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('MCP Server configuration saved (TODO: implement)'),
+          ),
+        );
+        Navigator.of(context).pop();
+      }
+    }, [ref, context]);
     return Container(
       padding: EdgeInsets.all(context.auraTheme.spacing.md),
       decoration: BoxDecoration(
@@ -257,7 +236,7 @@ class AddMcpModal extends HookConsumerWidget {
           Expanded(
             child: AuraButton(
               variant: AuraButtonVariant.outlined,
-              onPressed: onCancel,
+              onPressed: () => Navigator.of(context).pop(),
               child: const TextLocale(LocaleKeys.common_cancel),
             ),
           ),
@@ -265,7 +244,7 @@ class AddMcpModal extends HookConsumerWidget {
           Expanded(
             child: AuraButton(
               onPressed: onSave,
-              isLoading: isLoading,
+              isLoading: isSubmitting,
               child: const TextLocale(LocaleKeys.common_save),
             ),
           ),
@@ -273,139 +252,85 @@ class AddMcpModal extends HookConsumerWidget {
       ),
     );
   }
-
-  Future<void> _handleSave(BuildContext context, WidgetRef ref) async {
-    final notifier = ref.read(mcpFormProvider.notifier);
-    final success = await notifier.submit();
-
-    if (success && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('MCP Server configuration saved (TODO: implement)'),
-        ),
-      );
-      Navigator.of(context).pop();
-    }
-  }
 }
 
-/// Widget for selecting the transport type
 class _TransportSelector extends StatelessWidget {
-  const _TransportSelector({
-    required this.value,
-    required this.onChanged,
-  });
-
-  final McpTransportTypeOptions? value;
-  final ValueChanged<McpTransportTypeOptions?> onChanged;
+  const _TransportSelector();
 
   @override
   Widget build(BuildContext context) {
-    return AuraColumn(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: AuraSpacing.xs,
-      children: [
-        const AuraText(
-          style: AuraTextStyle.bodySmall,
-          color: AuraColorVariant.onSurfaceVariant,
-          child: TextLocale(LocaleKeys.mcp_modal_fields_transport_label),
-        ),
-        AuraDropdownSelector<McpTransportTypeOptions>(
-          value: value,
-          onChanged: onChanged,
-          options: const [
-            AuraDropdownOption(
-              value: McpTransportTypeOptions.streamableHttp,
-              child: TextLocale(
-                LocaleKeys.mcp_modal_transport_streamable_http,
-              ),
-            ),
-            AuraDropdownOption(
-              value: McpTransportTypeOptions.sse,
-              child: TextLocale(
-                LocaleKeys.mcp_modal_transport_sse,
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-/// Widget for toggling HTTP/2 support
-class _Http2Toggle extends StatelessWidget {
-  const _Http2Toggle({
-    required this.value,
-    required this.onChanged,
-  });
-
-  final bool value;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        const Expanded(
-          child: AuraColumn(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            spacing: AuraSpacing.none,
-            children: [
-              AuraText(
-                child: TextLocale(LocaleKeys.mcp_modal_fields_use_http2_label),
-              ),
-              AuraText(
-                style: AuraTextStyle.bodySmall,
-                color: AuraColorVariant.onSurfaceVariant,
-                child: TextLocale(LocaleKeys.mcp_modal_fields_use_http2_hint),
-              ),
-            ],
+    return AppDropdownBase<McpTransportTypeOptions>(
+      value: mcpFormProvider.select(
+        (value) => value.transport,
+      ),
+      onChanged: mcpFormProvider.notifier.select(
+        (notifier) => notifier.setTransport,
+      ),
+      options: const [
+        AuraDropdownOption(
+          value: McpTransportTypeOptions.streamableHttp,
+          child: TextLocale(
+            LocaleKeys.mcp_modal_transport_streamable_http,
           ),
         ),
-        AuraSwitch(
-          value: value,
-          onChanged: onChanged,
+        AuraDropdownOption(
+          value: McpTransportTypeOptions.sse,
+          child: TextLocale(
+            LocaleKeys.mcp_modal_transport_sse,
+          ),
         ),
       ],
+      labelLocaleKey: LocaleKeys.mcp_modal_fields_transport_label,
     );
   }
 }
 
-/// Widget for selecting the authentication type
-class _AuthenticationSelector extends StatelessWidget {
-  const _AuthenticationSelector({
-    required this.value,
-    required this.availableTypes,
-    required this.onChanged,
-  });
-
-  final McpAuthenticationTypeOptions value;
-  final List<McpAuthenticationTypeOptions> availableTypes;
-  final ValueChanged<McpAuthenticationTypeOptions> onChanged;
+class _Http2Toggle extends StatelessWidget {
+  const _Http2Toggle();
 
   @override
   Widget build(BuildContext context) {
-    return AuraColumn(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: AuraSpacing.xs,
-      children: [
-        const AuraText(
-          style: AuraTextStyle.bodySmall,
-          color: AuraColorVariant.onSurfaceVariant,
-          child: TextLocale(LocaleKeys.mcp_modal_fields_authentication_label),
-        ),
-        AuraButtonGroup<McpAuthenticationTypeOptions>.single(
-          selectedValue: value,
-          onChanged: onChanged,
-          items: availableTypes.map((type) {
-            return AuraButtonGroupItem(
-              value: type,
-              child: TextLocale(_getAuthTypeLocaleKey(type)),
-            );
-          }).toList(),
-        ),
-      ],
+    return AppToggleBase(
+      value: mcpFormProvider.select(
+        (value) => value.useHttp2,
+      ),
+      onChanged: mcpFormProvider.notifier.select(
+        (notifier) => notifier.setUseHttp2,
+      ),
+      hintLocaleKey: LocaleKeys.mcp_modal_fields_use_http2_hint,
+      labelLocaleKey: LocaleKeys.mcp_modal_fields_use_http2_label,
+    );
+  }
+}
+
+/// Renders the available authentication types from [mcpFormProvider]
+/// as a localized single-select button group and updates the selected type.
+class _AuthenticationSelector extends ConsumerWidget {
+  const _AuthenticationSelector();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final availableTypes = ref.watch(
+      mcpFormProvider.select(
+        (value) => value.availableAuthTypes,
+      ),
+    );
+
+    return AppGroupButtonSingleBase(
+      items: availableTypes.map((type) {
+        return AuraButtonGroupItem(
+          value: type,
+          child: TextLocale(_getAuthTypeLocaleKey(type)),
+        );
+      }).toList(),
+
+      labelLocaleKey: LocaleKeys.mcp_modal_fields_authentication_label,
+      onChanged: mcpFormProvider.notifier.select(
+        (value) => value.setAuthenticationType,
+      ),
+      value: mcpFormProvider.select(
+        (value) => value.authenticationType,
+      ),
     );
   }
 
@@ -421,55 +346,77 @@ class _AuthenticationSelector extends StatelessWidget {
   }
 }
 
-/// Widget for bearer token input
-class _BearerTokenField extends StatelessWidget {
-  const _BearerTokenField({
-    required this.controller,
-    required this.onChanged,
-  });
-
-  final TextEditingController controller;
-  final ValueChanged<String> onChanged;
+class _NameInput extends StatelessWidget {
+  const _NameInput();
 
   @override
   Widget build(BuildContext context) {
-    return AuraCard(
-      style: AuraCardStyle.border,
-      child: AuraColumn(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: AuraSpacing.md,
-        children: [
-          AuraRow(
-            spacing: AuraSpacing.sm,
-            children: [
-              AuraIcon(
-                Icons.key,
-                size: AuraIconSize.small,
-                color: context.auraColors.primary,
-              ),
-              const AuraText(
-                style: AuraTextStyle.bodySmall,
-                color: AuraColorVariant.primary,
-                child: TextLocale(LocaleKeys.mcp_modal_bearer_section_title),
-              ),
-            ],
-          ),
-          AuraInput(
-            controller: controller,
-            onChanged: onChanged,
-            label: const TextLocale(
-              LocaleKeys.mcp_modal_fields_bearer_token_label,
-            ),
-            placeholder: const TextLocale(
-              LocaleKeys.mcp_modal_fields_bearer_token_placeholder,
-            ),
-            hint: const TextLocale(
-              LocaleKeys.mcp_modal_fields_bearer_token_hint,
-            ),
-            obscureText: true,
-          ),
-        ],
+    return AppInputBase(
+      value: mcpFormProvider.select(
+        (value) => value.name,
       ),
+      onChanged: mcpFormProvider.notifier.select((value) => value.setName),
+
+      labelLocaleKey: LocaleKeys.mcp_modal_fields_name_label,
+      placeholderLocaleKey: LocaleKeys.mcp_modal_fields_name_placeholder,
+    );
+  }
+}
+
+class _DescriptionInput extends StatelessWidget {
+  const _DescriptionInput();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppInputBase(
+      value: mcpFormProvider.select(
+        (value) => value.description,
+      ),
+      onChanged: mcpFormProvider.notifier.select(
+        (value) => value.setDescription,
+      ),
+      labelLocaleKey: LocaleKeys.mcp_modal_fields_description_label,
+      placeholderLocaleKey: LocaleKeys.mcp_modal_fields_description_placeholder,
+    );
+  }
+}
+
+class _UrlInput extends StatelessWidget {
+  const _UrlInput();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppInputBase(
+      value: mcpFormProvider.select(
+        (value) => value.url,
+      ),
+      onChanged: mcpFormProvider.notifier.select(
+        (value) => value.setUrl,
+      ),
+      labelLocaleKey: LocaleKeys.mcp_modal_fields_url_label,
+      placeholderLocaleKey: LocaleKeys.mcp_modal_fields_url_placeholder,
+      hintLocaleKey: LocaleKeys.mcp_modal_fields_url_hint,
+    );
+  }
+}
+
+class _BearerTokenField extends StatelessWidget {
+  const _BearerTokenField();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppInputBase(
+      value: mcpFormProvider.select(
+        (value) => value.bearerToken,
+      ),
+      onChanged: mcpFormProvider.notifier.select(
+        (value) => value.setBearerToken,
+      ),
+      labelLocaleKey: LocaleKeys.mcp_modal_fields_bearer_token_label,
+      placeholderLocaleKey:
+          LocaleKeys.mcp_modal_fields_bearer_token_placeholder,
+      hintLocaleKey: LocaleKeys.mcp_modal_fields_bearer_token_hint,
+      obscureText: true,
     );
   }
 }
