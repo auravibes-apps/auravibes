@@ -237,7 +237,6 @@ class _Footer extends HookConsumerWidget {
             child: AuraButton(
               variant: AuraButtonVariant.outlined,
               onPressed: () => Navigator.of(context).pop(),
-              isLoading: isSubmitting,
               child: const TextLocale(LocaleKeys.common_cancel),
             ),
           ),
