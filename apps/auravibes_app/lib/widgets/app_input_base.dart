@@ -9,14 +9,14 @@ class AppInputBase extends HookConsumerWidget {
   const AppInputBase({
     required this.labelLocaleKey,
     required this.placeholderLocaleKey,
-    required this.initialValue,
+    required this.value,
     required this.onChanged,
     super.key,
     this.hintLocaleKey,
     this.obscureText = false,
   });
 
-  final ProviderListenable<String> initialValue;
+  final ProviderListenable<String> value;
   final ProviderListenable<void Function(String)?> onChanged;
   final String labelLocaleKey;
   final String placeholderLocaleKey;
@@ -26,7 +26,7 @@ class AppInputBase extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = useTextEditingController(
-      text: ref.watch(initialValue),
+      text: ref.watch(value),
     );
     return AuraInput(
       controller: controller,

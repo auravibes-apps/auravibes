@@ -335,7 +335,7 @@ class _AuthenticationSelector extends ConsumerWidget {
 }
 
 final _nameInput = AppInputBase(
-  initialValue: mcpFormProvider.select(
+  value: mcpFormProvider.select(
     (value) => value.name,
   ),
   onChanged: mcpFormProvider.notifier.select((value) => value.setName),
@@ -345,7 +345,7 @@ final _nameInput = AppInputBase(
 );
 
 final _descriptionInput = AppInputBase(
-  initialValue: mcpFormProvider.select(
+  value: mcpFormProvider.select(
     (value) => value.description,
   ),
   onChanged: mcpFormProvider.notifier.select(
@@ -356,7 +356,7 @@ final _descriptionInput = AppInputBase(
 );
 
 final _urlInput = AppInputBase(
-  initialValue: mcpFormProvider.select(
+  value: mcpFormProvider.select(
     (value) => value.url,
   ),
   onChanged: mcpFormProvider.notifier.select(
@@ -368,7 +368,7 @@ final _urlInput = AppInputBase(
 );
 
 final _bearerTokenField = AppInputBase(
-  initialValue: mcpFormProvider.select(
+  value: mcpFormProvider.select(
     (value) => value.bearerToken,
   ),
   onChanged: mcpFormProvider.notifier.select(
