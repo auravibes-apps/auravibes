@@ -303,7 +303,8 @@ class _Http2Toggle extends StatelessWidget {
   }
 }
 
-/// Widget for selecting the authentication type
+/// Renders the available authentication types from [mcpFormProvider]
+/// as a localized single-select button group and updates the selected type.
 class _AuthenticationSelector extends ConsumerWidget {
   const _AuthenticationSelector();
 
