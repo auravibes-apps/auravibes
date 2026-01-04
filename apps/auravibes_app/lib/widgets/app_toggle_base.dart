@@ -8,12 +8,12 @@ class AppToggleBase extends ConsumerWidget {
   const AppToggleBase({
     required this.labelLocaleKey,
     required this.hintLocaleKey,
-    required this.initialValue,
+    required this.value,
     required this.onChanged,
     super.key,
   });
 
-  final ProviderListenable<bool> initialValue;
+  final ProviderListenable<bool> value;
   // ignore: avoid_positional_boolean_parameters
   final ProviderListenable<void Function(bool)?> onChanged;
   final String labelLocaleKey;
@@ -21,7 +21,7 @@ class AppToggleBase extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final value = ref.watch(initialValue);
+    final value = ref.watch(this.value);
     return Row(
       children: [
         Expanded(

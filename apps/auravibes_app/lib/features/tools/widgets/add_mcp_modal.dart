@@ -292,7 +292,7 @@ class _Http2Toggle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppToggleBase(
-      initialValue: mcpFormProvider.select(
+      value: mcpFormProvider.select(
         (value) => value.useHttp2,
       ),
       onChanged: mcpFormProvider.notifier.select(
