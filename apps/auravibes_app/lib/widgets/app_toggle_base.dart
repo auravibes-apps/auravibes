@@ -4,6 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod/misc.dart';
 
+/// A reusable base widget for a provider-driven toggle/switch with text.
+///
+/// This widget listens to a [ProviderListenable<bool>] for the current
+/// switch value and an optional [ProviderListenable<void Function(bool)?>]
+/// for the `onChanged` callback. It displays a localized label and hint
+/// using [TextLocale] with the provided [labelLocaleKey] and
+/// [hintLocaleKey].
 class AppToggleBase extends ConsumerWidget {
   const AppToggleBase({
     required this.labelLocaleKey,
