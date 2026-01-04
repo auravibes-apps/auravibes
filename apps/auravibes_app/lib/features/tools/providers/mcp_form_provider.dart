@@ -132,7 +132,8 @@ class McpFormNotifier extends _$McpFormNotifier {
   }
 
   /// Update the HTTP/2 toggle
-  void setUseHttp2({required bool value}) {
+  // ignore: avoid_positional_boolean_parameters
+  void setUseHttp2(bool value) {
     state = state.copyWith(useHttp2: value);
   }
 

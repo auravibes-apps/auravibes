@@ -296,8 +296,7 @@ class _Http2Toggle extends StatelessWidget {
         (value) => value.useHttp2,
       ),
       onChanged: mcpFormProvider.notifier.select(
-        (notifier) =>
-            (value) => notifier.setUseHttp2(value: value),
+        (notifier) => notifier.setUseHttp2,
       ),
       hintLocaleKey: LocaleKeys.mcp_modal_fields_use_http2_hint,
       labelLocaleKey: LocaleKeys.mcp_modal_fields_use_http2_label,
