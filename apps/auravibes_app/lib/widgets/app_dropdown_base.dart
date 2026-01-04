@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod/misc.dart';
 
-/// Widget for selecting the transport type
+/// Generic provider-based dropdown selector widget for choosing a value from a list of options.
 class AppDropdownBase<T> extends HookConsumerWidget {
   const AppDropdownBase({
     required this.value,
