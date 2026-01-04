@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod/misc.dart';
 
-/// Widget for selecting the authentication type
+/// Generic provider-based single-selection button group widget.
 class AppGroupButtonSingleBase<T> extends HookConsumerWidget {
   const AppGroupButtonSingleBase({
     required this.value,
