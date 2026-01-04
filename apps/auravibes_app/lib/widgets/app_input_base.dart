@@ -5,6 +5,15 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod/misc.dart';
 
+/// A reusable text input widget backed by Riverpod providers and localized UI strings.
+///
+/// This widget builds an [AuraInput] whose text is initialized from and kept in sync
+/// with the given [value] provider. Any user changes are forwarded to the callback
+/// exposed by the [onChanged] provider.
+///
+/// The `labelLocaleKey`, `placeholderLocaleKey`, and optional [hintLocaleKey] are
+/// looked up via [TextLocale] to display localized label, placeholder, and hint
+/// text. Set [obscureText] to `true` for sensitive inputs such as passwords.
 class AppInputBase extends HookConsumerWidget {
   const AppInputBase({
     required this.labelLocaleKey,
