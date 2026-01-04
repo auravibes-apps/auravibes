@@ -5,8 +5,8 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod/misc.dart';
 
 /// Widget for selecting the transport type
-class AppDrowdownBase<T> extends HookConsumerWidget {
-  const AppDrowdownBase({
+class AppDropdownBase<T> extends HookConsumerWidget {
+  const AppDropdownBase({
     required this.value,
     required this.onChanged,
     required this.options,

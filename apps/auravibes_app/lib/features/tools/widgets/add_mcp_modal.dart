@@ -255,7 +255,7 @@ class _Footer extends HookConsumerWidget {
   }
 }
 
-final _transportSelector = AppDrowdownBase<McpTransportTypeOptions>(
+final _transportSelector = AppDropdownBase<McpTransportTypeOptions>(
   value: mcpFormProvider.select(
     (value) => value.transport,
   ),
