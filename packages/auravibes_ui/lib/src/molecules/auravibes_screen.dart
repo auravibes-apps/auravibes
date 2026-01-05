@@ -76,13 +76,10 @@ class AuraScreen extends StatelessWidget {
 
     final inheritLeading = defaults?.inheritLeadingWhen?.call(context);
 
-    final appBarIsAuraAppBar = resolvedAppBar is AuraAppBar;
-    final defaultIsAuraAppBar = defaultAppBar is AuraAppBar;
-
     // If child route provides an app bar without leading, and we should inherit
     // leading from default, copy the hamburger menu from default app bar
-    if (appBarIsAuraAppBar &&
-        defaultIsAuraAppBar &&
+    if (resolvedAppBar is AuraAppBar &&
+        defaultAppBar is AuraAppBar &&
         appBar != null &&
         resolvedAppBar.leading == null &&
         (inheritLeading ?? false)) {
