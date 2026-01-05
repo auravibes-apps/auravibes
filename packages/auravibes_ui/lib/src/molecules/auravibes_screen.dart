@@ -98,13 +98,6 @@ class AuraScreen extends StatelessWidget {
       }
     }
 
-    // IMPORTANT: For routes without their own app bar, ensure they always
-    // use the default app bar (with its hamburger menu) instead of
-    // showing a back button during transitions
-    if (appBar == null && defaultAppBar != null) {
-      resolvedAppBar = defaultAppBar;
-    }
-
     final showOwnAppBar =
         resolvedAppBar != null && (!ancestorHasAppBar || allowOverride);
 
