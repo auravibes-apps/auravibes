@@ -217,7 +217,7 @@ class AuraAppBar extends StatelessWidget {
   /// footer of bar
   final Widget? footer;
 
-  /// leading widget (typically a back button or drawer trigger)
+  /// Optional custom leading widget that replaces the automatic back button.
   final Widget? leading;
 
   @override
