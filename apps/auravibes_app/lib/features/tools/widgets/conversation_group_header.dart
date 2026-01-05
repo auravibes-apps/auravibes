@@ -219,9 +219,9 @@ class _ErrorBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraRow(
-      spacing: AuraSpacing.xs,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        // Error badge with truncated message
+        // Error badge (compact)
         Tooltip(
           message: groupWithTools.mcpErrorMessage ?? '',
           child: AuraBadge.text(
@@ -229,33 +229,46 @@ class _ErrorBadge extends StatelessWidget {
             size: AuraBadgeSize.small,
             child: AuraRow(
               spacing: AuraSpacing.xs,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 const AuraIcon(
                   Icons.error_outline,
                   size: AuraIconSize.extraSmall,
                 ),
-                Text(
-                  groupWithTools.truncatedErrorMessage ??
-                      LocaleKeys.tools_screen_mcp_error.tr(),
-                  overflow: TextOverflow.ellipsis,
-                ),
+                Text(LocaleKeys.tools_screen_mcp_error.tr()),
               ],
             ),
           ),
         ),
 
-        // Reconnect button
+        // View details button (icon-only)
+        if (onViewError != null && groupWithTools.mcpErrorMessage != null)
+          IconButton(
+            onPressed: onViewError,
+            icon: const AuraIcon(
+              Icons.visibility_outlined,
+              size: AuraIconSize.small,
+            ),
+            tooltip: LocaleKeys.tools_screen_mcp_view_error.tr(),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            style: IconButton.styleFrom(
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+          ),
+
+        // Reconnect button (icon-only)
         if (onReconnect != null)
-          TextButton.icon(
+          IconButton(
             onPressed: onReconnect,
             icon: const AuraIcon(
               Icons.refresh,
-              size: AuraIconSize.extraSmall,
+              size: AuraIconSize.small,
             ),
-            label: Text(LocaleKeys.tools_screen_mcp_reconnect.tr()),
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              minimumSize: Size.zero,
+            tooltip: LocaleKeys.tools_screen_mcp_reconnect.tr(),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            style: IconButton.styleFrom(
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
           ),
@@ -273,6 +286,7 @@ class _DisconnectedBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraRow(
+      mainAxisSize: MainAxisSize.min,
       spacing: AuraSpacing.xs,
       children: [
         AuraBadge.text(
@@ -281,16 +295,16 @@ class _DisconnectedBadge extends StatelessWidget {
           child: Text(LocaleKeys.tools_screen_mcp_disconnected.tr()),
         ),
         if (onReconnect != null)
-          TextButton.icon(
+          IconButton(
             onPressed: onReconnect,
             icon: const AuraIcon(
               Icons.refresh,
-              size: AuraIconSize.extraSmall,
+              size: AuraIconSize.small,
             ),
-            label: Text(LocaleKeys.tools_screen_mcp_reconnect.tr()),
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              minimumSize: Size.zero,
+            tooltip: LocaleKeys.tools_screen_mcp_reconnect.tr(),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            style: IconButton.styleFrom(
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
           ),
