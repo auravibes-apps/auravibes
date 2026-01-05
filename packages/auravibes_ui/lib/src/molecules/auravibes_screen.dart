@@ -228,7 +228,7 @@ class AuraAppBar extends StatelessWidget {
                   onPressed: () {
                     Navigator.of(context).pop();
                   },
-                  semanticLabel: 'Back',
+                  semanticLabel: 'Back to previous screen',
                   tooltip: 'Back to previous screen',
                 ),
               AuraText(
