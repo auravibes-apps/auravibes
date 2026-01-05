@@ -190,7 +190,7 @@ class AuraScreenDefaults extends StatelessWidget {
   }
 }
 
-/// App Barr
+/// App Bar
 class AuraAppBar extends StatelessWidget {
   /// constructor
   const AuraAppBar({
