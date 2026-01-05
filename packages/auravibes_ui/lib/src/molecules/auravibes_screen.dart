@@ -231,7 +231,7 @@ class AuraAppBar extends StatelessWidget {
               if (leading != null)
                 leading!
               else if (Navigator.of(context).canPop() &&
-                  (ModalRoute.of(context)?.isCurrent ?? true))
+                  (ModalRoute.of(context)?.isCurrent ?? false))
                 AuraIconButton(
                   icon: Icons.chevron_left_rounded,
                   color: context.auraColors.onBackground,
