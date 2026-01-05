@@ -39,7 +39,7 @@ class _AuraScreenDefaultsScope extends InheritedWidget {
 
 /// screen manager
 class AuraScreen extends StatelessWidget {
-  /// Screan manager
+  /// Screen manager
   const AuraScreen({
     required this.child,
     this.allowOverride = false,
