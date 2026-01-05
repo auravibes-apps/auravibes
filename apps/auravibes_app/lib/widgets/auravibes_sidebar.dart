@@ -147,7 +147,7 @@ class _AuraSidebarWrapperState extends State<AuraSidebarWrapper>
   Widget _buildHeader(BuildContext context, {bool isDrawer = false}) {
     var title = F.title;
     if (!_isExpanded || isDrawer) {
-      title = title.substring(0, 1);
+      title = title.isNotEmpty ? title.substring(0, 1) : '';
     }
     return Container(
       height: 48,
