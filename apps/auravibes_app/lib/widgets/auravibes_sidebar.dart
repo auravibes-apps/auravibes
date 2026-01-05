@@ -1,3 +1,4 @@
+import 'package:auravibes_app/flavors.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/app_router.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -144,6 +145,10 @@ class _AuraSidebarWrapperState extends State<AuraSidebarWrapper>
 
   /// Builds the header widget with the AURA logo.
   Widget _buildHeader(BuildContext context, {bool isDrawer = false}) {
+    var title = F.title;
+    if (!_isExpanded || isDrawer) {
+      title = title.isNotEmpty ? title.substring(0, 1) : '';
+    }
     return Container(
       height: 48,
       decoration: BoxDecoration(
@@ -154,9 +159,26 @@ class _AuraSidebarWrapperState extends State<AuraSidebarWrapper>
         child: AuraText(
           style: AuraTextStyle.heading5,
           color: AuraColorVariant.onPrimary,
-          child: Text(isDrawer ? 'AURA' : (_isExpanded ? 'AURA' : 'T')),
+          child: Text(title),
         ),
       ),
+    );
+  }
+
+  /// Builds default app bar for screens that don't provide their own.
+  Widget? _buildDefaultAppBar(BuildContext context) {
+    final isSmallScreen = MediaQuery.of(context).size.width < 768;
+
+    return AuraAppBar(
+      leading: isSmallScreen
+          ? AuraIconButton(
+              icon: Icons.menu,
+              onPressed: () {
+                _scaffoldKey.currentState?.openDrawer();
+              },
+            )
+          : null,
+      title: Text(F.title),
     );
   }
 
@@ -213,45 +235,46 @@ class _AuraSidebarWrapperState extends State<AuraSidebarWrapper>
 
     if (isSmallScreen) {
       // Mobile: Use Scaffold drawer pattern
-      return Scaffold(
-        key: _scaffoldKey,
-        appBar: AppBar(
-          title: const Text('AURA'),
-          backgroundColor: context.auraColors.primary,
-          foregroundColor: context.auraColors.onPrimary,
-          elevation: 0,
-        ),
-        drawer: Drawer(
-          backgroundColor: context.auraColors.surface,
-          child: AuraSidebar<NavigationItemType>(
-            isExpanded: true, // Always expanded in drawer mode
-            animation: const AlwaysStoppedAnimation(1),
-            navigationItems: _buildNavigationItems(),
-            onNavigationTap: _handleNavigation,
-            header: _buildHeader(context, isDrawer: true),
-            footer: _buildFooter(context, isDrawer: true),
+      return AuraScreenDefaults(
+        appBarBuilder: _buildDefaultAppBar,
+        inheritLeadingWhen: (context) => !Navigator.of(context).canPop(),
+        child: Scaffold(
+          key: _scaffoldKey,
+          drawer: Drawer(
+            backgroundColor: context.auraColors.surface,
+            child: AuraSidebar<NavigationItemType>(
+              isExpanded: true, // Always expanded in drawer mode
+              animation: const AlwaysStoppedAnimation(1),
+              navigationItems: _buildNavigationItems(),
+              onNavigationTap: _handleNavigation,
+              header: _buildHeader(context, isDrawer: true),
+              footer: _buildFooter(context, isDrawer: true),
+            ),
           ),
+          body: widget.child,
         ),
-        body: widget.child,
       );
     } else {
       // Desktop: Use persistent sidebar
-      return Scaffold(
-        body: Row(
-          children: [
-            // Sidebar UI Component
-            AuraSidebar(
-              isExpanded: _isExpanded,
-              animation: _animation,
-              navigationItems: _buildNavigationItems(),
-              onNavigationTap: _handleNavigation,
-              header: _buildHeader(context),
-              footer: _buildFooter(context),
-            ),
+      return AuraScreenDefaults(
+        appBarBuilder: _buildDefaultAppBar,
+        child: Scaffold(
+          body: Row(
+            children: [
+              // Sidebar UI Component
+              AuraSidebar(
+                isExpanded: _isExpanded,
+                animation: _animation,
+                navigationItems: _buildNavigationItems(),
+                onNavigationTap: _handleNavigation,
+                header: _buildHeader(context),
+                footer: _buildFooter(context),
+              ),
 
-            // Main Content
-            Expanded(child: widget.child),
-          ],
+              // Main Content
+              Expanded(child: widget.child),
+            ],
+          ),
         ),
       );
     }
