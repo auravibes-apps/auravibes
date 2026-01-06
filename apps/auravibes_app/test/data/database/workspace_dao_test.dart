@@ -1,7 +1,25 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+/// Creates a database connection for testing.
+///
+/// This method creates an in-memory database suitable for unit tests.
+/// The database is isolated and doesn't persist data between test runs.
+QueryExecutor createTestConnection() {
+  return DatabaseConnection.delayed(
+    Future(() {
+      return DatabaseConnection(
+        LazyDatabase(() async {
+          // Use an in-memory database for testing
+          return NativeDatabase.memory();
+        }),
+      );
+    }),
+  );
+}
 
 void main() {
   group('WorkspaceDao Tests', () {
@@ -9,7 +27,7 @@ void main() {
 
     setUp(() async {
       // Use in-memory database for testing
-      database = AppDatabase(connection: AppDatabase.createTestConnection());
+      database = AppDatabase(connection: createTestConnection());
     });
 
     tearDown(() async {

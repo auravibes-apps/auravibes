@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:auravibes_app/data/database/drift/daos/api_model_providers_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/api_models_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/conversation_dao.dart';
@@ -24,8 +22,7 @@ import 'package:auravibes_app/data/database/drift/tables/tools_table.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspaces_table.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:drift_flutter/drift_flutter.dart';
 import 'package:uuid/v7.dart';
 
 part 'app_database.g.dart';
@@ -93,27 +90,15 @@ class AppDatabase extends _$AppDatabase {
   /// This method sets up a cross-platform SQLite database connection
   /// with proper configuration for mobile and desktop platforms.
   static QueryExecutor _openConnection() {
-    return LazyDatabase(() async {
-      final dbFolder = await getApplicationDocumentsDirectory();
-      final file = File('${dbFolder.path}/auravibes_app.db');
-      return NativeDatabase(file);
-    });
-  }
-
-  /// Creates a database connection for testing.
-  ///
-  /// This method creates an in-memory database suitable for unit tests.
-  /// The database is isolated and doesn't persist data between test runs.
-  static QueryExecutor createTestConnection() {
-    return DatabaseConnection.delayed(
-      Future(() {
-        return DatabaseConnection(
-          LazyDatabase(() async {
-            // Use an in-memory database for testing
-            return NativeDatabase.memory();
-          }),
-        );
-      }),
+    return driftDatabase(
+      name: 'auravibes_app',
+      web: .new(
+        sqlite3Wasm: Uri.parse('sqlite3.wasm'),
+        driftWorker: Uri.parse('drift_worker.dart.js'),
+      ),
+      native: const DriftNativeOptions(
+        shareAcrossIsolates: true,
+      ),
     );
   }
 
