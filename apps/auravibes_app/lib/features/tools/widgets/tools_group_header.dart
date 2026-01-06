@@ -255,7 +255,7 @@ class _ErrorBadge extends StatelessWidget {
         // View details button (icon-only)
         if (onViewError != null && groupWithTools.mcpErrorMessage != null)
           AuraIconButton(
-            onPressed: onViewError!,
+            onPressed: onViewError,
             icon: Icons.visibility_outlined,
             tooltip: LocaleKeys.tools_screen_mcp_view_error.tr(),
             size: .small,
@@ -264,7 +264,7 @@ class _ErrorBadge extends StatelessWidget {
         // Reconnect button (icon-only)
         if (onReconnect != null)
           AuraIconButton(
-            onPressed: onReconnect!,
+            onPressed: onReconnect,
             icon: Icons.refresh,
             tooltip: LocaleKeys.tools_screen_mcp_reconnect.tr(),
             size: .small,
