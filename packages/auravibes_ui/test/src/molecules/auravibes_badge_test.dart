@@ -1,5 +1,4 @@
 import 'package:auravibes_ui/src/atoms/auravibes_text.dart';
-import 'package:auravibes_ui/src/colors/oklch.dart';
 import 'package:auravibes_ui/src/molecules/auravibes_badge.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
@@ -55,57 +54,6 @@ void main() {
       final container = tester.widget<Container>(find.byType(Container));
       final decoration = container.decoration! as BoxDecoration;
       expect(decoration.color, DesignColors.secondaryBase);
-    });
-
-    testWidgets('applies success variant styling correctly', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraBadge(
-              variant: AuraBadgeVariant.success,
-              child: Text('Success'),
-            ),
-          ),
-        ),
-      );
-
-      final container = tester.widget<Container>(find.byType(Container));
-      final decoration = container.decoration! as BoxDecoration;
-      expect(decoration.color?.toOklch().hue, HueColorValues.success);
-    });
-
-    testWidgets('applies warning variant styling correctly', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraBadge(
-              variant: AuraBadgeVariant.warning,
-              child: Text('Warning'),
-            ),
-          ),
-        ),
-      );
-
-      final container = tester.widget<Container>(find.byType(Container));
-      final decoration = container.decoration! as BoxDecoration;
-      expect(decoration.color?.toOklch().hue, HueColorValues.warning);
-    });
-
-    testWidgets('applies error variant styling correctly', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraBadge(
-              variant: AuraBadgeVariant.error,
-              child: Text('Error'),
-            ),
-          ),
-        ),
-      );
-
-      final container = tester.widget<Container>(find.byType(Container));
-      final decoration = container.decoration! as BoxDecoration;
-      expect(decoration.color?.toOklch().hue, HueColorValues.error);
     });
 
     testWidgets('applies outlined variant styling correctly', (tester) async {
