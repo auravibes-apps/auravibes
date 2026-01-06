@@ -1,3 +1,4 @@
+import 'package:auravibes_ui/src/colors/oklch.dart';
 import 'package:auravibes_ui/src/molecules/auravibes_connection_status.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
@@ -24,7 +25,7 @@ void main() {
       );
 
       final decoration = container.decoration! as BoxDecoration;
-      expect(decoration.color, DesignColors.success);
+      expect(decoration.color?.toOklch().hue, HueColorValues.success);
     });
 
     testWidgets('renders offline status correctly', (tester) async {
@@ -46,7 +47,7 @@ void main() {
       );
 
       final decoration = container.decoration! as BoxDecoration;
-      expect(decoration.color, DesignColors.error);
+      expect(decoration.color?.toOklch().hue, HueColorValues.error);
     });
 
     testWidgets('renders connecting status with animation', (tester) async {
@@ -68,7 +69,7 @@ void main() {
       );
 
       final decoration = container.decoration! as BoxDecoration;
-      expect(decoration.color, DesignColors.warning);
+      expect(decoration.color?.toOklch().hue, HueColorValues.warning);
 
       // Should have AnimatedBuilder for pulsing animation
       // Find AnimatedBuilder specifically within AuraConnectionStatus
@@ -265,7 +266,7 @@ void main() {
       );
 
       final text = tester.widget<Text>(find.text('Online'));
-      expect(text.style?.color, DesignColors.success);
+      expect(text.style?.color?.toOklch().hue, HueColorValues.success);
     });
 
     group('AuraConnectionState enum', () {

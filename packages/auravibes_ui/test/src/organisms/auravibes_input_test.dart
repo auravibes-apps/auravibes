@@ -1,3 +1,4 @@
+import 'package:auravibes_ui/src/colors/oklch.dart';
 import 'package:auravibes_ui/src/organisms/auravibes_input.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
@@ -130,7 +131,10 @@ void main() {
       );
 
       final decoration = container.decoration! as BoxDecoration;
-      expect(decoration.border?.top.color, DesignColors.success);
+      expect(
+        decoration.border?.top.color.toOklch().hue,
+        HueColorValues.success,
+      );
     });
 
     testWidgets('applies warning state styling', (tester) async {
@@ -154,7 +158,10 @@ void main() {
       );
 
       final decoration = container.decoration! as BoxDecoration;
-      expect(decoration.border?.top.color, DesignColors.warning);
+      expect(
+        decoration.border?.top.color.toOklch().hue,
+        HueColorValues.warning,
+      );
     });
 
     testWidgets('applies error state styling', (tester) async {
@@ -178,7 +185,7 @@ void main() {
       );
 
       final decoration = container.decoration! as BoxDecoration;
-      expect(decoration.border?.top.color, DesignColors.error);
+      expect(decoration.border?.top.color.toOklch().hue, HueColorValues.error);
     });
 
     testWidgets('disables input when enabled is false', (tester) async {

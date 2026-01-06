@@ -78,7 +78,7 @@ class WidgetbookApp extends StatelessWidget {
           ),
         ),
       ),
-      extensions: const [AuraTheme.light],
+      extensions: [AuraTheme.light],
     );
   }
 
@@ -106,7 +106,7 @@ class WidgetbookApp extends StatelessWidget {
           ),
         ),
       ),
-      extensions: const [AuraTheme.dark],
+      extensions: [AuraTheme.dark],
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:auravibes_ui/src/atoms/auravibes_text.dart';
+import 'package:auravibes_ui/src/colors/oklch.dart';
 import 'package:auravibes_ui/src/molecules/auravibes_badge.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
@@ -70,7 +71,7 @@ void main() {
 
       final container = tester.widget<Container>(find.byType(Container));
       final decoration = container.decoration! as BoxDecoration;
-      expect(decoration.color, DesignColors.success);
+      expect(decoration.color?.toOklch().hue, HueColorValues.success);
     });
 
     testWidgets('applies warning variant styling correctly', (tester) async {
@@ -87,7 +88,7 @@ void main() {
 
       final container = tester.widget<Container>(find.byType(Container));
       final decoration = container.decoration! as BoxDecoration;
-      expect(decoration.color, DesignColors.warning);
+      expect(decoration.color?.toOklch().hue, HueColorValues.warning);
     });
 
     testWidgets('applies error variant styling correctly', (tester) async {
@@ -104,7 +105,7 @@ void main() {
 
       final container = tester.widget<Container>(find.byType(Container));
       final decoration = container.decoration! as BoxDecoration;
-      expect(decoration.color, DesignColors.error);
+      expect(decoration.color?.toOklch().hue, HueColorValues.error);
     });
 
     testWidgets('applies outlined variant styling correctly', (tester) async {

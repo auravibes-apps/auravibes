@@ -1,4 +1,5 @@
 import 'package:auravibes_ui/src/atoms/auravibes_message_status.dart';
+import 'package:auravibes_ui/src/colors/oklch.dart';
 import 'package:auravibes_ui/src/tokens/auravibes_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
@@ -10,7 +11,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: ThemeData.light().copyWith(
-            extensions: const [AuraTheme.light],
+            extensions: [AuraTheme.light],
           ),
           home: const Scaffold(
             body: AuraMessageStatus(
@@ -33,7 +34,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: ThemeData.light().copyWith(
-            extensions: const [AuraTheme.light],
+            extensions: [AuraTheme.light],
           ),
           home: const Scaffold(
             body: AuraMessageStatus(
@@ -66,7 +67,7 @@ void main() {
       expect(find.byIcon(Icons.done_all), findsOneWidget);
 
       final icon = tester.widget<Icon>(find.byIcon(Icons.done_all));
-      expect(icon.color, DesignColors.info);
+      expect(icon.color?.toOklch().hue, HueColorValues.info);
     });
 
     testWidgets('renders read status with correct icon', (tester) async {
@@ -84,7 +85,7 @@ void main() {
       expect(find.byIcon(Icons.done_all), findsOneWidget);
 
       final icon = tester.widget<Icon>(find.byIcon(Icons.done_all));
-      expect(icon.color, DesignColors.success);
+      expect(icon.color?.toOklch().hue, HueColorValues.success);
     });
 
     testWidgets('renders error status with correct icon', (tester) async {
@@ -102,7 +103,7 @@ void main() {
       expect(find.byIcon(Icons.error_outline), findsOneWidget);
 
       final icon = tester.widget<Icon>(find.byIcon(Icons.error_outline));
-      expect(icon.color, DesignColors.error);
+      expect(icon.color?.toOklch().hue, HueColorValues.error);
     });
 
     testWidgets('applies small size correctly', (tester) async {

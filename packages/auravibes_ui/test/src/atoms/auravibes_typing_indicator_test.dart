@@ -128,7 +128,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: ThemeData.light().copyWith(
-            extensions: const [AuraTheme.light],
+            extensions: [AuraTheme.light],
           ),
           home: const Scaffold(
             body: AuraTypingIndicator(),

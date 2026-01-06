@@ -42,13 +42,13 @@ class MyApp extends ConsumerWidget {
         supportedLocales: context.supportedLocales,
         builder: (context, child) => AuraText(child: child!),
         theme: ThemeData(
-          extensions: const [
+          extensions: [
             AuraTheme.light,
           ],
         ),
         darkTheme: ThemeData(
           colorScheme: const ColorScheme.dark(),
-          extensions: const [
+          extensions: [
             AuraTheme.dark,
           ],
         ),

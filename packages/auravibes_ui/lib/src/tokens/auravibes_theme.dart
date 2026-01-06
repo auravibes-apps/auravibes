@@ -1,3 +1,4 @@
+import 'package:auravibes_ui/src/colors/oklch.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -18,7 +19,7 @@ class AuraTheme extends ThemeExtension<AuraTheme> {
   });
 
   /// Light theme variant.
-  static const light = AuraTheme(
+  static final light = AuraTheme(
     colors: _lightColors,
     typography: _standardTypography,
     spacing: _standardSpacing,
@@ -28,7 +29,7 @@ class AuraTheme extends ThemeExtension<AuraTheme> {
   );
 
   /// Dark theme variant.
-  static const dark = AuraTheme(
+  static final dark = AuraTheme(
     colors: _darkColors,
     typography: _standardTypography,
     spacing: _standardSpacing,
@@ -37,8 +38,8 @@ class AuraTheme extends ThemeExtension<AuraTheme> {
     animation: _standardAnimation,
   );
 
-  static const _lightColors = AuraColorScheme._light();
-  static const _darkColors = AuraColorScheme._dark();
+  static final _lightColors = AuraColorScheme._light();
+  static final _darkColors = AuraColorScheme._dark();
   static const _standardTypography = AuraTypographyTheme._standard();
   static const _standardSpacing = AuraSpacingTheme._standard();
   static const _standardBorderRadius = AuraBorderRadiusTheme._standard();
@@ -146,7 +147,7 @@ class AuraColorScheme {
   });
 
   /// Creates a light color scheme.
-  const AuraColorScheme._light()
+  AuraColorScheme._light()
     : primary = DesignColors.primaryBase,
       primaryVariant = DesignColors.primaryDark,
       onPrimary = DesignColors.primaryContrast,
@@ -159,13 +160,29 @@ class AuraColorScheme {
       onSurfaceVariant = DesignColors.neutral700,
       background = DesignColors.neutral100,
       onBackground = DesignColors.neutral900,
-      error = DesignColors.error,
+      error = OKLCHColor(
+        hue: HueColorValues.error,
+        lightness: 0.6,
+        chroma: 0.2,
+      ).toColor(),
       onError = const Color(0xFFFFFFFF),
-      warning = DesignColors.warning,
+      warning = OKLCHColor(
+        hue: HueColorValues.warning,
+        lightness: 0.6,
+        chroma: 0.2,
+      ).toColor(),
       onWarning = const Color(0xFFFFFFFF),
-      success = DesignColors.success,
+      success = OKLCHColor(
+        hue: HueColorValues.success,
+        lightness: 0.6,
+        chroma: 0.2,
+      ).toColor(),
       onSuccess = const Color(0xFFFFFFFF),
-      info = DesignColors.info,
+      info = OKLCHColor(
+        hue: HueColorValues.info,
+        lightness: 0.6,
+        chroma: 0.2,
+      ).toColor(),
       onInfo = const Color(0xFFFFFFFF),
       outline = DesignColors.neutral300,
       outlineVariant = DesignColors.neutral200,
@@ -176,7 +193,7 @@ class AuraColorScheme {
       inversePrimary = DesignColors.primaryLight;
 
   /// Creates a dark color scheme.
-  const AuraColorScheme._dark()
+  AuraColorScheme._dark()
     : primary = DesignColors.primaryLight,
       primaryVariant = DesignColors.primaryBase,
       onPrimary = DesignColors.neutral900,
@@ -189,13 +206,29 @@ class AuraColorScheme {
       onSurfaceVariant = DesignColors.neutral300,
       background = DesignColors.neutral900,
       onBackground = DesignColors.neutral100,
-      error = const Color(0xFFFF6B6B),
+      error = OKLCHColor(
+        hue: HueColorValues.error,
+        lightness: 0.4,
+        chroma: 0.2,
+      ).toColor(),
       onError = DesignColors.neutral900,
-      warning = const Color(0xFFFFD93D),
+      warning = OKLCHColor(
+        hue: HueColorValues.warning,
+        lightness: 0.4,
+        chroma: 0.2,
+      ).toColor(),
       onWarning = DesignColors.neutral900,
-      success = const Color(0xFF4ECDC4),
+      success = OKLCHColor(
+        hue: HueColorValues.success,
+        lightness: 0.4,
+        chroma: 0.2,
+      ).toColor(),
       onSuccess = DesignColors.neutral900,
-      info = const Color(0xFF74C0FC),
+      info = OKLCHColor(
+        hue: HueColorValues.info,
+        lightness: 0.4,
+        chroma: 0.2,
+      ).toColor(),
       onInfo = DesignColors.neutral900,
       outline = DesignColors.neutral600,
       outlineVariant = DesignColors.neutral700,

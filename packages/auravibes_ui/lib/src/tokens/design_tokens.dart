@@ -9,6 +9,23 @@ class DesignTokens {
   DesignTokens._();
 }
 
+/// Hue color values for semantic colors.
+class HueColorValues {
+  HueColorValues._();
+
+  /// Hue value for success color (green).
+  static const double success = 149.04;
+
+  /// Hue value for error color (red).
+  static const double error = 25.33;
+
+  /// Hue value for warning color (yellow/orange).
+  static const double warning = 70.08;
+
+  /// Hue value for info color (blue/purple).
+  static const double info = 259.32;
+}
+
 /// Color tokens based on the design system specification.
 ///
 /// Provides a comprehensive color palette including primary, secondary,
@@ -91,18 +108,6 @@ class DesignColors {
   static const Color neutral900 = Color(0xFF0F172A);
 
   // Semantic colors
-
-  /// Success color for positive feedback and completed states.
-  static const Color success = Color(0xFF22C55E);
-
-  /// Warning color for cautionary messages and pending states.
-  static const Color warning = Color(0xFFF59E0B);
-
-  /// Error color for negative feedback and failed states.
-  static const Color error = Color(0xFFEF4444);
-
-  /// Info color for informational messages and neutral feedback.
-  static const Color info = Color.fromARGB(255, 112, 163, 244);
 
   /// Transparent color
   static const Color transparent = Color(0x00000000);
