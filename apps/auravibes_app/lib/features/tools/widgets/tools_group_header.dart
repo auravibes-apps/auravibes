@@ -61,27 +61,20 @@ class ToolsGroupHeader extends StatelessWidget {
             spacing: AuraSpacing.xs,
             children: [
               // Name row with status badge
-              AuraRow(
-                spacing: AuraSpacing.sm,
-                children: [
-                  Flexible(
-                    child: AuraText(
-                      style: AuraTextStyle.heading6,
-                      child: Text(
-                        groupWithTools.displayName,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ),
-                  if (groupWithTools.isMcpGroup)
-                    _McpStatusBadge(
-                      groupWithTools: groupWithTools,
-                      onReconnect: onReconnect,
-                      onViewError: onViewError,
-                    ),
-                ],
+              AuraText(
+                style: AuraTextStyle.heading6,
+                child: Text(
+                  groupWithTools.displayName,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
 
+              if (groupWithTools.isMcpGroup)
+                _McpStatusBadge(
+                  groupWithTools: groupWithTools,
+                  onReconnect: onReconnect,
+                  onViewError: onViewError,
+                ),
               // Tool count
               AuraText(
                 style: AuraTextStyle.bodySmall,
@@ -236,56 +229,47 @@ class _ErrorBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraRow(
-      spacing: AuraSpacing.xs,
+      mainAxisSize: MainAxisSize.min,
+      spacing: .xs,
       children: [
-        // Error badge with truncated message
+        // Error badge (compact)
         Tooltip(
           message: groupWithTools.mcpErrorMessage ?? '',
           child: AuraBadge.text(
-            variant: AuraBadgeVariant.error,
+            variant: .error,
             size: AuraBadgeSize.small,
             child: AuraRow(
               spacing: AuraSpacing.xs,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 const AuraIcon(
                   Icons.error_outline,
                   size: AuraIconSize.extraSmall,
                 ),
-                Text(
-                  groupWithTools.truncatedErrorMessage ??
-                      LocaleKeys.tools_screen_mcp_error.tr(),
-                  overflow: TextOverflow.ellipsis,
-                ),
+                Text(LocaleKeys.tools_screen_mcp_error.tr()),
               ],
             ),
           ),
         ),
 
-        // View details button
+        // View details button (icon-only)
         if (onViewError != null && groupWithTools.mcpErrorMessage != null)
-          InkWell(
-            onTap: onViewError,
-            child: AuraText(
-              style: AuraTextStyle.bodySmall,
-              color: AuraColorVariant.primary,
-              child: Text(LocaleKeys.tools_screen_mcp_view_error.tr()),
-            ),
+          AuraIconButton(
+            onPressed: onViewError,
+            icon: Icons.visibility_outlined,
+            tooltip: LocaleKeys.tools_screen_mcp_view_error.tr(),
+            size: .small,
           ),
 
-        // Reconnect button
+        // Reconnect button (icon-only)
         if (onReconnect != null)
-          TextButton.icon(
+          AuraIconButton(
             onPressed: onReconnect,
-            icon: const AuraIcon(
-              Icons.refresh,
-              size: AuraIconSize.extraSmall,
-            ),
-            label: Text(LocaleKeys.tools_screen_mcp_reconnect.tr()),
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
+            icon: Icons.refresh,
+            tooltip: LocaleKeys.tools_screen_mcp_reconnect.tr(),
+            size: .small,
+            // padding: EdgeInsets.zero,
+            // constraints: const BoxConstraints(),
           ),
       ],
     );
@@ -301,6 +285,7 @@ class _DisconnectedBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraRow(
+      mainAxisSize: MainAxisSize.min,
       spacing: AuraSpacing.xs,
       children: [
         AuraBadge.text(
@@ -309,16 +294,16 @@ class _DisconnectedBadge extends StatelessWidget {
           child: Text(LocaleKeys.tools_screen_mcp_disconnected.tr()),
         ),
         if (onReconnect != null)
-          TextButton.icon(
+          IconButton(
             onPressed: onReconnect,
             icon: const AuraIcon(
               Icons.refresh,
-              size: AuraIconSize.extraSmall,
+              size: AuraIconSize.small,
             ),
-            label: Text(LocaleKeys.tools_screen_mcp_reconnect.tr()),
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              minimumSize: Size.zero,
+            tooltip: LocaleKeys.tools_screen_mcp_reconnect.tr(),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            style: IconButton.styleFrom(
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
           ),

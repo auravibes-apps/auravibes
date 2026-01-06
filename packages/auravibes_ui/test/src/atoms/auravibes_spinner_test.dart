@@ -429,19 +429,15 @@ void main() {
   });
 
   group('AuraDotsSpinner', () {
-    // Skip these animation-based tests
-    // due to complex timer handling in test environment
-    testWidgets('creates AuraDotsSpinner widget', (tester) async {
-      // Simple construction test without animation timer issues
+    test('creates AuraDotsSpinner with default parameters', () {
       const dotsSpinner = AuraDotsSpinner();
       expect(dotsSpinner.size, AuraSpinnerSize.medium);
       expect(dotsSpinner.dotCount, 3);
       expect(dotsSpinner.semanticLabel, isNull);
+      expect(dotsSpinner.color, isNull);
     });
 
-    testWidgets('creates AuraDotsSpinner with custom parameters', (
-      tester,
-    ) async {
+    test('creates AuraDotsSpinner with custom parameters', () {
       const customColor = Colors.blue;
       const semanticLabel = 'Loading dots';
       const dotCount = 5;
@@ -458,5 +454,5 @@ void main() {
       expect(dotsSpinner.dotCount, dotCount);
       expect(dotsSpinner.semanticLabel, semanticLabel);
     });
-  }, skip: 'Animation timers cause test environment issues');
+  });
 }
