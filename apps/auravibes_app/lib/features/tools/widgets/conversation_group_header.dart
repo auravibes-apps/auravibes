@@ -220,6 +220,7 @@ class _ErrorBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return AuraRow(
       mainAxisSize: MainAxisSize.min,
+      spacing: .sm,
       children: [
         // Error badge (compact)
         Tooltip(
@@ -243,34 +244,20 @@ class _ErrorBadge extends StatelessWidget {
 
         // View details button (icon-only)
         if (onViewError != null && groupWithTools.mcpErrorMessage != null)
-          IconButton(
+          AuraIconButton(
             onPressed: onViewError,
-            icon: const AuraIcon(
-              Icons.visibility_outlined,
-              size: AuraIconSize.small,
-            ),
+            icon: Icons.visibility_outlined,
             tooltip: LocaleKeys.tools_screen_mcp_view_error.tr(),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-            style: IconButton.styleFrom(
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
+            size: .small,
           ),
 
         // Reconnect button (icon-only)
         if (onReconnect != null)
-          IconButton(
+          AuraIconButton(
             onPressed: onReconnect,
-            icon: const AuraIcon(
-              Icons.refresh,
-              size: AuraIconSize.small,
-            ),
+            icon: Icons.refresh,
             tooltip: LocaleKeys.tools_screen_mcp_reconnect.tr(),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-            style: IconButton.styleFrom(
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
+            size: AuraIconSize.small,
           ),
       ],
     );

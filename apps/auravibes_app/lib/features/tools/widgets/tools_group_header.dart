@@ -61,27 +61,20 @@ class ToolsGroupHeader extends StatelessWidget {
             spacing: AuraSpacing.xs,
             children: [
               // Name row with status badge
-              AuraRow(
-                spacing: AuraSpacing.sm,
-                children: [
-                  Flexible(
-                    child: AuraText(
-                      style: AuraTextStyle.heading6,
-                      child: Text(
-                        groupWithTools.displayName,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ),
-                  if (groupWithTools.isMcpGroup)
-                    _McpStatusBadge(
-                      groupWithTools: groupWithTools,
-                      onReconnect: onReconnect,
-                      onViewError: onViewError,
-                    ),
-                ],
+              AuraText(
+                style: AuraTextStyle.heading6,
+                child: Text(
+                  groupWithTools.displayName,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
 
+              if (groupWithTools.isMcpGroup)
+                _McpStatusBadge(
+                  groupWithTools: groupWithTools,
+                  onReconnect: onReconnect,
+                  onViewError: onViewError,
+                ),
               // Tool count
               AuraText(
                 style: AuraTextStyle.bodySmall,
@@ -237,12 +230,13 @@ class _ErrorBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return AuraRow(
       mainAxisSize: MainAxisSize.min,
+      spacing: .xs,
       children: [
         // Error badge (compact)
         Tooltip(
           message: groupWithTools.mcpErrorMessage ?? '',
           child: AuraBadge.text(
-            variant: AuraBadgeVariant.error,
+            variant: .error,
             size: AuraBadgeSize.small,
             child: AuraRow(
               spacing: AuraSpacing.xs,
@@ -260,34 +254,22 @@ class _ErrorBadge extends StatelessWidget {
 
         // View details button (icon-only)
         if (onViewError != null && groupWithTools.mcpErrorMessage != null)
-          IconButton(
-            onPressed: onViewError,
-            icon: const AuraIcon(
-              Icons.visibility_outlined,
-              size: AuraIconSize.small,
-            ),
+          AuraIconButton(
+            onPressed: onViewError!,
+            icon: Icons.visibility_outlined,
             tooltip: LocaleKeys.tools_screen_mcp_view_error.tr(),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-            style: IconButton.styleFrom(
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
+            size: .small,
           ),
 
         // Reconnect button (icon-only)
         if (onReconnect != null)
-          IconButton(
-            onPressed: onReconnect,
-            icon: const AuraIcon(
-              Icons.refresh,
-              size: AuraIconSize.small,
-            ),
+          AuraIconButton(
+            onPressed: onReconnect!,
+            icon: Icons.refresh,
             tooltip: LocaleKeys.tools_screen_mcp_reconnect.tr(),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-            style: IconButton.styleFrom(
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
+            size: .small,
+            // padding: EdgeInsets.zero,
+            // constraints: const BoxConstraints(),
           ),
       ],
     );

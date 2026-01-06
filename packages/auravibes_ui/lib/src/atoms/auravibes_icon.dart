@@ -68,7 +68,7 @@ class AuraIconButton extends StatelessWidget {
   /// Creates a Aura icon button.
   const AuraIconButton({
     required this.icon,
-    required this.onPressed,
+    this.onPressed,
     super.key,
     this.disabled = false,
     this.size = AuraIconSize.medium,
@@ -83,7 +83,7 @@ class AuraIconButton extends StatelessWidget {
   final IconData icon;
 
   /// The callback that is called when the button is pressed.
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
 
   /// Whether the button is disabled.
   final bool disabled;
