@@ -633,7 +633,7 @@ const String APP_TITLE = 'Aura';       // App title
 
 - **Navigation animation flickering on iOS**: Under investigation
 - **Memory leak in chat widget**: Workaround implemented, tracking in issue tracker
-- **Hot reload偶尔失败**: Sometimes requires hot restart
+- **Hot reload occasionally fails**: Sometimes requires hot restart
 
 ### Upcoming Features
 
