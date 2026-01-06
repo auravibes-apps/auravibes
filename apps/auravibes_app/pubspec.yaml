@@ -45,7 +45,6 @@ dependencies:
   math_expressions: ^3.1.0
   mcp_client: ^1.0.2
   openai_dart: ^0.6.0+1
-  path_provider: ^2.1.5
 
   # Other dependencies
   riverpod: ^3.0.3
