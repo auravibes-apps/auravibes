@@ -10,7 +10,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: ThemeData(
-            extensions: const [
+            extensions: [
               AuraTheme.light,
             ],
           ),
@@ -29,7 +29,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: ThemeData(
-            extensions: const [
+            extensions: [
               AuraTheme.light,
             ],
           ),
@@ -59,7 +59,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: ThemeData(
-            extensions: const [
+            extensions: [
               AuraTheme.light,
             ],
           ),
@@ -92,7 +92,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: ThemeData(
-            extensions: const [
+            extensions: [
               AuraTheme.light,
             ],
           ),
@@ -115,7 +115,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: ThemeData(
-            extensions: const [
+            extensions: [
               AuraTheme.light,
             ],
           ),
@@ -133,7 +133,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: ThemeData(
-            extensions: const [
+            extensions: [
               AuraTheme.light,
             ],
           ),
@@ -161,7 +161,7 @@ void main() {
             ),
             child: MaterialApp(
               theme: ThemeData(
-                extensions: const [
+                extensions: [
                   AuraTheme.light,
                 ],
               ),
@@ -190,7 +190,7 @@ void main() {
           ),
           child: MaterialApp(
             theme: ThemeData(
-              extensions: const [
+              extensions: [
                 AuraTheme.light,
               ],
             ),
@@ -215,7 +215,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: ThemeData(
-            extensions: const [
+            extensions: [
               AuraTheme.light,
             ],
           ),
@@ -249,7 +249,7 @@ void main() {
             inheritLeadingWhen: (context) => true,
             child: MaterialApp(
               theme: ThemeData(
-                extensions: const [
+                extensions: [
                   AuraTheme.light,
                 ],
               ),
@@ -285,7 +285,7 @@ void main() {
             inheritLeadingWhen: (context) => false,
             child: MaterialApp(
               theme: ThemeData(
-                extensions: const [
+                extensions: [
                   AuraTheme.light,
                 ],
               ),
@@ -320,7 +320,7 @@ void main() {
             inheritLeadingWhen: (context) => true,
             child: MaterialApp(
               theme: ThemeData(
-                extensions: const [
+                extensions: [
                   AuraTheme.light,
                 ],
               ),
@@ -350,7 +350,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: ThemeData(
-            extensions: const [
+            extensions: [
               AuraTheme.light,
             ],
           ),

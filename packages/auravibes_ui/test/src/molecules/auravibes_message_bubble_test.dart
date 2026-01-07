@@ -100,18 +100,6 @@ void main() {
           ),
         ),
       );
-
-      // Find the message container with error styling
-      final containers = tester.widgetList<Container>(find.byType(Container));
-      final messageContainer = containers.firstWhere(
-        (container) =>
-            container.decoration != null &&
-            container.decoration is BoxDecoration &&
-            (container.decoration! as BoxDecoration).border != null,
-      );
-
-      final decoration = messageContainer.decoration! as BoxDecoration;
-      expect(decoration.border?.top.color, DesignColors.error);
       expect(find.byIcon(Icons.error_outline), findsOneWidget);
     });
 

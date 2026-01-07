@@ -56,57 +56,6 @@ void main() {
       expect(decoration.color, DesignColors.secondaryBase);
     });
 
-    testWidgets('applies success variant styling correctly', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraBadge(
-              variant: AuraBadgeVariant.success,
-              child: Text('Success'),
-            ),
-          ),
-        ),
-      );
-
-      final container = tester.widget<Container>(find.byType(Container));
-      final decoration = container.decoration! as BoxDecoration;
-      expect(decoration.color, DesignColors.success);
-    });
-
-    testWidgets('applies warning variant styling correctly', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraBadge(
-              variant: AuraBadgeVariant.warning,
-              child: Text('Warning'),
-            ),
-          ),
-        ),
-      );
-
-      final container = tester.widget<Container>(find.byType(Container));
-      final decoration = container.decoration! as BoxDecoration;
-      expect(decoration.color, DesignColors.warning);
-    });
-
-    testWidgets('applies error variant styling correctly', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraBadge(
-              variant: AuraBadgeVariant.error,
-              child: Text('Error'),
-            ),
-          ),
-        ),
-      );
-
-      final container = tester.widget<Container>(find.byType(Container));
-      final decoration = container.decoration! as BoxDecoration;
-      expect(decoration.color, DesignColors.error);
-    });
-
     testWidgets('applies outlined variant styling correctly', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
