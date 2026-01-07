@@ -10,19 +10,30 @@ class DesignTokens {
 }
 
 /// Hue color values for semantic colors.
+///
+/// These values are the hue components (in degrees) extracted from the
+/// semantic brand colors defined in the design system. The original colors
+/// are specified as hex/ARGB values in [DesignColors] (for example, the
+/// success, error, warning, and info semantic colors), then converted to an
+/// HSL/HSB color space and the resulting hue channel is recorded here.
+///
+/// When updating any of the underlying semantic colors in the design system,
+/// recalculate these hue values using the same conversion process instead of
+/// choosing arbitrary numbers, to keep the token set consistent and
+/// traceable back to the source design.
 class HueColorValues {
   HueColorValues._();
 
-  /// Hue value for success color (green).
+  /// Hue value (in degrees) for the success semantic color (green range).
   static const double success = 149.04;
 
-  /// Hue value for error color (red).
+  /// Hue value (in degrees) for the error semantic color (red range).
   static const double error = 25.33;
 
-  /// Hue value for warning color (yellow/orange).
+  /// Hue value (in degrees) for the warning semantic color (yellow/orange range).
   static const double warning = 70.08;
 
-  /// Hue value for info color (blue/purple).
+  /// Hue value (in degrees) for the info semantic color (blue/purple range).
   static const double info = 259.32;
 }
 
