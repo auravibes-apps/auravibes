@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 /// Extension providing color manipulation utilities for [Color].
-extension VegaColorExtension on Color {
+extension AuraColorExtension on Color {
   /// Returns the inverted version of this color.
   Color get invertColor => Color.from(
     red: 1 - r,
@@ -15,7 +15,7 @@ extension VegaColorExtension on Color {
   ///
   /// The [ratio] parameter determines the interpolation (0.0 = this color,
   /// 1.0 = target color).
-  Color incremetRelative(double ratio, Color color) => Color.from(
+  Color incrementRelative(double ratio, Color color) => Color.from(
     red: r + ((color.r - r) * ratio),
     green: g + ((color.g - g) * ratio),
     blue: b + ((color.b - b) * ratio),

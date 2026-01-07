@@ -1,7 +1,7 @@
 import 'dart:core';
 import 'dart:math' as math;
 
-import 'package:auravibes_ui/src/colors/matrix_transormations.dart';
+import 'package:auravibes_ui/src/colors/matrix_transformations.dart';
 import 'package:flutter/widgets.dart';
 
 extension on num {
@@ -223,6 +223,15 @@ class OklabColor extends ValueColor {
   /// Converts to sRGB color space.
   RgbColor toRgb() => toLrgb().toRgb();
 
+  /// Returns the valid limits for Oklab color space components.
+  ///
+  /// The a component (green-red axis) uses range [-0.4, 0.4].
+  /// The b component (blue-yellow axis) uses range [-0.4, 0.4].
+  /// These limits represent the gamut of colors that can be
+  /// displayed in sRGB, derived from the mathematical
+  /// transformation between sRGB and Oklab color spaces.
+  /// Values outside this range represent colors that cannot be
+  /// rendered in standard sRGB displays.
   @override
   (Vector, Vector) get validLimits => (
     const Vector(0, -0.4, -0.4),

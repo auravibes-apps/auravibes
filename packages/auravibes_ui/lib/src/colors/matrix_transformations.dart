@@ -38,7 +38,7 @@ class MatrixTransformation {
   const MatrixTransformation(this.v1, this.v2, this.v3);
 
   /// Creates a matrix by multiplying [a] and [b].
-  factory MatrixTransformation.mulitply(
+  factory MatrixTransformation.multiply(
     MatrixTransformation a,
     MatrixTransformation b,
   ) => MatrixTransformation(
@@ -65,7 +65,7 @@ class MatrixTransformation {
 
   /// Multiplies this matrix with [other] and returns the result.
   MatrixTransformation operator *(MatrixTransformation other) =>
-      MatrixTransformation.mulitply(this, other);
+      MatrixTransformation.multiply(this, other);
 }
 
 /// Matrix transformation from XYZ to RGB color space.
