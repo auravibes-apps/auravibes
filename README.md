@@ -94,7 +94,7 @@ Follow these steps to get a local copy up and running:
 #### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/auravibes/auravibes.git
+git clone https://github.com/auravibes-apps/auravibes.git
 cd auravibes
 ```
 
