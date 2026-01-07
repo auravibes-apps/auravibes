@@ -239,21 +239,56 @@ class OklabColor extends ValueColor {
   );
 }
 
-// Enum values are self-explanatory and do not require individual documentation
-// ignore_for_file: public_member_api_docs
 /// Predefined shades for OKLCH colors with varying lightness and chroma.
+///
+/// The numeric suffix follows a familiar 100–900 scale, where
+/// [OKLCHShades.s100] is the lightest shade and [OKLCHShades.s900]
+/// is the darkest.
 enum OKLCHShades {
+  /// Lightest shade (highest lightness, lowest chroma).
+  ///
+  /// Use for backgrounds or subtle tints.
   s100,
-  s200,
-  s300,
-  s400,
-  s500,
-  s600,
-  s700,
-  s800,
-  s900
-  ;
 
+  /// Very light shade.
+  ///
+  /// Slightly darker and more saturated than [OKLCHShades.s100].
+  s200,
+
+  /// Light shade.
+  ///
+  /// Typically used for hover states, borders, or light accents.
+  s300,
+
+  /// Light-to-mid shade.
+  ///
+  /// Darker and more saturated than [OKLCHShades.s300].
+  s400,
+
+  /// Mid shade (balanced lightness and chroma).
+  ///
+  /// Often used as the primary color value.
+  s500,
+
+  /// Mid-to-dark shade.
+  ///
+  /// Darker and more saturated than [OKLCHShades.s500].
+  s600,
+
+  /// Dark shade.
+  ///
+  /// Suitable for strong accents or pressed states.
+  s700,
+
+  /// Very dark shade.
+  ///
+  /// Approaches background/ink colors for high contrast.
+  s800,
+
+  /// Darkest shade (lowest lightness, low chroma).
+  ///
+  /// Use for text or the most prominent dark elements.
+  s900;
   /// The chroma value for this shade.
   double get chroma => switch (this) {
     OKLCHShades.s100 || OKLCHShades.s900 => 0.02,
