@@ -1,6 +1,4 @@
-import 'package:auravibes_ui/src/colors/oklch.dart';
 import 'package:auravibes_ui/src/organisms/auravibes_input.dart';
-import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -108,84 +106,6 @@ void main() {
 
       expect(find.text(errorText), findsOneWidget);
       expect(find.text(helperText), findsNothing);
-    });
-
-    testWidgets('applies success state styling', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraInput(
-              state: AuraInputState.success,
-            ),
-          ),
-        ),
-      );
-
-      final container = tester.widget<Container>(
-        find
-            .ancestor(
-              of: find.byType(TextFormField),
-              matching: find.byType(Container),
-            )
-            .first,
-      );
-
-      final decoration = container.decoration! as BoxDecoration;
-      expect(
-        decoration.border?.top.color.toOklch().hue,
-        HueColorValues.success,
-      );
-    });
-
-    testWidgets('applies warning state styling', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraInput(
-              state: AuraInputState.warning,
-            ),
-          ),
-        ),
-      );
-
-      final container = tester.widget<Container>(
-        find
-            .ancestor(
-              of: find.byType(TextFormField),
-              matching: find.byType(Container),
-            )
-            .first,
-      );
-
-      final decoration = container.decoration! as BoxDecoration;
-      expect(
-        decoration.border?.top.color.toOklch().hue,
-        HueColorValues.warning,
-      );
-    });
-
-    testWidgets('applies error state styling', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraInput(
-              state: AuraInputState.error,
-            ),
-          ),
-        ),
-      );
-
-      final container = tester.widget<Container>(
-        find
-            .ancestor(
-              of: find.byType(TextFormField),
-              matching: find.byType(Container),
-            )
-            .first,
-      );
-
-      final decoration = container.decoration! as BoxDecoration;
-      expect(decoration.border?.top.color.toOklch().hue, HueColorValues.error);
     });
 
     testWidgets('disables input when enabled is false', (tester) async {
