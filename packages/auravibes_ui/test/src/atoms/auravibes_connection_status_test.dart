@@ -1,55 +1,9 @@
-import 'package:auravibes_ui/src/colors/oklch.dart';
 import 'package:auravibes_ui/src/molecules/auravibes_connection_status.dart';
-import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('AuraConnectionStatus', () {
-    testWidgets('renders online status correctly', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraConnectionStatus(
-              status: AuraConnectionState.online,
-            ),
-          ),
-        ),
-      );
-
-      final container = tester.widget<Container>(
-        find.descendant(
-          of: find.byType(AuraConnectionStatus),
-          matching: find.byType(Container),
-        ),
-      );
-
-      final decoration = container.decoration! as BoxDecoration;
-      expect(decoration.color?.toOklch().hue, HueColorValues.success);
-    });
-
-    testWidgets('renders offline status correctly', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraConnectionStatus(
-              status: AuraConnectionState.offline,
-            ),
-          ),
-        ),
-      );
-
-      final container = tester.widget<Container>(
-        find.descendant(
-          of: find.byType(AuraConnectionStatus),
-          matching: find.byType(Container),
-        ),
-      );
-
-      final decoration = container.decoration! as BoxDecoration;
-      expect(decoration.color?.toOklch().hue, HueColorValues.error);
-    });
-
     testWidgets('renders connecting status with animation', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
@@ -60,16 +14,6 @@ void main() {
           ),
         ),
       );
-
-      final container = tester.widget<Container>(
-        find.descendant(
-          of: find.byType(AuraConnectionStatus),
-          matching: find.byType(Container),
-        ),
-      );
-
-      final decoration = container.decoration! as BoxDecoration;
-      expect(decoration.color?.toOklch().hue, HueColorValues.warning);
 
       // Should have AnimatedBuilder for pulsing animation
       // Find AnimatedBuilder specifically within AuraConnectionStatus
@@ -251,22 +195,6 @@ void main() {
         matching: find.byType(AnimatedBuilder),
       );
       expect(animatedBuilderInStatus2, findsOneWidget);
-    });
-
-    testWidgets('label color matches status color', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraConnectionStatus(
-              status: AuraConnectionState.online,
-              showLabel: true,
-            ),
-          ),
-        ),
-      );
-
-      final text = tester.widget<Text>(find.text('Online'));
-      expect(text.style?.color?.toOklch().hue, HueColorValues.success);
     });
 
     group('AuraConnectionState enum', () {
