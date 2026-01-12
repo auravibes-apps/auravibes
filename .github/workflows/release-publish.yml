@@ -1,0 +1,21 @@
+name: Publish release
+on:
+  push:
+    tags:
+      - 'auravibes_app-v*'
+
+jobs:
+  publish-release:
+    name: Create GitHub release
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📦 Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
