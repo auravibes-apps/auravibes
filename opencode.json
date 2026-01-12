@@ -71,6 +71,6 @@
         "mcp-server",
         "--force-roots-fallback"
       ]
-    },
+    }
   }
 }
