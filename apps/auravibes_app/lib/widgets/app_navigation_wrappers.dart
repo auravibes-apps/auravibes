@@ -44,15 +44,10 @@ class AuraSidebarWrapper extends HookWidget {
   const AuraSidebarWrapper({
     required this.navigationShell,
     super.key,
-    this.isInitiallyExpanded = true,
   });
 
   /// The main content to display next to the sidebar.
   final StatefulNavigationShell navigationShell;
-
-  /// Whether the sidebar should be expanded initially (desktop only).
-  final bool isInitiallyExpanded;
-
   void _goBranch(int index) {
     navigationShell.goBranch(
       index,
