@@ -64,7 +64,6 @@ class AuraSidebar extends StatelessWidget {
           else
             SizedBox(height: context.auraTheme.spacing.lg),
           Expanded(child: _buildNavigationItems(context)),
-          const ColoredBox(color: Colors.red),
           _buildNavigationItems(context, footer: true),
           if (footer != null) _buildFooterSection(context),
         ],
