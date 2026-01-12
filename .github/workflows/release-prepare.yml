@@ -21,7 +21,7 @@ jobs:
 
       - name: 🏷️ Bump app version
         run: |
-          sed -i '' "s/^version: .*/version: ${{ inputs.version }}/" apps/auravibes_app/pubspec.yaml
+          sed -i "s/^version: .*/version: ${{ inputs.version }}/" apps/auravibes_app/pubspec.yaml
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout -b release-${{ inputs.version }}
