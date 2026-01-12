@@ -35,6 +35,7 @@ class AuraPressable extends StatefulWidget {
   /// clipBehavior
   final Clip? clipBehavior;
 
+  /// padding
   final AuraEdgeInsetsGeometry? padding;
 
   @override

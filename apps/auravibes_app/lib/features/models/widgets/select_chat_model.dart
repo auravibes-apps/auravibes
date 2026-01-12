@@ -47,16 +47,18 @@ class SelectCredentialsModelWidget extends HookConsumerWidget
         placeholder: const TextLocale(
           LocaleKeys.chats_screens_chat_conversation_select_model_selctor,
         ),
-        options: options
-            .map(
-              (model) => AuraDropdownOption(
-                value: model.credentialsModel.id,
-                child: Text(
-                  '${model.credentials.name} - ${model.credentialsModel.modelId}',
-                ),
+        options: options.map(
+          (model) {
+            final name = model.credentials.name;
+            final modelId = model.credentialsModel.modelId;
+            return AuraDropdownOption(
+              value: model.credentialsModel.id,
+              child: Text(
+                '$name - $modelId',
               ),
-            )
-            .toList(),
+            );
+          },
+        ).toList(),
 
         header: switch (credentialsModelsAsync) {
           AsyncLoading<List<CredentialsModelWithProviderEntity>>() =>
