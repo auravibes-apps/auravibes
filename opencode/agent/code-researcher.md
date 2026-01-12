@@ -1,5 +1,5 @@
 ---
-description: Deep seach the code to understand how some things are implemented
+description: Deep search the code to understand how some things are implemented
 mode: subagent
 temperature: 0.1
 hidden: true
