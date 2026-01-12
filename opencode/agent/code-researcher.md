@@ -36,6 +36,6 @@ a code research specialist that combines
 
 
 ## Response
-- From the original request, fo a full summary of findings
+- From the original request, do a full summary of findings
 - add relative paths to files of findings related to the question
 - omit non relevant information related to the original question
