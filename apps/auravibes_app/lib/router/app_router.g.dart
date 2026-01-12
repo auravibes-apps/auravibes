@@ -8,53 +8,48 @@ part of 'app_router.dart';
 
 List<RouteBase> get $appRoutes => [$myShellRouteData];
 
-RouteBase get $myShellRouteData => ShellRouteData.$route(
-  navigatorKey: MyShellRouteData.$navigatorKey,
+RouteBase get $myShellRouteData => StatefulShellRouteData.$route(
   factory: $MyShellRouteDataExtension._fromState,
-  routes: [
-    GoRouteData.$route(path: '/home', factory: $HomeRoute._fromState),
-    GoRouteData.$route(
-      path: '/chats',
-      factory: $ChatsRoute._fromState,
+  branches: [
+    StatefulShellBranchData.$branch(
       routes: [
-        GoRouteData.$route(path: 'new', factory: $NewChatRoute._fromState),
         GoRouteData.$route(
-          path: ':chatId',
-          factory: $CoversationRoute._fromState,
+          path: '/chats',
+          factory: $ChatsRoute._fromState,
+          routes: [
+            GoRouteData.$route(path: 'new', factory: $NewChatRoute._fromState),
+            GoRouteData.$route(
+              path: ':chatId',
+              factory: $CoversationRoute._fromState,
+            ),
+          ],
         ),
       ],
     ),
-    GoRouteData.$route(path: '/tools', factory: $ToolsRoute._fromState),
-    GoRouteData.$route(path: '/models', factory: $ModelsRoute._fromState),
-    GoRouteData.$route(path: '/agents', factory: $AgentsRoute._fromState),
-    GoRouteData.$route(path: '/prompts', factory: $PromptsRoute._fromState),
-    GoRouteData.$route(path: '/settings', factory: $SettingsRoute._fromState),
+    StatefulShellBranchData.$branch(
+      routes: [
+        GoRouteData.$route(path: '/tools', factory: $ToolsRoute._fromState),
+      ],
+    ),
+    StatefulShellBranchData.$branch(
+      routes: [
+        GoRouteData.$route(path: '/models', factory: $ModelsRoute._fromState),
+      ],
+    ),
+    StatefulShellBranchData.$branch(
+      routes: [
+        GoRouteData.$route(
+          path: '/settings',
+          factory: $SettingsRoute._fromState,
+        ),
+      ],
+    ),
   ],
 );
 
 extension $MyShellRouteDataExtension on MyShellRouteData {
   static MyShellRouteData _fromState(GoRouterState state) =>
       const MyShellRouteData();
-}
-
-mixin $HomeRoute on GoRouteData {
-  static HomeRoute _fromState(GoRouterState state) => const HomeRoute();
-
-  @override
-  String get location => GoRouteData.$location('/home');
-
-  @override
-  void go(BuildContext context) => context.go(location);
-
-  @override
-  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
-
-  @override
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
-
-  @override
-  void replace(BuildContext context) => context.replace(location);
 }
 
 mixin $ChatsRoute on GoRouteData {
@@ -146,46 +141,6 @@ mixin $ModelsRoute on GoRouteData {
 
   @override
   String get location => GoRouteData.$location('/models');
-
-  @override
-  void go(BuildContext context) => context.go(location);
-
-  @override
-  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
-
-  @override
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
-
-  @override
-  void replace(BuildContext context) => context.replace(location);
-}
-
-mixin $AgentsRoute on GoRouteData {
-  static AgentsRoute _fromState(GoRouterState state) => AgentsRoute();
-
-  @override
-  String get location => GoRouteData.$location('/agents');
-
-  @override
-  void go(BuildContext context) => context.go(location);
-
-  @override
-  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
-
-  @override
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
-
-  @override
-  void replace(BuildContext context) => context.replace(location);
-}
-
-mixin $PromptsRoute on GoRouteData {
-  static PromptsRoute _fromState(GoRouterState state) => PromptsRoute();
-
-  @override
-  String get location => GoRouteData.$location('/prompts');
 
   @override
   void go(BuildContext context) => context.go(location);

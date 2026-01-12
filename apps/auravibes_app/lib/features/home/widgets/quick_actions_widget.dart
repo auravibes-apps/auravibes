@@ -76,13 +76,6 @@ class QuickActionsWidget extends StatelessWidget {
                 onTap: () => ToolsRoute().go(context),
               ),
             ),
-            Expanded(
-              child: _QuickActionTile(
-                icon: Icons.psychology_outlined,
-                labelKey: LocaleKeys.home_screen_actions_agents,
-                onTap: () => AgentsRoute().go(context),
-              ),
-            ),
           ],
         ),
       ],

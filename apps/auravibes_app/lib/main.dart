@@ -3,10 +3,10 @@ import 'package:auravibes_app/features/settings/providers/theme_provider.dart';
 import 'package:auravibes_app/flavors.dart';
 import 'package:auravibes_app/main/locale.dart';
 import 'package:auravibes_app/router/app_router.dart';
-import 'package:auravibes_app/widgets/auravibes_sidebar.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show appFlavor;
+import 'package:flutter/services.dart'
+    show SystemChrome, SystemUiMode, SystemUiOverlayStyle, appFlavor;
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -17,6 +17,10 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await MainLocale.ensureInitialized();
 
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(systemNavigationBarColor: Colors.transparent),
+  );
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   final container = ProviderContainer()..read(modelSyncServiceProvider);
 
   runApp(
@@ -52,6 +56,7 @@ class MyApp extends ConsumerWidget {
             AuraTheme.dark,
           ],
         ),
+        debugShowCheckedModeBanner: F.appFlavor != Flavor.prod,
         themeMode: themeMode,
         routerConfig: _router,
       ),
@@ -60,18 +65,7 @@ class MyApp extends ConsumerWidget {
 
   static final GoRouter _router = GoRouter(
     routes: $appRoutes,
-    initialLocation: '/home',
+    initialLocation: '/chats',
     navigatorKey: rootNavigatorKey,
   );
-}
-
-class AppLayout extends StatelessWidget {
-  const AppLayout({required this.child, super.key});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return AuraSidebarWrapper(child: child);
-  }
 }

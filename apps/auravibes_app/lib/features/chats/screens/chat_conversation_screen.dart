@@ -72,15 +72,15 @@ class _ChatConversationScreen extends HookConsumerWidget {
             },
           ),
         ],
-        footer: SelectCredentialsModelWidget(
-          credentialsModelId: modelId,
-          selectCredentialsModelId: ref
-              .watch(conversationChatProvider.notifier)
-              .setModel,
-        ),
       ),
       child: Column(
         children: [
+          SelectCredentialsModelWidget(
+            credentialsModelId: modelId,
+            selectCredentialsModelId: ref
+                .watch(conversationChatProvider.notifier)
+                .setModel,
+          ),
           Expanded(child: _ChatList()),
           const McpConnectingIndicator(),
           ChatInputWidget(
