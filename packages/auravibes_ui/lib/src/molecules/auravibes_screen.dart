@@ -64,7 +64,6 @@ class AuraScreen extends StatelessWidget {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: appBar,
-      extendBody: true,
       body: Portal(
         child: content,
       ),

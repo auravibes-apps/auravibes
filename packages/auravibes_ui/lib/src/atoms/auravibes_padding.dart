@@ -33,6 +33,15 @@ class AuraEdgeInsetsGeometry {
       right = spacing,
       bottom = spacing;
 
+  /// constructor for symmetric padding
+  const AuraEdgeInsetsGeometry.symmetric({
+    AuraSpacing horizontal = .none,
+    AuraSpacing vertical = .none,
+  }) : left = horizontal,
+       right = horizontal,
+       top = vertical,
+       bottom = vertical;
+
   /// none spacing
   static const none = AuraEdgeInsetsGeometry.all(.none);
 

@@ -41,6 +41,10 @@ class _ChatConversationScreen extends HookConsumerWidget {
       conversationChatProvider.select((c) => c.value?.modelId),
     );
 
+    final modelTitle = ref.watch(
+      conversationChatProvider.select((c) => c.value?.title),
+    );
+
     final onToolsPress = useCallback(() async {
       // Try to get conversation info
 
@@ -64,23 +68,16 @@ class _ChatConversationScreen extends HookConsumerWidget {
 
     return AuraScreen(
       appBar: AuraAppBar(
-        actions: [
-          IconButton(
-            icon: const AuraIcon(Icons.more_vert),
-            onPressed: () {
-              // TODO: Show chat options
-            },
-          ),
-        ],
+        title: Text(modelTitle ?? ''),
+        bottom: SelectCredentialsModelWidget(
+          credentialsModelId: modelId,
+          selectCredentialsModelId: ref
+              .watch(conversationChatProvider.notifier)
+              .setModel,
+        ),
       ),
       child: Column(
         children: [
-          SelectCredentialsModelWidget(
-            credentialsModelId: modelId,
-            selectCredentialsModelId: ref
-                .watch(conversationChatProvider.notifier)
-                .setModel,
-          ),
           Expanded(child: _ChatList()),
           const McpConnectingIndicator(),
           ChatInputWidget(
