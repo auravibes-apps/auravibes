@@ -8,6 +8,7 @@
     "prompts": "Prompts"
   },
   "models_screens": {
+    "title": "Proveedores de Modelos",
     "add_provider": {
       "open_button": "Agregar Proveedor",
       "title": "Agregar Proveedor de Modelo",

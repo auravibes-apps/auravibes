@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:auravibes_ui/src/tokens/auravibes_theme.dart';
+import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/widgets.dart';
 
 /// Pessable implementation of auravibes
@@ -14,6 +14,7 @@ class AuraPressable extends StatefulWidget {
     this.onPressed,
     this.onLongPress,
     this.clipBehavior = Clip.hardEdge,
+    this.padding,
   });
 
   /// child
@@ -33,6 +34,8 @@ class AuraPressable extends StatefulWidget {
 
   /// clipBehavior
   final Clip? clipBehavior;
+
+  final AuraEdgeInsetsGeometry? padding;
 
   @override
   AuraPressableState createState() => AuraPressableState();
@@ -103,22 +106,25 @@ class AuraPressableState extends State<AuraPressable> {
         );
       },
       onTapCancel: _onExitPressed,
-      child: Container(
-        decoration: widget.decoration,
-        clipBehavior: widget.decoration == null
-            ? Clip.none
-            : widget.clipBehavior ?? Clip.none,
-        child: AnimatedContainer(
-          duration: auraTheme.animation.normal,
-          color: selectedColor.withValues(alpha: alpha),
-          child: MouseRegion(
-            onEnter: (details) => _onHover(),
-            onExit: (details) => _onExitHover(),
-            cursor: canChangeColor
-                ? SystemMouseCursors.click
-                : MouseCursor.defer,
-            child: Listener(
-              child: widget.child,
+      child: AuraPadding(
+        padding: widget.padding ?? .none,
+        child: Container(
+          decoration: widget.decoration,
+          clipBehavior: widget.decoration == null
+              ? Clip.none
+              : widget.clipBehavior ?? Clip.none,
+          child: AnimatedContainer(
+            duration: auraTheme.animation.normal,
+            color: selectedColor.withValues(alpha: alpha),
+            child: MouseRegion(
+              onEnter: (details) => _onHover(),
+              onExit: (details) => _onExitHover(),
+              cursor: canChangeColor
+                  ? SystemMouseCursors.click
+                  : MouseCursor.defer,
+              child: Listener(
+                child: widget.child,
+              ),
             ),
           ),
         ),

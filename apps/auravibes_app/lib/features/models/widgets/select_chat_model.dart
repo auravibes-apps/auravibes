@@ -8,7 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class SelectCredentialsModelWidget extends HookConsumerWidget {
+class SelectCredentialsModelWidget extends HookConsumerWidget
+    implements PreferredSizeWidget {
   const SelectCredentialsModelWidget({
     required this.selectCredentialsModelId,
     super.key,
@@ -38,41 +39,47 @@ class SelectCredentialsModelWidget extends HookConsumerWidget {
       }).toList();
     }, [searchValue.value, credentialsModelsAsync.value]);
 
-    return AuraDropdownSelector<String>(
-      value: credentialsModelId,
-      onChanged: selectCredentialsModelId,
-      placeholder: const TextLocale(
-        LocaleKeys.chats_screens_chat_conversation_select_model_selctor,
-      ),
-      options: options
-          .map(
-            (model) => AuraDropdownOption(
-              value: model.credentialsModel.id,
-              child: Text(
-                '${model.credentials.name} - ${model.credentialsModel.modelId}',
-              ),
-            ),
-          )
-          .toList(),
-
-      header: switch (credentialsModelsAsync) {
-        AsyncLoading<List<CredentialsModelWithProviderEntity>>() =>
-          const AuraSpinner(),
-        AsyncData<List<CredentialsModelWithProviderEntity>>() => Padding(
-          padding: EdgeInsetsGeometry.all(context.auraTheme.spacing.md),
-          child: AuraInput(
-            controller: controller,
-            onChanged: (value) {
-              searchValue.value = value;
-            },
-          ),
+    return AuraPadding(
+      padding: const .only(bottom: .sm),
+      child: AuraDropdownSelector<String>(
+        value: credentialsModelId,
+        onChanged: selectCredentialsModelId,
+        placeholder: const TextLocale(
+          LocaleKeys.chats_screens_chat_conversation_select_model_selctor,
         ),
-        AsyncError<List<CredentialsModelWithProviderEntity>>(
-          :final error,
-          :final stackTrace,
-        ) =>
-          AppErrorWidget(error: error, stackTrace: stackTrace),
-      },
+        options: options
+            .map(
+              (model) => AuraDropdownOption(
+                value: model.credentialsModel.id,
+                child: Text(
+                  '${model.credentials.name} - ${model.credentialsModel.modelId}',
+                ),
+              ),
+            )
+            .toList(),
+
+        header: switch (credentialsModelsAsync) {
+          AsyncLoading<List<CredentialsModelWithProviderEntity>>() =>
+            const AuraSpinner(),
+          AsyncData<List<CredentialsModelWithProviderEntity>>() => Padding(
+            padding: EdgeInsetsGeometry.all(context.auraTheme.spacing.md),
+            child: AuraInput(
+              controller: controller,
+              onChanged: (value) {
+                searchValue.value = value;
+              },
+            ),
+          ),
+          AsyncError<List<CredentialsModelWithProviderEntity>>(
+            :final error,
+            :final stackTrace,
+          ) =>
+            AppErrorWidget(error: error, stackTrace: stackTrace),
+        },
+      ),
     );
   }
+
+  @override
+  Size get preferredSize => const Size.fromHeight(60);
 }

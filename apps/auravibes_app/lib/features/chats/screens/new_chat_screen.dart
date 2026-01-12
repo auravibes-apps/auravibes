@@ -5,9 +5,11 @@ import 'package:auravibes_app/features/models/widgets/select_chat_model.dart';
 import 'package:auravibes_app/features/tools/providers/conversation_tools_provider.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_management_modal.dart';
 import 'package:auravibes_app/features/workspaces/providers/selected_workspace.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/providers/messages_manager_provider.dart';
 import 'package:auravibes_app/router/app_router.dart';
 import 'package:auravibes_app/services/tools/user_tools_entity.dart';
+import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -105,7 +107,8 @@ class NewChatScreen extends HookConsumerWidget {
 
     return AuraScreen(
       appBar: AuraAppBar(
-        footer: SelectCredentialsModelWidget(
+        title: const TextLocale(LocaleKeys.home_screen_actions_start_new_chat),
+        bottom: SelectCredentialsModelWidget(
           credentialsModelId: modelIdState.value,
           selectCredentialsModelId: (value) {
             modelIdState.value = value;

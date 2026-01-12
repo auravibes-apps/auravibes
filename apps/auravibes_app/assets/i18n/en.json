@@ -8,6 +8,7 @@
     "prompts": "Prompts"
   },
   "models_screens": {
+    "title": "Model Providers",
     "add_provider": {
       "open_button": "Add Provider",
       "title": "Add Model Provider",

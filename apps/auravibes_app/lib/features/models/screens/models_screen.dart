@@ -14,9 +14,11 @@ class ModelsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraScreen(
+      appBar: const AuraAppBar(
+        title: TextLocale(LocaleKeys.models_screens_title),
+      ),
       child: AuraColumn(
         children: [
-          const Icon(Icons.memory_outlined, size: 64),
           _AddModelModalButton(),
           const Expanded(child: ListModelCredentialsWidget()),
         ],
