@@ -14,7 +14,6 @@ class AuraTheme extends ThemeExtension<AuraTheme> {
     required this.typography,
     required this.spacing,
     required this.borderRadius,
-    required this.elevation,
     required this.animation,
   });
 
@@ -24,7 +23,6 @@ class AuraTheme extends ThemeExtension<AuraTheme> {
     typography: _standardTypography,
     spacing: _standardSpacing,
     borderRadius: _standardBorderRadius,
-    elevation: _standardElevation,
     animation: _standardAnimation,
   );
 
@@ -34,7 +32,6 @@ class AuraTheme extends ThemeExtension<AuraTheme> {
     typography: _standardTypography,
     spacing: _standardSpacing,
     borderRadius: _standardBorderRadius,
-    elevation: _standardElevation,
     animation: _standardAnimation,
   );
 
@@ -43,7 +40,6 @@ class AuraTheme extends ThemeExtension<AuraTheme> {
   static const _standardTypography = AuraTypographyTheme._standard();
   static const _standardSpacing = AuraSpacingTheme._standard();
   static const _standardBorderRadius = AuraBorderRadiusTheme._standard();
-  static const _standardElevation = AuraElevationTheme._standard();
   static const _standardAnimation = AuraAnimationTheme._standard();
 
   /// Color scheme for the theme.
@@ -58,9 +54,6 @@ class AuraTheme extends ThemeExtension<AuraTheme> {
   /// Border radius theme.
   final AuraBorderRadiusTheme borderRadius;
 
-  /// Elevation theme.
-  final AuraElevationTheme elevation;
-
   /// Animation theme.
   final AuraAnimationTheme animation;
 
@@ -70,7 +63,6 @@ class AuraTheme extends ThemeExtension<AuraTheme> {
     AuraTypographyTheme? typography,
     AuraSpacingTheme? spacing,
     AuraBorderRadiusTheme? borderRadius,
-    AuraElevationTheme? elevation,
     AuraAnimationTheme? animation,
   }) {
     return AuraTheme(
@@ -78,7 +70,6 @@ class AuraTheme extends ThemeExtension<AuraTheme> {
       typography: typography ?? this.typography,
       spacing: spacing ?? this.spacing,
       borderRadius: borderRadius ?? this.borderRadius,
-      elevation: elevation ?? this.elevation,
       animation: animation ?? this.animation,
     );
   }
@@ -91,7 +82,6 @@ class AuraTheme extends ThemeExtension<AuraTheme> {
       typography: typography.lerp(other.typography, t),
       spacing: spacing.lerp(other.spacing, t),
       borderRadius: borderRadius.lerp(other.borderRadius, t),
-      elevation: elevation.lerp(other.elevation, t),
       animation: animation.lerp(other.animation, t),
     );
   }
@@ -141,9 +131,6 @@ class AuraColorScheme {
     required this.outlineVariant,
     required this.shadow,
     required this.scrim,
-    required this.inverseSurface,
-    required this.onInverseSurface,
-    required this.inversePrimary,
   });
 
   /// Creates a light color scheme.
@@ -187,56 +174,50 @@ class AuraColorScheme {
       outline = DesignColors.neutral300,
       outlineVariant = DesignColors.neutral200,
       shadow = DesignColors.neutral900,
-      scrim = const Color(0x80000000),
-      inverseSurface = DesignColors.neutral800,
-      onInverseSurface = DesignColors.neutral100,
-      inversePrimary = DesignColors.primaryLight;
+      scrim = const Color(0x80000000);
 
   /// Creates a dark color scheme.
   AuraColorScheme._dark()
     : primary = DesignColors.primaryLight,
       primaryVariant = DesignColors.primaryBase,
-      onPrimary = DesignColors.neutral900,
+      onPrimary = Colors.black,
       secondary = DesignColors.secondaryLight,
       secondaryVariant = DesignColors.secondaryBase,
-      onSecondary = DesignColors.neutral900,
+      onSecondary = Colors.black,
       surface = DesignColors.neutral800,
       surfaceVariant = DesignColors.neutral700,
       onSurface = DesignColors.neutral100,
       onSurfaceVariant = DesignColors.neutral300,
-      background = DesignColors.neutral900,
+      background = Colors.black,
       onBackground = DesignColors.neutral100,
       error = OKLCHColor(
         hue: HueColorValues.error,
         lightness: 0.4,
         chroma: 0.2,
       ).toColor(),
-      onError = DesignColors.neutral900,
+      onError = Colors.black,
       warning = OKLCHColor(
         hue: HueColorValues.warning,
         lightness: 0.4,
         chroma: 0.2,
       ).toColor(),
-      onWarning = DesignColors.neutral900,
+      onWarning = Colors.black,
       success = OKLCHColor(
         hue: HueColorValues.success,
         lightness: 0.4,
         chroma: 0.2,
       ).toColor(),
-      onSuccess = DesignColors.neutral900,
+      onSuccess = Colors.black,
       info = OKLCHColor(
         hue: HueColorValues.info,
         lightness: 0.4,
         chroma: 0.2,
       ).toColor(),
-      onInfo = DesignColors.neutral900,
+      onInfo = Colors.black,
       outline = DesignColors.neutral600,
       outlineVariant = DesignColors.neutral700,
       shadow = const Color(0xFF000000),
-      scrim = const Color(0xB3000000),
-      inverseSurface = DesignColors.neutral100,
-      onInverseSurface = DesignColors.neutral800,
-      inversePrimary = DesignColors.primaryDark;
+      scrim = const Color(0xB3000000);
 
   /// Primary color for main UI elements.
   final Color primary;
@@ -310,15 +291,6 @@ class AuraColorScheme {
   /// Scrim color for overlays.
   final Color scrim;
 
-  /// Inverse surface color.
-  final Color inverseSurface;
-
-  /// Color for text/icons on inverse surface.
-  final Color onInverseSurface;
-
-  /// Inverse primary color.
-  final Color inversePrimary;
-
   /// Linearly interpolate between two color schemes.
   AuraColorScheme lerp(AuraColorScheme other, double t) {
     return AuraColorScheme(
@@ -354,13 +326,6 @@ class AuraColorScheme {
       outlineVariant: Color.lerp(outlineVariant, other.outlineVariant, t)!,
       shadow: Color.lerp(shadow, other.shadow, t)!,
       scrim: Color.lerp(scrim, other.scrim, t)!,
-      inverseSurface: Color.lerp(inverseSurface, other.inverseSurface, t)!,
-      onInverseSurface: Color.lerp(
-        onInverseSurface,
-        other.onInverseSurface,
-        t,
-      )!,
-      inversePrimary: Color.lerp(inversePrimary, other.inversePrimary, t)!,
     );
   }
 
@@ -688,56 +653,6 @@ class AuraBorderRadiusTheme {
       lg: lerpDouble(lg, other.lg, t) ?? lg,
       xl: lerpDouble(xl, other.xl, t) ?? xl,
       full: lerpDouble(full, other.full, t) ?? full,
-    );
-  }
-}
-
-/// Elevation theme that provides consistent shadow depths.
-///
-/// Defines elevation values from none to extra large (xl) for creating
-/// visual hierarchy and depth through Material Design shadow principles.
-@immutable
-class AuraElevationTheme {
-  /// Creates an elevation theme with the specified values.
-  const AuraElevationTheme({
-    this.none = DesignElevation.none,
-    this.sm = DesignElevation.sm,
-    this.md = DesignElevation.md,
-    this.lg = DesignElevation.lg,
-    this.xl = DesignElevation.xl,
-  });
-
-  /// Creates the standard elevation theme.
-  const AuraElevationTheme._standard()
-    : none = DesignElevation.none,
-      sm = DesignElevation.sm,
-      md = DesignElevation.md,
-      lg = DesignElevation.lg,
-      xl = DesignElevation.xl;
-
-  /// No elevation for flat elements and backgrounds.
-  final double none;
-
-  /// Small elevation (1px) for subtle depth and hover states.
-  final double sm;
-
-  /// Medium elevation (4px) for cards and standard components.
-  final double md;
-
-  /// Large elevation (8px) for floating elements and dropdowns.
-  final double lg;
-
-  /// Extra large elevation (16px) for modals and prominent overlays.
-  final double xl;
-
-  /// Linearly interpolate between two elevation themes.
-  AuraElevationTheme lerp(AuraElevationTheme other, double t) {
-    return AuraElevationTheme(
-      none: lerpDouble(none, other.none, t) ?? none,
-      sm: lerpDouble(sm, other.sm, t) ?? sm,
-      md: lerpDouble(md, other.md, t) ?? md,
-      lg: lerpDouble(lg, other.lg, t) ?? lg,
-      xl: lerpDouble(xl, other.xl, t) ?? xl,
     );
   }
 }

@@ -100,7 +100,6 @@ class AppWithNavbar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: child,
-      extendBody: true,
       bottomNavigationBar: AuraBottomBar(
         navigationItems: navigationItems,
         selectedIndex: selectedIndex,
@@ -133,10 +132,9 @@ class AppWithNavRail extends StatelessWidget {
           AuraSidebar(
             navigationItems: navigationItems,
             onNavigationTap: onNavigationTap,
-            header: _buildHeader(context),
+            header: const _AppLogo(),
             selectedIndex: selectedIndex,
           ),
-
           // Main Content
           Expanded(
             child: child,
@@ -145,21 +143,38 @@ class AppWithNavRail extends StatelessWidget {
       ),
     );
   }
+}
 
-  /// Builds the header widget with the AURA logo.
-  Widget _buildHeader(BuildContext context) {
+class _AppLogo extends StatelessWidget {
+  const _AppLogo();
+
+  @override
+  Widget build(BuildContext context) {
     final title = F.title;
-    return Container(
-      height: 48,
-      decoration: BoxDecoration(
-        color: context.auraColors.primary,
-        borderRadius: BorderRadius.circular(context.auraTheme.borderRadius.lg),
-      ),
-      child: Center(
-        child: AuraText(
-          style: AuraTextStyle.heading5,
-          color: AuraColorVariant.onPrimary,
-          child: Text(title),
+    return SafeArea(
+      bottom: false,
+      child: AuraPadding(
+        padding: .small,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: context.auraColors.primary,
+            borderRadius: BorderRadius.circular(
+              context.auraTheme.borderRadius.lg,
+            ),
+          ),
+          child: AuraPadding(
+            padding: const .only(
+              top: AuraSpacing.sm,
+              bottom: AuraSpacing.sm,
+            ),
+            child: Center(
+              child: AuraText(
+                style: AuraTextStyle.heading5,
+                color: AuraColorVariant.onPrimary,
+                child: Text(title),
+              ),
+            ),
+          ),
         ),
       ),
     );

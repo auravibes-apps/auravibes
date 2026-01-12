@@ -18,7 +18,7 @@ class AuraCard extends StatelessWidget {
     this.padding = .medium,
     this.onTap,
     this.semanticLabel,
-    this.style = AuraCardStyle.glass,
+    this.style = AuraCardStyle.elevated,
   });
 
   /// The widget to display inside the card.
@@ -104,13 +104,13 @@ class AuraCard extends StatelessWidget {
                 begin: .topLeft,
                 end: .bottomCenter,
                 colors: [
-                  auraColors.onBackground.withValues(alpha: 0.05),
-                  auraColors.onBackground.withValues(alpha: 0.02),
+                  auraColors.onBackground.withValues(alpha: 0.07),
+                  auraColors.onBackground.withValues(alpha: 0.03),
                 ],
               ),
               borderRadius: BorderRadius.circular(DesignBorderRadius.xl),
               border: Border.all(
-                color: auraColors.inverseSurface.withValues(alpha: 0.05),
+                color: auraColors.background.withValues(alpha: 0.05),
                 width: 1.5,
               ),
             ),

@@ -40,7 +40,7 @@ class SelectCredentialsModelWidget extends HookConsumerWidget
     }, [searchValue.value, credentialsModelsAsync.value]);
 
     return AuraPadding(
-      padding: const .only(bottom: .sm),
+      padding: const .only(bottom: .sm, left: .md, right: .md),
       child: AuraDropdownSelector<String>(
         value: credentialsModelId,
         onChanged: selectCredentialsModelId,

@@ -72,37 +72,31 @@ class AuraSidebar extends StatelessWidget {
   }
 
   Widget _buildHeaderSection(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.all(context.auraTheme.spacing.lg),
-      child: header,
-    );
+    return header!;
   }
 
   Widget _buildNavigationItems(
     BuildContext context, {
     bool footer = false,
   }) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: context.auraTheme.spacing.md),
-      child: Column(
-        children: navigationItems.where((item) => item.footer == footer).map((
-          item,
-        ) {
-          final currentIndex = navigationItems.indexOf(item);
-          return Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: context.auraTheme.spacing.sm,
-              vertical: context.auraTheme.spacing.xs,
-            ),
-            child: _AuraSidebarItem(
-              selected: currentIndex == selectedIndex,
-              icon: item.icon,
-              onTap: () => onNavigationTap(currentIndex),
-              label: isExpanded ? item.label : const SizedBox.shrink(),
-            ),
-          );
-        }).toList(),
-      ),
+    return Column(
+      children: navigationItems.where((item) => item.footer == footer).map((
+        item,
+      ) {
+        final currentIndex = navigationItems.indexOf(item);
+        return AuraPadding(
+          padding: const .symmetric(
+            horizontal: .sm,
+            vertical: .xs,
+          ),
+          child: _AuraSidebarItem(
+            selected: currentIndex == selectedIndex,
+            icon: item.icon,
+            onTap: () => onNavigationTap(currentIndex),
+            label: isExpanded ? item.label : const SizedBox.shrink(),
+          ),
+        );
+      }).toList(),
     );
   }
 
