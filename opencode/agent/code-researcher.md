@@ -26,7 +26,7 @@ permission:
   webfetch: deny
 ---
 Your task is to do a deep understanding of the context of code.
-search by 
+search by file name, keywords, or patterns relevant to the request.
 
 
 # Code Researcher 
