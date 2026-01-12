@@ -9,7 +9,7 @@ reusables:
         - pattern: "^auravibes_app-v[0-9]+\\.[0-9]+\\.[0-9]+(-beta\\.[0-9]+)?$"
           include: true
 scripts:
-  - &script_setup_environment 
+  - &script_setup_environment
     name: Setup Environment
     script: |
       echo PATH="$PATH":"$FLUTTER_ROOT/.pub-cache/bin" >> $CM_ENV
