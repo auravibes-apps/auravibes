@@ -184,7 +184,7 @@ class AuraColorScheme {
       secondary = DesignColors.secondaryLight,
       secondaryVariant = DesignColors.secondaryBase,
       onSecondary = Colors.black,
-      surface = DesignColors.neutral900,
+      surface = DesignColors.neutral800,
       surfaceVariant = DesignColors.neutral700,
       onSurface = DesignColors.neutral100,
       onSurfaceVariant = DesignColors.neutral300,
