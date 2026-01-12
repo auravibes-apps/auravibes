@@ -9,7 +9,7 @@ plugins {
 
 val keystoreProperties =
     Properties().apply {
-    var file = File("key.properties")
+    val file = File("key.properties")
     if (file.exists()) load(file.reader())
 }
 
