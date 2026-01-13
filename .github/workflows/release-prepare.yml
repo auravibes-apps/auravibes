@@ -83,6 +83,10 @@ jobs:
             patch)
               PATCH=$((PATCH + 1))
               ;;
+            *)
+              echo "Error: Invalid bump type '$BUMP_TYPE'. Expected one of: major, minor, patch."
+              exit 1
+              ;;
           esac
           
           NEW_VERSION="$MAJOR.$MINOR.$PATCH"
