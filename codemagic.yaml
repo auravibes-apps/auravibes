@@ -42,12 +42,8 @@ scripts:
       
       if [[ $TAG_VERSION == *"-beta"* ]]; then
         echo "Environment: BETA"
-        export APP_BUNDLE_ID="me.auravibes.app.dev"
-        export APP_STORE_APPLE_ID="beta_apple_id"
       else
         echo "Environment: PRODUCTION"
-        export APP_BUNDLE_ID="me.auravibes.app"
-        export APP_STORE_APPLE_ID="prod_apple_id"
       fi
       
       # Extract version from tag (1.2.3 or 1.2.3-beta.1)
@@ -56,8 +52,6 @@ scripts:
       
       # Set environment variables for build
       echo "BUILD_NAME=$VERSION" >> $CM_ENV
-      echo "APP_BUNDLE_ID=$APP_BUNDLE_ID" >> $CM_ENV
-      echo "APP_STORE_APPLE_ID=$APP_STORE_APPLE_ID" >> $CM_ENV
       
       # Set automatic build number
       echo "BUILD_NUMBER=$PROJECT_BUILD_NUMBER" >> $CM_ENV
@@ -76,9 +70,6 @@ workflows:
       flutter: fvm
       groups:
         - github
-      vars:
-        APP_BUNDLE_ID: "me.auravibes.app"
-        APP_NAME: "AuraVibes"
     integrations:
       app_store_connect: app_store_connect
     cache:
@@ -105,7 +96,6 @@ workflows:
           echo "Building iOS IPA..."
           echo "Build Name: $BUILD_NAME"
           echo "Build Number: $BUILD_NUMBER"
-          echo "Bundle ID: $APP_BUNDLE_ID"
           
           cd apps/auravibes_app
           
