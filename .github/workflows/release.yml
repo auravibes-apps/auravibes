@@ -1,32 +1,36 @@
-name: Tag release
+name: Release
 on:
   push:
     branches: [main]
 
 jobs:
-  tag-release:
-    name: Create release tag
+  release:
+    name: Create release and update changelog
     permissions:
       contents: write
     if: contains(github.event.head_commit.message, 'chore(release)')
     runs-on: ubuntu-latest
     steps:
-      - name: 📚 Git Checkout
+      - name: Git Checkout
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 🏷️ Extract app version
+      - name: Extract version
         id: version
         run: |
           VERSION=$(grep '^version:' apps/auravibes_app/pubspec.yaml | awk '{print $2}')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Extracted version: $VERSION"
 
-      - name: 🎯 Create tag
-        run: |
-          git tag auravibes_app-v${{ steps.version.outputs.version }}
-          git push origin auravibes_app-v${{ steps.version.outputs.version }}
+      - name: Create tag and release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: auravibes_app-v${{ steps.version.outputs.version }}
+          name: AuraVibes App v${{ steps.version.outputs.version }}
+          draft: false
+          prerelease: false
+          generate_release_notes: false
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
