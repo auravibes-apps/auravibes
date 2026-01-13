@@ -22,7 +22,7 @@ Future<void> main() async {
     const SystemUiOverlayStyle(systemNavigationBarColor: Colors.transparent),
   );
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-  final container = ProviderContainer()..read(modelSyncServiceProvider);
+  final container = ProviderContainer();
 
   final appDatabase = container.read(
     appDatabaseProvider,
@@ -30,6 +30,9 @@ Future<void> main() async {
 
   await appDatabase
       .initializeWithDefaults(); // Load defaults after initialization
+
+  container.read(modelSyncServiceProvider);
+
   runApp(
     UncontrolledProviderScope(
       container: container,
