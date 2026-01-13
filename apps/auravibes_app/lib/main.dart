@@ -2,6 +2,7 @@ import 'package:auravibes_app/features/models/providers/api_model_repository_pro
 import 'package:auravibes_app/features/settings/providers/theme_provider.dart';
 import 'package:auravibes_app/flavors.dart';
 import 'package:auravibes_app/main/locale.dart';
+import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/router/app_router.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
@@ -23,6 +24,12 @@ Future<void> main() async {
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   final container = ProviderContainer()..read(modelSyncServiceProvider);
 
+  final appDatabase = container.read(
+    appDatabaseProvider,
+  );
+
+  await appDatabase
+      .initializeWithDefaults(); // Load defaults after initialization
   runApp(
     UncontrolledProviderScope(
       container: container,

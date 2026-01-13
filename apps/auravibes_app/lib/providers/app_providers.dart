@@ -10,5 +10,5 @@ Future<SharedPreferences> sharedPreferences(Ref ref) =>
 
 @Riverpod(keepAlive: true)
 AppDatabase appDatabase(Ref ref) {
-  return AppDatabase()..initializeWithDefaults();
+  return AppDatabase();
 }
