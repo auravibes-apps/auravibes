@@ -37,6 +37,10 @@ jobs:
         run: |
           APP_DIR="apps/${{ inputs.app }}"
           CURRENT_VERSION=$(grep "^version:" "$APP_DIR/pubspec.yaml" | awk '{print $2}')
+          if [ -z "$CURRENT_VERSION" ]; then
+            echo "Error: Could not extract version from $APP_DIR/pubspec.yaml" >&2
+            exit 1
+          fi
           
           echo "Current version: $CURRENT_VERSION"
           
