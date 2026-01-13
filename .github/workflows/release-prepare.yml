@@ -2,9 +2,22 @@ name: Prepare release
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: 'New version (e.g., 0.0.3)'
+      bump_type:
+        description: 'Version bump type'
         required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+        default: 'patch'
+      app:
+        description: 'App to update'
+        required: true
+        type: choice
+        options:
+          - auravibes_app
+        default: 'auravibes_app'
 
 jobs:
   prepare-release:
@@ -19,15 +32,47 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: 🏷️ Bump app version
+      - name: 🏷️ Calculate and bump app version
+        id: bump_version
         run: |
-          sed -i "s/^version: .*/version: ${{ inputs.version }}/" apps/auravibes_app/pubspec.yaml
+          APP_DIR="apps/${{ inputs.app }}"
+          CURRENT_VERSION=$(grep "^version:" "$APP_DIR/pubspec.yaml" | awk '{print $2}')
+          
+          echo "Current version: $CURRENT_VERSION"
+          
+          IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_VERSION"
+          MAJOR="${VERSION_PARTS[0]}"
+          MINOR="${VERSION_PARTS[1]}"
+          PATCH="${VERSION_PARTS[2]%%+*}"
+          
+          BUMP_TYPE="${{ inputs.bump_type }}"
+          
+          case $BUMP_TYPE in
+            major)
+              MAJOR=$((MAJOR + 1))
+              MINOR=0
+              PATCH=0
+              ;;
+            minor)
+              MINOR=$((MINOR + 1))
+              PATCH=0
+              ;;
+            patch)
+              PATCH=$((PATCH + 1))
+              ;;
+          esac
+          
+          NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+          echo "New version: $NEW_VERSION"
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          
+          sed -i "s/^version: .*/version: $NEW_VERSION/" "$APP_DIR/pubspec.yaml"
 
       - name: 📋 Create release PR
         uses: peter-evans/create-pull-request@v8
         with:
-          title: "chore(release): Version ${{ inputs.version }}"
-          body: "Release ${{ inputs.version }} - Bumped auravibes_app version. Merging will create tag auravibes_app-v${{ inputs.version }} and GitHub release."
-          branch: release-${{ inputs.version }}
+          title: "chore(release): Version ${{ steps.bump_version.outputs.new_version }}"
+          body: "Release ${{ steps.bump_version.outputs.new_version }} - Bumped ${{ inputs.app }} version (${{ inputs.bump_type }}). Merging will create tag ${{ inputs.app }}-v${{ steps.bump_version.outputs.new_version }} and GitHub release."
+          branch: release-${{ steps.bump_version.outputs.new_version }}
           delete-branch: true
-          commit-message: "chore(release): Bump version to ${{ inputs.version }}"
+          commit-message: "chore(release): Bump version to ${{ steps.bump_version.outputs.new_version }}"
