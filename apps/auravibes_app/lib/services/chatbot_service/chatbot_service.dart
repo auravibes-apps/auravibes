@@ -151,7 +151,7 @@ The title should capture the main topic or theme. Respond with only the title, n
     if (type == null) throw UnimplementedError();
     final url = chatProvider.credentials.url ?? chatProvider.modelsProvider.url;
 
-    // Get the actual API key from secure storage using the UUID
+    // Decrypt the API key
     final encrypted = chatProvider.credentials.key;
     final apiKey = await encryptionService.decrypt(encrypted);
 
