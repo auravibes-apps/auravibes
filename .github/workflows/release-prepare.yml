@@ -35,6 +35,7 @@ jobs:
       - name: 🏷️ Calculate and bump app version
         id: bump_version
         run: |
+          set -euo pipefail
           APP_DIR="apps/${{ inputs.app }}"
           CURRENT_VERSION=$(grep "^version:" "$APP_DIR/pubspec.yaml" | awk '{print $2}')
           if [ -z "$CURRENT_VERSION" ]; then
