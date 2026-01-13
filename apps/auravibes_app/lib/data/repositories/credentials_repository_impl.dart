@@ -39,9 +39,9 @@ class CredentialsRepositoryImpl implements CredentialsRepository {
     }
 
     // Store API key securely and get UUID reference
-    String keyUUID;
+    String rawApiKey;
     try {
-      keyUUID = await _encryptionService.encrypt(credentials.key);
+      rawApiKey = await _encryptionService.encrypt(credentials.key);
     } catch (e) {
       throw ModelProviderException(
         'Failed to store API key securely',
@@ -63,7 +63,7 @@ class CredentialsRepositoryImpl implements CredentialsRepository {
 
     final createdCredentialsModel = await _database.credentialsDao
         .insertModelProvider(
-          _modelProviderToCreateToCompanion(credentials, keyUUID),
+          _modelProviderToCreateToCompanion(credentials, rawApiKey),
         );
 
     final credentialsModels = models
@@ -94,11 +94,11 @@ class CredentialsRepositoryImpl implements CredentialsRepository {
 
   CredentialsCompanion _modelProviderToCreateToCompanion(
     CredentialsToCreate credentials,
-    String keyUUID,
+    String rawApiKey,
   ) {
     return CredentialsCompanion(
       name: .new(credentials.name),
-      keyValue: .new(keyUUID), // Store UUID instead of actual key
+      keyValue: .new(rawApiKey), // Store UUID instead of actual key
       url: .absentIfNull(credentials.url),
       workspaceId: .new(credentials.workspaceId),
       modelId: .new(credentials.modelId),
