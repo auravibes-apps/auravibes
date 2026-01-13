@@ -38,7 +38,7 @@ class CredentialsRepositoryImpl implements CredentialsRepository {
       throw ModelProviderNoTypeException(credentials.modelId);
     }
 
-    // Store API key securely and get UUID reference
+    // Encrypt API key for secure storage
     String rawApiKey;
     try {
       rawApiKey = await _encryptionService.encrypt(credentials.key);
