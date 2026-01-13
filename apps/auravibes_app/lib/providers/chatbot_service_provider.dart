@@ -1,5 +1,6 @@
 import 'package:auravibes_app/features/models/providers/model_providers_repository_providers.dart';
 import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
+import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'chatbot_service_provider.g.dart';
@@ -10,6 +11,8 @@ part 'chatbot_service_provider.g.dart';
 ChatbotService chatbotService(
   Ref ref,
 ) {
-  final credentialsRepository = ref.watch(modelProvidersRepositoryProvider);
-  return ChatbotService(credentialsRepository);
+  return ChatbotService(
+    credentialsRepository: ref.watch(modelProvidersRepositoryProvider),
+    encryptionService: ref.watch(encryptionServiceProvider),
+  );
 }

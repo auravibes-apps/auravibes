@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:auravibes_app/domain/entities/credentials_models_entities.dart';
 import 'package:auravibes_app/domain/repositories/model_providers_repository.dart';
 import 'package:auravibes_app/services/chatbot_service/models/chat_message_models.dart';
+import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:collection/collection.dart';
 import 'package:langchain/langchain.dart';
 import 'package:langchain_anthropic/langchain_anthropic.dart';
@@ -25,8 +26,12 @@ List<AIChatMessageToolCall>? safeDecode(String? metadata) {
 }
 
 class ChatbotService {
-  ChatbotService(this.credentialsRepository);
+  ChatbotService({
+    required this.credentialsRepository,
+    required this.encryptionService,
+  });
   CredentialsRepository credentialsRepository;
+  EncryptionService encryptionService;
 
   Stream<ChatResult> sendMessage(
     CredentialsModelWithProviderEntity chatProvider,
@@ -146,13 +151,9 @@ The title should capture the main topic or theme. Respond with only the title, n
     if (type == null) throw UnimplementedError();
     final url = chatProvider.credentials.url ?? chatProvider.modelsProvider.url;
 
-    // Get the actual API key from secure storage using the UUID
-    final keyUUID = chatProvider.credentials.key;
-    final apiKey = await credentialsRepository.getApiKey(keyUUID);
-
-    if (apiKey == null) {
-      throw Exception('API key not found for UUID: $keyUUID');
-    }
+    // Decrypt the API key
+    final encrypted = chatProvider.credentials.key;
+    final apiKey = await encryptionService.decrypt(encrypted);
 
     return switch (type) {
       .openai => ChatOpenAI(

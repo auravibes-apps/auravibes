@@ -15,12 +15,6 @@ abstract class CredentialsRepository {
     CredentialsToCreate credentials,
   );
 
-  /// Retrieves the actual API key using the UUID reference
-  Future<String?> getApiKey(String keyUUID);
-
-  /// Updates an API key in secure storage
-  Future<bool> updateApiKey(String keyUUID, String newApiKey);
-
   /// Deletes a credential and its associated API key from secure storage
   Future<void> deleteCredential(String credentialsId);
 }

@@ -1,10 +1,10 @@
-import 'package:auravibes_app/core/services/secure_storage_service.dart';
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/domain/entities/credentials_entities.dart';
 import 'package:auravibes_app/domain/entities/credentials_models_entities.dart';
 import 'package:auravibes_app/domain/repositories/model_providers_repository.dart';
 import 'package:auravibes_app/domain/repositories/workspace_repository.dart'
     show WorkspaceRepository;
+import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/model_provider_services/model_provider_services.dart';
 import 'package:drift/drift.dart';
 
@@ -14,9 +14,14 @@ import 'package:drift/drift.dart';
 /// using the Drift database. It handles the mapping between domain entities
 /// and database records, and provides proper error handling using exceptions.
 class CredentialsRepositoryImpl implements CredentialsRepository {
-  CredentialsRepositoryImpl(this._database);
+  CredentialsRepositoryImpl({
+    required AppDatabase database,
+    required EncryptionService encryptionService,
+  }) : _database = database,
+       _encryptionService = encryptionService;
 
   final AppDatabase _database;
+  final EncryptionService _encryptionService;
 
   @override
   Future<CredentialsEntity> createCredential(
@@ -33,10 +38,10 @@ class CredentialsRepositoryImpl implements CredentialsRepository {
       throw ModelProviderNoTypeException(credentials.modelId);
     }
 
-    // Store API key securely and get UUID reference
-    String keyUUID;
+    // Encrypt API key for secure storage
+    String rawApiKey;
     try {
-      keyUUID = await SecureStorageService.storeApiKey(credentials.key);
+      rawApiKey = await _encryptionService.encrypt(credentials.key);
     } catch (e) {
       throw ModelProviderException(
         'Failed to store API key securely',
@@ -53,14 +58,12 @@ class CredentialsRepositoryImpl implements CredentialsRepository {
       ),
     );
     if (models == null) {
-      // Clean up secure storage if validation fails
-      await SecureStorageService.deleteApiKey(keyUUID);
       throw ModelProviderNotModelsException(credentials.modelId);
     }
 
     final createdCredentialsModel = await _database.credentialsDao
         .insertModelProvider(
-          _modelProviderToCreateToCompanion(credentials, keyUUID),
+          _modelProviderToCreateToCompanion(credentials, rawApiKey),
         );
 
     final credentialsModels = models
@@ -91,11 +94,11 @@ class CredentialsRepositoryImpl implements CredentialsRepository {
 
   CredentialsCompanion _modelProviderToCreateToCompanion(
     CredentialsToCreate credentials,
-    String keyUUID,
+    String rawApiKey,
   ) {
     return CredentialsCompanion(
       name: .new(credentials.name),
-      keyValue: .new(keyUUID), // Store UUID instead of actual key
+      keyValue: .new(rawApiKey), // Store UUID instead of actual key
       url: .absentIfNull(credentials.url),
       workspaceId: .new(credentials.workspaceId),
       modelId: .new(credentials.modelId),
@@ -127,35 +130,6 @@ class CredentialsRepositoryImpl implements CredentialsRepository {
   }
 
   @override
-  Future<String?> getApiKey(String keyUUID) async {
-    if (!SecureStorageService.isValidUUID(keyUUID)) {
-      return null;
-    }
-
-    try {
-      return await SecureStorageService.getApiKey(keyUUID);
-    } catch (e) {
-      throw ModelProviderException(
-        'Failed to retrieve API key',
-        e as Exception,
-      );
-    }
-  }
-
-  @override
-  Future<bool> updateApiKey(String keyUUID, String newApiKey) async {
-    if (!SecureStorageService.isValidUUID(keyUUID)) {
-      return false;
-    }
-
-    try {
-      return await SecureStorageService.updateApiKey(keyUUID, newApiKey);
-    } catch (e) {
-      throw ModelProviderException('Failed to update API key', e as Exception);
-    }
-  }
-
-  @override
   Future<void> deleteCredential(String credentialsId) async {
     // Get the credential to retrieve the key UUID
     final credential = await _database.credentialsDao.getCredentialById(
@@ -167,14 +141,7 @@ class CredentialsRepositoryImpl implements CredentialsRepository {
       );
     }
 
-    final keyUUID = credential.keyValue;
-
     try {
-      // Delete from secure storage first
-      if (keyUUID.isNotEmpty && SecureStorageService.isValidUUID(keyUUID)) {
-        await SecureStorageService.deleteApiKey(keyUUID);
-      }
-
       // Delete from database
       await _database.credentialsDao.deleteCredential(credentialsId);
     } catch (e) {
