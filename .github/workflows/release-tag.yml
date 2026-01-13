@@ -1,13 +1,12 @@
-name: Tag and start release
+name: Tag release
 on:
   push:
     branches: [main]
 
 jobs:
-  prepare-release:
-    name: Tag and start release
+  tag-release:
+    name: Create release tag
     permissions:
-      actions: write
       contents: write
     if: contains(github.event.head_commit.message, 'chore(release)')
     runs-on: ubuntu-latest
@@ -15,28 +14,19 @@ jobs:
       - name: 📚 Git Checkout
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0  # Fetch all history for tags
+          fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
-      - name: 🔧 Setup FVM
-        uses: kuhnroyal/flutter-fvm-config-action/config@v3
-        id: fvm-config-action
 
-      - name: 🐦 Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}
-          channel: ${{ steps.fvm-config-action.outputs.FLUTTER_CHANNEL }}
-          cache: true
-          cache-key: "flutter-:os:-:channel:-:version:-:arch:"
-          pub-cache-key: "flutter-pub-:os:-:channel:-:version:-:arch:-${{ hashFiles('pubspec.lock') }}"
+      - name: 🏷️ Extract app version
+        id: version
+        run: |
+          VERSION=$(grep '^version:' apps/auravibes_app/pubspec.yaml | awk '{print $2}')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Extracted version: $VERSION"
 
-      - name: 🚀 Create Release PR with Melos
-        uses: bluefireteam/melos-action@v3
-        with:
-          tag: true
-      - run: |
-          melos exec -c 1 --no-published --no-private --order-dependents -- \
-          gh workflow run release-publish.yml \
-          --ref \$MELOS_PACKAGE_NAME-v\$MELOS_PACKAGE_VERSION
+      - name: 🎯 Create tag
+        run: |
+          git tag auravibes_app-v${{ steps.version.outputs.version }}
+          git push origin auravibes_app-v${{ steps.version.outputs.version }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

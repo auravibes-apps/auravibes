@@ -2,16 +2,9 @@ name: Prepare release
 on:
   workflow_dispatch:
     inputs:
-      prerelease:
-        description: 'Version as prerelease'
-        required: false
-        default: false
-        type: boolean
-      graduate:
-        description: 'Graduate prereleases to stable'
-        required: false
-        default: false
-        type: boolean
+      version:
+        description: 'New version (e.g., 0.0.3)'
+        required: true
 
 jobs:
   prepare-release:
@@ -19,36 +12,22 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: 📚 Git Checkout
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0  # Fetch all history for tags
-          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
-      - name: 🔧 Setup FVM
-        uses: kuhnroyal/flutter-fvm-config-action/config@v3
-        id: fvm-config-action
+      - name: 🏷️ Bump app version
+        run: |
+          sed -i "s/^version: .*/version: ${{ inputs.version }}/" apps/auravibes_app/pubspec.yaml
 
-      - name: 🐦 Setup Flutter
-        uses: subosito/flutter-action@v2
+      - name: 📋 Create release PR
+        uses: peter-evans/create-pull-request@v8
         with:
-          flutter-version: ${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}
-          channel: ${{ steps.fvm-config-action.outputs.FLUTTER_CHANNEL }}
-          cache: true
-          cache-key: "flutter-:os:-:channel:-:version:-:arch:"
-          pub-cache-key: "flutter-pub-:os:-:channel:-:version:-:arch:-${{ hashFiles('pubspec.lock') }}"
-
-      - name: 🚀 Create Release PR with Melos
-        uses: bluefireteam/melos-action@main  # Using main to get peter-evans/create-pull-request@v7.0.9 fix
-        with:
-          run-versioning: ${{ inputs.prerelease == false }}
-          run-versioning-prerelease: ${{ inputs.prerelease == true }}
-          run-versioning-graduate: ${{ inputs.graduate == true }}
-          include-private: true
-          publish-dry-run: false
-          create-pr: true
-          git-email: github-actions@github.com
-          git-name: github-actions
+          title: "chore(release): Version ${{ inputs.version }}"
+          body: "Release ${{ inputs.version }} - Bumped auravibes_app version. Merging will create tag auravibes_app-v${{ inputs.version }} and GitHub release."
+          branch: release-${{ inputs.version }}
+          delete-branch: true
+          commit-message: "chore(release): Bump version to ${{ inputs.version }}"

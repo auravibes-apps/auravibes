@@ -1,128 +1,303 @@
+reusables:
+  - &release_tag
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    triggering:
+      events:
+        - tag
+      tag_patterns:
+        - pattern: "^auravibes_app-v[0-9]+\\.[0-9]+\\.[0-9]+(-beta\\.[0-9]+)?$"
+          include: true
+scripts:
+  - &script_setup_environment
+    name: Setup Environment
+    script: |
+      echo PATH="$PATH":"$FLUTTER_ROOT/.pub-cache/bin" >> $CM_ENV
+      echo PATH="$PATH":"$FLUTTER_ROOT/bin" >> $CM_ENV
+  
+  - &script_install_melos
+    name: Install Melos
+    script: |
+      dart pub global activate melos
+
+  - &script_melos_bootstrap
+    name: Bootstrap Monorepo
+    script: |
+      echo "Bootstrapping monorepo packages..."
+      melos bootstrap --verbose
+
+  - &script_generate_code
+    name: Generate
+    script: |
+      echo "Running generations..."
+      melos generate
+      melos localization
+
+  
+  - &script_parse_tag
+    name: Parse Tag and Set Environment
+    script: |
+      # Parse tag to extract version and environment
+      TAG_VERSION=${CM_TAG##*-v} # Remove '<package-name>-v' prefix
+      
+      if [[ $TAG_VERSION == *"-beta"* ]]; then
+        echo "Environment: BETA"
+        export RELEASE_ENV="beta"
+        export BUILD_TYPE="release"
+        export APP_BUNDLE_ID="me.auravibes.app.dev"
+        export APP_STORE_APPLE_ID="beta_apple_id"
+      else
+        echo "Environment: PRODUCTION"
+        export RELEASE_ENV="prod"
+        export BUILD_TYPE="release"
+        export APP_BUNDLE_ID="me.auravibes.app"
+        export APP_STORE_APPLE_ID="prod_apple_id"
+      fi
+      
+      # Extract version from tag (1.2.3 or 1.2.3-beta.1)
+      VERSION=${TAG_VERSION%%-*}
+      echo "Version: $VERSION"
+      echo "Release Environment: $RELEASE_ENV"
+      
+      # Set environment variables for build
+      echo "BUILD_NAME=$VERSION" >> $CM_ENV
+      echo "RELEASE_ENV=$RELEASE_ENV" >> $CM_ENV
+      echo "APP_BUNDLE_ID=$APP_BUNDLE_ID" >> $CM_ENV
+      echo "APP_STORE_APPLE_ID=$APP_STORE_APPLE_ID" >> $CM_ENV
+      
+      # Set automatic build number
+      echo "BUILD_NUMBER=$PROJECT_BUILD_NUMBER" >> $CM_ENV
+
 workflows:
-  # Pull Request Validation
-  pr-validation:
-    name: PR Validation
-    instance_type: mac_mini_m2
-    max_build_duration: 20
+  # iOS Release Workflow
+  release-ios:
+    name: Release iOS
+    <<: *release_tag
     environment:
       flutter: fvm
-    when:
-      changeset:
-        includes:
-          - "apps/**"
-          - "packages/**"
-          - "melos.yaml"
-          - "codemagic.yaml"
-          - "pubspec.yaml"
-        excludes:
-          - "**/*.md"
-          - "**/README.md"
-          - "docs/**"
-    triggering:
-      events:
-        - pull_request
-      branch_patterns:
-        - pattern: "main"
-          include: true
-          source: false
+      groups:
+        - github
+      vars:
+        APP_BUNDLE_ID: "me.auravibes.app"
+        APP_NAME: "AuraVibes"
+    integrations:
+      app_store_connect: app_store_connect
     cache:
       cache_paths:
         - ~/.pub-cache
         - $FLUTTER_ROOT/.pub-cache
+        - ~/.pub-cache/hosted
+        - ~/Library/Caches/CocoaPods
     scripts:
-      - name: Setup Environment
-        script: |
-          echo "Setting up Dart/Flutter environment..."
-          echo PATH="$PATH":"$FLUTTER_ROOT/.pub-cache/bin" >> $CM_ENV
-          echo PATH="$PATH":"$FLUTTER_ROOT/bin" >> $CM_ENV
-          dart --version
-          flutter --version
+      - *script_setup_environment
+      - *script_install_melos
+      - *script_melos_bootstrap
+      - *script_generate_code
+      - *script_parse_tag
 
-      - name: Install Melos
+      - name: Set up code signing settings on Xcode project
         script: |
-          echo "Installing Melos..."
-          dart pub global activate melos
-          melos --version
+          xcode-project use-profiles
 
-      - name: Bootstrap Monorepo
+      - name: Install CocoaPods
         script: |
-          echo "Bootstrapping monorepo packages..."
-          melos bootstrap --verbose
+          find . -name "Podfile" -execdir pod install \;
 
-      - name: Generate
+      - name: Build iOS IPA with Obfuscation and Split Debug Info
         script: |
-          echo "Running generations..."
-          melos generate
-          melos localization
-
-      - name: Run Full Validation
-        script: |
-          echo "Running full validation pipeline..."
-          melos analyze
-          melos test
-          melos format:check
+          echo "Building iOS IPA..."
+          echo "Build Name: $BUILD_NAME"
+          echo "Build Number: $BUILD_NUMBER"
+          echo "Bundle ID: $APP_BUNDLE_ID"
+          echo "Environment: $RELEASE_ENV"
+          
+          cd apps/auravibes_app
+          
+          flutter build ipa \
+            --$BUILD_TYPE \
+            --flavor prod \
+            --build-name=$BUILD_NAME \
+            --build-number=$BUILD_NUMBER \
+            --obfuscate \
+            --split-debug-info=./ios/symbols \
+            --dart-define=RELEASE_ENV=$RELEASE_ENV
 
     artifacts:
-      - coverage/**/*.html
-      - "**/coverage/lcov.info"
-      - "**/build/app/outputs/flutter-apk/*.apk"
+      - apps/auravibes_app/build/ios/ipa/*.ipa
+      - apps/auravibes_app/ios/symbols/**
+      - /tmp/xcodebuild_logs/*.log
+      - flutter_drive.log
 
-  # Main Branch CI/CD
-  main-ci:
-    name: Main Branch CI/CD
-    instance_type: mac_mini_m2
-    max_build_duration: 30
+    publishing:
+      email:
+        recipients:
+          - team@auravibes.me
+        notify:
+          success: true
+          failure: true
+      
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        beta_groups:
+          - Beta Testers
+        submit_to_app_store: false
+      
+      scripts:
+        - name: Publish iOS artifacts to GitHub Release
+          script: |
+            if [ -z "${CM_TAG}" ]; then
+              echo "Not a tag build, will not publish to GitHub release"
+              exit 0
+            fi
+            cd apps/auravibes_app
+            gh release upload "${CM_TAG}" build/ios/ipa/*.ipa --clobber
+
+  # Android Release Workflow
+  release-android:
+    name: Release Android
+    <<: *release_tag
     environment:
       flutter: fvm
-    when:
-      changeset:
-        includes:
-          - "apps/**"
-          - "packages/**"
-          - "melos.yaml"
-          - "codemagic.yaml"
-    triggering:
-      events:
-        - push
-      branch_patterns:
-        - pattern: "main"
-          include: true
-        - pattern: "develop"
-          include: true
+      android_signing:
+        - auravibes_keystore
+      groups:
+        - google_play
+        - github
+      vars:
+        PACKAGE_NAME: "me.auravibes.app"
+        GOOGLE_PLAY_TRACK: "internal"
     cache:
       cache_paths:
         - ~/.pub-cache
         - $FLUTTER_ROOT/.pub-cache
+        - ~/.gradle/cache
     scripts:
-      - name: Setup Environment
-        script: |
-          echo "Setting up production environment..."
-          echo PATH="$PATH":"$FLUTTER_ROOT/.pub-cache/bin" >> $CM_ENV
-          echo PATH="$PATH":"$FLUTTER_ROOT/bin" >> $CM_ENV
+      - *script_setup_environment
+      - *script_install_melos
+      - *script_melos_bootstrap
+      - *script_generate_code
+      - *script_parse_tag
 
-      - name: Install Melos
+      - name: Set up local.properties
         script: |
-          dart pub global activate melos
-          melos --version
+          echo "flutter.sdk=$HOME/programs/flutter" > "$CM_BUILD_DIR/apps/auravibes_app/android/local.properties"
 
-      - name: Bootstrap Monorepo
+      - name: Build Android AAB with Obfuscation and Split Debug Info
         script: |
-          melos bootstrap --verbose
-
-      - name: Generate
-        script: |
-          echo "Running generations..."
-          melos generate
-          melos localization
-
-      - name: Run Full Validation
-        script: |
-          echo "Running full validation pipeline..."
-          melos analyze
-          melos test
-          melos format:check
+          echo "Building Android AAB..."
+          echo "Build Name: $BUILD_NAME"
+          echo "Build Number: $BUILD_NUMBER"
+          echo "Package Name: $PACKAGE_NAME"
+          echo "Track: $GOOGLE_PLAY_TRACK"
+          
+          cd apps/auravibes_app
+          
+          flutter build appbundle \
+            --$BUILD_TYPE \
+            --flavor prod \
+            --build-name=$BUILD_NAME \
+            --build-number=$BUILD_NUMBER \
+            --obfuscate \
+            --split-debug-info=./android/symbols \
+            --dart-define=RELEASE_ENV=$RELEASE_ENV
 
     artifacts:
-      - "**/build/app/outputs/flutter-apk/*.apk"
-      - "**/build/web/**"
-      - coverage/**/*.html
+      - apps/auravibes_app/build/app/outputs/bundle/**/*.aab
+      - apps/auravibes_app/build/app/outputs/mapping/**/mapping.txt
+      - apps/auravibes_app/android/symbols/**
+      - flutter_drive.log
+
+    publishing:
+      email:
+        recipients:
+          - team@auravibes.me
+        notify:
+          success: true
+          failure: true
+      
+      google_play:
+        credentials: $GOOGLE_PLAY_SERVICE_ACCOUNT_CREDENTIALS
+        track: $GOOGLE_PLAY_TRACK
+        submit_as_draft: true
+      
+      scripts:
+        - name: Publish Android artifacts to GitHub Release
+          script: |
+            if [ -z "${CM_TAG}" ]; then
+              echo "Not a tag build, will not publish to GitHub release"
+              exit 0
+            fi
+            cd apps/auravibes_app
+            gh release upload "${CM_TAG}" build/app/outputs/bundle/**/*.aab --clobber
+
+  # macOS Release Workflow
+  release-macos:
+    name: Release macOS
+    <<: *release_tag
+    environment:
+      flutter: fvm
+      groups:
+        - github
+      vars:
+        APP_BUNDLE_ID: "me.auravibes.app"
+    cache:
+      cache_paths:
+        - ~/.pub-cache
+        - $FLUTTER_ROOT/.pub-cache
+        - ~/Library/Caches/CocoaPods
+    scripts:
+      - *script_setup_environment
+      - *script_install_melos
+      - *script_melos_bootstrap
+      - *script_generate_code
+      - *script_parse_tag
+
+      - name: Enable macOS Desktop
+        script: |
+          flutter config --enable-macos-desktop
+
+      - name: Install CocoaPods
+        script: |
+          echo "Installing CocoaPods dependencies..."
+          find . -name "Podfile" -execdir pod install \;
+
+      - name: Build macOS PKG with Obfuscation and Split Debug Info
+        script: |
+          echo "Building macOS PKG..."
+          echo "Build Name: $BUILD_NAME"
+          echo "Build Number: $BUILD_NUMBER"
+          echo "Bundle ID: $APP_BUNDLE_ID"
+          
+          cd apps/auravibes_app
+          
+          flutter build macos \
+            --$BUILD_TYPE \
+            --flavor prod \
+            --build-name=$BUILD_NAME \
+            --build-number=$BUILD_NUMBER \
+            --obfuscate \
+            --split-debug-info=./macos/symbols \
+            --dart-define=RELEASE_ENV=$RELEASE_ENV
+
+    artifacts:
+      - apps/auravibes_app/build/macos/Build/Products/Release/*.app
+      - apps/auravibes_app/macos/symbols/**
+
+    publishing:
+      email:
+        recipients:
+          - team@auravibes.me
+        notify:
+          success: true
+          failure: true
+       
+      scripts:
+        - name: Publish macOS artifacts to GitHub Release
+          script: |
+            if [ -z "${CM_TAG}" ]; then
+              echo "Not a tag build, will not publish to GitHub release"
+              exit 0
+            fi
+            cd apps/auravibes_app
+            gh release upload "${CM_TAG}" build/macos/Build/Products/Release/*.app --clobber
