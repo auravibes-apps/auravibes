@@ -70,7 +70,6 @@ android {
             }
         }
         getByName("debug") {
-            isShrinkResources = false
         }
     }
 }
