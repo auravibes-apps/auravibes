@@ -40,7 +40,18 @@ jobs:
           
           echo "Current version: $CURRENT_VERSION"
           
+          if [ -z "$CURRENT_VERSION" ]; then
+            echo "Error: Could not determine current version from $APP_DIR/pubspec.yaml" >&2
+            exit 1
+          fi
+          
           IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_VERSION"
+          
+          if [ "${#VERSION_PARTS[@]}" -lt 3 ]; then
+            echo "Error: Invalid version format in $APP_DIR/pubspec.yaml. Expected MAJOR.MINOR.PATCH, got '$CURRENT_VERSION'" >&2
+            exit 1
+          fi
+          
           MAJOR="${VERSION_PARTS[0]}"
           MINOR="${VERSION_PARTS[1]}"
           PATCH_PART="${VERSION_PARTS[2]%%+*}"
