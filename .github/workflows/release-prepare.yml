@@ -43,7 +43,15 @@ jobs:
           IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_VERSION"
           MAJOR="${VERSION_PARTS[0]}"
           MINOR="${VERSION_PARTS[1]}"
-          PATCH="${VERSION_PARTS[2]%%+*}"
+          PATCH_PART="${VERSION_PARTS[2]%%+*}"
+          
+          # Ensure PATCH component is numeric before performing arithmetic
+          if ! [[ "$PATCH_PART" =~ ^[0-9]+$ ]]; then
+            echo "Error: Invalid PATCH version component '$PATCH_PART' in version '$CURRENT_VERSION'. Expected a numeric PATCH part (e.g., MAJOR.MINOR.PATCH[+BUILD])."
+            exit 1
+          fi
+          
+          PATCH="$PATCH_PART"
           
           BUMP_TYPE="${{ inputs.bump_type }}"
           
