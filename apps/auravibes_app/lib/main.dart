@@ -28,9 +28,8 @@ Future<void> main() async {
     appDatabaseProvider,
   );
 
-  await appDatabase
-      .initializeWithDefaults(); // Load defaults after the database connection is established
-
+  // Load defaults after the database connection is established
+  await appDatabase.initializeWithDefaults();
   container.read(modelSyncServiceProvider);
 
   runApp(
