@@ -38,13 +38,8 @@ class CredentialsRepositoryImpl implements CredentialsRepository {
       throw ModelProviderNoTypeException(credentials.modelId);
     }
 
-<<<<<<< Updated upstream
-    // Encrypt API key for secure storage
-    String rawApiKey;
-=======
     // Store API key encrypted
     String encryptedApiKey;
->>>>>>> Stashed changes
     try {
       encryptedApiKey = await _encryptionService.encrypt(credentials.key);
     } catch (e) {
