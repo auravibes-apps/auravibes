@@ -38,10 +38,10 @@ class CredentialsRepositoryImpl implements CredentialsRepository {
       throw ModelProviderNoTypeException(credentials.modelId);
     }
 
-    // Encrypt API key for secure storage
-    String rawApiKey;
+    // Store API key encrypted
+    String encryptedApiKey;
     try {
-      rawApiKey = await _encryptionService.encrypt(credentials.key);
+      encryptedApiKey = await _encryptionService.encrypt(credentials.key);
     } catch (e) {
       throw ModelProviderException(
         'Failed to store API key securely',
@@ -63,7 +63,7 @@ class CredentialsRepositoryImpl implements CredentialsRepository {
 
     final createdCredentialsModel = await _database.credentialsDao
         .insertModelProvider(
-          _modelProviderToCreateToCompanion(credentials, rawApiKey),
+          _modelProviderToCreateToCompanion(credentials, encryptedApiKey),
         );
 
     final credentialsModels = models
@@ -94,11 +94,11 @@ class CredentialsRepositoryImpl implements CredentialsRepository {
 
   CredentialsCompanion _modelProviderToCreateToCompanion(
     CredentialsToCreate credentials,
-    String rawApiKey,
+    String encryptedApiKey,
   ) {
     return CredentialsCompanion(
       name: .new(credentials.name),
-      keyValue: .new(rawApiKey), // Store UUID instead of actual key
+      keyValue: .new(encryptedApiKey), // Store the encrypted API key
       url: .absentIfNull(credentials.url),
       workspaceId: .new(credentials.workspaceId),
       modelId: .new(credentials.modelId),
@@ -112,7 +112,7 @@ class CredentialsRepositoryImpl implements CredentialsRepository {
       id: credentialsModel.id,
       name: credentialsModel.name,
       modelId: credentialsModel.modelId,
-      key: credentialsModel.keyValue, // This will contain the UUID
+      key: credentialsModel.keyValue, // This will contain the encrypted key
       url: credentialsModel.url,
       createdAt: credentialsModel.createdAt,
       updatedAt: credentialsModel.updatedAt,
@@ -131,7 +131,7 @@ class CredentialsRepositoryImpl implements CredentialsRepository {
 
   @override
   Future<void> deleteCredential(String credentialsId) async {
-    // Get the credential to retrieve the key UUID
+    // Get the credential to retrieve the encrypted key
     final credential = await _database.credentialsDao.getCredentialById(
       credentialsId,
     );
