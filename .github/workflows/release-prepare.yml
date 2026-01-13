@@ -74,7 +74,17 @@ jobs:
           echo "New version: $NEW_VERSION"
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
           
-          sed -i "s/^version: .*/version: $NEW_VERSION/" "$APP_DIR/pubspec.yaml"
+          if ! sed -i "s/^version: .*/version: $NEW_VERSION/" "$APP_DIR/pubspec.yaml"; then
+            echo "Error: Failed to update version in $APP_DIR/pubspec.yaml"
+            exit 1
+          fi
+          
+          if ! grep -q "^version: $NEW_VERSION" "$APP_DIR/pubspec.yaml"; then
+            echo "Error: Version update verification failed for $APP_DIR/pubspec.yaml"
+            echo "Current version line:"
+            grep "^version:" "$APP_DIR/pubspec.yaml" || echo "No version line found."
+            exit 1
+          fi
 
       - name: 📋 Create release PR
         uses: peter-evans/create-pull-request@v8
