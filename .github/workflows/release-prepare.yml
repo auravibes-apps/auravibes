@@ -22,12 +22,6 @@ jobs:
       - name: 🏷️ Bump app version
         run: |
           sed -i "s/^version: .*/version: ${{ inputs.version }}/" apps/auravibes_app/pubspec.yaml
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout -b release-${{ inputs.version }}
-          git add apps/auravibes_app/pubspec.yaml
-          git commit -m "chore(release): Bump version to ${{ inputs.version }}"
-          git push origin release-${{ inputs.version }}
 
       - name: 📋 Create release PR
         uses: peter-evans/create-pull-request@v8
@@ -36,3 +30,4 @@ jobs:
           body: "Release ${{ inputs.version }} - Bumped auravibes_app version. Merging will create tag auravibes_app-v${{ inputs.version }} and GitHub release."
           branch: release-${{ inputs.version }}
           delete-branch: true
+          commit-message: "chore(release): Bump version to ${{ inputs.version }}"
