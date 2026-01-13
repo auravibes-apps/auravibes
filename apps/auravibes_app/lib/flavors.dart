@@ -1,6 +1,7 @@
 enum Flavor {
   prod,
   dev,
+  beta,
 }
 
 class F {
@@ -14,6 +15,8 @@ class F {
         return 'AuraVibes';
       case Flavor.dev:
         return 'AuraVibes Dev';
+      case Flavor.beta:
+        return 'AuraVibes Beta';
     }
   }
 }

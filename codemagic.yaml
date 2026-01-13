@@ -41,9 +41,9 @@ scripts:
       TAG_VERSION=${CM_TAG##*-v} # Remove '<package-name>-v' prefix
       
       if [[ $TAG_VERSION == *"-beta"* ]]; then
-        echo "Environment: BETA"
+        FLAVOR="beta"
       else
-        echo "Environment: PRODUCTION"
+        FLAVOR="prod"
       fi
       
       # Extract version from tag (1.2.3 or 1.2.3-beta.1)
@@ -96,11 +96,12 @@ workflows:
           echo "Building iOS IPA..."
           echo "Build Name: $BUILD_NAME"
           echo "Build Number: $BUILD_NUMBER"
+          echo "Flavor: $FLAVOR"
           
           cd apps/auravibes_app
           
           flutter build ipa --release \
-            --flavor prod \
+            --flavor=$FLAVOR \
             --build-name=$BUILD_NAME \
             --build-number=$BUILD_NUMBER \
             --obfuscate \
@@ -166,6 +167,7 @@ workflows:
           echo "Building Android AAB..."
           echo "Build Name: $BUILD_NAME"
           echo "Build Number: $BUILD_NUMBER"
+          echo "Flavor: $FLAVOR"
           echo "Package Name: $PACKAGE_NAME"
           echo "Track: $GOOGLE_PLAY_TRACK"
           
@@ -174,7 +176,7 @@ workflows:
           
           flutter build appbundle \
             --release \
-            --flavor prod \
+            --flavor=$FLAVOR \
             --build-name=$BUILD_NAME \
             --build-number=$BUILD_NUMBER \
             --obfuscate \
@@ -235,20 +237,21 @@ workflows:
           echo "Building macOS PKG..."
           echo "Build Name: $BUILD_NAME"
           echo "Build Number: $BUILD_NUMBER"
+          echo "Flavor: $FLAVOR"
           echo "Bundle ID: $APP_BUNDLE_ID"
           
           cd apps/auravibes_app
           
           flutter build macos \
             --release \
-            --flavor prod \
+            --flavor=$FLAVOR \
             --build-name=$BUILD_NAME \
             --build-number=$BUILD_NUMBER \
             --obfuscate \
             --split-debug-info=./macos/symbols
 
     artifacts:
-      - apps/auravibes_app/build/macos/Build/Products/Release-prod/*.app
+      - apps/auravibes_app/build/macos/Build/Products/**/*.app
       - apps/auravibes_app/macos/symbols/**
 
     publishing:
@@ -260,4 +263,4 @@ workflows:
               exit 0
             fi
             cd apps/auravibes_app
-            gh release upload "${CM_TAG}" build/macos/Build/Products/Release/*.app --clobber
+            gh release upload "${CM_TAG}" build/macos/Build/Products/**/*.app --clobber

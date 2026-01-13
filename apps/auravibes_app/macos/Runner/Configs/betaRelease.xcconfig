@@ -1,0 +1,6 @@
+#include "../../Flutter/betaRelease.xcconfig"
+#include "Warnings.xcconfig"
+
+ASSET_PREFIX=beta
+BUNDLE_NAME=AuraVibes Beta
+BUNDLE_DISPLAY_NAME=AuraVibes Beta
