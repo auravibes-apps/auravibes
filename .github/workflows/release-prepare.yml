@@ -2,9 +2,22 @@ name: Prepare release
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: 'New version (e.g., 0.0.3)'
+      bump_type:
+        description: 'Version bump type'
         required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+        default: 'patch'
+      app:
+        description: 'App to update'
+        required: true
+        type: choice
+        options:
+          - auravibes_app
+        default: 'auravibes_app'
 
 jobs:
   prepare-release:
@@ -19,15 +32,85 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: 🏷️ Bump app version
+      - name: 🏷️ Calculate and bump app version
+        id: bump_version
         run: |
-          sed -i "s/^version: .*/version: ${{ inputs.version }}/" apps/auravibes_app/pubspec.yaml
+          set -euo pipefail
+          APP_DIR="apps/${{ inputs.app }}"
+          CURRENT_VERSION=$(grep "^version:" "$APP_DIR/pubspec.yaml" | awk '{print $2}')
+          if [ -z "$CURRENT_VERSION" ]; then
+            echo "Error: Could not extract version from $APP_DIR/pubspec.yaml" >&2
+            exit 1
+          fi
+          
+          echo "Current version: $CURRENT_VERSION"
+          
+          if [ -z "$CURRENT_VERSION" ]; then
+            echo "Error: Could not determine current version from $APP_DIR/pubspec.yaml" >&2
+            exit 1
+          fi
+          
+          IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_VERSION"
+          
+          if [ "${#VERSION_PARTS[@]}" -lt 3 ]; then
+            echo "Error: Invalid version format in $APP_DIR/pubspec.yaml. Expected MAJOR.MINOR.PATCH, got '$CURRENT_VERSION'" >&2
+            exit 1
+          fi
+          
+          MAJOR="${VERSION_PARTS[0]}"
+          MINOR="${VERSION_PARTS[1]}"
+          PATCH_PART="${VERSION_PARTS[2]%%+*}"
+          
+          # Ensure PATCH component is numeric before performing arithmetic
+          if ! [[ "$PATCH_PART" =~ ^[0-9]+$ ]]; then
+            echo "Error: Invalid PATCH version component '$PATCH_PART' in version '$CURRENT_VERSION'. Expected a numeric PATCH part (e.g., MAJOR.MINOR.PATCH[+BUILD])."
+            exit 1
+          fi
+          
+          PATCH="$PATCH_PART"
+          
+          BUMP_TYPE="${{ inputs.bump_type }}"
+          
+          case $BUMP_TYPE in
+            major)
+              MAJOR=$((MAJOR + 1))
+              MINOR=0
+              PATCH=0
+              ;;
+            minor)
+              MINOR=$((MINOR + 1))
+              PATCH=0
+              ;;
+            patch)
+              PATCH=$((PATCH + 1))
+              ;;
+            *)
+              echo "Error: Invalid bump type '$BUMP_TYPE'. Expected one of: major, minor, patch."
+              exit 1
+              ;;
+          esac
+          
+          NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+          echo "New version: $NEW_VERSION"
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          
+          if ! sed -i "s/^version: .*/version: $NEW_VERSION/" "$APP_DIR/pubspec.yaml"; then
+            echo "Error: Failed to update version in $APP_DIR/pubspec.yaml"
+            exit 1
+          fi
+          
+          if ! grep -q "^version: $NEW_VERSION" "$APP_DIR/pubspec.yaml"; then
+            echo "Error: Version update verification failed for $APP_DIR/pubspec.yaml"
+            echo "Current version line:"
+            grep "^version:" "$APP_DIR/pubspec.yaml" || echo "No version line found."
+            exit 1
+          fi
 
       - name: 📋 Create release PR
         uses: peter-evans/create-pull-request@v8
         with:
-          title: "chore(release): Version ${{ inputs.version }}"
-          body: "Release ${{ inputs.version }} - Bumped auravibes_app version. Merging will create tag auravibes_app-v${{ inputs.version }} and GitHub release."
-          branch: release-${{ inputs.version }}
+          title: "chore(release): Version ${{ steps.bump_version.outputs.new_version }}"
+          body: "Release ${{ steps.bump_version.outputs.new_version }} - Bumped ${{ inputs.app }} version (${{ inputs.bump_type }}). Merging will create tag ${{ inputs.app }}-v${{ steps.bump_version.outputs.new_version }} and GitHub release."
+          branch: release-${{ steps.bump_version.outputs.new_version }}
           delete-branch: true
-          commit-message: "chore(release): Bump version to ${{ inputs.version }}"
+          commit-message: "chore(release): Bump version to ${{ steps.bump_version.outputs.new_version }}"
