@@ -16,5 +16,10 @@ android.apply {
             applicationId = "me.auravibes.app.dev"
             resValue(type = "string", name = "app_name", value = "AuraVibes Dev")
         }
+        create("beta") {
+            dimension = "flavor-type"
+            applicationId = "me.auravibes.app.beta"
+            resValue(type = "string", name = "app_name", value = "AuraVibes Beta")
+        }
     }
 }
