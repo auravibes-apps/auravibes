@@ -8,7 +8,7 @@
 PRODUCT_NAME = widgetbook_workspace
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.example.widgetbookWorkspace
+PRODUCT_BUNDLE_IDENTIFIER = me.auravibes.widgetbookWorkspace
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2025 com.example. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2025 auravibes.me. All rights reserved.

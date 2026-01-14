@@ -1,4 +1,4 @@
-package com.example.auravibes
+package me.auravibes.app
 
 import io.flutter.embedding.android.FlutterActivity
 
