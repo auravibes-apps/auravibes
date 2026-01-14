@@ -71,6 +71,9 @@ workflows:
       flutter: fvm
       groups:
         - github
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: me.auravibes.app
     integrations:
       app_store_connect: app_store_connect
     cache:
@@ -204,64 +207,3 @@ workflows:
             fi
             cd apps/auravibes_app
             gh release upload "${CM_TAG}" build/app/outputs/bundle/**/*.aab --clobber
-
-  # macOS Release Workflow
-  release-macos:
-    name: Release macOS
-    <<: *release_tag
-    environment:
-      flutter: fvm
-      groups:
-        - github
-      vars:
-        APP_BUNDLE_ID: "me.auravibes.app"
-    cache:
-      cache_paths:
-        - ~/.pub-cache
-        - $FLUTTER_ROOT/.pub-cache
-        - ~/Library/Caches/CocoaPods
-    scripts:
-      - *script_setup_environment
-      - *script_install_melos
-      - *script_melos_bootstrap
-      - *script_generate_code
-      - *script_parse_tag
-
-      - name: Enable macOS Desktop
-        script: |
-          flutter config --enable-macos-desktop
-
-      - *script_install_cocoapods
-
-      - name: Build macOS PKG with Obfuscation and Split Debug Info
-        script: |
-          echo "Building macOS PKG..."
-          echo "Build Name: $BUILD_NAME"
-          echo "Build Number: $BUILD_NUMBER"
-          echo "Flavor: $FLAVOR"
-          echo "Bundle ID: $APP_BUNDLE_ID"
-          
-          cd apps/auravibes_app
-          
-          flutter build macos \
-            --release \
-            --flavor=$FLAVOR \
-            --build-name=$BUILD_NAME \
-            --build-number=$BUILD_NUMBER \
-            --obfuscate \
-            --split-debug-info=./macos/symbols
-
-    artifacts:
-      - apps/auravibes_app/build/macos/Build/Products/**/*.app
-      - apps/auravibes_app/macos/symbols/**
-
-    publishing:
-      scripts:
-        - name: Publish macOS artifacts to GitHub Release
-          script: |
-            if [ -z "${CM_TAG}" ]; then
-              echo "Not a tag build, will not publish to GitHub release"
-              exit 0
-            fi
-            cd apps/auravibes_app
-            gh release upload "${CM_TAG}" build/macos/Build/Products/**/*.app --clobber
