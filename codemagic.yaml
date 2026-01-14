@@ -55,6 +55,7 @@ scripts:
       
       # Set automatic build number
       echo "BUILD_NUMBER=$PROJECT_BUILD_NUMBER" >> $CM_ENV
+      echo "FLAVOR=$FLAVOR" >> $CM_ENV
   - &script_install_cocoapods
     name: Install CocoaPods
     script: |

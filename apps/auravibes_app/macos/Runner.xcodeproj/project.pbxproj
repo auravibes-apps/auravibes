@@ -21,7 +21,9 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
+		130871EF6B7DF917ACB291ED /* betaRelease.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 7806A7D41DF9E623675DE79F /* betaRelease.xcconfig */; };
 		2E97C1045D18CD856584FC68 /* prodDebug.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 8D69B5B72633623B2DDFB155 /* prodDebug.xcconfig */; };
+		319ABEDDE19C3BE5064B7E6E /* betaDebug.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = B25491BD36C2C724EE636C53 /* betaDebug.xcconfig */; };
 		331C80D8294CF71000263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C80D7294CF71000263BE5 /* RunnerTests.swift */; };
 		335BBD1B22A9A15E00E9071D /* GeneratedPluginRegistrant.swift in Sources */ = {isa = PBXBuildFile; fileRef = 335BBD1A22A9A15E00E9071D /* GeneratedPluginRegistrant.swift */; };
 		33CC10F12044A3C60003C045 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33CC10F02044A3C60003C045 /* AppDelegate.swift */; };
@@ -33,6 +35,7 @@
 		7F0C20592132039ECDFF1F00 /* devDebug.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = A5768BDDCD37924333561EB0 /* devDebug.xcconfig */; };
 		956E953B9DFCADA611245F92 /* devRelease.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 1A37D7DBAAB8EFB5C82C2F4E /* devRelease.xcconfig */; };
 		A16C8D1F08AF732C9786504B /* prodRelease.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 3EBF5C26151B63B051CBDE7D /* prodRelease.xcconfig */; };
+		B2811709B109E45B294064EE /* betaProfile.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = D4E965B4A9D59545F5C64434 /* betaProfile.xcconfig */; };
 		BD6902CB2673424304E412A5 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 11C4EC1501DCA7073D17CA33 /* Pods_Runner.framework */; };
 		D3466AD6880F90956EDCDB50 /* devProfile.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = D356F51D32FD6850C565D1EA /* devProfile.xcconfig */; };
 /* End PBXBuildFile section */
@@ -95,6 +98,7 @@
 		5FCA42A2BE6F433B56D6F187 /* Pods-RunnerTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.release.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.release.xcconfig"; sourceTree = "<group>"; };
 		6D9266E12899186562B139E1 /* Pods-RunnerTests.debug-dev.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.debug-dev.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.debug-dev.xcconfig"; sourceTree = "<group>"; };
 		75CDAE332E89C6797CE15DD7 /* Pods-Runner.release-prod.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release-prod.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release-prod.xcconfig"; sourceTree = "<group>"; };
+		7806A7D41DF9E623675DE79F /* betaRelease.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = betaRelease.xcconfig; path = Runner/Configs/betaRelease.xcconfig; sourceTree = "<group>"; };
 		7904073869B2E33DEF3F228F /* Pods-Runner.debug-prod.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug-prod.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug-prod.xcconfig"; sourceTree = "<group>"; };
 		7AFA3C8E1D35360C0083082E /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
 		848FC8A3F3699FEC1D4E9FE7 /* Pods-Runner.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile.xcconfig"; sourceTree = "<group>"; };
@@ -107,10 +111,12 @@
 		A02A41CFFF45383348A72A4D /* Pods-RunnerTests.release-prod.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.release-prod.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.release-prod.xcconfig"; sourceTree = "<group>"; };
 		A4FC09025BF1B8301C3E2C04 /* Pods-RunnerTests.profile-dev.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.profile-dev.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.profile-dev.xcconfig"; sourceTree = "<group>"; };
 		A5768BDDCD37924333561EB0 /* devDebug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = devDebug.xcconfig; path = Runner/Configs/devDebug.xcconfig; sourceTree = "<group>"; };
+		B25491BD36C2C724EE636C53 /* betaDebug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = betaDebug.xcconfig; path = Runner/Configs/betaDebug.xcconfig; sourceTree = "<group>"; };
 		BF252CF435EECC3818708873 /* Pods-Runner.release-dev.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release-dev.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release-dev.xcconfig"; sourceTree = "<group>"; };
 		C9E337DA165623B7DF7B1204 /* Pods_RunnerTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_RunnerTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		CD59F936006E19DE15566AD3 /* Pods-RunnerTests.release-dev.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.release-dev.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.release-dev.xcconfig"; sourceTree = "<group>"; };
 		D356F51D32FD6850C565D1EA /* devProfile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = devProfile.xcconfig; path = Runner/Configs/devProfile.xcconfig; sourceTree = "<group>"; };
+		D4E965B4A9D59545F5C64434 /* betaProfile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = betaProfile.xcconfig; path = Runner/Configs/betaProfile.xcconfig; sourceTree = "<group>"; };
 		DE0161DE32C78B2BC43B9C25 /* Pods-Runner.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -168,6 +174,9 @@
 				A5768BDDCD37924333561EB0 /* devDebug.xcconfig */,
 				D356F51D32FD6850C565D1EA /* devProfile.xcconfig */,
 				1A37D7DBAAB8EFB5C82C2F4E /* devRelease.xcconfig */,
+				B25491BD36C2C724EE636C53 /* betaDebug.xcconfig */,
+				D4E965B4A9D59545F5C64434 /* betaProfile.xcconfig */,
+				7806A7D41DF9E623675DE79F /* betaRelease.xcconfig */,
 			);
 			sourceTree = "<group>";
 		};
@@ -364,6 +373,9 @@
 				7F0C20592132039ECDFF1F00 /* devDebug.xcconfig in Resources */,
 				D3466AD6880F90956EDCDB50 /* devProfile.xcconfig in Resources */,
 				956E953B9DFCADA611245F92 /* devRelease.xcconfig in Resources */,
+				319ABEDDE19C3BE5064B7E6E /* betaDebug.xcconfig in Resources */,
+				B2811709B109E45B294064EE /* betaProfile.xcconfig in Resources */,
+				130871EF6B7DF917ACB291ED /* betaRelease.xcconfig in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -518,6 +530,14 @@
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
+		190CA7ABFBC760216BD6F17F /* Profile-beta */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = D4E965B4A9D59545F5C64434 /* betaProfile.xcconfig */;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = "Profile-beta";
+		};
 		1CE210DD66DA2C4654EDC27B /* Release-dev */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 1A37D7DBAAB8EFB5C82C2F4E /* devRelease.xcconfig */;
@@ -582,6 +602,71 @@
 				SWIFT_VERSION = 5.0;
 			};
 			name = "Release-dev";
+		};
+		251296C2A0ADB028E1F5C691 /* Release-beta */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7806A7D41DF9E623675DE79F /* betaRelease.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_APPICON_NAME = "$(ASSET_PREFIX)AppIcon";
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Flutter",
+				);
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_FILE = Runner/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Flutter",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				PRODUCT_BUNDLE_IDENTIFIER = me.auravibes.app.beta;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = "Release-beta";
 		};
 		331C80DB294CF71000263BE5 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -870,27 +955,109 @@
 			};
 			name = Release;
 		};
+		49A4542A151C75AD5EFBF971 /* Release-beta */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7806A7D41DF9E623675DE79F /* betaRelease.xcconfig */;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = "Release-beta";
+		};
 		4C40B82562446D79892F519D /* Profile-prod */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 0CC193C27F89F8C2D8191B6B /* prodProfile.xcconfig */;
 			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = Runner/DebugProfile.entitlements;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
-				DEVELOPMENT_TEAM = D2J7V42XTN;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = "Profile-prod";
+		};
+		5354C8E94FF20E236FED42D8 /* Debug-beta */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = B25491BD36C2C724EE636C53 /* betaDebug.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_APPICON_NAME = "$(ASSET_PREFIX)AppIcon";
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Flutter",
+				);
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_FILE = Runner/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Flutter",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = me.auravibes.app.beta;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = "Debug-beta";
 		};
 		5E3077AD7EA59A15AFE5DD29 /* Debug-prod */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 8D69B5B72633623B2DDFB155 /* prodDebug.xcconfig */;
 			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = Runner/DebugProfile.entitlements;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
-				DEVELOPMENT_TEAM = D2J7V42XTN;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = "Debug-prod";
+		};
+		61E02DAA173AD83DD3B815B7 /* Debug-beta */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = B25491BD36C2C724EE636C53 /* betaDebug.xcconfig */;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = "Debug-beta";
 		};
 		6FC3C0DA2ED0E7F300EC5CB6 /* Debug-prod */ = {
 			isa = XCBuildConfiguration;
@@ -986,9 +1153,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = A5768BDDCD37924333561EB0 /* devDebug.xcconfig */;
 			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = Runner/DebugProfile.entitlements;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
-				DEVELOPMENT_TEAM = D2J7V42XTN;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = "Debug-dev";
@@ -1195,13 +1359,75 @@
 			};
 			name = "Profile-prod";
 		};
+		A9F780916F3871A1222DE2CA /* Profile-beta */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = D4E965B4A9D59545F5C64434 /* betaProfile.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_APPICON_NAME = "$(ASSET_PREFIX)AppIcon";
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Flutter",
+				);
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_FILE = Runner/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Flutter",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				PRODUCT_BUNDLE_IDENTIFIER = me.auravibes.app.beta;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = "Profile-beta";
+		};
 		C59A8943B5518B44CF65F6FB /* Release-prod */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 3EBF5C26151B63B051CBDE7D /* prodRelease.xcconfig */;
 			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = Runner/Release.entitlements;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
-				DEVELOPMENT_TEAM = D2J7V42XTN;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = "Release-prod";
@@ -1210,9 +1436,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = D356F51D32FD6850C565D1EA /* devProfile.xcconfig */;
 			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = Runner/DebugProfile.entitlements;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
-				DEVELOPMENT_TEAM = D2J7V42XTN;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = "Profile-dev";
@@ -1221,9 +1444,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 1A37D7DBAAB8EFB5C82C2F4E /* devRelease.xcconfig */;
 			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = Runner/Release.entitlements;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
-				DEVELOPMENT_TEAM = D2J7V42XTN;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = "Release-dev";
@@ -1396,6 +1616,9 @@
 				83AB33CC2BCC7E8C180106AC /* Debug-dev */,
 				F08BF787802CB7DC32ED7225 /* Profile-dev */,
 				1CE210DD66DA2C4654EDC27B /* Release-dev */,
+				5354C8E94FF20E236FED42D8 /* Debug-beta */,
+				A9F780916F3871A1222DE2CA /* Profile-beta */,
+				251296C2A0ADB028E1F5C691 /* Release-beta */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -1412,6 +1635,9 @@
 				7CF54389C4834D033CF88FF1 /* Debug-dev */,
 				DD6179F301F1B87F71DF8919 /* Profile-dev */,
 				DFC0B36B72F55C54E8771560 /* Release-dev */,
+				61E02DAA173AD83DD3B815B7 /* Debug-beta */,
+				190CA7ABFBC760216BD6F17F /* Profile-beta */,
+				49A4542A151C75AD5EFBF971 /* Release-beta */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
