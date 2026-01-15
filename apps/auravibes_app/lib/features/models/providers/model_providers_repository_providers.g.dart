@@ -55,7 +55,7 @@ final class ModelProvidersRepositoryProvider
 }
 
 String _$modelProvidersRepositoryHash() =>
-    r'5ecb2ac2aa9e7c0b04d90f00d8de103f70de50e3';
+    r'e24c0d43d62bdfc68db800de929581d68c73ecf7';
 
 @ProviderFor(credentialsModelsRepository)
 final credentialsModelsRepositoryProvider =
