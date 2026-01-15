@@ -11,4 +11,26 @@ mixin _$CredentialModelsDaoMixin on DatabaseAccessor<AppDatabase> {
   $CredentialsTable get credentials => attachedDatabase.credentials;
   $CredentialModelsTable get credentialModels =>
       attachedDatabase.credentialModels;
+  CredentialModelsDaoManager get managers => CredentialModelsDaoManager(this);
+}
+
+class CredentialModelsDaoManager {
+  final _$CredentialModelsDaoMixin _db;
+  CredentialModelsDaoManager(this._db);
+  $$ApiModelProvidersTableTableManager get apiModelProviders =>
+      $$ApiModelProvidersTableTableManager(
+        _db.attachedDatabase,
+        _db.apiModelProviders,
+      );
+  $$ApiModelsTableTableManager get apiModels =>
+      $$ApiModelsTableTableManager(_db.attachedDatabase, _db.apiModels);
+  $$WorkspacesTableTableManager get workspaces =>
+      $$WorkspacesTableTableManager(_db.attachedDatabase, _db.workspaces);
+  $$CredentialsTableTableManager get credentials =>
+      $$CredentialsTableTableManager(_db.attachedDatabase, _db.credentials);
+  $$CredentialModelsTableTableManager get credentialModels =>
+      $$CredentialModelsTableTableManager(
+        _db.attachedDatabase,
+        _db.credentialModels,
+      );
 }

@@ -17,4 +17,39 @@ mixin _$ConversationToolsDaoMixin on DatabaseAccessor<AppDatabase> {
   $ToolsTable get tools => attachedDatabase.tools;
   $ConversationToolsTable get conversationTools =>
       attachedDatabase.conversationTools;
+  ConversationToolsDaoManager get managers => ConversationToolsDaoManager(this);
+}
+
+class ConversationToolsDaoManager {
+  final _$ConversationToolsDaoMixin _db;
+  ConversationToolsDaoManager(this._db);
+  $$WorkspacesTableTableManager get workspaces =>
+      $$WorkspacesTableTableManager(_db.attachedDatabase, _db.workspaces);
+  $$ApiModelProvidersTableTableManager get apiModelProviders =>
+      $$ApiModelProvidersTableTableManager(
+        _db.attachedDatabase,
+        _db.apiModelProviders,
+      );
+  $$ApiModelsTableTableManager get apiModels =>
+      $$ApiModelsTableTableManager(_db.attachedDatabase, _db.apiModels);
+  $$CredentialsTableTableManager get credentials =>
+      $$CredentialsTableTableManager(_db.attachedDatabase, _db.credentials);
+  $$CredentialModelsTableTableManager get credentialModels =>
+      $$CredentialModelsTableTableManager(
+        _db.attachedDatabase,
+        _db.credentialModels,
+      );
+  $$ConversationsTableTableManager get conversations =>
+      $$ConversationsTableTableManager(_db.attachedDatabase, _db.conversations);
+  $$McpServersTableTableManager get mcpServers =>
+      $$McpServersTableTableManager(_db.attachedDatabase, _db.mcpServers);
+  $$ToolsGroupsTableTableManager get toolsGroups =>
+      $$ToolsGroupsTableTableManager(_db.attachedDatabase, _db.toolsGroups);
+  $$ToolsTableTableManager get tools =>
+      $$ToolsTableTableManager(_db.attachedDatabase, _db.tools);
+  $$ConversationToolsTableTableManager get conversationTools =>
+      $$ConversationToolsTableTableManager(
+        _db.attachedDatabase,
+        _db.conversationTools,
+      );
 }
