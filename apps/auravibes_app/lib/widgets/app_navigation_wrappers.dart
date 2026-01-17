@@ -15,7 +15,7 @@ import 'package:go_router/go_router.dart';
 /// - Desktop: Shows persistent collapsible sidebar
 /// - Mobile: Uses Scaffold's drawer pattern for native platform behavior
 /// It delegates the visual presentation to AuraSidebarOrganism
-/// 'from auravibes_ui package.
+/// from the auravibes_ui package.
 
 final List<AuraNavigationData> _navigationItems = [
   // const AuraNavigationData(
