@@ -21,7 +21,7 @@ class AuraSidebar extends StatelessWidget {
     super.key,
   });
 
-  /// Whether sidebar is currently expanded.
+  /// Whether the sidebar is currently expanded.
   final bool isExpanded;
 
   /// List of navigation items to display.
