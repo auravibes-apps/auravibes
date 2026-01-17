@@ -42,7 +42,7 @@ final class AddModelProviderStateProvider
 }
 
 String _$addModelProviderStateHash() =>
-    r'e614d33da155aba003dcb1477145899fc114f8ff';
+    r'4740cf5eb15af8efb65e57e89512dde4e9238f10';
 
 abstract class _$AddModelProviderState
     extends $Notifier<AddModelProviderModel> {

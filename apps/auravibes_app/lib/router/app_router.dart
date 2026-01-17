@@ -17,12 +17,10 @@ final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
   branches: <TypedStatefulShellBranch<StatefulShellBranchData>>[
     TypedStatefulShellBranch(
       routes: [
+        TypedGoRoute<NewChatRoute>(path: '/chat/new'),
+        TypedGoRoute<CoversationRoute>(path: '/chats/:chatId'),
         TypedGoRoute<ChatsRoute>(
           path: '/chats',
-          routes: [
-            TypedGoRoute<NewChatRoute>(path: 'new'),
-            TypedGoRoute<CoversationRoute>(path: ':chatId'),
-          ],
         ),
       ],
     ),

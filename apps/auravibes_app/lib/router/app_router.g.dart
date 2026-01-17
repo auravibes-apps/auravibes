@@ -14,16 +14,14 @@ RouteBase get $myShellRouteData => StatefulShellRouteData.$route(
     StatefulShellBranchData.$branch(
       routes: [
         GoRouteData.$route(
-          path: '/chats',
-          factory: $ChatsRoute._fromState,
-          routes: [
-            GoRouteData.$route(path: 'new', factory: $NewChatRoute._fromState),
-            GoRouteData.$route(
-              path: ':chatId',
-              factory: $CoversationRoute._fromState,
-            ),
-          ],
+          path: '/chat/new',
+          factory: $NewChatRoute._fromState,
         ),
+        GoRouteData.$route(
+          path: '/chats/:chatId',
+          factory: $CoversationRoute._fromState,
+        ),
+        GoRouteData.$route(path: '/chats', factory: $ChatsRoute._fromState),
       ],
     ),
     StatefulShellBranchData.$branch(
@@ -52,31 +50,11 @@ extension $MyShellRouteDataExtension on MyShellRouteData {
       const MyShellRouteData();
 }
 
-mixin $ChatsRoute on GoRouteData {
-  static ChatsRoute _fromState(GoRouterState state) => ChatsRoute();
-
-  @override
-  String get location => GoRouteData.$location('/chats');
-
-  @override
-  void go(BuildContext context) => context.go(location);
-
-  @override
-  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
-
-  @override
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
-
-  @override
-  void replace(BuildContext context) => context.replace(location);
-}
-
 mixin $NewChatRoute on GoRouteData {
   static NewChatRoute _fromState(GoRouterState state) => NewChatRoute();
 
   @override
-  String get location => GoRouteData.$location('/chats/new');
+  String get location => GoRouteData.$location('/chat/new');
 
   @override
   void go(BuildContext context) => context.go(location);
@@ -101,6 +79,26 @@ mixin $CoversationRoute on GoRouteData {
   @override
   String get location =>
       GoRouteData.$location('/chats/${Uri.encodeComponent(_self.chatId)}');
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $ChatsRoute on GoRouteData {
+  static ChatsRoute _fromState(GoRouterState state) => ChatsRoute();
+
+  @override
+  String get location => GoRouteData.$location('/chats');
 
   @override
   void go(BuildContext context) => context.go(location);

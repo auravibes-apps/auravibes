@@ -2,6 +2,7 @@ import 'package:auravibes_app/features/models/providers/list_models_providers.da
 import 'package:auravibes_app/features/models/widgets/add_chat_model.dart';
 import 'package:auravibes_app/features/models/widgets/list_model_credentials.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/widgets/app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/app_content.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -14,7 +15,7 @@ class ModelsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraScreen(
-      appBar: const AuraAppBar(
+      appBar: const AuraAppBarWithDrawer(
         title: TextLocale(LocaleKeys.models_screens_title),
       ),
       child: AuraColumn(

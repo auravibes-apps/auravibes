@@ -1,6 +1,7 @@
 import 'package:auravibes_app/features/chats/widgets/chat_list_widget.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/app_router.dart';
+import 'package:auravibes_app/widgets/app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/app_content.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -13,7 +14,7 @@ class ChatScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return AuraScreen(
-      appBar: const AuraAppBar(
+      appBar: const AuraAppBarWithDrawer(
         title: TextLocale(LocaleKeys.chats_screens_chats_list_title),
       ),
       child: AuraColumn(

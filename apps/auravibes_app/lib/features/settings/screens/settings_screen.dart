@@ -1,5 +1,6 @@
 import 'package:auravibes_app/features/settings/providers/theme_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/widgets/app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
@@ -14,7 +15,7 @@ class SettingsScreen extends ConsumerWidget {
     final currentTheme = themeAsync.asData?.value ?? AppTheme.system;
 
     return AuraScreen(
-      appBar: const AuraAppBar(
+      appBar: const AuraAppBarWithDrawer(
         title: TextLocale(LocaleKeys.settings_screen_title),
       ),
       child: SingleChildScrollView(

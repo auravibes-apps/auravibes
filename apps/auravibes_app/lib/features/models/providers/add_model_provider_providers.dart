@@ -81,7 +81,8 @@ class AddModelProviderState extends _$AddModelProviderState {
         ),
       );
       return provider;
-    } on AddModelException catch (_) {
+    } on AddModelException catch (e) {
+      _log.severe('addModelProvider known error', e);
       rethrow;
     } on Exception catch (e, s) {
       _log.severe('addModelProvider error', e, s);

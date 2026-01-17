@@ -16,6 +16,7 @@ class AuraSidebar extends StatelessWidget {
     this.isExpanded = true,
     this.selectedIndex = 0,
     this.header,
+    this.middleSection,
     this.footer,
     super.key,
   });
@@ -34,6 +35,10 @@ class AuraSidebar extends StatelessWidget {
 
   /// Optional header widget to display at the top of the sidebar.
   final Widget? header;
+
+  /// Optional middle section widget to display between
+  /// main navigation and footer.
+  final Widget? middleSection;
 
   /// Optional footer widget to display at the bottom of the sidebar.
   final Widget? footer;
@@ -63,8 +68,22 @@ class AuraSidebar extends StatelessWidget {
             _buildHeaderSection(context)
           else
             SizedBox(height: context.auraTheme.spacing.lg),
-          Expanded(child: _buildNavigationItems(context)),
-          _buildNavigationItems(context, footer: true),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  _buildNavigationItems(context),
+                  ?middleSection,
+                ],
+              ),
+            ),
+          ),
+          SafeArea(
+            top: false,
+            right: false,
+            child: _buildNavigationItems(context, footer: true),
+          ),
+
           if (footer != null) _buildFooterSection(context),
         ],
       ),

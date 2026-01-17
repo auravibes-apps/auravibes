@@ -1,6 +1,7 @@
 {
   "menu": {
     "home": "Home",
+    "new_chat": "New Chat",
     "chats": "Chats",
     "tools": "Tools",
     "models": "Models",
@@ -175,6 +176,11 @@
     "actions": {
       "cancel": "Cancel"
     }
+  },
+  "sidebar": {
+    "recent_chats": "Recent Chats",
+    "no_recent_chats": "No recent chats",
+    "view_all_chats": "View All"
   },
   "mcp_modal": {
     "title": "Add MCP Server",
