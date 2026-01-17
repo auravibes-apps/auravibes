@@ -36,7 +36,8 @@ class AuraSidebar extends StatelessWidget {
   /// Optional header widget to display at the top of the sidebar.
   final Widget? header;
 
-  /// Optional middle section widget to display between main navigation and footer.
+  /// Optional middle section widget to display between
+  /// main navigation and footer.
   final Widget? middleSection;
 
   /// Optional footer widget to display at the bottom of the sidebar.
