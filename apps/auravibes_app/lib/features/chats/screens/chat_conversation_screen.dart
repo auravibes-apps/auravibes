@@ -8,6 +8,7 @@ import 'package:auravibes_app/features/chats/widgets/chat_messages_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/mcp_connecting_indicator.dart';
 import 'package:auravibes_app/features/models/widgets/select_chat_model.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_management_modal.dart';
+import 'package:auravibes_app/widgets/app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/app_error.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
@@ -67,7 +68,7 @@ class _ChatConversationScreen extends HookConsumerWidget {
     }, [ref]);
 
     return AuraScreen(
-      appBar: AuraAppBar(
+      appBar: AuraAppBarWithDrawer(
         title: Text(modelTitle ?? ''),
         bottom: SelectCredentialsModelWidget(
           credentialsModelId: modelId,

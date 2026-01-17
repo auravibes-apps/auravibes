@@ -16,11 +16,12 @@ class AuraSidebar extends StatelessWidget {
     this.isExpanded = true,
     this.selectedIndex = 0,
     this.header,
+    this.middleSection,
     this.footer,
     super.key,
   });
 
-  /// Whether the sidebar is currently expanded.
+  /// Whether sidebar is currently expanded.
   final bool isExpanded;
 
   /// List of navigation items to display.
@@ -34,6 +35,9 @@ class AuraSidebar extends StatelessWidget {
 
   /// Optional header widget to display at the top of the sidebar.
   final Widget? header;
+
+  /// Optional middle section widget to display between main navigation and footer.
+  final Widget? middleSection;
 
   /// Optional footer widget to display at the bottom of the sidebar.
   final Widget? footer;
@@ -63,7 +67,16 @@ class AuraSidebar extends StatelessWidget {
             _buildHeaderSection(context)
           else
             SizedBox(height: context.auraTheme.spacing.lg),
-          Expanded(child: _buildNavigationItems(context)),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  _buildNavigationItems(context),
+                  ?middleSection,
+                ],
+              ),
+            ),
+          ),
           _buildNavigationItems(context, footer: true),
           if (footer != null) _buildFooterSection(context),
         ],

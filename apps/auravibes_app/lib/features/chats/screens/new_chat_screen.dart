@@ -9,6 +9,7 @@ import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/providers/messages_manager_provider.dart';
 import 'package:auravibes_app/router/app_router.dart';
 import 'package:auravibes_app/services/tools/user_tools_entity.dart';
+import 'package:auravibes_app/widgets/app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
@@ -106,7 +107,7 @@ class NewChatScreen extends HookConsumerWidget {
     }
 
     return AuraScreen(
-      appBar: AuraAppBar(
+      appBar: AuraAppBarWithDrawer(
         title: const TextLocale(LocaleKeys.home_screen_actions_start_new_chat),
         bottom: SelectCredentialsModelWidget(
           credentialsModelId: modelIdState.value,

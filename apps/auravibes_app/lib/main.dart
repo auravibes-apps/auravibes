@@ -3,12 +3,11 @@ import 'package:auravibes_app/features/settings/providers/theme_provider.dart';
 import 'package:auravibes_app/flavors.dart';
 import 'package:auravibes_app/main/locale.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
-import 'package:auravibes_app/router/app_router.dart';
+import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'
     show SystemChrome, SystemUiMode, SystemUiOverlayStyle, appFlavor;
-import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 Future<void> main() async {
@@ -46,6 +45,7 @@ class MyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeAsync = ref.watch(themeControllerProvider);
+    final routerConfig = ref.watch(routerProvier);
     final themeMode = themeAsync.asData?.value.themeMode ?? ThemeMode.system;
 
     return Portal(
@@ -67,14 +67,8 @@ class MyApp extends ConsumerWidget {
         ),
         debugShowCheckedModeBanner: F.appFlavor != Flavor.prod,
         themeMode: themeMode,
-        routerConfig: _router,
+        routerConfig: routerConfig,
       ),
     );
   }
-
-  static final GoRouter _router = GoRouter(
-    routes: $appRoutes,
-    initialLocation: '/chats',
-    navigatorKey: rootNavigatorKey,
-  );
 }

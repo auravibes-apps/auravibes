@@ -93,10 +93,12 @@
 		33E51913231747F40026EE4D /* DebugProfile.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DebugProfile.entitlements; sourceTree = "<group>"; };
 		33E51914231749380026EE4D /* Release.entitlements */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.entitlements; path = Release.entitlements; sourceTree = "<group>"; };
 		33E5194F232828860026EE4D /* AppInfo.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = AppInfo.xcconfig; sourceTree = "<group>"; };
+		3B9ADB3D4516C149B6EA3DE5 /* Pods-RunnerTests.release-beta.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.release-beta.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.release-beta.xcconfig"; sourceTree = "<group>"; };
 		3EBF5C26151B63B051CBDE7D /* prodRelease.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = prodRelease.xcconfig; path = Runner/Configs/prodRelease.xcconfig; sourceTree = "<group>"; };
 		40A11C0FA0F653A62025C9F6 /* Pods-RunnerTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.debug.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.debug.xcconfig"; sourceTree = "<group>"; };
 		4BF2FFE3C249A7A66AACD8AD /* Pods-Runner.release-beta.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release-beta.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release-beta.xcconfig"; sourceTree = "<group>"; };
 		594195A1D255A2D85E8ABFF8 /* Pods-Runner.profile-beta.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile-beta.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile-beta.xcconfig"; sourceTree = "<group>"; };
+		5BD86E4928D0F13F69D6C284 /* Pods-RunnerTests.profile-beta.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.profile-beta.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.profile-beta.xcconfig"; sourceTree = "<group>"; };
 		5DA58BB80925FB0C26398C5F /* Pods-RunnerTests.profile-prod.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.profile-prod.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.profile-prod.xcconfig"; sourceTree = "<group>"; };
 		5FCA42A2BE6F433B56D6F187 /* Pods-RunnerTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.release.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.release.xcconfig"; sourceTree = "<group>"; };
 		6D9266E12899186562B139E1 /* Pods-RunnerTests.debug-dev.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.debug-dev.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.debug-dev.xcconfig"; sourceTree = "<group>"; };
@@ -121,6 +123,7 @@
 		D356F51D32FD6850C565D1EA /* devProfile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = devProfile.xcconfig; path = Runner/Configs/devProfile.xcconfig; sourceTree = "<group>"; };
 		D4E965B4A9D59545F5C64434 /* betaProfile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = betaProfile.xcconfig; path = Runner/Configs/betaProfile.xcconfig; sourceTree = "<group>"; };
 		DE0161DE32C78B2BC43B9C25 /* Pods-Runner.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"; sourceTree = "<group>"; };
+		F625EEBE2D96145E5FD77783 /* Pods-RunnerTests.debug-beta.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.debug-beta.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.debug-beta.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -251,6 +254,9 @@
 				23CCBEE0982996427D3CF5C6 /* Pods-Runner.debug-beta.xcconfig */,
 				594195A1D255A2D85E8ABFF8 /* Pods-Runner.profile-beta.xcconfig */,
 				4BF2FFE3C249A7A66AACD8AD /* Pods-Runner.release-beta.xcconfig */,
+				F625EEBE2D96145E5FD77783 /* Pods-RunnerTests.debug-beta.xcconfig */,
+				5BD86E4928D0F13F69D6C284 /* Pods-RunnerTests.profile-beta.xcconfig */,
+				3B9ADB3D4516C149B6EA3DE5 /* Pods-RunnerTests.release-beta.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -540,6 +546,9 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = D4E965B4A9D59545F5C64434 /* betaProfile.xcconfig */;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Runner/DebugProfile.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				DEVELOPMENT_TEAM = D2J7V42XTN;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = "Profile-beta";
@@ -965,6 +974,9 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 7806A7D41DF9E623675DE79F /* betaRelease.xcconfig */;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Runner/Release.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				DEVELOPMENT_TEAM = D2J7V42XTN;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = "Release-beta";
@@ -973,6 +985,9 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 0CC193C27F89F8C2D8191B6B /* prodProfile.xcconfig */;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Runner/DebugProfile.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				DEVELOPMENT_TEAM = D2J7V42XTN;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = "Profile-prod";
@@ -1053,6 +1068,9 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 8D69B5B72633623B2DDFB155 /* prodDebug.xcconfig */;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Runner/DebugProfile.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				DEVELOPMENT_TEAM = D2J7V42XTN;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = "Debug-prod";
@@ -1061,9 +1079,57 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = B25491BD36C2C724EE636C53 /* betaDebug.xcconfig */;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Runner/DebugProfile.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				DEVELOPMENT_TEAM = D2J7V42XTN;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = "Debug-beta";
+		};
+		6FB10FF82F19C32F00C3D1DD /* Debug-beta */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = F625EEBE2D96145E5FD77783 /* Pods-RunnerTests.debug-beta.xcconfig */;
+			buildSettings = {
+				PRODUCT_NAME = RunnerTests;
+			};
+			name = "Debug-beta";
+		};
+		6FB10FF92F19C32F00C3D1DD /* Profile-beta */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 5BD86E4928D0F13F69D6C284 /* Pods-RunnerTests.profile-beta.xcconfig */;
+			buildSettings = {
+				PRODUCT_NAME = RunnerTests;
+			};
+			name = "Profile-beta";
+		};
+		6FB10FFA2F19C32F00C3D1DD /* Release-beta */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 3B9ADB3D4516C149B6EA3DE5 /* Pods-RunnerTests.release-beta.xcconfig */;
+			buildSettings = {
+				PRODUCT_NAME = RunnerTests;
+			};
+			name = "Release-beta";
+		};
+		6FB10FFB2F19C32F00C3D1DD /* Debug-beta */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = FLX;
+			};
+			name = "Debug-beta";
+		};
+		6FB10FFC2F19C32F00C3D1DD /* Profile-beta */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = FLX;
+			};
+			name = "Profile-beta";
+		};
+		6FB10FFD2F19C32F00C3D1DD /* Release-beta */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = FLX;
+			};
+			name = "Release-beta";
 		};
 		6FC3C0DA2ED0E7F300EC5CB6 /* Debug-prod */ = {
 			isa = XCBuildConfiguration;
@@ -1159,6 +1225,9 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = A5768BDDCD37924333561EB0 /* devDebug.xcconfig */;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Runner/DebugProfile.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				DEVELOPMENT_TEAM = D2J7V42XTN;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = "Debug-dev";
@@ -1434,6 +1503,9 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 3EBF5C26151B63B051CBDE7D /* prodRelease.xcconfig */;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Runner/Release.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				DEVELOPMENT_TEAM = D2J7V42XTN;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = "Release-prod";
@@ -1442,6 +1514,9 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = D356F51D32FD6850C565D1EA /* devProfile.xcconfig */;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Runner/DebugProfile.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				DEVELOPMENT_TEAM = D2J7V42XTN;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = "Profile-dev";
@@ -1450,6 +1525,9 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 1A37D7DBAAB8EFB5C82C2F4E /* devRelease.xcconfig */;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Runner/Release.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				DEVELOPMENT_TEAM = D2J7V42XTN;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = "Release-dev";
@@ -1606,6 +1684,9 @@
 				6FC3C0DD2ED0E7F300EC5CB6 /* Debug-dev */,
 				6FC3C0DE2ED0E7F300EC5CB6 /* Profile-dev */,
 				6FC3C0DF2ED0E7F300EC5CB6 /* Release-dev */,
+				6FB10FF82F19C32F00C3D1DD /* Debug-beta */,
+				6FB10FF92F19C32F00C3D1DD /* Profile-beta */,
+				6FB10FFA2F19C32F00C3D1DD /* Release-beta */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -1660,6 +1741,9 @@
 				6FC3C0E32ED0E7F300EC5CB6 /* Debug-dev */,
 				6FC3C0E42ED0E7F300EC5CB6 /* Profile-dev */,
 				6FC3C0E52ED0E7F300EC5CB6 /* Release-dev */,
+				6FB10FFB2F19C32F00C3D1DD /* Debug-beta */,
+				6FB10FFC2F19C32F00C3D1DD /* Profile-beta */,
+				6FB10FFD2F19C32F00C3D1DD /* Release-beta */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

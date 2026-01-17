@@ -1,6 +1,7 @@
 {
   "menu": {
     "home": "Inicio",
+    "new_chat": "Nuevo Chat",
     "chats": "Chats",
     "tools": "Herramientas",
     "models": "Modelos",
@@ -175,6 +176,11 @@
     "actions": {
       "cancel": "Cancelar"
     }
+  },
+  "sidebar": {
+    "recent_chats": "Chats Recientes",
+    "no_recent_chats": "No hay chats recientes",
+    "view_all_chats": "Ver Todos"
   },
   "mcp_modal": {
     "title": "Agregar Servidor MCP",

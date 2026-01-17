@@ -4,6 +4,7 @@
 
 abstract class LocaleKeys {
   static const menu_home = 'menu.home';
+  static const menu_new_chat = 'menu.new_chat';
   static const menu_chats = 'menu.chats';
   static const menu_tools = 'menu.tools';
   static const menu_models = 'menu.models';
@@ -222,4 +223,7 @@ abstract class LocaleKeys {
       'mcp_modal.fields.bearer_token.placeholder';
   static const mcp_modal_fields_bearer_token_hint =
       'mcp_modal.fields.bearer_token.hint';
+  static const sidebar_recent_chats = 'sidebar.recent_chats';
+  static const sidebar_no_recent_chats = 'sidebar.no_recent_chats';
+  static const sidebar_view_all_chats = 'sidebar.view_all_chats';
 }
