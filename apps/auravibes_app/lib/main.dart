@@ -45,7 +45,7 @@ class MyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeAsync = ref.watch(themeControllerProvider);
-    final routerConfig = ref.watch(routerProvier);
+    final routerConfig = ref.watch(routerProvider);
     final themeMode = themeAsync.asData?.value.themeMode ?? ThemeMode.system;
 
     return Portal(
