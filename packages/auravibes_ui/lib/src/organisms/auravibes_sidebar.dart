@@ -78,7 +78,12 @@ class AuraSidebar extends StatelessWidget {
               ),
             ),
           ),
-          _buildNavigationItems(context, footer: true),
+          SafeArea(
+            top: false,
+            right: false,
+            child: _buildNavigationItems(context, footer: true),
+          ),
+
           if (footer != null) _buildFooterSection(context),
         ],
       ),

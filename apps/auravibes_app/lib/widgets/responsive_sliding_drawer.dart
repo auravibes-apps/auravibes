@@ -7,6 +7,12 @@ class ResponsiveSlidingDrawerController {
   void open() => _state?._openDrawer();
   void close() => _state?._closeDrawer();
   void toggle() => _state?._toggleDrawer();
+  bool get isDesktop => _state?.isDesktop ?? false;
+  void closeIfMobile() {
+    if (!isDesktop) {
+      _state?._closeDrawer();
+    }
+  }
 }
 
 class ResponsiveSlidingDrawerProvider extends InheritedWidget {

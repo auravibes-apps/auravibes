@@ -134,6 +134,30 @@ class AppWithResponsiveDrawer extends StatefulWidget {
 class _AppWithResponsiveDrawerState extends State<AppWithResponsiveDrawer> {
   late final ResponsiveSlidingDrawerController _controller =
       ResponsiveSlidingDrawerController();
+  late final GoRouter _router;
+  Uri? _previousRoute;
+
+  @override
+  void initState() {
+    super.initState();
+    _router = GoRouter.of(context);
+    _previousRoute = _router.state.uri;
+    _router.routeInformationProvider.addListener(_onRouteChanged);
+  }
+
+  void _onRouteChanged() {
+    final currentRoute = _router.state.uri;
+    if (currentRoute != _previousRoute) {
+      _controller.closeIfMobile();
+      _previousRoute = currentRoute;
+    }
+  }
+
+  @override
+  void dispose() {
+    _router.routeInformationProvider.removeListener(_onRouteChanged);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
