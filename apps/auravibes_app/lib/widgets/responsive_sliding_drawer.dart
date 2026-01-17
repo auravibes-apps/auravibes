@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-// enum _DrawerAction { open, close }
-
 enum _DrawerDragDirection { opening, closing }
 
 class ResponsiveSlidingDrawerController {
