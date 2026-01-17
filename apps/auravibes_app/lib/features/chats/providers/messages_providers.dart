@@ -108,24 +108,11 @@ String messageIdNotifier(Ref ref) =>
 MessageEntity? messageConversation(Ref ref) {
   final messageId = ref.watch(messageIdProvider);
 
-  final isLoading = ref.watch(
-    chatMessagesProvider.select((value) => value.isLoading),
-  );
-
-  var messageEntity = ref.watch(
+  final messageEntity = ref.watch(
     chatMessagesProvider.select(
       (value) => value.value?.firstWhereOrNull((c) => c.id == messageId),
     ),
   );
-
-  if (messageEntity == null && !isLoading) {
-    ref.invalidate(chatMessagesProvider);
-    messageEntity = ref.watch(
-      chatMessagesProvider.select(
-        (value) => value.value?.firstWhereOrNull((c) => c.id == messageId),
-      ),
-    );
-  }
 
   if (messageEntity == null) return null;
 
