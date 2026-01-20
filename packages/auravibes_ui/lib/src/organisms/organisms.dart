@@ -18,6 +18,7 @@ export 'auravibes_dropdown_selector.dart';
 export 'auravibes_field_wrapper.dart';
 export 'auravibes_input.dart';
 export 'auravibes_navigation_item.dart';
+export 'auravibes_popup_menu.dart';
 export 'auravibes_sidebar.dart';
 export 'auravibes_switch.dart';
 export 'auravibes_tab_item.dart';

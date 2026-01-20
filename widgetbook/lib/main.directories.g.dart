@@ -43,6 +43,8 @@ import 'package:widgetbook_workspace/aura_ui/auravibes_message_status_stories.da
     as _widgetbook_workspace_aura_ui_auravibes_message_status_stories;
 import 'package:widgetbook_workspace/aura_ui/auravibes_navigation_item_stories.dart'
     as _widgetbook_workspace_aura_ui_auravibes_navigation_item_stories;
+import 'package:widgetbook_workspace/aura_ui/auravibes_popup_menu_stories.dart'
+    as _widgetbook_workspace_aura_ui_auravibes_popup_menu_stories;
 import 'package:widgetbook_workspace/aura_ui/auravibes_screen_stories.dart'
     as _widgetbook_workspace_aura_ui_auravibes_screen_stories;
 import 'package:widgetbook_workspace/aura_ui/auravibes_spinner_stories.dart'
@@ -361,6 +363,16 @@ final directories = <_widgetbook.WidgetbookNode>[
             builder:
                 _widgetbook_workspace_aura_ui_auravibes_navigation_item_stories
                     .activeNavigationItemUseCase,
+          ),
+        ],
+      ),
+      _widgetbook.WidgetbookComponent(
+        name: 'AuraPopupMenu',
+        useCases: [
+          _widgetbook.WidgetbookUseCase(
+            name: 'Basic Popup Menu',
+            builder: _widgetbook_workspace_aura_ui_auravibes_popup_menu_stories
+                .basicContextMenuUseCase,
           ),
         ],
       ),
