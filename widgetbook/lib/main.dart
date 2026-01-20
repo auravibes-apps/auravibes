@@ -41,6 +41,12 @@ class WidgetbookApp extends StatelessWidget {
           ],
         ),
         BuilderAddon(
+          name: 'portal',
+          builder: (context, child) {
+            return Portal(child: child);
+          },
+        ),
+        BuilderAddon(
           name: 'SafeArea',
           builder: (ctx, child) => ColoredBox(
             color: ctx.auraColors.surface,
