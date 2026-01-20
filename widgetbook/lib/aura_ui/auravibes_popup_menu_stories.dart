@@ -9,9 +9,9 @@ Widget basicContextMenuUseCase(BuildContext context) {
   return AuraPopupMenu(
     controller: controller,
     items: [
-      AuraPupupMenuItem(title: Text('Item 1'), onTap: () {}),
-      AuraPupupMenuDivider(),
-      AuraPupupMenuItem(title: Text('Item 2'), onTap: () {}),
+      AuraPopupMenuItem(title: Text('Item 1'), onTap: () {}),
+      AuraPopupMenuDivider(),
+      AuraPopupMenuItem(title: Text('Item 2'), onTap: () {}),
     ],
     child: MaterialButton(
       onPressed: () {

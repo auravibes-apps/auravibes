@@ -43,7 +43,7 @@ class AuraPopupMenu extends StatefulWidget {
   final Widget child;
 
   /// The list of menu items to display in the popup.
-  final List<AuraPupupMenuEntry> items;
+  final List<AuraPopupMenuEntry> items;
 
   /// Controller for managing menu visibility.
   final AuraPopupMenuController controller;
@@ -121,9 +121,9 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
 /// This abstract class defines the interface for all menu items,
 /// including regular items, dividers, and custom builders.
 // ignore: one_member_abstracts
-abstract class AuraPupupMenuEntry {
+abstract class AuraPopupMenuEntry {
   /// Creates a new menu entry.
-  const AuraPupupMenuEntry();
+  const AuraPopupMenuEntry();
 
   /// Builds the widget for this menu entry.
   Widget build(BuildContext context);
@@ -132,11 +132,11 @@ abstract class AuraPupupMenuEntry {
 /// A menu entry that builds a custom widget.
 ///
 /// This allows for arbitrary widgets to be included in the menu.
-class AuraPupupMenuBuilder extends AuraPupupMenuEntry {
+class AuraPopupMenuBuilder extends AuraPopupMenuEntry {
   /// Creates a custom menu entry.
   ///
   /// [_build] is the function that builds the widget for this entry.
-  const AuraPupupMenuBuilder(this._build);
+  const AuraPopupMenuBuilder(this._build);
 
   /// The builder function for this menu entry.
   final Widget Function(BuildContext context) _build;
@@ -150,9 +150,9 @@ class AuraPupupMenuBuilder extends AuraPupupMenuEntry {
 /// A divider for separating menu items.
 ///
 /// Displays a horizontal line between menu items.
-class AuraPupupMenuDivider extends AuraPupupMenuEntry {
+class AuraPopupMenuDivider extends AuraPopupMenuEntry {
   /// Creates a new menu divider.
-  const AuraPupupMenuDivider();
+  const AuraPopupMenuDivider();
 
   @override
   Widget build(BuildContext context) {
@@ -167,14 +167,14 @@ class AuraPupupMenuDivider extends AuraPupupMenuEntry {
 ///
 /// Displays a title with optional leading and trailing widgets,
 /// and can be tapped to trigger an action.
-class AuraPupupMenuItem extends AuraPupupMenuEntry {
+class AuraPopupMenuItem extends AuraPopupMenuEntry {
   /// Creates a new menu item.
   ///
   /// [title] is the main content of the menu item.
   /// [onTap] is the callback when the item is tapped.
   /// [leading] is an optional widget displayed before the title.
   /// [trailing] is an optional widget displayed after the title.
-  const AuraPupupMenuItem({
+  const AuraPopupMenuItem({
     required this.title,
     this.onTap,
     this.leading,
