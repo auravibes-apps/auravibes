@@ -66,6 +66,12 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
     widget.controller._state = this;
   }
 
+  @override
+  void dispose() {
+    widget.controller._state = null;
+    super.dispose();
+  }
+
   void open() {
     setState(() {
       _visible = true;
@@ -196,7 +202,10 @@ class AuraPopupMenuItem extends AuraPopupMenuEntry {
   @override
   Widget build(BuildContext context) {
     return AuraTile(
-      onTap: onTap,
+      onTap: () {
+        onTap?.call();
+        context.findAncestorStateOfType<_AuraPopupMenuState>()?.close();
+      },
       leading: leading,
       trailing: trailing,
       variant: .ghost,
