@@ -122,7 +122,7 @@ class _CredentialsModelCard extends ConsumerWidget {
                     title: const TextLocale(LocaleKeys.common_delete),
                     leading: const AuraIcon(Icons.delete),
                     onTap: () => _confirmDelete(context, ref, credentialsModel),
-                    varian: .error,
+                    variant: .error,
                   ),
                 ],
                 child: AuraIconButton(

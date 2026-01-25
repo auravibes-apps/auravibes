@@ -225,7 +225,7 @@ class AuraPopupMenuItem extends AuraPopupMenuEntry {
     this.onTap,
     this.leading,
     this.trailing,
-    this.varian = .ghost,
+    this.variant = .ghost,
   });
 
   /// The main content of the menu item.
@@ -241,7 +241,7 @@ class AuraPopupMenuItem extends AuraPopupMenuEntry {
   final Widget? trailing;
 
   /// The visual variant of the menu item.
-  final AuraTileVariant varian;
+  final AuraTileVariant variant;
 
   @override
   Widget build(BuildContext context) {
@@ -252,7 +252,7 @@ class AuraPopupMenuItem extends AuraPopupMenuEntry {
       },
       leading: leading,
       trailing: trailing,
-      variant: varian,
+      variant: variant,
       child: title,
     );
   }
