@@ -38,6 +38,11 @@ class CredentialsRepositoryImpl implements CredentialsRepository {
       throw ModelProviderNoTypeException(credentials.modelId);
     }
 
+    // Extract last 6 characters for display
+    final keySuffix = credentials.key.length >= 6
+        ? credentials.key.substring(credentials.key.length - 6)
+        : credentials.key;
+
     // Store API key encrypted
     String encryptedApiKey;
     try {
@@ -63,7 +68,11 @@ class CredentialsRepositoryImpl implements CredentialsRepository {
 
     final createdCredentialsModel = await _database.credentialsDao
         .insertModelProvider(
-          _modelProviderToCreateToCompanion(credentials, encryptedApiKey),
+          _modelProviderToCreateToCompanion(
+            credentials,
+            encryptedApiKey,
+            keySuffix,
+          ),
         );
 
     final credentialsModels = models
@@ -95,10 +104,12 @@ class CredentialsRepositoryImpl implements CredentialsRepository {
   CredentialsCompanion _modelProviderToCreateToCompanion(
     CredentialsToCreate credentials,
     String encryptedApiKey,
+    String keySuffix,
   ) {
     return CredentialsCompanion(
       name: .new(credentials.name),
-      keyValue: .new(encryptedApiKey), // Store the encrypted API key
+      keyValue: .new(encryptedApiKey),
+      keySuffix: .new(keySuffix),
       url: .absentIfNull(credentials.url),
       workspaceId: .new(credentials.workspaceId),
       modelId: .new(credentials.modelId),
@@ -112,7 +123,8 @@ class CredentialsRepositoryImpl implements CredentialsRepository {
       id: credentialsModel.id,
       name: credentialsModel.name,
       modelId: credentialsModel.modelId,
-      key: credentialsModel.keyValue, // This will contain the encrypted key
+      key: credentialsModel.keyValue,
+      keySuffix: credentialsModel.keySuffix,
       url: credentialsModel.url,
       createdAt: credentialsModel.createdAt,
       updatedAt: credentialsModel.updatedAt,

@@ -1,6 +1,10 @@
 import 'package:auravibes_app/domain/entities/credentials_entities.dart';
 import 'package:auravibes_app/features/models/providers/list_models_providers.dart';
+import 'package:auravibes_app/features/models/providers/model_providers_repository_providers.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -18,7 +22,7 @@ class ListModelCredentialsWidget extends ConsumerWidget {
           return _buildEmptyState(context);
         }
 
-        return ListView.builder(
+        return ListView.separated(
           padding: const EdgeInsets.all(16),
           itemCount: credentialsModels.length,
           shrinkWrap: true,
@@ -28,11 +32,19 @@ class ListModelCredentialsWidget extends ConsumerWidget {
             //return Text(credentialsModel.name);
             return _CredentialsModelCard(credentialsModel: credentialsModel);
           },
+          separatorBuilder: (BuildContext context, int index) {
+            return SizedBox(height: context.auraTheme.spacing.md);
+          },
         );
       }(),
       AsyncLoading() => const Center(child: AuraSpinner()),
       AsyncError(error: final error, stackTrace: _) => AuraText(
-        child: Text('Error loading models: $error'),
+        child: Text(
+          LocaleKeys.models_screens_list_error.tr(
+            args: ['$error'],
+            context: context,
+          ),
+        ),
       ),
     };
   }
@@ -51,12 +63,16 @@ class ListModelCredentialsWidget extends ConsumerWidget {
             ),
             AuraText(
               style: AuraTextStyle.heading3,
-              child: Text('No AI Models Configured'),
+              child: TextLocale(
+                LocaleKeys.models_screens_list_empty_title,
+              ),
             ),
             AuraText(
               // TODO: color: Colors.grey,
               textAlign: TextAlign.center,
-              child: Text('Add your first AI model to get started'),
+              child: TextLocale(
+                LocaleKeys.models_screens_list_empty_subtitle,
+              ),
             ),
           ],
         ),
@@ -65,13 +81,15 @@ class ListModelCredentialsWidget extends ConsumerWidget {
   }
 }
 
-class _CredentialsModelCard extends StatelessWidget {
+class _CredentialsModelCard extends ConsumerWidget {
   const _CredentialsModelCard({required this.credentialsModel});
 
   final CredentialsEntity credentialsModel;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final menuController = AuraPopupMenuController();
+
     return AuraCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -87,20 +105,30 @@ class _CredentialsModelCard extends StatelessWidget {
                     AuraText(
                       style: AuraTextStyle.heading6,
                       child: Text(credentialsModel.name),
-                      // TODO: fontWeight: FontWeight.bold,
                     ),
                     const SizedBox(height: 4),
                     AuraText(
                       style: AuraTextStyle.bodySmall,
 
                       child: Text(_getModelTypeDisplay()),
-                      // TODOcolor: Colors.grey,
                     ),
                   ],
                 ),
               ),
-              AuraBadge.text(
-                child: Text(credentialsModel.modelId.toUpperCase()),
+              AuraPopupMenu(
+                controller: menuController,
+                items: [
+                  AuraPopupMenuItem(
+                    title: const TextLocale(LocaleKeys.common_delete),
+                    leading: const AuraIcon(Icons.delete),
+                    onTap: () => _confirmDelete(context, ref, credentialsModel),
+                    varian: .error,
+                  ),
+                ],
+                child: AuraIconButton(
+                  icon: Icons.more_vert,
+                  onPressed: menuController.toggle,
+                ),
               ),
             ],
           ),
@@ -109,29 +137,23 @@ class _CredentialsModelCard extends StatelessWidget {
             AuraText(
               style: AuraTextStyle.bodySmall,
 
-              child: Text('URL: ${credentialsModel.url}'),
-              // TODO: color: Colors.grey,
+              child: Text(
+                LocaleKeys.models_screens_list_url_label.tr(
+                  args: [credentialsModel.url!],
+                  context: context,
+                ),
+              ),
             ),
           ],
           const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: AuraText(
-                  style: AuraTextStyle.bodySmall,
-                  child: Text(
-                    'API Key: ${_obscureApiKey(credentialsModel.key)}',
-                  ),
-                  // TODO: color: Colors.grey,
-                ),
+          AuraText(
+            style: AuraTextStyle.bodySmall,
+            child: Text(
+              LocaleKeys.models_screens_list_api_key_label.tr(
+                args: [_obscureApiKey(credentialsModel.keySuffix)],
+                context: context,
               ),
-              AuraButton(
-                onPressed: () {
-                  // TODO: Implement edit functionality
-                },
-                child: const Text('Edit'),
-              ),
-            ],
+            ),
           ),
         ],
       ),
@@ -157,13 +179,46 @@ class _CredentialsModelCard extends StatelessWidget {
     return credentialsModel.modelId;
   }
 
-  String _obscureApiKey(String apiKey) {
-    if (apiKey.length <= 8) {
-      return '*' * apiKey.length;
+  String _obscureApiKey(String? keySuffix) {
+    if (keySuffix == null || keySuffix.isEmpty) {
+      return '*' * 20;
     }
-    final initial = apiKey.substring(0, 4);
-    final ending = apiKey.substring(apiKey.length - 4);
+    return '********************$keySuffix';
+  }
 
-    return '$initial${'*' * (apiKey.length - 8)}$ending';
+  Future<void> _confirmDelete(
+    BuildContext context,
+    WidgetRef ref,
+    CredentialsEntity credentials,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const TextLocale(LocaleKeys.models_screens_list_delete_title),
+        content: Text(
+          LocaleKeys.models_screens_list_delete_confirm.tr(
+            namedArgs: {'name': credentials.name},
+            context: context,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const TextLocale(LocaleKeys.common_cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const TextLocale(LocaleKeys.common_delete),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed ?? false) {
+      await ref
+          .read(modelProvidersRepositoryProvider)
+          .deleteCredential(credentials.id);
+      ref.invalidate(listCredentialsProvider);
+    }
   }
 }

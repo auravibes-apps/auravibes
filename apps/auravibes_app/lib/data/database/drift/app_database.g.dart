@@ -1592,6 +1592,17 @@ class $CredentialsTable extends Credentials
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _keySuffixMeta = const VerificationMeta(
+    'keySuffix',
+  );
+  @override
+  late final GeneratedColumn<String> keySuffix = GeneratedColumn<String>(
+    'key_suffix',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _workspaceIdMeta = const VerificationMeta(
     'workspaceId',
   );
@@ -1615,6 +1626,7 @@ class $CredentialsTable extends Credentials
     modelId,
     url,
     keyValue,
+    keySuffix,
     workspaceId,
   ];
   @override
@@ -1674,6 +1686,12 @@ class $CredentialsTable extends Credentials
     } else if (isInserting) {
       context.missing(_keyValueMeta);
     }
+    if (data.containsKey('key_suffix')) {
+      context.handle(
+        _keySuffixMeta,
+        keySuffix.isAcceptableOrUnknown(data['key_suffix']!, _keySuffixMeta),
+      );
+    }
     if (data.containsKey('workspace_id')) {
       context.handle(
         _workspaceIdMeta,
@@ -1722,6 +1740,10 @@ class $CredentialsTable extends Credentials
         DriftSqlType.string,
         data['${effectivePrefix}key_value'],
       )!,
+      keySuffix: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}key_suffix'],
+      ),
       workspaceId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}workspace_id'],
@@ -1755,6 +1777,9 @@ class CredentialsTable extends DataClass
 
   /// UUID reference to securely stored API key
   final String keyValue;
+
+  /// Last 6 characters of the API key (stored in plain text for display purposes)
+  final String? keySuffix;
   final String workspaceId;
   const CredentialsTable({
     required this.id,
@@ -1764,6 +1789,7 @@ class CredentialsTable extends DataClass
     required this.modelId,
     this.url,
     required this.keyValue,
+    this.keySuffix,
     required this.workspaceId,
   });
   @override
@@ -1778,6 +1804,9 @@ class CredentialsTable extends DataClass
       map['url'] = Variable<String>(url);
     }
     map['key_value'] = Variable<String>(keyValue);
+    if (!nullToAbsent || keySuffix != null) {
+      map['key_suffix'] = Variable<String>(keySuffix);
+    }
     map['workspace_id'] = Variable<String>(workspaceId);
     return map;
   }
@@ -1791,6 +1820,9 @@ class CredentialsTable extends DataClass
       modelId: Value(modelId),
       url: url == null && nullToAbsent ? const Value.absent() : Value(url),
       keyValue: Value(keyValue),
+      keySuffix: keySuffix == null && nullToAbsent
+          ? const Value.absent()
+          : Value(keySuffix),
       workspaceId: Value(workspaceId),
     );
   }
@@ -1808,6 +1840,7 @@ class CredentialsTable extends DataClass
       modelId: serializer.fromJson<String>(json['modelId']),
       url: serializer.fromJson<String?>(json['url']),
       keyValue: serializer.fromJson<String>(json['keyValue']),
+      keySuffix: serializer.fromJson<String?>(json['keySuffix']),
       workspaceId: serializer.fromJson<String>(json['workspaceId']),
     );
   }
@@ -1822,6 +1855,7 @@ class CredentialsTable extends DataClass
       'modelId': serializer.toJson<String>(modelId),
       'url': serializer.toJson<String?>(url),
       'keyValue': serializer.toJson<String>(keyValue),
+      'keySuffix': serializer.toJson<String?>(keySuffix),
       'workspaceId': serializer.toJson<String>(workspaceId),
     };
   }
@@ -1834,6 +1868,7 @@ class CredentialsTable extends DataClass
     String? modelId,
     Value<String?> url = const Value.absent(),
     String? keyValue,
+    Value<String?> keySuffix = const Value.absent(),
     String? workspaceId,
   }) => CredentialsTable(
     id: id ?? this.id,
@@ -1843,6 +1878,7 @@ class CredentialsTable extends DataClass
     modelId: modelId ?? this.modelId,
     url: url.present ? url.value : this.url,
     keyValue: keyValue ?? this.keyValue,
+    keySuffix: keySuffix.present ? keySuffix.value : this.keySuffix,
     workspaceId: workspaceId ?? this.workspaceId,
   );
   CredentialsTable copyWithCompanion(CredentialsCompanion data) {
@@ -1854,6 +1890,7 @@ class CredentialsTable extends DataClass
       modelId: data.modelId.present ? data.modelId.value : this.modelId,
       url: data.url.present ? data.url.value : this.url,
       keyValue: data.keyValue.present ? data.keyValue.value : this.keyValue,
+      keySuffix: data.keySuffix.present ? data.keySuffix.value : this.keySuffix,
       workspaceId: data.workspaceId.present
           ? data.workspaceId.value
           : this.workspaceId,
@@ -1870,6 +1907,7 @@ class CredentialsTable extends DataClass
           ..write('modelId: $modelId, ')
           ..write('url: $url, ')
           ..write('keyValue: $keyValue, ')
+          ..write('keySuffix: $keySuffix, ')
           ..write('workspaceId: $workspaceId')
           ..write(')'))
         .toString();
@@ -1884,6 +1922,7 @@ class CredentialsTable extends DataClass
     modelId,
     url,
     keyValue,
+    keySuffix,
     workspaceId,
   );
   @override
@@ -1897,6 +1936,7 @@ class CredentialsTable extends DataClass
           other.modelId == this.modelId &&
           other.url == this.url &&
           other.keyValue == this.keyValue &&
+          other.keySuffix == this.keySuffix &&
           other.workspaceId == this.workspaceId);
 }
 
@@ -1908,6 +1948,7 @@ class CredentialsCompanion extends UpdateCompanion<CredentialsTable> {
   final Value<String> modelId;
   final Value<String?> url;
   final Value<String> keyValue;
+  final Value<String?> keySuffix;
   final Value<String> workspaceId;
   final Value<int> rowid;
   const CredentialsCompanion({
@@ -1918,6 +1959,7 @@ class CredentialsCompanion extends UpdateCompanion<CredentialsTable> {
     this.modelId = const Value.absent(),
     this.url = const Value.absent(),
     this.keyValue = const Value.absent(),
+    this.keySuffix = const Value.absent(),
     this.workspaceId = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -1929,6 +1971,7 @@ class CredentialsCompanion extends UpdateCompanion<CredentialsTable> {
     required String modelId,
     this.url = const Value.absent(),
     required String keyValue,
+    this.keySuffix = const Value.absent(),
     required String workspaceId,
     this.rowid = const Value.absent(),
   }) : name = Value(name),
@@ -1943,6 +1986,7 @@ class CredentialsCompanion extends UpdateCompanion<CredentialsTable> {
     Expression<String>? modelId,
     Expression<String>? url,
     Expression<String>? keyValue,
+    Expression<String>? keySuffix,
     Expression<String>? workspaceId,
     Expression<int>? rowid,
   }) {
@@ -1954,6 +1998,7 @@ class CredentialsCompanion extends UpdateCompanion<CredentialsTable> {
       if (modelId != null) 'model_id': modelId,
       if (url != null) 'url': url,
       if (keyValue != null) 'key_value': keyValue,
+      if (keySuffix != null) 'key_suffix': keySuffix,
       if (workspaceId != null) 'workspace_id': workspaceId,
       if (rowid != null) 'rowid': rowid,
     });
@@ -1967,6 +2012,7 @@ class CredentialsCompanion extends UpdateCompanion<CredentialsTable> {
     Value<String>? modelId,
     Value<String?>? url,
     Value<String>? keyValue,
+    Value<String?>? keySuffix,
     Value<String>? workspaceId,
     Value<int>? rowid,
   }) {
@@ -1978,6 +2024,7 @@ class CredentialsCompanion extends UpdateCompanion<CredentialsTable> {
       modelId: modelId ?? this.modelId,
       url: url ?? this.url,
       keyValue: keyValue ?? this.keyValue,
+      keySuffix: keySuffix ?? this.keySuffix,
       workspaceId: workspaceId ?? this.workspaceId,
       rowid: rowid ?? this.rowid,
     );
@@ -2007,6 +2054,9 @@ class CredentialsCompanion extends UpdateCompanion<CredentialsTable> {
     if (keyValue.present) {
       map['key_value'] = Variable<String>(keyValue.value);
     }
+    if (keySuffix.present) {
+      map['key_suffix'] = Variable<String>(keySuffix.value);
+    }
     if (workspaceId.present) {
       map['workspace_id'] = Variable<String>(workspaceId.value);
     }
@@ -2026,6 +2076,7 @@ class CredentialsCompanion extends UpdateCompanion<CredentialsTable> {
           ..write('modelId: $modelId, ')
           ..write('url: $url, ')
           ..write('keyValue: $keyValue, ')
+          ..write('keySuffix: $keySuffix, ')
           ..write('workspaceId: $workspaceId, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -7753,6 +7804,7 @@ typedef $$CredentialsTableCreateCompanionBuilder =
       required String modelId,
       Value<String?> url,
       required String keyValue,
+      Value<String?> keySuffix,
       required String workspaceId,
       Value<int> rowid,
     });
@@ -7765,6 +7817,7 @@ typedef $$CredentialsTableUpdateCompanionBuilder =
       Value<String> modelId,
       Value<String?> url,
       Value<String> keyValue,
+      Value<String?> keySuffix,
       Value<String> workspaceId,
       Value<int> rowid,
     });
@@ -7874,6 +7927,11 @@ class $$CredentialsTableFilterComposer
 
   ColumnFilters<String> get keyValue => $composableBuilder(
     column: $table.keyValue,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get keySuffix => $composableBuilder(
+    column: $table.keySuffix,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7988,6 +8046,11 @@ class $$CredentialsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get keySuffix => $composableBuilder(
+    column: $table.keySuffix,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$ApiModelsTableOrderingComposer get modelId {
     final $$ApiModelsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -8061,6 +8124,9 @@ class $$CredentialsTableAnnotationComposer
 
   GeneratedColumn<String> get keyValue =>
       $composableBuilder(column: $table.keyValue, builder: (column) => column);
+
+  GeneratedColumn<String> get keySuffix =>
+      $composableBuilder(column: $table.keySuffix, builder: (column) => column);
 
   $$ApiModelsTableAnnotationComposer get modelId {
     final $$ApiModelsTableAnnotationComposer composer = $composerBuilder(
@@ -8173,6 +8239,7 @@ class $$CredentialsTableTableManager
                 Value<String> modelId = const Value.absent(),
                 Value<String?> url = const Value.absent(),
                 Value<String> keyValue = const Value.absent(),
+                Value<String?> keySuffix = const Value.absent(),
                 Value<String> workspaceId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => CredentialsCompanion(
@@ -8183,6 +8250,7 @@ class $$CredentialsTableTableManager
                 modelId: modelId,
                 url: url,
                 keyValue: keyValue,
+                keySuffix: keySuffix,
                 workspaceId: workspaceId,
                 rowid: rowid,
               ),
@@ -8195,6 +8263,7 @@ class $$CredentialsTableTableManager
                 required String modelId,
                 Value<String?> url = const Value.absent(),
                 required String keyValue,
+                Value<String?> keySuffix = const Value.absent(),
                 required String workspaceId,
                 Value<int> rowid = const Value.absent(),
               }) => CredentialsCompanion.insert(
@@ -8205,6 +8274,7 @@ class $$CredentialsTableTableManager
                 modelId: modelId,
                 url: url,
                 keyValue: keyValue,
+                keySuffix: keySuffix,
                 workspaceId: workspaceId,
                 rowid: rowid,
               ),

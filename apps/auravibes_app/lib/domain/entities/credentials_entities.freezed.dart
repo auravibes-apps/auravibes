@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$CredentialsEntity {
 
- String get id; String get name; String get key; String get modelId; DateTime get createdAt; DateTime get updatedAt; String get workspaceId; String? get url;
+ String get id; String get name; String get key; String get modelId; DateTime get createdAt; DateTime get updatedAt; String get workspaceId; String? get url; String? get keySuffix;
 /// Create a copy of CredentialsEntity
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $CredentialsEntityCopyWith<CredentialsEntity> get copyWith => _$CredentialsEntit
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CredentialsEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.key, key) || other.key == key)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.url, url) || other.url == url));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CredentialsEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.key, key) || other.key == key)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.url, url) || other.url == url)&&(identical(other.keySuffix, keySuffix) || other.keySuffix == keySuffix));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,name,key,modelId,createdAt,updatedAt,workspaceId,url);
+int get hashCode => Object.hash(runtimeType,id,name,key,modelId,createdAt,updatedAt,workspaceId,url,keySuffix);
 
 @override
 String toString() {
-  return 'CredentialsEntity(id: $id, name: $name, key: $key, modelId: $modelId, createdAt: $createdAt, updatedAt: $updatedAt, workspaceId: $workspaceId, url: $url)';
+  return 'CredentialsEntity(id: $id, name: $name, key: $key, modelId: $modelId, createdAt: $createdAt, updatedAt: $updatedAt, workspaceId: $workspaceId, url: $url, keySuffix: $keySuffix)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $CredentialsEntityCopyWith<$Res>  {
   factory $CredentialsEntityCopyWith(CredentialsEntity value, $Res Function(CredentialsEntity) _then) = _$CredentialsEntityCopyWithImpl;
 @useResult
 $Res call({
- String id, String name, String key, String modelId, DateTime createdAt, DateTime updatedAt, String workspaceId, String? url
+ String id, String name, String key, String modelId, DateTime createdAt, DateTime updatedAt, String workspaceId, String? url, String? keySuffix
 });
 
 
@@ -62,7 +62,7 @@ class _$CredentialsEntityCopyWithImpl<$Res>
 
 /// Create a copy of CredentialsEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? key = null,Object? modelId = null,Object? createdAt = null,Object? updatedAt = null,Object? workspaceId = null,Object? url = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? key = null,Object? modelId = null,Object? createdAt = null,Object? updatedAt = null,Object? workspaceId = null,Object? url = freezed,Object? keySuffix = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -72,6 +72,7 @@ as String,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: 
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as DateTime,workspaceId: null == workspaceId ? _self.workspaceId : workspaceId // ignore: cast_nullable_to_non_nullable
 as String,url: freezed == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
+as String?,keySuffix: freezed == keySuffix ? _self.keySuffix : keySuffix // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -157,10 +158,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  String key,  String modelId,  DateTime createdAt,  DateTime updatedAt,  String workspaceId,  String? url)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  String key,  String modelId,  DateTime createdAt,  DateTime updatedAt,  String workspaceId,  String? url,  String? keySuffix)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _CredentialsEntity() when $default != null:
-return $default(_that.id,_that.name,_that.key,_that.modelId,_that.createdAt,_that.updatedAt,_that.workspaceId,_that.url);case _:
+return $default(_that.id,_that.name,_that.key,_that.modelId,_that.createdAt,_that.updatedAt,_that.workspaceId,_that.url,_that.keySuffix);case _:
   return orElse();
 
 }
@@ -178,10 +179,10 @@ return $default(_that.id,_that.name,_that.key,_that.modelId,_that.createdAt,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  String key,  String modelId,  DateTime createdAt,  DateTime updatedAt,  String workspaceId,  String? url)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  String key,  String modelId,  DateTime createdAt,  DateTime updatedAt,  String workspaceId,  String? url,  String? keySuffix)  $default,) {final _that = this;
 switch (_that) {
 case _CredentialsEntity():
-return $default(_that.id,_that.name,_that.key,_that.modelId,_that.createdAt,_that.updatedAt,_that.workspaceId,_that.url);case _:
+return $default(_that.id,_that.name,_that.key,_that.modelId,_that.createdAt,_that.updatedAt,_that.workspaceId,_that.url,_that.keySuffix);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -198,10 +199,10 @@ return $default(_that.id,_that.name,_that.key,_that.modelId,_that.createdAt,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  String key,  String modelId,  DateTime createdAt,  DateTime updatedAt,  String workspaceId,  String? url)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  String key,  String modelId,  DateTime createdAt,  DateTime updatedAt,  String workspaceId,  String? url,  String? keySuffix)?  $default,) {final _that = this;
 switch (_that) {
 case _CredentialsEntity() when $default != null:
-return $default(_that.id,_that.name,_that.key,_that.modelId,_that.createdAt,_that.updatedAt,_that.workspaceId,_that.url);case _:
+return $default(_that.id,_that.name,_that.key,_that.modelId,_that.createdAt,_that.updatedAt,_that.workspaceId,_that.url,_that.keySuffix);case _:
   return null;
 
 }
@@ -213,7 +214,7 @@ return $default(_that.id,_that.name,_that.key,_that.modelId,_that.createdAt,_tha
 
 
 class _CredentialsEntity implements CredentialsEntity {
-  const _CredentialsEntity({required this.id, required this.name, required this.key, required this.modelId, required this.createdAt, required this.updatedAt, required this.workspaceId, this.url});
+  const _CredentialsEntity({required this.id, required this.name, required this.key, required this.modelId, required this.createdAt, required this.updatedAt, required this.workspaceId, this.url, this.keySuffix});
   
 
 @override final  String id;
@@ -224,6 +225,7 @@ class _CredentialsEntity implements CredentialsEntity {
 @override final  DateTime updatedAt;
 @override final  String workspaceId;
 @override final  String? url;
+@override final  String? keySuffix;
 
 /// Create a copy of CredentialsEntity
 /// with the given fields replaced by the non-null parameter values.
@@ -235,16 +237,16 @@ _$CredentialsEntityCopyWith<_CredentialsEntity> get copyWith => __$CredentialsEn
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CredentialsEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.key, key) || other.key == key)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.url, url) || other.url == url));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CredentialsEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.key, key) || other.key == key)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.url, url) || other.url == url)&&(identical(other.keySuffix, keySuffix) || other.keySuffix == keySuffix));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,name,key,modelId,createdAt,updatedAt,workspaceId,url);
+int get hashCode => Object.hash(runtimeType,id,name,key,modelId,createdAt,updatedAt,workspaceId,url,keySuffix);
 
 @override
 String toString() {
-  return 'CredentialsEntity(id: $id, name: $name, key: $key, modelId: $modelId, createdAt: $createdAt, updatedAt: $updatedAt, workspaceId: $workspaceId, url: $url)';
+  return 'CredentialsEntity(id: $id, name: $name, key: $key, modelId: $modelId, createdAt: $createdAt, updatedAt: $updatedAt, workspaceId: $workspaceId, url: $url, keySuffix: $keySuffix)';
 }
 
 
@@ -255,7 +257,7 @@ abstract mixin class _$CredentialsEntityCopyWith<$Res> implements $CredentialsEn
   factory _$CredentialsEntityCopyWith(_CredentialsEntity value, $Res Function(_CredentialsEntity) _then) = __$CredentialsEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String name, String key, String modelId, DateTime createdAt, DateTime updatedAt, String workspaceId, String? url
+ String id, String name, String key, String modelId, DateTime createdAt, DateTime updatedAt, String workspaceId, String? url, String? keySuffix
 });
 
 
@@ -272,7 +274,7 @@ class __$CredentialsEntityCopyWithImpl<$Res>
 
 /// Create a copy of CredentialsEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? key = null,Object? modelId = null,Object? createdAt = null,Object? updatedAt = null,Object? workspaceId = null,Object? url = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? key = null,Object? modelId = null,Object? createdAt = null,Object? updatedAt = null,Object? workspaceId = null,Object? url = freezed,Object? keySuffix = freezed,}) {
   return _then(_CredentialsEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -282,6 +284,7 @@ as String,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: 
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as DateTime,workspaceId: null == workspaceId ? _self.workspaceId : workspaceId // ignore: cast_nullable_to_non_nullable
 as String,url: freezed == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
+as String?,keySuffix: freezed == keySuffix ? _self.keySuffix : keySuffix // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }

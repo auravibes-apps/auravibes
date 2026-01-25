@@ -10,6 +10,13 @@
   },
   "models_screens": {
     "title": "Proveedores de Modelos",
+    "list_error": "Error al cargar modelos: {}",
+    "list_empty_title": "No hay Modelos de IA Configurados",
+    "list_empty_subtitle": "Agrega tu primer modelo de IA para comenzar",
+    "list_url_label": "URL: {}",
+    "list_api_key_label": "Clave API: {}",
+    "list_delete_title": "Eliminar Proveedor de Modelo",
+    "list_delete_confirm": "¿Estás seguro de que deseas eliminar {name}?",
     "add_provider": {
       "open_button": "Agregar Proveedor",
       "title": "Agregar Proveedor de Modelo",

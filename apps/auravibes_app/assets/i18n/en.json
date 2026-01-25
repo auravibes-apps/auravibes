@@ -10,6 +10,13 @@
   },
   "models_screens": {
     "title": "Model Providers",
+    "list_error": "Error loading models: {}",
+    "list_empty_title": "No AI Models Configured",
+    "list_empty_subtitle": "Add your first AI model to get started",
+    "list_url_label": "URL: {}",
+    "list_api_key_label": "API Key: {}",
+    "list_delete_title": "Delete Model Provider",
+    "list_delete_confirm": "Are you sure you want to delete {name}?",
     "add_provider": {
       "open_button": "Add Provider",
       "title": "Add Model Provider",

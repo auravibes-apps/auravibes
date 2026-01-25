@@ -1,5 +1,6 @@
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_portal/flutter_portal.dart';
 
 /// Controller for managing the visibility of a context menu.
@@ -32,10 +33,12 @@ class AuraPopupMenu extends StatefulWidget {
   /// [child] is the widget that triggers the menu.
   /// [items] is the list of menu entries to display.
   /// [controller] is used to programmatically control menu visibility.
+  /// [focusNode] defines the keyboard focus for this widget.
   const AuraPopupMenu({
     required this.child,
     required this.items,
     required this.controller,
+    this.focusNode,
     super.key,
   });
 
@@ -48,15 +51,21 @@ class AuraPopupMenu extends StatefulWidget {
   /// Controller for managing menu visibility.
   final AuraPopupMenuController controller;
 
+  /// Defines the keyboard focus for this widget.
+  final FocusNode? focusNode;
+
   @override
   State<AuraPopupMenu> createState() => _AuraPopupMenuState();
 }
 
 class _AuraPopupMenuState extends State<AuraPopupMenu> {
+  late FocusNode _focusNode;
   bool _visible = false;
+
   @override
   void initState() {
     super.initState();
+    _focusNode = widget.focusNode ?? FocusNode();
     widget.controller._state = this;
   }
 
@@ -69,6 +78,9 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
   @override
   void dispose() {
     widget.controller._state = null;
+    if (widget.focusNode == null) {
+      _focusNode.dispose();
+    }
     super.dispose();
   }
 
@@ -76,48 +88,76 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
     setState(() {
       _visible = true;
     });
+    FocusScope.of(context).requestFocus(_focusNode);
   }
 
   void close() {
     setState(() {
       _visible = false;
     });
+    _focusNode.unfocus();
   }
 
   void toggle() {
-    setState(() {
-      _visible = !_visible;
-    });
+    if (_focusNode.hasFocus) {
+      close();
+    } else {
+      open();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return PortalTarget(
-      visible: _visible,
-      anchor: const Aligned(
-        follower: .topCenter,
-        target: .bottomCenter,
-        portal: .bottomCenter,
-        shiftToWithinBound: .new(
-          x: true,
-          y: true,
-        ),
-      ),
-      fit: .passthrough,
-      portalFollower: SizedBox(
-        width: 200,
-        child: AuraCard(
-          padding: .none,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: .start,
-            children: widget.items
-                .map((e) => Builder(builder: e.build))
-                .toList(),
+    return FocusScope(
+      onKey: (node, event) {
+        if (event.logicalKey == LogicalKeyboardKey.escape && _visible) {
+          close();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: Focus(
+        focusNode: _focusNode,
+        descendantsAreFocusable: true,
+        onFocusChange: (hasFocus) {
+          if (hasFocus && !_visible) {
+            setState(() {
+              _visible = true;
+            });
+          } else if (!hasFocus && _visible) {
+            setState(() {
+              _visible = false;
+            });
+          }
+        },
+        child: PortalTarget(
+          visible: _visible,
+          anchor: const Aligned(
+            follower: .topCenter,
+            target: .bottomCenter,
+            portal: .bottomCenter,
+            shiftToWithinBound: .new(
+              x: true,
+              y: true,
+            ),
           ),
+          fit: .passthrough,
+          portalFollower: SizedBox(
+            width: 200,
+            child: AuraCard(
+              padding: .none,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: .start,
+                children: widget.items
+                    .map((e) => Builder(builder: e.build))
+                    .toList(),
+              ),
+            ),
+          ),
+          child: widget.child,
         ),
       ),
-      child: widget.child,
     );
   }
 }
@@ -185,6 +225,7 @@ class AuraPopupMenuItem extends AuraPopupMenuEntry {
     this.onTap,
     this.leading,
     this.trailing,
+    this.varian = .ghost,
   });
 
   /// The main content of the menu item.
@@ -199,6 +240,9 @@ class AuraPopupMenuItem extends AuraPopupMenuEntry {
   /// Optional widget displayed after the title.
   final Widget? trailing;
 
+  /// The visual variant of the menu item.
+  final AuraTileVariant varian;
+
   @override
   Widget build(BuildContext context) {
     return AuraTile(
@@ -208,7 +252,7 @@ class AuraPopupMenuItem extends AuraPopupMenuEntry {
       },
       leading: leading,
       trailing: trailing,
-      variant: .ghost,
+      variant: varian,
       child: title,
     );
   }
