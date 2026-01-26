@@ -16,5 +16,8 @@ class Credentials extends Table with TableMixin {
   /// UUID reference to securely stored API key
   TextColumn get keyValue => text()();
 
+  /// Last 6 characters of API key (stored in plain text for display)
+  TextColumn get keySuffix => text().nullable()();
+
   TextColumn get workspaceId => text().references(Workspaces, #id)();
 }

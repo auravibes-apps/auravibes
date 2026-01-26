@@ -14,6 +14,7 @@ abstract class CredentialsEntity with _$CredentialsEntity {
     required DateTime updatedAt,
     required String workspaceId,
     String? url,
+    String? keySuffix,
   }) = _CredentialsEntity;
 }
 

@@ -291,7 +291,7 @@ final class MessageConversationProvider
 }
 
 String _$messageConversationHash() =>
-    r'cbdedc6af2c7a25c3be4a46787770fbfe0d1e6e2';
+    r'dac954de945e42e52623469502189a9e8015a8cf';
 
 /// Provides the pending MCP server IDs for the current conversation.
 ///
