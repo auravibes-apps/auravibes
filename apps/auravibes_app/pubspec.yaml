@@ -19,7 +19,7 @@ dependencies:
   # Database dependencies
   crypto: ^3.0.7
   cryptography: ^2.9.0
-  dio: ^5.9.0
+  dio: ^5.9.1
   dio_smart_retry: ^7.0.1
   drift: ^2.30.1
   drift_flutter: ^0.2.8
