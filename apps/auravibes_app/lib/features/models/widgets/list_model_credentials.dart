@@ -32,7 +32,7 @@ class ListModelCredentialsWidget extends ConsumerWidget {
             //return Text(credentialsModel.name);
             return _CredentialsModelCard(credentialsModel: credentialsModel);
           },
-          separatorBuilder: (BuildContext context, int index) {
+          separatorBuilder: (context, index) {
             return SizedBox(height: context.auraTheme.spacing.md);
           },
         );
@@ -163,7 +163,7 @@ class _CredentialsModelCard extends ConsumerWidget {
   Widget _buildModelTypeIcon(BuildContext context) {
     return SvgPicture.network(
       'https://models.dev/logos/${credentialsModel.modelId}.svg',
-      placeholderBuilder: (BuildContext context) =>
+      placeholderBuilder: (context) =>
           const CircularProgressIndicator(), // Optional: show a loading
       // indicator
       colorFilter: ColorFilter.mode(

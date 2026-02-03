@@ -1,6 +1,6 @@
 # AuraVibes
 
-[![Flutter](https://img.shields.io/badge/Flutter-3.38.3+-02569B?style=flat-square&logo=flutter)](https://flutter.dev)
+[![Flutter](https://img.shields.io/badge/Flutter-3.38.9+-02569B?style=flat-square&logo=flutter)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.10.0+-0175C2?style=flat-square&logo=dart)](https://dart.dev)
 [![Melos](https://img.shields.io/badge/Melos-7.3.0-42a5f5?style=flat-square)](https://melos.invertase.dev)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -41,7 +41,7 @@ Before you begin, ensure you have the following installed:
 
 #### Required Software
 
-- **Flutter SDK**: 3.38.3 or higher (managed via FVM)
+- **Flutter SDK**: 3.38.9 or higher (managed via FVM)
   - Download from [flutter.dev](https://flutter.dev/docs/get-started/install)
   - Install [FVM](https://fvm.app) first: `dart pub global activate fvm`
   
