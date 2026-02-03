@@ -185,7 +185,7 @@ class McpManagerService {
   List<McpToolInfo> _convertTools(
     List<mcp.Tool> tools,
   ) {
-    return tools.map((mcp.Tool tool) {
+    return tools.map((tool) {
       return McpToolInfo(
         toolName: tool.name,
         description: tool.description,

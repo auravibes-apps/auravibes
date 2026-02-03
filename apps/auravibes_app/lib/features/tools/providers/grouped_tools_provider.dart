@@ -125,9 +125,7 @@ class GroupedToolsNotifier extends _$GroupedToolsNotifier {
 
     // Find the group to get MCP server ID
     final groups = state.value ?? <ToolsGroupWithTools>[];
-    final group = groups
-        .where((ToolsGroupWithTools g) => g.group?.id == groupId)
-        .firstOrNull;
+    final group = groups.where((g) => g.group?.id == groupId).firstOrNull;
 
     final mcpServerId = group?.mcpServerId;
     if ((group?.isMcpGroup ?? false) && mcpServerId != null) {

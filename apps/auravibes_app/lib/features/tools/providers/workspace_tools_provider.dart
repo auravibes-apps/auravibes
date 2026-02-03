@@ -125,7 +125,7 @@ Future<List<UserToolType>> availableToolsToAdd(Ref ref) async {
 
   // Return built-in tools that haven't been added yet
   return ToolService.getTypes()
-      .where((UserToolType type) => !addedToolIds.contains(type.value))
+      .where((type) => !addedToolIds.contains(type.value))
       .toList();
 }
 

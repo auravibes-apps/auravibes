@@ -280,9 +280,7 @@ class McpManagerNotifier extends _$McpManagerNotifier {
     }
 
     // Remove from state
-    state = state
-        .where((McpConnectionState c) => c.server.id != serverId)
-        .toList();
+    state = state.where((c) => c.server.id != serverId).toList();
 
     // Delete from database (cascades to tools group and tools)
     final repository = ref.read(mcpServersRepositoryProvider);
@@ -291,9 +289,7 @@ class McpManagerNotifier extends _$McpManagerNotifier {
 
   /// Reconnect to a specific MCP server.
   Future<void> reconnectMcpServer(String serverId) async {
-    final connection = state
-        .where((McpConnectionState c) => c.server.id == serverId)
-        .firstOrNull;
+    final connection = state.where((c) => c.server.id == serverId).firstOrNull;
     if (connection == null) return;
 
     // Disconnect if currently connected
@@ -306,7 +302,7 @@ class McpManagerNotifier extends _$McpManagerNotifier {
   /// Disconnect from a specific MCP server without deleting.
   void disconnectMcpServer(String serverId) {
     final index = state.indexWhere(
-      (McpConnectionState c) => c.server.id == serverId,
+      (c) => c.server.id == serverId,
     );
     if (index == -1) return;
 
@@ -325,9 +321,7 @@ class McpManagerNotifier extends _$McpManagerNotifier {
 
   /// Get a connection state by server ID.
   McpConnectionState? getConnection(String serverId) {
-    return state
-        .where((McpConnectionState c) => c.server.id == serverId)
-        .firstOrNull;
+    return state.where((c) => c.server.id == serverId).firstOrNull;
   }
 
   /// Get a ToolSpec for a specific MCP tool by server ID and tool name.
@@ -433,7 +427,7 @@ class McpManagerNotifier extends _$McpManagerNotifier {
 
     // Verify the tool exists on this server
     final toolExists = connection.tools.any(
-      (McpToolInfo t) => t.toolName == toolIdentifier,
+      (t) => t.toolName == toolIdentifier,
     );
     if (!toolExists) {
       throw Exception(
@@ -486,7 +480,7 @@ class McpManagerNotifier extends _$McpManagerNotifier {
   Future<void> _connectToMcp(McpServerEntity server) async {
     // Check if already in state
     final existingIndex = state.indexWhere(
-      (McpConnectionState c) => c.server.id == server.id,
+      (c) => c.server.id == server.id,
     );
 
     // Add or update state to "connecting"
@@ -547,7 +541,7 @@ class McpManagerNotifier extends _$McpManagerNotifier {
     McpConnectionState Function(McpConnectionState) updater,
   ) {
     final index = state.indexWhere(
-      (McpConnectionState c) => c.server.id == serverId,
+      (c) => c.server.id == serverId,
     );
     if (index == -1) return;
 

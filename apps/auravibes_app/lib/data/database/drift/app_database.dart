@@ -77,10 +77,10 @@ class AppDatabase extends _$AppDatabase {
   @override
   MigrationStrategy get migration {
     return MigrationStrategy(
-      onCreate: (Migrator m) async {
+      onCreate: (m) async {
         await m.createAll();
       },
-      onUpgrade: (Migrator m, int from, int to) async {
+      onUpgrade: (m, from, to) async {
         if (from == 1 && to == 2) {
           await customStatement(
             'ALTER TABLE credentials ADD COLUMN key_suffix TEXT',

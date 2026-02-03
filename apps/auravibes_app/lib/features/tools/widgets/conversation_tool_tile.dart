@@ -39,19 +39,20 @@ class ConversationToolTile extends HookConsumerWidget {
       await notifier.toggleTool(toolState.tool.id);
     }, [conversationId, workspaceId, toolState.tool]);
 
-    final onPermissionChanged = useCallback((ToolPermissionMode? mode) async {
-      if (mode == null) return;
-      final notifier = ref.read(
-        conversationToolsProvider(
-          workspaceId: workspaceId,
-          conversationId: conversationId,
-        ).notifier,
-      );
-      await notifier.setToolPermission(
-        toolState.tool.id,
-        permissionMode: mode,
-      );
-    }, [conversationId, workspaceId, toolState.tool]);
+    final onPermissionChanged =
+        useCallback<Future<void> Function(ToolPermissionMode?)>((mode) async {
+          if (mode == null) return;
+          final notifier = ref.read(
+            conversationToolsProvider(
+              workspaceId: workspaceId,
+              conversationId: conversationId,
+            ).notifier,
+          );
+          await notifier.setToolPermission(
+            toolState.tool.id,
+            permissionMode: mode,
+          );
+        }, [conversationId, workspaceId, toolState.tool]);
 
     final isEnabled = toolState.isEnabled;
     final isWorkspaceEnabled = toolState.isWorkspaceEnabled;
