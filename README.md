@@ -1,7 +1,7 @@
 # AuraVibes
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.38.9+-02569B?style=flat-square&logo=flutter)](https://flutter.dev)
-[![Dart](https://img.shields.io/badge/Dart-3.10.0+-0175C2?style=flat-square&logo=dart)](https://dart.dev)
+[![Dart](https://img.shields.io/badge/Dart-3.10.3+-0175C2?style=flat-square&logo=dart)](https://dart.dev)
 [![Melos](https://img.shields.io/badge/Melos-7.3.0-42a5f5?style=flat-square)](https://melos.invertase.dev)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-iOS%20%7C%20Android%20%7C%20macOS%20%7C%20Web%20%7C%20Linux%20%7C%20Windows-lightgrey)](#)
