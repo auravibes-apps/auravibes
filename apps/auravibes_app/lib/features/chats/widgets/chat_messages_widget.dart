@@ -8,7 +8,7 @@ import 'package:auravibes_app/features/chats/providers/tool_display_name_provide
 import 'package:auravibes_app/features/chats/widgets/tool_call_confirmation_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/tool_call_response_preview.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
-import 'package:auravibes_app/providers/tool_calling_manager_provider.dart';
+import 'package:auravibes_app/providers/tool_execution_controller.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -147,7 +147,7 @@ class _ToolCallWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final trackedTools = ref.watch(toolCallingManagerProvider);
+    final trackedTools = ref.watch(toolExecutionControllerProvider);
     final isRunning = trackedTools.any(
       (t) => t.id == toolCall.id && t.isRunning,
     );

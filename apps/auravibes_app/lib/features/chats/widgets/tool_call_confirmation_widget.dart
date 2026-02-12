@@ -1,6 +1,6 @@
 import 'package:auravibes_app/domain/entities/messages.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
-import 'package:auravibes_app/providers/tool_calling_manager_provider.dart';
+import 'package:auravibes_app/providers/tool_execution_controller.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
@@ -95,7 +95,7 @@ class ToolCallConfirmationWidget extends ConsumerWidget {
 
   void _onAllowOnce(WidgetRef ref) {
     ref
-        .read(toolCallingManagerProvider.notifier)
+        .read(toolExecutionControllerProvider.notifier)
         .grantToolCall(
           toolCallId: toolCall.id,
           messageId: messageId,
@@ -105,7 +105,7 @@ class ToolCallConfirmationWidget extends ConsumerWidget {
 
   void _onAllowForConversation(WidgetRef ref) {
     ref
-        .read(toolCallingManagerProvider.notifier)
+        .read(toolExecutionControllerProvider.notifier)
         .grantToolCall(
           toolCallId: toolCall.id,
           messageId: messageId,
@@ -115,7 +115,7 @@ class ToolCallConfirmationWidget extends ConsumerWidget {
 
   void _onSkip(WidgetRef ref) {
     ref
-        .read(toolCallingManagerProvider.notifier)
+        .read(toolExecutionControllerProvider.notifier)
         .skipToolCall(
           toolCallId: toolCall.id,
           messageId: messageId,
@@ -124,7 +124,7 @@ class ToolCallConfirmationWidget extends ConsumerWidget {
 
   void _onStopAll(WidgetRef ref) {
     ref
-        .read(toolCallingManagerProvider.notifier)
+        .read(toolExecutionControllerProvider.notifier)
         .stopAllToolCalls(
           messageId: messageId,
         );

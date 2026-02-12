@@ -1778,7 +1778,7 @@ class CredentialsTable extends DataClass
   /// UUID reference to securely stored API key
   final String keyValue;
 
-  /// Last 6 characters of the API key (stored in plain text for display purposes)
+  /// Last 6 characters of API key (stored in plain text for display)
   final String? keySuffix;
   final String workspaceId;
   const CredentialsTable({
