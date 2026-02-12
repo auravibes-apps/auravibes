@@ -14,7 +14,7 @@ void main() {
 
       final useCase = SendToolResponsesToAIUseCase(
         mockMessageRepo,
-        (_, __) async {},
+        (_, _) async {},
       );
 
       expect(useCase, isNotNull);
