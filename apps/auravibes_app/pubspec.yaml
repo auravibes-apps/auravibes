@@ -47,7 +47,6 @@ dependencies:
   openai_dart: ^0.6.0+1
 
   # Other dependencies
-  flutter_riverpod: any
   riverpod: ^3.0.3
   riverpod_annotation: ^4.0.0
   rxdart: ^0.28.0
@@ -65,6 +64,7 @@ dev_dependencies:
 
   flutter_flavorizr: ^2.4.1
   flutter_launcher_icons: ^0.14.4
+  flutter_riverpod: any
   flutter_test:
     sdk: flutter
   freezed: ^3.2.3

@@ -11,12 +11,11 @@ import 'package:auravibes_app/features/chats/providers/conversation_repository_p
 import 'package:auravibes_app/features/tools/providers/conversation_tools_provider.dart';
 import 'package:auravibes_app/features/tools/providers/grouped_tools_provider.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_provider.dart';
+import 'package:auravibes_app/providers/messages_manager_provider.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'tool_execution_controller.freezed.dart';
-part 'tool_execution_controller.g.dart';
 
 /// A trigger that increments whenever tool call results are updated.
 ///
@@ -34,6 +33,15 @@ class ToolUpdateRefreshTriggerNotifier extends Notifier<int> {
   void trigger() => state++;
 }
 
+class ToolExecutionContextException implements Exception {
+  const ToolExecutionContextException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => 'ToolExecutionContextException: $message';
+}
+
 /// Permission level when user grants a tool call.
 enum ToolGrantLevel {
   /// Run this tool once, but ask again next time
@@ -41,15 +49,6 @@ enum ToolGrantLevel {
 
   /// Grant permission for this conversation (persists to DB)
   conversation,
-}
-
-/// Tool response item for sending to AI
-@Freezed(toJson: true)
-abstract class ToolResponseItem with _$ToolResponseItem {
-  const factory ToolResponseItem({
-    required String id,
-    required String content,
-  }) = _ToolResponseItem;
 }
 
 /// Represents a tool call currently being tracked
@@ -63,8 +62,12 @@ abstract class TrackedToolCall with _$TrackedToolCall {
   }) = _TrackedToolCall;
 }
 
-@Riverpod(keepAlive: true)
-class ToolExecutionController extends _$ToolExecutionController {
+final toolExecutionControllerProvider =
+    NotifierProvider<ToolExecutionController, List<TrackedToolCall>>(
+      ToolExecutionController.new,
+    );
+
+class ToolExecutionController extends Notifier<List<TrackedToolCall>> {
   @override
   List<TrackedToolCall> build() => [];
 
@@ -88,12 +91,22 @@ class ToolExecutionController extends _$ToolExecutionController {
     List<ToolToCall> toolCalling,
     String responseMessageId,
   ) async {
+    final messageRepo = ref.read(messageRepositoryProvider);
+
+    final executionContext = await _resolveExecutionContext(responseMessageId);
+    if (executionContext == null) {
+      throw ToolExecutionContextException(
+        'Unable to resolve conversation/workspace context for message '
+        '$responseMessageId',
+      );
+    }
+
     // Get dependencies from Riverpod
     final conversationToolsRepo = ref.read(conversationToolsRepositoryProvider);
     final toolsGroupsRepo = ref.read(toolsGroupsRepositoryProvider);
     final workspaceToolsRepo = ref.read(workspaceToolsRepositoryProvider);
     final updateMetadataUseCase = UpdateMessageMetadataUseCase(
-      ref.read(messageRepositoryProvider),
+      messageRepo,
     );
 
     // Create use case instances with injected dependencies
@@ -108,14 +121,11 @@ class ToolExecutionController extends _$ToolExecutionController {
       updateMetadataUseCase,
     );
 
-    final conversationId = await _getConversationId(responseMessageId);
-    final workspaceId = await _getWorkspaceId(responseMessageId);
-
     // Filter tools by permission
     final filtered = await filterUseCase.call(
       tools: toolCalling,
-      conversationId: conversationId,
-      workspaceId: workspaceId,
+      conversationId: executionContext.conversationId,
+      workspaceId: executionContext.workspaceId,
       responseMessageId: responseMessageId,
     );
 
@@ -146,10 +156,7 @@ class ToolExecutionController extends _$ToolExecutionController {
     // Continue AI only if ALL tools were granted
     final allToolsGranted = filtered.grantedTools.length == toolCalling.length;
     if (allToolsGranted && !filtered.hasPendingTools) {
-      final sendToAI = SendToolResponsesToAIUseCase(
-        ref.read(messageRepositoryProvider),
-        ref,
-      );
+      final sendToAI = _createSendToolResponsesUseCase();
       await sendToAI.call(messageId: responseMessageId);
     }
   }
@@ -188,11 +195,11 @@ class ToolExecutionController extends _$ToolExecutionController {
       level: level,
     );
 
+    final canContinueAI = await _canContinueAi(messageId);
+    if (!canContinueAI) return;
+
     // Send tool response to AI after execution
-    final sendToAI = SendToolResponsesToAIUseCase(
-      ref.read(messageRepositoryProvider),
-      ref,
-    );
+    final sendToAI = _createSendToolResponsesUseCase();
     await sendToAI.call(messageId: messageId);
   }
 
@@ -215,11 +222,11 @@ class ToolExecutionController extends _$ToolExecutionController {
       ],
     );
 
+    final canContinueAI = await _canContinueAi(messageId);
+    if (!canContinueAI) return;
+
     // Check if all tools resolved
-    final sendToAI = SendToolResponsesToAIUseCase(
-      ref.read(messageRepositoryProvider),
-      ref,
-    );
+    final sendToAI = _createSendToolResponsesUseCase();
     await sendToAI.call(messageId: messageId);
   }
 
@@ -294,21 +301,64 @@ class ToolExecutionController extends _$ToolExecutionController {
     state = state.where((t) => t.id != toolCallId).toList();
   }
 
-  // Helper methods
-  Future<String> _getConversationId(String messageId) async {
-    final messageRepo = ref.read(messageRepositoryProvider);
-    final message = await messageRepo.getMessageById(messageId);
-    return message?.conversationId ?? '';
-  }
-
-  Future<String> _getWorkspaceId(String messageId) async {
+  Future<_ToolExecutionContext?> _resolveExecutionContext(
+    String responseMessageId,
+  ) async {
     final messageRepo = ref.read(messageRepositoryProvider);
     final conversationRepo = ref.read(conversationRepositoryProvider);
-    final message = await messageRepo.getMessageById(messageId);
-    if (message == null) return '';
+
+    final message = await messageRepo.getMessageById(responseMessageId);
+    if (message == null) return null;
+
+    final conversationId = message.conversationId;
+    if (conversationId.isEmpty) return null;
+
     final conversation = await conversationRepo.getConversationById(
-      message.conversationId,
+      conversationId,
     );
-    return conversation?.workspaceId ?? '';
+    if (conversation == null) return null;
+
+    final workspaceId = conversation.workspaceId;
+    if (workspaceId.isEmpty) return null;
+
+    return _ToolExecutionContext(
+      conversationId: conversationId,
+      workspaceId: workspaceId,
+    );
   }
+
+  Future<bool> _canContinueAi(String messageId) async {
+    if (hasRunningToolsForMessage(messageId)) return false;
+
+    final messageRepo = ref.read(messageRepositoryProvider);
+    final message = await messageRepo.getMessageById(messageId);
+    if (message == null) return false;
+
+    final metadata = message.metadata ?? const MessageMetadataEntity();
+    final hasPendingTools = metadata.toolCalls.any(
+      (toolCall) => toolCall.isPending,
+    );
+    return !hasPendingTools;
+  }
+
+  SendToolResponsesToAIUseCase _createSendToolResponsesUseCase() {
+    return SendToolResponsesToAIUseCase(
+      ref.read(messageRepositoryProvider),
+      (responses, messageId) async {
+        await ref
+            .read(messagesManagerProvider.notifier)
+            .sendToolsResponse(responses, messageId);
+      },
+    );
+  }
+}
+
+class _ToolExecutionContext {
+  const _ToolExecutionContext({
+    required this.conversationId,
+    required this.workspaceId,
+  });
+
+  final String conversationId;
+  final String workspaceId;
 }

@@ -29,6 +29,12 @@ In this repo, `ToolExecutionController` is the reference pattern:
 - Build/coordinate use cases inside controller methods with injected dependencies.
 - Keep cleanup and failure-safe logic in controller (`try/finally`, guard clauses).
 
+## Dependency Boundary Rule
+- Default: controllers call use cases, not repositories.
+- Allow direct repository calls only for thin reads with no business decisions, no branching by business state, and no cross-repository orchestration.
+- If logic includes validation, permission checks, sequencing, metadata updates, retries, or combining dependencies, move it into a use case.
+- If a controller method starts looking like domain behavior (not UI orchestration), extract/expand use cases first.
+
 ## UI Responsibilities
 - Watch controller state and map it to presentation.
 - Trigger controller intents from user actions.
@@ -55,12 +61,14 @@ In this repo, `ToolExecutionController` is the reference pattern:
 
 ## Common Mistakes
 - Re-adding business rules inside widgets after controller extraction.
+- Calling repositories directly from controllers for business actions.
 - Storing raw domain-heavy payloads in controller state.
 - Skipping query helpers and duplicating filters in UI files.
 - Instantiating side-effect services directly in widgets.
 
 ## Quick Checklist
 - Controller owns orchestration, widgets own presentation.
+- Business actions go through use cases (repo access in controller is read-only exception).
 - Controller state is minimal and UI-friendly.
 - Intent/query APIs are explicit and reusable.
 - Use cases remain the business rule boundary.

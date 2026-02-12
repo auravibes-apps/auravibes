@@ -1,10 +1,14 @@
 // lib/domain/usecases/tools/send_tool_responses_to_ai_usecase.dart
 import 'package:auravibes_app/domain/entities/messages.dart';
+import 'package:auravibes_app/domain/entities/tool_response_item.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
-import 'package:auravibes_app/providers/messages_manager_provider.dart';
-import 'package:auravibes_app/providers/tool_execution_controller.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+typedef SendToolResponses =
+    Future<void> Function(
+      List<ToolResponseItem> responses,
+      String messageId,
+    );
 
 /// Use case for sending tool responses to AI.
 ///
@@ -12,11 +16,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class SendToolResponsesToAIUseCase {
   const SendToolResponsesToAIUseCase(
     this._messageRepository,
-    this._ref,
+    this._sendToolResponses,
   );
 
   final MessageRepository _messageRepository;
-  final Ref _ref;
+  final SendToolResponses _sendToolResponses;
 
   /// Sends all resolved tool responses to AI for continuation
   Future<void> call({required String messageId}) async {
@@ -40,12 +44,6 @@ class SendToolResponsesToAIUseCase {
         .map((t) => ToolResponseItem(id: t.id, content: t.getResponseForAI()))
         .toList();
 
-    _sendResponsesToAI(allResponses, messageId);
-  }
-
-  void _sendResponsesToAI(List<ToolResponseItem> responses, String messageId) {
-    _ref
-        .read(messagesManagerProvider.notifier)
-        .sendToolsResponse(responses, messageId);
+    await _sendToolResponses(allResponses, messageId);
   }
 }

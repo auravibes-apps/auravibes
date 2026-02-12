@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/conversation.dart';
 import 'package:auravibes_app/domain/entities/messages.dart';
+import 'package:auravibes_app/domain/entities/tool_response_item.dart';
 import 'package:auravibes_app/domain/entities/workspace_tool.dart';
 import 'package:auravibes_app/domain/enums/message_types.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
