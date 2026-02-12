@@ -11,7 +11,7 @@ import 'package:auravibes_app/features/tools/providers/conversation_tools_provid
 import 'package:auravibes_app/features/tools/providers/grouped_tools_provider.dart';
 import 'package:auravibes_app/providers/chatbot_service_provider.dart';
 import 'package:auravibes_app/providers/mcp_manager_provider.dart';
-import 'package:auravibes_app/providers/tool_calling_manager_provider.dart';
+import 'package:auravibes_app/providers/tool_execution_controller.dart';
 import 'package:auravibes_app/services/chatbot_service/models/chat_message_models.dart';
 import 'package:auravibes_app/services/tools/tool_resolution.dart';
 import 'package:auravibes_app/services/tools/tool_service.dart';
@@ -348,7 +348,7 @@ class MessagesManagerNotifier extends _$MessagesManagerNotifier {
             (e) => e.key,
           )
           .toList();
-      final toolManager = ref.read(toolCallingManagerProvider.notifier);
+      final toolManager = ref.read(toolExecutionControllerProvider.notifier);
 
       await toolManager.setToolsToNotFound(responseMessageId, toolsNoFound);
 

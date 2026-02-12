@@ -5,7 +5,7 @@ import 'package:auravibes_app/domain/enums/message_types.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/providers/messages_manager_provider.dart';
-import 'package:auravibes_app/providers/tool_calling_manager_provider.dart';
+import 'package:auravibes_app/providers/tool_execution_controller.dart';
 import 'package:collection/collection.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod/experimental/mutation.dart';

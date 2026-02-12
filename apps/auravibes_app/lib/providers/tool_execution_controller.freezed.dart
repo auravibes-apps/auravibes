@@ -3,7 +3,7 @@
 // ignore_for_file: type=lint
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
-part of 'tool_calling_manager_provider.dart';
+part of 'tool_execution_controller.dart';
 
 // **************************************************************************
 // FreezedGenerator
@@ -11,278 +11,6 @@ part of 'tool_calling_manager_provider.dart';
 
 // dart format off
 T _$identity<T>(T value) => value;
-/// @nodoc
-mixin _$ToolCallItem {
-
- String get id; String get name; String get argumentsRaw; Map<String, dynamic> get arguments;
-/// Create a copy of ToolCallItem
-/// with the given fields replaced by the non-null parameter values.
-@JsonKey(includeFromJson: false, includeToJson: false)
-@pragma('vm:prefer-inline')
-$ToolCallItemCopyWith<ToolCallItem> get copyWith => _$ToolCallItemCopyWithImpl<ToolCallItem>(this as ToolCallItem, _$identity);
-
-
-
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ToolCallItem&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.argumentsRaw, argumentsRaw) || other.argumentsRaw == argumentsRaw)&&const DeepCollectionEquality().equals(other.arguments, arguments));
-}
-
-
-@override
-int get hashCode => Object.hash(runtimeType,id,name,argumentsRaw,const DeepCollectionEquality().hash(arguments));
-
-@override
-String toString() {
-  return 'ToolCallItem(id: $id, name: $name, argumentsRaw: $argumentsRaw, arguments: $arguments)';
-}
-
-
-}
-
-/// @nodoc
-abstract mixin class $ToolCallItemCopyWith<$Res>  {
-  factory $ToolCallItemCopyWith(ToolCallItem value, $Res Function(ToolCallItem) _then) = _$ToolCallItemCopyWithImpl;
-@useResult
-$Res call({
- String id, String name, String argumentsRaw, Map<String, dynamic> arguments
-});
-
-
-
-
-}
-/// @nodoc
-class _$ToolCallItemCopyWithImpl<$Res>
-    implements $ToolCallItemCopyWith<$Res> {
-  _$ToolCallItemCopyWithImpl(this._self, this._then);
-
-  final ToolCallItem _self;
-  final $Res Function(ToolCallItem) _then;
-
-/// Create a copy of ToolCallItem
-/// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? argumentsRaw = null,Object? arguments = null,}) {
-  return _then(_self.copyWith(
-id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
-as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
-as String,argumentsRaw: null == argumentsRaw ? _self.argumentsRaw : argumentsRaw // ignore: cast_nullable_to_non_nullable
-as String,arguments: null == arguments ? _self.arguments : arguments // ignore: cast_nullable_to_non_nullable
-as Map<String, dynamic>,
-  ));
-}
-
-}
-
-
-/// Adds pattern-matching-related methods to [ToolCallItem].
-extension ToolCallItemPatterns on ToolCallItem {
-/// A variant of `map` that fallback to returning `orElse`.
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case final Subclass value:
-///     return ...;
-///   case _:
-///     return orElse();
-/// }
-/// ```
-
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _ToolCallItem value)?  $default,{required TResult orElse(),}){
-final _that = this;
-switch (_that) {
-case _ToolCallItem() when $default != null:
-return $default(_that);case _:
-  return orElse();
-
-}
-}
-/// A `switch`-like method, using callbacks.
-///
-/// Callbacks receives the raw object, upcasted.
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case final Subclass value:
-///     return ...;
-///   case final Subclass2 value:
-///     return ...;
-/// }
-/// ```
-
-@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _ToolCallItem value)  $default,){
-final _that = this;
-switch (_that) {
-case _ToolCallItem():
-return $default(_that);case _:
-  throw StateError('Unexpected subclass');
-
-}
-}
-/// A variant of `map` that fallback to returning `null`.
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case final Subclass value:
-///     return ...;
-///   case _:
-///     return null;
-/// }
-/// ```
-
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _ToolCallItem value)?  $default,){
-final _that = this;
-switch (_that) {
-case _ToolCallItem() when $default != null:
-return $default(_that);case _:
-  return null;
-
-}
-}
-/// A variant of `when` that fallback to an `orElse` callback.
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case Subclass(:final field):
-///     return ...;
-///   case _:
-///     return orElse();
-/// }
-/// ```
-
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  String argumentsRaw,  Map<String, dynamic> arguments)?  $default,{required TResult orElse(),}) {final _that = this;
-switch (_that) {
-case _ToolCallItem() when $default != null:
-return $default(_that.id,_that.name,_that.argumentsRaw,_that.arguments);case _:
-  return orElse();
-
-}
-}
-/// A `switch`-like method, using callbacks.
-///
-/// As opposed to `map`, this offers destructuring.
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case Subclass(:final field):
-///     return ...;
-///   case Subclass2(:final field2):
-///     return ...;
-/// }
-/// ```
-
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  String argumentsRaw,  Map<String, dynamic> arguments)  $default,) {final _that = this;
-switch (_that) {
-case _ToolCallItem():
-return $default(_that.id,_that.name,_that.argumentsRaw,_that.arguments);case _:
-  throw StateError('Unexpected subclass');
-
-}
-}
-/// A variant of `when` that fallback to returning `null`
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case Subclass(:final field):
-///     return ...;
-///   case _:
-///     return null;
-/// }
-/// ```
-
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  String argumentsRaw,  Map<String, dynamic> arguments)?  $default,) {final _that = this;
-switch (_that) {
-case _ToolCallItem() when $default != null:
-return $default(_that.id,_that.name,_that.argumentsRaw,_that.arguments);case _:
-  return null;
-
-}
-}
-
-}
-
-/// @nodoc
-
-
-class _ToolCallItem implements ToolCallItem {
-  const _ToolCallItem({required this.id, required this.name, required this.argumentsRaw, required final  Map<String, dynamic> arguments}): _arguments = arguments;
-  
-
-@override final  String id;
-@override final  String name;
-@override final  String argumentsRaw;
- final  Map<String, dynamic> _arguments;
-@override Map<String, dynamic> get arguments {
-  if (_arguments is EqualUnmodifiableMapView) return _arguments;
-  // ignore: implicit_dynamic_type
-  return EqualUnmodifiableMapView(_arguments);
-}
-
-
-/// Create a copy of ToolCallItem
-/// with the given fields replaced by the non-null parameter values.
-@override @JsonKey(includeFromJson: false, includeToJson: false)
-@pragma('vm:prefer-inline')
-_$ToolCallItemCopyWith<_ToolCallItem> get copyWith => __$ToolCallItemCopyWithImpl<_ToolCallItem>(this, _$identity);
-
-
-
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ToolCallItem&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.argumentsRaw, argumentsRaw) || other.argumentsRaw == argumentsRaw)&&const DeepCollectionEquality().equals(other._arguments, _arguments));
-}
-
-
-@override
-int get hashCode => Object.hash(runtimeType,id,name,argumentsRaw,const DeepCollectionEquality().hash(_arguments));
-
-@override
-String toString() {
-  return 'ToolCallItem(id: $id, name: $name, argumentsRaw: $argumentsRaw, arguments: $arguments)';
-}
-
-
-}
-
-/// @nodoc
-abstract mixin class _$ToolCallItemCopyWith<$Res> implements $ToolCallItemCopyWith<$Res> {
-  factory _$ToolCallItemCopyWith(_ToolCallItem value, $Res Function(_ToolCallItem) _then) = __$ToolCallItemCopyWithImpl;
-@override @useResult
-$Res call({
- String id, String name, String argumentsRaw, Map<String, dynamic> arguments
-});
-
-
-
-
-}
-/// @nodoc
-class __$ToolCallItemCopyWithImpl<$Res>
-    implements _$ToolCallItemCopyWith<$Res> {
-  __$ToolCallItemCopyWithImpl(this._self, this._then);
-
-  final _ToolCallItem _self;
-  final $Res Function(_ToolCallItem) _then;
-
-/// Create a copy of ToolCallItem
-/// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? argumentsRaw = null,Object? arguments = null,}) {
-  return _then(_ToolCallItem(
-id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
-as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
-as String,argumentsRaw: null == argumentsRaw ? _self.argumentsRaw : argumentsRaw // ignore: cast_nullable_to_non_nullable
-as String,arguments: null == arguments ? _self._arguments : arguments // ignore: cast_nullable_to_non_nullable
-as Map<String, dynamic>,
-  ));
-}
-
-
-}
-
 /// @nodoc
 mixin _$ToolResponseItem {
 
@@ -551,11 +279,7 @@ as String,
 /// @nodoc
 mixin _$TrackedToolCall {
 
-/// The unique ID of the tool call
- String get id;/// The name/type of the tool
- String get toolName;/// The message ID this tool call belongs to
- String get messageId;/// Whether this tool is currently running
- bool get isRunning;
+ String get id; String get toolName; String get messageId; bool get isRunning;
 /// Create a copy of TrackedToolCall
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -753,13 +477,9 @@ class _TrackedToolCall implements TrackedToolCall {
   const _TrackedToolCall({required this.id, required this.toolName, required this.messageId, required this.isRunning});
   
 
-/// The unique ID of the tool call
 @override final  String id;
-/// The name/type of the tool
 @override final  String toolName;
-/// The message ID this tool call belongs to
 @override final  String messageId;
-/// Whether this tool is currently running
 @override final  bool isRunning;
 
 /// Create a copy of TrackedToolCall

@@ -205,7 +205,7 @@ final class AvailableToolsToAddProvider
 }
 
 String _$availableToolsToAddHash() =>
-    r'c11342fe74c0606bb77f2b4941351c12cf81babf';
+    r'ec941fc616c28b791d360a446b7bfb39c0cea4da';
 
 @ProviderFor(workspaceToolRow)
 final workspaceToolRowProvider = WorkspaceToolRowProvider._();

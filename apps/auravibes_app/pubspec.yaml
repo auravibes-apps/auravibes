@@ -72,6 +72,7 @@ dev_dependencies:
   mockito: ^5.6.3
   riverpod_generator: ^4.0.0+1
 
+  flutter_riverpod: any
 flutter:
   assets:
     - assets/i18n/
