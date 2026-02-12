@@ -7,7 +7,6 @@ import 'package:auravibes_app/services/tools/models/resolved_tool.dart';
 import 'package:auravibes_app/services/tools/user_tools_entity.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
-import 'package:mockito/mockito.dart';
 
 import 'batch_execute_tools_usecase_test.mocks.dart';
 

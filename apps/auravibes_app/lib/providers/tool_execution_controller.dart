@@ -12,10 +12,27 @@ import 'package:auravibes_app/features/tools/providers/conversation_tools_provid
 import 'package:auravibes_app/features/tools/providers/grouped_tools_provider.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_provider.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'tool_execution_controller.freezed.dart';
 part 'tool_execution_controller.g.dart';
+
+/// A trigger that increments whenever tool call results are updated.
+///
+/// UI components can watch this to know when to refresh message data
+/// after tool calls are resolved (stopped, skipped, or completed).
+final toolUpdateRefreshTriggerProvider =
+    NotifierProvider<ToolUpdateRefreshTriggerNotifier, int>(
+      ToolUpdateRefreshTriggerNotifier.new,
+    );
+
+class ToolUpdateRefreshTriggerNotifier extends Notifier<int> {
+  @override
+  int build() => 0;
+
+  void trigger() => state++;
+}
 
 /// Permission level when user grants a tool call.
 enum ToolGrantLevel {

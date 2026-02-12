@@ -7,7 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('ExecuteToolUseCase', () {
     test('should execute built-in tool successfully', () async {
-      final useCase = ExecuteToolUseCase();
+      const useCase = ExecuteToolUseCase();
       final tool = ResolvedTool.builtIn(
         tableId: 'test-id',
         toolIdentifier: 'calculator',
@@ -23,7 +23,7 @@ void main() {
     test(
       'should return toolNotFound for MCP tools (not yet implemented)',
       () async {
-        final useCase = ExecuteToolUseCase();
+        const useCase = ExecuteToolUseCase();
         final tool = ResolvedTool.mcp(
           tableId: 'test-id',
           toolIdentifier: 'mcp_tool',
@@ -39,7 +39,7 @@ void main() {
     test(
       'should return executionError with errorMessage when exception is thrown',
       () async {
-        final useCase = ExecuteToolUseCase();
+        const useCase = ExecuteToolUseCase();
         final tool = ResolvedTool.builtIn(
           tableId: 'test-id',
           toolIdentifier: 'calculator',
