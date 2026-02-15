@@ -11,7 +11,7 @@ dependencies:
   google_fonts: ^8.0.1
   auravibes_ui: 0.0.2
   widgetbook: ^3.20.2
-  widgetbook_annotation: ^3.9.0
+  widgetbook_annotation: ^3.10.0
   collection: ^1.19.1
 
 dev_dependencies:
