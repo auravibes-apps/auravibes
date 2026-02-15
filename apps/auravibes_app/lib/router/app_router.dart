@@ -3,7 +3,7 @@ import 'package:auravibes_app/features/chats/screens/list_chats_screen.dart';
 import 'package:auravibes_app/features/chats/screens/new_chat_screen.dart';
 import 'package:auravibes_app/features/models/screens/models_screen.dart';
 import 'package:auravibes_app/features/settings/screens/settings_screen.dart';
-import 'package:auravibes_app/features/tools/tools_screen.dart';
+import 'package:auravibes_app/features/tools/screens/tools_screen.dart';
 import 'package:auravibes_app/widgets/app_navigation_wrappers.dart';
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
@@ -18,7 +18,7 @@ final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
     TypedStatefulShellBranch(
       routes: [
         TypedGoRoute<NewChatRoute>(path: '/chat/new'),
-        TypedGoRoute<CoversationRoute>(path: '/chats/:chatId'),
+        TypedGoRoute<ConversationRoute>(path: '/chats/:chatId'),
         TypedGoRoute<ChatsRoute>(
           path: '/chats',
         ),
@@ -59,7 +59,7 @@ class MyShellRouteData extends StatefulShellRouteData {
 class ChatsRoute extends GoRouteData with $ChatsRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    return const ChatScreen();
+    return const ChatsListScreen();
   }
 }
 
@@ -70,8 +70,8 @@ class NewChatRoute extends GoRouteData with $NewChatRoute {
   }
 }
 
-class CoversationRoute extends GoRouteData with $CoversationRoute {
-  CoversationRoute({required this.chatId});
+class ConversationRoute extends GoRouteData with $ConversationRoute {
+  ConversationRoute({required this.chatId});
   String chatId;
 
   @override

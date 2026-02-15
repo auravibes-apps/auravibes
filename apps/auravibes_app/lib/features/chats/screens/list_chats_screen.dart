@@ -8,8 +8,8 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class ChatScreen extends ConsumerWidget {
-  const ChatScreen({super.key});
+class ChatsListScreen extends ConsumerWidget {
+  const ChatsListScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

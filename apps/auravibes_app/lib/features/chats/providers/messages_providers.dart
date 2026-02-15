@@ -101,14 +101,11 @@ Future<List<String>> messageList(Ref ref) async {
   return messages;
 }
 
-@Riverpod(dependencies: [])
-String messageIdNotifier(Ref ref) =>
-    throw Exception('implement messageIdNotifier');
-
-@Riverpod(dependencies: [messageIdNotifier, ChatMessagesController])
-MessageEntity? messageConversation(Ref ref) {
-  final messageId = ref.watch(messageIdProvider);
-
+@Riverpod(dependencies: [ChatMessagesController])
+MessageEntity? messageConversationById(
+  Ref ref,
+  String messageId,
+) {
   final messageEntity = ref.watch(
     chatMessagesControllerProvider.select(
       (value) => value.value?.firstWhereOrNull((c) => c.id == messageId),
@@ -120,7 +117,7 @@ MessageEntity? messageConversation(Ref ref) {
   final updateMessage = ref.watch(
     messagesControllerProvider.select(
       (messages) => messages.firstWhereOrNull((message) {
-        return message.responseMesageId == messageId;
+        return message.responseMessageId == messageId;
       }),
     ),
   );

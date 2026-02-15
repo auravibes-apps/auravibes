@@ -15,7 +15,6 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
 class ChatMessagesWidget extends HookConsumerWidget {
   const ChatMessagesWidget({required this.messages, super.key});
@@ -40,11 +39,9 @@ class ChatMessagesWidget extends HookConsumerWidget {
         final messageId = data[index];
         final isLastMessage = messageId == lastMessageId;
 
-        return ProviderScope(
-          overrides: [messageIdProvider.overrideWithValue(messageId)],
-          child: _ChatMessageRow(
-            isLastMessage: isLastMessage,
-          ),
+        return _ChatMessageRow(
+          messageId: messageId,
+          isLastMessage: isLastMessage,
         );
       },
     );
@@ -73,17 +70,18 @@ String? _tryDecode(Object? metadata) {
   return encoder.convert(decoded);
 }
 
-@Dependencies([messageConversation])
 class _ChatMessageRow extends HookConsumerWidget {
   const _ChatMessageRow({
+    required this.messageId,
     required this.isLastMessage,
   });
 
+  final String messageId;
   final bool isLastMessage;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final message = ref.watch(messageConversationProvider);
+    final message = ref.watch(messageConversationByIdProvider(messageId));
     if (message == null) {
       return const SizedBox.shrink();
     }
