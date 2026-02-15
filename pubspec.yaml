@@ -9,7 +9,7 @@ workspace:
   - widgetbook
 
 dev_dependencies:
-  dependency_validator: ^5.0.3
+  dependency_validator: ^5.0.4
   import_sorter: ^4.6.0
   melos: ^7.4.0
   riverpod_lint: ^3.1.0

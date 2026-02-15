@@ -349,10 +349,10 @@ packages:
     dependency: "direct dev"
     description:
       name: dependency_validator
-      sha256: a5928c0e3773808027bdafeb13fb4be0e4fdd79819773ad3df34d0fcf42636f2
+      sha256: "653cfb9927a7f4055699264c0ea934b0e9dd07760330c62ffa74861c646b98a8"
       url: "https://pub.dev"
     source: hosted
-    version: "5.0.3"
+    version: "5.0.4"
   desktop_webview_window:
     dependency: transitive
     description:
