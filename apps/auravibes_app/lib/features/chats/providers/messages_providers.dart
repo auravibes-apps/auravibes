@@ -2,9 +2,12 @@ import 'package:auravibes_app/core/exceptions/conversation_exceptions.dart';
 import 'package:auravibes_app/domain/entities/conversation.dart';
 import 'package:auravibes_app/domain/entities/messages.dart';
 import 'package:auravibes_app/domain/enums/message_types.dart';
+import 'package:auravibes_app/domain/models/streaming_message_projection.dart';
+import 'package:auravibes_app/domain/usecases/chats/merge_streaming_message_projection_usecase.dart';
+import 'package:auravibes_app/domain/usecases/chats/project_messages_streaming_status_usecase.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
-import 'package:auravibes_app/providers/messages_manager_provider.dart';
+import 'package:auravibes_app/providers/messages_controller.dart';
 import 'package:auravibes_app/providers/tool_execution_controller.dart';
 import 'package:collection/collection.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -22,7 +25,7 @@ String conversationSelectedNotifier(Ref ref) =>
     throw const NoConversationSelectedException();
 
 @Riverpod(dependencies: [conversationSelectedNotifier])
-class ConversationChatNotifier extends _$ConversationChatNotifier {
+class ConversationChatController extends _$ConversationChatController {
   @override
   Future<ConversationEntity?> build() async {
     final conversationId = ref.watch(conversationSelectedProvider);
@@ -44,7 +47,7 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
 }
 
 @Riverpod(dependencies: [conversationSelectedNotifier])
-class ChatMessages extends _$ChatMessages {
+class ChatMessagesController extends _$ChatMessagesController {
   @override
   Future<List<MessageEntity>> build() async {
     final conversationId = ref.watch(conversationSelectedProvider);
@@ -57,7 +60,7 @@ class ChatMessages extends _$ChatMessages {
         .getMessagesByConversation(conversationId);
 
     final messagesId = ref.watch(
-      messagesManagerProvider.select(
+      messagesControllerProvider.select(
         (message) => message
             .where((element) => element.conversationId == conversationId)
             .map((e) => e.messageId)
@@ -65,12 +68,10 @@ class ChatMessages extends _$ChatMessages {
       ),
     );
 
-    return messages.map((message) {
-      final streaming = messagesId.contains(message.id);
-      return message.copyWith(
-        status: streaming ? MessageStatus.streaming : message.status,
-      );
-    }).toList();
+    return const ProjectMessagesStreamingStatusUseCase().call(
+      messages: messages,
+      streamingMessageIds: messagesId,
+    );
   }
 
   Future<void> addMessage({
@@ -78,7 +79,7 @@ class ChatMessages extends _$ChatMessages {
     required MessageType messageType,
   }) async {
     final conversationId = ref.read(conversationSelectedProvider);
-    final messagesManager = ref.read(messagesManagerProvider.notifier);
+    final messagesManager = ref.read(messagesControllerProvider.notifier);
 
     final (userMessage, systemMessage) = await messagesManager.sendMessage(
       conversationId: conversationId,
@@ -89,10 +90,10 @@ class ChatMessages extends _$ChatMessages {
   }
 }
 
-@Riverpod(dependencies: [ChatMessages])
+@Riverpod(dependencies: [ChatMessagesController])
 Future<List<String>> messageList(Ref ref) async {
   final messages = await ref.watch(
-    chatMessagesProvider.selectAsync(
+    chatMessagesControllerProvider.selectAsync(
       (messages) => messages.map((message) => message.id).toList(),
     ),
   );
@@ -104,12 +105,12 @@ Future<List<String>> messageList(Ref ref) async {
 String messageIdNotifier(Ref ref) =>
     throw Exception('implement messageIdNotifier');
 
-@Riverpod(dependencies: [messageIdNotifier, ChatMessages])
+@Riverpod(dependencies: [messageIdNotifier, ChatMessagesController])
 MessageEntity? messageConversation(Ref ref) {
   final messageId = ref.watch(messageIdProvider);
 
   final messageEntity = ref.watch(
-    chatMessagesProvider.select(
+    chatMessagesControllerProvider.select(
       (value) => value.value?.firstWhereOrNull((c) => c.id == messageId),
     ),
   );
@@ -117,7 +118,7 @@ MessageEntity? messageConversation(Ref ref) {
   if (messageEntity == null) return null;
 
   final updateMessage = ref.watch(
-    messagesManagerProvider.select(
+    messagesControllerProvider.select(
       (messages) => messages.firstWhereOrNull((message) {
         return message.responseMesageId == messageId;
       }),
@@ -126,19 +127,29 @@ MessageEntity? messageConversation(Ref ref) {
 
   if (updateMessage == null) return messageEntity;
 
-  return messageEntity.copyWith(
-    content: updateMessage.content,
-    metadata: updateMessage.metadata,
-    status: switch (updateMessage.status) {
-      StreamingMessageStatus.created => MessageStatus.sending,
-      StreamingMessageStatus.streaming => MessageStatus.sending,
-      StreamingMessageStatus.done => MessageStatus.sent,
-      StreamingMessageStatus.error => MessageStatus.error,
-      StreamingMessageStatus.awaitingToolConfirmation => MessageStatus.sent,
-      StreamingMessageStatus.executingTools => MessageStatus.sending,
-      StreamingMessageStatus.waitingForMcpConnections => MessageStatus.sending,
-    },
+  return const MergeStreamingMessageProjectionUseCase().call(
+    baseMessage: messageEntity,
+    streamingMessage: StreamingMessageProjection(
+      content: updateMessage.content,
+      status: _toProjectionStatus(updateMessage.status),
+      metadata: updateMessage.metadata,
+    ),
   );
+}
+
+StreamingProjectionStatus _toProjectionStatus(StreamingMessageStatus status) {
+  return switch (status) {
+    StreamingMessageStatus.created => StreamingProjectionStatus.created,
+    StreamingMessageStatus.streaming => StreamingProjectionStatus.streaming,
+    StreamingMessageStatus.done => StreamingProjectionStatus.done,
+    StreamingMessageStatus.error => StreamingProjectionStatus.error,
+    StreamingMessageStatus.awaitingToolConfirmation =>
+      StreamingProjectionStatus.awaitingToolConfirmation,
+    StreamingMessageStatus.executingTools =>
+      StreamingProjectionStatus.executingTools,
+    StreamingMessageStatus.waitingForMcpConnections =>
+      StreamingProjectionStatus.waitingForMcpConnections,
+  };
 }
 
 /// Provides the pending MCP server IDs for the current conversation.
@@ -150,7 +161,7 @@ List<String> pendingMcpConnections(Ref ref) {
   final conversationId = ref.watch(conversationSelectedProvider);
 
   final waitingMessage = ref.watch(
-    messagesManagerProvider.select(
+    messagesControllerProvider.select(
       (messages) => messages.firstWhereOrNull(
         (msg) =>
             msg.conversationId == conversationId &&

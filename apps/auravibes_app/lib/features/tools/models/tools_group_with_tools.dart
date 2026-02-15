@@ -1,6 +1,6 @@
 import 'package:auravibes_app/domain/entities/tools_group.dart';
 import 'package:auravibes_app/domain/entities/workspace_tool.dart';
-import 'package:auravibes_app/providers/mcp_manager_provider.dart';
+import 'package:auravibes_app/providers/mcp_connection_controller.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'tools_group_with_tools.freezed.dart';

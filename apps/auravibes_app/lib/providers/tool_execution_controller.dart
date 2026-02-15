@@ -1,17 +1,18 @@
 import 'package:auravibes_app/domain/entities/messages.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
-import 'package:auravibes_app/domain/usecases/tools/batch_execute_tools_usecase.dart';
-import 'package:auravibes_app/domain/usecases/tools/check_tool_permission_usecase.dart';
-import 'package:auravibes_app/domain/usecases/tools/execute_tool_usecase.dart';
-import 'package:auravibes_app/domain/usecases/tools/filter_tools_by_permission_usecase.dart';
-import 'package:auravibes_app/domain/usecases/tools/grant_tool_permission_usecase.dart';
-import 'package:auravibes_app/domain/usecases/tools/send_tool_responses_to_ai_usecase.dart';
-import 'package:auravibes_app/domain/usecases/tools/update_message_metadata_usecase.dart';
+import 'package:auravibes_app/domain/enums/tool_grant_level.dart';
+import 'package:auravibes_app/domain/usecases/tools/execution/batch_execute_tools_usecase.dart';
+import 'package:auravibes_app/domain/usecases/tools/execution/check_tool_permission_usecase.dart';
+import 'package:auravibes_app/domain/usecases/tools/execution/execute_tool_usecase.dart';
+import 'package:auravibes_app/domain/usecases/tools/execution/filter_tools_by_permission_usecase.dart';
+import 'package:auravibes_app/domain/usecases/tools/execution/grant_tool_permission_usecase.dart';
+import 'package:auravibes_app/domain/usecases/tools/execution/send_tool_responses_to_ai_usecase.dart';
+import 'package:auravibes_app/domain/usecases/tools/execution/update_message_metadata_usecase.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
-import 'package:auravibes_app/features/tools/providers/conversation_tools_provider.dart';
-import 'package:auravibes_app/features/tools/providers/grouped_tools_provider.dart';
+import 'package:auravibes_app/features/tools/providers/conversation_tools_controller.dart';
+import 'package:auravibes_app/features/tools/providers/grouped_tools_controller.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_provider.dart';
-import 'package:auravibes_app/providers/messages_manager_provider.dart';
+import 'package:auravibes_app/providers/messages_controller.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -40,15 +41,6 @@ class ToolExecutionContextException implements Exception {
 
   @override
   String toString() => 'ToolExecutionContextException: $message';
-}
-
-/// Permission level when user grants a tool call.
-enum ToolGrantLevel {
-  /// Run this tool once, but ask again next time
-  once,
-
-  /// Grant permission for this conversation (persists to DB)
-  conversation,
 }
 
 /// Represents a tool call currently being tracked
@@ -346,7 +338,7 @@ class ToolExecutionController extends Notifier<List<TrackedToolCall>> {
       ref.read(messageRepositoryProvider),
       (responses, messageId) async {
         await ref
-            .read(messagesManagerProvider.notifier)
+            .read(messagesControllerProvider.notifier)
             .sendToolsResponse(responses, messageId);
       },
     );

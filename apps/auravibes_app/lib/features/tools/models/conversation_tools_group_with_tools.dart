@@ -1,6 +1,6 @@
 import 'package:auravibes_app/domain/entities/tools_group.dart';
-import 'package:auravibes_app/features/tools/providers/conversation_tools_provider.dart';
-import 'package:auravibes_app/providers/mcp_manager_provider.dart';
+import 'package:auravibes_app/features/tools/providers/conversation_tools_controller.dart';
+import 'package:auravibes_app/providers/mcp_connection_controller.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'conversation_tools_group_with_tools.freezed.dart';

@@ -51,39 +51,43 @@ final class ConversationSelectedNotifierProvider
 String _$conversationSelectedNotifierHash() =>
     r'30d28792df8d75acc432efeae609623be3e5c231';
 
-@ProviderFor(ConversationChatNotifier)
-final conversationChatProvider = ConversationChatNotifierProvider._();
+@ProviderFor(ConversationChatController)
+final conversationChatControllerProvider =
+    ConversationChatControllerProvider._();
 
-final class ConversationChatNotifierProvider
+final class ConversationChatControllerProvider
     extends
-        $AsyncNotifierProvider<ConversationChatNotifier, ConversationEntity?> {
-  ConversationChatNotifierProvider._()
+        $AsyncNotifierProvider<
+          ConversationChatController,
+          ConversationEntity?
+        > {
+  ConversationChatControllerProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'conversationChatProvider',
+        name: r'conversationChatControllerProvider',
         isAutoDispose: true,
         dependencies: <ProviderOrFamily>[conversationSelectedProvider],
         $allTransitiveDependencies: <ProviderOrFamily>[
-          ConversationChatNotifierProvider.$allTransitiveDependencies0,
+          ConversationChatControllerProvider.$allTransitiveDependencies0,
         ],
       );
 
   static final $allTransitiveDependencies0 = conversationSelectedProvider;
 
   @override
-  String debugGetCreateSourceHash() => _$conversationChatNotifierHash();
+  String debugGetCreateSourceHash() => _$conversationChatControllerHash();
 
   @$internal
   @override
-  ConversationChatNotifier create() => ConversationChatNotifier();
+  ConversationChatController create() => ConversationChatController();
 }
 
-String _$conversationChatNotifierHash() =>
-    r'1f1fb14eca5f6e98e85a2725875cebded5fb7ca0';
+String _$conversationChatControllerHash() =>
+    r'27c5641da382c8d14e9b4f3dd945072ece937de4';
 
-abstract class _$ConversationChatNotifier
+abstract class _$ConversationChatController
     extends $AsyncNotifier<ConversationEntity?> {
   FutureOr<ConversationEntity?> build();
   @$mustCallSuper
@@ -103,37 +107,40 @@ abstract class _$ConversationChatNotifier
   }
 }
 
-@ProviderFor(ChatMessages)
-final chatMessagesProvider = ChatMessagesProvider._();
+@ProviderFor(ChatMessagesController)
+final chatMessagesControllerProvider = ChatMessagesControllerProvider._();
 
-final class ChatMessagesProvider
-    extends $AsyncNotifierProvider<ChatMessages, List<MessageEntity>> {
-  ChatMessagesProvider._()
+final class ChatMessagesControllerProvider
+    extends
+        $AsyncNotifierProvider<ChatMessagesController, List<MessageEntity>> {
+  ChatMessagesControllerProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'chatMessagesProvider',
+        name: r'chatMessagesControllerProvider',
         isAutoDispose: true,
         dependencies: <ProviderOrFamily>[conversationSelectedProvider],
         $allTransitiveDependencies: <ProviderOrFamily>[
-          ChatMessagesProvider.$allTransitiveDependencies0,
+          ChatMessagesControllerProvider.$allTransitiveDependencies0,
         ],
       );
 
   static final $allTransitiveDependencies0 = conversationSelectedProvider;
 
   @override
-  String debugGetCreateSourceHash() => _$chatMessagesHash();
+  String debugGetCreateSourceHash() => _$chatMessagesControllerHash();
 
   @$internal
   @override
-  ChatMessages create() => ChatMessages();
+  ChatMessagesController create() => ChatMessagesController();
 }
 
-String _$chatMessagesHash() => r'71b0e2817a082b3c5ebce184da6b57bafe206b58';
+String _$chatMessagesControllerHash() =>
+    r'acd1cb925d11b836d9295627723cad13a0d5d39e';
 
-abstract class _$ChatMessages extends $AsyncNotifier<List<MessageEntity>> {
+abstract class _$ChatMessagesController
+    extends $AsyncNotifier<List<MessageEntity>> {
   FutureOr<List<MessageEntity>> build();
   @$mustCallSuper
   @override
@@ -170,16 +177,16 @@ final class MessageListProvider
         retry: null,
         name: r'messageListProvider',
         isAutoDispose: true,
-        dependencies: <ProviderOrFamily>[chatMessagesProvider],
+        dependencies: <ProviderOrFamily>[chatMessagesControllerProvider],
         $allTransitiveDependencies: <ProviderOrFamily>[
           MessageListProvider.$allTransitiveDependencies0,
           MessageListProvider.$allTransitiveDependencies1,
         ],
       );
 
-  static final $allTransitiveDependencies0 = chatMessagesProvider;
+  static final $allTransitiveDependencies0 = chatMessagesControllerProvider;
   static final $allTransitiveDependencies1 =
-      ChatMessagesProvider.$allTransitiveDependencies0;
+      ChatMessagesControllerProvider.$allTransitiveDependencies0;
 
   @override
   String debugGetCreateSourceHash() => _$messageListHash();
@@ -196,7 +203,7 @@ final class MessageListProvider
   }
 }
 
-String _$messageListHash() => r'57066aa84a313090aad3d3d0f1601dec58b2ef69';
+String _$messageListHash() => r'18865ef1f24212dd3e47c709f81acf1fbc933257';
 
 @ProviderFor(messageIdNotifier)
 final messageIdProvider = MessageIdNotifierProvider._();
@@ -254,7 +261,7 @@ final class MessageConversationProvider
         isAutoDispose: true,
         dependencies: <ProviderOrFamily>[
           messageIdProvider,
-          chatMessagesProvider,
+          chatMessagesControllerProvider,
         ],
         $allTransitiveDependencies: <ProviderOrFamily>[
           MessageConversationProvider.$allTransitiveDependencies0,
@@ -264,9 +271,9 @@ final class MessageConversationProvider
       );
 
   static final $allTransitiveDependencies0 = messageIdProvider;
-  static final $allTransitiveDependencies1 = chatMessagesProvider;
+  static final $allTransitiveDependencies1 = chatMessagesControllerProvider;
   static final $allTransitiveDependencies2 =
-      ChatMessagesProvider.$allTransitiveDependencies0;
+      ChatMessagesControllerProvider.$allTransitiveDependencies0;
 
   @override
   String debugGetCreateSourceHash() => _$messageConversationHash();
@@ -291,7 +298,7 @@ final class MessageConversationProvider
 }
 
 String _$messageConversationHash() =>
-    r'dac954de945e42e52623469502189a9e8015a8cf';
+    r'6c7a48761d743bbe14ff65861800c25f78c748d0';
 
 /// Provides the pending MCP server IDs for the current conversation.
 ///
@@ -351,4 +358,4 @@ final class PendingMcpConnectionsProvider
 }
 
 String _$pendingMcpConnectionsHash() =>
-    r'5592133c4118f304ea40f46c4eb669d69cbb833a';
+    r'c1dd2ebe5471ac9723a1e90f4f99a332ff26c427';
