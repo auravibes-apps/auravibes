@@ -1,6 +1,6 @@
 import 'package:auravibes_app/features/chats/providers/messages_providers.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
-import 'package:auravibes_app/providers/mcp_manager_provider.dart';
+import 'package:auravibes_app/providers/mcp_connection_controller.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -22,7 +22,7 @@ class McpConnectingIndicator extends ConsumerWidget {
     }
 
     // Get the server names for the pending MCPs
-    final mcpConnections = ref.watch(mcpManagerProvider);
+    final mcpConnections = ref.watch(mcpConnectionControllerProvider);
     final pendingServerNames = mcpConnections
         .where((c) => pendingMcpIds.contains(c.server.id))
         .map((c) => c.server.name)

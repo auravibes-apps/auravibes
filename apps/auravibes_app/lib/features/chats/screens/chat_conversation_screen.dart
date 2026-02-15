@@ -31,25 +31,27 @@ class ChatConversationScreen extends ConsumerWidget {
 }
 
 @Dependencies([
-  ConversationChatNotifier,
-  ChatMessages,
+  ConversationChatController,
+  ChatMessagesController,
   pendingMcpConnections,
 ])
 class _ChatConversationScreen extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final modelId = ref.watch(
-      conversationChatProvider.select((c) => c.value?.modelId),
+      conversationChatControllerProvider.select((c) => c.value?.modelId),
     );
 
     final modelTitle = ref.watch(
-      conversationChatProvider.select((c) => c.value?.title),
+      conversationChatControllerProvider.select((c) => c.value?.title),
     );
 
     final onToolsPress = useCallback(() async {
       // Try to get conversation info
 
-      final conversation = await ref.read(conversationChatProvider.future);
+      final conversation = await ref.read(
+        conversationChatControllerProvider.future,
+      );
       if (conversation == null) return;
       final conversationId = conversation.id;
       final workspaceId = conversation.workspaceId;
@@ -73,7 +75,7 @@ class _ChatConversationScreen extends HookConsumerWidget {
         bottom: SelectCredentialsModelWidget(
           credentialsModelId: modelId,
           selectCredentialsModelId: ref
-              .watch(conversationChatProvider.notifier)
+              .watch(conversationChatControllerProvider.notifier)
               .setModel,
         ),
       ),
@@ -85,7 +87,7 @@ class _ChatConversationScreen extends HookConsumerWidget {
             onToolsPress: onToolsPress,
             onSendMessage: (message) {
               ref
-                  .read(chatMessagesProvider.notifier)
+                  .read(chatMessagesControllerProvider.notifier)
                   .addMessage(
                     content: message,
                     messageType: MessageType.text,
@@ -98,12 +100,12 @@ class _ChatConversationScreen extends HookConsumerWidget {
   }
 }
 
-@Dependencies([ChatMessages])
+@Dependencies([ChatMessagesController])
 class _ChatList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isLoading = ref.watch(
-      chatMessagesProvider.select(
+      chatMessagesControllerProvider.select(
         (value) => value.isLoading && value.value == null,
       ),
     );
@@ -113,14 +115,14 @@ class _ChatList extends ConsumerWidget {
     }
 
     final messages = ref.watch(
-      chatMessagesProvider.select(
+      chatMessagesControllerProvider.select(
         (value) => [
           for (final message in value.value ?? <MessageEntity>[]) message.id,
         ],
       ),
     );
     final asyncError = ref.watch(
-      chatMessagesProvider.select(
+      chatMessagesControllerProvider.select(
         (value) => value.asError,
       ),
     );

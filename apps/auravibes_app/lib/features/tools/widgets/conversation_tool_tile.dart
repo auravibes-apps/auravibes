@@ -1,5 +1,5 @@
 import 'package:auravibes_app/domain/entities/workspace_tool.dart';
-import 'package:auravibes_app/features/tools/providers/conversation_tools_provider.dart';
+import 'package:auravibes_app/features/tools/providers/conversation_tools_controller.dart';
 import 'package:auravibes_app/features/tools/widgets/tool_extensions_widgets.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -31,7 +31,7 @@ class ConversationToolTile extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final onToggle = useCallback(() async {
       final notifier = ref.read(
-        conversationToolsProvider(
+        conversationToolsControllerProvider(
           workspaceId: workspaceId,
           conversationId: conversationId,
         ).notifier,
@@ -43,7 +43,7 @@ class ConversationToolTile extends HookConsumerWidget {
         useCallback<Future<void> Function(ToolPermissionMode?)>((mode) async {
           if (mode == null) return;
           final notifier = ref.read(
-            conversationToolsProvider(
+            conversationToolsControllerProvider(
               workspaceId: workspaceId,
               conversationId: conversationId,
             ).notifier,

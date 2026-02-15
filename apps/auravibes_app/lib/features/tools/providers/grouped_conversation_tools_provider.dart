@@ -1,7 +1,7 @@
 import 'package:auravibes_app/features/tools/models/conversation_tools_group_with_tools.dart';
-import 'package:auravibes_app/features/tools/providers/conversation_tools_provider.dart';
-import 'package:auravibes_app/features/tools/providers/grouped_tools_provider.dart';
-import 'package:auravibes_app/providers/mcp_manager_provider.dart';
+import 'package:auravibes_app/features/tools/providers/conversation_tools_controller.dart';
+import 'package:auravibes_app/features/tools/providers/grouped_tools_controller.dart';
+import 'package:auravibes_app/providers/mcp_connection_controller.dart';
 import 'package:collection/collection.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -27,7 +27,7 @@ class GroupedConversationToolsNotifier
   }) async {
     // Get all conversation tool states
     final conversationTools = await ref.watch(
-      conversationToolsProvider(
+      conversationToolsControllerProvider(
         workspaceId: workspaceId,
         conversationId: conversationId,
       ).future,
@@ -40,7 +40,7 @@ class GroupedConversationToolsNotifier
     );
 
     // Watch MCP connections for status enrichment
-    final mcpConnections = ref.watch(mcpManagerProvider);
+    final mcpConnections = ref.watch(mcpConnectionControllerProvider);
 
     // Group tools by their workspaceToolsGroupId
     final toolsByGroupId = <String?, List<ConversationToolState>>{};
@@ -113,7 +113,7 @@ class GroupedConversationToolsNotifier
     required bool enabled,
   }) async {
     final conversationNotifier = ref.read(
-      conversationToolsProvider(
+      conversationToolsControllerProvider(
         workspaceId: workspaceId,
         conversationId: conversationId,
       ).notifier,
@@ -139,6 +139,8 @@ class GroupedConversationToolsNotifier
 
   /// Reconnect to an MCP server.
   Future<void> reconnectMcp(String mcpServerId) async {
-    await ref.read(mcpManagerProvider.notifier).reconnectMcpServer(mcpServerId);
+    await ref
+        .read(mcpConnectionControllerProvider.notifier)
+        .reconnectMcpServer(mcpServerId);
   }
 }

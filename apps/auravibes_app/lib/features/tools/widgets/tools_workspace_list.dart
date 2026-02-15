@@ -1,4 +1,4 @@
-import 'package:auravibes_app/features/tools/providers/grouped_tools_provider.dart';
+import 'package:auravibes_app/features/tools/providers/grouped_tools_controller.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_group_card.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/app_error.dart';
@@ -23,7 +23,7 @@ class ToolsWorkspaceListWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final groupedToolsAsync = ref.watch(groupedToolsProvider);
+    final groupedToolsAsync = ref.watch(groupedToolsControllerProvider);
 
     return switch (groupedToolsAsync) {
       AsyncLoading() => const Center(child: AuraSpinner()),

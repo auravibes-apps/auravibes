@@ -1,0 +1,1 @@
+enum ToolGrantLevel { once, conversation }

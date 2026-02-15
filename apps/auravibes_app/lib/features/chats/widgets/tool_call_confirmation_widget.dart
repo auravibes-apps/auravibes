@@ -1,4 +1,5 @@
 import 'package:auravibes_app/domain/entities/messages.dart';
+import 'package:auravibes_app/domain/enums/tool_grant_level.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/providers/tool_execution_controller.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
