@@ -38,7 +38,7 @@ class NewChatScreen extends ConsumerWidget {
             .startConversation(message);
 
         if (context.mounted) {
-          CoversationRoute(chatId: conversationId).replace(context);
+          ConversationRoute(chatId: conversationId).replace(context);
         }
       } on Exception catch (e) {
         if (context.mounted) {

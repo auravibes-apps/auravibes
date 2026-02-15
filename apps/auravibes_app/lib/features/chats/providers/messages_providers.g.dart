@@ -205,78 +205,36 @@ final class MessageListProvider
 
 String _$messageListHash() => r'18865ef1f24212dd3e47c709f81acf1fbc933257';
 
-@ProviderFor(messageIdNotifier)
-final messageIdProvider = MessageIdNotifierProvider._();
+@ProviderFor(messageConversationById)
+final messageConversationByIdProvider = MessageConversationByIdFamily._();
 
-final class MessageIdNotifierProvider
-    extends $FunctionalProvider<String, String, String>
-    with $Provider<String> {
-  MessageIdNotifierProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'messageIdProvider',
-        isAutoDispose: true,
-        dependencies: <ProviderOrFamily>[],
-        $allTransitiveDependencies: <ProviderOrFamily>[],
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$messageIdNotifierHash();
-
-  @$internal
-  @override
-  $ProviderElement<String> $createElement($ProviderPointer pointer) =>
-      $ProviderElement(pointer);
-
-  @override
-  String create(Ref ref) {
-    return messageIdNotifier(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(String value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<String>(value),
-    );
-  }
-}
-
-String _$messageIdNotifierHash() => r'ca5c5d602ce2500fd6de1130348613aa34fc04ed';
-
-@ProviderFor(messageConversation)
-final messageConversationProvider = MessageConversationProvider._();
-
-final class MessageConversationProvider
+final class MessageConversationByIdProvider
     extends $FunctionalProvider<MessageEntity?, MessageEntity?, MessageEntity?>
     with $Provider<MessageEntity?> {
-  MessageConversationProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'messageConversationProvider',
-        isAutoDispose: true,
-        dependencies: <ProviderOrFamily>[
-          messageIdProvider,
-          chatMessagesControllerProvider,
-        ],
-        $allTransitiveDependencies: <ProviderOrFamily>[
-          MessageConversationProvider.$allTransitiveDependencies0,
-          MessageConversationProvider.$allTransitiveDependencies1,
-          MessageConversationProvider.$allTransitiveDependencies2,
-        ],
-      );
+  MessageConversationByIdProvider._({
+    required MessageConversationByIdFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'messageConversationByIdProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
 
-  static final $allTransitiveDependencies0 = messageIdProvider;
-  static final $allTransitiveDependencies1 = chatMessagesControllerProvider;
-  static final $allTransitiveDependencies2 =
+  static final $allTransitiveDependencies0 = chatMessagesControllerProvider;
+  static final $allTransitiveDependencies1 =
       ChatMessagesControllerProvider.$allTransitiveDependencies0;
 
   @override
-  String debugGetCreateSourceHash() => _$messageConversationHash();
+  String debugGetCreateSourceHash() => _$messageConversationByIdHash();
+
+  @override
+  String toString() {
+    return r'messageConversationByIdProvider'
+        ''
+        '($argument)';
+  }
 
   @$internal
   @override
@@ -285,7 +243,8 @@ final class MessageConversationProvider
 
   @override
   MessageEntity? create(Ref ref) {
-    return messageConversation(ref);
+    final argument = this.argument as String;
+    return messageConversationById(ref, argument);
   }
 
   /// {@macro riverpod.override_with_value}
@@ -295,10 +254,42 @@ final class MessageConversationProvider
       providerOverride: $SyncValueProvider<MessageEntity?>(value),
     );
   }
+
+  @override
+  bool operator ==(Object other) {
+    return other is MessageConversationByIdProvider &&
+        other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
 }
 
-String _$messageConversationHash() =>
-    r'6c7a48761d743bbe14ff65861800c25f78c748d0';
+String _$messageConversationByIdHash() =>
+    r'52383cd0eb1174ff0b8d545b47bcc5028006f1d5';
+
+final class MessageConversationByIdFamily extends $Family
+    with $FunctionalFamilyOverride<MessageEntity?, String> {
+  MessageConversationByIdFamily._()
+    : super(
+        retry: null,
+        name: r'messageConversationByIdProvider',
+        dependencies: <ProviderOrFamily>[chatMessagesControllerProvider],
+        $allTransitiveDependencies: <ProviderOrFamily>[
+          MessageConversationByIdProvider.$allTransitiveDependencies0,
+          MessageConversationByIdProvider.$allTransitiveDependencies1,
+        ],
+        isAutoDispose: true,
+      );
+
+  MessageConversationByIdProvider call(String messageId) =>
+      MessageConversationByIdProvider._(argument: messageId, from: this);
+
+  @override
+  String toString() => r'messageConversationByIdProvider';
+}
 
 /// Provides the pending MCP server IDs for the current conversation.
 ///

@@ -19,7 +19,7 @@ RouteBase get $myShellRouteData => StatefulShellRouteData.$route(
         ),
         GoRouteData.$route(
           path: '/chats/:chatId',
-          factory: $CoversationRoute._fromState,
+          factory: $ConversationRoute._fromState,
         ),
         GoRouteData.$route(path: '/chats', factory: $ChatsRoute._fromState),
       ],
@@ -70,11 +70,11 @@ mixin $NewChatRoute on GoRouteData {
   void replace(BuildContext context) => context.replace(location);
 }
 
-mixin $CoversationRoute on GoRouteData {
-  static CoversationRoute _fromState(GoRouterState state) =>
-      CoversationRoute(chatId: state.pathParameters['chatId']!);
+mixin $ConversationRoute on GoRouteData {
+  static ConversationRoute _fromState(GoRouterState state) =>
+      ConversationRoute(chatId: state.pathParameters['chatId']!);
 
-  CoversationRoute get _self => this as CoversationRoute;
+  ConversationRoute get _self => this as ConversationRoute;
 
   @override
   String get location =>
