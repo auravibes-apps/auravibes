@@ -905,10 +905,10 @@ packages:
     dependency: transitive
     description:
       name: mcp_client
-      sha256: "7d157ecc80392d8085a581912f38967e708bea0b421146f5010af12e00cc87db"
+      sha256: "7eabd41217ad70f6d563dcaa48c31ecd59dc0311a8802d09d5417ebe9a26c5e7"
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.2"
+    version: "1.1.0"
   melos:
     dependency: "direct dev"
     description:
