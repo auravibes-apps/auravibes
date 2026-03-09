@@ -11,7 +11,9 @@ class ProjectMessagesStreamingStatusUseCase {
     return messages
         .map(
           (message) => message.copyWith(
-            status: streamingMessageIds.contains(message.id)
+            status:
+                streamingMessageIds.contains(message.id) &&
+                    message.status == MessageStatus.unfinished
                 ? MessageStatus.streaming
                 : message.status,
           ),

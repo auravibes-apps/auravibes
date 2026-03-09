@@ -30,4 +30,38 @@ void main() {
     expect(result.metadata, isNotNull);
     expect(result.status, MessageStatus.error);
   });
+
+  test('maps active streaming lifecycle states to unfinished', () {
+    const usecase = MergeStreamingMessageProjectionUseCase();
+    final base = MessageEntity(
+      id: 'm1',
+      conversationId: 'c1',
+      content: 'old',
+      messageType: MessageType.text,
+      isUser: false,
+      status: MessageStatus.sent,
+      createdAt: DateTime(2025),
+      updatedAt: DateTime(2025),
+    );
+
+    const activeStatuses = [
+      StreamingProjectionStatus.created,
+      StreamingProjectionStatus.streaming,
+      StreamingProjectionStatus.executingTools,
+      StreamingProjectionStatus.waitingForMcpConnections,
+    ];
+
+    for (final status in activeStatuses) {
+      final result = usecase.call(
+        baseMessage: base,
+        streamingMessage: StreamingMessageProjection(
+          content: 'new',
+          status: status,
+          metadata: const MessageMetadataEntity(),
+        ),
+      );
+
+      expect(result.status, MessageStatus.unfinished);
+    }
+  });
 }

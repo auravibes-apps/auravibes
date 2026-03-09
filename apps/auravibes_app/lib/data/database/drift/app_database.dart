@@ -69,7 +69,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// Database schema version.
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   /// Migration logic for database schema upgrades.
   ///
@@ -84,6 +84,12 @@ class AppDatabase extends _$AppDatabase {
         if (from == 1 && to == 2) {
           await customStatement(
             'ALTER TABLE credentials ADD COLUMN key_suffix TEXT',
+          );
+        }
+
+        if (from < 3) {
+          await customStatement(
+            "UPDATE messages SET status = 'sent' WHERE status = 'delivered'",
           );
         }
       },

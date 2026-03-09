@@ -206,6 +206,19 @@ class MessagesController extends _$MessagesController {
     state = [...state, streamingMessage];
 
     final subs = CompositeSubscription();
+    var didHandleFailure = false;
+
+    void handleStreamFailure(Object error, [StackTrace? stackTrace]) {
+      if (didHandleFailure) return;
+      didHandleFailure = true;
+      unawaited(
+        _handleStreamFailure(
+          messageId: messageId,
+          responseMessageId: responseMessageId,
+        ),
+      );
+    }
+
     final chats$ = stream.shareReplay().scan<ChatResult?>((
       accumulated,
       value,
@@ -218,16 +231,18 @@ class MessagesController extends _$MessagesController {
     // set message confirmation
     subs
       ..add(
-        chats$
-            .shareReplay()
-            .take(1)
-            .listen((event) => _confirmMessage(messageId: messageId)),
+        chats$.shareReplay().take(1).listen(
+          (event) {
+            _confirmMessage(messageId: messageId);
+          },
+          onError: handleStreamFailure,
+        ),
       )
       // update states
       ..add(
-        chats$.shareReplay().listen(
-          (chatResult) => _updateState(responseMessageId, chatResult),
-        ),
+        chats$.shareReplay().listen((chatResult) {
+          _updateState(responseMessageId, chatResult);
+        }, onError: handleStreamFailure),
       );
 
     final coalescingSaver = _CoalescingSaver<ChatResult>(
@@ -244,6 +259,7 @@ class MessagesController extends _$MessagesController {
     subs.add(
       chats$.shareReplay().listen(
         coalescingSaver.push,
+        onError: handleStreamFailure,
         onDone: coalescingSaver.complete,
       ),
     );
@@ -312,6 +328,39 @@ class MessagesController extends _$MessagesController {
     );
   }
 
+  Future<void> _handleStreamFailure({
+    required String messageId,
+    required String responseMessageId,
+  }) async {
+    final repo = ref.read(messageRepositoryProvider);
+
+    final partialContent = state
+        .firstWhereOrNull((msg) => msg.responseMesageId == responseMessageId)
+        ?.content;
+
+    state = state
+        .where((msg) => msg.responseMesageId != responseMessageId)
+        .toList();
+
+    await _subscriptions[responseMessageId]?.cancel();
+    _subscriptions.remove(responseMessageId);
+
+    await repo.updateMessage(
+      messageId,
+      const MessageToUpdate(status: MessageStatus.error),
+    );
+
+    await repo.updateMessage(
+      responseMessageId,
+      MessageToUpdate(
+        status: MessageStatus.unfinished,
+        content: partialContent == null || partialContent.isEmpty
+            ? null
+            : partialContent,
+      ),
+    );
+  }
+
   Future<void> _doneMessage({
     required String responseMessageId,
     required ChatResult chatResult,
@@ -322,6 +371,7 @@ class MessagesController extends _$MessagesController {
     }).toList();
 
     await _subscriptions[responseMessageId]?.cancel();
+    _subscriptions.remove(responseMessageId);
 
     final toolsToCall = _getTools(chatResult);
     if (toolsToCall.isNotEmpty) {
@@ -444,7 +494,7 @@ class MessagesController extends _$MessagesController {
             content: '',
             messageType: MessageType.text,
             isUser: false,
-            status: MessageStatus.sending,
+            status: MessageStatus.unfinished,
           ),
         );
 
@@ -473,17 +523,27 @@ class MessagesController extends _$MessagesController {
     // Build combined tool specs (built-in + MCP) with composite IDs
     final combinedToolSpecs = await _buildCombinedToolSpecs(enabledTools);
 
-    final stream = chatbotService.sendMessage(
-      foundModel,
-      aiMessages,
-      tools: combinedToolSpecs,
-    );
-    _addStream(
-      messageId: createdMessageId,
-      conversationId: conversationId,
-      responseMessageId: responseMessage.id,
-      stream: stream,
-    );
+    try {
+      final stream = chatbotService.sendMessage(
+        foundModel,
+        aiMessages,
+        tools: combinedToolSpecs,
+      );
+      _addStream(
+        messageId: createdMessageId,
+        conversationId: conversationId,
+        responseMessageId: responseMessage.id,
+        stream: stream,
+      );
+    } on Exception {
+      await ref
+          .read(messageRepositoryProvider)
+          .updateMessage(
+            responseMessage.id,
+            const MessageToUpdate(status: MessageStatus.unfinished),
+          );
+      rethrow;
+    }
 
     return responseMessage;
   }
@@ -547,13 +607,23 @@ class MessagesController extends _$MessagesController {
           ),
         );
 
-    final responseMessage = await _waitMessage(
-      createdMessageId: createdMessage.id,
-      conversationId: conversationId,
-      enabledTools: enabledTools,
-    );
+    try {
+      final responseMessage = await _waitMessage(
+        createdMessageId: createdMessage.id,
+        conversationId: conversationId,
+        enabledTools: enabledTools,
+      );
 
-    return (createdMessage, responseMessage);
+      return (createdMessage, responseMessage);
+    } on Exception {
+      await ref
+          .read(messageRepositoryProvider)
+          .updateMessage(
+            createdMessage.id,
+            const MessageToUpdate(status: MessageStatus.error),
+          );
+      rethrow;
+    }
   }
 
   Future<ConversationEntity> addConversation({
