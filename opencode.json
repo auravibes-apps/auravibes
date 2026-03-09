@@ -28,7 +28,7 @@
   },
   "formatter": {
     "prettier": {
-      "command": ["npx", "-y", "prettier", "--stdin-filepath", "%"],
+      "command": ["npx", "-y", "prettier", "--write", "$FILE"],
       "languages": ["json", "yaml", "markdown", "html"]
     },
     "dart": {
