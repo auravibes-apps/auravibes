@@ -150,7 +150,7 @@ abstract class StreamingMessage with _$StreamingMessage {
   const factory StreamingMessage({
     required String messageId,
     required String conversationId,
-    required String responseMesageId,
+    required String responseMessageId,
     required String content,
     required DateTime createdAt,
     required DateTime updatedAt,
@@ -195,7 +195,7 @@ class MessagesController extends _$MessagesController {
     final streamingMessage = StreamingMessage(
       messageId: messageId,
       conversationId: conversationId,
-      responseMesageId: responseMessageId,
+      responseMessageId: responseMessageId,
       content: '',
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
@@ -254,7 +254,7 @@ class MessagesController extends _$MessagesController {
 
   void _updateState(String responseMessageId, ChatResult chatResult) {
     state = state.map((msg) {
-      if (msg.responseMesageId == responseMessageId) {
+      if (msg.responseMessageId == responseMessageId) {
         return msg.copyWith(
           status: StreamingMessageStatus.streaming,
           content: chatResult.outputAsString,
@@ -318,7 +318,7 @@ class MessagesController extends _$MessagesController {
   }) async {
     final repo = ref.read(messageRepositoryProvider);
     state = state.where((msg) {
-      return msg.responseMesageId != responseMessageId;
+      return msg.responseMessageId != responseMessageId;
     }).toList();
 
     await _subscriptions[responseMessageId]?.cancel();
@@ -409,7 +409,7 @@ class MessagesController extends _$MessagesController {
         final waitingMessage = StreamingMessage(
           messageId: createdMessageId,
           conversationId: conversationId,
-          responseMesageId: '', // No response yet
+          responseMessageId: '', // No response yet
           content: '',
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),

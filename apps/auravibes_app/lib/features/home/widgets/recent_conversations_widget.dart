@@ -2,6 +2,7 @@ import 'package:auravibes_app/domain/entities/conversation.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/models/providers/list_chat_models_providers.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/presentation/shared/formatters/relative_time_formatter.dart';
 import 'package:auravibes_app/router/app_router.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -109,7 +110,7 @@ class _RecentChatTile extends ConsumerWidget {
 
     return AuraCard(
       onTap: () {
-        CoversationRoute(chatId: chat.id).go(context);
+        ConversationRoute(chatId: chat.id).go(context);
       },
       child: AuraPadding(
         child: Column(
@@ -145,7 +146,7 @@ class _RecentChatTile extends ConsumerWidget {
                         style: AuraTextStyle.bodySmall,
                         color: AuraColorVariant.onSurfaceVariant,
                         child: Text(
-                          _formatDate(chat.updatedAt),
+                          formatRelativeTime(chat.updatedAt),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -164,22 +165,5 @@ class _RecentChatTile extends ConsumerWidget {
         ),
       ),
     );
-  }
-
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final difference = now.difference(date);
-
-    if (difference.inMinutes < 1) {
-      return 'Just now';
-    } else if (difference.inHours < 1) {
-      return '${difference.inMinutes}m ago';
-    } else if (difference.inDays < 1) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays}d ago';
-    } else {
-      return '${date.day}/${date.month}/${date.year}';
-    }
   }
 }

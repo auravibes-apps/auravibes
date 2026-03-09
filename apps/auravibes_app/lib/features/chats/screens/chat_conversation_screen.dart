@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:auravibes_app/domain/entities/messages.dart';
 import 'package:auravibes_app/domain/enums/message_types.dart';
 import 'package:auravibes_app/features/chats/providers/messages_providers.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
@@ -25,7 +24,7 @@ class ChatConversationScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return ProviderScope(
       overrides: [conversationSelectedProvider.overrideWithValue(chatId)],
-      child: _ChatConversationScreen(),
+      child: const _ChatConversationScreen(),
     );
   }
 }
@@ -36,6 +35,8 @@ class ChatConversationScreen extends ConsumerWidget {
   pendingMcpConnections,
 ])
 class _ChatConversationScreen extends HookConsumerWidget {
+  const _ChatConversationScreen();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final modelId = ref.watch(
@@ -81,7 +82,7 @@ class _ChatConversationScreen extends HookConsumerWidget {
       ),
       child: Column(
         children: [
-          Expanded(child: _ChatList()),
+          const Expanded(child: _ChatList()),
           const McpConnectingIndicator(),
           ChatInputWidget(
             onToolsPress: onToolsPress,
@@ -100,8 +101,9 @@ class _ChatConversationScreen extends HookConsumerWidget {
   }
 }
 
-@Dependencies([ChatMessagesController])
 class _ChatList extends ConsumerWidget {
+  const _ChatList();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isLoading = ref.watch(
@@ -115,10 +117,8 @@ class _ChatList extends ConsumerWidget {
     }
 
     final messages = ref.watch(
-      chatMessagesControllerProvider.select(
-        (value) => [
-          for (final message in value.value ?? <MessageEntity>[]) message.id,
-        ],
+      messageListProvider.select(
+        (value) => value.value ?? <String>[],
       ),
     );
     final asyncError = ref.watch(
@@ -133,8 +133,6 @@ class _ChatList extends ConsumerWidget {
       );
     }
 
-    return ChatMessagesWidget(
-      messages: messages,
-    );
+    return ChatMessagesWidget(messages: messages);
   }
 }
