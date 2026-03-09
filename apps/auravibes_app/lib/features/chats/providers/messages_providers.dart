@@ -120,7 +120,7 @@ MessageEntity? messageConversation(Ref ref) {
   final updateMessage = ref.watch(
     messagesControllerProvider.select(
       (messages) => messages.firstWhereOrNull((message) {
-        return message.responseMesageId == messageId;
+        return message.responseMessageId == messageId;
       }),
     ),
   );
