@@ -42,7 +42,8 @@ enum MessageType {
 /// ## Status Flow
 ///
 /// ### User Message Flow:
-/// 1. `sending` - Transient in-memory state (provider only), shows UI feedback while transmitting
+/// 1. `sending` - Transient in-memory state (provider only), shows UI
+///    feedback while transmitting
 /// 2. `sent` - Persisted to DB after successful confirmation from AI service
 /// 3. `error` - If sending fails
 ///
@@ -55,7 +56,8 @@ enum MessageType {
 ///
 /// ### Key Distinction:
 /// - `sending` = in-memory only, for UI feedback during active transmission
-/// - `unfinished` = persisted to DB, means "pending outcome" (app could close, crash, error)
+/// - `unfinished` = persisted to DB, means "pending outcome" (app could
+///   close, crash, error)
 enum MessageStatus {
   /// Transient in-memory state for UI feedback while actively transmitting.
   /// Not persisted to DB - use `unfinished` for persistent "pending" state.

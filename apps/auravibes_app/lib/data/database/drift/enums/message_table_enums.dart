@@ -11,15 +11,17 @@ enum MessagesTableType {
 
 /// Database enum representing the status of a message.
 ///
-/// See [MessageStatus] in domain layer for full documentation on status flow.
+/// See MessageStatus in domain layer for full documentation on status flow.
 ///
 /// Note: `sending` is rarely persisted - it's primarily an in-memory state.
-/// Use `unfinished` for messages with unknown outcome that need to survive app restart.
+/// Use `unfinished` for messages with unknown outcome that need to survive
+/// app restart.
 enum MessageTableStatus {
   /// Transient state - rarely persisted, primarily in-memory for UI feedback.
   sending('sending'),
 
-  /// Persisted "outcome unknown" state - AI responses pending completion or recovery.
+  /// Persisted "outcome unknown" state - AI responses pending completion
+  /// or recovery.
   unfinished('unfinished'),
 
   /// Message completed successfully.
