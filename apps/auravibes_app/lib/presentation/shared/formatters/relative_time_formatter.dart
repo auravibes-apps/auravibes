@@ -2,6 +2,9 @@ String formatRelativeTime(DateTime date, {DateTime? now}) {
   final current = now ?? DateTime.now();
   final difference = current.difference(date);
 
+  if (difference.isNegative) {
+    return '${date.day}/${date.month}/${date.year}';
+  }
   if (difference.inMinutes < 1) {
     return 'Just now';
   }
