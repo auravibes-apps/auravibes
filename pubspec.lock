@@ -1662,10 +1662,10 @@ packages:
     dependency: transitive
     description:
       name: widgetbook_generator
-      sha256: f615ad0d5052a4cf25e3d8b51d7f3d4191879958ba4bd09c326b2e36ae5b904c
+      sha256: "61fbe531ee5d535346ada5ec327a07eb645ed4e2d2636ad633beb8f774f9c3e5"
       url: "https://pub.dev"
     source: hosted
-    version: "3.21.0"
+    version: "3.22.0"
   win32:
     dependency: transitive
     description:
