@@ -27,38 +27,13 @@
     }
   },
   "formatter": {
-    "dart-fix": {
-      "command": [
-        "fvm",
-        "dart",
-        "fix",
-        "--apply",
-        "$FILE"
-      ],
-      "extensions": [
-        ".dart"
-      ]
+    "prettier": {
+      "command": ["npx", "prettier", "--stdin-filepath", "%"],
+      "languages": ["json", "yaml", "markdown", "html"]
     },
-    "dart-import-sorter": {
-      "command": [
-        "fvm",
-        "dart",
-        "pub",
-        "run",
-        "import_sorter:main",
-        "$FILE"
-      ],
-      "extensions": [
-        ".dart"
-      ]
-    },
-    "dart-format": {
-      "command": [
-        "fvm",
-        "dart",
-        "format",
-        "$FILE"
-      ]
+    "dart": {
+      "command": ["bash", "scripts/format-dart.sh", "$FILE"],
+      "extensions": [".dart"]
     }
   },
   "mcp": {
@@ -71,6 +46,11 @@
         "mcp-server",
         "--force-roots-fallback"
       ]
+    },
+    "pubdev": {
+      "type": "local",
+      "command": ["npx", "-y", "@devqxi/pubdev-mcp-server"],
+      "enabled": true
     }
   }
 }
