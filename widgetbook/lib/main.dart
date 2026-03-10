@@ -1,3 +1,4 @@
+// ignore_for_file: experimental_member_use
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
