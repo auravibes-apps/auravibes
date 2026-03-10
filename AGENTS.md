@@ -62,3 +62,59 @@ dart run build_runner build --delete-conflicting-outputs
 # Single file generation example
 dart run build_runner build --delete-conflicting-outputs --build-filter="lib/brick/db_types.g.dart"
 ```
+
+## Version Conventions
+
+### Badge Versions vs FVM Pinned Version
+- **Badge versions** in README.md reflect the **exact FVM pinned version** (e.g., `3.41.4+`)
+- This aligns with `.fvmrc` configuration for consistency
+- The `+` suffix indicates "this version or compatible updates"
+
+### SDK Constraints in pubspec.yaml
+- Use caret syntax for minimum version: `sdk: ^3.11.0`
+- This allows any compatible version within the major version range
+
+## Analyzer Ignore Directives
+
+### When to Use `// ignore:` vs `// ignore_for_file:`
+
+**Prefer line-level ignores** (`// ignore: rule_name`) when:
+- Only specific lines trigger the warning
+- The warning is localized to a known pattern
+
+**Use file-level ignores** (`// ignore_for_file: rule_name`) only when:
+- Multiple lines throughout the file trigger the same warning
+- The ignore is justified by project architecture
+
+### Required Documentation for Ignores
+
+All ignore directives **must** have a comment explaining the justification:
+
+```dart
+// Good: Documented line-level ignore
+SomeExperimentalApi(), // ignore: experimental_member_use - Required for widgetbook addon
+
+// Good: Documented file-level ignore
+// ignore_for_file: avoid_print
+// Required: This is a CLI tool that intentionally prints to stdout
+```
+
+### Common Ignore Scenarios
+
+| Rule | When Acceptable | Example |
+|------|-----------------|---------|
+| `experimental_member_use` | Using `@experimental` APIs from dependencies | Widgetbook addons |
+| `avoid_print` | CLI tools, debug utilities | Debug scripts |
+| `public_member_api_docs` | Internal packages | Private utilities |
+
+## AI Assistant Notes
+
+### Understanding Project Context
+- This is a **Flutter monorepo** using Melos for workspace management
+- **Always use `fvm` prefix** for Dart/Flutter commands to ensure correct SDK version
+- The project uses `very_good_analysis` for linting with strict rules
+
+### When Reviewing Code
+- Check if ignore directives are documented and justified
+- Prefer scoped solutions over broad ignores
+- Verify version references are consistent across README, pubspec, and FVM config

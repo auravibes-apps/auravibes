@@ -1,5 +1,3 @@
-// ignore_for_file: experimental_member_use
-// Required: Project uses sealed classes (experimental) which are referenced by widgetbook
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -25,7 +23,7 @@ class WidgetbookApp extends StatelessWidget {
       addons: [
         InspectorAddon(enabled: true),
         TextScaleAddon(),
-        SemanticsAddon(),
+        SemanticsAddon(), // ignore: experimental_member_use
         ViewportAddon([
           Viewports.none,
           IosViewports.iPhone13,
