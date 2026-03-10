@@ -29,7 +29,7 @@ class McpConnectingIndicator extends ConsumerWidget {
         .toList();
 
     return AuraContainer(
-      backgroundColor: context.auraColors.surfaceVariant,
+      backgroundColor: AuraColorVariant.surfaceVariant,
       padding: .small,
       margin: .small,
       child: Row(

@@ -112,15 +112,15 @@ class _ToolCallResponsePreviewState extends State<ToolCallResponsePreview> {
               variant: AuraButtonVariant.ghost,
               size: AuraButtonSize.small,
               onPressed: _showFullContent,
-              child: AuraRow(
+              child: const AuraRow(
                 mainAxisSize: MainAxisSize.min,
                 spacing: AuraSpacing.xs,
                 children: [
-                  const TextLocale(LocaleKeys.common_show_more),
+                  TextLocale(LocaleKeys.common_show_more),
                   AuraIcon(
                     Icons.open_in_new,
                     size: AuraIconSize.small,
-                    color: context.auraColors.primary,
+                    color: AuraColorVariant.primary,
                   ),
                 ],
               ),

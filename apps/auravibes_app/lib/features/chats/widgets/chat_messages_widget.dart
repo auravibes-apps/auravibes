@@ -166,7 +166,7 @@ class _ToolCallWidget extends ConsumerWidget {
     );
 
     return AuraContainer(
-      backgroundColor: context.auraColors.primary.withValues(alpha: 0.2),
+      backgroundColor: AuraColorVariant.surfaceVariant,
       borderRadius: 10,
       margin: .small,
       padding: .medium,

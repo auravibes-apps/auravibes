@@ -98,7 +98,7 @@ class AuraNavigationItem extends StatelessWidget {
     };
   }
 
-  Widget _buildCompactContent(Color iconColor, Color textColor) {
+  Widget _buildCompactContent(AuraColorVariant iconColor, Color textColor) {
     if (icon != null) {
       return AuraIcon(
         icon!,
@@ -115,7 +115,6 @@ class AuraNavigationItem extends StatelessWidget {
 
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          // TODO(style): check color
           style: TextStyle(
             color: textColor,
           ),
@@ -126,7 +125,7 @@ class AuraNavigationItem extends StatelessWidget {
     return const SizedBox.shrink();
   }
 
-  Widget _buildNormalContent(Color iconColor, Color textColor) {
+  Widget _buildNormalContent(AuraColorVariant iconColor, Color textColor) {
     if (icon != null && text != null) {
       return Column(
         mainAxisSize: MainAxisSize.min,
@@ -143,7 +142,6 @@ class AuraNavigationItem extends StatelessWidget {
 
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              // TODO(style): check color
               style: TextStyle(
                 color: textColor,
               ),
@@ -167,7 +165,6 @@ class AuraNavigationItem extends StatelessWidget {
           text!,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          // TODO(style): check color
           style: TextStyle(color: textColor),
         ),
       );
@@ -176,7 +173,7 @@ class AuraNavigationItem extends StatelessWidget {
     return const SizedBox.shrink();
   }
 
-  Widget _buildExpandedContent(Color iconColor, Color textColor) {
+  Widget _buildExpandedContent(AuraColorVariant iconColor, Color textColor) {
     if (icon != null && text != null) {
       return Row(
         mainAxisSize: MainAxisSize.min,
@@ -192,7 +189,6 @@ class AuraNavigationItem extends StatelessWidget {
                 text!,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                // TODO(style): check color
                 style: TextStyle(color: textColor),
               ),
             ),
@@ -214,7 +210,6 @@ class AuraNavigationItem extends StatelessWidget {
           text!,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          // TODO(style): check color
           style: TextStyle(
             color: textColor,
           ),
@@ -253,14 +248,14 @@ class AuraNavigationItem extends StatelessWidget {
     return auraColors.primary.withValues(alpha: 0.1);
   }
 
-  Color _getIconColor(AuraColorScheme auraColors) {
+  AuraColorVariant _getIconColor(AuraColorScheme auraColors) {
     if (onTap == null) {
-      return auraColors.onSurfaceVariant.withValues(alpha: 0.6);
+      return AuraColorVariant.onSurfaceVariant;
     }
 
-    if (isActive) return auraColors.primary;
+    if (isActive) return AuraColorVariant.primary;
 
-    return auraColors.onSurfaceVariant;
+    return AuraColorVariant.onSurfaceVariant;
   }
 
   Color _getTextColor(AuraColorScheme auraColors) {

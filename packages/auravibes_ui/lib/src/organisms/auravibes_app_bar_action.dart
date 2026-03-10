@@ -48,7 +48,7 @@ class AuraAppBarAction extends StatelessWidget {
       onPressed: onPressed,
       icon: AuraIcon(
         icon,
-        color: iconColor,
+        color: AuraColorVariant.onSurfaceVariant,
         semanticLabel: semanticLabel,
       ),
       iconSize: 24,

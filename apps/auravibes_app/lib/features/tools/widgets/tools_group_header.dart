@@ -100,10 +100,10 @@ class ToolsGroupHeader extends StatelessWidget {
             if (groupWithTools.isMcpGroup && onDelete != null)
               IconButton(
                 onPressed: onDelete,
-                icon: AuraIcon(
+                icon: const AuraIcon(
                   Icons.delete_outline,
                   size: AuraIconSize.small,
-                  color: context.auraColors.error,
+                  color: AuraColorVariant.error,
                 ),
                 tooltip: LocaleKeys.common_delete.tr(),
                 padding: EdgeInsets.zero,
@@ -124,9 +124,9 @@ class ToolsGroupHeader extends StatelessWidget {
               icon: AnimatedRotation(
                 turns: isExpanded ? 0.5 : 0,
                 duration: const Duration(milliseconds: 200),
-                child: AuraIcon(
+                child: const AuraIcon(
                   Icons.keyboard_arrow_down,
-                  color: context.auraColors.onSurfaceVariant,
+                  color: AuraColorVariant.onSurfaceVariant,
                 ),
               ),
               padding: EdgeInsets.zero,
@@ -165,8 +165,8 @@ class _GroupIcon extends StatelessWidget {
         child: AuraIcon(
           isMcp ? Icons.extension : Icons.build_circle_outlined,
           color: isEnabled
-              ? context.auraColors.primary
-              : context.auraColors.onSurfaceVariant,
+              ? AuraColorVariant.primary
+              : AuraColorVariant.onSurfaceVariant,
         ),
       ),
     );

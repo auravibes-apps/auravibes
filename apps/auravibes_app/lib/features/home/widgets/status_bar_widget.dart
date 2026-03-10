@@ -12,7 +12,7 @@ class StatusBarWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return AuraContainer(
-      backgroundColor: context.auraColors.surfaceVariant,
+      backgroundColor: AuraColorVariant.surfaceVariant,
       borderRadius: context.auraTheme.borderRadius.md,
       child: const AuraPadding(
         child: AuraRow(
@@ -41,10 +41,10 @@ class _ModelStatus extends ConsumerWidget {
         return AuraRow(
           spacing: .sm,
           children: [
-            AuraIcon(
+            const AuraIcon(
               Icons.model_training_outlined,
               size: AuraIconSize.small,
-              color: context.auraColors.success,
+              color: AuraColorVariant.primary,
             ),
             AuraText(
               style: AuraTextStyle.bodySmall,

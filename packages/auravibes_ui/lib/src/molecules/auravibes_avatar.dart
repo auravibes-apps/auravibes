@@ -1,6 +1,7 @@
 import 'package:auravibes_ui/src/atoms/auravibes_text.dart';
 import 'package:auravibes_ui/src/tokens/auravibes_theme.dart';
-import 'package:auravibes_ui/src/tokens/design_tokens.dart';
+import 'package:auravibes_ui/src/tokens/design_tokens.dart'
+    show AuraColorVariant, DesignShadows;
 import 'package:flutter/material.dart';
 
 /// A customizable avatar component following the Aura design system.
@@ -68,11 +69,11 @@ class AuraAvatar extends StatelessWidget {
   /// Fallback icon to display if the image fails to load.
   final IconData? fallbackIcon;
 
-  /// The background color of the avatar.
-  final Color? backgroundColor;
+  /// The background color variant of the avatar.
+  final AuraColorVariant? backgroundColor;
 
-  /// The foreground color (text/icon color) of the avatar.
-  final Color? foregroundColor;
+  /// The foreground color variant (text/icon color) of the avatar.
+  final AuraColorVariant? foregroundColor;
 
   /// A semantic label for the avatar for accessibility.
   final String? semanticLabel;
@@ -84,8 +85,12 @@ class AuraAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
     final avatarSize = _getAvatarSize();
-    final bgColor = backgroundColor ?? _getDefaultBackgroundColor(auraColors);
-    final fgColor = foregroundColor ?? _getDefaultForegroundColor(auraColors);
+    final bgColor =
+        auraColors.getColor(backgroundColor) ??
+        _getDefaultBackgroundColor(auraColors);
+    final fgColor =
+        auraColors.getColor(foregroundColor) ??
+        _getDefaultForegroundColor(auraColors);
 
     Widget avatar = Container(
       width: avatarSize,
@@ -135,7 +140,6 @@ class AuraAvatar extends StatelessWidget {
           style: _getTextStyle(),
           child: Text(
             initials!.toUpperCase(),
-            // TODO(style): check color
             style: TextStyle(
               color: foregroundColor,
             ),
@@ -164,7 +168,6 @@ class AuraAvatar extends StatelessWidget {
           style: _getTextStyle(),
           child: Text(
             fallbackText!.toUpperCase(),
-            // TODO(style): check color
             style: TextStyle(
               color: foregroundColor,
             ),
@@ -274,7 +277,6 @@ class AuraAvatarGroup extends StatelessWidget {
   Widget build(BuildContext context) {
     if (avatars.isEmpty) return const SizedBox.shrink();
 
-    final auraColors = context.auraColors;
     final visibleAvatars = avatars.take(maxVisible).toList();
     final remainingCount = avatars.length - maxVisible;
     final hasMore = remainingCount > 0 && showCount;
@@ -307,9 +309,8 @@ class AuraAvatarGroup extends StatelessWidget {
                 left: visibleAvatars.length * (avatarSize - overlap),
                 child: AuraAvatar.initials(
                   initials: '+$remainingCount',
-                  size: size,
-                  backgroundColor: auraColors.surfaceVariant,
-                  foregroundColor: auraColors.onSurfaceVariant,
+                  backgroundColor: AuraColorVariant.surfaceVariant,
+                  foregroundColor: AuraColorVariant.onSurfaceVariant,
                 ),
               ),
           ],
@@ -336,9 +337,8 @@ class AuraAvatarGroup extends StatelessWidget {
               padding: EdgeInsets.only(left: spacing),
               child: AuraAvatar.initials(
                 initials: '+$remainingCount',
-                size: size,
-                backgroundColor: auraColors.surfaceVariant,
-                foregroundColor: auraColors.onSurfaceVariant,
+                backgroundColor: AuraColorVariant.surfaceVariant,
+                foregroundColor: AuraColorVariant.onSurfaceVariant,
               ),
             ),
         ],

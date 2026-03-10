@@ -59,7 +59,7 @@ class ListModelCredentialsWidget extends ConsumerWidget {
             AuraIcon(
               Icons.model_training_outlined,
               size: AuraIconSize.extraLarge,
-              color: Colors.grey,
+              color: AuraColorVariant.onSurfaceVariant,
             ),
             AuraText(
               style: AuraTextStyle.heading3,

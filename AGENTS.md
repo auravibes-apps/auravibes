@@ -8,6 +8,16 @@ Flutter monorepo for AuraVibes AI Assistant using Melos for package management.
 ### Packages:
 - `packages/*/`
 
+## Packages
+
+### auravibes_ui
+UI component library following const-first design.
+
+**Important:** Read `packages/auravibes_ui/STYLE_GUIDE.md` before modifying UI components.
+- Use `AuraColorVariant` enum instead of `Color?` for const compatibility
+- Only children/dropdown lists can be variable parameters
+- Maximize compile-time constants via enums
+
 ## Commands
 all dart related commands should prefix with `fvm ` to ensure correct SDK version is used.
 

@@ -52,22 +52,22 @@ class _EmptyToolsState extends StatelessWidget {
     return Center(
       child: Padding(
         padding: EdgeInsets.all(context.auraTheme.spacing.xl),
-        child: AuraColumn(
+        child: const AuraColumn(
           mainAxisSize: MainAxisSize.min,
           spacing: AuraSpacing.md,
           children: [
             AuraIcon(
               Icons.build_circle_outlined,
               size: AuraIconSize.extraLarge,
-              color: context.auraColors.onSurfaceVariant.withValues(alpha: 0.5),
+              color: AuraColorVariant.onSurfaceVariant,
             ),
-            const AuraText(
+            AuraText(
               style: AuraTextStyle.heading6,
               color: AuraColorVariant.onSurfaceVariant,
               textAlign: TextAlign.center,
               child: TextLocale(LocaleKeys.tools_screen_no_tools_added),
             ),
-            const AuraText(
+            AuraText(
               style: AuraTextStyle.bodySmall,
               color: AuraColorVariant.onSurfaceVariant,
               textAlign: TextAlign.center,

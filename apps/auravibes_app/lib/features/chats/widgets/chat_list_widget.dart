@@ -50,7 +50,7 @@ class ChatListWidget extends ConsumerWidget {
             AuraIcon(
               Icons.chat_outlined,
               size: AuraIconSize.extraLarge,
-              color: Colors.grey,
+              color: AuraColorVariant.onSurfaceVariant,
             ),
             SizedBox(height: 16),
             AuraText(
@@ -104,7 +104,7 @@ class _ChatTile extends ConsumerWidget {
                           const AuraIcon(
                             Icons.push_pin_outlined,
                             size: AuraIconSize.small,
-                            color: Colors.orange,
+                            color: AuraColorVariant.secondary,
                           ),
                           const SizedBox(width: 8),
                         ],

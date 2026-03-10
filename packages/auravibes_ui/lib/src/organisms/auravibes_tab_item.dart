@@ -102,7 +102,6 @@ class AuraTabItem extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                // TODO(style): check color
                 color: textColor,
                 fontWeight: isActive
                     ? DesignTypography.fontWeightMedium
@@ -127,7 +126,6 @@ class AuraTabItem extends StatelessWidget {
           text!,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          // TODO(style): check color
           style: TextStyle(
             color: textColor,
             fontWeight: isActive
@@ -146,14 +144,14 @@ class AuraTabItem extends StatelessWidget {
     return auraColors.primary;
   }
 
-  Color _getIconColor(AuraColorScheme auraColors) {
+  AuraColorVariant _getIconColor(AuraColorScheme auraColors) {
     if (onTap == null) {
-      return auraColors.onSurfaceVariant.withValues(alpha: 0.6);
+      return AuraColorVariant.onSurfaceVariant;
     }
 
-    if (isActive) return auraColors.primary;
+    if (isActive) return AuraColorVariant.primary;
 
-    return auraColors.onSurfaceVariant;
+    return AuraColorVariant.onSurfaceVariant;
   }
 
   Color _getTextColor(AuraColorScheme auraColors) {

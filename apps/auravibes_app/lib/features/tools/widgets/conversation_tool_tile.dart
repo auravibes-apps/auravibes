@@ -128,16 +128,14 @@ class ConversationToolTile extends HookConsumerWidget {
                   AuraIcon(
                     isEnabled ? Icons.check_circle : Icons.circle_outlined,
                     color: isEnabled
-                        ? context.auraColors.primary
-                        : context.auraColors.onSurfaceVariant,
+                        ? AuraColorVariant.primary
+                        : AuraColorVariant.onSurfaceVariant,
                   )
                 else
-                  AuraIcon(
+                  const AuraIcon(
                     Icons.block,
                     size: AuraIconSize.small,
-                    color: context.auraColors.onSurfaceVariant.withValues(
-                      alpha: 0.5,
-                    ),
+                    color: AuraColorVariant.onSurfaceVariant,
                   ),
               ],
             ),

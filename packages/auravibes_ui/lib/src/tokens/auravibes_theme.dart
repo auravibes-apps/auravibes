@@ -337,6 +337,7 @@ class AuraColorScheme {
       AuraColorVariant.onSurface => onSurface,
       AuraColorVariant.error => error,
       AuraColorVariant.onSurfaceVariant => onSurfaceVariant,
+      AuraColorVariant.surfaceVariant => surfaceVariant,
       AuraColorVariant.onPrimary => onPrimary,
       AuraColorVariant.secondary => secondary,
     };
