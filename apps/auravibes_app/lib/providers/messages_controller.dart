@@ -332,33 +332,38 @@ class MessagesController extends _$MessagesController {
     required String messageId,
     required String responseMessageId,
   }) async {
-    final repo = ref.read(messageRepositoryProvider);
+    try {
+      final repo = ref.read(messageRepositoryProvider);
 
-    final partialContent = state
-        .firstWhereOrNull((msg) => msg.responseMessageId == responseMessageId)
-        ?.content;
+      final partialContent = state
+          .firstWhereOrNull((msg) => msg.responseMessageId == responseMessageId)
+          ?.content;
 
-    state = state
-        .where((msg) => msg.responseMessageId != responseMessageId)
-        .toList();
+      state = state
+          .where((msg) => msg.responseMessageId != responseMessageId)
+          .toList();
 
-    await _subscriptions[responseMessageId]?.cancel();
-    _subscriptions.remove(responseMessageId);
+      await _subscriptions[responseMessageId]?.cancel();
+      _subscriptions.remove(responseMessageId);
 
-    await repo.updateMessage(
-      messageId,
-      const MessageToUpdate(status: MessageStatus.error),
-    );
+      await repo.updateMessage(
+        messageId,
+        const MessageToUpdate(status: MessageStatus.error),
+      );
 
-    await repo.updateMessage(
-      responseMessageId,
-      MessageToUpdate(
-        status: MessageStatus.unfinished,
-        content: partialContent == null || partialContent.isEmpty
-            ? null
-            : partialContent,
-      ),
-    );
+      await repo.updateMessage(
+        responseMessageId,
+        MessageToUpdate(
+          status: MessageStatus.error,
+          content: partialContent == null || partialContent.isEmpty
+              ? null
+              : partialContent,
+        ),
+      );
+    } on Exception catch (_) {
+      // Silently handle errors in error handling to prevent crashes
+      // In debug mode, errors will still be visible in the debugger
+    }
   }
 
   Future<void> _doneMessage({

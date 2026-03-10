@@ -42,7 +42,7 @@ final class MessagesControllerProvider
 }
 
 String _$messagesControllerHash() =>
-    r'7cf6f55938ef820989392d931f3d0b4332dc0962';
+    r'049fc141b0ec4f270f5276979a7281cc2968f35e';
 
 abstract class _$MessagesController extends $Notifier<List<StreamingMessage>> {
   List<StreamingMessage> build();

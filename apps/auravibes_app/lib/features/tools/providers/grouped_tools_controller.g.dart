@@ -115,7 +115,7 @@ final class GroupedToolsControllerProvider
 }
 
 String _$groupedToolsControllerHash() =>
-    r'6bf4908f7fc86011e1712cbacba52e61749d2376';
+    r'4e09948d5ab2a555659dba6431041f12bc75862b';
 
 /// Provider that groups tools by their workspaceToolsGroupId.
 ///

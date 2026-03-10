@@ -81,7 +81,7 @@ class AppDatabase extends _$AppDatabase {
         await m.createAll();
       },
       onUpgrade: (m, from, to) async {
-        if (from == 1 && to == 2) {
+        if (from < 2) {
           await customStatement(
             'ALTER TABLE credentials ADD COLUMN key_suffix TEXT',
           );
@@ -91,6 +91,7 @@ class AppDatabase extends _$AppDatabase {
           await customStatement(
             "UPDATE messages SET status = 'sent' WHERE status = 'delivered'",
           );
+          await m.alterTable(TableMigration(messages));
         }
       },
     );

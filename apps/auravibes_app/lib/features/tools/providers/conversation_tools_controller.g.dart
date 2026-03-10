@@ -116,7 +116,7 @@ final class ConversationToolsControllerProvider
 }
 
 String _$conversationToolsControllerHash() =>
-    r'dd50a8725479c0aeb6bc78ad33df2198700a39c8';
+    r'5025c527e693155a0de8c9676d0e441375e3be7c';
 
 /// Provider for managing conversation tool settings
 ///

@@ -60,7 +60,7 @@ enum MessageType {
 ///   close, crash, error)
 enum MessageStatus {
   /// Transient in-memory state for UI feedback while actively transmitting.
-  /// Not persisted to DB - use `unfinished` for persistent "pending" state.
+  /// Rarely persisted to DB - primarily used in-memory for UI feedback.
   sending('sending'),
 
   /// Persisted "outcome unknown" state - survives app restart.

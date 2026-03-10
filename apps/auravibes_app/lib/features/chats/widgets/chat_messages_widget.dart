@@ -124,7 +124,7 @@ class _ChatMessageRow extends HookConsumerWidget {
   AuraMessageDeliveryStatus _mapMessageStatus(MessageStatus status) {
     return switch (status) {
       MessageStatus.sending => AuraMessageDeliveryStatus.sending,
-      MessageStatus.unfinished => AuraMessageDeliveryStatus.error,
+      MessageStatus.unfinished => AuraMessageDeliveryStatus.sending,
       MessageStatus.sent => AuraMessageDeliveryStatus.sent,
       MessageStatus.streaming => AuraMessageDeliveryStatus.sending,
       MessageStatus.error => AuraMessageDeliveryStatus.error,
