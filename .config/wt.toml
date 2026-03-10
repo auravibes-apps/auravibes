@@ -1,0 +1,8 @@
+# Worktrunk configuration
+# https://worktrunk.dev/
+
+[post-create]
+# Install the FVM Flutter version configured in .fvmrc
+fvm = "fvm install && fvm use"
+# Bootstrap melos packages and link them
+bootstrap = "fvm dart run melos bootstrap"
