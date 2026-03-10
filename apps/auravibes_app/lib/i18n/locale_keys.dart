@@ -67,6 +67,12 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.waiting_for_tools';
   static const chats_screens_chat_conversation_waiting_for_tools_named =
       'chats_screens.chat_conversation.waiting_for_tools_named';
+  static const chats_screens_chat_conversation_delete_title =
+      'chats_screens.chat_conversation.delete_title';
+  static const chats_screens_chat_conversation_delete_confirm =
+      'chats_screens.chat_conversation.delete_confirm';
+  static const chats_screens_chat_conversation_delete_tooltip =
+      'chats_screens.chat_conversation.delete_tooltip';
   static const tools_screen_title = 'tools_screen.title';
   static const tools_screen_refresh_tooltip = 'tools_screen.refresh_tooltip';
   static const tools_screen_workspace_ai_tools =
