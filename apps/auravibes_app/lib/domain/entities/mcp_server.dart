@@ -159,11 +159,11 @@ sealed class McpAuthenticationType with _$McpAuthenticationType {
     switch (this) {
       case McpAuthenticationTypeNone():
         return this;
-      case McpAuthenticationTypeOAuth(token: final token):
+      case McpAuthenticationTypeOAuth(:final token):
         return (this as McpAuthenticationTypeOAuth).copyWith(
           token: await token.copyCryptor(encryptor),
         );
-      case McpAuthenticationTypeBearerToken(bearerToken: final bearerToken):
+      case McpAuthenticationTypeBearerToken(:final bearerToken):
         return McpAuthenticationType.bearerToken(
           bearerToken: await encryptor(bearerToken),
         );

@@ -23,7 +23,7 @@ class WidgetbookApp extends StatelessWidget {
       addons: [
         InspectorAddon(enabled: true),
         TextScaleAddon(),
-        SemanticsAddon(),
+        SemanticsAddon(), // ignore: experimental_member_use
         ViewportAddon([
           Viewports.none,
           IosViewports.iPhone13,

@@ -61,7 +61,7 @@ class SidebarConversationsWidget extends ConsumerWidget {
           child: const AuraSpinner(),
         ),
       ),
-      AsyncError(error: final error, stackTrace: _) => Center(
+      AsyncError(:final error, stackTrace: _) => Center(
         child: Padding(
           padding: EdgeInsets.symmetric(
             vertical: context.auraTheme.spacing.md,

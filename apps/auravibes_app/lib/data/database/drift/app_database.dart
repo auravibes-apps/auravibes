@@ -93,6 +93,7 @@ class AppDatabase extends _$AppDatabase {
             "UPDATE messages SET status = 'sent' WHERE status = 'delivered'",
           );
           // Then, update the table schema to allow new enum values
+          // ignore: experimental_member_use - TableMigration is marked @experimental in drift package
           await m.alterTable(TableMigration(messages));
           // Finally, update sending → unfinished for AI responses
           await customStatement(
