@@ -57,10 +57,10 @@ class RecentConversationsWidget extends ConsumerWidget {
         padding: AuraEdgeInsetsGeometry.small,
         child: AuraColumn(
           children: [
-            AuraIcon(
+            const AuraIcon(
               Icons.chat_outlined,
               size: AuraIconSize.large,
-              color: context.auraColors.onSurfaceVariant,
+              color: AuraColorVariant.onSurfaceVariant,
             ),
             const AuraText(
               style: AuraTextStyle.heading6,
@@ -125,10 +125,10 @@ class _RecentChatTile extends ConsumerWidget {
                       AuraRow(
                         children: [
                           if (chat.isPinned) ...[
-                            AuraIcon(
+                            const AuraIcon(
                               Icons.push_pin_outlined,
                               size: AuraIconSize.small,
-                              color: context.auraColors.warning,
+                              color: AuraColorVariant.warning,
                             ),
                           ],
                           Expanded(

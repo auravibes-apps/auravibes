@@ -89,9 +89,9 @@ class ToolCallResponseModal extends StatelessWidget {
       ),
       child: Row(
         children: [
-          AuraIcon(
+          const AuraIcon(
             Icons.terminal,
-            color: context.auraColors.primary,
+            color: AuraColorVariant.primary,
           ),
           SizedBox(width: context.auraTheme.spacing.sm),
           Expanded(

@@ -13,15 +13,15 @@ class MergeStreamingMessageProjectionUseCase {
       content: streamingMessage.content,
       metadata: streamingMessage.metadata,
       status: switch (streamingMessage.status) {
-        StreamingProjectionStatus.created => MessageStatus.sending,
-        StreamingProjectionStatus.streaming => MessageStatus.sending,
+        StreamingProjectionStatus.created => MessageStatus.unfinished,
+        StreamingProjectionStatus.streaming => MessageStatus.unfinished,
         StreamingProjectionStatus.done => MessageStatus.sent,
         StreamingProjectionStatus.error => MessageStatus.error,
         StreamingProjectionStatus.awaitingToolConfirmation =>
           MessageStatus.sent,
-        StreamingProjectionStatus.executingTools => MessageStatus.sending,
+        StreamingProjectionStatus.executingTools => MessageStatus.unfinished,
         StreamingProjectionStatus.waitingForMcpConnections =>
-          MessageStatus.sending,
+          MessageStatus.unfinished,
       },
     );
   }

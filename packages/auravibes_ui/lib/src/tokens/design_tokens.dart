@@ -595,6 +595,9 @@ enum AuraColorVariant {
   /// on surface variant option
   onSurfaceVariant,
 
+  /// surface variant option
+  surfaceVariant,
+
   /// error option
   error,
 
@@ -603,4 +606,13 @@ enum AuraColorVariant {
 
   /// secondary option
   secondary,
+
+  /// success option (semantic)
+  success,
+
+  /// warning option (semantic)
+  warning,
+
+  /// info option (semantic)
+  info,
 }

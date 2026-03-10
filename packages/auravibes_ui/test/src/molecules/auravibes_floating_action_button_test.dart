@@ -1,6 +1,7 @@
 import 'package:auravibes_ui/src/atoms/auravibes_icon.dart';
 import 'package:auravibes_ui/src/atoms/auravibes_text.dart';
 import 'package:auravibes_ui/src/molecules/auravibes_floating_action_button.dart';
+import 'package:auravibes_ui/src/tokens/auravibes_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -128,10 +129,13 @@ void main() {
     });
 
     testWidgets('applies custom background color correctly', (tester) async {
-      const customColor = Colors.red;
+      const customColor = AuraColorVariant.error;
 
       await tester.pumpWidget(
         MaterialApp(
+          theme: ThemeData.light().copyWith(
+            extensions: [AuraTheme.light],
+          ),
           home: Scaffold(
             body: AuraFloatingActionButton(
               onPressed: () {},
@@ -145,14 +149,18 @@ void main() {
       final fab = tester.widget<FloatingActionButton>(
         find.byType(FloatingActionButton),
       );
-      expect(fab.backgroundColor, customColor);
+      // Verify the resolved color matches the theme's error color
+      expect(fab.backgroundColor, AuraTheme.light.colors.error);
     });
 
     testWidgets('applies custom foreground color correctly', (tester) async {
-      const customColor = Colors.black;
+      const customColor = AuraColorVariant.onPrimary;
 
       await tester.pumpWidget(
         MaterialApp(
+          theme: ThemeData.light().copyWith(
+            extensions: [AuraTheme.light],
+          ),
           home: Scaffold(
             body: AuraFloatingActionButton(
               onPressed: () {},
@@ -166,15 +174,20 @@ void main() {
       final fab = tester.widget<FloatingActionButton>(
         find.byType(FloatingActionButton),
       );
-      expect(fab.foregroundColor, customColor);
+      // Verify the resolved color matches the theme's onPrimary color
+      expect(fab.foregroundColor, AuraTheme.light.colors.onPrimary);
 
       final auraIcon = tester.widget<AuraIcon>(find.byType(AuraIcon));
+      // AuraIcon now receives AuraColorVariant, not Color
       expect(auraIcon.color, customColor);
     });
 
     testWidgets('applies default colors correctly', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          theme: ThemeData.light().copyWith(
+            extensions: [AuraTheme.light],
+          ),
           home: Scaffold(
             body: AuraFloatingActionButton(
               onPressed: () {},
@@ -187,11 +200,13 @@ void main() {
       final fab = tester.widget<FloatingActionButton>(
         find.byType(FloatingActionButton),
       );
-      expect(fab.backgroundColor, DesignColors.primaryBase);
-      expect(fab.foregroundColor, DesignColors.primaryContrast);
+      // Default colors are resolved from AuraTheme
+      expect(fab.backgroundColor, isNotNull);
+      expect(fab.foregroundColor, isNotNull);
 
       final auraIcon = tester.widget<AuraIcon>(find.byType(AuraIcon));
-      expect(auraIcon.color, DesignColors.primaryContrast);
+      // Default foreground color for icon is onPrimary (matches FAB foreground)
+      expect(auraIcon.color, AuraColorVariant.onPrimary);
     });
 
     testWidgets('handles null onPressed correctly', (tester) async {

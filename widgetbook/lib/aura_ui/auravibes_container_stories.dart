@@ -7,7 +7,7 @@ import 'package:widgetbook_workspace/knobs/padding.dart';
 @widgetbook.UseCase(name: 'Basic Container', type: AuraContainer)
 Widget basicContainerUseCase(BuildContext context) {
   return AuraContainer(
-    backgroundColor: Colors.grey.shade100,
+    backgroundColor: AuraColorVariant.surfaceVariant,
     padding: context.knobs.padding(),
     margin: context.knobs.padding(label: 'margin'),
     borderRadius: 8.0,

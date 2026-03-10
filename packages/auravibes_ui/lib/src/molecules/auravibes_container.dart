@@ -3,7 +3,7 @@ import 'package:auravibes_ui/src/atoms/auravibes_padding.dart'
 import 'package:auravibes_ui/src/tokens/auravibes_theme.dart'
     show AuraThemeExtension;
 import 'package:auravibes_ui/src/tokens/design_tokens.dart'
-    show DesignShadows, DesignSpacing;
+    show AuraColorVariant, DesignShadows, DesignSpacing;
 import 'package:flutter/material.dart';
 
 /// A customizable layout container component following the Aura design system.
@@ -36,8 +36,8 @@ class AuraContainer extends StatelessWidget {
   /// The margin outside the container.
   final AuraEdgeInsetsGeometry? margin;
 
-  /// The background color of the container.
-  final Color? backgroundColor;
+  /// The background color variant of the container.
+  final AuraColorVariant? backgroundColor;
 
   /// The border radius of the container.
   final double? borderRadius;
@@ -78,7 +78,9 @@ class AuraContainer extends StatelessWidget {
       height: height,
       alignment: alignment,
       decoration: BoxDecoration(
-        color: backgroundColor ?? auraTheme.colors.surface,
+        color:
+            auraTheme.colors.getColor(backgroundColor) ??
+            auraTheme.colors.surface,
         borderRadius: borderRadius != null
             ? BorderRadius.circular(borderRadius!)
             : null,

@@ -122,8 +122,8 @@ class _ChatMessageRow extends HookConsumerWidget {
   AuraMessageDeliveryStatus _mapMessageStatus(MessageStatus status) {
     return switch (status) {
       MessageStatus.sending => AuraMessageDeliveryStatus.sending,
+      MessageStatus.unfinished => AuraMessageDeliveryStatus.sending,
       MessageStatus.sent => AuraMessageDeliveryStatus.sent,
-      MessageStatus.delivered => AuraMessageDeliveryStatus.delivered,
       MessageStatus.streaming => AuraMessageDeliveryStatus.sending,
       MessageStatus.error => AuraMessageDeliveryStatus.error,
     };
@@ -166,7 +166,7 @@ class _ToolCallWidget extends ConsumerWidget {
     );
 
     return AuraContainer(
-      backgroundColor: context.auraColors.primary.withValues(alpha: 0.2),
+      backgroundColor: AuraColorVariant.surfaceVariant,
       borderRadius: 10,
       margin: .small,
       padding: .medium,

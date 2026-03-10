@@ -206,6 +206,22 @@ class MessagesController extends _$MessagesController {
     state = [...state, streamingMessage];
 
     final subs = CompositeSubscription();
+    // Register subscription immediately so error handlers can cancel it
+    _subscriptions[responseMessageId] = subs;
+
+    var didHandleFailure = false;
+
+    void handleStreamFailure(Object error, [StackTrace? stackTrace]) {
+      if (didHandleFailure) return;
+      didHandleFailure = true;
+      unawaited(
+        _handleStreamFailure(
+          messageId: messageId,
+          responseMessageId: responseMessageId,
+        ),
+      );
+    }
+
     final chats$ = stream.shareReplay().scan<ChatResult?>((
       accumulated,
       value,
@@ -215,19 +231,24 @@ class MessagesController extends _$MessagesController {
       return accumulated.concat(value);
     }, null).whereNotNull();
 
+    // Create single shared replay instance for all listeners
+    final shared$ = chats$.shareReplay();
+
     // set message confirmation
     subs
       ..add(
-        chats$
-            .shareReplay()
-            .take(1)
-            .listen((event) => _confirmMessage(messageId: messageId)),
+        shared$.take(1).listen(
+          (event) {
+            _confirmMessage(messageId: messageId);
+          },
+          onError: handleStreamFailure,
+        ),
       )
       // update states
       ..add(
-        chats$.shareReplay().listen(
-          (chatResult) => _updateState(responseMessageId, chatResult),
-        ),
+        shared$.listen((chatResult) {
+          _updateState(responseMessageId, chatResult);
+        }, onError: handleStreamFailure),
       );
 
     final coalescingSaver = _CoalescingSaver<ChatResult>(
@@ -242,14 +263,12 @@ class MessagesController extends _$MessagesController {
     );
     // store message update
     subs.add(
-      chats$.shareReplay().listen(
+      shared$.listen(
         coalescingSaver.push,
+        onError: handleStreamFailure,
         onDone: coalescingSaver.complete,
       ),
     );
-
-    // _deltaPersisters[responseMessageId] = deltaPersister;
-    _subscriptions[responseMessageId] = subs;
   }
 
   void _updateState(String responseMessageId, ChatResult chatResult) {
@@ -312,6 +331,52 @@ class MessagesController extends _$MessagesController {
     );
   }
 
+  Future<void> _handleStreamFailure({
+    required String messageId,
+    required String responseMessageId,
+  }) async {
+    try {
+      final repo = ref.read(messageRepositoryProvider);
+
+      // Get partial content from in-memory state before updating DB
+      final partialContent = state
+          .firstWhereOrNull((msg) => msg.responseMessageId == responseMessageId)
+          ?.content;
+
+      // Update DB first to prevent race condition with UI refresh
+      final userMessage = await repo.getMessageById(messageId);
+      if (userMessage?.status == MessageStatus.sending) {
+        await repo.updateMessage(
+          messageId,
+          const MessageToUpdate(status: MessageStatus.error),
+        );
+      }
+
+      await repo.updateMessage(
+        responseMessageId,
+        MessageToUpdate(
+          status: MessageStatus.error,
+          content: partialContent == null || partialContent.isEmpty
+              ? null
+              : partialContent,
+        ),
+      );
+
+      // Now remove from in-memory state after DB is updated
+      state = state
+          .where((msg) => msg.responseMessageId != responseMessageId)
+          .toList();
+
+      await _subscriptions[responseMessageId]?.cancel();
+      _subscriptions.remove(responseMessageId);
+    } on Exception catch (e) {
+      // Log error but don't crash - errors in error handling are critical
+      // but shouldn't cascade
+      // ignore: avoid_print
+      print('Critical: Error in _handleStreamFailure: $e');
+    }
+  }
+
   Future<void> _doneMessage({
     required String responseMessageId,
     required ChatResult chatResult,
@@ -322,6 +387,7 @@ class MessagesController extends _$MessagesController {
     }).toList();
 
     await _subscriptions[responseMessageId]?.cancel();
+    _subscriptions.remove(responseMessageId);
 
     final toolsToCall = _getTools(chatResult);
     if (toolsToCall.isNotEmpty) {
@@ -444,7 +510,7 @@ class MessagesController extends _$MessagesController {
             content: '',
             messageType: MessageType.text,
             isUser: false,
-            status: MessageStatus.sending,
+            status: MessageStatus.unfinished,
           ),
         );
 
@@ -473,17 +539,27 @@ class MessagesController extends _$MessagesController {
     // Build combined tool specs (built-in + MCP) with composite IDs
     final combinedToolSpecs = await _buildCombinedToolSpecs(enabledTools);
 
-    final stream = chatbotService.sendMessage(
-      foundModel,
-      aiMessages,
-      tools: combinedToolSpecs,
-    );
-    _addStream(
-      messageId: createdMessageId,
-      conversationId: conversationId,
-      responseMessageId: responseMessage.id,
-      stream: stream,
-    );
+    try {
+      final stream = chatbotService.sendMessage(
+        foundModel,
+        aiMessages,
+        tools: combinedToolSpecs,
+      );
+      _addStream(
+        messageId: createdMessageId,
+        conversationId: conversationId,
+        responseMessageId: responseMessage.id,
+        stream: stream,
+      );
+    } on Exception {
+      await ref
+          .read(messageRepositoryProvider)
+          .updateMessage(
+            responseMessage.id,
+            const MessageToUpdate(status: MessageStatus.error),
+          );
+      rethrow;
+    }
 
     return responseMessage;
   }
@@ -547,13 +623,23 @@ class MessagesController extends _$MessagesController {
           ),
         );
 
-    final responseMessage = await _waitMessage(
-      createdMessageId: createdMessage.id,
-      conversationId: conversationId,
-      enabledTools: enabledTools,
-    );
+    try {
+      final responseMessage = await _waitMessage(
+        createdMessageId: createdMessage.id,
+        conversationId: conversationId,
+        enabledTools: enabledTools,
+      );
 
-    return (createdMessage, responseMessage);
+      return (createdMessage, responseMessage);
+    } on Exception {
+      await ref
+          .read(messageRepositoryProvider)
+          .updateMessage(
+            createdMessage.id,
+            const MessageToUpdate(status: MessageStatus.error),
+          );
+      rethrow;
+    }
   }
 
   Future<ConversationEntity> addConversation({

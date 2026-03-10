@@ -1,4 +1,5 @@
 import 'package:auravibes_ui/src/atoms/auravibes_icon.dart';
+import 'package:auravibes_ui/src/tokens/auravibes_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -18,11 +19,14 @@ void main() {
     });
 
     testWidgets('applies custom color correctly', (tester) async {
-      const customColor = Colors.red;
+      const customColor = AuraColorVariant.error;
 
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
+        MaterialApp(
+          theme: ThemeData.light().copyWith(
+            extensions: [AuraTheme.light],
+          ),
+          home: const Scaffold(
             body: AuraIcon(
               Icons.star,
               color: customColor,
@@ -32,7 +36,8 @@ void main() {
       );
 
       final iconWidget = tester.widget<Icon>(find.byIcon(Icons.star));
-      expect(iconWidget.color, customColor);
+      // Verify the resolved color matches the theme's error color
+      expect(iconWidget.color, AuraTheme.light.colors.error);
     });
 
     testWidgets('applies medium size correctly', (tester) async {
@@ -199,7 +204,7 @@ void main() {
     });
 
     testWidgets('applies custom color correctly', (tester) async {
-      const customColor = Colors.red;
+      const customColor = AuraColorVariant.error;
 
       await tester.pumpWidget(
         MaterialApp(
@@ -218,10 +223,13 @@ void main() {
     });
 
     testWidgets('applies custom background color correctly', (tester) async {
-      const customBackgroundColor = Colors.blue;
+      const customBackgroundColor = AuraColorVariant.primary;
 
       await tester.pumpWidget(
         MaterialApp(
+          theme: ThemeData.light().copyWith(
+            extensions: [AuraTheme.light],
+          ),
           home: Scaffold(
             body: AuraIconButton(
               icon: Icons.star,
@@ -233,10 +241,10 @@ void main() {
       );
 
       final iconButton = tester.widget<IconButton>(find.byType(IconButton));
-      expect(
-        iconButton.style?.backgroundColor?.resolve({}),
-        customBackgroundColor,
-      );
+      final resolvedColor = iconButton.style?.backgroundColor?.resolve({});
+      // In const-first design, backgroundColor is resolved to the theme color
+      expect(resolvedColor, isNotNull);
+      expect(resolvedColor, AuraTheme.light.colors.primary);
     });
 
     testWidgets('shows tooltip when provided', (tester) async {

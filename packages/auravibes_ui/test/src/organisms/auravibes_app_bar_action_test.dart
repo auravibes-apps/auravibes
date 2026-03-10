@@ -1,6 +1,7 @@
 import 'package:auravibes_ui/src/atoms/auravibes_icon.dart';
 import 'package:auravibes_ui/src/molecules/auravibes_badge.dart';
 import 'package:auravibes_ui/src/organisms/auravibes_app_bar_action.dart';
+import 'package:auravibes_ui/src/tokens/auravibes_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -53,25 +54,31 @@ void main() {
 
     testWidgets('applies custom color correctly', (tester) async {
       const testIcon = Icons.notifications;
-      const customColor = Colors.red;
+      const customColorVariant = AuraColorVariant.error;
 
       await tester.pumpWidget(
         MaterialApp(
+          theme: ThemeData.light().copyWith(
+            extensions: [AuraTheme.light],
+          ),
           home: Scaffold(
             body: AuraAppBarAction(
               icon: testIcon,
               onPressed: () {},
-              color: customColor,
+              color: customColorVariant,
             ),
           ),
         ),
       );
 
       final auraIcon = tester.widget<AuraIcon>(find.byType(AuraIcon));
-      expect(auraIcon.color, customColor);
+      expect(auraIcon.color, customColorVariant);
 
+      // Verify the IconButton's resolved foregroundColor
+      // matches the theme color
       final iconButton = tester.widget<IconButton>(find.byType(IconButton));
-      expect(iconButton.style?.foregroundColor?.resolve({}), customColor);
+      final resolvedColor = iconButton.style?.foregroundColor?.resolve({});
+      expect(resolvedColor, AuraTheme.light.colors.error);
     });
 
     testWidgets('applies default color in light theme', (tester) async {
@@ -79,7 +86,9 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData.light(),
+          theme: ThemeData.light().copyWith(
+            extensions: [AuraTheme.light],
+          ),
           home: Scaffold(
             body: AuraAppBarAction(
               icon: testIcon,
@@ -90,7 +99,8 @@ void main() {
       );
 
       final auraIcon = tester.widget<AuraIcon>(find.byType(AuraIcon));
-      expect(auraIcon.color, const Color(0xFF0F172A));
+      // Default color is now AuraColorVariant.onSurfaceVariant
+      expect(auraIcon.color, AuraColorVariant.onSurfaceVariant);
     });
 
     testWidgets('applies default color in dark theme', (tester) async {
@@ -98,7 +108,9 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData.dark(),
+          theme: ThemeData.dark().copyWith(
+            extensions: [AuraTheme.dark],
+          ),
           home: Scaffold(
             body: AuraAppBarAction(
               icon: testIcon,
@@ -109,20 +121,21 @@ void main() {
       );
 
       final auraIcon = tester.widget<AuraIcon>(find.byType(AuraIcon));
-      expect(auraIcon.color, const Color(0xFF0F172A));
+      // Default color in dark theme is also AuraColorVariant.onSurfaceVariant
+      expect(auraIcon.color, AuraColorVariant.onSurfaceVariant);
     });
 
     testWidgets('uses app bar theme foreground color when available', (
       tester,
     ) async {
       const testIcon = Icons.notifications;
-      const appBarForegroundColor = Colors.purple;
 
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(
+          theme: ThemeData.light().copyWith(
+            extensions: [AuraTheme.light],
             appBarTheme: const AppBarTheme(
-              foregroundColor: appBarForegroundColor,
+              foregroundColor: Colors.purple,
             ),
           ),
           home: Scaffold(
@@ -135,7 +148,9 @@ void main() {
       );
 
       final auraIcon = tester.widget<AuraIcon>(find.byType(AuraIcon));
-      expect(auraIcon.color, appBarForegroundColor);
+      // In const-first design, AppBarTheme foregroundColor is ignored
+      // The widget always uses AuraColorVariant.onSurfaceVariant
+      expect(auraIcon.color, AuraColorVariant.onSurfaceVariant);
     });
 
     testWidgets('handles null onPressed correctly', (tester) async {

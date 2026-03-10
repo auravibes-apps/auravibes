@@ -15,11 +15,11 @@ MessageEntity _message(String id, MessageStatus status) => MessageEntity(
 );
 
 void main() {
-  test('marks only streaming ids as streaming', () {
+  test('marks unfinished streaming ids as streaming', () {
     const usecase = ProjectMessagesStreamingStatusUseCase();
     final messages = [
       _message('m1', MessageStatus.sent),
-      _message('m2', MessageStatus.sent),
+      _message('m2', MessageStatus.unfinished),
     ];
 
     final result = usecase.call(
@@ -29,5 +29,19 @@ void main() {
 
     expect(result[0].status, MessageStatus.sent);
     expect(result[1].status, MessageStatus.streaming);
+  });
+
+  test('does not mark sent messages as streaming', () {
+    const usecase = ProjectMessagesStreamingStatusUseCase();
+    final messages = [
+      _message('m1', MessageStatus.sent),
+    ];
+
+    final result = usecase.call(
+      messages: messages,
+      streamingMessageIds: ['m1'],
+    );
+
+    expect(result[0].status, MessageStatus.sent);
   });
 }
