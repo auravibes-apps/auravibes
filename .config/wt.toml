@@ -4,5 +4,5 @@
 [post-create]
 # Install the FVM Flutter version configured in .fvmrc
 fvm = "fvm install && fvm use"
-# Bootstrap melos packages and link them
-bootstrap = "fvm dart run melos bootstrap"
+# Get root dependencies first, then bootstrap melos packages
+bootstrap = "fvm dart pub get && fvm dart run melos bootstrap"
