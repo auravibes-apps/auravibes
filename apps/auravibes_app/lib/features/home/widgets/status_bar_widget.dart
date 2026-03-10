@@ -44,7 +44,7 @@ class _ModelStatus extends ConsumerWidget {
             const AuraIcon(
               Icons.model_training_outlined,
               size: AuraIconSize.small,
-              color: AuraColorVariant.primary,
+              color: AuraColorVariant.success,
             ),
             AuraText(
               style: AuraTextStyle.bodySmall,

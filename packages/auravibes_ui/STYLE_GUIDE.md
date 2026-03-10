@@ -90,8 +90,9 @@ enum AuraColorVariant {
 Colors are resolved from enums via `AuraColorScheme.getColor()`:
 
 ```dart
-Color getColor(AuraColorVariant? variant) {
+Color? getColor(AuraColorVariant? variant) {
   return switch (variant) {
+    null => null,
     AuraColorVariant.primary => primary,
     AuraColorVariant.onSurface => onSurface,
     AuraColorVariant.onSurfaceVariant => onSurfaceVariant,
@@ -99,9 +100,17 @@ Color getColor(AuraColorVariant? variant) {
     AuraColorVariant.error => error,
     AuraColorVariant.onPrimary => onPrimary,
     AuraColorVariant.secondary => secondary,
-    null => primary, // Default fallback
+    AuraColorVariant.success => success,
+    AuraColorVariant.warning => warning,
+    AuraColorVariant.info => info,
   };
 }
+```
+
+**Note**: `getColor()` returns `Color?` - always provide a fallback when using:
+
+```dart
+final color = auraColors.getColor(variant) ?? auraColors.primary;
 ```
 
 ### 3. Component Implementation

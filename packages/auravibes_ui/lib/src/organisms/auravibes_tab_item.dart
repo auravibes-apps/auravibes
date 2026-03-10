@@ -83,17 +83,24 @@ class AuraTabItem extends StatelessWidget {
   }
 
   Widget _buildContent(AuraColorScheme auraColors) {
-    final iconColor = _getIconColor(auraColors);
+    final iconColorVariant = _getIconColor();
     final textColor = _getTextColor(auraColors);
+    final isDisabled = onTap == null;
+
+    Widget buildIcon() {
+      final iconWidget = AuraIcon(
+        icon!,
+        color: iconColorVariant,
+      );
+      // Apply opacity for disabled state to match text behavior
+      return isDisabled ? Opacity(opacity: 0.6, child: iconWidget) : iconWidget;
+    }
 
     if (icon != null && text != null) {
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          AuraIcon(
-            icon!,
-            color: iconColor,
-          ),
+          buildIcon(),
           const SizedBox(height: DesignSpacing.xs),
           AuraText(
             style: AuraTextStyle.caption,
@@ -114,10 +121,7 @@ class AuraTabItem extends StatelessWidget {
     }
 
     if (icon != null) {
-      return AuraIcon(
-        icon!,
-        color: iconColor,
-      );
+      return buildIcon();
     }
 
     if (text != null) {
@@ -144,7 +148,7 @@ class AuraTabItem extends StatelessWidget {
     return auraColors.primary;
   }
 
-  AuraColorVariant _getIconColor(AuraColorScheme auraColors) {
+  AuraColorVariant _getIconColor() {
     if (onTap == null) {
       return AuraColorVariant.onSurfaceVariant;
     }

@@ -606,4 +606,13 @@ enum AuraColorVariant {
 
   /// secondary option
   secondary,
+
+  /// success option (semantic)
+  success,
+
+  /// warning option (semantic)
+  warning,
+
+  /// info option (semantic)
+  info,
 }
