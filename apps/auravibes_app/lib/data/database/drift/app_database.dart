@@ -69,7 +69,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// Database schema version.
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   /// Migration logic for database schema upgrades.
   ///
@@ -81,9 +81,23 @@ class AppDatabase extends _$AppDatabase {
         await m.createAll();
       },
       onUpgrade: (m, from, to) async {
-        if (from == 1 && to == 2) {
+        if (from < 2) {
           await customStatement(
             'ALTER TABLE credentials ADD COLUMN key_suffix TEXT',
+          );
+        }
+
+        if (from < 3) {
+          // First, update delivered → sent (remove old enum value)
+          await customStatement(
+            "UPDATE messages SET status = 'sent' WHERE status = 'delivered'",
+          );
+          // Then, update the table schema to allow new enum values
+          await m.alterTable(TableMigration(messages));
+          // Finally, update sending → unfinished for AI responses
+          await customStatement(
+            "UPDATE messages SET status = 'unfinished' "
+            "WHERE status = 'sending' AND is_user = 0",
           );
         }
       },

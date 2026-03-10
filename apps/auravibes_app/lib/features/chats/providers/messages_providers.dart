@@ -59,18 +59,18 @@ class ChatMessagesController extends _$ChatMessagesController {
         .watch(messageRepositoryProvider)
         .getMessagesByConversation(conversationId);
 
-    final messagesId = ref.watch(
+    final streamingResponseIds = ref.watch(
       messagesControllerProvider.select(
         (message) => message
             .where((element) => element.conversationId == conversationId)
-            .map((e) => e.messageId)
+            .map((e) => e.responseMessageId)
             .toList(),
       ),
     );
 
     return const ProjectMessagesStreamingStatusUseCase().call(
       messages: messages,
-      streamingMessageIds: messagesId,
+      streamingMessageIds: streamingResponseIds,
     );
   }
 

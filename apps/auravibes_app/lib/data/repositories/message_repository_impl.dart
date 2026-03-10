@@ -337,8 +337,8 @@ Failed to retrieve messages with status $status for conversation $conversationId
     return switch (status) {
       MessageTableStatus.sent => MessageStatus.sent,
       MessageTableStatus.sending => MessageStatus.sending,
+      MessageTableStatus.unfinished => MessageStatus.unfinished,
       MessageTableStatus.error => MessageStatus.error,
-      MessageTableStatus.delivered => MessageStatus.delivered,
       MessageTableStatus.streaming => MessageStatus.streaming,
     };
   }
@@ -348,8 +348,8 @@ Failed to retrieve messages with status $status for conversation $conversationId
     return switch (status) {
       MessageStatus.sent => MessageTableStatus.sent,
       MessageStatus.sending => MessageTableStatus.sending,
+      MessageStatus.unfinished => MessageTableStatus.unfinished,
       MessageStatus.error => MessageTableStatus.error,
-      MessageStatus.delivered => MessageTableStatus.delivered,
       MessageStatus.streaming => MessageTableStatus.streaming,
     };
   }
