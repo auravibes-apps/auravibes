@@ -346,10 +346,13 @@ class MessagesController extends _$MessagesController {
       await _subscriptions[responseMessageId]?.cancel();
       _subscriptions.remove(responseMessageId);
 
-      await repo.updateMessage(
-        messageId,
-        const MessageToUpdate(status: MessageStatus.error),
-      );
+      final userMessage = await repo.getMessageById(messageId);
+      if (userMessage?.status == MessageStatus.sending) {
+        await repo.updateMessage(
+          messageId,
+          const MessageToUpdate(status: MessageStatus.error),
+        );
+      }
 
       await repo.updateMessage(
         responseMessageId,
@@ -545,7 +548,7 @@ class MessagesController extends _$MessagesController {
           .read(messageRepositoryProvider)
           .updateMessage(
             responseMessage.id,
-            const MessageToUpdate(status: MessageStatus.unfinished),
+            const MessageToUpdate(status: MessageStatus.error),
           );
       rethrow;
     }
