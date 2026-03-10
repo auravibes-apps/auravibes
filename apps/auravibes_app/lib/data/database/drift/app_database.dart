@@ -88,14 +88,17 @@ class AppDatabase extends _$AppDatabase {
         }
 
         if (from < 3) {
+          // First, update delivered → sent (remove old enum value)
           await customStatement(
             "UPDATE messages SET status = 'sent' WHERE status = 'delivered'",
           );
+          // Then, update the table schema to allow new enum values
+          await m.alterTable(TableMigration(messages));
+          // Finally, update sending → unfinished for AI responses
           await customStatement(
             "UPDATE messages SET status = 'unfinished' "
             "WHERE status = 'sending' AND is_user = 0",
           );
-          await m.alterTable(TableMigration(messages));
         }
       },
     );

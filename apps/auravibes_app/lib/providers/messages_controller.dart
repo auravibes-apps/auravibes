@@ -206,6 +206,9 @@ class MessagesController extends _$MessagesController {
     state = [...state, streamingMessage];
 
     final subs = CompositeSubscription();
+    // Register subscription immediately so error handlers can cancel it
+    _subscriptions[responseMessageId] = subs;
+
     var didHandleFailure = false;
 
     void handleStreamFailure(Object error, [StackTrace? stackTrace]) {
@@ -263,9 +266,6 @@ class MessagesController extends _$MessagesController {
         onDone: coalescingSaver.complete,
       ),
     );
-
-    // _deltaPersisters[responseMessageId] = deltaPersister;
-    _subscriptions[responseMessageId] = subs;
   }
 
   void _updateState(String responseMessageId, ChatResult chatResult) {
