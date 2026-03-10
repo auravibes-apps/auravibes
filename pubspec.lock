@@ -673,10 +673,10 @@ packages:
     dependency: transitive
     description:
       name: google_fonts
-      sha256: c30eef5e7cd26eb89cc8065b4390ac86ce579f2fcdbe35220891c6278b5460da
+      sha256: db9df7a5898d894eeda4c78143f35c30a243558be439518972366880b80bf88e
       url: "https://pub.dev"
     source: hosted
-    version: "8.0.1"
+    version: "8.0.2"
   gpt_markdown:
     dependency: transitive
     description:
@@ -913,10 +913,10 @@ packages:
     dependency: transitive
     description:
       name: mcp_client
-      sha256: "7d157ecc80392d8085a581912f38967e708bea0b421146f5010af12e00cc87db"
+      sha256: "7eabd41217ad70f6d563dcaa48c31ecd59dc0311a8802d09d5417ebe9a26c5e7"
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.2"
+    version: "1.1.0"
   melos:
     dependency: "direct dev"
     description:
@@ -1654,26 +1654,26 @@ packages:
     dependency: transitive
     description:
       name: widgetbook
-      sha256: "1877019a90c514c69be049255801487ef22fe0a86c33f81fd82c80cabe86d886"
+      sha256: d4723df880c59e5df00da7ee02c5e29faf230d860319547e8fea011821ae93a9
       url: "https://pub.dev"
     source: hosted
-    version: "3.21.0"
+    version: "3.22.0"
   widgetbook_annotation:
     dependency: transitive
     description:
       name: widgetbook_annotation
-      sha256: c074bcb262e32bfd62038557fd5ed51e88f4d14e24447ed60fa5e57854941dbb
+      sha256: ec98130f23579f14e304b6b45516612676ae4e0b0e6bb1debe9dba4ea604ab42
       url: "https://pub.dev"
     source: hosted
-    version: "3.10.0"
+    version: "3.11.0"
   widgetbook_generator:
     dependency: transitive
     description:
       name: widgetbook_generator
-      sha256: f615ad0d5052a4cf25e3d8b51d7f3d4191879958ba4bd09c326b2e36ae5b904c
+      sha256: "61fbe531ee5d535346ada5ec327a07eb645ed4e2d2636ad633beb8f774f9c3e5"
       url: "https://pub.dev"
     source: hosted
-    version: "3.21.0"
+    version: "3.22.0"
   win32:
     dependency: transitive
     description:
