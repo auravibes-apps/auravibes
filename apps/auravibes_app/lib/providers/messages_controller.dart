@@ -335,17 +335,12 @@ class MessagesController extends _$MessagesController {
     try {
       final repo = ref.read(messageRepositoryProvider);
 
+      // Get partial content from in-memory state before updating DB
       final partialContent = state
           .firstWhereOrNull((msg) => msg.responseMessageId == responseMessageId)
           ?.content;
 
-      state = state
-          .where((msg) => msg.responseMessageId != responseMessageId)
-          .toList();
-
-      await _subscriptions[responseMessageId]?.cancel();
-      _subscriptions.remove(responseMessageId);
-
+      // Update DB first to prevent race condition with UI refresh
       final userMessage = await repo.getMessageById(messageId);
       if (userMessage?.status == MessageStatus.sending) {
         await repo.updateMessage(
@@ -363,9 +358,19 @@ class MessagesController extends _$MessagesController {
               : partialContent,
         ),
       );
-    } on Exception catch (_) {
-      // Silently handle errors in error handling to prevent crashes
-      // In debug mode, errors will still be visible in the debugger
+
+      // Now remove from in-memory state after DB is updated
+      state = state
+          .where((msg) => msg.responseMessageId != responseMessageId)
+          .toList();
+
+      await _subscriptions[responseMessageId]?.cancel();
+      _subscriptions.remove(responseMessageId);
+    } on Exception catch (e) {
+      // Log error but don't crash - errors in error handling are critical
+      // but shouldn't cascade
+      // ignore: avoid_print
+      print('Critical: Error in _handleStreamFailure: $e');
     }
   }
 

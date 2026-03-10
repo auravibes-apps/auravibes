@@ -91,6 +91,10 @@ class AppDatabase extends _$AppDatabase {
           await customStatement(
             "UPDATE messages SET status = 'sent' WHERE status = 'delivered'",
           );
+          await customStatement(
+            "UPDATE messages SET status = 'unfinished' "
+            "WHERE status = 'sending' AND is_user = 0",
+          );
           await m.alterTable(TableMigration(messages));
         }
       },

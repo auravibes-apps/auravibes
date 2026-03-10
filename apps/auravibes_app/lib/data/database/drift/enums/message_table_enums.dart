@@ -27,7 +27,7 @@ enum MessageTableStatus {
   /// Message completed successfully.
   sent('sent'),
 
-  /// Actively streaming (in-memory overlay).
+  /// Actively streaming - may be persisted during streaming.
   streaming('streaming'),
 
   /// Message failed - error details in metadata.

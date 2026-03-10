@@ -50,9 +50,12 @@ enum MessageType {
 /// ### AI Response Flow:
 /// 1. `unfinished` - Persisted to DB immediately, represents "outcome unknown"
 ///    - Survives app restart/crash, allows recovery of incomplete responses
-///    - Becomes `streaming` when actively receiving content (in-memory overlay)
-/// 2. `sent` - Response completed successfully
-/// 3. `error` - Response failed (partial content preserved in DB)
+///    - Transitions to `streaming` when actively receiving content
+/// 2. `streaming` - Actively receiving content (may be persisted
+///    during streaming)
+///    - Transient state that will become `sent` or `error`
+/// 3. `sent` - Response completed successfully
+/// 4. `error` - Response failed (partial content preserved in DB)
 ///
 /// ### Key Distinction:
 /// - `sending` = in-memory only, for UI feedback during active transmission
@@ -67,7 +70,8 @@ enum MessageStatus {
   /// Used for AI responses that are pending completion or may have failed.
   unfinished('unfinished'),
 
-  /// Actively receiving streaming content (in-memory overlay on `unfinished`).
+  /// Actively receiving streaming content.
+  /// May be persisted during streaming, transitions to `sent` or `error`.
   streaming('streaming'),
 
   /// Message completed successfully.
