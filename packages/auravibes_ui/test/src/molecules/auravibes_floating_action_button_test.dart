@@ -205,8 +205,8 @@ void main() {
       expect(fab.foregroundColor, isNotNull);
 
       final auraIcon = tester.widget<AuraIcon>(find.byType(AuraIcon));
-      // Default foreground color for icon is null (uses parent's color)
-      expect(auraIcon.color, isNull);
+      // Default foreground color for icon is onPrimary (matches FAB foreground)
+      expect(auraIcon.color, AuraColorVariant.onPrimary);
     });
 
     testWidgets('handles null onPressed correctly', (tester) async {

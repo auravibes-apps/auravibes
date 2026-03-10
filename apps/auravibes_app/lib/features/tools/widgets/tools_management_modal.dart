@@ -123,10 +123,13 @@ class _GroupedToolsList extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             spacing: AuraSpacing.md,
             children: [
-              AuraIcon(
-                Icons.build_circle_outlined,
-                size: AuraIconSize.extraLarge,
-                color: AuraColorVariant.onSurfaceVariant,
+              Opacity(
+                opacity: 0.5,
+                child: AuraIcon(
+                  Icons.build_circle_outlined,
+                  size: AuraIconSize.extraLarge,
+                  color: AuraColorVariant.onSurfaceVariant,
+                ),
               ),
               AuraText(
                 style: AuraTextStyle.heading6,

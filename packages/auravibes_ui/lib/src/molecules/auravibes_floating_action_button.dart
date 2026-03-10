@@ -158,7 +158,7 @@ class AuraFloatingActionButton extends StatelessWidget {
     return AuraIcon(
       icon,
       size: _getIconSize(),
-      color: foregroundColor,
+      color: foregroundColor ?? AuraColorVariant.onPrimary,
     );
   }
 
@@ -168,7 +168,7 @@ class AuraFloatingActionButton extends StatelessWidget {
       children: [
         AuraIcon(
           icon,
-          color: foregroundColor,
+          color: foregroundColor ?? AuraColorVariant.onPrimary,
         ),
         const SizedBox(width: DesignSpacing.sm),
         AuraText(

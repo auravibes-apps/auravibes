@@ -75,13 +75,18 @@ Use `AuraColorVariant` enum for all color parameters:
 
 ```dart
 enum AuraColorVariant {
+  // Core colors
   primary,
+  onPrimary,
+  secondary,
   onSurface,
   onSurfaceVariant,
   surfaceVariant,
   error,
-  onPrimary,
-  secondary,
+  // Semantic colors
+  success,
+  warning,
+  info,
 }
 ```
 

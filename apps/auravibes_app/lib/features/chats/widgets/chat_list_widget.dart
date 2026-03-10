@@ -104,7 +104,7 @@ class _ChatTile extends ConsumerWidget {
                           const AuraIcon(
                             Icons.push_pin_outlined,
                             size: AuraIconSize.small,
-                            color: AuraColorVariant.secondary,
+                            color: AuraColorVariant.warning,
                           ),
                           const SizedBox(width: 8),
                         ],

@@ -132,10 +132,13 @@ class ConversationToolTile extends HookConsumerWidget {
                         : AuraColorVariant.onSurfaceVariant,
                   )
                 else
-                  const AuraIcon(
-                    Icons.block,
-                    size: AuraIconSize.small,
-                    color: AuraColorVariant.onSurfaceVariant,
+                  const Opacity(
+                    opacity: 0.5,
+                    child: AuraIcon(
+                      Icons.block,
+                      size: AuraIconSize.small,
+                      color: AuraColorVariant.onSurfaceVariant,
+                    ),
                   ),
               ],
             ),
