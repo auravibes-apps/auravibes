@@ -73,6 +73,12 @@ void main() {
 
       final auraIcon = tester.widget<AuraIcon>(find.byType(AuraIcon));
       expect(auraIcon.color, customColorVariant);
+
+      // Verify the IconButton's resolved foregroundColor
+      // matches the theme color
+      final iconButton = tester.widget<IconButton>(find.byType(IconButton));
+      final resolvedColor = iconButton.style?.foregroundColor?.resolve({});
+      expect(resolvedColor, AuraTheme.light.colors.error);
     });
 
     testWidgets('applies default color in light theme', (tester) async {

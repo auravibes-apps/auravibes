@@ -43,7 +43,7 @@ class AuraAppBarAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
-    final iconColorVariant = color ?? _getDefaultIconColor(context);
+    final iconColorVariant = color ?? _getDefaultIconColor();
     final resolvedColor =
         auraColors.getColor(iconColorVariant) ?? auraColors.onSurface;
 
@@ -87,7 +87,7 @@ class AuraAppBarAction extends StatelessWidget {
     return actionButton;
   }
 
-  AuraColorVariant _getDefaultIconColor(BuildContext context) {
+  AuraColorVariant _getDefaultIconColor() {
     // In const-first design, we use AuraColorVariant instead of runtime Color
     // The default color for app bar actions is onSurfaceVariant
     return AuraColorVariant.onSurfaceVariant;

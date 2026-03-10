@@ -22,8 +22,11 @@ void main() {
       const customColor = AuraColorVariant.error;
 
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
+        MaterialApp(
+          theme: ThemeData.light().copyWith(
+            extensions: [AuraTheme.light],
+          ),
+          home: const Scaffold(
             body: AuraIcon(
               Icons.star,
               color: customColor,
@@ -33,8 +36,8 @@ void main() {
       );
 
       final iconWidget = tester.widget<Icon>(find.byIcon(Icons.star));
-      // Note: The actual color will be resolved from AuraColorVariant.error
-      expect(iconWidget.color, isNotNull);
+      // Verify the resolved color matches the theme's error color
+      expect(iconWidget.color, AuraTheme.light.colors.error);
     });
 
     testWidgets('applies medium size correctly', (tester) async {

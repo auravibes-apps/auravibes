@@ -149,8 +149,8 @@ void main() {
       final fab = tester.widget<FloatingActionButton>(
         find.byType(FloatingActionButton),
       );
-      // Note: The actual color will be resolved from AuraColorVariant.error
-      expect(fab.backgroundColor, isNotNull);
+      // Verify the resolved color matches the theme's error color
+      expect(fab.backgroundColor, AuraTheme.light.colors.error);
     });
 
     testWidgets('applies custom foreground color correctly', (tester) async {
@@ -174,8 +174,8 @@ void main() {
       final fab = tester.widget<FloatingActionButton>(
         find.byType(FloatingActionButton),
       );
-      // Note: The actual color is resolved from AuraColorVariant.onPrimary
-      expect(fab.foregroundColor, isNotNull);
+      // Verify the resolved color matches the theme's onPrimary color
+      expect(fab.foregroundColor, AuraTheme.light.colors.onPrimary);
 
       final auraIcon = tester.widget<AuraIcon>(find.byType(AuraIcon));
       // AuraIcon now receives AuraColorVariant, not Color
