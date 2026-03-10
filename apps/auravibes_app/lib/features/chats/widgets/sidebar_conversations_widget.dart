@@ -152,7 +152,7 @@ class _SidebarConversationTile extends StatelessWidget {
         vertical: context.auraTheme.spacing.xs,
       ),
       child: AuraTile(
-        variant: isActive ? AuraTileVariant.surface : AuraTileVariant.ghost,
+        variant: isActive ? AuraTileVariant.selected : AuraTileVariant.ghost,
         size: AuraTileSize.small,
         onTap: () => ConversationRoute(chatId: chat.id).go(context),
         leading: AuraIcon(

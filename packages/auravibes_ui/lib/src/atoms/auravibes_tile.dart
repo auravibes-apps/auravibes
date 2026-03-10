@@ -131,6 +131,7 @@ class AuraTile extends StatelessWidget {
       AuraTileVariant.surface => colors.surface,
       AuraTileVariant.outlined => Colors.transparent,
       AuraTileVariant.ghost => Colors.transparent,
+      AuraTileVariant.selected => colors.primary.withValues(alpha: 0.1),
       AuraTileVariant.success => colors.success,
       AuraTileVariant.warning => colors.warning,
       AuraTileVariant.error => colors.error,
@@ -161,6 +162,7 @@ class AuraTile extends StatelessWidget {
       AuraTileVariant.surface => colors.onSurface,
       AuraTileVariant.outlined => colors.primary,
       AuraTileVariant.ghost => colors.primary,
+      AuraTileVariant.selected => colors.primary,
       AuraTileVariant.success => colors.onSuccess,
       AuraTileVariant.warning => colors.onWarning,
       AuraTileVariant.error => colors.onError,
@@ -194,6 +196,7 @@ class AuraTile extends StatelessWidget {
         AuraTileVariant.surface => colors.onSurface,
         AuraTileVariant.outlined => colors.onSurface,
         AuraTileVariant.ghost => colors.primary,
+        AuraTileVariant.selected => colors.primary,
         AuraTileVariant.success => colors.onSuccess,
         AuraTileVariant.warning => colors.onWarning,
         AuraTileVariant.error => colors.onError,
@@ -243,6 +246,10 @@ enum AuraTileVariant {
 
   /// A tile with transparent background and no border.
   ghost,
+
+  /// A tile with subtle primary tint background, no shadow.
+  /// Used for selection states in navigation lists.
+  selected,
 
   /// A tile with success color background.
   success,
