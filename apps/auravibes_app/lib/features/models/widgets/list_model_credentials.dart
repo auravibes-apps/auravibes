@@ -38,7 +38,7 @@ class ListModelCredentialsWidget extends ConsumerWidget {
         );
       }(),
       AsyncLoading() => const Center(child: AuraSpinner()),
-      AsyncError(: final error, stackTrace: _) => AuraText(
+      AsyncError(:final error, stackTrace: _) => AuraText(
         child: Text(
           LocaleKeys.models_screens_list_error.tr(
             args: ['$error'],
