@@ -58,7 +58,8 @@ enum MessageType {
 /// 4. `error` - Response failed (partial content preserved in DB)
 ///
 /// ### Key Distinction:
-/// - `sending` = in-memory only, for UI feedback during active transmission
+/// - `sending` = transient state, primarily in-memory but may be briefly
+///   persisted until confirmation
 /// - `unfinished` = persisted to DB, means "pending outcome" (app could
 ///   close, crash, error)
 enum MessageStatus {

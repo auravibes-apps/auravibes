@@ -231,10 +231,13 @@ class MessagesController extends _$MessagesController {
       return accumulated.concat(value);
     }, null).whereNotNull();
 
+    // Create single shared replay instance for all listeners
+    final shared$ = chats$.shareReplay();
+
     // set message confirmation
     subs
       ..add(
-        chats$.shareReplay().take(1).listen(
+        shared$.take(1).listen(
           (event) {
             _confirmMessage(messageId: messageId);
           },
@@ -243,7 +246,7 @@ class MessagesController extends _$MessagesController {
       )
       // update states
       ..add(
-        chats$.shareReplay().listen((chatResult) {
+        shared$.listen((chatResult) {
           _updateState(responseMessageId, chatResult);
         }, onError: handleStreamFailure),
       );
@@ -260,7 +263,7 @@ class MessagesController extends _$MessagesController {
     );
     // store message update
     subs.add(
-      chats$.shareReplay().listen(
+      shared$.listen(
         coalescingSaver.push,
         onError: handleStreamFailure,
         onDone: coalescingSaver.complete,
