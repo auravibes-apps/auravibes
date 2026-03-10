@@ -30,8 +30,9 @@ class AuraAppBarAction extends StatelessWidget {
   /// Optional badge to display on the action button.
   final AuraBadge? badge;
 
-  /// The color of the icon. If null, uses the default app bar icon color.
-  final Color? color;
+  /// The color variant of the icon.
+  /// If null, uses the default app bar icon color.
+  final AuraColorVariant? color;
 
   /// A semantic label for the button for accessibility.
   final String? semanticLabel;
@@ -42,13 +43,15 @@ class AuraAppBarAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
-    final iconColor = color ?? _getDefaultIconColor(context, auraColors);
+    final iconColorVariant = color ?? _getDefaultIconColor(context);
+    final resolvedColor =
+        auraColors.getColor(iconColorVariant) ?? auraColors.onSurface;
 
     Widget actionButton = IconButton(
       onPressed: onPressed,
       icon: AuraIcon(
         icon,
-        color: AuraColorVariant.onSurfaceVariant,
+        color: iconColorVariant,
         semanticLabel: semanticLabel,
       ),
       iconSize: 24,
@@ -58,7 +61,7 @@ class AuraAppBarAction extends StatelessWidget {
         minHeight: 48,
       ),
       style: IconButton.styleFrom(
-        foregroundColor: iconColor,
+        foregroundColor: resolvedColor,
         backgroundColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(DesignBorderRadius.md),
@@ -84,12 +87,9 @@ class AuraAppBarAction extends StatelessWidget {
     return actionButton;
   }
 
-  Color _getDefaultIconColor(BuildContext context, AuraColorScheme auraColors) {
-    // Check if there's an AppBar theme with foreground color
-    final appBarTheme = Theme.of(context).appBarTheme;
-    if (appBarTheme.foregroundColor != null) {
-      return appBarTheme.foregroundColor!;
-    }
-    return auraColors.onSurface;
+  AuraColorVariant _getDefaultIconColor(BuildContext context) {
+    // In const-first design, we use AuraColorVariant instead of runtime Color
+    // The default color for app bar actions is onSurfaceVariant
+    return AuraColorVariant.onSurfaceVariant;
   }
 }

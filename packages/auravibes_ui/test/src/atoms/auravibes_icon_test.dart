@@ -1,4 +1,5 @@
 import 'package:auravibes_ui/src/atoms/auravibes_icon.dart';
+import 'package:auravibes_ui/src/tokens/auravibes_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -223,6 +224,9 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          theme: ThemeData.light().copyWith(
+            extensions: [AuraTheme.light],
+          ),
           home: Scaffold(
             body: AuraIconButton(
               icon: Icons.star,
@@ -234,10 +238,10 @@ void main() {
       );
 
       final iconButton = tester.widget<IconButton>(find.byType(IconButton));
-      expect(
-        iconButton.style?.backgroundColor?.resolve({}),
-        customBackgroundColor,
-      );
+      final resolvedColor = iconButton.style?.backgroundColor?.resolve({});
+      // In const-first design, backgroundColor is resolved to the theme color
+      expect(resolvedColor, isNotNull);
+      expect(resolvedColor, AuraTheme.light.colors.primary);
     });
 
     testWidgets('shows tooltip when provided', (tester) async {
