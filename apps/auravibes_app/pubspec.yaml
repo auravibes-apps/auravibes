@@ -8,7 +8,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 0.0.2
 
 environment:
-  sdk: ^3.10.0
+  sdk: ^3.11.0
 
 dependencies:
   anthropic_sdk_dart: ^0.3.0+1

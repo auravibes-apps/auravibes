@@ -38,7 +38,7 @@ class RecentConversationsWidget extends ConsumerWidget {
         );
       }(),
       AsyncLoading() => const Center(child: AuraSpinner()),
-      AsyncError(error: final error, stackTrace: _) => Center(
+      AsyncError(:final error, stackTrace: _) => Center(
         child: AuraText(
           color: AuraColorVariant.error,
           child: TextLocale(
@@ -54,7 +54,7 @@ class RecentConversationsWidget extends ConsumerWidget {
   Widget _buildEmptyState(BuildContext context) {
     return AuraCard(
       child: AuraPadding(
-        padding: const .all(.sm),
+        padding: AuraEdgeInsetsGeometry.small,
         child: AuraColumn(
           children: [
             const AuraIcon(

@@ -1,7 +1,7 @@
 name: auravibes_workspace
 publish_to: none
 environment:
-  sdk: ^3.10.0
+  sdk: ^3.11.0
 
 workspace:
   - apps/auravibes_app
@@ -13,7 +13,7 @@ dev_dependencies:
   import_sorter: ^4.6.0
   melos: ^7.4.0
   riverpod_lint: ^3.1.0
-  very_good_analysis: ^10.0.0
+  very_good_analysis: ^10.2.0
 
 melos:
   name: auravibes_workspace
@@ -28,7 +28,7 @@ melos:
         usePubspecOverrides: true
         runPubGetInParallel: false
         environment:
-          sdk: ^3.10.0
+          sdk: ^3.11.0
   scripts:
     analyze:
       run: dart analyze

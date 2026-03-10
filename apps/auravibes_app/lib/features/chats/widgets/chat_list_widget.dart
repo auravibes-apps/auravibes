@@ -35,7 +35,7 @@ class ChatListWidget extends ConsumerWidget {
         );
       }(),
       AsyncLoading() => const Center(child: AuraSpinner()),
-      AsyncError(error: final error, stackTrace: _) => Center(
+      AsyncError(:final error, stackTrace: _) => Center(
         child: AuraText(
           child: Text('Error loading chats: $error'),
         ),
