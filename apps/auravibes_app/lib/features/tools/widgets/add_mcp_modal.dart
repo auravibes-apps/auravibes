@@ -113,9 +113,9 @@ class AddMcpModal extends HookConsumerWidget {
       ),
       child: AuraRow(
         children: [
-          AuraIcon(
+          const AuraIcon(
             Icons.extension,
-            color: context.auraColors.primary,
+            color: AuraColorVariant.primary,
           ),
           const Expanded(
             child: AuraText(
@@ -181,9 +181,9 @@ class _ErrorBanner extends ConsumerWidget {
       color: context.auraColors.error.withValues(alpha: 0.1),
       child: Row(
         children: [
-          AuraIcon(
+          const AuraIcon(
             Icons.error_outline,
-            color: context.auraColors.error,
+            color: AuraColorVariant.error,
             size: AuraIconSize.small,
           ),
           SizedBox(width: context.auraTheme.spacing.sm),

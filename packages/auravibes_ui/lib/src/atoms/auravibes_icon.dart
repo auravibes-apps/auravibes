@@ -1,5 +1,6 @@
 import 'package:auravibes_ui/src/tokens/auravibes_theme.dart';
-import 'package:auravibes_ui/src/tokens/design_tokens.dart';
+import 'package:auravibes_ui/src/tokens/design_tokens.dart'
+    show AuraColorVariant, DesignBorderRadius;
 import 'package:flutter/material.dart';
 
 /// A customizable icon component following the Aura design system.
@@ -22,8 +23,9 @@ class AuraIcon extends StatelessWidget {
   /// The size of the icon.
   final AuraIconSize size;
 
-  /// The color of the icon. If null, uses the default color from the theme.
-  final Color? color;
+  /// The color variant of the icon.
+  /// If null, uses the default color from the theme.
+  final AuraColorVariant? color;
 
   /// A semantic label for the icon for accessibility.
   final String? semanticLabel;
@@ -31,7 +33,8 @@ class AuraIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
-    final iconColor = color ?? _getDefaultColor(auraColors);
+    final iconColor =
+        auraColors.getColor(color) ?? _getDefaultColor(auraColors);
     final iconSize = _getIconSize();
 
     return Semantics(
@@ -91,12 +94,13 @@ class AuraIconButton extends StatelessWidget {
   /// The size of the icon.
   final AuraIconSize size;
 
-  /// The color of the icon. If null, uses the default color for the variant.
-  final Color? color;
+  /// The color variant of the icon.
+  /// If null, uses the default color for the variant.
+  final AuraColorVariant? color;
 
-  /// The background color of the button. If null, uses the default for the
-  /// variant.
-  final Color? backgroundColor;
+  /// The background color variant of the button.
+  /// If null, uses the default for the variant.
+  final AuraColorVariant? backgroundColor;
 
   /// The visual variant of the icon button.
   final AuraIconButtonVariant variant;
@@ -121,7 +125,7 @@ class AuraIconButton extends StatelessWidget {
         icon: AuraIcon(
           icon,
           size: size,
-          color: color ?? _getIconColor(auraColors),
+          color: color,
           semanticLabel: semanticLabel,
         ),
         iconSize: iconSize,
@@ -131,8 +135,11 @@ class AuraIconButton extends StatelessWidget {
           minHeight: buttonSize,
         ),
         style: IconButton.styleFrom(
-          backgroundColor: backgroundColor ?? _getBackgroundColor(auraColors),
-          foregroundColor: color ?? _getIconColor(auraColors),
+          backgroundColor:
+              auraColors.getColor(backgroundColor) ??
+              _getBackgroundColor(auraColors),
+          foregroundColor:
+              auraColors.getColor(color) ?? _getIconColor(auraColors),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(_getBorderRadius()),
             side: variant == AuraIconButtonVariant.outlined

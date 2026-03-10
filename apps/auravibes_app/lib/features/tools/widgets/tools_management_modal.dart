@@ -116,27 +116,28 @@ class _GroupedToolsList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (groups.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.all(DesignSpacing.lg),
+      return const Padding(
+        padding: EdgeInsets.all(DesignSpacing.lg),
         child: Center(
           child: AuraColumn(
             mainAxisSize: MainAxisSize.min,
             spacing: AuraSpacing.md,
             children: [
-              AuraIcon(
-                Icons.build_circle_outlined,
-                size: AuraIconSize.extraLarge,
-                color: context.auraColors.onSurfaceVariant.withValues(
-                  alpha: 0.5,
+              Opacity(
+                opacity: 0.5,
+                child: AuraIcon(
+                  Icons.build_circle_outlined,
+                  size: AuraIconSize.extraLarge,
+                  color: AuraColorVariant.onSurfaceVariant,
                 ),
               ),
-              const AuraText(
+              AuraText(
                 style: AuraTextStyle.heading6,
                 color: AuraColorVariant.onSurfaceVariant,
                 textAlign: TextAlign.center,
                 child: TextLocale(LocaleKeys.tools_screen_no_tools_added),
               ),
-              const AuraText(
+              AuraText(
                 style: AuraTextStyle.bodySmall,
                 color: AuraColorVariant.onSurfaceVariant,
                 textAlign: TextAlign.center,

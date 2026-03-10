@@ -133,7 +133,6 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
 
   @override
   Widget build(BuildContext context) {
-    final auraColors = context.auraColors;
     final hasError = widget.error != null;
     final state = hasError ? AuraFieldState.error : AuraFieldState.normal;
 
@@ -203,7 +202,7 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
                     _isDropdownOpen
                         ? Icons.keyboard_arrow_up
                         : Icons.keyboard_arrow_down,
-                    color: auraColors.onSurfaceVariant,
+                    color: AuraColorVariant.onSurfaceVariant,
                     size: AuraIconSize.small,
                   ),
                 ],
@@ -308,9 +307,9 @@ class _DropdownMenuState<T> extends State<_DropdownMenu<T>> {
                               option.trailing!,
                             ] else if (isSelected) ...[
                               const SizedBox(width: DesignSpacing.sm),
-                              AuraIcon(
+                              const AuraIcon(
                                 Icons.check,
-                                color: auraColors.primary,
+                                color: AuraColorVariant.primary,
                                 size: AuraIconSize.small,
                               ),
                             ],

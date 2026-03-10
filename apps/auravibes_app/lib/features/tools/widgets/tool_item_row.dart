@@ -107,10 +107,10 @@ class ToolItemRow extends HookConsumerWidget {
                 icon: AnimatedRotation(
                   turns: isExpanded.value ? 0.5 : 0,
                   duration: const Duration(milliseconds: 200),
-                  child: AuraIcon(
+                  child: const AuraIcon(
                     Icons.keyboard_arrow_down,
                     size: AuraIconSize.small,
-                    color: context.auraColors.onSurfaceVariant,
+                    color: AuraColorVariant.onSurfaceVariant,
                   ),
                 ),
                 padding: EdgeInsets.zero,
@@ -205,10 +205,10 @@ class _ToolOptions extends HookConsumerWidget {
             alignment: Alignment.centerRight,
             child: TextButton.icon(
               onPressed: () => _confirmDelete(context, ref, workspaceTool),
-              icon: AuraIcon(
+              icon: const AuraIcon(
                 Icons.delete_outline,
                 size: AuraIconSize.small,
-                color: context.auraColors.error,
+                color: AuraColorVariant.error,
               ),
               label: AuraText(
                 style: AuraTextStyle.bodySmall,

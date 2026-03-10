@@ -79,32 +79,41 @@ class AuraNavigationItem extends StatelessWidget {
   }
 
   Widget _buildContent(AuraColorScheme auraColors) {
-    final iconColor = _getIconColor(auraColors);
+    final iconColor = _getIconColor();
     final textColor = _getTextColor(auraColors);
+    final isDisabled = onTap == null;
 
     return switch (size) {
       AuraNavigationItemSize.compact => _buildCompactContent(
         iconColor,
         textColor,
+        isDisabled,
       ),
       AuraNavigationItemSize.normal => _buildNormalContent(
         iconColor,
         textColor,
+        isDisabled,
       ),
       AuraNavigationItemSize.expanded => _buildExpandedContent(
         iconColor,
         textColor,
+        isDisabled,
       ),
     };
   }
 
-  Widget _buildCompactContent(Color iconColor, Color textColor) {
+  Widget _buildCompactContent(
+    AuraColorVariant iconColor,
+    Color textColor,
+    bool isDisabled,
+  ) {
     if (icon != null) {
-      return AuraIcon(
+      final iconWidget = AuraIcon(
         icon!,
         size: AuraIconSize.small,
         color: iconColor,
       );
+      return isDisabled ? Opacity(opacity: 0.6, child: iconWidget) : iconWidget;
     }
 
     if (text != null) {
@@ -115,7 +124,6 @@ class AuraNavigationItem extends StatelessWidget {
 
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          // TODO(style): check color
           style: TextStyle(
             color: textColor,
           ),
@@ -126,15 +134,24 @@ class AuraNavigationItem extends StatelessWidget {
     return const SizedBox.shrink();
   }
 
-  Widget _buildNormalContent(Color iconColor, Color textColor) {
+  Widget _buildNormalContent(
+    AuraColorVariant iconColor,
+    Color textColor,
+    bool isDisabled,
+  ) {
+    Widget buildIcon() {
+      final iconWidget = AuraIcon(
+        icon!,
+        color: iconColor,
+      );
+      return isDisabled ? Opacity(opacity: 0.6, child: iconWidget) : iconWidget;
+    }
+
     if (icon != null && text != null) {
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          AuraIcon(
-            icon!,
-            color: iconColor,
-          ),
+          buildIcon(),
           const SizedBox(height: DesignSpacing.xs),
           AuraText(
             style: AuraTextStyle.caption,
@@ -143,7 +160,6 @@ class AuraNavigationItem extends StatelessWidget {
 
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              // TODO(style): check color
               style: TextStyle(
                 color: textColor,
               ),
@@ -154,10 +170,7 @@ class AuraNavigationItem extends StatelessWidget {
     }
 
     if (icon != null) {
-      return AuraIcon(
-        icon!,
-        color: iconColor,
-      );
+      return buildIcon();
     }
 
     if (text != null) {
@@ -167,7 +180,6 @@ class AuraNavigationItem extends StatelessWidget {
           text!,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          // TODO(style): check color
           style: TextStyle(color: textColor),
         ),
       );
@@ -176,15 +188,24 @@ class AuraNavigationItem extends StatelessWidget {
     return const SizedBox.shrink();
   }
 
-  Widget _buildExpandedContent(Color iconColor, Color textColor) {
+  Widget _buildExpandedContent(
+    AuraColorVariant iconColor,
+    Color textColor,
+    bool isDisabled,
+  ) {
+    Widget buildIcon() {
+      final iconWidget = AuraIcon(
+        icon!,
+        color: iconColor,
+      );
+      return isDisabled ? Opacity(opacity: 0.6, child: iconWidget) : iconWidget;
+    }
+
     if (icon != null && text != null) {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          AuraIcon(
-            icon!,
-            color: iconColor,
-          ),
+          buildIcon(),
           const SizedBox(width: DesignSpacing.sm),
           Flexible(
             child: AuraText(
@@ -192,7 +213,6 @@ class AuraNavigationItem extends StatelessWidget {
                 text!,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                // TODO(style): check color
                 style: TextStyle(color: textColor),
               ),
             ),
@@ -202,10 +222,7 @@ class AuraNavigationItem extends StatelessWidget {
     }
 
     if (icon != null) {
-      return AuraIcon(
-        icon!,
-        color: iconColor,
-      );
+      return buildIcon();
     }
 
     if (text != null) {
@@ -214,7 +231,6 @@ class AuraNavigationItem extends StatelessWidget {
           text!,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          // TODO(style): check color
           style: TextStyle(
             color: textColor,
           ),
@@ -253,14 +269,14 @@ class AuraNavigationItem extends StatelessWidget {
     return auraColors.primary.withValues(alpha: 0.1);
   }
 
-  Color _getIconColor(AuraColorScheme auraColors) {
+  AuraColorVariant _getIconColor() {
     if (onTap == null) {
-      return auraColors.onSurfaceVariant.withValues(alpha: 0.6);
+      return AuraColorVariant.onSurfaceVariant;
     }
 
-    if (isActive) return auraColors.primary;
+    if (isActive) return AuraColorVariant.primary;
 
-    return auraColors.onSurfaceVariant;
+    return AuraColorVariant.onSurfaceVariant;
   }
 
   Color _getTextColor(AuraColorScheme auraColors) {

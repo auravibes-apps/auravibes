@@ -46,11 +46,12 @@ class AuraFloatingActionButton extends StatelessWidget {
   /// The size of the FAB.
   final AuraFABSize size;
 
-  /// The background color of the FAB. If null, uses the primary color.
-  final Color? backgroundColor;
+  /// The background color variant of the FAB. If null, uses the primary color.
+  final AuraColorVariant? backgroundColor;
 
-  /// The foreground color of the FAB. If null, uses the primary contrast color.
-  final Color? foregroundColor;
+  /// The foreground color variant of the FAB.
+  /// If null, uses the primary contrast color.
+  final AuraColorVariant? foregroundColor;
 
   /// A semantic label for the FAB for accessibility.
   final String? semanticLabel;
@@ -65,8 +66,10 @@ class AuraFloatingActionButton extends StatelessWidget {
 
     Widget fab = FloatingActionButton(
       onPressed: onPressed,
-      backgroundColor: backgroundColor ?? auraColors.primary,
-      foregroundColor: foregroundColor ?? auraColors.onPrimary,
+      backgroundColor:
+          auraColors.getColor(backgroundColor) ?? auraColors.primary,
+      foregroundColor:
+          auraColors.getColor(foregroundColor) ?? auraColors.onPrimary,
       elevation: _getElevation(),
       focusElevation: _getFocusElevation(),
       hoverElevation: _getHoverElevation(),
@@ -86,8 +89,10 @@ class AuraFloatingActionButton extends StatelessWidget {
         height: _getFABSize(),
         child: FloatingActionButton(
           onPressed: onPressed,
-          backgroundColor: backgroundColor ?? auraColors.primary,
-          foregroundColor: foregroundColor ?? auraColors.onPrimary,
+          backgroundColor:
+              auraColors.getColor(backgroundColor) ?? auraColors.primary,
+          foregroundColor:
+              auraColors.getColor(foregroundColor) ?? auraColors.onPrimary,
           elevation: _getElevation(),
           focusElevation: _getFocusElevation(),
           hoverElevation: _getHoverElevation(),
@@ -103,8 +108,10 @@ class AuraFloatingActionButton extends StatelessWidget {
     if (isExtended) {
       fab = FloatingActionButton.extended(
         onPressed: onPressed,
-        backgroundColor: backgroundColor ?? auraColors.primary,
-        foregroundColor: foregroundColor ?? auraColors.onPrimary,
+        backgroundColor:
+            auraColors.getColor(backgroundColor) ?? auraColors.primary,
+        foregroundColor:
+            auraColors.getColor(foregroundColor) ?? auraColors.onPrimary,
         elevation: _getElevation(),
         focusElevation: _getFocusElevation(),
         hoverElevation: _getHoverElevation(),
@@ -114,14 +121,14 @@ class AuraFloatingActionButton extends StatelessWidget {
         ),
         icon: AuraIcon(
           icon,
-          color: foregroundColor ?? auraColors.onPrimary,
+          color: foregroundColor,
         ),
         label: AuraText(
           child: Text(
             text!,
-            // TODO(style): check style
             style: TextStyle(
-              color: foregroundColor ?? auraColors.onPrimary,
+              color:
+                  auraColors.getColor(foregroundColor) ?? auraColors.onPrimary,
               fontWeight: DesignTypography.fontWeightMedium,
             ),
           ),
@@ -151,7 +158,7 @@ class AuraFloatingActionButton extends StatelessWidget {
     return AuraIcon(
       icon,
       size: _getIconSize(),
-      color: foregroundColor ?? auraColors.onPrimary,
+      color: foregroundColor ?? AuraColorVariant.onPrimary,
     );
   }
 
@@ -161,15 +168,15 @@ class AuraFloatingActionButton extends StatelessWidget {
       children: [
         AuraIcon(
           icon,
-          color: foregroundColor ?? auraColors.onPrimary,
+          color: foregroundColor ?? AuraColorVariant.onPrimary,
         ),
         const SizedBox(width: DesignSpacing.sm),
         AuraText(
           child: Text(
             text!,
             style: TextStyle(
-              // TODO(style): check style
-              color: foregroundColor ?? auraColors.onPrimary,
+              color:
+                  auraColors.getColor(foregroundColor) ?? auraColors.onPrimary,
               fontWeight: DesignTypography.fontWeightMedium,
             ),
           ),
