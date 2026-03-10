@@ -135,76 +135,76 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
             .modelId,
       ),
     );
-    return AuraPopupMenu(
-      controller: _menuController,
-      items: [
-        AuraPopupMenuItem(
-          title: const TextLocale(LocaleKeys.common_delete),
-          leading: const Icon(Icons.delete_outline),
-          onTap: () => _handleDelete(context),
-        ),
-      ],
-      child: AuraCard(
-        onTap: () {
-          ConversationRoute(chatId: widget.chat.id).go(context);
-        },
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      if (widget.chat.isPinned) ...[
-                        const AuraIcon(
-                          Icons.push_pin_outlined,
-                          size: AuraIconSize.small,
-                          color: AuraColorVariant.warning,
-                        ),
-                        const SizedBox(width: 8),
-                      ],
-                      Expanded(
-                        child: AuraText(
-                          style: AuraTextStyle.heading6,
-                          child: Text(
-                            widget.chat.title,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+    return AuraCard(
+      onTap: () {
+        ConversationRoute(chatId: widget.chat.id).go(context);
+      },
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    if (widget.chat.isPinned) ...[
+                      const AuraIcon(
+                        Icons.push_pin_outlined,
+                        size: AuraIconSize.small,
+                        color: AuraColorVariant.warning,
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                    Expanded(
+                      child: AuraText(
+                        style: AuraTextStyle.heading6,
+                        child: Text(
+                          widget.chat.title,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  AuraText(
-                    style: AuraTextStyle.bodySmall,
-                    color: AuraColorVariant.onSurfaceVariant,
-                    child: Text(
-                      formatRelativeTime(widget.chat.updatedAt),
-                      overflow: TextOverflow.ellipsis,
                     ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                AuraText(
+                  style: AuraTextStyle.bodySmall,
+                  color: AuraColorVariant.onSurfaceVariant,
+                  child: Text(
+                    formatRelativeTime(widget.chat.updatedAt),
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-            if (modelDisplayName != null) ...[
-              const SizedBox(width: 8),
-              AuraBadge.text(
-                variant: AuraBadgeVariant.info,
-                child: Text(modelDisplayName),
+          ),
+          if (modelDisplayName != null) ...[
+            const SizedBox(width: 8),
+            AuraBadge.text(
+              variant: AuraBadgeVariant.info,
+              child: Text(modelDisplayName),
+            ),
+          ],
+          const SizedBox(width: 8),
+          AuraPopupMenu(
+            controller: _menuController,
+            items: [
+              AuraPopupMenuItem(
+                title: const TextLocale(LocaleKeys.common_delete),
+                leading: const Icon(Icons.delete_outline),
+                onTap: () => _handleDelete(context),
               ),
             ],
-            const SizedBox(width: 8),
-            AuraIconButton(
+            child: AuraIconButton(
               icon: Icons.more_vert,
               size: AuraIconSize.small,
               tooltip: LocaleKeys.chats_screens_chat_conversation_delete_tooltip
                   .tr(),
               onPressed: _menuController.toggle,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

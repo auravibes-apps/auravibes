@@ -200,43 +200,43 @@ class _SidebarConversationTileState
         horizontal: context.auraTheme.spacing.sm,
         vertical: context.auraTheme.spacing.xs,
       ),
-      child: AuraPopupMenu(
-        controller: _menuController,
-        items: [
-          AuraPopupMenuItem(
-            title: const TextLocale(LocaleKeys.common_delete),
-            leading: const Icon(Icons.delete_outline),
-            onTap: () => _handleDelete(context),
-          ),
-        ],
-        child: AuraTile(
-          variant: widget.isActive
-              ? AuraTileVariant.surface
-              : AuraTileVariant.ghost,
-          size: AuraTileSize.small,
-          onTap: () => ConversationRoute(chatId: widget.chat.id).go(context),
-          leading: AuraIcon(
-            Icons.chat_bubble_outline,
-            size: AuraIconSize.small,
-            color: widget.isActive
-                ? AuraColorVariant.primary
-                : AuraColorVariant.onSurfaceVariant,
-          ),
-          trailing: AuraIconButton(
+      child: AuraTile(
+        variant: widget.isActive
+            ? AuraTileVariant.surface
+            : AuraTileVariant.ghost,
+        size: AuraTileSize.small,
+        onTap: () => ConversationRoute(chatId: widget.chat.id).go(context),
+        leading: AuraIcon(
+          Icons.chat_bubble_outline,
+          size: AuraIconSize.small,
+          color: widget.isActive
+              ? AuraColorVariant.primary
+              : AuraColorVariant.onSurfaceVariant,
+        ),
+        trailing: AuraPopupMenu(
+          controller: _menuController,
+          items: [
+            AuraPopupMenuItem(
+              title: const TextLocale(LocaleKeys.common_delete),
+              leading: const Icon(Icons.delete_outline),
+              onTap: () => _handleDelete(context),
+            ),
+          ],
+          child: AuraIconButton(
             icon: Icons.more_vert,
             size: AuraIconSize.small,
             tooltip: LocaleKeys.chats_screens_chat_conversation_delete_tooltip
                 .tr(),
             onPressed: _menuController.toggle,
           ),
-          child: AuraText(
-            style: AuraTextStyle.bodySmall,
-            color: widget.isActive ? AuraColorVariant.primary : null,
-            child: Text(
-              widget.chat.title,
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
-            ),
+        ),
+        child: AuraText(
+          style: AuraTextStyle.bodySmall,
+          color: widget.isActive ? AuraColorVariant.primary : null,
+          child: Text(
+            widget.chat.title,
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
           ),
         ),
       ),
