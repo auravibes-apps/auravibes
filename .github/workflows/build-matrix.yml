@@ -115,7 +115,9 @@ jobs:
           pod install --repo-update
 
       - name: 🏗️ Build macOS
-        run: flutter build macos --debug
+        run: |
+          export CODE_SIGNING_ALLOWED=NO
+          flutter build macos --debug
         working-directory: ${{ env.FLUTTER_WORKING_DIRECTORY }}
 
       - name: 📤 Upload macOS Artifact
