@@ -202,7 +202,7 @@ class _SidebarConversationTileState
       ),
       child: AuraTile(
         variant: widget.isActive
-            ? AuraTileVariant.surface
+            ? AuraTileVariant.selected
             : AuraTileVariant.ghost,
         size: AuraTileSize.small,
         onTap: () => ConversationRoute(chatId: widget.chat.id).go(context),
