@@ -67,6 +67,12 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.waiting_for_tools';
   static const chats_screens_chat_conversation_waiting_for_tools_named =
       'chats_screens.chat_conversation.waiting_for_tools_named';
+  static const chats_screens_chat_conversation_delete_title =
+      'chats_screens.chat_conversation.delete_title';
+  static const chats_screens_chat_conversation_delete_confirm =
+      'chats_screens.chat_conversation.delete_confirm';
+  static const chats_screens_chat_conversation_options_tooltip =
+      'chats_screens.chat_conversation.options_tooltip';
   static const tools_screen_title = 'tools_screen.title';
   static const tools_screen_refresh_tooltip = 'tools_screen.refresh_tooltip';
   static const tools_screen_workspace_ai_tools =
@@ -187,6 +193,9 @@ abstract class LocaleKeys {
       'settings_screen.theme.system_default';
   static const settings_screen_actions_cancel =
       'settings_screen.actions.cancel';
+  static const sidebar_recent_chats = 'sidebar.recent_chats';
+  static const sidebar_no_recent_chats = 'sidebar.no_recent_chats';
+  static const sidebar_view_all_chats = 'sidebar.view_all_chats';
   static const mcp_modal_title = 'mcp_modal.title';
   static const mcp_modal_add_mcp_tooltip = 'mcp_modal.add_mcp_tooltip';
   static const mcp_modal_transport_sse = 'mcp_modal.transport.sse';
@@ -235,7 +244,4 @@ abstract class LocaleKeys {
       'mcp_modal.fields.bearer_token.placeholder';
   static const mcp_modal_fields_bearer_token_hint =
       'mcp_modal.fields.bearer_token.hint';
-  static const sidebar_recent_chats = 'sidebar.recent_chats';
-  static const sidebar_no_recent_chats = 'sidebar.no_recent_chats';
-  static const sidebar_view_all_chats = 'sidebar.view_all_chats';
 }
