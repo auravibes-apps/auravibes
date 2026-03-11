@@ -217,8 +217,9 @@ class _SidebarConversationTileState
           controller: _menuController,
           items: [
             AuraPopupMenuItem(
+              variant: AuraTileVariant.error,
               title: const TextLocale(LocaleKeys.common_delete),
-              leading: const Icon(Icons.delete_outline),
+              leading: const AuraIcon(Icons.delete_outline),
               onTap: () => _handleDelete(context),
             ),
           ],
