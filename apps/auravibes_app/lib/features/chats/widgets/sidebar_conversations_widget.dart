@@ -225,7 +225,7 @@ class _SidebarConversationTileState
           child: AuraIconButton(
             icon: Icons.more_vert,
             size: AuraIconSize.small,
-            tooltip: LocaleKeys.chats_screens_chat_conversation_delete_tooltip
+            tooltip: LocaleKeys.chats_screens_chat_conversation_options_tooltip
                 .tr(),
             onPressed: _menuController.toggle,
           ),

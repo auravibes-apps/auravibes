@@ -60,7 +60,7 @@
       "waiting_for_tools_named": "Esperando a que {tools} se conecte...",
       "delete_title": "Eliminar Conversación",
       "delete_confirm": "¿Estás seguro de que deseas eliminar esta conversación? Esta acción no se puede deshacer.",
-      "delete_tooltip": "Eliminar conversación"
+      "options_tooltip": "Más opciones"
     }
   },
   "tools_screen": {
