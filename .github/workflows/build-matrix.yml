@@ -9,7 +9,8 @@ on:
       - 'apps/auravibes_app/pubspec.yaml'
       - 'apps/auravibes_app/pubspec.lock'
       - 'packages/**'
-      - 'melos.yaml'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
       - '.fvm/**'
       - '.github/workflows/build-matrix.yml'
       # Platform-specific paths
@@ -26,7 +27,8 @@ on:
       - 'apps/auravibes_app/pubspec.yaml'
       - 'apps/auravibes_app/pubspec.lock'
       - 'packages/**'
-      - 'melos.yaml'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
       - '.fvm/**'
       - '.github/workflows/build-matrix.yml'
       - 'apps/auravibes_app/macos/**'
@@ -54,6 +56,8 @@ jobs:
     steps:
       - name: 📚 Git Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: 🔍 Detect changed paths
         uses: dorny/paths-filter@v3
@@ -65,7 +69,8 @@ jobs:
               - 'apps/auravibes_app/pubspec.yaml'
               - 'apps/auravibes_app/pubspec.lock'
               - 'packages/**'
-              - 'melos.yaml'
+              - 'pubspec.yaml'
+              - 'pubspec.lock'
               - '.fvm/**'
               - '.github/workflows/build-matrix.yml'
             macos:
@@ -203,7 +208,7 @@ jobs:
           run-bootstrap: true
 
       - name: 🏗️ Build Android APK
-        run: flutter build apk --debug
+        run: flutter build apk --debug --verbose
         working-directory: ${{ env.FLUTTER_WORKING_DIRECTORY }}
 
       - name: 📤 Upload Android Artifact
