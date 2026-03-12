@@ -1,25 +1,6 @@
 name: Platform Build Matrix
 
 on:
-  pull_request:
-    branches: [main, dev, stage]
-    paths:
-      # Common paths - trigger all platform builds
-      - 'apps/auravibes_app/lib/**'
-      - 'apps/auravibes_app/pubspec.yaml'
-      - 'apps/auravibes_app/pubspec.lock'
-      - 'packages/**'
-      - 'pubspec.yaml'
-      - 'pubspec.lock'
-      - '.fvm/**'
-      - '.github/workflows/build-matrix.yml'
-      # Platform-specific paths
-      - 'apps/auravibes_app/macos/**'
-      - 'apps/auravibes_app/ios/**'
-      - 'apps/auravibes_app/android/**'
-      - 'apps/auravibes_app/windows/**'
-      - 'apps/auravibes_app/linux/**'
-      - 'apps/auravibes_app/web/**'
   push:
     branches: [main]
     paths:
@@ -37,6 +18,10 @@ on:
       - 'apps/auravibes_app/windows/**'
       - 'apps/auravibes_app/linux/**'
       - 'apps/auravibes_app/web/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   FLUTTER_WORKING_DIRECTORY: apps/auravibes_app
