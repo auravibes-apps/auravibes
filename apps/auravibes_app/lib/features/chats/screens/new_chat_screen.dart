@@ -42,9 +42,11 @@ class NewChatScreen extends ConsumerWidget {
         }
       } on Exception catch (e) {
         if (context.mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Error: $e')));
+          showAuraSnackBar(
+            context: context,
+            content: Text('Error: $e'),
+            variant: AuraSnackBarVariant.error,
+          );
         }
       }
     }

@@ -54,7 +54,6 @@ class AuraButton extends StatelessWidget {
 
     return SizedBox(
       width: isFullWidth ? double.infinity : null,
-      // height: _getHeight(),
       child: AuraPressable(
         color: DesignColors.transparent,
         onPressed: (disabled || isLoading) ? null : onPressed,
@@ -64,7 +63,6 @@ class AuraButton extends StatelessWidget {
           boxShadow: _getBoxShadow(),
           border: _getBorder(auraColors),
         ),
-        // decoration: DecoratedBox(decoration: decoration),
         child: AuraPadding(
           padding: _getPadding(auraTheme.spacing),
           child: Center(
@@ -97,6 +95,7 @@ class AuraButton extends StatelessWidget {
       AuraButtonVariant.ghost => DesignColors.transparent,
       AuraButtonVariant.elevated =>
         colors.getColor(colorVariant) ?? colors.primary,
+      AuraButtonVariant.text => DesignColors.transparent,
     };
   }
 
@@ -111,6 +110,7 @@ class AuraButton extends StatelessWidget {
       AuraButtonVariant.ghost =>
         colors.getColor(colorVariant) ?? colors.primary,
       AuraButtonVariant.elevated => colors.onPrimary,
+      AuraButtonVariant.text => colors.getColor(colorVariant) ?? colors.primary,
     };
   }
 
@@ -125,18 +125,29 @@ class AuraButton extends StatelessWidget {
       AuraButtonVariant.ghost =>
         colors.getColor(colorVariant) ?? colors.primary,
       AuraButtonVariant.elevated => colors.onPrimary,
+      AuraButtonVariant.text => colors.onSurfaceVariant,
     };
   }
 
   AuraEdgeInsetsGeometry _getPadding(AuraSpacingTheme spacing) {
     return switch (size) {
-      AuraButtonSize.small => .small,
-      AuraButtonSize.medium => .medium,
-      AuraButtonSize.large => .large,
+      AuraButtonSize.small => const AuraEdgeInsetsGeometry.symmetric(
+        horizontal: AuraSpacing.sm,
+        vertical: AuraSpacing.xs,
+      ),
+      AuraButtonSize.medium => const AuraEdgeInsetsGeometry.symmetric(
+        horizontal: AuraSpacing.md,
+        vertical: AuraSpacing.sm,
+      ),
+      AuraButtonSize.large => const AuraEdgeInsetsGeometry.symmetric(
+        horizontal: AuraSpacing.lg,
+        vertical: AuraSpacing.md,
+      ),
     };
   }
 
   Border? _getBorder(AuraColorScheme colors) {
+    if (disabled) return null;
     if (variant == AuraButtonVariant.outlined) {
       return Border.all(
         color: disabled
@@ -196,6 +207,10 @@ enum AuraButtonVariant {
 
   /// A button with elevation and shadow.
   elevated,
+
+  /// A button with transparent background, no border, and minimal padding.
+  /// Used for inline actions and dialog buttons.
+  text,
 }
 
 /// The size of a [AuraButton].
