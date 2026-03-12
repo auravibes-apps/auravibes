@@ -547,7 +547,7 @@
 			baseConfigurationReference = D4E965B4A9D59545F5C64434 /* betaProfile.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Runner/DebugProfile.entitlements;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				DEVELOPMENT_TEAM = D2J7V42XTN;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -784,7 +784,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Runner/DebugProfile.entitlements;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = D2J7V42XTN;
@@ -918,7 +918,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Runner/DebugProfile.entitlements;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = D2J7V42XTN;
@@ -940,7 +940,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Runner/Release.entitlements;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = D2J7V42XTN;
@@ -975,7 +975,7 @@
 			baseConfigurationReference = 7806A7D41DF9E623675DE79F /* betaRelease.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Runner/Release.entitlements;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				DEVELOPMENT_TEAM = D2J7V42XTN;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -986,7 +986,7 @@
 			baseConfigurationReference = 0CC193C27F89F8C2D8191B6B /* prodProfile.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Runner/DebugProfile.entitlements;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				DEVELOPMENT_TEAM = D2J7V42XTN;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -1069,7 +1069,7 @@
 			baseConfigurationReference = 8D69B5B72633623B2DDFB155 /* prodDebug.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Runner/DebugProfile.entitlements;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				DEVELOPMENT_TEAM = D2J7V42XTN;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -1080,7 +1080,7 @@
 			baseConfigurationReference = B25491BD36C2C724EE636C53 /* betaDebug.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Runner/DebugProfile.entitlements;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				DEVELOPMENT_TEAM = D2J7V42XTN;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -1226,7 +1226,7 @@
 			baseConfigurationReference = A5768BDDCD37924333561EB0 /* devDebug.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Runner/DebugProfile.entitlements;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				DEVELOPMENT_TEAM = D2J7V42XTN;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -1504,7 +1504,7 @@
 			baseConfigurationReference = 3EBF5C26151B63B051CBDE7D /* prodRelease.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Runner/Release.entitlements;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				DEVELOPMENT_TEAM = D2J7V42XTN;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -1515,7 +1515,7 @@
 			baseConfigurationReference = D356F51D32FD6850C565D1EA /* devProfile.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Runner/DebugProfile.entitlements;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				DEVELOPMENT_TEAM = D2J7V42XTN;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -1526,7 +1526,7 @@
 			baseConfigurationReference = 1A37D7DBAAB8EFB5C82C2F4E /* devRelease.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Runner/Release.entitlements;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				DEVELOPMENT_TEAM = D2J7V42XTN;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
