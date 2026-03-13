@@ -104,11 +104,6 @@ jobs:
         with:
           run-bootstrap: true
 
-      - name: 📦 iOS Pod Install
-        run: |
-          cd apps/auravibes_app/ios
-          pod install --repo-update=false
-
       - name: 📦 Cache Pods
         uses: actions/cache@v3
         with:
@@ -116,6 +111,11 @@ jobs:
           key: ${{ runner.os }}-ios-pods-${{ hashFiles('apps/auravibes_app/ios/Podfile.lock') }}
           restore-keys: |
             ${{ runner.os }}-ios-pods-
+
+      - name: 📦 iOS Pod Install
+        run: |
+          cd apps/auravibes_app/ios
+          pod install --repo-update=false
 
       - name: 📦 Check Podfile.lock changes
         id: ios-changed
