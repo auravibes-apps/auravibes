@@ -34,7 +34,7 @@ class AuraIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
     final iconColor =
-        auraColors.getColor(color) ?? _getDefaultColor(auraColors);
+        auraColors.getColorOrNull(color) ?? _getDefaultColor(auraColors);
     final iconSize = _getIconSize();
 
     return Semantics(
@@ -136,10 +136,10 @@ class AuraIconButton extends StatelessWidget {
         ),
         style: IconButton.styleFrom(
           backgroundColor:
-              auraColors.getColor(backgroundColor) ??
+              auraColors.getColorOrNull(backgroundColor) ??
               _getBackgroundColor(auraColors),
           foregroundColor:
-              auraColors.getColor(color) ?? _getIconColor(auraColors),
+              auraColors.getColorOrNull(color) ?? _getIconColor(auraColors),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(_getBorderRadius()),
             side: variant == AuraIconButtonVariant.outlined

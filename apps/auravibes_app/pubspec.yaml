@@ -56,13 +56,13 @@ dependencies:
 
 dev_dependencies:
   # Code generation for JSON serialization
-  build_runner: ^2.11.1
+  build_runner: ^2.12.2
   custom_lint: ^0.8.1
 
   # Code generation for Drift
   drift_dev: ^2.31.0
 
-  flutter_flavorizr: ^2.4.1
+  flutter_flavorizr: ^2.4.2
   flutter_launcher_icons: ^0.14.4
   flutter_riverpod: any
   flutter_test:

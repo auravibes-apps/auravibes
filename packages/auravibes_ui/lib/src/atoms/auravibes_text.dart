@@ -33,10 +33,10 @@ class AuraText extends StatelessWidget {
     final auraColors = context.auraColors;
     final textStyle = _getTextStyle(
       auraColors,
-    ).copyWith(color: context.auraColors.getColor(color));
+    ).copyWith(color: context.auraColors.getColorOrNull(color));
 
     final iconData = IconThemeData(
-      color: context.auraColors.getColor(color) ?? textStyle.color,
+      color: context.auraColors.getColorOrNull(color) ?? textStyle.color,
       size: textStyle.fontSize,
     );
 

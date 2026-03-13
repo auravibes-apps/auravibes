@@ -233,7 +233,7 @@ class _ErrorBadge extends StatelessWidget {
       spacing: .xs,
       children: [
         // Error badge (compact)
-        Tooltip(
+        AuraTooltip(
           message: groupWithTools.mcpErrorMessage ?? '',
           child: AuraBadge.text(
             variant: .error,

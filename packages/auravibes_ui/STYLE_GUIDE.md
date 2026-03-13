@@ -275,6 +275,70 @@ class AuraContainer extends StatelessWidget {
 }
 ```
 
+## Custom Implementation Guidelines
+
+When implementing Aura widgets, prefer full custom implementations over wrapping Material widgets:
+
+### ✅ Custom Approach (Preferred)
+
+- Use `CustomPaint` for custom graphics (radio buttons, checkboxes)
+- Use `OverlayEntry` for floating widgets (tooltips, snackbars, dialogs)
+- Use `GestureDetector` for custom interactions
+- Use `AnimatedContainer`/`AnimationController` for animations
+- Use `showGeneralDialog` for custom dialogs instead of `AlertDialog`
+
+### ❌ Avoid Material Wrappers
+
+The following Material widgets introduce styling that conflicts with Aura aesthetics and should be avoided:
+
+| Material Widget | Custom Alternative |
+|----------------|-------------------|
+| `Tooltip` | Custom `OverlayEntry` with `Positioned` |
+| `SnackBar` | Custom `OverlayEntry` with animations |
+| `AlertDialog` | Custom `showGeneralDialog` with `Container` |
+| `Radio` | Custom `CustomPaint` circles |
+| `RadioListTile` | Custom `GestureDetector` + `AuraRadio` + layout |
+| `SelectableText` | Acceptable - wraps complex text selection |
+
+### Implementation Examples
+
+**Custom Radio Button:**
+```dart
+class AuraRadio<T> extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => onChanged?.call(value),
+      child: CustomPaint(
+        painter: _AuraRadioPainter(isSelected: isSelected),
+      ),
+    );
+  }
+}
+```
+
+**Custom Dialog:**
+```dart
+Future<bool?> showAuraConfirmDialog(...) {
+  return showGeneralDialog<bool>(
+    context: context,
+    pageBuilder: (context, animation, secondaryAnimation) {
+      return _AuraDialog(/* ... */);
+    },
+  );
+}
+```
+
+**Custom SnackBar:**
+```dart
+void showAuraSnackBar(...) {
+  final entry = OverlayEntry(
+    builder: (context) => _AuraSnackBar(/* ... */),
+  );
+  Overlay.of(context).insert(entry);
+}
+```
+
 ## References
 
 - Flutter const optimization: https://api.flutter.dev/flutter/dart-core/const.html
@@ -283,5 +347,5 @@ class AuraContainer extends StatelessWidget {
 
 ---
 
-**Last Updated**: 2026-03-09  
-**Version**: 1.0.0
+**Last Updated**: 2026-03-12
+**Version**: 1.1.0

@@ -60,7 +60,10 @@
       "select_model_selctor": "Selecionar Modelo",
       "message_placeholder": "Escribe tu mensaje...",
       "waiting_for_tools": "Esperando a que las herramientas se conecten...",
-      "waiting_for_tools_named": "Esperando a que {tools} se conecte..."
+      "waiting_for_tools_named": "Esperando a que {tools} se conecte...",
+      "delete_title": "Eliminar Conversación",
+      "delete_confirm": "¿Estás seguro de que deseas eliminar esta conversación? Esta acción no se puede deshacer.",
+      "options_tooltip": "Más opciones"
     }
   },
   "tools_screen": {

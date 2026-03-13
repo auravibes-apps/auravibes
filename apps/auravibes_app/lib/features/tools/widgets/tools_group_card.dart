@@ -96,25 +96,13 @@ class ToolsGroupCard extends HookConsumerWidget {
   Future<void> _handleDelete(BuildContext context, WidgetRef ref) async {
     if (groupWithTools.group == null) return;
 
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showAuraConfirmDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(_kDeleteMcpTitle.tr()),
-        content: Text(_kDeleteMcpConfirm.tr()),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const TextLocale(LocaleKeys.common_cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
-            ),
-            child: const TextLocale(LocaleKeys.common_delete),
-          ),
-        ],
-      ),
+      title: Text(_kDeleteMcpTitle.tr()),
+      message: Text(_kDeleteMcpConfirm.tr()),
+      confirmLabel: const TextLocale(LocaleKeys.common_delete),
+      cancelLabel: const TextLocale(LocaleKeys.common_cancel),
+      isDestructive: true,
     );
 
     if (confirmed ?? false) {
@@ -125,22 +113,13 @@ class ToolsGroupCard extends HookConsumerWidget {
   }
 
   void _showErrorDetails(BuildContext context) {
-    showDialog<void>(
+    showAuraAlertDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(_kDeleteMcpTitle.tr()),
-        content: SingleChildScrollView(
-          child: SelectableText(
-            groupWithTools.mcpErrorMessage ?? 'Unknown error',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
-          ),
-        ],
+      title: Text(_kDeleteMcpTitle.tr()),
+      message: AuraSelectableText(
+        groupWithTools.mcpErrorMessage ?? 'Unknown error',
       ),
+      dismissLabel: const TextLocale(LocaleKeys.common_cancel),
     );
   }
 }

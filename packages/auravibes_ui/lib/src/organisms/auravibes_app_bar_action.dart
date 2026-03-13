@@ -45,7 +45,7 @@ class AuraAppBarAction extends StatelessWidget {
     final auraColors = context.auraColors;
     final iconColorVariant = color ?? _getDefaultIconColor();
     final resolvedColor =
-        auraColors.getColor(iconColorVariant) ?? auraColors.onSurface;
+        auraColors.getColorOrNull(iconColorVariant) ?? auraColors.onSurface;
 
     Widget actionButton = IconButton(
       onPressed: onPressed,

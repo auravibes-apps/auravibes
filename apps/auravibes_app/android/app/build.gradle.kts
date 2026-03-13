@@ -40,12 +40,20 @@ android {
     }
     signingConfigs {
         create("release") {
-            if (System.getenv()["CI"]?.toBoolean() == true) { // CI=true is exported by Codemagic
-                storeFile = file(System.getenv()["CM_KEYSTORE_PATH"])
-                storePassword = System.getenv()["CM_KEYSTORE_PASSWORD"]
-                keyAlias = System.getenv()["CM_KEY_ALIAS"]
-                keyPassword = System.getenv()["CM_KEY_PASSWORD"]
+            // Check for Codemagic CI environment variables first
+            val cmKeystorePath = System.getenv()["CM_KEYSTORE_PATH"]
+            val cmKeystorePassword = System.getenv()["CM_KEYSTORE_PASSWORD"]
+            val cmKeyAlias = System.getenv()["CM_KEY_ALIAS"]
+            val cmKeyPassword = System.getenv()["CM_KEY_PASSWORD"]
+            
+            if (cmKeystorePath != null && cmKeystorePassword != null && 
+                cmKeyAlias != null && cmKeyPassword != null) {
+                storeFile = file(cmKeystorePath)
+                storePassword = cmKeystorePassword
+                keyAlias = cmKeyAlias
+                keyPassword = cmKeyPassword
             } else {
+                // Fallback to local keystore.properties (for local development)
                 val storeFileProp = keystoreProperties.getProperty("storeFile")
                 val storePasswordProp = keystoreProperties.getProperty("storePassword")
                 val keyAliasProp = keystoreProperties.getProperty("keyAlias")
