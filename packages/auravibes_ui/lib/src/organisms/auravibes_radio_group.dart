@@ -138,7 +138,7 @@ class AuraRadioGroup<T> extends StatelessWidget {
 ///
 /// ## Layout Contract
 ///
-/// ```
+/// ```text
 /// ┌────────────────────────────────────────┐
 /// │ ○  [Title]                             │
 /// │    [Subtitle]                          │
@@ -197,7 +197,6 @@ class AuraRadioListTile<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDisabled = disabled || onChanged == null;
-    final isSelected = value == groupValue;
 
     return MouseRegion(
       cursor: isDisabled

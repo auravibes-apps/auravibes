@@ -26,6 +26,7 @@ enum AuraSnackBarVariant {
 /// This controller is returned from [showAuraSnackBar] to provide
 /// control over the snackbar after it's been shown.
 class AuraSnackBarController {
+  /// Creates a controller with the dismiss callback.
   AuraSnackBarController({
     required void Function() dismissCallback,
   }) : _dismissCallback = dismissCallback;
@@ -170,7 +171,7 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
         );
 
     // Start entry animation
-    _animationController.forward();
+    unawaited(_animationController.forward());
 
     // Set up auto-dismiss timer
     _dismissTimer = Timer(widget.duration, dismiss);
@@ -189,6 +190,7 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
     if (_isDismissed || _isDisposed) return;
     _isDismissed = true;
     _dismissTimer?.cancel();
+    // ignore: discarded_futures - intentionally not awaited, callback handles cleanup
     _animationController.reverse().then((_) {
       // Only call dismiss callback - don't dispose here
       // as dispose() will be called by the framework

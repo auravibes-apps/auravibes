@@ -49,7 +49,7 @@ class _RadioPainter extends CustomPainter {
 
 /// A configuration class for radio options in a group.
 ///
-/// Used with [AuraRadioGroup] to define the available selections.
+/// Used with AuraRadioGroup to define the available selections.
 class AuraRadioOption<T> {
   /// Creates a radio option with a value, label, and optional subtitle.
   const AuraRadioOption({

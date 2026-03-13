@@ -21,9 +21,9 @@ const _kTooltipSizePadding = 16.0;
 /// This tooltip uses [OverlayEntry] instead of Material's [Tooltip] to provide
 /// custom styling and behavior while keeping Flutter's gesture handling.
 ///
-/// Tooltips display informative text when users hover over (desktop) or tap (mobile)
-/// an element. The tooltip appears near the child widget and auto-dismisses after
-/// a configurable duration.
+/// Tooltips display informative text when users hover over (desktop) or tap
+/// (mobile) an element. The tooltip appears near the child widget and
+/// auto-dismisses after a configurable duration.
 ///
 /// Example:
 /// ```dart
@@ -100,7 +100,6 @@ class _AuraTooltipState extends State<AuraTooltip> {
   Timer? _waitTimer;
   Timer? _showTimer;
   bool _isHovering = false;
-  bool _isTapped = false;
 
   @override
   void dispose() {
@@ -135,10 +134,8 @@ class _AuraTooltipState extends State<AuraTooltip> {
     if (_overlayEntry != null) {
       // Already showing, remove it
       _removeOverlay();
-      _isTapped = false;
     } else {
       // Show tooltip on tap
-      _isTapped = true;
       _showTooltip();
     }
   }
@@ -220,10 +217,7 @@ class _AuraTooltipState extends State<AuraTooltip> {
     overlay.insert(_overlayEntry!);
 
     // Set up auto-dismiss timer
-    _showTimer = Timer(widget.showDuration, () {
-      _removeOverlay();
-      _isTapped = false;
-    });
+    _showTimer = Timer(widget.showDuration, _removeOverlay);
   }
 
   double _calculateTooltipHeight() {

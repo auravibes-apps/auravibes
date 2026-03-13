@@ -101,7 +101,7 @@ void main() {
       expect(find.text('Hover tooltip'), findsOneWidget);
 
       // Move mouse away to exit hover
-      await gesture.moveTo(const Offset(0, 0));
+      await gesture.moveTo(Offset.zero);
       await tester.pumpAndSettle();
     });
 
