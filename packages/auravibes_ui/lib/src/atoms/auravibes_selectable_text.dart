@@ -83,7 +83,7 @@ class AuraSelectableText extends StatelessWidget {
     final baseStyle = _getTextStyle(auraColors);
     // Only override color when colorVariant is provided
     final textStyle = colorVariant != null
-        ? baseStyle.copyWith(color: auraColors.getColor(colorVariant))
+        ? baseStyle.copyWith(color: auraColors.getColorOrNull(colorVariant))
         : baseStyle;
 
     return SelectableText(
@@ -96,7 +96,7 @@ class AuraSelectableText extends StatelessWidget {
       cursorHeight: cursorHeight,
       cursorRadius: cursorRadius,
       cursorColor: cursorColorVariant != null
-          ? auraColors.getColor(cursorColorVariant)
+          ? auraColors.getColorOrNull(cursorColorVariant)
           : auraColors.primary,
       onSelectionChanged: onSelectionChanged,
       showCursor: showCursor,

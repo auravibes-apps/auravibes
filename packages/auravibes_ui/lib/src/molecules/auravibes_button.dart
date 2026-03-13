@@ -95,12 +95,12 @@ class AuraButton extends StatelessWidget {
 
     return switch (variant) {
       AuraButtonVariant.primary =>
-        colors.getColor(colorVariant) ?? colors.primary,
+        colors.getColorOrNull(colorVariant) ?? colors.primary,
       AuraButtonVariant.secondary => colors.secondary,
       AuraButtonVariant.outlined => DesignColors.transparent,
       AuraButtonVariant.ghost => DesignColors.transparent,
       AuraButtonVariant.elevated =>
-        colors.getColor(colorVariant) ?? colors.primary,
+        colors.getColorOrNull(colorVariant) ?? colors.primary,
       AuraButtonVariant.text => DesignColors.transparent,
     };
   }
@@ -112,11 +112,12 @@ class AuraButton extends StatelessWidget {
       AuraButtonVariant.primary => colors.onPrimary,
       AuraButtonVariant.secondary => colors.onSecondary,
       AuraButtonVariant.outlined =>
-        colors.getColor(colorVariant) ?? colors.primary,
+        colors.getColorOrNull(colorVariant) ?? colors.primary,
       AuraButtonVariant.ghost =>
-        colors.getColor(colorVariant) ?? colors.primary,
+        colors.getColorOrNull(colorVariant) ?? colors.primary,
       AuraButtonVariant.elevated => colors.onPrimary,
-      AuraButtonVariant.text => colors.getColor(colorVariant) ?? colors.primary,
+      AuraButtonVariant.text =>
+        colors.getColorOrNull(colorVariant) ?? colors.primary,
     };
   }
 
@@ -127,9 +128,9 @@ class AuraButton extends StatelessWidget {
       AuraButtonVariant.primary => colors.onPrimary,
       AuraButtonVariant.secondary => colors.onSecondary,
       AuraButtonVariant.outlined =>
-        colors.getColor(colorVariant) ?? colors.primary,
+        colors.getColorOrNull(colorVariant) ?? colors.primary,
       AuraButtonVariant.ghost =>
-        colors.getColor(colorVariant) ?? colors.primary,
+        colors.getColorOrNull(colorVariant) ?? colors.primary,
       AuraButtonVariant.elevated => colors.onPrimary,
       AuraButtonVariant.text => colors.onSurfaceVariant,
     };
@@ -157,7 +158,7 @@ class AuraButton extends StatelessWidget {
       return Border.all(
         color: disabled
             ? colors.outlineVariant
-            : colors.getColor(colorVariant) ?? colors.primary,
+            : colors.getColorOrNull(colorVariant) ?? colors.primary,
       );
     }
     return null;

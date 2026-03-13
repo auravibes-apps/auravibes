@@ -86,10 +86,10 @@ class AuraAvatar extends StatelessWidget {
     final auraColors = context.auraColors;
     final avatarSize = _getAvatarSize();
     final bgColor =
-        auraColors.getColor(backgroundColor) ??
+        auraColors.getColorOrNull(backgroundColor) ??
         _getDefaultBackgroundColor(auraColors);
     final fgColor =
-        auraColors.getColor(foregroundColor) ??
+        auraColors.getColorOrNull(foregroundColor) ??
         _getDefaultForegroundColor(auraColors);
 
     Widget avatar = Container(

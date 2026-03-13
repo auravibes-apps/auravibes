@@ -67,9 +67,9 @@ class AuraFloatingActionButton extends StatelessWidget {
     Widget fab = FloatingActionButton(
       onPressed: onPressed,
       backgroundColor:
-          auraColors.getColor(backgroundColor) ?? auraColors.primary,
+          auraColors.getColorOrNull(backgroundColor) ?? auraColors.primary,
       foregroundColor:
-          auraColors.getColor(foregroundColor) ?? auraColors.onPrimary,
+          auraColors.getColorOrNull(foregroundColor) ?? auraColors.onPrimary,
       elevation: _getElevation(),
       focusElevation: _getFocusElevation(),
       hoverElevation: _getHoverElevation(),
@@ -90,9 +90,10 @@ class AuraFloatingActionButton extends StatelessWidget {
         child: FloatingActionButton(
           onPressed: onPressed,
           backgroundColor:
-              auraColors.getColor(backgroundColor) ?? auraColors.primary,
+              auraColors.getColorOrNull(backgroundColor) ?? auraColors.primary,
           foregroundColor:
-              auraColors.getColor(foregroundColor) ?? auraColors.onPrimary,
+              auraColors.getColorOrNull(foregroundColor) ??
+              auraColors.onPrimary,
           elevation: _getElevation(),
           focusElevation: _getFocusElevation(),
           hoverElevation: _getHoverElevation(),
@@ -109,9 +110,9 @@ class AuraFloatingActionButton extends StatelessWidget {
       fab = FloatingActionButton.extended(
         onPressed: onPressed,
         backgroundColor:
-            auraColors.getColor(backgroundColor) ?? auraColors.primary,
+            auraColors.getColorOrNull(backgroundColor) ?? auraColors.primary,
         foregroundColor:
-            auraColors.getColor(foregroundColor) ?? auraColors.onPrimary,
+            auraColors.getColorOrNull(foregroundColor) ?? auraColors.onPrimary,
         elevation: _getElevation(),
         focusElevation: _getFocusElevation(),
         hoverElevation: _getHoverElevation(),
@@ -128,7 +129,8 @@ class AuraFloatingActionButton extends StatelessWidget {
             text!,
             style: TextStyle(
               color:
-                  auraColors.getColor(foregroundColor) ?? auraColors.onPrimary,
+                  auraColors.getColorOrNull(foregroundColor) ??
+                  auraColors.onPrimary,
               fontWeight: DesignTypography.fontWeightMedium,
             ),
           ),
@@ -176,7 +178,8 @@ class AuraFloatingActionButton extends StatelessWidget {
             text!,
             style: TextStyle(
               color:
-                  auraColors.getColor(foregroundColor) ?? auraColors.onPrimary,
+                  auraColors.getColorOrNull(foregroundColor) ??
+                  auraColors.onPrimary,
               fontWeight: DesignTypography.fontWeightMedium,
             ),
           ),

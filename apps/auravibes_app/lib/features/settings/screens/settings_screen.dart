@@ -103,7 +103,7 @@ class SettingsScreen extends ConsumerWidget {
     showAuraAlertDialog(
       context: context,
       title: const TextLocale(LocaleKeys.settings_screen_theme_title),
-      content: AuraRadioGroup<AppTheme>(
+      message: AuraRadioGroup<AppTheme>(
         value: currentTheme,
         onChanged: (value) {
           if (value != null) {
@@ -128,15 +128,9 @@ class SettingsScreen extends ConsumerWidget {
           ),
         ],
       ),
-      actions: [
-        AuraButton(
-          variant: AuraButtonVariant.text,
-          onPressed: () => Navigator.pop(context),
-          child: const TextLocale(
-            LocaleKeys.settings_screen_actions_cancel,
-          ),
-        ),
-      ],
+      dismissLabel: const TextLocale(
+        LocaleKeys.settings_screen_actions_cancel,
+      ),
     );
   }
 }

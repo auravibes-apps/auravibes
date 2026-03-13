@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:auravibes_ui/src/tokens/auravibes_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// A custom tooltip widget that follows the Aura design system.
 ///
@@ -122,9 +123,6 @@ class _AuraTooltipState extends State<AuraTooltip> {
     final textColor = _getForegroundColor(auraColors);
 
     final overlay = Overlay.of(context);
-    if (overlay == null) {
-      return;
-    }
 
     _overlayEntry = OverlayEntry(
       builder: (context) {
@@ -199,21 +197,12 @@ class _AuraTooltipState extends State<AuraTooltip> {
   }
 
   Color _getBackgroundColor(AuraColorScheme colors) {
-    return switch (widget.colorVariant) {
-      AuraColorVariant.primary => colors.primary,
-      AuraColorVariant.secondary => colors.secondary,
-      AuraColorVariant.success => colors.success,
-      AuraColorVariant.error => colors.error,
-      AuraColorVariant.warning => colors.warning,
-      AuraColorVariant.info => colors.info,
-      AuraColorVariant.surfaceVariant => colors.surfaceVariant,
-      AuraColorVariant.onSurface => colors.onSurface,
-      AuraColorVariant.onSurfaceVariant => colors.onSurfaceVariant,
-      AuraColorVariant.onPrimary => colors.primary,
-    };
+    return colors.getColor(widget.colorVariant);
   }
 
   Color _getForegroundColor(AuraColorScheme colors) {
+    // Use the corresponding "on" color for contrast.
+    // For surface variants, use onSurface for readable text.
     return switch (widget.colorVariant) {
       AuraColorVariant.primary => colors.onPrimary,
       AuraColorVariant.secondary => colors.onSecondary,

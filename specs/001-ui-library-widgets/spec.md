@@ -118,7 +118,7 @@ As a user, I need to select and copy text content so that I can share error mess
 ### Edge Cases
 
 - **Dialog stacking**: When a dialog is shown while another is visible, the second dialog stacks on top (standard Flutter/Material behavior)
-- **SnackBar without Scaffold**: Flutter's native `ScaffoldMessenger.of(context)` error will propagate - no additional handling needed
+- **SnackBar without Scaffold**: The implementation uses `OverlayEntry` instead of `ScaffoldMessenger`, so no `Scaffold` is required. The snackbar requires an `Overlay` in the widget tree (provided by MaterialApp/CupertinoApp)
 - **Long messages in dialogs/snackbars**: Content wraps with scrollable area when exceeding available space
 - **Empty or single-option radio group**: Empty group renders nothing; single option renders normally and is always selected
 - **Tooltip near screen edges**: Flutter's Tooltip widget automatically repositions to stay within viewport

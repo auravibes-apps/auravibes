@@ -194,10 +194,11 @@ enum AuraSnackBarVariant {
 ```dart
 /// Shows a snackbar notification.
 ///
-/// Requires a Scaffold ancestor in the widget tree.
+/// Requires an [Overlay] above the provided [BuildContext] (for example,
+/// via a [MaterialApp] or [Navigator] that installs an [Overlay] widget).
 ///
-/// Returns the ScaffoldFeatureController for the snackbar.
-ScaffoldFeatureController<SnackBar, SnackBarClosedReason> showAuraSnackBar({
+/// Returns the [AuraSnackBarController] for the snackbar.
+AuraSnackBarController showAuraSnackBar({
   required BuildContext context,
   required Widget content,
   AuraSnackBarVariant variant = AuraSnackBarVariant.default_,

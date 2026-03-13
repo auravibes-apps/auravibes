@@ -64,8 +64,15 @@ AuraSnackBarController showAuraSnackBar({
     seconds: duration.inSeconds.clamp(1, 60),
   );
 
-  // Get overlay state
-  final overlayState = Overlay.of(context);
+  // Get overlay state - use maybeOf with rootOverlay to avoid appearing under dialogs
+  final overlayState = Overlay.maybeOf(context, rootOverlay: true);
+  if (overlayState == null) {
+    throw FlutterError(
+      'showAuraSnackBar requires an Overlay in the widget tree.\n'
+      'Ensure your app uses MaterialApp, CupertinoApp, or has an Overlay widget '
+      'above the provided BuildContext.',
+    );
+  }
 
   // Track overlay entry for removal
   late final OverlayEntry entry;
@@ -190,17 +197,20 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
     if (_isDismissed || _isDisposed) return;
     _isDismissed = true;
     _dismissTimer?.cancel();
-    // ignore: discarded_futures - intentionally not awaited, callback handles cleanup
-    _animationController.reverse().orCancel.then((_) {
-      // Only call dismiss callback - don't dispose here
-      // as dispose() will be called by the framework
-      widget.dismissCallback();
-    }).catchError((Object error) {
-      // Ignore ticker cancellations caused by widget disposal during animation.
-      if (error is! TickerCanceled) {
-        throw error;
-      }
-    });
+    _animationController
+        .reverse()
+        .orCancel
+        .then((_) {
+          // Only call dismiss callback - don't dispose here
+          // as dispose() will be called by the framework
+          widget.dismissCallback();
+        })
+        .catchError((Object error) {
+          // Ignore ticker cancellations caused by widget disposal during animation.
+          if (error is! TickerCanceled) {
+            throw error;
+          }
+        });
   }
 
   @override
