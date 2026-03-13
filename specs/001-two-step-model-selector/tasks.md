@@ -25,8 +25,8 @@
 
 **Purpose**: Prepare locale keys and verify existing dependencies
 
-- [ ] T001 Add locale key constants in `apps/auravibes_app/lib/i18n/locale_keys.dart`
-- [ ] T002 [P] Add English translations in `apps/auravibes_app/lib/i18n/en.yaml`
+- [x] T001 Add locale key constants in `apps/auravibes_app/lib/i18n/locale_keys.dart`
+- [x] T002 [P] Add English translations in `apps/auravibes_app/lib/i18n/en.yaml`
 
 ---
 
@@ -36,11 +36,11 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T003 Add `providerId` field to `NewChatState` in `apps/auravibes_app/lib/features/chats/providers/new_chat_controller.dart`
-- [ ] T004 Add `setProvider(String?)` method to `NewChatController` in `apps/auravibes_app/lib/features/chats/providers/new_chat_controller.dart`
-- [ ] T005 Run code generation for new_chat_controller: `cd apps/auravibes_app && fvm dart run build_runner build --delete-conflicting-outputs`
-- [ ] T006 Create `listModelsGroupedByProviderProvider` in `apps/auravibes_app/lib/features/models/providers/list_chat_models_providers.dart`
-- [ ] T007 Run code generation for list_chat_models_providers: `cd apps/auravibes_app && fvm dart run build_runner build --delete-conflicting-outputs`
+- [X] T003 Add `providerId` field to `NewChatState` in `apps/auravibes_app/lib/features/chats/providers/new_chat_controller.dart`
+- [X] T004 Add `setProvider(String?)` method to `NewChatController` in `apps/auravibes_app/lib/features/chats/providers/new_chat_controller.dart`
+- [X] T005 Run code generation for new_chat_controller: `cd apps/auravibes_app && fvm dart run build_runner build --delete-conflicting-outputs`
+- [X] T006 Create `listModelsGroupedByProviderProvider` in `apps/auravibes_app/lib/features/models/providers/list_chat_models_providers.dart`
+- [X] T007 Run code generation for list_chat_models_providers: `cd apps/auravibes_app && fvm dart run build_runner build --delete-conflicting-outputs`
 
 **Checkpoint**: Foundation ready - user story implementation can now begin
 
@@ -56,20 +56,20 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T008 [P] [US1] Create widget test file `apps/auravibes_app/test/features/models/widgets/select_chat_model_test.dart`
-- [ ] T009 [P] [US1] Write test: "shows provider dropdown on load"
-- [ ] T010 [P] [US1] Write test: "disables model dropdown when no provider selected"
-- [ ] T011 [P] [US1] Write test: "enables model dropdown when provider selected"
-- [ ] T012 [P] [US1] Write test: "shows only selected provider's models"
-- [ ] T013 [US1] Run tests to verify they FAIL: `cd apps/auravibes_app && fvm flutter test test/features/models/widgets/select_chat_model_test.dart`
+- [X] T008 [P] [US1] Create widget test file `apps/auravibes_app/test/features/models/widgets/select_chat_model_test.dart`
+- [X] T009 [P] [US1] Write test: "shows provider dropdown on load"
+- [X] T010 [P] [US1] Write test: "disables model dropdown when no provider selected"
+- [X] T011 [P] [US1] Write test: "enables model dropdown when provider selected"
+- [X] T012 [P] [US1] Write test: "shows only selected provider's models"
+- [X] T013 [US1] Run tests to verify they FAIL: `cd apps/auravibes_app && fvm flutter test test/features/models/widgets/select_chat_model_test.dart`
 
 ### Implementation for User Story 1
 
-- [ ] T014 [US1] Refactor `SelectCredentialsModelWidget` to two-dropdown layout in `apps/auravibes_app/lib/features/models/widgets/select_chat_model.dart`
-- [ ] T015 [US1] Create `_ProviderDropdown` private widget in `apps/auravibes_app/lib/features/models/widgets/select_chat_model.dart`
-- [ ] T016 [US1] Create `_ModelDropdown` private widget in `apps/auravibes_app/lib/features/models/widgets/select_chat_model.dart`
-- [ ] T017 [US1] Add loading/error state handling in `apps/auravibes_app/lib/features/models/widgets/select_chat_model.dart`
-- [ ] T018 [US1] Wire up provider selection in `apps/auravibes_app/lib/features/chats/screens/new_chat_screen.dart`
+- [X] T014 [US1] Refactor `SelectCredentialsModelWidget` to two-dropdown layout in `apps/auravibes_app/lib/features/models/widgets/select_chat_model.dart`
+- [X] T015 [US1] Create `_ProviderDropdown` private widget in `apps/auravibes_app/lib/features/models/widgets/select_chat_model.dart`
+- [X] T016 [US1] Create `_ModelDropdown` private widget in `apps/auravibes_app/lib/features/models/widgets/select_chat_model.dart`
+- [X] T017 [US1] Add loading/error state handling in `apps/auravibes_app/lib/features/models/widgets/select_chat_model.dart`
+- [X] T018 [US1] Wire up provider selection in `apps/auravibes_app/lib/features/chats/screens/new_chat_screen.dart`
 - [ ] T019 [US1] Run tests to verify they PASS: `cd apps/auravibes_app && fvm flutter test test/features/models/widgets/select_chat_model_test.dart`
 
 **Checkpoint**: User Story 1 complete - Provider/model selection works end-to-end
@@ -89,7 +89,7 @@
 
 ### Implementation for User Story 2
 
-- [ ] T022 [US2] Verify existing search/filter works in model dropdown (no code change needed if AuraDropdownSelector supports it)
+- [X] T022 [US2] Verify existing search/filter works in model dropdown (no code change needed if AuraDropdownSelector supports it)
 - [ ] T023 [US2] Run tests to verify they PASS: `cd apps/auravibes_app && fvm flutter test test/features/models/widgets/select_chat_model_test.dart`
 
 **Checkpoint**: User Story 2 complete - Model switching is smooth
@@ -109,7 +109,7 @@
 
 ### Implementation for User Story 3
 
-- [ ] T026 [US3] Add single-provider auto-selection logic in `apps/auravibes_app/lib/features/models/widgets/select_chat_model.dart`
+- [X] T026 [US3] Add single-provider auto-selection logic in `apps/auravibes_app/lib/features/models/widgets/select_chat_model.dart`
 - [ ] T027 [US3] Run tests to verify they PASS: `cd apps/auravibes_app && fvm flutter test test/features/models/widgets/select_chat_model_test.dart`
 
 **Checkpoint**: User Story 3 complete - Single provider UX optimized
@@ -120,10 +120,10 @@
 
 **Purpose**: Final validation and cleanup
 
-- [ ] T028 Run melos analyze: `fvm dart run melos analyze`
-- [ ] T029 Run melos format check: `fvm dart run melos format`
+- [X] T028 Run melos analyze: `fvm dart run melos analyze`
+- [X] T029 Run melos format check: `fvm dart run melos format`
 - [ ] T030 Run all tests: `fvm dart run melos run test`
-- [ ] T031 Run quick validation: `fvm dart run melos run validate:quick`
+- [X] T031 Run quick validation: `fvm dart run melos run validate:quick`
 - [ ] T032 Manual test: Open new chat screen, verify full user flow
 - [ ] T033 Commit all changes with conventional commit message
 

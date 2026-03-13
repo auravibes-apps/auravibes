@@ -9,6 +9,9 @@
     "prompts": "Prompts"
   },
   "models_screens": {
+    "select_provider": "Select Provider",
+    "select_model": "Select Model",
+    "select_provider_first": "Select provider first",
     "title": "Model Providers",
     "list_error": "Error loading models: {}",
     "list_empty_title": "No AI Models Configured",

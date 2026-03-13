@@ -128,3 +128,10 @@ SomeExperimentalApi(), // ignore: experimental_member_use - Required for widgetb
 - Check if ignore directives are documented and justified
 - Prefer scoped solutions over broad ignores
 - Verify version references are consistent across README, pubspec, and FVM config
+
+## Active Technologies
+- Dart 3.x (FVM pinned to 3.41.4+) + Flutter, Riverpod (with code generation), Freezed, auravibes_ui (001-two-step-model-selector)
+- Drift database (existing, no schema changes needed) (001-two-step-model-selector)
+
+## Recent Changes
+- 001-two-step-model-selector: Added Dart 3.x (FVM pinned to 3.41.4+) + Flutter, Riverpod (with code generation), Freezed, auravibes_ui

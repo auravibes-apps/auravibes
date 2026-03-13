@@ -54,8 +54,12 @@ class NewChatScreen extends ConsumerWidget {
         title: const TextLocale(LocaleKeys.home_screen_actions_start_new_chat),
         bottom: SelectCredentialsModelWidget(
           credentialsModelId: state.modelId,
+          selectedProviderId: state.providerId,
           selectCredentialsModelId: (value) {
             ref.read(newChatControllerProvider.notifier).setModelId(value);
+          },
+          onProviderChanged: (provider) {
+            ref.read(newChatControllerProvider.notifier).setProvider(provider);
           },
         ),
       ),
