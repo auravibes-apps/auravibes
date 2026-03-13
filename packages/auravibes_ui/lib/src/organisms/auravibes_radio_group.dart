@@ -123,7 +123,7 @@ class AuraRadioGroup<T> extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           label!,
-          const SizedBox(height: 8),
+          SizedBox(height: spacing.sm),
           optionsWidget,
         ],
       );
