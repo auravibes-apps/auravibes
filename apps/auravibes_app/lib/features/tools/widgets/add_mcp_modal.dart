@@ -214,10 +214,12 @@ class _Footer extends HookConsumerWidget {
       final success = await notifier.submit();
 
       if (success && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('MCP Server configuration saved (TODO: implement)'),
+        showAuraSnackBar(
+          context: context,
+          content: const Text(
+            'MCP Server configuration saved (TODO: implement)',
           ),
+          variant: AuraSnackBarVariant.success,
         );
         Navigator.of(context).pop();
       }

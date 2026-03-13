@@ -72,7 +72,7 @@ class AuraDivider extends StatelessWidget {
   Widget build(BuildContext context) {
     final auraTheme = context.auraTheme;
     final dividerColor =
-        auraTheme.colors.getColor(color) ?? auraTheme.colors.outline;
+        auraTheme.colors.getColorOrNull(color) ?? auraTheme.colors.outline;
     final dividerThickness = thickness ?? DesignBorderWidth.thin;
 
     if (label != null) {

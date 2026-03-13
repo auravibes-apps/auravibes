@@ -1,52 +1,111 @@
+import 'package:auravibes_ui/src/atoms/auravibes_text.dart';
 import 'package:auravibes_ui/src/tokens/auravibes_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
 
-/// A text widget that follows the Aura design system typography scale.
+/// A selectable text widget that follows the Aura design system.
 ///
-/// This widget provides consistent typography across the application by using
-/// predefined text styles based on the design tokens.
-class AuraText extends StatelessWidget {
-  /// Creates a Aura text widget.
-  const AuraText({
-    required this.child,
+/// This widget allows users to select and copy text while maintaining
+/// consistent typography styling from the Aura design system.
+///
+/// Example:
+/// ```dart
+/// AuraSelectableText(
+///   'Copy this text',
+///   style: AuraTextStyle.body,
+/// )
+/// ```
+class AuraSelectableText extends StatelessWidget {
+  /// Creates an Aura selectable text widget.
+  const AuraSelectableText(
+    this.data, {
     super.key,
     this.style = AuraTextStyle.body,
+    this.colorVariant,
     this.textAlign,
-    this.color,
+    this.maxLines,
+    this.onTap,
+    this.cursorWidth = 2.0,
+    this.cursorHeight,
+    this.cursorRadius,
+    this.cursorColorVariant,
+    this.onSelectionChanged,
+    this.showCursor = false,
+    this.autofocus = false,
+    this.minLines,
   });
 
   /// The text to display.
-  final Widget child;
+  final String data;
 
   /// The style variant to apply to the text.
   final AuraTextStyle style;
 
-  /// Aligmnet
+  /// The color variant for the text.
+  final AuraColorVariant? colorVariant;
+
+  /// How the text should be aligned horizontally.
   final TextAlign? textAlign;
 
-  /// enum color options
-  final AuraColorVariant? color;
+  /// The maximum number of lines for the text to span.
+  final int? maxLines;
+
+  /// Called when the user taps on the text.
+  final GestureTapCallback? onTap;
+
+  /// How thick the cursor will be.
+  final double cursorWidth;
+
+  /// How tall the cursor will be.
+  final double? cursorHeight;
+
+  /// How rounded the cursor is.
+  final Radius? cursorRadius;
+
+  /// The color variant for the cursor.
+  final AuraColorVariant? cursorColorVariant;
+
+  /// Called when the user changes the selection.
+  final SelectionChangedCallback? onSelectionChanged;
+
+  /// Whether to show cursor.
+  final bool showCursor;
+
+  /// Whether this text field should focus itself.
+  final bool autofocus;
+
+  /// The minimum number of lines to occupy when the content spans fewer lines.
+  final int? minLines;
 
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
-    final textStyle = _getTextStyle(
-      auraColors,
-    ).copyWith(color: context.auraColors.getColorOrNull(color));
+    final baseStyle = _getTextStyle(auraColors);
+    // Only override color when colorVariant is provided
+    final textStyle = colorVariant != null
+        ? baseStyle.copyWith(color: auraColors.getColorOrNull(colorVariant))
+        : baseStyle;
 
-    final iconData = IconThemeData(
-      color: context.auraColors.getColorOrNull(color) ?? textStyle.color,
-      size: textStyle.fontSize,
-    );
-
-    return DefaultTextStyle.merge(
+    return SelectableText(
+      data,
       style: textStyle,
-      child: IconTheme(data: iconData, child: child),
       textAlign: textAlign,
+      maxLines: maxLines,
+      onTap: onTap,
+      cursorWidth: cursorWidth,
+      cursorHeight: cursorHeight,
+      cursorRadius: cursorRadius,
+      cursorColor: cursorColorVariant != null
+          ? auraColors.getColorOrNull(cursorColorVariant)
+          : auraColors.primary,
+      onSelectionChanged: onSelectionChanged,
+      showCursor: showCursor,
+      autofocus: autofocus,
+      minLines: minLines,
     );
   }
 
+  /// Gets the text style based on the [AuraTextStyle] enum.
   TextStyle _getTextStyle(AuraColorScheme colors) {
     const fontFamily = DesignTypography.bodyFontFamily;
 
@@ -156,46 +215,4 @@ class AuraText extends StatelessWidget {
       ),
     };
   }
-}
-
-/// The style variant for [AuraText].
-enum AuraTextStyle {
-  /// Large heading text (48px).
-  heading1,
-
-  /// Medium heading text (36px).
-  heading2,
-
-  /// Small heading text (30px).
-  heading3,
-
-  /// Extra small heading text (24px).
-  heading4,
-
-  /// Tiny heading text (20px).
-  heading5,
-
-  /// Micro heading text (18px).
-  heading6,
-
-  /// Large body text (18px).
-  bodyLarge,
-
-  /// Default body text (16px).
-  body,
-
-  /// Small body text (14px).
-  bodySmall,
-
-  /// Caption text (12px).
-  caption,
-
-  /// Overline text (12px, uppercase).
-  overline,
-
-  /// Button text (16px, medium weight).
-  button,
-
-  /// Code text (14px, monospace).
-  code,
 }

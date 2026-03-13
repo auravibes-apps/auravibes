@@ -79,7 +79,7 @@ class AuraContainer extends StatelessWidget {
       alignment: alignment,
       decoration: BoxDecoration(
         color:
-            auraTheme.colors.getColor(backgroundColor) ??
+            auraTheme.colors.getColorOrNull(backgroundColor) ??
             auraTheme.colors.surface,
         borderRadius: borderRadius != null
             ? BorderRadius.circular(borderRadius!)

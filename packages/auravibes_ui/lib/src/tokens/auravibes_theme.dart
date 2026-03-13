@@ -329,10 +329,15 @@ class AuraColorScheme {
     );
   }
 
+  /// Get color by variant nullable
+  Color? getColorOrNull(AuraColorVariant? variant) {
+    if (variant == null) return null;
+    return getColor(variant);
+  }
+
   /// Get color by variant
-  Color? getColor(AuraColorVariant? variant) {
+  Color getColor(AuraColorVariant variant) {
     return switch (variant) {
-      null => null,
       AuraColorVariant.primary => primary,
       AuraColorVariant.onSurface => onSurface,
       AuraColorVariant.error => error,

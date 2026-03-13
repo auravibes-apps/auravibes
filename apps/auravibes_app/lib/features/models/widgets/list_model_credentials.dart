@@ -191,27 +191,18 @@ class _CredentialsModelCard extends ConsumerWidget {
     WidgetRef ref,
     CredentialsEntity credentials,
   ) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showAuraConfirmDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const TextLocale(LocaleKeys.models_screens_list_delete_title),
-        content: Text(
-          LocaleKeys.models_screens_list_delete_confirm.tr(
-            namedArgs: {'name': credentials.name},
-            context: context,
-          ),
+      title: const TextLocale(LocaleKeys.models_screens_list_delete_title),
+      message: Text(
+        LocaleKeys.models_screens_list_delete_confirm.tr(
+          namedArgs: {'name': credentials.name},
+          context: context,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const TextLocale(LocaleKeys.common_cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const TextLocale(LocaleKeys.common_delete),
-          ),
-        ],
       ),
+      confirmLabel: const TextLocale(LocaleKeys.common_delete),
+      cancelLabel: const TextLocale(LocaleKeys.common_cancel),
+      isDestructive: true,
     );
 
     if (confirmed ?? false) {

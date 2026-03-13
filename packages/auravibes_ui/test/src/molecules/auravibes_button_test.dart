@@ -146,12 +146,13 @@ void main() {
 
     group('AuraButtonVariant enum', () {
       test('has all expected values', () {
-        expect(AuraButtonVariant.values, hasLength(5));
+        expect(AuraButtonVariant.values, hasLength(6));
         expect(AuraButtonVariant.values, contains(AuraButtonVariant.primary));
         expect(AuraButtonVariant.values, contains(AuraButtonVariant.secondary));
         expect(AuraButtonVariant.values, contains(AuraButtonVariant.outlined));
         expect(AuraButtonVariant.values, contains(AuraButtonVariant.ghost));
         expect(AuraButtonVariant.values, contains(AuraButtonVariant.elevated));
+        expect(AuraButtonVariant.values, contains(AuraButtonVariant.text));
       });
     });
 

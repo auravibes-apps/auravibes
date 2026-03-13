@@ -3,6 +3,7 @@ import 'package:auravibes_app/features/tools/providers/grouped_conversation_tool
 import 'package:auravibes_app/features/tools/widgets/conversation_group_header.dart';
 import 'package:auravibes_app/features/tools/widgets/conversation_tool_tile.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -113,22 +114,13 @@ class ConversationToolsGroupCard extends HookConsumerWidget {
   }
 
   void _showErrorDetails(BuildContext context) {
-    showDialog<void>(
+    showAuraAlertDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(_kMcpErrorTitle.tr()),
-        content: SingleChildScrollView(
-          child: SelectableText(
-            groupWithTools.mcpErrorMessage ?? 'Unknown error',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(LocaleKeys.common_cancel.tr()),
-          ),
-        ],
+      title: Text(_kMcpErrorTitle.tr()),
+      message: AuraSelectableText(
+        groupWithTools.mcpErrorMessage ?? 'Unknown error',
       ),
+      dismissLabel: const TextLocale(LocaleKeys.common_cancel),
     );
   }
 }

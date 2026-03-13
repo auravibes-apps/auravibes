@@ -54,7 +54,6 @@ class AuraButton extends StatelessWidget {
 
     return SizedBox(
       width: isFullWidth ? double.infinity : null,
-      // height: _getHeight(),
       child: AuraPressable(
         color: DesignColors.transparent,
         onPressed: (disabled || isLoading) ? null : onPressed,
@@ -64,9 +63,8 @@ class AuraButton extends StatelessWidget {
           boxShadow: _getBoxShadow(),
           border: _getBorder(auraColors),
         ),
-        // decoration: DecoratedBox(decoration: decoration),
         child: AuraPadding(
-          padding: _getPadding(auraTheme.spacing),
+          padding: _getPadding(),
           child: Center(
             child: isLoading
                 ? SizedBox(
@@ -87,16 +85,23 @@ class AuraButton extends StatelessWidget {
   }
 
   Color _getBackgroundColor(AuraColorScheme colors) {
-    if (disabled) return colors.outlineVariant;
+    if (disabled) {
+      if (variant == AuraButtonVariant.text) {
+        // Text buttons should keep a transparent background even when disabled.
+        return DesignColors.transparent;
+      }
+      return colors.outlineVariant;
+    }
 
     return switch (variant) {
       AuraButtonVariant.primary =>
-        colors.getColor(colorVariant) ?? colors.primary,
+        colors.getColorOrNull(colorVariant) ?? colors.primary,
       AuraButtonVariant.secondary => colors.secondary,
       AuraButtonVariant.outlined => DesignColors.transparent,
       AuraButtonVariant.ghost => DesignColors.transparent,
       AuraButtonVariant.elevated =>
-        colors.getColor(colorVariant) ?? colors.primary,
+        colors.getColorOrNull(colorVariant) ?? colors.primary,
+      AuraButtonVariant.text => DesignColors.transparent,
     };
   }
 
@@ -107,10 +112,12 @@ class AuraButton extends StatelessWidget {
       AuraButtonVariant.primary => colors.onPrimary,
       AuraButtonVariant.secondary => colors.onSecondary,
       AuraButtonVariant.outlined =>
-        colors.getColor(colorVariant) ?? colors.primary,
+        colors.getColorOrNull(colorVariant) ?? colors.primary,
       AuraButtonVariant.ghost =>
-        colors.getColor(colorVariant) ?? colors.primary,
+        colors.getColorOrNull(colorVariant) ?? colors.primary,
       AuraButtonVariant.elevated => colors.onPrimary,
+      AuraButtonVariant.text =>
+        colors.getColorOrNull(colorVariant) ?? colors.primary,
     };
   }
 
@@ -121,18 +128,35 @@ class AuraButton extends StatelessWidget {
       AuraButtonVariant.primary => colors.onPrimary,
       AuraButtonVariant.secondary => colors.onSecondary,
       AuraButtonVariant.outlined =>
-        colors.getColor(colorVariant) ?? colors.primary,
+        colors.getColorOrNull(colorVariant) ?? colors.primary,
       AuraButtonVariant.ghost =>
-        colors.getColor(colorVariant) ?? colors.primary,
+        colors.getColorOrNull(colorVariant) ?? colors.primary,
       AuraButtonVariant.elevated => colors.onPrimary,
+      AuraButtonVariant.text => colors.onSurfaceVariant,
     };
   }
 
-  AuraEdgeInsetsGeometry _getPadding(AuraSpacingTheme spacing) {
+  AuraEdgeInsetsGeometry _getPadding() {
+    // Text variant uses minimal/inline padding for dialogs and inline actions
+    if (variant == AuraButtonVariant.text) {
+      return const AuraEdgeInsetsGeometry.symmetric(
+        horizontal: AuraSpacing.sm,
+        vertical: AuraSpacing.xs,
+      );
+    }
     return switch (size) {
-      AuraButtonSize.small => .small,
-      AuraButtonSize.medium => .medium,
-      AuraButtonSize.large => .large,
+      AuraButtonSize.small => const AuraEdgeInsetsGeometry.symmetric(
+        horizontal: AuraSpacing.sm,
+        vertical: AuraSpacing.xs,
+      ),
+      AuraButtonSize.medium => const AuraEdgeInsetsGeometry.symmetric(
+        horizontal: AuraSpacing.md,
+        vertical: AuraSpacing.sm,
+      ),
+      AuraButtonSize.large => const AuraEdgeInsetsGeometry.symmetric(
+        horizontal: AuraSpacing.lg,
+        vertical: AuraSpacing.md,
+      ),
     };
   }
 
@@ -141,7 +165,7 @@ class AuraButton extends StatelessWidget {
       return Border.all(
         color: disabled
             ? colors.outlineVariant
-            : colors.getColor(colorVariant) ?? colors.primary,
+            : colors.getColorOrNull(colorVariant) ?? colors.primary,
       );
     }
     return null;
@@ -196,6 +220,10 @@ enum AuraButtonVariant {
 
   /// A button with elevation and shadow.
   elevated,
+
+  /// A button with transparent background, no border, and minimal padding.
+  /// Used for inline actions and dialog buttons.
+  text,
 }
 
 /// The size of a [AuraButton].

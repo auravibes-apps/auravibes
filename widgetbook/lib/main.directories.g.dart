@@ -29,6 +29,8 @@ import 'package:widgetbook_workspace/aura_ui/auravibes_connection_status_stories
     as _widgetbook_workspace_aura_ui_auravibes_connection_status_stories;
 import 'package:widgetbook_workspace/aura_ui/auravibes_container_stories.dart'
     as _widgetbook_workspace_aura_ui_auravibes_container_stories;
+import 'package:widgetbook_workspace/aura_ui/auravibes_dialog_stories.dart'
+    as _widgetbook_workspace_aura_ui_auravibes_dialog_stories;
 import 'package:widgetbook_workspace/aura_ui/auravibes_divider_stories.dart'
     as _widgetbook_workspace_aura_ui_auravibes_divider_stories;
 import 'package:widgetbook_workspace/aura_ui/auravibes_floating_action_button_stories.dart'
@@ -45,8 +47,18 @@ import 'package:widgetbook_workspace/aura_ui/auravibes_navigation_item_stories.d
     as _widgetbook_workspace_aura_ui_auravibes_navigation_item_stories;
 import 'package:widgetbook_workspace/aura_ui/auravibes_popup_menu_stories.dart'
     as _widgetbook_workspace_aura_ui_auravibes_popup_menu_stories;
+import 'package:widgetbook_workspace/aura_ui/auravibes_radio_group_stories.dart'
+    as _widgetbook_workspace_aura_ui_auravibes_radio_group_stories;
+import 'package:widgetbook_workspace/aura_ui/auravibes_radio_list_tile_stories.dart'
+    as _widgetbook_workspace_aura_ui_auravibes_radio_list_tile_stories;
+import 'package:widgetbook_workspace/aura_ui/auravibes_radio_stories.dart'
+    as _widgetbook_workspace_aura_ui_auravibes_radio_stories;
 import 'package:widgetbook_workspace/aura_ui/auravibes_screen_stories.dart'
     as _widgetbook_workspace_aura_ui_auravibes_screen_stories;
+import 'package:widgetbook_workspace/aura_ui/auravibes_selectable_text_stories.dart'
+    as _widgetbook_workspace_aura_ui_auravibes_selectable_text_stories;
+import 'package:widgetbook_workspace/aura_ui/auravibes_snackbar_stories.dart'
+    as _widgetbook_workspace_aura_ui_auravibes_snackbar_stories;
 import 'package:widgetbook_workspace/aura_ui/auravibes_spinner_stories.dart'
     as _widgetbook_workspace_aura_ui_auravibes_spinner_stories;
 import 'package:widgetbook_workspace/aura_ui/auravibes_switch_stories.dart'
@@ -57,6 +69,8 @@ import 'package:widgetbook_workspace/aura_ui/auravibes_text_stories.dart'
     as _widgetbook_workspace_aura_ui_auravibes_text_stories;
 import 'package:widgetbook_workspace/aura_ui/auravibes_tile_stories.dart'
     as _widgetbook_workspace_aura_ui_auravibes_tile_stories;
+import 'package:widgetbook_workspace/aura_ui/auravibes_tooltip_stories.dart'
+    as _widgetbook_workspace_aura_ui_auravibes_tooltip_stories;
 import 'package:widgetbook_workspace/aura_ui/auravibes_typing_indicator_stories.dart'
     as _widgetbook_workspace_aura_ui_auravibes_typing_indicator_stories;
 
@@ -107,6 +121,17 @@ final directories = <_widgetbook.WidgetbookNode>[
         ],
       ),
       _widgetbook.WidgetbookComponent(
+        name: 'AuraSelectableText',
+        useCases: [
+          _widgetbook.WidgetbookUseCase(
+            name: 'Default SelectableText',
+            builder:
+                _widgetbook_workspace_aura_ui_auravibes_selectable_text_stories
+                    .defaultSelectableTextUseCase,
+          ),
+        ],
+      ),
+      _widgetbook.WidgetbookComponent(
         name: 'AuraSpinner',
         useCases: [
           _widgetbook.WidgetbookUseCase(
@@ -137,6 +162,16 @@ final directories = <_widgetbook.WidgetbookNode>[
         ],
       ),
       _widgetbook.WidgetbookComponent(
+        name: 'AuraTooltip',
+        useCases: [
+          _widgetbook.WidgetbookUseCase(
+            name: 'Default Tooltip',
+            builder: _widgetbook_workspace_aura_ui_auravibes_tooltip_stories
+                .defaultTooltipUseCase,
+          ),
+        ],
+      ),
+      _widgetbook.WidgetbookComponent(
         name: 'AuraTypingIndicator',
         useCases: [
           _widgetbook.WidgetbookUseCase(
@@ -144,6 +179,21 @@ final directories = <_widgetbook.WidgetbookNode>[
             builder:
                 _widgetbook_workspace_aura_ui_auravibes_typing_indicator_stories
                     .defaultTypingIndicatorUseCase,
+          ),
+        ],
+      ),
+    ],
+  ),
+  _widgetbook.WidgetbookFolder(
+    name: 'material',
+    children: [
+      _widgetbook.WidgetbookComponent(
+        name: 'SnackBar',
+        useCases: [
+          _widgetbook.WidgetbookUseCase(
+            name: 'Snackbar Variants',
+            builder: _widgetbook_workspace_aura_ui_auravibes_snackbar_stories
+                .snackbarVariantsUseCase,
           ),
         ],
       ),
@@ -297,6 +347,16 @@ final directories = <_widgetbook.WidgetbookNode>[
         ],
       ),
       _widgetbook.WidgetbookComponent(
+        name: 'AuraRadio',
+        useCases: [
+          _widgetbook.WidgetbookUseCase(
+            name: 'Single Radio',
+            builder: _widgetbook_workspace_aura_ui_auravibes_radio_stories
+                .singleRadioUseCase,
+          ),
+        ],
+      ),
+      _widgetbook.WidgetbookComponent(
         name: 'AuraScreen',
         useCases: [
           _widgetbook.WidgetbookUseCase(
@@ -311,6 +371,16 @@ final directories = <_widgetbook.WidgetbookNode>[
   _widgetbook.WidgetbookFolder(
     name: 'organisms',
     children: [
+      _widgetbook.WidgetbookComponent(
+        name: 'AuraAlertDialog',
+        useCases: [
+          _widgetbook.WidgetbookUseCase(
+            name: 'Alert Dialog',
+            builder: _widgetbook_workspace_aura_ui_auravibes_dialog_stories
+                .alertDialogUseCase,
+          ),
+        ],
+      ),
       _widgetbook.WidgetbookComponent(
         name: 'AuraAppBarAction',
         useCases: [
@@ -346,6 +416,16 @@ final directories = <_widgetbook.WidgetbookNode>[
         ],
       ),
       _widgetbook.WidgetbookComponent(
+        name: 'AuraConfirmDialog',
+        useCases: [
+          _widgetbook.WidgetbookUseCase(
+            name: 'Confirm Dialog',
+            builder: _widgetbook_workspace_aura_ui_auravibes_dialog_stories
+                .confirmDialogUseCase,
+          ),
+        ],
+      ),
+      _widgetbook.WidgetbookComponent(
         name: 'AuraInput',
         useCases: [
           _widgetbook.WidgetbookUseCase(
@@ -373,6 +453,27 @@ final directories = <_widgetbook.WidgetbookNode>[
             name: 'Basic Popup Menu',
             builder: _widgetbook_workspace_aura_ui_auravibes_popup_menu_stories
                 .basicContextMenuUseCase,
+          ),
+        ],
+      ),
+      _widgetbook.WidgetbookComponent(
+        name: 'AuraRadioGroup',
+        useCases: [
+          _widgetbook.WidgetbookUseCase(
+            name: 'Radio Group',
+            builder: _widgetbook_workspace_aura_ui_auravibes_radio_group_stories
+                .radioGroupUseCase,
+          ),
+        ],
+      ),
+      _widgetbook.WidgetbookComponent(
+        name: 'AuraRadioListTile',
+        useCases: [
+          _widgetbook.WidgetbookUseCase(
+            name: 'Radio List Tile',
+            builder:
+                _widgetbook_workspace_aura_ui_auravibes_radio_list_tile_stories
+                    .radioListTileUseCase,
           ),
         ],
       ),

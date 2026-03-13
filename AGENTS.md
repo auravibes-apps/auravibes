@@ -128,3 +128,10 @@ SomeExperimentalApi(), // ignore: experimental_member_use - Required for widgetb
 - Check if ignore directives are documented and justified
 - Prefer scoped solutions over broad ignores
 - Verify version references are consistent across README, pubspec, and FVM config
+
+## Active Technologies
+- Dart 3.11+ (Flutter 3.41.4+ via FVM) + Flutter SDK, flutter_portal, gpt_markdown, riverpod (existing) (001-ui-library-widgets)
+- N/A (UI components only) (001-ui-library-widgets)
+
+## Recent Changes
+- 001-ui-library-widgets: Added Dart 3.11+ (Flutter 3.41.4+ via FVM) + Flutter SDK, flutter_portal, gpt_markdown, riverpod (existing)
