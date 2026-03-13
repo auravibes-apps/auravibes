@@ -81,20 +81,22 @@ class AuraConfirmDialog extends StatelessWidget {
                   child: title,
                 ),
               ),
-              // Message
-              Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: auraTheme.spacing.md,
-                  vertical: auraTheme.spacing.sm,
-                ),
-                child: DefaultTextStyle(
-                  style: TextStyle(
-                    fontSize: auraTheme.typography.sizes.base,
-                    fontWeight: auraTheme.typography.weights.regular,
-                    color: auraColors.onSurfaceVariant,
-                    height: auraTheme.typography.lineHeights.base,
+              // Message (scrollable if too long)
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: auraTheme.spacing.md,
+                    vertical: auraTheme.spacing.sm,
                   ),
-                  child: message,
+                  child: DefaultTextStyle(
+                    style: TextStyle(
+                      fontSize: auraTheme.typography.sizes.base,
+                      fontWeight: auraTheme.typography.weights.regular,
+                      color: auraColors.onSurfaceVariant,
+                      height: auraTheme.typography.lineHeights.base,
+                    ),
+                    child: message,
+                  ),
                 ),
               ),
               // Actions
@@ -196,20 +198,22 @@ class AuraAlertDialog extends StatelessWidget {
                   child: title,
                 ),
               ),
-              // Message
-              Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: auraTheme.spacing.md,
-                  vertical: auraTheme.spacing.sm,
-                ),
-                child: DefaultTextStyle(
-                  style: TextStyle(
-                    fontSize: auraTheme.typography.sizes.base,
-                    fontWeight: auraTheme.typography.weights.regular,
-                    color: auraColors.onSurfaceVariant,
-                    height: auraTheme.typography.lineHeights.base,
+              // Message (scrollable if too long)
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: auraTheme.spacing.md,
+                    vertical: auraTheme.spacing.sm,
                   ),
-                  child: message,
+                  child: DefaultTextStyle(
+                    style: TextStyle(
+                      fontSize: auraTheme.typography.sizes.base,
+                      fontWeight: auraTheme.typography.weights.regular,
+                      color: auraColors.onSurfaceVariant,
+                      height: auraTheme.typography.lineHeights.base,
+                    ),
+                    child: message,
+                  ),
                 ),
               ),
               // Actions
@@ -254,7 +258,7 @@ Future<bool?> showAuraConfirmDialog({
   final result = await showGeneralDialog<bool>(
     context: context,
     barrierDismissible: barrierDismissible,
-    barrierLabel: 'Dismiss',
+    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
     barrierColor: Colors.black54,
     pageBuilder: (context, animation, secondaryAnimation) {
       return AuraConfirmDialog(
@@ -299,7 +303,7 @@ Future<void> showAuraAlertDialog({
   await showGeneralDialog<void>(
     context: context,
     barrierDismissible: barrierDismissible,
-    barrierLabel: 'Dismiss',
+    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
     barrierColor: Colors.black54,
     pageBuilder: (context, animation, secondaryAnimation) {
       return AuraAlertDialog(

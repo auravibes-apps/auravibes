@@ -147,7 +147,6 @@ class AuraButton extends StatelessWidget {
   }
 
   Border? _getBorder(AuraColorScheme colors) {
-    if (disabled) return null;
     if (variant == AuraButtonVariant.outlined) {
       return Border.all(
         color: disabled

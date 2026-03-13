@@ -67,6 +67,8 @@ class AuraRadioGroup<T> extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
+    final spacing = context.auraTheme.spacing;
+
     final radios = options.map((option) {
       return AuraRadio<T>(
         value: option.value,
@@ -85,30 +87,30 @@ class AuraRadioGroup<T> extends StatelessWidget {
             Row(
               children: [
                 radios[i],
-                const SizedBox(width: 8),
+                SizedBox(width: spacing.sm),
                 Flexible(child: options[i].label),
               ],
             ),
             if (options[i].subtitle != null)
               Padding(
-                padding: const EdgeInsets.only(left: 40),
+                padding: EdgeInsets.only(left: spacing.sm * 5),
                 child: options[i].subtitle,
               ),
-            if (i < options.length - 1) const SizedBox(height: 8),
+            if (i < options.length - 1) SizedBox(height: spacing.sm),
           ],
         ],
       );
     } else {
       optionsWidget = Wrap(
-        spacing: 16,
-        runSpacing: 8,
+        spacing: spacing.md,
+        runSpacing: spacing.sm,
         children: [
           for (int i = 0; i < options.length; i++)
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 radios[i],
-                const SizedBox(width: 8),
+                SizedBox(width: spacing.sm),
                 Flexible(child: options[i].label),
               ],
             ),

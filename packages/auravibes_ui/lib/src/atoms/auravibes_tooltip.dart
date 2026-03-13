@@ -92,8 +92,8 @@ class AuraTooltip extends StatelessWidget {
       AuraColorVariant.warning => colors.warning,
       AuraColorVariant.info => colors.info,
       AuraColorVariant.surfaceVariant => colors.surfaceVariant,
-      AuraColorVariant.onSurface => colors.surface,
-      AuraColorVariant.onSurfaceVariant => colors.surfaceVariant,
+      AuraColorVariant.onSurface => colors.onSurface,
+      AuraColorVariant.onSurfaceVariant => colors.onSurfaceVariant,
       AuraColorVariant.onPrimary => colors.primary,
     };
   }
@@ -107,8 +107,8 @@ class AuraTooltip extends StatelessWidget {
       AuraColorVariant.warning => colors.onWarning,
       AuraColorVariant.info => colors.onInfo,
       AuraColorVariant.surfaceVariant => colors.onSurface,
-      AuraColorVariant.onSurface => colors.onSurface,
-      AuraColorVariant.onSurfaceVariant => colors.onSurfaceVariant,
+      AuraColorVariant.onSurface => colors.surface,
+      AuraColorVariant.onSurfaceVariant => colors.surface,
       AuraColorVariant.onPrimary => colors.onPrimary,
     };
   }
