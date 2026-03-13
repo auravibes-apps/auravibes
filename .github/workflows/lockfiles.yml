@@ -177,12 +177,12 @@ jobs:
       - name: 📦 macOS Pod Install (App)
         run: |
           cd apps/auravibes_app/macos
-          pod install --repo-update=false
+          pod install --no-repo-update
 
       - name: 📦 macOS Pod Install (Widgetbook)
         run: |
           cd widgetbook/macos
-          pod install --repo-update=false
+          pod install --no-repo-update
 
       - name: 📦 Cache Pods (App)
         uses: actions/cache@v3
