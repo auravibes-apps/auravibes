@@ -84,16 +84,24 @@ class AuraRadioGroup<T> extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           for (int i = 0; i < options.length; i++) ...[
-            Row(
-              children: [
-                radios[i],
-                SizedBox(width: spacing.sm),
-                Flexible(child: options[i].label),
-              ],
+            // Make entire row tappable
+            GestureDetector(
+              onTap: onChanged == null
+                  ? null
+                  : () => onChanged!(options[i].value),
+              behavior: HitTestBehavior.opaque,
+              child: Row(
+                children: [
+                  radios[i],
+                  SizedBox(width: spacing.sm),
+                  Flexible(child: options[i].label),
+                ],
+              ),
             ),
             if (options[i].subtitle != null)
               Padding(
-                padding: EdgeInsets.only(left: spacing.sm * 5),
+                // Radio size (24) + gap (spacing.sm) for proper alignment
+                padding: EdgeInsets.only(left: 24 + spacing.sm),
                 child: options[i].subtitle,
               ),
             if (i < options.length - 1) SizedBox(height: spacing.sm),

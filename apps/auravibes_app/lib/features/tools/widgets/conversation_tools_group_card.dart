@@ -2,6 +2,8 @@ import 'package:auravibes_app/features/tools/models/conversation_tools_group_wit
 import 'package:auravibes_app/features/tools/providers/grouped_conversation_tools_provider.dart';
 import 'package:auravibes_app/features/tools/widgets/conversation_group_header.dart';
 import 'package:auravibes_app/features/tools/widgets/conversation_tool_tile.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -118,6 +120,7 @@ class ConversationToolsGroupCard extends HookConsumerWidget {
       message: AuraSelectableText(
         groupWithTools.mcpErrorMessage ?? 'Unknown error',
       ),
+      dismissLabel: const TextLocale(LocaleKeys.common_cancel),
     );
   }
 }

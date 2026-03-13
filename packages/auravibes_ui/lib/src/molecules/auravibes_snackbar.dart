@@ -199,11 +199,21 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
     _isDismissed = true;
     _dismissTimer?.cancel();
     unawaited(
-      _animationController.reverse().orCancel.then((_) {
-        // Only call dismiss callback - don't dispose here
-        // as dispose() will be called by the framework
-        widget.dismissCallback();
-      }),
+      _animationController
+          .reverse()
+          .orCancel
+          .then((_) {
+            // Only call dismiss callback - don't dispose here
+            // as dispose() will be called by the framework
+            widget.dismissCallback();
+          })
+          .catchError((Object error) {
+            // Ignore ticker cancellations caused by widget disposal
+            // during animation.
+            if (error is TickerCanceled) return;
+            // ignore: only_throw_errors - re-throwing non-cancellation errors
+            throw error;
+          }),
     );
   }
 

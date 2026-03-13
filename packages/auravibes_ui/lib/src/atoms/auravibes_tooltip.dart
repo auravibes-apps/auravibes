@@ -2,14 +2,14 @@ import 'dart:async';
 
 import 'package:auravibes_ui/src/tokens/auravibes_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 /// A custom tooltip widget that follows the Aura design system.
 ///
 /// This tooltip uses a custom OverlayEntry-based implementation with Aura
 /// styling. It shows informative text when users hover over (desktop) or
-/// tap (mobile) the wrapped widget.
+/// long-press (mobile) the wrapped widget.
 ///
 /// Example:
 /// ```dart
@@ -82,7 +82,7 @@ class _AuraTooltipState extends State<AuraTooltip> {
       onExit: _handlePointerExit,
       child: GestureDetector(
         behavior: HitTestBehavior.translucent,
-        onTap: _handleTap,
+        onLongPress: _handleLongPress,
         child: CompositedTransformTarget(
           link: _layerLink,
           child: widget.child,
@@ -105,7 +105,7 @@ class _AuraTooltipState extends State<AuraTooltip> {
     _removeOverlay();
   }
 
-  void _handleTap() {
+  void _handleLongPress() {
     // On tap, show immediately and auto-hide after [showDuration].
     _cancelTimers();
     if (_isVisible) {

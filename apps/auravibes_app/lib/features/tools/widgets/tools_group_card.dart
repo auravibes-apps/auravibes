@@ -119,6 +119,7 @@ class ToolsGroupCard extends HookConsumerWidget {
       message: AuraSelectableText(
         groupWithTools.mcpErrorMessage ?? 'Unknown error',
       ),
+      dismissLabel: const TextLocale(LocaleKeys.common_cancel),
     );
   }
 }

@@ -137,6 +137,13 @@ class AuraButton extends StatelessWidget {
   }
 
   AuraEdgeInsetsGeometry _getPadding() {
+    // Text variant uses minimal/inline padding for dialogs and inline actions
+    if (variant == AuraButtonVariant.text) {
+      return const AuraEdgeInsetsGeometry.symmetric(
+        horizontal: AuraSpacing.sm,
+        vertical: AuraSpacing.xs,
+      );
+    }
     return switch (size) {
       AuraButtonSize.small => const AuraEdgeInsetsGeometry.symmetric(
         horizontal: AuraSpacing.sm,
