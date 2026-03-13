@@ -469,8 +469,8 @@ class AuraSelectableText extends StatelessWidget {
   /// The text to display.
   final String data;
 
-  /// Optional text style. Color will be overridden by colorVariant.
-  final TextStyle? style;
+  /// Optional Aura text style variant. Color will be overridden by colorVariant.
+  final AuraTextStyle? style;
 
   /// Text color variant.
   final AuraColorVariant? colorVariant;
