@@ -297,9 +297,7 @@ void main() {
       expect(selectableText.cursorColor, AuraTheme.light.colors.primary);
     });
 
-    testWidgets('respects custom cursorColor', (tester) async {
-      const customCursorColor = Color(0xFF00FF00);
-
+    testWidgets('respects custom cursorColorVariant', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: ThemeData.light().copyWith(
@@ -308,7 +306,7 @@ void main() {
           home: const Scaffold(
             body: AuraSelectableText(
               'Custom cursor',
-              cursorColor: customCursorColor,
+              cursorColorVariant: AuraColorVariant.secondary,
             ),
           ),
         ),
@@ -317,7 +315,7 @@ void main() {
       final selectableText = tester.widget<SelectableText>(
         find.byType(SelectableText),
       );
-      expect(selectableText.cursorColor, customCursorColor);
+      expect(selectableText.cursorColor, AuraTheme.light.colors.secondary);
     });
 
     testWidgets('respects cursorWidth', (tester) async {

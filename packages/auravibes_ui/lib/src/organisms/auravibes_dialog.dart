@@ -294,10 +294,11 @@ Future<void> showAuraAlertDialog({
   required Widget message,
   Widget? dismissLabel,
   AuraColorVariant? colorVariant,
+  bool barrierDismissible = true,
 }) async {
   await showGeneralDialog<void>(
     context: context,
-    barrierDismissible: true,
+    barrierDismissible: barrierDismissible,
     barrierLabel: 'Dismiss',
     barrierColor: Colors.black54,
     pageBuilder: (context, animation, secondaryAnimation) {

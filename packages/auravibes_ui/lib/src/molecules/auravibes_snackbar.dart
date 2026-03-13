@@ -243,12 +243,12 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
                         ),
                       ),
                       // Action button
-                      if (widget.actionLabel != null &&
-                          widget.onAction != null) ...[
+                      if (widget.actionLabel != null) ...[
                         const SizedBox(width: 8),
                         GestureDetector(
                           onTap: () {
-                            widget.onAction!();
+                            // Use provided callback or default no-op
+                            (widget.onAction ?? () {})();
                             dismiss();
                           },
                           child: Padding(

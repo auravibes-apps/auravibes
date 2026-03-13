@@ -142,29 +142,28 @@ class AuraRadio<T> extends StatelessWidget {
     final isDisabled = disabled || onChanged == null;
     final isSelected = value == groupValue;
     final effectiveColor = _getActiveColor(context);
-    final borderColor = isDisabled
-        ? effectiveColor.withValues(alpha: 0.6)
-        : effectiveColor;
-    final fillColor = isDisabled
-        ? effectiveColor.withValues(alpha: 0.6)
-        : effectiveColor;
 
-    return MouseRegion(
-      cursor: isDisabled
-          ? SystemMouseCursors.forbidden
-          : SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: isDisabled ? null : () => onChanged?.call(value),
-        child: Opacity(
-          opacity: isDisabled ? 0.6 : 1.0,
-          child: SizedBox(
-            width: 24,
-            height: 24,
-            child: CustomPaint(
-              painter: _RadioPainter(
-                isSelected: isSelected,
-                color: fillColor,
-                borderColor: borderColor,
+    return Semantics(
+      checked: isSelected,
+      inMutuallyExclusiveGroup: true,
+      enabled: !isDisabled,
+      child: MouseRegion(
+        cursor: isDisabled
+            ? SystemMouseCursors.forbidden
+            : SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: isDisabled ? null : () => onChanged?.call(value),
+          child: Opacity(
+            opacity: isDisabled ? 0.6 : 1.0,
+            child: SizedBox(
+              width: 24,
+              height: 24,
+              child: CustomPaint(
+                painter: _RadioPainter(
+                  isSelected: isSelected,
+                  color: effectiveColor,
+                  borderColor: effectiveColor,
+                ),
               ),
             ),
           ),

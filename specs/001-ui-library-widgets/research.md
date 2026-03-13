@@ -8,26 +8,29 @@
 
 ### Q1: Should we wrap Material widgets or create custom implementations?
 
-**Decision**: Wrap Material widgets with Aura styling
+**Decision**: Custom implementations (with caveats)
 
 **Rationale**:
-- Material widgets provide battle-tested accessibility (screen readers, semantics)
-- Platform conventions (tap targets, gesture recognition) work out of the box
-- Focus management and keyboard navigation handled automatically
-- Less code to maintain, faster implementation
-- Can customize appearance via theming
+- Custom OverlayEntry/CustomPaint provides full control over styling
+- Avoids Material visual defaults that conflict with Aura design
+- Can optimize for Aura-specific use cases
+- Material widget wrappers still used for complex components where accessibility is critical
 
-**Alternatives Considered**:
-1. **Custom implementations**: Would require re-implementing accessibility, focus management, gesture detection. Too much effort for standard widgets.
-2. **Third-party packages**: Creates external dependency for core functionality. Not worth the risk.
-
-**Implementation Pattern**:
+**Implementation Pattern** (Custom):
 ```dart
 class AuraConfirmDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: context.auraColors.surface,
+    return Container(
+      // Custom container with Aura styling
+    );
+  }
+}
+```
+
+**When to use Custom vs Wrapper**:
+- **Custom implementations**: AlertDialog, SnackBar, Tooltip, Radio - need full visual control
+- **Material wrappers**: Complex interactive widgets where accessibility is critical
       title: title,
       content: message,
       actions: [

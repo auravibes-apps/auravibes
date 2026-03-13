@@ -10,7 +10,7 @@
 ### Session 2026-03-11
 
 - Q: When a dialog is shown while another dialog is already visible, how should the system behave? → A: Stack - Show second dialog on top of first
-- Q: What should happen when `showAuraSnackBar()` is called without a Scaffold ancestor? → A: Let Flutter's native ScaffoldMessenger error propagate (no additional handling needed)
+- Q: What should happen when `showAuraSnackBar()` is called without a Scaffold ancestor? → A: Works (uses OverlayEntry, doesn't require Scaffold)
 
 ## User Scenarios & Testing *(mandatory)*
 

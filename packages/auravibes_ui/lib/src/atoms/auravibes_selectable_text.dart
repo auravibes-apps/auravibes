@@ -28,7 +28,7 @@ class AuraSelectableText extends StatelessWidget {
     this.cursorWidth = 2.0,
     this.cursorHeight,
     this.cursorRadius,
-    this.cursorColor,
+    this.cursorColorVariant,
     this.onSelectionChanged,
     this.showCursor = false,
     this.autofocus = false,
@@ -62,8 +62,8 @@ class AuraSelectableText extends StatelessWidget {
   /// How rounded the cursor is.
   final Radius? cursorRadius;
 
-  /// The color of the cursor.
-  final Color? cursorColor;
+  /// The color variant for the cursor.
+  final AuraColorVariant? cursorColorVariant;
 
   /// Called when the user changes the selection.
   final SelectionChangedCallback? onSelectionChanged;
@@ -80,9 +80,11 @@ class AuraSelectableText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
-    final textStyle = _getTextStyle(auraColors).copyWith(
-      color: auraColors.getColor(colorVariant),
-    );
+    final baseStyle = _getTextStyle(auraColors);
+    // Only override color when colorVariant is provided
+    final textStyle = colorVariant != null
+        ? baseStyle.copyWith(color: auraColors.getColor(colorVariant))
+        : baseStyle;
 
     return SelectableText(
       data,
@@ -93,7 +95,9 @@ class AuraSelectableText extends StatelessWidget {
       cursorWidth: cursorWidth,
       cursorHeight: cursorHeight,
       cursorRadius: cursorRadius,
-      cursorColor: cursorColor ?? auraColors.primary,
+      cursorColor: cursorColorVariant != null
+          ? auraColors.getColor(cursorColorVariant)
+          : auraColors.primary,
       onSelectionChanged: onSelectionChanged,
       showCursor: showCursor,
       autofocus: autofocus,

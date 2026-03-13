@@ -64,7 +64,7 @@ class AuraButton extends StatelessWidget {
           border: _getBorder(auraColors),
         ),
         child: AuraPadding(
-          padding: _getPadding(auraTheme.spacing),
+          padding: _getPadding(),
           child: Center(
             child: isLoading
                 ? SizedBox(
@@ -129,7 +129,7 @@ class AuraButton extends StatelessWidget {
     };
   }
 
-  AuraEdgeInsetsGeometry _getPadding(AuraSpacingTheme spacing) {
+  AuraEdgeInsetsGeometry _getPadding() {
     return switch (size) {
       AuraButtonSize.small => const AuraEdgeInsetsGeometry.symmetric(
         horizontal: AuraSpacing.sm,
