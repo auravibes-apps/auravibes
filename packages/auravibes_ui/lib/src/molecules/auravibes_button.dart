@@ -85,7 +85,13 @@ class AuraButton extends StatelessWidget {
   }
 
   Color _getBackgroundColor(AuraColorScheme colors) {
-    if (disabled) return colors.outlineVariant;
+    if (disabled) {
+      if (variant == AuraButtonVariant.text) {
+        // Text buttons should keep a transparent background even when disabled.
+        return DesignColors.transparent;
+      }
+      return colors.outlineVariant;
+    }
 
     return switch (variant) {
       AuraButtonVariant.primary =>
