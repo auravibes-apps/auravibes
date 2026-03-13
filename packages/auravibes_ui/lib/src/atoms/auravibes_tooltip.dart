@@ -1,11 +1,14 @@
+import 'dart:async';
+
 import 'package:auravibes_ui/src/tokens/auravibes_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
 
 /// A custom tooltip widget that follows the Aura design system.
 ///
-/// This tooltip wraps Material's Tooltip with Aura styling.
-/// It shows informative text when users hover over (desktop) or tap (mobile)
+/// This tooltip uses a custom OverlayEntry-based implementation with Aura
+/// styling. It shows informative text when users hover over (desktop) or
+/// tap (mobile) the wrapped widget.
 ///
 /// Example:
 /// ```dart
@@ -17,7 +20,7 @@ import 'package:flutter/material.dart';
 ///   ),
 /// )
 /// ```
-class AuraTooltip extends StatelessWidget {
+class AuraTooltip extends StatefulWidget {
   /// Creates an Aura tooltip.
   const AuraTooltip({
     required this.message,
@@ -53,38 +56,150 @@ class AuraTooltip extends StatelessWidget {
   final bool preferBelow;
 
   @override
-  Widget build(BuildContext context) {
-    final colors = context.auraColors;
-    final backgroundColor = _getBackgroundColor(colors);
-    final textColor = _getForegroundColor(colors);
+  State<AuraTooltip> createState() => _AuraTooltipState();
+}
 
-    return Tooltip(
-      message: message,
-      preferBelow: preferBelow,
-      waitDuration: waitDuration,
-      showDuration: showDuration,
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+class _AuraTooltipState extends State<AuraTooltip> {
+  final LayerLink _layerLink = LayerLink();
+  OverlayEntry? _overlayEntry;
+  Timer? _showTimer;
+  Timer? _hideTimer;
+
+  bool get _isVisible => _overlayEntry != null;
+
+  @override
+  void dispose() {
+    _cancelTimers();
+    _removeOverlay();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: _handlePointerEnter,
+      onExit: _handlePointerExit,
+      child: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: _handleTap,
+        child: CompositedTransformTarget(
+          link: _layerLink,
+          child: widget.child,
+        ),
       ),
-      textStyle: TextStyle(
-        color: textColor,
-        fontSize: 12,
-        fontWeight: FontWeight.w500,
-      ),
-      child: child,
     );
   }
 
+  void _handlePointerEnter(PointerEnterEvent event) {
+    _cancelTimers();
+    if (widget.waitDuration > Duration.zero) {
+      _showTimer = Timer(widget.waitDuration, _showTooltip);
+    } else {
+      _showTooltip();
+    }
+  }
+
+  void _handlePointerExit(PointerExitEvent event) {
+    _cancelTimers();
+    _removeOverlay();
+  }
+
+  void _handleTap() {
+    // On tap, show immediately and auto-hide after [showDuration].
+    _cancelTimers();
+    if (_isVisible) {
+      _removeOverlay();
+      return;
+    }
+    _showTooltip();
+  }
+
+  void _showTooltip() {
+    if (!mounted || _isVisible) return;
+
+    final auraColors = context.auraColors;
+    final backgroundColor = _getBackgroundColor(auraColors);
+    final textColor = _getForegroundColor(auraColors);
+
+    final overlay = Overlay.of(context);
+    if (overlay == null) {
+      return;
+    }
+
+    _overlayEntry = OverlayEntry(
+      builder: (context) {
+        return Positioned.fill(
+          child: IgnorePointer(
+            child: CompositedTransformFollower(
+              link: _layerLink,
+              showWhenUnlinked: false,
+              offset: widget.preferBelow
+                  ? const Offset(0, 8)
+                  : const Offset(0, -8),
+              child: Material(
+                color: Colors.transparent,
+                child: Align(
+                  alignment: widget.preferBelow
+                      ? Alignment.topCenter
+                      : Alignment.bottomCenter,
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                    decoration: BoxDecoration(
+                      color: backgroundColor,
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.15),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    child: Text(
+                      widget.message,
+                      style: TextStyle(
+                        color: textColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    overlay.insert(_overlayEntry!);
+
+    if (widget.showDuration > Duration.zero) {
+      _hideTimer = Timer(widget.showDuration, _removeOverlay);
+    }
+  }
+
+  void _removeOverlay() {
+    _hideTimer?.cancel();
+    _hideTimer = null;
+
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+  }
+
+  void _cancelTimers() {
+    _showTimer?.cancel();
+    _hideTimer?.cancel();
+    _showTimer = null;
+    _hideTimer = null;
+  }
+
   Color _getBackgroundColor(AuraColorScheme colors) {
-    return switch (colorVariant) {
+    return switch (widget.colorVariant) {
       AuraColorVariant.primary => colors.primary,
       AuraColorVariant.secondary => colors.secondary,
       AuraColorVariant.success => colors.success,
@@ -99,7 +214,7 @@ class AuraTooltip extends StatelessWidget {
   }
 
   Color _getForegroundColor(AuraColorScheme colors) {
-    return switch (colorVariant) {
+    return switch (widget.colorVariant) {
       AuraColorVariant.primary => colors.onPrimary,
       AuraColorVariant.secondary => colors.onSecondary,
       AuraColorVariant.success => colors.onSuccess,
