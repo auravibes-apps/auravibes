@@ -100,42 +100,43 @@ class SettingsScreen extends ConsumerWidget {
     WidgetRef ref,
     AppTheme currentTheme,
   ) {
-    showDialog<void>(
+    showAuraAlertDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const TextLocale(LocaleKeys.settings_screen_theme_title),
-        content: AuraRadioGroup<AppTheme>(
-          value: currentTheme,
-          onChanged: (value) {
-            if (value != null) {
-              ref.read(themeControllerProvider.notifier).setTheme(value);
-              Navigator.pop(context);
-            }
-          },
-          options: const [
-            AuraRadioOption(
-              value: AppTheme.system,
-              label: TextLocale(
-                LocaleKeys.settings_screen_theme_system_default,
-              ),
+      title: const TextLocale(LocaleKeys.settings_screen_theme_title),
+      content: AuraRadioGroup<AppTheme>(
+        value: currentTheme,
+        onChanged: (value) {
+          if (value != null) {
+            ref.read(themeControllerProvider.notifier).setTheme(value);
+            Navigator.pop(context);
+          }
+        },
+        options: const [
+          AuraRadioOption(
+            value: AppTheme.system,
+            label: TextLocale(
+              LocaleKeys.settings_screen_theme_system_default,
             ),
-            AuraRadioOption(
-              value: AppTheme.light,
-              label: TextLocale(LocaleKeys.settings_screen_theme_light),
-            ),
-            AuraRadioOption(
-              value: AppTheme.dark,
-              label: TextLocale(LocaleKeys.settings_screen_theme_dark),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const TextLocale(LocaleKeys.settings_screen_actions_cancel),
+          ),
+          AuraRadioOption(
+            value: AppTheme.light,
+            label: TextLocale(LocaleKeys.settings_screen_theme_light),
+          ),
+          AuraRadioOption(
+            value: AppTheme.dark,
+            label: TextLocale(LocaleKeys.settings_screen_theme_dark),
           ),
         ],
       ),
+      actions: [
+        AuraButton(
+          variant: AuraButtonVariant.text,
+          onPressed: () => Navigator.pop(context),
+          child: const TextLocale(
+            LocaleKeys.settings_screen_actions_cancel,
+          ),
+        ),
+      ],
     );
   }
 }
