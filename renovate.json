@@ -1,0 +1,17 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "additionalBranchPrefix": "{{parentDir}}-",
+  "packageRules": [
+    {
+      "description": "Skip local monorepo packages in packages/ and apps/",
+      "matchPaths": ["packages/**", "apps/**", "widgetbook/**"],
+      "enabled": false
+    },
+    {
+      "description": "Automerge minor and patch updates",
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true
+    }
+  ]
+}

@@ -1,0 +1,225 @@
+name: Update Lockfiles
+
+on:
+  pull_request:
+    branches:
+      - main
+      - dev
+      - stage
+    paths:
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - 'packages/**/pubspec.yaml'
+      - '.fvmrc'
+      - 'melos.yaml'
+
+jobs:
+  pubspec-lock:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📚 Git Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: 🔧 Setup FVM
+        uses: kuhnroyal/flutter-fvm-config-action/config@v3
+        id: fvm-config-action
+
+      - name: 🐦 Setup Flutter
+        uses: subosito/flutter-action@v2
+        id: flutter-action
+        with:
+          flutter-version: ${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}
+          channel: ${{ steps.fvm-config-action.outputs.FLUTTER_CHANNEL }}
+          cache: true
+
+      - name: 🔗 Create FVM symlink for CI
+        run: |
+          mkdir -p .fvm
+          ln -s ${{ steps.flutter-action.outputs.tool-cache-path }}/flutter .fvm/flutter_sdk
+
+      - uses: bluefireteam/melos-action@main
+        with:
+          run-bootstrap: true
+
+      - name: 📦 Check pubspec.lock changes
+        id: pubspec-changed
+        run: |
+          if git diff --name-only | grep -q "pubspec.lock"; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 📦 Create Branch and Commit
+        if: steps.pubspec-changed.outputs.changed == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git checkout -b "update/pubspec-lock"
+          git add pubspec.lock
+          git diff --staged --quiet || git commit -m "chore: update pubspec.lock"
+
+      - name: 📦 Push and Create PR
+        if: steps.pubspec-changed.outputs.changed == 'true'
+        run: |
+          git push -u origin update/pubspec-lock --force
+          gh pr create --title "chore: update pubspec.lock" --body "Automated pubspec.lock update" --base ${{ github.base_ref }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  ios-pods:
+    runs-on: macos-latest
+
+    steps:
+      - name: 📚 Git Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: 🔧 Setup FVM
+        uses: kuhnroyal/flutter-fvm-config-action/config@v3
+        id: fvm-config-action
+
+      - name: 🐦 Setup Flutter
+        uses: subosito/flutter-action@v2
+        id: flutter-action
+        with:
+          flutter-version: ${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}
+          channel: ${{ steps.fvm-config-action.outputs.FLUTTER_CHANNEL }}
+          cache: true
+
+      - name: 🔗 Create FVM symlink for CI
+        run: |
+          mkdir -p .fvm
+          ln -s ${{ steps.flutter-action.outputs.tool-cache-path }}/flutter .fvm/flutter_sdk
+
+      - uses: bluefireteam/melos-action@main
+        with:
+          run-bootstrap: true
+
+      - name: 📦 iOS Pod Install
+        run: |
+          cd apps/auravibes_app/ios
+          pod install --repo-update=false
+
+      - name: 📦 Cache Pods
+        uses: actions/cache@v3
+        with:
+          path: apps/auravibes_app/ios/Pods
+          key: ${{ runner.os }}-ios-pods-${{ hashFiles('apps/auravibes_app/ios/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-ios-pods-
+
+      - name: 📦 Check Podfile.lock changes
+        id: ios-changed
+        run: |
+          if git diff --name-only | grep -q "apps/auravibes_app/ios/Podfile.lock"; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 📦 Create Branch and Commit
+        if: steps.ios-changed.outputs.changed == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git checkout -b "update/ios-podfile-lock"
+          git add apps/auravibes_app/ios/Podfile.lock
+          git diff --staged --quiet || git commit -m "chore: update iOS Podfile.lock"
+
+      - name: 📦 Push and Create PR
+        if: steps.ios-changed.outputs.changed == 'true'
+        run: |
+          git push -u origin update/ios-podfile-lock --force
+          gh pr create --title "chore: update iOS Podfile.lock" --body "Automated iOS Podfile.lock update" --base ${{ github.base_ref }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  macos-pods:
+    runs-on: macos-latest
+
+    steps:
+      - name: 📚 Git Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: 🔧 Setup FVM
+        uses: kuhnroyal/flutter-fvm-config-action/config@v3
+        id: fvm-config-action
+
+      - name: 🐦 Setup Flutter
+        uses: subosito/flutter-action@v2
+        id: flutter-action
+        with:
+          flutter-version: ${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}
+          channel: ${{ steps.fvm-config-action.outputs.FLUTTER_CHANNEL }}
+          cache: true
+
+      - name: 🔗 Create FVM symlink for CI
+        run: |
+          mkdir -p .fvm
+          ln -s ${{ steps.flutter-action.outputs.tool-cache-path }}/flutter .fvm/flutter_sdk
+
+      - uses: bluefireteam/melos-action@main
+        with:
+          run-bootstrap: true
+
+      - name: 📦 macOS Pod Install (App)
+        run: |
+          cd apps/auravibes_app/macos
+          pod install --repo-update=false
+
+      - name: 📦 macOS Pod Install (Widgetbook)
+        run: |
+          cd widgetbook/macos
+          pod install --repo-update=false
+
+      - name: 📦 Cache Pods (App)
+        uses: actions/cache@v3
+        with:
+          path: apps/auravibes_app/macos/Pods
+          key: ${{ runner.os }}-macos-pods-${{ hashFiles('apps/auravibes_app/macos/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-macos-pods-
+
+      - name: 📦 Cache Pods (Widgetbook)
+        uses: actions/cache@v3
+        with:
+          path: widgetbook/macos/Pods
+          key: ${{ runner.os }}-widgetbook-pods-${{ hashFiles('widgetbook/macos/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-widgetbook-pods-
+
+      - name: 📦 Check Podfile.lock changes
+        id: macos-changed
+        run: |
+          if git diff --name-only | grep -q "Podfile.lock"; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 📦 Create Branch and Commit
+        if: steps.macos-changed.outputs.changed == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git checkout -b "update/macos-podfile-lock"
+          git add apps/auravibes_app/macos/Podfile.lock widgetbook/macos/Podfile.lock
+          git diff --staged --quiet || git commit -m "chore: update macOS Podfile.lock"
+
+      - name: 📦 Push and Create PR
+        if: steps.macos-changed.outputs.changed == 'true'
+        run: |
+          git push -u origin update/macos-podfile-lock --force
+          gh pr create --title "chore: update macOS Podfile.lock" --body "Automated macOS Podfile.lock update" --base ${{ github.base_ref }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
