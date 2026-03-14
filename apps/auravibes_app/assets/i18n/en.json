@@ -12,6 +12,8 @@
     "select_provider": "Select Provider",
     "select_model": "Select Model",
     "select_provider_first": "Select provider first",
+    "no_providers_configured": "No providers configured",
+    "no_models_available": "No models available",
     "title": "Model Providers",
     "list_error": "Error loading models: {}",
     "list_empty_title": "No AI Models Configured",

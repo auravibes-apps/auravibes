@@ -44,6 +44,21 @@ class SelectCredentialsModelWidget extends HookConsumerWidget
     final screenWidth = MediaQuery.of(context).size.width;
     final isCompact = screenWidth < DesignBreakpoints.md;
 
+    // Filter models by search - computed unconditionally (not in hook)
+    final groupedMap = groupedModelsAsync.hasValue
+        ? groupedModelsAsync.value
+        : null;
+    final modelsForProvider = effectiveProviderId != null && groupedMap != null
+        ? groupedMap[effectiveProviderId] ??
+              <CredentialsModelWithProviderEntity>[]
+        : <CredentialsModelWithProviderEntity>[];
+    final filteredModels = searchValue.value.isEmpty
+        ? modelsForProvider
+        : modelsForProvider.where((model) {
+            final searchTerm = model.credentialsModel.modelId.toLowerCase();
+            return searchTerm.contains(searchValue.value.toLowerCase());
+          }).toList();
+
     // Auto-select provider when only one exists (US3)
     useEffect(() {
       groupedModelsAsync.whenOrNull(
@@ -58,6 +73,7 @@ class SelectCredentialsModelWidget extends HookConsumerWidget
             final singleProvider = groupedModels.keys.first;
             internalProviderId.value = singleProvider;
             onProviderChanged?.call(singleProvider);
+            selectCredentialsModelId(null); // Reset model when auto-selecting
           }
         },
       );
@@ -77,24 +93,13 @@ class SelectCredentialsModelWidget extends HookConsumerWidget
         if (groupedModels.isEmpty) {
           return const AuraPadding(
             padding: AuraEdgeInsetsGeometry.vertical(.md),
-            child: TextLocale(LocaleKeys.models_screens_select_provider),
+            child: TextLocale(
+              LocaleKeys.models_screens_no_providers_configured,
+            ),
           );
         }
 
         final providerNames = groupedModels.keys.toList();
-        final modelsForProvider = effectiveProviderId != null
-            ? groupedModels[effectiveProviderId] ??
-                  <CredentialsModelWithProviderEntity>[]
-            : <CredentialsModelWithProviderEntity>[];
-
-        // Filter models by search
-        final filteredModels = useMemoized(() {
-          if (searchValue.value.isEmpty) return modelsForProvider;
-          return modelsForProvider.where((model) {
-            final searchTerm = model.credentialsModel.modelId.toLowerCase();
-            return searchTerm.contains(searchValue.value.toLowerCase());
-          }).toList();
-        }, [searchValue.value, modelsForProvider]);
 
         return AuraPadding(
           padding: const AuraEdgeInsetsGeometry.only(
@@ -245,7 +250,7 @@ class _ModelDropdown extends HookConsumerWidget {
       header: models.isEmpty
           ? const AuraPadding(
               padding: AuraEdgeInsetsGeometry.medium,
-              child: Text('No models available'),
+              child: TextLocale(LocaleKeys.models_screens_no_models_available),
             )
           : Padding(
               padding: EdgeInsetsGeometry.all(context.auraTheme.spacing.md),

@@ -14,7 +14,9 @@ part 'new_chat_controller.g.dart';
 abstract class NewChatState with _$NewChatState {
   const factory NewChatState({
     String? modelId,
-    String? providerId,
+
+    /// Stores the provider NAME (not ID) - for display and filtering models
+    String? providerName,
     @Default(false) bool isLoading,
   }) = _NewChatState;
 }
@@ -30,9 +32,9 @@ class NewChatController extends _$NewChatController {
     state = state.copyWith(modelId: modelId);
   }
 
-  void setProvider(String? providerId) {
+  void setProvider(String? providerName) {
     state = state.copyWith(
-      providerId: providerId,
+      providerName: providerName,
       modelId: null, // Reset model when provider changes
     );
   }

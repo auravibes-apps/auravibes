@@ -15,6 +15,10 @@ abstract class LocaleKeys {
   static const models_screens_select_model = 'models_screens.select_model';
   static const models_screens_select_provider_first =
       'models_screens.select_provider_first';
+  static const models_screens_no_providers_configured =
+      'models_screens.no_providers_configured';
+  static const models_screens_no_models_available =
+      'models_screens.no_models_available';
   static const models_screens_title = 'models_screens.title';
   static const models_screens_list_error = 'models_screens.list_error';
   static const models_screens_list_empty_title =
