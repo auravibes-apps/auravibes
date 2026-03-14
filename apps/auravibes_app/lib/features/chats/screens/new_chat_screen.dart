@@ -52,29 +52,41 @@ class NewChatScreen extends ConsumerWidget {
     }
 
     return AuraScreen(
-      appBar: AuraAppBarWithDrawer(
-        title: const TextLocale(LocaleKeys.home_screen_actions_start_new_chat),
-        bottom: SelectCredentialsModelWidget(
-          credentialsModelId: state.modelId,
-          selectCredentialsModelId: (value) {
-            ref.read(newChatControllerProvider.notifier).setModelId(value);
-          },
-        ),
+      appBar: const AuraAppBarWithDrawer(
+        title: TextLocale(LocaleKeys.home_screen_actions_start_new_chat),
       ),
-      child: Stack(
+      child: Column(
         children: [
-          Center(
-            child: ChatInputWidget(
-              disabled: state.isLoading || state.modelId == null,
-              onSendMessage: handleSendMessage,
-              onToolsPress: onToolsPress,
+          SelectCredentialsModelWidget(
+            credentialsModelId: state.modelId,
+            selectedProviderId: state.providerName,
+            selectCredentialsModelId: (value) {
+              ref.read(newChatControllerProvider.notifier).setModelId(value);
+            },
+            onProviderChanged: (provider) {
+              ref
+                  .read(newChatControllerProvider.notifier)
+                  .setProvider(provider);
+            },
+          ),
+          Expanded(
+            child: Stack(
+              children: [
+                Center(
+                  child: ChatInputWidget(
+                    disabled: state.isLoading || state.modelId == null,
+                    onSendMessage: handleSendMessage,
+                    onToolsPress: onToolsPress,
+                  ),
+                ),
+                if (state.isLoading)
+                  ColoredBox(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    child: const Center(child: CircularProgressIndicator()),
+                  ),
+              ],
             ),
           ),
-          if (state.isLoading)
-            ColoredBox(
-              color: Colors.black.withValues(alpha: 0.3),
-              child: const Center(child: CircularProgressIndicator()),
-            ),
         ],
       ),
     );
