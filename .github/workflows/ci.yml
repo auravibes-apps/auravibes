@@ -35,18 +35,28 @@ jobs:
           cache-path: "${{ runner.tool_cache }}/flutter/:channel:-:version:-:arch:" # optional, change this to specify the cache path
           pub-cache-key: "flutter-pub-:os:-:channel:-:version:-:arch:-${{ hashFiles('pubspec.lock') }}" # optional, change this to force refresh cache of dart pub get dependencies
           # pub-cache-path: "${{ runner.tool_cache }}/flutter/:channel:-:version:-:arch:" # optional, change this to specify the cache path
+      - name: 🔗 Create FVM symlink for CI
+        run: |
+          mkdir -p .fvm
+          ln -sfn ${{ steps.flutter-action.outputs.tool-cache-path }}/flutter .fvm/flutter_sdk
+
+      - name: 🔗 Create FVM symlink for CI
+        run: |
+          mkdir -p .fvm
+          ln -sfn ${{ steps.flutter-action.outputs.tool-cache-path }}/flutter .fvm/flutter_sdk
+
       - uses: bluefireteam/melos-action@main
         with:
           run-bootstrap: true
 
       - name: ✨ Check Formatting
-        run: dart format --line-length 80 --set-exit-if-changed .
+        run: melos run format:check
 
       - name: 🕵️‍♂️ Analyze
-        run: flutter analyze .
+        run: melos analyze
 
       - name: 🧪 Run Tests
-        run: flutter test .
+        run: melos run test
 
       - name: 📦 Dependency Validation
         run: dart run dependency_validator

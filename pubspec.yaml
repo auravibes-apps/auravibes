@@ -17,7 +17,7 @@ dev_dependencies:
 
 melos:
   name: auravibes_workspace
-
+  sdkPath: auto
   categories:
     app:
       - "apps/**"

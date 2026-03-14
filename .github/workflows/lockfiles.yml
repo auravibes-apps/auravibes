@@ -1,0 +1,93 @@
+name: Update Lockfiles
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  update-lockfiles:
+    runs-on: macos-latest
+
+    steps:
+      - name: 📚 Git Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: 🔧 Setup FVM
+        uses: kuhnroyal/flutter-fvm-config-action/config@v3
+        id: fvm-config-action
+
+      - name: 🐦 Setup Flutter
+        uses: subosito/flutter-action@v2
+        id: flutter-action
+        with:
+          flutter-version: ${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}
+          channel: ${{ steps.fvm-config-action.outputs.FLUTTER_CHANNEL }}
+          cache: true
+
+      - name: 🔗 Create FVM symlink for CI
+        run: |
+          mkdir -p .fvm
+          ln -s ${{ steps.flutter-action.outputs.tool-cache-path }}/flutter .fvm/flutter_sdk
+
+      - name: 🏗️ Melos Bootstrap
+        uses: bluefireteam/melos-action@main
+        with:
+          run-bootstrap: true
+
+      - name: 🍎 iOS Pod Install
+        run: |
+          cd apps/auravibes_app/ios
+          pod install --no-repo-update
+
+      - name: 🖥️ macOS Pod Install (App)
+        run: |
+          cd apps/auravibes_app/macos
+          pod install --no-repo-update
+
+      - name: 🖥️ macOS Pod Install (Widgetbook)
+        run: |
+          cd widgetbook/macos
+          pod install --no-repo-update
+
+      - name: 📦 Check for lockfile changes
+        id: changes
+        run: |
+          changed_files=$(git diff --name-only)
+          if echo "$changed_files" | grep -qE "pubspec\.lock|Podfile\.lock"; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "Changed files:"
+            echo "$changed_files" | grep -E "pubspec\.lock|Podfile\.lock"
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "No lockfile changes"
+          fi
+
+      - name: 🔧 Configure Git
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+      - name: 🌿 Create branch and commit
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git checkout -b update/lockfiles
+          git add pubspec.lock apps/auravibes_app/ios/Podfile.lock apps/auravibes_app/macos/Podfile.lock widgetbook/macos/Podfile.lock
+          git diff --staged --quiet || git commit -m "chore: update lockfiles"
+
+      - name: 📤 Push and Create PR
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git push --force-with-lease -u origin update/lockfiles || true
+          pr_url=$(gh pr create --title "chore: update lockfiles" --body "Automated lockfile update after merge" --base main 2>/dev/null || echo "")
+          
+          if [ -n "$pr_url" ]; then
+            gh pr comment "$pr_url" --body "🔄 This PR updates the lockfiles after the recent merge. Please review and merge to keep dependencies up to date."
+          else
+            echo "PR already exists or no changes"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,7 +1,7 @@
 {
   "flutter": "3.41.4",
   "runPubGetOnSdkChanges": true,
-  "updateVscodeSettings": true,
+  "updateVscodeSettings": false,
   "updateGitIgnore": true,
-  "updateMelosSettings": true
+  "updateMelosSettings": false
 }

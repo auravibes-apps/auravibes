@@ -49,6 +49,7 @@ fvm flutter pub add dev:build_runner dev:json_serializable
 ```
 
 ### Quality & Testing
+valid on melos >7
 ```bash
 melos analyze            # Analyze code quality
 melos format             # Check code formatting
