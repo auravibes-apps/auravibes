@@ -38,7 +38,7 @@ jobs:
       - name: 🔗 Create FVM symlink for CI
         run: |
           mkdir -p .fvm
-          ln -s ${{ steps.flutter-action.outputs.tool-cache-path }}/flutter .fvm/flutter_sdk
+          ln -sfn ${{ steps.flutter-action.outputs.tool-cache-path }}/flutter .fvm/flutter_sdk
 
       - uses: bluefireteam/melos-action@main
         with:
