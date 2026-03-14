@@ -7,7 +7,7 @@ on:
 
 jobs:
   update-lockfiles:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
 
     steps:
       - name: 📚 Git Checkout
@@ -82,6 +82,12 @@ jobs:
         if: steps.changes.outputs.changed == 'true'
         run: |
           git push --force-with-lease -u origin update/lockfiles || true
-          gh pr create --title "chore: update lockfiles" --body "Automated lockfile update after merge" --base main 2>/dev/null || echo "PR already exists"
+          pr_url=$(gh pr create --title "chore: update lockfiles" --body "Automated lockfile update after merge" --base main 2>/dev/null || echo "")
+          
+          if [ -n "$pr_url" ]; then
+            gh pr comment "$pr_url" --body "🔄 This PR updates the lockfiles after the recent merge. Please review and merge to keep dependencies up to date."
+          else
+            echo "PR already exists or no changes"
+          fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
