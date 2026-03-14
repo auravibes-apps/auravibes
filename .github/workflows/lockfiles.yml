@@ -116,7 +116,7 @@ jobs:
       - name: 📦 iOS Pod Install
         run: |
           cd apps/auravibes_app/ios
-          pod install --repo-update=false
+          pod install --no-repo-update
 
       - name: 📦 Check Podfile.lock changes
         id: ios-changed
