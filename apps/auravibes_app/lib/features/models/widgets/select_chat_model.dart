@@ -40,6 +40,10 @@ class SelectCredentialsModelWidget extends HookConsumerWidget
     final internalProviderId = useState<String?>(null);
     final effectiveProviderId = selectedProviderId ?? internalProviderId.value;
 
+    // Responsive layout - stacked below md breakpoint (768px)
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isCompact = screenWidth < DesignBreakpoints.md;
+
     // Auto-select provider when only one exists (US3)
     useEffect(() {
       groupedModelsAsync.whenOrNull(
@@ -98,35 +102,56 @@ class SelectCredentialsModelWidget extends HookConsumerWidget
             left: .md,
             right: .md,
           ),
-          child: Row(
-            children: [
-              // Provider dropdown
-              Expanded(
-                child: _ProviderDropdown(
-                  providerNames: providerNames,
-                  selectedProvider: effectiveProviderId,
-                  onChanged: (provider) {
-                    internalProviderId.value = provider;
-                    onProviderChanged?.call(provider);
-                    // Reset model when provider changes (FR-004)
-                    selectCredentialsModelId(null);
-                  },
+          child: isCompact
+              ? Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _ProviderDropdown(
+                      providerNames: providerNames,
+                      selectedProvider: effectiveProviderId,
+                      onChanged: (provider) {
+                        internalProviderId.value = provider;
+                        onProviderChanged?.call(provider);
+                        selectCredentialsModelId(null);
+                      },
+                    ),
+                    const SizedBox(height: DesignSpacing.sm),
+                    _ModelDropdown(
+                      models: filteredModels,
+                      selectedModelId: credentialsModelId,
+                      providerSelected: effectiveProviderId != null,
+                      onChanged: selectCredentialsModelId,
+                      searchValue: searchValue,
+                      controller: controller,
+                    ),
+                  ],
+                )
+              : Row(
+                  children: [
+                    Expanded(
+                      child: _ProviderDropdown(
+                        providerNames: providerNames,
+                        selectedProvider: effectiveProviderId,
+                        onChanged: (provider) {
+                          internalProviderId.value = provider;
+                          onProviderChanged?.call(provider);
+                          selectCredentialsModelId(null);
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: DesignSpacing.sm),
+                    Expanded(
+                      child: _ModelDropdown(
+                        models: filteredModels,
+                        selectedModelId: credentialsModelId,
+                        providerSelected: effectiveProviderId != null,
+                        onChanged: selectCredentialsModelId,
+                        searchValue: searchValue,
+                        controller: controller,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(width: DesignSpacing.sm),
-              // Model dropdown
-              Expanded(
-                child: _ModelDropdown(
-                  models: filteredModels,
-                  selectedModelId: credentialsModelId,
-                  providerSelected: effectiveProviderId != null,
-                  onChanged: selectCredentialsModelId,
-                  searchValue: searchValue,
-                  controller: controller,
-                ),
-              ),
-            ],
-          ),
         );
       },
     );
@@ -158,7 +183,11 @@ class _ProviderDropdown extends HookConsumerWidget {
           .map(
             (name) => AuraDropdownOption(
               value: name,
-              child: Text(name),
+              child: Text(
+                name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           )
           .toList(),
@@ -189,6 +218,7 @@ class _ModelDropdown extends HookConsumerWidget {
     if (!providerSelected) {
       // Disabled state - show placeholder (FR-002)
       return const AuraDropdownSelector<String>(
+        isEnabled: false,
         placeholder: TextLocale(
           LocaleKeys.models_screens_select_provider_first,
         ),
@@ -206,7 +236,9 @@ class _ModelDropdown extends HookConsumerWidget {
               value: model.credentialsModel.id,
               child: Text(
                 model.credentialsModel.modelId,
-              ), // FR-007: Show model ID
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           )
           .toList(),
