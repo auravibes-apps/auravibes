@@ -43,8 +43,6 @@ class SelectCredentialsModelWidget extends HookConsumerWidget
     // Responsive layout - stacked below md breakpoint (768px)
     final screenWidth = MediaQuery.of(context).size.width;
     final isCompact = screenWidth < DesignBreakpoints.md;
-    // Show full text on narrow screens (<640px)
-    final isNarrow = screenWidth < DesignBreakpoints.sm;
 
     // Filter models by search - computed unconditionally (not in hook)
     final groupedMap = groupedModelsAsync.hasValue
