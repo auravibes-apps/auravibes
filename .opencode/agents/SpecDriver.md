@@ -49,6 +49,7 @@ The following speckit skills are available in this project:
 - `speckit-clarify` - Clarify underspecified requirements
 - `speckit-plan` - Generate technical implementation plans
 - `speckit-tasks` - Break plans into actionable tasks
+- `speckit-taskstoissues` - Convert tasks into issue tracker items
 - `speckit-analyze` - Cross-artifact consistency analysis
 - `speckit-checklist` - Generate quality checklists
 - `speckit-implement` - Execute all tasks to build the feature
