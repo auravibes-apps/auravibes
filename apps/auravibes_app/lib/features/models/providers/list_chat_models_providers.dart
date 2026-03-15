@@ -26,24 +26,18 @@ Future<List<CredentialsModelWithProviderEntity>> listCredentialsCredentials(
 @riverpod
 Future<Map<String, List<CredentialsModelWithProviderEntity>>>
 listModelsGroupedByProvider(Ref ref) async {
-  final modelsAsync = ref.watch(listCredentialsCredentialsProvider);
+  // Await the underlying FutureProvider so loading/error states propagate automatically.
+  final models = await ref.watch(listCredentialsCredentialsProvider.future);
 
-  // Propagate loading/error states properly
-  return modelsAsync.when(
-    data: (models) {
-      final grouped = <String, List<CredentialsModelWithProviderEntity>>{};
+  final grouped = <String, List<CredentialsModelWithProviderEntity>>{};
 
-      for (final model in models) {
-        final providerName = model.modelsProvider.name;
-        grouped.putIfAbsent(providerName, () => []).add(model);
-      }
+  for (final model in models) {
+    final providerName = model.modelsProvider.name;
+    grouped.putIfAbsent(providerName, () => []).add(model);
+  }
 
-      // Sort provider names alphabetically (FR-006)
-      final sortedKeys = grouped.keys.toList()..sort();
+  // Sort provider names alphabetically (FR-006)
+  final sortedKeys = grouped.keys.toList()..sort();
 
-      return {for (final key in sortedKeys) key: grouped[key]!};
-    },
-    loading: () => <String, List<CredentialsModelWithProviderEntity>>{},
-    error: (_, _) => <String, List<CredentialsModelWithProviderEntity>>{},
-  );
+  return {for (final key in sortedKeys) key: grouped[key]!};
 }
