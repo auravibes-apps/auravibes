@@ -59,7 +59,7 @@ class NewChatScreen extends ConsumerWidget {
         children: [
           SelectCredentialsModelWidget(
             credentialsModelId: state.modelId,
-            selectedProviderId: state.providerName,
+            selectedProviderId: state.providerId,
             selectCredentialsModelId: (value) {
               ref.read(newChatControllerProvider.notifier).setModelId(value);
             },

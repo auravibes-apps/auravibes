@@ -173,7 +173,7 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
             widthFactor: 1,
           ),
           portalFollower: TapRegion(
-            groupId: const ValueKey('dropdown'),
+            groupId: this,
             child: _DropdownMenu<T>(
               options: widget.options,
               selectedValue: widget.value,
@@ -189,7 +189,7 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
             ),
           ),
           child: TapRegion(
-            groupId: const ValueKey('dropdown'),
+            groupId: this,
             onTapOutside: (_) {
               // Close dropdown when tapping outside (like TextField)
               if (_isDropdownOpen) {

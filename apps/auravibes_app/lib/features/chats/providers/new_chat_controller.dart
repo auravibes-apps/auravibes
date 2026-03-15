@@ -15,7 +15,8 @@ abstract class NewChatState with _$NewChatState {
   const factory NewChatState({
     String? modelId,
 
-    /// Stores the provider ID (or name-equivalent) - for display and filtering models
+    /// Stores the provider ID (or name-equivalent)
+    /// - for display and filtering models
     String? providerId,
     @Default(false) bool isLoading,
   }) = _NewChatState;
