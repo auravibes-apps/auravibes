@@ -43,6 +43,8 @@ class SelectCredentialsModelWidget extends HookConsumerWidget
     // Responsive layout - stacked below md breakpoint (768px)
     final screenWidth = MediaQuery.of(context).size.width;
     final isCompact = screenWidth < DesignBreakpoints.md;
+    // Show full text on narrow screens (<640px)
+    final isNarrow = screenWidth < DesignBreakpoints.sm;
 
     // Filter models by search - computed unconditionally (not in hook)
     final groupedMap = groupedModelsAsync.hasValue
@@ -163,7 +165,8 @@ class SelectCredentialsModelWidget extends HookConsumerWidget
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(60);
+  // Use 120 to accommodate both Row (60) and Column (stacked) layouts
+  Size get preferredSize => const Size.fromHeight(120);
 }
 
 /// Provider dropdown widget - first step in two-step selection.
@@ -188,11 +191,7 @@ class _ProviderDropdown extends HookConsumerWidget {
           .map(
             (name) => AuraDropdownOption(
               value: name,
-              child: Text(
-                name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
+              child: Text(name),
             ),
           )
           .toList(),
@@ -239,11 +238,7 @@ class _ModelDropdown extends HookConsumerWidget {
           .map(
             (model) => AuraDropdownOption(
               value: model.credentialsModel.id,
-              child: Text(
-                model.credentialsModel.modelId,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
+              child: Text(model.credentialsModel.modelId),
             ),
           )
           .toList(),
