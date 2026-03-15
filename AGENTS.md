@@ -131,8 +131,10 @@ SomeExperimentalApi(), // ignore: experimental_member_use - Required for widgetb
 - Verify version references are consistent across README, pubspec, and FVM config
 
 ## Active Technologies
+- Dart 3.x (FVM pinned to 3.41.4+) + Flutter, Riverpod (with code generation), Freezed, auravibes_ui (001-two-step-model-selector)
+- Drift database (existing, no schema changes needed) (001-two-step-model-selector)
 - Dart 3.11+ (Flutter 3.41.4+ via FVM) + Flutter SDK, flutter_portal, gpt_markdown, riverpod (existing) (001-ui-library-widgets)
-- N/A (UI components only) (001-ui-library-widgets)
 
 ## Recent Changes
+- 001-two-step-model-selector: Added Dart 3.x (FVM pinned to 3.41.4+) + Flutter, Riverpod (with code generation), Freezed, auravibes_ui
 - 001-ui-library-widgets: Added Dart 3.11+ (Flutter 3.41.4+ via FVM) + Flutter SDK, flutter_portal, gpt_markdown, riverpod (existing)

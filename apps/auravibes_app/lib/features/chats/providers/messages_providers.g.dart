@@ -137,7 +137,7 @@ final class ChatMessagesControllerProvider
 }
 
 String _$chatMessagesControllerHash() =>
-    r'acd1cb925d11b836d9295627723cad13a0d5d39e';
+    r'10f16fcd01036e6c41b78cf35f23585c2b932482';
 
 abstract class _$ChatMessagesController
     extends $AsyncNotifier<List<MessageEntity>> {

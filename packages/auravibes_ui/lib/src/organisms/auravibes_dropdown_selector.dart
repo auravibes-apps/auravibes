@@ -88,15 +88,27 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
   void initState() {
     super.initState();
     _focusNode = widget.focusNode ?? FocusNode();
+    // Listen for focus changes
+    _focusNode.addListener(_onFocusChange);
   }
 
   @override
   void dispose() {
+    _focusNode.removeListener(_onFocusChange);
     if (widget.focusNode == null) {
       _focusNode.dispose();
     }
     // Ensure overlay is removed before widget is disposed
     super.dispose();
+  }
+
+  void _onFocusChange() {
+    // Close dropdown when losing focus
+    if (!_focusNode.hasFocus && _isDropdownOpen) {
+      setState(() {
+        _isDropdownOpen = false;
+      });
+    }
   }
 
   void _toggleDropdown() {
@@ -160,7 +172,8 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
             target: Alignment.bottomCenter,
             widthFactor: 1,
           ),
-          portalFollower: FocusScope(
+          portalFollower: TapRegion(
+            groupId: this,
             child: _DropdownMenu<T>(
               options: widget.options,
               selectedValue: widget.value,
@@ -175,37 +188,46 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
               optionBuilder: widget.optionBuilder,
             ),
           ),
-          child: AuraFieldWrapper(
-            label: widget.label,
-            hint: widget.hint,
-            error: widget.error,
-            isRequired: widget.isRequired,
-            state: state,
-            isEnabled: widget.isEnabled,
-            isFocused: _isDropdownOpen,
-            onTap: _toggleDropdown,
-            semanticLabel: widget.semanticLabel,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                vertical: DesignSpacing.sm,
-                horizontal: DesignSpacing.md,
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: AuraText(
-                      child: _getDisplayText(),
+          child: TapRegion(
+            groupId: this,
+            onTapOutside: (_) {
+              // Close dropdown when tapping outside (like TextField)
+              if (_isDropdownOpen) {
+                _unfocus();
+              }
+            },
+            child: AuraFieldWrapper(
+              label: widget.label,
+              hint: widget.hint,
+              error: widget.error,
+              isRequired: widget.isRequired,
+              state: state,
+              isEnabled: widget.isEnabled,
+              isFocused: _isDropdownOpen,
+              onTap: _toggleDropdown,
+              semanticLabel: widget.semanticLabel,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  vertical: DesignSpacing.sm,
+                  horizontal: DesignSpacing.md,
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: AuraText(
+                        child: _getDisplayText(),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: DesignSpacing.sm),
-                  AuraIcon(
-                    _isDropdownOpen
-                        ? Icons.keyboard_arrow_up
-                        : Icons.keyboard_arrow_down,
-                    color: AuraColorVariant.onSurfaceVariant,
-                    size: AuraIconSize.small,
-                  ),
-                ],
+                    const SizedBox(width: DesignSpacing.sm),
+                    AuraIcon(
+                      _isDropdownOpen
+                          ? Icons.keyboard_arrow_up
+                          : Icons.keyboard_arrow_down,
+                      color: AuraColorVariant.onSurfaceVariant,
+                      size: AuraIconSize.small,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

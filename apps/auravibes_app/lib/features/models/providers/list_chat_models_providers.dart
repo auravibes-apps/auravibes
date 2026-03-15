@@ -20,3 +20,24 @@ Future<List<CredentialsModelWithProviderEntity>> listCredentialsCredentials(
     CredentialsModelsFilter(workspaces: workspaces.map((w) => w.id).toList()),
   );
 }
+
+/// Groups models by provider name for two-step model selection.
+/// Returns a map where keys are provider names and values are lists of models.
+@riverpod
+Future<Map<String, List<CredentialsModelWithProviderEntity>>>
+listModelsGroupedByProvider(Ref ref) async {
+  // Await the underlying FutureProvider so loading/error states propagate automatically.
+  final models = await ref.watch(listCredentialsCredentialsProvider.future);
+
+  final grouped = <String, List<CredentialsModelWithProviderEntity>>{};
+
+  for (final model in models) {
+    final providerName = model.modelsProvider.name;
+    grouped.putIfAbsent(providerName, () => []).add(model);
+  }
+
+  // Sort provider names alphabetically (FR-006)
+  final sortedKeys = grouped.keys.toList()..sort();
+
+  return {for (final key in sortedKeys) key: grouped[key]!};
+}

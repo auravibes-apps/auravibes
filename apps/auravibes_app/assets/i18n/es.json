@@ -9,6 +9,11 @@
     "prompts": "Prompts"
   },
   "models_screens": {
+    "select_provider": "Seleccionar Proveedor",
+    "select_model": "Seleccionar Modelo",
+    "select_provider_first": "Selecciona proveedor primero",
+    "no_providers_configured": "No hay proveedores configurados",
+    "no_models_available": "No hay modelos disponibles",
     "title": "Proveedores de Modelos",
     "list_error": "Error al cargar modelos: {}",
     "list_empty_title": "No hay Modelos de IA Configurados",
