@@ -15,8 +15,8 @@ abstract class NewChatState with _$NewChatState {
   const factory NewChatState({
     String? modelId,
 
-    /// Stores the provider NAME (not ID) - for display and filtering models
-    String? providerName,
+    /// Stores the provider ID (or name-equivalent) - for display and filtering models
+    String? providerId,
     @Default(false) bool isLoading,
   }) = _NewChatState;
 }
@@ -32,9 +32,9 @@ class NewChatController extends _$NewChatController {
     state = state.copyWith(modelId: modelId);
   }
 
-  void setProvider(String? providerName) {
+  void setProvider(String? providerId) {
     state = state.copyWith(
-      providerName: providerName,
+      providerId: providerId,
       modelId: null, // Reset model when provider changes
     );
   }
