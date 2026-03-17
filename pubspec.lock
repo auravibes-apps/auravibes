@@ -189,10 +189,10 @@ packages:
     dependency: transitive
     description:
       name: cli_launcher
-      sha256: "17d2744fb9a254c49ec8eda582536abe714ea0131533e24389843a4256f82eac"
+      sha256: cc9f8d9ff8e6c5c31801c927224be7de3bd52664b7c2cd7a909db4b8ad6ac0ab
       url: "https://pub.dev"
     source: hosted
-    version: "0.3.2+1"
+    version: "0.3.3"
   cli_util:
     dependency: transitive
     description:
@@ -913,10 +913,10 @@ packages:
     dependency: "direct dev"
     description:
       name: melos
-      sha256: "7dcc4444d79b538ab8353bb38308f97e90b032984f75e8fd516fedfe8160b35e"
+      sha256: e3379a08af92a719a76d4cce9644c98dc87554e0fa3f2a93eb9a04bb295d4a03
       url: "https://pub.dev"
     source: hosted
-    version: "7.4.0"
+    version: "7.4.1"
   meta:
     dependency: transitive
     description:
@@ -1716,4 +1716,4 @@ packages:
     version: "2.2.3"
 sdks:
   dart: ">=3.11.0 <4.0.0"
-  flutter: ">=3.38.9 <4.0.0"
+  flutter: ">=3.38.9"
