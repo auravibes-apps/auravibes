@@ -49,7 +49,7 @@ jobs:
         with:
           run-bootstrap: true
       - name: 🛠️ Generate Code
-        run: melos generate
+        run: melos run generate --no-select
 
       - name: ✨ Check Formatting
         run: melos run format:check
