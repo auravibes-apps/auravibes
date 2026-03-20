@@ -48,6 +48,8 @@ jobs:
       - uses: bluefireteam/melos-action@main
         with:
           run-bootstrap: true
+      - name: 🛠️ Generate Code
+        run: melos generate
 
       - name: ✨ Check Formatting
         run: melos run format:check
