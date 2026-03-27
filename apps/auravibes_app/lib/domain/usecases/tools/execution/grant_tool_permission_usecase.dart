@@ -9,7 +9,7 @@ import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dar
 import 'package:auravibes_app/domain/usecases/tools/execution/batch_execute_tools_usecase.dart';
 import 'package:auravibes_app/domain/usecases/tools/execution/update_message_metadata_usecase.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool.dart';
-import 'package:auravibes_app/services/tools/tool_resolution.dart';
+import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
 
 /// Use case for granting tool permissions.
 ///
@@ -48,7 +48,7 @@ class GrantToolPermissionUseCase {
         .firstOrNull;
     if (toolCall == null) return;
 
-    final resolvedTool = ToolResolverUtil().resolveTool(toolCall.name);
+    final resolvedTool = ToolResolverService().resolveTool(toolCall.name);
     if (resolvedTool == null) {
       // Handle tool not found
       await _updateMetadataUseCase.call(

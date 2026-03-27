@@ -16,7 +16,7 @@ import 'package:auravibes_app/providers/chatbot_service_provider.dart';
 import 'package:auravibes_app/providers/mcp_connection_controller.dart';
 import 'package:auravibes_app/providers/tool_execution_controller.dart';
 import 'package:auravibes_app/services/chatbot_service/models/chat_message_models.dart';
-import 'package:auravibes_app/services/tools/tool_resolution.dart';
+import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
 import 'package:auravibes_app/services/tools/tool_service.dart';
 import 'package:auravibes_app/services/tools/user_tools_entity.dart';
 import 'package:auravibes_app/utils/drain.dart';
@@ -166,132 +166,9 @@ abstract class StreamingMessage with _$StreamingMessage {
 
 @Riverpod(keepAlive: true)
 class MessagesController extends _$MessagesController {
-  final Map<String, StreamSubscription<Never>> _subscriptions = {};
-  final Map<String, StreamingDeltaPersister> _deltaPersisters = {};
-
   @override
   List<StreamingMessage> build() {
-    ref.onDispose(() {
-      for (final subscription in _subscriptions.values) {
-        subscription.cancel();
-      }
-
-      for (final persister in _deltaPersisters.values) {
-        persister.close();
-      }
-    });
-
     return [];
-  }
-
-  // Add a new stream to the management system
-  void _addStream({
-    required String messageId,
-    required String conversationId,
-    required String responseMessageId,
-    required Stream<ChatResult> stream,
-  }) {
-    // Create streaming message entry
-    final streamingMessage = StreamingMessage(
-      messageId: messageId,
-      conversationId: conversationId,
-      responseMessageId: responseMessageId,
-      content: '',
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-      status: StreamingMessageStatus.created,
-    );
-
-    // Add to state
-    state = [...state, streamingMessage];
-
-    final subs = CompositeSubscription();
-    // Register subscription immediately so error handlers can cancel it
-    _subscriptions[responseMessageId] = subs;
-
-    var didHandleFailure = false;
-
-    void handleStreamFailure(Object error, [StackTrace? stackTrace]) {
-      if (didHandleFailure) return;
-      didHandleFailure = true;
-      unawaited(
-        _handleStreamFailure(
-          messageId: messageId,
-          responseMessageId: responseMessageId,
-        ),
-      );
-    }
-
-    final chats$ = stream.shareReplay().scan<ChatResult?>((
-      accumulated,
-      value,
-      index,
-    ) {
-      if (accumulated == null) return value;
-      return accumulated.concat(value);
-    }, null).whereNotNull();
-
-    // Create single shared replay instance for all listeners
-    final shared$ = chats$.shareReplay();
-
-    // set message confirmation
-    subs
-      ..add(
-        shared$.take(1).listen(
-          (event) {
-            _confirmMessage(messageId: messageId);
-          },
-          onError: handleStreamFailure,
-        ),
-      )
-      // update states
-      ..add(
-        shared$.listen((chatResult) {
-          _updateState(responseMessageId, chatResult);
-        }, onError: handleStreamFailure),
-      );
-
-    final coalescingSaver = _CoalescingSaver<ChatResult>(
-      storeMessage: (chatResult) => _updateMessage(
-        chatResult: chatResult,
-        responseMessageId: responseMessageId,
-      ),
-      storeDoneMessage: (chatResult) => _doneMessage(
-        chatResult: chatResult,
-        responseMessageId: responseMessageId,
-      ),
-    );
-    // store message update
-    subs.add(
-      shared$.listen(
-        coalescingSaver.push,
-        onError: handleStreamFailure,
-        onDone: coalescingSaver.complete,
-      ),
-    );
-  }
-
-  void _updateState(String responseMessageId, ChatResult chatResult) {
-    state = state.map((msg) {
-      if (msg.responseMessageId == responseMessageId) {
-        return msg.copyWith(
-          status: StreamingMessageStatus.streaming,
-          content: chatResult.outputAsString,
-          updatedAt: DateTime.now(),
-          metadata: _getMetadata(chatResult),
-        );
-      }
-      return msg;
-    }).toList();
-  }
-
-  Future<void> _confirmMessage({required String messageId}) async {
-    final repo = ref.read(messageRepositoryProvider);
-
-    await repo.updateMessage(
-      messageId,
-      const MessageToUpdate(status: MessageStatus.sent),
-    );
   }
 
   List<MessageToolCallEntity> _getTools(ChatResult chatResult) {
@@ -308,90 +185,13 @@ class MessagesController extends _$MessagesController {
     }).toList();
   }
 
-  MessageMetadataEntity? _getMetadata(ChatResult chatResult) {
-    if (chatResult.output.toolCalls.isEmpty) {
-      return null;
-    }
-
-    return MessageMetadataEntity(toolCalls: _getTools(chatResult));
-  }
-
-  Future<void> _updateMessage({
-    required String responseMessageId,
-    required ChatResult chatResult,
-  }) async {
-    final repo = ref.read(messageRepositoryProvider);
-
-    await repo.updateMessage(
-      responseMessageId,
-      MessageToUpdate(
-        content: chatResult.outputAsString,
-        metadata: _getMetadata(chatResult),
-      ),
-    );
-  }
-
-  Future<void> _handleStreamFailure({
-    required String messageId,
-    required String responseMessageId,
-  }) async {
-    try {
-      final repo = ref.read(messageRepositoryProvider);
-
-      // Get partial content from in-memory state before updating DB
-      final partialContent = state
-          .firstWhereOrNull((msg) => msg.responseMessageId == responseMessageId)
-          ?.content;
-
-      // Update DB first to prevent race condition with UI refresh
-      final userMessage = await repo.getMessageById(messageId);
-      if (userMessage?.status == MessageStatus.sending) {
-        await repo.updateMessage(
-          messageId,
-          const MessageToUpdate(status: MessageStatus.error),
-        );
-      }
-
-      await repo.updateMessage(
-        responseMessageId,
-        MessageToUpdate(
-          status: MessageStatus.error,
-          content: partialContent == null || partialContent.isEmpty
-              ? null
-              : partialContent,
-        ),
-      );
-
-      // Now remove from in-memory state after DB is updated
-      state = state
-          .where((msg) => msg.responseMessageId != responseMessageId)
-          .toList();
-
-      await _subscriptions[responseMessageId]?.cancel();
-      _subscriptions.remove(responseMessageId);
-    } on Exception catch (e) {
-      // Log error but don't crash - errors in error handling are critical
-      // but shouldn't cascade
-      // ignore: avoid_print
-      print('Critical: Error in _handleStreamFailure: $e');
-    }
-  }
-
   Future<void> _doneMessage({
     required String responseMessageId,
     required ChatResult chatResult,
   }) async {
-    final repo = ref.read(messageRepositoryProvider);
-    state = state.where((msg) {
-      return msg.responseMessageId != responseMessageId;
-    }).toList();
-
-    await _subscriptions[responseMessageId]?.cancel();
-    _subscriptions.remove(responseMessageId);
-
     final toolsToCall = _getTools(chatResult);
     if (toolsToCall.isNotEmpty) {
-      final resolver = ToolResolverUtil();
+      final resolver = ToolResolverService();
       final mapedToolsResolved = toolsToCall.asMap().map(
         (key, value) {
           final tool = resolver.resolveTool(value.name);
@@ -424,15 +224,6 @@ class MessagesController extends _$MessagesController {
       final foundToolsToRun = mapedToolsResolved.values.nonNulls.toList();
       toolManager.runTask(foundToolsToRun, responseMessageId);
     }
-
-    await repo.updateMessage(
-      responseMessageId,
-      MessageToUpdate(
-        status: MessageStatus.sent,
-        content: chatResult.outputAsString,
-        metadata: _getMetadata(chatResult),
-      ),
-    );
   }
 
   Future<MessageEntity> _waitMessage({
@@ -515,26 +306,6 @@ class MessagesController extends _$MessagesController {
         );
 
     final chatbotService = ref.watch(chatbotServiceProvider);
-    final aiMessages = messages.map<ChatbotMessage>((message) {
-      if (message.isUser) {
-        return ChatbotMessage.humanText(message.content);
-      }
-
-      return ChatbotMessage.ai(
-        message: message.content,
-        toolCalls: [
-          for (final toolCall
-              in message.metadata?.toolCalls ?? <MessageToolCallEntity>[])
-            ChatbotToolCall(
-              id: toolCall.id,
-              name: toolCall.name,
-              arguments: toolCall.arguments,
-              argumentsRaw: toolCall.argumentsRaw,
-              responseRaw: toolCall.responseRaw,
-            ),
-        ],
-      );
-    }).toList();
 
     // Build combined tool specs (built-in + MCP) with composite IDs
     final combinedToolSpecs = await _buildCombinedToolSpecs(enabledTools);

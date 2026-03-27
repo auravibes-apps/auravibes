@@ -18,7 +18,7 @@ class _BuiltInToolIdComponents {
   final String toolIdentifier;
 }
 
-class ToolResolverUtil {
+class ToolResolverService {
   // ============================================================
   // Helper: Tool resolution
   // ============================================================

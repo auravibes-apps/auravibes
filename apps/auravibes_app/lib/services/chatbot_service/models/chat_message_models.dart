@@ -23,13 +23,3 @@ abstract class ChatbotToolCall with _$ChatbotToolCall {
     );
   }
 }
-
-@freezed
-sealed class ChatbotMessage with _$ChatbotMessage {
-  const factory ChatbotMessage.humanText(String message) =
-      ChatbotMessageHumanText;
-  const factory ChatbotMessage.ai({
-    required String message,
-    required List<ChatbotToolCall> toolCalls,
-  }) = ChatbotMessageAI;
-}

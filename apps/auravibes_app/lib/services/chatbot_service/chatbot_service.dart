@@ -1,13 +1,13 @@
 import 'dart:convert';
 
 import 'package:auravibes_app/domain/entities/credentials_models_entities.dart';
+import 'package:auravibes_app/domain/entities/messages.dart';
 import 'package:auravibes_app/domain/repositories/model_providers_repository.dart';
-import 'package:auravibes_app/services/chatbot_service/models/chat_message_models.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
-import 'package:collection/collection.dart';
 import 'package:langchain/langchain.dart';
 import 'package:langchain_anthropic/langchain_anthropic.dart';
 import 'package:langchain_openai/langchain_openai.dart';
+import 'package:rxdart/rxdart.dart';
 
 List<AIChatMessageToolCall>? safeDecode(String? metadata) {
   if (metadata == null) return null;
@@ -35,29 +35,29 @@ class ChatbotService {
 
   Stream<ChatResult> sendMessage(
     CredentialsModelWithProviderEntity chatProvider,
-    List<ChatbotMessage> messages, {
+    List<MessageEntity> messages, {
     List<ToolSpec>? tools,
   }) async* {
-    final chatMessages = messages.map((message) {
-      return switch (message) {
-        ChatbotMessageHumanText(:final message) => [
-          ChatMessage.humanText(message),
-        ],
-        ChatbotMessageAI(:final message, :final toolCalls) => [
-          ChatMessage.ai(
-            message,
-            toolCalls: toolCalls.map((tool) => tool.toAIChat()).toList(),
-          ),
-          for (final response in toolCalls.where(
-            (element) => element.responseRaw != null,
-          ))
-            ChatMessage.tool(
-              toolCallId: response.id,
-              content: response.responseRaw!,
-            ),
-        ],
-      };
-    }).flattenedToList;
+    final chatMessages = messages
+        .map((message) {
+          if (message.isUser) {
+            return ChatMessage.humanText(message.content);
+          }
+          return ChatMessage.ai(
+            message.content,
+            toolCalls: [
+              for (final toolCall
+                  in message.metadata?.toolCalls ?? <MessageToolCallEntity>[])
+                .new(
+                  id: toolCall.id,
+                  name: toolCall.name,
+                  argumentsRaw: toolCall.argumentsRaw,
+                  arguments: toolCall.arguments,
+                ),
+            ],
+          );
+        })
+        .toList(growable: false);
 
     final credentialsModel = await _getCredentialsModel(
       chatProvider,
@@ -74,6 +74,13 @@ class ChatbotService {
     CredentialsModelWithProviderEntity chatProvider,
     String firstMessage,
   ) async {
+    return streamTitle(chatProvider, firstMessage).last;
+  }
+
+  Stream<String> streamTitle(
+    CredentialsModelWithProviderEntity chatProvider,
+    String firstMessage,
+  ) async* {
     final credentialsModel = await _getCredentialsModel(chatProvider);
 
     final prompt = PromptValue.chat([
@@ -86,36 +93,41 @@ The title should capture the main topic or theme. Respond with only the title, n
     ]);
 
     try {
-      final result = await credentialsModel.invoke(
+      final result = credentialsModel.stream(
         prompt,
         options: _getModelOptions(chatProvider),
       );
-      var title = result.outputAsString.trim();
 
-      // Clean up the title
-      if (title.startsWith('"') && title.endsWith('"')) {
-        title = title.substring(1, title.length - 1);
-      }
-      if (title.startsWith("'") && title.endsWith("'")) {
-        title = title.substring(1, title.length - 1);
-      }
-      if (title.startsWith('Title:')) {
-        title = title.substring(6).trim();
-      }
-      if (title.startsWith('Conversation:')) {
-        title = title.substring(13).trim();
-      }
+      yield* result
+          .map((event) => event.outputAsString.trim())
+          .scan((accumulated, value, index) => accumulated + value, '')
+          .map((title) {
+            // Clean up the title
+            var _title = title.trim();
+            if (_title.startsWith('"') && _title.endsWith('"')) {
+              _title = _title.substring(1, _title.length - 1);
+            }
+            if (_title.startsWith("'") && _title.endsWith("'")) {
+              _title = _title.substring(1, _title.length - 1);
+            }
+            if (_title.startsWith('Title:')) {
+              _title = _title.substring(6).trim();
+            }
+            if (_title.startsWith('Conversation:')) {
+              _title = _title.substring(13).trim();
+            }
 
-      // Ensure title is not empty and not too long
-      if (title.isEmpty) {
-        title = _generateFallbackTitle(firstMessage);
-      } else if (title.length > 50) {
-        title = '${title.substring(0, 47)}...';
-      }
+            // Ensure title is not empty and not too long
+            if (_title.isEmpty) {
+              return _generateFallbackTitle(firstMessage);
+            } else if (_title.length > 50) {
+              return '${_title.substring(0, 47)}...';
+            }
 
-      return title;
+            return _title;
+          });
     } on Exception catch (_) {
-      return _generateFallbackTitle(firstMessage);
+      yield _generateFallbackTitle(firstMessage);
     }
   }
 
