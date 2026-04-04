@@ -61,7 +61,7 @@ melos run validate           # Full CI validation
 ### Running Specific Tests
 in the package directory, use:
 ```bash
-flutter test test/my_test_file.dart
+flutter test test/test_file_one.dart test/test_file_two.dart --no-pub 
 ```
 
 ### Code Generation
