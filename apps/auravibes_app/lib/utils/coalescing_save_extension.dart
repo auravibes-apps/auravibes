@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:rxdart/rxdart.dart';
+
 class _CoalescingSaver<T> {
   _CoalescingSaver({
     required Future<void> Function(T state) store,
@@ -13,6 +15,7 @@ class _CoalescingSaver<T> {
   bool _saving = false;
   bool _closed = false;
   bool _doneRequested = false;
+  final Completer<void> _doneCompleter = Completer<void>();
 
   T? _pending;
 
@@ -22,13 +25,16 @@ class _CoalescingSaver<T> {
     if (!_saving) _run();
   }
 
-  void complete([T? finalState]) {
-    if (_closed) return;
+  Future<void> complete([T? finalState]) {
+    if (_closed) return _doneCompleter.future;
     if (finalState != null) {
       _pending = finalState;
     }
     _doneRequested = true;
-    if (!_saving) _run();
+    if (!_saving) {
+      unawaited(_run());
+    }
+    return _doneCompleter.future;
   }
 
   Future<void> _run() async {
@@ -49,6 +55,9 @@ class _CoalescingSaver<T> {
 
         if (_doneRequested) {
           _closed = true;
+          if (!_doneCompleter.isCompleted) {
+            _doneCompleter.complete();
+          }
           break;
         }
 
@@ -71,15 +80,19 @@ extension CoalescingSaveExtension<T> on Stream<T> {
       onSaved: controller.add,
     );
 
-    listen(
+    late final StreamSubscription<T> subscription;
+
+    subscription = shareReplay().listen(
       saver.push,
       onError: controller.addError,
-      onDone: () {
-        saver.complete();
-        controller.close();
+      onDone: () async {
+        await saver.complete();
+        await controller.close();
       },
       cancelOnError: false,
     );
+
+    controller.onCancel = subscription.cancel;
 
     return controller.stream;
   }

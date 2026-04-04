@@ -1,9 +1,6 @@
-import 'package:auravibes_app/domain/usecases/chats/start_new_chat_usecase.dart';
-import 'package:auravibes_app/domain/usecases/tools/conversation/resolve_conversation_tool_states_usecase.dart'
-    as tools_usecases;
-import 'package:auravibes_app/features/tools/providers/conversation_tools_controller.dart';
+import 'package:auravibes_app/domain/entities/conversation.dart';
+import 'package:auravibes_app/features/chats/usecases/send_new_message_usecase.dart';
 import 'package:auravibes_app/features/workspaces/providers/selected_workspace.dart';
-import 'package:auravibes_app/providers/messages_controller.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -40,7 +37,7 @@ class NewChatController extends _$NewChatController {
     );
   }
 
-  Future<String> startConversation(String message) async {
+  Future<ConversationEntity> startConversation(String message) async {
     final modelId = state.modelId;
     if (modelId == null) {
       throw Exception('Please select a chat model');
@@ -51,33 +48,14 @@ class NewChatController extends _$NewChatController {
       final workspaceId = await ref.read(
         selectedWorkspaceProvider.selectAsync((workspace) => workspace.id),
       );
-      return StartNewChatUseCase(
-        getConversationTools: (currentWorkspaceId) async {
-          final toolStates = await ref.read(
-            conversationToolsControllerProvider(
-              workspaceId: currentWorkspaceId,
-            ).future,
+      // TODO: manage future
+      return ref
+          .read(sendNewMessageUsecaseProvider)
+          .call(
+            firstMessage: message,
+            credentialsModelId: modelId,
+            workspaceId: workspaceId,
           );
-
-          return toolStates
-              .map(
-                (toolState) => tools_usecases.ResolvedConversationToolState(
-                  tool: toolState.tool,
-                  isEnabled: toolState.isEnabled,
-                  permissionMode: toolState.permissionMode,
-                  isWorkspaceEnabled: toolState.isWorkspaceEnabled,
-                ),
-              )
-              .toList();
-        },
-        addConversation: ref
-            .read(messagesControllerProvider.notifier)
-            .addConversation,
-      ).call(
-        workspaceId: workspaceId,
-        modelId: modelId,
-        message: message,
-      );
     } finally {
       state = state.copyWith(isLoading: false);
     }

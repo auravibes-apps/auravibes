@@ -8,7 +8,6 @@ import 'package:auravibes_app/features/chats/providers/tool_display_name_provide
 import 'package:auravibes_app/features/chats/widgets/tool_call_confirmation_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/tool_call_response_preview.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
-import 'package:auravibes_app/providers/tool_execution_controller.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -145,15 +144,10 @@ class _ToolCallWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final trackedTools = ref.watch(toolExecutionControllerProvider);
-    final isRunning = trackedTools.any(
-      (t) => t.id == toolCall.id && t.isRunning,
-    );
     // Only show confirmation for pending tool calls in the last message.
     // If a tool call is pending in a previous message, the user skipped it.
     // A tool is pending if resultStatus is null (not yet resolved).
-    final isPendingConfirmation =
-        toolCall.isPending && !isRunning && isLastMessage;
+    final isPendingConfirmation = toolCall.isPending && isLastMessage;
 
     // Get human-readable display name for the tool
     final displayNameAsync = ref.watch(toolDisplayNameProvider(toolCall.name));
@@ -189,14 +183,6 @@ class _ToolCallWidget extends ConsumerWidget {
               ],
             ),
           ),
-          // Show running indicator
-          if (isRunning)
-            _ToolCallStatusIndicator(
-              statusText: const TextLocale(LocaleKeys.tool_call_status_running),
-              icon: Icons.sync,
-              isSpinning: true,
-              color: context.auraColors.primary,
-            ),
           // Show pending confirmation indicator
           if (isPendingConfirmation) ...[
             _ToolCallStatusIndicator(
@@ -212,8 +198,8 @@ class _ToolCallWidget extends ConsumerWidget {
               ),
             ),
           ],
-          // Show resolved status (not pending and not running)
-          if (toolCall.isResolved && !isRunning)
+          // Show resolved status once persisted on the tool call metadata.
+          if (toolCall.isResolved)
             _ToolCallStatusIndicator(
               statusText: TextLocale(toolCall.resultStatus!.localeKey),
               icon: _getStatusIcon(toolCall.resultStatus!),
@@ -266,13 +252,11 @@ class _ToolCallStatusIndicator extends StatelessWidget {
     required this.statusText,
     required this.icon,
     required this.color,
-    this.isSpinning = false,
   });
 
   final Widget statusText;
   final IconData icon;
   final Color color;
-  final bool isSpinning;
 
   @override
   Widget build(BuildContext context) {
@@ -281,17 +265,7 @@ class _ToolCallStatusIndicator extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (isSpinning)
-            SizedBox(
-              width: 14,
-              height: 14,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: color,
-              ),
-            )
-          else
-            Icon(icon, size: 14, color: color),
+          Icon(icon, size: 14, color: color),
           SizedBox(width: context.auraTheme.spacing.xs),
           DefaultTextStyle(
             style: TextStyle(

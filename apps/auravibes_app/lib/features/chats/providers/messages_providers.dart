@@ -1,14 +1,12 @@
 import 'package:auravibes_app/core/exceptions/conversation_exceptions.dart';
 import 'package:auravibes_app/domain/entities/conversation.dart';
 import 'package:auravibes_app/domain/entities/messages.dart';
-import 'package:auravibes_app/domain/enums/message_types.dart';
 import 'package:auravibes_app/domain/models/streaming_message_projection.dart';
 import 'package:auravibes_app/domain/usecases/chats/merge_streaming_message_projection_usecase.dart';
-import 'package:auravibes_app/domain/usecases/chats/project_messages_streaming_status_usecase.dart';
+import 'package:auravibes_app/features/chats/notifiers/messages_streaming_notifier.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
-import 'package:auravibes_app/providers/messages_controller.dart';
-import 'package:auravibes_app/providers/tool_execution_controller.dart';
+import 'package:auravibes_app/utils/chat_result_extension.dart';
 import 'package:collection/collection.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod/experimental/mutation.dart';
@@ -52,41 +50,26 @@ class ChatMessagesController extends _$ChatMessagesController {
   Future<List<MessageEntity>> build() async {
     final conversationId = ref.watch(conversationSelectedProvider);
 
-    // Watch the tool update trigger to refresh when tool calls are resolved
-    ref.watch(toolUpdateRefreshTriggerProvider);
-
     final messages = await ref
         .watch(messageRepositoryProvider)
         .getMessagesByConversation(conversationId);
 
-    final streamingResponseIds = ref.watch(
-      messagesControllerProvider.select(
-        (message) => message
-            .where((element) => element.conversationId == conversationId)
-            .map((e) => e.responseMessageId)
-            .toList(),
-      ),
+    final streamingResponses = ref.watch(
+      messagesStreamingProvider,
     );
 
-    return const ProjectMessagesStreamingStatusUseCase().call(
-      messages: messages,
-      streamingMessageIds: streamingResponseIds,
-    );
-  }
-
-  Future<void> addMessage({
-    required String content,
-    required MessageType messageType,
-  }) async {
-    final conversationId = ref.read(conversationSelectedProvider);
-    final messagesManager = ref.read(messagesControllerProvider.notifier);
-
-    final (userMessage, systemMessage) = await messagesManager.sendMessage(
-      conversationId: conversationId,
-      message: content,
-    );
-
-    state = AsyncValue.data([...state.value ?? [], userMessage, systemMessage]);
+    return messages.map(
+      (e) {
+        if (streamingResponses.containsKey(e.id)) {
+          final lastResult = streamingResponses[e.id]!.lastResult;
+          return e.copyWith(
+            status: .streaming,
+            content: lastResult?.outputAsString ?? e.content,
+          );
+        }
+        return e;
+      },
+    ).toList();
   }
 }
 
@@ -115,10 +98,8 @@ MessageEntity? messageConversationById(
   if (messageEntity == null) return null;
 
   final updateMessage = ref.watch(
-    messagesControllerProvider.select(
-      (messages) => messages.firstWhereOrNull((message) {
-        return message.responseMessageId == messageId;
-      }),
+    messagesStreamingProvider.select(
+      (messages) => messages[messageId]?.lastResult,
     ),
   );
 
@@ -127,26 +108,11 @@ MessageEntity? messageConversationById(
   return const MergeStreamingMessageProjectionUseCase().call(
     baseMessage: messageEntity,
     streamingMessage: StreamingMessageProjection(
-      content: updateMessage.content,
-      status: _toProjectionStatus(updateMessage.status),
-      metadata: updateMessage.metadata,
+      content: updateMessage.outputAsString,
+      status: .streaming,
+      metadata: updateMessage.entityMetadata,
     ),
   );
-}
-
-StreamingProjectionStatus _toProjectionStatus(StreamingMessageStatus status) {
-  return switch (status) {
-    StreamingMessageStatus.created => StreamingProjectionStatus.created,
-    StreamingMessageStatus.streaming => StreamingProjectionStatus.streaming,
-    StreamingMessageStatus.done => StreamingProjectionStatus.done,
-    StreamingMessageStatus.error => StreamingProjectionStatus.error,
-    StreamingMessageStatus.awaitingToolConfirmation =>
-      StreamingProjectionStatus.awaitingToolConfirmation,
-    StreamingMessageStatus.executingTools =>
-      StreamingProjectionStatus.executingTools,
-    StreamingMessageStatus.waitingForMcpConnections =>
-      StreamingProjectionStatus.waitingForMcpConnections,
-  };
 }
 
 /// Provides the pending MCP server IDs for the current conversation.
@@ -155,17 +121,8 @@ StreamingProjectionStatus _toProjectionStatus(StreamingMessageStatus status) {
 /// or an empty list if not waiting.
 @Riverpod(dependencies: [conversationSelectedNotifier])
 List<String> pendingMcpConnections(Ref ref) {
-  final conversationId = ref.watch(conversationSelectedProvider);
-
-  final waitingMessage = ref.watch(
-    messagesControllerProvider.select(
-      (messages) => messages.firstWhereOrNull(
-        (msg) =>
-            msg.conversationId == conversationId &&
-            msg.status == StreamingMessageStatus.waitingForMcpConnections,
-      ),
-    ),
-  );
-
-  return waitingMessage?.pendingMcpServerIds ?? [];
+  // The current streaming state only exposes the last `ChatResult`, and it no
+  // longer carries pending MCP server IDs. Until that runtime state is modeled
+  // explicitly again, there is no reliable source for this indicator.
+  return const <String>[];
 }

@@ -19,6 +19,15 @@ if this circular dependency happens, it indicates that the usecases are too tigh
 
 a usecase cannot be a single dependency call, as that would not justify the existence of the usecase layer. Instead, a usecase should coordinate multiple actions, such as calling multiple repositories, performing some business logic, and then updating the state through notifiers. If a usecase is just a thin wrapper around a single repository call, it may be an indication that the usecase layer is not being used effectively and that the logic could be moved directly into the repository or notifier instead.
 
+create usecase only when is reusable, representing minninfull business action. either called from other usecases or UI actions.
+
+optimise uasecases for:
+- reusability
+- testability
+- clear business boundaries
+- fewer, stronger usecases
+- not many micro usecases
+
 # Example of a Usecase
 ```dart
 import 'package:auravibes_app/domain/repositories/chat_models_repository.dart';

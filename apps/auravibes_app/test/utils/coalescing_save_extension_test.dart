@@ -143,6 +143,26 @@ void main() {
       expect(savedStates, [42]);
     });
 
+    test('waits for the final async save before closing', () async {
+      final savedStates = <int>[];
+      final controller = StreamController<int>();
+
+      final output = controller.stream.coalescingSave(
+        store: (state) async {
+          await Future<void>.delayed(const Duration(milliseconds: 10));
+          savedStates.add(state);
+        },
+      );
+
+      controller
+        ..add(42)
+        ..close();
+
+      final results = await output.toList();
+      expect(results, [42]);
+      expect(savedStates, [42]);
+    });
+
     test('state is emitted only after store completes', () async {
       final storeTimestamps = <int>[];
       final emitTimestamps = <int, int>{};

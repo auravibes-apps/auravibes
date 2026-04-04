@@ -1,24 +1,24 @@
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
-import 'package:auravibes_app/features/chats/screens/usecases/continue_agent_usecase.dart';
+import 'package:auravibes_app/features/chats/usecases/agent_iteration_context.dart';
+import 'package:auravibes_app/features/chats/usecases/run_agent_iteration_usecase.dart';
 import 'package:riverpod/riverpod.dart';
 
 class SendMessageUsecase {
   const SendMessageUsecase({
-    required this.continueAgentUsecase,
+    required this.runAgentIterationUsecase,
     required this.messageRepository,
   });
 
-  final ContinueAgentUsecase continueAgentUsecase;
+  final RunAgentIterationUsecase runAgentIterationUsecase;
   final MessageRepository messageRepository;
   Future<void> call({
     required String conversationId,
     required String content,
   }) async {
-    // Implement the logic to send a message here.
-    // This might involve calling a repository method that interacts with an API or database.
+    // Persist the user message first so the chat history stays consistent.
 
-    await messageRepository.createMessage(
+    final createdMessage = await messageRepository.createMessage(
       .new(
         conversationId: conversationId,
         content: content,
@@ -27,15 +27,19 @@ class SendMessageUsecase {
         status: .sending,
       ),
     );
-    await continueAgentUsecase(
+    await runAgentIterationUsecase(
       conversationId: conversationId,
+      context: AgentIterationContext(
+        origin: AgentIterationOrigin.userMessage,
+        ackMessageId: createdMessage.id,
+      ),
     );
   }
 }
 
 final sendMessageUsecaseProvider = Provider<SendMessageUsecase>((ref) {
   return SendMessageUsecase(
-    continueAgentUsecase: ref.watch(continueAgentUsecaseProvider),
+    runAgentIterationUsecase: ref.watch(runAgentIterationUsecaseProvider),
     messageRepository: ref.watch(messageRepositoryProvider),
   );
 });

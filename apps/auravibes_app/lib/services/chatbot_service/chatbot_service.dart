@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:auravibes_app/domain/entities/credentials_models_entities.dart';
 import 'package:auravibes_app/domain/entities/messages.dart';
 import 'package:auravibes_app/domain/repositories/model_providers_repository.dart';
+import 'package:auravibes_app/services/chatbot_service/build_prompt_chat_messages.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:langchain/langchain.dart';
 import 'package:langchain_anthropic/langchain_anthropic.dart';
@@ -29,45 +30,31 @@ class ChatbotService {
   ChatbotService({
     required this.credentialsRepository,
     required this.encryptionService,
-  });
+    BuildPromptChatMessages? buildPromptChatMessages,
+  }) : _buildPromptChatMessages =
+           buildPromptChatMessages ?? const BuildPromptChatMessages();
   CredentialsRepository credentialsRepository;
   EncryptionService encryptionService;
+  final BuildPromptChatMessages _buildPromptChatMessages;
 
   Stream<ChatResult> sendMessage(
     CredentialsModelWithProviderEntity chatProvider,
     List<MessageEntity> messages, {
     List<ToolSpec>? tools,
   }) async* {
-    final chatMessages = messages
-        .map((message) {
-          if (message.isUser) {
-            return ChatMessage.humanText(message.content);
-          }
-          return ChatMessage.ai(
-            message.content,
-            toolCalls: [
-              for (final toolCall
-                  in message.metadata?.toolCalls ?? <MessageToolCallEntity>[])
-                .new(
-                  id: toolCall.id,
-                  name: toolCall.name,
-                  argumentsRaw: toolCall.argumentsRaw,
-                  arguments: toolCall.arguments,
-                ),
-            ],
-          );
-        })
-        .toList(growable: false);
+    final chatMessages = _buildPromptChatMessages.call(messages);
 
     final credentialsModel = await _getCredentialsModel(
       chatProvider,
       tools: tools,
     );
 
-    yield* credentialsModel.stream(
-      PromptValue.chat(chatMessages),
-      options: _getModelOptions(chatProvider),
-    );
+    yield* credentialsModel
+        .stream(
+          PromptValue.chat(chatMessages),
+          options: _getModelOptions(chatProvider),
+        )
+        .distinct();
   }
 
   Future<String> generateTitle(

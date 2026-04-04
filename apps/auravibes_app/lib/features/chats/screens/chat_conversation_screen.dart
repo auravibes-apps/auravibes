@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:auravibes_app/domain/enums/message_types.dart';
 import 'package:auravibes_app/features/chats/providers/messages_providers.dart';
+import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_messages_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/mcp_connecting_indicator.dart';
@@ -87,11 +87,13 @@ class _ChatConversationScreen extends HookConsumerWidget {
           ChatInputWidget(
             onToolsPress: onToolsPress,
             onSendMessage: (message) {
+              final conversationId = ref.read(conversationSelectedProvider);
+              // TODO: manage future
               ref
-                  .read(chatMessagesControllerProvider.notifier)
-                  .addMessage(
+                  .read(sendMessageUsecaseProvider)
+                  .call(
+                    conversationId: conversationId,
                     content: message,
-                    messageType: MessageType.text,
                   );
             },
           ),

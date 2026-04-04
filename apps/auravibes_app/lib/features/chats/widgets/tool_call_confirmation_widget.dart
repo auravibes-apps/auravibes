@@ -1,7 +1,8 @@
 import 'package:auravibes_app/domain/entities/messages.dart';
 import 'package:auravibes_app/domain/enums/tool_grant_level.dart';
+import 'package:auravibes_app/features/chats/providers/messages_providers.dart';
+import 'package:auravibes_app/features/chats/usecases/handle_tool_approval_iteration_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
-import 'package:auravibes_app/providers/tool_execution_controller.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
@@ -94,40 +95,44 @@ class ToolCallConfirmationWidget extends ConsumerWidget {
     );
   }
 
-  void _onAllowOnce(WidgetRef ref) {
-    ref
-        .read(toolExecutionControllerProvider.notifier)
-        .grantToolCall(
+  Future<void> _onAllowOnce(WidgetRef ref) async {
+    await ref
+        .read(handleToolApprovalIterationUsecaseProvider)
+        .approveToolCall(
           toolCallId: toolCall.id,
           messageId: messageId,
           level: ToolGrantLevel.once,
         );
+    ref.invalidate(chatMessagesControllerProvider);
   }
 
-  void _onAllowForConversation(WidgetRef ref) {
-    ref
-        .read(toolExecutionControllerProvider.notifier)
-        .grantToolCall(
+  Future<void> _onAllowForConversation(WidgetRef ref) async {
+    await ref
+        .read(handleToolApprovalIterationUsecaseProvider)
+        .approveToolCall(
           toolCallId: toolCall.id,
           messageId: messageId,
           level: ToolGrantLevel.conversation,
         );
+    ref.invalidate(chatMessagesControllerProvider);
   }
 
-  void _onSkip(WidgetRef ref) {
-    ref
-        .read(toolExecutionControllerProvider.notifier)
+  Future<void> _onSkip(WidgetRef ref) async {
+    await ref
+        .read(handleToolApprovalIterationUsecaseProvider)
         .skipToolCall(
           toolCallId: toolCall.id,
           messageId: messageId,
         );
+    ref.invalidate(chatMessagesControllerProvider);
   }
 
-  void _onStopAll(WidgetRef ref) {
-    ref
-        .read(toolExecutionControllerProvider.notifier)
+  Future<void> _onStopAll(WidgetRef ref) async {
+    await ref
+        .read(handleToolApprovalIterationUsecaseProvider)
         .stopAllToolCalls(
           messageId: messageId,
         );
+    ref.invalidate(chatMessagesControllerProvider);
   }
 }

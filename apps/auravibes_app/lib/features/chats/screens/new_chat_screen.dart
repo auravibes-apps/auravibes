@@ -33,12 +33,12 @@ class NewChatScreen extends ConsumerWidget {
 
     Future<void> handleSendMessage(String message) async {
       try {
-        final conversationId = await ref
+        final conversation = await ref
             .read(newChatControllerProvider.notifier)
             .startConversation(message);
 
         if (context.mounted) {
-          ConversationRoute(chatId: conversationId).replace(context);
+          ConversationRoute(chatId: conversation.id).replace(context);
         }
       } on Exception catch (e) {
         if (context.mounted) {
