@@ -22,7 +22,6 @@ dependency_validator:
     - 'test/**/*.mocks.dart'
 
 melos:
-  name: auravibes_workspace
   sdkPath: auto
   categories:
     app:
@@ -31,7 +30,6 @@ melos:
       - "packages/**"
   command:
       bootstrap:
-        usePubspecOverrides: true
         runPubGetInParallel: false
         environment:
           sdk: ^3.11.0
