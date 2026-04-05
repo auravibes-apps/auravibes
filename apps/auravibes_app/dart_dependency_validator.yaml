@@ -5,6 +5,4 @@ ignore:
  - easy_localization_loader
  - drift_flutter
  - anthropic_sdk_dart
- - riverpod_lint  # Lint package that works via configuration, not direct imports
- - build_runner   # Development tool with executables
- - custom_lint    # Lint package with executables
+  - build_runner   # Development tool with executables
