@@ -22,7 +22,6 @@ dependency_validator:
     - 'test/**/*.mocks.dart'
 
 melos:
-  name: auravibes_workspace
   sdkPath: auto
   categories:
     app:

@@ -25,6 +25,7 @@ These are the most common mistakes AI agents make. MEMORIZE THESE:
 | Expecting `pubspec_overrides.yaml` | Uses Dart pub workspaces (`workspace:` key) instead |
 | Running `melos analyze` | **Command removed.** Use `dart analyze` directly or via a script |
 | Using `packages:` key for package discovery | Use `workspace:` key (Dart pub workspace standard) |
+| Using `name:` in `melos:` section | Removed. Workspace name comes from root `name:` in pubspec.yaml |
 | Omitting `resolution: workspace` in packages | **Required** in every workspace package's pubspec.yaml |
 | Using `select-package:` in scripts | Renamed to `packageFilters:` with camelCase filter names |
 | Using `--since` flag | Removed. Use `--diff` instead |
@@ -54,7 +55,6 @@ dev_dependencies:
   melos: ^7.0.0
 
 melos:
-  name: my_workspace
   sdkPath: auto  # or ".fvm/flutter_sdk" for FVM projects
 
   repository: https://github.com/org/repo
@@ -503,11 +503,14 @@ scripts:
       dependsOn: build_runner
 
   generate:watch:
-    exec: dart run build_runner watch --delete-conflicting-outputs
+    run: dart run build_runner watch --delete-conflicting-outputs
     description: Watch mode code generation
+    exec:
+      concurrency: 10
     packageFilters:
       dependsOn: build_runner
-    concurrency: 10
+    packageFilters:
+      dependsOn: build_runner
 ```
 
 ### Testing with Coverage
