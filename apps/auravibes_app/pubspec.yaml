@@ -58,8 +58,6 @@ dependencies:
 dev_dependencies:
   # Code generation for JSON serialization
   build_runner: ^2.12.2
-  custom_lint: ^0.8.1
-
   # Code generation for Drift
   drift_dev: ^2.31.0
 
