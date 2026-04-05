@@ -13,59 +13,31 @@ class ConversationRepositoryImpl implements ConversationRepository {
     String workspaceId, {
     int? limit,
   }) {
-    try {
-      return _database.conversationDao
-          .watchConversationsByWorkspace(workspaceId, limit: limit)
-          .map((rows) => rows.map(_mapToConversation).toList())
-          .handleError((Object e) {
-            throw ConversationException(
-              'Failed to watch conversations for workspace $workspaceId',
-              e as Exception,
-            );
-          });
-    } catch (e) {
-      throw ConversationException(
-        'Failed to watch conversations for workspace $workspaceId',
-        e as Exception,
-      );
-    }
+    return _database.conversationDao
+        .watchConversationsByWorkspace(workspaceId, limit: limit)
+        .map((rows) => rows.map(_mapToConversation).toList());
   }
 
   @override
   Future<ConversationEntity?> getConversationById(String id) async {
-    try {
-      final conversationTable = await _database.conversationDao
-          .getConversationById(id);
-      return conversationTable != null
-          ? _mapToConversation(conversationTable)
-          : null;
-    } catch (e) {
-      throw ConversationException(
-        'Failed to retrieve conversation with ID $id',
-        e as Exception,
-      );
-    }
+    final conversationTable = await _database.conversationDao
+        .getConversationById(id);
+    return conversationTable != null
+        ? _mapToConversation(conversationTable)
+        : null;
   }
 
   @override
   Future<ConversationEntity> createConversation(
     ConversationToCreate conversation,
   ) async {
-    try {
-      _validateConversationToCreate(conversation);
+    _validateConversationToCreate(conversation);
 
-      final conversationCompanion = _mapToConversationsCompanion(conversation);
-      final createdConversation = await _database.conversationDao
-          .insertConversation(conversationCompanion);
+    final conversationCompanion = _mapToConversationsCompanion(conversation);
+    final createdConversation = await _database.conversationDao
+        .insertConversation(conversationCompanion);
 
-      return _mapToConversation(createdConversation);
-    } catch (e) {
-      if (e is ConversationException) rethrow;
-      throw ConversationException(
-        'Failed to create conversation',
-        e as Exception,
-      );
-    }
+    return _mapToConversation(createdConversation);
   }
 
   @override
@@ -73,66 +45,47 @@ class ConversationRepositoryImpl implements ConversationRepository {
     String id,
     ConversationToUpdate conversation,
   ) async {
-    try {
-      _validateConversationUpdate(conversation);
+    _validateConversationUpdate(conversation);
 
-      if (!await _conversationExists(id)) {
-        throw ConversationNotFoundException(id);
-      }
-
-      final conversationCompanion = _mapUpdateToConversationsCompanion(
-        conversation,
-      );
-      final updated = await _database.conversationDao.updateConversation(
-        id,
-        conversationCompanion,
-      );
-
-      if (!updated) {
-        throw ConversationException(
-          'Failed to update conversation with ID $id',
-        );
-      }
-
-      final updatedConversation = await _database.conversationDao
-          .getConversationById(id);
-
-      if (updatedConversation == null) {
-        throw ConversationException(
-          'Failed to retrieve updated conversation with ID $id',
-        );
-      }
-
-      return _mapToConversation(updatedConversation);
-    } catch (e) {
-      if (e is ConversationException) rethrow;
-      throw const ConversationException('Failed to update conversation');
+    if (!await _conversationExists(id)) {
+      throw ConversationNotFoundException(id);
     }
+
+    final conversationCompanion = _mapUpdateToConversationsCompanion(
+      conversation,
+    );
+    final updated = await _database.conversationDao.updateConversation(
+      id,
+      conversationCompanion,
+    );
+
+    if (!updated) {
+      throw ConversationException(
+        'Failed to update conversation with ID $id',
+      );
+    }
+
+    final updatedConversation = await _database.conversationDao
+        .getConversationById(id);
+
+    if (updatedConversation == null) {
+      throw ConversationException(
+        'Failed to retrieve updated conversation with ID $id',
+      );
+    }
+
+    return _mapToConversation(updatedConversation);
   }
 
   @override
   Future<bool> deleteConversation(String id) async {
-    try {
-      if (!await _conversationExists(id)) return false;
+    if (!await _conversationExists(id)) return false;
 
-      return _database.conversationDao.deleteConversation(id);
-    } catch (e) {
-      throw ConversationException(
-        'Failed to delete conversation',
-        e as Exception,
-      );
-    }
+    return _database.conversationDao.deleteConversation(id);
   }
 
   Future<bool> _conversationExists(String id) async {
-    try {
-      return await _database.conversationDao.getConversationById(id) != null;
-    } catch (e) {
-      throw ConversationException(
-        'Failed to check conversation existence',
-        e as Exception,
-      );
-    }
+    return await _database.conversationDao.getConversationById(id) != null;
   }
 
   void _validateConversationToCreate(ConversationToCreate conversation) {
