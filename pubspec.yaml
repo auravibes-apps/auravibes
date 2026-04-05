@@ -31,7 +31,6 @@ melos:
       - "packages/**"
   command:
       bootstrap:
-        usePubspecOverrides: true
         runPubGetInParallel: false
         environment:
           sdk: ^3.11.0

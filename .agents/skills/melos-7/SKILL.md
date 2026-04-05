@@ -166,7 +166,7 @@ resolution: workspace  # REQUIRED for pub workspaces
 
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `repository` | string or object | - | Git repo URL for changelinks |
+| `repository` | string or object | - | Git repo URL for changelog commit links |
 | `sdkPath` | string | - | Path to SDK. Use `auto` for system SDK, `.fvm/flutter_sdk` for FVM |
 | `useRootAsPackage` | bool | `false` | Include repo root as a workspace package |
 | `discoverNestedWorkspaces` | bool | `false` | Recursively discover nested pub workspaces |
@@ -237,7 +237,7 @@ scripts:
   validate:
     description: Full validation
     steps:
-      - melos analyze
+      - melos run analyze
       - melos run format:check
       - melos run test
 ```
