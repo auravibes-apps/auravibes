@@ -7,6 +7,7 @@ import 'package:auravibes_app/domain/enums/message_types.dart';
 import 'package:auravibes_app/domain/repositories/chat_models_repository.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
+import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_notifier.dart';
 import 'package:auravibes_app/features/chats/notifiers/messages_streaming_notifier.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_context.dart';
 import 'package:auravibes_app/features/chats/usecases/continue_agent_usecase.dart';
@@ -27,6 +28,7 @@ import 'continue_agent_usecase_test.mocks.dart';
   ConversationRepository,
   LoadConversationToolSpecsUsecase,
   MessagesStreamingNotifier,
+  ConversationStreamingNotifier,
   MonitoringService,
 ])
 void main() {
@@ -37,6 +39,7 @@ void main() {
     late MockConversationRepository conversationRepository;
     late MockLoadConversationToolSpecsUsecase loadConversationToolSpecsUsecase;
     late MockMessagesStreamingNotifier messagesStreamingNotifier;
+    late MockConversationStreamingNotifier conversationStreamingNotifier;
     late MockMonitoringService monitoringService;
     late ContinueAgentUsecase usecase;
 
@@ -47,6 +50,7 @@ void main() {
       conversationRepository = MockConversationRepository();
       loadConversationToolSpecsUsecase = MockLoadConversationToolSpecsUsecase();
       messagesStreamingNotifier = MockMessagesStreamingNotifier();
+      conversationStreamingNotifier = MockConversationStreamingNotifier();
       monitoringService = MockMonitoringService();
 
       usecase = ContinueAgentUsecase(
@@ -56,6 +60,7 @@ void main() {
         conversationRepository: conversationRepository,
         loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
         messagesStreamingNotifier: messagesStreamingNotifier,
+        conversationStreamingNotifier: conversationStreamingNotifier,
         monitoringService: monitoringService,
       );
 
@@ -173,13 +178,58 @@ void main() {
           conversationId: 'conversation-1',
           context: const AgentIterationContext(
             origin: AgentIterationOrigin.userMessage,
-            ackMessageId: 'user-1',
+            ackMessageIds: ['user-1'],
           ),
         );
 
         verify(
           messageRepository.updateMessage(
             'user-1',
+            const MessageToUpdate(status: MessageStatus.sent),
+          ),
+        ).called(1);
+      },
+    );
+
+    test(
+      'marks all pending user messages as sent on first model chunk',
+      () async {
+        when(
+          chatbotService.sendMessage(
+            _model,
+            [_userMessage],
+            tools: const [],
+          ),
+        ).thenAnswer(
+          (_) => Stream.fromIterable([
+            const ChatResult(
+              id: 'chunk-1',
+              output: AIChatMessage(content: 'Working'),
+              finishReason: FinishReason.stop,
+              metadata: {},
+              usage: LanguageModelUsage(),
+              streaming: true,
+            ),
+          ]),
+        );
+
+        await usecase.call(
+          conversationId: 'conversation-1',
+          context: const AgentIterationContext(
+            origin: AgentIterationOrigin.userMessage,
+            ackMessageIds: ['user-1', 'user-2'],
+          ),
+        );
+
+        verify(
+          messageRepository.updateMessage(
+            'user-1',
+            const MessageToUpdate(status: MessageStatus.sent),
+          ),
+        ).called(1);
+        verify(
+          messageRepository.updateMessage(
+            'user-2',
             const MessageToUpdate(status: MessageStatus.sent),
           ),
         ).called(1);

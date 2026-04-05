@@ -5,6 +5,7 @@ import 'package:auravibes_app/domain/enums/message_types.dart';
 import 'package:auravibes_app/domain/repositories/chat_models_repository.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
+import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_notifier.dart';
 import 'package:auravibes_app/features/chats/notifiers/messages_streaming_notifier.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_context.dart';
@@ -42,6 +43,7 @@ class ContinueAgentUsecase {
     required this.conversationRepository,
     required this.loadConversationToolSpecsUsecase,
     required this.messagesStreamingNotifier,
+    required this.conversationStreamingNotifier,
     required this.monitoringService,
   });
 
@@ -51,6 +53,7 @@ class ContinueAgentUsecase {
   final ConversationRepository conversationRepository;
   final LoadConversationToolSpecsUsecase loadConversationToolSpecsUsecase;
   final MessagesStreamingNotifier messagesStreamingNotifier;
+  final ConversationStreamingNotifier conversationStreamingNotifier;
   final MonitoringService monitoringService;
 
   Future<ContinueAgentResult> call({
@@ -89,20 +92,13 @@ class ContinueAgentUsecase {
     );
 
     final subs = CompositeSubscription();
-    messagesStreamingNotifier.startSubscription(subs, conversationId);
+    conversationStreamingNotifier.start(conversationId);
     late ChatResult lastResult;
     MessageEntity? firstMessage;
-    final pendingUserMessageId = context?.ackMessageId;
-    var hasAcknowledgedPendingUser = false;
+    final pendingUserMessageIds = context?.ackMessageIds ?? const <String>[];
+    var hasAcknowledgedPendingUsers = false;
     try {
       final streamingController = StreamController<ChatResult>.broadcast();
-
-      subs.add(
-        streamingController.stream.listen(
-          (result) =>
-              messagesStreamingNotifier.updateResult(result, conversationId),
-        ),
-      );
 
       final persistenceFuture = streamingController.stream
           .coalescingSave(
@@ -140,25 +136,34 @@ class ContinueAgentUsecase {
             ? chunk
             : accumulatedResult.concat(chunk);
 
-        if (!hasAcknowledgedPendingUser && pendingUserMessageId != null) {
-          await messageRepository.updateMessage(
-            pendingUserMessageId,
-            const MessageToUpdate(status: MessageStatus.sent),
-          );
-          hasAcknowledgedPendingUser = true;
+        if (!hasAcknowledgedPendingUsers && pendingUserMessageIds.isNotEmpty) {
+          for (final pendingUserMessageId in pendingUserMessageIds) {
+            await messageRepository.updateMessage(
+              pendingUserMessageId,
+              const MessageToUpdate(status: MessageStatus.sent),
+            );
+          }
+          hasAcknowledgedPendingUsers = true;
         }
 
-        firstMessage ??= await messageRepository.createMessage(
-          .new(
-            conversationId: conversationId,
-            content: accumulatedResult.outputAsString,
-            messageType: .text,
-            isUser: false,
-            status: .unfinished,
-          ),
-        );
+        if (firstMessage == null) {
+          firstMessage = await messageRepository.createMessage(
+            .new(
+              conversationId: conversationId,
+              content: accumulatedResult.outputAsString,
+              messageType: .text,
+              isUser: false,
+              status: .unfinished,
+            ),
+          );
+          messagesStreamingNotifier.startSubscription(subs, firstMessage.id);
+        }
 
         streamingController.add(accumulatedResult);
+        messagesStreamingNotifier.updateResult(
+          accumulatedResult,
+          firstMessage.id,
+        );
       }
 
       await streamingController.close();
@@ -177,13 +182,15 @@ class ContinueAgentUsecase {
         ),
       );
 
-      await messagesStreamingNotifier.remove(conversationId);
+      await messagesStreamingNotifier.remove(firstMessage.id);
     } catch (e, _) {
-      if (!hasAcknowledgedPendingUser && pendingUserMessageId != null) {
-        await messageRepository.updateMessage(
-          pendingUserMessageId,
-          const MessageToUpdate(status: MessageStatus.error),
-        );
+      if (!hasAcknowledgedPendingUsers && pendingUserMessageIds.isNotEmpty) {
+        for (final pendingUserMessageId in pendingUserMessageIds) {
+          await messageRepository.updateMessage(
+            pendingUserMessageId,
+            const MessageToUpdate(status: MessageStatus.error),
+          );
+        }
       }
 
       if (firstMessage == null) rethrow;
@@ -196,6 +203,7 @@ class ContinueAgentUsecase {
       );
       rethrow;
     } finally {
+      conversationStreamingNotifier.remove(conversationId);
       subs.dispose();
     }
 
@@ -219,6 +227,9 @@ final continueAgentUsecaseProvider = Provider<ContinueAgentUsecase>(
         loadConversationToolSpecsUsecaseProvider,
       ),
       messagesStreamingNotifier: ref.watch(messagesStreamingProvider.notifier),
+      conversationStreamingNotifier: ref.watch(
+        conversationStreamingProvider.notifier,
+      ),
       monitoringService: ref.watch(monitoringServiceProvider),
     );
   },

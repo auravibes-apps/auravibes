@@ -1,5 +1,9 @@
 import 'package:auravibes_app/domain/entities/conversation.dart';
+import 'package:auravibes_app/domain/entities/messages.dart';
+import 'package:auravibes_app/domain/enums/message_types.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
+import 'package:auravibes_app/domain/repositories/message_repository.dart';
+import 'package:auravibes_app/features/chats/notifiers/conversation_send_queue_notifier.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_context.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_decision.dart';
 import 'package:auravibes_app/features/chats/usecases/continue_agent_usecase.dart';
@@ -8,6 +12,7 @@ import 'package:auravibes_app/features/tools/usecases/run_allowed_tools_usecase.
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
+import 'package:riverpod/riverpod.dart';
 
 import 'run_agent_iteration_usecase_test.mocks.dart';
 
@@ -15,22 +20,31 @@ import 'run_agent_iteration_usecase_test.mocks.dart';
   ContinueAgentUsecase,
   RunAllowedToolsUsecase,
   ConversationRepository,
+  MessageRepository,
 ])
 void main() {
   group('RunAgentIterationUsecase', () {
     late MockContinueAgentUsecase continueAgentUsecase;
     late MockRunAllowedToolsUsecase runAllowedToolsUsecase;
     late MockConversationRepository conversationRepository;
+    late MockMessageRepository messageRepository;
+    late ProviderContainer container;
     late RunAgentIterationUsecase usecase;
 
     setUp(() {
       continueAgentUsecase = MockContinueAgentUsecase();
       runAllowedToolsUsecase = MockRunAllowedToolsUsecase();
       conversationRepository = MockConversationRepository();
+      messageRepository = MockMessageRepository();
+      container = ProviderContainer();
       usecase = RunAgentIterationUsecase(
         continueAgentUsecase: continueAgentUsecase,
         runAllowedToolsUsecase: runAllowedToolsUsecase,
         conversationRepository: conversationRepository,
+        messageRepository: messageRepository,
+        conversationSendQueueNotifier: container.read(
+          conversationSendQueueProvider.notifier,
+        ),
       );
 
       when(
@@ -45,6 +59,23 @@ void main() {
           updatedAt: DateTime(2025),
         ),
       );
+
+      when(messageRepository.createMessage(any)).thenAnswer(
+        (_) async => MessageEntity(
+          id: 'queued-user-1',
+          conversationId: 'conversation-1',
+          content: 'Queued follow-up',
+          messageType: MessageType.text,
+          isUser: true,
+          status: MessageStatus.sending,
+          createdAt: DateTime(2025),
+          updatedAt: DateTime(2025),
+        ),
+      );
+    });
+
+    tearDown(() {
+      container.dispose();
     });
 
     test('returns done when the agent response has no tool calls', () async {
@@ -53,7 +84,7 @@ void main() {
           conversationId: 'conversation-1',
           context: const AgentIterationContext(
             origin: AgentIterationOrigin.userMessage,
-            ackMessageId: 'user-1',
+            ackMessageIds: ['user-1'],
           ),
         ),
       ).thenAnswer(
@@ -67,7 +98,7 @@ void main() {
         conversationId: 'conversation-1',
         context: const AgentIterationContext(
           origin: AgentIterationOrigin.userMessage,
-          ackMessageId: 'user-1',
+          ackMessageIds: ['user-1'],
         ),
       );
 
@@ -86,7 +117,7 @@ void main() {
           conversationId: 'conversation-1',
           context: const AgentIterationContext(
             origin: AgentIterationOrigin.userMessage,
-            ackMessageId: 'user-1',
+            ackMessageIds: ['user-1'],
           ),
         ),
       ).thenAnswer(
@@ -100,7 +131,7 @@ void main() {
         conversationId: 'conversation-1',
         context: const AgentIterationContext(
           origin: AgentIterationOrigin.userMessage,
-          ackMessageId: 'user-1',
+          ackMessageIds: ['user-1'],
         ),
       );
 
@@ -109,7 +140,7 @@ void main() {
           conversationId: 'conversation-1',
           context: const AgentIterationContext(
             origin: AgentIterationOrigin.userMessage,
-            ackMessageId: 'user-1',
+            ackMessageIds: ['user-1'],
           ),
         ),
       ).called(1);
@@ -185,6 +216,148 @@ void main() {
         final result = await usecase.call(conversationId: 'conversation-1');
 
         expect(result, AgentIterationDecision.waitForToolApproval);
+      },
+    );
+
+    test(
+      'drains the next queued draft after the current iteration finishes',
+      () async {
+        container
+            .read(conversationSendQueueProvider.notifier)
+            .enqueue(
+              conversationId: 'conversation-1',
+              content: 'Queued follow-up',
+            );
+
+        when(
+          continueAgentUsecase.call(
+            conversationId: 'conversation-1',
+            context: const AgentIterationContext(
+              origin: AgentIterationOrigin.userMessage,
+              ackMessageIds: ['user-1'],
+            ),
+          ),
+        ).thenAnswer(
+          (_) async => const ContinueAgentResult(
+            messageId: 'assistant-1',
+            hasToolCalls: false,
+          ),
+        );
+        when(
+          continueAgentUsecase.call(
+            conversationId: 'conversation-1',
+            context: const AgentIterationContext(
+              origin: AgentIterationOrigin.userMessage,
+              ackMessageIds: ['queued-user-1'],
+            ),
+          ),
+        ).thenAnswer(
+          (_) async => const ContinueAgentResult(
+            messageId: 'assistant-2',
+            hasToolCalls: false,
+          ),
+        );
+
+        final result = await usecase.call(
+          conversationId: 'conversation-1',
+          context: const AgentIterationContext(
+            origin: AgentIterationOrigin.userMessage,
+            ackMessageIds: ['user-1'],
+          ),
+        );
+
+        expect(result, AgentIterationDecision.done);
+        verify(messageRepository.createMessage(any)).called(1);
+        verify(
+          continueAgentUsecase.call(
+            conversationId: 'conversation-1',
+            context: const AgentIterationContext(
+              origin: AgentIterationOrigin.userMessage,
+              ackMessageIds: ['queued-user-1'],
+            ),
+          ),
+        ).called(1);
+        expect(
+          container
+              .read(conversationSendQueueProvider.notifier)
+              .peek('conversation-1'),
+          isNull,
+        );
+      },
+    );
+
+    test(
+      'drains multiple queued drafts sequentially before returning done',
+      () async {
+        container
+            .read(conversationSendQueueProvider.notifier)
+            .enqueue(
+              conversationId: 'conversation-1',
+              content: 'Queued follow-up 1',
+            );
+        container
+            .read(conversationSendQueueProvider.notifier)
+            .enqueue(
+              conversationId: 'conversation-1',
+              content: 'Queued follow-up 2',
+            );
+
+        var callCount = 0;
+        when(
+          continueAgentUsecase.call(
+            conversationId: 'conversation-1',
+            context: anyNamed('context'),
+          ),
+        ).thenAnswer((invocation) async {
+          final context =
+              invocation.namedArguments[#context] as AgentIterationContext?;
+          callCount += 1;
+
+          if (callCount == 1) {
+            expect(context?.ackMessageIds, ['user-1']);
+          }
+          if (callCount == 2) {
+            expect(context?.ackMessageIds, ['queued-user-1', 'queued-user-2']);
+          }
+
+          return ContinueAgentResult(
+            messageId: 'assistant-$callCount',
+            hasToolCalls: false,
+          );
+        });
+
+        var createdCount = 0;
+        when(messageRepository.createMessage(any)).thenAnswer((_) async {
+          createdCount += 1;
+          return MessageEntity(
+            id: 'queued-user-$createdCount',
+            conversationId: 'conversation-1',
+            content: 'Queued follow-up $createdCount',
+            messageType: MessageType.text,
+            isUser: true,
+            status: MessageStatus.sending,
+            createdAt: DateTime(2025),
+            updatedAt: DateTime(2025),
+          );
+        });
+
+        final result = await usecase.call(
+          conversationId: 'conversation-1',
+          context: const AgentIterationContext(
+            origin: AgentIterationOrigin.userMessage,
+            ackMessageIds: ['user-1'],
+          ),
+        );
+
+        expect(result, AgentIterationDecision.done);
+        expect(callCount, 2);
+        verify(messageRepository.createMessage(any)).called(2);
+        expect(
+          container
+              .read(conversationSendQueueProvider.notifier)
+              .peek('conversation-1'),
+          isNull,
+        );
       },
     );
   });

@@ -1,12 +1,12 @@
 import 'package:auravibes_app/core/exceptions/conversation_exceptions.dart';
 import 'package:auravibes_app/domain/entities/conversation.dart';
 import 'package:auravibes_app/domain/entities/messages.dart';
-import 'package:auravibes_app/domain/models/streaming_message_projection.dart';
-import 'package:auravibes_app/domain/usecases/chats/merge_streaming_message_projection_usecase.dart';
+import 'package:auravibes_app/features/chats/notifiers/conversation_send_queue_notifier.dart';
+import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_notifier.dart';
 import 'package:auravibes_app/features/chats/notifiers/messages_streaming_notifier.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
-import 'package:auravibes_app/utils/chat_result_extension.dart';
+import 'package:auravibes_app/features/chats/usecases/get_conversation_busy_state_usecase.dart';
 import 'package:collection/collection.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod/experimental/mutation.dart';
@@ -57,14 +57,21 @@ class ChatMessagesController extends _$ChatMessagesController {
     final streamingResponses = ref.watch(
       messagesStreamingProvider,
     );
+    final latestAssistantMessageId = messages
+        .lastWhereOrNull(
+          (message) => !message.isUser,
+        )
+        ?.id;
+    final streamingResult = latestAssistantMessageId == null
+        ? null
+        : streamingResponses[latestAssistantMessageId]?.lastResult;
 
     return messages.map(
       (e) {
-        if (streamingResponses.containsKey(e.id)) {
-          final lastResult = streamingResponses[e.id]!.lastResult;
+        if (streamingResult != null && latestAssistantMessageId == e.id) {
           return e.copyWith(
             status: .streaming,
-            content: lastResult?.outputAsString ?? e.content,
+            content: streamingResult.outputAsString,
           );
         }
         return e;
@@ -97,20 +104,33 @@ MessageEntity? messageConversationById(
 
   if (messageEntity == null) return null;
 
-  final updateMessage = ref.watch(
-    messagesStreamingProvider.select(
-      (messages) => messages[messageId]?.lastResult,
-    ),
-  );
+  return messageEntity;
+}
 
-  if (updateMessage == null) return messageEntity;
+// TODO: update when messages are streaming
+@Riverpod(dependencies: [conversationSelectedNotifier, ChatMessagesController])
+Future<ConversationBusyState> conversationBusyState(Ref ref) async {
+  final conversationId = ref.watch(conversationSelectedProvider);
+  ref
+    ..watch(
+      conversationStreamingProvider.select(
+        (conversations) => conversations.contains(conversationId),
+      ),
+    )
+    ..watch(chatMessagesControllerProvider);
 
-  return const MergeStreamingMessageProjectionUseCase().call(
-    baseMessage: messageEntity,
-    streamingMessage: StreamingMessageProjection(
-      content: updateMessage.outputAsString,
-      status: .streaming,
-      metadata: updateMessage.entityMetadata,
+  final usecase = ref.watch(getConversationBusyStateUsecaseProvider);
+
+  return usecase.call(conversationId: conversationId);
+}
+
+@Riverpod(dependencies: [conversationSelectedNotifier])
+List<ConversationQueuedDraft> conversationQueuedDrafts(Ref ref) {
+  final conversationId = ref.watch(conversationSelectedProvider);
+
+  return ref.watch(
+    conversationSendQueueProvider.select(
+      (queues) => queues[conversationId] ?? const <ConversationQueuedDraft>[],
     ),
   );
 }

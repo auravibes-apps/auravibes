@@ -1,24 +1,16 @@
-import 'package:meta/meta.dart';
+import 'package:equatable/equatable.dart';
 
-@immutable
-class AgentIterationContext {
+class AgentIterationContext extends Equatable {
   const AgentIterationContext({
     required this.origin,
-    this.ackMessageId,
+    this.ackMessageIds = const [],
   });
 
   final AgentIterationOrigin origin;
-  final String? ackMessageId;
+  final List<String> ackMessageIds;
 
   @override
-  bool operator ==(Object other) {
-    return other is AgentIterationContext &&
-        other.origin == origin &&
-        other.ackMessageId == ackMessageId;
-  }
-
-  @override
-  int get hashCode => Object.hash(origin, ackMessageId);
+  List<Object?> get props => [origin, ackMessageIds];
 }
 
 enum AgentIterationOrigin {
