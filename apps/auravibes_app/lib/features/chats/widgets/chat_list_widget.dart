@@ -1,5 +1,6 @@
 import 'package:auravibes_app/domain/entities/conversation.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/models/providers/list_chat_models_providers.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/presentation/shared/formatters/relative_time_formatter.dart';
@@ -16,7 +17,7 @@ class ChatListWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final chatListAsync = ref.watch(conversationsListProvider);
+    final chatListAsync = ref.watch(conversationsStreamProvider());
 
     return switch (chatListAsync) {
       AsyncData(value: final chats) => () {
@@ -118,7 +119,7 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
 
     if (confirmed ?? false) {
       await ref
-          .read(conversationsListProvider.notifier)
+          .read(conversationRepositoryProvider)
           .deleteConversation(widget.chat.id);
     }
   }
@@ -135,6 +136,8 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
             .modelId,
       ),
     );
+    final title =
+        ref.watch(streamingTitleProvider(widget.chat.id)) ?? widget.chat.title;
     return AuraCard(
       onTap: () {
         ConversationRoute(chatId: widget.chat.id).go(context);
@@ -160,7 +163,7 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
                       child: AuraText(
                         style: AuraTextStyle.heading6,
                         child: Text(
-                          widget.chat.title,
+                          title,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),

@@ -15,19 +15,16 @@ class RecentConversationsWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final chatListAsync = ref.watch(conversationsListProvider);
+    final chatListAsync = ref.watch(conversationsStreamProvider(limit: 5));
 
     return switch (chatListAsync) {
       AsyncData(value: final chats) => () {
-        // Take only the 5 most recent conversations for home screen
-        final recentChats = chats.take(5).toList();
-
-        if (recentChats.isEmpty) {
+        if (chats.isEmpty) {
           return _buildEmptyState(context);
         }
 
         return Column(
-          children: recentChats
+          children: chats
               .map(
                 (chat) => AuraPadding(
                   padding: const .only(bottom: .base),
@@ -107,6 +104,7 @@ class _RecentChatTile extends ConsumerWidget {
             .modelId,
       ),
     );
+    final title = ref.watch(streamingTitleProvider(chat.id)) ?? chat.title;
 
     return AuraCard(
       onTap: () {
@@ -135,7 +133,7 @@ class _RecentChatTile extends ConsumerWidget {
                             child: AuraText(
                               style: AuraTextStyle.heading6,
                               child: Text(
-                                chat.title,
+                                title,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),

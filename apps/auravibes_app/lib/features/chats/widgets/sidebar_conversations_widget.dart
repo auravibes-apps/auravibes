@@ -1,5 +1,6 @@
 import 'package:auravibes_app/domain/entities/conversation.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/router/app_router.dart';
@@ -31,20 +32,20 @@ class SidebarConversationsWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentChatId = ref.watch(_currentChatIdProvider);
-    final chatListAsync = ref.watch(conversationsListProvider);
+    final chatListAsync = ref.watch(
+      conversationsStreamProvider(limit: limit),
+    );
 
     return switch (chatListAsync) {
       AsyncData(value: final chats) => () {
-        final limitedChats = chats.take(limit).toList();
-
-        if (limitedChats.isEmpty) {
+        if (chats.isEmpty) {
           return _buildEmptyState(context);
         }
 
         return Column(
           children: [
             _buildSectionHeader(context),
-            ...limitedChats.map(
+            ...chats.map(
               (chat) => _SidebarConversationTile(
                 chat: chat,
                 isActive: chat.id == currentChatId,
@@ -188,7 +189,7 @@ class _SidebarConversationTileState
 
     if (confirmed ?? false) {
       await ref
-          .read(conversationsListProvider.notifier)
+          .read(conversationRepositoryProvider)
           .deleteConversation(widget.chat.id);
     }
   }
@@ -235,7 +236,8 @@ class _SidebarConversationTileState
           style: AuraTextStyle.bodySmall,
           color: widget.isActive ? AuraColorVariant.primary : null,
           child: Text(
-            widget.chat.title,
+            ref.watch(streamingTitleProvider(widget.chat.id)) ??
+                widget.chat.title,
             overflow: TextOverflow.ellipsis,
             maxLines: 1,
           ),
