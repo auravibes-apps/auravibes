@@ -70,9 +70,28 @@ Run code generation commands in the package directory:
 # General build runner command
 dart run build_runner build --delete-conflicting-outputs
 
-# Single file generation example
-dart run build_runner build --delete-conflicting-outputs --build-filter="lib/brick/db_types.g.dart"
+# Single file generation (use --build-filter for targeted rebuilds)
+dart run build_runner build --delete-conflicting-outputs --build-filter="lib/domain/entities/messages.g.dart"
+
+# Multiple specific files
+dart run build_runner build --delete-conflicting-outputs \
+  --build-filter="lib/domain/entities/messages.g.dart" \
+  --build-filter="lib/features/chats/providers/conversation_providers.g.dart"
+
+# Drift database only
+dart run build_runner build --delete-conflicting-outputs --build-filter="lib/data/database/drift/app_database.g.dart"
+
+# Router only
+dart run build_runner build --delete-conflicting-outputs --build-filter="lib/router/app_router.g.dart"
 ```
+
+### Build Configuration (`build.yaml`)
+The app uses a `build.yaml` to scope generators to relevant directories, reducing unnecessary file scanning:
+- **freezed**: `domain/entities/`, `domain/models/`, `features/**/models/`, `features/**/providers/`, `features/**/notifiers/`, `providers/`, `services/`
+- **riverpod_generator**: `features/**/providers/`, `features/**/notifiers/`, `providers/`
+- **json_serializable**: `domain/entities/`, `services/`
+- **drift_dev**: `data/database/`
+- **go_router_builder**: `router/`
 
 ## Version Conventions
 
