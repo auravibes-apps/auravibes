@@ -68,21 +68,21 @@ flutter test test/test_file_one.dart test/test_file_two.dart --no-pub
 Run code generation commands in the package directory:
 ```bash
 # General build runner command
-dart run build_runner build --delete-conflicting-outputs
+fvm dart run build_runner build --delete-conflicting-outputs
 
 # Single file generation (use --build-filter for targeted rebuilds)
-dart run build_runner build --delete-conflicting-outputs --build-filter="lib/domain/entities/messages.g.dart"
+fvm dart run build_runner build --delete-conflicting-outputs --build-filter="lib/domain/entities/messages.g.dart"
 
 # Multiple specific files
-dart run build_runner build --delete-conflicting-outputs \
+fvm dart run build_runner build --delete-conflicting-outputs \
   --build-filter="lib/domain/entities/messages.g.dart" \
   --build-filter="lib/features/chats/providers/conversation_providers.g.dart"
 
 # Drift database only
-dart run build_runner build --delete-conflicting-outputs --build-filter="lib/data/database/drift/app_database.g.dart"
+fvm dart run build_runner build --delete-conflicting-outputs --build-filter="lib/data/database/drift/app_database.g.dart"
 
 # Router only
-dart run build_runner build --delete-conflicting-outputs --build-filter="lib/router/app_router.g.dart"
+fvm dart run build_runner build --delete-conflicting-outputs --build-filter="lib/router/app_router.g.dart"
 ```
 
 ### Build Configuration (`build.yaml`)
