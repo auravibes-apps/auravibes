@@ -9,7 +9,6 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
     with _$ConversationDaoMixin {
   ConversationDao(super.attachedDatabase);
 
-  // Core CRUD operations
   Future<ConversationsTable> insertConversation(
     ConversationsCompanion conversation,
   ) => into(conversations).insertReturning(conversation);
@@ -29,65 +28,24 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
     conversations,
   )..where((tbl) => tbl.id.equals(id))).go().then((count) => count > 0);
 
-  // Business-specific queries
-  Future<List<ConversationsTable>> getConversationsByWorkspace(
-    String workspaceId,
-  ) =>
-      (select(conversations)
-            ..where((tbl) => tbl.workspaceId.equals(workspaceId))
-            ..orderBy([
-              (tbl) => OrderingTerm(
-                expression: tbl.updatedAt,
-                mode: OrderingMode.desc,
-              ),
-            ]))
-          .get();
+  Stream<List<ConversationsTable>> watchConversationsByWorkspace(
+    String workspaceId, {
+    int? limit,
+  }) {
+    final query = _buildWorkspaceQuery(workspaceId);
+    if (limit != null) query.limit(limit, offset: 0);
+    return query.watch();
+  }
 
-  Future<List<ConversationsTable>> getPinnedConversations(String workspaceId) =>
-      (select(conversations)
-            ..where(
-              (tbl) =>
-                  tbl.workspaceId.equals(workspaceId) &
-                  tbl.isPinned.equals(true),
-            )
-            ..orderBy([
-              (tbl) => OrderingTerm(
-                expression: tbl.updatedAt,
-                mode: OrderingMode.desc,
-              ),
-            ]))
-          .get();
-
-  Future<int> getConversationCountByWorkspace(String workspaceId) =>
-      (selectOnly(conversations)
-            ..addColumns([conversations.id.count()])
-            ..where(conversations.workspaceId.equals(workspaceId)))
-          .map((row) => row.read(conversations.id.count()) ?? 0)
-          .getSingle();
-
-  Future<bool> conversationExists(String id) =>
-      (selectOnly(conversations)
-            ..addColumns([conversations.id.count()])
-            ..where(conversations.id.equals(id)))
-          .map((row) => row.read(conversations.id.count()) ?? 0)
-          .getSingle()
-          .then((result) => result > 0);
-
-  Future<List<ConversationsTable>> searchConversationsByTitle(
-    String workspaceId,
-    String query,
-  ) =>
-      (select(conversations)
-            ..where(
-              (tbl) =>
-                  tbl.workspaceId.equals(workspaceId) &
-                  tbl.title.contains(query),
-            )
-            ..orderBy([
-              (tbl) => OrderingTerm(
-                expression: tbl.updatedAt,
-                mode: OrderingMode.desc,
-              ),
-            ]))
-          .get();
+  SimpleSelectStatement<$ConversationsTable, ConversationsTable>
+  _buildWorkspaceQuery(String workspaceId) {
+    return (select(conversations)
+      ..where((tbl) => tbl.workspaceId.equals(workspaceId))
+      ..orderBy([
+        (tbl) => OrderingTerm(
+          expression: tbl.updatedAt,
+          mode: OrderingMode.desc,
+        ),
+      ]));
+  }
 }

@@ -4,7 +4,6 @@ import 'package:auravibes_app/domain/entities/messages.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_send_queue_notifier.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_notifier.dart';
 import 'package:auravibes_app/features/chats/notifiers/messages_streaming_notifier.dart';
-import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/get_conversation_busy_state_usecase.dart';
 import 'package:collection/collection.dart';
@@ -38,7 +37,7 @@ class ConversationChatController extends _$ConversationChatController {
     if (id == null) return;
 
     final updatedConversation = await ref
-        .read(conversationsListProvider.notifier)
+        .read(conversationRepositoryProvider)
         .updateConversation(id, ConversationToUpdate(modelId: modelId));
     state = AsyncData(updatedConversation);
   }
