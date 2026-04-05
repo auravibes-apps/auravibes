@@ -65,7 +65,6 @@ dev_dependencies:
 
   flutter_flavorizr: ^2.4.2
   flutter_launcher_icons: ^0.14.4
-  flutter_riverpod: any
   flutter_test:
     sdk: flutter
   freezed: ^3.2.3
@@ -73,6 +72,13 @@ dev_dependencies:
   json_serializable: ^6.11.2
   mockito: ^5.6.3
   riverpod_generator: ^4.0.0+1
+  state_notifier: ^1.0.0
+
+dependency_validator:
+  ignore:
+    - state_notifier
+  exclude:
+    - 'test/**/*.mocks.dart'
 
 flutter:
   assets:

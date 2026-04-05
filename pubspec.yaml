@@ -15,6 +15,12 @@ dev_dependencies:
   riverpod_lint: ^3.1.0
   very_good_analysis: ^10.2.0
 
+dependency_validator:
+  ignore:
+    - state_notifier
+  exclude:
+    - 'test/**/*.mocks.dart'
+
 melos:
   name: auravibes_workspace
   sdkPath: auto
