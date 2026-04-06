@@ -15,25 +15,22 @@ AI messages read more naturally without a bubble — they fill the available hor
 
 ### Approach
 
-Add a `bool showBubble` parameter (default `true`) to the existing `AuraMessageBubble` widget. When `false`, the widget skips all bubble decoration and renders content directly at full width.
+Skip `AuraMessageBubble` entirely for AI messages. Render markdown content directly in `chat_messages_widget.dart` for AI messages. `AuraMessageBubble` stays unchanged — it remains a bubble widget for user messages.
+
+Rationale: A "bubble without a bubble" is a contradiction. AI messages with no background, no max-width, no decoration are just markdown text. No need to stretch the bubble abstraction.
 
 ### Changes
 
-#### 1. `AuraMessageBubble` — `packages/auravibes_ui/lib/src/molecules/auravibes_message_bubble.dart`
+#### 1. `chat_messages_widget.dart` — `apps/auravibes_app/lib/features/chats/widgets/chat_messages_widget.dart`
 
-- Add parameter: `final bool showBubble;` (defaults to `true`)
-- When `showBubble == false`:
-  - No `Container` with `BoxDecoration` (no background color, no border radius, no shadow, no error border)
-  - No max-width constraint — content fills available horizontal space
-  - No `Align` widget — content is left-aligned naturally
-  - Content (GptMarkdown) renders with `onSurface` text color
-  - Timestamp and status indicators still render below content
+- In `_ChatMessageRow.build`, branch on `message.isUser`:
+  - **User messages** (`isUser == true`): use `AuraMessageBubble` as before (unchanged)
+  - **AI messages** (`isUser == false`): render `GptMarkdown` directly with `onSurface` text color, no Container, no max-width, no background, no alignment. Optionally show timestamp below.
 
-#### 2. `chat_messages_widget.dart` — `apps/auravibes_app/lib/features/chats/widgets/chat_messages_widget.dart`
+#### 2. `AuraMessageBubble` — no changes
 
-- Pass `showBubble: !message.isUser` to `AuraMessageBubble`
-- AI messages (`isUser == false`) get `showBubble: false`
-- User messages remain unchanged (`showBubble: true` by default)
+- Remains unchanged as a bubble-only widget
+- No new parameters needed
 
 ### What stays the same
 
@@ -41,19 +38,16 @@ Add a `bool showBubble` parameter (default `true`) to the existing `AuraMessageB
 - Tool call widgets: unchanged
 - Markdown rendering via GptMarkdown: unchanged
 - Message status and delivery indicators: unchanged
-- AuraMessageBubble public API: backward-compatible (new parameter has default value)
+- AuraMessageBubble: no changes to public API
 
 ### Affected files
 
 | File | Change |
 |------|--------|
-| `packages/auravibes_ui/lib/src/molecules/auravibes_message_bubble.dart` | Add `showBubble` parameter, conditional rendering |
-| `apps/auravibes_app/lib/features/chats/widgets/chat_messages_widget.dart` | Pass `showBubble: !message.isUser` |
-| `packages/auravibes_ui/test/src/molecules/auravibes_message_bubble_test.dart` | Add tests for `showBubble: false` |
-| `widgetbook/lib/aura_ui/auravibes_message_bubble_stories.dart` | Add story for flat variant |
+| `apps/auravibes_app/lib/features/chats/widgets/chat_messages_widget.dart` | Branch rendering: user → AuraMessageBubble, AI → direct markdown |
+| `packages/auravibes_ui/test/src/molecules/auravibes_message_bubble_test.dart` | No changes needed |
 
 ### Testing
 
-- Unit tests for `AuraMessageBubble` with `showBubble: false` — verify no `BoxDecoration`, no max-width constraint
-- Existing tests remain passing (backward-compatible change)
-- Widgetbook story for visual verification
+- Existing `AuraMessageBubble` tests remain passing (widget unchanged)
+- Manual visual verification: AI messages full-width, no bubble; user messages unchanged
