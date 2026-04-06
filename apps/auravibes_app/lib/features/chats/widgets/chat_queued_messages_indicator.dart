@@ -64,39 +64,48 @@ class _ChatQueuedMessagesIndicatorState
               ),
             ],
           ),
-          SizedBox(height: context.auraTheme.spacing.xs),
-          for (final draft in widget.queuedDrafts)
-            Padding(
-              padding: EdgeInsets.only(top: context.auraTheme.spacing.xs),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: AuraText(
-                      style: AuraTextStyle.caption,
-                      child: Text(
-                        draft.content,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+          const Divider(height: 1),
+          for (final (index, draft) in widget.queuedDrafts.indexed)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: DesignSpacing.xs,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: AuraText(
+                          style: AuraTextStyle.caption,
+                          child: Text(
+                            draft.content,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                       ),
-                    ),
+                      SizedBox(width: context.auraTheme.spacing.xs),
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 20),
+                        onPressed: () => notifier.remove(
+                          conversationId: conversationId,
+                          draftId: draft.id,
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 48,
+                          minHeight: 48,
+                        ),
+                        padding: const EdgeInsets.all(14),
+                        tooltip: 'Remove',
+                      ),
+                    ],
                   ),
-                  SizedBox(width: context.auraTheme.spacing.xs),
-                  IconButton(
-                    icon: const Icon(Icons.close, size: 16),
-                    onPressed: () => notifier.remove(
-                      conversationId: conversationId,
-                      draftId: draft.id,
-                    ),
-                    constraints: const BoxConstraints(
-                      minWidth: 24,
-                      minHeight: 24,
-                    ),
-                    padding: EdgeInsets.zero,
-                    visualDensity: VisualDensity.compact,
-                    tooltip: 'Remove',
-                  ),
-                ],
-              ),
+                ),
+                if (index < widget.queuedDrafts.length - 1)
+                  const Divider(height: 1),
+              ],
             ),
         ],
       ),
