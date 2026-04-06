@@ -8,6 +8,7 @@ import 'package:auravibes_app/features/chats/providers/tool_display_name_provide
 import 'package:auravibes_app/features/chats/widgets/tool_call_confirmation_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/tool_call_response_preview.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/utils/relative_time_formatter.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -97,13 +98,21 @@ class _ChatMessageRow extends HookConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (showTextBubble)
-            AuraMessageBubble(
-              key: ValueKey(message.id),
-              content: message.content,
-              isUser: message.isUser,
-              timestamp: message.createdAt,
-              status: _mapMessageStatus(message.status),
-            ),
+            if (message.isUser)
+              AuraMessageBubble(
+                key: ValueKey(message.id),
+                content: message.content,
+                isUser: true,
+                timestamp: message.createdAt,
+                status: _mapMessageStatus(message.status),
+              )
+            else
+              _AiMessageContent(
+                key: ValueKey(message.id),
+                content: message.content,
+                timestamp: message.createdAt,
+                status: _mapMessageStatus(message.status),
+              ),
           if (hasToolCalls) ...[
             for (final toolCall in message.metadata!.toolCalls)
               _ToolCallWidget(
@@ -126,6 +135,54 @@ class _ChatMessageRow extends HookConsumerWidget {
       MessageStatus.streaming => AuraMessageDeliveryStatus.sending,
       MessageStatus.error => AuraMessageDeliveryStatus.error,
     };
+  }
+}
+
+class _AiMessageContent extends StatelessWidget {
+  const _AiMessageContent({
+    required this.content,
+    super.key,
+    this.timestamp,
+    this.status = AuraMessageDeliveryStatus.sent,
+  });
+
+  final String content;
+  final DateTime? timestamp;
+  final AuraMessageDeliveryStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    final auraColors = context.auraColors;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GptMarkdown(
+          content,
+          style: TextStyle(
+            color: auraColors.onSurface,
+            fontSize: DesignTypography.fontSizeBase,
+            fontFamily: DesignTypography.bodyFontFamily,
+            height: DesignTypography.lineHeightBase,
+          ),
+        ),
+        if (timestamp != null) ...[
+          SizedBox(height: context.auraTheme.spacing.xs),
+          Text(
+            const RelativeTimeFormatter().format(timestamp!),
+            style: TextStyle(
+              color: auraColors.onSurfaceVariant,
+              fontSize: DesignTypography.fontSizeXs,
+              fontFamily: DesignTypography.bodyFontFamily,
+            ),
+          ),
+        ],
+        if (status != AuraMessageDeliveryStatus.sent) ...[
+          SizedBox(height: context.auraTheme.spacing.xs / 2),
+          AuraMessageStatus(status: status),
+        ],
+      ],
+    );
   }
 }
 
