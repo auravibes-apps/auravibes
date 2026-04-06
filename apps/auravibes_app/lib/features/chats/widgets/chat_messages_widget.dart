@@ -86,6 +86,9 @@ class _ChatMessageRow extends HookConsumerWidget {
       return const SizedBox.shrink();
     }
 
+    final activeStreamingIds = ref.watch(activeStreamingMessageIdsProvider);
+    final isStreaming = activeStreamingIds.contains(messageId);
+
     final hasToolCalls = message.metadata?.toolCalls.isNotEmpty ?? false;
     // Hide the text bubble when content is empty/whitespace and there are tool calls
     final hasContent = message.content.trim().isNotEmpty;
@@ -104,14 +107,14 @@ class _ChatMessageRow extends HookConsumerWidget {
                 content: message.content,
                 isUser: true,
                 timestamp: message.createdAt,
-                status: _mapMessageStatus(message.status),
+                status: _mapMessageStatus(message.status, isStreaming),
               )
             else
               _AiMessageContent(
                 key: ValueKey(message.id),
                 content: message.content,
                 timestamp: message.createdAt,
-                status: _mapMessageStatus(message.status),
+                status: _mapMessageStatus(message.status, isStreaming),
               ),
           if (hasToolCalls) ...[
             for (final toolCall in message.metadata!.toolCalls)
@@ -127,12 +130,17 @@ class _ChatMessageRow extends HookConsumerWidget {
     );
   }
 
-  AuraMessageDeliveryStatus _mapMessageStatus(MessageStatus status) {
+  AuraMessageDeliveryStatus _mapMessageStatus(
+    MessageStatus status,
+    bool isStreaming,
+  ) {
     return switch (status) {
       MessageStatus.sending => AuraMessageDeliveryStatus.sending,
-      MessageStatus.unfinished => AuraMessageDeliveryStatus.sending,
+      MessageStatus.unfinished =>
+        isStreaming
+            ? AuraMessageDeliveryStatus.sending
+            : AuraMessageDeliveryStatus.unfinished,
       MessageStatus.sent => AuraMessageDeliveryStatus.sent,
-      MessageStatus.streaming => AuraMessageDeliveryStatus.sending,
       MessageStatus.error => AuraMessageDeliveryStatus.error,
     };
   }

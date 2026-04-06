@@ -265,7 +265,7 @@ final _streamingAssistantMessage = MessageEntity(
   content: 'Working',
   messageType: MessageType.text,
   isUser: false,
-  status: MessageStatus.streaming,
+  status: MessageStatus.unfinished,
   createdAt: DateTime(2025),
   updatedAt: DateTime(2025),
 );

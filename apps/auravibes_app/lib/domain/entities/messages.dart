@@ -23,7 +23,6 @@ abstract class MessageToolCallEntity with _$MessageToolCallEntity {
     ///
     /// - null: Tool is pending or currently running
     /// - non-null: Tool has completed with this result status
-    // ignore: invalid_annotation_target
     @JsonKey(
       fromJson: _toolCallResultStatusFromJson,
       toJson: _toolCallResultStatusToJson,
