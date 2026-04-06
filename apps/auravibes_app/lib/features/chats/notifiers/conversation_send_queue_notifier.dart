@@ -78,4 +78,27 @@ class ConversationSendQueue extends _$ConversationSendQueue {
 
     return drafts;
   }
+
+  void remove({required String conversationId, required String draftId}) {
+    final drafts = state[conversationId];
+    if (drafts == null) return;
+
+    final remainingDrafts = drafts.where((d) => d.id != draftId).toList();
+
+    state = {
+      for (final entry in state.entries)
+        if (entry.key != conversationId) entry.key: entry.value,
+      if (remainingDrafts.isNotEmpty) conversationId: remainingDrafts,
+    };
+  }
+
+  void clearAll(String conversationId) {
+    final drafts = state[conversationId];
+    if (drafts == null || drafts.isEmpty) return;
+
+    state = {
+      for (final entry in state.entries)
+        if (entry.key != conversationId) entry.key: entry.value,
+    };
+  }
 }
