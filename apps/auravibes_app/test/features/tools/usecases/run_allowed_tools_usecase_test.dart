@@ -232,5 +232,413 @@ void main() {
         );
       },
     );
+
+    test(
+      'executes multiple granted tools and collects all results',
+      () async {
+        final tool1 = ToolToCall(
+          id: 'tool-1',
+          tool: ResolvedTool.builtIn(
+            tableId: 'calc',
+            toolIdentifier: 'calculator',
+            tooltype: UserToolType.calculator,
+          ),
+          argumentsRaw: '{"input": "1+1"}',
+        );
+        final tool2 = ToolToCall(
+          id: 'tool-2',
+          tool: ResolvedTool.builtIn(
+            tableId: 'calc',
+            toolIdentifier: 'calculator',
+            tooltype: UserToolType.calculator,
+          ),
+          argumentsRaw: '{"input": "2+2"}',
+        );
+
+        final multiToolMessage = MessageEntity(
+          id: 'message-1',
+          conversationId: 'conversation-1',
+          content: 'assistant',
+          messageType: MessageType.text,
+          isUser: false,
+          status: MessageStatus.sent,
+          createdAt: DateTime(2026),
+          updatedAt: DateTime(2026),
+          metadata: const MessageMetadataEntity(
+            toolCalls: [
+              MessageToolCallEntity(
+                id: 'tool-1',
+                name: 'built_in_calc_calculator',
+                argumentsRaw: '{"input": "1+1"}',
+              ),
+              MessageToolCallEntity(
+                id: 'tool-2',
+                name: 'built_in_calc_calculator',
+                argumentsRaw: '{"input": "2+2"}',
+              ),
+            ],
+          ),
+        );
+
+        when(
+          loadLatestMessageToolCallsUsecase.call(
+            conversationId: 'conversation-1',
+          ),
+        ).thenAnswer(
+          (_) async => LoadLatestMessageToolCallsResult(
+            messageId: 'message-1',
+            hasToolCalls: true,
+            toolsToRun: [tool1, tool2],
+            notFoundToolCallIds: const [],
+          ),
+        );
+        when(messageRepository.getMessageById('message-1')).thenAnswer(
+          (_) async => multiToolMessage,
+        );
+        when(
+          conversationToolsRepository.checkToolPermission(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+            toolId: 'calc',
+          ),
+        ).thenAnswer((_) async => ToolPermissionResult.granted);
+        when(
+          messageRepository.updateMessage('message-1', any),
+        ).thenAnswer((_) async => multiToolMessage);
+        when(
+          getAgentIterationDecisionUsecase.call(messageId: 'message-1'),
+        ).thenAnswer((_) async => AgentIterationDecision.continueIteration);
+
+        final result = await usecase.call(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+        );
+
+        expect(result, AgentIterationDecision.continueIteration);
+        final update =
+            verify(
+                  messageRepository.updateMessage('message-1', captureAny),
+                ).captured.single
+                as MessageToUpdate;
+        final updatedToolCalls = update.metadata?.toolCalls;
+        expect(updatedToolCalls, isNotNull);
+        expect(
+          updatedToolCalls?.firstWhere((tc) => tc.id == 'tool-1').resultStatus,
+          ToolCallResultStatus.success,
+        );
+        expect(
+          updatedToolCalls?.firstWhere((tc) => tc.id == 'tool-2').resultStatus,
+          ToolCallResultStatus.success,
+        );
+      },
+    );
+
+    test(
+      'one tool failure does not block other tools from completing',
+      () async {
+        final goodTool = ToolToCall(
+          id: 'tool-good',
+          tool: ResolvedTool.builtIn(
+            tableId: 'calc',
+            toolIdentifier: 'calculator',
+            tooltype: UserToolType.calculator,
+          ),
+          argumentsRaw: '{"input": "1+1"}',
+        );
+        final badTool = ToolToCall(
+          id: 'tool-bad',
+          tool: ResolvedTool.builtIn(
+            tableId: 'calc',
+            toolIdentifier: 'calculator',
+            tooltype: UserToolType.calculator,
+          ),
+          argumentsRaw: '{}',
+        );
+
+        final mixedMessage = MessageEntity(
+          id: 'message-1',
+          conversationId: 'conversation-1',
+          content: 'assistant',
+          messageType: MessageType.text,
+          isUser: false,
+          status: MessageStatus.sent,
+          createdAt: DateTime(2026),
+          updatedAt: DateTime(2026),
+          metadata: const MessageMetadataEntity(
+            toolCalls: [
+              MessageToolCallEntity(
+                id: 'tool-good',
+                name: 'built_in_calc_calculator',
+                argumentsRaw: '{"input": "1+1"}',
+              ),
+              MessageToolCallEntity(
+                id: 'tool-bad',
+                name: 'built_in_calc_calculator',
+                argumentsRaw: '{}',
+              ),
+            ],
+          ),
+        );
+
+        when(
+          loadLatestMessageToolCallsUsecase.call(
+            conversationId: 'conversation-1',
+          ),
+        ).thenAnswer(
+          (_) async => LoadLatestMessageToolCallsResult(
+            messageId: 'message-1',
+            hasToolCalls: true,
+            toolsToRun: [goodTool, badTool],
+            notFoundToolCallIds: const [],
+          ),
+        );
+        when(messageRepository.getMessageById('message-1')).thenAnswer(
+          (_) async => mixedMessage,
+        );
+        when(
+          conversationToolsRepository.checkToolPermission(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+            toolId: 'calc',
+          ),
+        ).thenAnswer((_) async => ToolPermissionResult.granted);
+        when(
+          messageRepository.updateMessage('message-1', any),
+        ).thenAnswer((_) async => mixedMessage);
+        when(
+          getAgentIterationDecisionUsecase.call(messageId: 'message-1'),
+        ).thenAnswer((_) async => AgentIterationDecision.continueIteration);
+
+        final result = await usecase.call(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+        );
+
+        expect(result, AgentIterationDecision.continueIteration);
+        final update =
+            verify(
+                  messageRepository.updateMessage('message-1', captureAny),
+                ).captured.single
+                as MessageToUpdate;
+        final updatedToolCalls = update.metadata?.toolCalls;
+        expect(updatedToolCalls, isNotNull);
+        expect(
+          updatedToolCalls
+              ?.firstWhere((tc) => tc.id == 'tool-good')
+              .resultStatus,
+          ToolCallResultStatus.success,
+        );
+        expect(
+          updatedToolCalls
+              ?.firstWhere((tc) => tc.id == 'tool-bad')
+              .resultStatus,
+          ToolCallResultStatus.executionError,
+        );
+      },
+    );
+
+    test(
+      'correctly partitions tools with mixed permissions',
+      () async {
+        final grantedTool = ToolToCall(
+          id: 'tool-granted',
+          tool: ResolvedTool.builtIn(
+            tableId: 'calc',
+            toolIdentifier: 'calculator',
+            tooltype: UserToolType.calculator,
+          ),
+          argumentsRaw: '{"input": "1+1"}',
+        );
+        final pendingTool = ToolToCall(
+          id: 'tool-pending',
+          tool: ResolvedTool.builtIn(
+            tableId: 'other',
+            toolIdentifier: 'other_tool',
+            tooltype: UserToolType.calculator,
+          ),
+          argumentsRaw: '{"input": "test"}',
+        );
+        final disabledTool = ToolToCall(
+          id: 'tool-disabled',
+          tool: ResolvedTool.builtIn(
+            tableId: 'disabled',
+            toolIdentifier: 'disabled_tool',
+            tooltype: UserToolType.calculator,
+          ),
+          argumentsRaw: '{"input": "test"}',
+        );
+
+        final mixedPermMessage = MessageEntity(
+          id: 'message-1',
+          conversationId: 'conversation-1',
+          content: 'assistant',
+          messageType: MessageType.text,
+          isUser: false,
+          status: MessageStatus.sent,
+          createdAt: DateTime(2026),
+          updatedAt: DateTime(2026),
+          metadata: const MessageMetadataEntity(
+            toolCalls: [
+              MessageToolCallEntity(
+                id: 'tool-granted',
+                name: 'built_in_calc_calculator',
+                argumentsRaw: '{"input": "1+1"}',
+              ),
+              MessageToolCallEntity(
+                id: 'tool-pending',
+                name: 'other_tool',
+                argumentsRaw: '{"input": "test"}',
+              ),
+              MessageToolCallEntity(
+                id: 'tool-disabled',
+                name: 'disabled_tool',
+                argumentsRaw: '{"input": "test"}',
+              ),
+            ],
+          ),
+        );
+
+        when(
+          loadLatestMessageToolCallsUsecase.call(
+            conversationId: 'conversation-1',
+          ),
+        ).thenAnswer(
+          (_) async => LoadLatestMessageToolCallsResult(
+            messageId: 'message-1',
+            hasToolCalls: true,
+            toolsToRun: [grantedTool, pendingTool, disabledTool],
+            notFoundToolCallIds: const [],
+          ),
+        );
+        when(messageRepository.getMessageById('message-1')).thenAnswer(
+          (_) async => mixedPermMessage,
+        );
+        when(
+          conversationToolsRepository.checkToolPermission(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+            toolId: 'calc',
+          ),
+        ).thenAnswer((_) async => ToolPermissionResult.granted);
+        when(
+          conversationToolsRepository.checkToolPermission(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+            toolId: 'other',
+          ),
+        ).thenAnswer(
+          (_) async => ToolPermissionResult.needsConfirmation,
+        );
+        when(
+          conversationToolsRepository.checkToolPermission(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+            toolId: 'disabled',
+          ),
+        ).thenAnswer(
+          (_) async => ToolPermissionResult.disabledInWorkspace,
+        );
+        when(
+          messageRepository.updateMessage('message-1', any),
+        ).thenAnswer((_) async => mixedPermMessage);
+
+        final result = await usecase.call(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+        );
+
+        expect(result, AgentIterationDecision.waitForToolApproval);
+        final update =
+            verify(
+                  messageRepository.updateMessage('message-1', captureAny),
+                ).captured.single
+                as MessageToUpdate;
+        final updatedToolCalls = update.metadata?.toolCalls;
+        expect(updatedToolCalls, isNotNull);
+        expect(
+          updatedToolCalls
+              ?.firstWhere((tc) => tc.id == 'tool-granted')
+              .resultStatus,
+          ToolCallResultStatus.success,
+        );
+        expect(
+          updatedToolCalls
+              ?.firstWhere((tc) => tc.id == 'tool-pending')
+              .resultStatus,
+          isNull,
+        );
+        expect(
+          updatedToolCalls
+              ?.firstWhere((tc) => tc.id == 'tool-disabled')
+              .resultStatus,
+          ToolCallResultStatus.disabledInWorkspace,
+        );
+      },
+    );
+
+    test(
+      'returns waitForToolApproval when all tools need confirmation',
+      () async {
+        final tool1 = ToolToCall(
+          id: 'tool-1',
+          tool: ResolvedTool.builtIn(
+            tableId: 'tool-a',
+            toolIdentifier: 'tool_a',
+            tooltype: UserToolType.calculator,
+          ),
+          argumentsRaw: '{"input": "1+1"}',
+        );
+        final tool2 = ToolToCall(
+          id: 'tool-2',
+          tool: ResolvedTool.builtIn(
+            tableId: 'tool-b',
+            toolIdentifier: 'tool_b',
+            tooltype: UserToolType.calculator,
+          ),
+          argumentsRaw: '{"input": "2+2"}',
+        );
+
+        when(
+          loadLatestMessageToolCallsUsecase.call(
+            conversationId: 'conversation-1',
+          ),
+        ).thenAnswer(
+          (_) async => LoadLatestMessageToolCallsResult(
+            messageId: 'message-1',
+            hasToolCalls: true,
+            toolsToRun: [tool1, tool2],
+            notFoundToolCallIds: const [],
+          ),
+        );
+        when(
+          conversationToolsRepository.checkToolPermission(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+            toolId: 'tool-a',
+          ),
+        ).thenAnswer(
+          (_) async => ToolPermissionResult.needsConfirmation,
+        );
+        when(
+          conversationToolsRepository.checkToolPermission(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+            toolId: 'tool-b',
+          ),
+        ).thenAnswer(
+          (_) async => ToolPermissionResult.needsConfirmation,
+        );
+
+        final result = await usecase.call(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+        );
+
+        expect(result, AgentIterationDecision.waitForToolApproval);
+        verifyNever(
+          messageRepository.updateMessage(any, any),
+        );
+      },
+    );
   });
 }

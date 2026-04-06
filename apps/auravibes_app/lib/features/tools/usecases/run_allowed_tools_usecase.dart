@@ -59,6 +59,7 @@ class RunAllowedToolsUsecase {
       );
     }
 
+    final grantedTools = <ToolToCall>[];
     for (final toolToCall in latestToolCalls.toolsToRun) {
       final permission = await _checkToolPermission(
         conversationId: conversationId,
@@ -68,14 +69,7 @@ class RunAllowedToolsUsecase {
 
       switch (permission) {
         case ToolPermissionResult.granted:
-          final executionResult = await _executeTool(toolToCall: toolToCall);
-          updates.add(
-            _ToolResultUpdate(
-              toolCallId: toolToCall.id,
-              resultStatus: executionResult.resultStatus,
-              responseRaw: executionResult.responseRaw,
-            ),
-          );
+          grantedTools.add(toolToCall);
         case ToolPermissionResult.needsConfirmation:
           hasPendingTools = true;
         case ToolPermissionResult.disabledInConversation:
@@ -100,6 +94,13 @@ class RunAllowedToolsUsecase {
             ),
           );
       }
+    }
+
+    if (grantedTools.isNotEmpty) {
+      final executionResults = await Future.wait(
+        grantedTools.map((tool) => _executeSafely(toolToCall: tool)),
+      );
+      updates.addAll(executionResults);
     }
 
     if (updates.isNotEmpty) {
@@ -194,6 +195,24 @@ class RunAllowedToolsUsecase {
       );
     } on Object catch (_) {
       return const _ToolExecutionResult(
+        resultStatus: ToolCallResultStatus.executionError,
+      );
+    }
+  }
+
+  Future<_ToolResultUpdate> _executeSafely({
+    required ToolToCall toolToCall,
+  }) async {
+    try {
+      final result = await _executeTool(toolToCall: toolToCall);
+      return _ToolResultUpdate(
+        toolCallId: toolToCall.id,
+        resultStatus: result.resultStatus,
+        responseRaw: result.responseRaw,
+      );
+    } on Object catch (_) {
+      return _ToolResultUpdate(
+        toolCallId: toolToCall.id,
         resultStatus: ToolCallResultStatus.executionError,
       );
     }
