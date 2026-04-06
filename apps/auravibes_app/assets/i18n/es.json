@@ -69,6 +69,7 @@
         "one": "1 mensaje en cola",
         "other": "{} mensajes en cola"
       },
+      "queued_clear_all": "Limpiar Todo",
       "delete_title": "Eliminar Conversación",
       "delete_confirm": "¿Estás seguro de que deseas eliminar esta conversación? Esta acción no se puede deshacer.",
       "options_tooltip": "Más opciones"
