@@ -106,6 +106,10 @@ void main() {
         update.metadata?.toolCalls.single.resultStatus,
         ToolCallResultStatus.toolNotFound,
       );
+
+      verify(
+        resumeConversationIfReadyUsecase.call(messageId: messageId),
+      ).called(1);
     });
 
     test(
@@ -148,6 +152,10 @@ void main() {
         final updatedToolCall = update.metadata?.toolCalls.single;
         expect(updatedToolCall?.resultStatus, ToolCallResultStatus.success);
         expect(updatedToolCall?.responseRaw, '2.0');
+
+        verify(
+          resumeConversationIfReadyUsecase.call(messageId: messageId),
+        ).called(1);
       },
     );
 
