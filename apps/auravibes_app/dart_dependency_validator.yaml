@@ -4,5 +4,4 @@ ignore:
  - json_annotation
  - easy_localization_loader
  - drift_flutter
- - anthropic_sdk_dart
-  - build_runner   # Development tool with executables
+ - build_runner   # Development tool with executables
