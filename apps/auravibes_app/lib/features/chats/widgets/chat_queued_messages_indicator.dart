@@ -6,7 +6,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class ChatQueuedMessagesIndicator extends ConsumerStatefulWidget {
+class ChatQueuedMessagesIndicator extends ConsumerWidget {
   const ChatQueuedMessagesIndicator({
     required this.queuedDrafts,
     super.key,
@@ -15,15 +15,8 @@ class ChatQueuedMessagesIndicator extends ConsumerStatefulWidget {
   final List<ConversationQueuedDraft> queuedDrafts;
 
   @override
-  ConsumerState<ChatQueuedMessagesIndicator> createState() =>
-      _ChatQueuedMessagesIndicatorState();
-}
-
-class _ChatQueuedMessagesIndicatorState
-    extends ConsumerState<ChatQueuedMessagesIndicator> {
-  @override
-  Widget build(BuildContext context) {
-    if (widget.queuedDrafts.isEmpty) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (queuedDrafts.isEmpty) {
       return const SizedBox.shrink();
     }
 
@@ -39,7 +32,7 @@ class _ChatQueuedMessagesIndicatorState
           Row(
             children: [
               AuraBadge.count(
-                count: widget.queuedDrafts.length,
+                count: queuedDrafts.length,
                 variant: AuraBadgeVariant.neutral,
                 size: AuraBadgeSize.small,
               ),
@@ -49,7 +42,7 @@ class _ChatQueuedMessagesIndicatorState
                 child: Text(
                   LocaleKeys
                       .chats_screens_chat_conversation_queued_messages_count
-                      .plural(widget.queuedDrafts.length),
+                      .plural(queuedDrafts.length),
                 ),
               ),
               const Spacer(),
@@ -65,7 +58,7 @@ class _ChatQueuedMessagesIndicatorState
             ],
           ),
           const Divider(height: 1),
-          for (final (index, draft) in widget.queuedDrafts.indexed)
+          for (final (index, draft) in queuedDrafts.indexed)
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -98,13 +91,12 @@ class _ChatQueuedMessagesIndicatorState
                           minHeight: 48,
                         ),
                         padding: const EdgeInsets.all(14),
-                        tooltip: 'Remove',
+                        tooltip: LocaleKeys.common_remove.tr(),
                       ),
                     ],
                   ),
                 ),
-                if (index < widget.queuedDrafts.length - 1)
-                  const Divider(height: 1),
+                if (index < queuedDrafts.length - 1) const Divider(height: 1),
               ],
             ),
         ],

@@ -68,9 +68,12 @@ void main() {
     test('remove with unknown conversationId is no-op', () {
       final notifier = container.read(conversationSendQueueProvider.notifier);
 
-      notifier.enqueue(conversationId: 'conv-1', content: 'First');
+      final draft = notifier.enqueue(
+        conversationId: 'conv-1',
+        content: 'First',
+      );
 
-      notifier.remove(conversationId: 'unknown', draftId: 'queued-0');
+      notifier.remove(conversationId: 'unknown', draftId: draft.id);
 
       final state = container.read(conversationSendQueueProvider);
       expect(state['conv-1']?.length, 1);

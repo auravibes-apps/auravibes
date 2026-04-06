@@ -71,10 +71,7 @@ class ConversationSendQueue extends _$ConversationSendQueue {
       return const [];
     }
 
-    state = {
-      for (final entry in state.entries)
-        if (entry.key != conversationId) entry.key: entry.value,
-    };
+    state = _withoutConversation(conversationId);
 
     return drafts;
   }
@@ -83,11 +80,12 @@ class ConversationSendQueue extends _$ConversationSendQueue {
     final drafts = state[conversationId];
     if (drafts == null) return;
 
+    if (!drafts.any((d) => d.id == draftId)) return;
+
     final remainingDrafts = drafts.where((d) => d.id != draftId).toList();
 
     state = {
-      for (final entry in state.entries)
-        if (entry.key != conversationId) entry.key: entry.value,
+      ..._withoutConversation(conversationId),
       if (remainingDrafts.isNotEmpty) conversationId: remainingDrafts,
     };
   }
@@ -96,7 +94,13 @@ class ConversationSendQueue extends _$ConversationSendQueue {
     final drafts = state[conversationId];
     if (drafts == null || drafts.isEmpty) return;
 
-    state = {
+    state = _withoutConversation(conversationId);
+  }
+
+  Map<String, List<ConversationQueuedDraft>> _withoutConversation(
+    String conversationId,
+  ) {
+    return {
       for (final entry in state.entries)
         if (entry.key != conversationId) entry.key: entry.value,
     };
