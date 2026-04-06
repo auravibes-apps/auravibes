@@ -106,8 +106,10 @@ MessageEntity? messageConversationById(
 }
 
 @Riverpod(dependencies: [MessagesStreamingNotifier])
-Set<String> activeStreamingMessageIds(Ref ref) {
-  return ref.watch(messagesStreamingProvider).keys.toSet();
+bool isMessageStreaming(Ref ref, String messageId) {
+  return ref.watch(
+    messagesStreamingProvider.select((state) => state.containsKey(messageId)),
+  );
 }
 
 // TODO: update when messages are streaming

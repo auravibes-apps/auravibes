@@ -86,8 +86,7 @@ class _ChatMessageRow extends HookConsumerWidget {
       return const SizedBox.shrink();
     }
 
-    final activeStreamingIds = ref.watch(activeStreamingMessageIdsProvider);
-    final isStreaming = activeStreamingIds.contains(messageId);
+    final isStreaming = ref.watch(isMessageStreamingProvider(messageId));
 
     final hasToolCalls = message.metadata?.toolCalls.isNotEmpty ?? false;
     // Hide the text bubble when content is empty/whitespace and there are tool calls
