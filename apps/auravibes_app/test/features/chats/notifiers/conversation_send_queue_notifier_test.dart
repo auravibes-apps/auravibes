@@ -1,3 +1,5 @@
+// ignore_for_file: cascade_invocations
+// Test file: sequential calls on the same notifier instance are intentional
 import 'package:auravibes_app/features/chats/notifiers/conversation_send_queue_notifier.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
