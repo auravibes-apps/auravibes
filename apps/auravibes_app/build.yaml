@@ -1,0 +1,27 @@
+targets:
+  $default:
+    builders:
+      freezed:
+        generate_for:
+          - "lib/domain/entities/**/*.dart"
+          - "lib/domain/models/**/*.dart"
+          - "lib/features/**/models/**/*.dart"
+          - "lib/features/**/providers/**/*.dart"
+          - "lib/features/**/notifiers/**/*.dart"
+          - "lib/providers/**/*.dart"
+          - "lib/services/**/*.dart"
+      riverpod_generator|riverpod_generator:
+        generate_for:
+          - "lib/features/**/providers/**/*.dart"
+          - "lib/features/**/notifiers/**/*.dart"
+          - "lib/providers/**/*.dart"
+      json_serializable:
+        generate_for:
+          - "lib/domain/entities/**/*.dart"
+          - "lib/services/**/*.dart"
+      drift_dev:
+        generate_for:
+          - "lib/data/database/**/*.dart"
+      go_router_builder:
+        generate_for:
+          - "lib/router/**/*.dart"
