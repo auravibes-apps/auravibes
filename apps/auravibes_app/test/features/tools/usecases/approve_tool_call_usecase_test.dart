@@ -9,6 +9,7 @@ import 'package:auravibes_app/domain/repositories/conversation_tools_repository.
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/repositories/tools_groups_repository.dart';
 import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dart';
+import 'package:auravibes_app/features/chats/usecases/resume_conversation_if_ready_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/approve_tool_call_usecase.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -23,6 +24,7 @@ import 'approve_tool_call_usecase_test.mocks.dart';
   ToolsGroupsRepository,
   WorkspaceToolsRepository,
   ToolResolverService,
+  ResumeConversationIfReadyUsecase,
 ])
 void main() {
   group('ApproveToolCallUsecase', () {
@@ -31,6 +33,7 @@ void main() {
     late MockToolsGroupsRepository toolsGroupsRepository;
     late MockWorkspaceToolsRepository workspaceToolsRepository;
     late MockToolResolverService toolResolverService;
+    late MockResumeConversationIfReadyUsecase resumeConversationIfReadyUsecase;
     late ApproveToolCallUsecase usecase;
 
     const toolCallId = 'tool-1';
@@ -61,6 +64,7 @@ void main() {
       toolsGroupsRepository = MockToolsGroupsRepository();
       workspaceToolsRepository = MockWorkspaceToolsRepository();
       toolResolverService = MockToolResolverService();
+      resumeConversationIfReadyUsecase = MockResumeConversationIfReadyUsecase();
 
       usecase = ApproveToolCallUsecase(
         messageRepository: messageRepository,
@@ -68,6 +72,7 @@ void main() {
         toolsGroupsRepository: toolsGroupsRepository,
         workspaceToolsRepository: workspaceToolsRepository,
         toolResolverService: toolResolverService,
+        resumeConversationIfReadyUsecase: resumeConversationIfReadyUsecase,
       );
 
       when(messageRepository.getMessageById(messageId)).thenAnswer(
@@ -76,6 +81,9 @@ void main() {
       when(messageRepository.updateMessage(messageId, any)).thenAnswer(
         (_) async => message,
       );
+      when(
+        resumeConversationIfReadyUsecase.call(messageId: anyNamed('messageId')),
+      ).thenAnswer((_) async {});
     });
 
     test('marks tool as not found when resolution fails', () async {
@@ -98,6 +106,10 @@ void main() {
         update.metadata?.toolCalls.single.resultStatus,
         ToolCallResultStatus.toolNotFound,
       );
+
+      verify(
+        resumeConversationIfReadyUsecase.call(messageId: messageId),
+      ).called(1);
     });
 
     test(
@@ -140,6 +152,10 @@ void main() {
         final updatedToolCall = update.metadata?.toolCalls.single;
         expect(updatedToolCall?.resultStatus, ToolCallResultStatus.success);
         expect(updatedToolCall?.responseRaw, '2.0');
+
+        verify(
+          resumeConversationIfReadyUsecase.call(messageId: messageId),
+        ).called(1);
       },
     );
 

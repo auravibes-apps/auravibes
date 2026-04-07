@@ -1,18 +1,15 @@
 import 'package:auravibes_app/domain/entities/messages.dart';
 import 'package:auravibes_app/domain/enums/tool_grant_level.dart';
 import 'package:auravibes_app/features/chats/providers/messages_providers.dart';
-import 'package:auravibes_app/features/chats/usecases/handle_tool_approval_iteration_usecase.dart';
+import 'package:auravibes_app/features/tools/usecases/approve_tool_call_usecase.dart';
+import 'package:auravibes_app/features/tools/usecases/skip_tool_call_usecase.dart';
+import 'package:auravibes_app/features/tools/usecases/stop_all_pending_tool_calls_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-/// Widget that shows confirmation buttons for a pending tool call.
-///
-/// Displays two rows of buttons:
-/// - Row 1 (Allow options): "Allow Once" | "Allow for Conversation"
-/// - Row 2 (Deny options): "Skip" | "Stop All"
 class ToolCallConfirmationWidget extends ConsumerWidget {
   const ToolCallConfirmationWidget({
     required this.toolCall,
@@ -40,7 +37,6 @@ class ToolCallConfirmationWidget extends ConsumerWidget {
       child: AuraColumn(
         spacing: AuraSpacing.sm,
         children: [
-          // Row 1: Allow options
           AuraRow(
             children: [
               Expanded(
@@ -65,7 +61,6 @@ class ToolCallConfirmationWidget extends ConsumerWidget {
               ),
             ],
           ),
-          // Row 2: Deny options
           AuraRow(
             children: [
               Expanded(
@@ -97,8 +92,8 @@ class ToolCallConfirmationWidget extends ConsumerWidget {
 
   Future<void> _onAllowOnce(WidgetRef ref) async {
     await ref
-        .read(handleToolApprovalIterationUsecaseProvider)
-        .approveToolCall(
+        .read(approveToolCallUsecaseProvider)
+        .call(
           toolCallId: toolCall.id,
           messageId: messageId,
           level: ToolGrantLevel.once,
@@ -108,8 +103,8 @@ class ToolCallConfirmationWidget extends ConsumerWidget {
 
   Future<void> _onAllowForConversation(WidgetRef ref) async {
     await ref
-        .read(handleToolApprovalIterationUsecaseProvider)
-        .approveToolCall(
+        .read(approveToolCallUsecaseProvider)
+        .call(
           toolCallId: toolCall.id,
           messageId: messageId,
           level: ToolGrantLevel.conversation,
@@ -119,8 +114,8 @@ class ToolCallConfirmationWidget extends ConsumerWidget {
 
   Future<void> _onSkip(WidgetRef ref) async {
     await ref
-        .read(handleToolApprovalIterationUsecaseProvider)
-        .skipToolCall(
+        .read(skipToolCallUsecaseProvider)
+        .call(
           toolCallId: toolCall.id,
           messageId: messageId,
         );
@@ -129,8 +124,8 @@ class ToolCallConfirmationWidget extends ConsumerWidget {
 
   Future<void> _onStopAll(WidgetRef ref) async {
     await ref
-        .read(handleToolApprovalIterationUsecaseProvider)
-        .stopAllToolCalls(
+        .read(stopAllPendingToolCallsUsecaseProvider)
+        .call(
           messageId: messageId,
         );
     ref.invalidate(chatMessagesControllerProvider);
