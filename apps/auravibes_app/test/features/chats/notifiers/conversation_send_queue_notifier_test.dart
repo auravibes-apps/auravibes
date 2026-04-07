@@ -1,5 +1,6 @@
 // ignore_for_file: cascade_invocations
-// Test file: sequential calls on the same notifier instance are intentional
+// Required: enqueue() returns ConversationQueuedDraft, not the notifier,
+// so cascading is not possible when calling multiple notifier methods.
 import 'package:auravibes_app/features/chats/notifiers/conversation_send_queue_notifier.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
@@ -60,7 +61,6 @@ void main() {
       final notifier = container.read(conversationSendQueueProvider.notifier);
 
       notifier.enqueue(conversationId: 'conv-1', content: 'First');
-
       notifier.remove(conversationId: 'conv-1', draftId: 'nonexistent');
 
       final state = container.read(conversationSendQueueProvider);
@@ -101,7 +101,6 @@ void main() {
       notifier.enqueue(conversationId: 'conv-1', content: 'First');
       notifier.enqueue(conversationId: 'conv-1', content: 'Second');
       notifier.enqueue(conversationId: 'conv-2', content: 'Other conv');
-
       notifier.clearAll('conv-1');
 
       final state = container.read(conversationSendQueueProvider);
@@ -113,7 +112,6 @@ void main() {
       final notifier = container.read(conversationSendQueueProvider.notifier);
 
       notifier.enqueue(conversationId: 'conv-1', content: 'First');
-
       notifier.clearAll('unknown');
 
       final state = container.read(conversationSendQueueProvider);

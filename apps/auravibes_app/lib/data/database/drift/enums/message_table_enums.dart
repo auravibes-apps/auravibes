@@ -27,9 +27,6 @@ enum MessageTableStatus {
   /// Message completed successfully.
   sent('sent'),
 
-  /// Actively streaming - may be persisted during streaming.
-  streaming('streaming'),
-
   /// Message failed - error details in metadata.
   error('error')
   ;
@@ -46,8 +43,6 @@ enum MessageTableStatus {
         return MessageTableStatus.unfinished;
       case 'error':
         return MessageTableStatus.error;
-      case 'streaming':
-        return MessageTableStatus.streaming;
       default:
         throw ArgumentError('Invalid message status: $value');
     }

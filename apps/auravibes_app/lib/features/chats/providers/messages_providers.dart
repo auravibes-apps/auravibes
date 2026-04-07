@@ -69,7 +69,6 @@ class ChatMessagesController extends _$ChatMessagesController {
       (e) {
         if (streamingResult != null && latestAssistantMessageId == e.id) {
           return e.copyWith(
-            status: .streaming,
             content: streamingResult.outputAsString,
           );
         }
@@ -104,6 +103,13 @@ MessageEntity? messageConversationById(
   if (messageEntity == null) return null;
 
   return messageEntity;
+}
+
+@Riverpod(dependencies: [MessagesStreamingNotifier])
+bool isMessageStreaming(Ref ref, String messageId) {
+  return ref.watch(
+    messagesStreamingProvider.select((state) => state.containsKey(messageId)),
+  );
 }
 
 // TODO: update when messages are streaming

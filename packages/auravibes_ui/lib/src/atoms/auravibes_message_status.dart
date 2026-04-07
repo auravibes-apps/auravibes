@@ -159,6 +159,7 @@ class _AuraMessageStatusState extends State<AuraMessageStatus>
   IconData _getStatusIcon() {
     return switch (widget.status) {
       AuraMessageDeliveryStatus.sending => Icons.access_time,
+      AuraMessageDeliveryStatus.unfinished => Icons.more_horiz,
       AuraMessageDeliveryStatus.sent => Icons.done,
       AuraMessageDeliveryStatus.delivered => Icons.done_all,
       AuraMessageDeliveryStatus.read => Icons.done_all,
@@ -170,6 +171,9 @@ class _AuraMessageStatusState extends State<AuraMessageStatus>
     return switch (widget.status) {
       AuraMessageDeliveryStatus.sending =>
         auraColors.onSurfaceVariant.withValues(alpha: 0.6),
+      AuraMessageDeliveryStatus.unfinished => auraColors.warning.withValues(
+        alpha: 0.8,
+      ),
       AuraMessageDeliveryStatus.sent => auraColors.onSurfaceVariant,
       AuraMessageDeliveryStatus.delivered => auraColors.info,
       AuraMessageDeliveryStatus.read => auraColors.success,
@@ -196,6 +200,8 @@ class _AuraMessageStatusState extends State<AuraMessageStatus>
   String _getSemanticLabel() {
     return switch (widget.status) {
       AuraMessageDeliveryStatus.sending => 'Message is being sent',
+      AuraMessageDeliveryStatus.unfinished =>
+        'Message was interrupted before completion',
       AuraMessageDeliveryStatus.sent => 'Message sent successfully',
       AuraMessageDeliveryStatus.delivered => 'Message delivered',
       AuraMessageDeliveryStatus.read => 'Message read by recipient',
@@ -208,6 +214,10 @@ class _AuraMessageStatusState extends State<AuraMessageStatus>
 enum AuraMessageDeliveryStatus {
   /// The message is currently being sent.
   sending,
+
+  /// The message was interrupted before completion (e.g. app crash, network
+  /// loss). Loaded from DB with truncated content.
+  unfinished,
 
   /// The message has been sent successfully.
   sent,

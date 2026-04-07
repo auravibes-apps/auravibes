@@ -199,10 +199,14 @@ void main() {
 
     group('AuraMessageDeliveryStatus enum', () {
       test('has all expected values', () {
-        expect(AuraMessageDeliveryStatus.values, hasLength(5));
+        expect(AuraMessageDeliveryStatus.values, hasLength(6));
         expect(
           AuraMessageDeliveryStatus.values,
           contains(AuraMessageDeliveryStatus.sending),
+        );
+        expect(
+          AuraMessageDeliveryStatus.values,
+          contains(AuraMessageDeliveryStatus.unfinished),
         );
         expect(
           AuraMessageDeliveryStatus.values,
