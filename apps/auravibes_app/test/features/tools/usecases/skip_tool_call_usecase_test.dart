@@ -58,9 +58,7 @@ void main() {
         resumeConversationIfReadyUsecase.call(
           messageId: anyNamed('messageId'),
         ),
-      ).thenAnswer((_) async {
-        return null;
-      });
+      ).thenAnswer((_) async {});
     });
 
     test('marks tool call as skippedByUser and resumes conversation', () async {
