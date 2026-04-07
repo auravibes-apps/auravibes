@@ -81,10 +81,10 @@ void main() {
       ).thenAnswer((_) async => const []);
       when(
         messageRepository.createMessage(any),
-      ).thenAnswer((_) async => _streamingAssistantMessage);
+      ).thenAnswer((_) async => _unfinishedAssistantMessage);
       when(
         messageRepository.updateMessage(any, any),
-      ).thenAnswer((_) async => _streamingAssistantMessage);
+      ).thenAnswer((_) async => _unfinishedAssistantMessage);
       when(
         messagesStreamingNotifier.remove(any),
       ).thenAnswer((_) async {});
@@ -259,13 +259,13 @@ final _userMessage = MessageEntity(
   updatedAt: DateTime(2025),
 );
 
-final _streamingAssistantMessage = MessageEntity(
+final _unfinishedAssistantMessage = MessageEntity(
   id: 'assistant-1',
   conversationId: 'conversation-1',
   content: 'Working',
   messageType: MessageType.text,
   isUser: false,
-  status: MessageStatus.streaming,
+  status: MessageStatus.unfinished,
   createdAt: DateTime(2025),
   updatedAt: DateTime(2025),
 );

@@ -7,6 +7,7 @@ import 'package:auravibes_app/domain/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/repositories/tools_groups_repository.dart';
 import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/usecases/resume_conversation_if_ready_usecase.dart';
 import 'package:auravibes_app/features/tools/providers/conversation_tools_controller.dart';
 import 'package:auravibes_app/features/tools/providers/grouped_tools_controller.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_provider.dart';
@@ -23,17 +24,20 @@ class ApproveToolCallUsecase {
     required ToolsGroupsRepository toolsGroupsRepository,
     required WorkspaceToolsRepository workspaceToolsRepository,
     required ToolResolverService toolResolverService,
+    required ResumeConversationIfReadyUsecase resumeConversationIfReadyUsecase,
   }) : _messageRepository = messageRepository,
        _conversationToolsRepository = conversationToolsRepository,
        _toolsGroupsRepository = toolsGroupsRepository,
        _workspaceToolsRepository = workspaceToolsRepository,
-       _toolResolverService = toolResolverService;
+       _toolResolverService = toolResolverService,
+       _resumeConversationIfReadyUsecase = resumeConversationIfReadyUsecase;
 
   final MessageRepository _messageRepository;
   final ConversationToolsRepository _conversationToolsRepository;
   final ToolsGroupsRepository _toolsGroupsRepository;
   final WorkspaceToolsRepository _workspaceToolsRepository;
   final ToolResolverService _toolResolverService;
+  final ResumeConversationIfReadyUsecase _resumeConversationIfReadyUsecase;
 
   Future<void> call({
     required String toolCallId,
@@ -55,6 +59,7 @@ class ApproveToolCallUsecase {
         toolCallId: toolCallId,
         resultStatus: ToolCallResultStatus.toolNotFound,
       );
+      await _resumeConversationIfReadyUsecase.call(messageId: messageId);
       return;
     }
 
@@ -80,6 +85,8 @@ class ApproveToolCallUsecase {
       resultStatus: executionResult.resultStatus,
       responseRaw: executionResult.responseRaw,
     );
+
+    await _resumeConversationIfReadyUsecase.call(messageId: messageId);
   }
 
   Future<_ExecutionResult> _executeTool({
@@ -185,5 +192,8 @@ final approveToolCallUsecaseProvider = Provider<ApproveToolCallUsecase>((ref) {
     toolsGroupsRepository: ref.watch(toolsGroupsRepositoryProvider),
     workspaceToolsRepository: ref.watch(workspaceToolsRepositoryProvider),
     toolResolverService: ToolResolverService(),
+    resumeConversationIfReadyUsecase: ref.watch(
+      resumeConversationIfReadyUsecaseProvider,
+    ),
   );
 });

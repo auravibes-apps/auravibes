@@ -171,13 +171,6 @@ Failed to retrieve messages of type $messageType for conversation $conversationI
   }
 
   @override
-  Future<MessageEntity?> appendToMessage(String id, String delta) {
-    return _database.messageDao
-        .concatMessage(id, delta)
-        .then((value) async => value != null ? _mapToMessage(value) : null);
-  }
-
-  @override
   Future<bool> deleteMessage(String id) async {
     try {
       // Check if message exists
@@ -339,7 +332,6 @@ Failed to retrieve messages with status $status for conversation $conversationId
       MessageTableStatus.sending => MessageStatus.sending,
       MessageTableStatus.unfinished => MessageStatus.unfinished,
       MessageTableStatus.error => MessageStatus.error,
-      MessageTableStatus.streaming => MessageStatus.streaming,
     };
   }
 
@@ -350,7 +342,6 @@ Failed to retrieve messages with status $status for conversation $conversationId
       MessageStatus.sending => MessageTableStatus.sending,
       MessageStatus.unfinished => MessageTableStatus.unfinished,
       MessageStatus.error => MessageTableStatus.error,
-      MessageStatus.streaming => MessageTableStatus.streaming,
     };
   }
 

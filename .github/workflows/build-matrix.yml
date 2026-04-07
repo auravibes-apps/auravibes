@@ -103,6 +103,9 @@ jobs:
         with:
           run-bootstrap: true
 
+      - name: 🛠️ Generate Code
+        run: melos run generate --no-select
+
       - name: 🔧 Setup CocoaPods
         run: |
           cd ${{ env.FLUTTER_WORKING_DIRECTORY }}/macos
@@ -151,6 +154,9 @@ jobs:
         uses: bluefireteam/melos-action@main
         with:
           run-bootstrap: true
+
+      - name: 🛠️ Generate Code
+        run: melos run generate --no-select
 
       - name: 🔧 Setup CocoaPods
         run: |
@@ -207,6 +213,9 @@ jobs:
         with:
           run-bootstrap: true
 
+      - name: 🛠️ Generate Code
+        run: melos run generate --no-select
+
       - name: 🏗️ Build Android APK
         run: flutter build apk --debug --verbose
         working-directory: ${{ env.FLUTTER_WORKING_DIRECTORY }}
@@ -249,6 +258,9 @@ jobs:
         uses: bluefireteam/melos-action@main
         with:
           run-bootstrap: true
+
+      - name: 🛠️ Generate Code
+        run: melos run generate --no-select
 
       - name: 🏗️ Build Windows
         run: flutter build windows --debug
@@ -298,6 +310,9 @@ jobs:
         with:
           run-bootstrap: true
 
+      - name: 🛠️ Generate Code
+        run: melos run generate --no-select
+
       - name: 🏗️ Build Linux
         run: flutter build linux --debug
         working-directory: ${{ env.FLUTTER_WORKING_DIRECTORY }}
@@ -340,6 +355,9 @@ jobs:
         uses: bluefireteam/melos-action@main
         with:
           run-bootstrap: true
+
+      - name: 🛠️ Generate Code
+        run: melos run generate --no-select
 
       - name: 🏗️ Build Web
         run: flutter build web --release

@@ -158,7 +158,11 @@ void main() {
               children: [
                 AuraMessageStatus(
                   status: AuraMessageDeliveryStatus.sending,
-                  showAnimation: false, // Disable animation for stable testing
+                  showAnimation: false,
+                ),
+                AuraMessageStatus(
+                  status: AuraMessageDeliveryStatus.unfinished,
+                  showAnimation: false,
                 ),
                 AuraMessageStatus(
                   status: AuraMessageDeliveryStatus.sent,
@@ -183,6 +187,10 @@ void main() {
       );
 
       expect(find.bySemanticsLabel('Message is being sent'), findsOneWidget);
+      expect(
+        find.bySemanticsLabel('Message was interrupted before completion'),
+        findsOneWidget,
+      );
       expect(
         find.bySemanticsLabel('Message sent successfully'),
         findsOneWidget,
@@ -351,10 +359,14 @@ void main() {
 
     group('AuraMessageDeliveryStatus enum', () {
       test('has all expected values', () {
-        expect(AuraMessageDeliveryStatus.values, hasLength(5));
+        expect(AuraMessageDeliveryStatus.values, hasLength(6));
         expect(
           AuraMessageDeliveryStatus.values,
           contains(AuraMessageDeliveryStatus.sending),
+        );
+        expect(
+          AuraMessageDeliveryStatus.values,
+          contains(AuraMessageDeliveryStatus.unfinished),
         );
         expect(
           AuraMessageDeliveryStatus.values,

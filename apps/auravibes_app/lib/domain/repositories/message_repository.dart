@@ -80,8 +80,6 @@ abstract class MessageRepository {
   /// Throws [MessageException] if there's an error updating the message.
   Future<MessageEntity> updateMessage(String id, MessageToUpdate message);
 
-  Future<MessageEntity?> appendToMessage(String id, String delta);
-
   /// Deletes a message from the data source.
   ///
   /// [id] The unique identifier of the message to delete.
