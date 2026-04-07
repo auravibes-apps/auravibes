@@ -93,6 +93,11 @@ jobs:
           cache-key: "flutter-:os:-:channel:-:version:-:arch:"
           pub-cache-key: "flutter-pub-:os:-:channel:-:version:-:arch:-${{ hashFiles('pubspec.lock') }}"
 
+      - name: 🔗 Create FVM symlink for CI
+        run: |
+          mkdir -p .fvm
+          ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
+
       - name: 📦 Melos Bootstrap
         uses: bluefireteam/melos-action@main
         with:
@@ -136,6 +141,11 @@ jobs:
           cache: true
           cache-key: "flutter-:os:-:channel:-:version:-:arch:"
           pub-cache-key: "flutter-pub-:os:-:channel:-:version:-:arch:-${{ hashFiles('pubspec.lock') }}"
+
+      - name: 🔗 Create FVM symlink for CI
+        run: |
+          mkdir -p .fvm
+          ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
 
       - name: 📦 Melos Bootstrap
         uses: bluefireteam/melos-action@main
@@ -187,6 +197,11 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: 🔗 Create FVM symlink for CI
+        run: |
+          mkdir -p .fvm
+          ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
+
       - name: 📦 Melos Bootstrap
         uses: bluefireteam/melos-action@main
         with:
@@ -224,6 +239,11 @@ jobs:
           cache: true
           cache-key: "flutter-:os:-:channel:-:version:-:arch:"
           pub-cache-key: "flutter-pub-:os:-:channel:-:version:-:arch:-${{ hashFiles('pubspec.lock') }}"
+
+      - name: 🔗 Create FVM symlink for CI
+        run: |
+          mkdir -p .fvm
+          ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
 
       - name: 📦 Melos Bootstrap
         uses: bluefireteam/melos-action@main
@@ -268,6 +288,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libsqlite3-dev libwebkit2gtk-4.1-dev libsecret-1-dev
 
+      - name: 🔗 Create FVM symlink for CI
+        run: |
+          mkdir -p .fvm
+          ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
+
       - name: 📦 Melos Bootstrap
         uses: bluefireteam/melos-action@main
         with:
@@ -305,6 +330,11 @@ jobs:
           cache: true
           cache-key: "flutter-:os:-:channel:-:version:-:arch:"
           pub-cache-key: "flutter-pub-:os:-:channel:-:version:-:arch:-${{ hashFiles('pubspec.lock') }}"
+
+      - name: 🔗 Create FVM symlink for CI
+        run: |
+          mkdir -p .fvm
+          ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
 
       - name: 📦 Melos Bootstrap
         uses: bluefireteam/melos-action@main
