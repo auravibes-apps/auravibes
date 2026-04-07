@@ -251,8 +251,10 @@ jobs:
 
       - name: 🔗 Create FVM symlink for CI
         run: |
-          mkdir -p .fvm
-          ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
+          New-Item -ItemType Directory -Force -Path .fvm | Out-Null
+          if (Test-Path .fvm\flutter_sdk) { Remove-Item .fvm\flutter_sdk -Recurse -Force }
+          New-Item -ItemType Junction -Path .fvm\flutter_sdk -Target "$env:FLUTTER_ROOT" | Out-Null
+        shell: pwsh
 
       - name: 📦 Melos Bootstrap
         uses: bluefireteam/melos-action@main
