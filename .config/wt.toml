@@ -6,5 +6,5 @@
 fvm = "fvm install && fvm use"
 # Get root dependencies first, then bootstrap melos packages
 bootstrap = "fvm dart pub get && fvm dart run melos bootstrap"
-# Run code generation for all packages
-generate = "fvm dart run melos run generate --no-select"
+# Run code generation directly via melos exec to avoid the nested melos run path
+generate = "fvm dart run melos exec --depends-on=build_runner -- \"dart run build_runner build --delete-conflicting-outputs\""
