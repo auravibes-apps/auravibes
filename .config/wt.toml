@@ -2,6 +2,8 @@
 # https://worktrunk.dev/
 
 [pre-start]
+# Copy selected gitignored caches from the primary worktree before setup.
+copy = "wt step copy-ignored"
 # Install the FVM Flutter version configured in .fvmrc
 fvm = "fvm install && fvm use"
 # Get root dependencies first, then bootstrap melos packages
