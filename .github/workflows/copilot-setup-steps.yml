@@ -37,7 +37,7 @@ jobs:
       - name: 🔗 Create FVM symlink for Copilot
         run: |
           mkdir -p .fvm
-          ln -sfn ${{ steps.flutter-action.outputs.tool-cache-path }}/flutter .fvm/flutter_sdk
+          ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
 
       - name: 📦 Melos Bootstrap
         uses: bluefireteam/melos-action@main
