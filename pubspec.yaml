@@ -21,7 +21,7 @@ dependency_validator:
     - 'test/**/*.mocks.dart'
 
 melos:
-  sdkPath: auto
+  sdkPath: .fvm/flutter_sdk
   categories:
     app:
       - "apps/**"

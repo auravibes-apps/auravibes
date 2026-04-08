@@ -21,7 +21,6 @@ jobs:
 
       - name: 🐦 Setup Flutter
         uses: subosito/flutter-action@v2
-        id: flutter-action
         with:
           flutter-version: ${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}
           channel: ${{ steps.fvm-config-action.outputs.FLUTTER_CHANNEL }}
@@ -30,7 +29,7 @@ jobs:
       - name: 🔗 Create FVM symlink for CI
         run: |
           mkdir -p .fvm
-          ln -s ${{ steps.flutter-action.outputs.tool-cache-path }}/flutter .fvm/flutter_sdk
+          ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
 
       - name: 🏗️ Melos Bootstrap
         uses: bluefireteam/melos-action@main
