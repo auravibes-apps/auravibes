@@ -3,8 +3,6 @@ import 'dart:async';
 import 'package:auravibes_app/domain/entities/mcp_server.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 import 'package:auravibes_app/domain/usecases/tools/mcp/build_mcp_server_to_create_usecase.dart';
-import 'package:auravibes_app/domain/usecases/tools/mcp/call_mcp_tool_usecase.dart';
-import 'package:auravibes_app/domain/usecases/tools/mcp/wait_for_mcp_connections_usecase.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/selected_workspace.dart';
@@ -335,18 +333,28 @@ class McpConnectionController extends _$McpConnectionController {
     Duration? timeout,
   }) async {
     final effectiveTimeout = timeout ?? getMcpConnectionTimeout();
-    await const WaitForMcpConnectionsUseCase().call(
-      mcpServerIds: mcpServerIds,
-      timeout: effectiveTimeout,
-      isStillConnecting: () {
-        return state
-            .where((connection) => mcpServerIds.contains(connection.server.id))
-            .any(
-              (connection) =>
-                  connection.status == McpConnectionStatus.connecting,
-            );
-      },
-    );
+    if (mcpServerIds.isEmpty || effectiveTimeout.inSeconds <= 0) {
+      return;
+    }
+
+    bool isStillConnecting() {
+      return state
+          .where((connection) => mcpServerIds.contains(connection.server.id))
+          .any(
+            (connection) => connection.status == McpConnectionStatus.connecting,
+          );
+    }
+
+    if (!isStillConnecting()) {
+      return;
+    }
+
+    final stopwatch = Stopwatch()..start();
+    const pollInterval = Duration(milliseconds: 100);
+    while (isStillConnecting() && stopwatch.elapsed < effectiveTimeout) {
+      await Future<void>.delayed(pollInterval);
+    }
+    stopwatch.stop();
   }
 
   /// Get the list of MCP connection states that are currently connecting
@@ -377,18 +385,21 @@ class McpConnectionController extends _$McpConnectionController {
       throw Exception('MCP server not found: $mcpServerId');
     }
 
-    return CallMcpToolUseCase(
-      callTool: ({required toolIdentifier, required arguments}) {
-        return _mcpManagerService.callToolString(
-          connection.client!,
-          toolIdentifier: toolIdentifier,
-          arguments: arguments,
-        );
-      },
-    ).call(
-      isConnected: connection.isReady,
-      availableTools: connection.tools,
-      mcpServerId: mcpServerId,
+    if (!connection.isReady) {
+      throw Exception('MCP server not connected: $mcpServerId');
+    }
+
+    final toolExists = connection.tools.any(
+      (t) => t.toolName == toolIdentifier,
+    );
+    if (!toolExists) {
+      throw Exception(
+        'Tool "$toolIdentifier" not found on MCP server: $mcpServerId',
+      );
+    }
+
+    return _mcpManagerService.callToolString(
+      connection.client!,
       toolIdentifier: toolIdentifier,
       arguments: arguments,
     );

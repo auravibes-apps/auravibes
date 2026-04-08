@@ -2,13 +2,12 @@ import 'package:auravibes_app/data/repositories/tools_groups_repository_impl.dar
 import 'package:auravibes_app/domain/models/grouped_tools_view_item.dart';
 import 'package:auravibes_app/domain/repositories/tools_groups_repository.dart';
 import 'package:auravibes_app/domain/usecases/tools/groups/build_grouped_tools_view_usecase.dart';
-import 'package:auravibes_app/domain/usecases/tools/groups/delete_mcp_group_usecase.dart';
-import 'package:auravibes_app/domain/usecases/tools/groups/set_mcp_group_enabled_usecase.dart';
 import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/selected_workspace.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/providers/mcp_connection_controller.dart';
+import 'package:collection/collection.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'grouped_tools_controller.g.dart';
@@ -84,25 +83,24 @@ class GroupedToolsController extends _$GroupedToolsController {
     String groupId, {
     required bool isEnabled,
   }) async {
-    final useCase = SetMcpGroupEnabledUseCase(
-      setToolsGroupEnabled: ref
-          .read(toolsGroupsRepositoryProvider)
-          .setToolsGroupEnabled,
-    );
+    await ref
+        .read(toolsGroupsRepositoryProvider)
+        .setToolsGroupEnabled(groupId, isEnabled: isEnabled);
 
-    await useCase.call(
-      groupId: groupId,
-      isEnabled: isEnabled,
-      groups: (state.value ?? const <ToolsGroupWithTools>[])
-          .map(_toGroupedToolsViewItem)
-          .toList(),
-      disconnectMcpServer: ref
-          .read(mcpConnectionControllerProvider.notifier)
-          .disconnectMcpServer,
-      reconnectMcpServer: ref
-          .read(mcpConnectionControllerProvider.notifier)
-          .reconnectMcpServer,
-    );
+    final group = (state.value ?? const <ToolsGroupWithTools>[])
+        .map(_toGroupedToolsViewItem)
+        .firstWhereOrNull((item) => item.group?.id == groupId);
+    if (group != null && group.isMcpGroup && group.mcpServerId != null) {
+      if (!isEnabled) {
+        ref
+            .read(mcpConnectionControllerProvider.notifier)
+            .disconnectMcpServer(group.mcpServerId!);
+      } else {
+        await ref
+            .read(mcpConnectionControllerProvider.notifier)
+            .reconnectMcpServer(group.mcpServerId!);
+      }
+    }
 
     ref.invalidateSelf();
   }
@@ -113,15 +111,16 @@ class GroupedToolsController extends _$GroupedToolsController {
   /// - Disconnect from the MCP server
   /// - Delete the MCP server (cascades to tools group and tools)
   Future<void> deleteMcpGroup(String groupId) async {
-    await const DeleteMcpGroupUseCase().call(
-      groupId: groupId,
-      groups: (state.value ?? const <ToolsGroupWithTools>[])
-          .map(_toGroupedToolsViewItem)
-          .toList(),
-      deleteMcpServer: ref
-          .read(mcpConnectionControllerProvider.notifier)
-          .deleteMcpServer,
-    );
+    final group = (state.value ?? const <ToolsGroupWithTools>[])
+        .map(_toGroupedToolsViewItem)
+        .firstWhereOrNull((item) => item.group?.id == groupId);
+    if (group == null || !group.isMcpGroup || group.mcpServerId == null) {
+      return;
+    }
+
+    await ref
+        .read(mcpConnectionControllerProvider.notifier)
+        .deleteMcpServer(group.mcpServerId!);
 
     ref
       ..invalidateSelf()
