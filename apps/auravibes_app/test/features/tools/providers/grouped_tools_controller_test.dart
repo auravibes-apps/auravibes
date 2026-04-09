@@ -91,6 +91,23 @@ void main() {
         expect(mcpController.reconnectedServerIds, isEmpty);
       },
     );
+
+    test(
+      'setMcpGroupEnabled skips side effects when repository update fails',
+      () async {
+        toolsGroupsRepository.groupById['group-1'] = _mcpGroup;
+        toolsGroupsRepository.setEnabledResult = false;
+
+        final notifier = container.read(groupedToolsControllerProvider.notifier)
+          ..state = const AsyncLoading();
+
+        await notifier.setMcpGroupEnabled('group-1', isEnabled: false);
+
+        expect(toolsGroupsRepository.lastSetGroupId, 'group-1');
+        expect(mcpController.disconnectedServerIds, isEmpty);
+        expect(mcpController.reconnectedServerIds, isEmpty);
+      },
+    );
   });
 }
 
@@ -159,6 +176,7 @@ class _FakeToolsGroupsRepository implements ToolsGroupsRepository {
   final Map<String, ToolsGroupEntity> groupById = {};
   String? lastSetGroupId;
   bool? lastIsEnabled;
+  bool setEnabledResult = true;
 
   @override
   Future<ToolsGroupEntity?> getToolsGroupById(String id) async => groupById[id];
@@ -170,7 +188,7 @@ class _FakeToolsGroupsRepository implements ToolsGroupsRepository {
   }) async {
     lastSetGroupId = groupId;
     lastIsEnabled = isEnabled;
-    return true;
+    return setEnabledResult;
   }
 
   @override

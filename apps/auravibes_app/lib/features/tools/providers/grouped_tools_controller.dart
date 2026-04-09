@@ -94,9 +94,12 @@ class GroupedToolsController extends _$GroupedToolsController {
       return;
     }
 
-    await ref
+    final didUpdate = await ref
         .read(toolsGroupsRepositoryProvider)
         .setToolsGroupEnabled(groupId, isEnabled: isEnabled);
+    if (!didUpdate) {
+      return;
+    }
 
     if (group.isMcpGroup && group.mcpServerId != null) {
       if (!isEnabled) {

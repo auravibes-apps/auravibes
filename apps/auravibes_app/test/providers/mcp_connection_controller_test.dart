@@ -32,6 +32,10 @@ void main() {
       );
     });
 
+    tearDown(() {
+      container.dispose();
+    });
+
     test('waitForConnectionsReady honors sub-second timeout values', () async {
       final notifier = container.read(mcpConnectionControllerProvider.notifier)
         ..state = [_connectingState];
@@ -60,8 +64,8 @@ void main() {
     test('callTool throws when server is missing', () async {
       final notifier = container.read(mcpConnectionControllerProvider.notifier);
 
-      expect(
-        () => notifier.callTool(
+      await expectLater(
+        notifier.callTool(
           mcpServerId: 'missing',
           toolIdentifier: 'sum',
           arguments: const {},
@@ -76,8 +80,8 @@ void main() {
           _connectingState.copyWith(status: McpConnectionStatus.disconnected),
         ];
 
-      expect(
-        () => notifier.callTool(
+      await expectLater(
+        notifier.callTool(
           mcpServerId: 'server-1',
           toolIdentifier: 'sum',
           arguments: const {},

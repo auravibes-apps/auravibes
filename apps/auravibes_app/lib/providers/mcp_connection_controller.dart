@@ -164,10 +164,15 @@ class McpToolIdComponents {
 @Riverpod(keepAlive: true)
 class McpConnectionController extends _$McpConnectionController {
   late final McpManagerService _mcpManagerService;
+  var _isDisposed = false;
+  var _lastKnownState = const <McpConnectionState>[];
+
   @override
   List<McpConnectionState> build() {
+    _isDisposed = false;
+    _lastKnownState = const [];
     _mcpManagerService = ref.watch(mcpManagerServiceProvider);
-    ref.onDispose(_disposeAllConnections);
+    ref.onDispose(_onDispose);
 
     // Load MCPs from database on initialization
     _loadMcpsFromDatabase();
@@ -214,7 +219,7 @@ class McpConnectionController extends _$McpConnectionController {
       tools: mcpTools,
     );
 
-    state = [
+    _setState([
       ...state,
       McpConnectionState(
         server: savedServer,
@@ -222,7 +227,7 @@ class McpConnectionController extends _$McpConnectionController {
         tools: mcpTools,
         client: client,
       ),
-    ];
+    ]);
 
     // Invalidate workspace tools provider so the UI refreshes with the new
     // tools
@@ -244,7 +249,7 @@ class McpConnectionController extends _$McpConnectionController {
     }
 
     // Remove from state
-    state = state.where((c) => c.server.id != serverId).toList();
+    _setState(state.where((c) => c.server.id != serverId).toList());
 
     // Delete from database (cascades to tools group and tools)
     final repository = ref.read(mcpServersRepositoryProvider);
@@ -273,14 +278,14 @@ class McpConnectionController extends _$McpConnectionController {
     final connection = state[index];
     _mcpManagerService.disconnect(connection.client);
 
-    state = [
+    _setState([
       ...state.sublist(0, index),
       connection.copyWith(
         status: McpConnectionStatus.disconnected,
         client: null,
       ),
       ...state.sublist(index + 1),
-    ];
+    ]);
   }
 
   /// Get a connection state by server ID.
@@ -354,7 +359,14 @@ class McpConnectionController extends _$McpConnectionController {
     final stopwatch = Stopwatch()..start();
     const pollInterval = Duration(milliseconds: 100);
     while (isStillConnecting() && stopwatch.elapsed < effectiveTimeout) {
-      await Future<void>.delayed(pollInterval);
+      final remaining = effectiveTimeout - stopwatch.elapsed;
+      if (remaining <= Duration.zero) {
+        break;
+      }
+
+      await Future<void>.delayed(
+        remaining < pollInterval ? remaining : pollInterval,
+      );
     }
     stopwatch.stop();
   }
@@ -415,11 +427,22 @@ class McpConnectionController extends _$McpConnectionController {
     try {
       final repository = ref.read(mcpServersRepositoryProvider);
       final workspace = await ref.read(selectedWorkspaceProvider.future);
+      if (_isDisposed) {
+        return;
+      }
+
       final servers = await repository.getEnabledMcpServersForWorkspace(
         workspace.id,
       );
+      if (_isDisposed) {
+        return;
+      }
 
       for (final server in servers) {
+        if (_isDisposed) {
+          return;
+        }
+
         await _connectToMcp(
           server.copyWith(
             authenticationType: await server.authenticationType.copyCryptor(
@@ -440,6 +463,10 @@ class McpConnectionController extends _$McpConnectionController {
 
   /// Connect to an MCP server.
   Future<void> _connectToMcp(McpServerEntity server) async {
+    if (_isDisposed) {
+      return;
+    }
+
     // Check if already in state
     final existingIndex = state.indexWhere(
       (c) => c.server.id == server.id,
@@ -447,28 +474,31 @@ class McpConnectionController extends _$McpConnectionController {
 
     // Add or update state to "connecting"
     if (existingIndex >= 0) {
-      state = [
+      _setState([
         ...state.sublist(0, existingIndex),
         state[existingIndex].copyWith(
           status: McpConnectionStatus.connecting,
           errorMessage: null,
         ),
         ...state.sublist(existingIndex + 1),
-      ];
+      ]);
     } else {
-      state = [
+      _setState([
         ...state,
         McpConnectionState(
           server: server,
           status: McpConnectionStatus.connecting,
         ),
-      ];
+      ]);
     }
 
     try {
       final client = await _mcpManagerService.connectMcp(server);
 
       final mcpTools = await _mcpManagerService.getTools(client);
+      if (_isDisposed) {
+        return;
+      }
 
       // Update state with connected client and tools
       _updateConnectionState(
@@ -502,23 +532,37 @@ class McpConnectionController extends _$McpConnectionController {
     String serverId,
     McpConnectionState Function(McpConnectionState) updater,
   ) {
+    if (_isDisposed) {
+      return;
+    }
+
     final index = state.indexWhere(
       (c) => c.server.id == serverId,
     );
     if (index == -1) return;
 
-    state = [
+    _setState([
       ...state.sublist(0, index),
       updater(state[index]),
       ...state.sublist(index + 1),
-    ];
+    ]);
+  }
+
+  void _onDispose() {
+    _isDisposed = true;
+    _disposeAllConnections();
   }
 
   /// Dispose all active connections.
   void _disposeAllConnections() {
-    for (final connection in state) {
+    for (final connection in _lastKnownState) {
       _mcpManagerService.disconnect(connection.client);
     }
+  }
+
+  void _setState(List<McpConnectionState> nextState) {
+    _lastKnownState = nextState;
+    state = nextState;
   }
 
   // ============================================================
