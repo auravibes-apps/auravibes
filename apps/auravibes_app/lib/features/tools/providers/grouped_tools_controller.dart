@@ -7,7 +7,6 @@ import 'package:auravibes_app/features/tools/providers/workspace_tools_provider.
 import 'package:auravibes_app/features/workspaces/providers/selected_workspace.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/providers/mcp_connection_controller.dart';
-import 'package:collection/collection.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'grouped_tools_controller.g.dart';
@@ -83,13 +82,16 @@ class GroupedToolsController extends _$GroupedToolsController {
     String groupId, {
     required bool isEnabled,
   }) async {
+    final group = await ref
+        .read(toolsGroupsRepositoryProvider)
+        .getToolsGroupById(
+          groupId,
+        );
+
     await ref
         .read(toolsGroupsRepositoryProvider)
         .setToolsGroupEnabled(groupId, isEnabled: isEnabled);
 
-    final group = (state.value ?? const <ToolsGroupWithTools>[])
-        .map(_toGroupedToolsViewItem)
-        .firstWhereOrNull((item) => item.group?.id == groupId);
     if (group != null && group.isMcpGroup && group.mcpServerId != null) {
       if (!isEnabled) {
         ref
@@ -111,9 +113,11 @@ class GroupedToolsController extends _$GroupedToolsController {
   /// - Disconnect from the MCP server
   /// - Delete the MCP server (cascades to tools group and tools)
   Future<void> deleteMcpGroup(String groupId) async {
-    final group = (state.value ?? const <ToolsGroupWithTools>[])
-        .map(_toGroupedToolsViewItem)
-        .firstWhereOrNull((item) => item.group?.id == groupId);
+    final group = await ref
+        .read(toolsGroupsRepositoryProvider)
+        .getToolsGroupById(
+          groupId,
+        );
     if (group == null || !group.isMcpGroup || group.mcpServerId == null) {
       return;
     }
@@ -143,21 +147,6 @@ ToolsGroupWithTools _toToolsGroupWithTools(
     group: item.group,
     tools: item.tools,
     mcpConnectionState: mcpConnectionState,
-  );
-}
-
-GroupedToolsViewItem _toGroupedToolsViewItem(ToolsGroupWithTools item) {
-  return GroupedToolsViewItem(
-    group: item.group,
-    tools: item.tools,
-    mcpConnection: switch (item.mcpConnectionState) {
-      null => null,
-      final state => McpConnectionView(
-        serverId: state.server.id,
-        status: _toMcpConnectionViewStatus(state.status),
-        errorMessage: state.errorMessage,
-      ),
-    },
   );
 }
 

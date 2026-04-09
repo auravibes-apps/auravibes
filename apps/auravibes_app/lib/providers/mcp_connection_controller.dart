@@ -333,7 +333,7 @@ class McpConnectionController extends _$McpConnectionController {
     Duration? timeout,
   }) async {
     final effectiveTimeout = timeout ?? getMcpConnectionTimeout();
-    if (mcpServerIds.isEmpty || effectiveTimeout.inSeconds <= 0) {
+    if (mcpServerIds.isEmpty || effectiveTimeout <= Duration.zero) {
       return;
     }
 
