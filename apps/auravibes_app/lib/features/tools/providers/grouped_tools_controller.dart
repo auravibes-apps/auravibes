@@ -82,17 +82,23 @@ class GroupedToolsController extends _$GroupedToolsController {
     String groupId, {
     required bool isEnabled,
   }) async {
+    final workspaceId = await ref.read(
+      selectedWorkspaceProvider.selectAsync((w) => w.id),
+    );
     final group = await ref
         .read(toolsGroupsRepositoryProvider)
         .getToolsGroupById(
           groupId,
         );
+    if (group == null || group.workspaceId != workspaceId) {
+      return;
+    }
 
     await ref
         .read(toolsGroupsRepositoryProvider)
         .setToolsGroupEnabled(groupId, isEnabled: isEnabled);
 
-    if (group != null && group.isMcpGroup && group.mcpServerId != null) {
+    if (group.isMcpGroup && group.mcpServerId != null) {
       if (!isEnabled) {
         ref
             .read(mcpConnectionControllerProvider.notifier)
@@ -113,12 +119,18 @@ class GroupedToolsController extends _$GroupedToolsController {
   /// - Disconnect from the MCP server
   /// - Delete the MCP server (cascades to tools group and tools)
   Future<void> deleteMcpGroup(String groupId) async {
+    final workspaceId = await ref.read(
+      selectedWorkspaceProvider.selectAsync((w) => w.id),
+    );
     final group = await ref
         .read(toolsGroupsRepositoryProvider)
         .getToolsGroupById(
           groupId,
         );
-    if (group == null || !group.isMcpGroup || group.mcpServerId == null) {
+    if (group == null || group.workspaceId != workspaceId) {
+      return;
+    }
+    if (!group.isMcpGroup || group.mcpServerId == null) {
       return;
     }
 

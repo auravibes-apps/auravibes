@@ -71,6 +71,26 @@ void main() {
         expect(mcpController.deletedServerIds, ['server-1']);
       },
     );
+
+    test(
+      'setMcpGroupEnabled ignores groups from another workspace',
+      () async {
+        toolsGroupsRepository.groupById['group-2'] = _mcpGroup.copyWith(
+          id: 'group-2',
+          workspaceId: 'workspace-2',
+          mcpServerId: 'server-2',
+        );
+
+        final notifier = container.read(groupedToolsControllerProvider.notifier)
+          ..state = const AsyncLoading();
+
+        await notifier.setMcpGroupEnabled('group-2', isEnabled: false);
+
+        expect(toolsGroupsRepository.lastSetGroupId, isNull);
+        expect(mcpController.disconnectedServerIds, isEmpty);
+        expect(mcpController.reconnectedServerIds, isEmpty);
+      },
+    );
   });
 }
 

@@ -59,15 +59,19 @@ class ConversationToolsController extends _$ConversationToolsController {
             )
             .toList();
 
+    // ConversationToolEntity.toolId stores the workspace tool record ID.
+    // It matches WorkspaceToolEntity.id, not WorkspaceToolEntity.toolId.
+    final stateIndexByWorkspaceToolId = <String, int>{
+      for (var i = 0; i < states.length; i++) states[i].tool.id: i,
+    };
+
     if (conversationId != null && conversationId.isNotEmpty) {
       final conversationTools = await _repository.getConversationTools(
         conversationId,
       );
       for (final tool in conversationTools) {
-        final index = states.indexWhere(
-          (state) => state.tool.id == tool.toolId,
-        );
-        if (index == -1) {
+        final index = stateIndexByWorkspaceToolId[tool.toolId];
+        if (index == null) {
           continue;
         }
 

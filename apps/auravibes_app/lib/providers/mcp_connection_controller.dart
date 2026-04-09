@@ -337,9 +337,11 @@ class McpConnectionController extends _$McpConnectionController {
       return;
     }
 
+    final mcpServerIdSet = mcpServerIds.toSet();
+
     bool isStillConnecting() {
       return state
-          .where((connection) => mcpServerIds.contains(connection.server.id))
+          .where((connection) => mcpServerIdSet.contains(connection.server.id))
           .any(
             (connection) => connection.status == McpConnectionStatus.connecting,
           );
@@ -366,12 +368,11 @@ class McpConnectionController extends _$McpConnectionController {
         .toList();
   }
 
-  /// Call an MCP tool by its composite ID.
+  /// Call an MCP tool on a connected MCP server.
   ///
-  /// The composite ID format is:
-  /// `mcp::<mcp_id>::<slug_name>::<tool_identifier>`
-  /// This method parses the composite ID, finds the MCP server connection,
-  /// and executes the tool with the given arguments.
+  /// The caller provides the resolved MCP server ID and tool identifier.
+  /// This method validates the current connection, ensures the tool exists,
+  /// and then executes it with the given arguments.
   ///
   /// Returns the tool result as a string.
   /// Throws an exception if the MCP server is not connected or tool not found.
