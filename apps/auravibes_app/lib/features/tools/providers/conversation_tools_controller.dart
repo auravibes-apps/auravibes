@@ -104,13 +104,14 @@ class ConversationToolsController extends _$ConversationToolsController {
     String toolId, {
     required bool isEnabled,
   }) async {
-    final success =
-        (conversationId == null || conversationId!.isEmpty) ||
-        await _repository.setConversationToolEnabled(
-          conversationId!,
-          toolId,
-          isEnabled: isEnabled,
-        );
+    if (conversationId == null || conversationId!.isEmpty) {
+      return false;
+    }
+    final success = await _repository.setConversationToolEnabled(
+      conversationId!,
+      toolId,
+      isEnabled: isEnabled,
+    );
     if (success && state.value != null) {
       final currentList = state.value!;
       final index = currentList.indexWhere(
@@ -130,13 +131,14 @@ class ConversationToolsController extends _$ConversationToolsController {
     String toolId, {
     required ToolPermissionMode permissionMode,
   }) async {
-    final success =
-        (conversationId == null || conversationId!.isEmpty) ||
-        await _repository.setConversationToolPermission(
-          conversationId!,
-          toolId,
-          permissionMode: permissionMode,
-        );
+    if (conversationId == null || conversationId!.isEmpty) {
+      return false;
+    }
+    final success = await _repository.setConversationToolPermission(
+      conversationId!,
+      toolId,
+      permissionMode: permissionMode,
+    );
     if (success && state.value != null) {
       final currentList = state.value!;
       final index = currentList.indexWhere(

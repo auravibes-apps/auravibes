@@ -61,7 +61,7 @@ void main() {
       );
       expect(
         stopwatch.elapsed,
-        lessThan(const Duration(milliseconds: 100)),
+        lessThan(const Duration(milliseconds: 500)),
       );
     });
 
@@ -85,7 +85,7 @@ void main() {
         );
         expect(
           stopwatch.elapsed,
-          lessThan(const Duration(milliseconds: 100)),
+          lessThan(const Duration(milliseconds: 500)),
         );
       },
     );

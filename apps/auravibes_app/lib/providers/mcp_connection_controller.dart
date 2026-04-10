@@ -221,6 +221,11 @@ class McpConnectionController extends _$McpConnectionController {
       tools: mcpTools,
     );
 
+    if (_isDisposed) {
+      _mcpManagerService.disconnect(client);
+      return;
+    }
+
     _setState([
       ...state,
       McpConnectionState(
@@ -231,9 +236,9 @@ class McpConnectionController extends _$McpConnectionController {
       ),
     ]);
 
-    // Invalidate workspace tools provider so the UI refreshes with the new
-    // tools
-    ref.invalidate(workspaceToolsProvider);
+    if (!_isDisposed) {
+      ref.invalidate(workspaceToolsProvider);
+    }
   }
 
   /// Delete an MCP server by ID.
@@ -259,15 +264,23 @@ class McpConnectionController extends _$McpConnectionController {
   }
 
   /// Reconnect to a specific MCP server.
+  ///
+  /// If the server is present in state, disconnects and reconnects.
+  /// If absent (e.g. after cold start), loads the server from the
+  /// repository and creates a fresh connection.
   Future<void> reconnectMcpServer(String serverId) async {
     final connection = state.where((c) => c.server.id == serverId).firstOrNull;
-    if (connection == null) return;
+    if (connection != null) {
+      _mcpManagerService.disconnect(connection.client);
+      await _connectToMcp(connection.server);
+      return;
+    }
 
-    // Disconnect if currently connected
-    _mcpManagerService.disconnect(connection.client);
-
-    // Reconnect
-    await _connectToMcp(connection.server);
+    final repository = ref.read(mcpServersRepositoryProvider);
+    final server = await repository.getMcpServerById(serverId);
+    if (server != null) {
+      await _connectToMcp(server);
+    }
   }
 
   /// Disconnect from a specific MCP server without deleting.
