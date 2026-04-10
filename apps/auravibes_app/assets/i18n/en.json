@@ -117,6 +117,9 @@
     "skip": "Skip",
     "stop_all": "Stop All"
   },
+  "tool_approval": {
+    "pending_count": "Tool approval {} of {}"
+  },
   "tool_call_status": {
     "success": "Completed",
     "skipped_by_user": "Skipped",

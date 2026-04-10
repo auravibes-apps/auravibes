@@ -5,7 +5,11 @@
   "packageRules": [
     {
       "description": "Skip local monorepo packages in packages/ and apps/",
-      "matchPaths": ["packages/**", "apps/**", "widgetbook/**"],
+      "matchFileNames": [
+        "packages/**",
+        "apps/**",
+        "widgetbook/**"
+      ],
       "enabled": false
     },
     {

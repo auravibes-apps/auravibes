@@ -1,3 +1,5 @@
+import 'package:auravibes_app/domain/entities/messages.dart';
+import 'package:auravibes_app/domain/enums/message_types.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
@@ -37,36 +39,30 @@ class RunAgentIterationUsecase {
     var currentContext = context;
 
     while (true) {
+      currentContext = await _withQueuedDrafts(
+        conversationId: conversationId,
+        context: currentContext,
+      );
+
       final continueResult = await continueAgentUsecase.call(
         conversationId: conversationId,
         context: currentContext,
       );
+
+      currentContext = AgentIterationContext(
+        origin: currentContext?.origin ?? AgentIterationOrigin.userMessage,
+      );
+
       if (!continueResult.hasToolCalls) {
-        final queuedDrafts = sendQueueRuntime.dequeueAll(
-          conversationId,
+        final queuedContext = await _withQueuedDrafts(
+          conversationId: conversationId,
+          context: currentContext,
         );
-        if (queuedDrafts.isEmpty) {
+        if (queuedContext == currentContext) {
           return AgentIterationDecision.done;
         }
 
-        final createdMessages = <String>[];
-        for (final queuedDraft in queuedDrafts) {
-          final createdMessage = await messageRepository.createMessage(
-            .new(
-              conversationId: conversationId,
-              content: queuedDraft.content,
-              messageType: .text,
-              isUser: true,
-              status: .sending,
-            ),
-          );
-          createdMessages.add(createdMessage.id);
-        }
-
-        currentContext = AgentIterationContext(
-          origin: AgentIterationOrigin.userMessage,
-          ackMessageIds: createdMessages,
-        );
+        currentContext = queuedContext;
         continue;
       }
 
@@ -79,6 +75,38 @@ class RunAgentIterationUsecase {
         return decision;
       }
     }
+  }
+
+  Future<AgentIterationContext?> _withQueuedDrafts({
+    required String conversationId,
+    required AgentIterationContext? context,
+  }) async {
+    final queuedDrafts = sendQueueRuntime.dequeueAll(conversationId);
+    if (queuedDrafts.isEmpty) {
+      return context;
+    }
+
+    final createdMessages = await Future.wait(
+      queuedDrafts.map(
+        (queuedDraft) => messageRepository.createMessage(
+          MessageToCreate(
+            conversationId: conversationId,
+            content: queuedDraft.content,
+            messageType: MessageType.text,
+            isUser: true,
+            status: MessageStatus.sending,
+          ),
+        ),
+      ),
+    );
+
+    return AgentIterationContext(
+      origin: context?.origin ?? AgentIterationOrigin.userMessage,
+      ackMessageIds: [
+        ...context?.ackMessageIds ?? const [],
+        ...createdMessages.map((message) => message.id),
+      ],
+    );
   }
 }
 
