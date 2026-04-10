@@ -104,43 +104,42 @@ class ConversationToolsController extends _$ConversationToolsController {
     String toolId, {
     required bool isEnabled,
   }) async {
-    final convId = conversationId;
-    if (convId == null || convId.isEmpty) {
-      return false;
-    }
-    final success = await _repository.setConversationToolEnabled(
-      convId,
-      toolId,
-      isEnabled: isEnabled,
+    return _updateConversationTool(
+      toolId: toolId,
+      persist: (convId) => _repository.setConversationToolEnabled(
+        convId,
+        toolId,
+        isEnabled: isEnabled,
+      ),
+      patch: (current) => current.copyWith(isEnabled: isEnabled),
     );
-    if (success && state.value != null) {
-      final currentList = state.value!;
-      final index = currentList.indexWhere(
-        (t) => t.tool.id == toolId,
-      );
-      if (index != -1) {
-        final updatedList = List<ConversationToolState>.from(currentList);
-        updatedList[index] = currentList[index].copyWith(isEnabled: isEnabled);
-        state = AsyncData(updatedList);
-      }
-    }
-    return success;
   }
 
-  /// Set the permission mode for a conversation tool
   Future<bool> setToolPermission(
     String toolId, {
     required ToolPermissionMode permissionMode,
+  }) async {
+    return _updateConversationTool(
+      toolId: toolId,
+      persist: (convId) => _repository.setConversationToolPermission(
+        convId,
+        toolId,
+        permissionMode: permissionMode,
+      ),
+      patch: (current) => current.copyWith(permissionMode: permissionMode),
+    );
+  }
+
+  Future<bool> _updateConversationTool({
+    required String toolId,
+    required Future<bool> Function(String conversationId) persist,
+    required ConversationToolState Function(ConversationToolState) patch,
   }) async {
     final convId = conversationId;
     if (convId == null || convId.isEmpty) {
       return false;
     }
-    final success = await _repository.setConversationToolPermission(
-      convId,
-      toolId,
-      permissionMode: permissionMode,
-    );
+    final success = await persist(convId);
     if (success && state.value != null) {
       final currentList = state.value!;
       final index = currentList.indexWhere(
@@ -148,9 +147,7 @@ class ConversationToolsController extends _$ConversationToolsController {
       );
       if (index != -1) {
         final updatedList = List<ConversationToolState>.from(currentList);
-        updatedList[index] = currentList[index].copyWith(
-          permissionMode: permissionMode,
-        );
+        updatedList[index] = patch(currentList[index]);
         state = AsyncData(updatedList);
       }
     }
