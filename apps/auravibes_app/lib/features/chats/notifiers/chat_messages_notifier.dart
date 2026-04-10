@@ -14,7 +14,7 @@ class ChatMessagesNotifier extends _$ChatMessagesNotifier {
     final conversationId = ref.watch(conversationSelectedProvider);
 
     final messages = await ref
-        .watch(messageRepositoryProvider)
+        .read(messageRepositoryProvider)
         .getMessagesByConversation(conversationId);
 
     final streamingResponses = ref.watch(

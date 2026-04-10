@@ -38,6 +38,7 @@ class GenerateTitleUsecase {
         error: error,
         stackTrace: stackTrace,
       );
+      titlesStreamingRuntime.removeTitle(conversationId);
     }).share();
 
     sharedStream

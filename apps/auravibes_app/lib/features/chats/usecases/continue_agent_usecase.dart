@@ -180,8 +180,6 @@ class ContinueAgentUsecase {
           status: .sent,
         ),
       );
-
-      await messagesStreamingRuntime.remove(firstMessage.id);
     } catch (e, _) {
       if (!hasAcknowledgedPendingUsers && pendingUserMessageIds.isNotEmpty) {
         for (final pendingUserMessageId in pendingUserMessageIds) {
@@ -203,6 +201,9 @@ class ContinueAgentUsecase {
       rethrow;
     } finally {
       conversationStreamingRuntime.remove(conversationId);
+      if (firstMessage != null) {
+        await messagesStreamingRuntime.remove(firstMessage.id);
+      }
       subs.dispose();
     }
 
