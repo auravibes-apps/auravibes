@@ -91,3 +91,39 @@ List<String> pendingMcpConnections(Ref ref) {
   // explicitly again, there is no reliable source for this indicator.
   return const <String>[];
 }
+
+class PendingToolCall {
+  const PendingToolCall({
+    required this.toolCall,
+    required this.messageId,
+  });
+
+  final MessageToolCallEntity toolCall;
+  final String messageId;
+}
+
+@Riverpod(dependencies: [ChatMessagesNotifier])
+List<PendingToolCall> pendingToolCalls(Ref ref) {
+  final messages = ref.watch(
+    chatMessagesProvider.select((value) => value.value),
+  );
+  if (messages == null || messages.isEmpty) return const [];
+
+  final latestAssistantMessage = messages.lastWhereOrNull(
+    (message) => !message.isUser,
+  );
+  if (latestAssistantMessage == null) return const [];
+
+  final toolCalls = latestAssistantMessage.metadata?.toolCalls;
+  if (toolCalls == null || toolCalls.isEmpty) return const [];
+
+  return toolCalls
+      .where((toolCall) => toolCall.isPending)
+      .map(
+        (toolCall) => PendingToolCall(
+          toolCall: toolCall,
+          messageId: latestAssistantMessage.id,
+        ),
+      )
+      .toList();
+}

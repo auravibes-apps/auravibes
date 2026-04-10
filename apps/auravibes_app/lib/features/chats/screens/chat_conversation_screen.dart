@@ -8,7 +8,7 @@ import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_messages_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_queued_messages_indicator.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_thinking_indicator.dart';
-import 'package:auravibes_app/features/chats/widgets/chat_tool_resolution_indicator.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_tool_approval_card.dart';
 import 'package:auravibes_app/features/chats/widgets/mcp_connecting_indicator.dart';
 import 'package:auravibes_app/features/models/widgets/select_chat_model.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_management_modal.dart';
@@ -92,31 +92,32 @@ class _ChatConversationScreen extends HookConsumerWidget {
         children: [
           const Expanded(child: _ChatList()),
           const McpConnectingIndicator(),
-          if (busyState?.isStreaming == true)
-            const ChatThinkingIndicator()
-          else if (busyState?.hasPendingTools == true)
-            const ChatToolResolutionIndicator(),
+          if (busyState?.isStreaming == true) const ChatThinkingIndicator(),
           if (queuedDrafts.isNotEmpty)
             ChatQueuedMessagesIndicator(queuedDrafts: queuedDrafts),
-          ChatInputWidget(
-            onToolsPress: onToolsPress,
-            onSendMessage: (message) async {
-              final conversationId = ref.read(conversationSelectedProvider);
-              try {
-                await ref
-                    .read(sendMessageUsecaseProvider)
-                    .call(
-                      conversationId: conversationId,
-                      content: message,
+          if (busyState?.hasPendingTools == true) const ChatToolApprovalCard(),
+          Offstage(
+            offstage: busyState?.hasPendingTools == true,
+            child: ChatInputWidget(
+              onToolsPress: onToolsPress,
+              onSendMessage: (message) async {
+                final conversationId = ref.read(conversationSelectedProvider);
+                try {
+                  await ref
+                      .read(sendMessageUsecaseProvider)
+                      .call(
+                        conversationId: conversationId,
+                        content: message,
+                      );
+                } on Exception catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to send message: $e')),
                     );
-              } on Exception catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Failed to send message: $e')),
-                  );
+                  }
                 }
-              }
-            },
+              },
+            ),
           ),
         ],
       ),

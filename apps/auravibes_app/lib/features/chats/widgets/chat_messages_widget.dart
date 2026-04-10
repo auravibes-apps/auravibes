@@ -5,9 +5,7 @@ import 'package:auravibes_app/domain/enums/message_types.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/providers/messages_providers.dart';
 import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
-import 'package:auravibes_app/features/chats/widgets/tool_call_confirmation_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/tool_call_response_preview.dart';
-import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/utils/relative_time_formatter.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -88,7 +86,13 @@ class _ChatMessageRow extends HookConsumerWidget {
 
     final isStreaming = ref.watch(isMessageStreamingProvider(messageId));
 
-    final hasToolCalls = message.metadata?.toolCalls.isNotEmpty ?? false;
+    final allToolCalls =
+        message.metadata?.toolCalls ?? const <MessageToolCallEntity>[];
+    final visibleToolCalls = allToolCalls
+        .where((toolCall) => toolCall.isResolved)
+        .toList();
+    final hasToolCalls = allToolCalls.isNotEmpty;
+    final hasVisibleToolCalls = visibleToolCalls.isNotEmpty;
     // Hide the text bubble when content is empty/whitespace and there are tool calls
     final hasContent = message.content.trim().isNotEmpty;
     final showTextBubble = hasContent || !hasToolCalls;
@@ -115,8 +119,8 @@ class _ChatMessageRow extends HookConsumerWidget {
                 timestamp: message.createdAt,
                 status: _mapMessageStatus(message.status, isStreaming),
               ),
-          if (hasToolCalls) ...[
-            for (final toolCall in message.metadata!.toolCalls)
+          if (hasVisibleToolCalls) ...[
+            for (final toolCall in visibleToolCalls)
               _ToolCallWidget(
                 key: ValueKey('tool_${toolCall.id}'),
                 toolCall: toolCall,
@@ -208,16 +212,9 @@ class _ToolCallWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Only show confirmation for pending tool calls in the last message.
-    // If a tool call is pending in a previous message, the user skipped it.
-    // A tool is pending if resultStatus is null (not yet resolved).
-    final isPendingConfirmation = toolCall.isPending && isLastMessage;
-
-    // Get human-readable display name for the tool
     final displayNameAsync = ref.watch(toolDisplayNameProvider(toolCall.name));
     final displayName = displayNameAsync.maybeWhen(
       data: (name) => name,
-      // Fallback to formatted name while loading or on error
       orElse: () => ToolNameFormatter.formatDisplayName(
         ToolNameFormatter.parse(toolCall.name),
       ),
@@ -236,7 +233,7 @@ class _ToolCallWidget extends ConsumerWidget {
               children: [
                 TextSpan(
                   text: displayName,
-                  style: const .new(
+                  style: const TextStyle(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -247,29 +244,12 @@ class _ToolCallWidget extends ConsumerWidget {
               ],
             ),
           ),
-          // Show pending confirmation indicator
-          if (isPendingConfirmation) ...[
-            _ToolCallStatusIndicator(
-              statusText: const TextLocale(LocaleKeys.tool_call_status_pending),
-              icon: Icons.help_outline,
-              color: context.auraColors.warning,
-            ),
-            Padding(
-              padding: EdgeInsets.only(top: context.auraTheme.spacing.sm),
-              child: ToolCallConfirmationWidget(
-                toolCall: toolCall,
-                messageId: messageId,
-              ),
-            ),
-          ],
-          // Show resolved status once persisted on the tool call metadata.
           if (toolCall.isResolved)
             _ToolCallStatusIndicator(
               statusText: TextLocale(toolCall.resultStatus!.localeKey),
               icon: _getStatusIcon(toolCall.resultStatus!),
               color: _getStatusColor(context, toolCall.resultStatus!),
             ),
-          // Show response content if available
           if (_tryDecode(toolCall.responseRaw) != null)
             Padding(
               padding: EdgeInsets.only(top: context.auraTheme.spacing.xs),

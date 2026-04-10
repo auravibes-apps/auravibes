@@ -156,6 +156,8 @@ abstract class LocaleKeys {
   static const tool_confirmation_skip = 'tool_confirmation.skip';
   static const tool_confirmation_stop_all = 'tool_confirmation.stop_all';
   static const tool_confirmation = 'tool_confirmation';
+  static const tool_approval_pending_count = 'tool_approval.pending_count';
+  static const tool_approval = 'tool_approval';
   static const tool_call_status_success = 'tool_call_status.success';
   static const tool_call_status_skipped_by_user =
       'tool_call_status.skipped_by_user';
