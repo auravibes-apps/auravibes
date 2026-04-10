@@ -38,18 +38,12 @@ void main() {
       conversationRepository = MockConversationRepository();
       messageRepository = MockMessageRepository();
       container = ProviderContainer();
-      final queueNotifier = container.read(
-        conversationSendQueueProvider.notifier,
-      );
       usecase = RunAgentIterationUsecase(
         continueAgentUsecase: continueAgentUsecase,
         runAllowedToolsUsecase: runAllowedToolsUsecase,
         conversationRepository: conversationRepository,
         messageRepository: messageRepository,
-        sendQueueRuntime: ConversationSendQueueRuntime(
-          enqueue: queueNotifier.enqueue,
-          dequeueAll: queueNotifier.dequeueAll,
-        ),
+        sendQueueRuntime: container.read(conversationSendQueueRuntimeProvider),
       );
 
       when(
