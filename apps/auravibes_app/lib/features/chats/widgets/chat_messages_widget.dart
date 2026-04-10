@@ -102,7 +102,6 @@ class _ChatMessageRow extends HookConsumerWidget {
                 key: ValueKey('tool_${toolCall.id}'),
                 toolCall: toolCall,
                 messageId: message.id,
-                isLastMessage: isLastMessage,
               ),
           ],
         ],
@@ -179,13 +178,11 @@ class _ToolCallWidget extends ConsumerWidget {
   const _ToolCallWidget({
     required this.toolCall,
     required this.messageId,
-    required this.isLastMessage,
     super.key,
   });
 
   final MessageToolCallEntity toolCall;
   final String messageId;
-  final bool isLastMessage;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -217,9 +214,11 @@ class _ToolCallWidget extends ConsumerWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                if (decodedArgs != null) const TextSpan(text: ' "'),
-                TextSpan(text: decodedArgs),
-                const TextSpan(text: '"'),
+                if (decodedArgs != null) ...[
+                  const TextSpan(text: ' "'),
+                  TextSpan(text: decodedArgs),
+                  const TextSpan(text: '"'),
+                ],
               ],
             ),
           ),
