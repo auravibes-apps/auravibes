@@ -152,9 +152,21 @@ void main() {
         when(
           continueAgentUsecase.call(
             conversationId: 'conversation-1',
+            context: anyNamed('context'),
           ),
-        ).thenAnswer((_) async {
+        ).thenAnswer((invocation) async {
+          final context =
+              invocation.namedArguments[#context] as AgentIterationContext?;
           callCount += 1;
+
+          if (callCount == 2) {
+            expect(
+              context,
+              const AgentIterationContext(
+                origin: AgentIterationOrigin.userMessage,
+              ),
+            );
+          }
 
           if (callCount == 1) {
             return const ContinueAgentResult(
@@ -181,6 +193,7 @@ void main() {
         verify(
           continueAgentUsecase.call(
             conversationId: 'conversation-1',
+            context: anyNamed('context'),
           ),
         ).called(2);
         verify(
@@ -219,7 +232,7 @@ void main() {
     );
 
     test(
-      'drains the next queued draft after the current iteration finishes',
+      'includes queued drafts in the same iteration context',
       () async {
         container
             .read(conversationSendQueueProvider.notifier)
@@ -233,26 +246,12 @@ void main() {
             conversationId: 'conversation-1',
             context: const AgentIterationContext(
               origin: AgentIterationOrigin.userMessage,
-              ackMessageIds: ['user-1'],
+              ackMessageIds: ['user-1', 'queued-user-1'],
             ),
           ),
         ).thenAnswer(
           (_) async => const ContinueAgentResult(
             messageId: 'assistant-1',
-            hasToolCalls: false,
-          ),
-        );
-        when(
-          continueAgentUsecase.call(
-            conversationId: 'conversation-1',
-            context: const AgentIterationContext(
-              origin: AgentIterationOrigin.userMessage,
-              ackMessageIds: ['queued-user-1'],
-            ),
-          ),
-        ).thenAnswer(
-          (_) async => const ContinueAgentResult(
-            messageId: 'assistant-2',
             hasToolCalls: false,
           ),
         );
@@ -272,10 +271,72 @@ void main() {
             conversationId: 'conversation-1',
             context: const AgentIterationContext(
               origin: AgentIterationOrigin.userMessage,
-              ackMessageIds: ['queued-user-1'],
+              ackMessageIds: ['user-1', 'queued-user-1'],
             ),
           ),
         ).called(1);
+        expect(
+          container
+              .read(conversationSendQueueProvider.notifier)
+              .peek('conversation-1'),
+          isNull,
+        );
+      },
+    );
+
+    test(
+      'adds queued drafts before the next continuation after tool execution',
+      () async {
+        var callCount = 0;
+        when(
+          continueAgentUsecase.call(
+            conversationId: 'conversation-1',
+            context: anyNamed('context'),
+          ),
+        ).thenAnswer((invocation) async {
+          final ctx =
+              invocation.namedArguments[#context] as AgentIterationContext?;
+          callCount += 1;
+
+          if (callCount == 1) {
+            return const ContinueAgentResult(
+              messageId: 'assistant-1',
+              hasToolCalls: true,
+            );
+          }
+          if (callCount == 2) {
+            expect(
+              ctx?.ackMessageIds,
+              ['queued-user-1'],
+              reason: 'queued draft should be acked before the next iteration',
+            );
+          }
+
+          return const ContinueAgentResult(
+            messageId: 'assistant-2',
+            hasToolCalls: false,
+          );
+        });
+        when(
+          runAllowedToolsUsecase.call(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+          ),
+        ).thenAnswer((_) async {
+          container
+              .read(conversationSendQueueProvider.notifier)
+              .enqueue(
+                conversationId: 'conversation-1',
+                content: 'Queued follow-up',
+              );
+          return AgentIterationDecision.continueIteration;
+        });
+
+        final result = await usecase.call(conversationId: 'conversation-1');
+
+        expect(result, AgentIterationDecision.done);
+        verify(messageRepository.createMessage(any)).called(1);
+        expect(callCount, 2);
         expect(
           container
               .read(conversationSendQueueProvider.notifier)
@@ -313,10 +374,11 @@ void main() {
           callCount += 1;
 
           if (callCount == 1) {
-            expect(context?.ackMessageIds, ['user-1']);
-          }
-          if (callCount == 2) {
-            expect(context?.ackMessageIds, ['queued-user-1', 'queued-user-2']);
+            expect(context?.ackMessageIds, [
+              'user-1',
+              'queued-user-1',
+              'queued-user-2',
+            ]);
           }
 
           return ContinueAgentResult(
@@ -349,7 +411,7 @@ void main() {
         );
 
         expect(result, AgentIterationDecision.done);
-        expect(callCount, 2);
+        expect(callCount, 1);
         verify(messageRepository.createMessage(any)).called(2);
         expect(
           container
