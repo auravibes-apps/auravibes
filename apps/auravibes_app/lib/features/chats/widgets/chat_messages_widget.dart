@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:auravibes_app/domain/entities/messages.dart';
 import 'package:auravibes_app/domain/enums/message_types.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
@@ -8,6 +6,7 @@ import 'package:auravibes_app/features/chats/providers/tool_display_name_provide
 import 'package:auravibes_app/features/chats/widgets/tool_call_response_preview.dart';
 import 'package:auravibes_app/utils/relative_time_formatter.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
+import 'package:auravibes_app/utils/try_decode_tool_metadata.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
@@ -44,28 +43,6 @@ class ChatMessagesWidget extends HookConsumerWidget {
       },
     );
   }
-}
-
-JsonEncoder encoder = const JsonEncoder.withIndent('  ');
-
-String? _tryDecode(Object? metadata) {
-  if (metadata == null) return null;
-  dynamic decoded;
-  try {
-    if (metadata is String) {
-      decoded = jsonDecode(metadata);
-    }
-  } on Exception catch (_) {
-    return metadata.toString();
-  }
-
-  if (decoded is Map<String, dynamic>) {
-    if (decoded.length == 1) {
-      return _tryDecode(decoded.values.first);
-    }
-  }
-
-  return encoder.convert(decoded);
 }
 
 class _ChatMessageRow extends HookConsumerWidget {
@@ -237,9 +214,9 @@ class _ToolCallWidget extends ConsumerWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                if (_tryDecode(toolCall.argumentsRaw) != null)
+                if (tryDecodeToolMetadata(toolCall.argumentsRaw) != null)
                   const TextSpan(text: ' "'),
-                TextSpan(text: _tryDecode(toolCall.argumentsRaw)),
+                TextSpan(text: tryDecodeToolMetadata(toolCall.argumentsRaw)),
                 const TextSpan(text: '"'),
               ],
             ),
@@ -250,12 +227,12 @@ class _ToolCallWidget extends ConsumerWidget {
               icon: _getStatusIcon(toolCall.resultStatus!),
               color: _getStatusColor(context, toolCall.resultStatus!),
             ),
-          if (_tryDecode(toolCall.responseRaw) != null)
+          if (tryDecodeToolMetadata(toolCall.responseRaw) != null)
             Padding(
               padding: EdgeInsets.only(top: context.auraTheme.spacing.xs),
               child: ToolCallResponsePreview(
                 toolName: toolCall.name,
-                content: _tryDecode(toolCall.responseRaw)!,
+                content: tryDecodeToolMetadata(toolCall.responseRaw)!,
               ),
             ),
         ],

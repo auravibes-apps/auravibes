@@ -1,4 +1,4 @@
-import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:auravibes_app/domain/entities/messages.dart';
 import 'package:auravibes_app/domain/enums/tool_grant_level.dart';
@@ -10,6 +10,7 @@ import 'package:auravibes_app/features/tools/usecases/skip_tool_call_usecase.dar
 import 'package:auravibes_app/features/tools/usecases/stop_all_pending_tool_calls_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
+import 'package:auravibes_app/utils/try_decode_tool_metadata.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -27,15 +28,17 @@ class ChatToolApprovalCard extends HookConsumerWidget {
 
     final currentIndex = useState(0);
     final lastIndex = pendingCalls.length - 1;
-    final clamped = currentIndex.value > lastIndex
-        ? lastIndex
-        : currentIndex.value;
+    useEffect(
+      () {
+        if (currentIndex.value > lastIndex) {
+          currentIndex.value = lastIndex;
+        }
+        return null;
+      },
+      [lastIndex],
+    );
 
-    if (currentIndex.value != clamped) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        currentIndex.value = clamped;
-      });
-    }
+    final clamped = math.min(currentIndex.value, lastIndex);
 
     final item = pendingCalls[clamped];
     final total = pendingCalls.length;
@@ -231,7 +234,7 @@ class _ToolCallInfo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
-    final decodedArgs = _tryDecode(argumentsRaw);
+    final decodedArgs = tryDecodeToolMetadata(argumentsRaw);
 
     return Container(
       width: double.infinity,
@@ -289,7 +292,7 @@ class _ConfirmationButtons extends ConsumerWidget {
               child: AuraButton(
                 size: AuraButtonSize.small,
                 variant: AuraButtonVariant.outlined,
-                onPressed: () => _onAllowOnce(ref),
+                onPressed: () => _onAllowOnce(ref, context),
                 child: const TextLocale(
                   LocaleKeys.tool_confirmation_allow_once,
                 ),
@@ -299,7 +302,7 @@ class _ConfirmationButtons extends ConsumerWidget {
               child: AuraButton(
                 size: AuraButtonSize.small,
                 variant: AuraButtonVariant.outlined,
-                onPressed: () => _onAllowForConversation(ref),
+                onPressed: () => _onAllowForConversation(ref, context),
                 child: const TextLocale(
                   LocaleKeys.tool_confirmation_allow_conversation,
                 ),
@@ -314,7 +317,7 @@ class _ConfirmationButtons extends ConsumerWidget {
                 size: AuraButtonSize.small,
                 variant: AuraButtonVariant.outlined,
                 colorVariant: .primary,
-                onPressed: () => _onSkip(ref),
+                onPressed: () => _onSkip(ref, context),
                 child: const TextLocale(LocaleKeys.tool_confirmation_skip),
               ),
             ),
@@ -323,7 +326,7 @@ class _ConfirmationButtons extends ConsumerWidget {
                 size: AuraButtonSize.small,
                 variant: AuraButtonVariant.outlined,
                 colorVariant: .error,
-                onPressed: () => _onStopAll(ref),
+                onPressed: () => _onStopAll(ref, context),
                 child: const TextLocale(
                   LocaleKeys.tool_confirmation_stop_all,
                 ),
@@ -335,64 +338,89 @@ class _ConfirmationButtons extends ConsumerWidget {
     );
   }
 
-  Future<void> _onAllowOnce(WidgetRef ref) async {
-    await ref
-        .read(approveToolCallUsecaseProvider)
-        .call(
-          toolCallId: toolCall.id,
-          messageId: messageId,
-          level: ToolGrantLevel.once,
-        );
-    ref.invalidate(chatMessagesProvider);
+  Future<void> _onAllowOnce(WidgetRef ref, BuildContext context) async {
+    await _runAction(
+      ref,
+      context,
+      errorMessage: 'Failed to approve tool call.',
+      action: () {
+        return ref
+            .read(approveToolCallUsecaseProvider)
+            .call(
+              toolCallId: toolCall.id,
+              messageId: messageId,
+              level: ToolGrantLevel.once,
+            );
+      },
+    );
   }
 
-  Future<void> _onAllowForConversation(WidgetRef ref) async {
-    await ref
-        .read(approveToolCallUsecaseProvider)
-        .call(
-          toolCallId: toolCall.id,
-          messageId: messageId,
-          level: ToolGrantLevel.conversation,
-        );
-    ref.invalidate(chatMessagesProvider);
+  Future<void> _onAllowForConversation(
+    WidgetRef ref,
+    BuildContext context,
+  ) async {
+    await _runAction(
+      ref,
+      context,
+      errorMessage: 'Failed to approve tool call for this conversation.',
+      action: () {
+        return ref
+            .read(approveToolCallUsecaseProvider)
+            .call(
+              toolCallId: toolCall.id,
+              messageId: messageId,
+              level: ToolGrantLevel.conversation,
+            );
+      },
+    );
   }
 
-  Future<void> _onSkip(WidgetRef ref) async {
-    await ref
-        .read(skipToolCallUsecaseProvider)
-        .call(
-          toolCallId: toolCall.id,
-          messageId: messageId,
-        );
-    ref.invalidate(chatMessagesProvider);
+  Future<void> _onSkip(WidgetRef ref, BuildContext context) async {
+    await _runAction(
+      ref,
+      context,
+      errorMessage: 'Failed to skip tool call.',
+      action: () {
+        return ref
+            .read(skipToolCallUsecaseProvider)
+            .call(
+              toolCallId: toolCall.id,
+              messageId: messageId,
+            );
+      },
+    );
   }
 
-  Future<void> _onStopAll(WidgetRef ref) async {
-    await ref
-        .read(stopAllPendingToolCallsUsecaseProvider)
-        .call(
-          messageId: messageId,
-        );
-    ref.invalidate(chatMessagesProvider);
+  Future<void> _onStopAll(WidgetRef ref, BuildContext context) async {
+    await _runAction(
+      ref,
+      context,
+      errorMessage: 'Failed to stop pending tool calls.',
+      action: () {
+        return ref
+            .read(stopAllPendingToolCallsUsecaseProvider)
+            .call(
+              messageId: messageId,
+            );
+      },
+    );
   }
-}
 
-String? _tryDecode(Object? metadata) {
-  if (metadata == null) return null;
-  dynamic decoded;
-  try {
-    if (metadata is String) {
-      decoded = jsonDecode(metadata);
+  Future<void> _runAction(
+    WidgetRef ref,
+    BuildContext context, {
+    required String errorMessage,
+    required Future<void> Function() action,
+  }) async {
+    try {
+      await action();
+      ref.invalidate(chatMessagesProvider);
+    } on Exception catch (error) {
+      debugPrint('Tool approval action failed: $error');
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$errorMessage $error')),
+      );
     }
-  } on Exception catch (_) {
-    return metadata.toString();
   }
-
-  if (decoded is Map<String, dynamic>) {
-    if (decoded.length == 1) {
-      return _tryDecode(decoded.values.first);
-    }
-  }
-
-  return const JsonEncoder.withIndent('  ').convert(decoded);
 }
