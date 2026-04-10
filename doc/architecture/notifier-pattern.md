@@ -43,7 +43,7 @@ Examples:
 - current MCP connection state and reconnect/disconnect runtime tracking
 - conversation-level tool enablement state for the current screen
 
-## What Belongs in a Usecase
+## What Belongs in a Use Case
 
 Move logic to a use case when it includes:
 - business rules or validation

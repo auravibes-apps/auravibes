@@ -9,7 +9,7 @@ The code is organized in feature base structure. then there are data, services o
 
 ## Usecases
 holde the business logic
-check `./doc/architecture/usecases-pattern.md` for detail description
+check `../../../doc/architecture/usecases-pattern.md` for detailed description
 usecases locations `apps/<app_name>/lib/features/<feature_name>/usecases/<usecase_name>_usecase.dart`
 
 # Notifiers

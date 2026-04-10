@@ -33,7 +33,7 @@ This pattern replaces legacy `*Controller` naming for Riverpod classes with `bui
 - call use cases for business actions
 - use guard clauses and `try/finally` around async state transitions
 
-## Usecase Boundary
+## Use Case Boundary
 
 Move logic out of a notifier when it includes:
 
