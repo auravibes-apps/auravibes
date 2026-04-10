@@ -418,7 +418,7 @@ void main() {
     );
 
     test(
-      'drains multiple queued drafts sequentially before returning done',
+      'drains multiple queued drafts in one iteration before returning done',
       () async {
         container
             .read(conversationSendQueueProvider.notifier)
