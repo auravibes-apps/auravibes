@@ -104,11 +104,12 @@ class ConversationToolsController extends _$ConversationToolsController {
     String toolId, {
     required bool isEnabled,
   }) async {
-    if (conversationId == null || conversationId!.isEmpty) {
+    final convId = conversationId;
+    if (convId == null || convId.isEmpty) {
       return false;
     }
     final success = await _repository.setConversationToolEnabled(
-      conversationId!,
+      convId,
       toolId,
       isEnabled: isEnabled,
     );
@@ -131,11 +132,12 @@ class ConversationToolsController extends _$ConversationToolsController {
     String toolId, {
     required ToolPermissionMode permissionMode,
   }) async {
-    if (conversationId == null || conversationId!.isEmpty) {
+    final convId = conversationId;
+    if (convId == null || convId.isEmpty) {
       return false;
     }
     final success = await _repository.setConversationToolPermission(
-      conversationId!,
+      convId,
       toolId,
       permissionMode: permissionMode,
     );
