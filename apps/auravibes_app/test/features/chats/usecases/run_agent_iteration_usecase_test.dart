@@ -233,6 +233,7 @@ void main() {
               context,
               const AgentIterationContext(
                 origin: AgentIterationOrigin.userMessage,
+                ackMessageIds: [], // ignore: avoid_redundant_argument_values - Explicit empty ack expectation for review clarity.
               ),
             );
           }
