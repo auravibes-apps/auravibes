@@ -66,13 +66,14 @@ class _ChatMessageRow extends HookConsumerWidget {
     final allToolCalls =
         message.metadata?.toolCalls ?? const <MessageToolCallEntity>[];
     final visibleToolCalls = allToolCalls
-        .where((toolCall) => toolCall.isResolved)
+        .where(
+          (toolCall) => toolCall.isResolved || toolCall.resultStatus == null,
+        )
         .toList();
-    final hasToolCalls = allToolCalls.isNotEmpty;
     final hasVisibleToolCalls = visibleToolCalls.isNotEmpty;
     // Hide the text bubble when content is empty/whitespace and there are tool calls
     final hasContent = message.content.trim().isNotEmpty;
-    final showTextBubble = hasContent || !hasToolCalls;
+    final showTextBubble = hasContent || !hasVisibleToolCalls;
 
     return AnimatedSize(
       duration: const Duration(microseconds: 200),
