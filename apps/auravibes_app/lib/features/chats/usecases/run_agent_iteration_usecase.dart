@@ -54,7 +54,16 @@ class RunAgentIterationUsecase {
       );
 
       if (!continueResult.hasToolCalls) {
-        return AgentIterationDecision.done;
+        final queuedContext = await _withQueuedDrafts(
+          conversationId: conversationId,
+          context: currentContext,
+        );
+        if (queuedContext == currentContext) {
+          return AgentIterationDecision.done;
+        }
+
+        currentContext = queuedContext;
+        continue;
       }
 
       final decision = await runAllowedToolsUsecase.call(
@@ -77,25 +86,25 @@ class RunAgentIterationUsecase {
       return context;
     }
 
-    final createdMessages = <String>[];
-    for (final queuedDraft in queuedDrafts) {
-      final createdMessage = await messageRepository.createMessage(
-        MessageToCreate(
-          conversationId: conversationId,
-          content: queuedDraft.content,
-          messageType: MessageType.text,
-          isUser: true,
-          status: MessageStatus.sending,
+    final createdMessages = await Future.wait(
+      queuedDrafts.map(
+        (queuedDraft) => messageRepository.createMessage(
+          MessageToCreate(
+            conversationId: conversationId,
+            content: queuedDraft.content,
+            messageType: MessageType.text,
+            isUser: true,
+            status: MessageStatus.sending,
+          ),
         ),
-      );
-      createdMessages.add(createdMessage.id);
-    }
+      ),
+    );
 
     return AgentIterationContext(
       origin: context?.origin ?? AgentIterationOrigin.userMessage,
       ackMessageIds: [
         ...context?.ackMessageIds ?? const [],
-        ...createdMessages,
+        ...createdMessages.map((message) => message.id),
       ],
     );
   }

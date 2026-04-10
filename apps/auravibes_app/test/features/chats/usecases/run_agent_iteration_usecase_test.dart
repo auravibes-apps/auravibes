@@ -146,6 +146,75 @@ void main() {
     });
 
     test(
+      'continues with drafts queued during a tool-free continuation',
+      () async {
+        var callCount = 0;
+        when(
+          continueAgentUsecase.call(
+            conversationId: 'conversation-1',
+            context: anyNamed('context'),
+          ),
+        ).thenAnswer((invocation) async {
+          final context =
+              invocation.namedArguments[#context] as AgentIterationContext?;
+          callCount += 1;
+
+          if (callCount == 1) {
+            expect(
+              context,
+              const AgentIterationContext(
+                origin: AgentIterationOrigin.userMessage,
+                ackMessageIds: ['user-1'],
+              ),
+            );
+            container
+                .read(conversationSendQueueProvider.notifier)
+                .enqueue(
+                  conversationId: 'conversation-1',
+                  content: 'Queued during stream',
+                );
+
+            return const ContinueAgentResult(
+              messageId: 'assistant-1',
+              hasToolCalls: false,
+            );
+          }
+
+          expect(
+            context,
+            const AgentIterationContext(
+              origin: AgentIterationOrigin.userMessage,
+              ackMessageIds: ['queued-user-1'],
+            ),
+          );
+
+          return const ContinueAgentResult(
+            messageId: 'assistant-2',
+            hasToolCalls: false,
+          );
+        });
+
+        final result = await usecase.call(
+          conversationId: 'conversation-1',
+          context: const AgentIterationContext(
+            origin: AgentIterationOrigin.userMessage,
+            ackMessageIds: ['user-1'],
+          ),
+        );
+
+        expect(result, AgentIterationDecision.done);
+        expect(callCount, 2);
+        verify(messageRepository.createMessage(any)).called(1);
+        expect(
+          container
+              .read(conversationSendQueueProvider.notifier)
+              .peek('conversation-1'),
+          isNull,
+        );
+      },
+    );
+
+    test(
       'continues looping while tool execution requests another iteration',
       () async {
         var callCount = 0;
