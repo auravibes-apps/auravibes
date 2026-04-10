@@ -2,7 +2,9 @@
 
 Use cases are for business logic and coordinate actions between repositories, services, and other use cases.
 
-They should not contain any UI code or directly manipulate notifier state. Instead, they should focus on performing a specific task or action, such as sending a message, fetching data, or processing user input. Use cases can be called from the UI layer (e.g., from a button press) or from notifiers. They can interact with repositories and services to fetch or update data, then return results to the caller.
+They should not contain any UI code or directly manipulate notifier state. Instead, they should focus on performing a specific task or action, such as sending a message, fetching data, or processing user input. Use cases can be called from the UI layer (e.g., from a button press) or from notifiers. They can interact with repositories and services to fetch or update data, then return results to the caller when applicable.
+
+Use cases come in two shapes: **query-style** use cases that return domain results (e.g., `Future<ConversationEntity>`), and **command-style** use cases that orchestrate side effects via runtime adapters, repositories, and services (e.g., `Future<void>`). Both shapes are valid.
 
 ## Runtime Adapter Exception
 
@@ -25,7 +27,7 @@ Do not create circular dependencies, even deeply nested ones. For example, if `S
 
 If this circular dependency happens, it indicates that the use cases are too tightly coupled and may need to be refactored to better separate concerns. Each use case should have a clear responsibility and should not depend on the internal workings of another use case.
 
-A use case should not be a single dependency call, as that would not justify the existence of the use case layer. Instead, a use case should coordinate multiple actions, such as calling multiple repositories, performing some business logic, and returning the result for the caller to apply to state if needed. If a use case is just a thin wrapper around a single repository call, consider moving that logic directly into the repository or notifier instead.
+A use case should not be a single dependency call, as that would not justify the existence of the use case layer. Instead, a use case should coordinate multiple actions, such as calling multiple repositories, performing some business logic, and returning the result for the caller to apply to state if needed. If a use case is just a thin wrapper around a single repository call, consider moving that logic directly into the repository or service instead.
 
 Create use cases only when reusable, representing meaningful business actions. Either called from other use cases or UI actions.
 
