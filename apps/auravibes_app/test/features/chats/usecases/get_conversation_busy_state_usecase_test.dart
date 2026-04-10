@@ -3,6 +3,7 @@ import 'package:auravibes_app/domain/enums/message_types.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_notifier.dart';
+import 'package:auravibes_app/features/chats/providers/streaming_runtime_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/get_conversation_busy_state_usecase.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
@@ -21,10 +22,13 @@ void main() {
     setUp(() {
       messageRepository = MockMessageRepository();
       container = ProviderContainer();
+      final notifier = container.read(conversationStreamingProvider.notifier);
       usecase = GetConversationBusyStateUsecase(
         messageRepository: messageRepository,
-        conversationStreamingNotifier: container.read(
-          conversationStreamingProvider.notifier,
+        conversationStreamingRuntime: ConversationStreamingRuntime(
+          start: notifier.start,
+          isStreaming: notifier.isStreaming,
+          remove: notifier.remove,
         ),
       );
 

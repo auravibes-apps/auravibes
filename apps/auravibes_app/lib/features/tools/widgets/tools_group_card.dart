@@ -1,5 +1,5 @@
 import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
-import 'package:auravibes_app/features/tools/providers/grouped_tools_controller.dart';
+import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/widgets/tool_item_row.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_group_header.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -78,7 +78,7 @@ class ToolsGroupCard extends HookConsumerWidget {
     if (groupWithTools.group == null) return;
 
     ref
-        .read(groupedToolsControllerProvider.notifier)
+        .read(groupedToolsProvider.notifier)
         .setMcpGroupEnabled(
           groupWithTools.group!.id,
           isEnabled: enabled,
@@ -89,7 +89,7 @@ class ToolsGroupCard extends HookConsumerWidget {
     if (groupWithTools.mcpServerId == null) return;
 
     await ref
-        .read(groupedToolsControllerProvider.notifier)
+        .read(groupedToolsProvider.notifier)
         .reconnectMcp(groupWithTools.mcpServerId!);
   }
 
@@ -107,7 +107,7 @@ class ToolsGroupCard extends HookConsumerWidget {
 
     if (confirmed ?? false) {
       await ref
-          .read(groupedToolsControllerProvider.notifier)
+          .read(groupedToolsProvider.notifier)
           .deleteMcpGroup(groupWithTools.group!.id);
     }
   }

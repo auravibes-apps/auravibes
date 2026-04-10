@@ -1,6 +1,6 @@
 import 'package:auravibes_app/domain/entities/messages.dart';
 import 'package:auravibes_app/domain/enums/tool_grant_level.dart';
-import 'package:auravibes_app/features/chats/providers/messages_providers.dart';
+import 'package:auravibes_app/features/chats/notifiers/chat_messages_notifier.dart';
 import 'package:auravibes_app/features/tools/usecases/approve_tool_call_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/skip_tool_call_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/stop_all_pending_tool_calls_usecase.dart';
@@ -98,7 +98,7 @@ class ToolCallConfirmationWidget extends ConsumerWidget {
           messageId: messageId,
           level: ToolGrantLevel.once,
         );
-    ref.invalidate(chatMessagesControllerProvider);
+    ref.invalidate(chatMessagesProvider);
   }
 
   Future<void> _onAllowForConversation(WidgetRef ref) async {
@@ -109,7 +109,7 @@ class ToolCallConfirmationWidget extends ConsumerWidget {
           messageId: messageId,
           level: ToolGrantLevel.conversation,
         );
-    ref.invalidate(chatMessagesControllerProvider);
+    ref.invalidate(chatMessagesProvider);
   }
 
   Future<void> _onSkip(WidgetRef ref) async {
@@ -119,7 +119,7 @@ class ToolCallConfirmationWidget extends ConsumerWidget {
           toolCallId: toolCall.id,
           messageId: messageId,
         );
-    ref.invalidate(chatMessagesControllerProvider);
+    ref.invalidate(chatMessagesProvider);
   }
 
   Future<void> _onStopAll(WidgetRef ref) async {
@@ -128,6 +128,6 @@ class ToolCallConfirmationWidget extends ConsumerWidget {
         .call(
           messageId: messageId,
         );
-    ref.invalidate(chatMessagesControllerProvider);
+    ref.invalidate(chatMessagesProvider);
   }
 }

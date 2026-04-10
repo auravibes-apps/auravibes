@@ -5,11 +5,11 @@ import 'package:auravibes_app/domain/usecases/tools/groups/build_grouped_tools_v
 import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/selected_workspace.dart';
+import 'package:auravibes_app/notifiers/mcp_connection_notifier.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
-import 'package:auravibes_app/providers/mcp_connection_controller.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-part 'grouped_tools_controller.g.dart';
+part 'grouped_tools_notifier.g.dart';
 
 /// Provider for the tools groups repository.
 @Riverpod(keepAlive: true)
@@ -27,7 +27,7 @@ ToolsGroupsRepository toolsGroupsRepository(Ref ref) {
 /// - Enriches MCP groups with their connection state
 /// - Sorts groups: Default first, then MCP errors, then by creation date
 @riverpod
-class GroupedToolsController extends _$GroupedToolsController {
+class GroupedToolsNotifier extends _$GroupedToolsNotifier {
   @override
   Future<List<ToolsGroupWithTools>> build() async {
     final workspaceId = await ref.watch(
@@ -40,7 +40,7 @@ class GroupedToolsController extends _$GroupedToolsController {
     );
 
     final workspaceTools = await ref.watch(workspaceToolsProvider.future);
-    final mcpConnections = ref.watch(mcpConnectionControllerProvider);
+    final mcpConnections = ref.watch(mcpConnectionProvider);
     final mcpConnectionsByServerId = {
       for (final connection in mcpConnections) connection.server.id: connection,
     };
@@ -104,11 +104,11 @@ class GroupedToolsController extends _$GroupedToolsController {
     if (group.isMcpGroup && group.mcpServerId != null) {
       if (!isEnabled) {
         ref
-            .read(mcpConnectionControllerProvider.notifier)
+            .read(mcpConnectionProvider.notifier)
             .disconnectMcpServer(group.mcpServerId!);
       } else {
         await ref
-            .read(mcpConnectionControllerProvider.notifier)
+            .read(mcpConnectionProvider.notifier)
             .reconnectMcpServer(group.mcpServerId!);
       }
     }
@@ -138,7 +138,7 @@ class GroupedToolsController extends _$GroupedToolsController {
     }
 
     await ref
-        .read(mcpConnectionControllerProvider.notifier)
+        .read(mcpConnectionProvider.notifier)
         .deleteMcpServer(group.mcpServerId!);
 
     ref
@@ -149,7 +149,7 @@ class GroupedToolsController extends _$GroupedToolsController {
   /// Reconnect to an MCP server.
   Future<void> reconnectMcp(String mcpServerId) async {
     await ref
-        .read(mcpConnectionControllerProvider.notifier)
+        .read(mcpConnectionProvider.notifier)
         .reconnectMcpServer(mcpServerId);
   }
 }
@@ -177,7 +177,7 @@ McpConnectionViewStatus _toMcpConnectionViewStatus(McpConnectionStatus status) {
 /// Provider that returns the count of enabled tools across all groups.
 @riverpod
 Future<int> enabledToolsCount(Ref ref) async {
-  final groupedTools = await ref.watch(groupedToolsControllerProvider.future);
+  final groupedTools = await ref.watch(groupedToolsProvider.future);
   return groupedTools.fold<int>(
     0,
     (sum, group) => sum + group.enabledToolsCount,
@@ -187,7 +187,7 @@ Future<int> enabledToolsCount(Ref ref) async {
 /// Provider that returns the total count of tools across all groups.
 @riverpod
 Future<int> totalToolsCount(Ref ref) async {
-  final groupedTools = await ref.watch(groupedToolsControllerProvider.future);
+  final groupedTools = await ref.watch(groupedToolsProvider.future);
   return groupedTools.fold<int>(
     0,
     (sum, group) => sum + group.totalToolsCount,

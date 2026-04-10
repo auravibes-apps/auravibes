@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:auravibes_app/features/chats/notifiers/chat_messages_notifier.dart';
+import 'package:auravibes_app/features/chats/notifiers/conversation_chat_notifier.dart';
 import 'package:auravibes_app/features/chats/providers/messages_providers.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
@@ -33,8 +35,8 @@ class ChatConversationScreen extends ConsumerWidget {
 }
 
 @Dependencies([
-  ConversationChatController,
-  ChatMessagesController,
+  ConversationChatNotifier,
+  ChatMessagesNotifier,
   pendingMcpConnections,
 ])
 class _ChatConversationScreen extends HookConsumerWidget {
@@ -43,18 +45,18 @@ class _ChatConversationScreen extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final modelId = ref.watch(
-      conversationChatControllerProvider.select((c) => c.value?.modelId),
+      conversationChatProvider.select((c) => c.value?.modelId),
     );
 
     final modelTitle = ref.watch(
-      conversationChatControllerProvider.select((c) => c.value?.title),
+      conversationChatProvider.select((c) => c.value?.title),
     );
 
     final onToolsPress = useCallback(() async {
       // Try to get conversation info
 
       final conversation = await ref.read(
-        conversationChatControllerProvider.future,
+        conversationChatProvider.future,
       );
       if (conversation == null) return;
       final conversationId = conversation.id;
@@ -82,7 +84,7 @@ class _ChatConversationScreen extends HookConsumerWidget {
         bottom: SelectCredentialsModelWidget(
           credentialsModelId: modelId,
           selectCredentialsModelId: ref
-              .watch(conversationChatControllerProvider.notifier)
+              .watch(conversationChatProvider.notifier)
               .setModel,
         ),
       ),
@@ -128,7 +130,7 @@ class _ChatList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isLoading = ref.watch(
-      chatMessagesControllerProvider.select(
+      chatMessagesProvider.select(
         (value) => value.isLoading && value.value == null,
       ),
     );
@@ -143,7 +145,7 @@ class _ChatList extends ConsumerWidget {
       ),
     );
     final asyncError = ref.watch(
-      chatMessagesControllerProvider.select(
+      chatMessagesProvider.select(
         (value) => value.asError,
       ),
     );

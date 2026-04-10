@@ -4,8 +4,8 @@ import 'package:auravibes_app/features/workspaces/providers/selected_workspace.d
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-part 'new_chat_controller.freezed.dart';
-part 'new_chat_controller.g.dart';
+part 'new_chat_notifier.freezed.dart';
+part 'new_chat_notifier.g.dart';
 
 @freezed
 abstract class NewChatState with _$NewChatState {
@@ -20,7 +20,7 @@ abstract class NewChatState with _$NewChatState {
 }
 
 @riverpod
-class NewChatController extends _$NewChatController {
+class NewChatNotifier extends _$NewChatNotifier {
   @override
   NewChatState build() {
     return const NewChatState();

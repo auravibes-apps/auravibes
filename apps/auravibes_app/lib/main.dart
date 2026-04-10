@@ -1,5 +1,5 @@
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
-import 'package:auravibes_app/features/settings/providers/theme_provider.dart';
+import 'package:auravibes_app/features/settings/notifiers/theme_notifier.dart';
 import 'package:auravibes_app/flavors.dart';
 import 'package:auravibes_app/main/locale.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
@@ -44,7 +44,7 @@ class MyApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final themeAsync = ref.watch(themeControllerProvider);
+    final themeAsync = ref.watch(themeProvider);
     final routerConfig = ref.watch(routerProvider);
     final themeMode = themeAsync.asData?.value.themeMode ?? ThemeMode.system;
 

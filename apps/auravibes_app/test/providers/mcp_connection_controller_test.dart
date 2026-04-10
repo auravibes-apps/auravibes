@@ -7,13 +7,13 @@ import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 import 'package:auravibes_app/domain/repositories/mcp_servers_repository.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/selected_workspace.dart';
-import 'package:auravibes_app/providers/mcp_connection_controller.dart';
+import 'package:auravibes_app/notifiers/mcp_connection_notifier.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 
 void main() {
-  group('McpConnectionController', () {
+  group('McpConnectionNotifier', () {
     late _FakeSelectedWorkspace selectedWorkspace;
     late _FakeMcpServersRepository mcpServersRepository;
     late _FakeMcpManagerService mcpManagerService;
@@ -37,7 +37,7 @@ void main() {
     });
 
     test('waitForConnectionsReady honors sub-second timeout values', () async {
-      final notifier = container.read(mcpConnectionControllerProvider.notifier)
+      final notifier = container.read(mcpConnectionProvider.notifier)
         ..state = [_connectingState];
 
       unawaited(
@@ -69,7 +69,7 @@ void main() {
       'waitForConnectionsReady returns close to timeout when never ready',
       () async {
         final notifier = container.read(
-          mcpConnectionControllerProvider.notifier,
+          mcpConnectionProvider.notifier,
         )..state = [_connectingState];
 
         final stopwatch = Stopwatch()..start();
@@ -91,7 +91,7 @@ void main() {
     );
 
     test('callTool throws when server is missing', () async {
-      final notifier = container.read(mcpConnectionControllerProvider.notifier);
+      final notifier = container.read(mcpConnectionProvider.notifier);
 
       await expectLater(
         notifier.callTool(
@@ -104,7 +104,7 @@ void main() {
     });
 
     test('callTool throws when server is not connected', () async {
-      final notifier = container.read(mcpConnectionControllerProvider.notifier)
+      final notifier = container.read(mcpConnectionProvider.notifier)
         ..state = [
           _connectingState.copyWith(status: McpConnectionStatus.disconnected),
         ];

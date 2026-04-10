@@ -1,15 +1,16 @@
-import 'package:auravibes_app/core/exceptions/conversation_exceptions.dart';
-import 'package:auravibes_app/domain/entities/conversation.dart';
 import 'package:auravibes_app/domain/entities/messages.dart';
+import 'package:auravibes_app/features/chats/notifiers/chat_messages_notifier.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_send_queue_notifier.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_notifier.dart';
 import 'package:auravibes_app/features/chats/notifiers/messages_streaming_notifier.dart';
-import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_selection_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/get_conversation_busy_state_usecase.dart';
 import 'package:collection/collection.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod/experimental/mutation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+export 'conversation_selection_provider.dart';
 
 part 'messages_providers.g.dart';
 
@@ -17,71 +18,10 @@ final addMessageMutation = Mutation<MessageEntity>();
 final deleteMessageMutation = Mutation<void>();
 final updateMessageMutation = Mutation<MessageEntity>();
 
-@Riverpod(dependencies: [])
-String conversationSelectedNotifier(Ref ref) =>
-    throw const NoConversationSelectedException();
-
-@Riverpod(dependencies: [conversationSelectedNotifier])
-class ConversationChatController extends _$ConversationChatController {
-  @override
-  Future<ConversationEntity?> build() async {
-    final conversationId = ref.watch(conversationSelectedProvider);
-
-    return ref
-        .watch(conversationRepositoryProvider)
-        .getConversationById(conversationId);
-  }
-
-  Future<void> setModel(String? modelId) async {
-    final id = state.value?.id;
-    if (id == null) return;
-
-    final updatedConversation = await ref
-        .read(conversationRepositoryProvider)
-        .updateConversation(id, ConversationToUpdate(modelId: modelId));
-    state = AsyncData(updatedConversation);
-  }
-}
-
-@Riverpod(dependencies: [conversationSelectedNotifier])
-class ChatMessagesController extends _$ChatMessagesController {
-  @override
-  Future<List<MessageEntity>> build() async {
-    final conversationId = ref.watch(conversationSelectedProvider);
-
-    final messages = await ref
-        .watch(messageRepositoryProvider)
-        .getMessagesByConversation(conversationId);
-
-    final streamingResponses = ref.watch(
-      messagesStreamingProvider,
-    );
-    final latestAssistantMessageId = messages
-        .lastWhereOrNull(
-          (message) => !message.isUser,
-        )
-        ?.id;
-    final streamingResult = latestAssistantMessageId == null
-        ? null
-        : streamingResponses[latestAssistantMessageId]?.lastResult;
-
-    return messages.map(
-      (e) {
-        if (streamingResult != null && latestAssistantMessageId == e.id) {
-          return e.copyWith(
-            content: streamingResult.outputAsString,
-          );
-        }
-        return e;
-      },
-    ).toList();
-  }
-}
-
-@Riverpod(dependencies: [ChatMessagesController])
+@Riverpod(dependencies: [ChatMessagesNotifier])
 Future<List<String>> messageList(Ref ref) async {
   final messages = await ref.watch(
-    chatMessagesControllerProvider.selectAsync(
+    chatMessagesProvider.selectAsync(
       (messages) => messages.map((message) => message.id).toList(),
     ),
   );
@@ -89,13 +29,13 @@ Future<List<String>> messageList(Ref ref) async {
   return messages;
 }
 
-@Riverpod(dependencies: [ChatMessagesController])
+@Riverpod(dependencies: [ChatMessagesNotifier])
 MessageEntity? messageConversationById(
   Ref ref,
   String messageId,
 ) {
   final messageEntity = ref.watch(
-    chatMessagesControllerProvider.select(
+    chatMessagesProvider.select(
       (value) => value.value?.firstWhereOrNull((c) => c.id == messageId),
     ),
   );
@@ -113,7 +53,7 @@ bool isMessageStreaming(Ref ref, String messageId) {
 }
 
 // TODO: update when messages are streaming
-@Riverpod(dependencies: [conversationSelectedNotifier, ChatMessagesController])
+@Riverpod(dependencies: [conversationSelected, ChatMessagesNotifier])
 Future<ConversationBusyState> conversationBusyState(Ref ref) async {
   final conversationId = ref.watch(conversationSelectedProvider);
   ref
@@ -122,14 +62,14 @@ Future<ConversationBusyState> conversationBusyState(Ref ref) async {
         (conversations) => conversations.contains(conversationId),
       ),
     )
-    ..watch(chatMessagesControllerProvider);
+    ..watch(chatMessagesProvider);
 
   final usecase = ref.watch(getConversationBusyStateUsecaseProvider);
 
   return usecase.call(conversationId: conversationId);
 }
 
-@Riverpod(dependencies: [conversationSelectedNotifier])
+@Riverpod(dependencies: [conversationSelected])
 List<ConversationQueuedDraft> conversationQueuedDrafts(Ref ref) {
   final conversationId = ref.watch(conversationSelectedProvider);
 
@@ -144,7 +84,7 @@ List<ConversationQueuedDraft> conversationQueuedDrafts(Ref ref) {
 ///
 /// Returns a list of MCP server IDs that are being waited on for connection,
 /// or an empty list if not waiting.
-@Riverpod(dependencies: [conversationSelectedNotifier])
+@Riverpod(dependencies: [conversationSelected])
 List<String> pendingMcpConnections(Ref ref) {
   // The current streaming state only exposes the last `ChatResult`, and it no
   // longer carries pending MCP server IDs. Until that runtime state is modeled

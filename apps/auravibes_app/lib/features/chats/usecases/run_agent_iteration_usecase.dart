@@ -1,7 +1,7 @@
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
-import 'package:auravibes_app/features/chats/notifiers/conversation_send_queue_notifier.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/providers/send_queue_runtime_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_context.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_decision.dart';
 import 'package:auravibes_app/features/chats/usecases/continue_agent_usecase.dart';
@@ -14,14 +14,14 @@ class RunAgentIterationUsecase {
     required this.runAllowedToolsUsecase,
     required this.conversationRepository,
     required this.messageRepository,
-    required this.conversationSendQueueNotifier,
+    required this.sendQueueRuntime,
   });
 
   final ContinueAgentUsecase continueAgentUsecase;
   final RunAllowedToolsUsecase runAllowedToolsUsecase;
   final ConversationRepository conversationRepository;
   final MessageRepository messageRepository;
-  final ConversationSendQueue conversationSendQueueNotifier;
+  final ConversationSendQueueRuntime sendQueueRuntime;
 
   Future<AgentIterationDecision> call({
     required String conversationId,
@@ -42,7 +42,7 @@ class RunAgentIterationUsecase {
         context: currentContext,
       );
       if (!continueResult.hasToolCalls) {
-        final queuedDrafts = conversationSendQueueNotifier.dequeueAll(
+        final queuedDrafts = sendQueueRuntime.dequeueAll(
           conversationId,
         );
         if (queuedDrafts.isEmpty) {
@@ -90,8 +90,6 @@ final runAgentIterationUsecaseProvider = Provider<RunAgentIterationUsecase>((
     runAllowedToolsUsecase: ref.watch(runAllowedToolsUsecaseProvider),
     conversationRepository: ref.watch(conversationRepositoryProvider),
     messageRepository: ref.watch(messageRepositoryProvider),
-    conversationSendQueueNotifier: ref.watch(
-      conversationSendQueueProvider.notifier,
-    ),
+    sendQueueRuntime: ref.watch(conversationSendQueueRuntimeProvider),
   );
 });

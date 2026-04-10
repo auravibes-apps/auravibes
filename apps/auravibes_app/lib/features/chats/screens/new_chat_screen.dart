@@ -1,4 +1,4 @@
-import 'package:auravibes_app/features/chats/providers/new_chat_controller.dart';
+import 'package:auravibes_app/features/chats/notifiers/new_chat_notifier.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/models/widgets/select_chat_model.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_management_modal.dart';
@@ -16,7 +16,7 @@ class NewChatScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(newChatControllerProvider);
+    final state = ref.watch(newChatProvider);
 
     Future<void> onToolsPress() async {
       final workspaceId = await ref.read(
@@ -34,7 +34,7 @@ class NewChatScreen extends ConsumerWidget {
     Future<void> handleSendMessage(String message) async {
       try {
         final conversation = await ref
-            .read(newChatControllerProvider.notifier)
+            .read(newChatProvider.notifier)
             .startConversation(message);
 
         if (context.mounted) {
@@ -61,12 +61,10 @@ class NewChatScreen extends ConsumerWidget {
             credentialsModelId: state.modelId,
             selectedProviderId: state.providerId,
             selectCredentialsModelId: (value) {
-              ref.read(newChatControllerProvider.notifier).setModelId(value);
+              ref.read(newChatProvider.notifier).setModelId(value);
             },
             onProviderChanged: (provider) {
-              ref
-                  .read(newChatControllerProvider.notifier)
-                  .setProvider(provider);
+              ref.read(newChatProvider.notifier).setProvider(provider);
             },
           ),
           Expanded(

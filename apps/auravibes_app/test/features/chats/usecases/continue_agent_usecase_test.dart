@@ -7,8 +7,7 @@ import 'package:auravibes_app/domain/enums/message_types.dart';
 import 'package:auravibes_app/domain/repositories/chat_models_repository.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
-import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_notifier.dart';
-import 'package:auravibes_app/features/chats/notifiers/messages_streaming_notifier.dart';
+import 'package:auravibes_app/features/chats/providers/streaming_runtime_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_context.dart';
 import 'package:auravibes_app/features/chats/usecases/continue_agent_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
@@ -27,8 +26,6 @@ import 'continue_agent_usecase_test.mocks.dart';
   CredentialsModelsRepository,
   ConversationRepository,
   LoadConversationToolSpecsUsecase,
-  MessagesStreamingNotifier,
-  ConversationStreamingNotifier,
   MonitoringService,
 ])
 void main() {
@@ -38,10 +35,14 @@ void main() {
     late MockCredentialsModelsRepository credentialsModelsRepository;
     late MockConversationRepository conversationRepository;
     late MockLoadConversationToolSpecsUsecase loadConversationToolSpecsUsecase;
-    late MockMessagesStreamingNotifier messagesStreamingNotifier;
-    late MockConversationStreamingNotifier conversationStreamingNotifier;
     late MockMonitoringService monitoringService;
     late ContinueAgentUsecase usecase;
+    late List<String> removedMessageIds;
+    late List<String> startedConversationIds;
+    late List<String> removedConversationIds;
+    late List<String> updatedMessageIds;
+    late List<ChatResult> updatedResults;
+    late List<String> startedSubscriptionMessageIds;
 
     setUp(() {
       chatbotService = MockChatbotService();
@@ -49,9 +50,13 @@ void main() {
       credentialsModelsRepository = MockCredentialsModelsRepository();
       conversationRepository = MockConversationRepository();
       loadConversationToolSpecsUsecase = MockLoadConversationToolSpecsUsecase();
-      messagesStreamingNotifier = MockMessagesStreamingNotifier();
-      conversationStreamingNotifier = MockConversationStreamingNotifier();
       monitoringService = MockMonitoringService();
+      removedMessageIds = [];
+      startedConversationIds = [];
+      removedConversationIds = [];
+      updatedMessageIds = [];
+      updatedResults = [];
+      startedSubscriptionMessageIds = [];
 
       usecase = ContinueAgentUsecase(
         chatbotService: chatbotService,
@@ -59,8 +64,23 @@ void main() {
         credentialsModelsRepository: credentialsModelsRepository,
         conversationRepository: conversationRepository,
         loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
-        messagesStreamingNotifier: messagesStreamingNotifier,
-        conversationStreamingNotifier: conversationStreamingNotifier,
+        messagesStreamingRuntime: MessagesStreamingRuntime(
+          startSubscription: (_, messageId) {
+            startedSubscriptionMessageIds.add(messageId);
+          },
+          updateResult: (result, messageId) {
+            updatedResults.add(result);
+            updatedMessageIds.add(messageId);
+          },
+          remove: (messageId) async {
+            removedMessageIds.add(messageId);
+          },
+        ),
+        conversationStreamingRuntime: ConversationStreamingRuntime(
+          start: startedConversationIds.add,
+          isStreaming: (_) => false,
+          remove: removedConversationIds.add,
+        ),
         monitoringService: monitoringService,
       );
 
@@ -85,9 +105,6 @@ void main() {
       when(
         messageRepository.updateMessage(any, any),
       ).thenAnswer((_) async => _unfinishedAssistantMessage);
-      when(
-        messagesStreamingNotifier.remove(any),
-      ).thenAnswer((_) async {});
     });
 
     test(
@@ -135,6 +152,12 @@ void main() {
 
         expect(result.messageId, 'assistant-1');
         expect(result.hasToolCalls, isTrue);
+
+        expect(startedConversationIds, ['conversation-1']);
+        expect(startedSubscriptionMessageIds, ['assistant-1']);
+        expect(updatedMessageIds, isNotEmpty);
+        expect(removedMessageIds, ['assistant-1']);
+        expect(removedConversationIds, ['conversation-1']);
 
         final updates = verify(
           messageRepository.updateMessage(
@@ -188,6 +211,11 @@ void main() {
             const MessageToUpdate(status: MessageStatus.sent),
           ),
         ).called(1);
+
+        expect(startedConversationIds, ['conversation-1']);
+        expect(startedSubscriptionMessageIds, ['assistant-1']);
+        expect(removedMessageIds, ['assistant-1']);
+        expect(removedConversationIds, ['conversation-1']);
       },
     );
 
@@ -233,6 +261,11 @@ void main() {
             const MessageToUpdate(status: MessageStatus.sent),
           ),
         ).called(1);
+
+        expect(startedConversationIds, ['conversation-1']);
+        expect(startedSubscriptionMessageIds, ['assistant-1']);
+        expect(removedMessageIds, ['assistant-1']);
+        expect(removedConversationIds, ['conversation-1']);
       },
     );
   });

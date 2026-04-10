@@ -2,7 +2,7 @@ import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-part 'theme_provider.g.dart';
+part 'theme_notifier.g.dart';
 
 enum AppTheme {
   light,
@@ -23,7 +23,7 @@ enum AppTheme {
 }
 
 @Riverpod(keepAlive: true)
-class ThemeController extends _$ThemeController {
+class ThemeNotifier extends _$ThemeNotifier {
   static const _themeKey = 'app_theme';
 
   @override

@@ -3,13 +3,13 @@ import 'package:auravibes_app/domain/entities/workspace_tool.dart';
 import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
 import 'package:auravibes_app/domain/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dart';
-import 'package:auravibes_app/features/tools/providers/conversation_tools_controller.dart';
+import 'package:auravibes_app/features/tools/notifiers/conversation_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 
 void main() {
-  group('ConversationToolsController', () {
+  group('ConversationToolsNotifier', () {
     late _FakeConversationToolsRepository conversationToolsRepository;
     late _FakeWorkspaceToolsRepository workspaceToolsRepository;
     late ProviderContainer container;
@@ -69,7 +69,7 @@ void main() {
         ];
 
         final result = await container.read(
-          conversationToolsControllerProvider(
+          conversationToolsProvider(
             workspaceId: 'workspace-1',
             conversationId: 'conversation-1',
           ).future,
@@ -105,7 +105,7 @@ void main() {
       ];
 
       final result = await container.read(
-        conversationToolsControllerProvider(
+        conversationToolsProvider(
           workspaceId: 'workspace-1',
         ).future,
       );

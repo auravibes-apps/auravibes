@@ -1,4 +1,4 @@
-import 'package:auravibes_app/features/settings/providers/theme_provider.dart';
+import 'package:auravibes_app/features/settings/notifiers/theme_notifier.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -11,7 +11,7 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final themeAsync = ref.watch(themeControllerProvider);
+    final themeAsync = ref.watch(themeProvider);
     final currentTheme = themeAsync.asData?.value ?? AppTheme.system;
 
     return AuraScreen(
@@ -107,7 +107,7 @@ class SettingsScreen extends ConsumerWidget {
         value: currentTheme,
         onChanged: (value) {
           if (value != null) {
-            ref.read(themeControllerProvider.notifier).setTheme(value);
+            ref.read(themeProvider.notifier).setTheme(value);
             Navigator.pop(context);
           }
         },

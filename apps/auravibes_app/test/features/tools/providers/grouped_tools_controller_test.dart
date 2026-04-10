@@ -4,26 +4,26 @@ import 'package:auravibes_app/domain/entities/workspace.dart';
 import 'package:auravibes_app/domain/entities/workspace_tool.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/domain/repositories/tools_groups_repository.dart';
-import 'package:auravibes_app/features/tools/providers/grouped_tools_controller.dart';
+import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/selected_workspace.dart';
-import 'package:auravibes_app/providers/mcp_connection_controller.dart';
+import 'package:auravibes_app/notifiers/mcp_connection_notifier.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 
 void main() {
-  group('GroupedToolsController', () {
+  group('GroupedToolsNotifier', () {
     late _FakeToolsGroupsRepository toolsGroupsRepository;
     late _FakeSelectedWorkspace selectedWorkspace;
     late _FakeWorkspaceToolsNotifier workspaceToolsNotifier;
-    late _FakeMcpConnectionController mcpController;
+    late _FakeMcpConnectionNotifier mcpNotifier;
     late ProviderContainer container;
 
     setUp(() {
       toolsGroupsRepository = _FakeToolsGroupsRepository();
       selectedWorkspace = _FakeSelectedWorkspace(_workspace);
       workspaceToolsNotifier = _FakeWorkspaceToolsNotifier(const []);
-      mcpController = _FakeMcpConnectionController();
+      mcpNotifier = _FakeMcpConnectionNotifier();
 
       container = ProviderContainer(
         overrides: [
@@ -32,7 +32,7 @@ void main() {
           ),
           selectedWorkspaceProvider.overrideWith(() => selectedWorkspace),
           workspaceToolsProvider.overrideWith(() => workspaceToolsNotifier),
-          mcpConnectionControllerProvider.overrideWith(() => mcpController),
+          mcpConnectionProvider.overrideWith(() => mcpNotifier),
         ],
       );
     });
@@ -46,14 +46,14 @@ void main() {
       () async {
         toolsGroupsRepository.groupById['group-1'] = _mcpGroup;
 
-        final notifier = container.read(groupedToolsControllerProvider.notifier)
+        final notifier = container.read(groupedToolsProvider.notifier)
           ..state = const AsyncLoading();
 
         await notifier.setMcpGroupEnabled('group-1', isEnabled: false);
 
         expect(toolsGroupsRepository.lastSetGroupId, 'group-1');
         expect(toolsGroupsRepository.lastIsEnabled, isFalse);
-        expect(mcpController.disconnectedServerIds, ['server-1']);
+        expect(mcpNotifier.disconnectedServerIds, ['server-1']);
       },
     );
 
@@ -63,12 +63,12 @@ void main() {
       () async {
         toolsGroupsRepository.groupById['group-1'] = _mcpGroup;
 
-        final notifier = container.read(groupedToolsControllerProvider.notifier)
+        final notifier = container.read(groupedToolsProvider.notifier)
           ..state = const AsyncLoading();
 
         await notifier.deleteMcpGroup('group-1');
 
-        expect(mcpController.deletedServerIds, ['server-1']);
+        expect(mcpNotifier.deletedServerIds, ['server-1']);
       },
     );
 
@@ -81,14 +81,14 @@ void main() {
           mcpServerId: 'server-2',
         );
 
-        final notifier = container.read(groupedToolsControllerProvider.notifier)
+        final notifier = container.read(groupedToolsProvider.notifier)
           ..state = const AsyncLoading();
 
         await notifier.setMcpGroupEnabled('group-2', isEnabled: false);
 
         expect(toolsGroupsRepository.lastSetGroupId, isNull);
-        expect(mcpController.disconnectedServerIds, isEmpty);
-        expect(mcpController.reconnectedServerIds, isEmpty);
+        expect(mcpNotifier.disconnectedServerIds, isEmpty);
+        expect(mcpNotifier.reconnectedServerIds, isEmpty);
       },
     );
 
@@ -98,14 +98,14 @@ void main() {
         toolsGroupsRepository.groupById['group-1'] = _mcpGroup;
         toolsGroupsRepository.setEnabledResult = false;
 
-        final notifier = container.read(groupedToolsControllerProvider.notifier)
+        final notifier = container.read(groupedToolsProvider.notifier)
           ..state = const AsyncLoading();
 
         await notifier.setMcpGroupEnabled('group-1', isEnabled: false);
 
         expect(toolsGroupsRepository.lastSetGroupId, 'group-1');
-        expect(mcpController.disconnectedServerIds, isEmpty);
-        expect(mcpController.reconnectedServerIds, isEmpty);
+        expect(mcpNotifier.disconnectedServerIds, isEmpty);
+        expect(mcpNotifier.reconnectedServerIds, isEmpty);
       },
     );
   });
@@ -148,7 +148,7 @@ class _FakeWorkspaceToolsNotifier extends WorkspaceToolsNotifier {
   Future<List<WorkspaceToolEntity>> build() async => tools;
 }
 
-class _FakeMcpConnectionController extends McpConnectionController {
+class _FakeMcpConnectionNotifier extends McpConnectionNotifier {
   final List<String> disconnectedServerIds = [];
   final List<String> reconnectedServerIds = [];
   final List<String> deletedServerIds = [];

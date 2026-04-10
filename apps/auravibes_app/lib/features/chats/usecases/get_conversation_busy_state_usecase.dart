@@ -1,7 +1,7 @@
 import 'package:auravibes_app/domain/entities/messages.dart';
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
-import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_notifier.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/providers/streaming_runtime_provider.dart';
 import 'package:riverpod/riverpod.dart';
 
 class ConversationBusyState {
@@ -19,11 +19,11 @@ class ConversationBusyState {
 class GetConversationBusyStateUsecase {
   const GetConversationBusyStateUsecase({
     required this.messageRepository,
-    required this.conversationStreamingNotifier,
+    required this.conversationStreamingRuntime,
   });
 
   final MessageRepository messageRepository;
-  final ConversationStreamingNotifier conversationStreamingNotifier;
+  final ConversationStreamingRuntime conversationStreamingRuntime;
 
   Future<ConversationBusyState> call({
     required String conversationId,
@@ -32,7 +32,7 @@ class GetConversationBusyStateUsecase {
       conversationId,
     );
 
-    final isStreaming = conversationStreamingNotifier.isStreaming(
+    final isStreaming = conversationStreamingRuntime.isStreaming(
       conversationId,
     );
 
@@ -64,8 +64,8 @@ final getConversationBusyStateUsecaseProvider =
     Provider<GetConversationBusyStateUsecase>((ref) {
       return GetConversationBusyStateUsecase(
         messageRepository: ref.watch(messageRepositoryProvider),
-        conversationStreamingNotifier: ref.watch(
-          conversationStreamingProvider.notifier,
+        conversationStreamingRuntime: ref.watch(
+          conversationStreamingRuntimeProvider,
         ),
       );
     });

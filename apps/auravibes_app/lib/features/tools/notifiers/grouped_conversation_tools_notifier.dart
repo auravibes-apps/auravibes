@@ -1,11 +1,11 @@
 import 'package:auravibes_app/features/tools/models/conversation_tools_group_with_tools.dart';
-import 'package:auravibes_app/features/tools/providers/conversation_tools_controller.dart';
-import 'package:auravibes_app/features/tools/providers/grouped_tools_controller.dart';
-import 'package:auravibes_app/providers/mcp_connection_controller.dart';
+import 'package:auravibes_app/features/tools/notifiers/conversation_tools_notifier.dart';
+import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
+import 'package:auravibes_app/notifiers/mcp_connection_notifier.dart';
 import 'package:collection/collection.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-part 'grouped_conversation_tools_provider.g.dart';
+part 'grouped_conversation_tools_notifier.g.dart';
 
 /// Provider that groups conversation tools by their workspaceToolsGroupId.
 ///
@@ -27,7 +27,7 @@ class GroupedConversationToolsNotifier
   }) async {
     // Get all conversation tool states
     final conversationTools = await ref.watch(
-      conversationToolsControllerProvider(
+      conversationToolsProvider(
         workspaceId: workspaceId,
         conversationId: conversationId,
       ).future,
@@ -40,7 +40,7 @@ class GroupedConversationToolsNotifier
     );
 
     // Watch MCP connections for status enrichment
-    final mcpConnections = ref.watch(mcpConnectionControllerProvider);
+    final mcpConnections = ref.watch(mcpConnectionProvider);
 
     // Group tools by their workspaceToolsGroupId
     final toolsByGroupId = <String?, List<ConversationToolState>>{};
@@ -113,7 +113,7 @@ class GroupedConversationToolsNotifier
     required bool enabled,
   }) async {
     final conversationNotifier = ref.read(
-      conversationToolsControllerProvider(
+      conversationToolsProvider(
         workspaceId: workspaceId,
         conversationId: conversationId,
       ).notifier,
@@ -140,7 +140,7 @@ class GroupedConversationToolsNotifier
   /// Reconnect to an MCP server.
   Future<void> reconnectMcp(String mcpServerId) async {
     await ref
-        .read(mcpConnectionControllerProvider.notifier)
+        .read(mcpConnectionProvider.notifier)
         .reconnectMcpServer(mcpServerId);
   }
 }

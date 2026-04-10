@@ -14,8 +14,8 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:langchain/langchain.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-part 'mcp_connection_controller.freezed.dart';
-part 'mcp_connection_controller.g.dart';
+part 'mcp_connection_notifier.freezed.dart';
+part 'mcp_connection_notifier.g.dart';
 
 // ============================================================
 // MCP Connection Status
@@ -164,7 +164,7 @@ class McpToolIdComponents {
 ///
 /// See [McpToolIdComponents] for parsing composite IDs.
 @Riverpod(keepAlive: true)
-class McpConnectionController extends _$McpConnectionController {
+class McpConnectionNotifier extends _$McpConnectionNotifier {
   late final McpManagerService _mcpManagerService;
   var _isDisposed = false;
   var _lastKnownState = const <McpConnectionState>[];
