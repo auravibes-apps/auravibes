@@ -124,7 +124,7 @@ SomeExperimentalApi(), // ignore: experimental_member_use - Required for widgetb
 - This is a **Flutter monorepo** using Melos for workspace management
 - **Always use `fvm` prefix** for Dart/Flutter commands to ensure correct SDK version
 - The project uses `very_good_analysis` for linting with strict rules
-- Prefer Dart dot shorthand syntax when possible in Dart 3.10+ code if the context type is clear, especially for enums, constructors, and obvious static members
+- Prefer Dart dot shorthand syntax when possible in Dart 3.11+ code if the context type is clear, especially for enums, constructors, and obvious static members
 
 ### Dart Style
 - Use Dart dot shorthand syntax from `https://dart.dev/language/dot-shorthands` when it improves readability and the context type is obvious

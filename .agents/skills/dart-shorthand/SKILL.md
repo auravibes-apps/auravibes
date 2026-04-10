@@ -1,6 +1,6 @@
 ---
 name: dart-shorthand
-description: Use when writing or reviewing Dart 3.10+ code and you want to apply dot shorthand syntax safely for enum values, constructors, and static members.
+description: Use when writing or reviewing Dart 3.11+ code and you want to apply dot shorthand syntax safely for enum values, constructors, and static members.
 license: MIT
 metadata:
   author: OpenCode
@@ -21,7 +21,7 @@ Official reference: `https://dart.dev/language/dot-shorthands`
 
 ## When to Use This Skill
 
-- Writing Dart 3.10+ code
+- Writing Dart 3.11+ code
 - Refactoring repetitive enum prefixes such as `MyEnum.value`
 - Initializing typed fields or locals with constructors like `.new()` or `.origin()`
 - Using static members where the target type is obvious from context
