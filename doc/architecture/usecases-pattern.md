@@ -1,3 +1,5 @@
+# Use Cases Pattern
+
 Use cases are for business logic and coordinate actions between repositories, services, and other use cases.
 
 They should not contain any UI code or directly manipulate notifier state. Instead, they should focus on performing a specific task or action, such as sending a message, fetching data, or processing user input. Use cases can be called from the UI layer (e.g., from a button press) or from notifiers. They can interact with repositories and services to fetch or update data, then return results to the caller.
@@ -34,8 +36,8 @@ Optimize use cases for:
 import 'package:auravibes_app/domain/repositories/chat_models_repository.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
-import 'package:auravibes_app/features/chats/screens/usecases/generate_title_usecase.dart';
-import 'package:auravibes_app/features/chats/screens/usecases/send_message_usecase.dart';
+import 'package:auravibes_app/features/chats/usecases/generate_title_usecase.dart';
+import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
 import 'package:auravibes_app/features/models/providers/model_providers_repository_providers.dart';
 import 'package:riverpod/riverpod.dart';
 
