@@ -163,7 +163,7 @@ void main() {
             expect(
               context,
               const AgentIterationContext(
-                origin: AgentIterationOrigin.userMessage,
+                origin: .userMessage,
                 ackMessageIds: ['user-1'],
               ),
             );
@@ -183,7 +183,7 @@ void main() {
           expect(
             context,
             const AgentIterationContext(
-              origin: AgentIterationOrigin.userMessage,
+              origin: .userMessage,
               ackMessageIds: ['queued-user-1'],
             ),
           );
@@ -232,7 +232,7 @@ void main() {
             expect(
               context,
               const AgentIterationContext(
-                origin: AgentIterationOrigin.userMessage,
+                origin: .userMessage,
                 ackMessageIds:
                     [], // ignore: avoid_redundant_argument_values - Explicit empty ack expectation for review clarity.
               ),
