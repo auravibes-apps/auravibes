@@ -157,10 +157,12 @@ class McpToolIdComponents {
 /// - Executing MCP tools
 ///
 /// Tools are stored with a composite ID format:
-/// `mcp::<mcpId>::<slugName>::<toolName>`
+/// `mcp_<mcpId>_<slugName>_<toolIdentifier>`
 /// - mcpId: Database ID for uniqueness
 /// - slugName: URL-safe server name for LLM readability
-/// - toolName: Original tool identifier from the MCP server
+/// - toolIdentifier: Original tool identifier from the MCP server
+///
+/// See [McpToolIdComponents] for parsing composite IDs.
 @Riverpod(keepAlive: true)
 class McpConnectionController extends _$McpConnectionController {
   late final McpManagerService _mcpManagerService;
