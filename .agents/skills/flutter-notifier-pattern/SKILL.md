@@ -65,7 +65,7 @@ Do not rename every provider to a notifier. Only Riverpod classes that own state
 
 1. Rename the class from `*Controller` to `*Notifier`.
 2. Move the file into a `notifiers/` folder.
-3. Rename generated provider usages from `*ControllerProvider` to `*NotifierProvider`.
+3. Update generated provider usages to match new names. Note: riverpod_generator derives the provider name from the class name (e.g. `ThemeNotifier` generates `themeProvider`, not `themeNotifierProvider`).
 4. Keep `build()` focused on loading initial state.
 5. Extract business-heavy methods into use cases.
 6. Update imports and generated files.
@@ -121,7 +121,7 @@ final conversationStreamingRuntimeProvider =
 
 ### Safety
 
-Method references are captured once per provider rebuild. Safe because code-generated notifiers are singleton-like. If a notifier adds mutable local fields beyond `ref`/`state`, captured references may go stale.
+Method references are captured once per provider rebuild. The adapter stays valid as long as the underlying notifier instance is not disposed and recreated between uses. For `@Riverpod(keepAlive: true)` notifiers this is guaranteed. For auto-dispose notifiers (`@riverpod`), the adapter's `ref.watch` subscription keeps the notifier alive while the adapter is watched. If a notifier adds mutable local fields beyond `ref`/`state`, review whether captured method references remain valid across the notifier's lifecycle.
 
 ### When to Use
 

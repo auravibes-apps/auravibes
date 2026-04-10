@@ -1,40 +1,41 @@
-usecases are for business logic and coordinate actions between repositories, services, and other usecases.
+Use cases are for business logic and coordinate actions between repositories, services, and other use cases.
 
+They should not contain any UI code or directly manipulate notifier state. Instead, they should focus on performing a specific task or action, such as sending a message, fetching data, or processing user input. Use cases can be called from the UI layer (e.g., from a button press) or from notifiers. They can interact with repositories and services to fetch or update data, then return results to the caller.
 
-They should not contain any UI code or directly manipulate notifier state.
-Instead, they should focus on performing a specific task or action, such as sending a message, fetching data, or processing user input. Usecases can be called from the UI layer (e.g., from a button press) or from notifiers. They can interact with repositories and services to fetch or update data, then return results to the caller.
+### Where to Find Use Cases
 
-### Where to Find Usecases
-Usecases are typically found in:
-`apps/<app_name>/lib/features/<feature_name>/usecases/` directory. Each usecase should be in its own file, and the file name should reflect the action it performs (e.g., `send_new_message_usecase.dart` with class name: `SendNewMessageUsecase`).
+Use cases are typically found in:
+`apps/<app_name>/lib/features/<feature_name>/usecases/` directory. Each use case should be in its own file, and the file name should reflect the action it performs (e.g., `send_new_message_usecase.dart` with class name: `SendNewMessageUsecase`).
 
-using DI to inject dependencies into the usecase, such as repositories and services, allows for better separation of concerns and makes the usecase easier to test. The usecase should not directly create instances of its dependencies but should receive them through its constructor, often using a provider to manage the dependencies.
+Using DI to inject dependencies into the use case, such as repositories and services, allows for better separation of concerns and makes the use case easier to test. The use case should not directly create instances of its dependencies but should receive them through its constructor, often using a provider to manage the dependencies.
 
-# Cascade pattern
-Usecases can call other usecases to perform complex actions. For example, a `SendNewMessageUsecase` might call a `GenerateTitleUsecase` to create a title for a conversation after sending a message. This allows for better code reuse and separation of concerns, as each usecase is responsible for a specific piece of functionality.
+# Cascade Pattern
 
-and not create circular dependencies, even deeply nested ones. For example, if `SendNewMessageUsecase` calls `GenerateTitleUsecase`, then `GenerateTitleUsecase` should not call `SendNewMessageUsecase` or any usecase that eventually calls `SendNewMessageUsecase`. This ensures that the flow of actions is clear and prevents infinite loops in the logic.
+Use cases can call other use cases to perform complex actions. For example, a `SendNewMessageUsecase` might call a `GenerateTitleUsecase` to create a title for a conversation after sending a message. This allows for better code reuse and separation of concerns, as each use case is responsible for a specific piece of functionality.
 
-if this circular dependency happens, it indicates that the usecases are too tightly coupled and may need to be refactored to better separate concerns. Each usecase should have a clear responsibility and should not depend on the internal workings of another usecase.
+Do not create circular dependencies, even deeply nested ones. For example, if `SendNewMessageUsecase` calls `GenerateTitleUsecase`, then `GenerateTitleUsecase` should not call `SendNewMessageUsecase` or any use case that eventually calls `SendNewMessageUsecase`. This ensures that the flow of actions is clear and prevents infinite loops in the logic.
 
-a usecase cannot be a single dependency call, as that would not justify the existence of the usecase layer. Instead, a usecase should coordinate multiple actions, such as calling multiple repositories, performing some business logic, and returning the result for the caller to apply to state if needed. If a usecase is just a thin wrapper around a single repository call, it may be an indication that the usecase layer is not being used effectively and that the logic could be moved directly into the repository or notifier instead.
+If this circular dependency happens, it indicates that the use cases are too tightly coupled and may need to be refactored to better separate concerns. Each use case should have a clear responsibility and should not depend on the internal workings of another use case.
 
-create usecase only when is reusable, representing minninfull business action. either called from other usecases or UI actions.
+A use case cannot be a single dependency call, as that would not justify the existence of the use case layer. Instead, a use case should coordinate multiple actions, such as calling multiple repositories, performing some business logic, and returning the result for the caller to apply to state if needed. If a use case is just a thin wrapper around a single repository call, it may be an indication that the use case layer is not being used effectively and that the logic could be moved directly into the repository or notifier instead.
 
-optimise uasecases for:
-- reusability
-- testability
-- clear business boundaries
-- fewer, stronger usecases
-- not many micro usecases
+Create use cases only when reusable, representing meaningful business actions. Either called from other use cases or UI actions.
 
-# Example of a Usecase
+Optimize use cases for:
+- Reusability
+- Testability
+- Clear business boundaries
+- Fewer, stronger use cases
+- Not many micro use cases
+
+# Example of a Use Case
+
 ```dart
 import 'package:auravibes_app/domain/repositories/chat_models_repository.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/screens/usecases/generate_title_usecase.dart';
-import 'package:auravibes_app/features/chats/screens/usecases/send_message_usecase  .dart';
+import 'package:auravibes_app/features/chats/screens/usecases/send_message_usecase.dart';
 import 'package:auravibes_app/features/models/providers/model_providers_repository_providers.dart';
 import 'package:riverpod/riverpod.dart';
 

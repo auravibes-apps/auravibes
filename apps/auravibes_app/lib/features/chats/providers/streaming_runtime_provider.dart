@@ -10,9 +10,10 @@ import 'package:rxdart/rxdart.dart';
 /// classes.
 ///
 /// Safety note: method references are captured once per provider rebuild.
-/// This is safe because code-generated Riverpod notifiers are singleton-like
-/// (the instance persists across watches). If a notifier later adds mutable
-/// local fields beyond `ref`/`state`, captured references may go stale.
+/// The adapter stays valid as long as the underlying notifier instance is not
+/// disposed and recreated between uses. For keepAlive notifiers this is
+/// guaranteed. For auto-dispose notifiers, the adapter's `ref.watch`
+/// subscription keeps the notifier alive while the adapter is watched.
 class ConversationStreamingRuntime {
   const ConversationStreamingRuntime({
     required this.start,

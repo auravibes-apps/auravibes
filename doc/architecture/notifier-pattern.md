@@ -158,7 +158,7 @@ Runtime adapter files live in `providers/` alongside other plain providers:
 
 ### Safety Note
 
-Method references are captured once per provider rebuild. This is safe because code-generated Riverpod notifiers are singleton-like (the instance persists across watches). If a notifier later adds mutable local fields beyond `ref`/`state`, captured references may go stale — review carefully in that case.
+Method references are captured once per provider rebuild. The adapter stays valid as long as the underlying notifier instance is not disposed and recreated between uses. For `@Riverpod(keepAlive: true)` notifiers this is guaranteed. For auto-dispose notifiers (`@riverpod`), the provider may be disposed when all listeners are removed and recreated on next access — the adapter's `ref.watch` subscription keeps the notifier alive while the adapter itself is watched, but if the adapter is allowed to dispose and later re-resolved, it will correctly pick up a fresh notifier instance. If a notifier adds mutable local fields beyond `ref`/`state`, review whether captured method references remain valid across the notifier's lifecycle.
 
 ## Migration Rule
 

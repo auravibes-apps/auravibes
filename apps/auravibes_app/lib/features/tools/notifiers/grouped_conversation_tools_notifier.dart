@@ -126,14 +126,12 @@ class GroupedConversationToolsNotifier
     if (group == null) return;
 
     // Toggle each tool in the group
-    await Future.wait(
-      group.tools.map(
-        (toolState) => conversationNotifier.setToolEnabled(
-          toolState.tool.id,
-          isEnabled: enabled,
-        ),
-      ),
-    );
+    for (final toolState in group.tools) {
+      await conversationNotifier.setToolEnabled(
+        toolState.tool.id,
+        isEnabled: enabled,
+      );
+    }
 
     // The state will be automatically refreshed via the watch on
     // conversationToolsProvider

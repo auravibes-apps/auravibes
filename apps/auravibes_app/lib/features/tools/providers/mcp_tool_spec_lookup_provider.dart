@@ -5,7 +5,8 @@ import 'package:riverpod/riverpod.dart';
 /// Runtime adapter wrapping a notifier method behind a plain callback.
 ///
 /// Safety note: the method reference is captured once per provider rebuild.
-/// Safe because code-generated notifiers are singleton-like.
+/// Safe for keepAlive notifiers. For auto-dispose notifiers, the adapter's
+/// `ref.watch` keeps the notifier alive while the adapter is watched.
 class McpToolSpecLookup {
   const McpToolSpecLookup({required this.call});
 
