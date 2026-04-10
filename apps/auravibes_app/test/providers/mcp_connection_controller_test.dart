@@ -59,7 +59,36 @@ void main() {
         stopwatch.elapsed,
         greaterThanOrEqualTo(const Duration(milliseconds: 20)),
       );
+      expect(
+        stopwatch.elapsed,
+        lessThan(const Duration(milliseconds: 100)),
+      );
     });
+
+    test(
+      'waitForConnectionsReady returns close to timeout when never ready',
+      () async {
+        final notifier = container.read(
+          mcpConnectionControllerProvider.notifier,
+        )..state = [_connectingState];
+
+        final stopwatch = Stopwatch()..start();
+        await notifier.waitForConnectionsReady(
+          mcpServerIds: const ['server-1'],
+          timeout: const Duration(milliseconds: 50),
+        );
+        stopwatch.stop();
+
+        expect(
+          stopwatch.elapsed,
+          greaterThanOrEqualTo(const Duration(milliseconds: 50)),
+        );
+        expect(
+          stopwatch.elapsed,
+          lessThan(const Duration(milliseconds: 100)),
+        );
+      },
+    );
 
     test('callTool throws when server is missing', () async {
       final notifier = container.read(mcpConnectionControllerProvider.notifier);
