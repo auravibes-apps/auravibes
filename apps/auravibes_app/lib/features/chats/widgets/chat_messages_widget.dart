@@ -1,15 +1,12 @@
-import 'dart:convert';
-
 import 'package:auravibes_app/domain/entities/messages.dart';
 import 'package:auravibes_app/domain/enums/message_types.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/providers/messages_providers.dart';
 import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
-import 'package:auravibes_app/features/chats/widgets/tool_call_confirmation_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/tool_call_response_preview.dart';
-import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/utils/relative_time_formatter.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
+import 'package:auravibes_app/utils/try_decode_tool_metadata.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
@@ -48,28 +45,6 @@ class ChatMessagesWidget extends HookConsumerWidget {
   }
 }
 
-JsonEncoder encoder = const JsonEncoder.withIndent('  ');
-
-String? _tryDecode(Object? metadata) {
-  if (metadata == null) return null;
-  dynamic decoded;
-  try {
-    if (metadata is String) {
-      decoded = jsonDecode(metadata);
-    }
-  } on Exception catch (_) {
-    return metadata.toString();
-  }
-
-  if (decoded is Map<String, dynamic>) {
-    if (decoded.length == 1) {
-      return _tryDecode(decoded.values.first);
-    }
-  }
-
-  return encoder.convert(decoded);
-}
-
 class _ChatMessageRow extends HookConsumerWidget {
   const _ChatMessageRow({
     required this.messageId,
@@ -87,11 +62,26 @@ class _ChatMessageRow extends HookConsumerWidget {
     }
 
     final isStreaming = ref.watch(isMessageStreamingProvider(messageId));
+    final busyState = ref.watch(
+      conversationBusyStateProvider.select(
+        (value) => value.maybeWhen(data: (state) => state, orElse: () => null),
+      ),
+    );
 
-    final hasToolCalls = message.metadata?.toolCalls.isNotEmpty ?? false;
+    final allToolCalls =
+        message.metadata?.toolCalls ?? const <MessageToolCallEntity>[];
+    final hidePendingToolCalls =
+        !message.isUser &&
+        isLastMessage &&
+        (busyState?.hasPendingTools ?? false) &&
+        !(busyState?.isStreaming ?? false);
+    final visibleToolCalls = hidePendingToolCalls
+        ? allToolCalls.where((toolCall) => toolCall.isResolved).toList()
+        : allToolCalls;
+    final hasVisibleToolCalls = visibleToolCalls.isNotEmpty;
     // Hide the text bubble when content is empty/whitespace and there are tool calls
     final hasContent = message.content.trim().isNotEmpty;
-    final showTextBubble = hasContent || !hasToolCalls;
+    final showTextBubble = hasContent || !hasVisibleToolCalls;
 
     return AnimatedSize(
       duration: const Duration(microseconds: 200),
@@ -115,13 +105,12 @@ class _ChatMessageRow extends HookConsumerWidget {
                 timestamp: message.createdAt,
                 status: _mapMessageStatus(message.status, isStreaming),
               ),
-          if (hasToolCalls) ...[
-            for (final toolCall in message.metadata!.toolCalls)
+          if (hasVisibleToolCalls) ...[
+            for (final toolCall in visibleToolCalls)
               _ToolCallWidget(
                 key: ValueKey('tool_${toolCall.id}'),
                 toolCall: toolCall,
                 messageId: message.id,
-                isLastMessage: isLastMessage,
               ),
           ],
         ],
@@ -198,30 +187,24 @@ class _ToolCallWidget extends ConsumerWidget {
   const _ToolCallWidget({
     required this.toolCall,
     required this.messageId,
-    required this.isLastMessage,
     super.key,
   });
 
   final MessageToolCallEntity toolCall;
   final String messageId;
-  final bool isLastMessage;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Only show confirmation for pending tool calls in the last message.
-    // If a tool call is pending in a previous message, the user skipped it.
-    // A tool is pending if resultStatus is null (not yet resolved).
-    final isPendingConfirmation = toolCall.isPending && isLastMessage;
-
-    // Get human-readable display name for the tool
     final displayNameAsync = ref.watch(toolDisplayNameProvider(toolCall.name));
     final displayName = displayNameAsync.maybeWhen(
       data: (name) => name,
-      // Fallback to formatted name while loading or on error
       orElse: () => ToolNameFormatter.formatDisplayName(
         ToolNameFormatter.parse(toolCall.name),
       ),
     );
+
+    final decodedArgs = tryDecodeToolMetadata(toolCall.argumentsRaw);
+    final decodedResponse = tryDecodeToolMetadata(toolCall.responseRaw);
 
     return AuraContainer(
       backgroundColor: AuraColorVariant.surfaceVariant,
@@ -236,46 +219,30 @@ class _ToolCallWidget extends ConsumerWidget {
               children: [
                 TextSpan(
                   text: displayName,
-                  style: const .new(
+                  style: const TextStyle(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                if (_tryDecode(toolCall.argumentsRaw) != null)
+                if (decodedArgs != null) ...[
                   const TextSpan(text: ' "'),
-                TextSpan(text: _tryDecode(toolCall.argumentsRaw)),
-                const TextSpan(text: '"'),
+                  TextSpan(text: decodedArgs),
+                  const TextSpan(text: '"'),
+                ],
               ],
             ),
           ),
-          // Show pending confirmation indicator
-          if (isPendingConfirmation) ...[
-            _ToolCallStatusIndicator(
-              statusText: const TextLocale(LocaleKeys.tool_call_status_pending),
-              icon: Icons.help_outline,
-              color: context.auraColors.warning,
-            ),
-            Padding(
-              padding: EdgeInsets.only(top: context.auraTheme.spacing.sm),
-              child: ToolCallConfirmationWidget(
-                toolCall: toolCall,
-                messageId: messageId,
-              ),
-            ),
-          ],
-          // Show resolved status once persisted on the tool call metadata.
           if (toolCall.isResolved)
             _ToolCallStatusIndicator(
               statusText: TextLocale(toolCall.resultStatus!.localeKey),
               icon: _getStatusIcon(toolCall.resultStatus!),
               color: _getStatusColor(context, toolCall.resultStatus!),
             ),
-          // Show response content if available
-          if (_tryDecode(toolCall.responseRaw) != null)
+          if (decodedResponse != null)
             Padding(
               padding: EdgeInsets.only(top: context.auraTheme.spacing.xs),
               child: ToolCallResponsePreview(
                 toolName: toolCall.name,
-                content: _tryDecode(toolCall.responseRaw)!,
+                content: decodedResponse,
               ),
             ),
         ],
