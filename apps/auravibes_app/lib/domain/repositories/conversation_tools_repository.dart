@@ -31,7 +31,7 @@ abstract class ConversationToolsRepository {
   /// Retrieves a specific conversation tool setting.
   ///
   /// [conversationId] The ID of the conversation.
-  /// [toolId] The type of tool to retrieve.
+  /// [toolId] The workspace-tool record ID (WorkspaceToolEntity.id).
   /// Returns the conversation tool setting, or null if not found.
   /// Throws [ConversationToolsException] if there's an error
   /// retrieving the tool.
@@ -43,7 +43,7 @@ abstract class ConversationToolsRepository {
   /// Enables or disables a tool for a conversation.
   ///
   /// [conversationId] The ID of the conversation.
-  /// [toolId] The type of tool to toggle.
+  /// [toolId] The workspace-tool record ID (WorkspaceToolEntity.id).
   /// [isEnabled] Whether the tool should be enabled.
   /// Returns true if the operation was successful, false if the
   ///  tool was not found.
@@ -62,7 +62,7 @@ abstract class ConversationToolsRepository {
   /// Sets the permission mode for a conversation tool.
   ///
   /// [conversationId] The ID of the conversation.
-  /// [toolId] The type of tool to update.
+  /// [toolId] The workspace-tool record ID (WorkspaceToolEntity.id).
   /// [permissionMode] The permission mode to set.
   /// Returns true if the operation was successful.
   /// Throws [ConversationToolsException] if there's an error updating the tool.
@@ -75,7 +75,7 @@ abstract class ConversationToolsRepository {
   /// Toggles the enabled status of a conversation tool.
   ///
   /// [conversationId] The ID of the conversation.
-  /// [toolId] The type of tool to toggle.
+  /// [toolId] The workspace-tool record ID (WorkspaceToolEntity.id).
   /// Returns true if the operation was successful, false if the
   /// tool was not found.
   /// Throws [ConversationToolsException] if there's an error toggling the tool.
@@ -84,7 +84,7 @@ abstract class ConversationToolsRepository {
   /// Checks if a specific tool is enabled for a conversation.
   ///
   /// [conversationId] The ID of the conversation.
-  /// [toolId] The type of tool to check.
+  /// [toolId] The workspace-tool record ID (WorkspaceToolEntity.id).
   /// Returns true if the tool is enabled, false otherwise.
   /// Throws [ConversationToolsException] if there's an error
   /// checking the tool status.
@@ -96,7 +96,7 @@ abstract class ConversationToolsRepository {
   /// Removes a tool setting for a conversation.
   ///
   /// [conversationId] The ID of the conversation.
-  /// [toolId] The type of tool to remove.
+  /// [toolId] The workspace-tool record ID (WorkspaceToolEntity.id).
   /// Returns true if the operation was successful, false
   /// if the tool was not found.
   /// Throws [ConversationToolsException] if there's an error removing the tool.
@@ -130,7 +130,7 @@ abstract class ConversationToolsRepository {
   /// Validates a conversation tool setting before creation or update.
   ///
   /// [conversationId] The ID of the conversation (for validation).
-  /// [toolId] The type of tool to validate.
+  /// [toolId] The workspace-tool record ID (WorkspaceToolEntity.id).
   /// [isEnabled] Whether the tool should be enabled.
   /// Returns true if the tool setting is valid.
   /// Throws [ConversationToolsValidationException] if
@@ -148,7 +148,7 @@ abstract class ConversationToolsRepository {
   /// both conversation-level overrides and workspace-level settings.
   /// [conversationId] The ID of the conversation.
   /// [workspaceId] The ID of the workspace the conversation belongs to.
-  /// [toolId] The type of tool to check.
+  /// [toolId] The workspace-tool record ID (WorkspaceToolEntity.id).
   /// Returns true if the tool is available for the conversation.
   /// Throws [ConversationToolsException] if there's an
   /// error checking tool availability.
