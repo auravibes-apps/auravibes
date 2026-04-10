@@ -492,10 +492,11 @@ class McpConnectionController extends _$McpConnectionController {
       ]);
     }
 
+    McpManagerClient? connectedClient;
     try {
-      final client = await _mcpManagerService.connectMcp(server);
+      connectedClient = await _mcpManagerService.connectMcp(server);
 
-      final mcpTools = await _mcpManagerService.getTools(client);
+      final mcpTools = await _mcpManagerService.getTools(connectedClient);
       if (_isDisposed) {
         return;
       }
@@ -505,11 +506,12 @@ class McpConnectionController extends _$McpConnectionController {
         server.id,
         (connection) => connection.copyWith(
           status: McpConnectionStatus.connected,
-          client: client,
+          client: connectedClient,
           tools: mcpTools,
           errorMessage: null,
         ),
       );
+      connectedClient = null;
 
       // Sync tools to database
       await _syncMcpToolsToDatabase(server, mcpTools);
@@ -524,6 +526,10 @@ class McpConnectionController extends _$McpConnectionController {
           errorMessage: e.toString(),
         ),
       );
+    } finally {
+      if (connectedClient != null) {
+        _mcpManagerService.disconnect(connectedClient);
+      }
     }
   }
 
