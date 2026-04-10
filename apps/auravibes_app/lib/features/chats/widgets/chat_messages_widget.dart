@@ -62,14 +62,22 @@ class _ChatMessageRow extends HookConsumerWidget {
     }
 
     final isStreaming = ref.watch(isMessageStreamingProvider(messageId));
+    final busyState = ref.watch(
+      conversationBusyStateProvider.select(
+        (value) => value.maybeWhen(data: (state) => state, orElse: () => null),
+      ),
+    );
 
     final allToolCalls =
         message.metadata?.toolCalls ?? const <MessageToolCallEntity>[];
-    final visibleToolCalls = allToolCalls
-        .where(
-          (toolCall) => toolCall.isResolved || toolCall.resultStatus == null,
-        )
-        .toList();
+    final hidePendingToolCalls =
+        !message.isUser &&
+        isLastMessage &&
+        (busyState?.hasPendingTools ?? false) &&
+        !(busyState?.isStreaming ?? false);
+    final visibleToolCalls = hidePendingToolCalls
+        ? allToolCalls.where((toolCall) => toolCall.isResolved).toList()
+        : allToolCalls;
     final hasVisibleToolCalls = visibleToolCalls.isNotEmpty;
     // Hide the text bubble when content is empty/whitespace and there are tool calls
     final hasContent = message.content.trim().isNotEmpty;
