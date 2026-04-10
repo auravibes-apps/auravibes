@@ -153,6 +153,12 @@ void main() {
         expect(result.messageId, 'assistant-1');
         expect(result.hasToolCalls, isTrue);
 
+        expect(startedConversationIds, ['conversation-1']);
+        expect(startedSubscriptionMessageIds, ['assistant-1']);
+        expect(updatedMessageIds, isNotEmpty);
+        expect(removedMessageIds, ['assistant-1']);
+        expect(removedConversationIds, ['conversation-1']);
+
         final updates = verify(
           messageRepository.updateMessage(
             'assistant-1',
@@ -205,6 +211,11 @@ void main() {
             const MessageToUpdate(status: MessageStatus.sent),
           ),
         ).called(1);
+
+        expect(startedConversationIds, ['conversation-1']);
+        expect(startedSubscriptionMessageIds, ['assistant-1']);
+        expect(removedMessageIds, ['assistant-1']);
+        expect(removedConversationIds, ['conversation-1']);
       },
     );
 
@@ -250,6 +261,11 @@ void main() {
             const MessageToUpdate(status: MessageStatus.sent),
           ),
         ).called(1);
+
+        expect(startedConversationIds, ['conversation-1']);
+        expect(startedSubscriptionMessageIds, ['assistant-1']);
+        expect(removedMessageIds, ['assistant-1']);
+        expect(removedConversationIds, ['conversation-1']);
       },
     );
   });

@@ -13,9 +13,9 @@ check `../../../doc/architecture/usecases-pattern.md` for detailed description
 usecases locations `apps/<app_name>/lib/features/<feature_name>/usecases/<usecase_name>_usecase.dart`
 
 # Notifiers
-don't have business logic, only app runtime states that use cases can manage
+Must not contain business logic. They only hold app runtime state that use cases can manage.
 location: `apps/<app_name>/lib/features/<feature_name>/notifiers/<notifier_name>_notifier.dart`
-check `../../../doc/architecture/notifier-pattern.md` for detail description
+See `../../../doc/architecture/notifier-pattern.md` for a detailed description
 
 # Providers
 dependencies results for UI to consume.

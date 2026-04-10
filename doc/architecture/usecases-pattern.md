@@ -4,14 +4,14 @@ Use cases are for business logic and coordinate actions between repositories, se
 
 They should not contain any UI code or directly manipulate notifier state. Instead, they should focus on performing a specific task or action, such as sending a message, fetching data, or processing user input. Use cases can be called from the UI layer (e.g., from a button press) or from notifiers. They can interact with repositories and services to fetch or update data, then return results to the caller.
 
-### Where to Find Use Cases
+## Where to Find Use Cases
 
 Use cases are typically found in:
 `apps/<app_name>/lib/features/<feature_name>/usecases/` directory. Each use case should be in its own file, and the file name should reflect the action it performs (e.g., `send_new_message_usecase.dart` with class name: `SendNewMessageUsecase`).
 
 Using DI to inject dependencies into the use case, such as repositories and services, allows for better separation of concerns and makes the use case easier to test. The use case should not directly create instances of its dependencies but should receive them through its constructor, often using a provider to manage the dependencies.
 
-# Cascade Pattern
+## Cascade Pattern
 
 Use cases can call other use cases to perform complex actions. For example, a `SendNewMessageUsecase` might call a `GenerateTitleUsecase` to create a title for a conversation after sending a message. This allows for better code reuse and separation of concerns, as each use case is responsible for a specific piece of functionality.
 
@@ -30,7 +30,7 @@ Optimize use cases for:
 - Fewer, stronger use cases
 - Not many micro use cases
 
-# Example of a Use Case
+## Example of a Use Case
 
 ```dart
 import 'package:auravibes_app/domain/repositories/chat_models_repository.dart';
