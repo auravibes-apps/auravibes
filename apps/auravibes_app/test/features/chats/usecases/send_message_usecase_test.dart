@@ -2,6 +2,7 @@ import 'package:auravibes_app/domain/entities/messages.dart';
 import 'package:auravibes_app/domain/enums/message_types.dart';
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_send_queue_notifier.dart';
+import 'package:auravibes_app/features/chats/providers/send_queue_runtime_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_context.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_decision.dart';
 import 'package:auravibes_app/features/chats/usecases/get_conversation_busy_state_usecase.dart';
@@ -36,8 +37,13 @@ void main() {
         runAgentIterationUsecase: runAgentIterationUsecase,
         messageRepository: messageRepository,
         getConversationBusyStateUsecase: getConversationBusyStateUsecase,
-        conversationSendQueueNotifier: container.read(
-          conversationSendQueueProvider.notifier,
+        sendQueueRuntime: ConversationSendQueueRuntime(
+          enqueue: container
+              .read(conversationSendQueueProvider.notifier)
+              .enqueue,
+          dequeueAll: container
+              .read(conversationSendQueueProvider.notifier)
+              .dequeueAll,
         ),
       );
 

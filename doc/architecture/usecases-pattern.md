@@ -1,14 +1,14 @@
-usecases are for business logic and coordinate actions between providers, notifiers, and repositories.
+usecases are for business logic and coordinate actions between repositories, services, and other usecases.
 
 
-They should not contain any UI code or directly manipulate state.
-Instead, they should focus on performing a specific task or action, such as sending a message, fetching data, or processing user input. Usecases can be called from the UI layer (e.g., from a button press) and can interact with repositories to fetch or update data, and with notifiers to update the UI state indirectly.
+They should not contain any UI code or directly manipulate notifier state.
+Instead, they should focus on performing a specific task or action, such as sending a message, fetching data, or processing user input. Usecases can be called from the UI layer (e.g., from a button press) or from notifiers. They can interact with repositories and services to fetch or update data, then return results to the caller.
 
 ### Where to Find Usecases
 Usecases are typically found in:
 `apps/<app_name>/lib/features/<feature_name>/usecases/` directory. Each usecase should be in its own file, and the file name should reflect the action it performs (e.g., `send_new_message_usecase.dart` with class name: `SendNewMessageUsecase`).
 
-using DI to inject dependencies into the usecase, such as repositories and notifiers, allows for better separation of concerns and makes the usecase easier to test. The usecase should not directly create instances of its dependencies but should receive them through its constructor, often using a provider to manage the dependencies.
+using DI to inject dependencies into the usecase, such as repositories and services, allows for better separation of concerns and makes the usecase easier to test. The usecase should not directly create instances of its dependencies but should receive them through its constructor, often using a provider to manage the dependencies.
 
 # Cascade pattern
 Usecases can call other usecases to perform complex actions. For example, a `SendNewMessageUsecase` might call a `GenerateTitleUsecase` to create a title for a conversation after sending a message. This allows for better code reuse and separation of concerns, as each usecase is responsible for a specific piece of functionality.
@@ -17,7 +17,7 @@ and not create circular dependencies, even deeply nested ones. For example, if `
 
 if this circular dependency happens, it indicates that the usecases are too tightly coupled and may need to be refactored to better separate concerns. Each usecase should have a clear responsibility and should not depend on the internal workings of another usecase.
 
-a usecase cannot be a single dependency call, as that would not justify the existence of the usecase layer. Instead, a usecase should coordinate multiple actions, such as calling multiple repositories, performing some business logic, and then updating the state through notifiers. If a usecase is just a thin wrapper around a single repository call, it may be an indication that the usecase layer is not being used effectively and that the logic could be moved directly into the repository or notifier instead.
+a usecase cannot be a single dependency call, as that would not justify the existence of the usecase layer. Instead, a usecase should coordinate multiple actions, such as calling multiple repositories, performing some business logic, and returning the result for the caller to apply to state if needed. If a usecase is just a thin wrapper around a single repository call, it may be an indication that the usecase layer is not being used effectively and that the logic could be moved directly into the repository or notifier instead.
 
 create usecase only when is reusable, representing minninfull business action. either called from other usecases or UI actions.
 

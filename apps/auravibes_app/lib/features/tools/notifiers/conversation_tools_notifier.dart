@@ -11,8 +11,8 @@ import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-part 'conversation_tools_controller.freezed.dart';
-part 'conversation_tools_controller.g.dart';
+part 'conversation_tools_notifier.freezed.dart';
+part 'conversation_tools_notifier.g.dart';
 
 /// State for a single tool in a conversation context
 @freezed
@@ -38,7 +38,7 @@ ConversationToolsRepository conversationToolsRepository(Ref ref) {
 ///
 /// Returns a list of all workspace tools with their conversation-level states.
 @riverpod
-class ConversationToolsController extends _$ConversationToolsController {
+class ConversationToolsNotifier extends _$ConversationToolsNotifier {
   late final ConversationToolsRepository _repository = ref.read(
     conversationToolsRepositoryProvider,
   );
@@ -101,11 +101,9 @@ class ConversationToolsController extends _$ConversationToolsController {
           toolId: toolId,
           isEnabled: isEnabled,
         );
-    if (success && state.value != null) {
-      final currentList = state.value!;
-      final index = currentList.indexWhere(
-        (t) => t.tool.id == toolId,
-      );
+    final currentList = state.value;
+    if (success && currentList != null) {
+      final index = currentList.indexWhere((t) => t.tool.id == toolId);
       if (index != -1) {
         final updatedList = List<ConversationToolState>.from(currentList);
         updatedList[index] = currentList[index].copyWith(isEnabled: isEnabled);
@@ -129,11 +127,9 @@ class ConversationToolsController extends _$ConversationToolsController {
           toolId: toolId,
           permissionMode: permissionMode,
         );
-    if (success && state.value != null) {
-      final currentList = state.value!;
-      final index = currentList.indexWhere(
-        (t) => t.tool.id == toolId,
-      );
+    final currentList = state.value;
+    if (success && currentList != null) {
+      final index = currentList.indexWhere((t) => t.tool.id == toolId);
       if (index != -1) {
         final updatedList = List<ConversationToolState>.from(currentList);
         updatedList[index] = currentList[index].copyWith(
@@ -165,7 +161,7 @@ class ConversationToolsController extends _$ConversationToolsController {
 /// Provider to get context-aware tools for chat
 /// (conversation -> workspace -> app defaults)
 @riverpod
-class ContextAwareToolsController extends _$ContextAwareToolsController {
+class ContextAwareToolsNotifier extends _$ContextAwareToolsNotifier {
   late ConversationToolsRepository _repository;
 
   @override
@@ -204,8 +200,8 @@ class ContextAwareToolsController extends _$ContextAwareToolsController {
 /// generating composite tool IDs.
 /// (conversation -> workspace -> app defaults)
 @riverpod
-class ContextAwareToolEntitiesController
-    extends _$ContextAwareToolEntitiesController {
+class ContextAwareToolEntitiesNotifier
+    extends _$ContextAwareToolEntitiesNotifier {
   late ConversationToolsRepository _repository;
 
   @override

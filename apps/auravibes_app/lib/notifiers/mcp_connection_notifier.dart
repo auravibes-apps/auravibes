@@ -16,8 +16,8 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:langchain/langchain.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-part 'mcp_connection_controller.freezed.dart';
-part 'mcp_connection_controller.g.dart';
+part 'mcp_connection_notifier.freezed.dart';
+part 'mcp_connection_notifier.g.dart';
 
 // ============================================================
 // MCP Connection Status
@@ -164,7 +164,7 @@ class McpToolIdComponents {
 /// - slugName: URL-safe server name for LLM readability
 /// - toolName: Original tool identifier from the MCP server
 @Riverpod(keepAlive: true)
-class McpConnectionController extends _$McpConnectionController {
+class McpConnectionNotifier extends _$McpConnectionNotifier {
   late final McpManagerService _mcpManagerService;
   @override
   List<McpConnectionState> build() {

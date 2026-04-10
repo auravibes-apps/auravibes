@@ -1,5 +1,5 @@
 import 'package:auravibes_app/domain/entities/mcp_server.dart';
-import 'package:auravibes_app/providers/mcp_connection_controller.dart';
+import 'package:auravibes_app/notifiers/mcp_connection_notifier.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -169,9 +169,7 @@ class McpFormNotifier extends _$McpFormNotifier {
 
     try {
       final mcpToCreate = state.toCreateEntity();
-      await ref
-          .read(mcpConnectionControllerProvider.notifier)
-          .addMcpServer(mcpToCreate);
+      await ref.read(mcpConnectionProvider.notifier).addMcpServer(mcpToCreate);
 
       setSubmitting(value: false);
       return true;

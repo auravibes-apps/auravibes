@@ -1,7 +1,7 @@
 import 'package:auravibes_app/domain/entities/credentials_models_entities.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
-import 'package:auravibes_app/features/chats/notifiers/titles_streams_notifier.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/providers/streaming_runtime_provider.dart';
 import 'package:auravibes_app/providers/chatbot_service_provider.dart';
 import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
 import 'package:auravibes_app/services/monitoring_service.dart';
@@ -13,13 +13,13 @@ class GenerateTitleUsecase {
   const GenerateTitleUsecase({
     required this.conversationRepo,
     required this.chatbotService,
-    required this.titlesStreamsNotifier,
+    required this.titlesStreamingRuntime,
     required this.monitoringService,
   });
 
   final ConversationRepository conversationRepo;
   final ChatbotService chatbotService;
-  final TitlesStreamsNotifier titlesStreamsNotifier;
+  final TitlesStreamingRuntime titlesStreamingRuntime;
   final MonitoringService monitoringService;
   void call({
     required String conversationId,
@@ -41,9 +41,9 @@ class GenerateTitleUsecase {
     }).share();
 
     sharedStream
-        .doOnDone(() => titlesStreamsNotifier.removeTitle(conversationId))
+        .doOnDone(() => titlesStreamingRuntime.removeTitle(conversationId))
         .listen((title) {
-          titlesStreamsNotifier.updateTitle(conversationId, title);
+          titlesStreamingRuntime.updateTitle(conversationId, title);
         });
 
     sharedStream
@@ -66,7 +66,7 @@ final generateTitleUsecaseProvider = Provider<GenerateTitleUsecase>(
     return GenerateTitleUsecase(
       conversationRepo: ref.watch(conversationRepositoryProvider),
       chatbotService: ref.watch(chatbotServiceProvider),
-      titlesStreamsNotifier: ref.watch(titlesStreamsProvider.notifier),
+      titlesStreamingRuntime: ref.watch(titlesStreamingRuntimeProvider),
       monitoringService: ref.watch(monitoringServiceProvider),
     );
   },

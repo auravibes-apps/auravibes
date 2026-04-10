@@ -1,4 +1,4 @@
-import 'package:auravibes_app/providers/mcp_connection_controller.dart';
+import 'package:auravibes_app/notifiers/mcp_connection_notifier.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool.dart';
 import 'package:auravibes_app/services/tools/user_tools_entity.dart';
 

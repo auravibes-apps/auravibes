@@ -1,6 +1,6 @@
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
-import 'package:auravibes_app/features/chats/notifiers/conversation_send_queue_notifier.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/providers/send_queue_runtime_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_context.dart';
 import 'package:auravibes_app/features/chats/usecases/get_conversation_busy_state_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/run_agent_iteration_usecase.dart';
@@ -11,13 +11,13 @@ class SendMessageUsecase {
     required this.runAgentIterationUsecase,
     required this.messageRepository,
     required this.getConversationBusyStateUsecase,
-    required this.conversationSendQueueNotifier,
+    required this.sendQueueRuntime,
   });
 
   final RunAgentIterationUsecase runAgentIterationUsecase;
   final MessageRepository messageRepository;
   final GetConversationBusyStateUsecase getConversationBusyStateUsecase;
-  final ConversationSendQueue conversationSendQueueNotifier;
+  final ConversationSendQueueRuntime sendQueueRuntime;
 
   Future<void> call({
     required String conversationId,
@@ -27,7 +27,7 @@ class SendMessageUsecase {
       conversationId: conversationId,
     );
     if (busyState.isBusy) {
-      conversationSendQueueNotifier.enqueue(
+      sendQueueRuntime.enqueue(
         conversationId: conversationId,
         content: content,
       );
@@ -70,8 +70,6 @@ final sendMessageUsecaseProvider = Provider<SendMessageUsecase>((ref) {
     getConversationBusyStateUsecase: ref.watch(
       getConversationBusyStateUsecaseProvider,
     ),
-    conversationSendQueueNotifier: ref.watch(
-      conversationSendQueueProvider.notifier,
-    ),
+    sendQueueRuntime: ref.watch(conversationSendQueueRuntimeProvider),
   );
 });

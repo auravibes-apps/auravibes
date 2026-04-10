@@ -5,9 +5,8 @@ import 'package:auravibes_app/domain/enums/message_types.dart';
 import 'package:auravibes_app/domain/repositories/chat_models_repository.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
-import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_notifier.dart';
-import 'package:auravibes_app/features/chats/notifiers/messages_streaming_notifier.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/providers/streaming_runtime_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_context.dart';
 import 'package:auravibes_app/features/models/providers/model_providers_repository_providers.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
@@ -42,8 +41,8 @@ class ContinueAgentUsecase {
     required this.credentialsModelsRepository,
     required this.conversationRepository,
     required this.loadConversationToolSpecsUsecase,
-    required this.messagesStreamingNotifier,
-    required this.conversationStreamingNotifier,
+    required this.messagesStreamingRuntime,
+    required this.conversationStreamingRuntime,
     required this.monitoringService,
   });
 
@@ -52,8 +51,8 @@ class ContinueAgentUsecase {
   final CredentialsModelsRepository credentialsModelsRepository;
   final ConversationRepository conversationRepository;
   final LoadConversationToolSpecsUsecase loadConversationToolSpecsUsecase;
-  final MessagesStreamingNotifier messagesStreamingNotifier;
-  final ConversationStreamingNotifier conversationStreamingNotifier;
+  final MessagesStreamingRuntime messagesStreamingRuntime;
+  final ConversationStreamingRuntime conversationStreamingRuntime;
   final MonitoringService monitoringService;
 
   Future<ContinueAgentResult> call({
@@ -92,7 +91,7 @@ class ContinueAgentUsecase {
     );
 
     final subs = CompositeSubscription();
-    conversationStreamingNotifier.start(conversationId);
+    conversationStreamingRuntime.start(conversationId);
     late ChatResult lastResult;
     MessageEntity? firstMessage;
     final pendingUserMessageIds = context?.ackMessageIds ?? const <String>[];
@@ -156,11 +155,11 @@ class ContinueAgentUsecase {
               status: .unfinished,
             ),
           );
-          messagesStreamingNotifier.startSubscription(subs, firstMessage.id);
+          messagesStreamingRuntime.startSubscription(subs, firstMessage.id);
         }
 
         streamingController.add(accumulatedResult);
-        messagesStreamingNotifier.updateResult(
+        messagesStreamingRuntime.updateResult(
           accumulatedResult,
           firstMessage.id,
         );
@@ -182,7 +181,7 @@ class ContinueAgentUsecase {
         ),
       );
 
-      await messagesStreamingNotifier.remove(firstMessage.id);
+      await messagesStreamingRuntime.remove(firstMessage.id);
     } catch (e, _) {
       if (!hasAcknowledgedPendingUsers && pendingUserMessageIds.isNotEmpty) {
         for (final pendingUserMessageId in pendingUserMessageIds) {
@@ -203,7 +202,7 @@ class ContinueAgentUsecase {
       );
       rethrow;
     } finally {
-      conversationStreamingNotifier.remove(conversationId);
+      conversationStreamingRuntime.remove(conversationId);
       subs.dispose();
     }
 
@@ -226,9 +225,9 @@ final continueAgentUsecaseProvider = Provider<ContinueAgentUsecase>(
       loadConversationToolSpecsUsecase: ref.watch(
         loadConversationToolSpecsUsecaseProvider,
       ),
-      messagesStreamingNotifier: ref.watch(messagesStreamingProvider.notifier),
-      conversationStreamingNotifier: ref.watch(
-        conversationStreamingProvider.notifier,
+      messagesStreamingRuntime: ref.watch(messagesStreamingRuntimeProvider),
+      conversationStreamingRuntime: ref.watch(
+        conversationStreamingRuntimeProvider,
       ),
       monitoringService: ref.watch(monitoringServiceProvider),
     );
