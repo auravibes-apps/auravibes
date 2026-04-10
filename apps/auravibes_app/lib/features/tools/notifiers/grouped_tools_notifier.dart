@@ -2,8 +2,6 @@ import 'package:auravibes_app/data/repositories/tools_groups_repository_impl.dar
 import 'package:auravibes_app/domain/models/grouped_tools_view_item.dart';
 import 'package:auravibes_app/domain/repositories/tools_groups_repository.dart';
 import 'package:auravibes_app/domain/usecases/tools/groups/build_grouped_tools_view_usecase.dart';
-import 'package:auravibes_app/domain/usecases/tools/groups/delete_mcp_group_usecase.dart';
-import 'package:auravibes_app/domain/usecases/tools/groups/set_mcp_group_enabled_usecase.dart';
 import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/selected_workspace.dart';
@@ -84,25 +82,36 @@ class GroupedToolsNotifier extends _$GroupedToolsNotifier {
     String groupId, {
     required bool isEnabled,
   }) async {
-    final useCase = SetMcpGroupEnabledUseCase(
-      setToolsGroupEnabled: ref
-          .read(toolsGroupsRepositoryProvider)
-          .setToolsGroupEnabled,
+    final workspaceId = await ref.read(
+      selectedWorkspaceProvider.selectAsync((w) => w.id),
     );
+    final group = await ref
+        .read(toolsGroupsRepositoryProvider)
+        .getToolsGroupById(
+          groupId,
+        );
+    if (group == null || group.workspaceId != workspaceId) {
+      return;
+    }
 
-    await useCase.call(
-      groupId: groupId,
-      isEnabled: isEnabled,
-      groups: (state.value ?? const <ToolsGroupWithTools>[])
-          .map(_toGroupedToolsViewItem)
-          .toList(),
-      disconnectMcpServer: ref
-          .read(mcpConnectionProvider.notifier)
-          .disconnectMcpServer,
-      reconnectMcpServer: ref
-          .read(mcpConnectionProvider.notifier)
-          .reconnectMcpServer,
-    );
+    final didUpdate = await ref
+        .read(toolsGroupsRepositoryProvider)
+        .setToolsGroupEnabled(groupId, isEnabled: isEnabled);
+    if (!didUpdate) {
+      return;
+    }
+
+    if (group.isMcpGroup && group.mcpServerId != null) {
+      if (!isEnabled) {
+        ref
+            .read(mcpConnectionProvider.notifier)
+            .disconnectMcpServer(group.mcpServerId!);
+      } else {
+        await ref
+            .read(mcpConnectionProvider.notifier)
+            .reconnectMcpServer(group.mcpServerId!);
+      }
+    }
 
     ref.invalidateSelf();
   }
@@ -113,13 +122,24 @@ class GroupedToolsNotifier extends _$GroupedToolsNotifier {
   /// - Disconnect from the MCP server
   /// - Delete the MCP server (cascades to tools group and tools)
   Future<void> deleteMcpGroup(String groupId) async {
-    await const DeleteMcpGroupUseCase().call(
-      groupId: groupId,
-      groups: (state.value ?? const <ToolsGroupWithTools>[])
-          .map(_toGroupedToolsViewItem)
-          .toList(),
-      deleteMcpServer: ref.read(mcpConnectionProvider.notifier).deleteMcpServer,
+    final workspaceId = await ref.read(
+      selectedWorkspaceProvider.selectAsync((w) => w.id),
     );
+    final group = await ref
+        .read(toolsGroupsRepositoryProvider)
+        .getToolsGroupById(
+          groupId,
+        );
+    if (group == null || group.workspaceId != workspaceId) {
+      return;
+    }
+    if (!group.isMcpGroup || group.mcpServerId == null) {
+      return;
+    }
+
+    await ref
+        .read(mcpConnectionProvider.notifier)
+        .deleteMcpServer(group.mcpServerId!);
 
     ref
       ..invalidateSelf()
@@ -142,21 +162,6 @@ ToolsGroupWithTools _toToolsGroupWithTools(
     group: item.group,
     tools: item.tools,
     mcpConnectionState: mcpConnectionState,
-  );
-}
-
-GroupedToolsViewItem _toGroupedToolsViewItem(ToolsGroupWithTools item) {
-  return GroupedToolsViewItem(
-    group: item.group,
-    tools: item.tools,
-    mcpConnection: switch (item.mcpConnectionState) {
-      null => null,
-      final state => McpConnectionView(
-        serverId: state.server.id,
-        status: _toMcpConnectionViewStatus(state.status),
-        errorMessage: state.errorMessage,
-      ),
-    },
   );
 }
 
