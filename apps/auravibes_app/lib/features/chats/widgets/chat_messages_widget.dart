@@ -197,6 +197,9 @@ class _ToolCallWidget extends ConsumerWidget {
       ),
     );
 
+    final decodedArgs = tryDecodeToolMetadata(toolCall.argumentsRaw);
+    final decodedResponse = tryDecodeToolMetadata(toolCall.responseRaw);
+
     return AuraContainer(
       backgroundColor: AuraColorVariant.surfaceVariant,
       borderRadius: 10,
@@ -214,9 +217,8 @@ class _ToolCallWidget extends ConsumerWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                if (tryDecodeToolMetadata(toolCall.argumentsRaw) != null)
-                  const TextSpan(text: ' "'),
-                TextSpan(text: tryDecodeToolMetadata(toolCall.argumentsRaw)),
+                if (decodedArgs != null) const TextSpan(text: ' "'),
+                TextSpan(text: decodedArgs),
                 const TextSpan(text: '"'),
               ],
             ),
@@ -227,12 +229,12 @@ class _ToolCallWidget extends ConsumerWidget {
               icon: _getStatusIcon(toolCall.resultStatus!),
               color: _getStatusColor(context, toolCall.resultStatus!),
             ),
-          if (tryDecodeToolMetadata(toolCall.responseRaw) != null)
+          if (decodedResponse != null)
             Padding(
               padding: EdgeInsets.only(top: context.auraTheme.spacing.xs),
               child: ToolCallResponsePreview(
                 toolName: toolCall.name,
-                content: tryDecodeToolMetadata(toolCall.responseRaw)!,
+                content: decodedResponse,
               ),
             ),
         ],

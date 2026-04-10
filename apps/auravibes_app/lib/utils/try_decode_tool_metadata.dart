@@ -19,7 +19,11 @@ String? tryDecodeToolMetadata(Object? metadata) {
   }
 
   if (decoded is Map || decoded is List) {
-    return _toolMetadataEncoder.convert(decoded);
+    try {
+      return _toolMetadataEncoder.convert(decoded);
+    } on Object {
+      return decoded.toString();
+    }
   }
 
   return decoded.toString();
