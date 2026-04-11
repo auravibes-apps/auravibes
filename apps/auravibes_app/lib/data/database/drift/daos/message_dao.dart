@@ -29,15 +29,22 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
   // Business-specific queries
   Future<List<MessagesTable>> getMessagesByConversation(
     String conversationId,
-  ) =>
-      (select(messages)
-            ..where((tbl) => tbl.conversationId.equals(conversationId))
-            ..orderBy([
-              (tbl) => OrderingTerm(
-                expression: tbl.createdAt,
-              ),
-            ]))
-          .get();
+  ) => _messagesByConversationQuery(conversationId).get();
+
+  Stream<List<MessagesTable>> watchMessagesByConversation(
+    String conversationId,
+  ) => _messagesByConversationQuery(conversationId).watch();
+
+  SimpleSelectStatement<$MessagesTable, MessagesTable>
+  _messagesByConversationQuery(String conversationId) {
+    return (select(messages)
+      ..where((tbl) => tbl.conversationId.equals(conversationId))
+      ..orderBy([
+        (tbl) => OrderingTerm(
+          expression: tbl.createdAt,
+        ),
+      ]));
+  }
 
   Future<List<MessagesTable>> getMessagesByConversationPaginated(
     String conversationId,

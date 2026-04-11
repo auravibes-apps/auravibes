@@ -112,15 +112,23 @@ jobs:
           rm -rf Pods Podfile.lock
           pod install --repo-update
 
-      - name: 🏗️ Build macOS
-        run: flutter build macos --debug
+      - name: 🏗️ Configure macOS Build
+        run: flutter build macos --debug --flavor prod --config-only
+        working-directory: ${{ env.FLUTTER_WORKING_DIRECTORY }}
+
+      - name: 🏗️ Build macOS (No Codesign)
+        run: >-
+          xcodebuild -workspace macos/Runner.xcworkspace -scheme Runner
+          -configuration Debug-prod -derivedDataPath build/macos
+          CODE_SIGN_STYLE=Manual CODE_SIGNING_ALLOWED=NO
+          CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build
         working-directory: ${{ env.FLUTTER_WORKING_DIRECTORY }}
 
       - name: 📤 Upload macOS Artifact
         uses: actions/upload-artifact@v7
         with:
           name: macos-build
-          path: ${{ env.FLUTTER_WORKING_DIRECTORY }}/build/macos/Build/Products/Debug/auravibes.app
+          path: ${{ env.FLUTTER_WORKING_DIRECTORY }}/build/macos/Build/Products/Debug-prod/auravibes.app
           retention-days: 7
 
   # iOS Build
@@ -217,14 +225,14 @@ jobs:
         run: melos run generate --no-select
 
       - name: 🏗️ Build Android APK
-        run: flutter build apk --debug --verbose
+        run: flutter build apk --debug --flavor prod --verbose
         working-directory: ${{ env.FLUTTER_WORKING_DIRECTORY }}
 
       - name: 📤 Upload Android Artifact
         uses: actions/upload-artifact@v7
         with:
           name: android-build
-          path: ${{ env.FLUTTER_WORKING_DIRECTORY }}/build/app/outputs/flutter-apk/app-debug.apk
+          path: ${{ env.FLUTTER_WORKING_DIRECTORY }}/build/app/outputs/flutter-apk/app-prod-debug.apk
           retention-days: 7
 
   # Windows Build
