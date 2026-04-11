@@ -77,6 +77,8 @@ abstract class LocaleKeys {
       'models_screens.add_provider.search.no_icon';
   static const models_screens_add_provider_search =
       'models_screens.add_provider.search';
+  static const models_screens_add_provider_errors_unknown =
+      'models_screens.add_provider.errors.unknown';
   static const models_screens_add_provider = 'models_screens.add_provider';
   static const models_screens = 'models_screens';
   static const chats_screens_chats_list_title =

@@ -50,6 +50,9 @@
         "placeholder": "Search model providers...",
         "no_models_found": "No model providers found",
         "no_icon": "No icon"
+      },
+      "errors": {
+        "unknown": "Unknown error occurred"
       }
     }
   },

@@ -37,6 +37,11 @@ class AddModelProviderWidget extends HookConsumerWidget {
     final scrollController = useScrollController();
     final formKey = useMemoized(GlobalKey<FormState>.new, []);
 
+    useEffect(() {
+      addCredentialsModelMutationProvider.reset(ref);
+      return null;
+    }, []);
+
     final hasModel = ref.watch(
       addModelProviderStateProvider(workspaceId).select(
         (value) => value.modelId != null,
@@ -206,7 +211,8 @@ class _ErrorBanner extends ConsumerWidget {
     final error = switch (addCredentialsModelMutation) {
       MutationError<void>(:final error) => switch (error) {
         AddModelException() => switch (error) {
-          AddModelExceptionUnknown() => 'unknown error',
+          AddModelExceptionUnknown() =>
+            LocaleKeys.models_screens_add_provider_errors_unknown,
         },
         _ => error.toString(),
       },

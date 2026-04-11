@@ -54,6 +54,7 @@ dependencies:
   sqlite3_flutter_libs: ^0.5.42
   uuid: ^4.5.3
 
+  flutter_riverpod: any
 dev_dependencies:
   # Code generation for JSON serialization
   build_runner: ^2.12.2

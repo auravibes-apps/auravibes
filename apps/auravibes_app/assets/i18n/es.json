@@ -50,6 +50,9 @@
         "placeholder": "Buscar proveedores de modelos...",
         "no_models_found": "No se encontraron proveedores de modelos",
         "no_icon": "Sin ícono"
+      },
+      "errors": {
+        "unknown": "Ocurrió un error desconocido"
       }
     }
   },

@@ -58,7 +58,7 @@ class _ChatConversationScreen extends HookConsumerWidget {
       );
     }
 
-    if (conversationAsync.hasError) {
+    if (conversationAsync.hasError && !conversationAsync.hasValue) {
       return AuraScreen(
         child: AppErrorWidget(
           error: conversationAsync.error!,
