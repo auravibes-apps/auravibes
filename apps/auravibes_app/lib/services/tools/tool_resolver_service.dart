@@ -72,7 +72,6 @@ class ToolResolverService {
       if (toolType != null) {
         return ResolvedTool.native(
           tableId: nativeTool.tableId,
-          toolIdentifier: nativeTool.toolIdentifier,
           nativeToolType: toolType,
         );
       }

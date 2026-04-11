@@ -52,13 +52,12 @@ class ResolvedTool {
 
   factory ResolvedTool.native({
     required String tableId,
-    required String toolIdentifier,
     required NativeToolType nativeToolType,
   }) {
     return ResolvedTool._(
       type: ResolvedToolType.native,
       tableId: tableId,
-      toolIdentifier: toolIdentifier,
+      toolIdentifier: nativeToolType.value,
       nativeTool: nativeToolType,
     );
   }

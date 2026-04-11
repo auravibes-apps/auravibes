@@ -113,12 +113,20 @@ final class UrlTool extends NativeToolEntity<String, String> {
       );
     }
 
-    await _ensurePublicHost(uri.host);
+    final resolvedHost = await _ensurePublicHost(uri.host);
+
+    final headers = _parseHeaders(json['headers']);
+    final effectiveHeaders = <String, String>{
+      ...?headers,
+      'Host': uri.host,
+    };
+
+    final effectiveUrl = uri.replace(host: resolvedHost).toString();
 
     return UrlRequest(
-      url: uri.toString(),
+      url: effectiveUrl,
       method: _parseMethod(json['method'] as String?),
-      headers: _parseHeaders(json['headers']),
+      headers: effectiveHeaders,
       body: json['body'] as String?,
     );
   }
@@ -154,7 +162,7 @@ final class UrlTool extends NativeToolEntity<String, String> {
     return null;
   }
 
-  Future<void> _ensurePublicHost(String host) async {
+  Future<String> _ensurePublicHost(String host) async {
     if (_isBlockedHostLabel(host)) {
       throw const FormatException(
         'Private or local network URLs are not allowed.',
@@ -168,7 +176,7 @@ final class UrlTool extends NativeToolEntity<String, String> {
           'Private or local network URLs are not allowed.',
         );
       }
-      return;
+      return literalAddress.address;
     }
 
     final addresses = await InternetAddress.lookup(host);
@@ -177,6 +185,7 @@ final class UrlTool extends NativeToolEntity<String, String> {
         'Private or local network URLs are not allowed.',
       );
     }
+    return addresses.first.address;
   }
 
   bool _isBlockedHostLabel(String host) {
@@ -192,15 +201,9 @@ final class UrlTool extends NativeToolEntity<String, String> {
 
     final raw = address.rawAddress;
     if (address.type == InternetAddressType.IPv4) {
-      return raw[0] == 10 ||
-          (raw[0] == 172 && raw[1] >= 16 && raw[1] <= 31) ||
-          (raw[0] == 192 && raw[1] == 168) ||
-          (raw[0] == 169 && raw[1] == 254) ||
-          raw[0] == 127 ||
-          raw[0] == 0;
+      return _isPrivateIPv4(raw);
     }
 
-    // Check IPv4-mapped IPv6 addresses (::ffff:x.x.x.x)
     if (address.type == InternetAddressType.IPv6 && raw.length == 16) {
       final isMapped =
           raw[0] == 0 &&
@@ -216,18 +219,23 @@ final class UrlTool extends NativeToolEntity<String, String> {
           raw[10] == 0xff &&
           raw[11] == 0xff;
       if (isMapped) {
-        return raw[12] == 10 ||
-            (raw[12] == 172 && raw[13] >= 16 && raw[13] <= 31) ||
-            (raw[12] == 192 && raw[13] == 168) ||
-            (raw[12] == 169 && raw[13] == 254) ||
-            raw[12] == 127 ||
-            raw[12] == 0;
+        return _isPrivateIPv4(raw.sublist(12));
       }
     }
 
     return raw[0] == 0xfc ||
         raw[0] == 0xfd ||
         (raw[0] == 0xfe && (raw[1] & 0xc0) == 0x80);
+  }
+
+  bool _isPrivateIPv4(List<int> b) {
+    return b[0] == 10 ||
+        (b[0] == 172 && b[1] >= 16 && b[1] <= 31) ||
+        (b[0] == 192 && b[1] == 168) ||
+        (b[0] == 169 && b[1] == 254) ||
+        b[0] == 127 ||
+        b[0] == 0 ||
+        (b[0] == 100 && b[1] >= 64 && b[1] <= 127);
   }
 
   @override
