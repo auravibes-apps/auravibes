@@ -45,7 +45,7 @@ abstract class ConversationToolsGroupWithTools
     if (!isDefaultGroup) return null;
     return switch (defaultGroupType) {
       .native => LocaleKeys.tools_screen_native_group,
-      _ => LocaleKeys.tools_screen_default_group,
+      .builtIn || null => LocaleKeys.tools_screen_default_group,
     };
   }
 
@@ -111,9 +111,8 @@ abstract class ConversationToolsGroupWithTools
   int get sortPriority {
     if (isDefaultGroup) {
       return switch (defaultGroupType) {
-        .builtIn => 0,
+        .builtIn || null => 0,
         .native => 1,
-        null => 0,
       };
     }
     if (hasMcpError) return 2;

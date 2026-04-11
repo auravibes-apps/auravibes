@@ -147,10 +147,10 @@ final class UrlTool extends NativeToolEntity<String, String> {
   }
 
   UrlRequestMethod _parseMethod(String? method) {
-    if (method == null) return UrlRequestMethod.get;
+    if (method == null) return .get;
     return UrlRequestMethod.values.firstWhere(
       (m) => m.value.toUpperCase() == method.toUpperCase(),
-      orElse: () => UrlRequestMethod.get,
+      orElse: () => .get,
     );
   }
 

@@ -44,7 +44,7 @@ abstract class ToolsGroupWithTools with _$ToolsGroupWithTools {
     if (!isDefaultGroup) return null;
     return switch (defaultGroupType) {
       .native => LocaleKeys.tools_screen_native_group,
-      _ => LocaleKeys.tools_screen_default_group,
+      .builtIn || null => LocaleKeys.tools_screen_default_group,
     };
   }
 
@@ -104,7 +104,7 @@ abstract class ToolsGroupWithTools with _$ToolsGroupWithTools {
     if (isDefaultGroup) {
       return switch (defaultGroupType) {
         .native => 1,
-        _ => 0,
+        .builtIn || null => 0,
       };
     }
     if (hasMcpError) return 2;
