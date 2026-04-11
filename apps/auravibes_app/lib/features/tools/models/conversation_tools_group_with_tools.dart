@@ -42,7 +42,7 @@ abstract class ConversationToolsGroupWithTools
   String? get localizedDisplayNameKey {
     if (!isDefaultGroup) return null;
     return switch (defaultGroupType) {
-      DefaultToolGroupType.native => LocaleKeys.tools_screen_native_group,
+      .native => LocaleKeys.tools_screen_native_group,
       _ => LocaleKeys.tools_screen_default_group,
     };
   }
