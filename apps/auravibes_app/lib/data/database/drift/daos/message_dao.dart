@@ -39,6 +39,18 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
             ]))
           .get();
 
+  Stream<List<MessagesTable>> watchMessagesByConversation(
+    String conversationId,
+  ) =>
+      (select(messages)
+            ..where((tbl) => tbl.conversationId.equals(conversationId))
+            ..orderBy([
+              (tbl) => OrderingTerm(
+                expression: tbl.createdAt,
+              ),
+            ]))
+          .watch();
+
   Future<List<MessagesTable>> getMessagesByConversationPaginated(
     String conversationId,
     int limit,

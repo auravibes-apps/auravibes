@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/enums/message_table_enums.dart';
 import 'package:auravibes_app/domain/entities/messages.dart';
@@ -31,6 +33,47 @@ class MessageRepositoryImpl implements MessageRepository {
         e as Exception,
       );
     }
+  }
+
+  @override
+  Stream<List<MessageEntity>> watchMessagesByConversation(
+    String conversationId,
+  ) {
+    return _database.messageDao
+        .watchMessagesByConversation(conversationId)
+        .transform(
+          StreamTransformer<
+            List<MessagesTable>,
+            List<MessageEntity>
+          >.fromHandlers(
+            handleData: (messageTables, sink) {
+              try {
+                sink.add(messageTables.map(_mapToMessage).toList());
+              } on Exception catch (error) {
+                sink.addError(
+                  MessageException(
+                    'Failed to watch messages for conversation $conversationId',
+                    error,
+                  ),
+                );
+              }
+            },
+            handleError: (error, stackTrace, sink) {
+              if (error is Exception) {
+                sink.addError(
+                  MessageException(
+                    'Failed to watch messages for conversation $conversationId',
+                    error,
+                  ),
+                  stackTrace,
+                );
+                return;
+              }
+
+              sink.addError(error, stackTrace);
+            },
+          ),
+        );
   }
 
   @override
