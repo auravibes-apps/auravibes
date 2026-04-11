@@ -1,20 +1,25 @@
 import 'package:auravibes_app/notifiers/mcp_connection_notifier.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool.dart';
+import 'package:auravibes_app/services/tools/native_tool_entity.dart';
 import 'package:auravibes_app/services/tools/user_tools_entity.dart';
 
-/// Parsed components of a built-in tool composite ID.
-///
-/// The composite ID format is: `built_in_<table_id>_<tool_identifier>`
 class _BuiltInToolIdComponents {
   const _BuiltInToolIdComponents({
     required this.tableId,
     required this.toolIdentifier,
   });
 
-  /// The database table ID for permission checks
   final String tableId;
+  final String toolIdentifier;
+}
 
-  /// The tool identifier (e.g., "calculator")
+class _NativeToolIdComponents {
+  const _NativeToolIdComponents({
+    required this.tableId,
+    required this.toolIdentifier,
+  });
+
+  final String tableId;
   final String toolIdentifier;
 }
 
@@ -59,6 +64,19 @@ class ToolResolverService {
         );
       }
     }
+
+    final nativeTool = _parseNativeToolId(compositeToolName);
+    if (nativeTool != null) {
+      final toolType = NativeToolType.fromValue(nativeTool.toolIdentifier);
+      if (toolType != null) {
+        return ResolvedTool.native(
+          tableId: nativeTool.tableId,
+          toolIdentifier: nativeTool.toolIdentifier,
+          nativeToolType: toolType,
+        );
+      }
+    }
+
     return null;
   }
 
@@ -91,6 +109,30 @@ class ToolResolverService {
     }
 
     return _BuiltInToolIdComponents(
+      tableId: tableId,
+      toolIdentifier: toolIdentifier,
+    );
+  }
+
+  static _NativeToolIdComponents? _parseNativeToolId(String compositeId) {
+    if (!compositeId.startsWith('native_')) {
+      return null;
+    }
+
+    final withoutPrefix = compositeId.substring(7);
+    final firstUnderscoreIdx = withoutPrefix.indexOf('_');
+    if (firstUnderscoreIdx <= 0) {
+      return null;
+    }
+
+    final tableId = withoutPrefix.substring(0, firstUnderscoreIdx);
+    final toolIdentifier = withoutPrefix.substring(firstUnderscoreIdx + 1);
+
+    if (tableId.isEmpty || toolIdentifier.isEmpty) {
+      return null;
+    }
+
+    return _NativeToolIdComponents(
       tableId: tableId,
       toolIdentifier: toolIdentifier,
     );

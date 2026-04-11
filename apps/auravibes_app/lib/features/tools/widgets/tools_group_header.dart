@@ -64,7 +64,8 @@ class ToolsGroupHeader extends StatelessWidget {
               AuraText(
                 style: AuraTextStyle.heading6,
                 child: Text(
-                  groupWithTools.displayName,
+                  groupWithTools.localizedDisplayNameKey?.tr() ??
+                      groupWithTools.group!.name,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),

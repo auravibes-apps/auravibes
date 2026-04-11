@@ -5,6 +5,7 @@ import 'package:auravibes_app/utils/string_extensions.dart';
 /// Tool composite IDs follow these formats:
 /// - MCP tools: `mcp_<mcp_id>_<slug_name>_<tool_identifier>`
 /// - Built-in tools: `built_in_<table_id>_<tool_identifier>`
+/// - Native tools: `native_<table_id>_<tool_identifier>`
 ///
 /// Note: Tool names must match pattern ^[a-zA-Z0-9_-]{1,128}$
 /// so we use underscores as separators instead of colons.
@@ -58,6 +59,22 @@ class ToolNameFormatter {
       }
     }
 
+    // Try parsing as native tool (format: native_<table_id>_<tool>)
+    if (compositeId.startsWith('native_')) {
+      final withoutPrefix = compositeId.substring(7);
+      final firstUnderscoreIdx = withoutPrefix.indexOf('_');
+      if (firstUnderscoreIdx > 0) {
+        final tableId = withoutPrefix.substring(0, firstUnderscoreIdx);
+        final toolIdentifier = withoutPrefix.substring(firstUnderscoreIdx + 1);
+        if (tableId.isNotEmpty && toolIdentifier.isNotEmpty) {
+          return ParsedToolId.native(
+            tableId: tableId,
+            toolIdentifier: toolIdentifier,
+          );
+        }
+      }
+    }
+
     // Fallback for unknown format
     return ParsedToolId.unknown(rawName: compositeId);
   }
@@ -80,6 +97,9 @@ class ToolNameFormatter {
         return '$serverDisplayName: $toolDisplayName';
       },
       builtIn: (tableId, toolIdentifier) {
+        return toolIdentifier.toHumanReadable();
+      },
+      native: (tableId, toolIdentifier) {
         return toolIdentifier.toHumanReadable();
       },
       unknown: (rawName) {
@@ -107,6 +127,12 @@ sealed class ParsedToolId {
     required String toolIdentifier,
   }) = BuiltInParsedToolId;
 
+  /// Creates a parsed native tool ID.
+  const factory ParsedToolId.native({
+    required String tableId,
+    required String toolIdentifier,
+  }) = NativeParsedToolId;
+
   /// Creates a fallback for unknown format.
   const factory ParsedToolId.unknown({
     required String rawName,
@@ -121,6 +147,7 @@ sealed class ParsedToolId {
     )
     mcp,
     required T Function(String tableId, String toolIdentifier) builtIn,
+    required T Function(String tableId, String toolIdentifier) native,
     required T Function(String rawName) unknown,
   });
 
@@ -154,6 +181,7 @@ final class McpParsedToolId extends ParsedToolId {
     )
     mcp,
     required T Function(String tableId, String toolIdentifier) builtIn,
+    required T Function(String tableId, String toolIdentifier) native,
     required T Function(String rawName) unknown,
   }) => mcp(mcpServerId, slugName, toolIdentifier);
 }
@@ -183,8 +211,39 @@ final class BuiltInParsedToolId extends ParsedToolId {
     )
     mcp,
     required T Function(String tableId, String toolIdentifier) builtIn,
+    required T Function(String tableId, String toolIdentifier) native,
     required T Function(String rawName) unknown,
   }) => builtIn(tableId, toolIdentifier);
+}
+
+/// Parsed native tool ID.
+final class NativeParsedToolId extends ParsedToolId {
+  const NativeParsedToolId({
+    required this.tableId,
+    required this.toolIdentifier,
+  }) : super._();
+
+  /// The database ID of the workspace tool.
+  final String tableId;
+
+  /// The tool type identifier.
+  final String toolIdentifier;
+
+  @override
+  String? get mcpServerId => null;
+
+  @override
+  T when<T>({
+    required T Function(
+      String mcpServerId,
+      String slugName,
+      String toolIdentifier,
+    )
+    mcp,
+    required T Function(String tableId, String toolIdentifier) builtIn,
+    required T Function(String tableId, String toolIdentifier) native,
+    required T Function(String rawName) unknown,
+  }) => native(tableId, toolIdentifier);
 }
 
 /// Fallback for unknown tool ID format.
@@ -206,6 +265,7 @@ final class UnknownParsedToolId extends ParsedToolId {
     )
     mcp,
     required T Function(String tableId, String toolIdentifier) builtIn,
+    required T Function(String tableId, String toolIdentifier) native,
     required T Function(String rawName) unknown,
   }) => unknown(rawName);
 }

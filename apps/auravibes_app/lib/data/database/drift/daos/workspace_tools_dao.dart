@@ -25,7 +25,13 @@ class WorkspaceToolsDao extends DatabaseAccessor<AppDatabase>
     required bool isEnabled,
   }) async {
     // Check if tool already exists
-    final existing = await getWorkspaceTool(workspaceId, toolId);
+    final existing =
+        await (select(tools)..where(
+              (tbl) =>
+                  tbl.workspaceId.equals(workspaceId) &
+                  tbl.toolId.equals(toolId),
+            ))
+            .getSingleOrNull();
 
     if (existing != null) {
       // Update existing tool
@@ -40,7 +46,11 @@ class WorkspaceToolsDao extends DatabaseAccessor<AppDatabase>
             ),
           );
       // Return updated tool
-      return (await getWorkspaceTool(workspaceId, toolId))!;
+      return (select(tools)..where(
+            (tbl) =>
+                tbl.workspaceId.equals(workspaceId) & tbl.toolId.equals(toolId),
+          ))
+          .getSingle();
     } else {
       // Insert new tool
       return into(tools).insertReturning(

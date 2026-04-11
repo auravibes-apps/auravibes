@@ -33,10 +33,7 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
       selectedWorkspaceProvider.selectAsync((w) => w.id),
     );
 
-    final workspaceTools = await _repository.getWorkspaceTools(_workspaceId);
-
-    // Return all tools (both built-in and MCP)
-    return workspaceTools;
+    return _repository.getWorkspaceTools(_workspaceId);
   }
 
   /// Add a new built-in tool to the workspace
@@ -120,10 +117,8 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
 Future<List<UserToolType>> availableToolsToAdd(Ref ref) async {
   final workspaceTools = await ref.watch(workspaceToolsProvider.future);
 
-  // Get IDs of tools already added
-  final addedToolIds = workspaceTools.map((wt) => wt.id).toSet();
+  final addedToolIds = workspaceTools.map((wt) => wt.toolId).toSet();
 
-  // Return built-in tools that haven't been added yet
   return ToolService.getTypes()
       .where((type) => !addedToolIds.contains(type.value))
       .toList();

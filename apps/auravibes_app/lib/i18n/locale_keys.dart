@@ -137,6 +137,7 @@ abstract class LocaleKeys {
   static const tools_screen_permission_label = 'tools_screen.permission_label';
   static const tools_screen_enabled_label = 'tools_screen.enabled_label';
   static const tools_screen_default_group = 'tools_screen.default_group';
+  static const tools_screen_native_group = 'tools_screen.native_group';
   static const tools_screen_mcp_connecting = 'tools_screen.mcp_connecting';
   static const tools_screen_mcp_connected = 'tools_screen.mcp_connected';
   static const tools_screen_mcp_error = 'tools_screen.mcp_error';
@@ -189,6 +190,9 @@ abstract class LocaleKeys {
   static const tools_names_calculator_description =
       'tools_names.calculator.description';
   static const tools_names_calculator = 'tools_names.calculator';
+  static const tools_names_url_name = 'tools_names.url.name';
+  static const tools_names_url_description = 'tools_names.url.description';
+  static const tools_names_url = 'tools_names.url';
   static const tools_names = 'tools_names';
   static const home_screen_welcome_title = 'home_screen.welcome_title';
   static const home_screen_welcome_subtitle = 'home_screen.welcome_subtitle';

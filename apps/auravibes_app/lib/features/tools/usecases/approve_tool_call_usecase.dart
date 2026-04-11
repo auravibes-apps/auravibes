@@ -12,6 +12,7 @@ import 'package:auravibes_app/features/tools/notifiers/conversation_tools_notifi
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_provider.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool.dart';
+import 'package:auravibes_app/services/tools/native_tool_service.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
 import 'package:auravibes_app/services/tools/tool_service.dart';
 import 'package:auravibes_app/utils/encode.dart';
@@ -93,26 +94,6 @@ class ApproveToolCallUsecase {
     required ResolvedTool tool,
     required String argumentsRaw,
   }) async {
-    if (!tool.isBuiltIn) {
-      return const _ExecutionResult(
-        resultStatus: ToolCallResultStatus.toolNotFound,
-      );
-    }
-
-    final builtInTool = tool.builtInTool;
-    if (builtInTool == null) {
-      return const _ExecutionResult(
-        resultStatus: ToolCallResultStatus.toolNotFound,
-      );
-    }
-
-    final toolService = ToolService.getTool(builtInTool);
-    if (toolService == null) {
-      return const _ExecutionResult(
-        resultStatus: ToolCallResultStatus.toolNotFound,
-      );
-    }
-
     final arguments = safeJsonDecode(argumentsRaw) ?? const <String, dynamic>{};
     final input = arguments['input'];
     if (input == null) {
@@ -122,7 +103,7 @@ class ApproveToolCallUsecase {
     }
 
     try {
-      final result = await toolService.runner(input as Object).value;
+      final result = await _runTool(tool, input as Object);
       return _ExecutionResult(
         resultStatus: ToolCallResultStatus.success,
         responseRaw: result.toString(),
@@ -132,6 +113,32 @@ class ApproveToolCallUsecase {
         resultStatus: ToolCallResultStatus.executionError,
       );
     }
+  }
+
+  Future<Object> _runTool(ResolvedTool tool, Object input) async {
+    if (tool.isBuiltIn) {
+      final builtInTool = tool.builtInTool;
+      final toolService = builtInTool == null
+          ? null
+          : ToolService.getTool(builtInTool);
+      if (toolService == null) {
+        throw StateError('Built-in tool not found');
+      }
+      return toolService.runner(input).value;
+    }
+
+    if (tool.isNative) {
+      final nativeTool = tool.nativeTool;
+      final toolService = nativeTool == null
+          ? null
+          : NativeToolService.getTool(nativeTool);
+      if (toolService == null) {
+        throw StateError('Native tool not found');
+      }
+      return toolService.runner(input).value;
+    }
+
+    throw StateError('Tool not found');
   }
 
   Future<void> _updateToolCall({

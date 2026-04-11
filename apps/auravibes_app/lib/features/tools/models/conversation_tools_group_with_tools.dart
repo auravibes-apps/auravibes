@@ -1,5 +1,7 @@
 import 'package:auravibes_app/domain/entities/tools_group.dart';
+import 'package:auravibes_app/domain/models/grouped_tools_view_item.dart';
 import 'package:auravibes_app/features/tools/notifiers/conversation_tools_notifier.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_notifier.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -19,6 +21,9 @@ abstract class ConversationToolsGroupWithTools
     /// The list of tools belonging to this group with conversation state.
     required List<ConversationToolState> tools,
 
+    /// The virtual default group type when [group] is null.
+    DefaultToolGroupType? defaultGroupType,
+
     /// The MCP connection state for MCP groups, null for non-MCP groups.
     McpConnectionState? mcpConnectionState,
   }) = _ConversationToolsGroupWithTools;
@@ -28,11 +33,19 @@ abstract class ConversationToolsGroupWithTools
   /// Returns true if this is the default "Built-in Tools" group.
   bool get isDefaultGroup => group == null;
 
+  bool get isNativeDefaultGroup =>
+      isDefaultGroup && defaultGroupType == DefaultToolGroupType.native;
+
   /// Returns true if this group is linked to an MCP server.
   bool get isMcpGroup => group?.isMcpGroup ?? false;
 
-  /// Returns the display name for this group.
-  String get displayName => group?.name ?? 'Built-in Tools';
+  String? get localizedDisplayNameKey {
+    if (!isDefaultGroup) return null;
+    return switch (defaultGroupType) {
+      DefaultToolGroupType.native => LocaleKeys.tools_screen_native_group,
+      _ => LocaleKeys.tools_screen_default_group,
+    };
+  }
 
   /// Returns the number of enabled tools in this group.
   int get enabledToolsCount => tools.where((t) => t.isEnabled).length;
@@ -93,10 +106,16 @@ abstract class ConversationToolsGroupWithTools
   /// 3 = MCP connecting
   /// 4 = MCP connected or non-MCP groups
   int get sortPriority {
-    if (isDefaultGroup) return 0;
-    if (hasMcpError) return 1;
-    if (isMcpDisconnected) return 2;
-    if (isMcpConnecting) return 3;
-    return 4;
+    if (isDefaultGroup) {
+      return switch (defaultGroupType) {
+        DefaultToolGroupType.builtIn => 0,
+        DefaultToolGroupType.native => 1,
+        null => 0,
+      };
+    }
+    if (hasMcpError) return 2;
+    if (isMcpDisconnected) return 3;
+    if (isMcpConnecting) return 4;
+    return 5;
   }
 }

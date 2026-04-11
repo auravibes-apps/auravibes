@@ -160,6 +160,7 @@ ToolsGroupWithTools _toToolsGroupWithTools(
 ) {
   return ToolsGroupWithTools(
     group: item.group,
+    defaultGroupType: item.defaultGroupType,
     tools: item.tools,
     mcpConnectionState: mcpConnectionState,
   );
