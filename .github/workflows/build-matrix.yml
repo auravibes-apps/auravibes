@@ -113,13 +113,13 @@ jobs:
           pod install --repo-update
 
       - name: 🏗️ Configure macOS Build
-        run: flutter build macos --debug --config-only
+        run: flutter build macos --debug --flavor prod --config-only
         working-directory: ${{ env.FLUTTER_WORKING_DIRECTORY }}
 
       - name: 🏗️ Build macOS (No Codesign)
         run: >-
           xcodebuild -workspace macos/Runner.xcworkspace -scheme Runner
-          -configuration Debug -derivedDataPath build/macos
+          -configuration Debug-prod -derivedDataPath build/macos
           CODE_SIGN_STYLE=Manual CODE_SIGNING_ALLOWED=NO
           CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build
         working-directory: ${{ env.FLUTTER_WORKING_DIRECTORY }}
@@ -128,7 +128,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: macos-build
-          path: ${{ env.FLUTTER_WORKING_DIRECTORY }}/build/macos/Build/Products/Debug/auravibes.app
+          path: ${{ env.FLUTTER_WORKING_DIRECTORY }}/build/macos/Build/Products/Debug-prod/auravibes.app
           retention-days: 7
 
   # iOS Build
