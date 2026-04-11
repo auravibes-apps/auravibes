@@ -14,7 +14,7 @@ part 'tools_group_with_tools.freezed.dart';
 @freezed
 abstract class ToolsGroupWithTools with _$ToolsGroupWithTools {
   const factory ToolsGroupWithTools({
-    /// The tools group entity, or null for the "Built-in Tools" default group.
+    /// The tools group entity, or null for a virtual default tools group.
     required ToolsGroupEntity? group,
 
     /// The list of tools belonging to this group.
@@ -29,7 +29,7 @@ abstract class ToolsGroupWithTools with _$ToolsGroupWithTools {
 
   const ToolsGroupWithTools._();
 
-  /// Returns true if this is the default "Built-in Tools" group.
+  /// Returns true if this is a virtual default group.
   bool get isDefaultGroup => group == null;
 
   bool get isNativeDefaultGroup =>
@@ -92,13 +92,19 @@ abstract class ToolsGroupWithTools with _$ToolsGroupWithTools {
   /// Sort priority for ordering groups in the list.
   ///
   /// Lower values appear first:
-  /// 0 = Default group (always first)
-  /// 1 = MCP with error (needs immediate attention)
-  /// 2 = MCP disconnected (needs attention)
-  /// 3 = MCP connecting
-  /// 4 = MCP connected or non-MCP groups
+  /// 0 = Built-in default group
+  /// 1 = Native default group
+  /// 2 = MCP with error (needs immediate attention)
+  /// 3 = MCP disconnected (needs attention)
+  /// 4 = MCP connecting
+  /// 5 = MCP connected or non-MCP groups
   int get sortPriority {
-    if (isDefaultGroup) return 0;
+    if (isDefaultGroup) {
+      return switch (defaultGroupType) {
+        DefaultToolGroupType.native => 1,
+        _ => 0,
+      };
+    }
     if (hasMcpError) return 2;
     if (isMcpDisconnected) return 3;
     if (isMcpConnecting) return 4;

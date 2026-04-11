@@ -1,7 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'url_response.freezed.dart';
-part 'url_response.g.dart';
 
 @freezed
 abstract class UrlResponse with _$UrlResponse {
@@ -11,9 +10,6 @@ abstract class UrlResponse with _$UrlResponse {
     required Map<String, String> headers,
     required Duration elapsed,
   }) = _UrlResponse;
-
-  factory UrlResponse.fromJson(Map<String, dynamic> json) =>
-      _$UrlResponseFromJson(json);
 
   const UrlResponse._();
 

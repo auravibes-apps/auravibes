@@ -129,7 +129,11 @@ class UrlService {
         completer.complete(buffer.toString());
         unawaited(subscription.cancel());
       },
-      onError: completer.completeError,
+      onError: (Object error, StackTrace stackTrace) {
+        if (!completer.isCompleted) {
+          completer.completeError(error, stackTrace);
+        }
+      },
       onDone: () {
         if (!completer.isCompleted) {
           completer.complete(buffer.toString());

@@ -38,27 +38,33 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
     String toolId,
   ) async {
     await _ensureNativeTools(workspaceId);
-    final result = await _dao.getWorkspaceTool(workspaceId, toolId);
+    final result = await _dao.getWorkspaceToolByToolId(workspaceId, toolId);
     if (result == null) return null;
 
     return _tableToEntity(result);
   }
 
   Future<void> _ensureNativeTools(String workspaceId) async {
-    final workspaceTools = await _dao.getWorkspaceTools(workspaceId);
-    final existingToolIds = workspaceTools.map((tool) => tool.toolId).toSet();
+    await _database.transaction(() async {
+      final workspaceTools = await _dao.getWorkspaceTools(workspaceId);
+      final existingNativeToolIds = workspaceTools
+          .where((tool) => tool.workspaceToolsGroupId == null)
+          .where((tool) => NativeToolService.hasTypeString(tool.toolId))
+          .map((tool) => tool.toolId)
+          .toSet();
 
-    for (final nativeType in NativeToolService.getTypes()) {
-      if (existingToolIds.contains(nativeType.value)) {
-        continue;
+      for (final nativeType in NativeToolService.getTypes()) {
+        if (existingNativeToolIds.contains(nativeType.value)) {
+          continue;
+        }
+
+        await _dao.setWorkspaceToolEnabled(
+          workspaceId,
+          nativeType.value,
+          isEnabled: true,
+        );
       }
-
-      await _dao.setWorkspaceToolEnabled(
-        workspaceId,
-        nativeType.value,
-        isEnabled: true,
-      );
-    }
+    });
   }
 
   @override
@@ -102,9 +108,7 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
     String toolType,
   ) async {
     try {
-      final result = await _dao.getWorkspaceTool(workspaceId, toolType);
-
-      return result?.isEnabled ?? false;
+      return await _dao.isWorkspaceToolEnabledByToolId(workspaceId, toolType);
     } catch (e) {
       throw WorkspaceToolsException(
         'Failed to check workspace tool status: $e',
@@ -116,7 +120,7 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
   @override
   Future<bool> removeWorkspaceTool(String workspaceId, String toolType) async {
     try {
-      return await _dao.deleteWorkspaceTool(workspaceId, toolType);
+      return await _dao.deleteWorkspaceToolByToolId(workspaceId, toolType);
     } catch (e) {
       throw WorkspaceToolsException(
         'Failed to remove workspace tool: $e',
@@ -235,8 +239,7 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
     String toolType,
   ) async {
     try {
-      final result = await _dao.getWorkspaceTool(workspaceId, toolType);
-      return result?.config;
+      return await _dao.getWorkspaceToolConfigByToolId(workspaceId, toolType);
     } catch (e) {
       throw WorkspaceToolsException(
         'Failed to get workspace tool config: $e',

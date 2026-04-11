@@ -17,7 +17,7 @@ enum NativeToolType {
   final String value;
 }
 
-abstract class NativeToolEntity<Input, Options, Output> {
+abstract class NativeToolEntity<Input, Output> {
   const NativeToolEntity();
 
   NativeToolType get type;

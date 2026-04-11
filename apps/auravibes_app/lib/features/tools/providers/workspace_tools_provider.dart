@@ -117,10 +117,14 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
 Future<List<UserToolType>> availableToolsToAdd(Ref ref) async {
   final workspaceTools = await ref.watch(workspaceToolsProvider.future);
 
-  final addedToolIds = workspaceTools.map((wt) => wt.toolId).toSet();
+  final addedBuiltInToolIds = workspaceTools
+      .map((wt) => wt.buildInType)
+      .whereType<UserToolType>()
+      .map((type) => type.value)
+      .toSet();
 
   return ToolService.getTypes()
-      .where((type) => !addedToolIds.contains(type.value))
+      .where((type) => !addedBuiltInToolIds.contains(type.value))
       .toList();
 }
 

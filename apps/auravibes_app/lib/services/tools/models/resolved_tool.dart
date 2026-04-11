@@ -8,7 +8,7 @@ enum ResolvedToolType {
   native,
 }
 
-/// Represents a resolved tool that can be either built-in or MCP.
+/// Represents a resolved tool that can be built-in, native, or MCP.
 ///
 /// This abstraction allows the tool calling manager to handle both types
 /// uniformly while preserving the necessary information for execution.

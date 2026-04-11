@@ -150,7 +150,7 @@
     },
     "url": {
       "name": "Lector de URL",
-      "description": "Obtiene contenido de una URL con metodo, headers y body opcionales"
+      "description": "Obtiene el contenido de una URL con metodo, encabezados y cuerpo opcionales"
     }
   },
   "home_screen": {

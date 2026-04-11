@@ -33,6 +33,7 @@ class ToolResolverService {
   /// Composite tool name formats:
   /// - Built-in: `built_in_<table_id>_<tool_identifier>`
   /// - MCP: `mcp_<mcp_id>_<slug_name>_<tool_identifier>`
+  /// - Native: `native_<table_id>_<tool_identifier>`
   ///
   /// Note: Tool names must match pattern ^[a-zA-Z0-9_-]{1,128}$
   /// so we use underscores as separators instead of colons.
@@ -52,14 +53,14 @@ class ToolResolverService {
       );
     }
 
-    final buildtInTool = _parseBuiltInToolId(compositeToolName);
+    final builtInTool = _parseBuiltInToolId(compositeToolName);
 
-    if (buildtInTool != null) {
-      final toolType = UserToolType.fromValue(buildtInTool.toolIdentifier);
+    if (builtInTool != null) {
+      final toolType = UserToolType.fromValue(builtInTool.toolIdentifier);
       if (toolType != null) {
         return ResolvedTool.builtIn(
-          tableId: buildtInTool.tableId,
-          toolIdentifier: buildtInTool.toolIdentifier,
+          tableId: builtInTool.tableId,
+          toolIdentifier: builtInTool.toolIdentifier,
           tooltype: toolType,
         );
       }

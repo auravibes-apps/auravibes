@@ -12,6 +12,7 @@ import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.da
 import 'package:auravibes_app/features/tools/providers/workspace_tools_provider.dart';
 import 'package:auravibes_app/features/tools/usecases/get_agent_iteration_decision_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/load_latest_message_tool_calls_usecase.dart';
+import 'package:auravibes_app/notifiers/mcp_connection_notifier.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool.dart';
 import 'package:auravibes_app/services/tools/native_tool_service.dart';
 import 'package:auravibes_app/services/tools/tool_service.dart';
@@ -25,6 +26,7 @@ class RunAllowedToolsUsecase {
     required this.conversationToolsRepository,
     required this.toolsGroupsRepository,
     required this.workspaceToolsRepository,
+    required this.mcpToolCaller,
     required this.getAgentIterationDecisionUsecase,
   });
 
@@ -33,6 +35,7 @@ class RunAllowedToolsUsecase {
   final ConversationToolsRepository conversationToolsRepository;
   final ToolsGroupsRepository toolsGroupsRepository;
   final WorkspaceToolsRepository workspaceToolsRepository;
+  final McpToolCaller mcpToolCaller;
   final GetAgentIterationDecisionUsecase getAgentIterationDecisionUsecase;
 
   Future<AgentIterationDecision> call({
@@ -161,18 +164,16 @@ class RunAllowedToolsUsecase {
   }) async {
     final arguments =
         safeJsonDecode(toolToCall.argumentsRaw) ?? const <String, dynamic>{};
-    final input = arguments['input'];
-    if (input == null) {
-      return const _ToolExecutionResult(
-        resultStatus: ToolCallResultStatus.executionError,
-      );
-    }
 
     try {
-      final result = await _runTool(toolToCall.tool, input as Object);
+      final result = await _runTool(toolToCall.tool, arguments);
       return _ToolExecutionResult(
         resultStatus: ToolCallResultStatus.success,
         responseRaw: result.toString(),
+      );
+    } on _ToolNotFoundException {
+      return const _ToolExecutionResult(
+        resultStatus: ToolCallResultStatus.toolNotFound,
       );
     } on Object catch (_) {
       return const _ToolExecutionResult(
@@ -181,30 +182,58 @@ class RunAllowedToolsUsecase {
     }
   }
 
-  Future<Object> _runTool(ResolvedTool tool, Object input) async {
+  Future<Object> _runTool(
+    ResolvedTool tool,
+    Map<String, dynamic> arguments,
+  ) async {
     if (tool.isBuiltIn) {
+      final input = arguments['input'];
+      if (input == null) {
+        throw const FormatException(
+          'Built-in tools require an input argument.',
+        );
+      }
+
       final builtInTool = tool.builtInTool;
       final toolService = builtInTool == null
           ? null
           : ToolService.getTool(builtInTool);
       if (toolService == null) {
-        throw StateError('Built-in tool not found');
+        throw const _ToolNotFoundException();
       }
-      return toolService.runner(input).value;
+      return toolService.runner(input as Object).value;
     }
 
     if (tool.isNative) {
+      final input = arguments['input'];
+      if (input == null) {
+        throw const FormatException('Native tools require an input argument.');
+      }
+
       final nativeTool = tool.nativeTool;
       final toolService = nativeTool == null
           ? null
           : NativeToolService.getTool(nativeTool);
       if (toolService == null) {
-        throw StateError('Native tool not found');
+        throw const _ToolNotFoundException();
       }
-      return toolService.runner(input).value;
+      return toolService.runner(input as Object).value;
     }
 
-    throw StateError('Tool not found');
+    if (tool.isMcp) {
+      final mcpServerId = tool.mcpServerId;
+      if (mcpServerId == null) {
+        throw const _ToolNotFoundException();
+      }
+
+      return mcpToolCaller(
+        mcpServerId: mcpServerId,
+        toolIdentifier: tool.toolIdentifier,
+        arguments: arguments,
+      );
+    }
+
+    throw const _ToolNotFoundException();
   }
 
   Future<_ToolResultUpdate> _executeSafely({
@@ -263,10 +292,34 @@ final runAllowedToolsUsecaseProvider = Provider<RunAllowedToolsUsecase>((ref) {
     conversationToolsRepository: ref.watch(conversationToolsRepositoryProvider),
     toolsGroupsRepository: ref.watch(toolsGroupsRepositoryProvider),
     workspaceToolsRepository: ref.watch(workspaceToolsRepositoryProvider),
+    mcpToolCaller: ref.watch(mcpToolCallerProvider),
     getAgentIterationDecisionUsecase: ref.watch(
       getAgentIterationDecisionUsecaseProvider,
     ),
   );
+});
+
+typedef McpToolCaller =
+    Future<String> Function({
+      required String mcpServerId,
+      required String toolIdentifier,
+      required Map<String, dynamic> arguments,
+    });
+
+final mcpToolCallerProvider = Provider<McpToolCaller>((ref) {
+  return ({
+    required String mcpServerId,
+    required String toolIdentifier,
+    required Map<String, dynamic> arguments,
+  }) {
+    return ref
+        .read(mcpConnectionProvider.notifier)
+        .callTool(
+          mcpServerId: mcpServerId,
+          toolIdentifier: toolIdentifier,
+          arguments: arguments,
+        );
+  };
 });
 
 class _ToolResultUpdate {
@@ -286,4 +339,8 @@ class _ToolExecutionResult {
 
   final ToolCallResultStatus resultStatus;
   final String? responseRaw;
+}
+
+final class _ToolNotFoundException implements Exception {
+  const _ToolNotFoundException();
 }

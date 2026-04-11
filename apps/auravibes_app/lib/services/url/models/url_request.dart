@@ -1,7 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'url_request.freezed.dart';
-part 'url_request.g.dart';
 
 enum UrlRequestMethod {
   get('GET'),
@@ -25,7 +24,4 @@ abstract class UrlRequest with _$UrlRequest {
     String? body,
     @Default(Duration(seconds: 30)) Duration timeout,
   }) = _UrlRequest;
-
-  factory UrlRequest.fromJson(Map<String, dynamic> json) =>
-      _$UrlRequestFromJson(json);
 }
