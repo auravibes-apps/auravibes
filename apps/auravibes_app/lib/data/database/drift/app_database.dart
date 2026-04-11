@@ -69,7 +69,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// Database schema version.
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   /// Migration logic for database schema upgrades.
   ///
@@ -99,6 +99,32 @@ class AppDatabase extends _$AppDatabase {
           await customStatement(
             "UPDATE messages SET status = 'unfinished' "
             "WHERE status = 'sending' AND is_user = 0",
+          );
+        }
+
+        if (from < 4) {
+          // Deduplicate native tools before adding unique index
+          await customStatement(
+            'DELETE FROM tools WHERE rowid IN ('
+            '  SELECT t1.rowid FROM tools t1'
+            '  INNER JOIN tools t2 ON t1.workspace_id = t2.workspace_id'
+            '    AND t1.tool_id = t2.tool_id'
+            '    AND t1.workspace_tools_group_id IS NULL'
+            '    AND t2.workspace_tools_group_id IS NULL'
+            '    AND t1.rowid < t2.rowid'
+            ')',
+          );
+          // Unique index for native tools (groupId IS NULL)
+          await customStatement(
+            'CREATE UNIQUE INDEX IF NOT EXISTS idx_tools_unique_native '
+            'ON tools (workspace_id, tool_id) '
+            'WHERE workspace_tools_group_id IS NULL',
+          );
+          // Unique index for MCP tools (groupId IS NOT NULL)
+          await customStatement(
+            'CREATE UNIQUE INDEX IF NOT EXISTS idx_tools_unique_mcp '
+            'ON tools (workspace_id, tool_id, workspace_tools_group_id) '
+            'WHERE workspace_tools_group_id IS NOT NULL',
           );
         }
       },
