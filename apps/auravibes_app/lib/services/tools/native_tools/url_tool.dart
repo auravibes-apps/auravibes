@@ -54,6 +54,10 @@ final class UrlTool extends NativeToolEntity<String, String> {
 
     () async {
       final request = await _buildRequest(toolInput);
+      if (completer.isCanceled) {
+        return;
+      }
+
       final service = _urlService ?? UrlService();
       responseOperation = service.execute(request);
 
@@ -118,10 +122,12 @@ final class UrlTool extends NativeToolEntity<String, String> {
     final headers = _parseHeaders(json['headers']);
     final effectiveHeaders = <String, String>{
       ...?headers,
-      'Host': uri.host,
+      if (uri.scheme == 'http') 'Host': uri.host,
     };
 
-    final effectiveUrl = uri.replace(host: resolvedHost).toString();
+    final effectiveUrl = uri.scheme == 'https'
+        ? uri.toString()
+        : uri.replace(host: resolvedHost).toString();
 
     return UrlRequest(
       url: effectiveUrl,
