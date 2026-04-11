@@ -122,7 +122,7 @@ final class UrlTool extends NativeToolEntity<String, String> {
     final headers = _parseHeaders(json['headers']);
     final effectiveHeaders = <String, String>{
       ...?headers,
-      if (uri.scheme == 'http') 'Host': uri.host,
+      if (uri.scheme == 'http') 'Host': uri.authority,
     };
 
     final effectiveUrl = uri.scheme == 'https'
