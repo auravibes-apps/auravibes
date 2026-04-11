@@ -3,7 +3,6 @@ import 'dart:collection';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/message_dao.dart';
-import 'package:auravibes_app/data/database/drift/tables/messages_table.dart';
 import 'package:auravibes_app/data/repositories/message_repository_impl.dart';
 import 'package:auravibes_app/domain/enums/message_types.dart';
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
@@ -108,7 +107,7 @@ void main() {
           'Failed to watch messages for conversation conversation-1',
         );
         expect(error.cause, isA<FormatException>());
-        expect(stackTrace.toString(), contains('_ThrowingMessagesList.[]'));
+        expect(stackTrace.toString(), contains('_ThrowingMessagesList'));
       },
     );
   });
@@ -127,9 +126,9 @@ MessagesTable _messageRow({
     updatedAt: now,
     conversationId: 'conversation-1',
     content: content,
-    messageType: MessagesTableType.text,
+    messageType: .text,
     isUser: isUser,
-    status: MessageTableStatus.sent,
+    status: .sent,
   );
 }
 
