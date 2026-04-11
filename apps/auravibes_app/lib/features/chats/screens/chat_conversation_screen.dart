@@ -67,15 +67,24 @@ class _ChatConversationScreen extends HookConsumerWidget {
       );
     }
 
-    final conversation = conversationAsync.value;
-    if (conversation == null) {
-      return const AuraScreen(
+    final conversationResult = conversationAsync.value;
+    if (conversationResult == null ||
+        conversationResult is! ConversationFound) {
+      final errorMessage = switch (conversationResult) {
+        ConversationWorkspaceMismatch() =>
+          'This conversation belongs to a different workspace',
+        ConversationNotFound() => 'Conversation not found',
+        _ => 'Conversation not found',
+      };
+      return AuraScreen(
         child: AppErrorWidget(
-          error: 'Conversation not found in this workspace',
+          error: errorMessage,
           stackTrace: StackTrace.empty,
         ),
       );
     }
+
+    final conversation = conversationResult.conversation;
 
     final onToolsPress = useCallback(() async {
       if (!context.mounted) return;
@@ -157,12 +166,7 @@ class _ChatList extends ConsumerWidget {
       return const Center(child: AuraSpinner());
     }
 
-    final messages = ref.watch(
-      chatMessagesProvider.select(
-        (value) =>
-            value.value?.map((message) => message.id).toList() ?? const [],
-      ),
-    );
+    final messages = ref.watch(chatMessageIdsProvider);
     final asyncError = ref.watch(
       chatMessagesProvider.select(
         (value) => value.asError,

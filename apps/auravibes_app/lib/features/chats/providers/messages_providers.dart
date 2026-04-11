@@ -32,6 +32,15 @@ AsyncValue<List<MessageEntity>> chatMessages(Ref ref) {
   return ref.watch(persistedChatMessagesProvider);
 }
 
+@Riverpod(dependencies: [chatMessages])
+List<String> chatMessageIds(Ref ref) {
+  final messages = ref.watch(
+    chatMessagesProvider.select((value) => value.value),
+  );
+  if (messages == null) return const [];
+  return UnmodifiableListView(messages.map((m) => m.id));
+}
+
 @Riverpod(dependencies: [persistedChatMessages, MessagesStreamingNotifier])
 MessageEntity? messageConversationById(
   Ref ref,

@@ -5,30 +5,55 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'conversation_chat_notifier.g.dart';
 
+sealed class ConversationResult {
+  const ConversationResult();
+}
+
+class ConversationFound extends ConversationResult {
+  const ConversationFound(this.conversation);
+  final ConversationEntity conversation;
+}
+
+class ConversationNotFound extends ConversationResult {
+  const ConversationNotFound();
+}
+
+class ConversationWorkspaceMismatch extends ConversationResult {
+  const ConversationWorkspaceMismatch(this.conversation);
+  final ConversationEntity conversation;
+}
+
 @Riverpod(dependencies: [conversationSelected])
 class ConversationChatNotifier extends _$ConversationChatNotifier {
   @override
-  Future<ConversationEntity?> build(String workspaceId) async {
+  Future<ConversationResult> build(String workspaceId) async {
     final conversationId = ref.watch(conversationSelectedProvider);
 
     final conversation = await ref
         .watch(conversationRepositoryProvider)
         .getConversationById(conversationId);
 
-    if (conversation == null || conversation.workspaceId != workspaceId) {
-      return null;
+    if (conversation == null) {
+      return const ConversationNotFound();
     }
 
-    return conversation;
+    if (conversation.workspaceId != workspaceId) {
+      return ConversationWorkspaceMismatch(conversation);
+    }
+
+    return ConversationFound(conversation);
   }
 
   Future<void> setModel(String? modelId) async {
-    final id = state.value?.id;
-    if (id == null) return;
+    final result = state.value;
+    if (result is! ConversationFound) return;
 
     final updatedConversation = await ref
         .read(conversationRepositoryProvider)
-        .updateConversation(id, ConversationToUpdate(modelId: modelId));
-    state = AsyncData(updatedConversation);
+        .updateConversation(
+          result.conversation.id,
+          ConversationToUpdate(modelId: modelId),
+        );
+    state = AsyncData(ConversationFound(updatedConversation));
   }
 }
