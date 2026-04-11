@@ -206,7 +206,7 @@ class _ErrorBanner extends ConsumerWidget {
     final error = switch (addCredentialsModelMutation) {
       MutationError<void>(:final error) => switch (error) {
         AddModelException() => switch (error) {
-          AddModelExceptionNoUnknown() => 'unknown error',
+          AddModelExceptionUnknown() => 'unknown error',
         },
         _ => error.toString(),
       },

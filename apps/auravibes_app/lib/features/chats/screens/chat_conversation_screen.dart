@@ -52,7 +52,7 @@ class _ChatConversationScreen extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final conversationAsync = ref.watch(conversationChatProvider(workspaceId));
 
-    if (conversationAsync.isLoading) {
+    if (conversationAsync.isLoading && !conversationAsync.hasValue) {
       return const AuraScreen(
         child: Center(child: AuraSpinner()),
       );

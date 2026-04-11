@@ -11,7 +11,7 @@ part 'add_model_provider_providers.g.dart';
 
 sealed class AddModelException implements Exception {}
 
-class AddModelExceptionNoUnknown implements AddModelException {}
+class AddModelExceptionUnknown implements AddModelException {}
 
 final _log = Logger('add_model_providers');
 
@@ -79,7 +79,7 @@ class AddModelProviderState extends _$AddModelProviderState {
       rethrow;
     } on Exception catch (e, s) {
       _log.severe('addModelProvider error', e, s);
-      throw AddModelExceptionNoUnknown();
+      throw AddModelExceptionUnknown();
     }
   }
 }
