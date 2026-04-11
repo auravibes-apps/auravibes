@@ -15,6 +15,15 @@ abstract class MessageRepository {
   /// Throws [MessageException] if there's an error retrieving messages.
   Future<List<MessageEntity>> getMessagesByConversation(String conversationId);
 
+  /// Watches all persisted messages for a specific conversation.
+  ///
+  /// [conversationId] The unique identifier of the conversation.
+  /// Emits a new ordered message list whenever the backing data changes.
+  /// Throws [MessageException] if there's an error retrieving messages.
+  Stream<List<MessageEntity>> watchMessagesByConversation(
+    String conversationId,
+  );
+
   /// Retrieves messages for a conversation with pagination.
   ///
   /// [conversationId] The unique identifier of the conversation.

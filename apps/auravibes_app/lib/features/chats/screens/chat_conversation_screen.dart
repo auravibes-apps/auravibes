@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:auravibes_app/features/chats/notifiers/chat_messages_notifier.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_chat_notifier.dart';
 import 'package:auravibes_app/features/chats/providers/messages_providers.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
@@ -36,7 +35,7 @@ class ChatConversationScreen extends ConsumerWidget {
 
 @Dependencies([
   ConversationChatNotifier,
-  ChatMessagesNotifier,
+  chatMessages,
   pendingMcpConnections,
 ])
 class _ChatConversationScreen extends HookConsumerWidget {
@@ -141,9 +140,7 @@ class _ChatList extends ConsumerWidget {
     }
 
     final messages = ref.watch(
-      messageListProvider.select(
-        (value) => value.value ?? <String>[],
-      ),
+      messageListProvider,
     );
     final asyncError = ref.watch(
       chatMessagesProvider.select(

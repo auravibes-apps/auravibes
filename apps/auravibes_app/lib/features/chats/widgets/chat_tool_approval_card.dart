@@ -2,7 +2,6 @@ import 'dart:math' as math;
 
 import 'package:auravibes_app/domain/entities/messages.dart';
 import 'package:auravibes_app/domain/enums/tool_grant_level.dart';
-import 'package:auravibes_app/features/chats/notifiers/chat_messages_notifier.dart';
 import 'package:auravibes_app/features/chats/providers/messages_providers.dart';
 import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
 import 'package:auravibes_app/features/tools/usecases/approve_tool_call_usecase.dart';
@@ -414,7 +413,6 @@ class _ConfirmationButtons extends ConsumerWidget {
   }) async {
     try {
       await action();
-      ref.invalidate(chatMessagesProvider);
     } on Exception catch (error) {
       debugPrint('Tool approval action failed: $error');
       if (!context.mounted) return;
