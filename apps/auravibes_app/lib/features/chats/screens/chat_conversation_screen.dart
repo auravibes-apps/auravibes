@@ -59,9 +59,11 @@ class _ChatConversationScreen extends HookConsumerWidget {
     }
 
     if (conversationAsync.hasError) {
-      return AppErrorWidget(
-        error: conversationAsync.error!,
-        stackTrace: conversationAsync.stackTrace ?? StackTrace.empty,
+      return AuraScreen(
+        child: AppErrorWidget(
+          error: conversationAsync.error!,
+          stackTrace: conversationAsync.stackTrace ?? StackTrace.empty,
+        ),
       );
     }
 
@@ -87,7 +89,7 @@ class _ChatConversationScreen extends HookConsumerWidget {
           ),
         ),
       );
-    }, [ref, workspaceId]);
+    }, [ref, workspaceId, conversation.id]);
 
     final busyState = ref.watch(conversationBusyStateProvider).asData?.value;
     final queuedDrafts = ref.watch(conversationQueuedDraftsProvider);

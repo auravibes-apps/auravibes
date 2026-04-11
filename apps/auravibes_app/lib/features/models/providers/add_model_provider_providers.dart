@@ -11,8 +11,6 @@ part 'add_model_provider_providers.g.dart';
 
 sealed class AddModelException implements Exception {}
 
-class AddModelExceptionNoWorkspace implements AddModelException {}
-
 class AddModelExceptionNoUnknown implements AddModelException {}
 
 final _log = Logger('add_model_providers');
