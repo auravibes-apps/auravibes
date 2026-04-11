@@ -10,7 +10,9 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class ModelsScreen extends StatelessWidget {
-  const ModelsScreen({super.key});
+  const ModelsScreen({required this.workspaceId, super.key});
+
+  final String workspaceId;
 
   @override
   Widget build(BuildContext context) {
@@ -20,8 +22,8 @@ class ModelsScreen extends StatelessWidget {
       ),
       child: AuraColumn(
         children: [
-          _AddModelModalButton(),
-          const Expanded(child: ListModelCredentialsWidget()),
+          _AddModelModalButton(workspaceId: workspaceId),
+          Expanded(child: ListModelCredentialsWidget(workspaceId: workspaceId)),
         ],
       ),
     );
@@ -29,6 +31,10 @@ class ModelsScreen extends StatelessWidget {
 }
 
 class _AddModelModalButton extends ConsumerWidget {
+  const _AddModelModalButton({required this.workspaceId});
+
+  final String workspaceId;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return AuraPadding(
@@ -53,12 +59,16 @@ class _AddModelModalButton extends ConsumerWidget {
                         ),
                         child: Padding(
                           padding: EdgeInsets.all(ctx.auraTheme.spacing.lg),
-                          child: const AddModelProviderWidget(),
+                          child: AddModelProviderWidget(
+                            workspaceId: workspaceId,
+                          ),
                         ),
                       ),
                     ),
                   ).then((onValue) {
-                    ref.invalidate(listCredentialsProvider);
+                    ref.invalidate(
+                      listCredentialsProvider(workspaceId: workspaceId),
+                    );
                   });
                   // context.go(location)
                 },

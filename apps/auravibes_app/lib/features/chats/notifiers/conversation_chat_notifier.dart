@@ -8,12 +8,18 @@ part 'conversation_chat_notifier.g.dart';
 @Riverpod(dependencies: [conversationSelected])
 class ConversationChatNotifier extends _$ConversationChatNotifier {
   @override
-  Future<ConversationEntity?> build() async {
+  Future<ConversationEntity?> build(String workspaceId) async {
     final conversationId = ref.watch(conversationSelectedProvider);
 
-    return ref
+    final conversation = await ref
         .watch(conversationRepositoryProvider)
         .getConversationById(conversationId);
+
+    if (conversation == null || conversation.workspaceId != workspaceId) {
+      return null;
+    }
+
+    return conversation;
   }
 
   Future<void> setModel(String? modelId) async {

@@ -21,15 +21,20 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod_annotation/experimental/scope.dart';
 
 class ChatConversationScreen extends ConsumerWidget {
-  const ChatConversationScreen({required this.chatId, super.key});
+  const ChatConversationScreen({
+    required this.workspaceId,
+    required this.chatId,
+    super.key,
+  });
 
+  final String workspaceId;
   final String chatId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return ProviderScope(
       overrides: [conversationSelectedProvider.overrideWithValue(chatId)],
-      child: const _ChatConversationScreen(),
+      child: _ChatConversationScreen(workspaceId: workspaceId),
     );
   }
 }
@@ -40,27 +45,43 @@ class ChatConversationScreen extends ConsumerWidget {
   pendingMcpConnections,
 ])
 class _ChatConversationScreen extends HookConsumerWidget {
-  const _ChatConversationScreen();
+  const _ChatConversationScreen({required this.workspaceId});
+
+  final String workspaceId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final modelId = ref.watch(
-      conversationChatProvider.select((c) => c.value?.modelId),
-    );
+    final conversationAsync = ref.watch(conversationChatProvider(workspaceId));
 
-    final modelTitle = ref.watch(
-      conversationChatProvider.select((c) => c.value?.title),
-    );
+    if (conversationAsync.isLoading) {
+      return const AuraScreen(
+        child: Center(child: AuraSpinner()),
+      );
+    }
+
+    if (conversationAsync.hasError) {
+      return AppErrorWidget(
+        error: conversationAsync.error!,
+        stackTrace: conversationAsync.stackTrace ?? StackTrace.empty,
+      );
+    }
+
+    final conversation = conversationAsync.value;
+    if (conversation == null) {
+      return const AuraScreen(
+        child: AppErrorWidget(
+          error: 'Conversation not found in this workspace',
+          stackTrace: StackTrace.empty,
+        ),
+      );
+    }
 
     final onToolsPress = useCallback(() async {
-      // Try to get conversation info
-
       final conversation = await ref.read(
-        conversationChatProvider.future,
+        conversationChatProvider(workspaceId).future,
       );
       if (conversation == null) return;
       final conversationId = conversation.id;
-      final workspaceId = conversation.workspaceId;
 
       if (context.mounted) {
         unawaited(
@@ -68,23 +89,24 @@ class _ChatConversationScreen extends HookConsumerWidget {
             context: context,
             builder: (context) => ToolsManagementModal(
               conversationId: conversationId,
-              workspaceId: workspaceId,
+              workspaceId: conversation.workspaceId,
             ),
           ),
         );
       }
-    }, [ref]);
+    }, [ref, workspaceId]);
 
     final busyState = ref.watch(conversationBusyStateProvider).asData?.value;
     final queuedDrafts = ref.watch(conversationQueuedDraftsProvider);
 
     return AuraScreen(
       appBar: AuraAppBarWithDrawer(
-        title: Text(modelTitle ?? ''),
+        title: Text(conversation.title),
         bottom: SelectCredentialsModelWidget(
-          credentialsModelId: modelId,
+          workspaceId: workspaceId,
+          credentialsModelId: conversation.modelId,
           selectCredentialsModelId: ref
-              .watch(conversationChatProvider.notifier)
+              .watch(conversationChatProvider(workspaceId).notifier)
               .setModel,
         ),
       ),
@@ -141,8 +163,9 @@ class _ChatList extends ConsumerWidget {
     }
 
     final messages = ref.watch(
-      messageListProvider.select(
-        (value) => value.value ?? <String>[],
+      chatMessagesProvider.select(
+        (value) =>
+            value.value?.map((message) => message.id).toList() ?? const [],
       ),
     );
     final asyncError = ref.watch(

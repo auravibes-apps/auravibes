@@ -1,6 +1,5 @@
 import 'package:auravibes_app/domain/entities/conversation.dart';
 import 'package:auravibes_app/features/chats/usecases/send_new_message_usecase.dart';
-import 'package:auravibes_app/features/workspaces/providers/selected_workspace.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -22,7 +21,7 @@ abstract class NewChatState with _$NewChatState {
 @riverpod
 class NewChatNotifier extends _$NewChatNotifier {
   @override
-  NewChatState build() {
+  NewChatState build(String workspaceId) {
     return const NewChatState();
   }
 
@@ -45,10 +44,6 @@ class NewChatNotifier extends _$NewChatNotifier {
 
     state = state.copyWith(isLoading: true);
     try {
-      final workspaceId = await ref.read(
-        selectedWorkspaceProvider.selectAsync((workspace) => workspace.id),
-      );
-      // TODO: manage future
       return ref
           .read(sendNewMessageUsecaseProvider)
           .call(

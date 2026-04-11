@@ -11,16 +11,20 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class RecentConversationsWidget extends ConsumerWidget {
-  const RecentConversationsWidget({super.key});
+  const RecentConversationsWidget({required this.workspaceId, super.key});
+
+  final String workspaceId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final chatListAsync = ref.watch(conversationsStreamProvider(limit: 5));
+    final chatListAsync = ref.watch(
+      conversationsStreamProvider(workspaceId: workspaceId, limit: 5),
+    );
 
     return switch (chatListAsync) {
       AsyncData(value: final chats) => () {
         if (chats.isEmpty) {
-          return _buildEmptyState(context);
+          return _buildEmptyState(context, workspaceId);
         }
 
         return Column(
@@ -28,7 +32,7 @@ class RecentConversationsWidget extends ConsumerWidget {
               .map(
                 (chat) => AuraPadding(
                   padding: const .only(bottom: .base),
-                  child: _RecentChatTile(chat: chat),
+                  child: _RecentChatTile(chat: chat, workspaceId: workspaceId),
                 ),
               )
               .toList(),
@@ -48,7 +52,7 @@ class RecentConversationsWidget extends ConsumerWidget {
     };
   }
 
-  Widget _buildEmptyState(BuildContext context) {
+  Widget _buildEmptyState(BuildContext context, String workspaceId) {
     return AuraCard(
       child: AuraPadding(
         padding: AuraEdgeInsetsGeometry.small,
@@ -77,7 +81,8 @@ class RecentConversationsWidget extends ConsumerWidget {
             ),
             AuraButton(
               variant: AuraButtonVariant.outlined,
-              onPressed: () => NewChatRoute().go(context),
+              onPressed: () =>
+                  NewChatRoute(workspaceId: workspaceId).go(context),
               child: const TextLocale(
                 LocaleKeys.home_screen_actions_start_new_chat,
               ),
@@ -90,25 +95,29 @@ class RecentConversationsWidget extends ConsumerWidget {
 }
 
 class _RecentChatTile extends ConsumerWidget {
-  const _RecentChatTile({required this.chat});
+  const _RecentChatTile({required this.chat, required this.workspaceId});
 
   final ConversationEntity chat;
+  final String workspaceId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final modelDisplayName = ref.watch(
-      listCredentialsCredentialsProvider.select(
-        (cms) => cms.value
-            ?.firstWhereOrNull((cm) => cm.credentialsModel.id == chat.modelId)
-            ?.credentialsModel
-            .modelId,
-      ),
+    final credentialsModelsAsync = ref.watch(
+      listCredentialsCredentialsProvider(workspaceId: workspaceId),
     );
+    final modelDisplayName = credentialsModelsAsync.asData?.value
+        .where((cm) => cm.credentialsModel.id == chat.modelId)
+        .firstOrNull
+        ?.credentialsModel
+        .modelId;
     final title = ref.watch(streamingTitleProvider(chat.id)) ?? chat.title;
 
     return AuraCard(
       onTap: () {
-        ConversationRoute(chatId: chat.id).go(context);
+        ConversationRoute(
+          workspaceId: workspaceId,
+          chatId: chat.id,
+        ).go(context);
       },
       child: AuraPadding(
         child: Column(

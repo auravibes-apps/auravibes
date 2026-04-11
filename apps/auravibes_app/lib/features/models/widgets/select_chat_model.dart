@@ -13,6 +13,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 class SelectCredentialsModelWidget extends HookConsumerWidget
     implements PreferredSizeWidget {
   const SelectCredentialsModelWidget({
+    required this.workspaceId,
     required this.selectCredentialsModelId,
     super.key,
     this.credentialsModelId,
@@ -20,6 +21,7 @@ class SelectCredentialsModelWidget extends HookConsumerWidget
     this.onProviderChanged,
   });
 
+  final String workspaceId;
   final String? credentialsModelId;
   final void Function(String?) selectCredentialsModelId;
 
@@ -31,7 +33,9 @@ class SelectCredentialsModelWidget extends HookConsumerWidget
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final groupedModelsAsync = ref.watch(listModelsGroupedByProviderProvider);
+    final groupedModelsAsync = ref.watch(
+      listModelsGroupedByProviderProvider(workspaceId: workspaceId),
+    );
 
     final searchValue = useState<String>('');
     final controller = useTextEditingController();

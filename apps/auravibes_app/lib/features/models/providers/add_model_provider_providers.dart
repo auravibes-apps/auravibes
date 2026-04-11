@@ -2,7 +2,6 @@ import 'package:auravibes_app/domain/entities/credentials_entities.dart';
 import 'package:auravibes_app/features/models/models/add_model_provider_model.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/providers/model_providers_repository_providers.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:collection/collection.dart';
 import 'package:logging/logging.dart';
 import 'package:riverpod/experimental/mutation.dart';
@@ -20,8 +19,11 @@ final _log = Logger('add_model_providers');
 
 @riverpod
 class AddModelProviderState extends _$AddModelProviderState {
+  late String _workspaceId;
+
   @override
-  AddModelProviderModel build() {
+  AddModelProviderModel build(String workspaceId) {
+    _workspaceId = workspaceId;
     return const AddModelProviderModel();
   }
 
@@ -63,13 +65,6 @@ class AddModelProviderState extends _$AddModelProviderState {
 
     try {
       final repo = ref.read(modelProvidersRepositoryProvider);
-      final wRepo = ref.read(workspaceRepositoryProvider);
-
-      final workspaces = await wRepo.getAllWorkspaces();
-      final firstWorkspace = workspaces.firstOrNull;
-      if (firstWorkspace == null) {
-        throw AddModelExceptionNoWorkspace();
-      }
 
       final provider = await repo.createCredential(
         CredentialsToCreate(
@@ -77,7 +72,7 @@ class AddModelProviderState extends _$AddModelProviderState {
           modelId: state.modelId!,
           key: state.key!,
           url: state.url,
-          workspaceId: firstWorkspace.id,
+          workspaceId: _workspaceId,
         ),
       );
       return provider;

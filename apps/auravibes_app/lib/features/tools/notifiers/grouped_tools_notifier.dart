@@ -4,7 +4,6 @@ import 'package:auravibes_app/domain/repositories/tools_groups_repository.dart';
 import 'package:auravibes_app/domain/usecases/tools/groups/build_grouped_tools_view_usecase.dart';
 import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_provider.dart';
-import 'package:auravibes_app/features/workspaces/providers/selected_workspace.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_notifier.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -28,18 +27,19 @@ ToolsGroupsRepository toolsGroupsRepository(Ref ref) {
 /// - Sorts groups: Default first, then MCP errors, then by creation date
 @riverpod
 class GroupedToolsNotifier extends _$GroupedToolsNotifier {
-  @override
-  Future<List<ToolsGroupWithTools>> build() async {
-    final workspaceId = await ref.watch(
-      selectedWorkspaceProvider.selectAsync((w) => w.id),
-    );
+  late String _workspaceId;
 
+  @override
+  Future<List<ToolsGroupWithTools>> build(String workspaceId) async {
+    _workspaceId = workspaceId;
     final toolsGroupsRepo = ref.watch(toolsGroupsRepositoryProvider);
     final groups = await toolsGroupsRepo.getToolsGroupsForWorkspace(
       workspaceId,
     );
 
-    final workspaceTools = await ref.watch(workspaceToolsProvider.future);
+    final workspaceTools = await ref.watch(
+      workspaceToolsProvider(workspaceId).future,
+    );
     final mcpConnections = ref.watch(mcpConnectionProvider);
     final mcpConnectionsByServerId = {
       for (final connection in mcpConnections) connection.server.id: connection,
@@ -82,15 +82,12 @@ class GroupedToolsNotifier extends _$GroupedToolsNotifier {
     String groupId, {
     required bool isEnabled,
   }) async {
-    final workspaceId = await ref.read(
-      selectedWorkspaceProvider.selectAsync((w) => w.id),
-    );
     final group = await ref
         .read(toolsGroupsRepositoryProvider)
         .getToolsGroupById(
           groupId,
         );
-    if (group == null || group.workspaceId != workspaceId) {
+    if (group == null || group.workspaceId != _workspaceId) {
       return;
     }
 
@@ -122,15 +119,12 @@ class GroupedToolsNotifier extends _$GroupedToolsNotifier {
   /// - Disconnect from the MCP server
   /// - Delete the MCP server (cascades to tools group and tools)
   Future<void> deleteMcpGroup(String groupId) async {
-    final workspaceId = await ref.read(
-      selectedWorkspaceProvider.selectAsync((w) => w.id),
-    );
     final group = await ref
         .read(toolsGroupsRepositoryProvider)
         .getToolsGroupById(
           groupId,
         );
-    if (group == null || group.workspaceId != workspaceId) {
+    if (group == null || group.workspaceId != _workspaceId) {
       return;
     }
     if (!group.isMcpGroup || group.mcpServerId == null) {
@@ -143,7 +137,7 @@ class GroupedToolsNotifier extends _$GroupedToolsNotifier {
 
     ref
       ..invalidateSelf()
-      ..invalidate(workspaceToolsProvider);
+      ..invalidate(workspaceToolsProvider(_workspaceId));
   }
 
   /// Reconnect to an MCP server.
@@ -176,8 +170,10 @@ McpConnectionViewStatus _toMcpConnectionViewStatus(McpConnectionStatus status) {
 
 /// Provider that returns the count of enabled tools across all groups.
 @riverpod
-Future<int> enabledToolsCount(Ref ref) async {
-  final groupedTools = await ref.watch(groupedToolsProvider.future);
+Future<int> enabledToolsCount(Ref ref, String workspaceId) async {
+  final groupedTools = await ref.watch(
+    groupedToolsProvider(workspaceId).future,
+  );
   return groupedTools.fold<int>(
     0,
     (sum, group) => sum + group.enabledToolsCount,
@@ -186,8 +182,10 @@ Future<int> enabledToolsCount(Ref ref) async {
 
 /// Provider that returns the total count of tools across all groups.
 @riverpod
-Future<int> totalToolsCount(Ref ref) async {
-  final groupedTools = await ref.watch(groupedToolsProvider.future);
+Future<int> totalToolsCount(Ref ref, String workspaceId) async {
+  final groupedTools = await ref.watch(
+    groupedToolsProvider(workspaceId).future,
+  );
   return groupedTools.fold<int>(
     0,
     (sum, group) => sum + group.totalToolsCount,

@@ -1,6 +1,7 @@
 import 'package:auravibes_app/features/chats/widgets/sidebar_conversations_widget.dart';
 import 'package:auravibes_app/flavors.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/router/app_router.dart';
 import 'package:auravibes_app/widgets/responsive_sliding_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -73,19 +74,11 @@ class AuraSidebarWrapper extends HookWidget {
 
   /// The main content to display next to the sidebar.
   final StatefulNavigationShell navigationShell;
-  void _goBranch(int index) {
-    navigationShell.goBranch(
-      index,
-      // A common pattern when using bottom navigation bars is to support
-      // navigating to the initial location when tapping the item that is
-      // already active. This example demonstrates how to support this behavior,
-      // using the initialLocation parameter of goBranch.
-      initialLocation: index == navigationShell.currentIndex,
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
+    useListenable(GoRouter.of(context).routeInformationProvider);
+
     final isSmallScreen = MediaQuery.of(context).size.width < 768;
     final selectedIndex = _calculateSelectedIndex(
       context,
@@ -96,7 +89,7 @@ class AuraSidebarWrapper extends HookWidget {
       // Mobile: Use Scaffold drawer pattern
       return AppWithResponsiveDrawer(
         navigationItems: _navigationItems,
-        onNavigationTap: _goBranch,
+        onNavigationTap: (index) => _goBranch(context, index),
         selectedIndex: selectedIndex,
         child: navigationShell,
       );
@@ -104,10 +97,31 @@ class AuraSidebarWrapper extends HookWidget {
       // Desktop: Use persistent sidebar
       return AppWithResponsiveDrawer(
         navigationItems: _navigationItems,
-        onNavigationTap: _goBranch,
+        onNavigationTap: (index) => _goBranch(context, index),
         selectedIndex: selectedIndex,
         child: navigationShell,
       );
+    }
+  }
+
+  void _goBranch(BuildContext context, int index) {
+    final workspaceId = _matchWorkspaceId(
+      GoRouter.of(context).routeInformationProvider.value.uri,
+    );
+
+    if (workspaceId == null || workspaceId.isEmpty) {
+      return;
+    }
+
+    switch (index) {
+      case 0:
+        NewChatRoute(workspaceId: workspaceId).go(context);
+      case 1:
+        ToolsRoute(workspaceId: workspaceId).go(context);
+      case 2:
+        ModelsRoute(workspaceId: workspaceId).go(context);
+      case 3:
+        SettingsRoute(workspaceId: workspaceId).go(context);
     }
   }
 }
@@ -141,15 +155,18 @@ class _AppWithResponsiveDrawerState extends State<AppWithResponsiveDrawer> {
   void initState() {
     super.initState();
     _router = GoRouter.of(context);
-    _previousRoute = _router.state.uri;
+    _previousRoute = _router.routeInformationProvider.value.uri;
     _router.routeInformationProvider.addListener(_onRouteChanged);
   }
 
   void _onRouteChanged() {
-    final currentRoute = _router.state.uri;
+    final currentRoute = _router.routeInformationProvider.value.uri;
     if (currentRoute != _previousRoute) {
       _controller.closeIfMobile();
-      _previousRoute = currentRoute;
+
+      setState(() {
+        _previousRoute = currentRoute;
+      });
     }
   }
 
@@ -161,6 +178,10 @@ class _AppWithResponsiveDrawerState extends State<AppWithResponsiveDrawer> {
 
   @override
   Widget build(BuildContext context) {
+    final workspaceId = _matchWorkspaceId(
+      _router.routeInformationProvider.value.uri,
+    );
+
     return ResponsiveSlidingDrawer(
       controller: _controller,
       drawer: Material(
@@ -168,7 +189,7 @@ class _AppWithResponsiveDrawerState extends State<AppWithResponsiveDrawer> {
           navigationItems: widget.navigationItems,
           onNavigationTap: widget.onNavigationTap,
           header: const _AppLogo(),
-          middleSection: const SidebarConversationsWidget(),
+          middleSection: SidebarConversationsWidget(workspaceId: workspaceId),
           selectedIndex: widget.selectedIndex,
         ),
       ),
@@ -179,6 +200,20 @@ class _AppWithResponsiveDrawerState extends State<AppWithResponsiveDrawer> {
       isDarkMode: Theme.of(context).brightness == Brightness.dark,
     );
   }
+}
+
+String? _matchWorkspaceId(Uri uri) {
+  final pathSegments = uri.pathSegments;
+
+  if (pathSegments.length < 2) {
+    return null;
+  }
+
+  if (pathSegments.first != 'workspaces') {
+    return null;
+  }
+
+  return pathSegments[1];
 }
 
 class _AppLogo extends StatelessWidget {

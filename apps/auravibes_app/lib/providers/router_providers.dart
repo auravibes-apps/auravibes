@@ -1,5 +1,7 @@
+import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/router/app_router.dart';
 import 'package:auravibes_app/utils/ref_extensions.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -15,13 +17,39 @@ final routeObserverProvider = Provider<RouteObserver<ModalRoute<void>>>(
 final routerProvider = Provider<GoRouter>(
   (ref) {
     final routeObserver = ref.read(routeObserverProvider);
+    final workspaceRepository = ref.read(workspaceRepositoryProvider);
+
     return GoRouter(
       routes: $appRoutes,
-      initialLocation: '/chat/new',
+      initialLocation: '/',
       navigatorKey: rootNavigatorKey,
       observers: [
         routeObserver,
       ],
+      redirect: (context, state) async {
+        final currentUri = state.uri;
+        final workspaceMatch = _matchWorkspaceId(currentUri);
+        final workspaces = await workspaceRepository.getAllWorkspaces();
+        final firstWorkspaceId = workspaces.firstOrNull?.id;
+
+        if (firstWorkspaceId == null) {
+          return null;
+        }
+
+        if (workspaceMatch == null) {
+          return _mapLegacyRoute(
+                currentUri,
+                fallbackWorkspaceId: firstWorkspaceId,
+              ) ??
+              NewChatRoute(workspaceId: firstWorkspaceId).location;
+        }
+
+        if (workspaces.any((workspace) => workspace.id == workspaceMatch)) {
+          return null;
+        }
+
+        return NewChatRoute(workspaceId: firstWorkspaceId).location;
+      },
     );
   },
 );
@@ -36,8 +64,63 @@ final routerInformationProvider = Provider<GoRouteInformationProvider>(
 
 final routerPathSegmentsProvider = Provider<List<String>>(
   (ref) {
-    final router = ref.watch(routerProvider);
-    ref.watch(routerInformationProvider);
-    return router.state.uri.pathSegments;
+    ref.watch(routerProvider);
+    final routeInformationProvider = ref.watch(routerInformationProvider);
+    return routeInformationProvider.value.uri.pathSegments;
   },
 );
+
+final currentRouteWorkspaceIdProvider = Provider<String?>(
+  (ref) {
+    ref.watch(routerProvider);
+    final routeInformationProvider = ref.watch(routerInformationProvider);
+    return _matchWorkspaceId(routeInformationProvider.value.uri);
+  },
+);
+
+String? _matchWorkspaceId(Uri uri) {
+  final pathSegments = uri.pathSegments;
+
+  if (pathSegments.length < 2) {
+    return null;
+  }
+
+  if (pathSegments.first != 'workspaces') {
+    return null;
+  }
+
+  return pathSegments[1];
+}
+
+String? _mapLegacyRoute(Uri uri, {required String fallbackWorkspaceId}) {
+  final pathSegments = uri.pathSegments;
+
+  if (pathSegments.isEmpty) {
+    return null;
+  }
+
+  final location = switch (pathSegments) {
+    ['chat', 'new'] => NewChatRoute(workspaceId: fallbackWorkspaceId).location,
+    ['chats'] => ChatsRoute(workspaceId: fallbackWorkspaceId).location,
+    ['chats', final chatId] => ConversationRoute(
+      workspaceId: fallbackWorkspaceId,
+      chatId: chatId,
+    ).location,
+    ['tools'] => ToolsRoute(workspaceId: fallbackWorkspaceId).location,
+    ['models'] => ModelsRoute(workspaceId: fallbackWorkspaceId).location,
+    ['settings'] => SettingsRoute(workspaceId: fallbackWorkspaceId).location,
+    _ => null,
+  };
+
+  if (location == null) {
+    return null;
+  }
+
+  if (!uri.hasQuery && uri.fragment.isEmpty) {
+    return location;
+  }
+
+  return Uri.parse(
+    location,
+  ).replace(query: uri.query, fragment: uri.fragment).toString();
+}

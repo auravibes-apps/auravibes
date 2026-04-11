@@ -12,14 +12,12 @@ class ChatMessagesNotifier extends _$ChatMessagesNotifier {
   @override
   Future<List<MessageEntity>> build() async {
     final conversationId = ref.watch(conversationSelectedProvider);
+    final streamingResponses = ref.watch(messagesStreamingProvider);
 
     final messages = await ref
         .read(messageRepositoryProvider)
         .getMessagesByConversation(conversationId);
 
-    final streamingResponses = ref.watch(
-      messagesStreamingProvider,
-    );
     final latestAssistantMessageId = messages
         .lastWhereOrNull(
           (message) => !message.isUser,

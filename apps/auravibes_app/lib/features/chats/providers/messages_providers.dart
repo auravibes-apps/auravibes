@@ -19,17 +19,6 @@ final deleteMessageMutation = Mutation<void>();
 final updateMessageMutation = Mutation<MessageEntity>();
 
 @Riverpod(dependencies: [ChatMessagesNotifier])
-Future<List<String>> messageList(Ref ref) async {
-  final messages = await ref.watch(
-    chatMessagesProvider.selectAsync(
-      (messages) => messages.map((message) => message.id).toList(),
-    ),
-  );
-
-  return messages;
-}
-
-@Riverpod(dependencies: [ChatMessagesNotifier])
 MessageEntity? messageConversationById(
   Ref ref,
   String messageId,

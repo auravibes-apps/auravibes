@@ -7,19 +7,21 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class StatusBarWidget extends ConsumerWidget {
-  const StatusBarWidget({super.key});
+  const StatusBarWidget({required this.workspaceId, super.key});
+
+  final String workspaceId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return AuraContainer(
       backgroundColor: AuraColorVariant.surfaceVariant,
       borderRadius: context.auraTheme.borderRadius.md,
-      child: const AuraPadding(
+      child: AuraPadding(
         child: AuraRow(
           children: [
             // Model status
             Expanded(
-              child: _ModelStatus(),
+              child: _ModelStatus(workspaceId: workspaceId),
             ),
           ],
         ),
@@ -29,11 +31,15 @@ class StatusBarWidget extends ConsumerWidget {
 }
 
 class _ModelStatus extends ConsumerWidget {
-  const _ModelStatus();
+  const _ModelStatus({required this.workspaceId});
+
+  final String workspaceId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final modelsAsync = ref.watch(listCredentialsCredentialsProvider);
+    final modelsAsync = ref.watch(
+      listCredentialsCredentialsProvider(workspaceId: workspaceId),
+    );
 
     return switch (modelsAsync) {
       AsyncData(value: final models) => () {

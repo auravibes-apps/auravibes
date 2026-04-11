@@ -5,8 +5,9 @@ import 'package:auravibes_app/domain/entities/workspace.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 import 'package:auravibes_app/domain/repositories/mcp_servers_repository.dart';
+import 'package:auravibes_app/domain/repositories/workspace_repository.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';
-import 'package:auravibes_app/features/workspaces/providers/selected_workspace.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_notifier.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_service.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -14,18 +15,18 @@ import 'package:riverpod/riverpod.dart';
 
 void main() {
   group('McpConnectionNotifier', () {
-    late _FakeSelectedWorkspace selectedWorkspace;
+    late _FakeWorkspaceRepository workspaceRepository;
     late _FakeMcpServersRepository mcpServersRepository;
     late _FakeMcpManagerService mcpManagerService;
     late ProviderContainer container;
 
     setUp(() {
-      selectedWorkspace = _FakeSelectedWorkspace(_workspace);
+      workspaceRepository = _FakeWorkspaceRepository();
       mcpServersRepository = _FakeMcpServersRepository();
       mcpManagerService = _FakeMcpManagerService();
       container = ProviderContainer(
         overrides: [
-          selectedWorkspaceProvider.overrideWith(() => selectedWorkspace),
+          workspaceRepositoryProvider.overrideWithValue(workspaceRepository),
           mcpServersRepositoryProvider.overrideWithValue(mcpServersRepository),
           mcpManagerServiceProvider.overrideWithValue(mcpManagerService),
         ],
@@ -152,16 +153,70 @@ final _connectingState = McpConnectionState(
   ],
 );
 
-class _FakeSelectedWorkspace extends SelectedWorkspace {
-  _FakeSelectedWorkspace(this.workspace);
+class _FakeMcpManagerService extends McpManagerService {}
 
-  final WorkspaceEntity workspace;
+class _FakeWorkspaceRepository implements WorkspaceRepository {
+  @override
+  Future<List<WorkspaceEntity>> getAllWorkspaces() async => [_workspace];
 
   @override
-  Future<WorkspaceEntity> build() async => workspace;
-}
+  Future<WorkspaceEntity> createWorkspace(WorkspaceToCreate workspace) {
+    throw UnimplementedError();
+  }
 
-class _FakeMcpManagerService extends McpManagerService {}
+  @override
+  Future<bool> deleteWorkspace(String id) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<int> getWorkspaceCount() {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<int> getWorkspaceCountByType(WorkspaceType type) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<WorkspaceEntity?> getWorkspaceById(String id) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<List<WorkspaceEntity>> getWorkspacesByType(WorkspaceType type) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<List<WorkspaceEntity>> searchWorkspacesByName(String query) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<WorkspaceEntity> updateWorkspace(
+    String id,
+    WorkspaceToCreate workspace,
+  ) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<bool> updateWorkspaceTimestamp(String id) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<bool> validateWorkspace(WorkspaceToCreate workspace) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<bool> workspaceExists(String id) {
+    throw UnimplementedError();
+  }
+}
 
 class _FakeMcpServersRepository implements McpServersRepository {
   @override

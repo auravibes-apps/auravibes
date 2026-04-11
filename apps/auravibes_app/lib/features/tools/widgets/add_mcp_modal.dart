@@ -14,13 +14,18 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 /// Modal for adding new MCP (Model Context Protocol) servers to the workspace
 class AddMcpModal extends HookConsumerWidget {
-  const AddMcpModal({super.key});
+  const AddMcpModal({required this.workspaceId, super.key});
+
+  final String workspaceId;
 
   /// Shows the add MCP modal as a dialog
-  static Future<void> show(BuildContext context) {
+  static Future<void> show(
+    BuildContext context, {
+    required String workspaceId,
+  }) {
     return showDialog<void>(
       context: context,
-      builder: (context) => const AddMcpModal(),
+      builder: (context) => AddMcpModal(workspaceId: workspaceId),
     );
   }
 
@@ -43,7 +48,7 @@ class AddMcpModal extends HookConsumerWidget {
             _buildHeader(context),
 
             // Error message
-            const _ErrorBanner(),
+            _ErrorBanner(workspaceId: workspaceId),
 
             // Scrollable form content
             Flexible(
@@ -56,45 +61,45 @@ class AddMcpModal extends HookConsumerWidget {
                       spacing: AuraSpacing.md,
                       children: [
                         // Name field (required)
-                        const _NameInput(),
+                        _NameInput(workspaceId: workspaceId),
 
                         // Description field (optional)
-                        const _DescriptionInput(),
+                        _DescriptionInput(workspaceId: workspaceId),
 
                         // URL field (required)
-                        const _UrlInput(),
+                        _UrlInput(workspaceId: workspaceId),
 
                         // Transport selector
-                        const _TransportSelector(),
+                        _TransportSelector(workspaceId: workspaceId),
 
                         // HTTP/2 toggle (only for streamableHttp)
                         AppVisibilityBase(
-                          visible: mcpFormProvider.select(
+                          visible: mcpFormProvider(workspaceId).select(
                             (value) => value.showHttp2Toggle,
                           ),
-                          child: const _Http2Toggle(),
+                          child: _Http2Toggle(workspaceId: workspaceId),
                         ),
 
                         // Authentication selector
-                        const _AuthenticationSelector(),
+                        _AuthenticationSelector(workspaceId: workspaceId),
 
                         // Bearer token field
                         AppVisibilityBase(
-                          visible: mcpFormProvider.select(
+                          visible: mcpFormProvider(workspaceId).select(
                             (value) => value.showBearerTokenField,
                           ),
-                          child: const _BearerTokenField(),
+                          child: _BearerTokenField(workspaceId: workspaceId),
                         ),
                       ],
                     ),
-                    const _LoadingOverlay(),
+                    _LoadingOverlay(workspaceId: workspaceId),
                   ],
                 ),
               ),
             ),
 
             // Footer with action buttons
-            const _Footer(),
+            _Footer(workspaceId: workspaceId),
           ],
         ),
       ),
@@ -134,12 +139,14 @@ class AddMcpModal extends HookConsumerWidget {
 }
 
 class _LoadingOverlay extends ConsumerWidget {
-  const _LoadingOverlay();
+  const _LoadingOverlay({required this.workspaceId});
+
+  final String workspaceId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isSubmitting = ref.watch(
-      mcpFormProvider.select(
+      mcpFormProvider(workspaceId).select(
         (value) => value.isSubmitting,
       ),
     );
@@ -160,12 +167,14 @@ class _LoadingOverlay extends ConsumerWidget {
 }
 
 class _ErrorBanner extends ConsumerWidget {
-  const _ErrorBanner();
+  const _ErrorBanner({required this.workspaceId});
+
+  final String workspaceId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final errorMessage = ref.watch(
-      mcpFormProvider.select(
+      mcpFormProvider(workspaceId).select(
         (value) => value.errorMessage,
       ),
     );
@@ -200,17 +209,20 @@ class _ErrorBanner extends ConsumerWidget {
 }
 
 class _Footer extends HookConsumerWidget {
-  const _Footer();
+  const _Footer({required this.workspaceId});
+
+  final String workspaceId;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isSubmitting = ref.watch(
-      mcpFormProvider.select(
+      mcpFormProvider(workspaceId).select(
         (value) => value.isSubmitting,
       ),
     );
 
     final onSave = useCallback(() async {
-      final notifier = ref.read(mcpFormProvider.notifier);
+      final notifier = ref.read(mcpFormProvider(workspaceId).notifier);
       final success = await notifier.submit();
 
       if (success && context.mounted) {
@@ -223,7 +235,7 @@ class _Footer extends HookConsumerWidget {
         );
         Navigator.of(context).pop();
       }
-    }, [ref, context]);
+    }, [ref, context, workspaceId]);
     return Container(
       padding: EdgeInsets.all(context.auraTheme.spacing.md),
       decoration: BoxDecoration(
@@ -257,15 +269,17 @@ class _Footer extends HookConsumerWidget {
 }
 
 class _TransportSelector extends StatelessWidget {
-  const _TransportSelector();
+  const _TransportSelector({required this.workspaceId});
+
+  final String workspaceId;
 
   @override
   Widget build(BuildContext context) {
     return AppDropdownBase<McpTransportTypeOptions>(
-      value: mcpFormProvider.select(
+      value: mcpFormProvider(workspaceId).select(
         (value) => value.transport,
       ),
-      onChanged: mcpFormProvider.notifier.select(
+      onChanged: mcpFormProvider(workspaceId).notifier.select(
         (notifier) => notifier.setTransport,
       ),
       options: const [
@@ -288,15 +302,17 @@ class _TransportSelector extends StatelessWidget {
 }
 
 class _Http2Toggle extends StatelessWidget {
-  const _Http2Toggle();
+  const _Http2Toggle({required this.workspaceId});
+
+  final String workspaceId;
 
   @override
   Widget build(BuildContext context) {
     return AppToggleBase(
-      value: mcpFormProvider.select(
+      value: mcpFormProvider(workspaceId).select(
         (value) => value.useHttp2,
       ),
-      onChanged: mcpFormProvider.notifier.select(
+      onChanged: mcpFormProvider(workspaceId).notifier.select(
         (notifier) => notifier.setUseHttp2,
       ),
       hintLocaleKey: LocaleKeys.mcp_modal_fields_use_http2_hint,
@@ -308,17 +324,19 @@ class _Http2Toggle extends StatelessWidget {
 /// Renders the available authentication types from [mcpFormProvider]
 /// as a localized single-select button group and updates the selected type.
 class _AuthenticationSelector extends ConsumerWidget {
-  const _AuthenticationSelector();
+  const _AuthenticationSelector({required this.workspaceId});
+
+  final String workspaceId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final availableTypes = ref.watch(
-      mcpFormProvider.select(
+      mcpFormProvider(workspaceId).select(
         (value) => value.availableAuthTypes,
       ),
     );
 
-    return AppGroupButtonSingleBase(
+    return AppGroupButtonSingleBase<McpAuthenticationTypeOptions>(
       items: availableTypes.map((type) {
         return AuraButtonGroupItem(
           value: type,
@@ -327,10 +345,10 @@ class _AuthenticationSelector extends ConsumerWidget {
       }).toList(),
 
       labelLocaleKey: LocaleKeys.mcp_modal_fields_authentication_label,
-      onChanged: mcpFormProvider.notifier.select(
+      onChanged: mcpFormProvider(workspaceId).notifier.select(
         (value) => value.setAuthenticationType,
       ),
-      value: mcpFormProvider.select(
+      value: mcpFormProvider(workspaceId).select(
         (value) => value.authenticationType,
       ),
     );
@@ -349,15 +367,19 @@ class _AuthenticationSelector extends ConsumerWidget {
 }
 
 class _NameInput extends StatelessWidget {
-  const _NameInput();
+  const _NameInput({required this.workspaceId});
+
+  final String workspaceId;
 
   @override
   Widget build(BuildContext context) {
     return AppInputBase(
-      value: mcpFormProvider.select(
+      value: mcpFormProvider(workspaceId).select(
         (value) => value.name,
       ),
-      onChanged: mcpFormProvider.notifier.select((value) => value.setName),
+      onChanged: mcpFormProvider(workspaceId).notifier.select(
+        (value) => value.setName,
+      ),
 
       labelLocaleKey: LocaleKeys.mcp_modal_fields_name_label,
       placeholderLocaleKey: LocaleKeys.mcp_modal_fields_name_placeholder,
@@ -366,15 +388,17 @@ class _NameInput extends StatelessWidget {
 }
 
 class _DescriptionInput extends StatelessWidget {
-  const _DescriptionInput();
+  const _DescriptionInput({required this.workspaceId});
+
+  final String workspaceId;
 
   @override
   Widget build(BuildContext context) {
     return AppInputBase(
-      value: mcpFormProvider.select(
+      value: mcpFormProvider(workspaceId).select(
         (value) => value.description,
       ),
-      onChanged: mcpFormProvider.notifier.select(
+      onChanged: mcpFormProvider(workspaceId).notifier.select(
         (value) => value.setDescription,
       ),
       labelLocaleKey: LocaleKeys.mcp_modal_fields_description_label,
@@ -384,15 +408,17 @@ class _DescriptionInput extends StatelessWidget {
 }
 
 class _UrlInput extends StatelessWidget {
-  const _UrlInput();
+  const _UrlInput({required this.workspaceId});
+
+  final String workspaceId;
 
   @override
   Widget build(BuildContext context) {
     return AppInputBase(
-      value: mcpFormProvider.select(
+      value: mcpFormProvider(workspaceId).select(
         (value) => value.url,
       ),
-      onChanged: mcpFormProvider.notifier.select(
+      onChanged: mcpFormProvider(workspaceId).notifier.select(
         (value) => value.setUrl,
       ),
       labelLocaleKey: LocaleKeys.mcp_modal_fields_url_label,
@@ -403,15 +429,17 @@ class _UrlInput extends StatelessWidget {
 }
 
 class _BearerTokenField extends StatelessWidget {
-  const _BearerTokenField();
+  const _BearerTokenField({required this.workspaceId});
+
+  final String workspaceId;
 
   @override
   Widget build(BuildContext context) {
     return AppInputBase(
-      value: mcpFormProvider.select(
+      value: mcpFormProvider(workspaceId).select(
         (value) => value.bearerToken,
       ),
-      onChanged: mcpFormProvider.notifier.select(
+      onChanged: mcpFormProvider(workspaceId).notifier.select(
         (value) => value.setBearerToken,
       ),
       labelLocaleKey: LocaleKeys.mcp_modal_fields_bearer_token_label,

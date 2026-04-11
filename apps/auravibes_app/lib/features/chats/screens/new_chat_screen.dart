@@ -2,7 +2,6 @@ import 'package:auravibes_app/features/chats/notifiers/new_chat_notifier.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/models/widgets/select_chat_model.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_management_modal.dart';
-import 'package:auravibes_app/features/workspaces/providers/selected_workspace.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/app_router.dart';
 import 'package:auravibes_app/widgets/app_bar_with_drawer.dart';
@@ -12,17 +11,15 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class NewChatScreen extends ConsumerWidget {
-  const NewChatScreen({super.key});
+  const NewChatScreen({required this.workspaceId, super.key});
+
+  final String workspaceId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(newChatProvider);
+    final state = ref.watch(newChatProvider(workspaceId));
 
     Future<void> onToolsPress() async {
-      final workspaceId = await ref.read(
-        selectedWorkspaceProvider.selectAsync((data) => data.id),
-      );
-
       if (workspaceId.isNotEmpty && context.mounted) {
         showDialog<void>(
           context: context,
@@ -34,11 +31,14 @@ class NewChatScreen extends ConsumerWidget {
     Future<void> handleSendMessage(String message) async {
       try {
         final conversation = await ref
-            .read(newChatProvider.notifier)
+            .read(newChatProvider(workspaceId).notifier)
             .startConversation(message);
 
         if (context.mounted) {
-          ConversationRoute(chatId: conversation.id).replace(context);
+          ConversationRoute(
+            workspaceId: workspaceId,
+            chatId: conversation.id,
+          ).replace(context);
         }
       } on Exception catch (e) {
         if (context.mounted) {
@@ -58,13 +58,16 @@ class NewChatScreen extends ConsumerWidget {
       child: Column(
         children: [
           SelectCredentialsModelWidget(
+            workspaceId: workspaceId,
             credentialsModelId: state.modelId,
             selectedProviderId: state.providerId,
             selectCredentialsModelId: (value) {
-              ref.read(newChatProvider.notifier).setModelId(value);
+              ref.read(newChatProvider(workspaceId).notifier).setModelId(value);
             },
             onProviderChanged: (provider) {
-              ref.read(newChatProvider.notifier).setProvider(provider);
+              ref
+                  .read(newChatProvider(workspaceId).notifier)
+                  .setProvider(provider);
             },
           ),
           Expanded(

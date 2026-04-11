@@ -5,7 +5,9 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 
 class QuickActionsWidget extends StatelessWidget {
-  const QuickActionsWidget({super.key});
+  const QuickActionsWidget({required this.workspaceId, super.key});
+
+  final String workspaceId;
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +17,7 @@ class QuickActionsWidget extends StatelessWidget {
         SizedBox(
           width: double.infinity,
           child: AuraButton(
-            onPressed: () => NewChatRoute().go(context),
+            onPressed: () => NewChatRoute(workspaceId: workspaceId).go(context),
             child: const AuraRow(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -33,7 +35,8 @@ class QuickActionsWidget extends StatelessWidget {
             Expanded(
               child: AuraButton(
                 variant: AuraButtonVariant.outlined,
-                onPressed: () => ChatsRoute().go(context),
+                onPressed: () =>
+                    ChatsRoute(workspaceId: workspaceId).go(context),
                 child: const AuraColumn(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -46,7 +49,8 @@ class QuickActionsWidget extends StatelessWidget {
             Expanded(
               child: AuraButton(
                 variant: AuraButtonVariant.outlined,
-                onPressed: () => SettingsRoute().go(context),
+                onPressed: () =>
+                    SettingsRoute(workspaceId: workspaceId).go(context),
                 child: const AuraColumn(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -66,14 +70,14 @@ class QuickActionsWidget extends StatelessWidget {
               child: _QuickActionTile(
                 icon: Icons.model_training_outlined,
                 labelKey: LocaleKeys.home_screen_actions_models,
-                onTap: () => ModelsRoute().go(context),
+                onTap: () => ModelsRoute(workspaceId: workspaceId).go(context),
               ),
             ),
             Expanded(
               child: _QuickActionTile(
                 icon: Icons.tune_outlined,
                 labelKey: LocaleKeys.home_screen_actions_tools,
-                onTap: () => ToolsRoute().go(context),
+                onTap: () => ToolsRoute(workspaceId: workspaceId).go(context),
               ),
             ),
           ],
