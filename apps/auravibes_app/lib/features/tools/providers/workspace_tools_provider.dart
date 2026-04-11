@@ -133,5 +133,10 @@ Future<List<UserToolType>> availableToolsToAdd(
 WorkspaceToolEntity? workspaceToolRow(Ref ref, String workspaceId) {
   final workspaceToolIndex = ref.watch(workspaceToolIndexProvider);
   final workspaceTools = ref.watch(workspaceToolsProvider(workspaceId)).value;
-  return workspaceTools?[workspaceToolIndex];
+  if (workspaceTools == null ||
+      workspaceToolIndex < 0 ||
+      workspaceToolIndex >= workspaceTools.length) {
+    return null;
+  }
+  return workspaceTools[workspaceToolIndex];
 }
