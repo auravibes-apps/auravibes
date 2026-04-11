@@ -11,9 +11,11 @@ import 'package:auravibes_app/features/chats/widgets/chat_tool_approval_card.dar
 import 'package:auravibes_app/features/chats/widgets/mcp_connecting_indicator.dart';
 import 'package:auravibes_app/features/models/widgets/select_chat_model.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_management_modal.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/app_error.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -72,9 +74,11 @@ class _ChatConversationScreen extends HookConsumerWidget {
         conversationResult is! ConversationFound) {
       final errorMessage = switch (conversationResult) {
         ConversationWorkspaceMismatch() =>
-          'This conversation belongs to a different workspace',
-        ConversationNotFound() => 'Conversation not found',
-        _ => 'Conversation not found',
+          LocaleKeys.chats_screens_chat_conversation_error_workspace_mismatch
+              .tr(),
+        ConversationNotFound() =>
+          LocaleKeys.chats_screens_chat_conversation_error_not_found.tr(),
+        _ => LocaleKeys.chats_screens_chat_conversation_error_not_found.tr(),
       };
       return AuraScreen(
         child: AppErrorWidget(

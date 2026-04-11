@@ -108,6 +108,10 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.delete_confirm';
   static const chats_screens_chat_conversation_options_tooltip =
       'chats_screens.chat_conversation.options_tooltip';
+  static const chats_screens_chat_conversation_error_workspace_mismatch =
+      'chats_screens.chat_conversation.error_workspace_mismatch';
+  static const chats_screens_chat_conversation_error_not_found =
+      'chats_screens.chat_conversation.error_not_found';
   static const chats_screens_chat_conversation =
       'chats_screens.chat_conversation';
   static const chats_screens = 'chats_screens';

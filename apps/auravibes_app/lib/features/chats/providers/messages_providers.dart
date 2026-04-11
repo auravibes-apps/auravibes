@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'package:auravibes_app/domain/entities/messages.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_send_queue_notifier.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_notifier.dart';
@@ -6,6 +8,7 @@ import 'package:auravibes_app/features/chats/providers/conversation_repository_p
 import 'package:auravibes_app/features/chats/providers/conversation_selection_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/get_conversation_busy_state_usecase.dart';
 import 'package:collection/collection.dart';
+import 'package:flutter/foundation.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod/experimental/mutation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -38,7 +41,31 @@ List<String> chatMessageIds(Ref ref) {
     chatMessagesProvider.select((value) => value.value),
   );
   if (messages == null) return const [];
-  return UnmodifiableListView(messages.map((m) => m.id));
+  return MessageIdList(messages.map((m) => m.id).toList());
+}
+
+@immutable
+class MessageIdList extends ListBase<String> {
+  const MessageIdList(this._ids);
+  final List<String> _ids;
+
+  @override
+  int get length => _ids.length;
+  @override
+  set length(int newLength) => _ids.length = newLength;
+  @override
+  String operator [](int index) => _ids[index];
+  @override
+  void operator []=(int index, String value) => _ids[index] = value;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MessageIdList &&
+          const DeepCollectionEquality().equals(_ids, other._ids);
+
+  @override
+  int get hashCode => const DeepCollectionEquality().hash(_ids);
 }
 
 @Riverpod(dependencies: [persistedChatMessages, MessagesStreamingNotifier])

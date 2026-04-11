@@ -19,8 +19,7 @@ class ConversationNotFound extends ConversationResult {
 }
 
 class ConversationWorkspaceMismatch extends ConversationResult {
-  const ConversationWorkspaceMismatch(this.conversation);
-  final ConversationEntity conversation;
+  const ConversationWorkspaceMismatch();
 }
 
 @Riverpod(dependencies: [conversationSelected])
@@ -38,7 +37,7 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
     }
 
     if (conversation.workspaceId != workspaceId) {
-      return ConversationWorkspaceMismatch(conversation);
+      return const ConversationWorkspaceMismatch();
     }
 
     return ConversationFound(conversation);
