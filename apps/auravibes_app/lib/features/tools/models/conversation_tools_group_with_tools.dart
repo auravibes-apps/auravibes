@@ -15,6 +15,7 @@ part 'conversation_tools_group_with_tools.freezed.dart';
 abstract class ConversationToolsGroupWithTools
     with _$ConversationToolsGroupWithTools {
   @Assert('group != null || defaultGroupType != null')
+  @Assert('group == null || defaultGroupType == null')
   const factory ConversationToolsGroupWithTools({
     /// The tools group entity, or null for a virtual default tools group.
     required ToolsGroupEntity? group,

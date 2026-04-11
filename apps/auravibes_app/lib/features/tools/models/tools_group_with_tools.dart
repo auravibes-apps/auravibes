@@ -14,6 +14,7 @@ part 'tools_group_with_tools.freezed.dart';
 @freezed
 abstract class ToolsGroupWithTools with _$ToolsGroupWithTools {
   @Assert('group != null || defaultGroupType != null')
+  @Assert('group == null || defaultGroupType == null')
   const factory ToolsGroupWithTools({
     /// The tools group entity, or null for a virtual default tools group.
     required ToolsGroupEntity? group,
