@@ -49,12 +49,13 @@ class MessageRepositoryImpl implements MessageRepository {
             handleData: (messageTables, sink) {
               try {
                 sink.add(messageTables.map(_mapToMessage).toList());
-              } on Exception catch (error) {
+              } on Exception catch (error, stackTrace) {
                 sink.addError(
                   MessageException(
                     'Failed to watch messages for conversation $conversationId',
                     error,
                   ),
+                  stackTrace,
                 );
               }
             },

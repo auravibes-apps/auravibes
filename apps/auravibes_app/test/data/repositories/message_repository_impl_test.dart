@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:collection';
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/message_dao.dart';
 import 'package:auravibes_app/data/database/drift/tables/messages_table.dart';
@@ -72,6 +75,42 @@ void main() {
         emitsError(same(failure)),
       );
     });
+
+    test(
+      'preserves stack trace when mapping streamed messages fails',
+      () async {
+        database = _TestAppDatabase(
+          (_) => Stream.value(_ThrowingMessagesList()),
+        );
+        repository = MessageRepositoryImpl(database);
+
+        final errorCompleter = Completer<Object>();
+        final stackTraceCompleter = Completer<StackTrace>();
+
+        final subscription = repository
+            .watchMessagesByConversation('conversation-1')
+            .listen(
+              (_) {},
+              onError: (Object error, StackTrace stackTrace) {
+                errorCompleter.complete(error);
+                stackTraceCompleter.complete(stackTrace);
+              },
+            );
+
+        addTearDown(subscription.cancel);
+
+        final error = await errorCompleter.future;
+        final stackTrace = await stackTraceCompleter.future;
+
+        expect(error, isA<MessageException>());
+        expect(
+          (error as MessageException).message,
+          'Failed to watch messages for conversation conversation-1',
+        );
+        expect(error.cause, isA<FormatException>());
+        expect(stackTrace.toString(), contains('_ThrowingMessagesList.[]'));
+      },
+    );
   });
 }
 
@@ -122,3 +161,23 @@ class _TestMessageDao extends MessageDao {
 }
 
 class _TestError extends Error {}
+
+class _ThrowingMessagesList extends ListBase<MessagesTable> {
+  @override
+  int get length => 1;
+
+  @override
+  set length(int value) {
+    throw UnsupportedError('length mutation is not supported');
+  }
+
+  @override
+  MessagesTable operator [](int index) {
+    throw const FormatException('bad message row');
+  }
+
+  @override
+  void operator []=(int index, MessagesTable value) {
+    throw UnsupportedError('item mutation is not supported');
+  }
+}
