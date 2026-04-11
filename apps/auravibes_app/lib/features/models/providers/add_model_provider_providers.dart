@@ -13,7 +13,7 @@ sealed class AddModelException implements Exception {}
 
 class AddModelExceptionNoWorkspace implements AddModelException {}
 
-class AddModelExceptionNoUnkown implements AddModelException {}
+class AddModelExceptionNoUnknown implements AddModelException {}
 
 final _log = Logger('add_model_providers');
 
@@ -81,7 +81,7 @@ class AddModelProviderState extends _$AddModelProviderState {
       rethrow;
     } on Exception catch (e, s) {
       _log.severe('addModelProvider error', e, s);
-      throw AddModelExceptionNoUnkown();
+      throw AddModelExceptionNoUnknown();
     }
   }
 }

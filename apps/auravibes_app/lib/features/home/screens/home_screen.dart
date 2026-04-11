@@ -17,7 +17,9 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final workspaceId = ref.watch(currentRouteWorkspaceIdProvider);
     if (workspaceId == null || workspaceId.isEmpty) {
-      return const SizedBox.shrink();
+      return const AuraScreen(
+        child: Center(child: AuraSpinner()),
+      );
     }
 
     return AuraScreen(

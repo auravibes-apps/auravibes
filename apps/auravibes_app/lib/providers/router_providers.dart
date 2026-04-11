@@ -17,7 +17,6 @@ final routeObserverProvider = Provider<RouteObserver<ModalRoute<void>>>(
 final routerProvider = Provider<GoRouter>(
   (ref) {
     final routeObserver = ref.read(routeObserverProvider);
-    final workspaceRepository = ref.read(workspaceRepositoryProvider);
 
     return GoRouter(
       routes: $appRoutes,
@@ -28,11 +27,13 @@ final routerProvider = Provider<GoRouter>(
       ],
       redirect: (context, state) async {
         final currentUri = state.uri;
-        final workspaceMatch = _matchWorkspaceId(currentUri);
-        final workspaces = await workspaceRepository.getAllWorkspaces();
+        final workspaceMatch = matchWorkspaceId(currentUri);
+        final workspaces = await ref.read(allWorkspacesProvider.future);
         final firstWorkspaceId = workspaces.firstOrNull?.id;
 
         if (firstWorkspaceId == null) {
+          // No workspaces exist yet; let navigation proceed.
+          // The UI should handle this case with an empty state.
           return null;
         }
 
@@ -74,11 +75,11 @@ final currentRouteWorkspaceIdProvider = Provider<String?>(
   (ref) {
     ref.watch(routerProvider);
     final routeInformationProvider = ref.watch(routerInformationProvider);
-    return _matchWorkspaceId(routeInformationProvider.value.uri);
+    return matchWorkspaceId(routeInformationProvider.value.uri);
   },
 );
 
-String? _matchWorkspaceId(Uri uri) {
+String? matchWorkspaceId(Uri uri) {
   final pathSegments = uri.pathSegments;
 
   if (pathSegments.length < 2) {

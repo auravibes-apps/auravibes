@@ -9,7 +9,7 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-// ignore: implementation_imports
+// ignore: implementation_imports - Required to access MutationError from Riverpod internals for transaction handling
 import 'package:riverpod/src/framework.dart';
 
 class AddModelProviderWidget extends HookConsumerWidget {
@@ -208,7 +208,7 @@ class _ErrorBanner extends ConsumerWidget {
       MutationError<void>(:final error) => switch (error) {
         AddModelException() => switch (error) {
           AddModelExceptionNoWorkspace() => 'no workspace found',
-          AddModelExceptionNoUnkown() => 'unkown error',
+          AddModelExceptionNoUnknown() => 'unknown error',
         },
         _ => error.toString(),
       },

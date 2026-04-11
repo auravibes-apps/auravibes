@@ -1,6 +1,7 @@
 import 'package:auravibes_app/features/chats/widgets/sidebar_conversations_widget.dart';
 import 'package:auravibes_app/flavors.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/router/app_router.dart';
 import 'package:auravibes_app/widgets/responsive_sliding_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -79,37 +80,26 @@ class AuraSidebarWrapper extends HookWidget {
   Widget build(BuildContext context) {
     useListenable(GoRouter.of(context).routeInformationProvider);
 
-    final isSmallScreen = MediaQuery.of(context).size.width < 768;
     final selectedIndex = _calculateSelectedIndex(
       context,
       navigationShell.currentIndex,
     );
 
-    if (isSmallScreen) {
-      // Mobile: Use Scaffold drawer pattern
-      return AppWithResponsiveDrawer(
-        navigationItems: _navigationItems,
-        onNavigationTap: (index) => _goBranch(context, index),
-        selectedIndex: selectedIndex,
-        child: navigationShell,
-      );
-    } else {
-      // Desktop: Use persistent sidebar
-      return AppWithResponsiveDrawer(
-        navigationItems: _navigationItems,
-        onNavigationTap: (index) => _goBranch(context, index),
-        selectedIndex: selectedIndex,
-        child: navigationShell,
-      );
-    }
+    return AppWithResponsiveDrawer(
+      navigationItems: _navigationItems,
+      onNavigationTap: (index) => _goBranch(context, index),
+      selectedIndex: selectedIndex,
+      child: navigationShell,
+    );
   }
 
   void _goBranch(BuildContext context, int index) {
-    final workspaceId = _matchWorkspaceId(
+    final workspaceId = matchWorkspaceId(
       GoRouter.of(context).routeInformationProvider.value.uri,
     );
 
     if (workspaceId == null || workspaceId.isEmpty) {
+      debugPrint('[Navigation] _goBranch: workspaceId missing, ignoring tap');
       return;
     }
 
@@ -178,7 +168,7 @@ class _AppWithResponsiveDrawerState extends State<AppWithResponsiveDrawer> {
 
   @override
   Widget build(BuildContext context) {
-    final workspaceId = _matchWorkspaceId(
+    final workspaceId = matchWorkspaceId(
       _router.routeInformationProvider.value.uri,
     );
 
@@ -200,20 +190,6 @@ class _AppWithResponsiveDrawerState extends State<AppWithResponsiveDrawer> {
       isDarkMode: Theme.of(context).brightness == Brightness.dark,
     );
   }
-}
-
-String? _matchWorkspaceId(Uri uri) {
-  final pathSegments = uri.pathSegments;
-
-  if (pathSegments.length < 2) {
-    return null;
-  }
-
-  if (pathSegments.first != 'workspaces') {
-    return null;
-  }
-
-  return pathSegments[1];
 }
 
 class _AppLogo extends StatelessWidget {

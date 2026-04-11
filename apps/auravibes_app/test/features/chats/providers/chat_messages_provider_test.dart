@@ -11,6 +11,10 @@ import 'package:langchain/langchain.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:rxdart/rxdart.dart';
 
+List<String> _messageIds(ProviderContainer container) =>
+    container.read(chatMessagesProvider).value?.map((m) => m.id).toList() ??
+    const [];
+
 void main() {
   group('chatMessagesProvider', () {
     late _FakeMessageRepository repository;
@@ -47,10 +51,7 @@ void main() {
           _message(id: 'message-1', content: 'hello', isUser: true),
         ],
       );
-      expect(
-        container.read(chatMessagesProvider).value?.map((m) => m.id).toList(),
-        ['message-1'],
-      );
+      expect(_messageIds(container), ['message-1']);
 
       repository.emit([
         _message(id: 'message-1', content: 'hello', isUser: true),
@@ -65,10 +66,7 @@ void main() {
           _message(id: 'message-2', content: 'hi there', isUser: false),
         ],
       );
-      expect(
-        container.read(chatMessagesProvider).value?.map((m) => m.id).toList(),
-        ['message-1', 'message-2'],
-      );
+      expect(_messageIds(container), ['message-1', 'message-2']);
     });
 
     test('applies streaming overlay only in message provider', () async {

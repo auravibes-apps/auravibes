@@ -76,23 +76,17 @@ class _ChatConversationScreen extends HookConsumerWidget {
     }
 
     final onToolsPress = useCallback(() async {
-      final conversation = await ref.read(
-        conversationChatProvider(workspaceId).future,
-      );
-      if (conversation == null) return;
-      final conversationId = conversation.id;
+      if (!context.mounted) return;
 
-      if (context.mounted) {
-        unawaited(
-          showDialog<void>(
-            context: context,
-            builder: (context) => ToolsManagementModal(
-              conversationId: conversationId,
-              workspaceId: conversation.workspaceId,
-            ),
+      unawaited(
+        showDialog<void>(
+          context: context,
+          builder: (context) => ToolsManagementModal(
+            conversationId: conversation.id,
+            workspaceId: workspaceId,
           ),
-        );
-      }
+        ),
+      );
     }, [ref, workspaceId]);
 
     final busyState = ref.watch(conversationBusyStateProvider).asData?.value;
