@@ -1,4 +1,4 @@
-Trademark and Brand Notice
+# Trademark and Brand Notice
 
 The source code in this repository is licensed under the Apache License 2.0.
 

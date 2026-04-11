@@ -105,7 +105,7 @@ open coverage/index.html
 [flutter_install_link]: https://docs.flutter.dev/get-started/install
 [github_actions_link]: https://docs.github.com/en/actions/learn-github-actions
 [license_badge]: https://img.shields.io/badge/license-Apache%202.0-blue.svg
-[license_link]: https://www.apache.org/licenses/LICENSE-2.0
+[license_link]: ../../LICENSE
 [logo_black]: https://raw.githubusercontent.com/VGVentures/very_good_brand/main/styles/README/vgv_logo_black.png#gh-light-mode-only
 [logo_white]: https://raw.githubusercontent.com/VGVentures/very_good_brand/main/styles/README/vgv_logo_white.png#gh-dark-mode-only
 [mason_link]: https://github.com/felangel/mason
