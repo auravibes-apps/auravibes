@@ -109,8 +109,8 @@ abstract class ConversationToolsGroupWithTools
   int get sortPriority {
     if (isDefaultGroup) {
       return switch (defaultGroupType) {
-        DefaultToolGroupType.builtIn => 0,
-        DefaultToolGroupType.native => 1,
+        .builtIn => 0,
+        .native => 1,
         null => 0,
       };
     }

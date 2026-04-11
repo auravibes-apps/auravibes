@@ -84,7 +84,7 @@ final class UrlTool extends NativeToolEntity<String, String> {
 
   String _formatResponse(UrlResponse response) {
     final headerLines = response.headers.entries
-        .map((e) => '${e.key}: ${e.value}')
+        .map((e) => '${e.key}: ${e.value.join(', ')}')
         .join('\n');
 
     return 'Status: ${response.statusCode}\n'
@@ -198,6 +198,31 @@ final class UrlTool extends NativeToolEntity<String, String> {
           (raw[0] == 169 && raw[1] == 254) ||
           raw[0] == 127 ||
           raw[0] == 0;
+    }
+
+    // Check IPv4-mapped IPv6 addresses (::ffff:x.x.x.x)
+    if (address.type == InternetAddressType.IPv6 && raw.length == 16) {
+      final isMapped =
+          raw[0] == 0 &&
+          raw[1] == 0 &&
+          raw[2] == 0 &&
+          raw[3] == 0 &&
+          raw[4] == 0 &&
+          raw[5] == 0 &&
+          raw[6] == 0 &&
+          raw[7] == 0 &&
+          raw[8] == 0 &&
+          raw[9] == 0 &&
+          raw[10] == 0xff &&
+          raw[11] == 0xff;
+      if (isMapped) {
+        return raw[12] == 10 ||
+            (raw[12] == 172 && raw[13] >= 16 && raw[13] <= 31) ||
+            (raw[12] == 192 && raw[13] == 168) ||
+            (raw[12] == 169 && raw[13] == 254) ||
+            raw[12] == 127 ||
+            raw[12] == 0;
+      }
     }
 
     return raw[0] == 0xfc ||

@@ -42,15 +42,13 @@ class UrlService {
             return;
           }
 
-          stopwatch.stop();
           final body = await _readResponseBody(response.data);
+          stopwatch.stop();
           completer.complete(
             UrlResponse(
               statusCode: response.statusCode ?? 0,
               body: body,
-              headers: response.headers.map.map(
-                (k, v) => MapEntry(k, v.join(', ')),
-              ),
+              headers: response.headers.map,
               elapsed: stopwatch.elapsed,
             ),
           );
@@ -74,11 +72,7 @@ class UrlService {
                 body: _truncateText(
                   error.response?.data?.toString() ?? error.message ?? '',
                 ),
-                headers:
-                    error.response?.headers.map.map(
-                      (k, v) => MapEntry(k, v.join(', ')),
-                    ) ??
-                    {},
+                headers: error.response?.headers.map ?? const {},
                 elapsed: stopwatch.elapsed,
               ),
             );

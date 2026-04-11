@@ -101,7 +101,7 @@ abstract class ToolsGroupWithTools with _$ToolsGroupWithTools {
   int get sortPriority {
     if (isDefaultGroup) {
       return switch (defaultGroupType) {
-        DefaultToolGroupType.native => 1,
+        .native => 1,
         _ => 0,
       };
     }

@@ -119,6 +119,11 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
 
   @override
   Future<bool> removeWorkspaceTool(String workspaceId, String toolType) async {
+    if (NativeToolService.hasTypeString(toolType)) {
+      throw WorkspaceToolsValidationException(
+        'Native tools cannot be removed: $toolType',
+      );
+    }
     try {
       return await _dao.deleteWorkspaceToolByToolId(workspaceId, toolType);
     } catch (e) {

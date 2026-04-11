@@ -31,7 +31,7 @@ void main() {
 
       expect(response.statusCode, 200);
       expect(response.body, 'ok');
-      expect(response.headers[Headers.contentTypeHeader], 'text/plain');
+      expect(response.headers[Headers.contentTypeHeader], ['text/plain']);
     });
 
     test('cancels the underlying dio request', () async {

@@ -7,7 +7,7 @@ abstract class UrlResponse with _$UrlResponse {
   const factory UrlResponse({
     required int statusCode,
     required String body,
-    required Map<String, String> headers,
+    required Map<String, List<String>> headers,
     required Duration elapsed,
   }) = _UrlResponse;
 
