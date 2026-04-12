@@ -52,11 +52,13 @@ class MessageIdList extends ListBase<String> {
   @override
   int get length => _ids.length;
   @override
-  set length(int newLength) => _ids.length = newLength;
+  set length(int newLength) =>
+      throw UnsupportedError('MessageIdList is immutable');
   @override
   String operator [](int index) => _ids[index];
   @override
-  void operator []=(int index, String value) => _ids[index] = value;
+  void operator []=(int index, String value) =>
+      throw UnsupportedError('MessageIdList is immutable');
 
   @override
   bool operator ==(Object other) =>

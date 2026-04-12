@@ -6,6 +6,7 @@ import 'package:auravibes_app/features/models/widgets/model_logo.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -212,7 +213,7 @@ class _ErrorBanner extends ConsumerWidget {
       MutationError<void>(:final error) => switch (error) {
         AddModelException() => switch (error) {
           AddModelExceptionUnknown() =>
-            LocaleKeys.models_screens_add_provider_errors_unknown,
+            LocaleKeys.models_screens_add_provider_errors_unknown.tr(),
         },
         _ => error.toString(),
       },
