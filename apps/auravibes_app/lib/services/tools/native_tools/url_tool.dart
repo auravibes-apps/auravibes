@@ -38,10 +38,7 @@ final class UrlTool extends NativeToolEntity<String, String> {
         },
         'required': ['input'],
       },
-      func: (toolInput) async {
-        final result = await _execute(toolInput);
-        return result;
-      },
+      func: _execute,
     );
   }
 
@@ -263,7 +260,9 @@ final class UrlTool extends NativeToolEntity<String, String> {
         (b[0] == 169 && b[1] == 254) ||
         b[0] == 127 ||
         b[0] == 0 ||
-        (b[0] == 100 && b[1] >= 64 && b[1] <= 127);
+        (b[0] == 100 && b[1] >= 64 && b[1] <= 127) ||
+        (b[0] >= 224 && b[0] <= 239) ||
+        b[0] >= 240;
   }
 
   @override
