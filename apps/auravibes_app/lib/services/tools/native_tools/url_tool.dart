@@ -120,8 +120,14 @@ final class UrlTool extends NativeToolEntity<String, String> {
     final resolvedHost = await _ensurePublicHost(uri.host);
 
     final headers = _parseHeaders(json['headers']);
+    final rawBody = json['body'];
+    final isStructuredBody = rawBody != null && rawBody is! String;
     final effectiveHeaders = <String, String>{
       ...?headers,
+      if (isStructuredBody &&
+          !(headers?.keys.any((k) => k.toLowerCase() == 'content-type') ??
+              false))
+        'Content-Type': 'application/json',
       if (uri.scheme == 'http') 'Host': uri.authority,
     };
 
@@ -133,10 +139,10 @@ final class UrlTool extends NativeToolEntity<String, String> {
       url: effectiveUrl,
       method: _parseMethod(json['method'] as String?),
       headers: effectiveHeaders,
-      body: switch (json['body']) {
+      body: switch (rawBody) {
         null => null,
         final String s => s,
-        _ => jsonEncode(json['body']),
+        _ => jsonEncode(rawBody),
       },
     );
   }
@@ -172,7 +178,16 @@ final class UrlTool extends NativeToolEntity<String, String> {
     if (headers is! Map) {
       throw const FormatException('Headers must be a JSON object.');
     }
-    return headers.map((k, v) => MapEntry(k.toString(), v.toString()));
+    return headers.entries.fold<Map<String, String>>({}, (result, entry) {
+      final name = entry.key.toString();
+      if (name.toLowerCase() == 'host') {
+        throw const FormatException(
+          'The Host header is derived from the URL.',
+        );
+      }
+      result[name] = entry.value.toString();
+      return result;
+    });
   }
 
   Future<String> _ensurePublicHost(String host) async {
