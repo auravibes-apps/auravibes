@@ -80,8 +80,11 @@ abstract class McpFormState with _$McpFormState {
 /// Notifier for managing MCP form state
 @riverpod
 class McpFormNotifier extends _$McpFormNotifier {
+  late String _workspaceId;
+
   @override
-  McpFormState build() {
+  McpFormState build(String workspaceId) {
+    _workspaceId = workspaceId;
     return const McpFormState();
   }
 
@@ -132,7 +135,7 @@ class McpFormNotifier extends _$McpFormNotifier {
   }
 
   /// Update the HTTP/2 toggle
-  // ignore: avoid_positional_boolean_parameters
+  // ignore: avoid_positional_boolean_parameters - simple setter for toggling HTTP/2 flag
   void setUseHttp2(bool value) {
     state = state.copyWith(useHttp2: value);
   }
@@ -169,7 +172,11 @@ class McpFormNotifier extends _$McpFormNotifier {
 
     try {
       final mcpToCreate = state.toCreateEntity();
-      await ref.read(mcpConnectionProvider.notifier).addMcpServer(mcpToCreate);
+      await ref
+          .read(
+            mcpConnectionProvider.notifier,
+          )
+          .addMcpServer(mcpToCreate, workspaceId: _workspaceId);
 
       setSubmitting(value: false);
       return true;

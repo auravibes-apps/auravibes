@@ -24,10 +24,12 @@ const _kNoToolsInGroup = 'tools_screen.no_tools_in_group';
 class ToolsGroupCard extends HookConsumerWidget {
   const ToolsGroupCard({
     required this.groupWithTools,
+    required this.workspaceId,
     super.key,
   });
 
   final ToolsGroupWithTools groupWithTools;
+  final String workspaceId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -61,7 +63,10 @@ class ToolsGroupCard extends HookConsumerWidget {
             // Expanded content
             if (isExpanded.value) ...[
               const AuraDivider(),
-              _ToolsList(groupWithTools: groupWithTools),
+              _ToolsList(
+                groupWithTools: groupWithTools,
+                workspaceId: workspaceId,
+              ),
             ],
           ],
         ),
@@ -78,7 +83,7 @@ class ToolsGroupCard extends HookConsumerWidget {
     if (groupWithTools.group == null) return;
 
     ref
-        .read(groupedToolsProvider.notifier)
+        .read(groupedToolsProvider(workspaceId).notifier)
         .setMcpGroupEnabled(
           groupWithTools.group!.id,
           isEnabled: enabled,
@@ -89,7 +94,7 @@ class ToolsGroupCard extends HookConsumerWidget {
     if (groupWithTools.mcpServerId == null) return;
 
     await ref
-        .read(groupedToolsProvider.notifier)
+        .read(groupedToolsProvider(workspaceId).notifier)
         .reconnectMcp(groupWithTools.mcpServerId!);
   }
 
@@ -107,7 +112,7 @@ class ToolsGroupCard extends HookConsumerWidget {
 
     if (confirmed ?? false) {
       await ref
-          .read(groupedToolsProvider.notifier)
+          .read(groupedToolsProvider(workspaceId).notifier)
           .deleteMcpGroup(groupWithTools.group!.id);
     }
   }
@@ -126,9 +131,10 @@ class ToolsGroupCard extends HookConsumerWidget {
 
 /// List of tools within a group.
 class _ToolsList extends StatelessWidget {
-  const _ToolsList({required this.groupWithTools});
+  const _ToolsList({required this.groupWithTools, required this.workspaceId});
 
   final ToolsGroupWithTools groupWithTools;
+  final String workspaceId;
 
   @override
   Widget build(BuildContext context) {
@@ -157,6 +163,7 @@ class _ToolsList extends StatelessWidget {
             .map(
               (tool) => ToolItemRow(
                 tool: tool,
+                workspaceId: workspaceId,
                 // MCP tools cannot be individually deleted
                 showDeleteButton: !groupWithTools.isMcpGroup,
               ),

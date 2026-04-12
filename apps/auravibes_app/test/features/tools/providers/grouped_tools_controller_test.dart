@@ -6,7 +6,6 @@ import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/domain/repositories/tools_groups_repository.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_provider.dart';
-import 'package:auravibes_app/features/workspaces/providers/selected_workspace.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_notifier.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
@@ -14,14 +13,12 @@ import 'package:riverpod/riverpod.dart';
 void main() {
   group('GroupedToolsNotifier', () {
     late _FakeToolsGroupsRepository toolsGroupsRepository;
-    late _FakeSelectedWorkspace selectedWorkspace;
     late _FakeWorkspaceToolsNotifier workspaceToolsNotifier;
     late _FakeMcpConnectionNotifier mcpNotifier;
     late ProviderContainer container;
 
     setUp(() {
       toolsGroupsRepository = _FakeToolsGroupsRepository();
-      selectedWorkspace = _FakeSelectedWorkspace(_workspace);
       workspaceToolsNotifier = _FakeWorkspaceToolsNotifier(const []);
       mcpNotifier = _FakeMcpConnectionNotifier();
 
@@ -30,8 +27,9 @@ void main() {
           toolsGroupsRepositoryProvider.overrideWithValue(
             toolsGroupsRepository,
           ),
-          selectedWorkspaceProvider.overrideWith(() => selectedWorkspace),
-          workspaceToolsProvider.overrideWith(() => workspaceToolsNotifier),
+          workspaceToolsProvider(
+            _workspace.id,
+          ).overrideWith(() => workspaceToolsNotifier),
           mcpConnectionProvider.overrideWith(() => mcpNotifier),
         ],
       );
@@ -46,8 +44,9 @@ void main() {
       () async {
         toolsGroupsRepository.groupById['group-1'] = _mcpGroup;
 
-        final notifier = container.read(groupedToolsProvider.notifier)
-          ..state = const AsyncLoading();
+        final notifier = container.read(
+          groupedToolsProvider(_workspace.id).notifier,
+        )..state = const AsyncLoading();
 
         await notifier.setMcpGroupEnabled('group-1', isEnabled: false);
 
@@ -63,8 +62,9 @@ void main() {
       () async {
         toolsGroupsRepository.groupById['group-1'] = _mcpGroup;
 
-        final notifier = container.read(groupedToolsProvider.notifier)
-          ..state = const AsyncLoading();
+        final notifier = container.read(
+          groupedToolsProvider(_workspace.id).notifier,
+        )..state = const AsyncLoading();
 
         await notifier.deleteMcpGroup('group-1');
 
@@ -81,8 +81,9 @@ void main() {
           mcpServerId: 'server-2',
         );
 
-        final notifier = container.read(groupedToolsProvider.notifier)
-          ..state = const AsyncLoading();
+        final notifier = container.read(
+          groupedToolsProvider(_workspace.id).notifier,
+        )..state = const AsyncLoading();
 
         await notifier.setMcpGroupEnabled('group-2', isEnabled: false);
 
@@ -98,8 +99,9 @@ void main() {
         toolsGroupsRepository.groupById['group-1'] = _mcpGroup;
         toolsGroupsRepository.setEnabledResult = false;
 
-        final notifier = container.read(groupedToolsProvider.notifier)
-          ..state = const AsyncLoading();
+        final notifier = container.read(
+          groupedToolsProvider(_workspace.id).notifier,
+        )..state = const AsyncLoading();
 
         await notifier.setMcpGroupEnabled('group-1', isEnabled: false);
 
@@ -130,22 +132,13 @@ final _mcpGroup = ToolsGroupEntity(
   mcpServerId: 'server-1',
 );
 
-class _FakeSelectedWorkspace extends SelectedWorkspace {
-  _FakeSelectedWorkspace(this.workspace);
-
-  final WorkspaceEntity workspace;
-
-  @override
-  Future<WorkspaceEntity> build() async => workspace;
-}
-
 class _FakeWorkspaceToolsNotifier extends WorkspaceToolsNotifier {
   _FakeWorkspaceToolsNotifier(this.tools);
 
   final List<WorkspaceToolEntity> tools;
 
   @override
-  Future<List<WorkspaceToolEntity>> build() async => tools;
+  Future<List<WorkspaceToolEntity>> build(String workspaceId) async => tools;
 }
 
 class _FakeMcpConnectionNotifier extends McpConnectionNotifier {

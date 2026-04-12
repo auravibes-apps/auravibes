@@ -13,11 +13,15 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class ChatListWidget extends ConsumerWidget {
-  const ChatListWidget({super.key});
+  const ChatListWidget({required this.workspaceId, super.key});
+
+  final String workspaceId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final chatListAsync = ref.watch(conversationsStreamProvider());
+    final chatListAsync = ref.watch(
+      conversationsStreamProvider(workspaceId: workspaceId),
+    );
 
     return switch (chatListAsync) {
       AsyncData(value: final chats) => () {
@@ -31,7 +35,7 @@ class ChatListWidget extends ConsumerWidget {
           itemCount: chats.length,
           itemBuilder: (context, index) {
             final chat = chats[index];
-            return _ChatTile(chat: chat);
+            return _ChatTile(chat: chat, workspaceId: workspaceId);
           },
         );
       }(),
@@ -74,9 +78,10 @@ class ChatListWidget extends ConsumerWidget {
 }
 
 class _ChatTile extends ConsumerStatefulWidget {
-  const _ChatTile({required this.chat});
+  const _ChatTile({required this.chat, required this.workspaceId});
 
   final ConversationEntity chat;
+  final String workspaceId;
 
   @override
   ConsumerState<_ChatTile> createState() => _ChatTileState();
@@ -126,21 +131,22 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
 
   @override
   Widget build(BuildContext context) {
-    final modelDisplayName = ref.watch(
-      listCredentialsCredentialsProvider.select(
-        (cms) => cms.value
-            ?.firstWhereOrNull(
-              (cm) => cm.credentialsModel.id == widget.chat.modelId,
-            )
-            ?.credentialsModel
-            .modelId,
-      ),
+    final credentialsModelsAsync = ref.watch(
+      listCredentialsCredentialsProvider(workspaceId: widget.workspaceId),
     );
+    final modelDisplayName = credentialsModelsAsync.asData?.value
+        .where((cm) => cm.credentialsModel.id == widget.chat.modelId)
+        .firstOrNull
+        ?.credentialsModel
+        .modelId;
     final title =
         ref.watch(streamingTitleProvider(widget.chat.id)) ?? widget.chat.title;
     return AuraCard(
       onTap: () {
-        ConversationRoute(chatId: widget.chat.id).go(context);
+        ConversationRoute(
+          workspaceId: widget.workspaceId,
+          chatId: widget.chat.id,
+        ).go(context);
       },
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -11,24 +11,31 @@ import 'package:auravibes_app/features/chats/widgets/chat_tool_approval_card.dar
 import 'package:auravibes_app/features/chats/widgets/mcp_connecting_indicator.dart';
 import 'package:auravibes_app/features/models/widgets/select_chat_model.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_management_modal.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/app_error.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod_annotation/experimental/scope.dart';
 
 class ChatConversationScreen extends ConsumerWidget {
-  const ChatConversationScreen({required this.chatId, super.key});
+  const ChatConversationScreen({
+    required this.workspaceId,
+    required this.chatId,
+    super.key,
+  });
 
+  final String workspaceId;
   final String chatId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return ProviderScope(
       overrides: [conversationSelectedProvider.overrideWithValue(chatId)],
-      child: const _ChatConversationScreen(),
+      child: _ChatConversationScreen(workspaceId: workspaceId),
     );
   }
 }
@@ -39,51 +46,75 @@ class ChatConversationScreen extends ConsumerWidget {
   pendingMcpConnections,
 ])
 class _ChatConversationScreen extends HookConsumerWidget {
-  const _ChatConversationScreen();
+  const _ChatConversationScreen({required this.workspaceId});
+
+  final String workspaceId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final modelId = ref.watch(
-      conversationChatProvider.select((c) => c.value?.modelId),
-    );
+    final conversationAsync = ref.watch(conversationChatProvider(workspaceId));
 
-    final modelTitle = ref.watch(
-      conversationChatProvider.select((c) => c.value?.title),
-    );
+    if (conversationAsync.isLoading && !conversationAsync.hasValue) {
+      return const AuraScreen(
+        child: Center(child: AuraSpinner()),
+      );
+    }
+
+    if (conversationAsync.hasError && !conversationAsync.hasValue) {
+      return AuraScreen(
+        child: AppErrorWidget(
+          error: conversationAsync.error!,
+          stackTrace: conversationAsync.stackTrace ?? StackTrace.empty,
+        ),
+      );
+    }
+
+    final conversationResult = conversationAsync.value;
+    if (conversationResult == null ||
+        conversationResult is! ConversationFound) {
+      final errorMessage = switch (conversationResult) {
+        ConversationWorkspaceMismatch() =>
+          LocaleKeys.chats_screens_chat_conversation_error_workspace_mismatch
+              .tr(),
+        ConversationNotFound() =>
+          LocaleKeys.chats_screens_chat_conversation_error_not_found.tr(),
+        _ => LocaleKeys.chats_screens_chat_conversation_error_not_found.tr(),
+      };
+      return AuraScreen(
+        child: AppErrorWidget(
+          error: errorMessage,
+          stackTrace: StackTrace.empty,
+        ),
+      );
+    }
+
+    final conversation = conversationResult.conversation;
 
     final onToolsPress = useCallback(() async {
-      // Try to get conversation info
+      if (!context.mounted) return;
 
-      final conversation = await ref.read(
-        conversationChatProvider.future,
-      );
-      if (conversation == null) return;
-      final conversationId = conversation.id;
-      final workspaceId = conversation.workspaceId;
-
-      if (context.mounted) {
-        unawaited(
-          showDialog<void>(
-            context: context,
-            builder: (context) => ToolsManagementModal(
-              conversationId: conversationId,
-              workspaceId: workspaceId,
-            ),
+      unawaited(
+        showDialog<void>(
+          context: context,
+          builder: (context) => ToolsManagementModal(
+            conversationId: conversation.id,
+            workspaceId: workspaceId,
           ),
-        );
-      }
-    }, [ref]);
+        ),
+      );
+    }, [ref, workspaceId, conversation.id]);
 
     final busyState = ref.watch(conversationBusyStateProvider).asData?.value;
     final queuedDrafts = ref.watch(conversationQueuedDraftsProvider);
 
     return AuraScreen(
       appBar: AuraAppBarWithDrawer(
-        title: Text(modelTitle ?? ''),
+        title: Text(conversation.title),
         bottom: SelectCredentialsModelWidget(
-          credentialsModelId: modelId,
+          workspaceId: workspaceId,
+          credentialsModelId: conversation.modelId,
           selectCredentialsModelId: ref
-              .watch(conversationChatProvider.notifier)
+              .watch(conversationChatProvider(workspaceId).notifier)
               .setModel,
         ),
       ),
@@ -139,9 +170,7 @@ class _ChatList extends ConsumerWidget {
       return const Center(child: AuraSpinner());
     }
 
-    final messages = ref.watch(
-      messageListProvider,
-    );
+    final messages = ref.watch(chatMessageIdsProvider);
     final asyncError = ref.watch(
       chatMessagesProvider.select(
         (value) => value.asError,

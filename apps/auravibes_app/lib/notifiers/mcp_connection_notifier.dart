@@ -5,7 +5,7 @@ import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 import 'package:auravibes_app/domain/usecases/tools/mcp/build_mcp_server_to_create_usecase.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_provider.dart';
-import 'package:auravibes_app/features/workspaces/providers/selected_workspace.dart';
+import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_service.dart';
 import 'package:auravibes_app/services/mcp_service/oauth_authenticate.dart';
@@ -174,10 +174,20 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
     _isDisposed = false;
     _lastKnownState = const [];
     _mcpManagerService = ref.watch(mcpManagerServiceProvider);
-    ref.onDispose(_onDispose);
+    ref
+      ..onDispose(_onDispose)
+      ..listen<String?>(currentRouteWorkspaceIdProvider, (previous, next) {
+        if (next == null || next == previous) {
+          return;
+        }
 
-    // Load MCPs from database on initialization
-    _loadMcpsFromDatabase();
+        unawaited(_loadMcpsForWorkspace(next));
+      });
+
+    final initialWorkspaceId = ref.read(currentRouteWorkspaceIdProvider);
+    if (initialWorkspaceId != null) {
+      unawaited(_loadMcpsForWorkspace(initialWorkspaceId));
+    }
 
     return [];
   }
@@ -192,10 +202,10 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
   /// 1. Save the server to the database
   /// 2. Connect to the MCP server
   /// 3. Persist tools to database if connection successful
-  Future<void> addMcpServer(McpServerFormToCreate serverToCreate) async {
-    final workspace = await ref.read(selectedWorkspaceProvider.future);
-    final workspaceId = workspace.id;
-
+  Future<void> addMcpServer(
+    McpServerFormToCreate serverToCreate, {
+    required String workspaceId,
+  }) async {
     final serverInfo =
         await BuildMcpServerToCreateUseCase(
           authenticator: OauthAuthenticate(
@@ -237,7 +247,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
     ]);
 
     if (!_isDisposed) {
-      ref.invalidate(workspaceToolsProvider);
+      ref.invalidate(workspaceToolsProvider(workspaceId));
     }
   }
 
@@ -437,17 +447,16 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
   // Private: Database Operations
   // ============================================================
 
-  /// Load MCPs from database on initialization.
-  Future<void> _loadMcpsFromDatabase() async {
+  /// Load enabled MCPs only for the active workspace.
+  Future<void> _loadMcpsForWorkspace(String workspaceId) async {
     try {
       final repository = ref.read(mcpServersRepositoryProvider);
-      final workspace = await ref.read(selectedWorkspaceProvider.future);
       if (_isDisposed) {
         return;
       }
 
       final servers = await repository.getEnabledMcpServersForWorkspace(
-        workspace.id,
+        workspaceId,
       );
       if (_isDisposed) {
         return;
@@ -456,6 +465,12 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
       for (final server in servers) {
         if (_isDisposed) {
           return;
+        }
+
+        if (getConnection(server.id) case final existingConnection?
+            when existingConnection.isReady ||
+                existingConnection.status == McpConnectionStatus.connecting) {
+          continue;
         }
 
         await _connectToMcp(

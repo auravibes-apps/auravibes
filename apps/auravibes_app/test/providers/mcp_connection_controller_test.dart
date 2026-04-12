@@ -1,12 +1,9 @@
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/mcp_server.dart';
-import 'package:auravibes_app/domain/entities/workspace.dart';
-import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 import 'package:auravibes_app/domain/repositories/mcp_servers_repository.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';
-import 'package:auravibes_app/features/workspaces/providers/selected_workspace.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_notifier.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_service.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -14,18 +11,15 @@ import 'package:riverpod/riverpod.dart';
 
 void main() {
   group('McpConnectionNotifier', () {
-    late _FakeSelectedWorkspace selectedWorkspace;
     late _FakeMcpServersRepository mcpServersRepository;
     late _FakeMcpManagerService mcpManagerService;
     late ProviderContainer container;
 
     setUp(() {
-      selectedWorkspace = _FakeSelectedWorkspace(_workspace);
       mcpServersRepository = _FakeMcpServersRepository();
       mcpManagerService = _FakeMcpManagerService();
       container = ProviderContainer(
         overrides: [
-          selectedWorkspaceProvider.overrideWith(() => selectedWorkspace),
           mcpServersRepositoryProvider.overrideWithValue(mcpServersRepository),
           mcpManagerServiceProvider.overrideWithValue(mcpManagerService),
         ],
@@ -121,14 +115,6 @@ void main() {
   });
 }
 
-final _workspace = WorkspaceEntity(
-  id: 'workspace-1',
-  name: 'Workspace',
-  type: WorkspaceType.local,
-  createdAt: DateTime(2026),
-  updatedAt: DateTime(2026),
-);
-
 final _server = McpServerEntity(
   id: 'server-1',
   workspaceId: 'workspace-1',
@@ -151,15 +137,6 @@ final _connectingState = McpConnectionState(
     ),
   ],
 );
-
-class _FakeSelectedWorkspace extends SelectedWorkspace {
-  _FakeSelectedWorkspace(this.workspace);
-
-  final WorkspaceEntity workspace;
-
-  @override
-  Future<WorkspaceEntity> build() async => workspace;
-}
 
 class _FakeMcpManagerService extends McpManagerService {}
 

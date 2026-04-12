@@ -6,14 +6,16 @@ import 'package:auravibes_app/features/models/widgets/model_logo.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-// ignore: implementation_imports
-import 'package:riverpod/src/framework.dart';
+import 'package:riverpod/experimental/mutation.dart';
 
 class AddModelProviderWidget extends HookConsumerWidget {
-  const AddModelProviderWidget({super.key});
+  const AddModelProviderWidget({required this.workspaceId, super.key});
+
+  final String workspaceId;
 
   // Extract long locale key to avoid line length issues
   static const String _noModelsFoundKey =
@@ -21,7 +23,9 @@ class AddModelProviderWidget extends HookConsumerWidget {
 
   void _submitForm(BuildContext context, WidgetRef ref) {
     addCredentialsModelMutationProvider.run(ref, (transaction) async {
-      final notifier = transaction.get(addModelProviderStateProvider.notifier);
+      final notifier = transaction.get(
+        addModelProviderStateProvider(workspaceId).notifier,
+      );
       final created = await notifier.addModelProvider();
       if (context.mounted && created != null) {
         Navigator.of(context).pop(created);
@@ -34,14 +38,19 @@ class AddModelProviderWidget extends HookConsumerWidget {
     final scrollController = useScrollController();
     final formKey = useMemoized(GlobalKey<FormState>.new, []);
 
+    useEffect(() {
+      addCredentialsModelMutationProvider.reset(ref);
+      return null;
+    }, []);
+
     final hasModel = ref.watch(
-      addModelProviderStateProvider.select(
+      addModelProviderStateProvider(workspaceId).select(
         (value) => value.modelId != null,
       ),
     );
 
     if (!hasModel) {
-      return _SelectModelProvider();
+      return _SelectModelProvider(workspaceId: workspaceId);
     }
 
     return Column(
@@ -50,7 +59,7 @@ class AddModelProviderWidget extends HookConsumerWidget {
         _ModalHeader(
           onClose: () => Navigator.of(context).pop(),
         ),
-        _SelectedModelHeader(),
+        _SelectedModelHeader(workspaceId: workspaceId),
         Flexible(
           child: SingleChildScrollView(
             controller: scrollController,
@@ -61,19 +70,25 @@ class AddModelProviderWidget extends HookConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const EnhancedModelInput(
+                  EnhancedModelInput(
+                    workspaceId: workspaceId,
                     fieldType: ModelInputFieldType.name,
                     // onSubmitted: keyFocusNode.requestFocus,
                   ),
-                  const EnhancedModelInput(
+                  EnhancedModelInput(
+                    workspaceId: workspaceId,
                     fieldType: ModelInputFieldType.key,
                   ),
                   SizedBox(height: context.auraTheme.spacing.xl),
                   _ApiConfigSection(
+                    workspaceId: workspaceId,
                     onSubmit: () => _submitForm(context, ref),
                   ),
                   SizedBox(height: context.auraTheme.spacing.xl),
-                  _CreateButton(onSubmit: () => _submitForm(context, ref)),
+                  _CreateButton(
+                    workspaceId: workspaceId,
+                    onSubmit: () => _submitForm(context, ref),
+                  ),
                 ],
               ),
             ),
@@ -118,9 +133,11 @@ class _ModalHeader extends StatelessWidget {
 /// API configuration section with key and URL
 class _ApiConfigSection extends StatelessWidget {
   const _ApiConfigSection({
+    required this.workspaceId,
     required this.onSubmit,
   });
 
+  final String workspaceId;
   final VoidCallback onSubmit;
 
   @override
@@ -128,6 +145,7 @@ class _ApiConfigSection extends StatelessWidget {
     return _HiddenSection(
       title: LocaleKeys.models_screens_add_provider_sections_advanced,
       child: EnhancedModelInput(
+        workspaceId: workspaceId,
         fieldType: ModelInputFieldType.url,
 
         onSubmitted: onSubmit,
@@ -194,8 +212,8 @@ class _ErrorBanner extends ConsumerWidget {
     final error = switch (addCredentialsModelMutation) {
       MutationError<void>(:final error) => switch (error) {
         AddModelException() => switch (error) {
-          AddModelExceptionNoWorkspace() => 'no workspace found',
-          AddModelExceptionNoUnkown() => 'unkown error',
+          AddModelExceptionUnknown() =>
+            LocaleKeys.models_screens_add_provider_errors_unknown.tr(),
         },
         _ => error.toString(),
       },
@@ -238,8 +256,9 @@ class _ErrorBanner extends ConsumerWidget {
 
 /// Create button with loading state
 class _CreateButton extends HookConsumerWidget {
-  const _CreateButton({required this.onSubmit});
+  const _CreateButton({required this.workspaceId, required this.onSubmit});
 
+  final String workspaceId;
   final VoidCallback onSubmit;
 
   @override
@@ -251,7 +270,7 @@ class _CreateButton extends HookConsumerWidget {
     );
 
     final isValid = ref.watch(
-      addModelProviderStateProvider.select(
+      addModelProviderStateProvider(workspaceId).select(
         (value) => value.isValid(),
       ),
     );
@@ -275,12 +294,16 @@ class _CreateButton extends HookConsumerWidget {
 }
 
 class _SelectModelProvider extends HookConsumerWidget {
+  const _SelectModelProvider({required this.workspaceId});
+
+  final String workspaceId;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final models = ref.watch(modelProvidersProvider).value;
     final searchQuery = useState('');
     final addModelProvider = ref.watch(
-      addModelProviderStateProvider.notifier,
+      addModelProviderStateProvider(workspaceId).notifier,
     );
 
     // Filter models based on search query using useMemoized
@@ -381,16 +404,20 @@ class _SelectModelProvider extends HookConsumerWidget {
 
 /// Header showing the selected model with a back button
 class _SelectedModelHeader extends HookConsumerWidget {
+  const _SelectedModelHeader({required this.workspaceId});
+
+  final String workspaceId;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedModelId = ref.watch(
-      addModelProviderStateProvider.select(
+      addModelProviderStateProvider(workspaceId).select(
         (value) => value.modelId,
       ),
     );
 
     final addModelProvider = ref.watch(
-      addModelProviderStateProvider.notifier,
+      addModelProviderStateProvider(workspaceId).notifier,
     );
 
     final models = ref.watch(modelProvidersProvider).value;

@@ -8,12 +8,14 @@ import 'package:flutter/widgets.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class ToolCountEnabledWidget extends ConsumerWidget {
-  const ToolCountEnabledWidget({super.key});
+  const ToolCountEnabledWidget({required this.workspaceId, super.key});
+
+  final String workspaceId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final countAsync = ref.watch(
-      workspaceToolsProvider.select(
+      workspaceToolsProvider(workspaceId).select(
         (asyncValue) => asyncValue.whenData(
           (value) => value.where((e) => e.isAvailable).nonNulls.length,
         ),

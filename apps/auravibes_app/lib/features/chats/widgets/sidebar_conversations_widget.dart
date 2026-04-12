@@ -13,27 +13,34 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 final _currentChatIdProvider = Provider<String?>(
   (ref) {
     final pathSegments = ref.watch(routerPathSegmentsProvider);
-    if (pathSegments.isEmpty) return null;
-    if (pathSegments[0] != 'chats') return null;
-    if (pathSegments.length < 2) return null;
-    final chatId = pathSegments[1];
+    if (pathSegments.length < 4) return null;
+    if (pathSegments[0] != 'workspaces') return null;
+    if (pathSegments[2] != 'chats') return null;
+    final chatId = pathSegments[3];
     return chatId;
   },
 );
 
 class SidebarConversationsWidget extends ConsumerWidget {
   const SidebarConversationsWidget({
+    required this.workspaceId,
     super.key,
     this.limit = 10,
   });
 
+  final String? workspaceId;
   final int limit;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final workspaceId = this.workspaceId;
+    if (workspaceId == null || workspaceId.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     final currentChatId = ref.watch(_currentChatIdProvider);
     final chatListAsync = ref.watch(
-      conversationsStreamProvider(limit: limit),
+      conversationsStreamProvider(workspaceId: workspaceId, limit: limit),
     );
 
     return switch (chatListAsync) {
@@ -48,10 +55,11 @@ class SidebarConversationsWidget extends ConsumerWidget {
             ...chats.map(
               (chat) => _SidebarConversationTile(
                 chat: chat,
+                workspaceId: workspaceId,
                 isActive: chat.id == currentChatId,
               ),
             ),
-            _buildViewAllButton(context),
+            _buildViewAllButton(context, workspaceId),
           ],
         );
       }(),
@@ -116,7 +124,7 @@ class SidebarConversationsWidget extends ConsumerWidget {
     );
   }
 
-  Widget _buildViewAllButton(BuildContext context) {
+  Widget _buildViewAllButton(BuildContext context, String workspaceId) {
     return Padding(
       padding: EdgeInsets.only(
         left: context.auraTheme.spacing.sm,
@@ -128,7 +136,7 @@ class SidebarConversationsWidget extends ConsumerWidget {
         variant: AuraButtonVariant.ghost,
         size: AuraButtonSize.small,
         isFullWidth: true,
-        onPressed: () => ChatsRoute().go(context),
+        onPressed: () => ChatsRoute(workspaceId: workspaceId).go(context),
         child: const TextLocale(
           LocaleKeys.sidebar_view_all_chats,
         ),
@@ -140,10 +148,12 @@ class SidebarConversationsWidget extends ConsumerWidget {
 class _SidebarConversationTile extends ConsumerStatefulWidget {
   const _SidebarConversationTile({
     required this.chat,
+    required this.workspaceId,
     required this.isActive,
   });
 
   final ConversationEntity chat;
+  final String workspaceId;
   final bool isActive;
 
   @override
@@ -206,7 +216,10 @@ class _SidebarConversationTileState
             ? AuraTileVariant.selected
             : AuraTileVariant.ghost,
         size: AuraTileSize.small,
-        onTap: () => ConversationRoute(chatId: widget.chat.id).go(context),
+        onTap: () => ConversationRoute(
+          workspaceId: widget.workspaceId,
+          chatId: widget.chat.id,
+        ).go(context),
         leading: AuraIcon(
           Icons.chat_bubble_outline,
           size: AuraIconSize.small,

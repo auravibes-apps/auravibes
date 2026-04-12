@@ -10,37 +10,64 @@ import 'package:go_router/go_router.dart';
 
 part 'app_router.g.dart';
 
+const workspacePathPrefix = '/workspaces';
+
 final GlobalKey<NavigatorState> shellNavigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
-@TypedStatefulShellRoute<MyShellRouteData>(
-  branches: <TypedStatefulShellBranch<StatefulShellBranchData>>[
-    TypedStatefulShellBranch(
-      routes: [
-        TypedGoRoute<NewChatRoute>(path: '/chat/new'),
-        TypedGoRoute<ConversationRoute>(path: '/chats/:chatId'),
-        TypedGoRoute<ChatsRoute>(
-          path: '/chats',
+@TypedGoRoute<WorkspaceRoute>(
+  path: '$workspacePathPrefix/:workspaceId',
+  routes: [
+    TypedStatefulShellRoute<MyShellRouteData>(
+      branches: <TypedStatefulShellBranch<StatefulShellBranchData>>[
+        TypedStatefulShellBranch(
+          routes: [
+            TypedGoRoute<NewChatRoute>(path: 'chat/new'),
+            TypedGoRoute<ConversationRoute>(path: 'chats/:chatId'),
+            TypedGoRoute<ChatsRoute>(path: 'chats'),
+          ],
         ),
-      ],
-    ),
-    TypedStatefulShellBranch(
-      routes: [
-        TypedGoRoute<ToolsRoute>(path: '/tools'),
-      ],
-    ),
-    TypedStatefulShellBranch(
-      routes: [
-        TypedGoRoute<ModelsRoute>(path: '/models'),
-      ],
-    ),
-    TypedStatefulShellBranch(
-      routes: [
-        TypedGoRoute<SettingsRoute>(path: '/settings'),
+        TypedStatefulShellBranch(
+          routes: [
+            TypedGoRoute<ToolsRoute>(path: 'tools'),
+          ],
+        ),
+        TypedStatefulShellBranch(
+          routes: [
+            TypedGoRoute<ModelsRoute>(path: 'models'),
+          ],
+        ),
+        TypedStatefulShellBranch(
+          routes: [
+            TypedGoRoute<SettingsRoute>(path: 'settings'),
+          ],
+        ),
       ],
     ),
   ],
 )
+class WorkspaceRoute extends GoRouteData with $WorkspaceRoute {
+  WorkspaceRoute({required this.workspaceId});
+
+  final String workspaceId;
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) {
+    return const SizedBox.shrink();
+  }
+
+  @override
+  String? redirect(BuildContext context, GoRouterState state) {
+    final workspacePath = '$workspacePathPrefix/$workspaceId';
+
+    if (state.uri.path == workspacePath) {
+      return NewChatRoute(workspaceId: workspaceId).location;
+    }
+
+    return null;
+  }
+}
+
 class MyShellRouteData extends StatefulShellRouteData {
   const MyShellRouteData();
 
@@ -57,50 +84,68 @@ class MyShellRouteData extends StatefulShellRouteData {
 }
 
 class ChatsRoute extends GoRouteData with $ChatsRoute {
+  ChatsRoute({required this.workspaceId});
+
+  final String workspaceId;
+
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    return const ChatsListScreen();
+    return ChatsListScreen(workspaceId: workspaceId);
   }
 }
 
 class NewChatRoute extends GoRouteData with $NewChatRoute {
+  NewChatRoute({required this.workspaceId});
+
+  final String workspaceId;
+
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    return const NewChatScreen();
+    return NewChatScreen(workspaceId: workspaceId);
   }
 }
 
 class ConversationRoute extends GoRouteData with $ConversationRoute {
-  ConversationRoute({required this.chatId});
-  String chatId;
+  ConversationRoute({required this.workspaceId, required this.chatId});
+
+  final String workspaceId;
+  final String chatId;
 
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    return ChatConversationScreen(chatId: chatId);
+    return ChatConversationScreen(workspaceId: workspaceId, chatId: chatId);
   }
 }
 
 class ToolsRoute extends GoRouteData with $ToolsRoute {
+  ToolsRoute({required this.workspaceId});
+
+  final String workspaceId;
+
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    return const ToolsScreen();
+    return ToolsScreen(workspaceId: workspaceId);
   }
 }
 
 class ModelsRoute extends GoRouteData with $ModelsRoute {
-  // There is no need to implement [build] when this [redirect] is
-  // unconditional.
+  ModelsRoute({required this.workspaceId});
+
+  final String workspaceId;
+
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    return const ModelsScreen();
+    return ModelsScreen(workspaceId: workspaceId);
   }
 }
 
 class SettingsRoute extends GoRouteData with $SettingsRoute {
-  // There is no need to implement [build] when this [redirect] is
-  // unconditional.
+  SettingsRoute({required this.workspaceId});
+
+  final String workspaceId;
+
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    return const SettingsScreen();
+    return SettingsScreen(workspaceId: workspaceId);
   }
 }

@@ -1,20 +1,19 @@
 import 'package:auravibes_app/domain/entities/credentials_entities.dart';
 import 'package:auravibes_app/features/models/providers/model_providers_repository_providers.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'list_models_providers.g.dart';
 
 @riverpod
-Future<List<CredentialsEntity>> listCredentials(Ref ref) async {
+Future<List<CredentialsEntity>> listCredentials(
+  Ref ref, {
+  required String workspaceId,
+}) async {
   final credentialsModelRepository = ref.watch(
     modelProvidersRepositoryProvider,
   );
-  final workspaceRepository = ref.watch(workspaceRepositoryProvider);
-
-  final workspaces = await workspaceRepository.getAllWorkspaces();
 
   return credentialsModelRepository.getCredentials(
-    ModelProviderFilter(workspaces: workspaces.map((w) => w.id).toList()),
+    ModelProviderFilter(workspaces: [workspaceId]),
   );
 }

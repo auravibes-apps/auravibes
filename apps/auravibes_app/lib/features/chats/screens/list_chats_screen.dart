@@ -9,7 +9,9 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class ChatsListScreen extends ConsumerWidget {
-  const ChatsListScreen({super.key});
+  const ChatsListScreen({required this.workspaceId, super.key});
+
+  final String workspaceId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -27,7 +29,7 @@ class ChatsListScreen extends ConsumerWidget {
                   Expanded(
                     child: AuraButton(
                       onPressed: () {
-                        NewChatRoute().go(context);
+                        NewChatRoute(workspaceId: workspaceId).go(context);
                       },
                       child: const TextLocale(
                         LocaleKeys.chats_screens_chats_list_add_chat,
@@ -39,7 +41,7 @@ class ChatsListScreen extends ConsumerWidget {
             ),
           ),
 
-          const Expanded(child: ChatListWidget()),
+          Expanded(child: ChatListWidget(workspaceId: workspaceId)),
         ],
       ),
     );
