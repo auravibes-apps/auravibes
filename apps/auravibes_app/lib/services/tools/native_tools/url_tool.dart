@@ -58,8 +58,8 @@ final class UrlTool extends NativeToolEntity<String, String> {
       final service = _urlService ?? UrlService();
       responseOperation = service.execute(request);
 
-      final response = await responseOperation!.value;
-      if (completer.isCanceled) {
+      final response = await responseOperation!.valueOrCancellation();
+      if (response == null || completer.isCanceled) {
         return;
       }
 
@@ -114,11 +114,18 @@ final class UrlTool extends NativeToolEntity<String, String> {
       );
     }
 
-    final resolvedHost = await _ensurePublicHost(uri.host);
-
+    final method = _parseMethod(json['method'] as String?);
     final headers = _parseHeaders(json['headers']);
     final rawBody = json['body'];
+    final body = switch (rawBody) {
+      null => null,
+      final String s => s,
+      _ => jsonEncode(rawBody),
+    };
     final isStructuredBody = rawBody != null && rawBody is! String;
+
+    final resolvedHost = await _ensurePublicHost(uri.host);
+
     final effectiveHeaders = <String, String>{
       ...?headers,
       if (isStructuredBody &&
@@ -134,13 +141,9 @@ final class UrlTool extends NativeToolEntity<String, String> {
 
     return UrlRequest(
       url: effectiveUrl,
-      method: _parseMethod(json['method'] as String?),
+      method: method,
       headers: effectiveHeaders,
-      body: switch (rawBody) {
-        null => null,
-        final String s => s,
-        _ => jsonEncode(rawBody),
-      },
+      body: body,
     );
   }
 
