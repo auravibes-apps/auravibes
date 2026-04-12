@@ -88,7 +88,7 @@ final class UrlTool extends NativeToolEntity<String, String> {
 
   String _formatResponse(UrlResponse response) {
     final headerLines = response.headers.entries
-        .map((e) => '${e.key}: ${e.value.join(', ')}')
+        .expand((e) => e.value.map((v) => '${e.key}: $v'))
         .join('\n');
 
     return 'Status: ${response.statusCode}\n'
@@ -133,7 +133,11 @@ final class UrlTool extends NativeToolEntity<String, String> {
       url: effectiveUrl,
       method: _parseMethod(json['method'] as String?),
       headers: effectiveHeaders,
-      body: json['body'] as String?,
+      body: switch (json['body']) {
+        null => null,
+        final String s => s,
+        _ => jsonEncode(json['body']),
+      },
     );
   }
 
@@ -154,18 +158,21 @@ final class UrlTool extends NativeToolEntity<String, String> {
 
   UrlRequestMethod _parseMethod(String? method) {
     if (method == null) return .get;
+    final normalized = method.trim().toUpperCase();
     return UrlRequestMethod.values.firstWhere(
-      (m) => m.value.toUpperCase() == method.toUpperCase(),
-      orElse: () => .get,
+      (m) => m.value == normalized,
+      orElse: () => throw FormatException(
+        'Unsupported HTTP method: $method',
+      ),
     );
   }
 
   Map<String, String>? _parseHeaders(dynamic headers) {
     if (headers == null) return null;
-    if (headers is Map) {
-      return headers.map((k, v) => MapEntry(k.toString(), v.toString()));
+    if (headers is! Map) {
+      throw const FormatException('Headers must be a JSON object.');
     }
-    return null;
+    return headers.map((k, v) => MapEntry(k.toString(), v.toString()));
   }
 
   Future<String> _ensurePublicHost(String host) async {
@@ -245,5 +252,5 @@ final class UrlTool extends NativeToolEntity<String, String> {
   }
 
   @override
-  NativeToolType get type => NativeToolType.url;
+  NativeToolType get type => .url;
 }
