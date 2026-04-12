@@ -15,12 +15,14 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 class ToolItemRow extends HookConsumerWidget {
   const ToolItemRow({
     required this.tool,
+    required this.workspaceId,
     this.showDeleteButton = true,
     super.key,
   });
 
   /// The tool to display.
   final WorkspaceToolEntity tool;
+  final String workspaceId;
 
   /// Whether to show the delete button.
   /// Should be false for MCP tools (they can't be individually deleted).
@@ -92,7 +94,7 @@ class ToolItemRow extends HookConsumerWidget {
                 value: isEnabled,
                 onChanged: (value) {
                   ref
-                      .read(workspaceToolsProvider.notifier)
+                      .read(workspaceToolsProvider(workspaceId).notifier)
                       .setToolEnabled(
                         tool.id,
                         isEnabled: value,
@@ -128,6 +130,7 @@ class ToolItemRow extends HookConsumerWidget {
               ),
               child: _ToolOptions(
                 tool: tool,
+                workspaceId: workspaceId,
                 isEnabled: isEnabled,
                 permissionMode: permissionMode,
                 showDeleteButton: showDeleteButton,
@@ -143,12 +146,14 @@ class ToolItemRow extends HookConsumerWidget {
 class _ToolOptions extends HookConsumerWidget {
   const _ToolOptions({
     required this.tool,
+    required this.workspaceId,
     required this.isEnabled,
     required this.permissionMode,
     required this.showDeleteButton,
   });
 
   final WorkspaceToolEntity tool;
+  final String workspaceId;
   final bool isEnabled;
   final ToolPermissionMode permissionMode;
   final bool showDeleteButton;
@@ -188,7 +193,7 @@ class _ToolOptions extends HookConsumerWidget {
                 selectedValue: permissionMode,
                 onChanged: (mode) {
                   ref
-                      .read(workspaceToolsProvider.notifier)
+                      .read(workspaceToolsProvider(workspaceId).notifier)
                       .setToolPermissionMode(
                         workspaceTool.id,
                         permissionMode: mode,
@@ -239,7 +244,7 @@ class _ToolOptions extends HookConsumerWidget {
 
     if (confirmed ?? false) {
       await ref
-          .read(workspaceToolsProvider.notifier)
+          .read(workspaceToolsProvider(workspaceId).notifier)
           .removeToolById(workspaceTool.id);
     }
   }

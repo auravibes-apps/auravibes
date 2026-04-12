@@ -19,11 +19,13 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 /// 2. MCP groups with errors/issues
 /// 3. Other groups by creation date (newest first)
 class ToolsWorkspaceListWidget extends ConsumerWidget {
-  const ToolsWorkspaceListWidget({super.key});
+  const ToolsWorkspaceListWidget({required this.workspaceId, super.key});
+
+  final String workspaceId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final groupedToolsAsync = ref.watch(groupedToolsProvider);
+    final groupedToolsAsync = ref.watch(groupedToolsProvider(workspaceId));
 
     return switch (groupedToolsAsync) {
       AsyncLoading() => const Center(child: AuraSpinner()),
@@ -34,7 +36,10 @@ class ToolsWorkspaceListWidget extends ConsumerWidget {
         ),
         itemCount: groups.length,
         itemBuilder: (context, index) {
-          return ToolsGroupCard(groupWithTools: groups[index]);
+          return ToolsGroupCard(
+            groupWithTools: groups[index],
+            workspaceId: workspaceId,
+          );
         },
       ),
       AsyncError(:final error, :final stackTrace) => AppErrorWidget(

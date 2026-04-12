@@ -12,7 +12,9 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class ToolsScreen extends ConsumerWidget {
-  const ToolsScreen({super.key});
+  const ToolsScreen({required this.workspaceId, super.key});
+
+  final String workspaceId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -23,13 +25,14 @@ class ToolsScreen extends ConsumerWidget {
           // Add MCP Server button
           AuraIconButton(
             icon: Icons.extension,
-            onPressed: () => AddMcpModal.show(context),
+            onPressed: () =>
+                AddMcpModal.show(context, workspaceId: workspaceId),
             tooltip: LocaleKeys.mcp_modal_add_mcp_tooltip.tr(context: context),
           ),
           AuraIconButton(
             icon: Icons.refresh,
             onPressed: () {
-              ref.invalidate(workspaceToolsProvider);
+              ref.invalidate(workspaceToolsProvider(workspaceId));
             },
             tooltip: LocaleKeys.tools_screen_refresh_tooltip.tr(
               context: context,
@@ -90,7 +93,9 @@ class ToolsScreen extends ConsumerWidget {
                                   color: Colors.green[700],
                                 ),
                                 const SizedBox(width: 4),
-                                const ToolCountEnabledWidget(),
+                                ToolCountEnabledWidget(
+                                  workspaceId: workspaceId,
+                                ),
                               ],
                             ),
                           ),
@@ -101,7 +106,9 @@ class ToolsScreen extends ConsumerWidget {
                 ),
 
                 // Tools list
-                const Expanded(child: ToolsWorkspaceListWidget()),
+                Expanded(
+                  child: ToolsWorkspaceListWidget(workspaceId: workspaceId),
+                ),
               ],
             ),
           ),
@@ -111,7 +118,8 @@ class ToolsScreen extends ConsumerWidget {
             bottom: context.auraTheme.spacing.md,
             child: AuraFloatingActionButton(
               icon: Icons.add,
-              onPressed: () => AddToolModal.show(context),
+              onPressed: () =>
+                  AddToolModal.show(context, workspaceId: workspaceId),
               tooltip: LocaleKeys.tools_screen_add_tool_tooltip.tr(
                 context: context,
               ),

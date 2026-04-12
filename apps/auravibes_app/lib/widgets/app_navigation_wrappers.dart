@@ -1,6 +1,8 @@
 import 'package:auravibes_app/features/chats/widgets/sidebar_conversations_widget.dart';
 import 'package:auravibes_app/flavors.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/providers/router_providers.dart';
+import 'package:auravibes_app/router/app_router.dart';
 import 'package:auravibes_app/widgets/responsive_sliding_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -73,41 +75,43 @@ class AuraSidebarWrapper extends HookWidget {
 
   /// The main content to display next to the sidebar.
   final StatefulNavigationShell navigationShell;
-  void _goBranch(int index) {
-    navigationShell.goBranch(
-      index,
-      // A common pattern when using bottom navigation bars is to support
-      // navigating to the initial location when tapping the item that is
-      // already active. This example demonstrates how to support this behavior,
-      // using the initialLocation parameter of goBranch.
-      initialLocation: index == navigationShell.currentIndex,
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
-    final isSmallScreen = MediaQuery.of(context).size.width < 768;
+    useListenable(GoRouter.of(context).routeInformationProvider);
+
     final selectedIndex = _calculateSelectedIndex(
       context,
       navigationShell.currentIndex,
     );
 
-    if (isSmallScreen) {
-      // Mobile: Use Scaffold drawer pattern
-      return AppWithResponsiveDrawer(
-        navigationItems: _navigationItems,
-        onNavigationTap: _goBranch,
-        selectedIndex: selectedIndex,
-        child: navigationShell,
-      );
-    } else {
-      // Desktop: Use persistent sidebar
-      return AppWithResponsiveDrawer(
-        navigationItems: _navigationItems,
-        onNavigationTap: _goBranch,
-        selectedIndex: selectedIndex,
-        child: navigationShell,
-      );
+    return AppWithResponsiveDrawer(
+      navigationItems: _navigationItems,
+      onNavigationTap: (index) => _goBranch(context, index),
+      selectedIndex: selectedIndex,
+      child: navigationShell,
+    );
+  }
+
+  void _goBranch(BuildContext context, int index) {
+    final workspaceId = matchWorkspaceId(
+      GoRouter.of(context).routeInformationProvider.value.uri,
+    );
+
+    if (workspaceId == null || workspaceId.isEmpty) {
+      debugPrint('[Navigation] _goBranch: workspaceId missing, ignoring tap');
+      return;
+    }
+
+    switch (index) {
+      case 0:
+        NewChatRoute(workspaceId: workspaceId).go(context);
+      case 1:
+        ToolsRoute(workspaceId: workspaceId).go(context);
+      case 2:
+        ModelsRoute(workspaceId: workspaceId).go(context);
+      case 3:
+        SettingsRoute(workspaceId: workspaceId).go(context);
     }
   }
 }
@@ -141,15 +145,18 @@ class _AppWithResponsiveDrawerState extends State<AppWithResponsiveDrawer> {
   void initState() {
     super.initState();
     _router = GoRouter.of(context);
-    _previousRoute = _router.state.uri;
+    _previousRoute = _router.routeInformationProvider.value.uri;
     _router.routeInformationProvider.addListener(_onRouteChanged);
   }
 
   void _onRouteChanged() {
-    final currentRoute = _router.state.uri;
+    final currentRoute = _router.routeInformationProvider.value.uri;
     if (currentRoute != _previousRoute) {
       _controller.closeIfMobile();
-      _previousRoute = currentRoute;
+
+      setState(() {
+        _previousRoute = currentRoute;
+      });
     }
   }
 
@@ -161,6 +168,10 @@ class _AppWithResponsiveDrawerState extends State<AppWithResponsiveDrawer> {
 
   @override
   Widget build(BuildContext context) {
+    final workspaceId = matchWorkspaceId(
+      _router.routeInformationProvider.value.uri,
+    );
+
     return ResponsiveSlidingDrawer(
       controller: _controller,
       drawer: Material(
@@ -168,7 +179,7 @@ class _AppWithResponsiveDrawerState extends State<AppWithResponsiveDrawer> {
           navigationItems: widget.navigationItems,
           onNavigationTap: widget.onNavigationTap,
           header: const _AppLogo(),
-          middleSection: const SidebarConversationsWidget(),
+          middleSection: SidebarConversationsWidget(workspaceId: workspaceId),
           selectedIndex: widget.selectedIndex,
         ),
       ),

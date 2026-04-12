@@ -1,12 +1,10 @@
 import 'package:auravibes_app/data/repositories/workspace_tools_repository_impl.dart';
 import 'package:auravibes_app/domain/entities/workspace_tool.dart';
 import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dart';
-import 'package:auravibes_app/features/workspaces/providers/selected_workspace.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/services/tools/tool_service.dart';
 import 'package:auravibes_app/services/tools/user_tools_entity.dart';
 import 'package:collection/collection.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'workspace_tools_provider.g.dart';
@@ -27,13 +25,12 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
   late String _workspaceId;
 
   @override
-  Future<List<WorkspaceToolEntity>> build() async {
+  Future<List<WorkspaceToolEntity>> build(String workspaceId) async {
     _repository = ref.watch(workspaceToolsRepositoryProvider);
-    _workspaceId = await ref.watch(
-      selectedWorkspaceProvider.selectAsync((w) => w.id),
-    );
+    _workspaceId = workspaceId;
+    final workspaceTools = await _repository.getWorkspaceTools(workspaceId);
 
-    return _repository.getWorkspaceTools(_workspaceId);
+    return workspaceTools;
   }
 
   /// Add a new built-in tool to the workspace
@@ -114,8 +111,13 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
 /// Provider that returns the list of available built-in tools
 /// that can be added to the workspace
 @riverpod
-Future<List<UserToolType>> availableToolsToAdd(Ref ref) async {
-  final workspaceTools = await ref.watch(workspaceToolsProvider.future);
+Future<List<UserToolType>> availableToolsToAdd(
+  Ref ref,
+  String workspaceId,
+) async {
+  final workspaceTools = await ref.watch(
+    workspaceToolsProvider(workspaceId).future,
+  );
 
   final addedBuiltInToolIds = workspaceTools
       .map((wt) => wt.buildInType)
@@ -129,9 +131,13 @@ Future<List<UserToolType>> availableToolsToAdd(Ref ref) async {
 }
 
 @Riverpod(dependencies: [workspaceToolIndexNotifier])
-WorkspaceToolEntity? workspaceToolRow(Ref ref) {
+WorkspaceToolEntity? workspaceToolRow(Ref ref, String workspaceId) {
   final workspaceToolIndex = ref.watch(workspaceToolIndexProvider);
-  return ref.watch(
-    workspaceToolsProvider.select((e) => e.value?[workspaceToolIndex]),
-  );
+  final workspaceTools = ref.watch(workspaceToolsProvider(workspaceId)).value;
+  if (workspaceTools == null ||
+      workspaceToolIndex < 0 ||
+      workspaceToolIndex >= workspaceTools.length) {
+    return null;
+  }
+  return workspaceTools[workspaceToolIndex];
 }

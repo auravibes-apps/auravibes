@@ -11,13 +11,18 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 /// Modal for adding new tools to the workspace
 class AddToolModal extends HookConsumerWidget {
-  const AddToolModal({super.key});
+  const AddToolModal({required this.workspaceId, super.key});
+
+  final String workspaceId;
 
   /// Shows the add tool modal as a dialog
-  static Future<void> show(BuildContext context) {
+  static Future<void> show(
+    BuildContext context, {
+    required String workspaceId,
+  }) {
     return showDialog<void>(
       context: context,
-      builder: (context) => const AddToolModal(),
+      builder: (context) => AddToolModal(workspaceId: workspaceId),
     );
   }
 
@@ -25,7 +30,9 @@ class AddToolModal extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final searchController = useTextEditingController();
     final searchQuery = useState('');
-    final availableToolsAsync = ref.watch(availableToolsToAddProvider);
+    final availableToolsAsync = ref.watch(
+      availableToolsToAddProvider(workspaceId),
+    );
 
     useEffect(() {
       void listener() => searchQuery.value = searchController.text;
@@ -95,6 +102,7 @@ class AddToolModal extends HookConsumerWidget {
               child: switch (availableToolsAsync) {
                 AsyncLoading() => const Center(child: AuraSpinner()),
                 AsyncData(:final value) => _AvailableToolsList(
+                  workspaceId: workspaceId,
                   tools: value,
                   searchQuery: searchQuery.value,
                 ),
@@ -116,10 +124,12 @@ class AddToolModal extends HookConsumerWidget {
 
 class _AvailableToolsList extends StatelessWidget {
   const _AvailableToolsList({
+    required this.workspaceId,
     required this.tools,
     required this.searchQuery,
   });
 
+  final String workspaceId;
   final List<UserToolType> tools;
   final String searchQuery;
 
@@ -171,23 +181,29 @@ class _AvailableToolsList extends StatelessWidget {
           SizedBox(height: context.auraTheme.spacing.sm),
       itemBuilder: (context, index) {
         final toolType = filteredTools[index];
-        return _AvailableToolTile(toolType: toolType);
+        return _AvailableToolTile(
+          toolType: toolType,
+          workspaceId: workspaceId,
+        );
       },
     );
   }
 }
 
 class _AvailableToolTile extends ConsumerWidget {
-  const _AvailableToolTile({required this.toolType});
+  const _AvailableToolTile({required this.toolType, required this.workspaceId});
 
   final UserToolType toolType;
+  final String workspaceId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return AuraTile(
       variant: AuraTileVariant.surface,
       onTap: () async {
-        await ref.read(workspaceToolsProvider.notifier).addTool(toolType);
+        await ref
+            .read(workspaceToolsProvider(workspaceId).notifier)
+            .addTool(toolType);
         if (context.mounted) {
           Navigator.of(context).pop();
         }

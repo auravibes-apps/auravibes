@@ -10,11 +10,15 @@ import 'package:flutter_svg/svg.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class ListModelCredentialsWidget extends ConsumerWidget {
-  const ListModelCredentialsWidget({super.key});
+  const ListModelCredentialsWidget({required this.workspaceId, super.key});
+
+  final String workspaceId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final credentialsModelsAsync = ref.watch(listCredentialsProvider);
+    final credentialsModelsAsync = ref.watch(
+      listCredentialsProvider(workspaceId: workspaceId),
+    );
 
     return switch (credentialsModelsAsync) {
       AsyncData(value: final credentialsModels) => () {
@@ -30,7 +34,10 @@ class ListModelCredentialsWidget extends ConsumerWidget {
           itemBuilder: (context, index) {
             final credentialsModel = credentialsModels[index];
             //return Text(credentialsModel.name);
-            return _CredentialsModelCard(credentialsModel: credentialsModel);
+            return _CredentialsModelCard(
+              credentialsModel: credentialsModel,
+              workspaceId: workspaceId,
+            );
           },
           separatorBuilder: (context, index) {
             return SizedBox(height: context.auraTheme.spacing.md);
@@ -82,9 +89,13 @@ class ListModelCredentialsWidget extends ConsumerWidget {
 }
 
 class _CredentialsModelCard extends ConsumerWidget {
-  const _CredentialsModelCard({required this.credentialsModel});
+  const _CredentialsModelCard({
+    required this.credentialsModel,
+    required this.workspaceId,
+  });
 
   final CredentialsEntity credentialsModel;
+  final String workspaceId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -209,7 +220,7 @@ class _CredentialsModelCard extends ConsumerWidget {
       await ref
           .read(modelProvidersRepositoryProvider)
           .deleteCredential(credentials.id);
-      ref.invalidate(listCredentialsProvider);
+      ref.invalidate(listCredentialsProvider(workspaceId: workspaceId));
     }
   }
 }

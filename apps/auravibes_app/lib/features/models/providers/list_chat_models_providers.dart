@@ -1,23 +1,20 @@
 import 'package:auravibes_app/domain/entities/credentials_models_entities.dart';
 import 'package:auravibes_app/features/models/providers/model_providers_repository_providers.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'list_chat_models_providers.g.dart';
 
 @riverpod
 Future<List<CredentialsModelWithProviderEntity>> listCredentialsCredentials(
-  Ref ref,
-) async {
+  Ref ref, {
+  required String workspaceId,
+}) async {
   final credentialsModelRepository = ref.watch(
     credentialsModelsRepositoryProvider,
   );
-  final workspaceRepository = ref.watch(workspaceRepositoryProvider);
-
-  final workspaces = await workspaceRepository.getAllWorkspaces();
 
   return credentialsModelRepository.getCredentialsModels(
-    CredentialsModelsFilter(workspaces: workspaces.map((w) => w.id).toList()),
+    CredentialsModelsFilter(workspaces: [workspaceId]),
   );
 }
 
@@ -25,9 +22,11 @@ Future<List<CredentialsModelWithProviderEntity>> listCredentialsCredentials(
 /// Returns a map where keys are provider names and values are lists of models.
 @riverpod
 Future<Map<String, List<CredentialsModelWithProviderEntity>>>
-listModelsGroupedByProvider(Ref ref) async {
+listModelsGroupedByProvider(Ref ref, {required String workspaceId}) async {
   // Await the underlying FutureProvider so loading/error states propagate automatically.
-  final models = await ref.watch(listCredentialsCredentialsProvider.future);
+  final models = await ref.watch(
+    listCredentialsCredentialsProvider(workspaceId: workspaceId).future,
+  );
 
   final grouped = <String, List<CredentialsModelWithProviderEntity>>{};
 
