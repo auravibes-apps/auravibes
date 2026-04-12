@@ -40,13 +40,15 @@ List<String> chatMessageIds(Ref ref) {
   final messages = ref.watch(
     chatMessagesProvider.select((value) => value.value),
   );
-  if (messages == null) return const [];
-  return MessageIdList(messages.map((m) => m.id).toList());
+  if (messages == null || messages.isEmpty) return MessageIdList.empty;
+  return MessageIdList(messages.map((m) => m.id));
 }
 
 @immutable
 class MessageIdList extends ListBase<String> {
-  const MessageIdList(this._ids);
+  MessageIdList(Iterable<String> ids) : _ids = List.unmodifiable(ids);
+  const MessageIdList._(this._ids);
+  static const MessageIdList empty = MessageIdList._(<String>[]);
   final List<String> _ids;
 
   @override
