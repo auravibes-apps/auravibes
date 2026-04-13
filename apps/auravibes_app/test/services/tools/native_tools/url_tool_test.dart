@@ -10,7 +10,7 @@ void main() {
         ..httpClientAdapter = _SuccessAdapter(body: 'ok', statusCode: 200);
       final tool = UrlTool(urlService: UrlService(dio: dio));
 
-      final result = await tool.runner('  {"url":"https://example.com"}').value;
+      final result = await tool.runner('  {"url":"https://1.1.1.1"}').value;
 
       expect(result, contains('Status: 200'));
       expect(result, contains('ok'));

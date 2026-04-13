@@ -255,8 +255,11 @@ final class UrlTool extends NativeToolEntity<String, String> {
       }
     }
 
-    return raw[0] == 0xfc ||
+    final isUnspecified = raw.every((b) => b == 0);
+    return isUnspecified ||
+        raw[0] == 0xfc ||
         raw[0] == 0xfd ||
+        raw[0] == 0xff ||
         (raw[0] == 0xfe && (raw[1] & 0xc0) == 0x80);
   }
 
