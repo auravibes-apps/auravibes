@@ -1,16 +1,14 @@
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
+import 'package:auravibes_app/services/tools/native_tool_entity.dart';
 import 'package:auravibes_app/services/tools/user_tools_entity.dart';
 
-/// Type of resolved tool.
 enum ResolvedToolType {
-  /// A built-in tool (e.g., calculator)
   builtIn,
-
-  /// An MCP tool from an external MCP server
   mcp,
+  native,
 }
 
-/// Represents a resolved tool that can be either built-in or MCP.
+/// Represents a resolved tool that can be built-in, native, or MCP.
 ///
 /// This abstraction allows the tool calling manager to handle both types
 /// uniformly while preserving the necessary information for execution.
@@ -21,6 +19,7 @@ class ResolvedTool {
     required this.toolIdentifier,
     this.builtInTool,
     this.mcpServerId,
+    this.nativeTool,
   });
 
   /// Creates a resolved built-in tool.
@@ -51,6 +50,18 @@ class ResolvedTool {
     );
   }
 
+  factory ResolvedTool.native({
+    required String tableId,
+    required NativeToolType nativeToolType,
+  }) {
+    return ResolvedTool._(
+      type: ResolvedToolType.native,
+      tableId: tableId,
+      toolIdentifier: nativeToolType.value,
+      nativeTool: nativeToolType,
+    );
+  }
+
   /// The type of tool (built-in or MCP)
   final ResolvedToolType type;
 
@@ -60,17 +71,17 @@ class ResolvedTool {
   /// The tool identifier (e.g., "calculator" or original MCP tool name)
   final String toolIdentifier;
 
-  /// The built-in tool implementation (only for built-in tools)
   final UserToolType? builtInTool;
 
-  /// The MCP server ID (only for MCP tools)
   final String? mcpServerId;
 
-  /// Whether this is a built-in tool
+  final NativeToolType? nativeTool;
+
   bool get isBuiltIn => type == ResolvedToolType.builtIn;
 
-  /// Whether this is an MCP tool
   bool get isMcp => type == ResolvedToolType.mcp;
+
+  bool get isNative => type == ResolvedToolType.native;
 }
 
 /// Internal class to hold tool resolution result.

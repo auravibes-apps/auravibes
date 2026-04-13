@@ -35,6 +35,9 @@ void main() {
     late MockToolResolverService toolResolverService;
     late MockResumeConversationIfReadyUsecase resumeConversationIfReadyUsecase;
     late ApproveToolCallUsecase usecase;
+    String? calledMcpServerId;
+    String? calledMcpToolIdentifier;
+    Map<String, dynamic>? calledMcpArguments;
 
     const toolCallId = 'tool-1';
     const messageId = 'message-1';
@@ -65,6 +68,9 @@ void main() {
       workspaceToolsRepository = MockWorkspaceToolsRepository();
       toolResolverService = MockToolResolverService();
       resumeConversationIfReadyUsecase = MockResumeConversationIfReadyUsecase();
+      calledMcpServerId = null;
+      calledMcpToolIdentifier = null;
+      calledMcpArguments = null;
 
       usecase = ApproveToolCallUsecase(
         messageRepository: messageRepository,
@@ -73,6 +79,17 @@ void main() {
         workspaceToolsRepository: workspaceToolsRepository,
         toolResolverService: toolResolverService,
         resumeConversationIfReadyUsecase: resumeConversationIfReadyUsecase,
+        mcpToolCaller:
+            ({
+              required mcpServerId,
+              required toolIdentifier,
+              required arguments,
+            }) async {
+              calledMcpServerId = mcpServerId;
+              calledMcpToolIdentifier = toolIdentifier;
+              calledMcpArguments = arguments;
+              return 'mcp result';
+            },
       );
 
       when(messageRepository.getMessageById(messageId)).thenAnswer(
@@ -111,6 +128,50 @@ void main() {
         resumeConversationIfReadyUsecase.call(messageId: messageId),
       ).called(1);
     });
+
+    test(
+      'executes MCP tools with raw arguments',
+      () async {
+        final mcpMessage = message.copyWith(
+          metadata: const MessageMetadataEntity(
+            toolCalls: [
+              MessageToolCallEntity(
+                id: toolCallId,
+                name: 'mcp_server-1_calc_sum',
+                argumentsRaw: '{"a": 1, "b": 2}',
+              ),
+            ],
+          ),
+        );
+        final resolvedTool = ToolResolverService().resolveTool(
+          'mcp_server-1_calc_sum',
+        )!;
+
+        when(messageRepository.getMessageById(messageId)).thenAnswer(
+          (_) async => mcpMessage,
+        );
+        when(
+          toolResolverService.resolveTool('mcp_server-1_calc_sum'),
+        ).thenReturn(resolvedTool);
+
+        await usecase.call(
+          toolCallId: toolCallId,
+          messageId: messageId,
+          level: ToolGrantLevel.once,
+        );
+
+        expect(calledMcpServerId, 'server-1');
+        expect(calledMcpToolIdentifier, 'sum');
+        expect(calledMcpArguments, {'a': 1, 'b': 2});
+
+        final update =
+            verify(
+                  messageRepository.updateMessage(messageId, captureAny),
+                ).captured.single
+                as MessageToUpdate;
+        expect(update.metadata?.toolCalls.single.responseRaw, 'mcp result');
+      },
+    );
 
     test(
       'persists conversation allow and stores successful response',

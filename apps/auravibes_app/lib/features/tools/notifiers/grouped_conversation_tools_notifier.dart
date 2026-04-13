@@ -1,3 +1,4 @@
+import 'package:auravibes_app/domain/models/grouped_tools_view_item.dart';
 import 'package:auravibes_app/features/tools/models/conversation_tools_group_with_tools.dart';
 import 'package:auravibes_app/features/tools/notifiers/conversation_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
@@ -52,13 +53,31 @@ class GroupedConversationToolsNotifier
     // Build result list
     final result = <ConversationToolsGroupWithTools>[];
 
-    // 1. Default group (tools with null groupId) - "Built-in Tools"
+    // 1. Default groups (tools with null groupId)
     final defaultTools = toolsByGroupId[null] ?? [];
-    if (defaultTools.isNotEmpty) {
+    final builtInTools = defaultTools
+        .where((toolState) => !toolState.tool.isNative)
+        .toList();
+    final nativeTools = defaultTools
+        .where((toolState) => toolState.tool.isNative)
+        .toList();
+
+    if (builtInTools.isNotEmpty) {
       result.add(
         ConversationToolsGroupWithTools(
           group: null,
-          tools: defaultTools,
+          defaultGroupType: DefaultToolGroupType.builtIn,
+          tools: builtInTools,
+        ),
+      );
+    }
+
+    if (nativeTools.isNotEmpty) {
+      result.add(
+        ConversationToolsGroupWithTools(
+          group: null,
+          defaultGroupType: DefaultToolGroupType.native,
+          tools: nativeTools,
         ),
       );
     }
@@ -111,6 +130,7 @@ class GroupedConversationToolsNotifier
   Future<void> toggleGroupTools(
     String? groupId, {
     required bool enabled,
+    DefaultToolGroupType? defaultGroupType,
   }) async {
     final conversationNotifier = ref.read(
       conversationToolsProvider(
@@ -121,7 +141,11 @@ class GroupedConversationToolsNotifier
 
     final currentGroups = state.value ?? [];
     final group = currentGroups.firstWhereOrNull(
-      (g) => g.group?.id == groupId || (groupId == null && g.isDefaultGroup),
+      (g) =>
+          g.group?.id == groupId ||
+          (groupId == null &&
+              g.isDefaultGroup &&
+              g.defaultGroupType == defaultGroupType),
     );
     if (group == null) return;
 

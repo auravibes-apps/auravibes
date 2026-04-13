@@ -205,7 +205,7 @@ class _ToolOptions extends HookConsumerWidget {
           ),
 
         // Delete button - only for built-in tools that can be removed
-        if (showDeleteButton)
+        if (showDeleteButton && !workspaceTool.isNative)
           Align(
             alignment: Alignment.centerRight,
             child: TextButton.icon(

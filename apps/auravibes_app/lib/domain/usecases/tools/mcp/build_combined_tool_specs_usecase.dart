@@ -1,6 +1,7 @@
 import 'package:auravibes_app/domain/entities/tools_group.dart';
 import 'package:auravibes_app/domain/entities/workspace_tool.dart';
 import 'package:auravibes_app/domain/usecases/tools/conversation/generate_built_in_composite_id.dart';
+import 'package:auravibes_app/services/tools/native_tool_service.dart';
 import 'package:auravibes_app/services/tools/tool_service.dart';
 import 'package:langchain/langchain.dart';
 
@@ -37,6 +38,29 @@ class BuildCombinedToolSpecsUseCase {
 
         final originalSpec = userTool.getTool();
         final compositeId = generateBuiltInCompositeId(
+          tableId: workspaceTool.id,
+          toolIdentifier: workspaceTool.toolId,
+        );
+
+        toolSpecs.add(
+          ToolSpec(
+            name: compositeId,
+            description: originalSpec.description,
+            inputJsonSchema: originalSpec.inputJsonSchema,
+          ),
+        );
+        continue;
+      }
+
+      final nativeToolType = workspaceTool.nativeType;
+      if (nativeToolType != null) {
+        final nativeTool = NativeToolService.getTool(nativeToolType);
+        if (nativeTool == null) {
+          continue;
+        }
+
+        final originalSpec = nativeTool.getTool();
+        final compositeId = generateNativeCompositeId(
           tableId: workspaceTool.id,
           toolIdentifier: workspaceTool.toolId,
         );

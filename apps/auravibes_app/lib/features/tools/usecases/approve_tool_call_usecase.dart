@@ -11,7 +11,10 @@ import 'package:auravibes_app/features/chats/usecases/resume_conversation_if_rea
 import 'package:auravibes_app/features/tools/notifiers/conversation_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_provider.dart';
+import 'package:auravibes_app/features/tools/usecases/run_allowed_tools_usecase.dart'
+    show McpToolCaller, mcpToolCallerProvider;
 import 'package:auravibes_app/services/tools/models/resolved_tool.dart';
+import 'package:auravibes_app/services/tools/native_tool_service.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
 import 'package:auravibes_app/services/tools/tool_service.dart';
 import 'package:auravibes_app/utils/encode.dart';
@@ -25,12 +28,14 @@ class ApproveToolCallUsecase {
     required WorkspaceToolsRepository workspaceToolsRepository,
     required ToolResolverService toolResolverService,
     required ResumeConversationIfReadyUsecase resumeConversationIfReadyUsecase,
+    required McpToolCaller mcpToolCaller,
   }) : _messageRepository = messageRepository,
        _conversationToolsRepository = conversationToolsRepository,
        _toolsGroupsRepository = toolsGroupsRepository,
        _workspaceToolsRepository = workspaceToolsRepository,
        _toolResolverService = toolResolverService,
-       _resumeConversationIfReadyUsecase = resumeConversationIfReadyUsecase;
+       _resumeConversationIfReadyUsecase = resumeConversationIfReadyUsecase,
+       _mcpToolCaller = mcpToolCaller;
 
   final MessageRepository _messageRepository;
   final ConversationToolsRepository _conversationToolsRepository;
@@ -38,6 +43,7 @@ class ApproveToolCallUsecase {
   final WorkspaceToolsRepository _workspaceToolsRepository;
   final ToolResolverService _toolResolverService;
   final ResumeConversationIfReadyUsecase _resumeConversationIfReadyUsecase;
+  final McpToolCaller _mcpToolCaller;
 
   Future<void> call({
     required String toolCallId,
@@ -93,45 +99,77 @@ class ApproveToolCallUsecase {
     required ResolvedTool tool,
     required String argumentsRaw,
   }) async {
-    if (!tool.isBuiltIn) {
-      return const _ExecutionResult(
-        resultStatus: ToolCallResultStatus.toolNotFound,
-      );
-    }
-
-    final builtInTool = tool.builtInTool;
-    if (builtInTool == null) {
-      return const _ExecutionResult(
-        resultStatus: ToolCallResultStatus.toolNotFound,
-      );
-    }
-
-    final toolService = ToolService.getTool(builtInTool);
-    if (toolService == null) {
-      return const _ExecutionResult(
-        resultStatus: ToolCallResultStatus.toolNotFound,
-      );
-    }
-
     final arguments = safeJsonDecode(argumentsRaw) ?? const <String, dynamic>{};
-    final input = arguments['input'];
-    if (input == null) {
-      return const _ExecutionResult(
-        resultStatus: ToolCallResultStatus.executionError,
-      );
-    }
 
     try {
-      final result = await toolService.runner(input as Object).value;
+      final result = await _runTool(tool, arguments);
       return _ExecutionResult(
         resultStatus: ToolCallResultStatus.success,
         responseRaw: result.toString(),
+      );
+    } on _ToolNotFoundException {
+      return const _ExecutionResult(
+        resultStatus: ToolCallResultStatus.toolNotFound,
       );
     } on Object catch (_) {
       return const _ExecutionResult(
         resultStatus: ToolCallResultStatus.executionError,
       );
     }
+  }
+
+  Future<Object> _runTool(
+    ResolvedTool tool,
+    Map<String, dynamic> arguments,
+  ) async {
+    if (tool.isBuiltIn) {
+      final input = arguments['input'];
+      if (input == null) {
+        throw const FormatException(
+          'Built-in tools require an input argument.',
+        );
+      }
+
+      final builtInTool = tool.builtInTool;
+      final toolService = builtInTool == null
+          ? null
+          : ToolService.getTool(builtInTool);
+      if (toolService == null) {
+        throw const _ToolNotFoundException();
+      }
+      return toolService.runner(input as Object).value;
+    }
+
+    if (tool.isNative) {
+      final input = arguments['input'];
+      if (input == null) {
+        throw const FormatException('Native tools require an input argument.');
+      }
+
+      final nativeTool = tool.nativeTool;
+      final toolService = nativeTool == null
+          ? null
+          : NativeToolService.getTool(nativeTool);
+      if (toolService == null) {
+        throw const _ToolNotFoundException();
+      }
+      return toolService.runner(input as Object).value;
+    }
+
+    if (tool.isMcp) {
+      final mcpServerId = tool.mcpServerId;
+      if (mcpServerId == null) {
+        throw const _ToolNotFoundException();
+      }
+
+      return _mcpToolCaller(
+        mcpServerId: mcpServerId,
+        toolIdentifier: tool.toolIdentifier,
+        arguments: arguments,
+      );
+    }
+
+    throw const _ToolNotFoundException();
   }
 
   Future<void> _updateToolCall({
@@ -185,6 +223,10 @@ class _ExecutionResult {
   final String? responseRaw;
 }
 
+final class _ToolNotFoundException implements Exception {
+  const _ToolNotFoundException();
+}
+
 final approveToolCallUsecaseProvider = Provider<ApproveToolCallUsecase>((ref) {
   return ApproveToolCallUsecase(
     messageRepository: ref.watch(messageRepositoryProvider),
@@ -195,5 +237,6 @@ final approveToolCallUsecaseProvider = Provider<ApproveToolCallUsecase>((ref) {
     resumeConversationIfReadyUsecase: ref.watch(
       resumeConversationIfReadyUsecaseProvider,
     ),
+    mcpToolCaller: ref.watch(mcpToolCallerProvider),
   );
 });

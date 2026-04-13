@@ -19,8 +19,26 @@ class BuildGroupedToolsViewUseCase {
 
     final result = <GroupedToolsViewItem>[];
     final defaultTools = toolsByGroupId[null] ?? [];
-    if (defaultTools.isNotEmpty) {
-      result.add(GroupedToolsViewItem(group: null, tools: defaultTools));
+    final builtInTools = defaultTools.where((tool) => !tool.isNative).toList();
+    final nativeTools = defaultTools.where((tool) => tool.isNative).toList();
+
+    if (builtInTools.isNotEmpty) {
+      result.add(
+        GroupedToolsViewItem(
+          group: null,
+          tools: builtInTools,
+          defaultGroupType: DefaultToolGroupType.builtIn,
+        ),
+      );
+    }
+    if (nativeTools.isNotEmpty) {
+      result.add(
+        GroupedToolsViewItem(
+          group: null,
+          tools: nativeTools,
+          defaultGroupType: DefaultToolGroupType.native,
+        ),
+      );
     }
 
     for (final group in groups) {
