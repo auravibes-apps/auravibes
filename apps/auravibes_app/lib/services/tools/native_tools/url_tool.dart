@@ -154,14 +154,11 @@ final class UrlTool extends NativeToolEntity<String, String> {
   Map<String, dynamic> _parseInput(String input) {
     final trimmedInput = input.trim();
     if (trimmedInput.startsWith('{')) {
-      try {
-        final decoded = const JsonDecoder().convert(trimmedInput);
-        if (decoded is Map) {
-          return Map<String, dynamic>.from(decoded);
-        }
-      } on FormatException {
-        return {'url': trimmedInput};
+      final decoded = const JsonDecoder().convert(trimmedInput);
+      if (decoded is! Map) {
+        throw const FormatException('Tool input JSON must be an object.');
       }
+      return Map<String, dynamic>.from(decoded);
     }
     return {'url': trimmedInput};
   }

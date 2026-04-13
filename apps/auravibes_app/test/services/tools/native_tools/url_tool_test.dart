@@ -42,6 +42,37 @@ void main() {
         throwsA(isA<FormatException>()),
       );
     });
+
+    test('rejects Host header in input', () {
+      final tool = UrlTool();
+
+      expect(
+        tool
+            .runner(
+              '{"url": "https://example.com", "headers": {"Host": "attacker.tld"}}',
+            )
+            .value,
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('rejects malformed JSON-object input starting with {', () {
+      final tool = UrlTool();
+
+      expect(
+        tool.runner('{bad}').value,
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('rejects bare opening brace', () {
+      final tool = UrlTool();
+
+      expect(
+        tool.runner('{').value,
+        throwsA(isA<FormatException>()),
+      );
+    });
   });
 }
 
