@@ -105,6 +105,7 @@
     "permission_label": "Permission",
     "enabled_label": "Enabled",
     "default_group": "Built-in Tools",
+    "native_group": "Native Tools",
     "mcp_connecting": "Connecting...",
     "mcp_connected": "Connected",
     "mcp_error": "Connection failed",
@@ -151,6 +152,10 @@
     "calculator": {
       "name": "Calculator",
       "description": "Solve Math problems"
+    },
+    "url": {
+      "name": "URL Fetcher",
+      "description": "Fetch URL content with optional method, headers, and body"
     }
   },
   "home_screen": {

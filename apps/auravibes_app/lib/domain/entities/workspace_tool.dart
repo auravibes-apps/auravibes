@@ -1,3 +1,4 @@
+import 'package:auravibes_app/services/tools/native_tool_entity.dart';
 import 'package:auravibes_app/services/tools/user_tools_entity.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -75,6 +76,12 @@ abstract class WorkspaceToolEntity with _$WorkspaceToolEntity {
     final type = UserToolType.fromValue(toolId);
     return type;
   }
+
+  NativeToolType? get nativeType {
+    return NativeToolType.fromValue(toolId);
+  }
+
+  bool get isNative => nativeType != null;
 }
 
 /// Entity for creating/updating workspace tool settings

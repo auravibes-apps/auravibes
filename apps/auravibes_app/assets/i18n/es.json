@@ -105,6 +105,7 @@
     "permission_label": "Permiso",
     "enabled_label": "Activado",
     "default_group": "Herramientas Integradas",
+    "native_group": "Herramientas Nativas",
     "mcp_connecting": "Conectando...",
     "mcp_connected": "Conectado",
     "mcp_error": "Error de conexión",
@@ -151,6 +152,10 @@
     "calculator": {
       "name": "Calculadora",
       "description": "Resuelve Problemas Matematicos"
+    },
+    "url": {
+      "name": "Lector de URL",
+      "description": "Obtiene el contenido de una URL con metodo, encabezados y cuerpo opcionales"
     }
   },
   "home_screen": {

@@ -1,4 +1,7 @@
+import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/domain/entities/messages.dart';
+import 'package:auravibes_app/domain/entities/tools_group.dart';
+import 'package:auravibes_app/domain/entities/workspace_tool.dart';
 import 'package:auravibes_app/domain/enums/message_types.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
@@ -37,6 +40,9 @@ void main() {
     late MockGetAgentIterationDecisionUsecase getAgentIterationDecisionUsecase;
     late RunAllowedToolsUsecase usecase;
     late MessageEntity toolMessage;
+    String? calledMcpServerId;
+    String? calledMcpToolIdentifier;
+    Map<String, dynamic>? calledMcpArguments;
 
     setUp(() {
       loadLatestMessageToolCallsUsecase =
@@ -46,6 +52,9 @@ void main() {
       toolsGroupsRepository = MockToolsGroupsRepository();
       workspaceToolsRepository = MockWorkspaceToolsRepository();
       getAgentIterationDecisionUsecase = MockGetAgentIterationDecisionUsecase();
+      calledMcpServerId = null;
+      calledMcpToolIdentifier = null;
+      calledMcpArguments = null;
 
       toolMessage = MessageEntity(
         id: 'message-1',
@@ -78,8 +87,113 @@ void main() {
         conversationToolsRepository: conversationToolsRepository,
         toolsGroupsRepository: toolsGroupsRepository,
         workspaceToolsRepository: workspaceToolsRepository,
+        mcpToolCaller:
+            ({
+              required mcpServerId,
+              required toolIdentifier,
+              required arguments,
+            }) async {
+              calledMcpServerId = mcpServerId;
+              calledMcpToolIdentifier = toolIdentifier;
+              calledMcpArguments = arguments;
+              return 'mcp result';
+            },
         getAgentIterationDecisionUsecase: getAgentIterationDecisionUsecase,
       );
+    });
+
+    test('passes raw argument maps to MCP tools', () async {
+      final tool = ToolToCall(
+        id: 'tool-1',
+        tool: ResolvedTool.mcp(
+          tableId: 'server-1',
+          toolIdentifier: 'sum',
+          mcpServerId: 'server-1',
+        ),
+        argumentsRaw: '{"a": 1, "b": 2}',
+      );
+
+      final mcpMessage = toolMessage.copyWith(
+        metadata: const MessageMetadataEntity(
+          toolCalls: [
+            MessageToolCallEntity(
+              id: 'tool-1',
+              name: 'mcp_server-1_calc_sum',
+              argumentsRaw: '{"a": 1, "b": 2}',
+            ),
+          ],
+        ),
+      );
+
+      when(
+        loadLatestMessageToolCallsUsecase.call(
+          conversationId: 'conversation-1',
+        ),
+      ).thenAnswer(
+        (_) async => LoadLatestMessageToolCallsResult(
+          messageId: 'message-1',
+          hasToolCalls: true,
+          toolsToRun: [tool],
+          notFoundToolCallIds: const [],
+        ),
+      );
+      when(messageRepository.getMessageById('message-1')).thenAnswer(
+        (_) async => mcpMessage,
+      );
+      when(
+        toolsGroupsRepository.getToolsGroupByMcpServerId('server-1'),
+      ).thenAnswer(
+        (_) async => ToolsGroupEntity(
+          id: 'group-1',
+          workspaceId: 'workspace-1',
+          name: 'Group',
+          isEnabled: true,
+          permissions: PermissionAccess.ask,
+          createdAt: DateTime(2026),
+          updatedAt: DateTime(2026),
+          mcpServerId: 'server-1',
+        ),
+      );
+      when(
+        workspaceToolsRepository.getWorkspaceToolByToolName(
+          toolGroupId: 'group-1',
+          toolName: 'sum',
+        ),
+      ).thenAnswer(
+        (_) async => WorkspaceToolEntity(
+          id: 'workspace-tool-1',
+          workspaceId: 'workspace-1',
+          toolId: 'sum',
+          isEnabled: true,
+          permissionMode: ToolPermissionMode.alwaysAllow,
+          createdAt: DateTime(2026),
+          updatedAt: DateTime(2026),
+          workspaceToolsGroupId: 'group-1',
+        ),
+      );
+      when(
+        conversationToolsRepository.checkToolPermission(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+          toolId: 'workspace-tool-1',
+        ),
+      ).thenAnswer((_) async => ToolPermissionResult.granted);
+      when(
+        messageRepository.updateMessage('message-1', any),
+      ).thenAnswer((_) async => mcpMessage);
+      when(
+        getAgentIterationDecisionUsecase.call(messageId: 'message-1'),
+      ).thenAnswer((_) async => AgentIterationDecision.continueIteration);
+
+      final result = await usecase.call(
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+      );
+
+      expect(result, AgentIterationDecision.continueIteration);
+      expect(calledMcpServerId, 'server-1');
+      expect(calledMcpToolIdentifier, 'sum');
+      expect(calledMcpArguments, {'a': 1, 'b': 2});
     });
 
     test('returns done when there are no tool calls to process', () async {

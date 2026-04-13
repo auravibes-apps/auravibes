@@ -53,7 +53,8 @@ class ConversationGroupHeader extends StatelessWidget {
               child: AuraText(
                 style: AuraTextStyle.heading6,
                 child: Text(
-                  groupWithTools.displayName,
+                  groupWithTools.localizedDisplayNameKey?.tr() ??
+                      groupWithTools.group!.name,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),

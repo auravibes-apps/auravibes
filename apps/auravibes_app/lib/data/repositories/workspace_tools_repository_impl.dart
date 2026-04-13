@@ -3,6 +3,7 @@ import 'package:auravibes_app/data/database/drift/daos/workspace_tools_dao.dart'
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/domain/entities/workspace_tool.dart';
 import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dart';
+import 'package:auravibes_app/services/tools/native_tool_service.dart';
 import 'package:auravibes_app/services/tools/tool_service.dart';
 
 /// Implementation of the WorkspaceToolsRepository
@@ -17,6 +18,7 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
   Future<List<WorkspaceToolEntity>> getWorkspaceTools(
     String workspaceId,
   ) async {
+    await _ensureNativeTools(workspaceId);
     final results = await _dao.getWorkspaceTools(workspaceId);
     return results.map(_tableToEntity).toList();
   }
@@ -25,6 +27,7 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
   Future<List<WorkspaceToolEntity>> getEnabledWorkspaceTools(
     String workspaceId,
   ) async {
+    await _ensureNativeTools(workspaceId);
     final results = await _dao.getEnabledWorkspaceTools(workspaceId);
     return results.map(_tableToEntity).toList();
   }
@@ -34,10 +37,34 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
     String workspaceId,
     String toolId,
   ) async {
-    final result = await _dao.getWorkspaceTool(workspaceId, toolId);
+    await _ensureNativeTools(workspaceId);
+    final result = await _dao.getWorkspaceToolByToolId(workspaceId, toolId);
     if (result == null) return null;
 
     return _tableToEntity(result);
+  }
+
+  Future<void> _ensureNativeTools(String workspaceId) async {
+    await _database.transaction(() async {
+      final workspaceTools = await _dao.getWorkspaceTools(workspaceId);
+      final existingNativeToolIds = workspaceTools
+          .where((tool) => tool.workspaceToolsGroupId == null)
+          .where((tool) => NativeToolService.hasTypeString(tool.toolId))
+          .map((tool) => tool.toolId)
+          .toSet();
+
+      for (final nativeType in NativeToolService.getTypes()) {
+        if (existingNativeToolIds.contains(nativeType.value)) {
+          continue;
+        }
+
+        await _dao.setWorkspaceToolEnabled(
+          workspaceId,
+          nativeType.value,
+          isEnabled: true,
+        );
+      }
+    });
   }
 
   @override
@@ -81,9 +108,7 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
     String toolType,
   ) async {
     try {
-      final result = await _dao.getWorkspaceTool(workspaceId, toolType);
-
-      return result?.isEnabled ?? false;
+      return await _dao.isWorkspaceToolEnabledByToolId(workspaceId, toolType);
     } catch (e) {
       throw WorkspaceToolsException(
         'Failed to check workspace tool status: $e',
@@ -94,8 +119,13 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
 
   @override
   Future<bool> removeWorkspaceTool(String workspaceId, String toolType) async {
+    if (NativeToolService.hasTypeString(toolType)) {
+      throw WorkspaceToolsValidationException(
+        'Native tools cannot be removed: $toolType',
+      );
+    }
     try {
-      return await _dao.deleteWorkspaceTool(workspaceId, toolType);
+      return await _dao.deleteWorkspaceToolByToolId(workspaceId, toolType);
     } catch (e) {
       throw WorkspaceToolsException(
         'Failed to remove workspace tool: $e',
@@ -176,7 +206,8 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
       }
 
       // Check if tool type is valid
-      if (!ToolService.hasTypeString(toolType)) {
+      if (!ToolService.hasTypeString(toolType) &&
+          !NativeToolService.hasTypeString(toolType)) {
         throw WorkspaceToolsValidationException('Invalid tool type: $toolType');
       }
 
@@ -213,8 +244,7 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
     String toolType,
   ) async {
     try {
-      final result = await _dao.getWorkspaceTool(workspaceId, toolType);
-      return result?.config;
+      return await _dao.getWorkspaceToolConfigByToolId(workspaceId, toolType);
     } catch (e) {
       throw WorkspaceToolsException(
         'Failed to get workspace tool config: $e',

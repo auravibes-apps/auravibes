@@ -97,6 +97,7 @@ class ConversationToolsGroupCard extends HookConsumerWidget {
         .toggleGroupTools(
           groupWithTools.group?.id,
           enabled: enabled,
+          defaultGroupType: groupWithTools.defaultGroupType,
         );
   }
 
