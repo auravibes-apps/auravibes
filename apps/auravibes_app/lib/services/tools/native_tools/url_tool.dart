@@ -96,7 +96,11 @@ final class UrlTool extends NativeToolEntity<String, String> {
 
   Future<UrlRequest> _buildRequest(String toolInput) async {
     final json = _parseInput(toolInput);
-    final url = (json['url'] as String? ?? '').trim();
+    final rawUrl = json['url'];
+    if (rawUrl is! String) {
+      throw FormatException('URL must be a string: ${rawUrl.runtimeType}');
+    }
+    final url = rawUrl.trim();
     if (url.isEmpty) {
       throw const FormatException('A non-empty URL is required.');
     }
@@ -114,7 +118,7 @@ final class UrlTool extends NativeToolEntity<String, String> {
       );
     }
 
-    final method = _parseMethod(json['method'] as String?);
+    final method = _parseMethod(json['method']);
     final headers = _parseHeaders(json['headers']);
     final rawBody = json['body'];
     final body = switch (rawBody) {
@@ -162,8 +166,11 @@ final class UrlTool extends NativeToolEntity<String, String> {
     return {'url': trimmedInput};
   }
 
-  UrlRequestMethod _parseMethod(String? method) {
+  UrlRequestMethod _parseMethod(dynamic method) {
     if (method == null) return .get;
+    if (method is! String) {
+      throw FormatException('HTTP method must be a string: $method');
+    }
     final normalized = method.trim().toUpperCase();
     return UrlRequestMethod.values.firstWhere(
       (m) => m.value == normalized,

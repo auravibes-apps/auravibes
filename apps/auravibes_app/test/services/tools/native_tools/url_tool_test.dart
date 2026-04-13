@@ -24,6 +24,24 @@ void main() {
         throwsA(isA<FormatException>()),
       );
     });
+
+    test('rejects non-string url value', () {
+      final tool = UrlTool();
+
+      expect(
+        tool.runner('{"url": 123}').value,
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('rejects non-string method value', () {
+      final tool = UrlTool();
+
+      expect(
+        tool.runner('{"url": "https://example.com", "method": 456}').value,
+        throwsA(isA<FormatException>()),
+      );
+    });
   });
 }
 
