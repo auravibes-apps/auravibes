@@ -22,6 +22,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: false
 
       - name: 🔧 Setup FVM
         uses: kuhnroyal/flutter-fvm-config-action/config@v3
@@ -40,8 +41,9 @@ jobs:
           ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
 
       - name: 🏗️ Melos Bootstrap
-        uses: bluefireteam/melos-action@main
+        uses: bluefireteam/melos-action@v3.6.0
         with:
+          melos-version: 7.4.0
           run-bootstrap: true
 
       - name: 📦 Check for lockfile changes
@@ -67,4 +69,4 @@ jobs:
         if: steps.changes.outputs.changed == 'true'
         run: |
           git commit -m "chore: fix pubspec.lock SDK constraints"
-          git push
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:${{ github.event.pull_request.head.ref }}
