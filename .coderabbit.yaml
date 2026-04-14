@@ -1,0 +1,113 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: "en-US"
+early_access: false
+tone_instructions: "Be concise. Follow very_good_analysis lint rules. Prefer Dart 3.11+ dot shorthand syntax when context is clear. Provide architectural insights on system design, scalability, and long-term maintainability."
+
+reviews:
+  profile: "chill"
+  request_changes_workflow: false
+  high_level_summary: true
+  high_level_summary_in_walkthrough: true
+  high_level_summary_instructions: "Generate a bullet-point summary organized by package (apps/ vs packages/). Include conventional commit type in summary. Highlight architectural changes and cross-package impacts."
+  poem: false
+  review_status: true
+  review_details: true
+  related_issues: true
+  related_prs: true
+  assess_linked_issues: true
+  collapse_walkthrough: true
+  changed_files_summary: true
+  sequence_diagrams: true
+  estimate_code_review_effort: true
+  abort_on_close: true
+
+  path_filters:
+    - "!**/*.g.dart"
+    - "!**/*.freezed.dart"
+    - "!**/generated_plugin_registrant.dart"
+    - "!**/.fvm/**"
+
+  path_instructions:
+    - path: "apps/auravibes_app/**/*.dart"
+      instructions: |
+        Review Flutter app code for:
+        - Architectural patterns: proper layering (UI → Logic → Data), dependency direction
+        - Proper use of GoRouter navigation patterns
+        - Riverpod provider usage (prefer code-generated providers)
+        - Widget const constructors and performance (const-first design)
+        - No business logic in widgets (use controller/usecase pattern)
+        - Proper lifecycle management and dispose patterns
+        - FVM-compatible SDK usage (Dart 3.x / Flutter 3.41.4+)
+        - Cross-package dependency management and system design impact
+
+    - path: "packages/auravibes_ui/**/*.dart"
+      instructions: |
+        Review UI package code for:
+        - AuraColorVariant enum usage instead of Color? (for const compatibility)
+        - Only children/dropdown lists as variable parameters
+        - Maximize compile-time constants via enums
+        - Follow STYLE_GUIDE.md conventions
+        - Widget const constructors everywhere possible
+
+    - path: "packages/**/lib/**/*.dart"
+      instructions: |
+        Review shared package code for:
+        - Architectural patterns: clean API boundaries, proper abstraction layers
+        - Proper use of Freezed for immutable data classes
+        - Drift database patterns (type-safe queries, reactive streams)
+        - Dart 3.11+ dot shorthand syntax when context is clear
+        - No comments unless explicitly requested
+        - Guard clause pattern and single responsibility principle
+        - Scalability and long-term maintainability of the package API
+
+    - path: "**/test/**/*.dart"
+      instructions: |
+        Review test code for:
+        - Proper use of Flutter test conventions
+        - Adequate coverage of methods, classes, and error paths
+        - Test descriptions that clarify purpose
+        - No test-of-tests or trivial assertions
+
+  auto_review:
+    enabled: true
+    drafts: false
+    auto_incremental_review: true
+    ignore_title_keywords:
+      - "WIP"
+      - "wip"
+    base_branches:
+      - "main"
+      - "develop"
+      - "feat/*"
+      - "setup/*"
+
+  finishing_touches:
+    docstrings:
+      enabled: false
+    unit_tests:
+      enabled: true
+    simplify:
+      enabled: false
+
+  pre_merge_checks:
+    title:
+      mode: "warning"
+      requirements: "Title should follow Conventional Commits format (e.g., feat:, fix:, refactor:, chore:). Keep under 50 chars."
+    description:
+      mode: "warning"
+
+  tools:
+    markdownlint:
+      enabled: true
+    yamllint:
+      enabled: true
+    actionlint:
+      enabled: true
+    gitleaks:
+      enabled: true
+    trufflehog:
+      enabled: true
+
+chat:
+  auto_reply: true
+  art: false
