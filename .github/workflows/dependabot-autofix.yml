@@ -1,0 +1,70 @@
+name: Dependabot Autofix
+
+on:
+  pull_request:
+    branches:
+      - main
+      - dev
+      - stage
+
+permissions:
+  contents: write
+
+jobs:
+  autofix:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: macos-latest
+
+    steps:
+      - name: 📚 Git Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🔧 Setup FVM
+        uses: kuhnroyal/flutter-fvm-config-action/config@v3
+        id: fvm-config-action
+
+      - name: 🐦 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}
+          channel: ${{ steps.fvm-config-action.outputs.FLUTTER_CHANNEL }}
+          cache: true
+
+      - name: 🔗 Create FVM symlink for CI
+        run: |
+          mkdir -p .fvm
+          ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
+
+      - name: 🏗️ Melos Bootstrap
+        uses: bluefireteam/melos-action@main
+        with:
+          run-bootstrap: true
+
+      - name: 📦 Check for lockfile changes
+        id: changes
+        run: |
+          git add pubspec.lock
+          if git diff --staged --quiet; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "No lockfile changes needed"
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "Lockfile changes detected"
+            git diff --staged
+          fi
+
+      - name: 🔧 Configure Git
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+      - name: 📤 Push corrected lockfile
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git commit -m "chore: fix pubspec.lock SDK constraints"
+          git push
