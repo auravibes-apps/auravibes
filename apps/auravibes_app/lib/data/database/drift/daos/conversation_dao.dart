@@ -28,6 +28,10 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
     conversations,
   )..where((tbl) => tbl.id.equals(id))).go().then((count) => count > 0);
 
+  Stream<ConversationsTable?> watchConversationById(String id) => (select(
+    conversations,
+  )..where((tbl) => tbl.id.equals(id))).watchSingleOrNull();
+
   Stream<List<ConversationsTable>> watchConversationsByWorkspace(
     String workspaceId, {
     int? limit,
