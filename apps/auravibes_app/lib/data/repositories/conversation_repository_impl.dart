@@ -19,6 +19,13 @@ class ConversationRepositoryImpl implements ConversationRepository {
   }
 
   @override
+  Stream<ConversationEntity?> watchConversationById(String id) {
+    return _database.conversationDao
+        .watchConversationById(id)
+        .map((row) => row != null ? _mapToConversation(row) : null);
+  }
+
+  @override
   Future<ConversationEntity?> getConversationById(String id) async {
     final conversationTable = await _database.conversationDao
         .getConversationById(id);

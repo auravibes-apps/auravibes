@@ -6,6 +6,8 @@ abstract class ConversationRepository {
     int? limit,
   });
 
+  Stream<ConversationEntity?> watchConversationById(String id);
+
   Future<ConversationEntity?> getConversationById(String id);
 
   Future<ConversationEntity> createConversation(
