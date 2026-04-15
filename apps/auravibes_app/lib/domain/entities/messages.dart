@@ -66,7 +66,11 @@ String? _toolCallResultStatusToJson(ToolCallResultStatus? status) {
 abstract class MessageMetadataEntity with _$MessageMetadataEntity {
   const factory MessageMetadataEntity({
     @Default(<MessageToolCallEntity>[]) List<MessageToolCallEntity> toolCalls,
+    int? promptTokens,
+    int? completionTokens,
+    int? totalTokens,
   }) = _MessageMetadataEntity;
+  const MessageMetadataEntity._();
 
   factory MessageMetadataEntity.fromJson(Map<String, dynamic> json) =>
       _$MessageMetadataEntityFromJson(json);
@@ -79,6 +83,10 @@ abstract class MessageMetadataEntity with _$MessageMetadataEntity {
     } on Exception catch (_) {
       return null;
     }
+  }
+
+  int get usedTokens {
+    return totalTokens ?? ((promptTokens ?? 0) + (completionTokens ?? 0));
   }
 }
 

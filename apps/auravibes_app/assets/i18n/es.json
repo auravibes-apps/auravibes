@@ -77,7 +77,20 @@
       "delete_confirm": "¿Estás seguro de que deseas eliminar esta conversación? Esta acción no se puede deshacer.",
       "options_tooltip": "Más opciones",
       "error_workspace_mismatch": "Esta conversación pertenece a un espacio de trabajo diferente",
-      "error_not_found": "Conversación no encontrada"
+      "error_not_found": "Conversación no encontrada",
+      "context_usage": {
+        "label": "Uso de ventana de contexto",
+        "limit_unavailable": "El límite de contexto no está disponible para este modelo.",
+        "tooltip_normal": "Usando {used} de {limit} tokens ({percent}%). Margen saludable.",
+        "tooltip_elevated": "Usando {used} de {limit} tokens ({percent}%). Acercándose al límite.",
+        "tooltip_warning": "Usando {used} de {limit} tokens ({percent}%). Cerca del límite de contexto.",
+        "tooltip_overflow": "Usando {used} de {limit} tokens ({percent}%). Supera el límite por {overflow} tokens.",
+        "semantic_limit_unavailable": "{usage}, límite de contexto no disponible",
+        "semantic_normal": "{usage}, {percent} por ciento",
+        "semantic_elevated": "{usage}, {percent} por ciento, acercándose al límite",
+        "semantic_warning": "{usage}, {percent} por ciento, cerca del límite",
+        "semantic_overflow": "{usage}, {percent} por ciento, supera el límite por {overflow} tokens"
+      }
     }
   },
   "tools_screen": {

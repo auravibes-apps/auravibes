@@ -16,11 +16,24 @@ extension ChatResultEntities on ChatResult {
     }).toList();
   }
 
+  int get entityPromptTokens => usage.promptTokens ?? 0;
+
+  int get entityCompletionTokens => usage.responseTokens ?? 0;
+
+  int get entityTotalTokens {
+    return usage.totalTokens ?? (entityPromptTokens + entityCompletionTokens);
+  }
+
   MessageMetadataEntity? get entityMetadata {
     if (output.toolCalls.isEmpty) {
       return null;
     }
 
-    return MessageMetadataEntity(toolCalls: entityTools);
+    return MessageMetadataEntity(
+      toolCalls: entityTools,
+      promptTokens: usage.promptTokens,
+      completionTokens: usage.responseTokens,
+      totalTokens: usage.totalTokens,
+    );
   }
 }
