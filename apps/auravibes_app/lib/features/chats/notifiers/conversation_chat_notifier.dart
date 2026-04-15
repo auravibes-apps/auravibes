@@ -1,4 +1,5 @@
 import 'package:auravibes_app/domain/entities/conversation.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_selection_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -27,10 +28,11 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
   @override
   Future<ConversationResult> build(String workspaceId) async {
     final conversationId = ref.watch(conversationSelectedProvider);
+    final asyncConv = ref.watch(
+      conversationByIdStreamProvider(conversationId: conversationId),
+    );
 
-    final conversation = await ref
-        .watch(conversationRepositoryProvider)
-        .getConversationById(conversationId);
+    final conversation = asyncConv.value;
 
     if (conversation == null) {
       return const ConversationNotFound();
