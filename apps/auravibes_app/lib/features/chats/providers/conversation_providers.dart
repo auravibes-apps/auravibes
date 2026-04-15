@@ -9,9 +9,9 @@ part 'conversation_providers.g.dart';
 Stream<ConversationEntity?> conversationByIdStream(
   Ref ref, {
   required String conversationId,
-}) async* {
+}) {
   final repo = ref.watch(conversationRepositoryProvider);
-  yield* repo.watchConversationById(conversationId);
+  return repo.watchConversationById(conversationId);
 }
 
 @riverpod
@@ -19,9 +19,9 @@ Stream<List<ConversationEntity>> conversationsStream(
   Ref ref, {
   required String workspaceId,
   int? limit,
-}) async* {
+}) {
   final repo = ref.watch(conversationRepositoryProvider);
-  yield* repo.watchConversationsByWorkspace(workspaceId, limit: limit);
+  return repo.watchConversationsByWorkspace(workspaceId, limit: limit);
 }
 
 @riverpod
