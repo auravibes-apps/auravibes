@@ -38,11 +38,6 @@ class AddModelProviderWidget extends HookConsumerWidget {
     final scrollController = useScrollController();
     final formKey = useMemoized(GlobalKey<FormState>.new, []);
 
-    useEffect(() {
-      addCredentialsModelMutationProvider.reset(ref);
-      return null;
-    }, []);
-
     final hasModel = ref.watch(
       addModelProviderStateProvider(workspaceId).select(
         (value) => value.modelId != null,
