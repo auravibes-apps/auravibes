@@ -109,9 +109,9 @@ class AppDatabase extends _$AppDatabase {
             '  SELECT t1.rowid FROM tools t1'
             '  INNER JOIN tools t2 ON t1.workspace_id = t2.workspace_id'
             '    AND t1.tool_id = t2.tool_id'
-            '    AND t1.workspace_tools_group_id IS NULL'
-            '    AND t2.workspace_tools_group_id IS NULL'
-            '    AND t1.rowid > t2.rowid'
+            '    AND t1.workspace_tools_group_id IS NULL '
+            '    AND t2.workspace_tools_group_id IS NULL '
+            '    AND t1.rowid > t2.rowid '
             ')',
           );
           // Unique index for native tools (groupId IS NULL)
@@ -127,8 +127,8 @@ class AppDatabase extends _$AppDatabase {
             '  INNER JOIN tools t2 ON t1.workspace_id = t2.workspace_id'
             '    AND t1.tool_id = t2.tool_id'
             '    AND t1.workspace_tools_group_id = t2.workspace_tools_group_id'
-            '    AND t1.workspace_tools_group_id IS NOT NULL'
-            '    AND t1.rowid > t2.rowid'
+            '    AND t1.workspace_tools_group_id IS NOT NULL '
+            '    AND t1.rowid > t2.rowid '
             ')',
           );
           // Unique index for MCP tools (groupId IS NOT NULL)
