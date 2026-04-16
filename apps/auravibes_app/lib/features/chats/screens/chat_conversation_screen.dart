@@ -111,10 +111,8 @@ class _ChatConversationScreen extends HookConsumerWidget {
     return AuraScreen(
       appBar: AuraAppBarWithDrawer(
         title: Text(conversation.title),
-        actions: [
-          ConversationContextUsagePill(
-            credentialsModelId: conversation.modelId,
-          ),
+        actions: const [
+          ConversationContextUsagePill(),
         ],
         bottom: SelectCredentialsModelWidget(
           workspaceId: workspaceId,

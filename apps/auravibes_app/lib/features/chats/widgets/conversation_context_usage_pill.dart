@@ -6,27 +6,18 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class ConversationContextUsagePill extends ConsumerWidget {
-  const ConversationContextUsagePill({
-    required this.credentialsModelId,
-    super.key,
-  });
-
-  final String? credentialsModelId;
+  const ConversationContextUsagePill({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final usedTokens = ref.watch(conversationUsedTokensProvider);
-    final limitTokens =
-        ref.watch(modelContextLimitProvider(credentialsModelId)).value ?? 0;
-    final rawPercent = limitTokens == 0
-        ? 0
-        : ((usedTokens / limitTokens) * 100).round();
-    final usageSummary = ConversationTokenUsageSummary(
-      usedTokens: usedTokens,
-      limitTokens: limitTokens,
-      percent: rawPercent,
-      progress: rawPercent.clamp(0, 100) / 100,
-    );
+    final usageSummary =
+        ref.watch(conversationTokenUsageSummaryProvider).value ??
+        const ConversationTokenUsageSummary(
+          usedTokens: 0,
+          limitTokens: 0,
+          percent: 0,
+          progress: 0,
+        );
 
     final viewModel = _ContextUsageViewModel.fromSummary(usageSummary);
     final auraColors = context.auraColors;
@@ -39,7 +30,6 @@ class ConversationContextUsagePill extends ConsumerWidget {
           label: LocaleKeys.chats_screens_chat_conversation_context_usage_label
               .tr(),
           value: viewModel.semanticValue,
-          liveRegion: true,
           child: AuraContainer(
             padding: const AuraEdgeInsetsGeometry.symmetric(
               horizontal: AuraSpacing.sm,
@@ -109,9 +99,9 @@ class _ContextUsageViewModel {
     ConversationTokenUsageSummary summary,
   ) {
     final hasLimit = summary.limitTokens > 0;
-    const limitUnavailableSemantic =
-        'chats_screens.chat_conversation.context_usage.'
-        'semantic_limit_unavailable';
+    const _s = LocaleKeys
+        // ignore: lines_longer_than_80_chars
+        .chats_screens_chat_conversation_context_usage_semantic_limit_unavailable;
     final usageLabel = hasLimit
         ? '${_formatCompactTokens(summary.usedTokens)}/${_formatCompactTokens(summary.limitTokens)}'
         : '${_formatCompactTokens(summary.usedTokens)}/--';
@@ -123,7 +113,7 @@ class _ContextUsageViewModel {
         tooltip: LocaleKeys
             .chats_screens_chat_conversation_context_usage_limit_unavailable
             .tr(),
-        semanticValue: limitUnavailableSemantic.tr(
+        semanticValue: _s.tr(
           namedArgs: {'usage': usageLabel},
         ),
         badgeVariant: AuraBadgeVariant.neutral,
@@ -205,7 +195,7 @@ class _ContextUsageViewModel {
                 'overflow': '$overflowTokens',
               },
             ),
-      _ContextUsageLevel.unknown => limitUnavailableSemantic.tr(
+      _ContextUsageLevel.unknown => _s.tr(
         namedArgs: {'usage': usageLabel},
       ),
     };
@@ -307,9 +297,16 @@ String _formatCompactTokens(int value) {
   }
 
   if (value >= 1000) {
+    final k = value / 1000;
+    if (k >= 1000) {
+      final formatted = k.truncateToDouble() == k
+          ? (value / 1000000).toStringAsFixed(0)
+          : (value / 1000000).toStringAsFixed(1);
+      return '${formatted}m';
+    }
     final formatted = value % 1000 == 0
-        ? (value / 1000).toStringAsFixed(0)
-        : (value / 1000).toStringAsFixed(1);
+        ? k.toStringAsFixed(0)
+        : k.toStringAsFixed(1);
     return '${formatted}k';
   }
 

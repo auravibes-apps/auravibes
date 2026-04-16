@@ -160,7 +160,7 @@ void main() {
       },
     );
 
-    test('computes token usage percentage and clamps over 100%', () async {
+    test('computes token usage percentage, clamps progress at 100%', () async {
       container =
           ProviderContainer(
               overrides: [

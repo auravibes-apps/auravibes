@@ -71,7 +71,7 @@ As a user, I still get a stable usage display even if a provider returns partial
 -->
 
 - Model context limit is missing or zero: UI must not divide by zero and must show a safe fallback (e.g., used only and 0% progress).
-- Percent exceeds 100 due to stale or changed model limit: percent display and progress must clamp to 100%.
+- Percent exceeds 100 due to stale or changed model limit: display raw percent value (may exceed 100) while clamping progress bar to 100%.
 - Streaming usage not present on intermediate chunks: keep last known value until a newer valid value arrives.
 - A message has no usage fields at all: treat message usage as zero.
 
@@ -86,14 +86,14 @@ As a user, I still get a stable usage display even if a provider returns partial
 
 - **FR-001**: System MUST store token usage per message in message metadata using the fields `promptTokens`, `completionTokens`, and `totalTokens` when available.
 - **FR-002**: System MUST compute message token usage using this order: `totalTokens`; otherwise `promptTokens + completionTokens`; otherwise `0`.
-- **FR-003**: System MUST compute conversation used tokens as the sum of usage across all messages in the active conversation.
+- **FR-003**: System MUST compute conversation used tokens from the latest assistant message usage (with streaming overlay when in-progress).
 - **FR-004**: System MUST include in-progress streaming usage in conversation totals while the assistant message is unfinished.
 - **FR-005**: System MUST use the selected conversation model context window limit as the denominator for percent usage.
 - **FR-006**: System MUST display in the conversation top bar: used tokens, model limit, and percent in the format `39k/205k - 19%`.
 - **FR-007**: System MUST render a circular progress indicator in the top bar where fill amount matches displayed percent.
 - **FR-008**: System MUST update the top bar usage display live during streaming responses.
 - **FR-009**: System MUST persist message usage so totals remain available after app restart.
-- **FR-010**: System MUST clamp percent and progress to a minimum of 0 and maximum of 100.
+- **FR-010**: System MUST clamp progress to a minimum of 0 and maximum of 1.0; raw percent may exceed 100 to indicate overflow.
 
 ### Key Entities *(include if feature involves data)*
 

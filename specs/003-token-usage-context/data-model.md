@@ -25,18 +25,14 @@ Runtime-only aggregate used by chat top bar.
 
 - `usedTokens: int`
 - `limitTokens: int`
-- `percentUsed: int` (0..100)
-- `progress: double` (0.0..1.0)
+- `percentUsed: int` (raw percent; may exceed 100 when usage overflows limit)
+- `progress: double` (clamped 0.0..1.0)
 
 ### Derivation Rules
 
-For each message:
-
-1. `messageUsed = totalTokens ?? (promptTokens + completionTokens) ?? 0`
-2. Conversation used = sum(`messageUsed`) across conversation messages.
-3. If a message is currently streaming, overlay with latest `ChatResult.usage`-derived value.
-4. `percentUsed = clamp(round((usedTokens / limitTokens) * 100), 0, 100)` when `limitTokens > 0`, else `0`.
-5. `progress = percentUsed / 100`.
+1. `usedTokens` is taken from the latest assistant message usage (with streaming overlay when in-progress).
+2. `percentUsed = round((usedTokens / limitTokens) * 100)` when `limitTokens > 0`, else `0`.
+3. `progress = clamp(percentUsed / 100, 0.0, 1.0)`.
 
 ## State Transitions
 

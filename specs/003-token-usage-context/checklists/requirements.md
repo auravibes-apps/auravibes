@@ -2,7 +2,7 @@
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning  
 **Created**: 2026-04-15  
-**Feature**: [/Users/davidlondono/Code/Mine/aura_vibes/auravibes.token-usage/specs/003-token-usage-context/spec.md](../spec.md)
+**Feature**: [`specs/003-token-usage-context/spec.md`](../spec.md)
 
 ## Content Quality
 

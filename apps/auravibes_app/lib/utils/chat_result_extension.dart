@@ -25,7 +25,12 @@ extension ChatResultEntities on ChatResult {
   }
 
   MessageMetadataEntity? get entityMetadata {
-    if (output.toolCalls.isEmpty) {
+    final hasUsage =
+        usage.promptTokens != null ||
+        usage.responseTokens != null ||
+        usage.totalTokens != null;
+
+    if (output.toolCalls.isEmpty && !hasUsage) {
       return null;
     }
 
