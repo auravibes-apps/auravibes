@@ -30,6 +30,7 @@ class ConversationContextUsagePill extends ConsumerWidget {
           label: LocaleKeys.chats_screens_chat_conversation_context_usage_label
               .tr(),
           value: viewModel.semanticValue,
+          container: true,
           child: AuraContainer(
             padding: const AuraEdgeInsetsGeometry.symmetric(
               horizontal: AuraSpacing.sm,
@@ -309,8 +310,8 @@ String _formatCompactTokens(int value) {
         : k.toStringAsFixed(1);
     if (double.tryParse(formatted) != null && double.parse(formatted) >= 1000) {
       final m = value / 1000000;
-      final mFormatted = (m * 10).truncateToDouble() == m * 10
-          ? m.toStringAsFixed(1)
+      final mFormatted = m.truncateToDouble() == m
+          ? m.toStringAsFixed(0)
           : m.toStringAsFixed(1);
       return '${mFormatted}m';
     }
