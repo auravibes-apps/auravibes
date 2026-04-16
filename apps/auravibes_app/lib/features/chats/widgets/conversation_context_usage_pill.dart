@@ -307,6 +307,13 @@ String _formatCompactTokens(int value) {
     final formatted = value % 1000 == 0
         ? k.toStringAsFixed(0)
         : k.toStringAsFixed(1);
+    if (double.tryParse(formatted) != null && double.parse(formatted) >= 1000) {
+      final m = value / 1000000;
+      final mFormatted = (m * 10).truncateToDouble() == m * 10
+          ? m.toStringAsFixed(1)
+          : m.toStringAsFixed(1);
+      return '${mFormatted}m';
+    }
     return '${formatted}k';
   }
 
