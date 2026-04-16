@@ -31,6 +31,7 @@ class ConversationContextUsagePill extends ConsumerWidget {
               .tr(),
           value: viewModel.semanticValue,
           container: true,
+          excludeSemantics: true,
           child: AuraContainer(
             padding: const AuraEdgeInsetsGeometry.symmetric(
               horizontal: AuraSpacing.sm,
