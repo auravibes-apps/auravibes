@@ -161,6 +161,7 @@ void main() {
     );
 
     test('computes token usage percentage, clamps progress at 100%', () async {
+      container.dispose();
       container =
           ProviderContainer(
               overrides: [

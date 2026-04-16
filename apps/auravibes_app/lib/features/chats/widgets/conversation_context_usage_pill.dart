@@ -100,7 +100,7 @@ class _ContextUsageViewModel {
   ) {
     final hasLimit = summary.limitTokens > 0;
     const _s = LocaleKeys
-        // ignore: lines_longer_than_80_chars
+        // ignore: lines_longer_than_80_chars - generated LocaleKeys name
         .chats_screens_chat_conversation_context_usage_semantic_limit_unavailable;
     final usageLabel = hasLimit
         ? '${_formatCompactTokens(summary.usedTokens)}/${_formatCompactTokens(summary.limitTokens)}'
