@@ -300,17 +300,12 @@ String _formatCompactTokens(int value) {
 
   if (value >= 1000) {
     final k = value / 1000;
-    if (k >= 1000) {
-      final formatted = k.truncateToDouble() == k
-          ? (value / 1000000).toStringAsFixed(0)
-          : (value / 1000000).toStringAsFixed(1);
-      return '${formatted}m';
-    }
     final formatted = value % 1000 == 0
         ? k.toStringAsFixed(0)
         : k.toStringAsFixed(1);
-    if (double.tryParse(formatted) != null && double.parse(formatted) >= 1000) {
-      final m = value / 1000000;
+    final roundedK = double.tryParse(formatted);
+    if (roundedK != null && roundedK >= 1000) {
+      final m = roundedK / 1000;
       final mFormatted = m.truncateToDouble() == m
           ? m.toStringAsFixed(0)
           : m.toStringAsFixed(1);
