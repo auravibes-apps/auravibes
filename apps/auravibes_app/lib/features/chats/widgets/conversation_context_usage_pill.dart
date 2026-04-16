@@ -55,7 +55,7 @@ class ConversationContextUsagePill extends ConsumerWidget {
                     ),
                     child: LinearProgressIndicator(
                       minHeight: 4,
-                      value: viewModel.progress,
+                      value: viewModel.progress.clamp(0.0, 1.0),
                       color: viewModel.progressColor(auraColors),
                       backgroundColor: auraColors.onSurfaceVariant.withValues(
                         alpha: 0.25,
