@@ -10,16 +10,11 @@ class ConversationContextUsagePill extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final usageSummary =
-        ref.watch(conversationTokenUsageSummaryProvider).value ??
-        const ConversationTokenUsageSummary(
-          usedTokens: 0,
-          limitTokens: 0,
-          percent: 0,
-          progress: 0,
-        );
-
-    final viewModel = _ContextUsageViewModel.fromSummary(usageSummary);
+    final usageSummaryAsync = ref.watch(conversationTokenUsageSummaryProvider);
+    final viewModel = switch (usageSummaryAsync) {
+      AsyncData(:final value) => _ContextUsageViewModel.fromSummary(value),
+      AsyncLoading() || AsyncError() => _ContextUsageViewModel.unavailable(),
+    };
     final auraColors = context.auraColors;
 
     return Padding(
@@ -212,6 +207,29 @@ class _ContextUsageViewModel {
       iconColor: level.iconColor,
       level: level,
       progress: summary.progress,
+    );
+  }
+
+  factory _ContextUsageViewModel.unavailable() {
+    const usageLabel = '--/--';
+    const semanticLimitUnavailable = LocaleKeys
+        // ignore: lines_longer_than_80_chars - generated LocaleKeys name
+        .chats_screens_chat_conversation_context_usage_semantic_limit_unavailable;
+
+    return _ContextUsageViewModel(
+      usageLabel: usageLabel,
+      percentLabel: '--',
+      tooltip: LocaleKeys
+          .chats_screens_chat_conversation_context_usage_limit_unavailable
+          .tr(),
+      semanticValue: semanticLimitUnavailable.tr(
+        namedArgs: {'usage': usageLabel},
+      ),
+      badgeVariant: AuraBadgeVariant.neutral,
+      icon: Icons.help_outline,
+      iconColor: AuraColorVariant.onSurfaceVariant,
+      level: _ContextUsageLevel.unknown,
+      progress: 0,
     );
   }
 
