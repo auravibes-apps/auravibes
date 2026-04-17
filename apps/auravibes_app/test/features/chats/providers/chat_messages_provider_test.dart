@@ -107,6 +107,100 @@ void main() {
         'streaming',
       );
     });
+
+    test(
+      'uses latest assistant usage and replaces with streaming value',
+      () async {
+        container
+          ..listen(
+            chatMessagesProvider,
+            (_, _) {},
+            fireImmediately: true,
+          )
+          ..listen(
+            conversationUsedTokensProvider,
+            (_, _) {},
+            fireImmediately: true,
+          );
+
+        repository.emit([
+          _message(
+            id: 'message-1',
+            content: 'first',
+            isUser: true,
+            metadata: const MessageMetadataEntity(totalTokens: 1000),
+          ),
+          _message(
+            id: 'message-2',
+            content: 'second',
+            isUser: false,
+            metadata: const MessageMetadataEntity(totalTokens: 500),
+          ),
+        ]);
+        await Future<void>.delayed(Duration.zero);
+
+        expect(container.read(conversationUsedTokensProvider), 500);
+
+        container.read(messagesStreamingProvider.notifier)
+          ..startSubscription(CompositeSubscription(), 'message-2')
+          ..updateResult(
+            const ChatResult(
+              id: 'chunk-2',
+              output: AIChatMessage(content: 'streaming'),
+              finishReason: FinishReason.unspecified,
+              metadata: {},
+              usage: LanguageModelUsage(totalTokens: 900),
+              streaming: true,
+            ),
+            'message-2',
+          );
+        await Future<void>.delayed(Duration.zero);
+
+        expect(container.read(conversationUsedTokensProvider), 900);
+      },
+    );
+
+    test('computes token usage percentage, clamps progress at 100%', () async {
+      container.dispose();
+      container =
+          ProviderContainer(
+              overrides: [
+                conversationSelectedProvider.overrideWithValue(
+                  'conversation-1',
+                ),
+                messageRepositoryProvider.overrideWithValue(repository),
+                conversationContextLimitProvider.overrideWith(
+                  (ref) async => 1000,
+                ),
+              ],
+            )
+            ..listen(chatMessagesProvider, (_, _) {}, fireImmediately: true)
+            ..listen(
+              conversationTokenUsageSummaryProvider,
+              (_, _) {},
+              fireImmediately: true,
+            );
+
+      repository.emit([
+        _message(
+          id: 'message-1',
+          content: 'first',
+          isUser: false,
+          metadata: const MessageMetadataEntity(totalTokens: 1900),
+        ),
+      ]);
+      await Future<void>.delayed(Duration.zero);
+
+      final summaryAsync = container.read(
+        conversationTokenUsageSummaryProvider,
+      );
+      final summary = summaryAsync.value;
+
+      expect(summary?.usedTokens, 1900);
+      expect(summary?.limitTokens, 1000);
+      expect(summary?.percent, 190);
+      expect(summary?.progress, 1);
+    });
   });
 }
 
@@ -114,6 +208,7 @@ MessageEntity _message({
   required String id,
   required String content,
   required bool isUser,
+  MessageMetadataEntity? metadata,
 }) {
   final now = DateTime(2026);
 
@@ -126,6 +221,7 @@ MessageEntity _message({
     status: MessageStatus.sent,
     createdAt: now,
     updatedAt: now,
+    metadata: metadata,
   );
 }
 

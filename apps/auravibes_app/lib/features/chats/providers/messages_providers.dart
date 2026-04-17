@@ -7,6 +7,9 @@ import 'package:auravibes_app/features/chats/notifiers/messages_streaming_notifi
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_selection_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/get_conversation_busy_state_usecase.dart';
+import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
+import 'package:auravibes_app/features/models/providers/model_providers_repository_providers.dart';
+import 'package:auravibes_app/utils/chat_result_extension.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -149,6 +152,108 @@ class PendingToolCall {
 
   final MessageToolCallEntity toolCall;
   final String messageId;
+}
+
+@immutable
+class ConversationTokenUsageSummary {
+  const ConversationTokenUsageSummary({
+    required this.usedTokens,
+    required this.limitTokens,
+    required this.percent,
+    required this.progress,
+  });
+
+  final int usedTokens;
+  final int limitTokens;
+  // Raw percent can exceed 100 when context overflows.
+  final int percent;
+  // Progress is normalized for meters and clamped to 0..1.
+  final double progress;
+}
+
+@Riverpod(
+  dependencies: [
+    apiModelRepository,
+    credentialsModelsRepository,
+  ],
+)
+Future<int> modelContextLimit(Ref ref, String? credentialsModelId) async {
+  if (credentialsModelId == null) return 0;
+
+  final selectedModel = await ref
+      .watch(credentialsModelsRepositoryProvider)
+      .getCredentialsModelById(credentialsModelId);
+  final modelId = selectedModel?.credentialsModel.modelId;
+  if (modelId == null) return 0;
+
+  final models = await ref.watch(apiModelRepositoryProvider).getAllModels();
+  final apiModel = models.firstWhereOrNull((model) => model.id == modelId);
+  return apiModel?.limitContext ?? 0;
+}
+
+@Riverpod(dependencies: [chatMessages, MessagesStreamingNotifier])
+int conversationUsedTokens(Ref ref) {
+  final messages = ref.watch(
+    chatMessagesProvider.select((value) => value.value),
+  );
+  if (messages == null || messages.isEmpty) return 0;
+
+  final latestAssistantMessage = messages.lastWhereOrNull(
+    (message) => !message.isUser,
+  );
+  if (latestAssistantMessage == null) return 0;
+
+  final streamingResult = ref.watch(
+    messagesStreamingProvider.select(
+      (state) => state[latestAssistantMessage.id]?.lastResult,
+    ),
+  );
+
+  return streamingResult?.entityTotalTokens ??
+      latestAssistantMessage.metadata?.usedTokens ??
+      0;
+}
+
+@Riverpod(dependencies: [conversationSelected])
+Future<int> conversationContextLimit(Ref ref) async {
+  final conversationId = ref.watch(conversationSelectedProvider);
+  final conversation = await ref
+      .watch(conversationRepositoryProvider)
+      .getConversationById(conversationId);
+  final conversationModelId = conversation?.modelId;
+
+  if (conversationModelId == null) return 0;
+
+  final selectedModel = await ref.watch(
+    modelContextLimitProvider(conversationModelId).future,
+  );
+
+  return selectedModel;
+}
+
+@Riverpod(
+  dependencies: [conversationUsedTokens, conversationContextLimit],
+)
+AsyncValue<ConversationTokenUsageSummary> conversationTokenUsageSummary(
+  Ref ref,
+) {
+  final usedTokens = ref.watch(conversationUsedTokensProvider);
+  final limitTokensAsync = ref.watch(conversationContextLimitProvider);
+
+  return limitTokensAsync.whenData((limitTokens) {
+    final normalizedLimit = limitTokens < 0 ? 0 : limitTokens;
+    final rawPercent = normalizedLimit == 0
+        ? 0
+        : ((usedTokens / normalizedLimit) * 100).round();
+    final normalizedProgress = rawPercent.clamp(0, 100) / 100;
+
+    return ConversationTokenUsageSummary(
+      usedTokens: usedTokens,
+      limitTokens: normalizedLimit,
+      percent: rawPercent,
+      progress: normalizedProgress,
+    );
+  });
 }
 
 @Riverpod(dependencies: [chatMessages])

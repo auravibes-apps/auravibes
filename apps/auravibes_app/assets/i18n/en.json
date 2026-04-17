@@ -77,7 +77,20 @@
       "delete_confirm": "Are you sure you want to delete this conversation? This action cannot be undone.",
       "options_tooltip": "More options",
       "error_workspace_mismatch": "This conversation belongs to a different workspace",
-      "error_not_found": "Conversation not found"
+      "error_not_found": "Conversation not found",
+      "context_usage": {
+        "label": "Context window usage",
+        "limit_unavailable": "Context window limit unavailable for this model.",
+        "tooltip_normal": "Using {used} of {limit} tokens ({percent}%). Healthy headroom.",
+        "tooltip_elevated": "Using {used} of {limit} tokens ({percent}%). Approaching limit.",
+        "tooltip_warning": "Using {used} of {limit} tokens ({percent}%). Near context limit.",
+        "tooltip_overflow": "Using {used} of {limit} tokens ({percent}%). Over limit by {overflow} tokens.",
+        "semantic_limit_unavailable": "{usage}, context limit unavailable",
+        "semantic_normal": "{usage}, {percent} percent",
+        "semantic_elevated": "{usage}, {percent} percent, approaching limit",
+        "semantic_warning": "{usage}, {percent} percent, near limit",
+        "semantic_overflow": "{usage}, {percent} percent, over limit by {overflow} tokens"
+      }
     }
   },
   "tools_screen": {

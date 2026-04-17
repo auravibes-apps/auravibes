@@ -124,7 +124,10 @@ void main() {
               output: AIChatMessage(content: 'Working'),
               finishReason: FinishReason.unspecified,
               metadata: {},
-              usage: LanguageModelUsage(),
+              usage: LanguageModelUsage(
+                promptTokens: 10,
+                responseTokens: 5,
+              ),
               streaming: true,
             ),
             const ChatResult(
@@ -142,7 +145,9 @@ void main() {
               ),
               finishReason: FinishReason.toolCalls,
               metadata: {},
-              usage: LanguageModelUsage(),
+              usage: LanguageModelUsage(
+                responseTokens: 7,
+              ),
               streaming: true,
             ),
           ]),
@@ -167,11 +172,15 @@ void main() {
         ).captured;
 
         final streamingUpdate = updates.cast<MessageToUpdate>().firstWhere(
-          (update) => update.metadata != null,
+          (update) => update.metadata?.toolCalls.isNotEmpty ?? false,
         );
 
         expect(streamingUpdate.metadata?.toolCalls, hasLength(1));
         expect(streamingUpdate.metadata?.toolCalls.single.id, 'tool-1');
+        expect(streamingUpdate.metadata?.promptTokens, 10);
+        expect(streamingUpdate.metadata?.completionTokens, 12);
+        expect(streamingUpdate.metadata?.totalTokens, isNull);
+        expect(streamingUpdate.metadata?.usedTokens, 22);
       },
     );
 

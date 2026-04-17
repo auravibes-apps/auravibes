@@ -176,7 +176,8 @@ class ContinueAgentUsecase {
 
       await messageRepository.updateMessage(
         firstMessage.id,
-        const .new(
+        .new(
+          metadata: lastResult.entityMetadata,
           status: .sent,
         ),
       );
