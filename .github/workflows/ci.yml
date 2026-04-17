@@ -15,8 +15,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
     steps:
       - name: 📚 Git Checkout
@@ -56,11 +54,22 @@ jobs:
       - name: 🧪 Run Tests
         run: melos run test
 
+      - name: 🔐 Check Sonar token availability
+        id: check-sonar-token
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          if [ -n "$SONAR_TOKEN" ]; then
+            echo "token_available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "token_available=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: ☁️ SonarCloud Scan
-        if: ${{ env.SONAR_TOKEN != '' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
+        if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
         uses: SonarSource/sonarqube-scan-action@299e4b793aaa83bf2aba7c9c14bedbb485688ec4
         env:
-          SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       - name: 📦 Dependency Validation
         run: dart run dependency_validator
