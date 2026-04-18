@@ -111,19 +111,18 @@ class _ChatConversationScreen extends HookConsumerWidget {
     return AuraScreen(
       appBar: AuraAppBarWithDrawer(
         title: Text(conversation.title),
-        actions: const [
-          ConversationContextUsagePill(),
-        ],
-        bottom: SelectCredentialsModelWidget(
-          workspaceId: workspaceId,
-          credentialsModelId: conversation.modelId,
-          selectCredentialsModelId: ref
-              .watch(conversationChatProvider(workspaceId).notifier)
-              .setModel,
-        ),
       ),
-      child: Column(
+      child: AuraColumn(
         children: [
+          const ConversationContextUsagePill(),
+          SelectCredentialsModelWidget(
+            workspaceId: workspaceId,
+            credentialsModelId: conversation.modelId,
+            selectCredentialsModelId: ref
+                .watch(conversationChatProvider(workspaceId).notifier)
+                .setModel,
+            onProviderChanged: (p1) {},
+          ),
           const Expanded(child: _ChatList()),
           const McpConnectingIndicator(),
           if (busyState?.isStreaming == true) const ChatThinkingIndicator(),
