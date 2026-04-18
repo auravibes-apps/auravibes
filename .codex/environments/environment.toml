@@ -15,7 +15,12 @@ if ! command -v fvm >/dev/null 2>&1; then
   export PATH="$PATH:$HOME/.pub-cache/bin"
 fi
 
-FLUTTER_VERSION=$(sed -n 's/.*"flutter"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' .fvmrc | head -n 1)
+if ! command -v jq >/dev/null 2>&1; then
+  echo "jq is required to parse .fvmrc."
+  exit 1
+fi
+
+FLUTTER_VERSION=$(jq -r '.flutter // empty' .fvmrc)
 if [ -z "$FLUTTER_VERSION" ]; then
   echo "Unable to read Flutter version from .fvmrc."
   exit 1
@@ -27,7 +32,7 @@ fvm flutter --version
 
 fvm dart pub get
 fvm dart run melos bootstrap
-fvm dart run melos exec --depends-on=build_runner -- "dart run build_runner build --delete-conflicting-outputs"
+fvm dart run melos run generate
 '''
 
 [[actions]]
@@ -38,12 +43,12 @@ command = "fvm dart pub get && fvm dart run melos bootstrap"
 [[actions]]
 name = "Generate Code"
 icon = "tool"
-command = "fvm dart run melos exec --depends-on=build_runner -- \"dart run build_runner build --delete-conflicting-outputs\""
+command = "fvm dart run melos run generate"
 
 [[actions]]
 name = "Analyze"
 icon = "debug"
-command = "fvm dart run melos analyze"
+command = "fvm dart run melos run analyze"
 
 [[actions]]
 name = "Format Check"
