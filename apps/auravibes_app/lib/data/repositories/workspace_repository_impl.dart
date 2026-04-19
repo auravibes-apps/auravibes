@@ -82,15 +82,18 @@ class WorkspaceRepositoryImpl implements WorkspaceRepository {
     WorkspacePatch workspace,
   ) async {
     try {
-      // Validate workspace before updating
-      if (!await _validateWorkspacePatch(workspace)) {
-        throw const WorkspaceValidationException('Invalid workspace data');
-      }
-
-      // Check if workspace exists
-      if (!await workspaceExists(id)) {
+      final currentWorkspaceTable = await _database.workspaceDao
+          .getWorkspaceById(
+            id,
+          );
+      if (currentWorkspaceTable == null) {
         throw WorkspaceNotFoundException(id);
       }
+
+      _validateWorkspacePatch(
+        workspace,
+        _mapToWorkspace(currentWorkspaceTable),
+      );
 
       final workspaceCompanion = _mapPatchToWorkspacesCompanion(workspace);
       final updated = await _database.workspaceDao.patchWorkspace(
@@ -99,7 +102,7 @@ class WorkspaceRepositoryImpl implements WorkspaceRepository {
       );
 
       if (!updated) {
-        throw WorkspaceException('Failed to update workspace with ID $id');
+        throw WorkspaceException('Failed to patch workspace with ID $id');
       }
 
       final updatedWorkspace = await _database.workspaceDao.getWorkspaceById(
@@ -115,7 +118,10 @@ class WorkspaceRepositoryImpl implements WorkspaceRepository {
       return _mapToWorkspace(updatedWorkspace);
     } catch (e) {
       if (e is WorkspaceException) rethrow;
-      throw WorkspaceException('Failed to update workspace', e as Exception);
+      throw WorkspaceException(
+        'Failed to patch workspace',
+        e is Exception ? e : Exception('Unexpected workspace patch error: $e'),
+      );
     }
   }
 
@@ -201,14 +207,14 @@ class WorkspaceRepositoryImpl implements WorkspaceRepository {
     try {
       // Check if workspace exists
       if (!await workspaceExists(id)) {
-        return false; // Return false instead of throwing for update operations
+        return false; // Return false instead of throwing for patch operations
       }
 
       final updated = await _database.workspaceDao.patchWorkspaceTimestamp(id);
       return updated;
     } catch (e) {
       throw WorkspaceException(
-        'Failed to update workspace timestamp',
+        'Failed to patch workspace timestamp',
         e as Exception,
       );
     }
@@ -243,18 +249,13 @@ class WorkspaceRepositoryImpl implements WorkspaceRepository {
     );
   }
 
-  Future<bool> _validateWorkspacePatch(WorkspacePatch workspace) async {
-    try {
-      if (!workspace.isValid) {
-        throw WorkspaceValidationException(_getValidationErrorPatch(workspace));
-      }
-      return true;
-    } catch (e) {
-      if (e is WorkspaceValidationException) rethrow;
-      throw WorkspaceValidationException(
-        'Workspace validation failed',
-        e as Exception,
-      );
+  void _validateWorkspacePatch(
+    WorkspacePatch workspace,
+    WorkspaceEntity currentWorkspace,
+  ) {
+    final validationError = workspace.validationErrorFor(currentWorkspace);
+    if (validationError != null) {
+      throw WorkspaceValidationException(validationError);
     }
   }
 
@@ -264,16 +265,6 @@ class WorkspaceRepositoryImpl implements WorkspaceRepository {
       type: Value.absentIfNull(workspace.type),
       url: Value.absentIfNull(workspace.url),
     );
-  }
-
-  String _getValidationErrorPatch(WorkspacePatch workspace) {
-    if (workspace.name != null && workspace.name!.isEmpty) {
-      return 'Workspace name cannot be empty';
-    }
-    if (workspace.url != null && workspace.url!.isEmpty) {
-      return 'Workspace URL cannot be empty';
-    }
-    return 'Unknown validation error';
   }
 
   /// Gets validation error message for a workspace.

@@ -77,9 +77,36 @@ abstract class WorkspacePatch with _$WorkspacePatch {
   }) = _WorkspacePatch;
   const WorkspacePatch._();
 
-  bool get isValid {
-    if (name != null && name!.isEmpty) return false;
-    if (url != null && url!.isEmpty) return false;
-    return name != null || type != null || url != null;
+  String? validationErrorFor(WorkspaceEntity current) {
+    if (name == null && type == null && url == null) {
+      return 'At least one field must be provided';
+    }
+
+    if (name != null && name!.isEmpty) {
+      return 'Workspace name cannot be empty';
+    }
+
+    if (url != null && url!.isEmpty) {
+      return 'Workspace URL cannot be empty';
+    }
+
+    final mergedName = name ?? current.name;
+    final mergedType = type ?? current.type;
+    final mergedUrl = url ?? current.url;
+
+    if (mergedName.isEmpty) {
+      return 'Workspace name cannot be empty';
+    }
+
+    if (mergedType == WorkspaceType.local && mergedUrl != null) {
+      return 'Local workspace cannot have a URL';
+    }
+
+    if (mergedType == WorkspaceType.remote &&
+        (mergedUrl == null || mergedUrl.isEmpty)) {
+      return 'Remote workspace must have a URL';
+    }
+
+    return null;
   }
 }
