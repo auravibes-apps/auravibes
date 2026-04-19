@@ -85,7 +85,7 @@ class WorkspaceToolsDao extends DatabaseAccessor<AppDatabase>
     return (select(tools)..where((tbl) => tbl.id.equals(id))).getSingle();
   }
 
-  Future<List<ToolsTable>> updateWorkspaceToolConfig(
+  Future<List<ToolsTable>> patchWorkspaceToolConfig(
     String workspaceId,
     String toolId,
     String? config,

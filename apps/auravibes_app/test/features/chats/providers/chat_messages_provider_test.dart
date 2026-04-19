@@ -309,7 +309,7 @@ class _FakeMessageRepository implements MessageRepository {
   }
 
   @override
-  Future<MessageEntity> updateMessage(String id, MessageToUpdate message) {
+  Future<MessageEntity> patchMessage(String id, MessagePatch message) {
     throw UnimplementedError();
   }
 

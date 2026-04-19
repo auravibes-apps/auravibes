@@ -77,13 +77,13 @@ class WorkspaceRepositoryImpl implements WorkspaceRepository {
   }
 
   @override
-  Future<WorkspaceEntity> updateWorkspace(
+  Future<WorkspaceEntity> patchWorkspace(
     String id,
-    WorkspaceToCreate workspace,
+    WorkspacePatch workspace,
   ) async {
     try {
       // Validate workspace before updating
-      if (!await validateWorkspace(workspace)) {
+      if (!await _validateWorkspacePatch(workspace)) {
         throw const WorkspaceValidationException('Invalid workspace data');
       }
 
@@ -92,11 +92,8 @@ class WorkspaceRepositoryImpl implements WorkspaceRepository {
         throw WorkspaceNotFoundException(id);
       }
 
-      final workspaceCompanion = _mapToWorkspacesCompanion(
-        workspace,
-        forUpdate: true,
-      );
-      final updated = await _database.workspaceDao.updateWorkspace(
+      final workspaceCompanion = _mapPatchToWorkspacesCompanion(workspace);
+      final updated = await _database.workspaceDao.patchWorkspace(
         id,
         workspaceCompanion,
       );
@@ -200,14 +197,14 @@ class WorkspaceRepositoryImpl implements WorkspaceRepository {
   }
 
   @override
-  Future<bool> updateWorkspaceTimestamp(String id) async {
+  Future<bool> patchWorkspaceTimestamp(String id) async {
     try {
       // Check if workspace exists
       if (!await workspaceExists(id)) {
         return false; // Return false instead of throwing for update operations
       }
 
-      final updated = await _database.workspaceDao.updateWorkspaceTimestamp(id);
+      final updated = await _database.workspaceDao.patchWorkspaceTimestamp(id);
       return updated;
     } catch (e) {
       throw WorkspaceException(
@@ -237,17 +234,46 @@ class WorkspaceRepositoryImpl implements WorkspaceRepository {
   /// for database operations.
   ///
   /// [workspace] The workspace entity to map.
-  /// [forUpdate] Whether this mapping is for an update operation.
   /// Returns the corresponding [WorkspacesCompanion].
-  WorkspacesCompanion _mapToWorkspacesCompanion(
-    WorkspaceToCreate workspace, {
-    bool forUpdate = false,
-  }) {
+  WorkspacesCompanion _mapToWorkspacesCompanion(WorkspaceToCreate workspace) {
     return WorkspacesCompanion(
       name: Value(workspace.name),
       type: Value(workspace.type),
       url: Value(workspace.url),
     );
+  }
+
+  Future<bool> _validateWorkspacePatch(WorkspacePatch workspace) async {
+    try {
+      if (!workspace.isValid) {
+        throw WorkspaceValidationException(_getValidationErrorPatch(workspace));
+      }
+      return true;
+    } catch (e) {
+      if (e is WorkspaceValidationException) rethrow;
+      throw WorkspaceValidationException(
+        'Workspace validation failed',
+        e as Exception,
+      );
+    }
+  }
+
+  WorkspacesCompanion _mapPatchToWorkspacesCompanion(WorkspacePatch workspace) {
+    return WorkspacesCompanion(
+      name: Value.absentIfNull(workspace.name),
+      type: Value.absentIfNull(workspace.type),
+      url: Value.absentIfNull(workspace.url),
+    );
+  }
+
+  String _getValidationErrorPatch(WorkspacePatch workspace) {
+    if (workspace.name != null && workspace.name!.isEmpty) {
+      return 'Workspace name cannot be empty';
+    }
+    if (workspace.url != null && workspace.url!.isEmpty) {
+      return 'Workspace URL cannot be empty';
+    }
+    return 'Unknown validation error';
   }
 
   /// Gets validation error message for a workspace.

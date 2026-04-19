@@ -170,11 +170,11 @@ abstract class MessageToCreate with _$MessageToCreate {
   }
 }
 
-/// Entity for creating a new message
+/// Entity for patching an existing message
 @freezed
-abstract class MessageToUpdate with _$MessageToUpdate {
-  /// Creates a new MessageToUpdate instance
-  const factory MessageToUpdate({
+abstract class MessagePatch with _$MessagePatch {
+  /// Creates a new MessagePatch instance
+  const factory MessagePatch({
     /// Content of the message (JSON structure based on message type)
     String? content,
 
@@ -182,8 +182,8 @@ abstract class MessageToUpdate with _$MessageToUpdate {
     MessageMetadataEntity? metadata,
 
     MessageStatus? status,
-  }) = _MessageToUpdate;
-  const MessageToUpdate._();
+  }) = _MessagePatch;
+  const MessagePatch._();
 
   /// Returns true if the message is in a valid state
   bool get isValid {

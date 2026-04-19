@@ -87,7 +87,7 @@ abstract class MessageRepository {
   /// Throws [MessageValidationException] if message data is invalid.
   /// Throws [MessageNotFoundException] if no message with the given ID exists.
   /// Throws [MessageException] if there's an error updating the message.
-  Future<MessageEntity> updateMessage(String id, MessageToUpdate message);
+  Future<MessageEntity> patchMessage(String id, MessagePatch message);
 
   /// Deletes a message from the data source.
   ///

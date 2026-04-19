@@ -14,9 +14,9 @@ abstract class ConversationRepository {
     ConversationToCreate conversation,
   );
 
-  Future<ConversationEntity> updateConversation(
+  Future<ConversationEntity> patchConversation(
     String id,
-    ConversationToUpdate conversation,
+    ConversationPatch conversation,
   );
 
   Future<bool> deleteConversation(String id);

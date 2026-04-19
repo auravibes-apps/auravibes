@@ -344,7 +344,7 @@ class _FakeWorkspaceToolsRepository implements WorkspaceToolsRepository {
   }
 
   @override
-  Future<List<WorkspaceToolEntity>> updateWorkspaceToolConfig(
+  Future<List<WorkspaceToolEntity>> patchWorkspaceToolConfig(
     String workspaceId,
     String toolType,
     String? config,

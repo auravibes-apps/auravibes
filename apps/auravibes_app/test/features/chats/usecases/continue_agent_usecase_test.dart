@@ -103,7 +103,7 @@ void main() {
         messageRepository.createMessage(any),
       ).thenAnswer((_) async => _unfinishedAssistantMessage);
       when(
-        messageRepository.updateMessage(any, any),
+        messageRepository.patchMessage(any, any),
       ).thenAnswer((_) async => _unfinishedAssistantMessage);
     });
 
@@ -165,13 +165,13 @@ void main() {
         expect(removedConversationIds, ['conversation-1']);
 
         final updates = verify(
-          messageRepository.updateMessage(
+          messageRepository.patchMessage(
             'assistant-1',
             captureAny,
           ),
         ).captured;
 
-        final streamingUpdate = updates.cast<MessageToUpdate>().firstWhere(
+        final streamingUpdate = updates.cast<MessagePatch>().firstWhere(
           (update) => update.metadata?.toolCalls.isNotEmpty ?? false,
         );
 
@@ -215,9 +215,9 @@ void main() {
         );
 
         verify(
-          messageRepository.updateMessage(
+          messageRepository.patchMessage(
             'user-1',
-            const MessageToUpdate(status: MessageStatus.sent),
+            const MessagePatch(status: MessageStatus.sent),
           ),
         ).called(1);
 
@@ -259,15 +259,15 @@ void main() {
         );
 
         verify(
-          messageRepository.updateMessage(
+          messageRepository.patchMessage(
             'user-1',
-            const MessageToUpdate(status: MessageStatus.sent),
+            const MessagePatch(status: MessageStatus.sent),
           ),
         ).called(1);
         verify(
-          messageRepository.updateMessage(
+          messageRepository.patchMessage(
             'user-2',
-            const MessageToUpdate(status: MessageStatus.sent),
+            const MessagePatch(status: MessageStatus.sent),
           ),
         ).called(1);
 

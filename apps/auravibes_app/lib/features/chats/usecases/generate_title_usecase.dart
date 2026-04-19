@@ -50,7 +50,7 @@ class GenerateTitleUsecase {
     sharedStream
         .coalescingSave(
           store: (t) async {
-            await conversationRepo.updateConversation(
+            await conversationRepo.patchConversation(
               conversationId,
               .new(
                 title: t,

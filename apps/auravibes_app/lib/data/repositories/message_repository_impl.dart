@@ -182,13 +182,13 @@ Failed to retrieve messages of type $messageType for conversation $conversationI
   }
 
   @override
-  Future<MessageEntity> updateMessage(
+  Future<MessageEntity> patchMessage(
     String id,
-    MessageToUpdate message,
+    MessagePatch message,
   ) async {
     try {
       // Validate message before updating
-      if (!await _validateMessageToUpdate(message)) {
+      if (!await _validateMessagePatch(message)) {
         throw const MessageValidationException('Invalid message data');
       }
 
@@ -197,8 +197,8 @@ Failed to retrieve messages of type $messageType for conversation $conversationI
         throw MessageNotFoundException(id);
       }
 
-      final messageCompanion = _mapUpdateToMessagesCompanion(message);
-      final updatedMessage = await _database.messageDao.updateMessage(
+      final messageCompanion = _mapPatchToMessagesCompanion(message);
+      final updatedMessage = await _database.messageDao.patchMessage(
         id,
         messageCompanion,
       );
@@ -289,10 +289,10 @@ Failed to retrieve messages with status $status for conversation $conversationId
     }
   }
 
-  Future<bool> _validateMessageToUpdate(MessageToUpdate message) async {
+  Future<bool> _validateMessagePatch(MessagePatch message) async {
     try {
       if (!message.isValid) {
-        throw MessageValidationException(_getValidationErrorToUpdate(message));
+        throw MessageValidationException(_getValidationErrorPatch(message));
       }
       return true;
     } catch (e) {
@@ -338,7 +338,7 @@ Failed to retrieve messages with status $status for conversation $conversationId
     );
   }
 
-  MessagesCompanion _mapUpdateToMessagesCompanion(MessageToUpdate message) {
+  MessagesCompanion _mapPatchToMessagesCompanion(MessagePatch message) {
     return MessagesCompanion(
       content: Value.absentIfNull(message.content),
       status: Value.absentIfNull(
@@ -360,7 +360,7 @@ Failed to retrieve messages with status $status for conversation $conversationId
     return 'Unknown validation error';
   }
 
-  String _getValidationErrorToUpdate(MessageToUpdate message) {
+  String _getValidationErrorPatch(MessagePatch message) {
     if (message.content != null && message.content!.isEmpty) {
       return 'Message content cannot be empty';
     }

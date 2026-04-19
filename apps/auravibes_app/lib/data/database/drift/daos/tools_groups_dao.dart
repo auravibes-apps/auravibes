@@ -56,7 +56,7 @@ class ToolsGroupsDao extends DatabaseAccessor<AppDatabase>
   /// Update the enabled status of a tools group.
   ///
   /// Returns true if a row was updated.
-  Future<bool> updateToolsGroupEnabled(String id, {required bool isEnabled}) =>
+  Future<bool> setToolsGroupEnabled(String id, {required bool isEnabled}) =>
       (update(toolsGroups)..where((t) => t.id.equals(id)))
           .write(
             ToolsGroupsCompanion(

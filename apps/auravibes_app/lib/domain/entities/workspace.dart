@@ -67,3 +67,19 @@ abstract class WorkspaceToCreate with _$WorkspaceToCreate {
     return hasValidName && hasValidUrl;
   }
 }
+
+@freezed
+abstract class WorkspacePatch with _$WorkspacePatch {
+  const factory WorkspacePatch({
+    String? name,
+    WorkspaceType? type,
+    String? url,
+  }) = _WorkspacePatch;
+  const WorkspacePatch._();
+
+  bool get isValid {
+    if (name != null && name!.isEmpty) return false;
+    if (url != null && url!.isEmpty) return false;
+    return name != null || type != null || url != null;
+  }
+}

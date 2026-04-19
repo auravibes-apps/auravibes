@@ -75,9 +75,9 @@ class WorkspaceLocalDataSource {
   /// [workspace] The updated workspace data.
   /// Returns true if the workspace was updated, false otherwise.
   /// Throws [Exception] if the database operation fails.
-  Future<bool> updateWorkspace(String id, WorkspacesCompanion workspace) async {
+  Future<bool> patchWorkspace(String id, WorkspacesCompanion workspace) async {
     try {
-      return await _workspaceDao.updateWorkspace(id, workspace);
+      return await _workspaceDao.patchWorkspace(id, workspace);
     } catch (e) {
       throw Exception('Failed to update workspace with ID $id: $e');
     }
@@ -152,9 +152,9 @@ class WorkspaceLocalDataSource {
   /// [id] The ID of the workspace to update.
   /// Returns true if the workspace was updated, false otherwise.
   /// Throws [Exception] if the database operation fails.
-  Future<bool> updateWorkspaceTimestamp(String id) async {
+  Future<bool> patchWorkspaceTimestamp(String id) async {
     try {
-      return await _workspaceDao.updateWorkspaceTimestamp(id);
+      return await _workspaceDao.patchWorkspaceTimestamp(id);
     } catch (e) {
       throw Exception(
         'Failed to update timestamp for workspace with ID $id: $e',

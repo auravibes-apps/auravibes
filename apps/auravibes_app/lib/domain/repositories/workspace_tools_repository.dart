@@ -72,7 +72,7 @@ abstract class WorkspaceToolsRepository {
   /// Returns true if the operation was successful, false if the tool
   /// was not found.
   /// Throws [WorkspaceToolsException] if there's an error updating the tool.
-  Future<List<WorkspaceToolEntity>> updateWorkspaceToolConfig(
+  Future<List<WorkspaceToolEntity>> patchWorkspaceToolConfig(
     String workspaceId,
     String toolType,
     String? config,

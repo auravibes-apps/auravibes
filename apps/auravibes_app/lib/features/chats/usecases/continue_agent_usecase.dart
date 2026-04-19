@@ -102,7 +102,7 @@ class ContinueAgentUsecase {
       final persistenceFuture = streamingController.stream
           .coalescingSave(
             store: (state) async {
-              await messageRepository.updateMessage(
+              await messageRepository.patchMessage(
                 firstMessage!.id,
                 .new(
                   content: state.outputAsString,
@@ -137,9 +137,9 @@ class ContinueAgentUsecase {
 
         if (!hasAcknowledgedPendingUsers && pendingUserMessageIds.isNotEmpty) {
           for (final pendingUserMessageId in pendingUserMessageIds) {
-            await messageRepository.updateMessage(
+            await messageRepository.patchMessage(
               pendingUserMessageId,
-              const MessageToUpdate(status: MessageStatus.sent),
+              const MessagePatch(status: MessageStatus.sent),
             );
           }
           hasAcknowledgedPendingUsers = true;
@@ -174,7 +174,7 @@ class ContinueAgentUsecase {
 
       lastResult = accumulatedResult;
 
-      await messageRepository.updateMessage(
+      await messageRepository.patchMessage(
         firstMessage.id,
         .new(
           metadata: lastResult.entityMetadata,
@@ -184,16 +184,16 @@ class ContinueAgentUsecase {
     } catch (e, _) {
       if (!hasAcknowledgedPendingUsers && pendingUserMessageIds.isNotEmpty) {
         for (final pendingUserMessageId in pendingUserMessageIds) {
-          await messageRepository.updateMessage(
+          await messageRepository.patchMessage(
             pendingUserMessageId,
-            const MessageToUpdate(status: MessageStatus.error),
+            const MessagePatch(status: MessageStatus.error),
           );
         }
       }
 
       if (firstMessage == null) rethrow;
 
-      await messageRepository.updateMessage(
+      await messageRepository.patchMessage(
         firstMessage.id,
         const .new(
           status: .error,

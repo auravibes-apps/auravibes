@@ -274,9 +274,9 @@ class RunAllowedToolsUsecase {
       );
     }).toList();
 
-    await messageRepository.updateMessage(
+    await messageRepository.patchMessage(
       messageId,
-      MessageToUpdate(
+      MessagePatch(
         metadata: metadata.copyWith(toolCalls: updatedToolCalls),
       ),
     );

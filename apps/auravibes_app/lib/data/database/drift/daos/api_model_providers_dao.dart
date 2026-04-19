@@ -90,21 +90,6 @@ class ApiModelProvidersDao extends DatabaseAccessor<AppDatabase>
     );
   }
 
-  /// Updates an existing provider in the database.
-  ///
-  /// Updates the provider with the given [id] using the provided [provider]
-  /// data.
-  /// Returns true if a provider was updated, false otherwise.
-  Future<bool> updateProvider(
-    String id,
-    ApiModelProvidersCompanion provider,
-  ) async {
-    final updateCount = await (update(
-      apiModelProviders,
-    )..where((t) => t.id.equals(id))).write(provider);
-    return updateCount > 0;
-  }
-
   /// Deletes a provider from the database.
   ///
   /// Deletes the provider with the given [id].

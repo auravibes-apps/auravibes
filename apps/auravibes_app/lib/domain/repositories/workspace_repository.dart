@@ -48,9 +48,9 @@ abstract class WorkspaceRepository {
   /// Throws [WorkspaceNotFoundException] if no workspace with the
   /// given ID exists.
   /// Throws [WorkspaceException] if there's an error updating the workspace.
-  Future<WorkspaceEntity> updateWorkspace(
+  Future<WorkspaceEntity> patchWorkspace(
     String id,
-    WorkspaceToCreate workspace,
+    WorkspacePatch workspace,
   );
 
   /// Deletes a workspace from the data source.
@@ -102,7 +102,7 @@ abstract class WorkspaceRepository {
   /// Returns true if the workspace was successfully updated,
   /// false if not found.
   /// Throws [WorkspaceException] if there's an error updating the timestamp.
-  Future<bool> updateWorkspaceTimestamp(String id);
+  Future<bool> patchWorkspaceTimestamp(String id);
 }
 
 /// Base exception for workspace-related operations.

@@ -74,10 +74,10 @@ void main() {
       );
       final createdWorkspace = await repository.createWorkspace(workspace);
 
-      final updatedWorkspace = workspace.copyWith(name: 'Updated Workspace');
+      const updatedWorkspace = WorkspacePatch(name: 'Updated Workspace');
 
       // Act
-      final result = await repository.updateWorkspace(
+      final result = await repository.patchWorkspace(
         createdWorkspace.id,
         updatedWorkspace,
       );
