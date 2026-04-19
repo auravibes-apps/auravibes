@@ -8,6 +8,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
+String? _findProviderForModelId(
+  Map<String, List<CredentialsModelWithProviderEntity>> groupedModels,
+  String? credentialsModelId,
+) {
+  if (credentialsModelId == null) {
+    return null;
+  }
+
+  for (final entry in groupedModels.entries) {
+    final hasModel = entry.value.any(
+      (model) => model.credentialsModel.id == credentialsModelId,
+    );
+    if (hasModel) {
+      return entry.key;
+    }
+  }
+
+  return null;
+}
+
 /// Two-step model selector: Provider first, then Model.
 /// Follows user mental model of selecting provider before model.
 class SelectCredentialsModelWidget extends HookConsumerWidget
@@ -94,7 +114,12 @@ class SelectChatData extends HookWidget {
 
     // Internal provider state if no external control
     final internalProviderId = useState<String?>(null);
-    final effectiveProviderId = selectedProviderId ?? internalProviderId.value;
+    final derivedProviderId = useMemoized(
+      () => _findProviderForModelId(groupedModels, credentialsModelId),
+      [groupedModels, credentialsModelId],
+    );
+    final effectiveProviderId =
+        selectedProviderId ?? internalProviderId.value ?? derivedProviderId;
 
     useEffect(() {
       if (selectedProviderId == null && internalProviderId.value != null) {
@@ -102,6 +127,18 @@ class SelectChatData extends HookWidget {
       }
       return null;
     }, [selectedProviderId]);
+
+    useEffect(() {
+      if (selectedProviderId != null || internalProviderId.value != null) {
+        return null;
+      }
+
+      if (derivedProviderId != null) {
+        internalProviderId.value = derivedProviderId;
+      }
+
+      return null;
+    }, [selectedProviderId, internalProviderId.value, derivedProviderId]);
 
     final onSelectProviderCallback = useCallback<void Function(String?)>((
       provider,
@@ -142,6 +179,7 @@ class SelectChatData extends HookWidget {
     );
     final modelDropdown = _ModelDropdown(
       models: filteredModels,
+      hasModelsForProvider: modelsForProvider.isNotEmpty,
       selectedModelId: credentialsModelId,
       providerSelected: effectiveProviderId != null,
       onChanged: selectCredentialsModelId,
@@ -216,6 +254,7 @@ class _ProviderDropdown extends StatelessWidget {
 class _ModelDropdown extends StatelessWidget {
   const _ModelDropdown({
     required this.models,
+    required this.hasModelsForProvider,
     required this.selectedModelId,
     required this.providerSelected,
     required this.onChanged,
@@ -225,6 +264,7 @@ class _ModelDropdown extends StatelessWidget {
   });
 
   final List<CredentialsModelWithProviderEntity> models;
+  final bool hasModelsForProvider;
   final String? selectedModelId;
   final bool providerSelected;
   final void Function(String?) onChanged;
@@ -257,7 +297,7 @@ class _ModelDropdown extends StatelessWidget {
             ),
           )
           .toList(),
-      header: models.isEmpty
+      header: !hasModelsForProvider
           ? const AuraPadding(
               padding: AuraEdgeInsetsGeometry.medium,
               child: TextLocale(LocaleKeys.models_screens_no_models_available),
