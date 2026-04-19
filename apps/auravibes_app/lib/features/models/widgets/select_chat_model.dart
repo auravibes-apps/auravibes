@@ -8,6 +8,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
+String? _findProviderForModelId(
+  Map<String, List<CredentialsModelWithProviderEntity>> groupedModels,
+  String? credentialsModelId,
+) {
+  if (credentialsModelId == null) {
+    return null;
+  }
+
+  for (final entry in groupedModels.entries) {
+    final hasModel = entry.value.any(
+      (model) => model.credentialsModel.id == credentialsModelId,
+    );
+    if (hasModel) {
+      return entry.key;
+    }
+  }
+
+  return null;
+}
+
 /// Two-step model selector: Provider first, then Model.
 /// Follows user mental model of selecting provider before model.
 class SelectCredentialsModelWidget extends HookConsumerWidget
@@ -15,10 +35,10 @@ class SelectCredentialsModelWidget extends HookConsumerWidget
   const SelectCredentialsModelWidget({
     required this.workspaceId,
     required this.selectCredentialsModelId,
+    required this.onProviderChanged,
     super.key,
     this.credentialsModelId,
     this.selectedProviderId,
-    this.onProviderChanged,
   });
 
   final String workspaceId;
@@ -29,7 +49,7 @@ class SelectCredentialsModelWidget extends HookConsumerWidget
   final String? selectedProviderId;
 
   /// Callback when provider selection changes.
-  final void Function(String?)? onProviderChanged;
+  final void Function(String?) onProviderChanged;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -37,23 +57,101 @@ class SelectCredentialsModelWidget extends HookConsumerWidget
       listModelsGroupedByProviderProvider(workspaceId: workspaceId),
     );
 
-    final searchValue = useState<String>('');
-    final controller = useTextEditingController();
+    final onSelectProvider = useCallback<void Function(String?)>((provider) {
+      onProviderChanged(provider);
+      selectCredentialsModelId(null);
+    }, [onProviderChanged, selectCredentialsModelId]);
 
-    // Internal provider state if no external control
-    final internalProviderId = useState<String?>(null);
-    final effectiveProviderId = selectedProviderId ?? internalProviderId.value;
+    return switch (groupedModelsAsync) {
+      AsyncLoading() => const AuraPadding(
+        padding: AuraEdgeInsetsGeometry.vertical(.md),
+        child: AuraSpinner(),
+      ),
+      AsyncError(:final error, :final stackTrace) => AppErrorWidget(
+        error: error,
+        stackTrace: stackTrace,
+      ),
+      AsyncData(:final value) => SelectChatData(
+        groupedModels: value,
+        credentialsModelId: credentialsModelId,
+        selectedProviderId: selectedProviderId,
+        onSelectProvider: onSelectProvider,
+        selectCredentialsModelId: selectCredentialsModelId,
+      ),
+    };
+  }
+
+  @override
+  // Use 120 to accommodate both Row (60) and Column (stacked) layouts
+  Size get preferredSize => const Size.fromHeight(120);
+}
+
+class SelectChatData extends HookWidget {
+  const SelectChatData({
+    required this.groupedModels,
+    required this.credentialsModelId,
+    required this.selectedProviderId,
+    required this.onSelectProvider,
+    required this.selectCredentialsModelId,
+    super.key,
+  });
+
+  final Map<String, List<CredentialsModelWithProviderEntity>> groupedModels;
+  final String? credentialsModelId;
+  final String? selectedProviderId;
+  final void Function(String?) onSelectProvider;
+  final void Function(String?) selectCredentialsModelId;
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = useTextEditingController();
 
     // Responsive layout - stacked below md breakpoint (768px)
     final screenWidth = MediaQuery.of(context).size.width;
     final isCompact = screenWidth < DesignBreakpoints.md;
 
+    final searchValue = useState<String>('');
+
+    // Internal provider state if no external control
+    final internalProviderId = useState<String?>(null);
+    final derivedProviderId = useMemoized(
+      () => _findProviderForModelId(groupedModels, credentialsModelId),
+      [groupedModels, credentialsModelId],
+    );
+    final effectiveProviderId =
+        selectedProviderId ?? internalProviderId.value ?? derivedProviderId;
+
+    useEffect(() {
+      if (selectedProviderId == null && internalProviderId.value != null) {
+        internalProviderId.value = null;
+      }
+      return null;
+    }, [selectedProviderId]);
+
+    useEffect(() {
+      if (selectedProviderId != null || internalProviderId.value != null) {
+        return null;
+      }
+
+      if (derivedProviderId != null) {
+        internalProviderId.value = derivedProviderId;
+      }
+
+      return null;
+    }, [selectedProviderId, internalProviderId.value, derivedProviderId]);
+
+    final onSelectProviderCallback = useCallback<void Function(String?)>((
+      provider,
+    ) {
+      if (selectedProviderId == null) {
+        internalProviderId.value = provider;
+      }
+      onSelectProvider(provider);
+    }, [onSelectProvider, selectedProviderId]);
+
     // Filter models by search - computed unconditionally (not in hook)
-    final groupedMap = groupedModelsAsync.hasValue
-        ? groupedModelsAsync.value
-        : null;
-    final modelsForProvider = effectiveProviderId != null && groupedMap != null
-        ? groupedMap[effectiveProviderId] ??
+    final modelsForProvider = effectiveProviderId != null
+        ? groupedModels[effectiveProviderId] ??
               <CredentialsModelWithProviderEntity>[]
         : <CredentialsModelWithProviderEntity>[];
     final filteredModels = searchValue.value.isEmpty
@@ -63,116 +161,67 @@ class SelectCredentialsModelWidget extends HookConsumerWidget
             return searchTerm.contains(searchValue.value.toLowerCase());
           }).toList();
 
-    // Auto-select provider when only one exists (US3)
-    useEffect(() {
-      groupedModelsAsync.whenOrNull(
-        data: (groupedModels) {
-          // Only auto-select if:
-          // 1. Exactly one provider exists
-          // 2. No provider is currently selected (external or internal)
-          // 3. This is internal state (not externally controlled)
-          if (groupedModels.length == 1 &&
-              selectedProviderId == null &&
-              internalProviderId.value == null) {
-            final singleProvider = groupedModels.keys.first;
-            internalProviderId.value = singleProvider;
-            onProviderChanged?.call(singleProvider);
-            selectCredentialsModelId(null); // Reset model when auto-selecting
-          }
-        },
-      );
-      return null;
-    }, [groupedModelsAsync, selectedProviderId]);
-
-    return groupedModelsAsync.when(
-      loading: () => const AuraPadding(
+    if (groupedModels.isEmpty) {
+      return const AuraPadding(
         padding: AuraEdgeInsetsGeometry.vertical(.md),
-        child: AuraSpinner(),
-      ),
-      error: (error, stackTrace) => AppErrorWidget(
-        error: error,
-        stackTrace: stackTrace,
-      ),
-      data: (groupedModels) {
-        if (groupedModels.isEmpty) {
-          return const AuraPadding(
-            padding: AuraEdgeInsetsGeometry.vertical(.md),
-            child: TextLocale(
-              LocaleKeys.models_screens_no_providers_configured,
-            ),
-          );
-        }
+        child: TextLocale(
+          LocaleKeys.models_screens_no_providers_configured,
+        ),
+      );
+    }
 
-        final providerNames = groupedModels.keys.toList();
+    final providerNames = groupedModels.keys.toList();
 
-        return AuraPadding(
-          padding: const AuraEdgeInsetsGeometry.only(
-            bottom: .sm,
-            left: .md,
-            right: .md,
-          ),
-          child: isCompact
-              ? Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _ProviderDropdown(
-                      providerNames: providerNames,
-                      selectedProvider: effectiveProviderId,
-                      onChanged: (provider) {
-                        internalProviderId.value = provider;
-                        onProviderChanged?.call(provider);
-                        selectCredentialsModelId(null);
-                      },
-                    ),
-                    const SizedBox(height: DesignSpacing.sm),
-                    _ModelDropdown(
-                      models: filteredModels,
-                      selectedModelId: credentialsModelId,
-                      providerSelected: effectiveProviderId != null,
-                      onChanged: selectCredentialsModelId,
-                      searchValue: searchValue,
-                      controller: controller,
-                    ),
-                  ],
-                )
-              : Row(
-                  children: [
-                    Expanded(
-                      child: _ProviderDropdown(
-                        providerNames: providerNames,
-                        selectedProvider: effectiveProviderId,
-                        onChanged: (provider) {
-                          internalProviderId.value = provider;
-                          onProviderChanged?.call(provider);
-                          selectCredentialsModelId(null);
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: DesignSpacing.sm),
-                    Expanded(
-                      child: _ModelDropdown(
-                        models: filteredModels,
-                        selectedModelId: credentialsModelId,
-                        providerSelected: effectiveProviderId != null,
-                        onChanged: selectCredentialsModelId,
-                        searchValue: searchValue,
-                        controller: controller,
-                      ),
-                    ),
-                  ],
-                ),
-        );
+    final provider = _ProviderDropdown(
+      providerNames: providerNames,
+      selectedProvider: effectiveProviderId,
+      onChanged: onSelectProviderCallback,
+    );
+    final modelDropdown = _ModelDropdown(
+      models: filteredModels,
+      hasModelsForProvider: modelsForProvider.isNotEmpty,
+      selectedModelId: credentialsModelId,
+      providerSelected: effectiveProviderId != null,
+      onChanged: selectCredentialsModelId,
+      searchValue: searchValue.value,
+      onSearchChanged: (value) {
+        searchValue.value = value;
       },
+      controller: controller,
+    );
+
+    return AuraPadding(
+      padding: const AuraEdgeInsetsGeometry.only(
+        bottom: .sm,
+        left: .md,
+        right: .md,
+      ),
+      child: isCompact
+          ? AuraColumn(
+              spacing: .sm,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                provider,
+                modelDropdown,
+              ],
+            )
+          : AuraRow(
+              spacing: .sm,
+              children: [
+                Expanded(
+                  child: provider,
+                ),
+                Expanded(
+                  child: modelDropdown,
+                ),
+              ],
+            ),
     );
   }
-
-  @override
-  // Use 120 to accommodate both Row (60) and Column (stacked) layouts
-  Size get preferredSize => const Size.fromHeight(120);
 }
 
 /// Provider dropdown widget - first step in two-step selection.
-class _ProviderDropdown extends HookConsumerWidget {
+class _ProviderDropdown extends StatelessWidget {
   const _ProviderDropdown({
     required this.providerNames,
     required this.selectedProvider,
@@ -184,7 +233,7 @@ class _ProviderDropdown extends HookConsumerWidget {
   final void Function(String?) onChanged;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return AuraDropdownSelector<String>(
       value: selectedProvider,
       onChanged: onChanged,
@@ -202,25 +251,29 @@ class _ProviderDropdown extends HookConsumerWidget {
 }
 
 /// Model dropdown widget - second step, disabled until provider selected.
-class _ModelDropdown extends HookConsumerWidget {
+class _ModelDropdown extends StatelessWidget {
   const _ModelDropdown({
     required this.models,
+    required this.hasModelsForProvider,
     required this.selectedModelId,
     required this.providerSelected,
     required this.onChanged,
     required this.searchValue,
+    required this.onSearchChanged,
     required this.controller,
   });
 
   final List<CredentialsModelWithProviderEntity> models;
+  final bool hasModelsForProvider;
   final String? selectedModelId;
   final bool providerSelected;
   final void Function(String?) onChanged;
-  final ValueNotifier<String> searchValue;
+  final String searchValue;
+  final ValueChanged<String> onSearchChanged;
   final TextEditingController controller;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     if (!providerSelected) {
       // Disabled state - show placeholder (FR-002)
       return const AuraDropdownSelector<String>(
@@ -244,18 +297,16 @@ class _ModelDropdown extends HookConsumerWidget {
             ),
           )
           .toList(),
-      header: models.isEmpty
+      header: !hasModelsForProvider
           ? const AuraPadding(
               padding: AuraEdgeInsetsGeometry.medium,
               child: TextLocale(LocaleKeys.models_screens_no_models_available),
             )
-          : Padding(
-              padding: EdgeInsetsGeometry.all(context.auraTheme.spacing.md),
+          : AuraPadding(
+              padding: AuraEdgeInsetsGeometry.medium,
               child: AuraInput(
                 controller: controller,
-                onChanged: (value) {
-                  searchValue.value = value;
-                },
+                onChanged: onSearchChanged,
               ),
             ),
     );
