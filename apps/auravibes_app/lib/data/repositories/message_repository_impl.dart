@@ -189,11 +189,6 @@ Failed to retrieve messages of type $messageType for conversation $conversationI
     try {
       _validateMessagePatch(message);
 
-      // Check if message exists
-      if (!await messageExists(id)) {
-        throw MessageNotFoundException(id);
-      }
-
       final messageCompanion = _mapPatchToMessagesCompanion(message);
       final updatedMessage = await _database.messageDao.patchMessage(
         id,
@@ -201,7 +196,7 @@ Failed to retrieve messages of type $messageType for conversation $conversationI
       );
 
       if (updatedMessage == null) {
-        throw MessageException('Failed to patch message with ID $id');
+        throw MessageNotFoundException(id);
       }
 
       return _mapToMessage(updatedMessage);
