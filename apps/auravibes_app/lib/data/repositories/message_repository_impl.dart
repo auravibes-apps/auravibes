@@ -207,7 +207,10 @@ Failed to retrieve messages of type $messageType for conversation $conversationI
       return _mapToMessage(updatedMessage);
     } catch (e) {
       if (e is MessageException) rethrow;
-      throw MessageException('Failed to patch message', e as Exception);
+      final wrappedError = e is Exception
+          ? e
+          : Exception('Unexpected message patch error: $e');
+      throw MessageException('Failed to patch message', wrappedError);
     }
   }
 
@@ -279,9 +282,12 @@ Failed to retrieve messages with status $status for conversation $conversationId
       return true;
     } catch (e) {
       if (e is MessageValidationException) rethrow;
+      final wrappedError = e is Exception
+          ? e
+          : Exception('Unexpected message validation error: $e');
       throw MessageValidationException(
         'Message validation failed',
-        e as Exception,
+        wrappedError,
       );
     }
   }
