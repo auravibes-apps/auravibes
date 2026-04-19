@@ -187,10 +187,7 @@ Failed to retrieve messages of type $messageType for conversation $conversationI
     MessagePatch message,
   ) async {
     try {
-      // Validate message before updating
-      if (!await _validateMessagePatch(message)) {
-        throw const MessageValidationException('Invalid message data');
-      }
+      _validateMessagePatch(message);
 
       // Check if message exists
       if (!await messageExists(id)) {
@@ -204,13 +201,13 @@ Failed to retrieve messages of type $messageType for conversation $conversationI
       );
 
       if (updatedMessage == null) {
-        throw MessageException('Failed to update message with ID $id');
+        throw MessageException('Failed to patch message with ID $id');
       }
 
       return _mapToMessage(updatedMessage);
     } catch (e) {
       if (e is MessageException) rethrow;
-      throw MessageException('Failed to update message', e as Exception);
+      throw MessageException('Failed to patch message', e as Exception);
     }
   }
 
@@ -289,12 +286,12 @@ Failed to retrieve messages with status $status for conversation $conversationId
     }
   }
 
-  Future<bool> _validateMessagePatch(MessagePatch message) async {
+  void _validateMessagePatch(MessagePatch message) {
     try {
-      if (!message.isValid) {
-        throw MessageValidationException(_getValidationErrorPatch(message));
+      final validationError = _getValidationErrorPatch(message);
+      if (validationError != null) {
+        throw MessageValidationException(validationError);
       }
-      return true;
     } catch (e) {
       if (e is MessageValidationException) rethrow;
       throw MessageValidationException(
@@ -360,14 +357,16 @@ Failed to retrieve messages with status $status for conversation $conversationId
     return 'Unknown validation error';
   }
 
-  String _getValidationErrorPatch(MessagePatch message) {
-    if (message.content != null && message.content!.isEmpty) {
+  String? _getValidationErrorPatch(MessagePatch message) {
+    if (message.content != null && message.content!.trim().isEmpty) {
       return 'Message content cannot be empty';
     }
-    if (message.metadata != null) {
-      return 'Metadata cannot be empty';
+    if (message.content == null &&
+        message.metadata == null &&
+        message.status == null) {
+      return 'Must set content, metadata, or status';
     }
-    return 'Must Set content or metadata or status';
+    return null;
   }
 
   MessageStatus _messageTableStatusToEntityStatus(MessageTableStatus status) {
