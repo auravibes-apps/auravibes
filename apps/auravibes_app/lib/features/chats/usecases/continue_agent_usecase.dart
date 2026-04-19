@@ -181,25 +181,44 @@ class ContinueAgentUsecase {
           status: .sent,
         ),
       );
-    } catch (e, _) {
+    } on Object catch (error, stackTrace) {
       if (!hasAcknowledgedPendingUsers && pendingUserMessageIds.isNotEmpty) {
-        for (final pendingUserMessageId in pendingUserMessageIds) {
-          await messageRepository.patchMessage(
-            pendingUserMessageId,
-            const MessagePatch(status: MessageStatus.error),
+        try {
+          for (final pendingUserMessageId in pendingUserMessageIds) {
+            await messageRepository.patchMessage(
+              pendingUserMessageId,
+              const MessagePatch(status: MessageStatus.error),
+            );
+          }
+        } on Object catch (cleanupError, cleanupStackTrace) {
+          monitoringService.trackError(
+            'Failed to persist pending user error state',
+            error: cleanupError,
+            stackTrace: cleanupStackTrace,
           );
         }
       }
 
-      if (firstMessage == null) rethrow;
+      if (firstMessage == null) {
+        Error.throwWithStackTrace(error, stackTrace);
+      }
 
-      await messageRepository.patchMessage(
-        firstMessage.id,
-        const .new(
-          status: .error,
-        ),
-      );
-      rethrow;
+      try {
+        await messageRepository.patchMessage(
+          firstMessage.id,
+          const .new(
+            status: .error,
+          ),
+        );
+      } on Object catch (cleanupError, cleanupStackTrace) {
+        monitoringService.trackError(
+          'Failed to persist assistant error state',
+          error: cleanupError,
+          stackTrace: cleanupStackTrace,
+        );
+      }
+
+      Error.throwWithStackTrace(error, stackTrace);
     } finally {
       conversationStreamingRuntime.remove(conversationId);
       if (firstMessage != null) {
