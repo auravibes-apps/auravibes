@@ -79,14 +79,14 @@ abstract class MessageRepository {
   /// Throws [MessageException] if there's an error creating the message.
   Future<MessageEntity> createMessage(MessageToCreate message);
 
-  /// Updates an existing message in the data source.
+  /// Applies a partial update (patch) to an existing message.
   ///
-  /// [id] The ID of the message to update.
-  /// [message] The message with updated values. Must have a valid ID.
+  /// [id] The ID of the message to patch.
+  /// [message] The partial fields to update. Unspecified fields are unchanged.
   /// Returns the updated message.
   /// Throws [MessageValidationException] if message data is invalid.
   /// Throws [MessageNotFoundException] if no message with the given ID exists.
-  /// Throws [MessageException] if there's an error updating the message.
+  /// Throws [MessageException] if there's an error patching the message.
   Future<MessageEntity> patchMessage(String id, MessagePatch message);
 
   /// Deletes a message from the data source.
