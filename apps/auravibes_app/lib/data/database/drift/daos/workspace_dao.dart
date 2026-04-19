@@ -47,12 +47,12 @@ class WorkspaceDao extends DatabaseAccessor<AppDatabase>
     return into(workspaces).insertReturning(workspace);
   }
 
-  /// Updates an existing workspace in the database.
+  /// Patches an existing workspace in the database.
   ///
   /// Updates the workspace with the given [id]
   /// using the provided [workspace] data.
-  /// Returns true if a workspace was updated, false otherwise.
-  Future<bool> updateWorkspace(String id, WorkspacesCompanion workspace) async {
+  /// Returns true if a workspace was patched, false otherwise.
+  Future<bool> patchWorkspace(String id, WorkspacesCompanion workspace) async {
     final updateCount = await (update(
       workspaces,
     )..where((t) => t.id.equals(id))).write(workspace);
@@ -114,7 +114,7 @@ class WorkspaceDao extends DatabaseAccessor<AppDatabase>
         .then((rows) => rows.length);
   }
 
-  Future<bool> updateWorkspaceTimestamp(String id) async {
+  Future<bool> patchWorkspaceTimestamp(String id) async {
     final rowsAffected =
         await (update(workspaces)..where((t) => t.id.equals(id))).write(
           WorkspacesCompanion(updatedAt: Value(DateTime.now())),

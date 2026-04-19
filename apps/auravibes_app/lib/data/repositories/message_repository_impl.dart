@@ -182,35 +182,30 @@ Failed to retrieve messages of type $messageType for conversation $conversationI
   }
 
   @override
-  Future<MessageEntity> updateMessage(
+  Future<MessageEntity> patchMessage(
     String id,
-    MessageToUpdate message,
+    MessagePatch message,
   ) async {
     try {
-      // Validate message before updating
-      if (!await _validateMessageToUpdate(message)) {
-        throw const MessageValidationException('Invalid message data');
-      }
+      _validateMessagePatch(message);
 
-      // Check if message exists
-      if (!await messageExists(id)) {
-        throw MessageNotFoundException(id);
-      }
-
-      final messageCompanion = _mapUpdateToMessagesCompanion(message);
-      final updatedMessage = await _database.messageDao.updateMessage(
+      final messageCompanion = _mapPatchToMessagesCompanion(message);
+      final updatedMessage = await _database.messageDao.patchMessage(
         id,
         messageCompanion,
       );
 
       if (updatedMessage == null) {
-        throw MessageException('Failed to update message with ID $id');
+        throw MessageNotFoundException(id);
       }
 
       return _mapToMessage(updatedMessage);
     } catch (e) {
       if (e is MessageException) rethrow;
-      throw MessageException('Failed to update message', e as Exception);
+      final wrappedError = e is Exception
+          ? e
+          : Exception('Unexpected message patch error: $e');
+      throw MessageException('Failed to patch message', wrappedError);
     }
   }
 
@@ -282,19 +277,22 @@ Failed to retrieve messages with status $status for conversation $conversationId
       return true;
     } catch (e) {
       if (e is MessageValidationException) rethrow;
+      final wrappedError = e is Exception
+          ? e
+          : Exception('Unexpected message validation error: $e');
       throw MessageValidationException(
         'Message validation failed',
-        e as Exception,
+        wrappedError,
       );
     }
   }
 
-  Future<bool> _validateMessageToUpdate(MessageToUpdate message) async {
+  void _validateMessagePatch(MessagePatch message) {
     try {
-      if (!message.isValid) {
-        throw MessageValidationException(_getValidationErrorToUpdate(message));
+      final validationError = _getValidationErrorPatch(message);
+      if (validationError != null) {
+        throw MessageValidationException(validationError);
       }
-      return true;
     } catch (e) {
       if (e is MessageValidationException) rethrow;
       throw MessageValidationException(
@@ -338,7 +336,7 @@ Failed to retrieve messages with status $status for conversation $conversationId
     );
   }
 
-  MessagesCompanion _mapUpdateToMessagesCompanion(MessageToUpdate message) {
+  MessagesCompanion _mapPatchToMessagesCompanion(MessagePatch message) {
     return MessagesCompanion(
       content: Value.absentIfNull(message.content),
       status: Value.absentIfNull(
@@ -360,14 +358,16 @@ Failed to retrieve messages with status $status for conversation $conversationId
     return 'Unknown validation error';
   }
 
-  String _getValidationErrorToUpdate(MessageToUpdate message) {
-    if (message.content != null && message.content!.isEmpty) {
+  String? _getValidationErrorPatch(MessagePatch message) {
+    if (message.content != null && message.content!.trim().isEmpty) {
       return 'Message content cannot be empty';
     }
-    if (message.metadata != null) {
-      return 'Metadata cannot be empty';
+    if (message.content == null &&
+        message.metadata == null &&
+        message.status == null) {
+      return 'Must set content, metadata, or status';
     }
-    return 'Must Set content or metadata or status';
+    return null;
   }
 
   MessageStatus _messageTableStatusToEntityStatus(MessageTableStatus status) {

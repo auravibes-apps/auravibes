@@ -95,7 +95,7 @@ void main() {
       when(messageRepository.getMessageById(messageId)).thenAnswer(
         (_) async => message,
       );
-      when(messageRepository.updateMessage(messageId, any)).thenAnswer(
+      when(messageRepository.patchMessage(messageId, any)).thenAnswer(
         (_) async => message,
       );
       when(
@@ -116,9 +116,9 @@ void main() {
 
       final update =
           verify(
-                messageRepository.updateMessage(messageId, captureAny),
+                messageRepository.patchMessage(messageId, captureAny),
               ).captured.single
-              as MessageToUpdate;
+              as MessagePatch;
       expect(
         update.metadata?.toolCalls.single.resultStatus,
         ToolCallResultStatus.toolNotFound,
@@ -166,9 +166,9 @@ void main() {
 
         final update =
             verify(
-                  messageRepository.updateMessage(messageId, captureAny),
+                  messageRepository.patchMessage(messageId, captureAny),
                 ).captured.single
-                as MessageToUpdate;
+                as MessagePatch;
         expect(update.metadata?.toolCalls.single.responseRaw, 'mcp result');
       },
     );
@@ -207,9 +207,9 @@ void main() {
 
         final update =
             verify(
-                  messageRepository.updateMessage(messageId, captureAny),
+                  messageRepository.patchMessage(messageId, captureAny),
                 ).captured.single
-                as MessageToUpdate;
+                as MessagePatch;
         final updatedToolCall = update.metadata?.toolCalls.single;
         expect(updatedToolCall?.resultStatus, ToolCallResultStatus.success);
         expect(updatedToolCall?.responseRaw, '2.0');
@@ -253,9 +253,9 @@ void main() {
 
         final update =
             verify(
-                  messageRepository.updateMessage(messageId, captureAny),
+                  messageRepository.patchMessage(messageId, captureAny),
                 ).captured.single
-                as MessageToUpdate;
+                as MessagePatch;
         expect(
           update.metadata?.toolCalls.single.resultStatus,
           ToolCallResultStatus.executionError,

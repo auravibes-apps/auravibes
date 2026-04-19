@@ -48,20 +48,20 @@ class ConversationRepositoryImpl implements ConversationRepository {
   }
 
   @override
-  Future<ConversationEntity> updateConversation(
+  Future<ConversationEntity> patchConversation(
     String id,
-    ConversationToUpdate conversation,
+    ConversationPatch conversation,
   ) async {
-    _validateConversationUpdate(conversation);
+    _validateConversationPatch(conversation);
 
     if (!await _conversationExists(id)) {
       throw ConversationNotFoundException(id);
     }
 
-    final conversationCompanion = _mapUpdateToConversationsCompanion(
+    final conversationCompanion = _mapPatchToConversationsCompanion(
       conversation,
     );
-    final updated = await _database.conversationDao.updateConversation(
+    final updated = await _database.conversationDao.patchConversation(
       id,
       conversationCompanion,
     );
@@ -107,7 +107,7 @@ class ConversationRepositoryImpl implements ConversationRepository {
     }
   }
 
-  void _validateConversationUpdate(ConversationToUpdate conversation) {
+  void _validateConversationPatch(ConversationPatch conversation) {
     if (!conversation.isValid) {
       throw ConversationValidationException(
         conversation.title != null && conversation.title!.isEmpty
@@ -142,8 +142,8 @@ class ConversationRepositoryImpl implements ConversationRepository {
     );
   }
 
-  ConversationsCompanion _mapUpdateToConversationsCompanion(
-    ConversationToUpdate conversation,
+  ConversationsCompanion _mapPatchToConversationsCompanion(
+    ConversationPatch conversation,
   ) {
     return ConversationsCompanion(
       title: Value.absentIfNull(conversation.title),

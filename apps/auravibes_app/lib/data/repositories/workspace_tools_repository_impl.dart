@@ -254,14 +254,21 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
   }
 
   @override
-  Future<List<WorkspaceToolEntity>> updateWorkspaceToolConfig(
+  Future<List<WorkspaceToolEntity>> patchWorkspaceToolConfig(
     String workspaceId,
     String toolType,
     String? config,
   ) async {
-    return _dao
-        .updateWorkspaceToolConfig(workspaceId, toolType, config)
-        .then((value) => value.map(_tableToEntity).toList());
+    try {
+      return await _dao
+          .patchWorkspaceToolConfig(workspaceId, toolType, config)
+          .then((value) => value.map(_tableToEntity).toList());
+    } catch (e) {
+      throw WorkspaceToolsException(
+        'Failed to patch workspace tool config: $e',
+        e is Exception ? e : null,
+      );
+    }
   }
 
   WorkspaceToolEntity _tableToEntity(ToolsTable table) {

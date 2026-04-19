@@ -188,9 +188,9 @@ class ApproveToolCallUsecase {
       );
     }).toList();
 
-    await _messageRepository.updateMessage(
+    await _messageRepository.patchMessage(
       message.id,
-      MessageToUpdate(
+      MessagePatch(
         metadata: metadata.copyWith(toolCalls: updatedToolCalls),
       ),
     );

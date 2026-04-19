@@ -51,7 +51,7 @@ void main() {
       when(messageRepository.getMessageById(messageId)).thenAnswer(
         (_) async => message,
       );
-      when(messageRepository.updateMessage(messageId, any)).thenAnswer(
+      when(messageRepository.patchMessage(messageId, any)).thenAnswer(
         (_) async => message,
       );
       when(
@@ -66,9 +66,9 @@ void main() {
 
       final update =
           verify(
-                messageRepository.updateMessage(messageId, captureAny),
+                messageRepository.patchMessage(messageId, captureAny),
               ).captured.single
-              as MessageToUpdate;
+              as MessagePatch;
       expect(
         update.metadata?.toolCalls.first.resultStatus,
         ToolCallResultStatus.skippedByUser,
@@ -87,7 +87,7 @@ void main() {
       await usecase.call(toolCallId: toolCallId, messageId: messageId);
 
       verifyNever(
-        messageRepository.updateMessage(any, any),
+        messageRepository.patchMessage(any, any),
       );
       verifyNever(
         resumeConversationIfReadyUsecase.call(messageId: anyNamed('messageId')),

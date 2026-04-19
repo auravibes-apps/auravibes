@@ -51,9 +51,9 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
 
     final updatedConversation = await ref
         .read(conversationRepositoryProvider)
-        .updateConversation(
+        .patchConversation(
           result.conversation.id,
-          ConversationToUpdate(modelId: modelId),
+          ConversationPatch(modelId: modelId),
         );
     state = AsyncData(ConversationFound(updatedConversation));
   }

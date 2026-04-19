@@ -46,19 +46,6 @@ class McpServersDao extends DatabaseAccessor<AppDatabase>
   Future<McpServersTable> insertMcpServer(McpServersCompanion companion) =>
       into(mcpServers).insertReturning(companion);
 
-  /// Update an existing MCP server.
-  ///
-  /// Returns true if a row was updated.
-  Future<bool> updateMcpServer(
-    String id,
-    McpServersCompanion companion,
-  ) async {
-    final rowsUpdated = await (update(
-      mcpServers,
-    )..where((t) => t.id.equals(id))).write(companion);
-    return rowsUpdated > 0;
-  }
-
   /// Delete an MCP server by ID.
   ///
   /// Returns true if a row was deleted.
