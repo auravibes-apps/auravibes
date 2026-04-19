@@ -37,10 +37,10 @@ class SelectCredentialsModelWidget extends HookConsumerWidget
       listModelsGroupedByProviderProvider(workspaceId: workspaceId),
     );
 
-    void onSelectProvider(String? provider) {
+    final onSelectProvider = useCallback<void Function(String?)>((provider) {
       onProviderChanged(provider);
       selectCredentialsModelId(null);
-    }
+    }, [onProviderChanged, selectCredentialsModelId]);
 
     return switch (groupedModelsAsync) {
       AsyncLoading() => const AuraPadding(
@@ -145,7 +145,10 @@ class SelectChatData extends HookWidget {
       selectedModelId: credentialsModelId,
       providerSelected: effectiveProviderId != null,
       onChanged: selectCredentialsModelId,
-      searchValue: searchValue,
+      searchValue: searchValue.value,
+      onSearchChanged: (value) {
+        searchValue.value = value;
+      },
       controller: controller,
     );
 
@@ -217,6 +220,7 @@ class _ModelDropdown extends StatelessWidget {
     required this.providerSelected,
     required this.onChanged,
     required this.searchValue,
+    required this.onSearchChanged,
     required this.controller,
   });
 
@@ -224,7 +228,8 @@ class _ModelDropdown extends StatelessWidget {
   final String? selectedModelId;
   final bool providerSelected;
   final void Function(String?) onChanged;
-  final ValueNotifier<String> searchValue;
+  final String searchValue;
+  final ValueChanged<String> onSearchChanged;
   final TextEditingController controller;
 
   @override
@@ -261,9 +266,7 @@ class _ModelDropdown extends StatelessWidget {
               padding: AuraEdgeInsetsGeometry.medium,
               child: AuraInput(
                 controller: controller,
-                onChanged: (value) {
-                  searchValue.value = value;
-                },
+                onChanged: onSearchChanged,
               ),
             ),
     );
