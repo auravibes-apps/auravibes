@@ -96,7 +96,9 @@ class SelectChatData extends HookWidget {
     final internalProviderId = useState<String?>(null);
     final effectiveProviderId = selectedProviderId ?? internalProviderId.value;
 
-    final _onSelectProvider = useCallback<void Function(String?)>((provider) {
+    final onSelectProviderCallback = useCallback<void Function(String?)>((
+      provider,
+    ) {
       internalProviderId.value = provider;
       onSelectProvider(provider);
     }, [onSelectProvider]);
@@ -127,7 +129,7 @@ class SelectChatData extends HookWidget {
     final provider = _ProviderDropdown(
       providerNames: providerNames,
       selectedProvider: effectiveProviderId,
-      onChanged: _onSelectProvider,
+      onChanged: onSelectProviderCallback,
     );
     final modelDropdown = _ModelDropdown(
       models: filteredModels,
@@ -169,7 +171,7 @@ class SelectChatData extends HookWidget {
 }
 
 /// Provider dropdown widget - first step in two-step selection.
-class _ProviderDropdown extends HookConsumerWidget {
+class _ProviderDropdown extends StatelessWidget {
   const _ProviderDropdown({
     required this.providerNames,
     required this.selectedProvider,
@@ -181,7 +183,7 @@ class _ProviderDropdown extends HookConsumerWidget {
   final void Function(String?) onChanged;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return AuraDropdownSelector<String>(
       value: selectedProvider,
       onChanged: onChanged,
@@ -199,7 +201,7 @@ class _ProviderDropdown extends HookConsumerWidget {
 }
 
 /// Model dropdown widget - second step, disabled until provider selected.
-class _ModelDropdown extends HookConsumerWidget {
+class _ModelDropdown extends StatelessWidget {
   const _ModelDropdown({
     required this.models,
     required this.selectedModelId,
@@ -217,7 +219,7 @@ class _ModelDropdown extends HookConsumerWidget {
   final TextEditingController controller;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     if (!providerSelected) {
       // Disabled state - show placeholder (FR-002)
       return const AuraDropdownSelector<String>(
@@ -246,8 +248,8 @@ class _ModelDropdown extends HookConsumerWidget {
               padding: AuraEdgeInsetsGeometry.medium,
               child: TextLocale(LocaleKeys.models_screens_no_models_available),
             )
-          : Padding(
-              padding: EdgeInsetsGeometry.all(context.auraTheme.spacing.md),
+          : AuraPadding(
+              padding: AuraEdgeInsetsGeometry.medium,
               child: AuraInput(
                 controller: controller,
                 onChanged: (value) {

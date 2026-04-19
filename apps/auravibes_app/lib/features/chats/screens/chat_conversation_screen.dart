@@ -121,7 +121,7 @@ class _ChatConversationScreen extends HookConsumerWidget {
             selectCredentialsModelId: ref
                 .watch(conversationChatProvider(workspaceId).notifier)
                 .setModel,
-            onProviderChanged: (p1) {},
+            onProviderChanged: (_) {},
           ),
           const Expanded(child: _ChatList()),
           const McpConnectingIndicator(),
