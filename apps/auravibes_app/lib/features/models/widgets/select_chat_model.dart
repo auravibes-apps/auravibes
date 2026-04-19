@@ -96,12 +96,21 @@ class SelectChatData extends HookWidget {
     final internalProviderId = useState<String?>(null);
     final effectiveProviderId = selectedProviderId ?? internalProviderId.value;
 
+    useEffect(() {
+      if (selectedProviderId == null && internalProviderId.value != null) {
+        internalProviderId.value = null;
+      }
+      return null;
+    }, [selectedProviderId]);
+
     final onSelectProviderCallback = useCallback<void Function(String?)>((
       provider,
     ) {
-      internalProviderId.value = provider;
+      if (selectedProviderId == null) {
+        internalProviderId.value = provider;
+      }
       onSelectProvider(provider);
-    }, [onSelectProvider]);
+    }, [onSelectProvider, selectedProviderId]);
 
     // Filter models by search - computed unconditionally (not in hook)
     final modelsForProvider = effectiveProviderId != null
