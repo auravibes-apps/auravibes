@@ -9,10 +9,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'add_model_provider_providers.g.dart';
 
-sealed class AddModelException implements Exception {}
-
-class AddModelExceptionUnknown implements AddModelException {}
-
 final _log = Logger('add_model_providers');
 
 @riverpod
@@ -74,12 +70,9 @@ class AddModelProviderState extends _$AddModelProviderState {
         ),
       );
       return provider;
-    } on AddModelException catch (e) {
-      _log.severe('addModelProvider known error', e);
-      rethrow;
     } on Exception catch (e, s) {
       _log.severe('addModelProvider error', e, s);
-      throw AddModelExceptionUnknown();
+      rethrow;
     }
   }
 }

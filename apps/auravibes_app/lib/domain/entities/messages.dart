@@ -66,7 +66,11 @@ String? _toolCallResultStatusToJson(ToolCallResultStatus? status) {
 abstract class MessageMetadataEntity with _$MessageMetadataEntity {
   const factory MessageMetadataEntity({
     @Default(<MessageToolCallEntity>[]) List<MessageToolCallEntity> toolCalls,
+    int? promptTokens,
+    int? completionTokens,
+    int? totalTokens,
   }) = _MessageMetadataEntity;
+  const MessageMetadataEntity._();
 
   factory MessageMetadataEntity.fromJson(Map<String, dynamic> json) =>
       _$MessageMetadataEntityFromJson(json);
@@ -79,6 +83,10 @@ abstract class MessageMetadataEntity with _$MessageMetadataEntity {
     } on Exception catch (_) {
       return null;
     }
+  }
+
+  int get usedTokens {
+    return totalTokens ?? ((promptTokens ?? 0) + (completionTokens ?? 0));
   }
 }
 
@@ -162,11 +170,11 @@ abstract class MessageToCreate with _$MessageToCreate {
   }
 }
 
-/// Entity for creating a new message
+/// Entity for patching an existing message
 @freezed
-abstract class MessageToUpdate with _$MessageToUpdate {
-  /// Creates a new MessageToUpdate instance
-  const factory MessageToUpdate({
+abstract class MessagePatch with _$MessagePatch {
+  /// Creates a new MessagePatch instance
+  const factory MessagePatch({
     /// Content of the message (JSON structure based on message type)
     String? content,
 
@@ -174,8 +182,8 @@ abstract class MessageToUpdate with _$MessageToUpdate {
     MessageMetadataEntity? metadata,
 
     MessageStatus? status,
-  }) = _MessageToUpdate;
-  const MessageToUpdate._();
+  }) = _MessagePatch;
+  const MessagePatch._();
 
   /// Returns true if the message is in a valid state
   bool get isValid {

@@ -19,11 +19,6 @@ import 'package:langchain/langchain.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:rxdart/rxdart.dart';
 
-class UnresolvedToolsException implements Exception {
-  UnresolvedToolsException(this.message);
-  final String message;
-}
-
 class ContinueAgentResult {
   const ContinueAgentResult({
     required this.messageId,
@@ -102,7 +97,7 @@ class ContinueAgentUsecase {
       final persistenceFuture = streamingController.stream
           .coalescingSave(
             store: (state) async {
-              await messageRepository.updateMessage(
+              await messageRepository.patchMessage(
                 firstMessage!.id,
                 .new(
                   content: state.outputAsString,
@@ -137,9 +132,9 @@ class ContinueAgentUsecase {
 
         if (!hasAcknowledgedPendingUsers && pendingUserMessageIds.isNotEmpty) {
           for (final pendingUserMessageId in pendingUserMessageIds) {
-            await messageRepository.updateMessage(
+            await messageRepository.patchMessage(
               pendingUserMessageId,
-              const MessageToUpdate(status: MessageStatus.sent),
+              const MessagePatch(status: MessageStatus.sent),
             );
           }
           hasAcknowledgedPendingUsers = true;
@@ -174,31 +169,51 @@ class ContinueAgentUsecase {
 
       lastResult = accumulatedResult;
 
-      await messageRepository.updateMessage(
+      await messageRepository.patchMessage(
         firstMessage.id,
-        const .new(
+        .new(
+          metadata: lastResult.entityMetadata,
           status: .sent,
         ),
       );
-    } catch (e, _) {
+    } on Object catch (error, stackTrace) {
       if (!hasAcknowledgedPendingUsers && pendingUserMessageIds.isNotEmpty) {
-        for (final pendingUserMessageId in pendingUserMessageIds) {
-          await messageRepository.updateMessage(
-            pendingUserMessageId,
-            const MessageToUpdate(status: MessageStatus.error),
+        try {
+          for (final pendingUserMessageId in pendingUserMessageIds) {
+            await messageRepository.patchMessage(
+              pendingUserMessageId,
+              const MessagePatch(status: MessageStatus.error),
+            );
+          }
+        } on Object catch (cleanupError, cleanupStackTrace) {
+          monitoringService.trackError(
+            'Failed to persist pending user error state',
+            error: cleanupError,
+            stackTrace: cleanupStackTrace,
           );
         }
       }
 
-      if (firstMessage == null) rethrow;
+      if (firstMessage == null) {
+        Error.throwWithStackTrace(error, stackTrace);
+      }
 
-      await messageRepository.updateMessage(
-        firstMessage.id,
-        const .new(
-          status: .error,
-        ),
-      );
-      rethrow;
+      try {
+        await messageRepository.patchMessage(
+          firstMessage.id,
+          const .new(
+            status: .error,
+          ),
+        );
+      } on Object catch (cleanupError, cleanupStackTrace) {
+        monitoringService.trackError(
+          'Failed to persist assistant error state',
+          error: cleanupError,
+          stackTrace: cleanupStackTrace,
+        );
+      }
+
+      Error.throwWithStackTrace(error, stackTrace);
     } finally {
       conversationStreamingRuntime.remove(conversationId);
       if (firstMessage != null) {

@@ -74,16 +74,70 @@ void main() {
       );
       final createdWorkspace = await repository.createWorkspace(workspace);
 
-      final updatedWorkspace = workspace.copyWith(name: 'Updated Workspace');
+      const updatedWorkspace = WorkspacePatch(name: 'Updated Workspace');
 
       // Act
-      final result = await repository.updateWorkspace(
+      final result = await repository.patchWorkspace(
         createdWorkspace.id,
         updatedWorkspace,
       );
 
       // Assert
       expect(result.name, 'Updated Workspace');
+    });
+
+    test('should reject empty workspace patch', () async {
+      // Arrange
+      const workspace = WorkspaceToCreate(
+        name: 'Test Workspace',
+        type: WorkspaceType.local,
+      );
+      final createdWorkspace = await repository.createWorkspace(workspace);
+
+      // Act + Assert
+      await expectLater(
+        repository.patchWorkspace(createdWorkspace.id, const WorkspacePatch()),
+        throwsA(
+          isA<WorkspaceValidationException>().having(
+            (error) => error.message,
+            'message',
+            'At least one field must be provided',
+          ),
+        ),
+      );
+    });
+
+    test('should reject invalid merged workspace patch invariants', () async {
+      // Arrange
+      const localWorkspace = WorkspaceToCreate(
+        name: 'Local Workspace',
+        type: WorkspaceType.local,
+      );
+      const remoteWorkspace = WorkspaceToCreate(
+        name: 'Remote Workspace',
+        type: WorkspaceType.remote,
+        url: 'https://example.com',
+      );
+      final createdLocal = await repository.createWorkspace(localWorkspace);
+      final createdRemote = await repository.createWorkspace(remoteWorkspace);
+
+      // Act + Assert: local + URL should fail
+      await expectLater(
+        repository.patchWorkspace(
+          createdLocal.id,
+          const WorkspacePatch(url: 'https://invalid-for-local.com'),
+        ),
+        throwsA(isA<WorkspaceValidationException>()),
+      );
+
+      // Act + Assert: changing remote -> local without clearing URL should fail
+      await expectLater(
+        repository.patchWorkspace(
+          createdRemote.id,
+          const WorkspacePatch(type: WorkspaceType.local),
+        ),
+        throwsA(isA<WorkspaceValidationException>()),
+      );
     });
 
     test('should delete a workspace', () async {

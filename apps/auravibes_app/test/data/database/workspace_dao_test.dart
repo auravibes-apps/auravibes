@@ -90,7 +90,7 @@ void main() {
       );
 
       // Update the workspace
-      final updated = await workspaceDao.updateWorkspace(
+      final updated = await workspaceDao.patchWorkspace(
         idCreated.id,
         WorkspacesCompanion(
           name: const Value('Updated Name'),

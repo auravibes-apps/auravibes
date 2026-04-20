@@ -4,9 +4,12 @@ import 'package:auravibes_app/domain/entities/messages.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_send_queue_notifier.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_notifier.dart';
 import 'package:auravibes_app/features/chats/notifiers/messages_streaming_notifier.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_selection_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/get_conversation_busy_state_usecase.dart';
+import 'package:auravibes_app/features/models/providers/credentials_providers.dart';
+import 'package:auravibes_app/utils/chat_result_extension.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -21,18 +24,21 @@ final addMessageMutation = Mutation<MessageEntity>();
 final deleteMessageMutation = Mutation<void>();
 final updateMessageMutation = Mutation<MessageEntity>();
 
-@Riverpod(dependencies: [conversationSelected])
-Stream<List<MessageEntity>> persistedChatMessages(Ref ref) {
-  final conversationId = ref.watch(conversationSelectedProvider);
-
+@riverpod
+Stream<List<MessageEntity>> chatMessagesByConversation(
+  Ref ref,
+  String conversationId,
+) {
   return ref
       .watch(messageRepositoryProvider)
       .watchMessagesByConversation(conversationId);
 }
 
-@Riverpod(dependencies: [persistedChatMessages])
-AsyncValue<List<MessageEntity>> chatMessages(Ref ref) {
-  return ref.watch(persistedChatMessagesProvider);
+@Riverpod(dependencies: [conversationSelected])
+Future<List<MessageEntity>> chatMessages(Ref ref) {
+  final conversationId = ref.watch(conversationSelectedProvider);
+
+  return ref.watch(chatMessagesByConversationProvider(conversationId).future);
 }
 
 @Riverpod(dependencies: [chatMessages])
@@ -72,13 +78,13 @@ class MessageIdList extends ListBase<String> {
   int get hashCode => const DeepCollectionEquality().hash(_ids);
 }
 
-@Riverpod(dependencies: [persistedChatMessages, MessagesStreamingNotifier])
+@Riverpod(dependencies: [chatMessages, MessagesStreamingNotifier])
 MessageEntity? messageConversationById(
   Ref ref,
   String messageId,
 ) {
   final messageEntity = ref.watch(
-    persistedChatMessagesProvider.select(
+    chatMessagesProvider.select(
       (value) => value.value?.firstWhereOrNull((c) => c.id == messageId),
     ),
   );
@@ -149,6 +155,52 @@ class PendingToolCall {
 
   final MessageToolCallEntity toolCall;
   final String messageId;
+}
+
+@Riverpod(dependencies: [chatMessages, MessagesStreamingNotifier])
+int conversationUsedTokens(Ref ref) {
+  final messages = ref.watch(
+    chatMessagesProvider.select((value) => value.value),
+  );
+  if (messages == null || messages.isEmpty) return 0;
+
+  final latestAssistantMessage = messages.lastWhereOrNull(
+    (message) => !message.isUser,
+  );
+  if (latestAssistantMessage == null) return 0;
+
+  final streamingResult = ref.watch(
+    messagesStreamingProvider.select(
+      (state) => state[latestAssistantMessage.id]?.lastResult,
+    ),
+  );
+
+  return streamingResult?.entityTotalTokens ??
+      latestAssistantMessage.metadata?.usedTokens ??
+      0;
+}
+
+@Riverpod(
+  dependencies: [
+    conversationSelected,
+    conversationByIdStream,
+    modelContextLimit,
+  ],
+)
+Future<int?> conversationContextLimit(Ref ref) async {
+  final conversationId = ref.watch(conversationSelectedProvider);
+  final conversationModelId = ref
+      .watch(conversationByIdStreamProvider(conversationId: conversationId))
+      .value
+      ?.modelId;
+
+  if (conversationModelId == null) return null;
+
+  final selectedModel = await ref.watch(
+    modelContextLimitProvider(conversationModelId).future,
+  );
+
+  return selectedModel;
 }
 
 @Riverpod(dependencies: [chatMessages])

@@ -8,6 +8,7 @@ import 'package:auravibes_app/features/chats/widgets/chat_messages_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_queued_messages_indicator.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_thinking_indicator.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_tool_approval_card.dart';
+import 'package:auravibes_app/features/chats/widgets/conversation_context_usage_pill.dart';
 import 'package:auravibes_app/features/chats/widgets/mcp_connecting_indicator.dart';
 import 'package:auravibes_app/features/models/widgets/select_chat_model.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_management_modal.dart';
@@ -110,16 +111,18 @@ class _ChatConversationScreen extends HookConsumerWidget {
     return AuraScreen(
       appBar: AuraAppBarWithDrawer(
         title: Text(conversation.title),
-        bottom: SelectCredentialsModelWidget(
-          workspaceId: workspaceId,
-          credentialsModelId: conversation.modelId,
-          selectCredentialsModelId: ref
-              .watch(conversationChatProvider(workspaceId).notifier)
-              .setModel,
-        ),
       ),
-      child: Column(
+      child: AuraColumn(
         children: [
+          const ConversationContextUsagePill(),
+          SelectCredentialsModelWidget(
+            workspaceId: workspaceId,
+            credentialsModelId: conversation.modelId,
+            selectCredentialsModelId: ref
+                .watch(conversationChatProvider(workspaceId).notifier)
+                .setModel,
+            onProviderChanged: (_) {},
+          ),
           const Expanded(child: _ChatList()),
           const McpConnectingIndicator(),
           if (busyState?.isStreaming == true) const ChatThinkingIndicator(),

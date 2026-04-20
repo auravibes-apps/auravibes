@@ -69,8 +69,8 @@ abstract class ConversationToCreate with _$ConversationToCreate {
 }
 
 @freezed
-abstract class ConversationToUpdate with _$ConversationToUpdate {
-  const factory ConversationToUpdate({
+abstract class ConversationPatch with _$ConversationPatch {
+  const factory ConversationPatch({
     /// Human-readable title of the conversation
     String? title,
 
@@ -79,8 +79,8 @@ abstract class ConversationToUpdate with _$ConversationToUpdate {
 
     /// Whether this conversation is pinned
     bool? isPinned,
-  }) = _ConversationToUpdate;
-  const ConversationToUpdate._();
+  }) = _ConversationPatch;
+  const ConversationPatch._();
 
   bool get isValid {
     if (title != null && title!.isEmpty) return false;

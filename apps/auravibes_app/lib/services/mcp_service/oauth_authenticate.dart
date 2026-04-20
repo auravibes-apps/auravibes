@@ -8,20 +8,6 @@ import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 
-/// Exception thrown when OAuth authentication fails.
-class OAuthException implements Exception {
-  const OAuthException(this.message, [this.cause]);
-
-  final String message;
-  final Object? cause;
-
-  @override
-  String toString() {
-    final causedBy = cause != null ? ' (Caused by: $cause)' : '';
-    return 'OAuthException: $message$causedBy';
-  }
-}
-
 class OauthAuthenticate {
   OauthAuthenticate({
     required this.callbackUrlScheme,

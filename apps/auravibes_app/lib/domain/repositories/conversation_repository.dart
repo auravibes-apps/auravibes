@@ -6,15 +6,17 @@ abstract class ConversationRepository {
     int? limit,
   });
 
+  Stream<ConversationEntity?> watchConversationById(String id);
+
   Future<ConversationEntity?> getConversationById(String id);
 
   Future<ConversationEntity> createConversation(
     ConversationToCreate conversation,
   );
 
-  Future<ConversationEntity> updateConversation(
+  Future<ConversationEntity> patchConversation(
     String id,
-    ConversationToUpdate conversation,
+    ConversationPatch conversation,
   );
 
   Future<bool> deleteConversation(String id);

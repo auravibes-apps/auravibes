@@ -17,7 +17,7 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
     conversations,
   )..where((tbl) => tbl.id.equals(id))).getSingleOrNull();
 
-  Future<bool> updateConversation(
+  Future<bool> patchConversation(
     String id,
     ConversationsCompanion companion,
   ) => (update(conversations)..where((tbl) => tbl.id.equals(id)))
@@ -27,6 +27,10 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
   Future<bool> deleteConversation(String id) => (delete(
     conversations,
   )..where((tbl) => tbl.id.equals(id))).go().then((count) => count > 0);
+
+  Stream<ConversationsTable?> watchConversationById(String id) => (select(
+    conversations,
+  )..where((tbl) => tbl.id.equals(id))).watchSingleOrNull();
 
   Stream<List<ConversationsTable>> watchConversationsByWorkspace(
     String workspaceId, {

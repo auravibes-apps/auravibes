@@ -103,7 +103,7 @@ void main() {
         messageRepository.createMessage(any),
       ).thenAnswer((_) async => _unfinishedAssistantMessage);
       when(
-        messageRepository.updateMessage(any, any),
+        messageRepository.patchMessage(any, any),
       ).thenAnswer((_) async => _unfinishedAssistantMessage);
     });
 
@@ -124,7 +124,10 @@ void main() {
               output: AIChatMessage(content: 'Working'),
               finishReason: FinishReason.unspecified,
               metadata: {},
-              usage: LanguageModelUsage(),
+              usage: LanguageModelUsage(
+                promptTokens: 10,
+                responseTokens: 5,
+              ),
               streaming: true,
             ),
             const ChatResult(
@@ -142,7 +145,9 @@ void main() {
               ),
               finishReason: FinishReason.toolCalls,
               metadata: {},
-              usage: LanguageModelUsage(),
+              usage: LanguageModelUsage(
+                responseTokens: 7,
+              ),
               streaming: true,
             ),
           ]),
@@ -160,18 +165,22 @@ void main() {
         expect(removedConversationIds, ['conversation-1']);
 
         final updates = verify(
-          messageRepository.updateMessage(
+          messageRepository.patchMessage(
             'assistant-1',
             captureAny,
           ),
         ).captured;
 
-        final streamingUpdate = updates.cast<MessageToUpdate>().firstWhere(
-          (update) => update.metadata != null,
+        final streamingUpdate = updates.cast<MessagePatch>().firstWhere(
+          (update) => update.metadata?.toolCalls.isNotEmpty ?? false,
         );
 
         expect(streamingUpdate.metadata?.toolCalls, hasLength(1));
         expect(streamingUpdate.metadata?.toolCalls.single.id, 'tool-1');
+        expect(streamingUpdate.metadata?.promptTokens, 10);
+        expect(streamingUpdate.metadata?.completionTokens, 12);
+        expect(streamingUpdate.metadata?.totalTokens, isNull);
+        expect(streamingUpdate.metadata?.usedTokens, 22);
       },
     );
 
@@ -206,9 +215,9 @@ void main() {
         );
 
         verify(
-          messageRepository.updateMessage(
+          messageRepository.patchMessage(
             'user-1',
-            const MessageToUpdate(status: MessageStatus.sent),
+            const MessagePatch(status: MessageStatus.sent),
           ),
         ).called(1);
 
@@ -250,15 +259,15 @@ void main() {
         );
 
         verify(
-          messageRepository.updateMessage(
+          messageRepository.patchMessage(
             'user-1',
-            const MessageToUpdate(status: MessageStatus.sent),
+            const MessagePatch(status: MessageStatus.sent),
           ),
         ).called(1);
         verify(
-          messageRepository.updateMessage(
+          messageRepository.patchMessage(
             'user-2',
-            const MessageToUpdate(status: MessageStatus.sent),
+            const MessagePatch(status: MessageStatus.sent),
           ),
         ).called(1);
 

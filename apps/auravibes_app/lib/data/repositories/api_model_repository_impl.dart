@@ -19,42 +19,43 @@ class ApiModelRepositoryImpl implements ApiModelRepository {
 
   @override
   Future<List<ApiModelProviderEntity>> getAllProviders() async {
-    try {
-      final providerTables = await _database.apiModelProvidersDao
-          .getAllProviders();
-      return providerTables.map(_mapToProviderEntity).toList();
-    } catch (e) {
-      throw ApiModelException(
-        'Failed to retrieve all providers',
-        e as Exception,
-      );
-    }
+    final providerTables = await _database.apiModelProvidersDao
+        .getAllProviders();
+    return providerTables.map(_mapToProviderEntity).toList();
   }
 
   @override
   Future<List<ApiModelProviderEntity>> getProvidersByType(String type) async {
-    try {
-      final providerTables = await _database.apiModelProvidersDao
-          .getProvidersByType(type);
-      return providerTables.map(_mapToProviderEntity).toList();
-    } catch (e) {
-      throw ApiModelException(
-        'Failed to retrieve providers of type $type',
-        e as Exception,
-      );
-    }
+    final providerTables = await _database.apiModelProvidersDao
+        .getProvidersByType(type);
+    return providerTables.map(_mapToProviderEntity).toList();
   }
 
   // Model operations
 
   @override
   Future<List<ApiModelEntity>> getAllModels() async {
-    try {
-      final modelTables = await _database.apiModelsDao.getAllModels();
-      return modelTables.map(_mapToModelEntity).toList();
-    } catch (e) {
-      throw ApiModelException('Failed to retrieve all models', e as Exception);
-    }
+    final modelTables = await _database.apiModelsDao.getAllModels();
+    return modelTables.map(_mapToModelEntity).toList();
+  }
+
+  @override
+  Future<ApiModelEntity?> getModelByProviderAndModelId(
+    String providerId,
+    String modelId,
+  ) async {
+    final modelTable = await _database.apiModelsDao
+        .getModelByProviderAndModelId(providerId, modelId);
+    if (modelTable == null) return null;
+    return _mapToModelEntity(modelTable);
+  }
+
+  @override
+  Future<List<ApiModelEntity>> getModelsByProvider(String providerId) async {
+    final modelTables = await _database.apiModelsDao.getModelsByProvider(
+      providerId,
+    );
+    return modelTables.map(_mapToModelEntity).toList();
   }
 
   // Batch operations
@@ -63,62 +64,40 @@ class ApiModelRepositoryImpl implements ApiModelRepository {
   Future<List<ApiModelProviderEntity>> batchUpsertProviders(
     List<ApiModelProviderEntity> providers,
   ) async {
-    try {
-      final providerCompanions = providers
-          .map(_modelProviderEntityToCompanion)
-          .toList();
+    final providerCompanions = providers
+        .map(_modelProviderEntityToCompanion)
+        .toList();
 
-      final insertedProviders = await _database.apiModelProvidersDao
-          .batchUpsertProviders(providerCompanions);
+    final insertedProviders = await _database.apiModelProvidersDao
+        .batchUpsertProviders(providerCompanions);
 
-      return [
-        for (final insertedProvider in insertedProviders)
-          _mapToProviderEntity(insertedProvider),
-      ];
-    } on Exception catch (e) {
-      throw ApiModelException(
-        'Failed to batch upsert providers',
-        e,
-      );
-    } catch (_) {
-      rethrow;
-      // if (e is ApiModelException) rethrow;
-    }
+    return [
+      for (final insertedProvider in insertedProviders)
+        _mapToProviderEntity(insertedProvider),
+    ];
   }
 
   @override
   Future<List<ApiModelEntity>> batchUpsertModels(
     List<ApiModelEntity> models,
   ) async {
-    try {
-      final modelCompanions = models
-          .map(_mapEntityToCompanion)
-          .nonNulls
-          .toList();
-      final insertedModels = await _database.apiModelsDao.batchUpsertModels(
-        modelCompanions,
-      );
+    final modelCompanions = models.map(_mapEntityToCompanion).nonNulls.toList();
+    final insertedModels = await _database.apiModelsDao.batchUpsertModels(
+      modelCompanions,
+    );
 
-      return [
-        for (final insertedModel in insertedModels)
-          _mapToModelEntity(insertedModel),
-      ];
-    } catch (e) {
-      if (e is ApiModelException) rethrow;
-      throw ApiModelException('Failed to batch upsert models', e as Exception);
-    }
+    return [
+      for (final insertedModel in insertedModels)
+        _mapToModelEntity(insertedModel),
+    ];
   }
 
   @override
   Future<int> deleteAllData() async {
-    try {
-      final deletedModels = await _database.apiModelsDao.deleteAllModels();
-      final deletedProviders = await _database.apiModelProvidersDao
-          .deleteAllProviders();
-      return deletedModels + deletedProviders;
-    } catch (e) {
-      throw ApiModelException('Failed to delete all data', e as Exception);
-    }
+    final deletedModels = await _database.apiModelsDao.deleteAllModels();
+    final deletedProviders = await _database.apiModelProvidersDao
+        .deleteAllProviders();
+    return deletedModels + deletedProviders;
   }
 
   // Helper methods

@@ -12,14 +12,12 @@ abstract class MessageRepository {
   ///
   /// [conversationId] The unique identifier of the conversation.
   /// Returns a list of messages ordered by their creation date.
-  /// Throws [MessageException] if there's an error retrieving messages.
   Future<List<MessageEntity>> getMessagesByConversation(String conversationId);
 
   /// Watches all persisted messages for a specific conversation.
   ///
   /// [conversationId] The unique identifier of the conversation.
   /// Emits a new ordered message list whenever the backing data changes.
-  /// Throws [MessageException] if there's an error retrieving messages.
   Stream<List<MessageEntity>> watchMessagesByConversation(
     String conversationId,
   );
@@ -30,7 +28,6 @@ abstract class MessageRepository {
   /// [limit] Maximum number of messages to retrieve.
   /// [offset] Number of messages to skip for pagination.
   /// Returns a list of messages ordered by their creation date.
-  /// Throws [MessageException] if there's an error retrieving messages.
   Future<List<MessageEntity>> getMessagesByConversationPaginated(
     String conversationId,
     int limit,
@@ -42,7 +39,6 @@ abstract class MessageRepository {
   /// [conversationId] The unique identifier of the conversation.
   /// [messageType] The type of messages to retrieve.
   /// Returns a list of messages of the specified type ordered by creation date.
-  /// Throws [MessageException] if there's an error retrieving messages.
   Future<List<MessageEntity>> getMessagesByType(
     String conversationId,
     MessageType messageType,
@@ -52,21 +48,18 @@ abstract class MessageRepository {
   ///
   /// [conversationId] The unique identifier of the conversation.
   /// Returns a list of user messages ordered by their creation date.
-  /// Throws [MessageException] if there's an error retrieving messages.
   Future<List<MessageEntity>> getUserMessages(String conversationId);
 
   /// Retrieves system messages for a specific conversation.
   ///
   /// [conversationId] The unique identifier of the conversation.
   /// Returns a list of system messages ordered by their creation date.
-  /// Throws [MessageException] if there's an error retrieving messages.
   Future<List<MessageEntity>> getSystemMessages(String conversationId);
 
   /// Retrieves a message by its unique identifier.
   ///
   /// [id] The unique identifier of the message to retrieve.
   /// Returns the message with the given [id], or null if not found.
-  /// Throws [MessageException] if there's an error retrieving the message.
   Future<MessageEntity?> getMessageById(String id);
 
   /// Creates a new message in the data source.
@@ -76,31 +69,27 @@ abstract class MessageRepository {
   /// Throws [MessageValidationException] if message data is invalid.
   /// Throws [MessageDuplicateException] if a message with the same ID already
   ///  exists.
-  /// Throws [MessageException] if there's an error creating the message.
   Future<MessageEntity> createMessage(MessageToCreate message);
 
-  /// Updates an existing message in the data source.
+  /// Applies a partial update (patch) to an existing message.
   ///
-  /// [id] The ID of the message to update.
-  /// [message] The message with updated values. Must have a valid ID.
+  /// [id] The ID of the message to patch.
+  /// [message] The partial fields to update. Unspecified fields are unchanged.
   /// Returns the updated message.
   /// Throws [MessageValidationException] if message data is invalid.
   /// Throws [MessageNotFoundException] if no message with the given ID exists.
-  /// Throws [MessageException] if there's an error updating the message.
-  Future<MessageEntity> updateMessage(String id, MessageToUpdate message);
+  Future<MessageEntity> patchMessage(String id, MessagePatch message);
 
   /// Deletes a message from the data source.
   ///
   /// [id] The unique identifier of the message to delete.
   /// Returns true if the message was successfully deleted, false if not found.
-  /// Throws [MessageException] if there's an error deleting the message.
   Future<bool> deleteMessage(String id);
 
   /// Checks if a message with the given ID exists.
   ///
   /// [id] The unique identifier to check.
   /// Returns true if the message exists, false otherwise.
-  /// Throws [MessageException] if there's an error checking existence.
   Future<bool> messageExists(String id);
 
   /// Retrieves messages filtered by status for a specific conversation.
@@ -109,7 +98,6 @@ abstract class MessageRepository {
   /// [status] The status of messages to retrieve.
   /// Returns a list of messages with the specified status ordered by
   /// creation date.
-  /// Throws [MessageException] if there's an error retrieving messages.
   Future<List<MessageEntity>> getMessagesByStatus(
     String conversationId,
     MessageStatus status,
@@ -119,7 +107,6 @@ abstract class MessageRepository {
   ///
   /// [conversationId] The unique identifier of the conversation.
   /// Returns the total number of messages in the conversation.
-  /// Throws [MessageException] if there's an error counting messages.
   Future<int> getMessageCountByConversation(String conversationId);
 
   /// Validates message data before creation or update.

@@ -48,7 +48,7 @@ void main() {
       when(messageRepository.getMessageById('message-1')).thenAnswer(
         (_) async => message,
       );
-      when(messageRepository.updateMessage('message-1', any)).thenAnswer(
+      when(messageRepository.patchMessage('message-1', any)).thenAnswer(
         (_) async => message,
       );
 
@@ -60,9 +60,9 @@ void main() {
 
       final updated =
           verify(
-                messageRepository.updateMessage('message-1', captureAny),
+                messageRepository.patchMessage('message-1', captureAny),
               ).captured.single
-              as MessageToUpdate;
+              as MessagePatch;
       final toolCalls = updated.metadata?.toolCalls;
 
       expect(toolCalls, isNotNull);

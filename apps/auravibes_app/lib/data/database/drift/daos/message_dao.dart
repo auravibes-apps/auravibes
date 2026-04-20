@@ -15,7 +15,7 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
   Future<MessagesTable?> getMessageById(String id) =>
       (select(messages)..where((tbl) => tbl.id.equals(id))).getSingleOrNull();
 
-  Future<MessagesTable?> updateMessage(
+  Future<MessagesTable?> patchMessage(
     String id,
     MessagesCompanion companion,
   ) => (update(messages)..where((tbl) => tbl.id.equals(id)))

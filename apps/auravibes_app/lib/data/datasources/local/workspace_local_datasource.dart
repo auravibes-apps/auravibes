@@ -69,17 +69,17 @@ class WorkspaceLocalDataSource {
     }
   }
 
-  /// Updates an existing workspace in the local database.
+  /// Applies a partial patch to an existing workspace in the local database.
   ///
-  /// [id] The ID of the workspace to update.
-  /// [workspace] The updated workspace data.
-  /// Returns true if the workspace was updated, false otherwise.
+  /// [id] The ID of the workspace to patch.
+  /// [workspace] The partial workspace data to patch.
+  /// Returns true if the workspace was patched, false otherwise.
   /// Throws [Exception] if the database operation fails.
-  Future<bool> updateWorkspace(String id, WorkspacesCompanion workspace) async {
+  Future<bool> patchWorkspace(String id, WorkspacesCompanion workspace) async {
     try {
-      return await _workspaceDao.updateWorkspace(id, workspace);
+      return await _workspaceDao.patchWorkspace(id, workspace);
     } catch (e) {
-      throw Exception('Failed to update workspace with ID $id: $e');
+      throw Exception('Failed to patch workspace with ID $id: $e');
     }
   }
 
@@ -147,17 +147,17 @@ class WorkspaceLocalDataSource {
     }
   }
 
-  /// Updates the last updated timestamp for a workspace.
+  /// Patches the last-updated timestamp for a workspace.
   ///
-  /// [id] The ID of the workspace to update.
-  /// Returns true if the workspace was updated, false otherwise.
+  /// [id] The ID of the workspace to patch.
+  /// Returns true if the workspace timestamp was patched, false otherwise.
   /// Throws [Exception] if the database operation fails.
-  Future<bool> updateWorkspaceTimestamp(String id) async {
+  Future<bool> patchWorkspaceTimestamp(String id) async {
     try {
-      return await _workspaceDao.updateWorkspaceTimestamp(id);
+      return await _workspaceDao.patchWorkspaceTimestamp(id);
     } catch (e) {
       throw Exception(
-        'Failed to update timestamp for workspace with ID $id: $e',
+        'Failed to patch timestamp for workspace with ID $id: $e',
       );
     }
   }

@@ -1,3 +1,4 @@
+import 'package:auravibes_app/features/models/providers/add_model_provider_providers.dart';
 import 'package:auravibes_app/features/models/providers/list_models_providers.dart';
 import 'package:auravibes_app/features/models/widgets/add_chat_model.dart';
 import 'package:auravibes_app/features/models/widgets/list_model_credentials.dart';
@@ -45,6 +46,7 @@ class _AddModelModalButton extends ConsumerWidget {
             Expanded(
               child: AuraButton(
                 onPressed: () {
+                  addCredentialsModelMutationProvider.reset(ref);
                   showDialog<void>(
                     context: context,
                     builder: (ctx) => Dialog(

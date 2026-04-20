@@ -11,14 +11,12 @@ abstract class WorkspaceToolsRepository {
   ///
   /// [workspaceId] The ID of the workspace to retrieve tools for.
   /// Returns a list of workspace tool settings ordered by tool type.
-  /// Throws [WorkspaceToolsException] if there's an error retrieving tools.
   Future<List<WorkspaceToolEntity>> getWorkspaceTools(String workspaceId);
 
   /// Retrieves enabled workspace tool settings for a specific workspace.
   ///
   /// [workspaceId] The ID of the workspace to retrieve enabled tools for.
   /// Returns a list of enabled workspace tool settings ordered by tool type.
-  /// Throws [WorkspaceToolsException] if there's an error retrieving tools.
   Future<List<WorkspaceToolEntity>> getEnabledWorkspaceTools(
     String workspaceId,
   );
@@ -28,7 +26,6 @@ abstract class WorkspaceToolsRepository {
   /// [workspaceId] The ID of the workspace.
   /// [toolType] The type of tool to retrieve.
   /// Returns the workspace tool setting, or null if not found.
-  /// Throws [WorkspaceToolsException] if there's an error retrieving the tool.
   Future<WorkspaceToolEntity?> getWorkspaceTool(
     String workspaceId,
     String toolType,
@@ -41,7 +38,6 @@ abstract class WorkspaceToolsRepository {
   /// [isEnabled] Whether the tool should be enabled.
   /// Returns true if the operation was successful, false if the tool
   /// was not found.
-  /// Throws [WorkspaceToolsException] if there's an error updating the tool.
   Future<WorkspaceToolEntity> setWorkspaceToolEnabled(
     String workspaceId,
     String toolType, {
@@ -58,21 +54,18 @@ abstract class WorkspaceToolsRepository {
   /// [id] The unique ID of the tool record in the database.
   /// [isEnabled] Whether the tool should be enabled.
   /// Returns the updated workspace tool entity.
-  /// Throws [WorkspaceToolsException] if there's an error updating the tool.
   Future<WorkspaceToolEntity> setToolEnabledById(
     String id, {
     required bool isEnabled,
   });
 
-  /// Updates the configuration for a workspace tool.
+  /// Applies a partial update (patch) to workspace tool configuration.
   ///
   /// [workspaceId] The ID of the workspace.
-  /// [toolType] The type of tool to update.
+  /// [toolType] The type of tool to patch.
   /// [config] The new configuration as JSON string.
-  /// Returns true if the operation was successful, false if the tool
-  /// was not found.
-  /// Throws [WorkspaceToolsException] if there's an error updating the tool.
-  Future<List<WorkspaceToolEntity>> updateWorkspaceToolConfig(
+  /// Returns the updated list of workspace tool settings for the workspace.
+  Future<List<WorkspaceToolEntity>> patchWorkspaceToolConfig(
     String workspaceId,
     String toolType,
     String? config,
@@ -83,8 +76,6 @@ abstract class WorkspaceToolsRepository {
   /// [workspaceId] The ID of the workspace.
   /// [toolType] The type of tool to check.
   /// Returns true if the tool is enabled, false otherwise.
-  /// Throws [WorkspaceToolsException] if there's an error checking
-  /// the tool status.
   Future<bool> isWorkspaceToolEnabled(String workspaceId, String toolType);
 
   /// Gets the configuration for a workspace tool.
@@ -93,8 +84,6 @@ abstract class WorkspaceToolsRepository {
   /// [toolType] The type of tool to get configuration for.
   /// Returns the tool configuration as a JSON string, or null if
   ///  not found or no config exists.
-  /// Throws [WorkspaceToolsException] if there's an error retrieving
-  /// the configuration.
   Future<String?> getWorkspaceToolConfig(String workspaceId, String toolType);
 
   /// Removes a tool setting for a workspace.
@@ -103,7 +92,6 @@ abstract class WorkspaceToolsRepository {
   /// [toolType] The type of tool to remove.
   /// Returns true if the operation was successful, false if the
   /// tool was not found.
-  /// Throws [WorkspaceToolsException] if there's an error removing the tool.
   Future<bool> removeWorkspaceTool(String workspaceId, String toolType);
 
   /// Removes a tool setting by its unique database ID.
@@ -111,21 +99,18 @@ abstract class WorkspaceToolsRepository {
   /// [id] The unique ID of the tool record in the database.
   /// Returns true if the operation was successful, false if the
   /// tool was not found.
-  /// Throws [WorkspaceToolsException] if there's an error removing the tool.
   Future<bool> removeWorkspaceToolById(String id);
 
   /// Gets the total count of tools configured for a workspace.
   ///
   /// [workspaceId] The ID of the workspace.
   /// Returns the total number of tools configured for the workspace.
-  /// Throws [WorkspaceToolsException] if there's an error counting tools.
   Future<int> getWorkspaceToolsCount(String workspaceId);
 
   /// Gets the count of enabled tools for a workspace.
   ///
   /// [workspaceId] The ID of the workspace.
   /// Returns the number of enabled tools for the workspace.
-  /// Throws [WorkspaceToolsException] if there's an error counting tools.
   Future<int> getEnabledWorkspaceToolsCount(String workspaceId);
 
   /// Copies workspace tools to a conversation.
@@ -134,7 +119,6 @@ abstract class WorkspaceToolsRepository {
   /// [conversationId] The ID of the target conversation.
   /// Copies all workspace tool settings to the conversation as
   ///  a starting point.
-  /// Throws [WorkspaceToolsException] if there's an error copying tools.
   Future<void> copyWorkspaceToolsToConversation(
     String workspaceId,
     String conversationId,
@@ -160,7 +144,6 @@ abstract class WorkspaceToolsRepository {
   /// [id] The unique ID of the tool record in the database.
   /// [permissionMode] The permission mode to set.
   /// Returns the updated workspace tool entity.
-  /// Throws [WorkspaceToolsException] if there's an error updating the tool.
   Future<WorkspaceToolEntity> setToolPermissionMode(
     String id, {
     required ToolPermissionMode permissionMode,

@@ -14,7 +14,6 @@ abstract class ConversationToolsRepository {
   ///
   /// [conversationId] The ID of the conversation to retrieve tools for.
   /// Returns a list of conversation tool settings ordered by tool type.
-  /// Throws [ConversationToolsException] if there's an error retrieving tools.
   Future<List<ConversationToolEntity>> getConversationTools(
     String conversationId,
   );
@@ -23,7 +22,6 @@ abstract class ConversationToolsRepository {
   ///
   /// [conversationId] The ID of the conversation to retrieve enabled tools for.
   /// Returns a list of enabled conversation tool settings ordered by tool type.
-  /// Throws [ConversationToolsException] if there's an error retrieving tools.
   Future<List<ConversationToolEntity>> getEnabledConversationTools(
     String conversationId,
   );
@@ -33,8 +31,6 @@ abstract class ConversationToolsRepository {
   /// [conversationId] The ID of the conversation.
   /// [toolId] The workspace-tool record ID (WorkspaceToolEntity.id).
   /// Returns the conversation tool setting, or null if not found.
-  /// Throws [ConversationToolsException] if there's an error
-  /// retrieving the tool.
   Future<ConversationToolEntity?> getConversationTool(
     String conversationId,
     String toolId,
@@ -47,7 +43,6 @@ abstract class ConversationToolsRepository {
   /// [isEnabled] Whether the tool should be enabled.
   /// Returns true if the operation was successful, false if the
   ///  tool was not found.
-  /// Throws [ConversationToolsException] if there's an error updating the tool.
   Future<bool> setConversationToolEnabled(
     String conversationId,
     String toolId, {
@@ -65,7 +60,6 @@ abstract class ConversationToolsRepository {
   /// [toolId] The workspace-tool record ID (WorkspaceToolEntity.id).
   /// [permissionMode] The permission mode to set.
   /// Returns true if the operation was successful.
-  /// Throws [ConversationToolsException] if there's an error updating the tool.
   Future<bool> setConversationToolPermission(
     String conversationId,
     String toolId, {
@@ -78,7 +72,6 @@ abstract class ConversationToolsRepository {
   /// [toolId] The workspace-tool record ID (WorkspaceToolEntity.id).
   /// Returns true if the operation was successful, false if the
   /// tool was not found.
-  /// Throws [ConversationToolsException] if there's an error toggling the tool.
   Future<bool> toggleConversationTool(String conversationId, String toolId);
 
   /// Checks if a specific tool is enabled for a conversation.
@@ -86,8 +79,6 @@ abstract class ConversationToolsRepository {
   /// [conversationId] The ID of the conversation.
   /// [toolId] The workspace-tool record ID (WorkspaceToolEntity.id).
   /// Returns true if the tool is enabled, false otherwise.
-  /// Throws [ConversationToolsException] if there's an error
-  /// checking the tool status.
   Future<bool> isConversationToolEnabled(
     String conversationId,
     String toolId,
@@ -99,21 +90,18 @@ abstract class ConversationToolsRepository {
   /// [toolId] The workspace-tool record ID (WorkspaceToolEntity.id).
   /// Returns true if the operation was successful, false
   /// if the tool was not found.
-  /// Throws [ConversationToolsException] if there's an error removing the tool.
   Future<bool> removeConversationTool(String conversationId, String toolId);
 
   /// Gets the total count of tools configured for a conversation.
   ///
   /// [conversationId] The ID of the conversation.
   /// Returns the total number of tools configured for the conversation.
-  /// Throws [ConversationToolsException] if there's an error counting tools.
   Future<int> getConversationToolsCount(String conversationId);
 
   /// Gets the count of enabled tools for a conversation.
   ///
   /// [conversationId] The ID of the conversation.
   /// Returns the number of enabled tools for the conversation.
-  /// Throws [ConversationToolsException] if there's an error counting tools.
   Future<int> getEnabledConversationToolsCount(String conversationId);
 
   /// Copies all tools from one conversation to another.
@@ -121,7 +109,6 @@ abstract class ConversationToolsRepository {
   /// [sourceConversationId] The ID of the source conversation.
   /// [targetConversationId] The ID of the target conversation.
   /// Copies all tool settings from source to target conversation.
-  /// Throws [ConversationToolsException] if there's an error copying tools.
   Future<void> copyConversationTools(
     String sourceConversationId,
     String targetConversationId,
@@ -150,8 +137,6 @@ abstract class ConversationToolsRepository {
   /// [workspaceId] The ID of the workspace the conversation belongs to.
   /// [toolId] The workspace-tool record ID (WorkspaceToolEntity.id).
   /// Returns true if the tool is available for the conversation.
-  /// Throws [ConversationToolsException] if there's an
-  /// error checking tool availability.
   Future<bool> isToolAvailableForConversation(
     String conversationId,
     String workspaceId,
@@ -167,8 +152,6 @@ abstract class ConversationToolsRepository {
   /// [conversationId] The ID of the conversation.
   /// [workspaceId] The ID of the workspace the conversation belongs to.
   /// Returns a list of tool types that are available for the conversation.
-  /// Throws [ConversationToolsException] if there's an error
-  /// getting available tools.
   Future<List<String>> getAvailableToolsForConversation(
     String conversationId,
     String workspaceId,
@@ -182,8 +165,6 @@ abstract class ConversationToolsRepository {
   /// [workspaceId] The ID of the workspace the conversation belongs to.
   /// Returns a list of [WorkspaceToolEntity] that are available for the
   /// conversation.
-  /// Throws [ConversationToolsException] if there's an error
-  /// getting available tools.
   Future<List<WorkspaceToolEntity>> getAvailableToolEntitiesForConversation(
     String conversationId,
     String workspaceId,
@@ -202,8 +183,6 @@ abstract class ConversationToolsRepository {
   /// [toolId] The identifier of the tool to check.
   /// Returns [ToolPermissionResult] indicating whether the tool can be
   /// executed, needs confirmation, or should be skipped.
-  /// Throws [ConversationToolsException] if there's an error checking
-  /// permissions.
   Future<ToolPermissionResult> checkToolPermission({
     required String conversationId,
     required String workspaceId,
