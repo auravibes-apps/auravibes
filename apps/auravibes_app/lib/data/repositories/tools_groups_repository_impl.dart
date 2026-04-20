@@ -40,7 +40,7 @@ class ToolsGroupsRepositoryImpl implements ToolsGroupsRepository {
     String groupId, {
     required bool isEnabled,
   }) async {
-    return _database.toolsGroupsDao.updateToolsGroupEnabled(
+    return _database.toolsGroupsDao.setToolsGroupEnabled(
       groupId,
       isEnabled: isEnabled,
     );

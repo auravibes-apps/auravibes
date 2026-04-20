@@ -17,7 +17,7 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
     conversations,
   )..where((tbl) => tbl.id.equals(id))).getSingleOrNull();
 
-  Future<bool> updateConversation(
+  Future<bool> patchConversation(
     String id,
     ConversationsCompanion companion,
   ) => (update(conversations)..where((tbl) => tbl.id.equals(id)))

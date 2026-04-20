@@ -59,14 +59,13 @@ abstract class WorkspaceToolsRepository {
     required bool isEnabled,
   });
 
-  /// Updates the configuration for a workspace tool.
+  /// Applies a partial update (patch) to workspace tool configuration.
   ///
   /// [workspaceId] The ID of the workspace.
-  /// [toolType] The type of tool to update.
+  /// [toolType] The type of tool to patch.
   /// [config] The new configuration as JSON string.
-  /// Returns true if the operation was successful, false if the tool
-  /// was not found.
-  Future<List<WorkspaceToolEntity>> updateWorkspaceToolConfig(
+  /// Returns the updated list of workspace tool settings for the workspace.
+  Future<List<WorkspaceToolEntity>> patchWorkspaceToolConfig(
     String workspaceId,
     String toolType,
     String? config,

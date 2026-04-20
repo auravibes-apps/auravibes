@@ -51,31 +51,30 @@ class WorkspaceRepositoryImpl implements WorkspaceRepository {
   }
 
   @override
-  Future<WorkspaceEntity> updateWorkspace(
+  Future<WorkspaceEntity> patchWorkspace(
     String id,
-    WorkspaceToCreate workspace,
+    WorkspacePatch workspace,
   ) async {
-    // Validate workspace before updating
-    if (!await validateWorkspace(workspace)) {
-      throw const WorkspaceValidationException('Invalid workspace data');
-    }
-
-    // Check if workspace exists
-    if (!await workspaceExists(id)) {
+    final currentWorkspaceTable = await _database.workspaceDao.getWorkspaceById(
+      id,
+    );
+    if (currentWorkspaceTable == null) {
       throw WorkspaceNotFoundException(id);
     }
 
-    final workspaceCompanion = _mapToWorkspacesCompanion(
+    _validateWorkspacePatch(
       workspace,
-      forUpdate: true,
+      _mapToWorkspace(currentWorkspaceTable),
     );
-    final updated = await _database.workspaceDao.updateWorkspace(
+
+    final workspaceCompanion = _mapPatchToWorkspacesCompanion(workspace);
+    final updated = await _database.workspaceDao.patchWorkspace(
       id,
       workspaceCompanion,
     );
 
     if (!updated) {
-      throw WorkspaceException('Failed to update workspace with ID $id');
+      throw WorkspaceException('Failed to patch workspace with ID $id');
     }
 
     final updatedWorkspace = await _database.workspaceDao.getWorkspaceById(id);
@@ -134,14 +133,13 @@ class WorkspaceRepositoryImpl implements WorkspaceRepository {
   }
 
   @override
-  Future<bool> updateWorkspaceTimestamp(String id) async {
+  Future<bool> patchWorkspaceTimestamp(String id) async {
     // Check if workspace exists
     if (!await workspaceExists(id)) {
-      return false; // Return false instead of throwing for update operations
+      return false; // Return false instead of throwing for patch operations
     }
 
-    final updated = await _database.workspaceDao.updateWorkspaceTimestamp(id);
-    return updated;
+    return _database.workspaceDao.patchWorkspaceTimestamp(id);
   }
 
   /// Maps a [workspacesTable] database record to a [WorkspaceEntity]
@@ -164,16 +162,30 @@ class WorkspaceRepositoryImpl implements WorkspaceRepository {
   /// for database operations.
   ///
   /// [workspace] The workspace entity to map.
-  /// [forUpdate] Whether this mapping is for an update operation.
   /// Returns the corresponding [WorkspacesCompanion].
-  WorkspacesCompanion _mapToWorkspacesCompanion(
-    WorkspaceToCreate workspace, {
-    bool forUpdate = false,
-  }) {
+  WorkspacesCompanion _mapToWorkspacesCompanion(WorkspaceToCreate workspace) {
     return WorkspacesCompanion(
       name: Value(workspace.name),
       type: Value(workspace.type),
       url: Value(workspace.url),
+    );
+  }
+
+  void _validateWorkspacePatch(
+    WorkspacePatch workspace,
+    WorkspaceEntity currentWorkspace,
+  ) {
+    final validationError = workspace.validationErrorFor(currentWorkspace);
+    if (validationError != null) {
+      throw WorkspaceValidationException(validationError);
+    }
+  }
+
+  WorkspacesCompanion _mapPatchToWorkspacesCompanion(WorkspacePatch workspace) {
+    return WorkspacesCompanion(
+      name: Value.absentIfNull(workspace.name),
+      type: Value.absentIfNull(workspace.type),
+      url: Value.absentIfNull(workspace.url),
     );
   }
 

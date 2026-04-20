@@ -132,28 +132,20 @@ class MessageRepositoryImpl implements MessageRepository {
   }
 
   @override
-  Future<MessageEntity> updateMessage(
+  Future<MessageEntity> patchMessage(
     String id,
-    MessageToUpdate message,
+    MessagePatch message,
   ) async {
-    // Validate message before updating
-    if (!await _validateMessageToUpdate(message)) {
-      throw const MessageValidationException('Invalid message data');
-    }
+    _validateMessagePatch(message);
 
-    // Check if message exists
-    if (!await messageExists(id)) {
-      throw MessageNotFoundException(id);
-    }
-
-    final messageCompanion = _mapUpdateToMessagesCompanion(message);
-    final updatedMessage = await _database.messageDao.updateMessage(
+    final messageCompanion = _mapPatchToMessagesCompanion(message);
+    final updatedMessage = await _database.messageDao.patchMessage(
       id,
       messageCompanion,
     );
 
     if (updatedMessage == null) {
-      throw MessageException('Failed to update message with ID $id');
+      throw MessageNotFoundException(id);
     }
 
     return _mapToMessage(updatedMessage);
@@ -200,11 +192,11 @@ class MessageRepositoryImpl implements MessageRepository {
     return true;
   }
 
-  Future<bool> _validateMessageToUpdate(MessageToUpdate message) async {
-    if (!message.isValid) {
-      throw MessageValidationException(_getValidationErrorToUpdate(message));
+  void _validateMessagePatch(MessagePatch message) {
+    final validationError = _getValidationErrorPatch(message);
+    if (validationError != null) {
+      throw MessageValidationException(validationError);
     }
-    return true;
   }
 
   /// Maps a [messageTable] database record to a [MessageEntity] domain entity.
@@ -241,7 +233,7 @@ class MessageRepositoryImpl implements MessageRepository {
     );
   }
 
-  MessagesCompanion _mapUpdateToMessagesCompanion(MessageToUpdate message) {
+  MessagesCompanion _mapPatchToMessagesCompanion(MessagePatch message) {
     return MessagesCompanion(
       content: Value.absentIfNull(message.content),
       status: Value.absentIfNull(
@@ -263,14 +255,16 @@ class MessageRepositoryImpl implements MessageRepository {
     return 'Unknown validation error';
   }
 
-  String _getValidationErrorToUpdate(MessageToUpdate message) {
-    if (message.content != null && message.content!.isEmpty) {
+  String? _getValidationErrorPatch(MessagePatch message) {
+    if (message.content != null && message.content!.trim().isEmpty) {
       return 'Message content cannot be empty';
     }
-    if (message.metadata != null) {
-      return 'Metadata cannot be empty';
+    if (message.content == null &&
+        message.metadata == null &&
+        message.status == null) {
+      return 'Must set content, metadata, or status';
     }
-    return 'Must Set content or metadata or status';
+    return null;
   }
 
   MessageStatus _messageTableStatusToEntityStatus(MessageTableStatus status) {

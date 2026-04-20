@@ -179,7 +179,7 @@ void main() {
         ),
       ).thenAnswer((_) async => ToolPermissionResult.granted);
       when(
-        messageRepository.updateMessage('message-1', any),
+        messageRepository.patchMessage('message-1', any),
       ).thenAnswer((_) async => mcpMessage);
       when(
         getAgentIterationDecisionUsecase.call(messageId: 'message-1'),
@@ -265,7 +265,7 @@ void main() {
 
         expect(result, AgentIterationDecision.waitForToolApproval);
         verifyNever(
-          messageRepository.updateMessage(any, any),
+          messageRepository.patchMessage(any, any),
         );
       },
     );
@@ -307,7 +307,7 @@ void main() {
           ),
         ).thenAnswer((_) async => ToolPermissionResult.granted);
         when(
-          messageRepository.updateMessage('message-1', any),
+          messageRepository.patchMessage('message-1', any),
         ).thenAnswer((_) async => toolMessage);
         when(
           getAgentIterationDecisionUsecase.call(messageId: 'message-1'),
@@ -321,9 +321,9 @@ void main() {
         expect(result, AgentIterationDecision.continueIteration);
         final update =
             verify(
-                  messageRepository.updateMessage('message-1', captureAny),
+                  messageRepository.patchMessage('message-1', captureAny),
                 ).captured.single
-                as MessageToUpdate;
+                as MessagePatch;
         final updatedToolCalls = update.metadata?.toolCalls;
         expect(updatedToolCalls, isNotNull);
         expect(
@@ -417,7 +417,7 @@ void main() {
           ),
         ).thenAnswer((_) async => ToolPermissionResult.granted);
         when(
-          messageRepository.updateMessage('message-1', any),
+          messageRepository.patchMessage('message-1', any),
         ).thenAnswer((_) async => multiToolMessage);
         when(
           getAgentIterationDecisionUsecase.call(messageId: 'message-1'),
@@ -431,9 +431,9 @@ void main() {
         expect(result, AgentIterationDecision.continueIteration);
         final update =
             verify(
-                  messageRepository.updateMessage('message-1', captureAny),
+                  messageRepository.patchMessage('message-1', captureAny),
                 ).captured.single
-                as MessageToUpdate;
+                as MessagePatch;
         final updatedToolCalls = update.metadata?.toolCalls;
         expect(updatedToolCalls, isNotNull);
         expect(
@@ -517,7 +517,7 @@ void main() {
           ),
         ).thenAnswer((_) async => ToolPermissionResult.granted);
         when(
-          messageRepository.updateMessage('message-1', any),
+          messageRepository.patchMessage('message-1', any),
         ).thenAnswer((_) async => mixedMessage);
         when(
           getAgentIterationDecisionUsecase.call(messageId: 'message-1'),
@@ -531,9 +531,9 @@ void main() {
         expect(result, AgentIterationDecision.continueIteration);
         final update =
             verify(
-                  messageRepository.updateMessage('message-1', captureAny),
+                  messageRepository.patchMessage('message-1', captureAny),
                 ).captured.single
-                as MessageToUpdate;
+                as MessagePatch;
         final updatedToolCalls = update.metadata?.toolCalls;
         expect(updatedToolCalls, isNotNull);
         expect(
@@ -653,7 +653,7 @@ void main() {
           (_) async => ToolPermissionResult.disabledInWorkspace,
         );
         when(
-          messageRepository.updateMessage('message-1', any),
+          messageRepository.patchMessage('message-1', any),
         ).thenAnswer((_) async => mixedPermMessage);
 
         final result = await usecase.call(
@@ -664,9 +664,9 @@ void main() {
         expect(result, AgentIterationDecision.waitForToolApproval);
         final update =
             verify(
-                  messageRepository.updateMessage('message-1', captureAny),
+                  messageRepository.patchMessage('message-1', captureAny),
                 ).captured.single
-                as MessageToUpdate;
+                as MessagePatch;
         final updatedToolCalls = update.metadata?.toolCalls;
         expect(updatedToolCalls, isNotNull);
         expect(
@@ -750,7 +750,7 @@ void main() {
 
         expect(result, AgentIterationDecision.waitForToolApproval);
         verifyNever(
-          messageRepository.updateMessage(any, any),
+          messageRepository.patchMessage(any, any),
         );
       },
     );
