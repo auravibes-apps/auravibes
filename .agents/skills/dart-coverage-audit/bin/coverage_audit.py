@@ -8,6 +8,7 @@ import json
 import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
+from typing import Dict, List, Optional, Tuple
 
 
 @dataclass(frozen=True)
@@ -27,19 +28,23 @@ class LcovError(Exception):
     pass
 
 
-def parse_lcov(lcov_path: Path) -> list[FileCoverage]:
+_GENERATED_SUFFIXES = (".g.dart", ".freezed.dart", ".mocks.dart")
+
+
+def parse_lcov(lcov_path: Path) -> List[FileCoverage]:
     if not lcov_path.exists():
         raise LcovError(f"LCOV file not found: {lcov_path}")
 
-    records: list[FileCoverage] = []
-    current_file: str | None = None
+    aggregate: Dict[str, Tuple[int, int]] = {}
+    current_file: Optional[str] = None
     hits = 0
     found = 0
 
     def flush() -> None:
         nonlocal current_file, hits, found
         if current_file is not None and found > 0:
-            records.append(FileCoverage(path=current_file, hits=hits, found=found))
+            prev_hits, prev_found = aggregate.get(current_file, (0, 0))
+            aggregate[current_file] = (prev_hits + hits, prev_found + found)
         current_file = None
         hits = 0
         found = 0
@@ -55,7 +60,7 @@ def parse_lcov(lcov_path: Path) -> list[FileCoverage]:
                 if line.startswith("DA:"):
                     parts = line[3:].split(",")
                     if len(parts) < 2:
-                        continue
+                        raise LcovError(f"Malformed DA entry: {line}")
                     found += 1
                     if int(parts[1]) > 0:
                         hits += 1
@@ -68,6 +73,10 @@ def parse_lcov(lcov_path: Path) -> list[FileCoverage]:
         raise LcovError("Invalid DA entry in LCOV file") from err
 
     flush()
+    records = [
+        FileCoverage(path=path, hits=hits, found=found)
+        for path, (hits, found) in aggregate.items()
+    ]
     if not records:
         raise LcovError("No file coverage records found in LCOV file")
     return records
@@ -97,7 +106,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--exclude-generated",
         action="store_true",
-        help="Exclude generated files ending in .g.dart",
+        help="Exclude generated files ending in .g.dart, .freezed.dart, or .mocks.dart",
     )
     parser.add_argument(
         "--min-lines",
@@ -155,7 +164,11 @@ def main() -> int:
 
     filtered = [entry for entry in records if entry.found >= args.min_lines]
     if args.exclude_generated:
-        filtered = [entry for entry in filtered if not entry.path.endswith(".g.dart")]
+        filtered = [
+            entry
+            for entry in filtered
+            if not any(entry.path.endswith(suffix) for suffix in _GENERATED_SUFFIXES)
+        ]
 
     if not filtered:
         print("error: no files remain after filters", file=sys.stderr)
@@ -185,6 +198,7 @@ def main() -> int:
 
     if args.json_out:
         payload = {
+            "schema_version": 1,
             "overall_percent": round(overall, 4),
             "total_hits": total_hits,
             "total_found": total_found,

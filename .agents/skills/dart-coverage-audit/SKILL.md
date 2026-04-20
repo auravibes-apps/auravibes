@@ -42,7 +42,7 @@ fvm dart test --coverage=coverage
 
 Path:
 
-`./bin/coverage_audit.py`
+`.agents/skills/dart-coverage-audit/bin/coverage_audit.py`
 
 This script parses `lcov.info` and prints:
 
@@ -97,7 +97,7 @@ python3 .agents/skills/dart-coverage-audit/bin/coverage_audit.py \
 
 ## Notes
 
-- `--exclude-generated` removes files ending in `.g.dart`.
+- `--exclude-generated` removes files ending in `.g.dart`, `.freezed.dart`, or `.mocks.dart`.
 - `--min-lines` can skip tiny files from ranking noise.
 - Exit codes:
   - `0` success
