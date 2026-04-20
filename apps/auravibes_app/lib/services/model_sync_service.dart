@@ -36,32 +36,41 @@ class ModelSyncService {
   Future<ModelSyncResult> performFullSync() async {
     final startTime = DateTime.now();
 
-    // Check API accessibility first
-    final apiStatus = await apiService.getApiStatus();
-    if (!apiStatus.isAccessible) {
-      throw Exception('API is not accessible: ${apiStatus.statusMessage}');
+    try {
+      final apiStatus = await apiService.getApiStatus();
+      if (!apiStatus.isAccessible) {
+        return ModelSyncResult(
+          isSuccess: false,
+          duration: DateTime.now().difference(startTime),
+          fullSync: true,
+          errors: ['API is not accessible: ${apiStatus.statusMessage}'],
+        );
+      }
+
+      final apiResponse = await apiService.fetchAllModels();
+      final localProviders = await repository.getAllProviders();
+      final localModels = await repository.getAllModels();
+
+      final result = await _performSyncOperation(
+        apiResponse: apiResponse,
+        localProviders: localProviders,
+        localModels: localModels,
+        fullSync: true,
+      );
+
+      return result.copyWith(
+        duration: DateTime.now().difference(startTime),
+        fullSync: true,
+      );
+    } on Exception catch (e, s) {
+      _log.severe('full sync pre-check failed', e, s);
+      return ModelSyncResult(
+        isSuccess: false,
+        duration: DateTime.now().difference(startTime),
+        fullSync: true,
+        errors: ['Full sync pre-check failed: $e'],
+      );
     }
-
-    // Fetch data from API
-    final apiResponse = await apiService.fetchAllModels();
-
-    // Get current local data
-    final localProviders = await repository.getAllProviders();
-    final localModels = await repository.getAllModels();
-
-    // Perform synchronization
-    final result = await _performSyncOperation(
-      apiResponse: apiResponse,
-      localProviders: localProviders,
-      localModels: localModels,
-      fullSync: true,
-    );
-
-    final endTime = DateTime.now();
-    return result.copyWith(
-      duration: endTime.difference(startTime),
-      fullSync: true,
-    );
   }
 
   /// Performs the actual synchronization operation.

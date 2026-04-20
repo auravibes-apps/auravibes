@@ -250,11 +250,6 @@ class _ErrorBanner extends ConsumerWidget {
       return message;
     }
 
-    final rawMessage = error.toString().trim();
-    if (rawMessage.isNotEmpty) {
-      return rawMessage;
-    }
-
     return LocaleKeys.models_screens_add_provider_errors_unknown.tr();
   }
 }
