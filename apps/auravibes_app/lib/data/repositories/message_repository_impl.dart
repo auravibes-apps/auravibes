@@ -23,16 +23,10 @@ class MessageRepositoryImpl implements MessageRepository {
   Future<List<MessageEntity>> getMessagesByConversation(
     String conversationId,
   ) async {
-    try {
-      final messageTables = await _database.messageDao
-          .getMessagesByConversation(conversationId);
-      return messageTables.map(_mapToMessage).toList();
-    } catch (e) {
-      throw MessageException(
-        'Failed to retrieve messages for conversation $conversationId',
-        e as Exception,
-      );
-    }
+    final messageTables = await _database.messageDao.getMessagesByConversation(
+      conversationId,
+    );
+    return messageTables.map(_mapToMessage).toList();
   }
 
   @override
@@ -83,18 +77,9 @@ class MessageRepositoryImpl implements MessageRepository {
     int limit,
     int offset,
   ) async {
-    try {
-      final messageTables = await _database.messageDao
-          .getMessagesByConversationPaginated(conversationId, limit, offset);
-      return messageTables.map(_mapToMessage).toList();
-    } catch (e) {
-      throw MessageException(
-        '''
-Failed to retrieve paginated messages for conversation $conversationId
-''',
-        e as Exception,
-      );
-    }
+    final messageTables = await _database.messageDao
+        .getMessagesByConversationPaginated(conversationId, limit, offset);
+    return messageTables.map(_mapToMessage).toList();
   }
 
   @override
@@ -102,83 +87,48 @@ Failed to retrieve paginated messages for conversation $conversationId
     String conversationId,
     MessageType messageType,
   ) async {
-    try {
-      final messageTables = await _database.messageDao.getMessagesByType(
-        conversationId,
-        _messageTypeToTableType(messageType),
-      );
-      return messageTables.map(_mapToMessage).toList();
-    } catch (e) {
-      throw MessageException(
-        '''
-Failed to retrieve messages of type $messageType for conversation $conversationId
-''',
-        e as Exception,
-      );
-    }
+    final messageTables = await _database.messageDao.getMessagesByType(
+      conversationId,
+      _messageTypeToTableType(messageType),
+    );
+    return messageTables.map(_mapToMessage).toList();
   }
 
   @override
   Future<List<MessageEntity>> getUserMessages(String conversationId) async {
-    try {
-      final messageTables = await _database.messageDao.getUserMessages(
-        conversationId,
-      );
-      return messageTables.map(_mapToMessage).toList();
-    } catch (e) {
-      throw MessageException(
-        'Failed to retrieve user messages for conversation $conversationId',
-        e as Exception,
-      );
-    }
+    final messageTables = await _database.messageDao.getUserMessages(
+      conversationId,
+    );
+    return messageTables.map(_mapToMessage).toList();
   }
 
   @override
   Future<List<MessageEntity>> getSystemMessages(String conversationId) async {
-    try {
-      final messageTables = await _database.messageDao.getSystemMessages(
-        conversationId,
-      );
-      return messageTables.map(_mapToMessage).toList();
-    } catch (e) {
-      throw MessageException(
-        'Failed to retrieve system messages for conversation $conversationId',
-        e as Exception,
-      );
-    }
+    final messageTables = await _database.messageDao.getSystemMessages(
+      conversationId,
+    );
+    return messageTables.map(_mapToMessage).toList();
   }
 
   @override
   Future<MessageEntity?> getMessageById(String id) async {
-    try {
-      final messageTable = await _database.messageDao.getMessageById(id);
-      return messageTable != null ? _mapToMessage(messageTable) : null;
-    } catch (e) {
-      throw MessageException(
-        'Failed to retrieve message with ID $id',
-        e as Exception,
-      );
-    }
+    final messageTable = await _database.messageDao.getMessageById(id);
+    return messageTable != null ? _mapToMessage(messageTable) : null;
   }
 
   @override
   Future<MessageEntity> createMessage(MessageToCreate message) async {
-    try {
-      // Validate message before creating
-      if (!await validateMessage(message)) {
-        throw const MessageValidationException('Invalid message data');
-      }
-
-      final messageCompanion = _mapToMessagesCompanion(message);
-      final createdMessage = await _database.messageDao.insertMessage(
-        messageCompanion,
-      );
-
-      return _mapToMessage(createdMessage);
-    } catch (e) {
-      if (e is MessageException) rethrow;
-      throw MessageException('Failed to create message', e as Exception);
+    // Validate message before creating
+    if (!await validateMessage(message)) {
+      throw const MessageValidationException('Invalid message data');
     }
+
+    final messageCompanion = _mapToMessagesCompanion(message);
+    final createdMessage = await _database.messageDao.insertMessage(
+      messageCompanion,
+    );
+
+    return _mapToMessage(createdMessage);
   }
 
   @override
@@ -186,59 +136,43 @@ Failed to retrieve messages of type $messageType for conversation $conversationI
     String id,
     MessageToUpdate message,
   ) async {
-    try {
-      // Validate message before updating
-      if (!await _validateMessageToUpdate(message)) {
-        throw const MessageValidationException('Invalid message data');
-      }
-
-      // Check if message exists
-      if (!await messageExists(id)) {
-        throw MessageNotFoundException(id);
-      }
-
-      final messageCompanion = _mapUpdateToMessagesCompanion(message);
-      final updatedMessage = await _database.messageDao.updateMessage(
-        id,
-        messageCompanion,
-      );
-
-      if (updatedMessage == null) {
-        throw MessageException('Failed to update message with ID $id');
-      }
-
-      return _mapToMessage(updatedMessage);
-    } catch (e) {
-      if (e is MessageException) rethrow;
-      throw MessageException('Failed to update message', e as Exception);
+    // Validate message before updating
+    if (!await _validateMessageToUpdate(message)) {
+      throw const MessageValidationException('Invalid message data');
     }
+
+    // Check if message exists
+    if (!await messageExists(id)) {
+      throw MessageNotFoundException(id);
+    }
+
+    final messageCompanion = _mapUpdateToMessagesCompanion(message);
+    final updatedMessage = await _database.messageDao.updateMessage(
+      id,
+      messageCompanion,
+    );
+
+    if (updatedMessage == null) {
+      throw MessageException('Failed to update message with ID $id');
+    }
+
+    return _mapToMessage(updatedMessage);
   }
 
   @override
   Future<bool> deleteMessage(String id) async {
-    try {
-      // Check if message exists
-      if (!await messageExists(id)) {
-        return false; // Return false instead of throwing for delete operations
-      }
-
-      final deleted = await _database.messageDao.deleteMessage(id);
-      return deleted;
-    } catch (e) {
-      throw MessageException('Failed to delete message', e as Exception);
+    // Check if message exists
+    if (!await messageExists(id)) {
+      return false; // Return false instead of throwing for delete operations
     }
+
+    final deleted = await _database.messageDao.deleteMessage(id);
+    return deleted;
   }
 
   @override
   Future<bool> messageExists(String id) async {
-    try {
-      return await _database.messageDao.messageExists(id);
-    } catch (e) {
-      throw MessageException(
-        'Failed to check message existence',
-        e as Exception,
-      );
-    }
+    return _database.messageDao.messageExists(id);
   }
 
   @override
@@ -246,62 +180,31 @@ Failed to retrieve messages of type $messageType for conversation $conversationI
     String conversationId,
     MessageStatus status,
   ) async {
-    try {
-      final messageTables = await _database.messageDao.getMessagesByStatus(
-        conversationId,
-        status.value,
-      );
-      return messageTables.map(_mapToMessage).toList();
-    } catch (e) {
-      throw MessageException(
-        '''
-Failed to retrieve messages with status $status for conversation $conversationId
-''',
-        e as Exception,
-      );
-    }
+    final messageTables = await _database.messageDao.getMessagesByStatus(
+      conversationId,
+      status.value,
+    );
+    return messageTables.map(_mapToMessage).toList();
   }
 
   @override
   Future<int> getMessageCountByConversation(String conversationId) async {
-    try {
-      return await _database.messageDao.getMessageCountByConversation(
-        conversationId,
-      );
-    } catch (e) {
-      throw MessageException('Failed to get message count', e as Exception);
-    }
+    return _database.messageDao.getMessageCountByConversation(conversationId);
   }
 
   @override
   Future<bool> validateMessage(MessageToCreate message) async {
-    try {
-      if (!message.isValid) {
-        throw MessageValidationException(_getValidationErrorToCreate(message));
-      }
-      return true;
-    } catch (e) {
-      if (e is MessageValidationException) rethrow;
-      throw MessageValidationException(
-        'Message validation failed',
-        e as Exception,
-      );
+    if (!message.isValid) {
+      throw MessageValidationException(_getValidationErrorToCreate(message));
     }
+    return true;
   }
 
   Future<bool> _validateMessageToUpdate(MessageToUpdate message) async {
-    try {
-      if (!message.isValid) {
-        throw MessageValidationException(_getValidationErrorToUpdate(message));
-      }
-      return true;
-    } catch (e) {
-      if (e is MessageValidationException) rethrow;
-      throw MessageValidationException(
-        'Message validation failed',
-        e as Exception,
-      );
+    if (!message.isValid) {
+      throw MessageValidationException(_getValidationErrorToUpdate(message));
     }
+    return true;
   }
 
   /// Maps a [messageTable] database record to a [MessageEntity] domain entity.

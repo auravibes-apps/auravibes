@@ -44,15 +44,7 @@ class CredentialsRepositoryImpl implements CredentialsRepository {
         : credentials.key;
 
     // Store API key encrypted
-    String encryptedApiKey;
-    try {
-      encryptedApiKey = await _encryptionService.encrypt(credentials.key);
-    } catch (e) {
-      throw ModelProviderException(
-        'Failed to store API key securely',
-        e as Exception,
-      );
-    }
+    final encryptedApiKey = await _encryptionService.encrypt(credentials.key);
 
     // Validate API key with model provider
     final models = await ModelProviderServices().getCredentialsModels(
@@ -153,14 +145,7 @@ class CredentialsRepositoryImpl implements CredentialsRepository {
       );
     }
 
-    try {
-      // Delete from database
-      await _database.credentialsDao.deleteCredential(credentialsId);
-    } catch (e) {
-      throw ModelProviderException(
-        'Failed to delete credential',
-        e as Exception,
-      );
-    }
+    // Delete from database
+    await _database.credentialsDao.deleteCredential(credentialsId);
   }
 }

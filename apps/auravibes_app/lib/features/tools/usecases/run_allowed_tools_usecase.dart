@@ -167,13 +167,14 @@ class RunAllowedToolsUsecase {
 
     try {
       final result = await _runTool(toolToCall.tool, arguments);
+      if (result == null) {
+        return const _ToolExecutionResult(
+          resultStatus: ToolCallResultStatus.toolNotFound,
+        );
+      }
       return _ToolExecutionResult(
         resultStatus: ToolCallResultStatus.success,
         responseRaw: result.toString(),
-      );
-    } on _ToolNotFoundException {
-      return const _ToolExecutionResult(
-        resultStatus: ToolCallResultStatus.toolNotFound,
       );
     } on Object catch (_) {
       return const _ToolExecutionResult(
@@ -182,7 +183,7 @@ class RunAllowedToolsUsecase {
     }
   }
 
-  Future<Object> _runTool(
+  Future<Object?> _runTool(
     ResolvedTool tool,
     Map<String, dynamic> arguments,
   ) async {
@@ -199,7 +200,7 @@ class RunAllowedToolsUsecase {
           ? null
           : ToolService.getTool(builtInTool);
       if (toolService == null) {
-        throw const _ToolNotFoundException();
+        return null;
       }
       return toolService.runner(input as Object).value;
     }
@@ -215,7 +216,7 @@ class RunAllowedToolsUsecase {
           ? null
           : NativeToolService.getTool(nativeTool);
       if (toolService == null) {
-        throw const _ToolNotFoundException();
+        return null;
       }
       return toolService.runner(input as Object).value;
     }
@@ -223,7 +224,7 @@ class RunAllowedToolsUsecase {
     if (tool.isMcp) {
       final mcpServerId = tool.mcpServerId;
       if (mcpServerId == null) {
-        throw const _ToolNotFoundException();
+        return null;
       }
 
       return mcpToolCaller(
@@ -233,7 +234,7 @@ class RunAllowedToolsUsecase {
       );
     }
 
-    throw const _ToolNotFoundException();
+    return null;
   }
 
   Future<_ToolResultUpdate> _executeSafely({
@@ -339,8 +340,4 @@ class _ToolExecutionResult {
 
   final ToolCallResultStatus resultStatus;
   final String? responseRaw;
-}
-
-final class _ToolNotFoundException implements Exception {
-  const _ToolNotFoundException();
 }
