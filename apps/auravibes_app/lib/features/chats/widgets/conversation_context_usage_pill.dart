@@ -3,18 +3,26 @@ import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class ConversationContextUsagePill extends ConsumerWidget {
+class ConversationContextUsagePill extends HookConsumerWidget {
   const ConversationContextUsagePill({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final usageSummaryAsync = ref.watch(conversationTokenUsageSummaryProvider);
-    final viewModel = switch (usageSummaryAsync) {
-      AsyncData(:final value) => _ContextUsageViewModel.fromSummary(value),
-      AsyncLoading() || AsyncError() => _ContextUsageViewModel.unavailable(),
-    };
+    final usedTokens = ref.watch(conversationUsedTokensProvider);
+    final contextLimitAsync = ref.watch(conversationContextLimitProvider);
+    final viewModel = useMemoized(() {
+      return switch (contextLimitAsync) {
+        AsyncData(:final value) => _ContextUsageViewModel.fromUsage(
+          usedTokens: usedTokens,
+          limitTokens: value,
+        ),
+        AsyncLoading() ||
+        AsyncError() => _ContextUsageViewModel.limitUnavailable(usedTokens),
+      };
+    }, [usedTokens, contextLimitAsync]);
     final auraColors = context.auraColors;
 
     return Padding(
@@ -92,16 +100,23 @@ class _ContextUsageViewModel {
     required this.progress,
   });
 
-  factory _ContextUsageViewModel.fromSummary(
-    ConversationTokenUsageSummary summary,
-  ) {
-    final hasLimit = summary.limitTokens > 0;
+  factory _ContextUsageViewModel.fromUsage({
+    required int usedTokens,
+    required int? limitTokens,
+  }) {
+    final normalizedLimit = (limitTokens ?? 0) < 0 ? 0 : (limitTokens ?? 0);
+    final hasLimit = normalizedLimit > 0;
+    final percent = hasLimit
+        ? ((usedTokens / normalizedLimit) * 100).round()
+        : 0;
+    final progress = percent.clamp(0, 100) / 100;
+
     const _s = LocaleKeys
         // ignore: lines_longer_than_80_chars - generated LocaleKeys name
         .chats_screens_chat_conversation_context_usage_semantic_limit_unavailable;
     final usageLabel = hasLimit
-        ? '${_formatCompactTokens(summary.usedTokens)}/${_formatCompactTokens(summary.limitTokens)}'
-        : '${_formatCompactTokens(summary.usedTokens)}/--';
+        ? '${_formatCompactTokens(usedTokens)}/${_formatCompactTokens(normalizedLimit)}'
+        : '${_formatCompactTokens(usedTokens)}/--';
 
     if (!hasLimit) {
       return _ContextUsageViewModel(
@@ -121,31 +136,47 @@ class _ContextUsageViewModel {
       );
     }
 
-    final level = _ContextUsageLevel.fromPercent(summary.percent);
-    final overflowTokens = summary.usedTokens - summary.limitTokens;
+    final level = _ContextUsageLevel.fromPercent(percent);
+    final overflowTokens = usedTokens - normalizedLimit;
     final tooltip = switch (level) {
       _ContextUsageLevel.normal =>
         LocaleKeys.chats_screens_chat_conversation_context_usage_tooltip_normal
             .tr(
-              namedArgs: _tooltipArgs(summary),
+              namedArgs: _tooltipArgs(
+                usedTokens: usedTokens,
+                limitTokens: normalizedLimit,
+                percent: percent,
+              ),
             ),
       _ContextUsageLevel.elevated =>
         LocaleKeys
             .chats_screens_chat_conversation_context_usage_tooltip_elevated
             .tr(
-              namedArgs: _tooltipArgs(summary),
+              namedArgs: _tooltipArgs(
+                usedTokens: usedTokens,
+                limitTokens: normalizedLimit,
+                percent: percent,
+              ),
             ),
       _ContextUsageLevel.warning =>
         LocaleKeys.chats_screens_chat_conversation_context_usage_tooltip_warning
             .tr(
-              namedArgs: _tooltipArgs(summary),
+              namedArgs: _tooltipArgs(
+                usedTokens: usedTokens,
+                limitTokens: normalizedLimit,
+                percent: percent,
+              ),
             ),
       _ContextUsageLevel.overflow =>
         LocaleKeys
             .chats_screens_chat_conversation_context_usage_tooltip_overflow
             .tr(
               namedArgs: {
-                ..._tooltipArgs(summary),
+                ..._tooltipArgs(
+                  usedTokens: usedTokens,
+                  limitTokens: normalizedLimit,
+                  percent: percent,
+                ),
                 'overflow': '$overflowTokens',
               },
             ),
@@ -161,7 +192,7 @@ class _ContextUsageViewModel {
             .tr(
               namedArgs: {
                 'usage': usageLabel,
-                'percent': '${summary.percent}',
+                'percent': '$percent',
               },
             ),
       _ContextUsageLevel.elevated =>
@@ -170,7 +201,7 @@ class _ContextUsageViewModel {
             .tr(
               namedArgs: {
                 'usage': usageLabel,
-                'percent': '${summary.percent}',
+                'percent': '$percent',
               },
             ),
       _ContextUsageLevel.warning =>
@@ -179,7 +210,7 @@ class _ContextUsageViewModel {
             .tr(
               namedArgs: {
                 'usage': usageLabel,
-                'percent': '${summary.percent}',
+                'percent': '$percent',
               },
             ),
       _ContextUsageLevel.overflow =>
@@ -188,7 +219,7 @@ class _ContextUsageViewModel {
             .tr(
               namedArgs: {
                 'usage': usageLabel,
-                'percent': '${summary.percent}',
+                'percent': '$percent',
                 'overflow': '$overflowTokens',
               },
             ),
@@ -199,19 +230,19 @@ class _ContextUsageViewModel {
 
     return _ContextUsageViewModel(
       usageLabel: usageLabel,
-      percentLabel: '${summary.percent}%',
+      percentLabel: '$percent%',
       tooltip: tooltip,
       semanticValue: semanticValue,
       badgeVariant: level.badgeVariant,
       icon: level.icon,
       iconColor: level.iconColor,
       level: level,
-      progress: summary.progress,
+      progress: progress,
     );
   }
 
-  factory _ContextUsageViewModel.unavailable() {
-    const usageLabel = '--/--';
+  factory _ContextUsageViewModel.limitUnavailable(int usedTokens) {
+    final usageLabel = '${_formatCompactTokens(usedTokens)}/--';
     const semanticLimitUnavailable = LocaleKeys
         // ignore: lines_longer_than_80_chars - generated LocaleKeys name
         .chats_screens_chat_conversation_context_usage_semantic_limit_unavailable;
@@ -254,11 +285,15 @@ class _ContextUsageViewModel {
   }
 }
 
-Map<String, String> _tooltipArgs(ConversationTokenUsageSummary summary) {
+Map<String, String> _tooltipArgs({
+  required int usedTokens,
+  required int limitTokens,
+  required int percent,
+}) {
   return {
-    'used': '${summary.usedTokens}',
-    'limit': '${summary.limitTokens}',
-    'percent': '${summary.percent}',
+    'used': '$usedTokens',
+    'limit': '$limitTokens',
+    'percent': '$percent',
   };
 }
 
