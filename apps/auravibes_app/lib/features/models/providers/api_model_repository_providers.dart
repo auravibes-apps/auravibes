@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:auravibes_app/data/repositories/api_model_repository_impl.dart';
+import 'package:auravibes_app/domain/entities/api_model.dart';
 import 'package:auravibes_app/domain/entities/api_model_provider.dart';
 import 'package:auravibes_app/domain/repositories/api_model_repository.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
@@ -48,4 +49,28 @@ ModelSyncService modelSyncService(Ref ref) {
 @riverpod
 Future<List<ApiModelProviderEntity>> modelProvidersNotifier(Ref ref) {
   return ref.watch(apiModelRepositoryProvider).getAllProviders();
+}
+
+@Riverpod(keepAlive: true)
+Future<List<ApiModelEntity>> getAllModels(Ref ref) {
+  return ref.watch(apiModelRepositoryProvider).getAllModels();
+}
+
+@riverpod
+Future<ApiModelEntity?> getModelByProviderAndModelId(
+  Ref ref, {
+  required String providerId,
+  required String modelId,
+}) {
+  return ref
+      .watch(apiModelRepositoryProvider)
+      .getModelByProviderAndModelId(providerId, modelId);
+}
+
+@Riverpod(keepAlive: true)
+Future<List<ApiModelEntity>> getModelsByProvider(
+  Ref ref, {
+  required String providerId,
+}) {
+  return ref.watch(apiModelRepositoryProvider).getModelsByProvider(providerId);
 }

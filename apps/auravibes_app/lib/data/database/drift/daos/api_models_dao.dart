@@ -25,11 +25,18 @@ class ApiModelsDao extends DatabaseAccessor<AppDatabase>
         .get();
   }
 
-  /// Retrieves a model by its ID.
+  /// Retrieves a model by provider ID + model ID.
   ///
-  /// Returns the model with the given [id], or null if not found.
-  Future<ApiModelsTable?> getModelById(String id) {
-    return (select(apiModels)..where((t) => t.id.equals(id))).getSingleOrNull();
+  /// Returns the model matching [providerId] and [modelId], or null if not
+  /// found.
+  Future<ApiModelsTable?> getModelByProviderAndModelId(
+    String providerId,
+    String modelId,
+  ) {
+    return (select(apiModels)..where(
+          (t) => t.modelProvider.equals(providerId) & t.id.equals(modelId),
+        ))
+        .getSingleOrNull();
   }
 
   /// Retrieves models by their provider ID.

@@ -28,6 +28,22 @@ abstract class ApiModelRepository {
   /// Returns a list of all models ordered by provider and name.
   Future<List<ApiModelEntity>> getAllModels();
 
+  /// Retrieves a model by provider + model ID.
+  ///
+  /// [providerId] Provider ID (for example: openai).
+  /// [modelId] Model ID inside that provider.
+  /// Returns the matching model, or null if not found.
+  Future<ApiModelEntity?> getModelByProviderAndModelId(
+    String providerId,
+    String modelId,
+  );
+
+  /// Retrieves all models for a specific provider.
+  ///
+  /// [providerId] Provider ID to filter by.
+  /// Returns a list of models ordered by model name.
+  Future<List<ApiModelEntity>> getModelsByProvider(String providerId);
+
   // Batch operations for synchronization
 
   /// Batch inserts or updates multiple providers.

@@ -39,6 +39,25 @@ class ApiModelRepositoryImpl implements ApiModelRepository {
     return modelTables.map(_mapToModelEntity).toList();
   }
 
+  @override
+  Future<ApiModelEntity?> getModelByProviderAndModelId(
+    String providerId,
+    String modelId,
+  ) async {
+    final modelTable = await _database.apiModelsDao
+        .getModelByProviderAndModelId(providerId, modelId);
+    if (modelTable == null) return null;
+    return _mapToModelEntity(modelTable);
+  }
+
+  @override
+  Future<List<ApiModelEntity>> getModelsByProvider(String providerId) async {
+    final modelTables = await _database.apiModelsDao.getModelsByProvider(
+      providerId,
+    );
+    return modelTables.map(_mapToModelEntity).toList();
+  }
+
   // Batch operations
 
   @override
