@@ -25,10 +25,14 @@ enum ContextUsageLevel {
   unknown
   ;
 
-  static ContextUsageLevel fromPercent(int percent) {
-    if (percent > 100) return ContextUsageLevel.overflow;
-    if (percent >= 85) return ContextUsageLevel.warning;
-    if (percent >= 70) return ContextUsageLevel.elevated;
+  static ContextUsageLevel fromUsage({
+    required int usedTokens,
+    required int limitTokens,
+  }) {
+    if (usedTokens > limitTokens) return ContextUsageLevel.overflow;
+    final ratio = limitTokens > 0 ? usedTokens / limitTokens : 0.0;
+    if (ratio >= 0.85) return ContextUsageLevel.warning;
+    if (ratio >= 0.70) return ContextUsageLevel.elevated;
     return ContextUsageLevel.normal;
   }
 
@@ -99,7 +103,10 @@ class ContextUsageData {
       );
     }
 
-    final level = ContextUsageLevel.fromPercent(percent);
+    final level = ContextUsageLevel.fromUsage(
+      usedTokens: usedTokens,
+      limitTokens: normalizedLimit,
+    );
     final overflowTokens = usedTokens - normalizedLimit;
 
     return ContextUsageData(
