@@ -3,26 +3,23 @@ import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class ConversationContextUsagePill extends HookConsumerWidget {
+class ConversationContextUsagePill extends ConsumerWidget {
   const ConversationContextUsagePill({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final usedTokens = ref.watch(conversationUsedTokensProvider);
     final contextLimitAsync = ref.watch(conversationContextLimitProvider);
-    final viewModel = useMemoized(() {
-      return switch (contextLimitAsync) {
-        AsyncData(:final value) => _ContextUsageViewModel.fromUsage(
-          usedTokens: usedTokens,
-          limitTokens: value,
-        ),
-        AsyncLoading() ||
-        AsyncError() => _ContextUsageViewModel.limitUnavailable(usedTokens),
-      };
-    }, [usedTokens, contextLimitAsync]);
+    final viewModel = switch (contextLimitAsync) {
+      AsyncData(:final value) => _ContextUsageViewModel.fromUsage(
+        usedTokens: usedTokens,
+        limitTokens: value,
+      ),
+      AsyncLoading() ||
+      AsyncError() => _ContextUsageViewModel.limitUnavailable(usedTokens),
+    };
     final auraColors = context.auraColors;
 
     return Padding(

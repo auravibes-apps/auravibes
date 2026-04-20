@@ -194,7 +194,7 @@ Future<int?> conversationContextLimit(Ref ref) async {
       .value
       ?.modelId;
 
-  if (conversationModelId == null) return 0;
+  if (conversationModelId == null) return null;
 
   final selectedModel = await ref.watch(
     modelContextLimitProvider(conversationModelId).future,
