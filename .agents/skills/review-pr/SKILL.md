@@ -133,7 +133,12 @@ For each item, capture:
 
 Deduplicate by comment/thread identity first, then by same location plus same requested change.
 
-Keep original links or IDs for every item so the skill can reply later.
+Keep the following identifiers per item so the skill can reply and resolve after push:
+
+- `thread` source: `reviewThread.id` (for reply/resolve mutations)
+- `review-comment` source: comment `id` (for reactions on review comments)
+- `issue-comment` source: comment `id` (for replies on PR comments)
+- `review` source: review `id` (for referencing the review)
 
 ### Step 5: Present Findings
 
@@ -141,7 +146,7 @@ Display the normalized list in priority order, preserving source details.
 
 Example:
 
-```
+```text
 PR Review Items for PR #123: [PR Title]
 
 | # | Priority | Source | Author | Title | Location | Action |

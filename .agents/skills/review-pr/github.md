@@ -45,6 +45,7 @@ gh api graphql \
             path
             comments(first:100) {
               nodes {
+                id
                 databaseId
                 body
                 author { login }
@@ -74,6 +75,7 @@ gh api graphql \
             path
             comments(first:100) {
               nodes {
+                id
                 databaseId
                 body
                 author { login }
@@ -195,7 +197,7 @@ Only resolve after the fix is pushed.
 
 ```bash
 # React with thumbs up to a review comment
-gh api repos/{owner}/{repo}/issues/comments/<comment-id>/reactions \
+gh api repos/{owner}/{repo}/pulls/comments/<comment-id>/reactions \
   -X POST \
   -f content='+1'
 ```
