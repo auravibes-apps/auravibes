@@ -73,16 +73,9 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
     String toolType, {
     required bool isEnabled,
   }) async {
-    try {
-      return await _dao
-          .setWorkspaceToolEnabled(workspaceId, toolType, isEnabled: isEnabled)
-          .then(_tableToEntity);
-    } catch (e) {
-      throw WorkspaceToolsException(
-        'Failed to set workspace tool enabled: $e',
-        e is Exception ? e : null,
-      );
-    }
+    return _dao
+        .setWorkspaceToolEnabled(workspaceId, toolType, isEnabled: isEnabled)
+        .then(_tableToEntity);
   }
 
   @override
@@ -90,16 +83,9 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
     String id, {
     required bool isEnabled,
   }) async {
-    try {
-      return await _dao
-          .setWorkspaceToolEnabledById(id, isEnabled: isEnabled)
-          .then(_tableToEntity);
-    } catch (e) {
-      throw WorkspaceToolsException(
-        'Failed to set workspace tool enabled by ID: $e',
-        e is Exception ? e : null,
-      );
-    }
+    return _dao
+        .setWorkspaceToolEnabledById(id, isEnabled: isEnabled)
+        .then(_tableToEntity);
   }
 
   @override
@@ -107,14 +93,7 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
     String workspaceId,
     String toolType,
   ) async {
-    try {
-      return await _dao.isWorkspaceToolEnabledByToolId(workspaceId, toolType);
-    } catch (e) {
-      throw WorkspaceToolsException(
-        'Failed to check workspace tool status: $e',
-        e is Exception ? e : null,
-      );
-    }
+    return _dao.isWorkspaceToolEnabledByToolId(workspaceId, toolType);
   }
 
   @override
@@ -124,50 +103,22 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
         'Native tools cannot be removed: $toolType',
       );
     }
-    try {
-      return await _dao.deleteWorkspaceToolByToolId(workspaceId, toolType);
-    } catch (e) {
-      throw WorkspaceToolsException(
-        'Failed to remove workspace tool: $e',
-        e is Exception ? e : null,
-      );
-    }
+    return _dao.deleteWorkspaceToolByToolId(workspaceId, toolType);
   }
 
   @override
   Future<bool> removeWorkspaceToolById(String id) async {
-    try {
-      return await _dao.deleteWorkspaceToolById(id);
-    } catch (e) {
-      throw WorkspaceToolsException(
-        'Failed to remove workspace tool by ID: $e',
-        e is Exception ? e : null,
-      );
-    }
+    return _dao.deleteWorkspaceToolById(id);
   }
 
   @override
   Future<int> getWorkspaceToolsCount(String workspaceId) async {
-    try {
-      return await _dao.getWorkspaceToolsCount(workspaceId);
-    } catch (e) {
-      throw WorkspaceToolsException(
-        'Failed to count workspace tools: $e',
-        e is Exception ? e : null,
-      );
-    }
+    return _dao.getWorkspaceToolsCount(workspaceId);
   }
 
   @override
   Future<int> getEnabledWorkspaceToolsCount(String workspaceId) async {
-    try {
-      return await _dao.getEnabledWorkspaceToolsCount(workspaceId);
-    } catch (e) {
-      throw WorkspaceToolsException(
-        'Failed to count enabled workspace tools: $e',
-        e is Exception ? e : null,
-      );
-    }
+    return _dao.getEnabledWorkspaceToolsCount(workspaceId);
   }
 
   @override
@@ -175,16 +126,9 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
     String workspaceId,
     String conversationId,
   ) async {
-    try {
-      // This method is no longer needed since we use disabled tools approach
-      // Copying workspace tools to conversation is handled by the conversation
-      // tools repository
-    } catch (e) {
-      throw WorkspaceToolsException(
-        'Failed to copy workspace tools to conversation: $e',
-        e is Exception ? e : null,
-      );
-    }
+    // This method is no longer needed since we use disabled tools approach.
+    // Copying workspace tools to conversation is handled by the conversation
+    // tools repository.
   }
 
   @override
@@ -194,48 +138,24 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
     required bool isEnabled,
     String? config,
   }) async {
-    try {
-      // Check if workspace exists
-      final workspace = await _database.workspaceDao.getWorkspaceById(
-        workspaceId,
-      );
-      if (workspace == null) {
-        throw WorkspaceToolsValidationException(
-          'Workspace not found: $workspaceId',
-        );
-      }
-
-      // Check if tool type is valid
-      if (!ToolService.hasTypeString(toolType) &&
-          !NativeToolService.hasTypeString(toolType)) {
-        throw WorkspaceToolsValidationException('Invalid tool type: $toolType');
-      }
-
-      // Validate config if provided
-      if (config != null && config.isNotEmpty) {
-        try {
-          // Basic JSON validation
-          // can be extended based on tool type requirements
-          // This is a simple check, you might want to add more
-          // sophisticated validation
-          if (config.trim().startsWith('{') && config.trim().endsWith('}')) {
-            // It looks like JSON, could parse it if needed
-          }
-        } on Exception catch (_) {
-          throw WorkspaceToolsValidationException(
-            'Invalid config format: $config',
-          );
-        }
-      }
-
-      return true;
-    } catch (e) {
-      if (e is WorkspaceToolsValidationException) rethrow;
-      throw WorkspaceToolsException(
-        'Failed to validate workspace tool setting: $e',
-        e is Exception ? e : null,
+    // Check if workspace exists
+    final workspace = await _database.workspaceDao.getWorkspaceById(
+      workspaceId,
+    );
+    if (workspace == null) {
+      throw WorkspaceToolsValidationException(
+        'Workspace not found: $workspaceId',
       );
     }
+
+    // Check if tool type is valid
+    if (!ToolService.hasTypeString(toolType) &&
+        !NativeToolService.hasTypeString(toolType)) {
+      throw WorkspaceToolsValidationException('Invalid tool type: $toolType');
+    }
+
+    // Config string is currently optional and not parsed.
+    return true;
   }
 
   @override
@@ -243,14 +163,7 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
     String workspaceId,
     String toolType,
   ) async {
-    try {
-      return await _dao.getWorkspaceToolConfigByToolId(workspaceId, toolType);
-    } catch (e) {
-      throw WorkspaceToolsException(
-        'Failed to get workspace tool config: $e',
-        e is Exception ? e : null,
-      );
-    }
+    return _dao.getWorkspaceToolConfigByToolId(workspaceId, toolType);
   }
 
   @override
@@ -306,19 +219,12 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
     String id, {
     required ToolPermissionMode permissionMode,
   }) async {
-    try {
-      return await _dao
-          .setWorkspaceToolPermission(
-            id,
-            permission: _mapPermissionMode(permissionMode),
-          )
-          .then(_tableToEntity);
-    } catch (e) {
-      throw WorkspaceToolsException(
-        'Failed to set workspace tool permission: $e',
-        e is Exception ? e : null,
-      );
-    }
+    return _dao
+        .setWorkspaceToolPermission(
+          id,
+          permission: _mapPermissionMode(permissionMode),
+        )
+        .then(_tableToEntity);
   }
 
   @override

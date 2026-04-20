@@ -46,7 +46,6 @@ class ModelApiService {
   /// Fetches all models and providers from the API.
   ///
   /// Returns a [ModelApiResponse] containing providers and models data.
-  /// Throws [ModelApiException] if the request fails after all retries.
   Future<ModelApiResponse> fetchAllModels() async {
     final response = await _dio.get<Map<String, dynamic>>(
       '/api.json',
@@ -59,7 +58,6 @@ class ModelApiService {
   /// Gets API status and basic information.
   ///
   /// Returns a [ModelApiStatus] with API health information.
-  /// Throws [ModelApiException] if unable to get status.
   Future<ModelApiStatus> getApiStatus() async {
     try {
       final startTime = DateTime.now();
@@ -86,36 +84,29 @@ class ModelApiService {
   ///
   /// [response] The Dio response to parse.
   /// Returns a [ModelApiResponse] with the parsed data.
-  /// Throws [ModelApiException] if parsing fails.
   ModelApiResponse _parseDioResponse(
     Response<Map<String, dynamic>> response,
   ) {
-    try {
-      if (response.statusCode != 200 || response.data == null) {
-        throw ModelApiException(
-          'API request failed with status ${response.statusCode}',
-        );
-      }
-
-      final jsonData = response.data!;
-
-      // Parse providers
-      final providersData = jsonData;
-
-      final providers = providersData.entries
-          .map((e) {
-            return e.value as Map<String, dynamic>?;
-          })
-          .nonNulls
-          .map(ApiProviderDto.fromJson)
-          .toList();
-
-      return ModelApiResponse(providers: providers);
-    } on Exception catch (e) {
-      throw ModelApiException('Failed to parse API response', e);
-    } catch (_) {
-      rethrow;
+    if (response.statusCode != 200 || response.data == null) {
+      throw Exception(
+        'API request failed with status ${response.statusCode}',
+      );
     }
+
+    final jsonData = response.data!;
+
+    // Parse providers
+    final providersData = jsonData;
+
+    final providers = providersData.entries
+        .map((e) {
+          return e.value as Map<String, dynamic>?;
+        })
+        .nonNulls
+        .map(ApiProviderDto.fromJson)
+        .toList();
+
+    return ModelApiResponse(providers: providers);
   }
 
   /// Disposes the Dio client.
@@ -207,22 +198,5 @@ class ModelApiStatus {
     } else {
       return error ?? 'Unknown error';
     }
-  }
-}
-
-/// Exception for model API related errors.
-class ModelApiException implements Exception {
-  const ModelApiException(this.message, [this.cause]);
-
-  /// Error message
-  final String message;
-
-  /// Optional underlying cause
-  final Exception? cause;
-
-  @override
-  String toString() {
-    final causeStr = cause != null ? ' (Caused by: $cause)' : '';
-    return 'ModelApiException: $message$causeStr';
   }
 }

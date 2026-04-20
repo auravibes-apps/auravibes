@@ -33,27 +33,24 @@ class ModelSyncService {
   /// 4. Return a summary of the synchronization results
   ///
   /// Returns a [ModelSyncResult] with details about what was synchronized.
-  /// Throws [ModelSyncException] if the synchronization fails.
   Future<ModelSyncResult> performFullSync() async {
     final startTime = DateTime.now();
 
     try {
-      // Check API accessibility first
       final apiStatus = await apiService.getApiStatus();
       if (!apiStatus.isAccessible) {
-        throw ModelSyncException(
-          'API is not accessible: ${apiStatus.statusMessage}',
+        return ModelSyncResult(
+          isSuccess: false,
+          duration: DateTime.now().difference(startTime),
+          fullSync: true,
+          errors: ['API is not accessible: ${apiStatus.statusMessage}'],
         );
       }
 
-      // Fetch data from API
       final apiResponse = await apiService.fetchAllModels();
-
-      // Get current local data
       final localProviders = await repository.getAllProviders();
       final localModels = await repository.getAllModels();
 
-      // Perform synchronization
       final result = await _performSyncOperation(
         apiResponse: apiResponse,
         localProviders: localProviders,
@@ -61,15 +58,17 @@ class ModelSyncService {
         fullSync: true,
       );
 
-      final endTime = DateTime.now();
       return result.copyWith(
-        duration: endTime.difference(startTime),
+        duration: DateTime.now().difference(startTime),
         fullSync: true,
       );
-    } catch (e) {
-      throw ModelSyncException(
-        'Full synchronization failed',
-        e is Exception ? e : Exception(e.toString()),
+    } on Exception catch (e, s) {
+      _log.severe('full sync pre-check failed', e, s);
+      return ModelSyncResult(
+        isSuccess: false,
+        duration: DateTime.now().difference(startTime),
+        fullSync: true,
+        errors: ['Full sync pre-check failed: $e'],
       );
     }
   }
@@ -103,8 +102,8 @@ class ModelSyncService {
 
       // Sync providers (clear and replace for full sync)
       if (fullSync) {
-        final deletedProviders = await repository.deleteAllData();
-        providersRemoved = deletedProviders ~/ 1000; // Rough estimate
+        await repository.deleteAllData();
+        providersRemoved = localProviders.length;
       }
 
       // Batch insert providers and models
@@ -362,22 +361,5 @@ class ModelSyncStatus {
     return '''
 Healthy: $localProviderCount providers, $localModelCount models, API accessible
 ''';
-  }
-}
-
-/// Exception for synchronization related errors.
-class ModelSyncException implements Exception {
-  const ModelSyncException(this.message, [this.cause]);
-
-  /// Error message
-  final String message;
-
-  /// Optional underlying cause
-  final Exception? cause;
-
-  @override
-  String toString() {
-    final causeStr = cause != null ? ' (Caused by: $cause)' : '';
-    return 'ModelSyncException: $message$causeStr';
   }
 }

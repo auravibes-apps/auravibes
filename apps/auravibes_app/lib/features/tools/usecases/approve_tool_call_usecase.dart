@@ -103,13 +103,14 @@ class ApproveToolCallUsecase {
 
     try {
       final result = await _runTool(tool, arguments);
+      if (result == null) {
+        return const _ExecutionResult(
+          resultStatus: ToolCallResultStatus.toolNotFound,
+        );
+      }
       return _ExecutionResult(
         resultStatus: ToolCallResultStatus.success,
         responseRaw: result.toString(),
-      );
-    } on _ToolNotFoundException {
-      return const _ExecutionResult(
-        resultStatus: ToolCallResultStatus.toolNotFound,
       );
     } on Object catch (_) {
       return const _ExecutionResult(
@@ -118,7 +119,7 @@ class ApproveToolCallUsecase {
     }
   }
 
-  Future<Object> _runTool(
+  Future<Object?> _runTool(
     ResolvedTool tool,
     Map<String, dynamic> arguments,
   ) async {
@@ -135,7 +136,7 @@ class ApproveToolCallUsecase {
           ? null
           : ToolService.getTool(builtInTool);
       if (toolService == null) {
-        throw const _ToolNotFoundException();
+        return null;
       }
       return toolService.runner(input as Object).value;
     }
@@ -151,7 +152,7 @@ class ApproveToolCallUsecase {
           ? null
           : NativeToolService.getTool(nativeTool);
       if (toolService == null) {
-        throw const _ToolNotFoundException();
+        return null;
       }
       return toolService.runner(input as Object).value;
     }
@@ -159,7 +160,7 @@ class ApproveToolCallUsecase {
     if (tool.isMcp) {
       final mcpServerId = tool.mcpServerId;
       if (mcpServerId == null) {
-        throw const _ToolNotFoundException();
+        return null;
       }
 
       return _mcpToolCaller(
@@ -169,7 +170,7 @@ class ApproveToolCallUsecase {
       );
     }
 
-    throw const _ToolNotFoundException();
+    return null;
   }
 
   Future<void> _updateToolCall({
@@ -221,10 +222,6 @@ class _ExecutionResult {
 
   final ToolCallResultStatus resultStatus;
   final String? responseRaw;
-}
-
-final class _ToolNotFoundException implements Exception {
-  const _ToolNotFoundException();
 }
 
 final approveToolCallUsecaseProvider = Provider<ApproveToolCallUsecase>((ref) {

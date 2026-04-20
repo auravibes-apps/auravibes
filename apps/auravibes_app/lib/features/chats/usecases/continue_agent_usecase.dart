@@ -19,11 +19,6 @@ import 'package:langchain/langchain.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:rxdart/rxdart.dart';
 
-class UnresolvedToolsException implements Exception {
-  UnresolvedToolsException(this.message);
-  final String message;
-}
-
 class ContinueAgentResult {
   const ContinueAgentResult({
     required this.messageId,
