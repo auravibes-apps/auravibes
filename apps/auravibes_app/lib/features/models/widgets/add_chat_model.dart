@@ -1,4 +1,5 @@
 import 'package:auravibes_app/domain/entities/api_model_provider.dart';
+import 'package:auravibes_app/domain/repositories/model_providers_repository.dart';
 import 'package:auravibes_app/features/models/providers/add_model_provider_providers.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/widgets/enhanced_model_input.dart';
@@ -205,8 +206,7 @@ class _ErrorBanner extends ConsumerWidget {
     );
 
     final error = switch (addCredentialsModelMutation) {
-      MutationError<void>() =>
-        LocaleKeys.models_screens_add_provider_errors_unknown.tr(),
+      MutationError<void>(:final error) => _mapErrorMessage(error),
       _ => null,
     };
 
@@ -241,6 +241,21 @@ class _ErrorBanner extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  String _mapErrorMessage(Object error) {
+    if (error case ModelProviderException(
+      :final message,
+    ) when message.trim().isNotEmpty) {
+      return message;
+    }
+
+    final rawMessage = error.toString().trim();
+    if (rawMessage.isNotEmpty) {
+      return rawMessage;
+    }
+
+    return LocaleKeys.models_screens_add_provider_errors_unknown.tr();
   }
 }
 
