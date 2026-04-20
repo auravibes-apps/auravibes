@@ -11,21 +11,18 @@ abstract class WorkspaceRepository {
   /// Retrieves all workspaces from the data source.
   ///
   /// Returns a list of all workspaces ordered by their creation date.
-  /// Throws [WorkspaceException] if there's an error retrieving workspaces.
   Future<List<WorkspaceEntity>> getAllWorkspaces();
 
   /// Retrieves a workspace by its unique identifier.
   ///
   /// [id] The unique identifier of the workspace to retrieve.
   /// Returns the workspace with the given [id], or null if not found.
-  /// Throws [WorkspaceException] if there's an error retrieving the workspace.
   Future<WorkspaceEntity?> getWorkspaceById(String id);
 
   /// Retrieves workspaces filtered by their type.
   ///
   /// [type] The type of workspaces to retrieve.
   /// Returns a list of workspaces with the specified [type] ordered by name.
-  /// Throws [WorkspaceException] if there's an error retrieving workspaces.
   Future<List<WorkspaceEntity>> getWorkspacesByType(WorkspaceType type);
 
   /// Creates a new workspace in the data source.
@@ -36,7 +33,6 @@ abstract class WorkspaceRepository {
   /// Throws [WorkspaceValidationException] if the workspace data is invalid.
   /// Throws [WorkspaceDuplicateException] if a workspace with the same ID
   /// already exists.
-  /// Throws [WorkspaceException] if there's an error creating the workspace.
   Future<WorkspaceEntity> createWorkspace(WorkspaceToCreate workspace);
 
   /// Applies a partial update (patch) to an existing workspace.
@@ -47,7 +43,6 @@ abstract class WorkspaceRepository {
   /// Throws [WorkspaceValidationException] if the workspace data is invalid.
   /// Throws [WorkspaceNotFoundException] if no workspace with the
   /// given ID exists.
-  /// Throws [WorkspaceException] if there's an error patching the workspace.
   Future<WorkspaceEntity> patchWorkspace(
     String id,
     WorkspacePatch workspace,
@@ -58,14 +53,12 @@ abstract class WorkspaceRepository {
   /// [id] The unique identifier of the workspace to delete.
   /// Returns true if the workspace was successfully deleted, false
   /// if not found.
-  /// Throws [WorkspaceException] if there's an error deleting the workspace.
   Future<bool> deleteWorkspace(String id);
 
   /// Checks if a workspace with the given ID exists.
   ///
   /// [id] The unique identifier to check.
   /// Returns true if the workspace exists, false otherwise.
-  /// Throws [WorkspaceException] if there's an error checking existence.
   Future<bool> workspaceExists(String id);
 
   /// Searches for workspaces by name.
@@ -73,20 +66,17 @@ abstract class WorkspaceRepository {
   /// [query] The search query string. The search is case-insensitive and
   /// matches workspaces whose names contain the query.
   /// Returns a list of matching workspaces ordered by name.
-  /// Throws [WorkspaceException] if there's an error searching workspaces.
   Future<List<WorkspaceEntity>> searchWorkspacesByName(String query);
 
   /// Gets the total count of all workspaces.
   ///
   /// Returns the total number of workspaces in the data source.
-  /// Throws [WorkspaceException] if there's an error counting workspaces.
   Future<int> getWorkspaceCount();
 
   /// Gets the count of workspaces filtered by type.
   ///
   /// [type] The type of workspaces to count.
   /// Returns the number of workspaces with the specified [type].
-  /// Throws [WorkspaceException] if there's an error counting workspaces.
   Future<int> getWorkspaceCountByType(WorkspaceType type);
 
   /// Validates workspace data before creation.
@@ -101,7 +91,6 @@ abstract class WorkspaceRepository {
   /// [id] The unique identifier of the workspace to patch.
   /// Returns true if the workspace timestamp was successfully patched,
   /// false if not found.
-  /// Throws [WorkspaceException] if there's an error patching the timestamp.
   Future<bool> patchWorkspaceTimestamp(String id);
 }
 

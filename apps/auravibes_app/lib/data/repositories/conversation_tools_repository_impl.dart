@@ -137,10 +137,17 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
 
   @override
   Future<int> getEnabledConversationToolsCount(String conversationId) async {
+    final conversation = await _database.conversationDao.getConversationById(
+      conversationId,
+    );
+    if (conversation == null) {
+      return 0;
+    }
+
     // This is computed as available tools - disabled tools
     final availableCount = await getAvailableToolsForConversation(
       conversationId,
-      '',
+      conversation.workspaceId,
     );
     return availableCount.length;
   }

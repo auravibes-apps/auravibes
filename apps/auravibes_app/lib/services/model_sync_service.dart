@@ -93,8 +93,8 @@ class ModelSyncService {
 
       // Sync providers (clear and replace for full sync)
       if (fullSync) {
-        final deletedProviders = await repository.deleteAllData();
-        providersRemoved = deletedProviders ~/ 1000; // Rough estimate
+        await repository.deleteAllData();
+        providersRemoved = localProviders.length;
       }
 
       // Batch insert providers and models
