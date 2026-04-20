@@ -48,7 +48,7 @@ class NewChatNotifier extends _$NewChatNotifier {
           .read(sendNewMessageUsecaseProvider)
           .call(
             firstMessage: message,
-            credentialsModelId: modelId,
+            workspaceModelSelectionId: modelId,
             workspaceId: workspaceId,
           );
     } finally {

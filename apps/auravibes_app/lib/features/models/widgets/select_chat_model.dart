@@ -1,5 +1,5 @@
-import 'package:auravibes_app/domain/entities/credentials_models_entities.dart';
-import 'package:auravibes_app/features/models/providers/list_chat_models_providers.dart';
+import 'package:auravibes_app/domain/entities/workspace_model_selection_entities.dart';
+import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/app_error.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -9,16 +9,16 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 String? _findProviderForModelId(
-  Map<String, List<CredentialsModelWithProviderEntity>> groupedModels,
-  String? credentialsModelId,
+  Map<String, List<WorkspaceModelSelectionWithConnectionEntity>> groupedModels,
+  String? workspaceModelSelectionId,
 ) {
-  if (credentialsModelId == null) {
+  if (workspaceModelSelectionId == null) {
     return null;
   }
 
   for (final entry in groupedModels.entries) {
     final hasModel = entry.value.any(
-      (model) => model.credentialsModel.id == credentialsModelId,
+      (model) => model.workspaceModelSelection.id == workspaceModelSelectionId,
     );
     if (hasModel) {
       return entry.key;
@@ -30,20 +30,20 @@ String? _findProviderForModelId(
 
 /// Two-step model selector: Provider first, then Model.
 /// Follows user mental model of selecting provider before model.
-class SelectCredentialsModelWidget extends HookConsumerWidget
+class SelectWorkspaceModelSelectionWidget extends HookConsumerWidget
     implements PreferredSizeWidget {
-  const SelectCredentialsModelWidget({
+  const SelectWorkspaceModelSelectionWidget({
     required this.workspaceId,
-    required this.selectCredentialsModelId,
+    required this.selectWorkspaceModelSelectionId,
     required this.onProviderChanged,
     super.key,
-    this.credentialsModelId,
+    this.workspaceModelSelectionId,
     this.selectedProviderId,
   });
 
   final String workspaceId;
-  final String? credentialsModelId;
-  final void Function(String?) selectCredentialsModelId;
+  final String? workspaceModelSelectionId;
+  final void Function(String?) selectWorkspaceModelSelectionId;
 
   /// Currently selected provider name (not ID).
   final String? selectedProviderId;
@@ -59,8 +59,8 @@ class SelectCredentialsModelWidget extends HookConsumerWidget
 
     final onSelectProvider = useCallback<void Function(String?)>((provider) {
       onProviderChanged(provider);
-      selectCredentialsModelId(null);
-    }, [onProviderChanged, selectCredentialsModelId]);
+      selectWorkspaceModelSelectionId(null);
+    }, [onProviderChanged, selectWorkspaceModelSelectionId]);
 
     return switch (groupedModelsAsync) {
       AsyncLoading() => const AuraPadding(
@@ -73,10 +73,10 @@ class SelectCredentialsModelWidget extends HookConsumerWidget
       ),
       AsyncData(:final value) => SelectChatData(
         groupedModels: value,
-        credentialsModelId: credentialsModelId,
+        workspaceModelSelectionId: workspaceModelSelectionId,
         selectedProviderId: selectedProviderId,
         onSelectProvider: onSelectProvider,
-        selectCredentialsModelId: selectCredentialsModelId,
+        selectWorkspaceModelSelectionId: selectWorkspaceModelSelectionId,
       ),
     };
   }
@@ -89,18 +89,19 @@ class SelectCredentialsModelWidget extends HookConsumerWidget
 class SelectChatData extends HookWidget {
   const SelectChatData({
     required this.groupedModels,
-    required this.credentialsModelId,
+    required this.workspaceModelSelectionId,
     required this.selectedProviderId,
     required this.onSelectProvider,
-    required this.selectCredentialsModelId,
+    required this.selectWorkspaceModelSelectionId,
     super.key,
   });
 
-  final Map<String, List<CredentialsModelWithProviderEntity>> groupedModels;
-  final String? credentialsModelId;
+  final Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>
+  groupedModels;
+  final String? workspaceModelSelectionId;
   final String? selectedProviderId;
   final void Function(String?) onSelectProvider;
-  final void Function(String?) selectCredentialsModelId;
+  final void Function(String?) selectWorkspaceModelSelectionId;
 
   @override
   Widget build(BuildContext context) {
@@ -115,8 +116,8 @@ class SelectChatData extends HookWidget {
     // Internal provider state if no external control
     final internalProviderId = useState<String?>(null);
     final derivedProviderId = useMemoized(
-      () => _findProviderForModelId(groupedModels, credentialsModelId),
-      [groupedModels, credentialsModelId],
+      () => _findProviderForModelId(groupedModels, workspaceModelSelectionId),
+      [groupedModels, workspaceModelSelectionId],
     );
     final effectiveProviderId =
         selectedProviderId ?? internalProviderId.value ?? derivedProviderId;
@@ -152,12 +153,13 @@ class SelectChatData extends HookWidget {
     // Filter models by search - computed unconditionally (not in hook)
     final modelsForProvider = effectiveProviderId != null
         ? groupedModels[effectiveProviderId] ??
-              <CredentialsModelWithProviderEntity>[]
-        : <CredentialsModelWithProviderEntity>[];
+              <WorkspaceModelSelectionWithConnectionEntity>[]
+        : <WorkspaceModelSelectionWithConnectionEntity>[];
     final filteredModels = searchValue.value.isEmpty
         ? modelsForProvider
         : modelsForProvider.where((model) {
-            final searchTerm = model.credentialsModel.modelId.toLowerCase();
+            final searchTerm = model.workspaceModelSelection.modelId
+                .toLowerCase();
             return searchTerm.contains(searchValue.value.toLowerCase());
           }).toList();
 
@@ -180,9 +182,9 @@ class SelectChatData extends HookWidget {
     final modelDropdown = _ModelDropdown(
       models: filteredModels,
       hasModelsForProvider: modelsForProvider.isNotEmpty,
-      selectedModelId: credentialsModelId,
+      selectedModelId: workspaceModelSelectionId,
       providerSelected: effectiveProviderId != null,
-      onChanged: selectCredentialsModelId,
+      onChanged: selectWorkspaceModelSelectionId,
       searchValue: searchValue.value,
       onSearchChanged: (value) {
         searchValue.value = value;
@@ -263,7 +265,7 @@ class _ModelDropdown extends StatelessWidget {
     required this.controller,
   });
 
-  final List<CredentialsModelWithProviderEntity> models;
+  final List<WorkspaceModelSelectionWithConnectionEntity> models;
   final bool hasModelsForProvider;
   final String? selectedModelId;
   final bool providerSelected;
@@ -292,8 +294,8 @@ class _ModelDropdown extends StatelessWidget {
       options: models
           .map(
             (model) => AuraDropdownOption(
-              value: model.credentialsModel.id,
-              child: Text(model.credentialsModel.modelId),
+              value: model.workspaceModelSelection.id,
+              child: Text(model.workspaceModelSelection.modelId),
             ),
           )
           .toList(),

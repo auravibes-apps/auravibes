@@ -1,11 +1,11 @@
 import 'package:auravibes_app/domain/enums/chat_models_type.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-part 'credentials_entities.freezed.dart';
+part 'model_connection_entities.freezed.dart';
 
 @freezed
-abstract class CredentialsEntity with _$CredentialsEntity {
-  const factory CredentialsEntity({
+abstract class ModelConnectionEntity with _$ModelConnectionEntity {
+  const factory ModelConnectionEntity({
     required String id,
     required String name,
     required String key,
@@ -15,24 +15,24 @@ abstract class CredentialsEntity with _$CredentialsEntity {
     required String workspaceId,
     String? url,
     String? keySuffix,
-  }) = _CredentialsEntity;
+  }) = _ModelConnectionEntity;
 }
 
 @freezed
-abstract class CredentialsToCreate with _$CredentialsToCreate {
-  const factory CredentialsToCreate({
+abstract class ModelConnectionToCreate with _$ModelConnectionToCreate {
+  const factory ModelConnectionToCreate({
     required String name,
     required String key,
     required String workspaceId,
     required String modelId,
     String? url,
-  }) = _CredentialsToCreate;
+  }) = _ModelConnectionToCreate;
 }
 
 @freezed
-abstract class ModelProviderFilter with _$ModelProviderFilter {
-  const factory ModelProviderFilter({
+abstract class ModelConnectionFilter with _$ModelConnectionFilter {
+  const factory ModelConnectionFilter({
     List<String>? workspaces,
     List<CredentialsModelType>? types,
-  }) = _ModelProviderFilter;
+  }) = _ModelConnectionFilter;
 }

@@ -1,13 +1,12 @@
 import 'package:auravibes_app/domain/entities/conversation.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
-import 'package:auravibes_app/features/models/providers/list_chat_models_providers.dart';
+import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/presentation/shared/formatters/relative_time_formatter.dart';
 import 'package:auravibes_app/router/app_router.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -131,13 +130,13 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
 
   @override
   Widget build(BuildContext context) {
-    final credentialsModelsAsync = ref.watch(
-      listCredentialsCredentialsProvider(workspaceId: widget.workspaceId),
+    final workspaceModelSelectionsAsync = ref.watch(
+      listWorkspaceModelSelectionsProvider(workspaceId: widget.workspaceId),
     );
-    final modelDisplayName = credentialsModelsAsync.asData?.value
-        .where((cm) => cm.credentialsModel.id == widget.chat.modelId)
+    final modelDisplayName = workspaceModelSelectionsAsync.asData?.value
+        .where((cm) => cm.workspaceModelSelection.id == widget.chat.modelId)
         .firstOrNull
-        ?.credentialsModel
+        ?.workspaceModelSelection
         .modelId;
     final title =
         ref.watch(streamingTitleProvider(widget.chat.id)) ?? widget.chat.title;

@@ -1,13 +1,13 @@
-import 'package:auravibes_app/domain/entities/credentials_entities.dart';
+import 'package:auravibes_app/domain/entities/model_connection_entities.dart';
 import 'package:auravibes_app/features/models/models/add_model_provider_model.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
-import 'package:auravibes_app/features/models/providers/model_providers_repository_providers.dart';
+import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
 import 'package:collection/collection.dart';
 import 'package:logging/logging.dart';
 import 'package:riverpod/experimental/mutation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-part 'add_model_provider_providers.g.dart';
+part 'add_model_providers.g.dart';
 
 final _log = Logger('add_model_providers');
 
@@ -34,7 +34,7 @@ class AddModelProviderState extends _$AddModelProviderState {
   }
 
   void setModel(String? newValue) {
-    final models = ref.watch(modelProvidersProvider).value;
+    final models = ref.watch(apiModelProvidersProvider).value;
     final model = models?.firstWhereOrNull(
       (element) {
         return element.id == newValue;
@@ -52,16 +52,16 @@ class AddModelProviderState extends _$AddModelProviderState {
     );
   }
 
-  Future<CredentialsEntity?> addModelProvider() async {
+  Future<ModelConnectionEntity?> addModelProvider() async {
     if (!state.isValid()) {
       return null;
     }
 
     try {
-      final repo = ref.read(modelProvidersRepositoryProvider);
+      final repo = ref.read(modelConnectionRepositoryProvider);
 
-      final provider = await repo.createCredential(
-        CredentialsToCreate(
+      final provider = await repo.createModelConnection(
+        ModelConnectionToCreate(
           name: state.name!,
           modelId: state.modelId!,
           key: state.key!,
