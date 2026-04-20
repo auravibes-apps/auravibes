@@ -73,7 +73,7 @@ Check: `git status` and whether current branch has unpushed commits.
 gh pr list --head $(git branch --show-current) --state open --json number,title
 ```
 
-**If no PR:** Ask whether to create one. If yes, create PR (see [github.md § 9](./github.md#9-create-pr-if-needed)), then inform user to rerun after reviewers respond.
+**If no PR:** Ask whether to create one. If yes, create PR (see [github.md § 11](./github.md#11-create-pr-if-needed)), then inform user to rerun after reviewers respond.
 
 ### Step 3: Collect All Open Review Feedback
 
@@ -247,25 +247,33 @@ If code was changed but not pushed, do not post review replies yet.
 
 ### Step 12: Reply After Push
 
-After a successful push, comment back on the review items that were addressed.
+After a successful push, iterate over every addressed review item and reply.
 
-Preferred behavior:
+**Per-item reply loop:**
 
-- For unresolved review threads: reply in thread with what changed, then resolve thread if appropriate
-- For standalone review comments: reply to the comment when GitHub supports replies; otherwise include it in PR summary
-- For review-summary bodies and issue comments: post a PR comment that references the addressed feedback and commit SHA
+For each item that was fixed or intentionally skipped:
 
-Reply content should include:
+1. **`thread` source:** Reply in the thread using `addPullRequestReviewThreadReply` with the thread's `id`. Then resolve with `resolveReviewThread` if fully addressed. See [github.md § 7](./github.md#7-reply-to-review-thread).
 
-- short status: fixed / partially addressed / intentionally skipped
-- commit SHA or pushed branch reference
-- short note on what changed
+2. **`review-comment` source:** Reply using the REST endpoint with `in_reply_to`. See [github.md § 8](./github.md#8-reply-to-review-comment-inline-not-in-thread).
+
+3. **`issue-comment` source:** Post a new PR comment referencing the original author. See [github.md § 9](./github.md#9-reply-to-issue-comment-pr-comment).
+
+4. **`review` source (review body/summary):** Include in the PR summary comment (Step 13) — GitHub has no API to reply directly to a review body.
+
+**Reply content for each item must include:**
+
+- short status: `Fixed` / `Partially addressed` / `Intentionally skipped`
+- commit SHA
+- brief note on what changed
+
+**Do not resolve threads** that were only partially addressed or intentionally skipped.
 
 Do this only after push so links and commit references point to final branch state.
 
 ### Step 13: Post PR Summary Comment
 
-After push, post one summary comment to the PR with:
+After per-item replies, post one summary comment to the PR with:
 
 - count of addressed items
 - count of skipped/deferred items

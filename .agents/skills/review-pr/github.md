@@ -182,18 +182,59 @@ Post after the push step (if pushing) so branch state is final.
 
 ### 7. Reply To Review Thread
 
-Use GraphQL `addPullRequestReviewThreadReply` to reply in-thread when needed, then resolve with `resolveReviewThread` if appropriate.
+Reply in-thread, then optionally resolve.
 
-Minimum reply body:
+**Reply to a thread:**
 
-```text
-Fixed in <commit-sha>.
-Updated <short description of change>.
+```bash
+gh api graphql \
+  -F body='Fixed in <commit-sha>. Updated <short description of change>.' \
+  -F threadId='<reviewThread.id>' \
+  -f query='mutation($body:String!, $threadId:ID!) {
+    addPullRequestReviewThreadReply(input:{body:$body, pullRequestReviewThreadId:$threadId}) {
+      comment { databaseId }
+    }
+  }'
 ```
 
-Only resolve after the fix is pushed.
+**Resolve a thread after reply:**
 
-### 8. React To Or Acknowledge Comment
+```bash
+gh api graphql \
+  -F threadId='<reviewThread.id>' \
+  -f query='mutation($threadId:ID!) {
+    resolveReviewThread(input:{threadId:$threadId}) {
+      thread { isResolved }
+    }
+  }'
+```
+
+Only resolve after the fix is pushed. Do not resolve threads that were only partially addressed.
+
+### 8. Reply To Review Comment (inline, not in thread)
+
+For standalone review comments that are not part of a thread, use the REST endpoint with `in_reply_to`:
+
+```bash
+gh api repos/{owner}/{repo}/pulls/<pr-number>/comments \
+  -X POST \
+  -f body='Fixed in <commit-sha>. Updated <short description of change>.' \
+  -f in_reply_to=<comment-id>
+```
+
+### 9. Reply To Issue Comment (PR comment)
+
+Regular PR comments do not support threaded replies. Post a new PR comment that references the original comment:
+
+```bash
+gh pr comment <pr-number> --body "$(cat <<'EOF'
+Re: @<author> — Fixed in <commit-sha>.
+Updated <short description of change>.
+EOF
+)"
+```
+
+### 10. React To Or Acknowledge Comment
 
 ```bash
 # React with thumbs up to a review comment
@@ -204,7 +245,7 @@ gh api repos/{owner}/{repo}/pulls/comments/<comment-id>/reactions \
 
 Optional. Do not use reaction as the only acknowledgement when a textual reply is needed.
 
-### 9. Create PR (if needed)
+### 11. Create PR (if needed)
 
 ```bash
 gh pr create --title '<title>' --body '<body>'
