@@ -81,6 +81,7 @@ class WorkspaceModelSelectionRepositoryImpl
         workspaceId: withProvider.modelConnection.workspaceId,
         url: withProvider.modelConnection.url,
         modelId: withProvider.modelConnection.modelId,
+        keySuffix: withProvider.modelConnection.keySuffix,
       ),
       modelsProvider: ApiModelProviderEntity(
         id: withProvider.modelProvider.id,
