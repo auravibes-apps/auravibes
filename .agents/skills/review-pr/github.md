@@ -40,12 +40,16 @@ gh api graphql \
         reviewThreads(first:100) {
           pageInfo { hasNextPage endCursor }
           nodes {
+            id
             isResolved
+            path
             comments(first:100) {
               nodes {
                 databaseId
                 body
                 author { login }
+                path
+                position
               }
             }
           }
@@ -65,12 +69,16 @@ gh api graphql \
         reviewThreads(first:100 after:"<endCursor>") {
           pageInfo { hasNextPage endCursor }
           nodes {
+            id
             isResolved
+            path
             comments(first:100) {
               nodes {
                 databaseId
                 body
                 author { login }
+                path
+                position
               }
             }
           }
