@@ -125,6 +125,17 @@ void main() {
       // Both items render, selectedIndex=1 means Settings is selected
       expect(find.text('Home'), findsOneWidget);
       expect(find.text('Settings'), findsOneWidget);
+
+      final textStyles = tester.widgetList<DefaultTextStyle>(
+        find.descendant(
+          of: find.byType(AuraBottomBar),
+          matching: find.byType(DefaultTextStyle),
+        ),
+      );
+      expect(textStyles.length, 2);
+      final homeStyle = textStyles.first;
+      final settingsStyle = textStyles.last;
+      expect(homeStyle.style.fontWeight, isNot(settingsStyle.style.fontWeight));
     });
   });
 }

@@ -89,6 +89,13 @@ void main() {
       );
 
       expect(find.text('Styled Label'), findsOneWidget);
+      final auraText = tester.widget<AuraText>(
+        find.descendant(
+          of: find.byType(AuraFieldLabel),
+          matching: find.byType(AuraText),
+        ),
+      );
+      expect(auraText.style, AuraTextStyle.heading1);
     });
 
     testWidgets('renders in a Row with mainAxisSize min', (tester) async {

@@ -46,9 +46,8 @@ void main() {
         ),
       );
 
-      final container = tester.widget<Container>(find.byType(Container).first);
-      final constraints = container.constraints;
-      expect(constraints?.maxWidth, 280);
+      final size = tester.getSize(find.byType(AuraSidebar));
+      expect(size.width, 280);
     });
 
     testWidgets('has collapsed width when isExpanded is false', (tester) async {
@@ -69,9 +68,8 @@ void main() {
         ),
       );
 
-      final container = tester.widget<Container>(find.byType(Container).first);
-      final constraints = container.constraints;
-      expect(constraints?.maxWidth, 80);
+      final size = tester.getSize(find.byType(AuraSidebar));
+      expect(size.width, 80);
     });
 
     testWidgets('calls onNavigationTap with correct index', (tester) async {
@@ -173,6 +171,20 @@ void main() {
 
       expect(find.text('Home'), findsOneWidget);
       expect(find.text('Logout'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(SingleChildScrollView),
+          matching: find.text('Home'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byType(SafeArea),
+          matching: find.text('Logout'),
+        ),
+        findsOneWidget,
+      );
     });
   });
 

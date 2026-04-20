@@ -145,6 +145,16 @@ void main() {
       );
 
       expect(find.text('Small Padded Card'), findsOneWidget);
+      final auraPadding = tester.widget<AuraPadding>(
+        find.descendant(
+          of: find.byType(AuraCard),
+          matching: find.byType(AuraPadding),
+        ),
+      );
+      expect(
+        auraPadding.padding,
+        const AuraEdgeInsetsGeometry.all(AuraSpacing.sm),
+      );
     });
 
     test('AuraCardStyle enum has all values', () {

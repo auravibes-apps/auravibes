@@ -363,9 +363,9 @@ void main() {
       const original = Color.fromARGB(255, 100, 150, 200);
       final oklch = original.toOklch();
       final converted = oklch.toColor();
-      expect(converted.r, closeTo(original.r, 2));
-      expect(converted.g, closeTo(original.g, 2));
-      expect(converted.b, closeTo(original.b, 2));
+      expect(converted.r, closeTo(original.r, 0.02));
+      expect(converted.g, closeTo(original.g, 0.02));
+      expect(converted.b, closeTo(original.b, 0.02));
     });
   });
 }

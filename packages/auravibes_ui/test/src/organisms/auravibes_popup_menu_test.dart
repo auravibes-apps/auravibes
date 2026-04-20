@@ -131,7 +131,7 @@ void main() {
       expect(wasTapped, isTrue);
     });
 
-    testWidgets('menu item tap closes popup menu', (tester) async {
+    testWidgets('popup menu items hide when controller closes', (tester) async {
       final controller = AuraPopupMenuController();
 
       await tester.pumpWidget(
@@ -153,10 +153,13 @@ void main() {
       controller.open();
       await tester.pump();
       expect(controller.isShowing, isTrue);
+      expect(find.text('Item 1'), findsOneWidget);
 
       controller.close();
       await tester.pump();
+
       expect(controller.isShowing, isFalse);
+      expect(find.text('Item 1'), findsNothing);
     });
 
     testWidgets('divider renders correctly', (tester) async {
@@ -220,9 +223,13 @@ void main() {
 
     test('open/close/toggle do nothing when not attached', () {
       final controller = AuraPopupMenuController();
-      expect(controller.open, returnsNormally);
-      expect(controller.close, returnsNormally);
-      expect(controller.toggle, returnsNormally);
+      expect(controller.isShowing, isFalse);
+      controller.open();
+      expect(controller.isShowing, isFalse);
+      controller.close();
+      expect(controller.isShowing, isFalse);
+      controller.toggle();
+      expect(controller.isShowing, isFalse);
     });
   });
 }

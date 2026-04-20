@@ -127,6 +127,12 @@ void main() {
       );
 
       expect(find.text('Large Padded'), findsOneWidget);
+      final paddingWidget = tester.widget<Padding>(find.byType(Padding));
+      final edgeInsets = paddingWidget.padding as EdgeInsets;
+      expect(edgeInsets.left, AuraTheme.light.spacing.lg);
+      expect(edgeInsets.top, AuraTheme.light.spacing.lg);
+      expect(edgeInsets.right, AuraTheme.light.spacing.lg);
+      expect(edgeInsets.bottom, AuraTheme.light.spacing.lg);
     });
 
     testWidgets('renders with null child', (tester) async {

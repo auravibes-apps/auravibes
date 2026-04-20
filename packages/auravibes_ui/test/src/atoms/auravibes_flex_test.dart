@@ -1,4 +1,5 @@
 import 'package:auravibes_ui/src/atoms/auravibes_flex.dart';
+import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -21,6 +22,8 @@ void main() {
       expect(find.text('Item 1'), findsOneWidget);
       expect(find.text('Item 2'), findsOneWidget);
       expect(find.byType(Column), findsOneWidget);
+      final auraColumn = tester.widget<AuraColumn>(find.byType(AuraColumn));
+      expect(auraColumn.spacing, AuraSpacing.base);
     });
 
     testWidgets('applies custom crossAxisAlignment', (tester) async {
@@ -90,6 +93,8 @@ void main() {
       expect(find.text('Item 1'), findsOneWidget);
       expect(find.text('Item 2'), findsOneWidget);
       expect(find.byType(Row), findsOneWidget);
+      final auraRow = tester.widget<AuraRow>(find.byType(AuraRow));
+      expect(auraRow.spacing, AuraSpacing.base);
     });
 
     testWidgets('applies custom crossAxisAlignment', (tester) async {

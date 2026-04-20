@@ -144,8 +144,13 @@ void main() {
         ),
       );
 
-      // The semanticLabel is accepted as a property; verify widget renders.
-      expect(find.text('opt1'), findsOneWidget);
+      final semanticsFinder = find.descendant(
+        of: find.byType(AuraDropdownOption<String>),
+        matching: find.byType(Semantics),
+      );
+      expect(semanticsFinder, findsOneWidget);
+      final semantics = tester.widget<Semantics>(semanticsFinder);
+      expect(semantics.properties.label, 'Select option one');
     });
 
     testWidgets('trailing takes priority over selected check', (tester) async {

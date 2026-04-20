@@ -207,6 +207,7 @@ class OklabColor extends ValueColor {
       lightness: lightness,
       chroma: math.sqrt(math.pow(a, 2) + math.pow(b, 2)),
       hue: hue >= 0 ? hue : hue + 360,
+      alpha: alpha,
     );
   }
 
