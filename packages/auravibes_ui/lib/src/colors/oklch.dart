@@ -120,10 +120,10 @@ class RgbColor {
 
   /// Creates an sRGB color from a Flutter Color.
   RgbColor.fromColor(Color color)
-    : red = color.r / 255,
-      green = color.g / 255,
-      blue = color.b / 255,
-      alpha = color.a / 255;
+    : red = color.r,
+      green = color.g,
+      blue = color.b,
+      alpha = color.a;
 
   /// The red component in range [0, 1].
   double red;
