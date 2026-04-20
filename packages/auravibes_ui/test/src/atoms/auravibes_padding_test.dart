@@ -63,18 +63,30 @@ void main() {
 
     test('base constant uses base spacing', () {
       expect(AuraEdgeInsetsGeometry.base.left, AuraSpacing.base);
+      expect(AuraEdgeInsetsGeometry.base.top, AuraSpacing.base);
+      expect(AuraEdgeInsetsGeometry.base.right, AuraSpacing.base);
+      expect(AuraEdgeInsetsGeometry.base.bottom, AuraSpacing.base);
     });
 
     test('medium constant uses md spacing', () {
       expect(AuraEdgeInsetsGeometry.medium.left, AuraSpacing.md);
+      expect(AuraEdgeInsetsGeometry.medium.top, AuraSpacing.md);
+      expect(AuraEdgeInsetsGeometry.medium.right, AuraSpacing.md);
+      expect(AuraEdgeInsetsGeometry.medium.bottom, AuraSpacing.md);
     });
 
     test('large constant uses lg spacing', () {
       expect(AuraEdgeInsetsGeometry.large.left, AuraSpacing.lg);
+      expect(AuraEdgeInsetsGeometry.large.top, AuraSpacing.lg);
+      expect(AuraEdgeInsetsGeometry.large.right, AuraSpacing.lg);
+      expect(AuraEdgeInsetsGeometry.large.bottom, AuraSpacing.lg);
     });
 
     test('small constant uses sm spacing', () {
       expect(AuraEdgeInsetsGeometry.small.left, AuraSpacing.sm);
+      expect(AuraEdgeInsetsGeometry.small.top, AuraSpacing.sm);
+      expect(AuraEdgeInsetsGeometry.small.right, AuraSpacing.sm);
+      expect(AuraEdgeInsetsGeometry.small.bottom, AuraSpacing.sm);
     });
 
     test('equality works for same values', () {
@@ -145,7 +157,8 @@ void main() {
         ),
       );
 
-      expect(find.byType(AuraPadding), findsOneWidget);
+      final paddingWidget = tester.widget<Padding>(find.byType(Padding));
+      expect(paddingWidget.child, isNull);
     });
 
     testWidgets('applies correct padding values through context', (
@@ -167,6 +180,8 @@ void main() {
       final edgeInsets = paddingWidget.padding as EdgeInsets;
       expect(edgeInsets.left, AuraTheme.light.spacing.md);
       expect(edgeInsets.top, AuraTheme.light.spacing.md);
+      expect(edgeInsets.right, AuraTheme.light.spacing.md);
+      expect(edgeInsets.bottom, AuraTheme.light.spacing.md);
     });
   });
 }

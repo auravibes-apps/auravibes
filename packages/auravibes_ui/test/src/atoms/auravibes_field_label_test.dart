@@ -3,18 +3,31 @@ import 'package:auravibes_ui/src/atoms/auravibes_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+Future<void> _pumpFieldLabel(
+  WidgetTester tester, {
+  required Widget child,
+  bool isRequired = false,
+  AuraTextStyle? style,
+  String? semanticLabel,
+}) async {
+  await tester.pumpWidget(
+    MaterialApp(
+      home: Scaffold(
+        body: AuraFieldLabel(
+          isRequired: isRequired,
+          style: style,
+          semanticLabel: semanticLabel,
+          child: child,
+        ),
+      ),
+    ),
+  );
+}
+
 void main() {
   group('AuraFieldLabel', () {
     testWidgets('renders child text correctly', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraFieldLabel(
-              child: Text('Field Name'),
-            ),
-          ),
-        ),
-      );
+      await _pumpFieldLabel(tester, child: const Text('Field Name'));
 
       expect(find.text('Field Name'), findsOneWidget);
       expect(find.byType(AuraText), findsOneWidget);
@@ -23,15 +36,10 @@ void main() {
     testWidgets('shows required asterisk when isRequired is true', (
       tester,
     ) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraFieldLabel(
-              isRequired: true,
-              child: Text('Required Field'),
-            ),
-          ),
-        ),
+      await _pumpFieldLabel(
+        tester,
+        isRequired: true,
+        child: const Text('Required Field'),
       );
 
       expect(find.text('Required Field'), findsOneWidget);
@@ -41,30 +49,17 @@ void main() {
     testWidgets('does not show asterisk when isRequired is false', (
       tester,
     ) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraFieldLabel(
-              child: Text('Optional Field'),
-            ),
-          ),
-        ),
-      );
+      await _pumpFieldLabel(tester, child: const Text('Optional Field'));
 
       expect(find.text('Optional Field'), findsOneWidget);
       expect(find.text('*'), findsNothing);
     });
 
     testWidgets('applies semantic label', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraFieldLabel(
-              semanticLabel: 'Username field',
-              child: Text('Username'),
-            ),
-          ),
-        ),
+      await _pumpFieldLabel(
+        tester,
+        semanticLabel: 'Username field',
+        child: const Text('Username'),
       );
 
       final semanticsFinder = find.descendant(
@@ -77,15 +72,10 @@ void main() {
     });
 
     testWidgets('applies custom style', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraFieldLabel(
-              style: AuraTextStyle.heading1,
-              child: Text('Styled Label'),
-            ),
-          ),
-        ),
+      await _pumpFieldLabel(
+        tester,
+        style: AuraTextStyle.heading1,
+        child: const Text('Styled Label'),
       );
 
       expect(find.text('Styled Label'), findsOneWidget);
@@ -99,17 +89,14 @@ void main() {
     });
 
     testWidgets('renders in a Row with mainAxisSize min', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraFieldLabel(
-              child: Text('Label'),
-            ),
-          ),
+      await _pumpFieldLabel(tester, child: const Text('Label'));
+
+      final row = tester.widget<Row>(
+        find.descendant(
+          of: find.byType(AuraFieldLabel),
+          matching: find.byType(Row),
         ),
       );
-
-      final row = tester.widget<Row>(find.byType(Row));
       expect(row.mainAxisSize, MainAxisSize.min);
     });
   });

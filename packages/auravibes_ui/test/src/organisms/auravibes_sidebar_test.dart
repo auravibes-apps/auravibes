@@ -196,6 +196,10 @@ void main() {
         footer: true,
       );
 
+      final icon = data.icon as Icon;
+      final label = data.label as Text;
+      expect(icon.icon, Icons.home);
+      expect(label.data, 'Home');
       expect(data.footer, isTrue);
     });
 
@@ -207,6 +211,9 @@ void main() {
 
       final updated = data.copyWith(footer: true);
       expect(updated.footer, isTrue);
+      expect(identical(updated.icon, data.icon), isTrue);
+      expect(identical(updated.label, data.label), isTrue);
+      expect(data.footer, isFalse);
     });
   });
 }
