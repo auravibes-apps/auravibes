@@ -12,6 +12,5 @@ export 'package:gpt_markdown/gpt_markdown.dart' show GptMarkdown;
 export 'src/atoms/atoms.dart';
 export 'src/molecules/molecules.dart';
 export 'src/organisms/organisms.dart';
-export 'src/templates/templates.dart';
 // Export design tokens
 export 'src/tokens/tokens.dart';
