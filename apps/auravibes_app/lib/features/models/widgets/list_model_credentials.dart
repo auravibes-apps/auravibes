@@ -1,6 +1,6 @@
-import 'package:auravibes_app/domain/entities/credentials_entities.dart';
-import 'package:auravibes_app/features/models/providers/list_models_providers.dart';
-import 'package:auravibes_app/features/models/providers/model_providers_repository_providers.dart';
+import 'package:auravibes_app/domain/entities/model_connection_entities.dart';
+import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
+import 'package:auravibes_app/features/models/providers/workspace_model_connections_providers.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -9,33 +9,32 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class ListModelCredentialsWidget extends ConsumerWidget {
-  const ListModelCredentialsWidget({required this.workspaceId, super.key});
+class ListModelConnectionsWidget extends ConsumerWidget {
+  const ListModelConnectionsWidget({required this.workspaceId, super.key});
 
   final String workspaceId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final credentialsModelsAsync = ref.watch(
-      listCredentialsProvider(workspaceId: workspaceId),
+    final workspaceModelSelectionsAsync = ref.watch(
+      listWorkspaceModelConnectionsProvider(workspaceId: workspaceId),
     );
 
-    return switch (credentialsModelsAsync) {
-      AsyncData(value: final credentialsModels) => () {
-        if (credentialsModels.isEmpty) {
+    return switch (workspaceModelSelectionsAsync) {
+      AsyncData(value: final workspaceModelSelections) => () {
+        if (workspaceModelSelections.isEmpty) {
           return _buildEmptyState(context);
         }
 
         return ListView.separated(
           padding: const EdgeInsets.all(16),
-          itemCount: credentialsModels.length,
+          itemCount: workspaceModelSelections.length,
           shrinkWrap: true,
           // separatorBuilder: (context, index) => const SizedBox(height: 12),
           itemBuilder: (context, index) {
-            final credentialsModel = credentialsModels[index];
-            //return Text(credentialsModel.name);
-            return _CredentialsModelCard(
-              credentialsModel: credentialsModel,
+            final workspaceModelSelection = workspaceModelSelections[index];
+            return _ModelConnectionCard(
+              workspaceModelSelection: workspaceModelSelection,
               workspaceId: workspaceId,
             );
           },
@@ -88,13 +87,13 @@ class ListModelCredentialsWidget extends ConsumerWidget {
   }
 }
 
-class _CredentialsModelCard extends ConsumerWidget {
-  const _CredentialsModelCard({
-    required this.credentialsModel,
+class _ModelConnectionCard extends ConsumerWidget {
+  const _ModelConnectionCard({
+    required this.workspaceModelSelection,
     required this.workspaceId,
   });
 
-  final CredentialsEntity credentialsModel;
+  final ModelConnectionEntity workspaceModelSelection;
   final String workspaceId;
 
   @override
@@ -115,7 +114,7 @@ class _CredentialsModelCard extends ConsumerWidget {
                   children: [
                     AuraText(
                       style: AuraTextStyle.heading6,
-                      child: Text(credentialsModel.name),
+                      child: Text(workspaceModelSelection.name),
                     ),
                     const SizedBox(height: 4),
                     AuraText(
@@ -132,7 +131,8 @@ class _CredentialsModelCard extends ConsumerWidget {
                   AuraPopupMenuItem(
                     title: const TextLocale(LocaleKeys.common_delete),
                     leading: const AuraIcon(Icons.delete),
-                    onTap: () => _confirmDelete(context, ref, credentialsModel),
+                    onTap: () =>
+                        _confirmDelete(context, ref, workspaceModelSelection),
                     variant: .error,
                   ),
                 ],
@@ -143,14 +143,14 @@ class _CredentialsModelCard extends ConsumerWidget {
               ),
             ],
           ),
-          if (credentialsModel.url != null) ...[
+          if (workspaceModelSelection.url != null) ...[
             const SizedBox(height: 12),
             AuraText(
               style: AuraTextStyle.bodySmall,
 
               child: Text(
                 LocaleKeys.models_screens_list_url_label.tr(
-                  args: [credentialsModel.url!],
+                  args: [workspaceModelSelection.url!],
                   context: context,
                 ),
               ),
@@ -161,7 +161,7 @@ class _CredentialsModelCard extends ConsumerWidget {
             style: AuraTextStyle.bodySmall,
             child: Text(
               LocaleKeys.models_screens_list_api_key_label.tr(
-                args: [_obscureApiKey(credentialsModel.keySuffix)],
+                args: [_obscureApiKey(workspaceModelSelection.keySuffix)],
                 context: context,
               ),
             ),
@@ -173,7 +173,7 @@ class _CredentialsModelCard extends ConsumerWidget {
 
   Widget _buildModelTypeIcon(BuildContext context) {
     return SvgPicture.network(
-      'https://models.dev/logos/${credentialsModel.modelId}.svg',
+      'https://models.dev/logos/${workspaceModelSelection.modelId}.svg',
       placeholderBuilder: (context) =>
           const CircularProgressIndicator(), // Optional: show a loading
       // indicator
@@ -187,7 +187,7 @@ class _CredentialsModelCard extends ConsumerWidget {
   }
 
   String _getModelTypeDisplay() {
-    return credentialsModel.modelId;
+    return workspaceModelSelection.modelId;
   }
 
   String _obscureApiKey(String? keySuffix) {
@@ -200,14 +200,14 @@ class _CredentialsModelCard extends ConsumerWidget {
   Future<void> _confirmDelete(
     BuildContext context,
     WidgetRef ref,
-    CredentialsEntity credentials,
+    ModelConnectionEntity modelConnection,
   ) async {
     final confirmed = await showAuraConfirmDialog(
       context: context,
       title: const TextLocale(LocaleKeys.models_screens_list_delete_title),
       message: Text(
         LocaleKeys.models_screens_list_delete_confirm.tr(
-          namedArgs: {'name': credentials.name},
+          namedArgs: {'name': modelConnection.name},
           context: context,
         ),
       ),
@@ -218,9 +218,11 @@ class _CredentialsModelCard extends ConsumerWidget {
 
     if (confirmed ?? false) {
       await ref
-          .read(modelProvidersRepositoryProvider)
-          .deleteCredential(credentials.id);
-      ref.invalidate(listCredentialsProvider(workspaceId: workspaceId));
+          .read(modelConnectionRepositoryProvider)
+          .deleteModelConnection(modelConnection.id);
+      ref.invalidate(
+        listWorkspaceModelConnectionsProvider(workspaceId: workspaceId),
+      );
     }
   }
 }

@@ -1,12 +1,11 @@
 import 'package:auravibes_app/domain/entities/conversation.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
-import 'package:auravibes_app/features/models/providers/list_chat_models_providers.dart';
+import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/presentation/shared/formatters/relative_time_formatter.dart';
 import 'package:auravibes_app/router/app_router.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -102,13 +101,13 @@ class _RecentChatTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final credentialsModelsAsync = ref.watch(
-      listCredentialsCredentialsProvider(workspaceId: workspaceId),
+    final workspaceModelSelectionsAsync = ref.watch(
+      listWorkspaceModelSelectionsProvider(workspaceId: workspaceId),
     );
-    final modelDisplayName = credentialsModelsAsync.asData?.value
-        .where((cm) => cm.credentialsModel.id == chat.modelId)
+    final modelDisplayName = workspaceModelSelectionsAsync.asData?.value
+        .where((cm) => cm.workspaceModelSelection.id == chat.modelId)
         .firstOrNull
-        ?.credentialsModel
+        ?.workspaceModelSelection
         .modelId;
     final title = ref.watch(streamingTitleProvider(chat.id)) ?? chat.title;
 

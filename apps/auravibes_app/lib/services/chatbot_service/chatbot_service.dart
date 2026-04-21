@@ -1,6 +1,6 @@
-import 'package:auravibes_app/domain/entities/credentials_models_entities.dart';
 import 'package:auravibes_app/domain/entities/messages.dart';
-import 'package:auravibes_app/domain/repositories/model_providers_repository.dart';
+import 'package:auravibes_app/domain/entities/workspace_model_selection_entities.dart';
+import 'package:auravibes_app/domain/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/services/chatbot_service/build_prompt_chat_messages.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:langchain/langchain.dart';
@@ -10,28 +10,28 @@ import 'package:rxdart/rxdart.dart';
 
 class ChatbotService {
   ChatbotService({
-    required this.credentialsRepository,
+    required this.modelConnectionRepository,
     required this.encryptionService,
     BuildPromptChatMessages? buildPromptChatMessages,
   }) : _buildPromptChatMessages =
            buildPromptChatMessages ?? const BuildPromptChatMessages();
-  CredentialsRepository credentialsRepository;
+  ModelConnectionRepository modelConnectionRepository;
   EncryptionService encryptionService;
   final BuildPromptChatMessages _buildPromptChatMessages;
 
   Stream<ChatResult> sendMessage(
-    CredentialsModelWithProviderEntity chatProvider,
+    WorkspaceModelSelectionWithConnectionEntity chatProvider,
     List<MessageEntity> messages, {
     List<ToolSpec>? tools,
   }) async* {
     final chatMessages = _buildPromptChatMessages.call(messages);
 
-    final credentialsModel = await _getCredentialsModel(
+    final workspaceModelSelection = await _getWorkspaceModelSelection(
       chatProvider,
       tools: tools,
     );
 
-    yield* credentialsModel
+    yield* workspaceModelSelection
         .stream(
           PromptValue.chat(chatMessages),
           options: _getModelOptions(chatProvider),
@@ -40,17 +40,19 @@ class ChatbotService {
   }
 
   Future<String> generateTitle(
-    CredentialsModelWithProviderEntity chatProvider,
+    WorkspaceModelSelectionWithConnectionEntity chatProvider,
     String firstMessage,
   ) async {
     return streamTitle(chatProvider, firstMessage).last;
   }
 
   Stream<String> streamTitle(
-    CredentialsModelWithProviderEntity chatProvider,
+    WorkspaceModelSelectionWithConnectionEntity chatProvider,
     String firstMessage,
   ) async* {
-    final credentialsModel = await _getCredentialsModel(chatProvider);
+    final workspaceModelSelection = await _getWorkspaceModelSelection(
+      chatProvider,
+    );
 
     final prompt = PromptValue.chat([
       ChatMessage.humanText(
@@ -62,7 +64,7 @@ The title should capture the main topic or theme. Respond with only the title, n
     ]);
 
     try {
-      final result = credentialsModel.stream(
+      final result = workspaceModelSelection.stream(
         prompt,
         options: _getModelOptions(chatProvider),
       );
@@ -110,30 +112,31 @@ The title should capture the main topic or theme. Respond with only the title, n
   }
 
   ChatModelOptions _getModelOptions(
-    CredentialsModelWithProviderEntity chatProvider,
+    WorkspaceModelSelectionWithConnectionEntity chatProvider,
   ) {
     final type = chatProvider.modelsProvider.type;
     if (type == null) throw UnimplementedError();
     return switch (type) {
       .openai => ChatOpenAIOptions(
-        model: chatProvider.credentialsModel.modelId,
+        model: chatProvider.workspaceModelSelection.modelId,
       ),
       .anthropic => ChatAnthropicOptions(
-        model: chatProvider.credentialsModel.modelId,
+        model: chatProvider.workspaceModelSelection.modelId,
       ),
     };
   }
 
-  Future<BaseChatModel> _getCredentialsModel(
-    CredentialsModelWithProviderEntity chatProvider, {
+  Future<BaseChatModel> _getWorkspaceModelSelection(
+    WorkspaceModelSelectionWithConnectionEntity chatProvider, {
     List<ToolSpec>? tools,
   }) async {
     final type = chatProvider.modelsProvider.type;
     if (type == null) throw UnimplementedError();
-    final url = chatProvider.credentials.url ?? chatProvider.modelsProvider.url;
+    final url =
+        chatProvider.modelConnection.url ?? chatProvider.modelsProvider.url;
 
     // Decrypt the API key
-    final encrypted = chatProvider.credentials.key;
+    final encrypted = chatProvider.modelConnection.key;
     final apiKey = await encryptionService.decrypt(encrypted);
 
     return switch (type) {
@@ -141,7 +144,7 @@ The title should capture the main topic or theme. Respond with only the title, n
         apiKey: apiKey,
         baseUrl: url ?? 'https://api.openai.com/v1',
         defaultOptions: ChatOpenAIOptions(
-          model: chatProvider.credentialsModel.modelId,
+          model: chatProvider.workspaceModelSelection.modelId,
           tools: tools,
         ),
       ),
@@ -149,7 +152,7 @@ The title should capture the main topic or theme. Respond with only the title, n
         apiKey: apiKey,
         baseUrl: url ?? 'https://api.anthropic.com/v1',
         defaultOptions: ChatAnthropicOptions(
-          model: chatProvider.credentialsModel.modelId,
+          model: chatProvider.workspaceModelSelection.modelId,
           tools: tools,
         ),
       ),

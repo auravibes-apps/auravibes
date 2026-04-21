@@ -2,13 +2,13 @@ import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/messages.dart';
 import 'package:auravibes_app/domain/enums/message_types.dart';
-import 'package:auravibes_app/domain/repositories/chat_models_repository.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
+import 'package:auravibes_app/domain/repositories/workspace_model_selection_repository.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/streaming_runtime_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_context.dart';
-import 'package:auravibes_app/features/models/providers/model_providers_repository_providers.dart';
+import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
 import 'package:auravibes_app/providers/chatbot_service_provider.dart';
 import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
@@ -33,7 +33,7 @@ class ContinueAgentUsecase {
   ContinueAgentUsecase({
     required this.chatbotService,
     required this.messageRepository,
-    required this.credentialsModelsRepository,
+    required this.workspaceModelSelectionsRepository,
     required this.conversationRepository,
     required this.loadConversationToolSpecsUsecase,
     required this.messagesStreamingRuntime,
@@ -43,7 +43,7 @@ class ContinueAgentUsecase {
 
   final ChatbotService chatbotService;
   final MessageRepository messageRepository;
-  final CredentialsModelsRepository credentialsModelsRepository;
+  final WorkspaceModelSelectionRepository workspaceModelSelectionsRepository;
   final ConversationRepository conversationRepository;
   final LoadConversationToolSpecsUsecase loadConversationToolSpecsUsecase;
   final MessagesStreamingRuntime messagesStreamingRuntime;
@@ -72,8 +72,8 @@ class ContinueAgentUsecase {
       throw Exception('Conversation has no model id');
     }
 
-    final foundModel = await credentialsModelsRepository
-        .getCredentialsModelById(
+    final foundModel = await workspaceModelSelectionsRepository
+        .getWorkspaceModelSelectionById(
           modelId,
         );
     if (foundModel == null) {
@@ -234,8 +234,8 @@ final continueAgentUsecaseProvider = Provider<ContinueAgentUsecase>(
     return ContinueAgentUsecase(
       chatbotService: ref.watch(chatbotServiceProvider),
       messageRepository: ref.watch(messageRepositoryProvider),
-      credentialsModelsRepository: ref.watch(
-        credentialsModelsRepositoryProvider,
+      workspaceModelSelectionsRepository: ref.watch(
+        workspaceModelSelectionRepositoryProvider,
       ),
       conversationRepository: ref.watch(conversationRepositoryProvider),
       loadConversationToolSpecsUsecase: ref.watch(

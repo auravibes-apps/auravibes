@@ -2,23 +2,23 @@ import 'package:auravibes_app/data/database/drift/daos/api_model_providers_dao.d
 import 'package:auravibes_app/data/database/drift/daos/api_models_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/conversation_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/conversation_tools_dao.dart';
-import 'package:auravibes_app/data/database/drift/daos/credential_models_dao.dart';
-import 'package:auravibes_app/data/database/drift/daos/credentials_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/mcp_servers_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/message_dao.dart';
+import 'package:auravibes_app/data/database/drift/daos/model_connections_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/tools_groups_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_dao.dart';
+import 'package:auravibes_app/data/database/drift/daos/workspace_model_selections_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_tools_dao.dart';
 import 'package:auravibes_app/data/database/drift/tables/api_model_provider_table.dart';
 import 'package:auravibes_app/data/database/drift/tables/api_model_table.dart';
 import 'package:auravibes_app/data/database/drift/tables/conversation_tools_table.dart';
 import 'package:auravibes_app/data/database/drift/tables/conversations_table.dart';
-import 'package:auravibes_app/data/database/drift/tables/credentials_models_table.dart';
-import 'package:auravibes_app/data/database/drift/tables/credentials_table.dart';
 import 'package:auravibes_app/data/database/drift/tables/mcp_servers_table.dart';
 import 'package:auravibes_app/data/database/drift/tables/messages_table.dart';
+import 'package:auravibes_app/data/database/drift/tables/model_connections_table.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools_groups_table.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools_table.dart';
+import 'package:auravibes_app/data/database/drift/tables/workspace_model_selections_table.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspaces_table.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:drift/drift.dart';
@@ -34,8 +34,8 @@ part 'app_database.g.dart';
 @DriftDatabase(
   tables: [
     Workspaces,
-    Credentials,
-    CredentialModels,
+    ModelConnections,
+    WorkspaceModelSelections,
     ApiModelProviders,
     ApiModels,
     Conversations,
@@ -47,8 +47,8 @@ part 'app_database.g.dart';
   ],
   daos: [
     WorkspaceDao,
-    CredentialsDao,
-    CredentialModelsDao,
+    ModelConnectionsDao,
+    WorkspaceModelSelectionsDao,
     ApiModelProvidersDao,
     ApiModelsDao,
     ConversationDao,
@@ -69,7 +69,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// Database schema version.
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   /// Migration logic for database schema upgrades.
   ///
@@ -137,6 +137,17 @@ class AppDatabase extends _$AppDatabase {
             'ON tools (workspace_id, tool_id, workspace_tools_group_id) '
             'WHERE workspace_tools_group_id IS NOT NULL',
           );
+        }
+
+        if (from < 5) {
+          // Schema version 5: Renamed credentials tables to model_connections
+          // and workspace_model_selections for clearer domain terminology.
+          // Fresh installs get the new schema automatically; existing data is
+          // discarded since this is pre-production.
+          await customStatement('DROP TABLE IF EXISTS credential_models');
+          await customStatement('DROP TABLE IF EXISTS credentials');
+          await m.createTable(modelConnections);
+          await m.createTable(workspaceModelSelections);
         }
       },
     );

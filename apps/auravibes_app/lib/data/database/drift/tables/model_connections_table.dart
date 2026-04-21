@@ -3,8 +3,8 @@ import 'package:auravibes_app/data/database/drift/tables/common.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspaces_table.dart';
 import 'package:drift/drift.dart';
 
-@DataClassName('CredentialsTable')
-class Credentials extends Table with TableMixin {
+@DataClassName('ModelConnectionTable')
+class ModelConnections extends Table with TableMixin {
   /// Human-readable name of the chat model
   TextColumn get name => text()();
 
