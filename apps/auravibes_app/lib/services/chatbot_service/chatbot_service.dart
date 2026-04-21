@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:auravibes_app/domain/entities/messages.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entities.dart';
 import 'package:auravibes_app/domain/repositories/model_connection_repository.dart';
@@ -9,22 +7,6 @@ import 'package:langchain/langchain.dart';
 import 'package:langchain_anthropic/langchain_anthropic.dart';
 import 'package:langchain_openai/langchain_openai.dart';
 import 'package:rxdart/rxdart.dart';
-
-List<AIChatMessageToolCall>? safeDecode(String? metadata) {
-  if (metadata == null) return null;
-  final jsonMap = jsonDecode(metadata);
-
-  if (jsonMap is! Map<String, dynamic>) {
-    return null;
-  }
-  if (jsonMap.containsKey('tool_responses') &&
-      jsonMap['tool_responses'] is List<Map<String, dynamic>>) {
-    return (jsonMap['tool_responses'] as List<Map<String, dynamic>>)
-        .map(AIChatMessageToolCall.fromMap)
-        .toList();
-  }
-  return null;
-}
 
 class ChatbotService {
   ChatbotService({
