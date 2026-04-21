@@ -1,12 +1,12 @@
 import 'package:auravibes_app/domain/entities/api_model_provider.dart';
 import 'package:auravibes_app/domain/entities/conversation.dart';
-import 'package:auravibes_app/domain/entities/credentials_entities.dart';
-import 'package:auravibes_app/domain/entities/credentials_models_entities.dart';
 import 'package:auravibes_app/domain/entities/messages.dart';
+import 'package:auravibes_app/domain/entities/model_connection_entities.dart';
+import 'package:auravibes_app/domain/entities/workspace_model_selection_entities.dart';
 import 'package:auravibes_app/domain/enums/message_types.dart';
-import 'package:auravibes_app/domain/repositories/chat_models_repository.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
+import 'package:auravibes_app/domain/repositories/workspace_model_selection_repository.dart';
 import 'package:auravibes_app/features/chats/providers/streaming_runtime_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_context.dart';
 import 'package:auravibes_app/features/chats/usecases/continue_agent_usecase.dart';
@@ -23,7 +23,7 @@ import 'continue_agent_usecase_test.mocks.dart';
 @GenerateMocks([
   ChatbotService,
   MessageRepository,
-  CredentialsModelsRepository,
+  WorkspaceModelSelectionRepository,
   ConversationRepository,
   LoadConversationToolSpecsUsecase,
   MonitoringService,
@@ -32,7 +32,8 @@ void main() {
   group('ContinueAgentUsecase', () {
     late MockChatbotService chatbotService;
     late MockMessageRepository messageRepository;
-    late MockCredentialsModelsRepository credentialsModelsRepository;
+    late MockWorkspaceModelSelectionRepository
+    workspaceModelSelectionsRepository;
     late MockConversationRepository conversationRepository;
     late MockLoadConversationToolSpecsUsecase loadConversationToolSpecsUsecase;
     late MockMonitoringService monitoringService;
@@ -47,7 +48,8 @@ void main() {
     setUp(() {
       chatbotService = MockChatbotService();
       messageRepository = MockMessageRepository();
-      credentialsModelsRepository = MockCredentialsModelsRepository();
+      workspaceModelSelectionsRepository =
+          MockWorkspaceModelSelectionRepository();
       conversationRepository = MockConversationRepository();
       loadConversationToolSpecsUsecase = MockLoadConversationToolSpecsUsecase();
       monitoringService = MockMonitoringService();
@@ -61,7 +63,7 @@ void main() {
       usecase = ContinueAgentUsecase(
         chatbotService: chatbotService,
         messageRepository: messageRepository,
-        credentialsModelsRepository: credentialsModelsRepository,
+        workspaceModelSelectionsRepository: workspaceModelSelectionsRepository,
         conversationRepository: conversationRepository,
         loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
         messagesStreamingRuntime: MessagesStreamingRuntime(
@@ -91,7 +93,9 @@ void main() {
         messageRepository.getMessagesByConversation('conversation-1'),
       ).thenAnswer((_) async => [_userMessage]);
       when(
-        credentialsModelsRepository.getCredentialsModelById('model-1'),
+        workspaceModelSelectionsRepository.getWorkspaceModelSelectionById(
+          'model-1',
+        ),
       ).thenAnswer((_) async => _model);
       when(
         loadConversationToolSpecsUsecase.call(
@@ -312,15 +316,15 @@ final _unfinishedAssistantMessage = MessageEntity(
   updatedAt: DateTime(2025),
 );
 
-final _model = CredentialsModelWithProviderEntity(
-  credentialsModel: CredentialsModelEntity(
+final _model = WorkspaceModelSelectionWithConnectionEntity(
+  workspaceModelSelection: WorkspaceModelSelectionEntity(
     id: 'model-1',
     modelId: 'gpt-4',
     createdAt: DateTime(2025),
     updatedAt: DateTime(2025),
-    credentialsId: 'credential-1',
+    modelConnectionId: 'credential-1',
   ),
-  credentials: CredentialsEntity(
+  modelConnection: ModelConnectionEntity(
     id: 'credential-1',
     name: 'Main credential',
     key: 'secret',

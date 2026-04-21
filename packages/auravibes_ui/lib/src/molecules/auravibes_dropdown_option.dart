@@ -51,7 +51,7 @@ class AuraDropdownOption<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
 
-    return AuraPressable(
+    Widget result = AuraPressable(
       color: Colors.blue,
       onPressed: isEnabled ? onTap : null,
       child: Container(
@@ -86,6 +86,15 @@ class AuraDropdownOption<T> extends StatelessWidget {
         ),
       ),
     );
+
+    if (semanticLabel != null) {
+      result = Semantics(
+        label: semanticLabel,
+        child: result,
+      );
+    }
+
+    return result;
   }
 
   Widget _buildDefaultLabel(BuildContext context) {

@@ -47,7 +47,7 @@ ModelSyncService modelSyncService(Ref ref) {
 }
 
 @riverpod
-Future<List<ApiModelProviderEntity>> modelProvidersNotifier(Ref ref) {
+Future<List<ApiModelProviderEntity>> apiModelProviders(Ref ref) {
   return ref.watch(apiModelRepositoryProvider).getAllProviders();
 }
 

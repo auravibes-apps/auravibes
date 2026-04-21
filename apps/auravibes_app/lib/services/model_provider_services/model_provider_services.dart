@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:auravibes_app/domain/entities/credentials_models_entities.dart';
+import 'package:auravibes_app/domain/entities/workspace_model_selection_entities.dart';
 import 'package:auravibes_app/domain/enums/chat_models_type.dart';
 import 'package:auravibes_app/services/model_provider_services/models/antropic_responses.dart';
 import 'package:http/http.dart' as http;
@@ -14,7 +14,7 @@ class ModelProvider {
 }
 
 class ModelProviderServices {
-  Future<List<CredentialModelToCreate>?> getCredentialsModels(
+  Future<List<WorkspaceModelSelectionToCreate>?> getWorkspaceModelSelections(
     ModelProvider provider,
   ) async {
     if (provider.type == CredentialsModelType.openai) {
@@ -23,9 +23,9 @@ class ModelProviderServices {
       final models = await client.listModels();
       return models.data
           .map(
-            (model) => CredentialModelToCreate(
+            (model) => WorkspaceModelSelectionToCreate(
               modelId: model.id,
-              credentialsId: '',
+              modelConnectionId: '',
             ),
           )
           .toList();
@@ -37,9 +37,9 @@ class ModelProviderServices {
 
       return models
           .map(
-            (model) => CredentialModelToCreate(
+            (model) => WorkspaceModelSelectionToCreate(
               modelId: model.id,
-              credentialsId: '',
+              modelConnectionId: '',
             ),
           )
           .toList();

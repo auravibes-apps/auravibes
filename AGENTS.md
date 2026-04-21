@@ -146,3 +146,8 @@ SomeExperimentalApi(), // ignore: experimental_member_use - Required for widgetb
 ## Recent Changes
 - 001-two-step-model-selector: Added Dart 3.x (FVM pinned to 3.41.4+) + Flutter, Riverpod (with code generation), Freezed, auravibes_ui
 - 001-ui-library-widgets: Added Dart 3.11+ (Flutter 3.41.4+ via FVM) + Flutter SDK, flutter_portal, gpt_markdown, riverpod (existing)
+
+<!-- SPECKIT START -->
+For additional context about technologies to be used, project structure,
+shell commands, and other important information, read the current plan
+<!-- SPECKIT END -->

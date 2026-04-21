@@ -57,11 +57,11 @@ class NewChatScreen extends ConsumerWidget {
       ),
       child: Column(
         children: [
-          SelectCredentialsModelWidget(
+          SelectWorkspaceModelSelectionWidget(
             workspaceId: workspaceId,
-            credentialsModelId: state.modelId,
+            workspaceModelSelectionId: state.modelId,
             selectedProviderId: state.providerId,
-            selectCredentialsModelId: (value) {
+            selectWorkspaceModelSelectionId: (value) {
               ref.read(newChatProvider(workspaceId).notifier).setModelId(value);
             },
             onProviderChanged: (provider) {
