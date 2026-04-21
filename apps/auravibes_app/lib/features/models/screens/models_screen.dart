@@ -1,5 +1,5 @@
-import 'package:auravibes_app/features/models/providers/add_model_provider_providers.dart';
-import 'package:auravibes_app/features/models/providers/list_models_providers.dart';
+import 'package:auravibes_app/features/models/providers/add_model_providers.dart';
+import 'package:auravibes_app/features/models/providers/workspace_model_connections_providers.dart';
 import 'package:auravibes_app/features/models/widgets/add_chat_model.dart';
 import 'package:auravibes_app/features/models/widgets/list_model_credentials.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -24,7 +24,7 @@ class ModelsScreen extends StatelessWidget {
       child: AuraColumn(
         children: [
           _AddModelModalButton(workspaceId: workspaceId),
-          Expanded(child: ListModelCredentialsWidget(workspaceId: workspaceId)),
+          Expanded(child: ListModelConnectionsWidget(workspaceId: workspaceId)),
         ],
       ),
     );
@@ -69,7 +69,9 @@ class _AddModelModalButton extends ConsumerWidget {
                     ),
                   ).then((onValue) {
                     ref.invalidate(
-                      listCredentialsProvider(workspaceId: workspaceId),
+                      listWorkspaceModelConnectionsProvider(
+                        workspaceId: workspaceId,
+                      ),
                     );
                   });
                   // context.go(location)

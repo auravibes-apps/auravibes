@@ -1,4 +1,4 @@
-import 'package:auravibes_app/features/models/providers/list_chat_models_providers.dart';
+import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/app_error.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -38,7 +38,7 @@ class _ModelStatus extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final modelsAsync = ref.watch(
-      listCredentialsCredentialsProvider(workspaceId: workspaceId),
+      listWorkspaceModelSelectionsProvider(workspaceId: workspaceId),
     );
 
     return switch (modelsAsync) {

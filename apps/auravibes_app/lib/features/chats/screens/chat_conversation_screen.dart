@@ -115,10 +115,10 @@ class _ChatConversationScreen extends HookConsumerWidget {
       child: AuraColumn(
         children: [
           const ConversationContextUsagePill(),
-          SelectCredentialsModelWidget(
+          SelectWorkspaceModelSelectionWidget(
             workspaceId: workspaceId,
-            credentialsModelId: conversation.modelId,
-            selectCredentialsModelId: ref
+            workspaceModelSelectionId: conversation.modelId,
+            selectWorkspaceModelSelectionId: ref
                 .watch(conversationChatProvider(workspaceId).notifier)
                 .setModel,
             onProviderChanged: (_) {},
