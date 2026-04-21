@@ -8,6 +8,7 @@ import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:langchain/langchain.dart';
 import 'package:langchain_anthropic/langchain_anthropic.dart';
 import 'package:langchain_openai/langchain_openai.dart';
+import 'package:rxdart/rxdart.dart';
 
 List<AIChatMessageToolCall>? safeDecode(String? metadata) {
   if (metadata == null) return null;
