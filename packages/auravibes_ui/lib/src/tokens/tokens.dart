@@ -5,5 +5,27 @@
 /// across the application.
 library;
 
-export 'auravibes_theme.dart';
-export 'design_tokens.dart';
+export 'auravibes_theme.dart'
+    show
+        AuraAnimationTheme,
+        AuraBorderRadiusTheme,
+        AuraColorScheme,
+        AuraFontSizes,
+        AuraFontWeights,
+        AuraLetterSpacings,
+        AuraLineHeights,
+        AuraSpacingTheme,
+        AuraTheme,
+        AuraThemeExtension,
+        AuraTypographyTheme;
+export 'design_tokens.dart'
+    show
+        AuraColorVariant,
+        AuraSpacing,
+        DesignBorderRadius,
+        DesignBreakpoints,
+        DesignColors,
+        DesignShadows,
+        DesignSpacing,
+        DesignTokens,
+        DesignTypography;
