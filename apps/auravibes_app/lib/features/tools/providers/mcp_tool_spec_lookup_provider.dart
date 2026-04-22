@@ -1,5 +1,5 @@
+import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_notifier.dart';
-import 'package:langchain/langchain.dart';
 import 'package:riverpod/riverpod.dart';
 
 /// Runtime adapter wrapping a notifier method behind a plain callback.

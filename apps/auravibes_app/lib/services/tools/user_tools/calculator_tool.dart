@@ -1,6 +1,6 @@
 import 'package:async/async.dart';
+import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/services/tools/user_tools_entity.dart';
-import 'package:langchain/langchain.dart';
 import 'package:math_expressions/math_expressions.dart';
 
 /// Represents an available tool in the app
@@ -8,10 +8,8 @@ final class CalculatorTool extends UserToolEntity<String, Object, String> {
   const CalculatorTool();
 
   @override
-  Tool<Object, ToolOptions, Object> getTool() {
-    final parser = GrammarParser();
-    final evaluator = RealEvaluator();
-    return Tool.fromFunction<String, String>(
+  ToolSpec getTool() {
+    return const ToolSpec(
       name: 'calculator',
       description:
           'Useful for getting the result of a math expression '
@@ -27,14 +25,6 @@ final class CalculatorTool extends UserToolEntity<String, Object, String> {
           },
         },
         'required': ['input'],
-      },
-      func: (toolInput) async {
-        try {
-          final exp = parser.parse(toolInput);
-          return evaluator.evaluate(exp).toString();
-        } on Exception catch (_) {
-          return "I don't know how to do that.";
-        }
       },
     );
   }

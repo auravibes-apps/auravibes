@@ -1,9 +1,9 @@
+import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/domain/entities/tools_group.dart';
 import 'package:auravibes_app/domain/entities/workspace_tool.dart';
 import 'package:auravibes_app/domain/usecases/tools/conversation/generate_built_in_composite_id.dart';
 import 'package:auravibes_app/services/tools/native_tool_service.dart';
 import 'package:auravibes_app/services/tools/tool_service.dart';
-import 'package:langchain/langchain.dart';
 
 class BuildCombinedToolSpecsUseCase {
   const BuildCombinedToolSpecsUseCase({

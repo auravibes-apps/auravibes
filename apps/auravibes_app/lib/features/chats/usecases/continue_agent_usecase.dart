@@ -11,11 +11,12 @@ import 'package:auravibes_app/features/chats/usecases/agent_iteration_context.da
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
 import 'package:auravibes_app/providers/chatbot_service_provider.dart';
+import 'package:auravibes_app/services/chatbot_service/build_prompt_chat_messages.dart';
 import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
 import 'package:auravibes_app/services/monitoring_service.dart';
 import 'package:auravibes_app/utils/chat_result_extension.dart';
 import 'package:auravibes_app/utils/coalescing_save_extension.dart';
-import 'package:langchain/langchain.dart';
+import 'package:dartantic_ai/dartantic_ai.dart' hide Provider;
 import 'package:riverpod/riverpod.dart';
 import 'package:rxdart/rxdart.dart';
 
@@ -65,8 +66,6 @@ class ContinueAgentUsecase {
       conversationId,
     );
 
-    // TODO: check messages are good
-
     final modelId = conversation.modelId;
     if (modelId == null) {
       throw Exception('Conversation has no model id');
@@ -85,14 +84,17 @@ class ContinueAgentUsecase {
       workspaceId: conversation.workspaceId,
     );
 
+    final chatHistory = const BuildPromptChatMessages()(messages);
+
     final subs = CompositeSubscription();
     conversationStreamingRuntime.start(conversationId);
-    late ChatResult lastResult;
+    ChatResult<ChatMessage>? accumulatedResult;
     MessageEntity? firstMessage;
     final pendingUserMessageIds = context?.ackMessageIds ?? const <String>[];
     var hasAcknowledgedPendingUsers = false;
     try {
-      final streamingController = StreamController<ChatResult>.broadcast();
+      final streamingController =
+          StreamController<ChatResult<ChatMessage>>.broadcast();
 
       final persistenceFuture = streamingController.stream
           .coalescingSave(
@@ -100,7 +102,7 @@ class ContinueAgentUsecase {
               await messageRepository.patchMessage(
                 firstMessage!.id,
                 .new(
-                  content: state.outputAsString,
+                  content: state.entityText,
                   metadata: state.entityMetadata,
                   status: .unfinished,
                 ),
@@ -109,12 +111,10 @@ class ContinueAgentUsecase {
           )
           .drain<void>();
 
-      ChatResult? accumulatedResult;
-
       final responseStream = chatbotService
           .sendMessage(
             foundModel,
-            messages,
+            chatHistory,
             tools: tools,
           )
           .doOnError((error, stackTrace) {
@@ -125,10 +125,8 @@ class ContinueAgentUsecase {
             );
           });
 
-      await for (final ChatResult chunk in responseStream) {
-        accumulatedResult = accumulatedResult == null
-            ? chunk
-            : accumulatedResult.concat(chunk);
+      await for (final ChatResult<ChatMessage> chunk in responseStream) {
+        accumulatedResult = accumulatedResult?.concat(chunk) ?? chunk;
 
         if (!hasAcknowledgedPendingUsers && pendingUserMessageIds.isNotEmpty) {
           for (final pendingUserMessageId in pendingUserMessageIds) {
@@ -144,7 +142,7 @@ class ContinueAgentUsecase {
           firstMessage = await messageRepository.createMessage(
             .new(
               conversationId: conversationId,
-              content: accumulatedResult.outputAsString,
+              content: accumulatedResult.output.text,
               messageType: .text,
               isUser: false,
               status: .unfinished,
@@ -167,12 +165,10 @@ class ContinueAgentUsecase {
         throw StateError('Agent stream completed without any result');
       }
 
-      lastResult = accumulatedResult;
-
       await messageRepository.patchMessage(
         firstMessage.id,
         .new(
-          metadata: lastResult.entityMetadata,
+          metadata: accumulatedResult.entityMetadata,
           status: .sent,
         ),
       );
@@ -224,7 +220,7 @@ class ContinueAgentUsecase {
 
     return ContinueAgentResult(
       messageId: firstMessage.id,
-      hasToolCalls: lastResult.entityTools.isNotEmpty,
+      hasToolCalls: accumulatedResult.entityTools.isNotEmpty,
     );
   }
 }

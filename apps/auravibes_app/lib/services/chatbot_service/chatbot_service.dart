@@ -1,42 +1,41 @@
-import 'package:auravibes_app/domain/entities/messages.dart';
+import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entities.dart';
 import 'package:auravibes_app/domain/repositories/model_connection_repository.dart';
-import 'package:auravibes_app/services/chatbot_service/build_prompt_chat_messages.dart';
+import 'package:auravibes_app/services/chatbot_service/provider_factory.dart';
+import 'package:auravibes_app/services/chatbot_service/tool_adapter.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
-import 'package:langchain/langchain.dart';
-import 'package:langchain_anthropic/langchain_anthropic.dart';
-import 'package:langchain_openai/langchain_openai.dart';
+import 'package:dartantic_ai/dartantic_ai.dart';
 import 'package:rxdart/rxdart.dart';
 
 class ChatbotService {
   ChatbotService({
     required this.modelConnectionRepository,
     required this.encryptionService,
-    BuildPromptChatMessages? buildPromptChatMessages,
-  }) : _buildPromptChatMessages =
-           buildPromptChatMessages ?? const BuildPromptChatMessages();
+    ProviderFactory? providerFactory,
+    ToolAdapter? toolAdapter,
+  }) : _providerFactory = providerFactory ?? const ProviderFactory(),
+       _toolAdapter = toolAdapter ?? const ToolAdapter();
+
   ModelConnectionRepository modelConnectionRepository;
   EncryptionService encryptionService;
-  final BuildPromptChatMessages _buildPromptChatMessages;
+  final ProviderFactory _providerFactory;
+  final ToolAdapter _toolAdapter;
 
-  Stream<ChatResult> sendMessage(
+  Stream<ChatResult<ChatMessage>> sendMessage(
     WorkspaceModelSelectionWithConnectionEntity chatProvider,
-    List<MessageEntity> messages, {
+    List<ChatMessage> history, {
     List<ToolSpec>? tools,
   }) async* {
-    final chatMessages = _buildPromptChatMessages.call(messages);
+    final dartanticTools = tools != null
+        ? _toolAdapter(
+            tools,
+            onCall: (toolName, args) async => {},
+          )
+        : null;
 
-    final workspaceModelSelection = await _getWorkspaceModelSelection(
-      chatProvider,
-      tools: tools,
-    );
+    final chatModel = await _getChatModel(chatProvider, tools: dartanticTools);
 
-    yield* workspaceModelSelection
-        .stream(
-          PromptValue.chat(chatMessages),
-          options: _getModelOptions(chatProvider),
-        )
-        .distinct();
+    yield* chatModel.sendStream(history).distinct();
   }
 
   Future<String> generateTitle(
@@ -50,52 +49,53 @@ class ChatbotService {
     WorkspaceModelSelectionWithConnectionEntity chatProvider,
     String firstMessage,
   ) async* {
-    final workspaceModelSelection = await _getWorkspaceModelSelection(
-      chatProvider,
-    );
+    final agent = await _getAgent(chatProvider);
 
-    final prompt = PromptValue.chat([
-      ChatMessage.humanText(
-        '''
-Generate a short, concise title (max 5 words) for a conversation that starts with this message: "$firstMessage".
-The title should capture the main topic or theme. Respond with only the title, no quotes or extra text.
-''',
-      ),
-    ]);
+    final prompt =
+        'Generate a short, concise title (max 5 words) for a conversation '
+        'that starts with this message: "$firstMessage". '
+        'The title should capture the main topic or theme. '
+        'Respond with only the title, no quotes or extra text.';
 
     try {
-      final result = workspaceModelSelection.stream(
+      final result = agent.sendStream(
         prompt,
-        options: _getModelOptions(chatProvider),
+        history: [ChatMessage.system('You generate conversation titles.')],
       );
 
       yield* result
-          .map((event) => event.outputAsString.trim())
+          .map((event) => event.output.trim())
           .scan((accumulated, value, index) => accumulated + value, '')
           .map((title) {
-            // Clean up the title
-            var _title = title.trim();
-            if (_title.startsWith('"') && _title.endsWith('"')) {
-              _title = _title.substring(1, _title.length - 1);
+            var processedTitle = title.trim();
+            if (processedTitle.startsWith('"') &&
+                processedTitle.endsWith('"')) {
+              processedTitle = processedTitle.substring(
+                1,
+                processedTitle.length - 1,
+              );
             }
-            if (_title.startsWith("'") && _title.endsWith("'")) {
-              _title = _title.substring(1, _title.length - 1);
+            if (processedTitle.startsWith("'") &&
+                processedTitle.endsWith("'")) {
+              processedTitle = processedTitle.substring(
+                1,
+                processedTitle.length - 1,
+              );
             }
-            if (_title.startsWith('Title:')) {
-              _title = _title.substring(6).trim();
+            if (processedTitle.startsWith('Title:')) {
+              processedTitle = processedTitle.substring(6).trim();
             }
-            if (_title.startsWith('Conversation:')) {
-              _title = _title.substring(13).trim();
+            if (processedTitle.startsWith('Conversation:')) {
+              processedTitle = processedTitle.substring(13).trim();
             }
 
-            // Ensure title is not empty and not too long
-            if (_title.isEmpty) {
+            if (processedTitle.isEmpty) {
               return _generateFallbackTitle(firstMessage);
-            } else if (_title.length > 50) {
-              return '${_title.substring(0, 47)}...';
+            } else if (processedTitle.length > 50) {
+              return '${processedTitle.substring(0, 47)}...';
             }
 
-            return _title;
+            return processedTitle;
           });
     } on Exception catch (_) {
       yield _generateFallbackTitle(firstMessage);
@@ -111,51 +111,26 @@ The title should capture the main topic or theme. Respond with only the title, n
     return words.length > 30 ? '${words.substring(0, 27)}...' : words;
   }
 
-  ChatModelOptions _getModelOptions(
-    WorkspaceModelSelectionWithConnectionEntity chatProvider,
-  ) {
-    final type = chatProvider.modelsProvider.type;
-    if (type == null) throw UnimplementedError();
-    return switch (type) {
-      .openai => ChatOpenAIOptions(
-        model: chatProvider.workspaceModelSelection.modelId,
-      ),
-      .anthropic => ChatAnthropicOptions(
-        model: chatProvider.workspaceModelSelection.modelId,
-      ),
-    };
-  }
-
-  Future<BaseChatModel> _getWorkspaceModelSelection(
+  Future<ChatModel> _getChatModel(
     WorkspaceModelSelectionWithConnectionEntity chatProvider, {
-    List<ToolSpec>? tools,
+    List<Tool>? tools,
   }) async {
-    final type = chatProvider.modelsProvider.type;
-    if (type == null) throw UnimplementedError();
-    final url =
-        chatProvider.modelConnection.url ?? chatProvider.modelsProvider.url;
-
-    // Decrypt the API key
     final encrypted = chatProvider.modelConnection.key;
     final apiKey = await encryptionService.decrypt(encrypted);
 
-    return switch (type) {
-      .openai => ChatOpenAI(
-        apiKey: apiKey,
-        baseUrl: url ?? 'https://api.openai.com/v1',
-        defaultOptions: ChatOpenAIOptions(
-          model: chatProvider.workspaceModelSelection.modelId,
-          tools: tools,
-        ),
-      ),
-      .anthropic => ChatAnthropic(
-        apiKey: apiKey,
-        baseUrl: url ?? 'https://api.anthropic.com/v1',
-        defaultOptions: ChatAnthropicOptions(
-          model: chatProvider.workspaceModelSelection.modelId,
-          tools: tools,
-        ),
-      ),
-    };
+    return _providerFactory(
+      chatProvider,
+      apiKey: apiKey,
+      tools: tools,
+    );
+  }
+
+  Future<Agent> _getAgent(
+    WorkspaceModelSelectionWithConnectionEntity chatProvider,
+  ) async {
+    final encrypted = chatProvider.modelConnection.key;
+    final apiKey = await encryptionService.decrypt(encrypted);
+
+    return _providerFactory.createAgent(chatProvider, apiKey: apiKey);
   }
 }

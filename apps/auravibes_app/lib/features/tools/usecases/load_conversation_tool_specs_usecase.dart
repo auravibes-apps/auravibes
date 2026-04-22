@@ -1,9 +1,9 @@
+import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/domain/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/domain/usecases/tools/mcp/build_combined_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/tools/notifiers/conversation_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_tool_spec_lookup_provider.dart';
-import 'package:langchain/langchain.dart';
 import 'package:riverpod/riverpod.dart';
 
 class LoadConversationToolSpecsUsecase {

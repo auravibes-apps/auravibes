@@ -18,10 +18,13 @@ class ModelProviderServices {
     ModelProvider provider,
   ) async {
     if (provider.type == CredentialsModelType.openai) {
-      final client = OpenAIClient(apiKey: provider.key, baseUrl: provider.url);
+      final client = OpenAIClient.withApiKey(
+        provider.key,
+        baseUrl: provider.url ?? 'https://api.openai.com/v1',
+      );
 
-      final models = await client.listModels();
-      return models.data
+      final modelsResponse = await client.models.list();
+      return modelsResponse.data
           .map(
             (model) => WorkspaceModelSelectionToCreate(
               modelId: model.id,

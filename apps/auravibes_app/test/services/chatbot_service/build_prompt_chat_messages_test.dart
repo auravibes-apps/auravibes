@@ -3,7 +3,6 @@ import 'package:auravibes_app/domain/enums/message_types.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/services/chatbot_service/build_prompt_chat_messages.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:langchain/langchain.dart';
 
 void main() {
   group('BuildPromptChatMessages', () {
@@ -47,16 +46,21 @@ void main() {
       final result = usecase.call(messages);
 
       expect(result, hasLength(3));
-      expect(result[0], isA<HumanChatMessage>());
+      expect(result[0].role.name, 'user');
 
-      final aiMessage = result[1] as AIChatMessage;
-      expect(aiMessage.toolCalls, hasLength(1));
-      expect(aiMessage.toolCalls.single.id, 'tool-1');
-      expect(aiMessage.toolCalls.single.name, 'built_in_calc_calculator');
+      final modelMessage = result[1];
+      expect(modelMessage.role.name, 'model');
+      expect(modelMessage.toolCalls, hasLength(1));
+      expect(modelMessage.toolCalls.single.callId, 'tool-1');
+      expect(
+        modelMessage.toolCalls.single.toolName,
+        'built_in_calc_calculator',
+      );
 
-      final toolMessage = result[2] as ToolChatMessage;
-      expect(toolMessage.toolCallId, 'tool-1');
-      expect(toolMessage.content, '4');
+      final resultMessage = result[2];
+      expect(resultMessage.role.name, 'model');
+      expect(resultMessage.toolResults, hasLength(1));
+      expect(resultMessage.toolResults.single.callId, 'tool-1');
     });
 
     test(
@@ -88,9 +92,10 @@ void main() {
         final result = usecase.call(messages);
 
         expect(result, hasLength(2));
-        final toolMessage = result[1] as ToolChatMessage;
+        final resultMessage = result[1];
+        expect(resultMessage.toolResults, hasLength(1));
         expect(
-          toolMessage.content,
+          resultMessage.toolResults.single.result,
           ToolCallResultStatus.toolNotFound.toResponseString(),
         );
       },

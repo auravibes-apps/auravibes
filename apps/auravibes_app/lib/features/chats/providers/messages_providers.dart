@@ -97,7 +97,7 @@ MessageEntity? messageConversationById(
 
   if (streamingResult == null) return messageEntity;
 
-  return messageEntity.copyWith(content: streamingResult.outputAsString);
+  return messageEntity.copyWith(content: streamingResult.output.text);
 }
 
 @Riverpod(dependencies: [MessagesStreamingNotifier])
