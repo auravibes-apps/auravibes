@@ -38,6 +38,8 @@ As an end user, I can ask questions that require tools (such as calculations or 
 3. **Given** a conversation with MCP tools connected, **When** the user invokes an MCP capability, **Then** the tool executes and the response is integrated into the chat.
 4. **Given** a tool call that fails, **When** the error occurs, **Then** the AI receives the error context and responds gracefully without crashing.
 
+**Agent Loop Architecture**: The app manages the agent loop using `ChatModel.sendStream()` directly (not `Agent.sendStream()`) to prevent dartantic from auto-executing tools. The flow is: model call -> detect tool calls in response -> check permissions via `ApproveToolCallUsecase` -> execute approved tools via `RunAllowedToolsUsecase` -> feed results back as tool messages -> loop. This ensures all tool invocations go through the user approval pipeline.
+
 ---
 
 ### User Story 3 - Streaming Responses (Priority: P2)
@@ -90,11 +92,11 @@ As a user or administrator, I can view token usage statistics for conversations 
 
 ### Edge Cases
 
-- What happens when the configured API key is invalid or expired? The system should surface a clear error message without crashing.
-- What happens when a tool call times out or returns an unexpected format? The AI should receive an error result and attempt to recover.
+- What happens when the configured API key is invalid or expired? The system should surface a clear error message (e.g., "Authentication failed. Please check your API key in Settings.") without crashing.
+- What happens when a tool call times out or returns an unexpected format? The AI should receive an error result and attempt to recover. The partial response is preserved with error status.
 - What happens when the network disconnects mid-stream? The partial response should be preserved and the user notified.
 - What happens when switching providers mid-conversation? The conversation history should remain intact and the new provider should receive correct context.
-- What happens when a provider returns empty or malformed usage metadata? The system should handle gracefully without breaking the UI.
+- What happens when a provider returns empty or malformed usage metadata? The system should handle gracefully without breaking the UI. Token counts default to 0.
 
 ## Clarifications
 
@@ -103,7 +105,7 @@ As a user or administrator, I can view token usage statistics for conversations 
 - **Q: Should this be a big-bang replacement or gradual rollout?** → **A: Big-bang** — Replace all LangChain usage in a single commit/PR. All providers switch simultaneously.
 - **Q: Should the migration include a documented rollback procedure?** → **A: No rollback** — Once deployed, issues are fixed forward. No reversion to LangChain is planned or documented.
 - **Q: Should the migration enable additional dartantic_ai providers beyond OpenAI and Anthropic?** → **A: Enable all dartantic providers** — The system uses models.dev to dynamically fetch LLM vendors, so all dartantic_ai built-in providers should be configured and available.
-- **Q: Should the migration replace the existing custom MCP integration with dartantic_ai's built-in McpClient?** → **A: Keep existing MCP** — Retain the current custom MCP connection manager and tool spec lookup. Only replace the LangChain chat model and tool execution layers.
+- **Q: Should the migration replace the existing custom MCP integration with dartantic_ai's built-in McpClient?** → **A: Keep existing MCP** — Retain the current custom MCP connection manager and tool spec lookup. MCP tool specs are normalized to domain `ToolSpec` entities and converted to dartantic `Tool` objects via `ToolAdapter` for registration with `ChatModel`. Actual tool invocation still routes through the app's agent loop and MCP manager. Only the LangChain chat model and tool execution layers are replaced.
 - **Q: Should new tests be added for dartantic_ai-specific behavior, or only existing tests must pass?** → **A: Existing + targeted new tests** — All existing tests must pass, plus new tests are added for dartantic_ai-specific integration points (provider setup, message mapping, streaming behavior).
 
 ## Requirements _(mandatory)_
@@ -113,7 +115,7 @@ As a user or administrator, I can view token usage statistics for conversations 
 - **FR-001**: The system MUST support sending messages to AI providers and receiving text responses.
 - **FR-002**: The system MUST stream AI responses token-by-token in real time.
 - **FR-003**: The system MUST support multi-turn conversations with persistent history across messages.
-- **FR-004**: The system MUST support built-in tools (e.g., calculator, URL fetcher) that the AI can invoke autonomously.
+- **FR-004**: The system MUST support built-in tools (e.g., calculator, URL fetcher). Tool execution is app-controlled via the approval pipeline — tools are not auto-executed by the AI framework.
 - **FR-005**: The system MUST support external tools via the Model Context Protocol (MCP), allowing integration with third-party tool servers.
 - **FR-006**: The system MUST support multiple AI providers and allow per-conversation or per-workspace provider selection. All dartantic_ai built-in providers MUST be available for selection.
 - **FR-007**: The system MUST support custom provider endpoint URLs and custom HTTP headers for enterprise or proxy configurations.
