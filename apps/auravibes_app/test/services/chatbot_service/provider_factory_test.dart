@@ -72,6 +72,23 @@ void main() {
       expect(chatModel, isA<ChatModel>());
     });
 
+    test(
+      'creates ChatModel via OpenAIProvider when anthropic has custom baseUrl',
+      () {
+        // AnthropicProvider constructor doesn't accept baseUrl,
+        // so custom URLs fall through to OpenAIProvider (OpenAI-compatible).
+        final config = makeConfig(
+          type: ModelProvidersType.anthropic,
+          modelId: 'claude-sonnet-4-0',
+          connectionUrl: 'https://custom-proxy.example.com/v1',
+          providerUrl: 'https://api.anthropic.com/v1',
+        );
+        final chatModel = factory(config, apiKey: 'sk-ant-test');
+
+        expect(chatModel, isA<ChatModel>());
+      },
+    );
+
     test('throws when type is null and no baseUrl', () {
       final config = makeConfig();
 

@@ -92,11 +92,13 @@ class ContinueAgentUsecase {
     MessageEntity? firstMessage;
     final pendingUserMessageIds = context?.ackMessageIds ?? const <String>[];
     var hasAcknowledgedPendingUsers = false;
+    StreamController<ChatResult<ChatMessage>>? streamingController;
+    Future<void>? persistenceFuture;
     try {
-      final streamingController =
+      streamingController =
           StreamController<ChatResult<ChatMessage>>.broadcast();
 
-      final persistenceFuture = streamingController.stream
+      persistenceFuture = streamingController.stream
           .coalescingSave(
             store: (state) async {
               await messageRepository.patchMessage(
@@ -158,9 +160,6 @@ class ContinueAgentUsecase {
         );
       }
 
-      await streamingController.close();
-      await persistenceFuture;
-
       if (accumulatedResult == null || firstMessage == null) {
         throw StateError('Agent stream completed without any result');
       }
@@ -211,6 +210,8 @@ class ContinueAgentUsecase {
 
       Error.throwWithStackTrace(error, stackTrace);
     } finally {
+      await streamingController?.close();
+      await persistenceFuture;
       conversationStreamingRuntime.remove(conversationId);
       if (firstMessage != null) {
         await messagesStreamingRuntime.remove(firstMessage.id);

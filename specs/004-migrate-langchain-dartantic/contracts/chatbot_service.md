@@ -16,9 +16,9 @@ abstract class ChatbotService {
   /// [tools] - Available tools for this conversation
   /// [providerConfig] - Selected provider and model configuration
   ///
-  /// Returns a stream of [ChatResult] chunks that can be concatenated
-  /// to form the complete response.
-  Stream<ChatResult> sendMessage({
+  /// Returns a stream of [ChatResult<ChatMessage>] chunks that can be
+  /// concatenated via [ChatResultConcat] to form the complete response.
+  Stream<ChatResult<ChatMessage>> sendMessage({
     required String message,
     required List<MessageEntity> history,
     required List<Tool> tools,
@@ -42,13 +42,14 @@ abstract class ChatbotService {
 
 ## Key Changes from LangChain
 
-| Aspect         | Before (LangChain)                          | After (dartantic_ai)                                  |
-| -------------- | ------------------------------------------- | ----------------------------------------------------- |
-| Model type     | `BaseChatModel`                             | `Agent`                                               |
-| Model creation | `ChatOpenAI(...)`, `ChatAnthropic(...)`     | `Agent('provider:model')` or `Agent.forProvider(...)` |
-| Options        | `ChatOpenAIOptions`, `ChatAnthropicOptions` | Constructor parameters on `Agent`                     |
-| Prompt wrapper | `PromptValue.chat(messages)`                | Pass `List<ChatMessage>` directly to `sendStream()`   |
-| Streaming      | `model.stream(promptValue)`                 | `agent.sendStream(prompt, history: messages)`         |
+| Aspect         | Before (LangChain)                          | After (dartantic_ai)                                   |
+| -------------- | ------------------------------------------- | ------------------------------------------------------ |
+| Model type     | `BaseChatModel`                             | `ChatModel` (via `ProviderFactory.call()`)             |
+| Model creation | `ChatOpenAI(...)`, `ChatAnthropic(...)`     | `ProviderFactory.call(providerType, modelId, apiKey)`  |
+| Options        | `ChatOpenAIOptions`, `ChatAnthropicOptions` | Provider-specific options via `ProviderFactory`        |
+| Prompt builder | `PromptValue.chat(messages)`                | `BuildPromptChatMessages` → `List<ChatMessage>`        |
+| Streaming      | `model.stream(promptValue)`                 | `chatModel.sendStream(prompt, history: messages)`      |
+| Tool adapter   | N/A                                         | `ToolAdapter` converts domain tools → dartantic `Tool` |
 
 ---
 
@@ -90,9 +91,9 @@ class ProviderConfiguration {
 
 **Mapping to dartantic**:
 
-- Built-in providers: `Agent('${providerType}:${modelId}')`
-- Custom endpoint: `Agent.forProvider(OpenAIProvider(apiKey: ..., baseUrl: Uri.parse(baseUrl!)))`
-- Custom headers: Passed to provider constructor
+- Built-in providers: `ProviderFactory.call(providerType, modelId, apiKey)`
+- Custom endpoint: `ProviderFactory.call(..., baseUrl: Uri.parse(baseUrl!))`
+- Custom headers: Passed to `ProviderFactory.call(..., headers: customHeaders)`
 
 ---
 

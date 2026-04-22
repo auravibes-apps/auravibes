@@ -31,10 +31,14 @@ class ToolAdapter {
       inputSchema: Schema.fromMap(
         spec.inputJsonSchema.cast<String, Object?>(),
       ),
-      onCall: (args) => onCall(
-        spec.name,
-        args is Map<String, dynamic> ? args : <String, dynamic>{},
-      ),
+      onCall: (args) {
+        if (args is! Map<String, dynamic>) {
+          throw ArgumentError(
+            'Tool "${spec.name}" received non-map args: ${args.runtimeType}',
+          );
+        }
+        return onCall(spec.name, Map<String, dynamic>.from(args));
+      },
     );
   }
 }

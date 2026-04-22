@@ -33,9 +33,9 @@ e.g. `fvm dart run melos bootstrap`
 ### Melos Commands
 
 ```bash
-melos bs                    # Install dependencies & link packages
-melos clean                 # Clean all packages
-melos list                  # List all packages
+fvm dart run melos bs                    # Install dependencies & link packages
+fvm dart run melos clean                 # Clean all packages
+fvm dart run melos list                  # List all packages
 ```
 
 ### Dependency Management
@@ -62,11 +62,11 @@ fvm flutter pub add dev:build_runner dev:json_serializable
 valid on melos >7
 
 ```bash
-melos analyze            # Analyze code quality
-melos format             # Check code formatting
-melos run test               # Run all tests
-melos run validate:quick     # Quick development check
-melos run validate           # Full CI validation
+fvm dart run melos analyze            # Analyze code quality
+fvm dart run melos format             # Check code formatting
+fvm dart run melos run test               # Run all tests
+fvm dart run melos run validate:quick     # Quick development check
+fvm dart run melos run validate           # Full CI validation
 ```
 
 ### Running Specific Tests
@@ -74,7 +74,7 @@ melos run validate           # Full CI validation
 in the package directory, use:
 
 ```bash
-flutter test test/test_file_one.dart test/test_file_two.dart --no-pub
+fvm flutter test test/test_file_one.dart test/test_file_two.dart --no-pub
 ```
 
 ### Code Generation
@@ -83,10 +83,10 @@ Run code generation commands in the package directory:
 
 ```bash
 # General build runner command
-dart run build_runner build --delete-conflicting-outputs
+fvm dart run build_runner build --delete-conflicting-outputs
 
 # Single file generation example
-dart run build_runner build --delete-conflicting-outputs --build-filter="lib/brick/db_types.g.dart"
+fvm dart run build_runner build --delete-conflicting-outputs --build-filter="lib/brick/db_types.g.dart"
 ```
 
 ## Version Conventions
@@ -163,7 +163,7 @@ SomeExperimentalApi(), // ignore: experimental_member_use - Required for widgetb
 - Dart 3.x (FVM pinned to 3.41.4+) + Flutter, Riverpod (with code generation), Freezed, auravibes_ui (001-two-step-model-selector)
 - Drift database (existing, no schema changes needed) (001-two-step-model-selector)
 - Dart 3.11+ (Flutter 3.41.4+ via FVM) + Flutter SDK, flutter_portal, gpt_markdown, riverpod (existing) (001-ui-library-widgets)
-- Dart 3.11+ with Flutter 3.41.4+ (FVM pinned) + Flutter, Riverpod, Drift, LangChain (`ChatResult` / `LanguageModelUsage`), auravibes_ui (003-token-usage-context)
+- Dart 3.11+ with Flutter 3.41.4+ (FVM pinned) + Flutter, Riverpod, Drift, dartantic_ai (`ChatResult<ChatMessage>` / `LanguageModelUsage`), auravibes_ui (003-token-usage-context)
 - Existing Drift `messages` table metadata JSON (no schema migration planned) (003-token-usage-context)
 
 ## Recent Changes

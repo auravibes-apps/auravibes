@@ -35,7 +35,7 @@ class MessagesStreamingNotifier extends _$MessagesStreamingNotifier {
     final currentState = state[messageId];
     if (currentState == null) {
       throw Exception(
-        'No subscription found for conversation id: $messageId',
+        'No subscription found for message id: $messageId',
       );
     }
     state = {

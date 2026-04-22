@@ -37,12 +37,13 @@ dartantic_ai: ^3.4.0
 Run:
 
 ```bash
-fvm flutter pub get
+fvm flutter pub remove langchain langchain_anthropic langchain_openai
+fvm flutter pub add dartantic_ai:^3.4.0
 ```
 
 ### Step 2: Migrate ChatbotService
 
-Replace `BaseChatModel` initialization with `Agent` creation:
+Replace `BaseChatModel` initialization with `ChatModel` via `ProviderFactory`:
 
 **Before**:
 
@@ -56,21 +57,20 @@ final model = ChatOpenAI(
 **After**:
 
 ```dart
-final agent = Agent(
-  'openai:$modelId',
-  tools: tools, // List<Tool>
+final chatModel = ProviderFactory.call(
+  apiKey: decryptedKey,
+  // ...provider configuration
 );
 ```
 
 For custom endpoints:
 
 ```dart
-final provider = OpenAIProvider(
+final chatModel = ProviderFactory.call(
   apiKey: decryptedKey,
   baseUrl: Uri.parse(customUrl),
   headers: customHeaders,
 );
-final agent = Agent.forProvider(provider);
 ```
 
 ### Step 3: Migrate Message Conversion
@@ -120,6 +120,8 @@ final tool = Tool(
 );
 ```
 
+**Note**: In the actual codebase, `ToolAdapter` handles converting domain tool definitions to dartantic `Tool` objects.
+
 ### Step 5: Migrate Streaming
 
 **Before**:
@@ -135,12 +137,16 @@ await for (final chunk in stream) {
 **After**:
 
 ```dart
-final stream = agent.sendStream(prompt, history: messages);
+final stream = chatModel.sendStream(prompt, history: messages);
 await for (final chunk in stream) {
-  final text = chunk.output;
+  // chunk is ChatResult<ChatMessage> — accumulate deltas with ChatResultConcat
+  final text = chunk.output.text;
+  final toolCalls = chunk.output.toolCalls;
   final usage = chunk.usage;
 }
 ```
+
+**Note**: The app manages the agent loop (tool call → tool result → continue), NOT dartantic. Use `ChatResultConcat` extension to accumulate streaming deltas into a complete result.
 
 ### Step 6: Migrate Token Usage Extraction
 
@@ -187,12 +193,13 @@ fvm dart run melos run validate
 
 - [ ] All LangChain imports removed
 - [ ] dartantic_ai imports added
-- [ ] `Agent` created for all provider types
-- [ ] Custom URLs configured via `OpenAIProvider`
+- [ ] `ChatModel` created via `ProviderFactory` for all provider types
+- [ ] Custom URLs configured via `ProviderFactory` parameters
 - [ ] Messages converted to dartantic `ChatMessage`
-- [ ] Tools converted to dartantic `Tool`
-- [ ] Streaming uses `agent.sendStream()`
-- [ ] Token usage extracted from `ChatResult.usage`
+- [ ] Tools converted via `ToolAdapter` to dartantic `Tool`
+- [ ] Streaming uses `chatModel.sendStream()`
+- [ ] Stream yields `ChatResult<ChatMessage>` with `.output.text`, `.output.toolCalls`, `.usage`
+- [ ] Deltas accumulated via `ChatResultConcat`
 - [ ] 100% existing tests pass
 - [ ] New targeted tests added
 - [ ] Zero analysis warnings

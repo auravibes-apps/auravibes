@@ -3,7 +3,7 @@
 **Feature Branch**: `004-migrate-langchain-dartantic`  
 **Created**: 2026-04-21  
 **Status**: Draft  
-**Input**: User description: "the change from lanchaing to dartantic_ai"
+**Input**: User description: "the change from LangChain to dartantic_ai"
 
 ## User Scenarios & Testing _(mandatory)_
 

@@ -21,22 +21,23 @@ This migration replaces framework-level types while preserving all domain entiti
 
 ### Replaced Framework Types
 
-| Domain Concept    | Old Type (LangChain)                        | New Type (dartantic_ai)                           |
-| ----------------- | ------------------------------------------- | ------------------------------------------------- |
-| Chat model        | `BaseChatModel`                             | `Agent`                                           |
-| Provider instance | `ChatOpenAI`, `ChatAnthropic`               | `Agent('openai')`, `Agent('anthropic')`           |
-| Chat message      | `ChatMessage`                               | `ChatMessage`                                     |
-| User message      | `ChatMessage.humanText()`                   | `ChatMessage.user()`                              |
-| Assistant message | `ChatMessage.ai()`                          | `ChatMessage.assistant()`                         |
-| Tool message      | `ChatMessage.tool()`                        | `ChatMessage.tool()`                              |
-| Tool call         | `AIChatMessageToolCall`                     | `ToolCall`                                        |
-| Tool spec         | `ToolSpec`                                  | `Tool` (unified)                                  |
-| Executable tool   | `Tool.fromFunction()`                       | `Tool(name, description, inputSchema, onCall)`    |
-| Prompt wrapper    | `PromptValue.chat()`                        | `List<ChatMessage>` (passed directly)             |
-| Stream result     | `ChatResult`                                | `ChatResult`                                      |
-| Token usage       | `LanguageModelUsage`                        | `LanguageModelUsage`                              |
-| Finish reason     | `FinishReason`                              | Inferred from output                              |
-| Model options     | `ChatOpenAIOptions`, `ChatAnthropicOptions` | Provider-specific options via `Agent` constructor |
+| Domain Concept    | Old Type (LangChain)                        | New Type (dartantic_ai)                                  |
+| ----------------- | ------------------------------------------- | -------------------------------------------------------- |
+| Chat model        | `BaseChatModel`                             | `ChatModel` (via `ProviderFactory.call()`)               |
+| Provider instance | `ChatOpenAI`, `ChatAnthropic`               | `ProviderFactory.call(providerType, modelId, apiKey)`    |
+| Chat message      | `ChatMessage`                               | `ChatMessage`                                            |
+| User message      | `ChatMessage.humanText()`                   | `ChatMessage.user()`                                     |
+| Assistant message | `ChatMessage.ai()`                          | `ChatMessage.assistant()`                                |
+| Tool message      | `ChatMessage.tool()`                        | `ChatMessage.tool()`                                     |
+| Tool call         | `AIChatMessageToolCall`                     | `ToolCall`                                               |
+| Tool spec         | `ToolSpec`                                  | `Tool` (unified)                                         |
+| Executable tool   | `Tool.fromFunction()`                       | `Tool(name, description, inputSchema, onCall)`           |
+| Prompt builder    | `PromptValue.chat()`                        | `BuildPromptChatMessages` → `List<ChatMessage>`          |
+| Stream result     | `ChatResult`                                | `ChatResult<ChatMessage>`                                |
+| Token usage       | `LanguageModelUsage`                        | `LanguageModelUsage`                                     |
+| Finish reason     | `FinishReason`                              | Inferred from output                                     |
+| Model options     | `ChatOpenAIOptions`, `ChatAnthropicOptions` | Provider-specific options via `ProviderFactory`          |
+| Tool adapter      | N/A                                         | `ToolAdapter` (converts domain tools → dartantic `Tool`) |
 
 ---
 
@@ -44,9 +45,9 @@ This migration replaces framework-level types while preserving all domain entiti
 
 ```
 MessageEntity (domain)
-  → ChatMessage (dartantic)
-    → Agent.sendStream(history: [...])
-      → ChatResult (stream chunk)
+  → BuildPromptChatMessages → List<ChatMessage> (dartantic)
+    → ChatModel.sendStream(prompt, history: messages)
+      → ChatResult<ChatMessage> (stream chunk, accumulated via ChatResultConcat)
         → MessageEntity (domain, persisted)
 ```
 
@@ -99,7 +100,7 @@ McpServer
     → Tool (dartantic)
 ```
 
-**Note**: MCP tool specs are converted to dartantic `Tool` at the boundary where they are passed to the agent.
+**Note**: MCP tool specs are converted to dartantic `Tool` at the boundary via `ToolAdapter` where they are passed to the chat model.
 
 ---
 
@@ -122,12 +123,12 @@ McpServer
 ### Custom Provider
 
 ```dart
-final provider = OpenAIProvider(
+final chatModel = ProviderFactory.call(
   apiKey: apiKey,
-  baseUrl: Uri.parse(customUrl),
+  baseUrl: customUrl != null ? Uri.parse(customUrl) : null,
   headers: customHeaders,
+  // ...other provider config
 );
-final agent = Agent.forProvider(provider);
 ```
 
 ---

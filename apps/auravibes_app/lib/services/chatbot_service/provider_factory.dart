@@ -102,6 +102,9 @@ class ProviderFactory {
     ModelProvidersType? providerType,
     String? baseUrl,
   }) {
+    // AnthropicProvider doesn't accept baseUrl in its constructor.
+    // When a custom URL is set, fall through to OpenAIProvider which
+    // supports custom endpoints (most Anthropic proxies are OpenAI-compatible).
     if (providerType == ModelProvidersType.anthropic && baseUrl == null) {
       return AnthropicProvider(apiKey: apiKey);
     }

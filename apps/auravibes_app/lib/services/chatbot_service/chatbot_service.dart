@@ -26,16 +26,25 @@ class ChatbotService {
     List<ChatMessage> history, {
     List<ToolSpec>? tools,
   }) async* {
+    // Tools are passed to ChatModel for definition-only purposes.
+    // ChatModel.sendStream() never auto-executes tools; the app's
+    // RunAgentIterationUsecase manages execution via the approval pipeline.
+    // If onCall is ever invoked (e.g. future API change), fail loudly.
     final dartanticTools = tools != null
         ? _toolAdapter(
             tools,
-            onCall: (toolName, args) async => {},
+            onCall: (toolName, args) async {
+              throw StateError(
+                'Tool "$toolName" execution should go through the approval '
+                'pipeline, not through dartantic onCall',
+              );
+            },
           )
         : null;
 
     final chatModel = await _getChatModel(chatProvider, tools: dartanticTools);
 
-    yield* chatModel.sendStream(history).distinct();
+    yield* chatModel.sendStream(history);
   }
 
   Future<String> generateTitle(

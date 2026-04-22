@@ -61,12 +61,14 @@ apps/auravibes_app/
 │   │   ├── chatbot_service/           # Chat model init, streaming, title gen
 │   │   │   ├── chatbot_service.dart
 │   │   │   ├── build_prompt_chat_messages.dart
+│   │   │   ├── provider_factory.dart  # Creates ChatModel from provider config
+│   │   │   ├── tool_adapter.dart      # Converts domain tools → dartantic Tool
 │   │   │   └── models/
 │   │   │       └── chat_message_models.dart
 │   │   └── tools/                     # Tool definitions and specs
 │   │       ├── native_tool_entity.dart
 │   │       ├── user_tools_entity.dart
-│   │       └── native_tools/
+│   │       └── user_tools/
 │   │           ├── calculator_tool.dart
 │   │           └── url_tool.dart
 │   ├── features/
@@ -88,7 +90,7 @@ apps/auravibes_app/
     └── domain/usecases/tools/mcp/
 ```
 
-**Structure Decision**: This migration is confined to the existing `apps/auravibes_app` service and feature layers. No new packages or directories are created. LangChain dependencies are removed from `pubspec.yaml` and replaced with `dartantic_ai`.
+**Structure Decision**: This migration is confined to the existing `apps/auravibes_app` service and feature layers. `provider_factory.dart` and `tool_adapter.dart` are added under `services/chatbot_service/`. LangChain dependencies are removed from `pubspec.yaml` and replaced with `dartantic_ai`. The orchestration flow is: `ProviderFactory` → `ChatModel.sendStream()` → `ChatResultConcat` → approval pipeline.
 
 ## Complexity Tracking
 

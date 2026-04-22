@@ -31,7 +31,7 @@ class MessageConverter {
   ///
   /// Returns a domain message entity ready for persistence.
   MessageEntity toDomainMessage(
-    ChatResult result, {
+    ChatResult<ChatMessage> result, {
     required String conversationId,
   });
 
@@ -40,7 +40,7 @@ class MessageConverter {
   /// [result] - Chat result containing usage metadata
   ///
   /// Returns token usage statistics or null if unavailable.
-  TokenUsage? extractTokenUsage(ChatResult result);
+  TokenUsage? extractTokenUsage(ChatResult<ChatMessage> result);
 }
 
 /// Token usage statistics.
@@ -120,12 +120,12 @@ ChatMessage.user('Hello');
 ChatMessage.assistant('Hi!', toolCalls: [...]);
 ChatMessage.tool('Result', toolCallId: 'call_123');
 
-// No prompt wrapper needed — pass list directly
-final stream = agent.sendStream('Hello', history: messages);
+// No prompt wrapper needed — pass list directly via BuildPromptChatMessages
+final stream = chatModel.sendStream('Hello', history: messages);
 
 // Result extraction
-final text = result.output;
-final toolCalls = result.toolCalls; // or from messages
+final text = result.output.text;
+final toolCalls = result.output.toolCalls;
 final usage = result.usage;
 ```
 
