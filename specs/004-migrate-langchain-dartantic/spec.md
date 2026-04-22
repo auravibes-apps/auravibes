@@ -40,6 +40,11 @@ As an end user, I can ask questions that require tools (such as calculations or 
 
 **Agent Loop Architecture**: The app manages the agent loop using `ChatModel.sendStream()` directly (not `Agent.sendStream()`) to prevent dartantic from auto-executing tools. The flow is: model call -> detect tool calls in response -> check permissions via `ApproveToolCallUsecase` -> execute approved tools via `RunAllowedToolsUsecase` -> feed results back as tool messages -> loop. This ensures all tool invocations go through the user approval pipeline.
 
+Example flows:
+
+- **Tool execution**: User asks "What is 2+2?" -> AI generates `calculator` tool call -> app intercepts, auto-approves built-in tool -> calculator returns `4` -> AI incorporates result into response.
+- **Tool failure**: User triggers URL fetch -> tool times out -> error wrapped as tool result -> AI acknowledges error and suggests alternatives.
+
 ---
 
 ### User Story 3 - Streaming Responses (Priority: P2)
