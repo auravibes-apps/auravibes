@@ -13,6 +13,14 @@
 set -euo pipefail
 
 MODE="${1:---release}"
+case "$MODE" in
+  --release|--debug) ;;
+  *)
+    echo "Error: invalid mode '$MODE'. Use --release or --debug." >&2
+    exit 1
+    ;;
+esac
+
 APP_DIR="apps/auravibes_app"
 WEB_DIR="$APP_DIR/web"
 WORKER_SRC="$WEB_DIR/drift_worker.dart"
@@ -45,12 +53,21 @@ TAG="sqlite3-${SQLITE3_VER}"
 WASM_URL="https://github.com/simolus3/sqlite3.dart/releases/download/${TAG}/sqlite3.wasm"
 
 echo "Downloading sqlite3.wasm for sqlite3 ${SQLITE3_VER}..."
-HTTP_CODE=$(curl -fsSL -w "%{http_code}" -o "$WASM_OUT" "$WASM_URL" || true)
+TMP_WASM="${WASM_OUT}.tmp"
+HTTP_CODE=$(curl -fsSL \
+  --connect-timeout 10 \
+  --max-time 120 \
+  --retry 3 \
+  --retry-delay 2 \
+  --retry-all-errors \
+  -w "%{http_code}" \
+  -o "$TMP_WASM" "$WASM_URL" || true)
 
 if [ "$HTTP_CODE" = "200" ]; then
-  echo "  -> $WASM_OUT ($(ls -lh "$WASM_OUT" | awk '{print $5}'))"
+  mv "$TMP_WASM" "$WASM_OUT"
+  echo "  -> $WASM_OUT ($(wc -c < "$WASM_OUT") bytes)"
 else
-  rm -f "$WASM_OUT"
+  rm -f "$TMP_WASM" "$WASM_OUT"
   echo "Error: download failed (HTTP $HTTP_CODE) for $WASM_URL" >&2
   echo "Download manually from: https://github.com/simolus3/sqlite3.dart/releases/tag/${TAG}" >&2
   exit 1
