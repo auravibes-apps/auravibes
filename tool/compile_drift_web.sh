@@ -28,15 +28,17 @@ echo "Compiling drift worker ($MODE)..."
 fvm dart compile js $OPT_FLAG "$WORKER_SRC" -o "$WORKER_OUT"
 echo "  -> $WORKER_OUT ($(wc -l < "$WORKER_OUT") lines)"
 
-SQLITE3_VER=$(fvm dart pub deps --json 2>/dev/null \
-  | python3 -c "import sys,json; pkgs=json.load(sys.stdin)['packages']; print(next(p['version'] for p in pkgs if p['name']=='sqlite3'))" \
-  2>/dev/null || true)
+if [ -z "${SQLITE3_VER:-}" ]; then
+  SQLITE3_VER=$(fvm dart pub --directory "$APP_DIR" deps --json 2>/dev/null \
+    | python3 -c "import sys,json; pkgs=json.load(sys.stdin)['packages']; print(next(p['version'] for p in pkgs if p['name']=='sqlite3'))" \
+    2>/dev/null || true)
+fi
 
 if [ -z "$SQLITE3_VER" ]; then
-  echo "Warning: could not detect sqlite3 version from pub deps, skipping wasm download."
-  echo "Set SQLITE3_VER manually and re-run, or download sqlite3.wasm from:"
-  echo "  https://github.com/simolus3/sqlite3.dart/releases"
-  exit 0
+  echo "Error: could not detect sqlite3 version from pub deps." >&2
+  echo "Set SQLITE3_VER manually and re-run, or download sqlite3.wasm from:" >&2
+  echo "  https://github.com/simolus3/sqlite3.dart/releases" >&2
+  exit 1
 fi
 
 TAG="sqlite3-${SQLITE3_VER}"
@@ -49,8 +51,9 @@ if [ "$HTTP_CODE" = "200" ]; then
   echo "  -> $WASM_OUT ($(ls -lh "$WASM_OUT" | awk '{print $5}'))"
 else
   rm -f "$WASM_OUT"
-  echo "Warning: download failed (HTTP $HTTP_CODE) for $WASM_URL"
-  echo "Download manually from: https://github.com/simolus3/sqlite3.dart/releases/tag/${TAG}"
+  echo "Error: download failed (HTTP $HTTP_CODE) for $WASM_URL" >&2
+  echo "Download manually from: https://github.com/simolus3/sqlite3.dart/releases/tag/${TAG}" >&2
+  exit 1
 fi
 
 echo "Done."
