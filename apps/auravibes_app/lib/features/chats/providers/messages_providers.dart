@@ -8,7 +8,7 @@ import 'package:auravibes_app/features/chats/providers/conversation_providers.da
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_selection_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/get_conversation_busy_state_usecase.dart';
-import 'package:auravibes_app/features/models/providers/credentials_providers.dart';
+import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
 import 'package:auravibes_app/utils/chat_result_extension.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
@@ -97,7 +97,7 @@ MessageEntity? messageConversationById(
 
   if (streamingResult == null) return messageEntity;
 
-  return messageEntity.copyWith(content: streamingResult.outputAsString);
+  return messageEntity.copyWith(content: streamingResult.output.text);
 }
 
 @Riverpod(dependencies: [MessagesStreamingNotifier])

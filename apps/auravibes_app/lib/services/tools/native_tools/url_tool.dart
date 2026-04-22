@@ -2,11 +2,11 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:async/async.dart';
+import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/services/tools/native_tool_entity.dart';
 import 'package:auravibes_app/services/url/models/url_request.dart';
 import 'package:auravibes_app/services/url/models/url_response.dart';
 import 'package:auravibes_app/services/url/url_service.dart';
-import 'package:langchain/langchain.dart';
 
 final class UrlTool extends NativeToolEntity<String, String> {
   UrlTool({UrlService? urlService}) : _urlService = urlService;
@@ -14,8 +14,8 @@ final class UrlTool extends NativeToolEntity<String, String> {
   final UrlService? _urlService;
 
   @override
-  Tool<Object, ToolOptions, Object> getTool() {
-    return Tool.fromFunction<String, String>(
+  ToolSpec getTool() {
+    return const ToolSpec(
       name: 'url',
       description:
           'Fetches content from a URL. '
@@ -38,7 +38,6 @@ final class UrlTool extends NativeToolEntity<String, String> {
         },
         'required': ['input'],
       },
-      func: _execute,
     );
   }
 
@@ -73,14 +72,6 @@ final class UrlTool extends NativeToolEntity<String, String> {
     });
 
     return completer.operation;
-  }
-
-  Future<String> _execute(String toolInput) async {
-    final service = _urlService ?? UrlService();
-    final request = await _buildRequest(toolInput);
-    final response = await service.execute(request).value;
-
-    return _formatResponse(response);
   }
 
   String _formatResponse(UrlResponse response) {

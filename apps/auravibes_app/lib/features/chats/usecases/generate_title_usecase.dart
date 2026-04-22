@@ -1,4 +1,4 @@
-import 'package:auravibes_app/domain/entities/credentials_models_entities.dart';
+import 'package:auravibes_app/domain/entities/workspace_model_selection_entities.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/streaming_runtime_provider.dart';
@@ -24,11 +24,12 @@ class GenerateTitleUsecase {
   void call({
     required String conversationId,
     required String firstMessage,
-    required CredentialsModelWithProviderEntity credentialsModel,
+    required WorkspaceModelSelectionWithConnectionEntity
+    workspaceModelSelection,
   }) {
     // stream title
     final stream = chatbotService.streamTitle(
-      credentialsModel,
+      workspaceModelSelection,
       firstMessage,
     );
 

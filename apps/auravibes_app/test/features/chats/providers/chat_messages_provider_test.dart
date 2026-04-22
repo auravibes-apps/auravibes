@@ -2,21 +2,21 @@ import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/api_model.dart';
 import 'package:auravibes_app/domain/entities/api_model_provider.dart';
-import 'package:auravibes_app/domain/entities/credentials_entities.dart';
-import 'package:auravibes_app/domain/entities/credentials_models_entities.dart';
 import 'package:auravibes_app/domain/entities/messages.dart';
+import 'package:auravibes_app/domain/entities/model_connection_entities.dart';
+import 'package:auravibes_app/domain/entities/workspace_model_selection_entities.dart';
 import 'package:auravibes_app/domain/enums/message_types.dart';
 import 'package:auravibes_app/domain/repositories/api_model_repository.dart';
-import 'package:auravibes_app/domain/repositories/chat_models_repository.dart';
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
+import 'package:auravibes_app/domain/repositories/workspace_model_selection_repository.dart';
 import 'package:auravibes_app/features/chats/notifiers/messages_streaming_notifier.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/messages_providers.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
-import 'package:auravibes_app/features/models/providers/credentials_providers.dart';
-import 'package:auravibes_app/features/models/providers/model_providers_repository_providers.dart';
+import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
+import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
+import 'package:dartantic_ai/dartantic_ai.dart' hide Provider;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:langchain/langchain.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:rxdart/rxdart.dart';
 
@@ -100,13 +100,9 @@ void main() {
       container.read(messagesStreamingProvider.notifier)
         ..startSubscription(CompositeSubscription(), 'message-1')
         ..updateResult(
-          const ChatResult(
-            id: 'chunk-1',
-            output: AIChatMessage(content: 'streaming'),
-            finishReason: FinishReason.unspecified,
-            metadata: {},
-            usage: LanguageModelUsage(),
-            streaming: true,
+          ChatResult<ChatMessage>(
+            output: ChatMessage.model('streaming'),
+            usage: const LanguageModelUsage(),
           ),
           'message-1',
         );
@@ -158,13 +154,9 @@ void main() {
         container.read(messagesStreamingProvider.notifier)
           ..startSubscription(CompositeSubscription(), 'message-2')
           ..updateResult(
-            const ChatResult(
-              id: 'chunk-2',
-              output: AIChatMessage(content: 'streaming'),
-              finishReason: FinishReason.unspecified,
-              metadata: {},
-              usage: LanguageModelUsage(totalTokens: 900),
-              streaming: true,
+            ChatResult<ChatMessage>(
+              output: ChatMessage.model('streaming'),
+              usage: const LanguageModelUsage(totalTokens: 900),
             ),
             'message-2',
           );
@@ -177,8 +169,8 @@ void main() {
 
   group('modelContextLimitProvider', () {
     test('prefers provider-specific model when IDs collide', () async {
-      final fakeCredentialsRepo = _FakeCredentialsModelsRepository(
-        selectedModel: _credentialsModelWithProvider(
+      final fakeCredentialsRepo = _FakeWorkspaceModelSelectionRepository(
+        selectedModel: _workspaceModelSelectionWithProvider(
           credentialModelId: 'cm-1',
           modelId: 'shared-model',
           providerId: 'provider-b',
@@ -193,7 +185,7 @@ void main() {
 
       final container = ProviderContainer(
         overrides: [
-          credentialsModelsRepositoryProvider.overrideWithValue(
+          workspaceModelSelectionRepositoryProvider.overrideWithValue(
             fakeCredentialsRepo,
           ),
           apiModelRepositoryProvider.overrideWithValue(fakeApiRepo),
@@ -209,8 +201,8 @@ void main() {
     });
 
     test('does not normalize model IDs when resolving context limit', () async {
-      final fakeCredentialsRepo = _FakeCredentialsModelsRepository(
-        selectedModel: _credentialsModelWithProvider(
+      final fakeCredentialsRepo = _FakeWorkspaceModelSelectionRepository(
+        selectedModel: _workspaceModelSelectionWithProvider(
           credentialModelId: 'cm-2',
           modelId: 'openrouter/gpt-5.3-chat-latest',
           providerId: 'openrouter',
@@ -228,7 +220,7 @@ void main() {
 
       final container = ProviderContainer(
         overrides: [
-          credentialsModelsRepositoryProvider.overrideWithValue(
+          workspaceModelSelectionRepositoryProvider.overrideWithValue(
             fakeCredentialsRepo,
           ),
           apiModelRepositoryProvider.overrideWithValue(fakeApiRepo),
@@ -282,21 +274,22 @@ ApiModelEntity _apiModel({
   );
 }
 
-CredentialsModelWithProviderEntity _credentialsModelWithProvider({
+WorkspaceModelSelectionWithConnectionEntity
+_workspaceModelSelectionWithProvider({
   required String credentialModelId,
   required String modelId,
   required String providerId,
 }) {
   final now = DateTime(2026);
-  return CredentialsModelWithProviderEntity(
-    credentialsModel: CredentialsModelEntity(
+  return WorkspaceModelSelectionWithConnectionEntity(
+    workspaceModelSelection: WorkspaceModelSelectionEntity(
       id: credentialModelId,
       modelId: modelId,
-      credentialsId: 'cred-1',
+      modelConnectionId: 'cred-1',
       createdAt: now,
       updatedAt: now,
     ),
-    credentials: CredentialsEntity(
+    modelConnection: ModelConnectionEntity(
       id: 'cred-1',
       name: 'Test Provider',
       key: 'encrypted',
@@ -415,28 +408,31 @@ class _FakeMessageRepository implements MessageRepository {
   }
 }
 
-class _FakeCredentialsModelsRepository implements CredentialsModelsRepository {
-  _FakeCredentialsModelsRepository({this.selectedModel});
+class _FakeWorkspaceModelSelectionRepository
+    implements WorkspaceModelSelectionRepository {
+  _FakeWorkspaceModelSelectionRepository({this.selectedModel});
 
-  final CredentialsModelWithProviderEntity? selectedModel;
+  final WorkspaceModelSelectionWithConnectionEntity? selectedModel;
 
   @override
-  Future<void> createCredentialsModels(
-    List<CredentialModelToCreate> credentialsModels,
+  Future<void> createWorkspaceModelSelections(
+    List<WorkspaceModelSelectionToCreate> workspaceModelSelections,
   ) {
     throw UnimplementedError();
   }
 
   @override
-  Future<CredentialsModelWithProviderEntity?> getCredentialsModelById(
+  Future<WorkspaceModelSelectionWithConnectionEntity?>
+  getWorkspaceModelSelectionById(
     String id,
   ) async {
     return selectedModel;
   }
 
   @override
-  Future<List<CredentialsModelWithProviderEntity>> getCredentialsModels(
-    CredentialsModelsFilter filter,
+  Future<List<WorkspaceModelSelectionWithConnectionEntity>>
+  getWorkspaceModelSelections(
+    WorkspaceModelSelectionFilter filter,
   ) {
     throw UnimplementedError();
   }

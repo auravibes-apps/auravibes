@@ -1,44 +1,63 @@
 import 'package:auravibes_app/domain/entities/messages.dart';
-import 'package:langchain/langchain.dart';
+import 'package:dartantic_ai/dartantic_ai.dart';
 
-extension ChatResultEntities on ChatResult {
+extension ChatResultConcat on ChatResult<ChatMessage> {
+  ChatResult<ChatMessage> concat(ChatResult<ChatMessage> delta) {
+    return ChatResult<ChatMessage>(
+      output: output.concatenate(delta.output),
+      finishReason: delta.finishReason != FinishReason.unspecified
+          ? delta.finishReason
+          : finishReason,
+      usage: usage != null && delta.usage != null
+          ? usage!.concat(delta.usage!)
+          : delta.usage ?? usage,
+      messages: [...messages, ...delta.messages],
+      metadata: {...metadata, ...delta.metadata},
+    );
+  }
+}
+
+extension ChatResultEntities on ChatResult<ChatMessage> {
   List<MessageToolCallEntity> get entityTools {
-    if (output.toolCalls.isEmpty) {
-      return [];
-    }
+    final allToolCalls = output.toolCalls;
+    if (allToolCalls.isEmpty) return [];
 
-    return output.toolCalls.map((e) {
-      return MessageToolCallEntity(
-        argumentsRaw: e.argumentsRaw,
-        id: e.id,
-        name: e.name,
-      );
-    }).toList();
+    return allToolCalls
+        .map(
+          (tc) => MessageToolCallEntity(
+            argumentsRaw: tc.argumentsRaw,
+            id: tc.callId,
+            name: tc.toolName,
+          ),
+        )
+        .toList();
   }
 
-  int get entityPromptTokens => usage.promptTokens ?? 0;
+  int get entityPromptTokens => usage?.promptTokens ?? 0;
 
-  int get entityCompletionTokens => usage.responseTokens ?? 0;
+  int get entityCompletionTokens => usage?.responseTokens ?? 0;
 
   int get entityTotalTokens {
-    return usage.totalTokens ?? (entityPromptTokens + entityCompletionTokens);
+    return usage?.totalTokens ?? (entityPromptTokens + entityCompletionTokens);
   }
+
+  String get entityText => output.text;
 
   MessageMetadataEntity? get entityMetadata {
     final hasUsage =
-        usage.promptTokens != null ||
-        usage.responseTokens != null ||
-        usage.totalTokens != null;
+        usage?.promptTokens != null ||
+        usage?.responseTokens != null ||
+        usage?.totalTokens != null;
 
-    if (output.toolCalls.isEmpty && !hasUsage) {
+    if (entityTools.isEmpty && !hasUsage) {
       return null;
     }
 
     return MessageMetadataEntity(
       toolCalls: entityTools,
-      promptTokens: usage.promptTokens,
-      completionTokens: usage.responseTokens,
-      totalTokens: usage.totalTokens,
+      promptTokens: usage?.promptTokens,
+      completionTokens: usage?.responseTokens,
+      totalTokens: usage?.totalTokens,
     );
   }
 }

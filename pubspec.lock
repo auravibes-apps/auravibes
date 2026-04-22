@@ -45,10 +45,10 @@ packages:
     dependency: transitive
     description:
       name: anthropic_sdk_dart
-      sha256: "30162d70384f38f98f22e2402776f28d260b721fef684893dbed2a3108e72428"
+      sha256: b0e91039942930341b24e3871d5b9481b6d31528b711eb752f413f4d1f5980eb
       url: "https://pub.dev"
     source: hosted
-    version: "0.3.1"
+    version: "1.5.0"
   archive:
     dependency: transitive
     description:
@@ -273,6 +273,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.9.0"
+  csslib:
+    dependency: transitive
+    description:
+      name: csslib
+      sha256: "09bad715f418841f976c77db72d5398dc1253c21fb9c0c7f0b0b985860b2d58e"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.2"
   csv:
     dependency: transitive
     description:
@@ -289,6 +297,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.1.3"
+  dartantic_ai:
+    dependency: transitive
+    description:
+      name: dartantic_ai
+      sha256: "2c6cf66ef2ee081a2b863c11b7d8343e0f760380ba1a367df567a537c520bd14"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.4.0"
+  dartantic_interface:
+    dependency: transitive
+    description:
+      name: dartantic_interface
+      sha256: b21a1867da49335b1004cae5b97abeff75e3421ec7c3fee144bcc5e6f463dc63
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.0.0"
   dbus:
     dependency: transitive
     description:
@@ -297,6 +321,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.7.12"
+  decimal:
+    dependency: transitive
+    description:
+      name: decimal
+      sha256: fc706a5618b81e5b367b01dd62621def37abc096f2b46a9bd9068b64c1fa36d0
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.2.4"
   dependency_validator:
     dependency: "direct dev"
     description:
@@ -393,6 +425,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.0.2"
+  email_validator:
+    dependency: transitive
+    description:
+      name: email_validator
+      sha256: b19aa5d92fdd76fbc65112060c94d45ba855105a28bb6e462de7ff03b12fa1fb
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.0.0"
   equatable:
     dependency: transitive
     description:
@@ -605,6 +645,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.0"
+  genai_primitives:
+    dependency: transitive
+    description:
+      name: genai_primitives
+      sha256: "2468ecd2984f32232ab199315e384821c61a198e356828e34b9a5bcf0fda863e"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.3"
   glob:
     dependency: transitive
     description:
@@ -625,10 +673,10 @@ packages:
     dependency: transitive
     description:
       name: go_router_builder
-      sha256: c9bfc336012b98096023e606e39ec8848858ba8ad3a8540e20b4a0e7cbe89140
+      sha256: "52c0403e3fc80db4058d44088f28227f4ecf046f9b8ccbea0e325d3c7b4bb7f5"
       url: "https://pub.dev"
     source: hosted
-    version: "4.2.1"
+    version: "4.3.0"
   google_fonts:
     dependency: transitive
     description:
@@ -637,6 +685,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "8.0.2"
+  googleai_dart:
+    dependency: transitive
+    description:
+      name: googleai_dart
+      sha256: b7283c2d0d0aefb8feb735b1a8bcaa5cd1eaeb18fef86d500e9644564586d762
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.1.0"
   gpt_markdown:
     dependency: transitive
     description:
@@ -669,6 +725,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.3.1"
+  html:
+    dependency: transitive
+    description:
+      name: html
+      sha256: "6d1264f2dffa1b1101c25a91dff0dc2daee4c18e87cd8538729773c073dbf602"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.15.6"
   http:
     dependency: transitive
     description:
@@ -741,6 +805,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.11.0"
+  json_schema_builder:
+    dependency: transitive
+    description:
+      name: json_schema_builder
+      sha256: "65035d48d028401ad0ffc8c2f173209c7b1441e465a942a0f909070fae33170c"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.3"
   json_serializable:
     dependency: transitive
     description:
@@ -749,46 +821,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.13.0"
-  langchain:
-    dependency: transitive
-    description:
-      name: langchain
-      sha256: b7035e0903953cb065734499296e66d9fa0f6e15934aa2f57389b9fb6b001aab
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.8.1"
-  langchain_anthropic:
-    dependency: transitive
-    description:
-      name: langchain_anthropic
-      sha256: e78c81064733f6dbc67b5ea06cc62454581bede69a4f06abe7ebf1347716be78
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.3.1"
-  langchain_core:
-    dependency: transitive
-    description:
-      name: langchain_core
-      sha256: fce3cd0e31dcbac80d209f6361207936a58b05506b800f13227cbe83f6e3e721
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.4.1"
-  langchain_openai:
-    dependency: transitive
-    description:
-      name: langchain_openai
-      sha256: "23ed96ece5bc27ec95d1b720bce61267e6db578d24134ddf80b715184e932330"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.8.1+1"
-  langchain_tiktoken:
-    dependency: transitive
-    description:
-      name: langchain_tiktoken
-      sha256: c1804f4b3e56574ca67e562305d9f11e3eabe3c8aa87fea8635992f7efc66674
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.1"
   leak_tracker:
     dependency: transitive
     description:
@@ -869,6 +901,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.1.0"
+  mcp_dart:
+    dependency: transitive
+    description:
+      name: mcp_dart
+      sha256: "30ab03147fec3fd72e98172475cd720cd4e3aec7d5f8944ef36dbfabc75a353c"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.1.0"
   melos:
     dependency: "direct dev"
     description:
@@ -893,6 +933,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.0"
+  mistralai_dart:
+    dependency: transitive
+    description:
+      name: mistralai_dart
+      sha256: ee6a06c6cac399fc3f4a707f379acd3afea79775033fe4b605da6a8c2dfd3768
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.3.0"
   mockito:
     dependency: transitive
     description:
@@ -949,14 +997,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "9.3.0"
+  ollama_dart:
+    dependency: transitive
+    description:
+      name: ollama_dart
+      sha256: d301154465e07810bd0c6ebb4ebc24f1e0f51372a299ae6b28433ac3bea91031
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.4.1"
   openai_dart:
     dependency: transitive
     description:
       name: openai_dart
-      sha256: "037605a210cb3b1d8ac72b11a4ace26f25ee9267aaf981d2af1d7f0524adcbf5"
+      sha256: "4731f94ea9a09cd9e92333debcfb87efda2764718e506538206df9f540e9ab60"
       url: "https://pub.dev"
     source: hosted
-    version: "0.6.2"
+    version: "1.4.0"
   package_config:
     dependency: transitive
     description:
@@ -1117,6 +1173,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.5.0"
+  rational:
+    dependency: transitive
+    description:
+      name: rational
+      sha256: cb808fb6f1a839e6fc5f7d8cb3b0a10e1db48b3be102de73938c627f0b636336
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.2.3"
   recase:
     dependency: transitive
     description:
@@ -1338,6 +1402,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.43.1"
+  sse:
+    dependency: transitive
+    description:
+      name: sse
+      sha256: a9a804dbde8bfd369da3b4aa241d44d63a6486a97388c54ec166073d88c52302
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.2.0"
+  sse_channel:
+    dependency: transitive
+    description:
+      name: sse_channel
+      sha256: ad85fda353fae12533fd762dbd3ff275e710f216644e39459bf11a138124acad
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.2"
   stack_trace:
     dependency: transitive
     description:

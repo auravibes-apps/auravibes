@@ -1,5 +1,4 @@
 import 'package:auravibes_ui/src/atoms/atoms.dart';
-import 'package:auravibes_ui/src/organisms/auravibes_bottom_bar.dart';
 import 'package:auravibes_ui/src/tokens/tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -130,7 +129,7 @@ class AuraSidebar extends StatelessWidget {
 /// Represents a navigation item in the sidebar.
 ///
 /// This can be reused across multiple navigation components like
-/// [AuraSidebar], [AuraBottomBar], etc.
+/// [AuraSidebar].
 class AuraNavigationData {
   /// Creates a navigation item.
   const AuraNavigationData({

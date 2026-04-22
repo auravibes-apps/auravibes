@@ -1,9 +1,9 @@
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
+import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/domain/entities/tools_group.dart';
 import 'package:auravibes_app/domain/entities/workspace_tool.dart';
 import 'package:auravibes_app/domain/usecases/tools/mcp/build_combined_tool_specs_usecase.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:langchain/langchain.dart';
 
 WorkspaceToolEntity _tool({
   required String id,

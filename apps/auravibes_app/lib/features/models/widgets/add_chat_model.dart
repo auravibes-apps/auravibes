@@ -1,6 +1,6 @@
 import 'package:auravibes_app/domain/entities/api_model_provider.dart';
-import 'package:auravibes_app/domain/repositories/model_providers_repository.dart';
-import 'package:auravibes_app/features/models/providers/add_model_provider_providers.dart';
+import 'package:auravibes_app/domain/repositories/model_connection_repository.dart';
+import 'package:auravibes_app/features/models/providers/add_model_providers.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/widgets/enhanced_model_input.dart';
 import 'package:auravibes_app/features/models/widgets/model_logo.dart';
@@ -244,7 +244,7 @@ class _ErrorBanner extends ConsumerWidget {
   }
 
   String _mapErrorMessage(Object error) {
-    if (error case ModelProviderException(
+    if (error case ModelConnectionException(
       :final message,
     ) when message.trim().isNotEmpty) {
       return message;
@@ -300,7 +300,7 @@ class _SelectModelProvider extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final models = ref.watch(modelProvidersProvider).value;
+    final models = ref.watch(apiModelProvidersProvider).value;
     final searchQuery = useState('');
     final addModelProvider = ref.watch(
       addModelProviderStateProvider(workspaceId).notifier,
@@ -420,7 +420,7 @@ class _SelectedModelHeader extends HookConsumerWidget {
       addModelProviderStateProvider(workspaceId).notifier,
     );
 
-    final models = ref.watch(modelProvidersProvider).value;
+    final models = ref.watch(apiModelProvidersProvider).value;
 
     if (selectedModelId == null || models == null) {
       return const SizedBox.shrink();

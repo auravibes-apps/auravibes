@@ -1,5 +1,5 @@
 import 'package:async/async.dart';
-import 'package:langchain/langchain.dart';
+import 'package:auravibes_app/domain/entities/tool_spec.dart';
 
 enum NativeToolType {
   url('url')

@@ -1,10 +1,10 @@
 import 'package:auravibes_app/domain/entities/conversation.dart';
-import 'package:auravibes_app/domain/repositories/chat_models_repository.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
+import 'package:auravibes_app/domain/repositories/workspace_model_selection_repository.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/generate_title_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
-import 'package:auravibes_app/features/models/providers/model_providers_repository_providers.dart';
+import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
 import 'package:auravibes_app/services/monitoring_service.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -13,42 +13,43 @@ class SendNewMessageUsecase {
     required this.conversationRepo,
     required this.sendMessageUsecase,
 
-    required this.credentialsRepository,
+    required this.workspaceModelSelectionRepository,
     required this.generateTitleUsecase,
     required this.monitoringService,
   });
 
   final ConversationRepository conversationRepo;
   final SendMessageUsecase sendMessageUsecase;
-  final CredentialsModelsRepository credentialsRepository;
+  final WorkspaceModelSelectionRepository workspaceModelSelectionRepository;
   final GenerateTitleUsecase generateTitleUsecase;
   final MonitoringService monitoringService;
   Future<ConversationEntity> call({
     required String workspaceId,
     required String firstMessage,
-    required String credentialsModelId,
+    required String workspaceModelSelectionId,
   }) async {
+    // Validate model selection exists before creating conversation
+    final workspaceModelSelection = await workspaceModelSelectionRepository
+        .getWorkspaceModelSelectionById(workspaceModelSelectionId);
+
+    if (workspaceModelSelection == null) {
+      throw Exception('Selected model not found');
+    }
+
     // create conversation
     final newConversation = await conversationRepo.createConversation(
       .new(
         title: 'New Conversation',
         workspaceId: workspaceId,
-        modelId: credentialsModelId,
+        modelId: workspaceModelSelectionId,
       ),
     );
-
-    final credentialsModel = await credentialsRepository
-        .getCredentialsModelById(credentialsModelId);
-
-    if (credentialsModel == null) {
-      throw Exception('Selected model not found');
-    }
 
     // stream title
     generateTitleUsecase.call(
       conversationId: newConversation.id,
       firstMessage: firstMessage,
-      credentialsModel: credentialsModel,
+      workspaceModelSelection: workspaceModelSelection,
     );
 
     sendMessageUsecase
@@ -72,7 +73,9 @@ final sendNewMessageUsecaseProvider = Provider<SendNewMessageUsecase>(
     return SendNewMessageUsecase(
       conversationRepo: ref.watch(conversationRepositoryProvider),
       sendMessageUsecase: ref.watch(sendMessageUsecaseProvider),
-      credentialsRepository: ref.watch(credentialsModelsRepositoryProvider),
+      workspaceModelSelectionRepository: ref.watch(
+        workspaceModelSelectionRepositoryProvider,
+      ),
       generateTitleUsecase: ref.watch(generateTitleUsecaseProvider),
       monitoringService: ref.watch(monitoringServiceProvider),
     );

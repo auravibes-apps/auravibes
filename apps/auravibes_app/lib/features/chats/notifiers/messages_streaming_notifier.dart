@@ -1,5 +1,5 @@
+import 'package:dartantic_ai/dartantic_ai.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:langchain/langchain.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:rxdart/rxdart.dart';
 
@@ -10,7 +10,7 @@ part 'messages_streaming_notifier.g.dart';
 abstract class MessagesStreamingState with _$MessagesStreamingState {
   const factory MessagesStreamingState({
     required CompositeSubscription streamSubscription,
-    ChatResult? lastResult,
+    ChatResult<ChatMessage>? lastResult,
   }) = _MessagesStreamingState;
 }
 
@@ -31,11 +31,11 @@ class MessagesStreamingNotifier extends _$MessagesStreamingNotifier {
     };
   }
 
-  void updateResult(ChatResult result, String messageId) {
+  void updateResult(ChatResult<ChatMessage> result, String messageId) {
     final currentState = state[messageId];
     if (currentState == null) {
       throw Exception(
-        'No subscription found for conversation id: $messageId',
+        'No subscription found for message id: $messageId',
       );
     }
     state = {

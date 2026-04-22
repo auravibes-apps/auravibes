@@ -1,19 +1,10 @@
 import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_notifier.dart';
 import 'package:auravibes_app/features/chats/notifiers/messages_streaming_notifier.dart';
 import 'package:auravibes_app/features/chats/notifiers/titles_streams_notifier.dart';
-import 'package:langchain/langchain.dart';
+import 'package:dartantic_ai/dartantic_ai.dart' hide Provider;
 import 'package:riverpod/riverpod.dart';
 import 'package:rxdart/rxdart.dart';
 
-/// Runtime adapter that captures notifier method references behind plain
-/// callback interfaces, so use cases stay decoupled from Riverpod notifier
-/// classes.
-///
-/// Safety note: method references are captured once per provider rebuild.
-/// The adapter stays valid as long as the underlying notifier instance is not
-/// disposed and recreated between uses. For keepAlive notifiers this is
-/// guaranteed. For auto-dispose notifiers, the adapter's `ref.watch`
-/// subscription keeps the notifier alive while the adapter is watched.
 class ConversationStreamingRuntime {
   const ConversationStreamingRuntime({
     required this.start,
@@ -35,7 +26,8 @@ class MessagesStreamingRuntime {
 
   final void Function(CompositeSubscription subscription, String messageId)
   startSubscription;
-  final void Function(ChatResult result, String messageId) updateResult;
+  final void Function(ChatResult<ChatMessage> result, String messageId)
+  updateResult;
   final Future<void> Function(String messageId) remove;
 }
 

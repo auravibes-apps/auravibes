@@ -1,5 +1,5 @@
 import 'package:auravibes_app/features/models/models/add_model_provider_model.dart';
-import 'package:auravibes_app/features/models/providers/add_model_provider_providers.dart';
+import 'package:auravibes_app/features/models/providers/add_model_providers.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
