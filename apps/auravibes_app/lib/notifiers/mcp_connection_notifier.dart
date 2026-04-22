@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/mcp_server.dart';
+import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 import 'package:auravibes_app/domain/usecases/tools/mcp/build_mcp_server_to_create_usecase.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';
@@ -11,7 +12,6 @@ import 'package:auravibes_app/services/mcp_service/mcp_service.dart';
 import 'package:auravibes_app/services/mcp_service/oauth_authenticate.dart';
 import 'package:collection/collection.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:langchain/langchain.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'mcp_connection_notifier.freezed.dart';

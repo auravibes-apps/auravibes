@@ -15,8 +15,8 @@ import 'package:auravibes_app/features/chats/providers/messages_providers.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
+import 'package:dartantic_ai/dartantic_ai.dart' hide Provider;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:langchain/langchain.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:rxdart/rxdart.dart';
 
@@ -100,13 +100,9 @@ void main() {
       container.read(messagesStreamingProvider.notifier)
         ..startSubscription(CompositeSubscription(), 'message-1')
         ..updateResult(
-          const ChatResult(
-            id: 'chunk-1',
-            output: AIChatMessage(content: 'streaming'),
-            finishReason: FinishReason.unspecified,
-            metadata: {},
-            usage: LanguageModelUsage(),
-            streaming: true,
+          ChatResult<ChatMessage>(
+            output: ChatMessage.model('streaming'),
+            usage: const LanguageModelUsage(),
           ),
           'message-1',
         );
@@ -158,13 +154,9 @@ void main() {
         container.read(messagesStreamingProvider.notifier)
           ..startSubscription(CompositeSubscription(), 'message-2')
           ..updateResult(
-            const ChatResult(
-              id: 'chunk-2',
-              output: AIChatMessage(content: 'streaming'),
-              finishReason: FinishReason.unspecified,
-              metadata: {},
-              usage: LanguageModelUsage(totalTokens: 900),
-              streaming: true,
+            ChatResult<ChatMessage>(
+              output: ChatMessage.model('streaming'),
+              usage: const LanguageModelUsage(totalTokens: 900),
             ),
             'message-2',
           );
