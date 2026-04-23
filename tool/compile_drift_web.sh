@@ -12,6 +12,11 @@
 
 set -euo pipefail
 
+if [ "$#" -gt 1 ]; then
+  echo "Error: too many arguments. Use: $0 [--debug|--release]" >&2
+  exit 1
+fi
+
 MODE="${1:---release}"
 case "$MODE" in
   --release|--debug) ;;
@@ -64,6 +69,16 @@ HTTP_CODE=$(curl -fsSL \
   -o "$TMP_WASM" "$WASM_URL" || true)
 
 if [ "$HTTP_CODE" = "200" ]; then
+  if [ -n "${SQLITE3_WASM_SHA256:-}" ]; then
+    ACTUAL_SHA=$(shasum -a 256 "$TMP_WASM" | cut -d' ' -f1)
+    if [ "$ACTUAL_SHA" != "$SQLITE3_WASM_SHA256" ]; then
+      rm -f "$TMP_WASM"
+      echo "Error: checksum mismatch for $WASM_URL" >&2
+      echo "  expected: $SQLITE3_WASM_SHA256" >&2
+      echo "  actual:   $ACTUAL_SHA" >&2
+      exit 1
+    fi
+  fi
   mv "$TMP_WASM" "$WASM_OUT"
   echo "  -> $WASM_OUT ($(wc -c < "$WASM_OUT") bytes)"
 else
