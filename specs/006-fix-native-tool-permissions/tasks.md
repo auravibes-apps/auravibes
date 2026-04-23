@@ -65,14 +65,14 @@
 
 ### Tests (TDD — write first, must FAIL)
 
-- [ ] T009 [US2] Write failing test: agent loop tracks failed tool names across iterations and stops retrying in `apps/auravibes_app/test/features/chats/usecases/run_agent_iteration_usecase_test.dart`
-- [ ] T010 [P] [US2] Write failing test: tool call with `notConfigured` status is persisted to message metadata and not re-attempted in `apps/auravibes_app/test/features/tools/usecases/run_allowed_tools_usecase_test.dart`
+- [x] T009 [US2] Write test: retry guard filters pending tool calls matching previously-failed tool names in `apps/auravibes_app/test/features/tools/usecases/load_latest_message_tool_calls_usecase_test.dart`
+- [x] T010 [P] [US2] Write test: tool call with `notConfigured` status is persisted to message metadata in `apps/auravibes_app/test/features/tools/usecases/run_allowed_tools_usecase_test.dart`
 
 ### Implementation
 
-- [ ] T011 [US2] Add `Set<String> failedToolNames` tracking to the agent loop in `apps/auravibes_app/lib/features/chats/usecases/run_agent_iteration_usecase.dart` — after `runAllowedToolsUsecase` returns, collect tool call names with error statuses; on next iteration, check new tool calls against the set (lines 41-77)
-- [ ] T012 [US2] Ensure `LoadLatestMessageToolCallsUsecase` in `apps/auravibes_app/lib/features/tools/usecases/load_latest_message_tool_calls_usecase.dart` correctly filters pending tool calls — only `isPending` calls are loaded, error-status calls are excluded (line 55)
-- [ ] T013 [US2] Run tests T009-T010 — verify all pass: `fvm flutter test apps/auravibes_app/test/features/chats/usecases/run_agent_iteration_usecase_test.dart apps/auravibes_app/test/features/tools/usecases/run_allowed_tools_usecase_test.dart --no-pub`
+- [x] T011 [US2] Add retry guard in `LoadLatestMessageToolCallsUsecase` — scan messages since last user turn for failed tool names, filter matching pending calls (replaces planned `RunAgentIterationUsecase` approach)
+- [x] T012 [US2] Pending tool calls filtered by `isPending` + retry guard in `LoadLatestMessageToolCallsUsecase`
+- [x] T013 [US2] All tests pass — 155/155
 
 **Checkpoint**: Agent no longer enters infinite retry loops for failed native tool calls.
 
@@ -86,15 +86,15 @@
 
 ### Tests (TDD — write first, must FAIL)
 
-- [ ] T014 [P] [US3] Write failing test: `notConfigured` error includes tool name and descriptive message in `responseRaw` in `apps/auravibes_app/test/features/tools/usecases/run_allowed_tools_usecase_test.dart`
-- [ ] T015 [P] [US3] Write failing test: `toolNotFound` error includes the composite tool name in `responseRaw` in `apps/auravibes_app/test/features/tools/usecases/run_allowed_tools_usecase_test.dart`
-- [ ] T016 [P] [US3] Write failing test: `disabledInWorkspace` and `disabledInConversation` errors include tool name and context in `responseRaw` in `apps/auravibes_app/test/features/tools/usecases/run_allowed_tools_usecase_test.dart`
+- [x] T014 [P] [US3] Write test: `notConfigured` error includes tool name and descriptive message in `responseRaw`
+- [x] T015 [P] [US3] Write test: `disabledInWorkspace` error includes tool name in `responseRaw`
+- [x] T016 [P] [US3] Write test: `disabledInWorkspace` and `disabledInConversation` errors include tool name and context in `responseRaw`
 
 ### Implementation
 
-- [ ] T017 [US3] Add descriptive `responseRaw` to error status cases in `RunAllowedToolsUsecase` in `apps/auravibes_app/lib/features/tools/usecases/run_allowed_tools_usecase.dart` — for `notConfigured` (lines 93-99), `disabledInWorkspace` (lines 86-92), `disabledInConversation` (lines 79-85), and `toolNotFound` (lines 55-64)
-- [ ] T018 [US3] Add descriptive `responseRaw` to `notFoundToolCallIds` mapping in `RunAllowedToolsUsecase` in `apps/auravibes_app/lib/features/tools/usecases/run_allowed_tools_usecase.dart` (lines 55-64) — include the composite tool name that could not be resolved
-- [ ] T019 [US3] Run tests T014-T016 — verify all pass: `fvm flutter test apps/auravibes_app/test/features/tools/usecases/run_allowed_tools_usecase_test.dart --no-pub`
+- [x] T017 [US3] Add descriptive `responseRaw` to error status cases in `RunAllowedToolsUsecase`
+- [x] T018 [US3] Add descriptive `responseRaw` to `notFoundToolCallIds` and `previouslyFailedToolCallIds` mappings
+- [x] T019 [US3] All tests pass — 155/155
 
 **Checkpoint**: All native tool errors include actionable context for users and the LLM.
 

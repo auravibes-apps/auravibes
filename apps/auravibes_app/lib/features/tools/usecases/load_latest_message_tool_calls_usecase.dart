@@ -96,20 +96,46 @@ class LoadLatestMessageToolCallsUsecase {
     List<MessageEntity> messages, {
     required String excludeMessageId,
   }) {
-    final failedNames = <String>{};
-    for (final message in messages) {
-      if (message.id == excludeMessageId || message.isUser) continue;
-      final toolCalls = message.metadata?.toolCalls ?? const [];
-      for (final toolCall in toolCalls) {
-        final status = toolCall.resultStatus;
-        if (status != null &&
-            status != ToolCallResultStatus.success &&
-            status != ToolCallResultStatus.skippedByUser &&
-            status != ToolCallResultStatus.stoppedByUser) {
-          failedNames.add(toolCall.name);
+    final excludeIndex = messages.indexWhere(
+      (m) => m.id == excludeMessageId,
+    );
+    if (excludeIndex == -1) return const {};
+
+    var startIndex = 0;
+    var userCount = 0;
+    for (var i = excludeIndex - 1; i >= 0; i--) {
+      if (messages[i].isUser) {
+        userCount++;
+        if (userCount == 2) {
+          startIndex = i + 1;
+          break;
         }
       }
     }
+    if (userCount < 2) {
+      startIndex = 0;
+    }
+
+    final latestStatusByToolName = <String, ToolCallResultStatus>{};
+    for (var i = startIndex; i < excludeIndex; i++) {
+      final message = messages[i];
+      if (message.isUser) continue;
+      final toolCalls = message.metadata?.toolCalls ?? const [];
+      for (final toolCall in toolCalls) {
+        final status = toolCall.resultStatus;
+        if (status == null) continue;
+        latestStatusByToolName[toolCall.name] = status;
+      }
+    }
+
+    final failedNames = <String>{};
+    latestStatusByToolName.forEach((toolName, status) {
+      if (status != ToolCallResultStatus.success &&
+          status != ToolCallResultStatus.skippedByUser &&
+          status != ToolCallResultStatus.stoppedByUser) {
+        failedNames.add(toolName);
+      }
+    });
     return failedNames;
   }
 }

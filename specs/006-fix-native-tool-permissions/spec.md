@@ -3,7 +3,7 @@
 **Feature Branch**: `006-fix-native-tool-permissions`
 **Created**: 2026-04-22
 **Status**: Draft
-**Input**: User description: "it seams native tools are failing to run, when it is about to ask for permissions it just skip and just fail the execution and the agent just keep failing trying to call the tools again and again"
+**Input**: User description: "it seems native tools are failing to run, when it is about to ask for permissions it just skip and just fail the execution and the agent just keep failing trying to call the tools again and again"
 
 ## User Scenarios & Testing _(mandatory)_
 
@@ -68,7 +68,7 @@ When native tool permission checks fail, the app must provide enough information
 
 ### Functional Requirements
 
-- **FR-001**: The permission check for native tools MUST correctly resolve the workspace tool database ID from the composite tool name and look up the corresponding workspace tool record
+- **FR-001**: The permission check for native/built-in tools MUST use `resolvedTool.toolIdentifier` (the type string, e.g., "url") for workspace tool lookup, then `workspaceTool.id` (PK) for conversation override lookup
 - **FR-002**: When a native tool's workspace permission mode is "always ask", the system MUST return `needsConfirmation` and leave the tool call pending for user approval
 - **FR-003**: When a native tool's workspace permission mode is "always allow", the system MUST return `granted` and execute the tool immediately
 - **FR-004**: When a native tool is not found in the workspace tools (no matching database record), the system MUST return `notConfigured` with a descriptive error message rather than silently failing

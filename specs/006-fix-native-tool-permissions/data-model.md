@@ -9,13 +9,13 @@ No new entities. All entities below already exist in the codebase.
 
 ### ResolvedTool (existing)
 
-| Field          | Type               | Description                                       |
-| -------------- | ------------------ | ------------------------------------------------- |
-| type           | `ResolvedToolType` | builtIn / mcp / native                            |
-| tableId        | `String`           | Workspace tool database ID for permission lookups |
-| toolIdentifier | `String`           | Tool type identifier (e.g., "url", "calculator")  |
-| mcpServerId    | `String?`          | MCP server ID (null for native/built-in)          |
-| nativeTool     | `NativeToolType?`  | Native tool type enum                             |
+| Field          | Type               | Description                                                                                |
+| -------------- | ------------------ | ------------------------------------------------------------------------------------------ |
+| type           | `ResolvedToolType` | builtIn / mcp / native                                                                     |
+| tableId        | `String`           | Workspace tool database row ID (UUID)                                                      |
+| toolIdentifier | `String`           | Tool type identifier (e.g., "url", "calculator"). **Used for non-MCP permission lookups.** |
+| mcpServerId    | `String?`          | MCP server ID (null for native/built-in)                                                   |
+| nativeTool     | `NativeToolType?`  | Native tool type enum                                                                      |
 
 ### MessageToolCallEntity (existing)
 
@@ -70,15 +70,15 @@ Example for `toolNotFound`:
 "Tool 'native_abc123_unknown' could not be resolved. The tool may have been removed."
 ```
 
-### Agent Iteration State — New tracking (in-memory only)
+### Retry Guard — Implemented in LoadLatestMessageToolCallsUsecase
 
-Track failed tool names across iterations to prevent LLM retry loops:
+Scan messages since the last user turn for tool calls with error statuses.
+Filter pending tool calls whose composite name matches a previously-failed name.
+This is derived from persisted tool call results, no additional in-memory state needed.
 
-| Field           | Type          | Description                                             |
-| --------------- | ------------- | ------------------------------------------------------- |
-| failedToolNames | `Set<String>` | Tool composite names that failed in previous iterations |
-
-This is in-memory state within `RunAgentIterationUsecase`, not persisted to DB.
+| Method                    | Location                            | Description                                                               |
+| ------------------------- | ----------------------------------- | ------------------------------------------------------------------------- |
+| `_collectFailedToolNames` | `LoadLatestMessageToolCallsUsecase` | Scans messages since last user turn, computes latest status per tool name |
 
 ## State Transitions
 
@@ -111,7 +111,7 @@ LoadLatestMessageToolCallsUsecase
           execute → success | error
 ```
 
-### Agent Loop Iteration (existing, with proposed retry guard)
+### Agent Loop Iteration (with retry guard)
 
 ```
 RunAgentIterationUsecase.while(true)
@@ -120,15 +120,19 @@ RunAgentIterationUsecase.while(true)
   ContinueAgentUsecase → LLM response with tool calls
         |
         v
+  LoadLatestMessageToolCallsUsecase
+    ├── Filter pending calls whose name matches
+    │   a previously-failed tool (since last user turn)
+    │   → added to previouslyFailedToolCallIds
+    └── Return remaining pending calls as toolsToRun
+        |
+        v
   RunAllowedToolsUsecase → permission checks + execution
+      previouslyFailedToolCallIds → marked as executionError
         |
         v
   Decision?
     ├── done              → exit loop
     ├── waitForApproval   → exit loop, wait for user
     └── continueIteration → loop back
-                              |
-                              [NEW] Check if LLM called a tool
-                              that already failed → inject
-                              "do not retry" context
 ```

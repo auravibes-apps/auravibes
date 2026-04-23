@@ -58,7 +58,7 @@ class RunAllowedToolsUsecase {
           (toolCallId) => _ToolResultUpdate(
             toolCallId: toolCallId,
             resultStatus: ToolCallResultStatus.toolNotFound,
-            responseRaw: 'Tool not found.',
+            responseRaw: 'Tool not found for tool call: $toolCallId.',
           ),
         ),
       );
