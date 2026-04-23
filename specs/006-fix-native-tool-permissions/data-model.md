@@ -33,8 +33,8 @@ No new entities. All entities below already exist in the codebase.
 | ------------------------ | ------------------------------------------ |
 | `null` (pending)         | Awaiting permission check or user approval |
 | `success`                | Tool executed successfully                 |
-| `skipped`                | User skipped the tool                      |
-| `stopped`                | User stopped all pending tools             |
+| `skippedByUser`          | User skipped the tool                      |
+| `stoppedByUser`          | User stopped all pending tools             |
 | `toolNotFound`           | Composite name could not be resolved       |
 | `notConfigured`          | Tool not in workspace tools or disabled    |
 | `disabledInWorkspace`    | Tool disabled at workspace level           |
@@ -60,13 +60,13 @@ Proposed: Descriptive error message including tool name and reason.
 
 Example for `notConfigured`:
 
-```
+```text
 "Tool 'url' is not enabled in this workspace. Enable it in workspace settings to use it."
 ```
 
 Example for `toolNotFound`:
 
-```
+```text
 "Tool 'native_abc123_unknown' could not be resolved. The tool may have been removed."
 ```
 
@@ -84,7 +84,7 @@ This is derived from persisted tool call results, no additional in-memory state 
 
 ### Tool Call Lifecycle (existing, documented for clarity)
 
-```
+```text
 LLM returns tool call (resultStatus = null)
         |
         v
@@ -113,7 +113,7 @@ LoadLatestMessageToolCallsUsecase
 
 ### Agent Loop Iteration (with retry guard)
 
-```
+```text
 RunAgentIterationUsecase.while(true)
         |
         v
