@@ -182,7 +182,7 @@ void main() {
         // Create a conversation tool that disables this tool
         await database.conversationToolsDao.upsertConversationTool(
           testConversationId,
-          testToolId,
+          'workspace-tool-id',
           isEnabled: false,
           permission: PermissionAccess.ask,
         );
@@ -223,7 +223,7 @@ void main() {
         // Create a conversation tool that requires confirmation
         await database.conversationToolsDao.upsertConversationTool(
           testConversationId,
-          testToolId,
+          'workspace-tool-id',
           isEnabled: true,
           permission: PermissionAccess.ask,
         );
@@ -264,7 +264,7 @@ void main() {
         // Create a conversation tool that grants permission
         await database.conversationToolsDao.upsertConversationTool(
           testConversationId,
-          testToolId,
+          'workspace-tool-id',
           isEnabled: true,
           permission: PermissionAccess.granted,
         );

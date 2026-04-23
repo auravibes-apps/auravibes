@@ -315,7 +315,7 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
     // 2. Check conversation override (takes priority)
     final conversationTool = await getConversationTool(
       conversationId,
-      toolId,
+      workspaceTool.id,
     );
 
     if (conversationTool != null) {
