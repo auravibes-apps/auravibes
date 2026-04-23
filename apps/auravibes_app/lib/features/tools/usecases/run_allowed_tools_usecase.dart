@@ -58,6 +58,21 @@ class RunAllowedToolsUsecase {
           (toolCallId) => _ToolResultUpdate(
             toolCallId: toolCallId,
             resultStatus: ToolCallResultStatus.toolNotFound,
+            responseRaw: 'Tool not found for tool call: $toolCallId.',
+          ),
+        ),
+      );
+    }
+
+    if (latestToolCalls.previouslyFailedToolCallIds.isNotEmpty) {
+      updates.addAll(
+        latestToolCalls.previouslyFailedToolCallIds.map(
+          (toolCallId) => _ToolResultUpdate(
+            toolCallId: toolCallId,
+            resultStatus: ToolCallResultStatus.executionError,
+            responseRaw:
+                'Tool execution was already attempted and failed. '
+                'Not retrying.',
           ),
         ),
       );
@@ -81,6 +96,9 @@ class RunAllowedToolsUsecase {
             _ToolResultUpdate(
               toolCallId: toolToCall.id,
               resultStatus: ToolCallResultStatus.disabledInConversation,
+              responseRaw:
+                  'Tool "${toolToCall.tool.toolIdentifier}" is disabled for '
+                  'this conversation.',
             ),
           );
         case ToolPermissionResult.disabledInWorkspace:
@@ -88,6 +106,9 @@ class RunAllowedToolsUsecase {
             _ToolResultUpdate(
               toolCallId: toolToCall.id,
               resultStatus: ToolCallResultStatus.disabledInWorkspace,
+              responseRaw:
+                  'Tool "${toolToCall.tool.toolIdentifier}" is disabled in '
+                  'workspace settings.',
             ),
           );
         case ToolPermissionResult.notConfigured:
@@ -95,6 +116,9 @@ class RunAllowedToolsUsecase {
             _ToolResultUpdate(
               toolCallId: toolToCall.id,
               resultStatus: ToolCallResultStatus.notConfigured,
+              responseRaw:
+                  'Tool "${toolToCall.tool.toolIdentifier}" is not configured. '
+                  'Enable it in workspace settings to use it.',
             ),
           );
       }
@@ -142,7 +166,7 @@ class RunAllowedToolsUsecase {
 
   Future<String?> _resolvePermissionTableId(ResolvedTool resolvedTool) async {
     if (resolvedTool.mcpServerId == null) {
-      return resolvedTool.tableId;
+      return resolvedTool.toolIdentifier;
     }
 
     final toolGroup = await toolsGroupsRepository.getToolsGroupByMcpServerId(

@@ -175,6 +175,6 @@ SomeExperimentalApi(), // ignore: experimental_member_use - Required for widgetb
 
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at `specs/004-migrate-langchain-dartantic/plan.md`
+at `specs/006-fix-native-tool-permissions/plan.md`
 
 <!-- SPECKIT END -->
