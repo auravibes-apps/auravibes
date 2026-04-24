@@ -65,7 +65,7 @@ Generated family parameters become available by name inside the class (`listId` 
 - Generated providers are auto-dispose by default. Use `@Riverpod(keepAlive: true)` only when provider lifetime must outlive listeners.
 - `StateProvider`, `StateNotifierProvider`, and `ChangeNotifierProvider` are legacy in Riverpod 3. Keep them only for migration/maintenance and import from `legacy.dart`.
 - `AsyncValue` is sealed. Prefer exhaustive `switch` or `.when`.
-- In Riverpod 3, the safe nullable data getter is `.value`; old `valueOrNull` usage should be migrated.
+- In Riverpod 3, `valueOrNull` was renamed to `.value` and removed; migrate old `valueOrNull` reads to `.value`.
 - Riverpod throws if `Ref`/`Notifier` is used after disposal. Check `ref.mounted` after awaits in methods that might outlive the provider.
 - Exceptions while reading providers may be wrapped in `ProviderException`; inspect the original error when needed.
 - Widget listeners can be paused when widgets are not visible; do not assume an offscreen widget listener remains active for app-level work.
@@ -127,16 +127,24 @@ Override scoped values with `ProviderScope(overrides: [...])`.
 
 ## Testing
 
-Use `ProviderContainer.test` for provider tests:
+Use `ProviderContainer(...)` for provider tests and dispose it in `tearDown`:
 
 ```dart
-test('loads todos', () async {
-  final container = ProviderContainer.test(
+late ProviderContainer container;
+
+setUp(() {
+  container = ProviderContainer(
     overrides: [
       todoRepositoryProvider.overrideWithValue(fakeRepository),
     ],
   );
+});
 
+tearDown(() {
+  container.dispose();
+});
+
+test('loads todos', () async {
   expect(await container.read(todosProvider('inbox').future), hasLength(2));
 });
 ```

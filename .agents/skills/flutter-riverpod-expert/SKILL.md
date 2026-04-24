@@ -50,18 +50,45 @@ Apply Riverpod 3 patterns that fit the current codebase. In AuraVibes, prefer th
 
 ## Common AuraVibes Pattern
 
+This sample is based on `ConversationSendQueue` in `apps/auravibes_app`.
+
 ```dart
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'conversation_send_queue_notifier.g.dart';
 
-@riverpod
-class ConversationSendQueueNotifier extends _$ConversationSendQueueNotifier {
-  @override
-  List<String> build() => const [];
+class ConversationQueuedDraft {
+  const ConversationQueuedDraft({
+    required this.id,
+    required this.content,
+  });
 
-  void enqueue(String messageId) {
-    state = [...state, messageId];
+  final String id;
+  final String content;
+}
+
+@riverpod
+class ConversationSendQueue extends _$ConversationSendQueue {
+  int _nextDraftId = 0;
+
+  @override
+  Map<String, List<ConversationQueuedDraft>> build() => {};
+
+  ConversationQueuedDraft enqueue({
+    required String conversationId,
+    required String content,
+  }) {
+    final draft = ConversationQueuedDraft(
+      id: 'queued-${_nextDraftId++}',
+      content: content,
+    );
+
+    state = {
+      ...state,
+      conversationId: [...state[conversationId] ?? const [], draft],
+    };
+
+    return draft;
   }
 }
 ```

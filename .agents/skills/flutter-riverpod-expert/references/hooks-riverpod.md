@@ -13,10 +13,10 @@ Official package/docs references used when this reference was written:
 
 ## Widget Selection
 
-- Use `ConsumerWidget` when the widget only needs Riverpod.
-- Use `HookConsumerWidget` when the widget needs hooks and Riverpod in the same `build`.
-- Use `Consumer` for a small subtree when only part of a larger widget should rebuild.
-- Use hooks for widget-local lifecycle objects and ephemeral UI state.
+- Prefer `ConsumerWidget` when the widget only needs Riverpod.
+- Choose `HookConsumerWidget` if the widget needs hooks and Riverpod in the same `build`.
+- Employ `Consumer` for a small subtree when only part of a larger widget should rebuild.
+- Reserve hooks for widget-local lifecycle objects and ephemeral UI state.
 
 ```dart
 class SearchBox extends HookConsumerWidget {

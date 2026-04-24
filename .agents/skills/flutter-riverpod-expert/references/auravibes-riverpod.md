@@ -57,13 +57,14 @@ import 'package:hooks_riverpod/legacy.dart';
 
 ## Scoped Providers
 
-AuraVibes uses scoped providers for selected conversation/workspace context.
+AuraVibes uses scoped providers for selected conversation/workspace context. Default scoped providers should be non-nullable and fail fast until overridden via `ProviderScope`.
 
 For a scoped generated provider:
 
 ```dart
 @Riverpod(dependencies: [])
-String? conversationSelected(Ref ref) => null;
+String conversationSelected(Ref ref) =>
+    throw const NoConversationSelectedException();
 ```
 
 Any generated provider that watches it must list it:
