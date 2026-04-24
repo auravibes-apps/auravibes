@@ -42,7 +42,7 @@
 - [ ] T016 Add Riverpod repository provider for agents in `apps/auravibes_app/lib/features/agents/providers/agent_repository_provider.dart`
 - [ ] T017 Update `ConversationEntity`, `ConversationToCreate`, and `ConversationPatch` with optional `agentId` in `apps/auravibes_app/lib/domain/entities/conversation.dart`
 - [ ] T018 Update `ConversationRepositoryImpl` mapping, create, patch, and validation for optional `agentId` in `apps/auravibes_app/lib/data/repositories/conversation_repository_impl.dart`
-- [ ] T019 Run generated code for Drift, Freezed, and Riverpod from repo root using `fvm dart run build_runner build --delete-conflicting-outputs`
+- [ ] T019 Run generated code for Drift, Freezed, and Riverpod from repo root using `fvm dart run melos run generate`
 
 **Checkpoint**: Data/domain foundation builds and user-story work can begin.
 
@@ -209,12 +209,12 @@
 - [ ] T078 Add structured logging assertions for create/edit/delete/select/fallback operations in `apps/auravibes_app/test/features/agents/notifiers/agents_notifier_test.dart` and `apps/auravibes_app/test/features/chats/notifiers/conversation_chat_notifier_test.dart`
 - [ ] T079 Implement structured logging with user action, workspace id, conversation id when present, agent id when present, and error type in `apps/auravibes_app/lib/features/agents/notifiers/agents_notifier.dart` and `apps/auravibes_app/lib/features/chats/notifiers/conversation_chat_notifier.dart`
 - [ ] T080 Review agent repository and use cases for `error-handling-exceptions`: keep validation, duplicate slug, not-found, and cross-workspace exceptions; remove generic catch-and-rethrow wrappers in `apps/auravibes_app/lib/data/repositories/agent_repository_impl.dart`, `apps/auravibes_app/lib/features/agents/usecases/`, and `apps/auravibes_app/lib/features/chats/usecases/change_conversation_agent_usecase.dart`
-- [ ] T081 Run generated code from repo root using `fvm dart run build_runner build --delete-conflicting-outputs`
+- [ ] T081 Run generated code from repo root using `fvm dart run melos run generate`
 - [ ] T082 Run focused app tests from `apps/auravibes_app` using `fvm flutter test test/data/database/agents_dao_test.dart test/data/repositories/agent_repository_impl_test.dart test/services/chatbot_service/build_prompt_chat_messages_test.dart --no-pub`
 - [ ] T083 Run integration tests from `apps/auravibes_app` using `fvm flutter test integration_test/reusable_agents_management_flow_test.dart integration_test/reusable_agents_new_chat_flow_test.dart integration_test/reusable_agents_conversation_flow_test.dart --no-pub`
 - [ ] T084 Run coverage audit from `apps/auravibes_app` using `fvm flutter test --coverage --no-pub` and verify new feature coverage meets the project 80% minimum
 - [ ] T085 Manually verify SC-001 through SC-006 timings and action counts from `specs/007-reusable-agents/quickstart.md`
-- [ ] T086 Run repo validation from root using `fvm dart run melos analyze`, `fvm dart run melos format`, and `fvm dart run melos run validate:quick`
+- [ ] T086 Run repo validation from root using `fvm dart run melos run analyze`, `fvm dart run melos format`, and `fvm dart run melos run validate:quick`
 - [ ] T087 Update `specs/007-reusable-agents/quickstart.md` with any final manual verification changes discovered during implementation
 
 ---
@@ -302,6 +302,10 @@ For each story phase, complete test tasks first, run focused tests to confirm fa
 ### Explicit Exceptions Rule
 
 Use meaningful domain exceptions only for expected business decisions: validation rejected, duplicate slug, missing agent, and cross-workspace selection. Let unexpected infrastructure errors bubble unless they can be mapped to one of those business cases.
+
+### Agent Workflow Examples
+
+See [agent-workflows.md](./agent-workflows.md) for UI-to-notifier-to-usecase sequences, prompt composition examples, and interface responsibilities for reusable-agent selection, edit, and delete flows.
 
 ## Notes
 

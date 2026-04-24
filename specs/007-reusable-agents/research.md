@@ -48,6 +48,29 @@
 - Store agent instructions as visible chat messages: rejected because it pollutes conversation history.
 - Append instructions after user messages: rejected because it weakens the intended guidance and can confuse chronological history.
 
+**Usage example**:
+
+Before selection, prompt construction uses the visible conversation history only:
+
+```text
+user: "Review this migration."
+assistant: "Share the migration file."
+```
+
+After selecting `code-reviewer`, prompt construction prepends the latest saved instructions:
+
+```text
+developer: "Act as a code reviewer. Focus on correctness, tests, and migration safety."
+user: "Review this migration."
+assistant: "Share the migration file."
+```
+
+If the selected `agentId` later points to a deleted agent, the conversation behaves as `"No Agent"` before the next send and does not inject stale instructions.
+
+Example agents:
+- `code-reviewer`: reviews diffs for correctness, test gaps, and unsafe assumptions.
+- `support-bot`: answers customer-support drafts using workspace tone and escalation rules.
+
 ## Decision: Keep tool presets, model choice, scheduling, background tasks, and flow builder out of scope
 
 **Rationale**: The first implementation should ship reusable instruction profiles only. Future workflow capabilities can attach to the same workspace-scoped agent concept after the core lifecycle is stable.

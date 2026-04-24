@@ -62,7 +62,7 @@ fvm flutter pub add dev:build_runner dev:json_serializable
 valid on melos >7
 
 ```bash
-fvm dart run melos analyze            # Analyze code quality
+fvm dart run melos run analyze        # Analyze code quality
 fvm dart run melos format             # Check code formatting
 fvm dart run melos run test               # Run all tests
 fvm dart run melos run validate:quick     # Quick development check
@@ -159,7 +159,7 @@ SomeExperimentalApi(), // ignore: experimental_member_use - Required for widgetb
 - Verify version references are consistent across README, pubspec, and FVM config
 
 ## Active Technologies
-- Dart 3.11+ with Flutter 3.41.4+ via FVM + Flutter SDK, Riverpod with code generation, Freezed, Drift, dartantic_ai, auravibes_ui (007-reusable-agents)
+- Dart 3.11+ with Flutter 3.41.7 via FVM + Flutter SDK, Riverpod with code generation, Freezed, Drift, dartantic_ai, auravibes_ui (007-reusable-agents)
 - Local Drift SQLite database with schema migration (007-reusable-agents)
 
 - Dart 3.x (FVM pinned to 3.41.4+) + Flutter, Riverpod (with code generation), Freezed, auravibes_ui (001-two-step-model-selector)
@@ -170,7 +170,7 @@ SomeExperimentalApi(), // ignore: experimental_member_use - Required for widgetb
 
 ## Recent Changes
 
-- 007-reusable-agents: Added Dart 3.11+ with Flutter 3.41.4+ via FVM + Flutter SDK, Riverpod with code generation, Freezed, Drift, dartantic_ai, auravibes_ui
+- 007-reusable-agents: Added reusable agents planning artifacts; canonical stack is listed in [Active Technologies](#active-technologies).
 - 001-two-step-model-selector: Added Dart 3.x (FVM pinned to 3.41.4+) + Flutter, Riverpod (with code generation), Freezed, auravibes_ui
 - 001-ui-library-widgets: Added Dart 3.11+ (Flutter 3.41.4+ via FVM) + Flutter SDK, flutter_portal, gpt_markdown, riverpod (existing)
 

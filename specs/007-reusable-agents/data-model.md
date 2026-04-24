@@ -97,3 +97,14 @@ Output rule:
 - If no agent is selected, build prompt from conversation messages only.
 - If an agent is selected, prepend agent instructions as conversation-level guidance before conversation history.
 - User-created agent instructions do not override platform safety or security rules.
+
+Example selected-agent prompt shape:
+
+```text
+1. developer: "Reusable agent instructions for reviewer: Review code changes for correctness, missing tests, and unsafe assumptions."
+2. user: "Can you review this diff?"
+3. assistant: "Yes. Share the diff."
+4. user: "<diff>"
+```
+
+The first message is derived from the latest saved `ReusableAgent.instructions`. It guides the assistant for this response but remains lower priority than platform, safety, and security instructions.

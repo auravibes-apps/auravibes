@@ -60,8 +60,8 @@
 From repo root:
 
 ```bash
-fvm dart run build_runner build --delete-conflicting-outputs
-fvm dart run melos analyze
+fvm dart run melos run generate
+fvm dart run melos run analyze
 fvm dart run melos format
 fvm dart run melos run validate:quick
 ```

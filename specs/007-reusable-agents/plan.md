@@ -11,14 +11,14 @@ Technical approach: add Drift persistence for agents and conversation selections
 
 ## Technical Context
 
-**Language/Version**: Dart 3.11+ with Flutter 3.41.4+ via FVM  
-**Primary Dependencies**: Flutter SDK, Riverpod with code generation, Freezed, Drift, dartantic_ai, auravibes_ui  
-**Storage**: Local Drift SQLite database with schema migration  
-**Testing**: `fvm flutter test` for focused package tests; `fvm dart run melos analyze`, `fvm dart run melos format`, and `fvm dart run melos run validate:quick` for validation  
-**Target Platform**: AuraVibes Flutter app targets supported desktop/mobile/web platforms  
-**Project Type**: Flutter monorepo application feature in `apps/auravibes_app`  
-**Performance Goals**: Agent list and selectors remain responsive with at least 10 workspace agents; selecting/changing an agent completes in 2 actions or fewer per spec  
-**Constraints**: Use existing feature-based architecture, Drift DAOs for persistence, Riverpod generated providers, `auravibes_ui` design system, no tool presets, no model selection changes, no scheduled/background tasks, no flow builder  
+**Language/Version**: Dart 3.11+ with Flutter 3.41.7 via FVM
+**Primary Dependencies**: Flutter SDK, Riverpod with code generation, Freezed, Drift, dartantic_ai, auravibes_ui
+**Storage**: Local Drift SQLite database with schema migration
+**Testing**: `fvm flutter test` for focused package tests; `fvm dart run melos run analyze`, `fvm dart run melos format`, and `fvm dart run melos run validate:quick` for validation
+**Target Platform**: AuraVibes Flutter app targets supported desktop/mobile/web platforms
+**Project Type**: Flutter monorepo application feature in `apps/auravibes_app`
+**Performance Goals**: Agent list and selectors remain responsive with at least 10 workspace agents; selecting/changing an agent completes in 2 actions or fewer per spec
+**Constraints**: Use existing feature-based architecture, Drift DAOs for persistence, Riverpod generated providers, `auravibes_ui` design system, no tool presets, no model selection changes, no scheduled/background tasks, no flow builder
 **Scale/Scope**: Workspace-local agent management, conversation-level selection, latest-instructions prompt injection, delete fallback to "No Agent"
 
 ## Constitution Check
@@ -108,6 +108,10 @@ See [research.md](./research.md).
 ## Phase 1: Design
 
 See [data-model.md](./data-model.md), [contracts/reusable-agents-ui.md](./contracts/reusable-agents-ui.md), and [quickstart.md](./quickstart.md).
+
+### Agent Interaction Examples
+
+See [agent-workflows.md](./agent-workflows.md) for concrete reusable-agent examples, UI-to-domain flow sequences, prompt composition before/after examples, and selector fallback behavior.
 
 ## Post-Design Constitution Check
 

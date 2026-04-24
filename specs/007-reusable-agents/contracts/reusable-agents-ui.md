@@ -12,6 +12,35 @@ Required states:
 - Saving/deleting: prevent duplicate submissions and show progress.
 - Error: show user-readable validation or persistence failure.
 
+Example states:
+
+```text
+Empty
++------------------------------+
+| No reusable agents           |
+| [Create Agent]               |
++------------------------------+
+
+Loaded
++------------+---------------+----------------------+
+| Name       | Slug          | Instructions         |
++------------+---------------+----------------------+
+| Reviewer   | reviewer      | Review code changes. |
+| Support    | support       | Answer with tone.    |
++------------+---------------+----------------------+
+
+Saving/deleting
++------------+---------------+----------------------+
+| Reviewer   | reviewer      | Saving.              |
++------------+---------------+----------------------+
+
+Error
++------------------------------+
+| Name already exists in this  |
+| workspace. Choose another.   |
++------------------------------+
+```
+
 Required actions:
 - Create agent with `name` and `instructions`.
 - Edit agent `name` and `instructions`.
@@ -30,6 +59,14 @@ Location:
 Options:
 - Always includes "No Agent".
 - Includes current workspace agents only.
+
+Example option list:
+
+```text
+No Agent
+Reviewer        reviewer
+Support         support
+```
 
 Behavior:
 - Default selection is "No Agent".
@@ -50,6 +87,15 @@ Behavior:
 - Changing selection updates the conversation for future assistant responses only.
 - If current selection references a deleted agent, show "No Agent" and inform the user before next send.
 
+Selector state flow:
+
+```text
+loading agents -> show current value -> user selects option -> save selection
+save success -> update displayed value
+save failure -> keep previous value and show error
+deleted selected agent -> display "No Agent" and show fallback notice
+```
+
 ## Prompt Behavior Contract
 
 Inputs:
@@ -62,6 +108,12 @@ Expected behavior:
 - "No Agent": prompt contains only normal conversation history and existing tool messages.
 - Selected agent: prompt includes latest saved agent instructions as non-visible conversation guidance before normal conversation history.
 - Deleted/missing selected agent: clear or ignore selection, inform user, and proceed as "No Agent".
+
+Agent responsibilities and use cases:
+- `Reviewer` should influence future assistant responses by adding review-focused instructions before conversation history.
+- `Support` should influence future assistant responses by adding support-tone instructions before conversation history.
+- Selectors only choose an agent; prompt composition owns instruction injection.
+- Delete flow owns fallback to "No Agent"; prompt composition must not use deleted-agent instructions.
 
 ## Out of Scope
 
