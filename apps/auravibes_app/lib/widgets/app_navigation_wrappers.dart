@@ -9,6 +9,7 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 /// A sidebar widget that handles business logic and navigation state.
 ///
@@ -66,7 +67,7 @@ int _calculateSelectedIndex(BuildContext context, int shellIndex) {
   return shellIndex;
 }
 
-class AuraSidebarWrapper extends HookWidget {
+class AuraSidebarWrapper extends HookConsumerWidget {
   /// Creates a Aura sidebar widget.
   const AuraSidebarWrapper({
     required this.navigationShell,
@@ -77,9 +78,10 @@ class AuraSidebarWrapper extends HookWidget {
   final StatefulNavigationShell navigationShell;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     useListenable(GoRouter.of(context).routeInformationProvider);
 
+    final workspaceId = ref.watch(currentRouteWorkspaceIdProvider);
     final selectedIndex = _calculateSelectedIndex(
       context,
       navigationShell.currentIndex,
@@ -87,17 +89,14 @@ class AuraSidebarWrapper extends HookWidget {
 
     return AppWithResponsiveDrawer(
       navigationItems: _navigationItems,
-      onNavigationTap: (index) => _goBranch(context, index),
+      onNavigationTap: (index) => _goBranch(context, index, workspaceId),
       selectedIndex: selectedIndex,
+      workspaceId: workspaceId,
       child: navigationShell,
     );
   }
 
-  void _goBranch(BuildContext context, int index) {
-    final workspaceId = matchWorkspaceId(
-      GoRouter.of(context).routeInformationProvider.value.uri,
-    );
-
+  void _goBranch(BuildContext context, int index, String? workspaceId) {
     if (workspaceId == null || workspaceId.isEmpty) {
       debugPrint('[Navigation] _goBranch: workspaceId missing, ignoring tap');
       return;
@@ -122,6 +121,7 @@ class AppWithResponsiveDrawer extends StatefulWidget {
     required this.navigationItems,
     required this.onNavigationTap,
     required this.selectedIndex,
+    required this.workspaceId,
     super.key,
   });
 
@@ -129,6 +129,7 @@ class AppWithResponsiveDrawer extends StatefulWidget {
   final List<AuraNavigationData> navigationItems;
   final void Function(int) onNavigationTap;
   final int selectedIndex;
+  final String? workspaceId;
 
   @override
   State<AppWithResponsiveDrawer> createState() =>
@@ -168,10 +169,6 @@ class _AppWithResponsiveDrawerState extends State<AppWithResponsiveDrawer> {
 
   @override
   Widget build(BuildContext context) {
-    final workspaceId = matchWorkspaceId(
-      _router.routeInformationProvider.value.uri,
-    );
-
     return ResponsiveSlidingDrawer(
       controller: _controller,
       drawer: Material(
@@ -179,7 +176,9 @@ class _AppWithResponsiveDrawerState extends State<AppWithResponsiveDrawer> {
           navigationItems: widget.navigationItems,
           onNavigationTap: widget.onNavigationTap,
           header: const _AppLogo(),
-          middleSection: SidebarConversationsWidget(workspaceId: workspaceId),
+          middleSection: SidebarConversationsWidget(
+            workspaceId: widget.workspaceId,
+          ),
           selectedIndex: widget.selectedIndex,
         ),
       ),
