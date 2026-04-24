@@ -36,6 +36,12 @@ Use scoped-provider annotation imports only when the file has `@Dependencies`:
 import 'package:riverpod_annotation/experimental/scope.dart';
 ```
 
+Use experimental mutation imports only when the file declares or uses `Mutation`:
+
+```dart
+import 'package:riverpod/experimental/mutation.dart';
+```
+
 Use legacy imports only for existing legacy providers:
 
 ```dart

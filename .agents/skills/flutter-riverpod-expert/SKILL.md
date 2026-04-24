@@ -11,9 +11,10 @@ Apply Riverpod 3 patterns that fit the current codebase. In AuraVibes, prefer th
 
 1. Inspect the package's `pubspec.yaml` before suggesting imports or dependencies.
 2. In this repo, use:
-   - `package:hooks_riverpod/hooks_riverpod.dart` for Flutter widgets, `WidgetRef`, `ProviderScope`, `ProviderContainer`, hooks, `Mutation`, and consumer widgets.
+   - `package:hooks_riverpod/hooks_riverpod.dart` for Flutter widgets, `WidgetRef`, `ProviderScope`, `ProviderContainer`, hooks, and consumer widgets.
    - `package:riverpod_annotation/riverpod_annotation.dart` for generated providers.
    - `package:riverpod_annotation/experimental/scope.dart` only when `@Dependencies` is required for scoped providers.
+   - `package:riverpod/experimental/mutation.dart` only when using experimental `Mutation`.
    - `package:hooks_riverpod/legacy.dart` only when maintaining existing `StateProvider`, `StateNotifierProvider`, or `ChangeNotifierProvider` code.
 3. Do not manually edit `pubspec.yaml` for dependency changes in this repo. Use the project command convention with `fvm flutter pub add ...`.
 4. Run generation from the package directory after changing generated providers:

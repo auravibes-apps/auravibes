@@ -87,6 +87,8 @@ Use `.when` if that better matches existing code.
 Riverpod 3 includes experimental `Mutation`. It is useful for UI-observable side effects such as create/update/delete operations. Because it is experimental, prefer existing project patterns.
 
 ```dart
+import 'package:riverpod/experimental/mutation.dart';
+
 final addMessageMutation = Mutation<MessageEntity>();
 
 void submit(WidgetRef ref, String text) {
