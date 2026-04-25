@@ -70,7 +70,15 @@ HTTP_CODE=$(curl -fsSL \
 
 if [ "$HTTP_CODE" = "200" ]; then
   if [ -n "${SQLITE3_WASM_SHA256:-}" ]; then
-    ACTUAL_SHA=$(shasum -a 256 "$TMP_WASM" | cut -d' ' -f1)
+    if command -v sha256sum >/dev/null 2>&1; then
+      ACTUAL_SHA=$(sha256sum "$TMP_WASM" | cut -d' ' -f1)
+    elif command -v shasum >/dev/null 2>&1; then
+      ACTUAL_SHA=$(shasum -a 256 "$TMP_WASM" | cut -d' ' -f1)
+    else
+      rm -f "$TMP_WASM"
+      echo "Error: no sha256 tool found (need sha256sum or shasum)" >&2
+      exit 1
+    fi
     if [ "$ACTUAL_SHA" != "$SQLITE3_WASM_SHA256" ]; then
       rm -f "$TMP_WASM"
       echo "Error: checksum mismatch for $WASM_URL" >&2
