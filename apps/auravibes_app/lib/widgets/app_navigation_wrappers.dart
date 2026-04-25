@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:logging/logging.dart';
 
 /// A sidebar widget that handles business logic and navigation state.
 ///
@@ -74,6 +75,8 @@ class AuraSidebarWrapper extends HookConsumerWidget {
     super.key,
   });
 
+  static final Logger _logger = Logger('AuraSidebarWrapper');
+
   /// The main content to display next to the sidebar.
   final StatefulNavigationShell navigationShell;
 
@@ -90,20 +93,14 @@ class AuraSidebarWrapper extends HookConsumerWidget {
     return AppWithResponsiveDrawer(
       navigationItems: _navigationItems,
       onNavigationTap: (index) {
-        final branchWorkspaceId =
-            workspaceId ??
-            matchWorkspaceId(
-              GoRouter.of(context).routeInformationProvider.value.uri,
-            );
-
-        if (branchWorkspaceId == null || branchWorkspaceId.isEmpty) {
-          debugPrint(
-            '[Navigation] _goBranch: workspaceId missing, ignoring tap',
+        if (workspaceId == null || workspaceId.isEmpty) {
+          _logger.warning(
+            '[Navigation] onNavigationTap: workspaceId missing, ignoring tap',
           );
           return;
         }
 
-        _goBranch(context, index, branchWorkspaceId);
+        _goBranch(context, index, workspaceId);
       },
       selectedIndex: selectedIndex,
       workspaceId: workspaceId,
@@ -179,10 +176,6 @@ class _AppWithResponsiveDrawerState extends State<AppWithResponsiveDrawer> {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveWorkspaceId =
-        widget.workspaceId ??
-        matchWorkspaceId(_router.routeInformationProvider.value.uri);
-
     return ResponsiveSlidingDrawer(
       controller: _controller,
       drawer: Material(
@@ -191,7 +184,7 @@ class _AppWithResponsiveDrawerState extends State<AppWithResponsiveDrawer> {
           onNavigationTap: widget.onNavigationTap,
           header: const _AppLogo(),
           middleSection: SidebarConversationsWidget(
-            workspaceId: effectiveWorkspaceId,
+            workspaceId: widget.workspaceId,
           ),
           selectedIndex: widget.selectedIndex,
         ),
