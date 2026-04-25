@@ -85,7 +85,7 @@ Conversation.agentId
 - Add unique index for `(workspace_id, slug)`.
 - Add nullable `agent_id` to `conversations`.
 - Migration increments Drift schema version.
-- Deleting an agent should make affected conversations behave as "No Agent"; implementation may either null affected `agent_id` values in the delete operation or use nullable references with fallback logic, but user-visible behavior must match the spec.
+- Deleting an agent must transactionally set `conversations.agent_id = NULL` for all affected conversations. Runtime missing-agent fallback is defense-in-depth only and must not be the primary deletion contract.
 
 ## Prompt Composition
 

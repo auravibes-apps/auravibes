@@ -311,6 +311,6 @@ See [agent-workflows.md](./agent-workflows.md) for UI-to-notifier-to-usecase seq
 
 - No tasks add tool presets, model selection, scheduled/background tasks, or flow-builder behavior.
 - Use `auravibes_ui` components and tokens for all UI work.
-- Use Riverpod generated providers and run build_runner after adding generated annotations.
+- Use Riverpod generated providers and run code generation via `fvm dart run melos run generate` after adding generated annotations.
 - Use Drift DAOs and migrations for persistence changes.
 - Never log agent instructions, chat content, API keys, auth tokens, or other sensitive values in structured logs.
