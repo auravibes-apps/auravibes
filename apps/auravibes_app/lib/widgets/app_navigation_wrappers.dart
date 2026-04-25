@@ -89,19 +89,29 @@ class AuraSidebarWrapper extends HookConsumerWidget {
 
     return AppWithResponsiveDrawer(
       navigationItems: _navigationItems,
-      onNavigationTap: (index) => _goBranch(context, index, workspaceId),
+      onNavigationTap: (index) {
+        final branchWorkspaceId =
+            workspaceId ??
+            matchWorkspaceId(
+              GoRouter.of(context).routeInformationProvider.value.uri,
+            );
+
+        if (branchWorkspaceId == null || branchWorkspaceId.isEmpty) {
+          debugPrint(
+            '[Navigation] _goBranch: workspaceId missing, ignoring tap',
+          );
+          return;
+        }
+
+        _goBranch(context, index, branchWorkspaceId);
+      },
       selectedIndex: selectedIndex,
       workspaceId: workspaceId,
       child: navigationShell,
     );
   }
 
-  void _goBranch(BuildContext context, int index, String? workspaceId) {
-    if (workspaceId == null || workspaceId.isEmpty) {
-      debugPrint('[Navigation] _goBranch: workspaceId missing, ignoring tap');
-      return;
-    }
-
+  void _goBranch(BuildContext context, int index, String workspaceId) {
     switch (index) {
       case 0:
         NewChatRoute(workspaceId: workspaceId).go(context);
@@ -169,6 +179,10 @@ class _AppWithResponsiveDrawerState extends State<AppWithResponsiveDrawer> {
 
   @override
   Widget build(BuildContext context) {
+    final effectiveWorkspaceId =
+        widget.workspaceId ??
+        matchWorkspaceId(_router.routeInformationProvider.value.uri);
+
     return ResponsiveSlidingDrawer(
       controller: _controller,
       drawer: Material(
@@ -177,7 +191,7 @@ class _AppWithResponsiveDrawerState extends State<AppWithResponsiveDrawer> {
           onNavigationTap: widget.onNavigationTap,
           header: const _AppLogo(),
           middleSection: SidebarConversationsWidget(
-            workspaceId: widget.workspaceId,
+            workspaceId: effectiveWorkspaceId,
           ),
           selectedIndex: widget.selectedIndex,
         ),
