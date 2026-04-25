@@ -14,7 +14,7 @@ Technical approach: add Drift persistence for agents and conversation selections
 **Language/Version**: Dart 3.11+ with Flutter 3.41.7 via FVM
 **Primary Dependencies**: Flutter SDK, Riverpod with code generation, Freezed, Drift, dartantic_ai, auravibes_ui
 **Storage**: Local Drift SQLite database with schema migration
-**Testing**: `fvm flutter test` for focused package tests; `fvm dart run melos run analyze`, `fvm dart run melos format`, and `fvm dart run melos run validate:quick` for validation
+**Testing**: `fvm flutter test` for focused package tests; `fvm dart run melos run analyze`, `fvm dart run melos run format:check`, and `fvm dart run melos run validate:quick` for validation
 **Target Platform**: AuraVibes Flutter app targets supported desktop/mobile/web platforms
 **Project Type**: Flutter monorepo application feature in `apps/auravibes_app`
 **Performance Goals**: Agent list and selectors remain responsive with at least 10 workspace agents; selecting/changing an agent completes in 2 actions or fewer per spec

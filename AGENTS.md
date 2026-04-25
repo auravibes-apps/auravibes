@@ -63,7 +63,7 @@ valid on melos >7
 
 ```bash
 fvm dart run melos run analyze        # Analyze code quality
-fvm dart run melos format             # Check code formatting
+fvm dart run melos run format:check   # Check code formatting
 fvm dart run melos run test               # Run all tests
 fvm dart run melos run validate:quick     # Quick development check
 fvm dart run melos run validate           # Full CI validation

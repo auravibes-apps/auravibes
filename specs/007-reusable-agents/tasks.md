@@ -214,7 +214,7 @@
 - [ ] T083 Run integration tests from `apps/auravibes_app` using `fvm flutter test integration_test/reusable_agents_management_flow_test.dart integration_test/reusable_agents_new_chat_flow_test.dart integration_test/reusable_agents_conversation_flow_test.dart --no-pub`
 - [ ] T084 Run coverage audit from `apps/auravibes_app` using `fvm flutter test --coverage --no-pub` and verify new feature coverage meets the project 80% minimum
 - [ ] T085 Manually verify SC-001 through SC-006 timings and action counts from `specs/007-reusable-agents/quickstart.md`
-- [ ] T086 Run repo validation from root using `fvm dart run melos run analyze`, `fvm dart run melos format`, and `fvm dart run melos run validate:quick`
+- [ ] T086 Run repo validation from root using `fvm dart run melos run analyze`, `fvm dart run melos run format:check`, and `fvm dart run melos run validate:quick`
 - [ ] T087 Update `specs/007-reusable-agents/quickstart.md` with any final manual verification changes discovered during implementation
 
 ---

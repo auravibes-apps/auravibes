@@ -24,6 +24,18 @@ Validation:
 - `(workspaceId, slug)` must be unique.
 - `instructions` must not be empty after trimming.
 
+Slug generation:
+- Trim leading and trailing whitespace from `name`.
+- Normalize Unicode to a comparable ASCII form where possible.
+- Convert to lowercase.
+- Replace runs of whitespace with a single hyphen.
+- Remove punctuation and unsupported special characters.
+- Collapse repeated hyphens and trim leading or trailing hyphens.
+- Limit the generated slug to 64 characters, truncating at a hyphen boundary when practical.
+- Resolve same-workspace collisions by appending the next numeric suffix (`-1`, `-2`, and so on) until unique.
+- Example: `"Code Reviewer!"` becomes `code-reviewer`.
+- Implementations may use the project's standard slugify utility if it follows these rules.
+
 Lifecycle:
 - Created from Agents management screen.
 - Edited from Agents management screen.
