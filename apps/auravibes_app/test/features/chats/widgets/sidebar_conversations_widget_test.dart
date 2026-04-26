@@ -165,7 +165,7 @@ class _RecordingConversationRepository implements ConversationRepository {
     );
 
     late final StreamController<List<ConversationEntity>> controller;
-    controller = StreamController<List<ConversationEntity>>(
+    controller = StreamController<List<ConversationEntity>>.broadcast(
       onCancel: () => _controllers.remove(controller),
     );
     _controllers.add(controller);

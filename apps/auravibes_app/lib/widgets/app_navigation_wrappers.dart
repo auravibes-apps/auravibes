@@ -82,6 +82,10 @@ class AuraSidebarWrapper extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // useListenable keeps GoRouter.of(context).routeInformationProvider updates
+    // active for _calculateSelectedIndex;
+    // ref.watch(currentRouteWorkspaceIdProvider) only supplies the
+    // workspace id.
     useListenable(GoRouter.of(context).routeInformationProvider);
 
     final workspaceId = ref.watch(currentRouteWorkspaceIdProvider);
@@ -94,7 +98,7 @@ class AuraSidebarWrapper extends HookConsumerWidget {
       navigationItems: _navigationItems,
       onNavigationTap: (index) {
         if (workspaceId == null || workspaceId.isEmpty) {
-          _logger.warning(
+          _logger.fine(
             '[Navigation] onNavigationTap: workspaceId missing, ignoring tap',
           );
           return;
