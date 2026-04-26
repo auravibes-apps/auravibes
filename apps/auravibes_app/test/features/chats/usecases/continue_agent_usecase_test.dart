@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:auravibes_app/domain/entities/api_model_provider.dart';
 import 'package:auravibes_app/domain/entities/conversation.dart';
 import 'package:auravibes_app/domain/entities/messages.dart';
@@ -7,6 +9,7 @@ import 'package:auravibes_app/domain/enums/message_types.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/repositories/workspace_model_selection_repository.dart';
+import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime_provider.dart';
 import 'package:auravibes_app/features/chats/providers/streaming_runtime_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_context.dart';
 import 'package:auravibes_app/features/chats/usecases/continue_agent_usecase.dart';
@@ -44,6 +47,7 @@ void main() {
     late List<String> updatedMessageIds;
     late List<ChatResult<ChatMessage>> updatedResults;
     late List<String> startedSubscriptionMessageIds;
+    late AgentCancellationRuntime agentCancellationRuntime;
 
     setUp(() {
       chatbotService = MockChatbotService();
@@ -59,6 +63,8 @@ void main() {
       updatedMessageIds = [];
       updatedResults = [];
       startedSubscriptionMessageIds = [];
+      agentCancellationRuntime = AgentCancellationRuntime()
+        ..start('conversation-1');
 
       usecase = ContinueAgentUsecase(
         chatbotService: chatbotService,
@@ -83,6 +89,7 @@ void main() {
           isStreaming: (_) => false,
           remove: removedConversationIds.add,
         ),
+        agentCancellationRuntime: agentCancellationRuntime,
         monitoringService: monitoringService,
       );
 
@@ -265,6 +272,94 @@ void main() {
         expect(startedSubscriptionMessageIds, ['assistant-1']);
         expect(removedMessageIds, ['assistant-1']);
         expect(removedConversationIds, ['conversation-1']);
+      },
+    );
+
+    test(
+      'stops before the first chunk without creating an assistant error',
+      () async {
+        final controller = StreamController<ChatResult<ChatMessage>>();
+        when(
+          chatbotService.sendMessage(
+            _model,
+            any,
+            tools: const [],
+          ),
+        ).thenAnswer((_) => controller.stream);
+
+        final future = usecase.call(
+          conversationId: 'conversation-1',
+          context: const AgentIterationContext(
+            origin: AgentIterationOrigin.userMessage,
+            ackMessageIds: ['user-1'],
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        agentCancellationRuntime.requestStop('conversation-1');
+
+        final result = await future;
+        await controller.close();
+
+        expect(result.hasToolCalls, isFalse);
+        verifyNever(messageRepository.createMessage(any));
+        verify(
+          messageRepository.patchMessage(
+            'user-1',
+            const MessagePatch(status: MessageStatus.sent),
+          ),
+        ).called(1);
+        verifyNever(
+          messageRepository.patchMessage(
+            'assistant-1',
+            const MessagePatch(status: MessageStatus.error),
+          ),
+        );
+      },
+    );
+
+    test(
+      'preserves partial assistant text as sent when stopped during stream',
+      () async {
+        final controller = StreamController<ChatResult<ChatMessage>>();
+        when(
+          chatbotService.sendMessage(
+            _model,
+            any,
+            tools: const [],
+          ),
+        ).thenAnswer((_) => controller.stream);
+
+        final future = usecase.call(conversationId: 'conversation-1');
+        controller.add(
+          ChatResult<ChatMessage>(
+            output: ChatMessage.model('Partial answer'),
+            finishReason: FinishReason.stop,
+            usage: const LanguageModelUsage(),
+          ),
+        );
+
+        while (startedSubscriptionMessageIds.isEmpty) {
+          await Future<void>.delayed(Duration.zero);
+        }
+        agentCancellationRuntime.requestStop('conversation-1');
+
+        final result = await future;
+        await controller.close();
+
+        expect(result.messageId, 'assistant-1');
+        expect(result.hasToolCalls, isFalse);
+        final patches = verify(
+          messageRepository.patchMessage('assistant-1', captureAny),
+        ).captured.cast<MessagePatch>();
+        expect(
+          patches.any(
+            (patch) =>
+                patch.content == 'Partial answer' &&
+                patch.status == MessageStatus.sent,
+          ),
+          isTrue,
+        );
       },
     );
   });

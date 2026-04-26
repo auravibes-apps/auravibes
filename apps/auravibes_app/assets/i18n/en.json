@@ -64,6 +64,7 @@
     "chat_conversation": {
       "select_model_selctor": "Select Model",
       "message_placeholder": "Type your message...",
+      "stop_generation": "Stop generation",
       "waiting_for_tools": "Waiting for tools to connect...",
       "waiting_for_tools_named": "Waiting for {tools} to connect...",
       "thinking_status": "Thinking...",

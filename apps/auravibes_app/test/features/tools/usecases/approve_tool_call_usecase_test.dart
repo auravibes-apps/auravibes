@@ -9,6 +9,7 @@ import 'package:auravibes_app/domain/repositories/conversation_tools_repository.
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/repositories/tools_groups_repository.dart';
 import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dart';
+import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/resume_conversation_if_ready_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/approve_tool_call_usecase.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
@@ -34,6 +35,7 @@ void main() {
     late MockWorkspaceToolsRepository workspaceToolsRepository;
     late MockToolResolverService toolResolverService;
     late MockResumeConversationIfReadyUsecase resumeConversationIfReadyUsecase;
+    late AgentCancellationRuntime agentCancellationRuntime;
     late ApproveToolCallUsecase usecase;
     String? calledMcpServerId;
     String? calledMcpToolIdentifier;
@@ -68,6 +70,8 @@ void main() {
       workspaceToolsRepository = MockWorkspaceToolsRepository();
       toolResolverService = MockToolResolverService();
       resumeConversationIfReadyUsecase = MockResumeConversationIfReadyUsecase();
+      agentCancellationRuntime = AgentCancellationRuntime()
+        ..start('conversation-1');
       calledMcpServerId = null;
       calledMcpToolIdentifier = null;
       calledMcpArguments = null;
@@ -79,6 +83,7 @@ void main() {
         workspaceToolsRepository: workspaceToolsRepository,
         toolResolverService: toolResolverService,
         resumeConversationIfReadyUsecase: resumeConversationIfReadyUsecase,
+        agentCancellationRuntime: agentCancellationRuntime,
         mcpToolCaller:
             ({
               required mcpServerId,

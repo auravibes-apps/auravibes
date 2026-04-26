@@ -6,6 +6,7 @@ import 'package:auravibes_app/domain/repositories/conversation_tools_repository.
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/repositories/tools_groups_repository.dart';
 import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dart';
+import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/resume_conversation_if_ready_usecase.dart';
 import 'package:auravibes_app/features/tools/notifiers/conversation_tools_notifier.dart';
@@ -29,13 +30,15 @@ class ApproveToolCallUsecase {
     required ToolResolverService toolResolverService,
     required ResumeConversationIfReadyUsecase resumeConversationIfReadyUsecase,
     required McpToolCaller mcpToolCaller,
+    required AgentCancellationRuntime agentCancellationRuntime,
   }) : _messageRepository = messageRepository,
        _conversationToolsRepository = conversationToolsRepository,
        _toolsGroupsRepository = toolsGroupsRepository,
        _workspaceToolsRepository = workspaceToolsRepository,
        _toolResolverService = toolResolverService,
        _resumeConversationIfReadyUsecase = resumeConversationIfReadyUsecase,
-       _mcpToolCaller = mcpToolCaller;
+       _mcpToolCaller = mcpToolCaller,
+       _agentCancellationRuntime = agentCancellationRuntime;
 
   final MessageRepository _messageRepository;
   final ConversationToolsRepository _conversationToolsRepository;
@@ -44,6 +47,7 @@ class ApproveToolCallUsecase {
   final ToolResolverService _toolResolverService;
   final ResumeConversationIfReadyUsecase _resumeConversationIfReadyUsecase;
   final McpToolCaller _mcpToolCaller;
+  final AgentCancellationRuntime _agentCancellationRuntime;
 
   Future<void> call({
     required String toolCallId,
@@ -81,6 +85,7 @@ class ApproveToolCallUsecase {
     }
 
     final executionResult = await _executeTool(
+      conversationId: message.conversationId,
       tool: resolvedTool,
       argumentsRaw: toolCall.argumentsRaw,
     );
@@ -92,17 +97,29 @@ class ApproveToolCallUsecase {
       responseRaw: executionResult.responseRaw,
     );
 
+    if (_agentCancellationRuntime.isCancellationRequested(
+      message.conversationId,
+    )) {
+      return;
+    }
+
     await _resumeConversationIfReadyUsecase.call(messageId: messageId);
   }
 
   Future<_ExecutionResult> _executeTool({
+    required String conversationId,
     required ResolvedTool tool,
     required String argumentsRaw,
   }) async {
     final arguments = safeJsonDecode(argumentsRaw) ?? const <String, dynamic>{};
 
     try {
-      final result = await _runTool(tool, arguments);
+      final result = await _runTool(conversationId, tool, arguments);
+      if (_agentCancellationRuntime.isCancellationRequested(conversationId)) {
+        return const _ExecutionResult(
+          resultStatus: ToolCallResultStatus.stoppedByUser,
+        );
+      }
       if (result == null) {
         return const _ExecutionResult(
           resultStatus: ToolCallResultStatus.toolNotFound,
@@ -120,6 +137,7 @@ class ApproveToolCallUsecase {
   }
 
   Future<Object?> _runTool(
+    String conversationId,
     ResolvedTool tool,
     Map<String, dynamic> arguments,
   ) async {
@@ -138,7 +156,12 @@ class ApproveToolCallUsecase {
       if (toolService == null) {
         return null;
       }
-      return toolService.runner(input as Object).value;
+      final operation = toolService.runner(input as Object);
+      _agentCancellationRuntime.registerCancelableOperation(
+        conversationId,
+        operation,
+      );
+      return operation.valueOrCancellation();
     }
 
     if (tool.isNative) {
@@ -154,7 +177,12 @@ class ApproveToolCallUsecase {
       if (toolService == null) {
         return null;
       }
-      return toolService.runner(input as Object).value;
+      final operation = toolService.runner(input as Object);
+      _agentCancellationRuntime.registerCancelableOperation(
+        conversationId,
+        operation,
+      );
+      return operation.valueOrCancellation();
     }
 
     if (tool.isMcp) {
@@ -163,6 +191,7 @@ class ApproveToolCallUsecase {
         return null;
       }
 
+      _agentCancellationRuntime.registerCleanup(conversationId, () {});
       return _mcpToolCaller(
         mcpServerId: mcpServerId,
         toolIdentifier: tool.toolIdentifier,
@@ -235,5 +264,6 @@ final approveToolCallUsecaseProvider = Provider<ApproveToolCallUsecase>((ref) {
       resumeConversationIfReadyUsecaseProvider,
     ),
     mcpToolCaller: ref.watch(mcpToolCallerProvider),
+    agentCancellationRuntime: ref.watch(agentCancellationRuntimeProvider),
   );
 });

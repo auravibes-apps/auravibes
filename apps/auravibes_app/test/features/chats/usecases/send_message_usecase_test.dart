@@ -44,6 +44,9 @@ void main() {
           dequeueAll: container
               .read(conversationSendQueueProvider.notifier)
               .dequeueAll,
+          clear: container
+              .read(conversationSendQueueProvider.notifier)
+              .clearAll,
         ),
       );
 

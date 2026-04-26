@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:auravibes_app/features/chats/notifiers/conversation_chat_notifier.dart';
 import 'package:auravibes_app/features/chats/providers/messages_providers.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
+import 'package:auravibes_app/features/chats/usecases/stop_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_messages_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_queued_messages_indicator.dart';
@@ -129,28 +130,40 @@ class _ChatConversationScreen extends HookConsumerWidget {
           if (queuedDrafts.isNotEmpty)
             ChatQueuedMessagesIndicator(queuedDrafts: queuedDrafts),
           if (busyState?.hasPendingTools == true) const ChatToolApprovalCard(),
-          Offstage(
-            offstage: busyState?.hasPendingTools == true,
-            child: ChatInputWidget(
-              onToolsPress: onToolsPress,
-              onSendMessage: (message) async {
-                final conversationId = ref.read(conversationSelectedProvider);
-                try {
-                  await ref
-                      .read(sendMessageUsecaseProvider)
-                      .call(
-                        conversationId: conversationId,
-                        content: message,
-                      );
-                } on Exception catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Failed to send message: $e')),
-                    );
-                  }
+          ChatInputWidget(
+            onToolsPress: onToolsPress,
+            isBusy: busyState?.isBusy ?? false,
+            onStop: () async {
+              final conversationId = ref.read(conversationSelectedProvider);
+              try {
+                await ref
+                    .read(stopConversationUsecaseProvider)
+                    .call(conversationId: conversationId);
+              } on Exception catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Failed to stop conversation: $e')),
+                  );
                 }
-              },
-            ),
+              }
+            },
+            onSendMessage: (message) async {
+              final conversationId = ref.read(conversationSelectedProvider);
+              try {
+                await ref
+                    .read(sendMessageUsecaseProvider)
+                    .call(
+                      conversationId: conversationId,
+                      content: message,
+                    );
+              } on Exception catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Failed to send message: $e')),
+                  );
+                }
+              }
+            },
           ),
         ],
       ),
