@@ -1,18 +1,18 @@
 # Worktrunk configuration
 # https://worktrunk.dev/
 
-[[pre-start]]
+[[pre-switch]]
 # Copy selected gitignored caches from the primary worktree before setup.
 copy = "wt step copy-ignored"
 
-[[pre-start]]
+[[pre-switch]]
 # Install the FVM Flutter version configured in .fvmrc
 fvm = "fvm install && fvm use"
 
-[[pre-start]]
+[[pre-switch]]
 # Get root dependencies first, then bootstrap melos packages
 bootstrap = "fvm dart pub get && fvm dart run melos bootstrap"
 
-[[pre-start]]
+[[pre-switch]]
 # Run code generation directly via melos exec to avoid the nested melos run path
 generate = "fvm dart run melos exec --depends-on=build_runner -- \"dart run build_runner build --delete-conflicting-outputs\""
