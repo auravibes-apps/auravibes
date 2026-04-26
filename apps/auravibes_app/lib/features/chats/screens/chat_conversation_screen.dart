@@ -139,10 +139,26 @@ class _ChatConversationScreen extends HookConsumerWidget {
                 await ref
                     .read(stopConversationUsecaseProvider)
                     .call(conversationId: conversationId);
-              } on Exception catch (e) {
+              } catch (error, stackTrace) {
+                FlutterError.reportError(
+                  FlutterErrorDetails(
+                    exception: error,
+                    stack: stackTrace,
+                    library: 'chat_conversation_screen',
+                    context: ErrorDescription(
+                      'while stopping a conversation',
+                    ),
+                  ),
+                );
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Failed to stop conversation: $e')),
+                    SnackBar(
+                      content: Text(
+                        LocaleKeys
+                            .chats_screens_chat_conversation_stop_error
+                            .tr(),
+                      ),
+                    ),
                   );
                 }
               }

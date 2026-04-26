@@ -295,7 +295,6 @@ class RunAllowedToolsUsecase {
         return null;
       }
 
-      agentCancellationRuntime.registerCleanup(conversationId, () {});
       return mcpToolCaller(
         mcpServerId: mcpServerId,
         toolIdentifier: tool.toolIdentifier,

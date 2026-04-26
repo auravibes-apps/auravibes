@@ -191,7 +191,6 @@ class ApproveToolCallUsecase {
         return null;
       }
 
-      _agentCancellationRuntime.registerCleanup(conversationId, () {});
       return _mcpToolCaller(
         mcpServerId: mcpServerId,
         toolIdentifier: tool.toolIdentifier,

@@ -6,6 +6,7 @@ import 'package:auravibes_app/domain/entities/messages.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entities.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entities.dart';
 import 'package:auravibes_app/domain/enums/message_types.dart';
+import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/repositories/workspace_model_selection_repository.dart';
@@ -349,6 +350,114 @@ void main() {
 
         expect(result.messageId, 'assistant-1');
         expect(result.hasToolCalls, isFalse);
+        final patches = verify(
+          messageRepository.patchMessage('assistant-1', captureAny),
+        ).captured.cast<MessagePatch>();
+        expect(
+          patches.any(
+            (patch) =>
+                patch.content == 'Partial answer' &&
+                patch.status == MessageStatus.sent,
+          ),
+          isTrue,
+        );
+      },
+    );
+
+    test(
+      'marks streamed pending tool calls as stopped when stopped',
+      () async {
+        final controller = StreamController<ChatResult<ChatMessage>>();
+        when(
+          chatbotService.sendMessage(
+            _model,
+            any,
+            tools: const [],
+          ),
+        ).thenAnswer((_) => controller.stream);
+
+        final future = usecase.call(conversationId: 'conversation-1');
+        controller.add(
+          ChatResult<ChatMessage>(
+            output: ChatMessage.model(
+              '',
+              parts: const [
+                ToolPart.call(
+                  callId: 'tool-1',
+                  toolName: 'calculator',
+                  arguments: {'input': '2+2'},
+                ),
+              ],
+            ),
+            finishReason: FinishReason.toolCalls,
+            usage: const LanguageModelUsage(),
+          ),
+        );
+
+        while (startedSubscriptionMessageIds.isEmpty) {
+          await Future<void>.delayed(Duration.zero);
+        }
+        agentCancellationRuntime.requestStop('conversation-1');
+
+        final result = await future;
+        await controller.close();
+
+        expect(result.hasToolCalls, isFalse);
+        final patches = verify(
+          messageRepository.patchMessage('assistant-1', captureAny),
+        ).captured.cast<MessagePatch>();
+        final stoppedPatch = patches.lastWhere(
+          (patch) => patch.status == MessageStatus.sent,
+        );
+        expect(
+          stoppedPatch.metadata?.toolCalls.single.resultStatus,
+          ToolCallResultStatus.stoppedByUser,
+        );
+      },
+    );
+
+    test(
+      'waits for in-flight chunk persistence before completing stop',
+      () async {
+        final controller = StreamController<ChatResult<ChatMessage>>();
+        final createStarted = Completer<void>();
+        final createCompleter = Completer<MessageEntity>();
+        when(
+          chatbotService.sendMessage(
+            _model,
+            any,
+            tools: const [],
+          ),
+        ).thenAnswer((_) => controller.stream);
+        when(messageRepository.createMessage(any)).thenAnswer((_) {
+          if (!createStarted.isCompleted) {
+            createStarted.complete();
+          }
+          return createCompleter.future;
+        });
+
+        final future = usecase.call(conversationId: 'conversation-1');
+        controller.add(
+          ChatResult<ChatMessage>(
+            output: ChatMessage.model('Partial answer'),
+            finishReason: FinishReason.stop,
+            usage: const LanguageModelUsage(),
+          ),
+        );
+        await createStarted.future;
+
+        var didComplete = false;
+        unawaited(future.then((_) => didComplete = true));
+        agentCancellationRuntime.requestStop('conversation-1');
+        await Future<void>.delayed(Duration.zero);
+
+        expect(didComplete, isFalse);
+
+        createCompleter.complete(_unfinishedAssistantMessage);
+        final result = await future;
+        await controller.close();
+
+        expect(result.messageId, 'assistant-1');
         final patches = verify(
           messageRepository.patchMessage('assistant-1', captureAny),
         ).captured.cast<MessagePatch>();

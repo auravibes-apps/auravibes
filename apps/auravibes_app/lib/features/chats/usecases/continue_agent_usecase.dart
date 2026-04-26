@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/messages.dart';
 import 'package:auravibes_app/domain/enums/message_types.dart';
+import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/repositories/workspace_model_selection_repository.dart';
@@ -171,6 +172,7 @@ class ContinueAgentUsecase {
       }
 
       final responseCompleter = Completer<void>();
+      Future<void>? activeChunkProcessing;
       responseSubscription = responseStream.listen(
         null,
         onError: (Object error, StackTrace stackTrace) {
@@ -196,7 +198,7 @@ class ContinueAgentUsecase {
       );
       responseSubscription.onData((chunk) {
         responseSubscription?.pause();
-        () async {
+        final processing = () async {
           try {
             await handleChunk(chunk);
             if (agentCancellationRuntime.isCancellationRequested(
@@ -217,11 +219,13 @@ class ContinueAgentUsecase {
             }
           }
         }();
+        activeChunkProcessing = processing;
       });
       agentCancellationRuntime.registerCleanup(
         conversationId,
         () async {
           await responseSubscription?.cancel();
+          await activeChunkProcessing;
           if (!responseCompleter.isCompleted) {
             responseCompleter.complete();
           }
@@ -247,7 +251,9 @@ class ContinueAgentUsecase {
             stoppedMessage.id,
             MessagePatch(
               content: accumulatedResult?.entityText,
-              metadata: accumulatedResult?.entityMetadata,
+              metadata: _markPendingToolsStopped(
+                accumulatedResult?.entityMetadata,
+              ),
               status: MessageStatus.sent,
             ),
           );
@@ -324,6 +330,24 @@ class ContinueAgentUsecase {
     return ContinueAgentResult(
       messageId: firstMessage!.id,
       hasToolCalls: accumulatedResult!.entityTools.isNotEmpty,
+    );
+  }
+
+  MessageMetadataEntity? _markPendingToolsStopped(
+    MessageMetadataEntity? metadata,
+  ) {
+    if (metadata == null || metadata.toolCalls.isEmpty) {
+      return metadata;
+    }
+
+    return metadata.copyWith(
+      toolCalls: metadata.toolCalls.map((toolCall) {
+        if (!toolCall.isPending) return toolCall;
+
+        return toolCall.copyWith(
+          resultStatus: ToolCallResultStatus.stoppedByUser,
+        );
+      }).toList(),
     );
   }
 }

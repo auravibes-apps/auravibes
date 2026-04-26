@@ -7,7 +7,10 @@ class AgentCancellationRuntime {
   final _entries = <String, _AgentCancellationEntry>{};
 
   void start(String conversationId) {
-    _entries[conversationId] = _AgentCancellationEntry();
+    _entries.putIfAbsent(
+      conversationId,
+      _AgentCancellationEntry.new,
+    );
   }
 
   bool isCancellationRequested(String conversationId) {
@@ -15,12 +18,10 @@ class AgentCancellationRuntime {
   }
 
   void requestStop(String conversationId) {
-    _entries
-        .putIfAbsent(
-          conversationId,
-          _AgentCancellationEntry.new,
-        )
-        .requestStop();
+    final entry = _entries[conversationId];
+    if (entry == null) return;
+
+    entry.requestStop();
   }
 
   void clear(String conversationId) {

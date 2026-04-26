@@ -332,6 +332,59 @@ void main() {
     );
 
     test(
+      'marks queued drafts sent when stopped after dequeue',
+      () async {
+        container
+            .read(conversationSendQueueProvider.notifier)
+            .enqueue(
+              conversationId: 'conversation-1',
+              content: 'Queued follow-up',
+            );
+        when(messageRepository.createMessage(any)).thenAnswer((_) async {
+          agentCancellationRuntime.requestStop('conversation-1');
+          return MessageEntity(
+            id: 'queued-user-1',
+            conversationId: 'conversation-1',
+            content: 'Queued follow-up',
+            messageType: MessageType.text,
+            isUser: true,
+            status: MessageStatus.sending,
+            createdAt: DateTime(2025),
+            updatedAt: DateTime(2025),
+          );
+        });
+        when(messageRepository.patchMessage('queued-user-1', any)).thenAnswer(
+          (_) async => MessageEntity(
+            id: 'queued-user-1',
+            conversationId: 'conversation-1',
+            content: 'Queued follow-up',
+            messageType: MessageType.text,
+            isUser: true,
+            status: MessageStatus.sent,
+            createdAt: DateTime(2025),
+            updatedAt: DateTime(2025),
+          ),
+        );
+
+        final result = await usecase.call(conversationId: 'conversation-1');
+
+        expect(result, AgentIterationDecision.done);
+        verifyNever(
+          continueAgentUsecase.call(
+            conversationId: anyNamed('conversationId'),
+            context: anyNamed('context'),
+          ),
+        );
+        final patch =
+            verify(
+                  messageRepository.patchMessage('queued-user-1', captureAny),
+                ).captured.single
+                as MessagePatch;
+        expect(patch.status, MessageStatus.sent);
+      },
+    );
+
+    test(
       'returns the tool decision when execution must pause for approval',
       () async {
         when(

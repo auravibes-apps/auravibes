@@ -65,6 +65,7 @@
       "select_model_selctor": "Select Model",
       "message_placeholder": "Type your message...",
       "stop_generation": "Stop generation",
+      "stop_error": "Could not stop the conversation. Please try again.",
       "waiting_for_tools": "Waiting for tools to connect...",
       "waiting_for_tools_named": "Waiting for {tools} to connect...",
       "thinking_status": "Thinking...",

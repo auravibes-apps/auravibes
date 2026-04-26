@@ -46,6 +46,7 @@ class RunAgentIterationUsecase {
 
       while (true) {
         if (agentCancellationRuntime.isCancellationRequested(conversationId)) {
+          await _markAckMessagesSent(currentContext);
           sendQueueRuntime.clear(conversationId);
           return AgentIterationDecision.done;
         }
@@ -56,6 +57,7 @@ class RunAgentIterationUsecase {
         );
 
         if (agentCancellationRuntime.isCancellationRequested(conversationId)) {
+          await _markAckMessagesSent(currentContext);
           sendQueueRuntime.clear(conversationId);
           return AgentIterationDecision.done;
         }
@@ -66,6 +68,7 @@ class RunAgentIterationUsecase {
         );
 
         if (agentCancellationRuntime.isCancellationRequested(conversationId)) {
+          await _markAckMessagesSent(currentContext);
           sendQueueRuntime.clear(conversationId);
           return AgentIterationDecision.done;
         }
@@ -93,6 +96,7 @@ class RunAgentIterationUsecase {
         );
 
         if (agentCancellationRuntime.isCancellationRequested(conversationId)) {
+          await _markAckMessagesSent(currentContext);
           sendQueueRuntime.clear(conversationId);
           return AgentIterationDecision.done;
         }
@@ -135,6 +139,20 @@ class RunAgentIterationUsecase {
         ...context?.ackMessageIds ?? const [],
         ...createdMessages.map((message) => message.id),
       ],
+    );
+  }
+
+  Future<void> _markAckMessagesSent(AgentIterationContext? context) async {
+    final ackMessageIds = context?.ackMessageIds ?? const <String>[];
+    if (ackMessageIds.isEmpty) return;
+
+    await Future.wait(
+      ackMessageIds.map(
+        (messageId) => messageRepository.patchMessage(
+          messageId,
+          const MessagePatch(status: MessageStatus.sent),
+        ),
+      ),
     );
   }
 }
