@@ -9,6 +9,8 @@ import 'package:auravibes_app/features/chats/providers/conversation_repository_p
 import 'package:auravibes_app/features/chats/providers/conversation_selection_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/get_conversation_busy_state_usecase.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
+import 'package:auravibes_app/features/tools/usecases/resolve_tool_approval_decision_usecase.dart';
+import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
 import 'package:auravibes_app/utils/chat_result_extension.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
@@ -203,8 +205,15 @@ Future<int?> conversationContextLimit(Ref ref) async {
   return selectedModel;
 }
 
-@Riverpod(dependencies: [chatMessages])
-List<PendingToolCall> pendingToolCalls(Ref ref) {
+@Riverpod(
+  dependencies: [
+    conversationSelected,
+    chatMessages,
+    conversationByIdStream,
+  ],
+)
+Future<List<PendingToolCall>> pendingToolCalls(Ref ref) async {
+  final conversationId = ref.watch(conversationSelectedProvider);
   final messages = ref.watch(
     chatMessagesProvider.select((value) => value.value),
   );
@@ -218,13 +227,47 @@ List<PendingToolCall> pendingToolCalls(Ref ref) {
   final toolCalls = latestAssistantMessage.metadata?.toolCalls;
   if (toolCalls == null || toolCalls.isEmpty) return const [];
 
-  return toolCalls
-      .where((toolCall) => toolCall.isPending)
-      .map(
-        (toolCall) => PendingToolCall(
+  final pendingCalls = toolCalls.where((tc) => tc.isPending).toList();
+  if (pendingCalls.isEmpty) return const [];
+
+  final conversation = await ref.watch(
+    conversationByIdStreamProvider(conversationId: conversationId).future,
+  );
+  final workspaceId = conversation?.workspaceId;
+  if (workspaceId == null) return const [];
+
+  final decisionUsecase = ref.watch(resolveToolApprovalDecisionUsecaseProvider);
+  final resolver = ToolResolverService();
+
+  final results = <PendingToolCall>[];
+  for (final toolCall in pendingCalls) {
+    final resolvedTool = resolver.resolveTool(toolCall.name);
+    if (resolvedTool == null) {
+      results.add(
+        PendingToolCall(
           toolCall: toolCall,
           messageId: latestAssistantMessage.id,
         ),
-      )
-      .toList();
+      );
+      continue;
+    }
+
+    final decision = await decisionUsecase(
+      conversationId: conversationId,
+      workspaceId: workspaceId,
+      toolCallId: toolCall.id,
+      resolvedTool: resolvedTool,
+    );
+
+    if (decision.needsConfirmation) {
+      results.add(
+        PendingToolCall(
+          toolCall: toolCall,
+          messageId: latestAssistantMessage.id,
+        ),
+      );
+    }
+  }
+
+  return results;
 }

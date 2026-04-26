@@ -1,17 +1,12 @@
 import 'package:auravibes_app/domain/entities/messages.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
-import 'package:auravibes_app/domain/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
-import 'package:auravibes_app/domain/repositories/tools_groups_repository.dart';
-import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_decision.dart';
-import 'package:auravibes_app/features/tools/notifiers/conversation_tools_notifier.dart';
-import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
-import 'package:auravibes_app/features/tools/providers/workspace_tools_provider.dart';
 import 'package:auravibes_app/features/tools/usecases/get_agent_iteration_decision_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/load_latest_message_tool_calls_usecase.dart';
+import 'package:auravibes_app/features/tools/usecases/resolve_tool_approval_decision_usecase.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_notifier.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool.dart';
 import 'package:auravibes_app/services/tools/native_tool_service.dart';
@@ -23,18 +18,14 @@ class RunAllowedToolsUsecase {
   const RunAllowedToolsUsecase({
     required this.loadLatestMessageToolCallsUsecase,
     required this.messageRepository,
-    required this.conversationToolsRepository,
-    required this.toolsGroupsRepository,
-    required this.workspaceToolsRepository,
+    required this.resolveToolApprovalDecision,
     required this.mcpToolCaller,
     required this.getAgentIterationDecisionUsecase,
   });
 
   final LoadLatestMessageToolCallsUsecase loadLatestMessageToolCallsUsecase;
   final MessageRepository messageRepository;
-  final ConversationToolsRepository conversationToolsRepository;
-  final ToolsGroupsRepository toolsGroupsRepository;
-  final WorkspaceToolsRepository workspaceToolsRepository;
+  final ResolveToolApprovalDecisionUsecase resolveToolApprovalDecision;
   final McpToolCaller mcpToolCaller;
   final GetAgentIterationDecisionUsecase getAgentIterationDecisionUsecase;
 
@@ -80,13 +71,14 @@ class RunAllowedToolsUsecase {
 
     final grantedTools = <ToolToCall>[];
     for (final toolToCall in latestToolCalls.toolsToRun) {
-      final permission = await _checkToolPermission(
+      final decision = await resolveToolApprovalDecision(
         conversationId: conversationId,
         workspaceId: workspaceId,
+        toolCallId: toolToCall.id,
         resolvedTool: toolToCall.tool,
       );
 
-      switch (permission) {
+      switch (decision.permissionResult) {
         case ToolPermissionResult.granted:
           grantedTools.add(toolToCall);
         case ToolPermissionResult.needsConfirmation:
@@ -145,42 +137,6 @@ class RunAllowedToolsUsecase {
     return getAgentIterationDecisionUsecase.call(
       messageId: latestToolCalls.messageId,
     );
-  }
-
-  Future<ToolPermissionResult> _checkToolPermission({
-    required String conversationId,
-    required String workspaceId,
-    required ResolvedTool resolvedTool,
-  }) async {
-    final permissionTableId = await _resolvePermissionTableId(resolvedTool);
-    if (permissionTableId == null) {
-      return ToolPermissionResult.notConfigured;
-    }
-
-    return conversationToolsRepository.checkToolPermission(
-      conversationId: conversationId,
-      workspaceId: workspaceId,
-      toolId: permissionTableId,
-    );
-  }
-
-  Future<String?> _resolvePermissionTableId(ResolvedTool resolvedTool) async {
-    if (resolvedTool.mcpServerId == null) {
-      return resolvedTool.toolIdentifier;
-    }
-
-    final toolGroup = await toolsGroupsRepository.getToolsGroupByMcpServerId(
-      resolvedTool.mcpServerId!,
-    );
-    if (toolGroup == null) return null;
-
-    final workspaceTool = await workspaceToolsRepository
-        .getWorkspaceToolByToolName(
-          toolGroupId: toolGroup.id,
-          toolName: resolvedTool.toolIdentifier,
-        );
-
-    return workspaceTool?.id;
   }
 
   Future<_ToolExecutionResult> _executeTool({
@@ -314,9 +270,9 @@ final runAllowedToolsUsecaseProvider = Provider<RunAllowedToolsUsecase>((ref) {
       loadLatestMessageToolCallsUsecaseProvider,
     ),
     messageRepository: ref.watch(messageRepositoryProvider),
-    conversationToolsRepository: ref.watch(conversationToolsRepositoryProvider),
-    toolsGroupsRepository: ref.watch(toolsGroupsRepositoryProvider),
-    workspaceToolsRepository: ref.watch(workspaceToolsRepositoryProvider),
+    resolveToolApprovalDecision: ref.watch(
+      resolveToolApprovalDecisionUsecaseProvider,
+    ),
     mcpToolCaller: ref.watch(mcpToolCallerProvider),
     getAgentIterationDecisionUsecase: ref.watch(
       getAgentIterationDecisionUsecaseProvider,
