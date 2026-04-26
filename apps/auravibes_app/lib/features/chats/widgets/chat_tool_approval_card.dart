@@ -22,7 +22,7 @@ class ChatToolApprovalCard extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final pendingCalls = ref.watch(pendingToolCallsProvider);
+    final pendingCalls = ref.watch(pendingToolCallsProvider).value ?? [];
     if (pendingCalls.isEmpty) return const SizedBox.shrink();
 
     final currentIndex = useState(0);
