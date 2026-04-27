@@ -14,6 +14,7 @@ class ConversationSendQueueRuntime {
   const ConversationSendQueueRuntime({
     required this.enqueue,
     required this.dequeueAll,
+    required this.clear,
   });
 
   final ConversationQueuedDraft Function({
@@ -23,6 +24,7 @@ class ConversationSendQueueRuntime {
   enqueue;
   final List<ConversationQueuedDraft> Function(String conversationId)
   dequeueAll;
+  final void Function(String conversationId) clear;
 }
 
 final conversationSendQueueRuntimeProvider =
@@ -31,5 +33,6 @@ final conversationSendQueueRuntimeProvider =
       return ConversationSendQueueRuntime(
         enqueue: notifier.enqueue,
         dequeueAll: notifier.dequeueAll,
+        clear: notifier.clear,
       );
     });
