@@ -33,6 +33,6 @@ final conversationSendQueueRuntimeProvider =
       return ConversationSendQueueRuntime(
         enqueue: notifier.enqueue,
         dequeueAll: notifier.dequeueAll,
-        clear: notifier.clearAll,
+        clear: notifier.clear,
       );
     });

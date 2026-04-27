@@ -25,7 +25,8 @@ class AgentCancellationRuntime {
   }
 
   void clear(String conversationId) {
-    _entries.remove(conversationId);
+    final entry = _entries.remove(conversationId);
+    entry?.requestStop();
   }
 
   void registerStreamSubscription<T>(
@@ -72,9 +73,13 @@ class _AgentCancellationEntry {
 
     _isCancellationRequested = true;
     for (final cleanup in List.of(_cleanupCallbacks)) {
-      final result = cleanup();
-      if (result is Future<void>) {
-        unawaited(result);
+      try {
+        final result = cleanup();
+        if (result is Future<void>) {
+          unawaited(result.catchError((Object _) {}));
+        }
+      } on Object {
+        // Swallow so subsequent cleanups still run.
       }
     }
   }
@@ -83,9 +88,13 @@ class _AgentCancellationEntry {
     _cleanupCallbacks.add(cleanup);
     if (!_isCancellationRequested) return;
 
-    final result = cleanup();
-    if (result is Future<void>) {
-      unawaited(result);
+    try {
+      final result = cleanup();
+      if (result is Future<void>) {
+        unawaited(result.catchError((Object _) {}));
+      }
+    } on Object {
+      // Swallow so registration continues.
     }
   }
 }

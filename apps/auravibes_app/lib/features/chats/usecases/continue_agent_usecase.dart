@@ -173,12 +173,27 @@ class ContinueAgentUsecase {
 
       final responseCompleter = Completer<void>();
       Future<void>? activeChunkProcessing;
+      agentCancellationRuntime.registerCleanup(
+        conversationId,
+        () async {
+          await responseSubscription?.cancel();
+          await activeChunkProcessing;
+          if (!responseCompleter.isCompleted) {
+            responseCompleter.complete();
+          }
+        },
+      );
       responseSubscription = responseStream.listen(
         null,
         onError: (Object error, StackTrace stackTrace) {
           if (agentCancellationRuntime.isCancellationRequested(
             conversationId,
           )) {
+            monitoringService.trackError(
+              'Stream error during cancellation',
+              error: error,
+              stackTrace: stackTrace,
+            );
             if (!responseCompleter.isCompleted) {
               responseCompleter.complete();
             }
@@ -221,20 +236,15 @@ class ContinueAgentUsecase {
         }();
         activeChunkProcessing = processing;
       });
-      agentCancellationRuntime.registerCleanup(
-        conversationId,
-        () async {
-          await responseSubscription?.cancel();
-          await activeChunkProcessing;
-          if (!responseCompleter.isCompleted) {
-            responseCompleter.complete();
-          }
-        },
-      );
 
       await responseCompleter.future;
 
       if (agentCancellationRuntime.isCancellationRequested(conversationId)) {
+        await streamingController.close();
+        await persistenceFuture;
+        streamingController = null;
+        persistenceFuture = null;
+
         if (!hasAcknowledgedPendingUsers && pendingUserMessageIds.isNotEmpty) {
           for (final pendingUserMessageId in pendingUserMessageIds) {
             await messageRepository.patchMessage(

@@ -49,7 +49,7 @@ class ChatQueuedMessagesIndicator extends ConsumerWidget {
               AuraButton(
                 variant: AuraButtonVariant.text,
                 size: AuraButtonSize.small,
-                onPressed: () => notifier.clearAll(conversationId),
+                onPressed: () => notifier.clear(conversationId),
                 child: Text(
                   LocaleKeys.chats_screens_chat_conversation_queued_clear_all
                       .tr(),

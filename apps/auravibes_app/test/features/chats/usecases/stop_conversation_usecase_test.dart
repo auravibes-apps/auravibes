@@ -34,7 +34,7 @@ void main() {
         sendQueueRuntime: ConversationSendQueueRuntime(
           enqueue: queueNotifier.enqueue,
           dequeueAll: queueNotifier.dequeueAll,
-          clear: queueNotifier.clearAll,
+          clear: queueNotifier.clear,
         ),
         messageRepository: messageRepository,
       );
