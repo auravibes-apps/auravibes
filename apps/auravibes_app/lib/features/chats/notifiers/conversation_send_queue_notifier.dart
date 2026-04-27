@@ -90,7 +90,7 @@ class ConversationSendQueue extends _$ConversationSendQueue {
     };
   }
 
-  void clearAll(String conversationId) {
+  void clear(String conversationId) {
     final drafts = state[conversationId];
     if (drafts == null || drafts.isEmpty) return;
 

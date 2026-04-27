@@ -3,6 +3,7 @@ import 'package:auravibes_app/domain/enums/message_types.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
+import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_decision.dart';
 import 'package:auravibes_app/features/tools/usecases/get_agent_iteration_decision_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/load_latest_message_tool_calls_usecase.dart';
@@ -30,6 +31,7 @@ void main() {
     late MockMessageRepository messageRepository;
     late MockResolveToolApprovalDecisionUsecase resolveToolApprovalDecision;
     late MockGetAgentIterationDecisionUsecase getAgentIterationDecisionUsecase;
+    late AgentCancellationRuntime agentCancellationRuntime;
     late RunAllowedToolsUsecase usecase;
     late MessageEntity toolMessage;
     String? calledMcpServerId;
@@ -42,6 +44,8 @@ void main() {
       messageRepository = MockMessageRepository();
       resolveToolApprovalDecision = MockResolveToolApprovalDecisionUsecase();
       getAgentIterationDecisionUsecase = MockGetAgentIterationDecisionUsecase();
+      agentCancellationRuntime = AgentCancellationRuntime()
+        ..start('conversation-1');
       calledMcpServerId = null;
       calledMcpToolIdentifier = null;
       calledMcpArguments = null;
@@ -87,6 +91,7 @@ void main() {
               return 'mcp result';
             },
         getAgentIterationDecisionUsecase: getAgentIterationDecisionUsecase,
+        agentCancellationRuntime: agentCancellationRuntime,
       );
     });
 
@@ -818,6 +823,7 @@ void main() {
     late MockMessageRepository messageRepository;
     late MockResolveToolApprovalDecisionUsecase resolveToolApprovalDecision;
     late MockGetAgentIterationDecisionUsecase getAgentIterationDecisionUsecase;
+    late AgentCancellationRuntime agentCancellationRuntime;
     late RunAllowedToolsUsecase usecase;
 
     setUp(() {
@@ -826,6 +832,8 @@ void main() {
       messageRepository = MockMessageRepository();
       resolveToolApprovalDecision = MockResolveToolApprovalDecisionUsecase();
       getAgentIterationDecisionUsecase = MockGetAgentIterationDecisionUsecase();
+      agentCancellationRuntime = AgentCancellationRuntime()
+        ..start('conversation-1');
 
       usecase = RunAllowedToolsUsecase(
         loadLatestMessageToolCallsUsecase: loadLatestMessageToolCallsUsecase,
@@ -840,6 +848,7 @@ void main() {
               return 'mcp result';
             },
         getAgentIterationDecisionUsecase: getAgentIterationDecisionUsecase,
+        agentCancellationRuntime: agentCancellationRuntime,
       );
     });
 
