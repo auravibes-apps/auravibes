@@ -50,7 +50,7 @@ void main() {
           conversationToolsRepository.checkToolPermission(
             conversationId: 'conv-1',
             workspaceId: 'ws-1',
-            toolId: 'calc',
+            toolId: 'calculator',
           ),
         ).thenAnswer((_) async => ToolPermissionResult.granted);
 
@@ -63,7 +63,7 @@ void main() {
 
         expect(decision.toolCallId, 'tc-1');
         expect(decision.permissionResult, ToolPermissionResult.granted);
-        expect(decision.permissionTableId, 'calc');
+        expect(decision.permissionTableId, 'calculator');
         expect(decision.needsConfirmation, isFalse);
       });
 
@@ -80,7 +80,7 @@ void main() {
             conversationToolsRepository.checkToolPermission(
               conversationId: 'conv-1',
               workspaceId: 'ws-1',
-              toolId: 'calc',
+              toolId: 'calculator',
             ),
           ).thenAnswer((_) async => ToolPermissionResult.needsConfirmation);
 
@@ -101,7 +101,7 @@ void main() {
     });
 
     group('native tools', () {
-      test('returns granted for native tool using tableId', () async {
+      test('returns granted for native tool using toolIdentifier', () async {
         final resolvedTool = ResolvedTool.native(
           tableId: 'native-1',
           nativeToolType: NativeToolType.url,
@@ -111,7 +111,7 @@ void main() {
           conversationToolsRepository.checkToolPermission(
             conversationId: 'conv-1',
             workspaceId: 'ws-1',
-            toolId: 'native-1',
+            toolId: 'url',
           ),
         ).thenAnswer((_) async => ToolPermissionResult.granted);
 
@@ -123,7 +123,7 @@ void main() {
         );
 
         expect(decision.permissionResult, ToolPermissionResult.granted);
-        expect(decision.permissionTableId, 'native-1');
+        expect(decision.permissionTableId, 'url');
       });
     });
 
@@ -262,7 +262,7 @@ void main() {
           conversationToolsRepository.checkToolPermission(
             conversationId: 'conv-1',
             workspaceId: 'ws-1',
-            toolId: 'calc',
+            toolId: 'calculator',
           ),
         ).thenAnswer(
           (_) async => ToolPermissionResult.disabledInConversation,
