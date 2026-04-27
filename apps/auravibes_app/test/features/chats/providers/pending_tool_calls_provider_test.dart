@@ -132,7 +132,7 @@ void main() {
               'tc-granted': const ToolApprovalDecision(
                 toolCallId: 'tc-granted',
                 permissionResult: ToolPermissionResult.granted,
-                permissionTableId: 'calc',
+                permissionTableId: 'calculator',
               ),
               'tc-needs-confirm': const ToolApprovalDecision(
                 toolCallId: 'tc-needs-confirm',
@@ -198,7 +198,7 @@ void main() {
               'tc-needs-confirm-2': const ToolApprovalDecision(
                 toolCallId: 'tc-needs-confirm-2',
                 permissionResult: ToolPermissionResult.needsConfirmation,
-                permissionTableId: 'calc',
+                permissionTableId: 'calculator',
               ),
             }),
           ),
@@ -309,7 +309,7 @@ void main() {
               'tc-1': const ToolApprovalDecision(
                 toolCallId: 'tc-1',
                 permissionResult: ToolPermissionResult.granted,
-                permissionTableId: 'calc',
+                permissionTableId: 'calculator',
               ),
               'tc-2': const ToolApprovalDecision(
                 toolCallId: 'tc-2',
@@ -450,7 +450,7 @@ void main() {
               ToolApprovalDecision(
                 toolCallId: 'tc-$i',
                 permissionResult: ToolPermissionResult.granted,
-                permissionTableId: 'calc',
+                permissionTableId: 'calculator',
               ),
             ),
           ),

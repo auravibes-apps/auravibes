@@ -8,7 +8,6 @@ import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_messages_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_queued_messages_indicator.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_thinking_indicator.dart';
-import 'package:auravibes_app/features/chats/widgets/chat_tool_approval_card.dart';
 import 'package:auravibes_app/features/chats/widgets/conversation_context_usage_pill.dart';
 import 'package:auravibes_app/features/chats/widgets/mcp_connecting_indicator.dart';
 import 'package:auravibes_app/features/models/widgets/select_chat_model.dart';
@@ -129,7 +128,6 @@ class _ChatConversationScreen extends HookConsumerWidget {
           if (busyState?.isStreaming == true) const ChatThinkingIndicator(),
           if (queuedDrafts.isNotEmpty)
             ChatQueuedMessagesIndicator(queuedDrafts: queuedDrafts),
-          if (busyState?.hasPendingTools == true) const ChatToolApprovalCard(),
           ChatInputWidget(
             onToolsPress: onToolsPress,
             isBusy: busyState?.isBusy ?? false,

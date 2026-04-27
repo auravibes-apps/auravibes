@@ -6,7 +6,6 @@ import 'package:auravibes_app/features/tools/notifiers/conversation_tools_notifi
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_provider.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool.dart';
-import 'package:flutter/foundation.dart';
 import 'package:riverpod/riverpod.dart';
 
 class ToolApprovalDecision {
@@ -62,10 +61,6 @@ class ResolveToolApprovalDecisionUsecase {
       permissionTableId: permissionTableId,
     );
   }
-
-  @visibleForTesting
-  Future<String?> resolvePermissionTableId(ResolvedTool resolvedTool) =>
-      _resolvePermissionTableId(resolvedTool);
 
   Future<String?> _resolvePermissionTableId(ResolvedTool resolvedTool) async {
     final mcpServerId = resolvedTool.mcpServerId;

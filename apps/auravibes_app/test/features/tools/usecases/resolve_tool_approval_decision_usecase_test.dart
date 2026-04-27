@@ -98,8 +98,10 @@ void main() {
           expect(decision.needsConfirmation, isTrue);
         },
       );
+    });
 
-      test('returns granted for native tool using toolIdentifier', () async {
+    group('native tools', () {
+      test('returns granted for native tool using tableId', () async {
         final resolvedTool = ResolvedTool.native(
           tableId: 'native-1',
           nativeToolType: NativeToolType.url,

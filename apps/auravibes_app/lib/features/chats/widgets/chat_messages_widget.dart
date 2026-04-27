@@ -3,6 +3,7 @@ import 'package:auravibes_app/domain/enums/message_types.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/providers/messages_providers.dart';
 import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_tool_approval_card.dart';
 import 'package:auravibes_app/features/chats/widgets/tool_call_response_preview.dart';
 import 'package:auravibes_app/utils/relative_time_formatter.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
@@ -79,9 +80,9 @@ class _ChatMessageRow extends HookConsumerWidget {
         ? allToolCalls.where((toolCall) => toolCall.isResolved).toList()
         : allToolCalls;
     final hasVisibleToolCalls = visibleToolCalls.isNotEmpty;
-    // Hide the text bubble when content is empty/whitespace and there are tool calls
     final hasContent = message.content.trim().isNotEmpty;
-    final showTextBubble = hasContent || !hasVisibleToolCalls;
+    final showTextBubble =
+        !hidePendingToolCalls && (hasContent || !hasVisibleToolCalls);
 
     return AnimatedSize(
       duration: const Duration(microseconds: 200),
@@ -89,7 +90,9 @@ class _ChatMessageRow extends HookConsumerWidget {
       child: AuraColumn(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (showTextBubble)
+          if (hidePendingToolCalls)
+            const ChatToolApprovalCard()
+          else if (showTextBubble)
             if (message.isUser)
               AuraMessageBubble(
                 key: ValueKey(message.id),
