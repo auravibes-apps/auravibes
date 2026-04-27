@@ -50,7 +50,7 @@ void main() {
           conversationToolsRepository.checkToolPermission(
             conversationId: 'conv-1',
             workspaceId: 'ws-1',
-            toolId: 'calculator',
+            toolId: 'calc',
           ),
         ).thenAnswer((_) async => ToolPermissionResult.granted);
 
@@ -63,7 +63,7 @@ void main() {
 
         expect(decision.toolCallId, 'tc-1');
         expect(decision.permissionResult, ToolPermissionResult.granted);
-        expect(decision.permissionTableId, 'calculator');
+        expect(decision.permissionTableId, 'calc');
         expect(decision.needsConfirmation, isFalse);
       });
 
@@ -80,7 +80,7 @@ void main() {
             conversationToolsRepository.checkToolPermission(
               conversationId: 'conv-1',
               workspaceId: 'ws-1',
-              toolId: 'calculator',
+              toolId: 'calc',
             ),
           ).thenAnswer((_) async => ToolPermissionResult.needsConfirmation);
 
@@ -109,7 +109,7 @@ void main() {
           conversationToolsRepository.checkToolPermission(
             conversationId: 'conv-1',
             workspaceId: 'ws-1',
-            toolId: 'url',
+            toolId: 'native-1',
           ),
         ).thenAnswer((_) async => ToolPermissionResult.granted);
 
@@ -121,7 +121,7 @@ void main() {
         );
 
         expect(decision.permissionResult, ToolPermissionResult.granted);
-        expect(decision.permissionTableId, 'url');
+        expect(decision.permissionTableId, 'native-1');
       });
     });
 
@@ -260,7 +260,7 @@ void main() {
           conversationToolsRepository.checkToolPermission(
             conversationId: 'conv-1',
             workspaceId: 'ws-1',
-            toolId: 'calculator',
+            toolId: 'calc',
           ),
         ).thenAnswer(
           (_) async => ToolPermissionResult.disabledInConversation,

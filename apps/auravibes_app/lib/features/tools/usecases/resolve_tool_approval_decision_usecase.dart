@@ -68,12 +68,13 @@ class ResolveToolApprovalDecisionUsecase {
       _resolvePermissionTableId(resolvedTool);
 
   Future<String?> _resolvePermissionTableId(ResolvedTool resolvedTool) async {
-    if (resolvedTool.mcpServerId == null) {
-      return resolvedTool.toolIdentifier;
+    final mcpServerId = resolvedTool.mcpServerId;
+    if (mcpServerId == null) {
+      return resolvedTool.tableId;
     }
 
     final toolGroup = await toolsGroupsRepository.getToolsGroupByMcpServerId(
-      resolvedTool.mcpServerId!,
+      mcpServerId,
     );
     if (toolGroup == null) return null;
 

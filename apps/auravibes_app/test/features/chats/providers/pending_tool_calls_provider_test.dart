@@ -447,8 +447,8 @@ void main() {
             20,
             (i) => MapEntry(
               'tc-$i',
-              const ToolApprovalDecision(
-                toolCallId: '',
+              ToolApprovalDecision(
+                toolCallId: 'tc-$i',
                 permissionResult: ToolPermissionResult.granted,
                 permissionTableId: 'calc',
               ),

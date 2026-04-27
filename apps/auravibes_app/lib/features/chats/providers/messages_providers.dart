@@ -234,40 +234,43 @@ Future<List<PendingToolCall>> pendingToolCalls(Ref ref) async {
     conversationByIdStreamProvider(conversationId: conversationId).future,
   );
   final workspaceId = conversation?.workspaceId;
-  if (workspaceId == null) return const [];
+  if (workspaceId == null) {
+    debugPrint(
+      '[pendingToolCalls] No workspaceId for conversation $conversationId',
+    );
+    return const [];
+  }
 
   final decisionUsecase = ref.watch(resolveToolApprovalDecisionUsecaseProvider);
   final resolver = ToolResolverService();
 
-  final results = <PendingToolCall>[];
-  for (final toolCall in pendingCalls) {
-    final resolvedTool = resolver.resolveTool(toolCall.name);
-    if (resolvedTool == null) {
-      results.add(
-        PendingToolCall(
-          toolCall: toolCall,
+  final entries = await Future.wait(
+    pendingCalls.map((toolCall) async {
+      final resolvedTool = resolver.resolveTool(toolCall.name);
+      if (resolvedTool == null) {
+        return (toolCall: toolCall, needsConfirmation: true);
+      }
+
+      final decision = await decisionUsecase(
+        conversationId: conversationId,
+        workspaceId: workspaceId,
+        toolCallId: toolCall.id,
+        resolvedTool: resolvedTool,
+      );
+      return (
+        toolCall: toolCall,
+        needsConfirmation: decision.needsConfirmation,
+      );
+    }),
+  );
+
+  return entries
+      .where((e) => e.needsConfirmation)
+      .map(
+        (e) => PendingToolCall(
+          toolCall: e.toolCall,
           messageId: latestAssistantMessage.id,
         ),
-      );
-      continue;
-    }
-
-    final decision = await decisionUsecase(
-      conversationId: conversationId,
-      workspaceId: workspaceId,
-      toolCallId: toolCall.id,
-      resolvedTool: resolvedTool,
-    );
-
-    if (decision.needsConfirmation) {
-      results.add(
-        PendingToolCall(
-          toolCall: toolCall,
-          messageId: latestAssistantMessage.id,
-        ),
-      );
-    }
-  }
-
-  return results;
+      )
+      .toList();
 }
