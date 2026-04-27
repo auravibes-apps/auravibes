@@ -154,8 +154,7 @@ class _ChatConversationScreen extends HookConsumerWidget {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        LocaleKeys
-                            .chats_screens_chat_conversation_stop_error
+                        LocaleKeys.chats_screens_chat_conversation_stop_error
                             .tr(),
                       ),
                     ),

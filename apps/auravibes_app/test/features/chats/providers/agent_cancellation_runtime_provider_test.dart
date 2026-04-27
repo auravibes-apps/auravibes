@@ -3,13 +3,16 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('AgentCancellationRuntime', () {
-    test('does not create a cancellation entry when stopping inactive runs', () {
-      final runtime = AgentCancellationRuntime();
+    test(
+      'does not create a cancellation entry when stopping inactive runs',
+      () {
+        final runtime = AgentCancellationRuntime();
 
-      runtime.requestStop('conversation-1');
+        runtime.requestStop('conversation-1');
 
-      expect(runtime.isCancellationRequested('conversation-1'), isFalse);
-    });
+        expect(runtime.isCancellationRequested('conversation-1'), isFalse);
+      },
+    );
 
     test('keeps existing cleanups when start is called twice', () {
       final runtime = AgentCancellationRuntime();
