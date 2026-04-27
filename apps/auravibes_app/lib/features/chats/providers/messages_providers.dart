@@ -251,16 +251,21 @@ Future<List<PendingToolCall>> pendingToolCalls(Ref ref) async {
         return (toolCall: toolCall, needsConfirmation: true);
       }
 
-      final decision = await decisionUsecase(
-        conversationId: conversationId,
-        workspaceId: workspaceId,
-        toolCallId: toolCall.id,
-        resolvedTool: resolvedTool,
-      );
-      return (
-        toolCall: toolCall,
-        needsConfirmation: decision.needsConfirmation,
-      );
+      try {
+        final decision = await decisionUsecase(
+          conversationId: conversationId,
+          workspaceId: workspaceId,
+          toolCallId: toolCall.id,
+          resolvedTool: resolvedTool,
+        );
+        return (
+          toolCall: toolCall,
+          needsConfirmation: decision.needsConfirmation,
+        );
+      } on Object catch (error) {
+        debugPrint('[pendingToolCalls] Error resolving $toolCall: $error');
+        return (toolCall: toolCall, needsConfirmation: true);
+      }
     }),
   );
 
