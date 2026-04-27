@@ -95,24 +95,24 @@ void main() {
       expect(state['conv-1'], isNull);
     });
 
-    test('clearAll removes all drafts for a conversation', () {
+    test('clear removes all drafts for a conversation', () {
       final notifier = container.read(conversationSendQueueProvider.notifier);
 
       notifier.enqueue(conversationId: 'conv-1', content: 'First');
       notifier.enqueue(conversationId: 'conv-1', content: 'Second');
       notifier.enqueue(conversationId: 'conv-2', content: 'Other conv');
-      notifier.clearAll('conv-1');
+      notifier.clear('conv-1');
 
       final state = container.read(conversationSendQueueProvider);
       expect(state['conv-1'], isNull);
       expect(state['conv-2']?.length, 1);
     });
 
-    test('clearAll with unknown conversationId is no-op', () {
+    test('clear with unknown conversationId is no-op', () {
       final notifier = container.read(conversationSendQueueProvider.notifier);
 
       notifier.enqueue(conversationId: 'conv-1', content: 'First');
-      notifier.clearAll('unknown');
+      notifier.clear('unknown');
 
       final state = container.read(conversationSendQueueProvider);
       expect(state['conv-1']?.length, 1);

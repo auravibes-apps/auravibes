@@ -4,6 +4,7 @@ import 'package:auravibes_app/domain/enums/message_types.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_send_queue_notifier.dart';
+import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime_provider.dart';
 import 'package:auravibes_app/features/chats/providers/send_queue_runtime_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_context.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_decision.dart';
@@ -30,6 +31,7 @@ void main() {
     late MockConversationRepository conversationRepository;
     late MockMessageRepository messageRepository;
     late ProviderContainer container;
+    late AgentCancellationRuntime agentCancellationRuntime;
     late RunAgentIterationUsecase usecase;
 
     setUp(() {
@@ -38,12 +40,14 @@ void main() {
       conversationRepository = MockConversationRepository();
       messageRepository = MockMessageRepository();
       container = ProviderContainer();
+      agentCancellationRuntime = AgentCancellationRuntime();
       usecase = RunAgentIterationUsecase(
         continueAgentUsecase: continueAgentUsecase,
         runAllowedToolsUsecase: runAllowedToolsUsecase,
         conversationRepository: conversationRepository,
         messageRepository: messageRepository,
         sendQueueRuntime: container.read(conversationSendQueueRuntimeProvider),
+        agentCancellationRuntime: agentCancellationRuntime,
       );
 
       when(
@@ -273,6 +277,110 @@ void main() {
             workspaceId: 'workspace-1',
           ),
         ).called(1);
+      },
+    );
+
+    test(
+      'stops before the next loop iteration and clears queued drafts',
+      () async {
+        var callCount = 0;
+        when(
+          continueAgentUsecase.call(
+            conversationId: 'conversation-1',
+            context: anyNamed('context'),
+          ),
+        ).thenAnswer((_) async {
+          callCount += 1;
+          return ContinueAgentResult(
+            messageId: 'assistant-$callCount',
+            hasToolCalls: true,
+          );
+        });
+        when(
+          runAllowedToolsUsecase.call(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+          ),
+        ).thenAnswer((_) async {
+          container
+              .read(conversationSendQueueProvider.notifier)
+              .enqueue(
+                conversationId: 'conversation-1',
+                content: 'Queued follow-up',
+              );
+          agentCancellationRuntime.requestStop('conversation-1');
+          return AgentIterationDecision.continueIteration;
+        });
+
+        final result = await usecase.call(conversationId: 'conversation-1');
+
+        expect(result, AgentIterationDecision.done);
+        expect(callCount, 1);
+        expect(
+          container
+              .read(conversationSendQueueProvider.notifier)
+              .peek('conversation-1'),
+          isNull,
+        );
+        verify(
+          continueAgentUsecase.call(
+            conversationId: 'conversation-1',
+            context: anyNamed('context'),
+          ),
+        ).called(1);
+      },
+    );
+
+    test(
+      'marks queued drafts sent when stopped after dequeue',
+      () async {
+        container
+            .read(conversationSendQueueProvider.notifier)
+            .enqueue(
+              conversationId: 'conversation-1',
+              content: 'Queued follow-up',
+            );
+        when(messageRepository.createMessage(any)).thenAnswer((_) async {
+          agentCancellationRuntime.requestStop('conversation-1');
+          return MessageEntity(
+            id: 'queued-user-1',
+            conversationId: 'conversation-1',
+            content: 'Queued follow-up',
+            messageType: MessageType.text,
+            isUser: true,
+            status: MessageStatus.sending,
+            createdAt: DateTime(2025),
+            updatedAt: DateTime(2025),
+          );
+        });
+        when(messageRepository.patchMessage('queued-user-1', any)).thenAnswer(
+          (_) async => MessageEntity(
+            id: 'queued-user-1',
+            conversationId: 'conversation-1',
+            content: 'Queued follow-up',
+            messageType: MessageType.text,
+            isUser: true,
+            status: MessageStatus.sent,
+            createdAt: DateTime(2025),
+            updatedAt: DateTime(2025),
+          ),
+        );
+
+        final result = await usecase.call(conversationId: 'conversation-1');
+
+        expect(result, AgentIterationDecision.done);
+        verifyNever(
+          continueAgentUsecase.call(
+            conversationId: anyNamed('conversationId'),
+            context: anyNamed('context'),
+          ),
+        );
+        final patch =
+            verify(
+                  messageRepository.patchMessage('queued-user-1', captureAny),
+                ).captured.single
+                as MessagePatch;
+        expect(patch.status, MessageStatus.sent);
       },
     );
 

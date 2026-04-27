@@ -2,9 +2,11 @@ import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/messages.dart';
 import 'package:auravibes_app/domain/enums/message_types.dart';
+import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/repositories/workspace_model_selection_repository.dart';
+import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/streaming_runtime_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_context.dart';
@@ -39,6 +41,7 @@ class ContinueAgentUsecase {
     required this.loadConversationToolSpecsUsecase,
     required this.messagesStreamingRuntime,
     required this.conversationStreamingRuntime,
+    required this.agentCancellationRuntime,
     required this.monitoringService,
   });
 
@@ -49,6 +52,7 @@ class ContinueAgentUsecase {
   final LoadConversationToolSpecsUsecase loadConversationToolSpecsUsecase;
   final MessagesStreamingRuntime messagesStreamingRuntime;
   final ConversationStreamingRuntime conversationStreamingRuntime;
+  final AgentCancellationRuntime agentCancellationRuntime;
   final MonitoringService monitoringService;
 
   Future<ContinueAgentResult> call({
@@ -94,6 +98,7 @@ class ContinueAgentUsecase {
     var hasAcknowledgedPendingUsers = false;
     StreamController<ChatResult<ChatMessage>>? streamingController;
     Future<void>? persistenceFuture;
+    StreamSubscription<ChatResult<ChatMessage>>? responseSubscription;
     try {
       streamingController =
           StreamController<ChatResult<ChatMessage>>.broadcast();
@@ -127,8 +132,13 @@ class ContinueAgentUsecase {
             );
           });
 
-      await for (final ChatResult<ChatMessage> chunk in responseStream) {
+      Future<void> handleChunk(ChatResult<ChatMessage> chunk) async {
+        if (agentCancellationRuntime.isCancellationRequested(conversationId)) {
+          return;
+        }
+
         accumulatedResult = accumulatedResult?.concat(chunk) ?? chunk;
+        final currentResult = accumulatedResult!;
 
         if (!hasAcknowledgedPendingUsers && pendingUserMessageIds.isNotEmpty) {
           for (final pendingUserMessageId in pendingUserMessageIds) {
@@ -144,30 +154,137 @@ class ContinueAgentUsecase {
           firstMessage = await messageRepository.createMessage(
             .new(
               conversationId: conversationId,
-              content: accumulatedResult.output.text,
+              content: currentResult.output.text,
               messageType: .text,
               isUser: false,
               status: .unfinished,
             ),
           );
-          messagesStreamingRuntime.startSubscription(subs, firstMessage.id);
+          messagesStreamingRuntime.startSubscription(subs, firstMessage!.id);
+        }
+        final currentMessage = firstMessage!;
+
+        streamingController!.add(currentResult);
+        messagesStreamingRuntime.updateResult(
+          currentResult,
+          currentMessage.id,
+        );
+      }
+
+      final responseCompleter = Completer<void>();
+      Future<void>? activeChunkProcessing;
+      agentCancellationRuntime.registerCleanup(
+        conversationId,
+        () async {
+          await responseSubscription?.cancel();
+          await activeChunkProcessing;
+          if (!responseCompleter.isCompleted) {
+            responseCompleter.complete();
+          }
+        },
+      );
+      responseSubscription = responseStream.listen(
+        null,
+        onError: (Object error, StackTrace stackTrace) {
+          if (agentCancellationRuntime.isCancellationRequested(
+            conversationId,
+          )) {
+            monitoringService.trackError(
+              'Stream error during cancellation',
+              error: error,
+              stackTrace: stackTrace,
+            );
+            if (!responseCompleter.isCompleted) {
+              responseCompleter.complete();
+            }
+            return;
+          }
+
+          if (!responseCompleter.isCompleted) {
+            responseCompleter.completeError(error, stackTrace);
+          }
+        },
+        onDone: () {
+          if (!responseCompleter.isCompleted) {
+            responseCompleter.complete();
+          }
+        },
+        cancelOnError: true,
+      );
+      responseSubscription.onData((chunk) {
+        responseSubscription?.pause();
+        final processing = () async {
+          try {
+            await handleChunk(chunk);
+            if (agentCancellationRuntime.isCancellationRequested(
+              conversationId,
+            )) {
+              await responseSubscription?.cancel();
+              if (!responseCompleter.isCompleted) {
+                responseCompleter.complete();
+              }
+              return;
+            }
+
+            responseSubscription?.resume();
+          } on Object catch (error, stackTrace) {
+            await responseSubscription?.cancel();
+            if (!responseCompleter.isCompleted) {
+              responseCompleter.completeError(error, stackTrace);
+            }
+          }
+        }();
+        activeChunkProcessing = processing;
+      });
+
+      await responseCompleter.future;
+
+      if (agentCancellationRuntime.isCancellationRequested(conversationId)) {
+        await streamingController.close();
+        await persistenceFuture;
+        streamingController = null;
+        persistenceFuture = null;
+
+        if (!hasAcknowledgedPendingUsers && pendingUserMessageIds.isNotEmpty) {
+          for (final pendingUserMessageId in pendingUserMessageIds) {
+            await messageRepository.patchMessage(
+              pendingUserMessageId,
+              const MessagePatch(status: MessageStatus.sent),
+            );
+          }
+          hasAcknowledgedPendingUsers = true;
         }
 
-        streamingController.add(accumulatedResult);
-        messagesStreamingRuntime.updateResult(
-          accumulatedResult,
-          firstMessage.id,
+        final stoppedMessage = firstMessage;
+        if (stoppedMessage != null) {
+          await messageRepository.patchMessage(
+            stoppedMessage.id,
+            MessagePatch(
+              content: accumulatedResult?.entityText,
+              metadata: _markPendingToolsStopped(
+                accumulatedResult?.entityMetadata,
+              ),
+              status: MessageStatus.sent,
+            ),
+          );
+        }
+
+        return ContinueAgentResult(
+          messageId: firstMessage?.id ?? '',
+          hasToolCalls: false,
         );
       }
 
       if (accumulatedResult == null || firstMessage == null) {
         throw StateError('Agent stream completed without any result');
       }
+      final completedResult = accumulatedResult!;
+      final completedMessage = firstMessage!;
 
       await messageRepository.patchMessage(
-        firstMessage.id,
+        completedMessage.id,
         .new(
-          metadata: accumulatedResult.entityMetadata,
+          metadata: completedResult.entityMetadata,
           status: .sent,
         ),
       );
@@ -195,7 +312,7 @@ class ContinueAgentUsecase {
 
       try {
         await messageRepository.patchMessage(
-          firstMessage.id,
+          firstMessage!.id,
           const .new(
             status: .error,
           ),
@@ -210,18 +327,37 @@ class ContinueAgentUsecase {
 
       Error.throwWithStackTrace(error, stackTrace);
     } finally {
+      await responseSubscription?.cancel();
       await streamingController?.close();
       await persistenceFuture;
       conversationStreamingRuntime.remove(conversationId);
       if (firstMessage != null) {
-        await messagesStreamingRuntime.remove(firstMessage.id);
+        await messagesStreamingRuntime.remove(firstMessage!.id);
       }
       subs.dispose();
     }
 
     return ContinueAgentResult(
-      messageId: firstMessage.id,
-      hasToolCalls: accumulatedResult.entityTools.isNotEmpty,
+      messageId: firstMessage!.id,
+      hasToolCalls: accumulatedResult!.entityTools.isNotEmpty,
+    );
+  }
+
+  MessageMetadataEntity? _markPendingToolsStopped(
+    MessageMetadataEntity? metadata,
+  ) {
+    if (metadata == null || metadata.toolCalls.isEmpty) {
+      return metadata;
+    }
+
+    return metadata.copyWith(
+      toolCalls: metadata.toolCalls.map((toolCall) {
+        if (!toolCall.isPending) return toolCall;
+
+        return toolCall.copyWith(
+          resultStatus: ToolCallResultStatus.stoppedByUser,
+        );
+      }).toList(),
     );
   }
 }
@@ -242,6 +378,7 @@ final continueAgentUsecaseProvider = Provider<ContinueAgentUsecase>(
       conversationStreamingRuntime: ref.watch(
         conversationStreamingRuntimeProvider,
       ),
+      agentCancellationRuntime: ref.watch(agentCancellationRuntimeProvider),
       monitoringService: ref.watch(monitoringServiceProvider),
     );
   },

@@ -182,6 +182,10 @@ abstract class LocaleKeys {
       'tool_call_status.execution_error';
   static const tool_call_status_running = 'tool_call_status.running';
   static const tool_call_status_pending = 'tool_call_status.pending';
+  static const chats_screens_chat_conversation_stop_generation =
+      'chats_screens.chat_conversation.stop_generation';
+  static const chats_screens_chat_conversation_stop_error =
+      'chats_screens.chat_conversation.stop_error';
   static const common_cancel = 'common.cancel';
   static const common_remove = 'common.remove';
   static const common_add = 'common.add';

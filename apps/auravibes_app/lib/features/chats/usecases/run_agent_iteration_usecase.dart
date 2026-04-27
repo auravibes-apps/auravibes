@@ -2,6 +2,7 @@ import 'package:auravibes_app/domain/entities/messages.dart';
 import 'package:auravibes_app/domain/enums/message_types.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
+import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/send_queue_runtime_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_context.dart';
@@ -17,6 +18,7 @@ class RunAgentIterationUsecase {
     required this.conversationRepository,
     required this.messageRepository,
     required this.sendQueueRuntime,
+    required this.agentCancellationRuntime,
   });
 
   final ContinueAgentUsecase continueAgentUsecase;
@@ -24,6 +26,7 @@ class RunAgentIterationUsecase {
   final ConversationRepository conversationRepository;
   final MessageRepository messageRepository;
   final ConversationSendQueueRuntime sendQueueRuntime;
+  final AgentCancellationRuntime agentCancellationRuntime;
 
   Future<AgentIterationDecision> call({
     required String conversationId,
@@ -36,44 +39,74 @@ class RunAgentIterationUsecase {
       throw Exception('Conversation not found');
     }
 
-    var currentContext = context;
+    agentCancellationRuntime.start(conversationId);
 
-    while (true) {
-      currentContext = await _withQueuedDrafts(
-        conversationId: conversationId,
-        context: currentContext,
-      );
+    try {
+      var currentContext = context;
 
-      final continueResult = await continueAgentUsecase.call(
-        conversationId: conversationId,
-        context: currentContext,
-      );
-
-      currentContext = AgentIterationContext(
-        origin: currentContext?.origin ?? AgentIterationOrigin.userMessage,
-      );
-
-      if (!continueResult.hasToolCalls) {
-        final queuedContext = await _withQueuedDrafts(
-          conversationId: conversationId,
-          context: currentContext,
-        );
-        if (queuedContext == currentContext) {
+      while (true) {
+        if (agentCancellationRuntime.isCancellationRequested(conversationId)) {
+          await _markAckMessagesSent(currentContext);
+          sendQueueRuntime.clear(conversationId);
           return AgentIterationDecision.done;
         }
 
-        currentContext = queuedContext;
-        continue;
-      }
+        currentContext = await _withQueuedDrafts(
+          conversationId: conversationId,
+          context: currentContext,
+        );
 
-      final decision = await runAllowedToolsUsecase.call(
-        conversationId: conversationId,
-        workspaceId: conversation.workspaceId,
-      );
+        if (agentCancellationRuntime.isCancellationRequested(conversationId)) {
+          await _markAckMessagesSent(currentContext);
+          sendQueueRuntime.clear(conversationId);
+          return AgentIterationDecision.done;
+        }
 
-      if (decision != AgentIterationDecision.continueIteration) {
-        return decision;
+        final continueResult = await continueAgentUsecase.call(
+          conversationId: conversationId,
+          context: currentContext,
+        );
+
+        if (agentCancellationRuntime.isCancellationRequested(conversationId)) {
+          await _markAckMessagesSent(currentContext);
+          sendQueueRuntime.clear(conversationId);
+          return AgentIterationDecision.done;
+        }
+
+        currentContext = AgentIterationContext(
+          origin: currentContext?.origin ?? AgentIterationOrigin.userMessage,
+        );
+
+        if (!continueResult.hasToolCalls) {
+          final queuedContext = await _withQueuedDrafts(
+            conversationId: conversationId,
+            context: currentContext,
+          );
+          if (queuedContext == currentContext) {
+            return AgentIterationDecision.done;
+          }
+
+          currentContext = queuedContext;
+          continue;
+        }
+
+        final decision = await runAllowedToolsUsecase.call(
+          conversationId: conversationId,
+          workspaceId: conversation.workspaceId,
+        );
+
+        if (agentCancellationRuntime.isCancellationRequested(conversationId)) {
+          await _markAckMessagesSent(currentContext);
+          sendQueueRuntime.clear(conversationId);
+          return AgentIterationDecision.done;
+        }
+
+        if (decision != AgentIterationDecision.continueIteration) {
+          return decision;
+        }
       }
+    } finally {
+      agentCancellationRuntime.clear(conversationId);
     }
   }
 
@@ -108,6 +141,20 @@ class RunAgentIterationUsecase {
       ],
     );
   }
+
+  Future<void> _markAckMessagesSent(AgentIterationContext? context) async {
+    final ackMessageIds = context?.ackMessageIds ?? const <String>[];
+    if (ackMessageIds.isEmpty) return;
+
+    await Future.wait(
+      ackMessageIds.map(
+        (messageId) => messageRepository.patchMessage(
+          messageId,
+          const MessagePatch(status: MessageStatus.sent),
+        ),
+      ),
+    );
+  }
 }
 
 final runAgentIterationUsecaseProvider = Provider<RunAgentIterationUsecase>((
@@ -119,5 +166,6 @@ final runAgentIterationUsecaseProvider = Provider<RunAgentIterationUsecase>((
     conversationRepository: ref.watch(conversationRepositoryProvider),
     messageRepository: ref.watch(messageRepositoryProvider),
     sendQueueRuntime: ref.watch(conversationSendQueueRuntimeProvider),
+    agentCancellationRuntime: ref.watch(agentCancellationRuntimeProvider),
   );
 });
