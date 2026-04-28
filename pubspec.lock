@@ -109,10 +109,10 @@ packages:
     dependency: transitive
     description:
       name: build_runner
-      sha256: "4425a87d87d0d1303540f867994303f5b141ad2f6ecac7ac2cf8851f41c0cef1"
+      sha256: "22fdcc3cfeb9d974d7408718c4be15ec5e9b1b350088f3a6c88f154e74dd700d"
       url: "https://pub.dev"
     source: hosted
-    version: "2.14.0"
+    version: "2.14.1"
   built_collection:
     dependency: transitive
     description:
@@ -681,10 +681,10 @@ packages:
     dependency: transitive
     description:
       name: google_fonts
-      sha256: db9df7a5898d894eeda4c78143f35c30a243558be439518972366880b80bf88e
+      sha256: "4e9391085e524954a51e3625b7c9c7e9851dc3f376603208bb45c24b9a66255d"
       url: "https://pub.dev"
     source: hosted
-    version: "8.0.2"
+    version: "8.1.0"
   googleai_dart:
     dependency: transitive
     description:
@@ -897,10 +897,10 @@ packages:
     dependency: transitive
     description:
       name: mcp_client
-      sha256: "7eabd41217ad70f6d563dcaa48c31ecd59dc0311a8802d09d5417ebe9a26c5e7"
+      sha256: "9d3ddd86682a429596b856696d20ef1d46ceef0806869b111638e7b565662f3b"
       url: "https://pub.dev"
     source: hosted
-    version: "1.1.0"
+    version: "1.1.1"
   mcp_dart:
     dependency: transitive
     description:
