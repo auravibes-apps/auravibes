@@ -79,11 +79,12 @@ class MyShellRouteData extends StatefulShellRouteData {
     GoRouterState state,
     StatefulNavigationShell navigationShell,
   ) {
-    final workspaceId = state.pathParameters['workspaceId'] ?? '';
-    assert(
-      workspaceId.isNotEmpty,
-      'workspaceId must be present in route pathParameters',
-    );
+    final workspaceId = state.pathParameters['workspaceId'];
+    if (workspaceId == null || workspaceId.isEmpty) {
+      throw StateError(
+        'workspaceId must be present in route pathParameters',
+      );
+    }
     return AuraSidebarWrapper(
       navigationShell: navigationShell,
       workspaceId: workspaceId,

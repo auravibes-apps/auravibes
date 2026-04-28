@@ -139,7 +139,7 @@ class AppWithResponsiveDrawer extends StatefulWidget {
   final List<AuraNavigationData> navigationItems;
   final void Function(int) onNavigationTap;
   final int selectedIndex;
-  final String? workspaceId;
+  final String workspaceId;
 
   @override
   State<AppWithResponsiveDrawer> createState() =>

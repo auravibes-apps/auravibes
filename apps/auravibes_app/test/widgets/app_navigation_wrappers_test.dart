@@ -46,6 +46,7 @@ void main() {
           ),
         ],
       );
+      addTearDown(router.dispose);
 
       await tester.pumpWidget(
         MaterialApp.router(routerConfig: router),
@@ -57,6 +58,59 @@ void main() {
 
       await tester.pumpAndSettle();
       expect(find.text('workspaceId: ws-test'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'workspaceId available after async redirect from root — exercises actual startup failure mode',
+    (tester) async {
+      String? capturedWorkspaceId;
+
+      final router = GoRouter(
+        initialLocation: '/',
+        routes: [
+          GoRoute(
+            path: '/workspaces/:workspaceId',
+            builder: (context, state) => const SizedBox.shrink(),
+            routes: [
+              StatefulShellRoute.indexedStack(
+                builder: (context, state, navigationShell) {
+                  capturedWorkspaceId = state.pathParameters['workspaceId'];
+                  return Text('workspaceId: $capturedWorkspaceId');
+                },
+                branches: [
+                  StatefulShellBranch(
+                    routes: [
+                      GoRoute(
+                        path: 'chat/new',
+                        builder: (context, state) =>
+                            const Text('New chat screen'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+        redirect: (context, state) {
+          if (state.uri.toString() == '/') {
+            return '/workspaces/ws-redirect-test/chat/new';
+          }
+          return null;
+        },
+      );
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp.router(routerConfig: router),
+      );
+
+      // Key regression guard: workspaceId must be available after the initial
+      // frame — even when the route required an async-like redirect from '/'.
+      // The old Riverpod-based path failed here because ChangeNotifier
+      // notifications from routeInformationProvider didn't propagate.
+      expect(capturedWorkspaceId, 'ws-redirect-test');
     },
   );
 }
