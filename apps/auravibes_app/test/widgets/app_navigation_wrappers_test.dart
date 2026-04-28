@@ -50,11 +50,12 @@ void main() {
       await tester.pumpWidget(
         MaterialApp.router(routerConfig: router),
       );
-      await tester.pumpAndSettle();
 
-      // Core assertion: workspaceId is resolved synchronously from route state,
-      // not from an async Riverpod provider chain.
+      // Core assertion: workspaceId is resolved synchronously from route state
+      // after the initial frame, not after async operations settle.
       expect(capturedWorkspaceId, 'ws-test');
+
+      await tester.pumpAndSettle();
       expect(find.text('workspaceId: ws-test'), findsOneWidget);
     },
   );
