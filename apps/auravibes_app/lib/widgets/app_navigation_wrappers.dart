@@ -1,7 +1,6 @@
 import 'package:auravibes_app/features/chats/widgets/sidebar_conversations_widget.dart';
 import 'package:auravibes_app/flavors.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
-import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/router/app_router.dart';
 import 'package:auravibes_app/widgets/responsive_sliding_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -72,6 +71,7 @@ class AuraSidebarWrapper extends HookConsumerWidget {
   /// Creates a Aura sidebar widget.
   const AuraSidebarWrapper({
     required this.navigationShell,
+    required this.workspaceId,
     super.key,
   });
 
@@ -80,15 +80,14 @@ class AuraSidebarWrapper extends HookConsumerWidget {
   /// The main content to display next to the sidebar.
   final StatefulNavigationShell navigationShell;
 
+  /// The current workspace ID from the route.
+  final String workspaceId;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // useListenable keeps GoRouter.of(context).routeInformationProvider updates
-    // active for _calculateSelectedIndex;
-    // ref.watch(currentRouteWorkspaceIdProvider) only supplies the
-    // workspace id.
+    // active for _calculateSelectedIndex.
     useListenable(GoRouter.of(context).routeInformationProvider);
-
-    final workspaceId = ref.watch(currentRouteWorkspaceIdProvider);
     final selectedIndex = _calculateSelectedIndex(
       context,
       navigationShell.currentIndex,
@@ -97,7 +96,7 @@ class AuraSidebarWrapper extends HookConsumerWidget {
     return AppWithResponsiveDrawer(
       navigationItems: _navigationItems,
       onNavigationTap: (index) {
-        if (workspaceId == null || workspaceId.isEmpty) {
+        if (workspaceId.isEmpty) {
           _logger.fine(
             '[Navigation] onNavigationTap: workspaceId missing, ignoring tap',
           );

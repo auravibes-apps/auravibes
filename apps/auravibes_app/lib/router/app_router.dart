@@ -79,7 +79,11 @@ class MyShellRouteData extends StatefulShellRouteData {
     GoRouterState state,
     StatefulNavigationShell navigationShell,
   ) {
-    return AuraSidebarWrapper(navigationShell: navigationShell);
+    final workspaceId = state.pathParameters['workspaceId'] ?? '';
+    return AuraSidebarWrapper(
+      navigationShell: navigationShell,
+      workspaceId: workspaceId,
+    );
   }
 }
 
