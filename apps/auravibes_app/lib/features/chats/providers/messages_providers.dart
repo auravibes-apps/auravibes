@@ -236,9 +236,17 @@ Future<List<PendingToolCall>> pendingToolCalls(Ref ref) async {
   final workspaceId = conversation?.workspaceId;
   if (workspaceId == null) {
     debugPrint(
-      '[pendingToolCalls] No workspaceId for conversation $conversationId',
+      '[pendingToolCalls] No workspaceId for conversation $conversationId; '
+      'returning pending tool calls as needing confirmation',
     );
-    return const [];
+    return pendingCalls
+        .map(
+          (toolCall) => PendingToolCall(
+            toolCall: toolCall,
+            messageId: latestAssistantMessage.id,
+          ),
+        )
+        .toList();
   }
 
   final decisionUsecase = ref.watch(resolveToolApprovalDecisionUsecaseProvider);

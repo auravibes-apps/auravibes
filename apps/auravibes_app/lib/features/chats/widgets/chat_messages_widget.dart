@@ -80,8 +80,7 @@ class _ChatMessageRow extends HookConsumerWidget {
         : allToolCalls;
     final hasVisibleToolCalls = visibleToolCalls.isNotEmpty;
     final hasContent = message.content.trim().isNotEmpty;
-    final showTextBubble =
-        !hidePendingToolCalls && (hasContent || !hasVisibleToolCalls);
+    final showTextBubble = hasContent || !hasVisibleToolCalls;
 
     return AnimatedSize(
       duration: const Duration(microseconds: 200),
