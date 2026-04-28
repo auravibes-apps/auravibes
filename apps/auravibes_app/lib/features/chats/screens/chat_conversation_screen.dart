@@ -108,6 +108,8 @@ class _ChatConversationScreen extends HookConsumerWidget {
 
     final busyState = ref.watch(conversationBusyStateProvider).asData?.value;
     final queuedDrafts = ref.watch(conversationQueuedDraftsProvider);
+    final pendingCalls = ref.watch(pendingToolCallsProvider).value ?? const [];
+    final hasPendingApprovals = pendingCalls.isNotEmpty;
 
     return AuraScreen(
       appBar: AuraAppBarWithDrawer(
@@ -129,56 +131,59 @@ class _ChatConversationScreen extends HookConsumerWidget {
           if (busyState?.isStreaming == true) const ChatThinkingIndicator(),
           if (queuedDrafts.isNotEmpty)
             ChatQueuedMessagesIndicator(queuedDrafts: queuedDrafts),
-          if (busyState?.hasPendingTools == true) const ChatToolApprovalCard(),
-          ChatInputWidget(
-            onToolsPress: onToolsPress,
-            isBusy: busyState?.isBusy ?? false,
-            onStop: () async {
-              final conversationId = ref.read(conversationSelectedProvider);
-              try {
-                await ref
-                    .read(stopConversationUsecaseProvider)
-                    .call(conversationId: conversationId);
-              } catch (error, stackTrace) {
-                FlutterError.reportError(
-                  FlutterErrorDetails(
-                    exception: error,
-                    stack: stackTrace,
-                    library: 'chat_conversation_screen',
-                    context: ErrorDescription(
-                      'while stopping a conversation',
-                    ),
-                  ),
-                );
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        LocaleKeys.chats_screens_chat_conversation_stop_error
-                            .tr(),
+          if (hasPendingApprovals) const ChatToolApprovalCard(),
+          Offstage(
+            offstage: hasPendingApprovals,
+            child: ChatInputWidget(
+              onToolsPress: onToolsPress,
+              isBusy: busyState?.isBusy ?? false,
+              onStop: () async {
+                final conversationId = ref.read(conversationSelectedProvider);
+                try {
+                  await ref
+                      .read(stopConversationUsecaseProvider)
+                      .call(conversationId: conversationId);
+                } catch (error, stackTrace) {
+                  FlutterError.reportError(
+                    FlutterErrorDetails(
+                      exception: error,
+                      stack: stackTrace,
+                      library: 'chat_conversation_screen',
+                      context: ErrorDescription(
+                        'while stopping a conversation',
                       ),
                     ),
                   );
-                }
-              }
-            },
-            onSendMessage: (message) async {
-              final conversationId = ref.read(conversationSelectedProvider);
-              try {
-                await ref
-                    .read(sendMessageUsecaseProvider)
-                    .call(
-                      conversationId: conversationId,
-                      content: message,
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          LocaleKeys.chats_screens_chat_conversation_stop_error
+                              .tr(),
+                        ),
+                      ),
                     );
-              } on Exception catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Failed to send message: $e')),
-                  );
+                  }
                 }
-              }
-            },
+              },
+              onSendMessage: (message) async {
+                final conversationId = ref.read(conversationSelectedProvider);
+                try {
+                  await ref
+                      .read(sendMessageUsecaseProvider)
+                      .call(
+                        conversationId: conversationId,
+                        content: message,
+                      );
+                } on Exception catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to send message: $e')),
+                    );
+                  }
+                }
+              },
+            ),
           ),
         ],
       ),

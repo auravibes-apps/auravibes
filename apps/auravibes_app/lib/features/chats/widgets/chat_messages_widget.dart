@@ -79,7 +79,6 @@ class _ChatMessageRow extends HookConsumerWidget {
         ? allToolCalls.where((toolCall) => toolCall.isResolved).toList()
         : allToolCalls;
     final hasVisibleToolCalls = visibleToolCalls.isNotEmpty;
-    // Hide the text bubble when content is empty/whitespace and there are tool calls
     final hasContent = message.content.trim().isNotEmpty;
     final showTextBubble = hasContent || !hasVisibleToolCalls;
 

@@ -160,6 +160,9 @@ SomeExperimentalApi(), // ignore: experimental_member_use - Required for widgetb
 
 ## Active Technologies
 
+- Dart 3.11+ with Flutter 3.41.4+ via FVM + Flutter, hooks_riverpod/Riverpod 3, riverpod_generator, Freezed, Drift, auravibes_ui (008-avoid-approval-flash)
+- Existing Drift `messages` metadata JSON and tool permission tables; no schema changes planned (008-avoid-approval-flash)
+
 - Dart 3.x (FVM pinned to 3.41.4+) + Flutter, Riverpod (with code generation), Freezed, auravibes_ui (001-two-step-model-selector)
 - Drift database (existing, no schema changes needed) (001-two-step-model-selector)
 - Dart 3.11+ (Flutter 3.41.4+ via FVM) + Flutter SDK, flutter_portal, gpt_markdown, riverpod (existing) (001-ui-library-widgets)
@@ -175,6 +178,6 @@ SomeExperimentalApi(), // ignore: experimental_member_use - Required for widgetb
 
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at `specs/006-fix-native-tool-permissions/plan.md`
+at `specs/008-avoid-approval-flash/plan.md`
 
 <!-- SPECKIT END -->

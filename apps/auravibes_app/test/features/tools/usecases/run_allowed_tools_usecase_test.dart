@@ -1,18 +1,13 @@
-import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/domain/entities/messages.dart';
-import 'package:auravibes_app/domain/entities/tools_group.dart';
-import 'package:auravibes_app/domain/entities/workspace_tool.dart';
 import 'package:auravibes_app/domain/enums/message_types.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
-import 'package:auravibes_app/domain/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
-import 'package:auravibes_app/domain/repositories/tools_groups_repository.dart';
-import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_decision.dart';
 import 'package:auravibes_app/features/tools/usecases/get_agent_iteration_decision_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/load_latest_message_tool_calls_usecase.dart';
+import 'package:auravibes_app/features/tools/usecases/resolve_tool_approval_decision_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/run_allowed_tools_usecase.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool.dart';
 import 'package:auravibes_app/services/tools/native_tool_entity.dart';
@@ -26,9 +21,7 @@ import 'run_allowed_tools_usecase_test.mocks.dart';
 @GenerateMocks([
   LoadLatestMessageToolCallsUsecase,
   MessageRepository,
-  ConversationToolsRepository,
-  ToolsGroupsRepository,
-  WorkspaceToolsRepository,
+  ResolveToolApprovalDecisionUsecase,
   GetAgentIterationDecisionUsecase,
 ])
 void main() {
@@ -36,9 +29,7 @@ void main() {
     late MockLoadLatestMessageToolCallsUsecase
     loadLatestMessageToolCallsUsecase;
     late MockMessageRepository messageRepository;
-    late MockConversationToolsRepository conversationToolsRepository;
-    late MockToolsGroupsRepository toolsGroupsRepository;
-    late MockWorkspaceToolsRepository workspaceToolsRepository;
+    late MockResolveToolApprovalDecisionUsecase resolveToolApprovalDecision;
     late MockGetAgentIterationDecisionUsecase getAgentIterationDecisionUsecase;
     late AgentCancellationRuntime agentCancellationRuntime;
     late RunAllowedToolsUsecase usecase;
@@ -51,9 +42,7 @@ void main() {
       loadLatestMessageToolCallsUsecase =
           MockLoadLatestMessageToolCallsUsecase();
       messageRepository = MockMessageRepository();
-      conversationToolsRepository = MockConversationToolsRepository();
-      toolsGroupsRepository = MockToolsGroupsRepository();
-      workspaceToolsRepository = MockWorkspaceToolsRepository();
+      resolveToolApprovalDecision = MockResolveToolApprovalDecisionUsecase();
       getAgentIterationDecisionUsecase = MockGetAgentIterationDecisionUsecase();
       agentCancellationRuntime = AgentCancellationRuntime()
         ..start('conversation-1');
@@ -89,9 +78,7 @@ void main() {
       usecase = RunAllowedToolsUsecase(
         loadLatestMessageToolCallsUsecase: loadLatestMessageToolCallsUsecase,
         messageRepository: messageRepository,
-        conversationToolsRepository: conversationToolsRepository,
-        toolsGroupsRepository: toolsGroupsRepository,
-        workspaceToolsRepository: workspaceToolsRepository,
+        resolveToolApprovalDecision: resolveToolApprovalDecision,
         mcpToolCaller:
             ({
               required mcpServerId,
@@ -148,43 +135,19 @@ void main() {
         (_) async => mcpMessage,
       );
       when(
-        toolsGroupsRepository.getToolsGroupByMcpServerId('server-1'),
-      ).thenAnswer(
-        (_) async => ToolsGroupEntity(
-          id: 'group-1',
-          workspaceId: 'workspace-1',
-          name: 'Group',
-          isEnabled: true,
-          permissions: PermissionAccess.ask,
-          createdAt: DateTime(2026),
-          updatedAt: DateTime(2026),
-          mcpServerId: 'server-1',
-        ),
-      );
-      when(
-        workspaceToolsRepository.getWorkspaceToolByToolName(
-          toolGroupId: 'group-1',
-          toolName: 'sum',
-        ),
-      ).thenAnswer(
-        (_) async => WorkspaceToolEntity(
-          id: 'workspace-tool-1',
-          workspaceId: 'workspace-1',
-          toolId: 'sum',
-          isEnabled: true,
-          permissionMode: ToolPermissionMode.alwaysAllow,
-          createdAt: DateTime(2026),
-          updatedAt: DateTime(2026),
-          workspaceToolsGroupId: 'group-1',
-        ),
-      );
-      when(
-        conversationToolsRepository.checkToolPermission(
+        resolveToolApprovalDecision(
           conversationId: 'conversation-1',
           workspaceId: 'workspace-1',
-          toolId: 'workspace-tool-1',
+          toolCallId: 'tool-1',
+          resolvedTool: tool.tool,
         ),
-      ).thenAnswer((_) async => ToolPermissionResult.granted);
+      ).thenAnswer(
+        (_) async => const ToolApprovalDecision(
+          toolCallId: 'tool-1',
+          permissionResult: ToolPermissionResult.granted,
+          permissionTableId: 'workspace-tool-1',
+        ),
+      );
       when(
         messageRepository.patchMessage('message-1', any),
       ).thenAnswer((_) async => mcpMessage);
@@ -225,10 +188,11 @@ void main() {
 
       expect(result, AgentIterationDecision.done);
       verifyNever(
-        conversationToolsRepository.checkToolPermission(
+        resolveToolApprovalDecision(
           conversationId: anyNamed('conversationId'),
           workspaceId: anyNamed('workspaceId'),
-          toolId: anyNamed('toolId'),
+          toolCallId: anyNamed('toolCallId'),
+          resolvedTool: anyNamed('resolvedTool'),
         ),
       );
     });
@@ -260,12 +224,19 @@ void main() {
           ),
         );
         when(
-          conversationToolsRepository.checkToolPermission(
+          resolveToolApprovalDecision(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
-            toolId: 'calculator',
+            toolCallId: 'tool-1',
+            resolvedTool: tool.tool,
           ),
-        ).thenAnswer((_) async => ToolPermissionResult.needsConfirmation);
+        ).thenAnswer(
+          (_) async => const ToolApprovalDecision(
+            toolCallId: 'tool-1',
+            permissionResult: ToolPermissionResult.needsConfirmation,
+            permissionTableId: 'calculator',
+          ),
+        );
 
         final result = await usecase.call(
           conversationId: 'conversation-1',
@@ -310,12 +281,19 @@ void main() {
           (_) async => toolMessage,
         );
         when(
-          conversationToolsRepository.checkToolPermission(
+          resolveToolApprovalDecision(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
-            toolId: 'calculator',
+            toolCallId: 'tool-1',
+            resolvedTool: tool.tool,
           ),
-        ).thenAnswer((_) async => ToolPermissionResult.granted);
+        ).thenAnswer(
+          (_) async => const ToolApprovalDecision(
+            toolCallId: 'tool-1',
+            permissionResult: ToolPermissionResult.granted,
+            permissionTableId: 'calculator',
+          ),
+        );
         when(
           messageRepository.patchMessage('message-1', any),
         ).thenAnswer((_) async => toolMessage);
@@ -421,12 +399,33 @@ void main() {
           (_) async => multiToolMessage,
         );
         when(
-          conversationToolsRepository.checkToolPermission(
+          resolveToolApprovalDecision(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
-            toolId: 'calculator',
+            toolCallId: 'tool-1',
+            resolvedTool: tool1.tool,
           ),
-        ).thenAnswer((_) async => ToolPermissionResult.granted);
+        ).thenAnswer(
+          (_) async => const ToolApprovalDecision(
+            toolCallId: 'tool-1',
+            permissionResult: ToolPermissionResult.granted,
+            permissionTableId: 'calculator',
+          ),
+        );
+        when(
+          resolveToolApprovalDecision(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+            toolCallId: 'tool-2',
+            resolvedTool: tool2.tool,
+          ),
+        ).thenAnswer(
+          (_) async => const ToolApprovalDecision(
+            toolCallId: 'tool-2',
+            permissionResult: ToolPermissionResult.granted,
+            permissionTableId: 'calculator',
+          ),
+        );
         when(
           messageRepository.patchMessage('message-1', any),
         ).thenAnswer((_) async => multiToolMessage);
@@ -522,12 +521,33 @@ void main() {
           (_) async => mixedMessage,
         );
         when(
-          conversationToolsRepository.checkToolPermission(
+          resolveToolApprovalDecision(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
-            toolId: 'calculator',
+            toolCallId: 'tool-good',
+            resolvedTool: goodTool.tool,
           ),
-        ).thenAnswer((_) async => ToolPermissionResult.granted);
+        ).thenAnswer(
+          (_) async => const ToolApprovalDecision(
+            toolCallId: 'tool-good',
+            permissionResult: ToolPermissionResult.granted,
+            permissionTableId: 'calculator',
+          ),
+        );
+        when(
+          resolveToolApprovalDecision(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+            toolCallId: 'tool-bad',
+            resolvedTool: badTool.tool,
+          ),
+        ).thenAnswer(
+          (_) async => const ToolApprovalDecision(
+            toolCallId: 'tool-bad',
+            permissionResult: ToolPermissionResult.granted,
+            permissionTableId: 'calculator',
+          ),
+        );
         when(
           messageRepository.patchMessage('message-1', any),
         ).thenAnswer((_) async => mixedMessage);
@@ -641,29 +661,46 @@ void main() {
           (_) async => mixedPermMessage,
         );
         when(
-          conversationToolsRepository.checkToolPermission(
+          resolveToolApprovalDecision(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
-            toolId: 'calculator',
-          ),
-        ).thenAnswer((_) async => ToolPermissionResult.granted);
-        when(
-          conversationToolsRepository.checkToolPermission(
-            conversationId: 'conversation-1',
-            workspaceId: 'workspace-1',
-            toolId: 'other_tool',
+            toolCallId: 'tool-granted',
+            resolvedTool: grantedTool.tool,
           ),
         ).thenAnswer(
-          (_) async => ToolPermissionResult.needsConfirmation,
+          (_) async => const ToolApprovalDecision(
+            toolCallId: 'tool-granted',
+            permissionResult: ToolPermissionResult.granted,
+            permissionTableId: 'calculator',
+          ),
         );
         when(
-          conversationToolsRepository.checkToolPermission(
+          resolveToolApprovalDecision(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
-            toolId: 'disabled_tool',
+            toolCallId: 'tool-pending',
+            resolvedTool: pendingTool.tool,
           ),
         ).thenAnswer(
-          (_) async => ToolPermissionResult.disabledInWorkspace,
+          (_) async => const ToolApprovalDecision(
+            toolCallId: 'tool-pending',
+            permissionResult: ToolPermissionResult.needsConfirmation,
+            permissionTableId: 'other_tool',
+          ),
+        );
+        when(
+          resolveToolApprovalDecision(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+            toolCallId: 'tool-disabled',
+            resolvedTool: disabledTool.tool,
+          ),
+        ).thenAnswer(
+          (_) async => const ToolApprovalDecision(
+            toolCallId: 'tool-disabled',
+            permissionResult: ToolPermissionResult.disabledInWorkspace,
+            permissionTableId: 'disabled_tool',
+          ),
         );
         when(
           messageRepository.patchMessage('message-1', any),
@@ -739,22 +776,32 @@ void main() {
           ),
         );
         when(
-          conversationToolsRepository.checkToolPermission(
+          resolveToolApprovalDecision(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
-            toolId: 'tool_a',
+            toolCallId: 'tool-1',
+            resolvedTool: tool1.tool,
           ),
         ).thenAnswer(
-          (_) async => ToolPermissionResult.needsConfirmation,
+          (_) async => const ToolApprovalDecision(
+            toolCallId: 'tool-1',
+            permissionResult: ToolPermissionResult.needsConfirmation,
+            permissionTableId: 'tool_a',
+          ),
         );
         when(
-          conversationToolsRepository.checkToolPermission(
+          resolveToolApprovalDecision(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
-            toolId: 'tool_b',
+            toolCallId: 'tool-2',
+            resolvedTool: tool2.tool,
           ),
         ).thenAnswer(
-          (_) async => ToolPermissionResult.needsConfirmation,
+          (_) async => const ToolApprovalDecision(
+            toolCallId: 'tool-2',
+            permissionResult: ToolPermissionResult.needsConfirmation,
+            permissionTableId: 'tool_b',
+          ),
         );
 
         final result = await usecase.call(
@@ -774,9 +821,7 @@ void main() {
     late MockLoadLatestMessageToolCallsUsecase
     loadLatestMessageToolCallsUsecase;
     late MockMessageRepository messageRepository;
-    late MockConversationToolsRepository conversationToolsRepository;
-    late MockToolsGroupsRepository toolsGroupsRepository;
-    late MockWorkspaceToolsRepository workspaceToolsRepository;
+    late MockResolveToolApprovalDecisionUsecase resolveToolApprovalDecision;
     late MockGetAgentIterationDecisionUsecase getAgentIterationDecisionUsecase;
     late AgentCancellationRuntime agentCancellationRuntime;
     late RunAllowedToolsUsecase usecase;
@@ -785,9 +830,7 @@ void main() {
       loadLatestMessageToolCallsUsecase =
           MockLoadLatestMessageToolCallsUsecase();
       messageRepository = MockMessageRepository();
-      conversationToolsRepository = MockConversationToolsRepository();
-      toolsGroupsRepository = MockToolsGroupsRepository();
-      workspaceToolsRepository = MockWorkspaceToolsRepository();
+      resolveToolApprovalDecision = MockResolveToolApprovalDecisionUsecase();
       getAgentIterationDecisionUsecase = MockGetAgentIterationDecisionUsecase();
       agentCancellationRuntime = AgentCancellationRuntime()
         ..start('conversation-1');
@@ -795,9 +838,7 @@ void main() {
       usecase = RunAllowedToolsUsecase(
         loadLatestMessageToolCallsUsecase: loadLatestMessageToolCallsUsecase,
         messageRepository: messageRepository,
-        conversationToolsRepository: conversationToolsRepository,
-        toolsGroupsRepository: toolsGroupsRepository,
-        workspaceToolsRepository: workspaceToolsRepository,
+        resolveToolApprovalDecision: resolveToolApprovalDecision,
         mcpToolCaller:
             ({
               required mcpServerId,
@@ -838,12 +879,19 @@ void main() {
           ),
         );
         when(
-          conversationToolsRepository.checkToolPermission(
+          resolveToolApprovalDecision(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
-            toolId: 'url',
+            toolCallId: 'native-tool-1',
+            resolvedTool: nativeTool.tool,
           ),
-        ).thenAnswer((_) async => ToolPermissionResult.needsConfirmation);
+        ).thenAnswer(
+          (_) async => const ToolApprovalDecision(
+            toolCallId: 'native-tool-1',
+            permissionResult: ToolPermissionResult.needsConfirmation,
+            permissionTableId: 'url',
+          ),
+        );
 
         final result = await usecase.call(
           conversationId: 'conversation-1',
@@ -852,10 +900,11 @@ void main() {
 
         expect(result, AgentIterationDecision.waitForToolApproval);
         verify(
-          conversationToolsRepository.checkToolPermission(
+          resolveToolApprovalDecision(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
-            toolId: 'url',
+            toolCallId: 'native-tool-1',
+            resolvedTool: nativeTool.tool,
           ),
         ).called(1);
         verifyNever(
@@ -911,12 +960,19 @@ void main() {
           ),
         );
         when(
-          conversationToolsRepository.checkToolPermission(
+          resolveToolApprovalDecision(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
-            toolId: 'url',
+            toolCallId: 'native-tool-1',
+            resolvedTool: nativeTool.tool,
           ),
-        ).thenAnswer((_) async => ToolPermissionResult.granted);
+        ).thenAnswer(
+          (_) async => const ToolApprovalDecision(
+            toolCallId: 'native-tool-1',
+            permissionResult: ToolPermissionResult.granted,
+            permissionTableId: 'url',
+          ),
+        );
         when(messageRepository.getMessageById('message-1')).thenAnswer(
           (_) async => nativeMessage,
         );
@@ -996,12 +1052,18 @@ void main() {
           ),
         );
         when(
-          conversationToolsRepository.checkToolPermission(
+          resolveToolApprovalDecision(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
-            toolId: 'url',
+            toolCallId: 'native-tool-1',
+            resolvedTool: nativeTool.tool,
           ),
-        ).thenAnswer((_) async => ToolPermissionResult.notConfigured);
+        ).thenAnswer(
+          (_) async => const ToolApprovalDecision(
+            toolCallId: 'native-tool-1',
+            permissionResult: ToolPermissionResult.notConfigured,
+          ),
+        );
         when(messageRepository.getMessageById('message-1')).thenAnswer(
           (_) async => nativeMessage,
         );
@@ -1081,12 +1143,18 @@ void main() {
           ),
         );
         when(
-          conversationToolsRepository.checkToolPermission(
+          resolveToolApprovalDecision(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
-            toolId: 'url',
+            toolCallId: 'native-tool-1',
+            resolvedTool: nativeTool.tool,
           ),
-        ).thenAnswer((_) async => ToolPermissionResult.notConfigured);
+        ).thenAnswer(
+          (_) async => const ToolApprovalDecision(
+            toolCallId: 'native-tool-1',
+            permissionResult: ToolPermissionResult.notConfigured,
+          ),
+        );
         when(messageRepository.getMessageById('message-1')).thenAnswer(
           (_) async => nativeMessage,
         );
@@ -1161,13 +1229,18 @@ void main() {
           ),
         );
         when(
-          conversationToolsRepository.checkToolPermission(
+          resolveToolApprovalDecision(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
-            toolId: 'url',
+            toolCallId: 'native-tool-1',
+            resolvedTool: nativeTool.tool,
           ),
         ).thenAnswer(
-          (_) async => ToolPermissionResult.disabledInWorkspace,
+          (_) async => const ToolApprovalDecision(
+            toolCallId: 'native-tool-1',
+            permissionResult: ToolPermissionResult.disabledInWorkspace,
+            permissionTableId: 'url',
+          ),
         );
         when(messageRepository.getMessageById('message-1')).thenAnswer(
           (_) async => nativeMessage,
