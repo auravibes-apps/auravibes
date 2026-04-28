@@ -3,7 +3,6 @@ import 'package:auravibes_app/domain/enums/message_types.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/providers/messages_providers.dart';
 import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
-import 'package:auravibes_app/features/chats/widgets/chat_tool_approval_card.dart';
 import 'package:auravibes_app/features/chats/widgets/tool_call_response_preview.dart';
 import 'package:auravibes_app/utils/relative_time_formatter.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
@@ -90,9 +89,7 @@ class _ChatMessageRow extends HookConsumerWidget {
       child: AuraColumn(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (hidePendingToolCalls)
-            const ChatToolApprovalCard()
-          else if (showTextBubble)
+          if (showTextBubble)
             if (message.isUser)
               AuraMessageBubble(
                 key: ValueKey(message.id),

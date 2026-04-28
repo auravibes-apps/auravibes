@@ -8,6 +8,7 @@ import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_messages_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_queued_messages_indicator.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_thinking_indicator.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_tool_approval_card.dart';
 import 'package:auravibes_app/features/chats/widgets/conversation_context_usage_pill.dart';
 import 'package:auravibes_app/features/chats/widgets/mcp_connecting_indicator.dart';
 import 'package:auravibes_app/features/models/widgets/select_chat_model.dart';
@@ -107,6 +108,9 @@ class _ChatConversationScreen extends HookConsumerWidget {
 
     final busyState = ref.watch(conversationBusyStateProvider).asData?.value;
     final queuedDrafts = ref.watch(conversationQueuedDraftsProvider);
+    final pendingCalls =
+        ref.watch(pendingToolCallsProvider).value ?? const [];
+    final hasPendingApprovals = pendingCalls.isNotEmpty;
 
     return AuraScreen(
       appBar: AuraAppBarWithDrawer(
@@ -128,10 +132,13 @@ class _ChatConversationScreen extends HookConsumerWidget {
           if (busyState?.isStreaming == true) const ChatThinkingIndicator(),
           if (queuedDrafts.isNotEmpty)
             ChatQueuedMessagesIndicator(queuedDrafts: queuedDrafts),
-          ChatInputWidget(
-            onToolsPress: onToolsPress,
-            isBusy: busyState?.isBusy ?? false,
-            onStop: () async {
+          if (hasPendingApprovals) const ChatToolApprovalCard(),
+          Offstage(
+            offstage: hasPendingApprovals,
+            child: ChatInputWidget(
+              onToolsPress: onToolsPress,
+              isBusy: busyState?.isBusy ?? false,
+              onStop: () async {
               final conversationId = ref.read(conversationSelectedProvider);
               try {
                 await ref
@@ -177,6 +184,7 @@ class _ChatConversationScreen extends HookConsumerWidget {
                 }
               }
             },
+          ),
           ),
         ],
       ),
