@@ -87,6 +87,32 @@ void main() {
       expect(response.body, 'Server Error');
     });
 
+    test('truncates large DioException response data', () async {
+      final largeBody = 'x' * (1024 * 1024 + 100);
+      final adapter = _FakeHttpClientAdapter(
+        onFetch: (options, _, _) async {
+          throw DioException(
+            requestOptions: RequestOptions(path: options.path),
+            response: Response(
+              requestOptions: RequestOptions(),
+              statusCode: 500,
+              data: largeBody,
+            ),
+            type: DioExceptionType.badResponse,
+          );
+        },
+      );
+      final dio = Dio()..httpClientAdapter = adapter;
+      final service = UrlService(dio: dio);
+
+      final response = await service
+          .execute(const UrlRequest(url: 'https://example.com'))
+          .value;
+
+      expect(response.body, contains('[truncated]'));
+      expect(response.body.length, lessThan(largeBody.length));
+    });
+
     test('handles DioException without response', () async {
       final adapter = _FakeHttpClientAdapter(
         onFetch: (options, _, _) async {
@@ -146,6 +172,54 @@ void main() {
           .value;
 
       expect(response.statusCode, 0);
+    });
+
+    test('cancels operation when Dio reports cancellation', () async {
+      final adapter = _FakeHttpClientAdapter(
+        onFetch: (options, _, _) async {
+          throw DioException(
+            requestOptions: RequestOptions(path: options.path),
+            type: DioExceptionType.cancel,
+          );
+        },
+      );
+      final dio = Dio()..httpClientAdapter = adapter;
+      final service = UrlService(dio: dio);
+
+      final operation = service.execute(
+        const UrlRequest(url: 'https://example.com'),
+      );
+
+      expect(await operation.valueOrCancellation(), isNull);
+      expect(operation.isCanceled, isTrue);
+    });
+
+    test('streams string body when content-type is absent', () async {
+      var streamedBody = '';
+      final adapter = _FakeHttpClientAdapter(
+        onFetch: (_, requestStream, _) async {
+          final chunks = await requestStream!.toList();
+          streamedBody = String.fromCharCodes(
+            chunks.expand((chunk) => chunk),
+          );
+
+          return ResponseBody.fromString('ok', 200);
+        },
+      );
+      final dio = Dio()..httpClientAdapter = adapter;
+      final service = UrlService(dio: dio);
+
+      await service
+          .execute(
+            const UrlRequest(
+              url: 'https://example.com',
+              method: UrlRequestMethod.post,
+              body: 'plain body',
+            ),
+          )
+          .value;
+
+      expect(streamedBody, 'plain body');
     });
 
     test('handles null response body', () async {

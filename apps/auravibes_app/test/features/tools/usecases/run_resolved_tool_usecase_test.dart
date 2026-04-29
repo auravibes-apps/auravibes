@@ -3,6 +3,7 @@ import 'package:auravibes_app/features/tools/usecases/run_resolved_tool_usecase.
 import 'package:auravibes_app/services/tools/models/resolved_tool.dart';
 import 'package:auravibes_app/services/tools/native_tool_entity.dart';
 import 'package:auravibes_app/services/tools/user_tools_entity.dart';
+import 'package:riverpod/riverpod.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -88,6 +89,16 @@ void main() {
     expect(
       mcpCalls,
       [(serverId: 'server-1', toolIdentifier: 'remote-tool')],
+    );
+  });
+
+  test('provider creates the shared tool runner', () {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    expect(
+      container.read(runResolvedToolUsecaseProvider),
+      isA<RunResolvedToolUsecase>(),
     );
   });
 }
