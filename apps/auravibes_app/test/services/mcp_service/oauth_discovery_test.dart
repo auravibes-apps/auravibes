@@ -302,7 +302,7 @@ void main() {
             if (request.url.path.contains('/sse')) {
               return Response(
                 '',
-                200,
+                401,
                 headers: {
                   'www-authenticate': 'Bearer realm="mcp"',
                   'x-oauth-authorization-url': 'https://auth.example.com/auth',

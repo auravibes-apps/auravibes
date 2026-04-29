@@ -38,7 +38,9 @@ class RunResolvedToolUsecase {
       return _runMcpTool(tool, arguments);
     }
 
-    return null;
+    throw UnsupportedError(
+      'Unsupported tool kind for ${tool.toolIdentifier}.',
+    );
   }
 
   Future<Object?> _runBuiltInTool(
@@ -55,7 +57,11 @@ class RunResolvedToolUsecase {
     final toolService = builtInTool == null
         ? null
         : ToolService.getTool(builtInTool);
-    if (toolService == null) return Future.value();
+    if (toolService == null) {
+      throw StateError(
+        'No built-in ToolService registered for ${tool.toolIdentifier}.',
+      );
+    }
 
     final operation = toolService.runner(input as Object);
     agentCancellationRuntime.registerCancelableOperation(
@@ -79,7 +85,11 @@ class RunResolvedToolUsecase {
     final toolService = nativeTool == null
         ? null
         : NativeToolService.getTool(nativeTool);
-    if (toolService == null) return Future.value();
+    if (toolService == null) {
+      throw StateError(
+        'No NativeToolService registered for ${tool.toolIdentifier}.',
+      );
+    }
 
     final operation = toolService.runner(input as Object);
     agentCancellationRuntime.registerCancelableOperation(
@@ -94,7 +104,11 @@ class RunResolvedToolUsecase {
     Map<String, dynamic> arguments,
   ) {
     final mcpServerId = tool.mcpServerId;
-    if (mcpServerId == null) return Future.value();
+    if (mcpServerId == null) {
+      throw StateError(
+        'MCP tool ${tool.toolIdentifier} is missing its server binding.',
+      );
+    }
 
     return mcpToolCaller(
       mcpServerId: mcpServerId,

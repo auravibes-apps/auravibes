@@ -113,6 +113,9 @@ class ConversationRepositoryImpl implements ConversationRepository {
   ) {
     if (conversation.title.isEmpty) return _conversationTitleEmpty;
     if (conversation.workspaceId.isEmpty) return _workspaceIdEmpty;
+    if (conversation.modelId != null && conversation.modelId!.isEmpty) {
+      return _modelIdEmpty;
+    }
     return _unknownValidationError;
   }
 

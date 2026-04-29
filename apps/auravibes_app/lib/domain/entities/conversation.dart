@@ -64,7 +64,9 @@ abstract class ConversationToCreate with _$ConversationToCreate {
 
   /// Returns true if the conversation is in a valid state
   bool get isValid {
-    return hasValidTitle && workspaceId.isNotEmpty;
+    return hasValidTitle &&
+        workspaceId.isNotEmpty &&
+        (modelId == null || modelId!.isNotEmpty);
   }
 }
 

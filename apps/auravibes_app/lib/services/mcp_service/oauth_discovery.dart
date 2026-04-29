@@ -143,12 +143,12 @@ class OAuthDiscoveryService {
   ) async {
     try {
       _logger.info('Probing MCP server directly: $serverUrl');
-
-      if (!_isMcpEndpoint(serverUrl)) return null;
+      final uri = Uri.tryParse(serverUrl);
+      if (uri == null || !uri.hasScheme || !uri.hasAuthority) return null;
 
       final response = await http
           .get(
-            Uri.parse(serverUrl),
+            uri,
             headers: {'Accept': 'text/event-stream'},
           )
           .timeout(const Duration(seconds: 5));
@@ -161,17 +161,14 @@ class OAuthDiscoveryService {
     return null;
   }
 
-  static bool _isMcpEndpoint(String serverUrl) {
-    return serverUrl.contains('/sse') || serverUrl.contains('/mcp');
-  }
-
   static OAuthDiscoveryResult? _parseDirectProbeResponse(
     http.Response response,
   ) {
+    if (response.statusCode != 401) return null;
+
     final headerResult = _parseOAuthHeaderChallenge(response);
     if (headerResult != null) return headerResult;
 
-    if (response.statusCode != 401) return null;
     _logger.info('Server returned 401, may require OAuth');
     return _parseOAuthBodyChallenge(response.body);
   }
