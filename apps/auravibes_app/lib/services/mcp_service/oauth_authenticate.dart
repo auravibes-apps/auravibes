@@ -19,7 +19,19 @@ class OauthAuthenticate {
 
   static const String _chars =
       'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890';
-  static final Random _rng = Random();
+  static Random _createSecureRandom() {
+    try {
+      return Random.secure();
+      // ignore: avoid_catching_errors
+    } on UnsupportedError {
+      throw StateError(
+        'Secure randomness is required to generate OAuth PKCE and state '
+        'values, but Random.secure() is not supported on this platform.',
+      );
+    }
+  }
+
+  static final Random _rng = _createSecureRandom();
 
   /// Generates a random string for PKCE code verifier
   static String _generateRandomString(int length) {
