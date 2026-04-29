@@ -1,13 +1,24 @@
 <!--
 Sync Impact Report:
-- Version change: NONE → 1.0.0
-- Modified principles: N/A (initial constitution)
-- Added sections: All sections (initial constitution)
-- Removed sections: N/A
+- Version change: 1.0.0 -> 2.0.0
+- Modified principles:
+  - Start with User Needs -> User Value First
+  - Design with Data -> Layered, Package-Aware Architecture
+  - Package-First Architecture -> Layered, Package-Aware Architecture
+  - UI Kit Mandate -> UI System First
+  - Test-Driven Development (NON-NEGOTIABLE) -> Risk-Based Quality Gates
+  - Fail Fast + Explicit Errors -> Explicit Failures
+  - Simplicity + YAGNI -> Simplicity
+  - Observability + Performance -> Observable Where It Matters
+  - Security + Privacy -> Security and Privacy
+  - Code Quality Standards -> Dart and Flutter Standards
+- Added sections: Online references reviewed
+- Removed sections: Hard coverage/startup/FPS mandates without project baselines
 - Templates requiring updates:
-  ✅ .specify/templates/plan-template.md - Constitution Check section aligned
-  ✅ .specify/templates/spec-template.md - User needs and data requirements aligned
-  ✅ .specify/templates/tasks-template.md - Task categorization aligned with principles
+  ✅ .specify/templates/plan-template.md - no change needed
+  ✅ .specify/templates/spec-template.md - no change needed
+  ✅ .specify/templates/tasks-template.md - testing note aligned with risk-based gates
+  ✅ .specify/templates/commands/*.md - no files present
 - Follow-up TODOs: None
 -->
 
@@ -15,314 +26,218 @@ Sync Impact Report:
 
 ## Core Principles
 
-### I. Start with User Needs
+### I. User Value First
 
-**Why here**: User-centered design prevents feature creep and ensures real value delivery in AI assistant applications.
+Every feature MUST start from a named user scenario, pain point, and measurable
+success outcome. Features without a clear user benefit MUST be deferred. Specs
+MUST keep user stories independently testable so each delivered slice can be
+validated without shipping unrelated scope.
 
-Required:
+**Rationale**: AI assistant work can drift into impressive but unused capability.
+User-centered slices keep implementation small and reviewable.
 
-- Every feature MUST begin with explicit user scenarios and pain points
-- Features without clear user benefit MUST be rejected or deferred
-- User stories MUST be prioritized by value and independently testable
-- UI/UX decisions MUST be validated against user journey maps
-- Accessibility MUST be considered from the start, not as an afterthought
+### II. Layered, Package-Aware Architecture
 
-**Rationale**: In AI-powered applications, it's easy to build technically impressive features that don't solve real problems. Starting with user needs ensures we build what matters.
+Flutter code MUST keep presentation, state/orchestration, domain decisions, and
+data access separated. Widgets MUST not contain business logic. Repositories and
+services MUST own external APIs, database access, and platform integration.
+Reusable code MUST live in `packages/*`; app-specific composition MUST remain in
+`apps/auravibes_app/`.
 
-### II. Design with Data
+**Rationale**: Flutter architecture guidance emphasizes clear layer boundaries
+with views, view models/controllers, repositories, and services. In this monorepo,
+package boundaries are the enforcement mechanism for those responsibilities.
 
-**Why here**: Data-driven decisions reduce assumptions and improve AI assistant effectiveness.
+### III. UI System First
 
-Required:
+Production UI MUST use `auravibes_ui` tokens and components before adding custom
+styling. Reusable widgets MUST be added to `packages/auravibes_ui/` only when
+there is a current second use or a clear design-system need. UI changes MUST
+account for responsive layout and accessibility semantics relevant to the change.
 
-- Database schema MUST be designed before UI implementation
-- Data flow diagrams MUST exist for features involving state persistence
-- API contracts MUST be defined before provider implementations
-- Analytics and telemetry MUST be planned for user behavior understanding
-- Data models MUST use immutable patterns (Freezed/Equatable) for predictability
+**Rationale**: Shared UI keeps visual behavior consistent. Requiring reuse too
+early creates unnecessary abstractions, so extraction needs a current reason.
 
-**Rationale**: Flutter's reactive paradigm and Riverpod's state management work best with well-designed data models. Changing database schema later has high blast radius across the monorepo.
+### IV. Data and State Correctness
 
-### III. Package-First Architecture
+Persistent data changes MUST define the model, ownership, and migration path
+before implementation. Riverpod providers MUST have clear ownership and lifecycle
+(`autoDispose`, scoped, or app-level). Async UI state MUST use `AsyncValue` or an
+equivalent explicit loading/error/data representation. State updates MUST be
+immutable.
 
-**Why here**: Monorepo structure enables code reuse and maintains clean boundaries between concerns.
+**Rationale**: Drift schemas, Riverpod lifecycles, and generated immutable models
+are high-blast-radius choices. Making ownership explicit prevents hidden coupling.
 
-Required:
+### V. Risk-Based Quality Gates
 
-- Every feature MUST consider: Does this belong in an existing package, a new package, or the main app?
-- Shared functionality MUST be extracted to packages (`packages/*/`)
-- Platform-specific code MUST be isolated in appropriate packages or app layers
-- UI components MUST use the `auravibes_ui` package design system (atoms/molecules/organisms/templates)
-- Package dependencies MUST flow inward: concrete implementations depend on abstractions, not vice versa
+Tests are REQUIRED for new behavior, bug fixes, public package APIs, database
+migrations, provider logic, and critical user journeys. Tests MUST be written
+before or with the implementation when practical, and bug fixes SHOULD include a
+regression test that fails before the fix. Documentation-only changes may use
+review-only validation.
 
-**Rationale**: Flutter monorepos with Melos work best when packages have clear, single responsibilities. Cross-package coupling creates maintenance burden and breaks independent testing.
+**Rationale**: Mandatory TDD for every edit creates process noise. Risk-based
+testing keeps the non-negotiable part: changed behavior must be verifiable.
 
-### IV. UI Kit Mandate
+### VI. Explicit Failures
 
-**Why here**: Consistent UI reduces cognitive load and accelerates development across the monorepo.
+Fallible operations MUST expose explicit error states or typed exceptions. Code
+MUST NOT catch errors and return `null` or generic fallback values silently. User
+facing errors MUST explain the recovery path without exposing stack traces or
+secrets.
 
-Required:
+**Rationale**: AI providers, local databases, and platform APIs fail often.
+Silent failures cause data loss and make support/debugging harder.
 
-- ALL UI components MUST use design tokens from `auravibes_ui` package (colors, typography, spacing)
-- Custom widgets MUST follow atomic design hierarchy (atoms → molecules → organisms → templates)
-- New components MUST be added to `auravibes_ui` if reusable across features
-- Material Design 3 theming MUST be applied via the design system, not hardcoded
-- Responsive design MUST use defined breakpoints from design tokens
+### VII. Security and Privacy
 
-**Rationale**: Hardcoded styles and ad-hoc components create visual inconsistency and make theme changes expensive. The atomic design system ensures scalability and maintainability.
+Secrets, API keys, tokens, personal data, and conversation content MUST NOT be
+logged or committed. Credentials MUST be stored with platform secure storage or
+another approved secret-storage mechanism. User input and external data MUST be
+validated at trust boundaries.
 
-### V. Test-Driven Development (NON-NEGOTIABLE)
+**Rationale**: AuraVibes handles provider credentials and private conversations.
+The minimum safe rule is to prevent accidental disclosure by default.
 
-**Why here**: Flutter's hot reload enables rapid iteration, but tests ensure stability across the monorepo.
+### VIII. Observable Where It Matters
 
-Required:
+Provider operations, API calls, database writes, and long-running tasks MUST log
+structured context sufficient to debug failures without logging sensitive data.
+Performance-sensitive features MUST define the relevant metric before optimizing
+and verify the result after changes.
 
-- TDD mandatory: Tests written → User approved → Tests fail → Then implement
-- Red-Green-Refactor cycle strictly enforced
-- Widget tests MUST exist for all UI components in `auravibes_ui`
-- Integration tests MUST cover critical user journeys (chat, workspace management, agent interactions)
-- Unit tests MUST cover business logic in providers, repositories, and use cases
-- 80%+ code coverage required for new features
+**Rationale**: Observability is useful when it answers a support or performance
+question. Blanket telemetry requirements create noise and privacy risk.
 
-**Rationale**: Flutter's widget tree and Riverpod's provider dependencies create complex state interactions that are difficult to debug without tests. Tests document intent and prevent regressions.
+### IX. Simplicity
 
-### VI. Fail Fast + Explicit Errors
+Every new abstraction, package, provider method, configuration key, route branch,
+or feature flag MUST have a current accepted use case. Prefer straightforward
+widget composition and small local duplication over speculative reuse. Unsupported
+platforms or states MUST fail explicitly instead of pretending to work.
 
-**Why here**: Silent failures in AI assistant applications can lead to data loss or incorrect responses.
+**Rationale**: The easiest code to maintain is code that does only what is needed
+now. Premature flexibility is a recurring source of bugs in Flutter apps.
 
-Required:
+### X. Dart and Flutter Standards
 
-- Prefer explicit error types over dynamic exceptions
-- Use `Result<T, E>` pattern for fallible operations (via Freezed sealed classes)
-- Never catch exceptions and return null silently
-- Log all errors with structured context (user action, feature, error type)
-- UI MUST display meaningful error messages to users, not technical stack traces
-- Critical operations MUST have rollback/recovery mechanisms
+Dart code MUST pass configured analysis with no warnings. Code MUST be formatted
+with `dart format`. Public package APIs MUST use dartdoc when consumed outside
+their package. Naming, imports, and API design MUST follow Effective Dart unless
+the local codebase has a stronger convention.
 
-**Rationale**: AI interactions involve external APIs (Anthropic, OpenAI) and local state (Drift database). Silent failures corrupt user data and erode trust. Explicit errors enable debugging and recovery.
-
-### VII. Simplicity + YAGNI
-
-**Why here**: Premature complexity increases attack surface and maintenance burden in cross-platform apps.
-
-Required:
-
-- Do not add new config keys, provider methods, feature flags, or routing branches without a concrete accepted use case
-- Do not introduce speculative "future-proof" abstractions without at least one current caller
-- Keep unsupported platforms or features explicit (error out) rather than adding partial fake support
-- Prefer straightforward widget composition over clever meta-programming
-- Duplicate small, local logic when it preserves clarity (DRY applies only after rule-of-three)
-
-**Rationale**: Flutter's declarative UI and Riverpod's reactive state already provide powerful abstractions. Adding layers of indirection without clear benefit makes the codebase harder to navigate and test.
-
-### VIII. Observability + Performance
-
-**Why here**: AI assistant performance directly impacts user experience across six platforms.
-
-Required:
-
-- Structured logging required for all provider operations, API calls, and state changes
-- Performance profiling MUST be done for features involving:
-  - Chat message rendering (large conversation threads)
-  - Database queries (workspace/chat history)
-  - AI provider API calls (latency and token usage)
-  - Image/media handling
-- Memory usage MUST be monitored for long-running sessions
-- Startup time MUST stay under 3 seconds on target devices
-- Animation frame rates MUST maintain 60 fps during UI interactions
-
-**Rationale**: Flutter apps on multiple platforms have different performance characteristics. AI responses can be slow, and UI jank during message streaming degrades perceived quality.
-
-### IX. Security + Privacy
-
-**Why here**: AI assistants handle sensitive user data (API keys, conversations, workspaces).
-
-Required:
-
-- API keys MUST be stored using secure storage (flutter_secure_storage or platform keychain)
-- User conversations MUST be encrypted at rest (Drift encryption or platform-level encryption)
-- Never log or persist sensitive data (API keys, auth tokens) in plain text
-- Use neutral, project-scoped placeholders in tests/examples (e.g., `test_user`, `auravibes_workspace`)
-- Never commit personal data, real names, emails, or API keys in code, docs, or tests
-- Validate all user inputs before processing (guard clauses, schema validation)
-
-**Rationale**: Cross-platform Flutter apps access platform-specific secure storage. Losing API keys or exposing conversations damages user trust and violates privacy expectations.
-
-### X. Code Quality Standards
-
-**Why here**: Monorepo consistency enables parallel development across packages.
-
-Required:
-
-- Use `very_good_analysis` linting rules strictly (no warnings allowed in CI)
-- Format all code with `dart format` before commits
-- Follow Dart naming conventions: `lowerCamelCase` for variables/functions, `PascalCase` for types, `snake_case` for files
-- Keep files under 400 lines; extract large widgets/providers into smaller units
-- Use meaningful names: `ChatMessageList` over `MessageWidget`, `WorkspaceRepository` over `Repo`
-- Document public APIs with dartdoc comments for package consumers
-
-**Rationale**: Flutter's hot reload and IDE support work best with consistent, well-formatted code. Large files slow down analysis and make navigation difficult.
+**Rationale**: Consistency is the main value of Dart style rules. The analyzer,
+formatter, and package docs keep monorepo work reviewable.
 
 ## Architecture Constraints
 
 ### Monorepo Structure
 
-**Why here**: Melos manages dependencies and linking across packages.
-
-Required:
-
-- Main app lives in `apps/auravibes_app/`
-- Reusable packages live in `packages/*/`
-- Shared UI components live in `packages/auravibes_ui/`
-- Each package MUST have clear, single responsibility (e.g., `auravibes_ui` for UI, `auravibes_core` for domain logic)
-- Use `melos bootstrap` for dependency installation, never manual `pub get`
-- All Dart commands MUST prefix with `fvm ` to ensure correct SDK version
-
-**Rationale**: Manual dependency management in monorepos creates version conflicts and linking issues. Melos ensures consistency and enables local package linking.
+- Main app code lives in `apps/auravibes_app/`.
+- Reusable packages live in `packages/*/`.
+- Shared UI components live in `packages/auravibes_ui/`.
+- Each package MUST have one clear responsibility.
+- Dependency installation and workspace operations MUST use Melos from the repo root.
+- Dart and Flutter commands MUST use the repository-pinned FVM SDK.
 
 ### State Management Contract
 
-**Why here**: Riverpod provides powerful state management, but misuse creates complex dependencies.
-
-Required:
-
-- Use code generation for providers (`riverpod_generator`)
-- Providers MUST have clear ownership: app-level (singleton), scoped (feature-level), or autoDispose (ephemeral)
-- Never mutate state directly; always create new instances (immutable updates)
-- Use `AsyncValue` for async operations, never raw Futures in UI
-- Keep business logic in providers/repositories, not in widgets
-- Controllers orchestrate use cases; widgets only handle presentation
-
-**Rationale**: Riverpod's reactive model works best with immutability. Mutable state creates race conditions and makes testing difficult.
-
-### Navigation Contract
-
-**Why here**: GoRouter enables declarative routing, but deep links require careful planning.
-
-Required:
-
-- Define all routes in a single router configuration
-- Use typed route parameters (not dynamic maps)
-- Deep links MUST be validated before navigation
-- Navigation state MUST persist across app lifecycle (backgrounding/foregrounding)
-- Handle navigation errors gracefully (fallback routes, error screens)
-
-**Rationale**: Complex navigation in AI assistants (chat → settings → workspace → chat) requires predictable routing. Ad-hoc navigation creates hard-to-debug state issues.
+- Generated Riverpod providers are preferred because this project already uses code generation.
+- Providers MUST declare lifecycle intentionally rather than relying on accidental defaults.
+- Controllers/notifiers orchestrate use cases; widgets render state and forward user intent.
+- Mutable shared state is prohibited unless isolated behind a repository/service boundary.
 
 ### Database Contract
 
-**Why here**: Drift provides type-safe SQLite, but schema changes have high blast radius.
+- Drift schema changes MUST include migration tests or a documented verification path.
+- Multi-step writes MUST use transactions.
+- Providers MUST NOT contain raw SQL or schema migration logic.
+- Persisted metadata MUST be versioned when the shape can change over time.
 
-Required:
+### Dependency Contract
 
-- Schema changes MUST include migration scripts
-- Database version MUST be tracked explicitly
-- Use DAOs (Data Access Objects) for complex queries, not raw SQL in providers
-- Transactions MUST be used for multi-step operations
-- Database files MUST be platform-appropriate (Application Documents on iOS/macOS, AppData on Windows)
-
-**Rationale**: Database schema changes in production apps require careful migrations. Direct SQL in providers makes schema evolution difficult.
+- Runtime and development dependencies MUST be added with `fvm flutter pub add` or the
+  project-approved Melos command, not by hand-editing `pubspec.yaml`.
+- New dependencies MUST justify current use, maintenance health, and package-boundary impact.
+- Do not import another package's `lib/src` internals.
 
 ## Development Workflow
 
-### Feature Development Process
-
 1. **Read before write**
-   - Inspect existing packages, widgets, and providers before editing
-   - Check `auravibes_ui` for existing components before creating new ones
-   - Review database schema for related entities
+   - Inspect existing packages, widgets, providers, and data models before editing.
+   - Check `packages/auravibes_ui/STYLE_GUIDE.md` before changing UI components.
 
 2. **Define scope boundary**
-   - One concern per PR; avoid mixed feature+refactor+infra patches
-   - Declare which packages are affected (app, UI, core, etc.)
-   - Identify if UI kit needs updates
+   - Keep one concern per PR or task.
+   - Identify affected app/package paths before implementation.
+   - Document any intentional constitution exception before review.
 
 3. **Implement minimal patch**
-   - Apply Simplicity/YAGNI/DRY rule-of-three explicitly
-   - Use `auravibes_ui` design tokens for all UI changes
-   - Write tests first, ensure they fail, then implement
+   - Change only lines needed for the accepted behavior.
+   - Prefer deleting or simplifying code over adding framework.
+   - Add abstractions only after a current caller requires them.
 
-4. **Validate by risk tier**
-   - Docs-only: lightweight checks
-   - UI changes: widget tests + visual regression
-   - State/DB changes: integration tests + migration tests
-   - Provider/API changes: unit tests + contract tests
+4. **Validate by risk**
+   - Docs-only: review rendered content or links where relevant.
+   - UI: widget tests and visual/manual check for affected states.
+   - Provider/domain/data: unit tests for logic and error states.
+   - Database: migration/data-shape verification.
+   - Critical user journey: integration or end-to-end coverage when feasible.
 
 5. **Document impact**
-   - Update docs/PR notes for behavior, risk, side effects, and rollback
-   - If UI changes: update `auravibes_ui` README and component catalog
-   - If DB changes: document migration path and rollback strategy
-   - If routing changes: update navigation documentation
-
-6. **Respect queue hygiene**
-   - If stacked PR: declare `Depends on #...`
-   - If replacing old PR: declare `Supersedes #...`
-
-### Branch / Commit / PR Flow
-
-All contributors (human or agent) must follow the same collaboration flow:
-
-- Create and work from a non-`main` branch
-- Commit changes with clear, scoped commit messages (conventional commits)
-- Open a PR to `main`; do not push directly to `main`
-- Wait for required checks (analyze, format, test) and review outcomes before merging
-- Merge via PR controls (squash/rebase/merge as repository policy allows)
+   - PRs MUST call out behavior changes, migration risk, and validation performed.
+   - Breaking changes MUST include migration notes.
 
 ### Validation Commands
 
-Default local checks for code changes:
+Default checks for code changes:
 
 ```bash
-# Formatting
-fvm dart format --set-exit-if-changed .
-
-# Analysis
-fvm dart analyze --fatal-infos
-
-# Tests (run in specific package or app directory)
-fvm flutter test
-
-# Melos validation (run from monorepo root)
-fvm dart run melos run validate:quick  # Quick check
-fvm dart run melos run validate        # Full CI validation
+fvm dart run melos analyze
+fvm dart run melos format
+fvm dart run melos run test
+fvm dart run melos run validate:quick
 ```
 
-### Platform-Specific Considerations
+Run narrower package checks when the change is isolated and full validation is not
+reasonable for the current task.
 
-- **iOS/macOS**: Test on physical devices for performance; verify keychain access
-- **Android**: Test across API levels (21+); verify secure storage behavior
-- **Web**: Test with different browsers; verify responsive design at breakpoints
-- **Windows/Linux**: Test installation paths and local storage
+## Online References Reviewed
+
+- GitHub Spec Kit constitution template and constitution command workflow, reviewed 2026-04-26.
+- Flutter app architecture guide, reviewed 2026-04-26.
+- Dart Effective Dart guide, reviewed 2026-04-26.
+- Riverpod code-generation documentation, reviewed 2026-04-26.
+- Melos getting-started documentation, reviewed 2026-04-26.
 
 ## Governance
 
 ### Amendment Procedure
 
-- Constitution supersedes all other practices and conventions
-- Amendments require:
-  1. Documentation of proposed change
-  2. Impact analysis on existing packages and features
-  3. Migration plan for breaking changes
-  4. Approval from project maintainers
-  5. Update to constitution version following semantic versioning
+- This constitution supersedes conflicting local conventions.
+- Amendments MUST document the proposed change, impact, migration needs, and version bump.
+- Maintainer approval is REQUIRED before merging constitution changes.
+- Dependent templates under `.specify/templates/` MUST be checked with each amendment.
 
 ### Versioning Policy
 
-- **MAJOR**: Backward incompatible principle removals or redefinitions (e.g., removing TDD requirement)
-- **MINOR**: New principle/section added or materially expanded guidance (e.g., adding accessibility principle)
-- **PATCH**: Clarifications, wording improvements, typo fixes, non-semantic refinements
+- **MAJOR**: Removes or redefines a principle in a way that changes required behavior.
+- **MINOR**: Adds a principle or materially expands required behavior.
+- **PATCH**: Clarifies wording without changing required behavior.
 
 ### Compliance Review
 
-- All PRs/reviews MUST verify compliance with relevant constitution principles
-- Complexity beyond simplicity guidelines MUST be justified in PR description
-- Use `AGENTS.md` for runtime development guidance and command reference
-- Constitution violations block PR merge until resolved
+- PRs MUST satisfy the principles relevant to touched files and changed behavior.
+- Reviewers MUST block changes that violate security/privacy or data-migration rules.
+- Complexity beyond the Simplicity principle MUST be justified in the PR description.
+- `AGENTS.md` remains the runtime command and agent-behavior reference.
 
 ### Conflict Resolution
 
-- In case of conflict between constitution and external best practices, constitution takes precedence
-- If constitution principle conflicts with platform requirement, document exception and seek amendment
-- When in doubt, err on the side of simplicity and user value
+- If external best practices conflict with this constitution, follow this constitution
+  and propose an amendment if the external guidance is better for this project.
+- If a platform requirement conflicts with this constitution, document the exception
+  and keep the workaround as narrow as possible.
 
-**Version**: 1.0.0 | **Ratified**: 2026-03-09 | **Last Amended**: 2026-03-09
+**Version**: 2.0.0 | **Ratified**: 2026-03-09 | **Last Amended**: 2026-04-26

@@ -1,7 +1,6 @@
 import 'package:auravibes_ui/src/atoms/auravibes_padding.dart';
 import 'package:auravibes_ui/src/atoms/auravibes_pressable.dart';
 import 'package:auravibes_ui/src/molecules/auravibes_card.dart';
-import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -137,7 +136,7 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraCard(
-              padding: AuraEdgeInsetsGeometry.all(AuraSpacing.sm),
+              padding: AuraEdgeInsetsGeometry.small,
               child: Text('Small Padded Card'),
             ),
           ),
@@ -153,7 +152,7 @@ void main() {
       );
       expect(
         auraPadding.padding,
-        const AuraEdgeInsetsGeometry.all(AuraSpacing.sm),
+        AuraEdgeInsetsGeometry.small,
       );
     });
 

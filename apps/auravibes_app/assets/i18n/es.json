@@ -64,6 +64,8 @@
     "chat_conversation": {
       "select_model_selctor": "Selecionar Modelo",
       "message_placeholder": "Escribe tu mensaje...",
+      "stop_generation": "Detener generación",
+      "stop_error": "No se pudo detener la conversación. Inténtalo de nuevo.",
       "waiting_for_tools": "Esperando a que las herramientas se conecten...",
       "waiting_for_tools_named": "Esperando a que {tools} se conecte...",
       "thinking_status": "Pensando... Los mensajes nuevos se encolarán.",

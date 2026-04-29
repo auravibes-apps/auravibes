@@ -19,7 +19,7 @@ class AddModelProviderWidget extends HookConsumerWidget {
   final String workspaceId;
 
   // Extract long locale key to avoid line length issues
-  static const String _noModelsFoundKey =
+  static const String noModelsFoundKey =
       LocaleKeys.models_screens_add_provider_search_no_models_found;
 
   void _submitForm(BuildContext context, WidgetRef ref) {
@@ -368,7 +368,7 @@ class _SelectModelProvider extends HookConsumerWidget {
                         style: AuraTextStyle.bodyLarge,
                         color: AuraColorVariant.onSurfaceVariant,
                         child: TextLocale(
-                          AddModelProviderWidget._noModelsFoundKey,
+                          AddModelProviderWidget.noModelsFoundKey,
                         ),
                       ),
                     ],

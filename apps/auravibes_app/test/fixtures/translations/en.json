@@ -1,0 +1,149 @@
+{
+  "menu": {
+    "home": "Home",
+    "new_chat": "New Chat",
+    "chats": "Chats",
+    "tools": "Tools",
+    "models": "Models",
+    "agents": "Agents",
+    "prompts": "Prompts"
+  },
+  "models_screens": {
+    "add_provider": {
+      "search_no_icon": "No icon"
+    }
+  },
+  "sidebar_recent_chats": "Recent Chats",
+  "sidebar_no_recent_chats": "No recent chats",
+  "sidebar_view_all_chats": "View All",
+  "settings_screen": {
+    "title": "Settings",
+    "app_settings": {
+      "title": "App Settings",
+      "subtitle": "Configure your app preferences and behavior"
+    },
+    "theme": {
+      "title": "Theme & Appearance",
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System",
+      "system_default": "System Default"
+    },
+    "actions": {
+      "cancel": "Cancel"
+    }
+  },
+  "home_screen": {
+    "welcome_title": "Welcome to AuraVibes",
+    "welcome_subtitle": "Your AI assistant is ready to help",
+    "quick_actions": "Quick Actions",
+    "recent_conversations": "Recent Conversations",
+    "actions": {
+      "start_new_chat": "Start New Chat",
+      "all_chats": "All Chats",
+      "settings": "Settings",
+      "models": "Models",
+      "tools": "Tools",
+      "agents": "Agents"
+    },
+    "conversation_states": {
+      "no_conversations": "No conversations yet",
+      "no_chats_yet": "No Chats Yet",
+      "start_first_conversation": "Start your first conversation with AuraVibes",
+      "error_loading_conversations": "Error loading conversations: {}",
+      "error_loading_chats": "Error loading chats: {}"
+    },
+    "date_formatting": {
+      "just_now": "Just now",
+      "minutes_ago": "{}m ago",
+      "hours_ago": "{}h ago",
+      "days_ago": "{}d ago"
+    }
+  },
+  "common": {
+    "cancel": "Cancel",
+    "remove": "Remove",
+    "add": "Add",
+    "save": "Save",
+    "delete": "Delete",
+    "confirm": "Confirm",
+    "close": "Close",
+    "show_more": "Show more"
+  },
+  "chats_screens": {
+    "chats_list": {
+      "title": "Chats",
+      "add_chat": "Add Chat"
+    },
+    "chat_conversation": {
+      "select_model_selctor": "Select Model",
+      "message_placeholder": "Type your message...",
+      "stop_generation": "Stop generation",
+      "stop_error": "Could not stop the conversation. Please try again.",
+      "waiting_for_tools": "Waiting for tools to connect...",
+      "waiting_for_tools_named": "Waiting for {tools} to connect...",
+      "thinking_status": "Thinking...",
+      "tool_resolution_status": "Waiting for tool resolution...",
+      "queued_messages_count": {
+        "one": "1 queued message",
+        "other": "{} queued messages"
+      },
+      "queued_clear_all": "Clear All",
+      "delete_title": "Delete Conversation",
+      "delete_confirm": "Are you sure you want to delete this conversation? This action cannot be undone.",
+      "options_tooltip": "More options",
+      "error_workspace_mismatch": "This conversation belongs to a different workspace",
+      "error_not_found": "Conversation not found",
+      "context_usage": {
+        "label": "Context window usage",
+        "limit_unavailable": "Context window limit unavailable for this model.",
+        "tooltip_normal": "Using {used} of {limit} tokens ({percent}%). Healthy headroom.",
+        "tooltip_elevated": "Using {used} of {limit} tokens ({percent}%). Approaching limit.",
+        "tooltip_warning": "Using {used} of {limit} tokens ({percent}%). Near context limit.",
+        "tooltip_overflow": "Using {used} of {limit} tokens ({percent}%). Over limit by {overflow} tokens.",
+        "semantic_limit_unavailable": "{usage}, context limit unavailable",
+        "semantic_normal": "{usage}, {percent} percent",
+        "semantic_elevated": "{usage}, {percent} percent, approaching limit",
+        "semantic_warning": "{usage}, {percent} percent, near limit",
+        "semantic_overflow": "{usage}, {percent} percent, over limit by {overflow} tokens"
+      }
+    }
+  },
+  "tools_screen": {
+    "title": "Workspace Tools",
+    "refresh_tooltip": "Refresh tools",
+    "workspace_ai_tools": "Workspace AI Tools",
+    "enable_configure_description": "Enable and configure tools for this workspace",
+    "enabled_count": {
+      "zero": "no tools enabled",
+      "other": "{} enabled"
+    },
+    "configured": "Configured",
+    "add_tool_title": "Add Tool",
+    "add_tool_tooltip": "Add a new tool",
+    "search_tools": "Search tools...",
+    "no_tools_added": "No tools added",
+    "add_tools_hint": "Tap the + button to add tools to this workspace",
+    "all_tools_added": "All available tools have been added",
+    "no_tools_found": "No tools match your search",
+    "remove_tool_title": "Remove Tool",
+    "remove_tool_confirm": "Are you sure you want to remove this tool from the workspace?",
+    "remove_tool_tooltip": "Remove tool",
+    "permission_always_ask": "Always Ask",
+    "permission_always_allow": "Always Allow",
+    "permission_label": "Permission",
+    "enabled_label": "Enabled",
+    "default_group": "Built-in Tools",
+    "native_group": "Native Tools",
+    "mcp_connecting": "Connecting...",
+    "mcp_connected": "Connected",
+    "mcp_error": "Connection failed",
+    "mcp_disconnected": "Disconnected",
+    "mcp_reconnect": "Reconnect",
+    "mcp_view_error": "View details",
+    "tools_count": "{enabled} of {total} enabled",
+    "delete_mcp_title": "Delete MCP Server",
+    "delete_mcp_confirm": "This will remove the MCP server and all its tools. Continue?",
+    "no_tools_in_group": "No tools available"
+  }
+}

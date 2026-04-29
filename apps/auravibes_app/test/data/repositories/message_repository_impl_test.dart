@@ -4,9 +4,10 @@ import 'dart:collection';
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/message_dao.dart';
 import 'package:auravibes_app/data/repositories/message_repository_impl.dart';
+import 'package:auravibes_app/domain/entities/messages.dart';
 import 'package:auravibes_app/domain/enums/message_types.dart';
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
-import 'package:drift/drift.dart';
+import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -110,6 +111,342 @@ void main() {
         expect(stackTrace.toString(), contains('_ThrowingMessagesList'));
       },
     );
+  });
+
+  group('MessageRepositoryImpl with real database', () {
+    late AppDatabase database;
+    late MessageRepositoryImpl repository;
+
+    setUp(() {
+      database = AppDatabase(
+        connection: DatabaseConnection(NativeDatabase.memory()),
+      );
+      repository = MessageRepositoryImpl(database);
+    });
+
+    tearDown(() async {
+      await database.close();
+    });
+
+    test('getMessagesByConversation returns empty when no messages', () async {
+      final messages = await repository.getMessagesByConversation('conv-1');
+      expect(messages, isEmpty);
+    });
+
+    test('createMessage and retrieve it', () async {
+      final created = await repository.createMessage(
+        const MessageToCreate(
+          conversationId: 'conv-1',
+          content: 'hello world',
+          messageType: MessageType.text,
+          isUser: true,
+          status: MessageStatus.sending,
+        ),
+      );
+
+      expect(created.conversationId, 'conv-1');
+      expect(created.content, 'hello world');
+      expect(created.messageType, MessageType.text);
+      expect(created.isUser, isTrue);
+
+      final messages = await repository.getMessagesByConversation('conv-1');
+      expect(messages, hasLength(1));
+      expect(messages.first.id, created.id);
+    });
+
+    test('getMessageById returns null for non-existent', () async {
+      final message = await repository.getMessageById('nonexistent');
+      expect(message, isNull);
+    });
+
+    test('getMessageById returns created message', () async {
+      final created = await repository.createMessage(
+        const MessageToCreate(
+          conversationId: 'conv-1',
+          content: 'test',
+          messageType: MessageType.text,
+          isUser: true,
+          status: MessageStatus.sending,
+        ),
+      );
+
+      final found = await repository.getMessageById(created.id);
+      expect(found, isNotNull);
+      expect(found!.content, 'test');
+    });
+
+    test('messageExists returns false for non-existent', () async {
+      expect(await repository.messageExists('nonexistent'), isFalse);
+    });
+
+    test('messageExists returns true for existing', () async {
+      final created = await repository.createMessage(
+        const MessageToCreate(
+          conversationId: 'conv-1',
+          content: 'test',
+          messageType: MessageType.text,
+          isUser: true,
+          status: MessageStatus.sending,
+        ),
+      );
+
+      expect(await repository.messageExists(created.id), isTrue);
+    });
+
+    test('deleteMessage returns false for non-existent', () async {
+      expect(await repository.deleteMessage('nonexistent'), isFalse);
+    });
+
+    test('deleteMessage returns true and removes message', () async {
+      final created = await repository.createMessage(
+        const MessageToCreate(
+          conversationId: 'conv-1',
+          content: 'to delete',
+          messageType: MessageType.text,
+          isUser: true,
+          status: MessageStatus.sending,
+        ),
+      );
+
+      expect(await repository.deleteMessage(created.id), isTrue);
+      expect(await repository.getMessageById(created.id), isNull);
+    });
+
+    test('getMessageCountByConversation returns correct count', () async {
+      expect(await repository.getMessageCountByConversation('conv-1'), 0);
+
+      await repository.createMessage(
+        const MessageToCreate(
+          conversationId: 'conv-1',
+          content: 'msg1',
+          messageType: MessageType.text,
+          isUser: true,
+          status: MessageStatus.sending,
+        ),
+      );
+      await repository.createMessage(
+        const MessageToCreate(
+          conversationId: 'conv-1',
+          content: 'msg2',
+          messageType: MessageType.text,
+          isUser: false,
+          status: MessageStatus.sending,
+        ),
+      );
+
+      expect(await repository.getMessageCountByConversation('conv-1'), 2);
+    });
+
+    test('patchMessage updates content', () async {
+      final created = await repository.createMessage(
+        const MessageToCreate(
+          conversationId: 'conv-1',
+          content: 'original',
+          messageType: MessageType.text,
+          isUser: true,
+          status: MessageStatus.sending,
+        ),
+      );
+
+      final patched = await repository.patchMessage(
+        created.id,
+        const MessagePatch(content: 'updated'),
+      );
+      expect(patched.content, 'updated');
+    });
+
+    test('patchMessage throws for non-existent', () async {
+      expect(
+        () => repository.patchMessage(
+          'nonexistent',
+          const MessagePatch(content: 'x'),
+        ),
+        throwsA(isA<MessageNotFoundException>()),
+      );
+    });
+
+    test('getMessagesByConversationPaginated limits results', () async {
+      for (var i = 0; i < 5; i++) {
+        await repository.createMessage(
+          const MessageToCreate(
+            conversationId: 'conv-1',
+            content: 'msg0',
+            messageType: MessageType.text,
+            isUser: true,
+            status: MessageStatus.sending,
+          ),
+        );
+      }
+
+      final page = await repository.getMessagesByConversationPaginated(
+        'conv-1',
+        2,
+        0,
+      );
+      expect(page, hasLength(2));
+    });
+
+    test('getMessagesByType filters correctly', () async {
+      await repository.createMessage(
+        const MessageToCreate(
+          conversationId: 'conv-1',
+          content: 'text msg',
+          messageType: MessageType.text,
+          isUser: true,
+          status: MessageStatus.sending,
+        ),
+      );
+
+      final textMessages = await repository.getMessagesByType(
+        'conv-1',
+        MessageType.text,
+      );
+      expect(textMessages, hasLength(1));
+
+      final systemMessages = await repository.getMessagesByType(
+        'conv-1',
+        MessageType.system,
+      );
+      expect(systemMessages, isEmpty);
+    });
+
+    test('getMessagesByStatus filters correctly', () async {
+      await repository.createMessage(
+        const MessageToCreate(
+          conversationId: 'conv-1',
+          content: 'sent msg',
+          messageType: MessageType.text,
+          isUser: true,
+          status: MessageStatus.sending,
+        ),
+      );
+
+      final sentMessages = await repository.getMessagesByStatus(
+        'conv-1',
+        MessageStatus.sent,
+      );
+      expect(sentMessages, isEmpty);
+
+      final sendingMessages = await repository.getMessagesByStatus(
+        'conv-1',
+        MessageStatus.sending,
+      );
+      expect(sendingMessages, hasLength(1));
+    });
+
+    test('validateMessage returns true for valid message', () async {
+      final valid = await repository.validateMessage(
+        const MessageToCreate(
+          conversationId: 'conv-1',
+          content: 'hello',
+          messageType: MessageType.text,
+          isUser: true,
+          status: MessageStatus.sending,
+        ),
+      );
+      expect(valid, isTrue);
+    });
+
+    test('validateMessage throws for invalid message', () async {
+      expect(
+        () => repository.validateMessage(
+          const MessageToCreate(
+            conversationId: '',
+            content: '',
+            messageType: MessageType.text,
+            isUser: true,
+            status: MessageStatus.sending,
+          ),
+        ),
+        throwsA(isA<MessageValidationException>()),
+      );
+    });
+
+    test('getUserMessages returns only user messages', () async {
+      await repository.createMessage(
+        const MessageToCreate(
+          conversationId: 'conv-1',
+          content: 'user msg',
+          messageType: MessageType.text,
+          isUser: true,
+          status: MessageStatus.sending,
+        ),
+      );
+      await repository.createMessage(
+        const MessageToCreate(
+          conversationId: 'conv-1',
+          content: 'ai msg',
+          messageType: MessageType.text,
+          isUser: false,
+          status: MessageStatus.sending,
+        ),
+      );
+
+      final userMessages = await repository.getUserMessages('conv-1');
+      expect(userMessages, hasLength(1));
+      expect(userMessages.first.isUser, isTrue);
+    });
+
+    test('getSystemMessages returns only non-user messages', () async {
+      await repository.createMessage(
+        const MessageToCreate(
+          conversationId: 'conv-1',
+          content: 'user msg',
+          messageType: MessageType.text,
+          isUser: true,
+          status: MessageStatus.sending,
+        ),
+      );
+      await repository.createMessage(
+        const MessageToCreate(
+          conversationId: 'conv-1',
+          content: 'ai msg',
+          messageType: MessageType.text,
+          isUser: false,
+          status: MessageStatus.sending,
+        ),
+      );
+
+      final systemMessages = await repository.getSystemMessages('conv-1');
+      expect(systemMessages, hasLength(1));
+      expect(systemMessages.first.isUser, isFalse);
+    });
+
+    test('patchMessage with status updates status', () async {
+      final created = await repository.createMessage(
+        const MessageToCreate(
+          conversationId: 'conv-1',
+          content: 'test',
+          messageType: MessageType.text,
+          isUser: true,
+          status: MessageStatus.sending,
+        ),
+      );
+
+      final patched = await repository.patchMessage(
+        created.id,
+        const MessagePatch(status: MessageStatus.sent),
+      );
+      expect(patched.status, MessageStatus.sent);
+    });
+
+    test('createMessage with metadata stores it', () async {
+      final created = await repository.createMessage(
+        const MessageToCreate(
+          conversationId: 'conv-1',
+          content: 'test',
+          messageType: MessageType.text,
+          isUser: false,
+          status: MessageStatus.sending,
+          metadata: '{"promptTokens":10}',
+        ),
+      );
+
+      final found = await repository.getMessageById(created.id);
+      expect(found, isNotNull);
+      expect(found!.metadata, isNotNull);
+      expect(found.metadata!.promptTokens, 10);
+    });
   });
 }
 

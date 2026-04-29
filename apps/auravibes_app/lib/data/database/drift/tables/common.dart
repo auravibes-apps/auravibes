@@ -1,3 +1,6 @@
+// coverage:ignore-file
+// Required: Drift table DSL is unreachable at runtime
+// (see api_model_table.dart).
 import 'package:drift/drift.dart';
 import 'package:uuid/v7.dart';
 

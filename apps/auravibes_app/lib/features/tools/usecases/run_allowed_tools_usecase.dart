@@ -1,17 +1,13 @@
 import 'package:auravibes_app/domain/entities/messages.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
-import 'package:auravibes_app/domain/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
-import 'package:auravibes_app/domain/repositories/tools_groups_repository.dart';
-import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dart';
+import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_decision.dart';
-import 'package:auravibes_app/features/tools/notifiers/conversation_tools_notifier.dart';
-import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
-import 'package:auravibes_app/features/tools/providers/workspace_tools_provider.dart';
 import 'package:auravibes_app/features/tools/usecases/get_agent_iteration_decision_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/load_latest_message_tool_calls_usecase.dart';
+import 'package:auravibes_app/features/tools/usecases/resolve_tool_approval_decision_usecase.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_notifier.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool.dart';
 import 'package:auravibes_app/services/tools/native_tool_service.dart';
@@ -23,20 +19,18 @@ class RunAllowedToolsUsecase {
   const RunAllowedToolsUsecase({
     required this.loadLatestMessageToolCallsUsecase,
     required this.messageRepository,
-    required this.conversationToolsRepository,
-    required this.toolsGroupsRepository,
-    required this.workspaceToolsRepository,
+    required this.resolveToolApprovalDecision,
     required this.mcpToolCaller,
     required this.getAgentIterationDecisionUsecase,
+    required this.agentCancellationRuntime,
   });
 
   final LoadLatestMessageToolCallsUsecase loadLatestMessageToolCallsUsecase;
   final MessageRepository messageRepository;
-  final ConversationToolsRepository conversationToolsRepository;
-  final ToolsGroupsRepository toolsGroupsRepository;
-  final WorkspaceToolsRepository workspaceToolsRepository;
+  final ResolveToolApprovalDecisionUsecase resolveToolApprovalDecision;
   final McpToolCaller mcpToolCaller;
   final GetAgentIterationDecisionUsecase getAgentIterationDecisionUsecase;
+  final AgentCancellationRuntime agentCancellationRuntime;
 
   Future<AgentIterationDecision> call({
     required String conversationId,
@@ -52,12 +46,32 @@ class RunAllowedToolsUsecase {
       return AgentIterationDecision.done;
     }
 
+    if (agentCancellationRuntime.isCancellationRequested(conversationId)) {
+      await _stopPendingTools(messageId: latestToolCalls.messageId);
+      return AgentIterationDecision.done;
+    }
+
     if (latestToolCalls.notFoundToolCallIds.isNotEmpty) {
       updates.addAll(
         latestToolCalls.notFoundToolCallIds.map(
           (toolCallId) => _ToolResultUpdate(
             toolCallId: toolCallId,
             resultStatus: ToolCallResultStatus.toolNotFound,
+            responseRaw: 'Tool not found for tool call: $toolCallId.',
+          ),
+        ),
+      );
+    }
+
+    if (latestToolCalls.previouslyFailedToolCallIds.isNotEmpty) {
+      updates.addAll(
+        latestToolCalls.previouslyFailedToolCallIds.map(
+          (toolCallId) => _ToolResultUpdate(
+            toolCallId: toolCallId,
+            resultStatus: ToolCallResultStatus.executionError,
+            responseRaw:
+                'Tool execution was already attempted and failed. '
+                'Not retrying.',
           ),
         ),
       );
@@ -65,13 +79,24 @@ class RunAllowedToolsUsecase {
 
     final grantedTools = <ToolToCall>[];
     for (final toolToCall in latestToolCalls.toolsToRun) {
-      final permission = await _checkToolPermission(
+      if (agentCancellationRuntime.isCancellationRequested(conversationId)) {
+        updates.add(
+          _ToolResultUpdate(
+            toolCallId: toolToCall.id,
+            resultStatus: ToolCallResultStatus.stoppedByUser,
+          ),
+        );
+        continue;
+      }
+
+      final decision = await resolveToolApprovalDecision(
         conversationId: conversationId,
         workspaceId: workspaceId,
+        toolCallId: toolToCall.id,
         resolvedTool: toolToCall.tool,
       );
 
-      switch (permission) {
+      switch (decision.permissionResult) {
         case ToolPermissionResult.granted:
           grantedTools.add(toolToCall);
         case ToolPermissionResult.needsConfirmation:
@@ -81,6 +106,9 @@ class RunAllowedToolsUsecase {
             _ToolResultUpdate(
               toolCallId: toolToCall.id,
               resultStatus: ToolCallResultStatus.disabledInConversation,
+              responseRaw:
+                  'Tool "${toolToCall.tool.toolIdentifier}" is disabled for '
+                  'this conversation.',
             ),
           );
         case ToolPermissionResult.disabledInWorkspace:
@@ -88,6 +116,9 @@ class RunAllowedToolsUsecase {
             _ToolResultUpdate(
               toolCallId: toolToCall.id,
               resultStatus: ToolCallResultStatus.disabledInWorkspace,
+              responseRaw:
+                  'Tool "${toolToCall.tool.toolIdentifier}" is disabled in '
+                  'workspace settings.',
             ),
           );
         case ToolPermissionResult.notConfigured:
@@ -95,6 +126,9 @@ class RunAllowedToolsUsecase {
             _ToolResultUpdate(
               toolCallId: toolToCall.id,
               resultStatus: ToolCallResultStatus.notConfigured,
+              responseRaw:
+                  'Tool "${toolToCall.tool.toolIdentifier}" is not configured. '
+                  'Enable it in workspace settings to use it.',
             ),
           );
       }
@@ -102,7 +136,12 @@ class RunAllowedToolsUsecase {
 
     if (grantedTools.isNotEmpty) {
       final executionResults = await Future.wait(
-        grantedTools.map((tool) => _executeSafely(toolToCall: tool)),
+        grantedTools.map(
+          (tool) => _executeSafely(
+            conversationId: conversationId,
+            toolToCall: tool,
+          ),
+        ),
       );
       updates.addAll(executionResults);
     }
@@ -118,55 +157,29 @@ class RunAllowedToolsUsecase {
       return AgentIterationDecision.waitForToolApproval;
     }
 
+    if (agentCancellationRuntime.isCancellationRequested(conversationId)) {
+      return AgentIterationDecision.done;
+    }
+
     return getAgentIterationDecisionUsecase.call(
       messageId: latestToolCalls.messageId,
     );
   }
 
-  Future<ToolPermissionResult> _checkToolPermission({
-    required String conversationId,
-    required String workspaceId,
-    required ResolvedTool resolvedTool,
-  }) async {
-    final permissionTableId = await _resolvePermissionTableId(resolvedTool);
-    if (permissionTableId == null) {
-      return ToolPermissionResult.notConfigured;
-    }
-
-    return conversationToolsRepository.checkToolPermission(
-      conversationId: conversationId,
-      workspaceId: workspaceId,
-      toolId: permissionTableId,
-    );
-  }
-
-  Future<String?> _resolvePermissionTableId(ResolvedTool resolvedTool) async {
-    if (resolvedTool.mcpServerId == null) {
-      return resolvedTool.tableId;
-    }
-
-    final toolGroup = await toolsGroupsRepository.getToolsGroupByMcpServerId(
-      resolvedTool.mcpServerId!,
-    );
-    if (toolGroup == null) return null;
-
-    final workspaceTool = await workspaceToolsRepository
-        .getWorkspaceToolByToolName(
-          toolGroupId: toolGroup.id,
-          toolName: resolvedTool.toolIdentifier,
-        );
-
-    return workspaceTool?.id;
-  }
-
   Future<_ToolExecutionResult> _executeTool({
+    required String conversationId,
     required ToolToCall toolToCall,
   }) async {
     final arguments =
         safeJsonDecode(toolToCall.argumentsRaw) ?? const <String, dynamic>{};
 
     try {
-      final result = await _runTool(toolToCall.tool, arguments);
+      final result = await _runTool(conversationId, toolToCall.tool, arguments);
+      if (agentCancellationRuntime.isCancellationRequested(conversationId)) {
+        return const _ToolExecutionResult(
+          resultStatus: ToolCallResultStatus.stoppedByUser,
+        );
+      }
       if (result == null) {
         return const _ToolExecutionResult(
           resultStatus: ToolCallResultStatus.toolNotFound,
@@ -184,6 +197,7 @@ class RunAllowedToolsUsecase {
   }
 
   Future<Object?> _runTool(
+    String conversationId,
     ResolvedTool tool,
     Map<String, dynamic> arguments,
   ) async {
@@ -202,7 +216,12 @@ class RunAllowedToolsUsecase {
       if (toolService == null) {
         return null;
       }
-      return toolService.runner(input as Object).value;
+      final operation = toolService.runner(input as Object);
+      agentCancellationRuntime.registerCancelableOperation(
+        conversationId,
+        operation,
+      );
+      return operation.valueOrCancellation();
     }
 
     if (tool.isNative) {
@@ -218,7 +237,12 @@ class RunAllowedToolsUsecase {
       if (toolService == null) {
         return null;
       }
-      return toolService.runner(input as Object).value;
+      final operation = toolService.runner(input as Object);
+      agentCancellationRuntime.registerCancelableOperation(
+        conversationId,
+        operation,
+      );
+      return operation.valueOrCancellation();
     }
 
     if (tool.isMcp) {
@@ -238,10 +262,14 @@ class RunAllowedToolsUsecase {
   }
 
   Future<_ToolResultUpdate> _executeSafely({
+    required String conversationId,
     required ToolToCall toolToCall,
   }) async {
     try {
-      final result = await _executeTool(toolToCall: toolToCall);
+      final result = await _executeTool(
+        conversationId: conversationId,
+        toolToCall: toolToCall,
+      );
       return _ToolResultUpdate(
         toolCallId: toolToCall.id,
         resultStatus: result.resultStatus,
@@ -250,9 +278,38 @@ class RunAllowedToolsUsecase {
     } on Object catch (_) {
       return _ToolResultUpdate(
         toolCallId: toolToCall.id,
-        resultStatus: ToolCallResultStatus.executionError,
+        resultStatus:
+            agentCancellationRuntime.isCancellationRequested(
+              conversationId,
+            )
+            ? ToolCallResultStatus.stoppedByUser
+            : ToolCallResultStatus.executionError,
       );
     }
+  }
+
+  Future<void> _stopPendingTools({required String messageId}) async {
+    final message = await messageRepository.getMessageById(messageId);
+    if (message == null) return;
+
+    final metadata = message.metadata ?? const MessageMetadataEntity();
+    var didUpdate = false;
+    final updatedToolCalls = metadata.toolCalls.map((toolCall) {
+      if (!toolCall.isPending) return toolCall;
+
+      didUpdate = true;
+      return toolCall.copyWith(
+        resultStatus: ToolCallResultStatus.stoppedByUser,
+      );
+    }).toList();
+    if (!didUpdate) return;
+
+    await messageRepository.patchMessage(
+      messageId,
+      MessagePatch(
+        metadata: metadata.copyWith(toolCalls: updatedToolCalls),
+      ),
+    );
   }
 
   Future<void> _updateToolResults({
@@ -290,13 +347,14 @@ final runAllowedToolsUsecaseProvider = Provider<RunAllowedToolsUsecase>((ref) {
       loadLatestMessageToolCallsUsecaseProvider,
     ),
     messageRepository: ref.watch(messageRepositoryProvider),
-    conversationToolsRepository: ref.watch(conversationToolsRepositoryProvider),
-    toolsGroupsRepository: ref.watch(toolsGroupsRepositoryProvider),
-    workspaceToolsRepository: ref.watch(workspaceToolsRepositoryProvider),
+    resolveToolApprovalDecision: ref.watch(
+      resolveToolApprovalDecisionUsecaseProvider,
+    ),
     mcpToolCaller: ref.watch(mcpToolCallerProvider),
     getAgentIterationDecisionUsecase: ref.watch(
       getAgentIterationDecisionUsecaseProvider,
     ),
+    agentCancellationRuntime: ref.watch(agentCancellationRuntimeProvider),
   );
 });
 

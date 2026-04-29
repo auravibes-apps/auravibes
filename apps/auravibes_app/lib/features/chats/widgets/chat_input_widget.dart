@@ -1,6 +1,7 @@
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -10,12 +11,16 @@ class ChatInputWidget extends HookConsumerWidget {
     required this.onSendMessage,
     required this.onToolsPress,
     this.disabled = false,
+    this.isBusy = false,
+    this.onStop,
     super.key,
   });
 
   final bool disabled;
+  final bool isBusy;
   final void Function(String message) onSendMessage;
   final VoidCallback? onToolsPress;
+  final VoidCallback? onStop;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -54,6 +59,23 @@ class ChatInputWidget extends HookConsumerWidget {
               ),
 
             const Spacer(),
+
+            if (isBusy && onStop != null)
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Tooltip(
+                  message: LocaleKeys
+                      .chats_screens_chat_conversation_stop_generation
+                      .tr(),
+                  child: AuraButton(
+                    onPressed: onStop!,
+                    variant: AuraButtonVariant.outlined,
+                    colorVariant: AuraColorVariant.error,
+                    size: AuraButtonSize.small,
+                    child: const AuraIcon(Icons.stop_rounded),
+                  ),
+                ),
+              ),
 
             // Send button
             AuraButton(

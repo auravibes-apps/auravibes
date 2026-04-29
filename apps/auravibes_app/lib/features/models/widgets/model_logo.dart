@@ -3,6 +3,7 @@ import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:http/http.dart' as http;
 
 /// A reusable widget for displaying model provider logos
 class ModelLogo extends StatelessWidget {
@@ -10,17 +11,25 @@ class ModelLogo extends StatelessWidget {
     required this.modelId,
     this.height = 20,
     this.width,
+    this.svgBuilder,
+    this.httpClient,
     super.key,
   });
 
   final String modelId;
   final double height;
   final double? width;
+  final Widget Function(BuildContext context, String url)? svgBuilder;
+  final http.Client? httpClient;
 
   @override
   Widget build(BuildContext context) {
+    final url = 'https://models.dev/logos/$modelId.svg';
+    if (svgBuilder != null) {
+      return svgBuilder!(context, url);
+    }
     return SvgPicture.network(
-      'https://models.dev/logos/$modelId.svg',
+      url,
       height: height,
       width: width,
       colorFilter: ColorFilter.mode(
@@ -37,6 +46,7 @@ class ModelLogo extends StatelessWidget {
           ),
         );
       },
+      httpClient: httpClient,
     );
   }
 }

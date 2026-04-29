@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-String? _findProviderForModelId(
+String? findProviderForModelId(
   Map<String, List<WorkspaceModelSelectionWithConnectionEntity>> groupedModels,
   String? workspaceModelSelectionId,
 ) {
@@ -116,7 +116,7 @@ class SelectChatData extends HookWidget {
     // Internal provider state if no external control
     final internalProviderId = useState<String?>(null);
     final derivedProviderId = useMemoized(
-      () => _findProviderForModelId(groupedModels, workspaceModelSelectionId),
+      () => findProviderForModelId(groupedModels, workspaceModelSelectionId),
       [groupedModels, workspaceModelSelectionId],
     );
     final effectiveProviderId =

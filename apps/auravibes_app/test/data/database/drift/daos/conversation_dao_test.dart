@@ -1,0 +1,177 @@
+import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/domain/enums/workspace_type.dart';
+import 'package:drift/drift.dart' hide isNotNull, isNull;
+import 'package:drift/native.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+QueryExecutor createTestConnection() {
+  return DatabaseConnection.delayed(
+    Future(() {
+      return DatabaseConnection(
+        LazyDatabase(() async {
+          return NativeDatabase.memory();
+        }),
+      );
+    }),
+  );
+}
+
+void main() {
+  group('ConversationDao', () {
+    late AppDatabase database;
+
+    setUp(() async {
+      database = AppDatabase(connection: createTestConnection());
+    });
+
+    tearDown(() async {
+      await database.close();
+    });
+
+    test('insertConversation creates and returns conversation', () async {
+      final ws = await database.workspaceDao.insertWorkspace(
+        WorkspacesCompanion.insert(name: 'WS', type: WorkspaceType.local),
+      );
+      final conv = await database.conversationDao.insertConversation(
+        ConversationsCompanion.insert(
+          workspaceId: ws.id,
+          title: 'Test Conversation',
+        ),
+      );
+      expect(conv.title, equals('Test Conversation'));
+      expect(conv.workspaceId, equals(ws.id));
+    });
+
+    test('getConversationById returns conversation', () async {
+      final ws = await database.workspaceDao.insertWorkspace(
+        WorkspacesCompanion.insert(name: 'WS', type: WorkspaceType.local),
+      );
+      final created = await database.conversationDao.insertConversation(
+        ConversationsCompanion.insert(
+          workspaceId: ws.id,
+          title: 'Test',
+        ),
+      );
+      final found = await database.conversationDao.getConversationById(
+        created.id,
+      );
+      expect(found, isNotNull);
+      expect(found!.title, equals('Test'));
+    });
+
+    test('getConversationById returns null for nonexistent', () async {
+      final found = await database.conversationDao.getConversationById(
+        'nonexistent',
+      );
+      expect(found, isNull);
+    });
+
+    test('patchConversation updates fields', () async {
+      final ws = await database.workspaceDao.insertWorkspace(
+        WorkspacesCompanion.insert(name: 'WS', type: WorkspaceType.local),
+      );
+      final created = await database.conversationDao.insertConversation(
+        ConversationsCompanion.insert(
+          workspaceId: ws.id,
+          title: 'Original',
+        ),
+      );
+      final patched = await database.conversationDao.patchConversation(
+        created.id,
+        ConversationsCompanion(
+          title: const Value('Updated'),
+          updatedAt: Value(DateTime.now()),
+        ),
+      );
+      expect(patched, isTrue);
+      final found = await database.conversationDao.getConversationById(
+        created.id,
+      );
+      expect(found!.title, equals('Updated'));
+    });
+
+    test('patchConversation returns false for nonexistent', () async {
+      final patched = await database.conversationDao.patchConversation(
+        'nonexistent',
+        const ConversationsCompanion(title: Value('X')),
+      );
+      expect(patched, isFalse);
+    });
+
+    test('deleteConversation removes conversation', () async {
+      final ws = await database.workspaceDao.insertWorkspace(
+        WorkspacesCompanion.insert(name: 'WS', type: WorkspaceType.local),
+      );
+      final created = await database.conversationDao.insertConversation(
+        ConversationsCompanion.insert(
+          workspaceId: ws.id,
+          title: 'To Delete',
+        ),
+      );
+      final deleted = await database.conversationDao.deleteConversation(
+        created.id,
+      );
+      expect(deleted, isTrue);
+      expect(
+        await database.conversationDao.getConversationById(created.id),
+        isNull,
+      );
+    });
+
+    test('deleteConversation returns false for nonexistent', () async {
+      final deleted = await database.conversationDao.deleteConversation(
+        'nonexistent',
+      );
+      expect(deleted, isFalse);
+    });
+
+    test('watchConversationById emits conversation', () async {
+      final ws = await database.workspaceDao.insertWorkspace(
+        WorkspacesCompanion.insert(name: 'WS', type: WorkspaceType.local),
+      );
+      final created = await database.conversationDao.insertConversation(
+        ConversationsCompanion.insert(
+          workspaceId: ws.id,
+          title: 'Watched',
+        ),
+      );
+      final emitted = await database.conversationDao
+          .watchConversationById(created.id)
+          .first;
+      expect(emitted, isNotNull);
+      expect(emitted!.title, equals('Watched'));
+    });
+
+    test('watchConversationsByWorkspace emits list', () async {
+      final ws = await database.workspaceDao.insertWorkspace(
+        WorkspacesCompanion.insert(name: 'WS', type: WorkspaceType.local),
+      );
+      await database.conversationDao.insertConversation(
+        ConversationsCompanion.insert(workspaceId: ws.id, title: 'A'),
+      );
+      await database.conversationDao.insertConversation(
+        ConversationsCompanion.insert(workspaceId: ws.id, title: 'B'),
+      );
+      final emitted = await database.conversationDao
+          .watchConversationsByWorkspace(ws.id)
+          .first;
+      expect(emitted.length, equals(2));
+    });
+
+    test('watchConversationsByWorkspace with limit', () async {
+      final ws = await database.workspaceDao.insertWorkspace(
+        WorkspacesCompanion.insert(name: 'WS', type: WorkspaceType.local),
+      );
+      await database.conversationDao.insertConversation(
+        ConversationsCompanion.insert(workspaceId: ws.id, title: 'A'),
+      );
+      await database.conversationDao.insertConversation(
+        ConversationsCompanion.insert(workspaceId: ws.id, title: 'B'),
+      );
+      final emitted = await database.conversationDao
+          .watchConversationsByWorkspace(ws.id, limit: 1)
+          .first;
+      expect(emitted.length, equals(1));
+    });
+  });
+}

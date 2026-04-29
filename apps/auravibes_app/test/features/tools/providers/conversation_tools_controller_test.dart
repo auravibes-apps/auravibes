@@ -114,6 +114,45 @@ void main() {
       expect(result.single.permissionMode, ToolPermissionMode.alwaysAllow);
       expect(conversationToolsRepository.lastConversationId, isNull);
     });
+
+    test('returns empty list when no workspace tools exist', () async {
+      workspaceToolsRepository.workspaceTools = [];
+
+      final result = await container.read(
+        conversationToolsProvider(
+          workspaceId: 'workspace-1',
+          conversationId: 'conversation-1',
+        ).future,
+      );
+
+      expect(result, isEmpty);
+    });
+
+    test(
+      'uses workspace tool isWorkspaceEnabled from workspace tool state',
+      () async {
+        final createdAt = DateTime(2026);
+        workspaceToolsRepository.workspaceTools = [
+          WorkspaceToolEntity(
+            id: 'tool-1',
+            workspaceId: 'workspace-1',
+            toolId: 'calculator',
+            isEnabled: false,
+            permissionMode: ToolPermissionMode.alwaysAsk,
+            createdAt: createdAt,
+            updatedAt: createdAt,
+          ),
+        ];
+
+        final result = await container.read(
+          conversationToolsProvider(
+            workspaceId: 'workspace-1',
+          ).future,
+        );
+
+        expect(result.single.isWorkspaceEnabled, isFalse);
+      },
+    );
   });
 }
 

@@ -22,7 +22,14 @@ class ChatToolApprovalCard extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final pendingCalls = ref.watch(pendingToolCallsProvider);
+    final asyncCalls = ref.watch(pendingToolCallsProvider);
+    if (asyncCalls.hasError) {
+      debugPrint(
+        '[ChatToolApprovalCard] Error: ${asyncCalls.error}',
+      );
+      return const SizedBox.shrink();
+    }
+    final pendingCalls = asyncCalls.value ?? const <PendingToolCall>[];
     if (pendingCalls.isEmpty) return const SizedBox.shrink();
 
     final currentIndex = useState(0);

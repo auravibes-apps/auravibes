@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:auravibes_app/features/chats/notifiers/conversation_chat_notifier.dart';
 import 'package:auravibes_app/features/chats/providers/messages_providers.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
+import 'package:auravibes_app/features/chats/usecases/stop_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_messages_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_queued_messages_indicator.dart';
@@ -107,6 +108,8 @@ class _ChatConversationScreen extends HookConsumerWidget {
 
     final busyState = ref.watch(conversationBusyStateProvider).asData?.value;
     final queuedDrafts = ref.watch(conversationQueuedDraftsProvider);
+    final pendingCalls = ref.watch(pendingToolCallsProvider).value ?? const [];
+    final hasPendingApprovals = pendingCalls.isNotEmpty;
 
     return AuraScreen(
       appBar: AuraAppBarWithDrawer(
@@ -128,11 +131,41 @@ class _ChatConversationScreen extends HookConsumerWidget {
           if (busyState?.isStreaming == true) const ChatThinkingIndicator(),
           if (queuedDrafts.isNotEmpty)
             ChatQueuedMessagesIndicator(queuedDrafts: queuedDrafts),
-          if (busyState?.hasPendingTools == true) const ChatToolApprovalCard(),
+          if (hasPendingApprovals) const ChatToolApprovalCard(),
           Offstage(
-            offstage: busyState?.hasPendingTools == true,
+            offstage: hasPendingApprovals,
             child: ChatInputWidget(
               onToolsPress: onToolsPress,
+              isBusy: busyState?.isBusy ?? false,
+              onStop: () async {
+                final conversationId = ref.read(conversationSelectedProvider);
+                try {
+                  await ref
+                      .read(stopConversationUsecaseProvider)
+                      .call(conversationId: conversationId);
+                } catch (error, stackTrace) {
+                  FlutterError.reportError(
+                    FlutterErrorDetails(
+                      exception: error,
+                      stack: stackTrace,
+                      library: 'chat_conversation_screen',
+                      context: ErrorDescription(
+                        'while stopping a conversation',
+                      ),
+                    ),
+                  );
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          LocaleKeys.chats_screens_chat_conversation_stop_error
+                              .tr(),
+                        ),
+                      ),
+                    );
+                  }
+                }
+              },
               onSendMessage: (message) async {
                 final conversationId = ref.read(conversationSelectedProvider);
                 try {
