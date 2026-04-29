@@ -142,63 +142,80 @@ class ApproveToolCallUsecase {
     Map<String, dynamic> arguments,
   ) async {
     if (tool.isBuiltIn) {
-      final input = arguments['input'];
-      if (input == null) {
-        throw const FormatException(
-          'Built-in tools require an input argument.',
-        );
-      }
-
-      final builtInTool = tool.builtInTool;
-      final toolService = builtInTool == null
-          ? null
-          : ToolService.getTool(builtInTool);
-      if (toolService == null) {
-        return null;
-      }
-      final operation = toolService.runner(input as Object);
-      _agentCancellationRuntime.registerCancelableOperation(
-        conversationId,
-        operation,
-      );
-      return operation.valueOrCancellation();
+      return _runBuiltInTool(conversationId, tool, arguments);
     }
 
     if (tool.isNative) {
-      final input = arguments['input'];
-      if (input == null) {
-        throw const FormatException('Native tools require an input argument.');
-      }
-
-      final nativeTool = tool.nativeTool;
-      final toolService = nativeTool == null
-          ? null
-          : NativeToolService.getTool(nativeTool);
-      if (toolService == null) {
-        return null;
-      }
-      final operation = toolService.runner(input as Object);
-      _agentCancellationRuntime.registerCancelableOperation(
-        conversationId,
-        operation,
-      );
-      return operation.valueOrCancellation();
+      return _runNativeTool(conversationId, tool, arguments);
     }
 
     if (tool.isMcp) {
-      final mcpServerId = tool.mcpServerId;
-      if (mcpServerId == null) {
-        return null;
-      }
-
-      return _mcpToolCaller(
-        mcpServerId: mcpServerId,
-        toolIdentifier: tool.toolIdentifier,
-        arguments: arguments,
-      );
+      return _runMcpTool(tool, arguments);
     }
 
     return null;
+  }
+
+  Future<Object?> _runBuiltInTool(
+    String conversationId,
+    ResolvedTool tool,
+    Map<String, dynamic> arguments,
+  ) {
+    final input = arguments['input'];
+    if (input == null) {
+      throw const FormatException('Built-in tools require an input argument.');
+    }
+
+    final builtInTool = tool.builtInTool;
+    final toolService = builtInTool == null
+        ? null
+        : ToolService.getTool(builtInTool);
+    if (toolService == null) return Future.value();
+
+    final operation = toolService.runner(input as Object);
+    _agentCancellationRuntime.registerCancelableOperation(
+      conversationId,
+      operation,
+    );
+    return operation.valueOrCancellation();
+  }
+
+  Future<Object?> _runNativeTool(
+    String conversationId,
+    ResolvedTool tool,
+    Map<String, dynamic> arguments,
+  ) {
+    final input = arguments['input'];
+    if (input == null) {
+      throw const FormatException('Native tools require an input argument.');
+    }
+
+    final nativeTool = tool.nativeTool;
+    final toolService = nativeTool == null
+        ? null
+        : NativeToolService.getTool(nativeTool);
+    if (toolService == null) return Future.value();
+
+    final operation = toolService.runner(input as Object);
+    _agentCancellationRuntime.registerCancelableOperation(
+      conversationId,
+      operation,
+    );
+    return operation.valueOrCancellation();
+  }
+
+  Future<Object?> _runMcpTool(
+    ResolvedTool tool,
+    Map<String, dynamic> arguments,
+  ) {
+    final mcpServerId = tool.mcpServerId;
+    if (mcpServerId == null) return Future.value();
+
+    return _mcpToolCaller(
+      mcpServerId: mcpServerId,
+      toolIdentifier: tool.toolIdentifier,
+      arguments: arguments,
+    );
   }
 
   Future<void> _updateToolCall({

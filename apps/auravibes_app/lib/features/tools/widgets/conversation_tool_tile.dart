@@ -65,109 +65,196 @@ class ConversationToolTile extends HookConsumerWidget {
         spacing: AuraSpacing.none,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Main tool row
-          AuraPadding(
-            padding: .medium,
-            child: AuraRow(
-              spacing: AuraSpacing.md,
-              children: [
-                // Tool icon
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: isEnabled && isWorkspaceEnabled
-                        ? context.auraColors.primary.withValues(alpha: 0.1)
-                        : context.auraColors.surfaceVariant,
-                    borderRadius: BorderRadius.circular(
-                      DesignBorderRadius.md,
-                    ),
-                  ),
-                  child: toolState.tool.getIconWidget(),
-                ),
-
-                // Tool name and description
-                Expanded(
-                  child: AuraColumn(
-                    spacing: AuraSpacing.xs,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      AuraText(
-                        color: isWorkspaceEnabled
-                            ? AuraColorVariant.onSurface
-                            : AuraColorVariant.onSurfaceVariant,
-                        child: toolState.tool.getNameWidget(),
-                      ),
-                      if (!isWorkspaceEnabled)
-                        AuraText(
-                          style: AuraTextStyle.bodySmall,
-                          color: AuraColorVariant.onSurfaceVariant,
-                          child: DefaultTextStyle.merge(
-                            style: const TextStyle(
-                              fontStyle: FontStyle.italic,
-                            ),
-                            child: const Text('Disabled in workspace'),
-                          ),
-                        )
-                      else
-                        AuraText(
-                          style: AuraTextStyle.bodySmall,
-                          color: AuraColorVariant.onSurfaceVariant,
-                          child: DefaultTextStyle.merge(
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            child: toolState.tool.getDescriptionWidget(),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-
-                // Toggle indicator
-                if (isWorkspaceEnabled)
-                  AuraIcon(
-                    isEnabled ? Icons.check_circle : Icons.circle_outlined,
-                    color: isEnabled
-                        ? AuraColorVariant.primary
-                        : AuraColorVariant.onSurfaceVariant,
-                  )
-                else
-                  const Opacity(
-                    opacity: 0.5,
-                    child: AuraIcon(
-                      Icons.block,
-                      size: AuraIconSize.small,
-                      color: AuraColorVariant.onSurfaceVariant,
-                    ),
-                  ),
-              ],
-            ),
+          _ToolSummaryRow(
+            toolState: toolState,
+            isEnabled: isEnabled,
+            isWorkspaceEnabled: isWorkspaceEnabled,
           ),
-
-          // Permission selector - always visible when tool is enabled
-          if (isEnabled && isWorkspaceEnabled) ...[
-            const AuraDivider(),
-            AuraPadding(
-              padding: .medium,
-              child: AuraColumn(
-                spacing: AuraSpacing.sm,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const AuraText(
-                    style: AuraTextStyle.bodySmall,
-                    color: AuraColorVariant.onSurfaceVariant,
-                    child: TextLocale(LocaleKeys.tools_screen_permission_label),
-                  ),
-                  ToolPermissionSelector(
-                    value: toolState.permissionMode,
-                    onChanged: onPermissionChanged,
-                  ),
-                ],
-              ),
+          if (isEnabled && isWorkspaceEnabled)
+            _ToolPermissionSection(
+              value: toolState.permissionMode,
+              onChanged: onPermissionChanged,
             ),
-          ],
         ],
       ),
+    );
+  }
+}
+
+class _ToolSummaryRow extends StatelessWidget {
+  const _ToolSummaryRow({
+    required this.toolState,
+    required this.isEnabled,
+    required this.isWorkspaceEnabled,
+  });
+
+  final ConversationToolState toolState;
+  final bool isEnabled;
+  final bool isWorkspaceEnabled;
+
+  @override
+  Widget build(BuildContext context) {
+    return AuraPadding(
+      padding: .medium,
+      child: AuraRow(
+        spacing: AuraSpacing.md,
+        children: [
+          _ToolIcon(
+            toolState: toolState,
+            isEnabled: isEnabled,
+            isWorkspaceEnabled: isWorkspaceEnabled,
+          ),
+          Expanded(
+            child: _ToolDescription(
+              toolState: toolState,
+              isWorkspaceEnabled: isWorkspaceEnabled,
+            ),
+          ),
+          _ToolToggleIcon(
+            isEnabled: isEnabled,
+            isWorkspaceEnabled: isWorkspaceEnabled,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ToolIcon extends StatelessWidget {
+  const _ToolIcon({
+    required this.toolState,
+    required this.isEnabled,
+    required this.isWorkspaceEnabled,
+  });
+
+  final ConversationToolState toolState;
+  final bool isEnabled;
+  final bool isWorkspaceEnabled;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: isEnabled && isWorkspaceEnabled
+            ? context.auraColors.primary.withValues(alpha: 0.1)
+            : context.auraColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(DesignBorderRadius.md),
+      ),
+      child: toolState.tool.getIconWidget(),
+    );
+  }
+}
+
+class _ToolDescription extends StatelessWidget {
+  const _ToolDescription({
+    required this.toolState,
+    required this.isWorkspaceEnabled,
+  });
+
+  final ConversationToolState toolState;
+  final bool isWorkspaceEnabled;
+
+  @override
+  Widget build(BuildContext context) {
+    return AuraColumn(
+      spacing: AuraSpacing.xs,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AuraText(
+          color: isWorkspaceEnabled
+              ? AuraColorVariant.onSurface
+              : AuraColorVariant.onSurfaceVariant,
+          child: toolState.tool.getNameWidget(),
+        ),
+        if (isWorkspaceEnabled)
+          AuraText(
+            style: AuraTextStyle.bodySmall,
+            color: AuraColorVariant.onSurfaceVariant,
+            child: DefaultTextStyle.merge(
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              child: toolState.tool.getDescriptionWidget(),
+            ),
+          )
+        else
+          AuraText(
+            style: AuraTextStyle.bodySmall,
+            color: AuraColorVariant.onSurfaceVariant,
+            child: DefaultTextStyle.merge(
+              style: const TextStyle(fontStyle: FontStyle.italic),
+              child: const Text('Disabled in workspace'),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _ToolToggleIcon extends StatelessWidget {
+  const _ToolToggleIcon({
+    required this.isEnabled,
+    required this.isWorkspaceEnabled,
+  });
+
+  final bool isEnabled;
+  final bool isWorkspaceEnabled;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!isWorkspaceEnabled) {
+      return const Opacity(
+        opacity: 0.5,
+        child: AuraIcon(
+          Icons.block,
+          size: AuraIconSize.small,
+          color: AuraColorVariant.onSurfaceVariant,
+        ),
+      );
+    }
+
+    return AuraIcon(
+      isEnabled ? Icons.check_circle : Icons.circle_outlined,
+      color: isEnabled
+          ? AuraColorVariant.primary
+          : AuraColorVariant.onSurfaceVariant,
+    );
+  }
+}
+
+class _ToolPermissionSection extends StatelessWidget {
+  const _ToolPermissionSection({
+    required this.value,
+    required this.onChanged,
+  });
+
+  final ToolPermissionMode value;
+  final void Function(ToolPermissionMode?) onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return AuraColumn(
+      spacing: AuraSpacing.none,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const AuraDivider(),
+        AuraPadding(
+          padding: .medium,
+          child: AuraColumn(
+            spacing: AuraSpacing.sm,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const AuraText(
+                style: AuraTextStyle.bodySmall,
+                color: AuraColorVariant.onSurfaceVariant,
+                child: TextLocale(LocaleKeys.tools_screen_permission_label),
+              ),
+              ToolPermissionSelector(value: value, onChanged: onChanged),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

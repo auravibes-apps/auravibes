@@ -316,25 +316,52 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
     final isHovered = _isHovering && !_isPressed;
 
     return switch (widget.variant) {
-      AuraButtonGroupVariant.filled =>
-        isActive
-            ? colors.primary
-            : isHovered
-            ? colors.primary.withValues(alpha: 0.8)
-            : colors.primary.withValues(alpha: 0.6),
-      AuraButtonGroupVariant.outlined =>
-        isActive
-            ? colors.primary
-            : isHovered
-            ? colors.primary.withValues(alpha: 0.1)
-            : DesignColors.transparent,
-      AuraButtonGroupVariant.ghost =>
-        isActive
-            ? colors.primary.withValues(alpha: 0.2)
-            : isHovered
-            ? colors.primary.withValues(alpha: 0.1)
-            : DesignColors.transparent,
+      AuraButtonGroupVariant.filled => _getFilledBackgroundColor(
+        colors,
+        isActive: isActive,
+        isHovered: isHovered,
+      ),
+      AuraButtonGroupVariant.outlined => _getOutlinedBackgroundColor(
+        colors,
+        isActive: isActive,
+        isHovered: isHovered,
+      ),
+      AuraButtonGroupVariant.ghost => _getGhostBackgroundColor(
+        colors,
+        isActive: isActive,
+        isHovered: isHovered,
+      ),
     };
+  }
+
+  Color _getFilledBackgroundColor(
+    AuraColorScheme colors, {
+    required bool isActive,
+    required bool isHovered,
+  }) {
+    if (isActive) return colors.primary;
+    if (isHovered) return colors.primary.withValues(alpha: 0.8);
+    return colors.primary.withValues(alpha: 0.6);
+  }
+
+  Color _getOutlinedBackgroundColor(
+    AuraColorScheme colors, {
+    required bool isActive,
+    required bool isHovered,
+  }) {
+    if (isActive) return colors.primary;
+    if (isHovered) return colors.primary.withValues(alpha: 0.1);
+    return DesignColors.transparent;
+  }
+
+  Color _getGhostBackgroundColor(
+    AuraColorScheme colors, {
+    required bool isActive,
+    required bool isHovered,
+  }) {
+    if (isActive) return colors.primary.withValues(alpha: 0.2);
+    if (isHovered) return colors.primary.withValues(alpha: 0.1);
+    return DesignColors.transparent;
   }
 
   Color _getForegroundColor() {

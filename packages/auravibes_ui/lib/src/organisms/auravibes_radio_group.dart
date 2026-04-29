@@ -78,53 +78,9 @@ class AuraRadioGroup<T> extends StatelessWidget {
       );
     }).toList();
 
-    final Widget optionsWidget;
-    if (direction == Axis.vertical) {
-      optionsWidget = Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          for (int i = 0; i < options.length; i++) ...[
-            // Make entire row tappable
-            GestureDetector(
-              onTap: onChanged == null
-                  ? null
-                  : () => onChanged!(options[i].value),
-              behavior: HitTestBehavior.opaque,
-              child: Row(
-                children: [
-                  radios[i],
-                  SizedBox(width: spacing.sm),
-                  Flexible(child: options[i].label),
-                ],
-              ),
-            ),
-            if (options[i].subtitle != null)
-              Padding(
-                // Radio size (24) + gap (spacing.sm) for proper alignment
-                padding: EdgeInsets.only(left: 24 + spacing.sm),
-                child: options[i].subtitle,
-              ),
-            if (i < options.length - 1) SizedBox(height: spacing.sm),
-          ],
-        ],
-      );
-    } else {
-      optionsWidget = Wrap(
-        spacing: spacing.md,
-        runSpacing: spacing.sm,
-        children: [
-          for (int i = 0; i < options.length; i++)
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                radios[i],
-                SizedBox(width: spacing.sm),
-                Flexible(child: options[i].label),
-              ],
-            ),
-        ],
-      );
-    }
+    final optionsWidget = direction == Axis.vertical
+        ? _buildVerticalOptions(radios, spacing)
+        : _buildHorizontalOptions(radios, spacing);
 
     if (label != null) {
       return Column(
@@ -138,6 +94,60 @@ class AuraRadioGroup<T> extends StatelessWidget {
     }
 
     return optionsWidget;
+  }
+
+  Widget _buildVerticalOptions(
+    List<AuraRadio<T>> radios,
+    AuraSpacingTheme spacing,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (int i = 0; i < options.length; i++) ...[
+          GestureDetector(
+            onTap: onChanged == null
+                ? null
+                : () => onChanged!(options[i].value),
+            behavior: HitTestBehavior.opaque,
+            child: Row(
+              children: [
+                radios[i],
+                SizedBox(width: spacing.sm),
+                Flexible(child: options[i].label),
+              ],
+            ),
+          ),
+          if (options[i].subtitle != null)
+            Padding(
+              // Radio size (24) + gap (spacing.sm) for proper alignment.
+              padding: EdgeInsets.only(left: 24 + spacing.sm),
+              child: options[i].subtitle,
+            ),
+          if (i < options.length - 1) SizedBox(height: spacing.sm),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildHorizontalOptions(
+    List<AuraRadio<T>> radios,
+    AuraSpacingTheme spacing,
+  ) {
+    return Wrap(
+      spacing: spacing.md,
+      runSpacing: spacing.sm,
+      children: [
+        for (int i = 0; i < options.length; i++)
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              radios[i],
+              SizedBox(width: spacing.sm),
+              Flexible(child: options[i].label),
+            ],
+          ),
+      ],
+    );
   }
 }
 

@@ -98,25 +98,35 @@ class ConversationRepositoryImpl implements ConversationRepository {
   void _validateConversationToCreate(ConversationToCreate conversation) {
     if (!conversation.isValid) {
       throw ConversationValidationException(
-        conversation.title.isEmpty
-            ? 'Conversation title cannot be empty'
-            : conversation.workspaceId.isEmpty
-            ? 'Workspace ID cannot be empty'
-            : 'Unknown validation error',
+        _conversationCreateValidationMessage(conversation),
       );
     }
+  }
+
+  String _conversationCreateValidationMessage(
+    ConversationToCreate conversation,
+  ) {
+    if (conversation.title.isEmpty) return 'Conversation title cannot be empty';
+    if (conversation.workspaceId.isEmpty) return 'Workspace ID cannot be empty';
+    return 'Unknown validation error';
   }
 
   void _validateConversationPatch(ConversationPatch conversation) {
     if (!conversation.isValid) {
       throw ConversationValidationException(
-        conversation.title != null && conversation.title!.isEmpty
-            ? 'Conversation title cannot be empty'
-            : conversation.modelId != null && conversation.modelId!.isEmpty
-            ? 'Model ID cannot be empty'
-            : 'Unknown validation error',
+        _conversationPatchValidationMessage(conversation),
       );
     }
+  }
+
+  String _conversationPatchValidationMessage(ConversationPatch conversation) {
+    if (conversation.title != null && conversation.title!.isEmpty) {
+      return 'Conversation title cannot be empty';
+    }
+    if (conversation.modelId != null && conversation.modelId!.isEmpty) {
+      return 'Model ID cannot be empty';
+    }
+    return 'Unknown validation error';
   }
 
   ConversationEntity _mapToConversation(ConversationsTable conversationTable) {

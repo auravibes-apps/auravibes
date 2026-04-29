@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:widgetbook/widgetbook.dart';
 import 'package:widgetbook_annotation/widgetbook_annotation.dart' as widgetbook;
 
+const _endIndentLabel = 'End Indent';
+
 @widgetbook.UseCase(name: 'Horizontal Divider', type: AuraDivider)
 Widget basicHorizontalDividerUseCase(BuildContext context) {
   return AuraDivider(
     endIndent: context.knobs.double.slider(
-      label: 'End Indent',
+      label: _endIndentLabel,
       initialValue: 0,
       max: 100,
     ),
@@ -41,7 +43,7 @@ Widget verticalDividerUseCase(BuildContext context) {
       max: 1,
     ),
     endIndent: context.knobs.double.slider(
-      label: 'End Indent',
+      label: _endIndentLabel,
       initialValue: 0,
       max: 100,
     ),
@@ -63,7 +65,7 @@ Widget verticalDividerUseCase(BuildContext context) {
 @widgetbook.UseCase(name: 'Divider with Label', type: AuraDivider)
 Widget dividerWithLabelUseCase(BuildContext context) {
   return AuraDivider.withLabel(
-    label: Text('Section 1'),
+    label: const Text('Section 1'),
 
     height: context.knobs.double.slider(
       label: 'Height',
@@ -72,7 +74,7 @@ Widget dividerWithLabelUseCase(BuildContext context) {
       max: 1,
     ),
     endIndent: context.knobs.double.slider(
-      label: 'End Indent',
+      label: _endIndentLabel,
       initialValue: 0,
       max: 100,
     ),

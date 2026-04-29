@@ -87,7 +87,7 @@ void main() {
       expect(summary, contains('1 models removed'));
     });
 
-    test('copyWith preserves unchanged values', () {
+    test('withTiming preserves unchanged values', () {
       final result = ModelSyncResult(
         isSuccess: true,
         providersAdded: 3,
@@ -95,29 +95,31 @@ void main() {
         duration: const Duration(seconds: 10),
       );
 
-      final copy = result.copyWith(modelsAdded: 10);
+      final copy = result.withTiming(fullSync: true);
 
       expect(copy.isSuccess, true);
       expect(copy.providersAdded, 3);
-      expect(copy.modelsAdded, 10);
+      expect(copy.modelsAdded, 5);
       expect(copy.duration, const Duration(seconds: 10));
+      expect(copy.fullSync, true);
     });
 
-    test('copyWith overrides specified values', () {
+    test('withTiming overrides specified values', () {
       final result = ModelSyncResult(
         isSuccess: true,
         providersAdded: 3,
+        duration: const Duration(seconds: 10),
       );
 
-      final copy = result.copyWith(
-        isSuccess: false,
-        providersAdded: 0,
-        errors: ['Failed'],
+      final copy = result.withTiming(
+        duration: const Duration(seconds: 20),
+        fullSync: true,
       );
 
-      expect(copy.isSuccess, false);
-      expect(copy.providersAdded, 0);
-      expect(copy.errors, ['Failed']);
+      expect(copy.isSuccess, true);
+      expect(copy.providersAdded, 3);
+      expect(copy.duration, const Duration(seconds: 20));
+      expect(copy.fullSync, true);
     });
 
     test('defaults are correct', () {

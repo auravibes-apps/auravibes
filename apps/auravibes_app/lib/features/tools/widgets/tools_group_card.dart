@@ -105,8 +105,10 @@ class ToolsGroupCard extends HookConsumerWidget {
       context: context,
       title: Text(_kDeleteMcpTitle.tr()),
       message: Text(_kDeleteMcpConfirm.tr()),
-      confirmLabel: const TextLocale(LocaleKeys.common_delete),
-      cancelLabel: const TextLocale(LocaleKeys.common_cancel),
+      actions: const AuraConfirmDialogActions(
+        confirmLabel: TextLocale(LocaleKeys.common_delete),
+        cancelLabel: TextLocale(LocaleKeys.common_cancel),
+      ),
       isDestructive: true,
     );
 

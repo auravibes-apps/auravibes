@@ -93,18 +93,23 @@ class _ChatConversationScreen extends HookConsumerWidget {
     final conversation = conversationResult.conversation;
 
     final onToolsPress = useCallback(() async {
-      if (!context.mounted) return;
-
-      unawaited(
-        showDialog<void>(
-          context: context,
-          builder: (context) => ToolsManagementModal(
-            conversationId: conversation.id,
-            workspaceId: workspaceId,
-          ),
-        ),
+      _showToolsModal(
+        context: context,
+        workspaceId: workspaceId,
+        conversationId: conversation.id,
       );
     }, [ref, workspaceId, conversation.id]);
+
+    final onStop = useCallback(() async {
+      await _stopConversation(context, ref);
+    }, [ref]);
+
+    final onSendMessage = useCallback<Future<void> Function(String)>(
+      (message) async {
+        await _sendMessage(context, ref, message);
+      },
+      [ref],
+    );
 
     final busyState = ref.watch(conversationBusyStateProvider).asData?.value;
     final queuedDrafts = ref.watch(conversationQueuedDraftsProvider);
@@ -137,56 +142,76 @@ class _ChatConversationScreen extends HookConsumerWidget {
             child: ChatInputWidget(
               onToolsPress: onToolsPress,
               isBusy: busyState?.isBusy ?? false,
-              onStop: () async {
-                final conversationId = ref.read(conversationSelectedProvider);
-                try {
-                  await ref
-                      .read(stopConversationUsecaseProvider)
-                      .call(conversationId: conversationId);
-                } catch (error, stackTrace) {
-                  FlutterError.reportError(
-                    FlutterErrorDetails(
-                      exception: error,
-                      stack: stackTrace,
-                      library: 'chat_conversation_screen',
-                      context: ErrorDescription(
-                        'while stopping a conversation',
-                      ),
-                    ),
-                  );
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          LocaleKeys.chats_screens_chat_conversation_stop_error
-                              .tr(),
-                        ),
-                      ),
-                    );
-                  }
-                }
-              },
-              onSendMessage: (message) async {
-                final conversationId = ref.read(conversationSelectedProvider);
-                try {
-                  await ref
-                      .read(sendMessageUsecaseProvider)
-                      .call(
-                        conversationId: conversationId,
-                        content: message,
-                      );
-                } on Exception catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Failed to send message: $e')),
-                    );
-                  }
-                }
-              },
+              onStop: onStop,
+              onSendMessage: onSendMessage,
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+void _showToolsModal({
+  required BuildContext context,
+  required String workspaceId,
+  required String conversationId,
+}) {
+  if (!context.mounted) return;
+
+  unawaited(
+    showDialog<void>(
+      context: context,
+      builder: (context) => ToolsManagementModal(
+        conversationId: conversationId,
+        workspaceId: workspaceId,
+      ),
+    ),
+  );
+}
+
+Future<void> _stopConversation(BuildContext context, WidgetRef ref) async {
+  final conversationId = ref.read(conversationSelectedProvider);
+  try {
+    await ref
+        .read(stopConversationUsecaseProvider)
+        .call(conversationId: conversationId);
+  } catch (error, stackTrace) {
+    FlutterError.reportError(
+      FlutterErrorDetails(
+        exception: error,
+        stack: stackTrace,
+        library: 'chat_conversation_screen',
+        context: ErrorDescription('while stopping a conversation'),
+      ),
+    );
+    if (!context.mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          LocaleKeys.chats_screens_chat_conversation_stop_error.tr(),
+        ),
+      ),
+    );
+  }
+}
+
+Future<void> _sendMessage(
+  BuildContext context,
+  WidgetRef ref,
+  String message,
+) async {
+  final conversationId = ref.read(conversationSelectedProvider);
+  try {
+    await ref
+        .read(sendMessageUsecaseProvider)
+        .call(conversationId: conversationId, content: message);
+  } on Exception catch (e) {
+    if (!context.mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Failed to send message: $e')),
     );
   }
 }

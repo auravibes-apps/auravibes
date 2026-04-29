@@ -58,7 +58,7 @@ class ModelSyncService {
         fullSync: true,
       );
 
-      return result.copyWith(
+      return result.withTiming(
         duration: DateTime.now().difference(startTime),
         fullSync: true,
       );
@@ -224,30 +224,22 @@ class ModelSyncResult {
     return 'Synchronized $changeStr$durationStr';
   }
 
-  /// Creates a copy with updated values
-  ModelSyncResult copyWith({
-    bool? isSuccess,
+  /// Creates a copy with updated timing values.
+  ModelSyncResult withTiming({
     Duration? duration,
     bool? fullSync,
-    int? providersAdded,
-    int? providersUpdated,
-    int? providersRemoved,
-    int? modelsAdded,
-    int? modelsUpdated,
-    int? modelsRemoved,
-    List<String>? errors,
   }) {
     return ModelSyncResult(
-      isSuccess: isSuccess ?? this.isSuccess,
+      isSuccess: isSuccess,
       duration: duration ?? this.duration,
       fullSync: fullSync ?? this.fullSync,
-      providersAdded: providersAdded ?? this.providersAdded,
-      providersUpdated: providersUpdated ?? this.providersUpdated,
-      providersRemoved: providersRemoved ?? this.providersRemoved,
-      modelsAdded: modelsAdded ?? this.modelsAdded,
-      modelsUpdated: modelsUpdated ?? this.modelsUpdated,
-      modelsRemoved: modelsRemoved ?? this.modelsRemoved,
-      errors: errors ?? this.errors,
+      providersAdded: providersAdded,
+      providersUpdated: providersUpdated,
+      providersRemoved: providersRemoved,
+      modelsAdded: modelsAdded,
+      modelsUpdated: modelsUpdated,
+      modelsRemoved: modelsRemoved,
+      errors: errors,
     );
   }
 }

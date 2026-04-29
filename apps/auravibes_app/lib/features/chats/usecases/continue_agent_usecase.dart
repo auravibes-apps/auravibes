@@ -140,15 +140,10 @@ class ContinueAgentUsecase {
         accumulatedResult = accumulatedResult?.concat(chunk) ?? chunk;
         final currentResult = accumulatedResult!;
 
-        if (!hasAcknowledgedPendingUsers && pendingUserMessageIds.isNotEmpty) {
-          for (final pendingUserMessageId in pendingUserMessageIds) {
-            await messageRepository.patchMessage(
-              pendingUserMessageId,
-              const MessagePatch(status: MessageStatus.sent),
-            );
-          }
-          hasAcknowledgedPendingUsers = true;
-        }
+        hasAcknowledgedPendingUsers = await _acknowledgePendingUsers(
+          pendingUserMessageIds,
+          alreadyAcknowledged: hasAcknowledgedPendingUsers,
+        );
 
         if (firstMessage == null) {
           firstMessage = await messageRepository.createMessage(
@@ -245,29 +240,15 @@ class ContinueAgentUsecase {
         streamingController = null;
         persistenceFuture = null;
 
-        if (!hasAcknowledgedPendingUsers && pendingUserMessageIds.isNotEmpty) {
-          for (final pendingUserMessageId in pendingUserMessageIds) {
-            await messageRepository.patchMessage(
-              pendingUserMessageId,
-              const MessagePatch(status: MessageStatus.sent),
-            );
-          }
-          hasAcknowledgedPendingUsers = true;
-        }
+        hasAcknowledgedPendingUsers = await _acknowledgePendingUsers(
+          pendingUserMessageIds,
+          alreadyAcknowledged: hasAcknowledgedPendingUsers,
+        );
 
-        final stoppedMessage = firstMessage;
-        if (stoppedMessage != null) {
-          await messageRepository.patchMessage(
-            stoppedMessage.id,
-            MessagePatch(
-              content: accumulatedResult?.entityText,
-              metadata: _markPendingToolsStopped(
-                accumulatedResult?.entityMetadata,
-              ),
-              status: MessageStatus.sent,
-            ),
-          );
-        }
+        await _persistStoppedAssistantMessage(
+          firstMessage,
+          accumulatedResult,
+        );
 
         return ContinueAgentResult(
           messageId: firstMessage?.id ?? '',
@@ -281,49 +262,21 @@ class ContinueAgentUsecase {
       final completedResult = accumulatedResult!;
       final completedMessage = firstMessage!;
 
-      await messageRepository.patchMessage(
-        completedMessage.id,
-        .new(
-          metadata: completedResult.entityMetadata,
-          status: .sent,
-        ),
+      await _persistCompletedAssistantMessage(
+        completedMessage,
+        completedResult,
       );
     } on Object catch (error, stackTrace) {
-      if (!hasAcknowledgedPendingUsers && pendingUserMessageIds.isNotEmpty) {
-        try {
-          for (final pendingUserMessageId in pendingUserMessageIds) {
-            await messageRepository.patchMessage(
-              pendingUserMessageId,
-              const MessagePatch(status: MessageStatus.error),
-            );
-          }
-        } on Object catch (cleanupError, cleanupStackTrace) {
-          monitoringService.trackError(
-            'Failed to persist pending user error state',
-            error: cleanupError,
-            stackTrace: cleanupStackTrace,
-          );
-        }
-      }
+      await _markPendingUsersErrored(
+        pendingUserMessageIds,
+        alreadyAcknowledged: hasAcknowledgedPendingUsers,
+      );
 
       if (firstMessage == null) {
         Error.throwWithStackTrace(error, stackTrace);
       }
 
-      try {
-        await messageRepository.patchMessage(
-          firstMessage!.id,
-          const .new(
-            status: .error,
-          ),
-        );
-      } on Object catch (cleanupError, cleanupStackTrace) {
-        monitoringService.trackError(
-          'Failed to persist assistant error state',
-          error: cleanupError,
-          stackTrace: cleanupStackTrace,
-        );
-      }
+      await _markAssistantErrored(firstMessage!);
 
       Error.throwWithStackTrace(error, stackTrace);
     } finally {
@@ -341,6 +294,89 @@ class ContinueAgentUsecase {
       messageId: firstMessage!.id,
       hasToolCalls: accumulatedResult!.entityTools.isNotEmpty,
     );
+  }
+
+  Future<bool> _acknowledgePendingUsers(
+    List<String> pendingUserMessageIds, {
+    required bool alreadyAcknowledged,
+  }) async {
+    if (alreadyAcknowledged || pendingUserMessageIds.isEmpty) {
+      return alreadyAcknowledged;
+    }
+
+    for (final pendingUserMessageId in pendingUserMessageIds) {
+      await messageRepository.patchMessage(
+        pendingUserMessageId,
+        const MessagePatch(status: MessageStatus.sent),
+      );
+    }
+    return true;
+  }
+
+  Future<void> _persistStoppedAssistantMessage(
+    MessageEntity? message,
+    ChatResult<ChatMessage>? result,
+  ) async {
+    if (message == null) return;
+
+    await messageRepository.patchMessage(
+      message.id,
+      MessagePatch(
+        content: result?.entityText,
+        metadata: _markPendingToolsStopped(result?.entityMetadata),
+        status: MessageStatus.sent,
+      ),
+    );
+  }
+
+  Future<void> _persistCompletedAssistantMessage(
+    MessageEntity message,
+    ChatResult<ChatMessage> result,
+  ) async {
+    await messageRepository.patchMessage(
+      message.id,
+      .new(
+        metadata: result.entityMetadata,
+        status: .sent,
+      ),
+    );
+  }
+
+  Future<void> _markPendingUsersErrored(
+    List<String> pendingUserMessageIds, {
+    required bool alreadyAcknowledged,
+  }) async {
+    if (alreadyAcknowledged || pendingUserMessageIds.isEmpty) return;
+
+    try {
+      for (final pendingUserMessageId in pendingUserMessageIds) {
+        await messageRepository.patchMessage(
+          pendingUserMessageId,
+          const MessagePatch(status: MessageStatus.error),
+        );
+      }
+    } on Object catch (cleanupError, cleanupStackTrace) {
+      monitoringService.trackError(
+        'Failed to persist pending user error state',
+        error: cleanupError,
+        stackTrace: cleanupStackTrace,
+      );
+    }
+  }
+
+  Future<void> _markAssistantErrored(MessageEntity message) async {
+    try {
+      await messageRepository.patchMessage(
+        message.id,
+        const .new(status: .error),
+      );
+    } on Object catch (cleanupError, cleanupStackTrace) {
+      monitoringService.trackError(
+        'Failed to persist assistant error state',
+        error: cleanupError,
+        stackTrace: cleanupStackTrace,
+      );
+    }
   }
 
   MessageMetadataEntity? _markPendingToolsStopped(

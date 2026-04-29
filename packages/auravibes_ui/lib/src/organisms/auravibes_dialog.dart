@@ -249,8 +249,7 @@ Future<bool?> showAuraConfirmDialog({
   required BuildContext context,
   required Widget title,
   required Widget message,
-  Widget? confirmLabel,
-  Widget? cancelLabel,
+  AuraConfirmDialogActions actions = const AuraConfirmDialogActions(),
   bool isDestructive = false,
   bool barrierDismissible = true,
   AuraColorVariant? colorVariant,
@@ -264,8 +263,8 @@ Future<bool?> showAuraConfirmDialog({
       return AuraConfirmDialog(
         title: title,
         message: message,
-        confirmLabel: confirmLabel ?? const Text('Confirm'),
-        cancelLabel: cancelLabel ?? const Text('Cancel'),
+        confirmLabel: actions.confirmLabel ?? const Text('Confirm'),
+        cancelLabel: actions.cancelLabel ?? const Text('Cancel'),
         isDestructive: isDestructive,
         colorVariant: colorVariant,
       );
@@ -287,6 +286,21 @@ Future<bool?> showAuraConfirmDialog({
   );
 
   return result;
+}
+
+/// Labels used by [showAuraConfirmDialog].
+class AuraConfirmDialogActions {
+  /// Creates labels for confirmation dialog actions.
+  const AuraConfirmDialogActions({
+    this.confirmLabel,
+    this.cancelLabel,
+  });
+
+  /// Label for the confirm action.
+  final Widget? confirmLabel;
+
+  /// Label for the cancel action.
+  final Widget? cancelLabel;
 }
 
 /// Shows an alert dialog and dismisses on button tap.

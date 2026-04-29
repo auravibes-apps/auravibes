@@ -8,6 +8,9 @@ import 'package:auravibes_app/services/url/models/url_request.dart';
 import 'package:auravibes_app/services/url/models/url_response.dart';
 import 'package:auravibes_app/services/url/url_service.dart';
 
+const _privateNetworkUrlError =
+    'Private or local network URLs are not allowed.';
+
 final class UrlTool extends NativeToolEntity<String, String> {
   UrlTool({UrlService? urlService}) : _urlService = urlService;
 
@@ -188,7 +191,7 @@ final class UrlTool extends NativeToolEntity<String, String> {
   Future<String> _ensurePublicHost(String host) async {
     if (_isBlockedHostLabel(host)) {
       throw const FormatException(
-        'Private or local network URLs are not allowed.',
+        _privateNetworkUrlError,
       );
     }
 
@@ -196,7 +199,7 @@ final class UrlTool extends NativeToolEntity<String, String> {
     if (literalAddress != null) {
       if (_isPrivateAddress(literalAddress)) {
         throw const FormatException(
-          'Private or local network URLs are not allowed.',
+          _privateNetworkUrlError,
         );
       }
       return literalAddress.address;
@@ -205,7 +208,7 @@ final class UrlTool extends NativeToolEntity<String, String> {
     final addresses = await InternetAddress.lookup(host);
     if (addresses.isEmpty || addresses.any(_isPrivateAddress)) {
       throw const FormatException(
-        'Private or local network URLs are not allowed.',
+        _privateNetworkUrlError,
       );
     }
     return addresses.first.address;

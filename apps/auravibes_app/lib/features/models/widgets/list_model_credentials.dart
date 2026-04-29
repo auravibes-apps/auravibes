@@ -74,7 +74,7 @@ class ListModelConnectionsWidget extends ConsumerWidget {
               ),
             ),
             AuraText(
-              // TODO: color: Colors.grey,
+              color: AuraColorVariant.onSurfaceVariant,
               textAlign: TextAlign.center,
               child: TextLocale(
                 LocaleKeys.models_screens_list_empty_subtitle,
@@ -211,8 +211,10 @@ class _ModelConnectionCard extends ConsumerWidget {
           context: context,
         ),
       ),
-      confirmLabel: const TextLocale(LocaleKeys.common_delete),
-      cancelLabel: const TextLocale(LocaleKeys.common_cancel),
+      actions: const AuraConfirmDialogActions(
+        confirmLabel: TextLocale(LocaleKeys.common_delete),
+        cancelLabel: TextLocale(LocaleKeys.common_cancel),
+      ),
       isDestructive: true,
     );
 

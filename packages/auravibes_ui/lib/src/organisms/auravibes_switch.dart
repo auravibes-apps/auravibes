@@ -56,6 +56,7 @@ class AuraSwitch extends StatelessWidget {
 
     final trackColor = _getTrackColor(auraColors);
     final thumbColor = _getThumbColor(auraColors);
+    final loadingColor = _getLoadingColor(auraColors);
 
     return GestureDetector(
       onTap: isInteractive ? () => onChanged!(!value) : null,
@@ -96,9 +97,7 @@ class AuraSwitch extends StatelessWidget {
                             height: thumbSize * 0.6,
                             child: AuraLoadingCircle(
                               size: thumbSize * 0.6,
-                              color: value
-                                  ? auraColors.primary
-                                  : auraColors.onSurfaceVariant,
+                              color: loadingColor,
                             ),
                           ),
                         )
@@ -146,6 +145,11 @@ class AuraSwitch extends StatelessWidget {
   }
 
   Color _getThumbColor(AuraColorScheme colors) => colors.surface;
+
+  Color _getLoadingColor(AuraColorScheme colors) {
+    if (value) return colors.primary;
+    return colors.onSurfaceVariant;
+  }
 }
 
 /// The size of an [AuraSwitch].

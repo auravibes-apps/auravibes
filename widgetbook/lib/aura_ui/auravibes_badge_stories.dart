@@ -54,9 +54,9 @@ Widget customContentBadgeUseCase(BuildContext context) {
       label: 'size',
       options: AuraBadgeSize.values,
     ),
-    child: Row(
+    child: const Row(
       mainAxisSize: MainAxisSize.min,
-      children: const [
+      children: [
         Icon(Icons.star, size: 16, color: Colors.white),
         SizedBox(width: 4),
         Text('Premium', style: TextStyle(color: Colors.white, fontSize: 12)),
