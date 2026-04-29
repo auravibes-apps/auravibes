@@ -16,24 +16,10 @@ if ! command -v fvm >/dev/null 2>&1; then
   export PATH="$PATH:$HOME/.pub-cache/bin"
 fi
 
-if ! command -v jq >/dev/null 2>&1; then
-  echo "jq is required to parse .fvmrc."
-  exit 1
-fi
 
-FLUTTER_VERSION=$(jq -r '.flutter // empty' .fvmrc)
-if [ -z "$FLUTTER_VERSION" ]; then
-  echo "Unable to read Flutter version from .fvmrc."
-  exit 1
-fi
-
-fvm install "$FLUTTER_VERSION"
-fvm use "$FLUTTER_VERSION" --force --skip-pub-get
-fvm flutter --version
-
+fvm use
 fvm dart pub get
 fvm dart run melos bootstrap
-fvm dart run melos run generate --no-select
 '''
 
 [[actions]]

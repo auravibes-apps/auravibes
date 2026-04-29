@@ -5,7 +5,7 @@
     "https://raw.githubusercontent.com/weaveworks/eksctl/main/pkg/apis/eksctl.io/v1alpha5/assets/schema.json": "*.eksctl.yaml",
     "https://codemagic.io/codemagic-schema.json": "codemagic.yaml"
   },
-  "dart.flutterSdkPath": ".fvm/flutter_sdk",
+  "dart.flutterSdkPath": ".fvm/versions/3.41.8",
   "dart.sdkPath": ".fvm/flutter_sdk/bin/cache/dart-sdk",
   "dart.lineLength": 80,
   "dart.previewFlutterUiGuides": true,
@@ -23,9 +23,7 @@
     "pubspec.yaml": ".metadata, .packages, all_lint_rules.yaml, analysis_options.yaml, build.yaml, pubspec.lock, pubspec_overrides.yaml"
   },
   "[dart]": {
-    "editor.rulers": [
-      80
-    ],
+    "editor.rulers": [80],
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
       "source.fixAll": "explicit",
@@ -35,13 +33,8 @@
       "quickfix.create.constructorForFinalFields": "always"
     }
   },
-  "files.exclude": {
-    "**/*.freezed.dart": true,
-    "**/*.g.dart": true
-  },
-  "editor.rulers": [
-    120
-  ],
+  "files.exclude": {},
+  "editor.rulers": [120],
   "window.commandCenter": true,
   "debug.toolBarLocation": "commandCenter"
 }
