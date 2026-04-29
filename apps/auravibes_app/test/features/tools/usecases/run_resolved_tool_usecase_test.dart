@@ -92,6 +92,21 @@ void main() {
     );
   });
 
+  test('rejects MCP tools without a server binding', () {
+    expect(
+      () => usecase(
+        conversationId: 'conversation-1',
+        tool: ResolvedTool.mcp(
+          tableId: 'tool-1',
+          toolIdentifier: 'remote-tool',
+          mcpServerId: '',
+        ),
+        arguments: {'value': 1},
+      ),
+      throwsA(isA<StateError>()),
+    );
+  });
+
   test('provider creates the shared tool runner', () {
     final container = ProviderContainer();
     addTearDown(container.dispose);

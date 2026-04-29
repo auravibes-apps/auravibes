@@ -104,7 +104,7 @@ class RunResolvedToolUsecase {
     Map<String, dynamic> arguments,
   ) {
     final mcpServerId = tool.mcpServerId;
-    if (mcpServerId == null) {
+    if (mcpServerId == null || mcpServerId.isEmpty) {
       throw StateError(
         'MCP tool ${tool.toolIdentifier} is missing its server binding.',
       );

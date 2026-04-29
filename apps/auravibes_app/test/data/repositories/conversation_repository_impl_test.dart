@@ -212,6 +212,7 @@ void main() {
           repository.createConversation(toCreate),
           throwsA(isA<ConversationValidationException>()),
         );
+        verifyNever(mockDao.insertConversation(any));
       });
     });
 

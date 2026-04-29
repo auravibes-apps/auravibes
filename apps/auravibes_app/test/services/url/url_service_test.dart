@@ -197,7 +197,12 @@ void main() {
     test('streams string body when content-type is absent', () async {
       var streamedBody = '';
       final adapter = _FakeHttpClientAdapter(
-        onFetch: (_, requestStream, _) async {
+        onFetch: (options, requestStream, _) async {
+          expect(
+            options.headers.keys.map((key) => key.toLowerCase()),
+            isNot(contains(Headers.contentTypeHeader)),
+          );
+
           final chunks = await requestStream!.toList();
           streamedBody = String.fromCharCodes(
             chunks.expand((chunk) => chunk),
