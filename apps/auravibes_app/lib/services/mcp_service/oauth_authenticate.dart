@@ -25,7 +25,7 @@ class OauthAuthenticate {
 
   static const String _chars =
       'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890';
-  static final Random _rng = Random();
+  static final Random _rng = Random.secure();
 
   /// Generates a random string for PKCE code verifier
   static String _generateRandomString(int length) {
