@@ -1,0 +1,303 @@
+import 'package:auravibes_app/domain/entities/messages.dart';
+import 'package:auravibes_app/features/chats/providers/messages_providers.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_tool_approval_card.dart';
+import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+
+void main() {
+  Widget buildSubject({
+    required List<Object> overrides,
+  }) {
+    return EasyLocalization(
+      supportedLocales: const [Locale('en')],
+      path: 'assets/i18n',
+      fallbackLocale: const Locale('en'),
+      startLocale: const Locale('en'),
+      useFallbackTranslations: true,
+      useOnlyLangCode: true,
+      child: ProviderScope(
+        overrides: overrides.cast(),
+        child: Builder(
+          builder: (context) {
+            return MaterialApp(
+              locale: context.locale,
+              supportedLocales: context.supportedLocales,
+              localizationsDelegates: context.localizationDelegates,
+              home: Theme(
+                data: ThemeData(extensions: [AuraTheme.light]),
+                child: const Material(
+                  child: ChatToolApprovalCard(),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  PendingToolCall _createPendingToolCall({
+    String toolCallId = 'tc-1',
+    String messageId = 'msg-1',
+    String toolName = 'built_in_1_read_file',
+  }) {
+    return PendingToolCall(
+      toolCall: MessageToolCallEntity(
+        id: toolCallId,
+        name: toolName,
+        argumentsRaw: '{"input": "test.txt"}',
+      ),
+      messageId: messageId,
+    );
+  }
+
+  Future<void> pumpAndInit(WidgetTester tester, Widget widget) async {
+    await tester.runAsync(() async {
+      await tester.pumpWidget(widget);
+    });
+    await tester.pump();
+    await tester.pump();
+  }
+
+  group('ChatToolApprovalCard', () {
+    testWidgets('renders SizedBox.shrink when no pending calls', (
+      tester,
+    ) async {
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          overrides: [
+            pendingToolCallsProvider.overrideWith((ref) => []),
+          ],
+        ),
+      );
+
+      final sizedBoxes = tester.widgetList<SizedBox>(find.byType(SizedBox));
+      expect(
+        sizedBoxes.any((box) => box.width == 0 && box.height == 0),
+        isTrue,
+      );
+    });
+
+    testWidgets('renders approval card when pending calls exist', (
+      tester,
+    ) async {
+      final pendingCalls = [_createPendingToolCall()];
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          overrides: [
+            pendingToolCallsProvider.overrideWith((ref) => pendingCalls),
+          ],
+        ),
+      );
+
+      expect(find.byIcon(Icons.build_outlined), findsOneWidget);
+    });
+
+    testWidgets('shows navigation chevrons for multiple pending calls', (
+      tester,
+    ) async {
+      final pendingCalls = [
+        _createPendingToolCall(),
+        _createPendingToolCall(toolCallId: 'tc-2'),
+      ];
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          overrides: [
+            pendingToolCallsProvider.overrideWith((ref) => pendingCalls),
+          ],
+        ),
+      );
+
+      expect(find.byIcon(Icons.chevron_left), findsOneWidget);
+      expect(find.byIcon(Icons.chevron_right), findsOneWidget);
+    });
+
+    testWidgets('shows formatted tool display name', (tester) async {
+      final pendingCalls = [
+        _createPendingToolCall(),
+      ];
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          overrides: [
+            pendingToolCallsProvider.overrideWith((ref) => pendingCalls),
+          ],
+        ),
+      );
+
+      expect(find.text('Read File'), findsOneWidget);
+    });
+
+    testWidgets('shows decoded arguments when available', (tester) async {
+      const toolCall = MessageToolCallEntity(
+        id: 'tc-1',
+        name: 'built_in_1_search',
+        argumentsRaw: '{"query": "test query"}',
+      );
+      final pendingCalls = [
+        const PendingToolCall(toolCall: toolCall, messageId: 'msg-1'),
+      ];
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          overrides: [
+            pendingToolCallsProvider.overrideWith((ref) => pendingCalls),
+          ],
+        ),
+      );
+
+      expect(find.textContaining('query'), findsOneWidget);
+    });
+
+    testWidgets('renders confirmation buttons', (tester) async {
+      final pendingCalls = [_createPendingToolCall()];
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          overrides: [
+            pendingToolCallsProvider.overrideWith((ref) => pendingCalls),
+          ],
+        ),
+      );
+
+      expect(find.text('Allow Once'), findsOneWidget);
+      expect(find.text('Skip'), findsOneWidget);
+      expect(find.text('Stop All'), findsOneWidget);
+    });
+
+    testWidgets('renders SizedBox.shrink when async has error', (
+      tester,
+    ) async {
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          overrides: [
+            pendingToolCallsProvider.overrideWith(
+              (ref) => throw Exception('fail'),
+            ),
+          ],
+        ),
+      );
+
+      final sizedBoxes = tester.widgetList<SizedBox>(find.byType(SizedBox));
+      expect(
+        sizedBoxes.any((box) => box.width == 0 && box.height == 0),
+        isTrue,
+      );
+    });
+
+    testWidgets('shows Allow for Conversation button', (tester) async {
+      final pendingCalls = [_createPendingToolCall()];
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          overrides: [
+            pendingToolCallsProvider.overrideWith((ref) => pendingCalls),
+          ],
+        ),
+      );
+
+      expect(find.text('Allow for Conversation'), findsOneWidget);
+    });
+
+    testWidgets('navigates to next pending call on chevron right', (
+      tester,
+    ) async {
+      final pendingCalls = [
+        _createPendingToolCall(),
+        _createPendingToolCall(
+          toolCallId: 'tc-2',
+          toolName: 'built_in_1_search',
+        ),
+      ];
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          overrides: [
+            pendingToolCallsProvider.overrideWith((ref) => pendingCalls),
+          ],
+        ),
+      );
+
+      expect(find.text('Read File'), findsOneWidget);
+
+      await tester.tap(find.byIcon(Icons.chevron_right));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Search'), findsOneWidget);
+    });
+
+    testWidgets('navigates to previous pending call on chevron left', (
+      tester,
+    ) async {
+      final pendingCalls = [
+        _createPendingToolCall(),
+        _createPendingToolCall(
+          toolCallId: 'tc-2',
+          toolName: 'built_in_1_search',
+        ),
+      ];
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          overrides: [
+            pendingToolCallsProvider.overrideWith((ref) => pendingCalls),
+          ],
+        ),
+      );
+
+      await tester.tap(find.byIcon(Icons.chevron_right));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Search'), findsOneWidget);
+
+      await tester.tap(find.byIcon(Icons.chevron_left));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Read File'), findsOneWidget);
+    });
+
+    testWidgets('shows pending count text', (tester) async {
+      final pendingCalls = [
+        _createPendingToolCall(),
+        _createPendingToolCall(toolCallId: 'tc-2'),
+      ];
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          overrides: [
+            pendingToolCallsProvider.overrideWith((ref) => pendingCalls),
+          ],
+        ),
+      );
+
+      expect(find.textContaining('1'), findsOneWidget);
+      expect(find.textContaining('2'), findsOneWidget);
+    });
+
+    testWidgets('shows SizedBox.shrink when pending calls empty list', (
+      tester,
+    ) async {
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          overrides: [
+            pendingToolCallsProvider.overrideWith((ref) => <PendingToolCall>[]),
+          ],
+        ),
+      );
+
+      final sizedBoxes = tester.widgetList<SizedBox>(find.byType(SizedBox));
+      expect(
+        sizedBoxes.any((box) => box.width == 0 && box.height == 0),
+        isTrue,
+      );
+    });
+  });
+}

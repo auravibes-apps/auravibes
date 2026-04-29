@@ -38,4 +38,36 @@ void main() {
 
     expect(result.authenticationType, isA<McpAuthenticationTypeBearerToken>());
   });
+
+  test('throws when bearer type selected but token is null', () async {
+    final usecase = BuildMcpServerToCreateUseCase(authenticator: authenticator);
+    const form = McpServerFormToCreate(
+      name: 'Server',
+      url: 'https://example.com',
+      transport: McpTransportTypeSSE(),
+      authenticationType: McpAuthenticationTypeOptions.bearerToken,
+      bearerToken: null,
+    );
+
+    expect(
+      () => usecase.call(form),
+      throwsA(isA<Exception>()),
+    );
+  });
+
+  test('throws when oauth discovery fails', () async {
+    final usecase = BuildMcpServerToCreateUseCase(authenticator: authenticator);
+    const form = McpServerFormToCreate(
+      name: 'Server',
+      url: 'https://invalid-oauth.example.com',
+      transport: McpTransportTypeSSE(),
+      authenticationType: McpAuthenticationTypeOptions.oauth,
+      bearerToken: null,
+    );
+
+    expect(
+      () => usecase.call(form),
+      throwsA(isA<Exception>()),
+    );
+  });
 }

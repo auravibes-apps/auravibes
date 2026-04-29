@@ -155,5 +155,54 @@ void main() {
         ),
       ).called(1);
     });
+
+    test('fetches message by correct messageId', () async {
+      when(messageRepository.getMessageById(messageId)).thenAnswer(
+        (_) async => null,
+      );
+
+      await usecase.call(messageId: messageId);
+
+      verify(messageRepository.getMessageById(messageId)).called(1);
+    });
+
+    test('fetches conversation using message conversationId', () async {
+      when(messageRepository.getMessageById(messageId)).thenAnswer(
+        (_) async => message,
+      );
+      when(
+        conversationRepository.getConversationById(conversationId),
+      ).thenAnswer((_) async => null);
+
+      await usecase.call(messageId: messageId);
+
+      verify(
+        conversationRepository.getConversationById(conversationId),
+      ).called(1);
+    });
+
+    test('passes correct workspaceId to runAllowedTools', () async {
+      when(messageRepository.getMessageById(messageId)).thenAnswer(
+        (_) async => message,
+      );
+      when(
+        conversationRepository.getConversationById(conversationId),
+      ).thenAnswer((_) async => conversation);
+      when(
+        runAllowedToolsUsecase.call(
+          conversationId: anyNamed('conversationId'),
+          workspaceId: anyNamed('workspaceId'),
+        ),
+      ).thenAnswer((_) async => AgentIterationDecision.waitForToolApproval);
+
+      await usecase.call(messageId: messageId);
+
+      verify(
+        runAllowedToolsUsecase.call(
+          conversationId: conversationId,
+          workspaceId: workspaceId,
+        ),
+      ).called(1);
+    });
   });
 }

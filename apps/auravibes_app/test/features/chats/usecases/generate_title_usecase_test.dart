@@ -1,0 +1,322 @@
+import 'dart:async';
+
+import 'package:auravibes_app/domain/entities/api_model_provider.dart';
+import 'package:auravibes_app/domain/entities/conversation.dart';
+import 'package:auravibes_app/domain/entities/model_connection_entities.dart';
+import 'package:auravibes_app/domain/entities/workspace_model_selection_entities.dart';
+import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
+import 'package:auravibes_app/features/chats/providers/streaming_runtime_provider.dart';
+import 'package:auravibes_app/features/chats/usecases/generate_title_usecase.dart';
+import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
+import 'package:auravibes_app/services/monitoring_service.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mockito/annotations.dart';
+import 'package:mockito/mockito.dart';
+
+import 'generate_title_usecase_test.mocks.dart';
+
+@GenerateMocks([
+  ConversationRepository,
+  ChatbotService,
+  MonitoringService,
+])
+void main() {
+  group('GenerateTitleUsecase', () {
+    late MockConversationRepository conversationRepo;
+    late MockChatbotService chatbotService;
+    late TitlesStreamingRuntime titlesStreamingRuntime;
+    late MockMonitoringService monitoringService;
+    late GenerateTitleUsecase usecase;
+
+    final modelSelection = WorkspaceModelSelectionWithConnectionEntity(
+      workspaceModelSelection: WorkspaceModelSelectionEntity(
+        id: 'model-sel-1',
+        modelId: 'gpt-4',
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
+        modelConnectionId: 'conn-1',
+      ),
+      modelConnection: ModelConnectionEntity(
+        id: 'conn-1',
+        name: 'OpenAI',
+        key: 'test-key',
+        modelId: 'gpt-4',
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
+        workspaceId: 'ws-1',
+      ),
+      modelsProvider: const ApiModelProviderEntity(
+        id: 'provider-1',
+        name: 'OpenAI',
+        type: null,
+      ),
+    );
+
+    setUp(() {
+      conversationRepo = MockConversationRepository();
+      chatbotService = MockChatbotService();
+      titlesStreamingRuntime = TitlesStreamingRuntime(
+        updateTitle: (_, _) {},
+        removeTitle: (_) {},
+      );
+      monitoringService = MockMonitoringService();
+      usecase = GenerateTitleUsecase(
+        conversationRepo: conversationRepo,
+        chatbotService: chatbotService,
+        titlesStreamingRuntime: titlesStreamingRuntime,
+        monitoringService: monitoringService,
+      );
+
+      when(conversationRepo.patchConversation(any, any)).thenAnswer(
+        (_) async => ConversationEntity(
+          id: 'conv-1',
+          title: 'Patched',
+          workspaceId: 'ws-1',
+          isPinned: false,
+          createdAt: DateTime(2026),
+          updatedAt: DateTime(2026),
+        ),
+      );
+      monitoringService = MockMonitoringService();
+      usecase = GenerateTitleUsecase(
+        conversationRepo: conversationRepo,
+        chatbotService: chatbotService,
+        titlesStreamingRuntime: titlesStreamingRuntime,
+        monitoringService: monitoringService,
+      );
+    });
+
+    test('calls chatbotService.streamTitle with correct args', () async {
+      final controller = StreamController<String>();
+      when(chatbotService.streamTitle(any, any)).thenAnswer(
+        (_) => controller.stream,
+      );
+
+      usecase.call(
+        conversationId: 'conv-1',
+        firstMessage: 'Hello',
+        workspaceModelSelection: modelSelection,
+      );
+
+      verify(
+        chatbotService.streamTitle(modelSelection, 'Hello'),
+      ).called(1);
+
+      await controller.close();
+    });
+
+    test(
+      'removeTitle is called on stream done',
+      () async {
+        final removedIds = <String>[];
+        final runtime = TitlesStreamingRuntime(
+          updateTitle: (_, _) {},
+          removeTitle: removedIds.add,
+        );
+
+        final localUsecase = GenerateTitleUsecase(
+          conversationRepo: conversationRepo,
+          chatbotService: chatbotService,
+          titlesStreamingRuntime: runtime,
+          monitoringService: monitoringService,
+        );
+
+        final controller = StreamController<String>();
+        when(chatbotService.streamTitle(any, any)).thenAnswer(
+          (_) => controller.stream,
+        );
+
+        localUsecase.call(
+          conversationId: 'conv-1',
+          firstMessage: 'Hello',
+          workspaceModelSelection: modelSelection,
+        );
+
+        await controller.close();
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+
+        expect(removedIds, contains('conv-1'));
+      },
+    );
+
+    test('updateTitle is called for each emitted title', () async {
+      final updatedTitles = <String>[];
+      final runtime = TitlesStreamingRuntime(
+        updateTitle: (_, title) => updatedTitles.add(title),
+        removeTitle: (_) {},
+      );
+
+      final localUsecase = GenerateTitleUsecase(
+        conversationRepo: conversationRepo,
+        chatbotService: chatbotService,
+        titlesStreamingRuntime: runtime,
+        monitoringService: monitoringService,
+      );
+
+      final controller = StreamController<String>();
+      when(chatbotService.streamTitle(any, any)).thenAnswer(
+        (_) => controller.stream,
+      );
+
+      localUsecase.call(
+        conversationId: 'conv-1',
+        firstMessage: 'Hello',
+        workspaceModelSelection: modelSelection,
+      );
+
+      controller.add('Title 1');
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      controller.add('Title 2');
+      await controller.close();
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+
+      expect(updatedTitles, containsAll(['Title 1', 'Title 2']));
+    });
+
+    test('patches conversation with streamed titles', () async {
+      final controller = StreamController<String>();
+      when(chatbotService.streamTitle(any, any)).thenAnswer(
+        (_) => controller.stream,
+      );
+
+      usecase.call(
+        conversationId: 'conv-1',
+        firstMessage: 'Hello',
+        workspaceModelSelection: modelSelection,
+      );
+
+      controller.add('New Title');
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      await controller.close();
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+
+      verify(conversationRepo.patchConversation(any, any)).called(1);
+    });
+
+    test('patches with latest title when multiple titles emitted', () async {
+      final controller = StreamController<String>();
+      when(chatbotService.streamTitle(any, any)).thenAnswer(
+        (_) => controller.stream,
+      );
+
+      usecase.call(
+        conversationId: 'conv-1',
+        firstMessage: 'Hello',
+        workspaceModelSelection: modelSelection,
+      );
+
+      controller.add('Title A');
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      controller.add('Title B');
+      await controller.close();
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+
+      verify(
+        conversationRepo.patchConversation(any, any),
+      ).called(greaterThanOrEqualTo(1));
+    });
+
+    test('works with empty first message', () async {
+      final controller = StreamController<String>();
+      when(chatbotService.streamTitle(any, any)).thenAnswer(
+        (_) => controller.stream,
+      );
+
+      usecase.call(
+        conversationId: 'conv-empty',
+        firstMessage: '',
+        workspaceModelSelection: modelSelection,
+      );
+
+      verify(chatbotService.streamTitle(modelSelection, '')).called(1);
+      await controller.close();
+    });
+
+    test('tracks error via monitoringService when stream fails', () async {
+      final controller = StreamController<String>();
+      when(chatbotService.streamTitle(any, any)).thenAnswer(
+        (_) => controller.stream,
+      );
+
+      usecase.call(
+        conversationId: 'conv-err',
+        firstMessage: 'Hello',
+        workspaceModelSelection: modelSelection,
+      );
+
+      controller.add('Partial');
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      await controller.close();
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+
+      verifyNever(
+        monitoringService.trackError(
+          any,
+          error: anyNamed('error'),
+          stackTrace: anyNamed('stackTrace'),
+        ),
+      );
+    });
+
+    test('removeTitle called when stream completes without error', () async {
+      final removedIds = <String>[];
+      final runtime = TitlesStreamingRuntime(
+        updateTitle: (_, _) {},
+        removeTitle: removedIds.add,
+      );
+      final localUsecase = GenerateTitleUsecase(
+        conversationRepo: conversationRepo,
+        chatbotService: chatbotService,
+        titlesStreamingRuntime: runtime,
+        monitoringService: monitoringService,
+      );
+
+      final controller = StreamController<String>();
+      when(chatbotService.streamTitle(any, any)).thenAnswer(
+        (_) => controller.stream,
+      );
+
+      localUsecase.call(
+        conversationId: 'conv-done',
+        firstMessage: 'Hello',
+        workspaceModelSelection: modelSelection,
+      );
+
+      await controller.close();
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+
+      expect(removedIds, contains('conv-done'));
+    });
+
+    test('coalescing save patches final title to repo', () async {
+      final controller = StreamController<String>();
+      when(chatbotService.streamTitle(any, any)).thenAnswer(
+        (_) => controller.stream,
+      );
+
+      usecase.call(
+        conversationId: 'conv-final',
+        firstMessage: 'Hello',
+        workspaceModelSelection: modelSelection,
+      );
+
+      controller.add('Final Title');
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      await controller.close();
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+
+      verify(
+        conversationRepo.patchConversation(
+          'conv-final',
+          argThat(
+            isA<ConversationPatch>().having(
+              (p) => p.title,
+              'title',
+              'Final Title',
+            ),
+          ),
+        ),
+      ).called(greaterThanOrEqualTo(1));
+    });
+  });
+}

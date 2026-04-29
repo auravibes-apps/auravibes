@@ -1,0 +1,121 @@
+import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
+import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+
+void main() {
+  Widget buildSubject({
+    required void Function(String) onSendMessage,
+    VoidCallback? onToolsPress,
+    bool disabled = false,
+    bool isBusy = false,
+    VoidCallback? onStop,
+  }) {
+    return EasyLocalization(
+      supportedLocales: const [Locale('en')],
+      path: 'assets/i18n',
+      fallbackLocale: const Locale('en'),
+      startLocale: const Locale('en'),
+      useFallbackTranslations: true,
+      useOnlyLangCode: true,
+      child: ProviderScope(
+        child: Builder(
+          builder: (context) {
+            return MaterialApp(
+              locale: context.locale,
+              supportedLocales: context.supportedLocales,
+              localizationsDelegates: context.localizationDelegates,
+              home: Theme(
+                data: ThemeData(extensions: [AuraTheme.light]),
+                child: Material(
+                  child: ChatInputWidget(
+                    onSendMessage: onSendMessage,
+                    onToolsPress: onToolsPress,
+                    disabled: disabled,
+                    isBusy: isBusy,
+                    onStop: onStop,
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Future<void> pumpAndInit(WidgetTester tester, Widget widget) async {
+    await tester.runAsync(() async {
+      await tester.pumpWidget(widget);
+    });
+    await tester.pump();
+    await tester.pump();
+    await tester.pump();
+  }
+
+  testWidgets('renders without error', (tester) async {
+    await pumpAndInit(tester, buildSubject(onSendMessage: (_) {}));
+
+    expect(find.byType(ChatInputWidget), findsOneWidget);
+    expect(find.byType(AuraInput), findsOneWidget);
+  });
+
+  testWidgets('shows tools button when onToolsPress provided', (tester) async {
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        onSendMessage: (_) {},
+        onToolsPress: () {},
+      ),
+    );
+
+    expect(find.byIcon(Icons.build_circle_outlined), findsOneWidget);
+  });
+
+  testWidgets('hides tools button when onToolsPress is null', (tester) async {
+    await pumpAndInit(tester, buildSubject(onSendMessage: (_) {}));
+
+    expect(find.byIcon(Icons.build_circle_outlined), findsNothing);
+  });
+
+  testWidgets('shows stop button when isBusy and onStop provided', (
+    tester,
+  ) async {
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        onSendMessage: (_) {},
+        isBusy: true,
+        onStop: () {},
+      ),
+    );
+
+    expect(find.byIcon(Icons.stop_rounded), findsOneWidget);
+  });
+
+  testWidgets('hides stop button when isBusy is false', (tester) async {
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        onSendMessage: (_) {},
+        onStop: () {},
+      ),
+    );
+
+    expect(find.byIcon(Icons.stop_rounded), findsNothing);
+  });
+
+  testWidgets('hides stop button when onStop is null', (tester) async {
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        onSendMessage: (_) {},
+        isBusy: true,
+      ),
+    );
+
+    expect(find.byIcon(Icons.stop_rounded), findsNothing);
+  });
+}

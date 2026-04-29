@@ -1,0 +1,407 @@
+import 'package:auravibes_app/domain/entities/workspace_tool.dart';
+import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dart';
+import 'package:auravibes_app/features/tools/providers/workspace_tools_provider.dart';
+import 'package:auravibes_app/services/tools/user_tools_entity.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:riverpod/riverpod.dart';
+
+WorkspaceToolEntity _tool({
+  String id = 'tool-1',
+  String toolId = 'calculator',
+  bool isEnabled = true,
+  ToolPermissionMode permissionMode = ToolPermissionMode.alwaysAsk,
+  String? config,
+}) {
+  return WorkspaceToolEntity(
+    id: id,
+    workspaceId: 'ws1',
+    toolId: toolId,
+    isEnabled: isEnabled,
+    permissionMode: permissionMode,
+    createdAt: DateTime(2026),
+    updatedAt: DateTime(2026),
+    config: config,
+  );
+}
+
+class _FakeWorkspaceToolsRepository implements WorkspaceToolsRepository {
+  List<WorkspaceToolEntity> tools = [];
+  List<String> removedIds = [];
+  Map<String, WorkspaceToolEntity> updatedTools = {};
+  bool removeResult = true;
+
+  @override
+  Future<List<WorkspaceToolEntity>> getWorkspaceTools(
+    String workspaceId,
+  ) async => tools;
+
+  @override
+  Future<WorkspaceToolEntity> setWorkspaceToolEnabled(
+    String workspaceId,
+    String toolType, {
+    required bool isEnabled,
+  }) async {
+    final tool = tools.firstWhere((t) => t.toolId == toolType);
+    final updated = tool.copyWith(isEnabled: isEnabled);
+    tools = tools.map((t) => t.id == tool.id ? updated : t).toList();
+    return updated;
+  }
+
+  @override
+  Future<WorkspaceToolEntity> setToolEnabledById(
+    String id, {
+    required bool isEnabled,
+  }) async {
+    final tool = tools.firstWhere((t) => t.id == id);
+    final updated = tool.copyWith(isEnabled: isEnabled);
+    updatedTools[id] = updated;
+    return updated;
+  }
+
+  @override
+  Future<bool> removeWorkspaceToolById(String id) async {
+    removedIds.add(id);
+    return removeResult;
+  }
+
+  @override
+  Future<WorkspaceToolEntity> setToolPermissionMode(
+    String id, {
+    required ToolPermissionMode permissionMode,
+  }) async {
+    final tool = tools.firstWhere((t) => t.id == id);
+    final updated = tool.copyWith(permissionMode: permissionMode);
+    updatedTools[id] = updated;
+    return updated;
+  }
+
+  @override
+  Future<List<WorkspaceToolEntity>> patchWorkspaceToolConfig(
+    String workspaceId,
+    String toolType,
+    String? config,
+  ) async {
+    final tool = tools.firstWhere((t) => t.toolId == toolType);
+    final updated = tool.copyWith(config: config);
+    updatedTools[tool.id] = updated;
+    return [updated];
+  }
+
+  @override
+  Future<List<WorkspaceToolEntity>> getEnabledWorkspaceTools(
+    String workspaceId,
+  ) async => tools.where((t) => t.isEnabled).toList();
+
+  @override
+  Future<WorkspaceToolEntity?> getWorkspaceTool(
+    String workspaceId,
+    String toolType,
+  ) async => tools.where((t) => t.toolId == toolType).firstOrNull;
+
+  @override
+  Future<WorkspaceToolEntity?> getWorkspaceToolByToolName({
+    required String toolGroupId,
+    required String toolName,
+  }) async => null;
+
+  @override
+  Future<bool> isWorkspaceToolEnabled(String workspaceId, String toolType) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<String?> getWorkspaceToolConfig(
+    String workspaceId,
+    String toolType,
+  ) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<bool> removeWorkspaceTool(
+    String workspaceId,
+    String toolType,
+  ) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<int> getWorkspaceToolsCount(String workspaceId) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<int> getEnabledWorkspaceToolsCount(String workspaceId) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> copyWorkspaceToolsToConversation(
+    String workspaceId,
+    String conversationId,
+  ) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<bool> validateWorkspaceToolSetting(
+    String workspaceId,
+    String toolType, {
+    required bool isEnabled,
+    String? config,
+  }) {
+    throw UnimplementedError();
+  }
+}
+
+void main() {
+  group('workspaceToolRowProvider', () {
+    late _FakeWorkspaceToolsRepository repository;
+    late ProviderContainer container;
+
+    setUp(() {
+      repository = _FakeWorkspaceToolsRepository();
+      container = ProviderContainer(
+        overrides: [
+          workspaceToolsRepositoryProvider.overrideWithValue(repository),
+          workspaceToolIndexProvider.overrideWithValue(0),
+        ],
+      );
+    });
+
+    tearDown(() => container.dispose());
+
+    test('returns null when workspace tools is loading', () {
+      final result = container.read(workspaceToolRowProvider('ws1'));
+      expect(result, isNull);
+    });
+
+    test('returns null when index is negative', () {
+      final container2 = ProviderContainer(
+        overrides: [
+          workspaceToolsRepositoryProvider.overrideWithValue(repository),
+          workspaceToolIndexProvider.overrideWithValue(-1),
+        ],
+      );
+      addTearDown(container2.dispose);
+
+      final result = container2.read(workspaceToolRowProvider('ws1'));
+      expect(result, isNull);
+    });
+  });
+
+  group('WorkspaceToolsNotifier', () {
+    late _FakeWorkspaceToolsRepository repository;
+    late ProviderContainer container;
+
+    setUp(() {
+      repository = _FakeWorkspaceToolsRepository();
+      container = ProviderContainer(
+        overrides: [
+          workspaceToolsRepositoryProvider.overrideWithValue(repository),
+        ],
+      );
+    });
+
+    tearDown(() => container.dispose());
+
+    test('build loads workspace tools from repository', () async {
+      repository.tools = [_tool(id: 't1'), _tool(id: 't2', toolId: 'search')];
+
+      final result = await container.read(
+        workspaceToolsProvider('ws1').future,
+      );
+      expect(result.length, 2);
+      expect(result[0].id, 't1');
+    });
+
+    test('setToolEnabled updates tool in state', () async {
+      repository.tools = [_tool(id: 't1')];
+
+      container.listen(
+        workspaceToolsProvider('ws1'),
+        (_, _) {},
+        fireImmediately: true,
+      );
+      await container.read(workspaceToolsProvider('ws1').future);
+
+      await container
+          .read(workspaceToolsProvider('ws1').notifier)
+          .setToolEnabled('t1', isEnabled: false);
+
+      final result = await container.read(
+        workspaceToolsProvider('ws1').future,
+      );
+      expect(result.first.isEnabled, isFalse);
+    });
+
+    test('removeToolById removes tool from state', () async {
+      repository.tools = [_tool(id: 't1'), _tool(id: 't2')];
+
+      container.listen(
+        workspaceToolsProvider('ws1'),
+        (_, _) {},
+        fireImmediately: true,
+      );
+      await container.read(workspaceToolsProvider('ws1').future);
+
+      final success = await container
+          .read(workspaceToolsProvider('ws1').notifier)
+          .removeToolById('t1');
+
+      expect(success, isTrue);
+      expect(repository.removedIds, ['t1']);
+    });
+
+    test('setToolPermissionMode updates permission', () async {
+      repository.tools = [_tool(id: 't1')];
+
+      container.listen(
+        workspaceToolsProvider('ws1'),
+        (_, _) {},
+        fireImmediately: true,
+      );
+      await container.read(workspaceToolsProvider('ws1').future);
+
+      await container
+          .read(workspaceToolsProvider('ws1').notifier)
+          .setToolPermissionMode(
+            't1',
+            permissionMode: ToolPermissionMode.alwaysAllow,
+          );
+
+      expect(
+        repository.updatedTools['t1']?.permissionMode,
+        ToolPermissionMode.alwaysAllow,
+      );
+    });
+
+    test('addTool enables tool and invalidates self', () async {
+      repository.tools = [_tool(id: 't1', isEnabled: false)];
+
+      container.listen(
+        workspaceToolsProvider('ws1'),
+        (_, _) {},
+        fireImmediately: true,
+      );
+      await container.read(workspaceToolsProvider('ws1').future);
+
+      await container
+          .read(workspaceToolsProvider('ws1').notifier)
+          .addTool(UserToolType.calculator);
+
+      expect(repository.tools.first.isEnabled, isTrue);
+    });
+
+    test('updateToolConfig patches config and replaces tool', () async {
+      repository.tools = [_tool(id: 't1')];
+
+      container.listen(
+        workspaceToolsProvider('ws1'),
+        (_, _) {},
+        fireImmediately: true,
+      );
+      await container.read(workspaceToolsProvider('ws1').future);
+
+      await container
+          .read(workspaceToolsProvider('ws1').notifier)
+          .updateToolConfig('calculator', '{"key":"val"}');
+
+      expect(repository.updatedTools['t1']?.config, '{"key":"val"}');
+    });
+
+    test('removeToolById returns false when repository fails', () async {
+      final failRepo = _FakeWorkspaceToolsRepository()
+        ..tools = [_tool(id: 't1')]
+        ..removeResult = false;
+
+      final failContainer = ProviderContainer(
+        overrides: [
+          workspaceToolsRepositoryProvider.overrideWithValue(failRepo),
+        ],
+      );
+      addTearDown(failContainer.dispose);
+
+      failContainer.listen(
+        workspaceToolsProvider('ws1'),
+        (_, _) {},
+        fireImmediately: true,
+      );
+      await failContainer.read(workspaceToolsProvider('ws1').future);
+
+      final success = await failContainer
+          .read(workspaceToolsProvider('ws1').notifier)
+          .removeToolById('t1');
+
+      expect(success, isFalse);
+    });
+  });
+
+  group('workspaceToolRowProvider', () {
+    test('returns null when index equals list length', () async {
+      final repository = _FakeWorkspaceToolsRepository()
+        ..tools = [_tool(id: 't1')];
+      final container2 = ProviderContainer(
+        overrides: [
+          workspaceToolsRepositoryProvider.overrideWithValue(repository),
+          workspaceToolIndexProvider.overrideWithValue(1),
+        ],
+      );
+      addTearDown(container2.dispose);
+
+      final result = container2.read(workspaceToolRowProvider('ws1'));
+      expect(result, isNull);
+    });
+
+    test('returns tool at valid index', () async {
+      final repository = _FakeWorkspaceToolsRepository()
+        ..tools = [_tool(id: 't1'), _tool(id: 't2')];
+      final container2 = ProviderContainer(
+        overrides: [
+          workspaceToolsRepositoryProvider.overrideWithValue(repository),
+          workspaceToolIndexProvider.overrideWithValue(0),
+        ],
+      );
+      addTearDown(container2.dispose);
+
+      await container2.read(workspaceToolsProvider('ws1').future);
+      final result = container2.read(workspaceToolRowProvider('ws1'));
+      expect(result, isNotNull);
+      expect(result!.id, 't1');
+    });
+  });
+
+  group('availableToolsToAddProvider', () {
+    test('excludes already-added built-in tools', () async {
+      final repository = _FakeWorkspaceToolsRepository()
+        ..tools = [_tool(id: 't1')];
+      final container = ProviderContainer(
+        overrides: [
+          workspaceToolsRepositoryProvider.overrideWithValue(repository),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final result = await container.read(
+        availableToolsToAddProvider('ws1').future,
+      );
+      expect(result, isEmpty);
+    });
+
+    test('includes tools not yet added', () async {
+      final repository = _FakeWorkspaceToolsRepository()
+        ..tools = [_tool(id: 't1', toolId: 'search')];
+      final container = ProviderContainer(
+        overrides: [
+          workspaceToolsRepositoryProvider.overrideWithValue(repository),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final result = await container.read(
+        availableToolsToAddProvider('ws1').future,
+      );
+      expect(result, contains(UserToolType.calculator));
+    });
+  });
+}
