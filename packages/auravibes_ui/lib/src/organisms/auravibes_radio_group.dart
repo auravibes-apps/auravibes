@@ -42,6 +42,7 @@ class AuraRadioGroup<T> extends StatelessWidget {
     this.direction = Axis.vertical,
     this.colorVariant,
   });
+  static const double _kRadioVisualSize = 24;
 
   /// The currently selected value.
   final T? value;
@@ -119,8 +120,9 @@ class AuraRadioGroup<T> extends StatelessWidget {
           ),
           if (options[i].subtitle != null)
             Padding(
-              // Radio size (24) + gap (spacing.sm) for proper alignment.
-              padding: EdgeInsets.only(left: 24 + spacing.sm),
+              padding: EdgeInsets.only(
+                left: _kRadioVisualSize + spacing.sm,
+              ),
               child: options[i].subtitle,
             ),
           if (i < options.length - 1) SizedBox(height: spacing.sm),
@@ -138,13 +140,19 @@ class AuraRadioGroup<T> extends StatelessWidget {
       runSpacing: spacing.sm,
       children: [
         for (int i = 0; i < options.length; i++)
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              radios[i],
-              SizedBox(width: spacing.sm),
-              Flexible(child: options[i].label),
-            ],
+          GestureDetector(
+            onTap: onChanged == null
+                ? null
+                : () => onChanged!(options[i].value),
+            behavior: HitTestBehavior.opaque,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                radios[i],
+                SizedBox(width: spacing.sm),
+                Flexible(child: options[i].label),
+              ],
+            ),
           ),
       ],
     );

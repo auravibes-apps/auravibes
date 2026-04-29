@@ -76,7 +76,7 @@ class BuildCombinedToolSpecsUseCase {
     final originalSpec = nativeTool.getTool();
     final compositeId = generateNativeCompositeId(
       tableId: workspaceTool.id,
-      toolIdentifier: workspaceTool.toolId,
+      toolIdentifier: nativeToolType.value,
     );
     return ToolSpec(
       name: compositeId,

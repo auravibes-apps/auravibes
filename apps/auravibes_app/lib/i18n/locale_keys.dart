@@ -159,6 +159,8 @@ abstract class LocaleKeys {
       'tools_screen.delete_mcp_confirm';
   static const tools_screen_no_tools_in_group =
       'tools_screen.no_tools_in_group';
+  static const tools_screen_disabled_in_workspace =
+      'tools_screen.disabled_in_workspace';
   static const tool_confirmation_allow_once = 'tool_confirmation.allow_once';
   static const tool_confirmation_allow_conversation =
       'tool_confirmation.allow_conversation';
@@ -186,6 +188,8 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.stop_generation';
   static const chats_screens_chat_conversation_stop_error =
       'chats_screens.chat_conversation.stop_error';
+  static const chats_screens_chat_conversation_send_error =
+      'chats_screens.chat_conversation.send_error';
   static const common_cancel = 'common.cancel';
   static const common_remove = 'common.remove';
   static const common_add = 'common.add';

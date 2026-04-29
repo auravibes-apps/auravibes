@@ -223,11 +223,14 @@ void main() {
     test(
       'POST with string body does not auto-add content-type header',
       () async {
+        Map<String, dynamic>? sentHeaders;
         final dio = Dio()
           ..httpClientAdapter = _InspectAdapter(
             body: 'created',
             statusCode: 201,
-            onInspect: (method, headers, body) {},
+            onInspect: (method, headers, body) {
+              sentHeaders = headers;
+            },
           );
         final tool = UrlTool(urlService: UrlService(dio: dio));
 
@@ -240,6 +243,10 @@ void main() {
             .value;
 
         expect(result, contains('Status: 201'));
+        expect(
+          sentHeaders!.keys.map((key) => key.toLowerCase()),
+          isNot(contains('content-type')),
+        );
       },
     );
 

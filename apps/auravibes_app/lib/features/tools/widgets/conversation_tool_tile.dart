@@ -29,30 +29,26 @@ class ConversationToolTile extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final toolsNotifier = ref.read(
+      conversationToolsProvider(
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+      ).notifier,
+    );
+    final toolId = toolState.tool.id;
+
     final onToggle = useCallback(() async {
-      final notifier = ref.read(
-        conversationToolsProvider(
-          workspaceId: workspaceId,
-          conversationId: conversationId,
-        ).notifier,
-      );
-      await notifier.toggleTool(toolState.tool.id);
-    }, [conversationId, workspaceId, toolState.tool]);
+      await toolsNotifier.toggleTool(toolId);
+    }, [toolsNotifier, toolId]);
 
     final onPermissionChanged =
         useCallback<Future<void> Function(ToolPermissionMode?)>((mode) async {
           if (mode == null) return;
-          final notifier = ref.read(
-            conversationToolsProvider(
-              workspaceId: workspaceId,
-              conversationId: conversationId,
-            ).notifier,
-          );
-          await notifier.setToolPermission(
-            toolState.tool.id,
+          await toolsNotifier.setToolPermission(
+            toolId,
             permissionMode: mode,
           );
-        }, [conversationId, workspaceId, toolState.tool]);
+        }, [toolsNotifier, toolId]);
 
     final isEnabled = toolState.isEnabled;
     final isWorkspaceEnabled = toolState.isWorkspaceEnabled;
@@ -184,7 +180,9 @@ class _ToolDescription extends StatelessWidget {
             color: AuraColorVariant.onSurfaceVariant,
             child: DefaultTextStyle.merge(
               style: const TextStyle(fontStyle: FontStyle.italic),
-              child: const Text('Disabled in workspace'),
+              child: const TextLocale(
+                LocaleKeys.tools_screen_disabled_in_workspace,
+              ),
             ),
           ),
       ],

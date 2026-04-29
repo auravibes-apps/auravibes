@@ -239,7 +239,7 @@ class ModelSyncResult {
       modelsAdded: modelsAdded,
       modelsUpdated: modelsUpdated,
       modelsRemoved: modelsRemoved,
-      errors: errors,
+      errors: List.unmodifiable(errors),
     );
   }
 }

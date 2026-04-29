@@ -80,6 +80,7 @@
       "message_placeholder": "Type your message...",
       "stop_generation": "Stop generation",
       "stop_error": "Could not stop the conversation. Please try again.",
+      "send_error": "Could not send the message. Please try again.",
       "waiting_for_tools": "Waiting for tools to connect...",
       "waiting_for_tools_named": "Waiting for {tools} to connect...",
       "thinking_status": "Thinking...",
@@ -144,6 +145,7 @@
     "tools_count": "{enabled} of {total} enabled",
     "delete_mcp_title": "Delete MCP Server",
     "delete_mcp_confirm": "This will remove the MCP server and all its tools. Continue?",
-    "no_tools_in_group": "No tools available"
+    "no_tools_in_group": "No tools available",
+    "disabled_in_workspace": "Disabled in workspace"
   }
 }

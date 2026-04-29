@@ -492,6 +492,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
             onPanStart: (_) => _setResizing(true),
             onPanUpdate: _handleDividerPanUpdate,
             onPanEnd: (_) => _setResizing(false),
+            onPanCancel: () => _setResizing(false),
             child: Center(
               child: Container(
                 width: 4,
@@ -587,7 +588,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
   }
 
   void _closeIfFullyOpen(bool drawerFullyOpen) {
-    if (drawerFullyOpen) _toggleDrawer();
+    if (drawerFullyOpen) _closeDrawer();
   }
 
   Widget _buildScrimColor() {

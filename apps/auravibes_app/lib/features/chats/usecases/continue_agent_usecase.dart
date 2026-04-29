@@ -262,6 +262,11 @@ class ContinueAgentUsecase {
       final completedResult = accumulatedResult!;
       final completedMessage = firstMessage!;
 
+      await streamingController.close();
+      await persistenceFuture;
+      streamingController = null;
+      persistenceFuture = null;
+
       await _persistCompletedAssistantMessage(
         completedMessage,
         completedResult,
@@ -275,6 +280,11 @@ class ContinueAgentUsecase {
       if (firstMessage == null) {
         Error.throwWithStackTrace(error, stackTrace);
       }
+
+      await streamingController?.close();
+      await persistenceFuture;
+      streamingController = null;
+      persistenceFuture = null;
 
       await _markAssistantErrored(firstMessage!);
 

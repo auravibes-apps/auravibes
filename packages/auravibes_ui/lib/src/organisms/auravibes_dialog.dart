@@ -47,91 +47,31 @@ class AuraConfirmDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final auraColors = context.auraColors;
-    final auraTheme = context.auraTheme;
-
-    return Center(
-      child: Material(
-        color: Colors.transparent,
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 24),
-          constraints: const BoxConstraints(maxWidth: 400),
-          decoration: BoxDecoration(
-            color: auraColors.surface,
-            borderRadius: BorderRadius.circular(auraTheme.borderRadius.lg),
-            boxShadow: const [DesignShadows.lg],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Title
-              Padding(
-                padding: EdgeInsets.only(
-                  left: auraTheme.spacing.md,
-                  right: auraTheme.spacing.md,
-                  top: auraTheme.spacing.lg,
-                ),
-                child: DefaultTextStyle(
-                  style: TextStyle(
-                    fontSize: auraTheme.typography.sizes.lg,
-                    fontWeight: auraTheme.typography.weights.semibold,
-                    color: auraColors.onSurface,
-                  ),
-                  child: title,
-                ),
-              ),
-              // Message (scrollable if too long)
-              Flexible(
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: auraTheme.spacing.md,
-                    vertical: auraTheme.spacing.sm,
-                  ),
-                  child: DefaultTextStyle(
-                    style: TextStyle(
-                      fontSize: auraTheme.typography.sizes.base,
-                      fontWeight: auraTheme.typography.weights.regular,
-                      color: auraColors.onSurfaceVariant,
-                      height: auraTheme.typography.lineHeights.base,
-                    ),
-                    child: message,
-                  ),
-                ),
-              ),
-              // Actions
-              Padding(
-                padding: EdgeInsets.all(auraTheme.spacing.md),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    AuraButton(
-                      variant: AuraButtonVariant.text,
-                      onPressed: () {
-                        Navigator.of(context).pop(false);
-                        onCancel?.call();
-                      },
-                      child: cancelLabel ?? const Text('Cancel'),
-                    ),
-                    const SizedBox(width: 8),
-                    AuraButton(
-                      variant: AuraButtonVariant.text,
-                      onPressed: () {
-                        Navigator.of(context).pop(true);
-                        onConfirm?.call();
-                      },
-                      colorVariant: isDestructive
-                          ? AuraColorVariant.error
-                          : colorVariant ?? AuraColorVariant.primary,
-                      child: confirmLabel ?? const Text('Confirm'),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+    return _AuraDialogShell(
+      title: title,
+      message: message,
+      actions: [
+        AuraButton(
+          variant: AuraButtonVariant.text,
+          onPressed: () {
+            Navigator.of(context).pop(false);
+            onCancel?.call();
+          },
+          child: cancelLabel ?? const Text('Cancel'),
         ),
-      ),
+        const SizedBox(width: 8),
+        AuraButton(
+          variant: AuraButtonVariant.text,
+          onPressed: () {
+            Navigator.of(context).pop(true);
+            onConfirm?.call();
+          },
+          colorVariant: isDestructive
+              ? AuraColorVariant.error
+              : colorVariant ?? AuraColorVariant.primary,
+          child: confirmLabel ?? const Text('Confirm'),
+        ),
+      ],
     );
   }
 }
@@ -161,6 +101,36 @@ class AuraAlertDialog extends StatelessWidget {
 
   /// The accent color for the dialog.
   final AuraColorVariant? colorVariant;
+
+  @override
+  Widget build(BuildContext context) {
+    return _AuraDialogShell(
+      title: title,
+      message: message,
+      actions: [
+        AuraButton(
+          variant: AuraButtonVariant.text,
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          colorVariant: colorVariant,
+          child: dismissLabel ?? const Text('OK'),
+        ),
+      ],
+    );
+  }
+}
+
+class _AuraDialogShell extends StatelessWidget {
+  const _AuraDialogShell({
+    required this.title,
+    required this.message,
+    required this.actions,
+  });
+
+  final Widget title;
+  final Widget message;
+  final List<Widget> actions;
 
   @override
   Widget build(BuildContext context) {
@@ -216,21 +186,11 @@ class AuraAlertDialog extends StatelessWidget {
                   ),
                 ),
               ),
-              // Actions
               Padding(
                 padding: EdgeInsets.all(auraTheme.spacing.md),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    AuraButton(
-                      variant: AuraButtonVariant.text,
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
-                      colorVariant: colorVariant,
-                      child: dismissLabel ?? const Text('OK'),
-                    ),
-                  ],
+                  children: actions,
                 ),
               ),
             ],

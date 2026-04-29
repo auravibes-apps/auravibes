@@ -198,7 +198,9 @@ class OAuthDiscoveryService {
   }
 
   static OAuthDiscoveryResult? _parseOAuthBodyChallenge(String body) {
-    if (!body.contains('oauth') && !body.contains('authorization')) {
+    final normalizedBody = body.toLowerCase();
+    if (!normalizedBody.contains('oauth') &&
+        !normalizedBody.contains('authorization')) {
       return null;
     }
 

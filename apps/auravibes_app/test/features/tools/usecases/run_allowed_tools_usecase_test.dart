@@ -9,6 +9,7 @@ import 'package:auravibes_app/features/tools/usecases/get_agent_iteration_decisi
 import 'package:auravibes_app/features/tools/usecases/load_latest_message_tool_calls_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/resolve_tool_approval_decision_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/run_allowed_tools_usecase.dart';
+import 'package:auravibes_app/features/tools/usecases/run_resolved_tool_usecase.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool.dart';
 import 'package:auravibes_app/services/tools/native_tool_entity.dart';
 import 'package:auravibes_app/services/tools/user_tools_entity.dart';
@@ -79,17 +80,20 @@ void main() {
         loadLatestMessageToolCallsUsecase: loadLatestMessageToolCallsUsecase,
         messageRepository: messageRepository,
         resolveToolApprovalDecision: resolveToolApprovalDecision,
-        mcpToolCaller:
-            ({
-              required mcpServerId,
-              required toolIdentifier,
-              required arguments,
-            }) async {
-              calledMcpServerId = mcpServerId;
-              calledMcpToolIdentifier = toolIdentifier;
-              calledMcpArguments = arguments;
-              return 'mcp result';
-            },
+        runResolvedToolUsecase: RunResolvedToolUsecase(
+          agentCancellationRuntime: agentCancellationRuntime,
+          mcpToolCaller:
+              ({
+                required mcpServerId,
+                required toolIdentifier,
+                required arguments,
+              }) async {
+                calledMcpServerId = mcpServerId;
+                calledMcpToolIdentifier = toolIdentifier;
+                calledMcpArguments = arguments;
+                return 'mcp result';
+              },
+        ),
         getAgentIterationDecisionUsecase: getAgentIterationDecisionUsecase,
         agentCancellationRuntime: agentCancellationRuntime,
       );
@@ -839,14 +843,17 @@ void main() {
         loadLatestMessageToolCallsUsecase: loadLatestMessageToolCallsUsecase,
         messageRepository: messageRepository,
         resolveToolApprovalDecision: resolveToolApprovalDecision,
-        mcpToolCaller:
-            ({
-              required mcpServerId,
-              required toolIdentifier,
-              required arguments,
-            }) async {
-              return 'mcp result';
-            },
+        runResolvedToolUsecase: RunResolvedToolUsecase(
+          agentCancellationRuntime: agentCancellationRuntime,
+          mcpToolCaller:
+              ({
+                required mcpServerId,
+                required toolIdentifier,
+                required arguments,
+              }) async {
+                return 'mcp result';
+              },
+        ),
         getAgentIterationDecisionUsecase: getAgentIterationDecisionUsecase,
         agentCancellationRuntime: agentCancellationRuntime,
       );
@@ -1292,14 +1299,17 @@ void main() {
         loadLatestMessageToolCallsUsecase: loadLatestMessageToolCallsUsecase,
         messageRepository: messageRepository,
         resolveToolApprovalDecision: resolveToolApprovalDecision,
-        mcpToolCaller:
-            ({
-              required mcpServerId,
-              required toolIdentifier,
-              required arguments,
-            }) async {
-              return 'mcp result';
-            },
+        runResolvedToolUsecase: RunResolvedToolUsecase(
+          agentCancellationRuntime: agentCancellationRuntime,
+          mcpToolCaller:
+              ({
+                required mcpServerId,
+                required toolIdentifier,
+                required arguments,
+              }) async {
+                return 'mcp result';
+              },
+        ),
         getAgentIterationDecisionUsecase: getAgentIterationDecisionUsecase,
         agentCancellationRuntime: agentCancellationRuntime,
       );

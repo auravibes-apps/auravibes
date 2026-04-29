@@ -207,11 +207,23 @@ Future<void> _sendMessage(
     await ref
         .read(sendMessageUsecaseProvider)
         .call(conversationId: conversationId, content: message);
-  } on Exception catch (e) {
+  } on Exception catch (error, stackTrace) {
+    FlutterError.reportError(
+      FlutterErrorDetails(
+        exception: error,
+        stack: stackTrace,
+        library: 'chat_conversation_screen',
+        context: ErrorDescription('while sending a message'),
+      ),
+    );
     if (!context.mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Failed to send message: $e')),
+      SnackBar(
+        content: Text(
+          LocaleKeys.chats_screens_chat_conversation_send_error.tr(),
+        ),
+      ),
     );
   }
 }

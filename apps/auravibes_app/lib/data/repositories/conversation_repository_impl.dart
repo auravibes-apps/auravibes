@@ -3,6 +3,11 @@ import 'package:auravibes_app/domain/entities/conversation.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:drift/drift.dart';
 
+const _conversationTitleEmpty = 'Conversation title cannot be empty';
+const _modelIdEmpty = 'Model ID cannot be empty';
+const _unknownValidationError = 'Unknown validation error';
+const _workspaceIdEmpty = 'Workspace ID cannot be empty';
+
 class ConversationRepositoryImpl implements ConversationRepository {
   ConversationRepositoryImpl(this._database);
 
@@ -106,9 +111,9 @@ class ConversationRepositoryImpl implements ConversationRepository {
   String _conversationCreateValidationMessage(
     ConversationToCreate conversation,
   ) {
-    if (conversation.title.isEmpty) return 'Conversation title cannot be empty';
-    if (conversation.workspaceId.isEmpty) return 'Workspace ID cannot be empty';
-    return 'Unknown validation error';
+    if (conversation.title.isEmpty) return _conversationTitleEmpty;
+    if (conversation.workspaceId.isEmpty) return _workspaceIdEmpty;
+    return _unknownValidationError;
   }
 
   void _validateConversationPatch(ConversationPatch conversation) {
@@ -121,12 +126,12 @@ class ConversationRepositoryImpl implements ConversationRepository {
 
   String _conversationPatchValidationMessage(ConversationPatch conversation) {
     if (conversation.title != null && conversation.title!.isEmpty) {
-      return 'Conversation title cannot be empty';
+      return _conversationTitleEmpty;
     }
     if (conversation.modelId != null && conversation.modelId!.isEmpty) {
-      return 'Model ID cannot be empty';
+      return _modelIdEmpty;
     }
-    return 'Unknown validation error';
+    return _unknownValidationError;
   }
 
   ConversationEntity _mapToConversation(ConversationsTable conversationTable) {
