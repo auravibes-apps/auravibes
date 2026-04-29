@@ -220,9 +220,7 @@ void main() {
       expect(tool.type, NativeToolType.url);
     });
 
-    test(
-      'POST with string body does not auto-add content-type header',
-      () async {
+    test('POST with string body does not auto-add content-type header', () async {
       final dio = Dio()
         ..httpClientAdapter = _InspectAdapter(
           body: 'created',
