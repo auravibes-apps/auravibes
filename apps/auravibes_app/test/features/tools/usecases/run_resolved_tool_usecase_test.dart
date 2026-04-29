@@ -3,8 +3,8 @@ import 'package:auravibes_app/features/tools/usecases/run_resolved_tool_usecase.
 import 'package:auravibes_app/services/tools/models/resolved_tool.dart';
 import 'package:auravibes_app/services/tools/native_tool_entity.dart';
 import 'package:auravibes_app/services/tools/user_tools_entity.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
-import 'package:test/test.dart';
 
 void main() {
   late AgentCancellationRuntime cancellationRuntime;
