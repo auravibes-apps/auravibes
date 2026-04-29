@@ -1,7 +1,8 @@
 /// Enum representing the type of chat model.
 enum CredentialsModelType {
   openai('openai'),
-  anthropic('anthropic')
+  anthropic('anthropic'),
+  google('google')
   ;
 
   /// Creates a new CredentialsModelType with the given string value
@@ -16,6 +17,8 @@ enum CredentialsModelType {
         return CredentialsModelType.openai;
       case 'anthropic':
         return CredentialsModelType.anthropic;
+      case 'google':
+        return CredentialsModelType.google;
       default:
         throw ArgumentError('Invalid chat model type: $value');
     }

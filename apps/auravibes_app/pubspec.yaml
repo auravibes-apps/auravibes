@@ -68,7 +68,8 @@ dev_dependencies:
   json_serializable: ^6.11.2
   mockito: ^5.6.3
   riverpod_generator: ^4.0.0+1
-
+  nock: ^1.2.3
+  dartantic_interface: ^4.0.0
 dependency_validator:
   exclude:
     - "test/**/*.mocks.dart"

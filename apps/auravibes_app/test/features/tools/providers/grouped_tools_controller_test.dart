@@ -110,6 +110,75 @@ void main() {
         expect(mcpNotifier.reconnectedServerIds, isEmpty);
       },
     );
+
+    test(
+      'setMcpGroupEnabled reconnects when enabled',
+      () async {
+        toolsGroupsRepository.groupById['group-1'] = _mcpGroup;
+
+        final notifier = container.read(
+          groupedToolsProvider(_workspace.id).notifier,
+        )..state = const AsyncLoading();
+
+        await notifier.setMcpGroupEnabled('group-1', isEnabled: true);
+
+        expect(toolsGroupsRepository.lastSetGroupId, 'group-1');
+        expect(toolsGroupsRepository.lastIsEnabled, isTrue);
+        expect(mcpNotifier.reconnectedServerIds, ['server-1']);
+        expect(mcpNotifier.disconnectedServerIds, isEmpty);
+      },
+    );
+
+    test(
+      'deleteMcpGroup skips non-MCP group',
+      () async {
+        final nonMcpGroup = _mcpGroup.copyWith(
+          id: 'group-non-mcp',
+          mcpServerId: null,
+        );
+        toolsGroupsRepository.groupById['group-non-mcp'] = nonMcpGroup;
+
+        final notifier = container.read(
+          groupedToolsProvider(_workspace.id).notifier,
+        )..state = const AsyncLoading();
+
+        await notifier.deleteMcpGroup('group-non-mcp');
+
+        expect(mcpNotifier.deletedServerIds, isEmpty);
+      },
+    );
+
+    test(
+      'reconnectMcp delegates to McpConnectionNotifier',
+      () async {
+        final notifier = container.read(
+          groupedToolsProvider(_workspace.id).notifier,
+        )..state = const AsyncLoading();
+
+        await notifier.reconnectMcp('server-1');
+
+        expect(mcpNotifier.reconnectedServerIds, ['server-1']);
+      },
+    );
+
+    test(
+      'deleteMcpGroup skips group with null mcpServerId',
+      () async {
+        final group = _mcpGroup.copyWith(
+          id: 'group-empty-mcp',
+          mcpServerId: '',
+        );
+        toolsGroupsRepository.groupById['group-empty-mcp'] = group;
+
+        final notifier = container.read(
+          groupedToolsProvider(_workspace.id).notifier,
+        )..state = const AsyncLoading();
+
+        await notifier.deleteMcpGroup('group-empty-mcp');
+
+        expect(mcpNotifier.deletedServerIds, isEmpty);
+      },
+    );
   });
 }
 

@@ -472,6 +472,145 @@ void main() {
       },
     );
   });
+
+  group('ContinueAgentUsecase error paths', () {
+    late MockChatbotService chatbotService;
+    late MockMessageRepository messageRepository;
+    late MockWorkspaceModelSelectionRepository
+    workspaceModelSelectionsRepository;
+    late MockConversationRepository conversationRepository;
+    late MockLoadConversationToolSpecsUsecase loadConversationToolSpecsUsecase;
+    late MockMonitoringService monitoringService;
+    late ContinueAgentUsecase usecase;
+    late AgentCancellationRuntime agentCancellationRuntime;
+
+    setUp(() {
+      chatbotService = MockChatbotService();
+      messageRepository = MockMessageRepository();
+      workspaceModelSelectionsRepository =
+          MockWorkspaceModelSelectionRepository();
+      conversationRepository = MockConversationRepository();
+      loadConversationToolSpecsUsecase = MockLoadConversationToolSpecsUsecase();
+      monitoringService = MockMonitoringService();
+      agentCancellationRuntime = AgentCancellationRuntime()
+        ..start('conversation-1');
+
+      usecase = ContinueAgentUsecase(
+        chatbotService: chatbotService,
+        messageRepository: messageRepository,
+        workspaceModelSelectionsRepository: workspaceModelSelectionsRepository,
+        conversationRepository: conversationRepository,
+        loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
+        messagesStreamingRuntime: MessagesStreamingRuntime(
+          startSubscription: (_, _) {},
+          updateResult: (_, _) {},
+          remove: (_) async {},
+        ),
+        conversationStreamingRuntime: ConversationStreamingRuntime(
+          start: (_) {},
+          isStreaming: (_) => false,
+          remove: (_) {},
+        ),
+        agentCancellationRuntime: agentCancellationRuntime,
+        monitoringService: monitoringService,
+      );
+    });
+
+    test('throws when conversation not found', () async {
+      when(
+        conversationRepository.getConversationById('conversation-1'),
+      ).thenAnswer((_) async => null);
+
+      expect(
+        usecase.call(conversationId: 'conversation-1'),
+        throwsA(isA<Exception>()),
+      );
+    });
+
+    test('throws when conversation has no model id', () async {
+      final noModelConversation = ConversationEntity(
+        id: 'conversation-1',
+        title: 'No Model',
+        workspaceId: 'workspace-1',
+        isPinned: false,
+        createdAt: DateTime(2025),
+        updatedAt: DateTime(2025),
+      );
+      when(
+        conversationRepository.getConversationById('conversation-1'),
+      ).thenAnswer((_) async => noModelConversation);
+      when(
+        messageRepository.getMessagesByConversation('conversation-1'),
+      ).thenAnswer((_) async => []);
+
+      expect(
+        usecase.call(conversationId: 'conversation-1'),
+        throwsA(isA<Exception>()),
+      );
+    });
+
+    test('throws when model not found', () async {
+      when(
+        conversationRepository.getConversationById('conversation-1'),
+      ).thenAnswer((_) async => _conversation);
+      when(
+        messageRepository.getMessagesByConversation('conversation-1'),
+      ).thenAnswer((_) async => []);
+      when(
+        workspaceModelSelectionsRepository.getWorkspaceModelSelectionById(
+          'model-1',
+        ),
+      ).thenAnswer((_) async => null);
+
+      expect(
+        usecase.call(conversationId: 'conversation-1'),
+        throwsA(isA<Exception>()),
+      );
+    });
+
+    test(
+      'rethrows when stream errors before any chunk',
+      () async {
+        when(
+          conversationRepository.getConversationById('conversation-1'),
+        ).thenAnswer((_) async => _conversation);
+        when(
+          messageRepository.getMessagesByConversation('conversation-1'),
+        ).thenAnswer((_) async => []);
+        when(
+          workspaceModelSelectionsRepository.getWorkspaceModelSelectionById(
+            'model-1',
+          ),
+        ).thenAnswer((_) async => _model);
+        when(
+          loadConversationToolSpecsUsecase.call(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+          ),
+        ).thenAnswer((_) async => const []);
+        when(messageRepository.createMessage(any)).thenAnswer(
+          (_) async => _unfinishedAssistantMessage,
+        );
+        when(messageRepository.patchMessage(any, any)).thenAnswer(
+          (_) async => _unfinishedAssistantMessage,
+        );
+        when(
+          chatbotService.sendMessage(_model, any, tools: const []),
+        ).thenAnswer(
+          (_) => Stream.error(StateError('model error')),
+        );
+
+        try {
+          await usecase.call(conversationId: 'conversation-1');
+          fail('Should have thrown');
+        } on StateError {
+          verifyNever(
+            messageRepository.patchMessage(any, any),
+          );
+        }
+      },
+    );
+  });
 }
 
 final _conversation = ConversationEntity(

@@ -1,3 +1,6 @@
+// coverage:ignore-file
+// Required: Drift table DSL is unreachable at runtime
+// (see api_model_table.dart).
 import 'package:auravibes_app/data/database/drift/tables/common.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools_groups_table.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspaces_table.dart';

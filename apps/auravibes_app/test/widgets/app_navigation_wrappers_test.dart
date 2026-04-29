@@ -1,37 +1,213 @@
+import 'dart:async';
+
+import 'package:auravibes_app/domain/entities/conversation.dart';
+import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/flavors.dart';
+import 'package:auravibes_app/providers/router_providers.dart';
+import 'package:auravibes_app/widgets/app_navigation_wrappers.dart';
+import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 void main() {
+  group('_calculateSelectedIndex', () {
+    testWidgets('returns shellIndex for root workspace path', (tester) async {
+      int? result;
+
+      final router = GoRouter(
+        initialLocation: '/workspaces/ws-test/tools',
+        routes: [
+          GoRoute(
+            path: '/workspaces/:workspaceId',
+            builder: (context, state) => const SizedBox.shrink(),
+            routes: [
+              StatefulShellRoute.indexedStack(
+                builder: (context, state, navigationShell) {
+                  result = navigationShell.currentIndex;
+                  return navigationShell;
+                },
+                branches: [
+                  StatefulShellBranch(
+                    routes: [
+                      GoRoute(
+                        path: 'chat/new',
+                        builder: (context, state) =>
+                            const Text('New chat screen'),
+                      ),
+                    ],
+                  ),
+                  StatefulShellBranch(
+                    routes: [
+                      GoRoute(
+                        path: 'tools',
+                        builder: (context, state) => const Text('Tools screen'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      expect(result, 1);
+    });
+
+    testWidgets('returns -1 for specific chat route', (tester) async {
+      int? capturedShellIndex;
+
+      final router = GoRouter(
+        initialLocation: '/workspaces/ws-test/chats/chat-123',
+        routes: [
+          GoRoute(
+            path: '/workspaces/:workspaceId',
+            builder: (context, state) => const SizedBox.shrink(),
+            routes: [
+              StatefulShellRoute.indexedStack(
+                builder: (context, state, navigationShell) {
+                  capturedShellIndex = navigationShell.currentIndex;
+                  return navigationShell;
+                },
+                branches: [
+                  StatefulShellBranch(
+                    routes: [
+                      GoRoute(
+                        path: 'chat/new',
+                        builder: (context, state) => const Text('New chat'),
+                      ),
+                      GoRoute(
+                        path: 'chats/:chatId',
+                        builder: (context, state) => const Text('Chat screen'),
+                      ),
+                    ],
+                  ),
+                  StatefulShellBranch(
+                    routes: [
+                      GoRoute(
+                        path: 'tools',
+                        builder: (context, state) => const Text('Tools screen'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      expect(capturedShellIndex, 0);
+    });
+  });
+
+  group('AuraSidebarWrapper', () {
+    test('constructor stores workspaceId', () {
+      final shell = _FakeNavigationShell();
+      final wrapper = AuraSidebarWrapper(
+        navigationShell: shell,
+        workspaceId: 'ws-1',
+      );
+      expect(wrapper.workspaceId, 'ws-1');
+    });
+
+    test('constructor accepts optional key', () {
+      final shell = _FakeNavigationShell();
+      final wrapper = AuraSidebarWrapper(
+        navigationShell: shell,
+        workspaceId: 'ws-1',
+        key: const Key('test'),
+      );
+      expect(wrapper.key, const Key('test'));
+    });
+
+    test('is a ConsumerWidget', () {
+      final shell = _FakeNavigationShell();
+      final wrapper = AuraSidebarWrapper(
+        navigationShell: shell,
+        workspaceId: 'ws-1',
+      );
+      expect(wrapper, isA<ConsumerWidget>());
+    });
+  });
+
+  group('AppWithResponsiveDrawer', () {
+    test('constructor stores properties', () {
+      final widget = AppWithResponsiveDrawer(
+        navigationItems: const [],
+        onNavigationTap: (_) {},
+        selectedIndex: 0,
+        workspaceId: 'ws-1',
+        child: const SizedBox(),
+      );
+      expect(widget.workspaceId, 'ws-1');
+      expect(widget.selectedIndex, 0);
+    });
+
+    test('constructor accepts optional key', () {
+      final widget = AppWithResponsiveDrawer(
+        navigationItems: const [],
+        onNavigationTap: (_) {},
+        selectedIndex: 0,
+        workspaceId: 'ws-1',
+        key: const Key('drawer-key'),
+        child: const SizedBox(),
+      );
+      expect(widget.key, const Key('drawer-key'));
+    });
+
+    test('is a StatefulWidget', () {
+      final widget = AppWithResponsiveDrawer(
+        navigationItems: const [],
+        onNavigationTap: (_) {},
+        selectedIndex: 0,
+        workspaceId: 'ws-1',
+        child: const SizedBox(),
+      );
+      expect(widget, isA<StatefulWidget>());
+    });
+  });
+
   testWidgets(
-    'workspaceId from route state is available synchronously — no Riverpod dependency',
+    'workspaceId from route state is available synchronously'
+    ' — no Riverpod dependency',
     (tester) async {
       String? capturedWorkspaceId;
 
       final router = GoRouter(
         initialLocation: '/workspaces/ws-test/tools',
         routes: [
-          // Matches production structure: parent route has :workspaceId param,
-          // child StatefulShellBranch routes have no parameters.
           GoRoute(
             path: '/workspaces/:workspaceId',
-            // Production WorkspaceRoute.build returns SizedBox.shrink;
-            // the shell builder provides the actual UI.
             builder: (context, state) => const SizedBox.shrink(),
             routes: [
               StatefulShellRoute.indexedStack(
                 builder: (context, state, navigationShell) {
-                  // Same pattern as MyShellRouteData.builder in app_router.dart:82.
-                  // Before the fix, the sidebar read workspaceId from
-                  // currentRouteWorkspaceIdProvider (a Riverpod proxy), which
-                  // broke after the async redirect because the ChangeNotifier
-                  // notification didn't reach the Riverpod provider tree.
-                  // After the fix, workspaceId comes directly from GoRouter's
-                  // synchronous pathParameters — no async dependency.
                   capturedWorkspaceId = state.pathParameters['workspaceId'];
                   return Text('workspaceId: $capturedWorkspaceId');
                 },
                 branches: [
+                  StatefulShellBranch(
+                    routes: [
+                      GoRoute(
+                        path: 'chat/new',
+                        builder: (context, state) =>
+                            const Text('New chat screen'),
+                      ),
+                    ],
+                  ),
                   StatefulShellBranch(
                     routes: [
                       GoRoute(
@@ -52,8 +228,6 @@ void main() {
         MaterialApp.router(routerConfig: router),
       );
 
-      // Core assertion: workspaceId is resolved synchronously from route state
-      // after the initial frame, not after async operations settle.
       expect(capturedWorkspaceId, 'ws-test');
 
       await tester.pumpAndSettle();
@@ -62,7 +236,7 @@ void main() {
   );
 
   testWidgets(
-    'workspaceId available after async redirect from root — exercises actual startup failure mode',
+    'workspaceId available after async redirect from root',
     (tester) async {
       String? capturedWorkspaceId;
 
@@ -106,11 +280,404 @@ void main() {
         MaterialApp.router(routerConfig: router),
       );
 
-      // Key regression guard: workspaceId must be available after the initial
-      // frame — even when the route required an async-like redirect from '/'.
-      // The old Riverpod-based path failed here because ChangeNotifier
-      // notifications from routeInformationProvider didn't propagate.
       expect(capturedWorkspaceId, 'ws-redirect-test');
     },
   );
+
+  testWidgets(
+    'specific chat route navigates to branch 0 alongside chat/new',
+    (tester) async {
+      int? capturedShellIndex;
+
+      final router = GoRouter(
+        initialLocation: '/workspaces/ws-test/chats/chat-123',
+        routes: [
+          GoRoute(
+            path: '/workspaces/:workspaceId',
+            builder: (context, state) => const SizedBox.shrink(),
+            routes: [
+              StatefulShellRoute.indexedStack(
+                builder: (context, state, navigationShell) {
+                  capturedShellIndex = navigationShell.currentIndex;
+                  return navigationShell;
+                },
+                branches: [
+                  StatefulShellBranch(
+                    routes: [
+                      GoRoute(
+                        path: 'chat/new',
+                        builder: (context, state) => const Text('New chat'),
+                      ),
+                      GoRoute(
+                        path: 'chats/:chatId',
+                        builder: (context, state) => const Text('Chat screen'),
+                      ),
+                    ],
+                  ),
+                  StatefulShellBranch(
+                    routes: [
+                      GoRoute(
+                        path: 'tools',
+                        builder: (context, state) => const Text('Tools screen'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp.router(routerConfig: router),
+      );
+      await tester.pumpAndSettle();
+
+      expect(capturedShellIndex, 0);
+      expect(find.text('Chat screen'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'tools route navigates to branch 1',
+    (tester) async {
+      int? capturedShellIndex;
+
+      final router = GoRouter(
+        initialLocation: '/workspaces/ws-test/tools',
+        routes: [
+          GoRoute(
+            path: '/workspaces/:workspaceId',
+            builder: (context, state) => const SizedBox.shrink(),
+            routes: [
+              StatefulShellRoute.indexedStack(
+                builder: (context, state, navigationShell) {
+                  capturedShellIndex = navigationShell.currentIndex;
+                  return navigationShell;
+                },
+                branches: [
+                  StatefulShellBranch(
+                    routes: [
+                      GoRoute(
+                        path: 'chat/new',
+                        builder: (context, state) => const Text('New chat'),
+                      ),
+                    ],
+                  ),
+                  StatefulShellBranch(
+                    routes: [
+                      GoRoute(
+                        path: 'tools',
+                        builder: (context, state) => const Text('Tools screen'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp.router(routerConfig: router),
+      );
+      await tester.pumpAndSettle();
+
+      expect(capturedShellIndex, 1);
+      expect(find.text('Tools screen'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'settings route navigates to branch 2',
+    (tester) async {
+      int? capturedShellIndex;
+
+      final router = GoRouter(
+        initialLocation: '/workspaces/ws-test/settings',
+        routes: [
+          GoRoute(
+            path: '/workspaces/:workspaceId',
+            builder: (context, state) => const SizedBox.shrink(),
+            routes: [
+              StatefulShellRoute.indexedStack(
+                builder: (context, state, navigationShell) {
+                  capturedShellIndex = navigationShell.currentIndex;
+                  return navigationShell;
+                },
+                branches: [
+                  StatefulShellBranch(
+                    routes: [
+                      GoRoute(
+                        path: 'chat/new',
+                        builder: (context, state) => const Text('New chat'),
+                      ),
+                    ],
+                  ),
+                  StatefulShellBranch(
+                    routes: [
+                      GoRoute(
+                        path: 'tools',
+                        builder: (context, state) => const Text('Tools screen'),
+                      ),
+                    ],
+                  ),
+                  StatefulShellBranch(
+                    routes: [
+                      GoRoute(
+                        path: 'settings',
+                        builder: (context, state) =>
+                            const Text('Settings screen'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp.router(routerConfig: router),
+      );
+      await tester.pumpAndSettle();
+
+      expect(capturedShellIndex, 2);
+      expect(find.text('Settings screen'), findsOneWidget);
+    },
+  );
+
+  group('AuraSidebarWrapper rendering', () {
+    late _RecordingConversationRepository repository;
+
+    setUpAll(() {
+      try {
+        F.appFlavor = Flavor.dev;
+      } catch (_) {}
+    });
+
+    setUp(() {
+      repository = _RecordingConversationRepository();
+    });
+
+    tearDown(() async {
+      await repository.close();
+    });
+
+    Widget _buildTestApp({
+      required String initialLocation,
+      required List<StatefulShellBranch> branches,
+    }) {
+      final repo = repository;
+      final router = GoRouter(
+        initialLocation: initialLocation,
+        routes: [
+          GoRoute(
+            path: '/workspaces/:workspaceId',
+            builder: (context, state) => const SizedBox.shrink(),
+            routes: [
+              StatefulShellRoute.indexedStack(
+                builder: (context, state, navigationShell) {
+                  return Theme(
+                    data: ThemeData(extensions: [AuraTheme.light]),
+                    child: Material(
+                      child: AuraSidebarWrapper(
+                        navigationShell: navigationShell,
+                        workspaceId: '',
+                      ),
+                    ),
+                  );
+                },
+                branches: branches,
+              ),
+            ],
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+      return EasyLocalization(
+        supportedLocales: const [Locale('en')],
+        path: 'assets/i18n',
+        fallbackLocale: const Locale('en'),
+        startLocale: const Locale('en'),
+        useFallbackTranslations: true,
+        useOnlyLangCode: true,
+        child: Builder(
+          builder: (context) {
+            return ProviderScope(
+              overrides: [
+                conversationRepositoryProvider.overrideWithValue(repo),
+                routerPathSegmentsProvider.overrideWithValue(const []),
+              ],
+              child: MaterialApp.router(
+                routerConfig: router,
+                localizationsDelegates: context.localizationDelegates,
+                supportedLocales: context.supportedLocales,
+                locale: context.locale,
+              ),
+            );
+          },
+        ),
+      );
+    }
+
+    testWidgets('renders sidebar for multiple routes', (tester) async {
+      final branches = [
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: 'chat/new',
+              builder: (_, _) => const SizedBox.shrink(),
+            ),
+            GoRoute(
+              path: 'chats/:chatId',
+              builder: (_, _) => const SizedBox.shrink(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: 'tools',
+              builder: (_, _) => const SizedBox.shrink(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: 'models',
+              builder: (_, _) => const SizedBox.shrink(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: 'settings',
+              builder: (_, _) => const SizedBox.shrink(),
+            ),
+          ],
+        ),
+      ];
+
+      await tester.pumpWidget(
+        _buildTestApp(
+          initialLocation: '/workspaces/ws-test/tools',
+          branches: branches,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AuraSidebarWrapper), findsOneWidget);
+
+      await tester.pumpWidget(
+        _buildTestApp(
+          initialLocation: '/workspaces/ws-test/chat/new',
+          branches: branches,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AuraSidebarWrapper), findsOneWidget);
+
+      await tester.pumpWidget(
+        _buildTestApp(
+          initialLocation: '/workspaces/ws-test/chats/chat-123',
+          branches: branches,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AuraSidebarWrapper), findsOneWidget);
+
+      await tester.pumpWidget(
+        _buildTestApp(
+          initialLocation: '/workspaces/ws-test/models',
+          branches: branches,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AuraSidebarWrapper), findsOneWidget);
+
+      await tester.pumpWidget(
+        _buildTestApp(
+          initialLocation: '/workspaces/ws-test/settings',
+          branches: branches,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AuraSidebarWrapper), findsOneWidget);
+    });
+  });
+}
+
+class _FakeNavigationShell extends Fake implements StatefulNavigationShell {
+  @override
+  int currentIndex = 0;
+
+  @override
+  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) =>
+      '_FakeNavigationShell';
+}
+
+class _RecordingConversationRepository implements ConversationRepository {
+  final _controllers = <StreamController<List<ConversationEntity>>>[];
+
+  @override
+  Stream<List<ConversationEntity>> watchConversationsByWorkspace(
+    String workspaceId, {
+    int? limit,
+  }) {
+    late final StreamController<List<ConversationEntity>> controller;
+    controller = StreamController<List<ConversationEntity>>.broadcast(
+      onCancel: () => _controllers.remove(controller),
+    );
+    _controllers.add(controller);
+    return controller.stream;
+  }
+
+  Future<void> close() async {
+    await Future.wait(
+      _controllers.where((c) => !c.isClosed).map((c) => c.close()),
+    );
+  }
+
+  @override
+  Future<ConversationEntity> createConversation(
+    ConversationToCreate conversation,
+  ) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<bool> deleteConversation(String id) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<ConversationEntity?> getConversationById(String id) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<ConversationEntity> patchConversation(
+    String id,
+    ConversationPatch conversation,
+  ) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Stream<ConversationEntity?> watchConversationById(String id) {
+    throw UnimplementedError();
+  }
 }

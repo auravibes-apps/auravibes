@@ -17,12 +17,6 @@ class OauthAuthenticate {
   final String callbackUrlScheme;
   final String clientName;
 
-  /// Authenticates with the MCP server using OAuth.
-  ///
-  /// Returns the OAuth token on success.
-  /// Throws an exception if OAuth discovery fails or authentication is
-  /// cancelled.
-
   static const String _chars =
       'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890';
   static final Random _rng = Random();
@@ -38,7 +32,7 @@ class OauthAuthenticate {
   }
 
   /// Generates PKCE code challenge from verifier
-  static String _generateCodeChallenge(String codeVerifier) {
+  static String generateCodeChallenge(String codeVerifier) {
     final bytes = utf8.encode(codeVerifier);
     final digest = sha256.convert(bytes);
     return base64Url.encode(digest.bytes).replaceAll('=', '');
@@ -55,11 +49,16 @@ class OauthAuthenticate {
     return oAuthResult;
   }
 
+  /// Authenticates with the MCP server using OAuth.
+  ///
+  /// Returns the OAuth token on success.
+  /// Throws an exception if OAuth discovery fails or authentication is
+  /// cancelled.
   Future<OAutTokenModel> authenticate(
     OAuthDiscoveryResult oAuthResult,
   ) async {
     final codeVerifier = _generateRandomString(128);
-    final codeChallenge = _generateCodeChallenge(codeVerifier);
+    final codeChallenge = generateCodeChallenge(codeVerifier);
     final stateParam = _generateRandomString(32);
     final clientId = oAuthResult.clientId;
 
@@ -67,23 +66,19 @@ class OauthAuthenticate {
       queryParameters: {
         'response_type': 'code',
         'redirect_uri': '$callbackUrlScheme:/',
-        // 'scope': oAuthResult.scope,
         'state': stateParam,
         'code_challenge': codeChallenge,
         'code_challenge_method': 'S256',
-        // Only include client_id if provided
-        // (some servers support public clients)
         if (clientId != null && clientId.isNotEmpty) 'client_id': clientId,
       },
     );
 
-    // Present the dialog to the user
     final result = await FlutterWebAuth2.authenticate(
       url: uri.toString(),
       callbackUrlScheme: callbackUrlScheme,
     );
 
-    final code = _validateGetCode(
+    final code = validateGetCode(
       urlResult: result,
       stateParam: stateParam,
     );
@@ -96,11 +91,10 @@ class OauthAuthenticate {
     );
   }
 
-  String _validateGetCode({
+  static String validateGetCode({
     required String urlResult,
     required String stateParam,
   }) {
-    // Extract token from resulting url
     final returnedUri = Uri.parse(urlResult);
 
     final queryParams = returnedUri.queryParameters;

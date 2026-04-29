@@ -1,3 +1,8 @@
+// coverage:ignore-file
+// Required: Drift table DSL methods (text(), real(), boolean(), integer())
+// call _isGenerated() which throws at runtime. The generated subclass
+// overrides every column getter with late final GeneratedColumn fields, and
+// TableInfo mixin overrides primaryKey. No code here executes at runtime.
 import 'package:auravibes_app/data/database/drift/converters/list_converter.dart';
 import 'package:auravibes_app/data/database/drift/tables/api_model_provider_table.dart';
 import 'package:drift/drift.dart';

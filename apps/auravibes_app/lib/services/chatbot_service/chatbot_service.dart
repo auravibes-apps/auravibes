@@ -99,7 +99,7 @@ class ChatbotService {
             }
 
             if (processedTitle.isEmpty) {
-              return _generateFallbackTitle(firstMessage);
+              return generateFallbackTitle(firstMessage);
             } else if (processedTitle.length > 50) {
               return '${processedTitle.substring(0, 47)}...';
             }
@@ -107,11 +107,11 @@ class ChatbotService {
             return processedTitle;
           });
     } on Exception catch (_) {
-      yield _generateFallbackTitle(firstMessage);
+      yield generateFallbackTitle(firstMessage);
     }
   }
 
-  String _generateFallbackTitle(String message) {
+  static String generateFallbackTitle(String message) {
     final words = message
         .split(' ')
         .where((word) => word.isNotEmpty)

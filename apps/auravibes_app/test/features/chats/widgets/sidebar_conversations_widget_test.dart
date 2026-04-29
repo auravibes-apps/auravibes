@@ -88,6 +88,183 @@ void main() {
       expect(repository._controllers, isNot(contains(firstController)));
     },
   );
+
+  testWidgets('renders SizedBox.shrink when workspaceId is null', (
+    tester,
+  ) async {
+    final repository = _RecordingConversationRepository();
+    addTearDown(repository.close);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          conversationRepositoryProvider.overrideWithValue(repository),
+          routerPathSegmentsProvider.overrideWithValue(const []),
+        ],
+        child: const MaterialApp(
+          home: _SidebarWorkspaceHost(),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byType(SizedBox), findsOneWidget);
+  });
+
+  testWidgets('shows spinner when loading', (tester) async {
+    final repository = _RecordingConversationRepository();
+    addTearDown(repository.close);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          conversationRepositoryProvider.overrideWithValue(repository),
+          routerPathSegmentsProvider.overrideWithValue(const []),
+        ],
+        child: const MaterialApp(
+          home: _SidebarWorkspaceHost(),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(_SidebarWorkspaceHost.loadWorkspaceKey));
+    await tester.pump();
+
+    expect(find.byType(AuraSpinner), findsOneWidget);
+  });
+
+  testWidgets('uses custom limit parameter', (tester) async {
+    final repository = _RecordingConversationRepository();
+    addTearDown(repository.close);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          conversationRepositoryProvider.overrideWithValue(repository),
+          routerPathSegmentsProvider.overrideWithValue(const []),
+        ],
+        child: MaterialApp(
+          home: Theme(
+            data: ThemeData(extensions: [AuraTheme.light]),
+            child: const Material(
+              child: SizedBox(
+                width: 300,
+                height: 800,
+                child: SidebarConversationsWidget(
+                  workspaceId: 'workspace-1',
+                  limit: 5,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(
+      repository.workspaceWatchCalls,
+      equals([
+        const _WorkspaceWatchCall(workspaceId: 'workspace-1', limit: 5),
+      ]),
+    );
+  });
+
+  test('SidebarConversationsWidget stores properties', () {
+    const widget = SidebarConversationsWidget(
+      workspaceId: 'ws-1',
+      limit: 5,
+    );
+    expect(widget.workspaceId, 'ws-1');
+    expect(widget.limit, 5);
+  });
+
+  test('SidebarConversationsWidget workspaceId can be null', () {
+    const widget = SidebarConversationsWidget(
+      workspaceId: null,
+    );
+    expect(widget.workspaceId, isNull);
+  });
+
+  test('SidebarConversationsWidget default limit is 10', () {
+    const widget = SidebarConversationsWidget(
+      workspaceId: 'ws-1',
+    );
+    expect(widget.limit, 10);
+  });
+
+  test('SidebarConversationsWidget accepts optional key', () {
+    const widget = SidebarConversationsWidget(
+      workspaceId: 'ws-1',
+      key: Key('test-key'),
+    );
+    expect(widget.key, const Key('test-key'));
+  });
+
+  testWidgets('renders SizedBox.shrink when workspaceId is empty', (
+    tester,
+  ) async {
+    final repository = _RecordingConversationRepository();
+    addTearDown(repository.close);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          conversationRepositoryProvider.overrideWithValue(repository),
+          routerPathSegmentsProvider.overrideWithValue(const []),
+        ],
+        child: MaterialApp(
+          home: Theme(
+            data: ThemeData(extensions: [AuraTheme.light]),
+            child: const Material(
+              child: SizedBox(
+                width: 300,
+                height: 800,
+                child: SidebarConversationsWidget(
+                  workspaceId: '',
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byType(SizedBox), findsWidgets);
+    expect(repository.workspaceWatchCalls, isEmpty);
+  });
+
+  testWidgets('shows spinner when loading conversations', (tester) async {
+    final repository = _RecordingConversationRepository();
+    addTearDown(repository.close);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          conversationRepositoryProvider.overrideWithValue(repository),
+          routerPathSegmentsProvider.overrideWithValue(const []),
+        ],
+        child: MaterialApp(
+          home: Theme(
+            data: ThemeData(extensions: [AuraTheme.light]),
+            child: const Material(
+              child: SizedBox(
+                width: 300,
+                height: 800,
+                child: SidebarConversationsWidget(
+                  workspaceId: 'workspace-1',
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byType(AuraSpinner), findsOneWidget);
+  });
 }
 
 class _SidebarWorkspaceHost extends StatefulWidget {
