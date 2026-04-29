@@ -23,7 +23,7 @@ void main() {
     });
 
     test('converts null to empty list', () {
-      expect(stringListConverter.fromJson(null), []);
+      expect(stringListConverter.fromJson(null), <String>[]);
     });
 
     test('converts to JSON', () {

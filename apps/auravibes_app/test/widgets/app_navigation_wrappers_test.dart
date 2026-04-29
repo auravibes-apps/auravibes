@@ -459,7 +459,7 @@ void main() {
     setUpAll(() {
       try {
         F.appFlavor = Flavor.dev;
-      } catch (_) {}
+      } on Object catch (_) {}
     });
 
     setUp(() {
@@ -622,7 +622,7 @@ void main() {
 
 class _FakeNavigationShell extends Fake implements StatefulNavigationShell {
   @override
-  int currentIndex = 0;
+  final int currentIndex = 0;
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) =>

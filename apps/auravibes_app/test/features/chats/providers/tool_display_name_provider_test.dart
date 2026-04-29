@@ -1,4 +1,5 @@
 import 'package:auravibes_app/domain/entities/mcp_server.dart';
+import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 import 'package:auravibes_app/domain/repositories/mcp_servers_repository.dart';
 import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';
@@ -17,7 +18,7 @@ class _FakeMcpServersRepository implements McpServersRepository {
   Future<McpServerEntity> addMcpServerWithTools({
     required String workspaceId,
     required McpServerToCreate serverToCreate,
-    required List tools,
+    required List<McpToolInfo> tools,
   }) {
     throw UnimplementedError();
   }
@@ -42,7 +43,7 @@ class _FakeMcpServersRepository implements McpServersRepository {
   @override
   Future<void> syncMcpTools({
     required String mcpServerId,
-    required List currentTools,
+    required List<McpToolInfo> currentTools,
   }) {
     throw UnimplementedError();
   }

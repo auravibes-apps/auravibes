@@ -26,15 +26,6 @@ void main() {
     });
 
     group('validateGetCode', () {
-      late OauthAuthenticate auth;
-
-      setUp(() {
-        auth = OauthAuthenticate(
-          callbackUrlScheme: 'test',
-          clientName: 'TestApp',
-        );
-      });
-
       test('returns code when URL has valid code and matching state', () {
         final code = OauthAuthenticate.validateGetCode(
           urlResult: 'test:/?state=abc123&code=auth_code_123',

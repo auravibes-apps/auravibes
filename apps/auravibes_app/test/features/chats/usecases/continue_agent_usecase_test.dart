@@ -603,6 +603,7 @@ void main() {
         try {
           await usecase.call(conversationId: 'conversation-1');
           fail('Should have thrown');
+          // ignore: avoid_catching_errors
         } on StateError {
           verifyNever(
             messageRepository.patchMessage(any, any),

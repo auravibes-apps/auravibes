@@ -1,3 +1,4 @@
+// ignore_for_file: cascade_invocations
 import 'package:auravibes_app/widgets/responsive_sliding_drawer.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/gestures.dart';

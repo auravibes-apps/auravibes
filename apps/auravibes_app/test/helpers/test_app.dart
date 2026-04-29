@@ -2,9 +2,11 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart' show ProviderScope;
 
-/// Creates a testable widget wrapped with EasyLocalization and ProviderScope.
+/// Creates a testable widget wrapped with EasyLocalization and
+/// ProviderScope.
 ///
-/// Use this for widget tests that depend on localized text or Riverpod providers.
+/// Use this for widget tests that depend on localized text or Riverpod
+/// providers.
 ///
 /// Example:
 /// ```dart

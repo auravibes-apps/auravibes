@@ -3,15 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('OauthAuthenticate.validateGetCode additional', () {
-    late OauthAuthenticate auth;
-
-    setUp(() {
-      auth = OauthAuthenticate(
-        callbackUrlScheme: 'test',
-        clientName: 'TestApp',
-      );
-    });
-
     test('handles URL with additional query parameters', () {
       final code = OauthAuthenticate.validateGetCode(
         urlResult: 'test:/?state=abc&code=xyz&extra=param',

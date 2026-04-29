@@ -1,3 +1,4 @@
+// ignore_for_file: cascade_invocations
 import 'package:auravibes_app/features/chats/notifiers/titles_streams_notifier.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';

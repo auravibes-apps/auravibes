@@ -167,7 +167,7 @@ void main() {
       addTearDown(container.dispose);
 
       final segments = container.read(routerPathSegmentsProvider);
-      expect(segments, isA<List>());
+      expect(segments, isA<List<String>>());
     });
   });
 

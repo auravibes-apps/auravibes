@@ -30,7 +30,7 @@ void main() {
     test('name and title return correct values for assigned flavor', () {
       try {
         F.appFlavor = Flavor.prod;
-      } catch (_) {
+      } on Object catch (_) {
         // Already set by another test in this process
       }
       expect(F.name, isNotEmpty);

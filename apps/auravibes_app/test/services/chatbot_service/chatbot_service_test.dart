@@ -1,6 +1,4 @@
-import 'package:auravibes_app/domain/entities/api_model_provider.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entities.dart';
-import 'package:auravibes_app/domain/entities/workspace_model_selection_entities.dart';
 import 'package:auravibes_app/domain/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
@@ -207,32 +205,6 @@ String _processTitle(String title) {
     return '${processed.substring(0, 47)}...';
   }
   return processed;
-}
-
-WorkspaceModelSelectionWithConnectionEntity _createTestModelSelection() {
-  return WorkspaceModelSelectionWithConnectionEntity(
-    workspaceModelSelection: WorkspaceModelSelectionEntity(
-      id: 'sel-1',
-      modelId: 'gpt-4',
-      createdAt: DateTime(2026),
-      updatedAt: DateTime(2026),
-      modelConnectionId: 'conn-1',
-    ),
-    modelConnection: ModelConnectionEntity(
-      id: 'conn-1',
-      name: 'Test',
-      key: 'test-key',
-      modelId: 'openai',
-      createdAt: DateTime(2026),
-      updatedAt: DateTime(2026),
-      workspaceId: 'ws-1',
-    ),
-    modelsProvider: const ApiModelProviderEntity(
-      id: 'openai',
-      name: 'OpenAI',
-      type: null,
-    ),
-  );
 }
 
 class _FakeModelConnectionRepository extends ModelConnectionRepository {

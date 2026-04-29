@@ -1,3 +1,4 @@
+// ignore_for_file: cascade_invocations
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:flutter_test/flutter_test.dart';
 

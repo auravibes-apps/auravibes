@@ -1,3 +1,4 @@
+// ignore_for_file: cascade_invocations
 import 'package:auravibes_app/domain/entities/api_model_provider.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entities.dart';
 import 'package:auravibes_app/domain/repositories/model_connection_repository.dart';
@@ -32,11 +33,9 @@ class _FakeModelConnectionRepository implements ModelConnectionRepository {
     ModelConnectionFilter filter,
   ) async => const [];
 
-  @override
   Future<ModelConnectionEntity?> getModelConnectionById(String id) async =>
       null;
 
-  @override
   Future<ModelConnectionEntity> updateModelConnection(
     String id,
     ModelConnectionToCreate update,
@@ -301,11 +300,9 @@ class _ThrowingModelConnectionRepository implements ModelConnectionRepository {
     ModelConnectionFilter filter,
   ) async => const [];
 
-  @override
   Future<ModelConnectionEntity?> getModelConnectionById(String id) async =>
       null;
 
-  @override
   Future<ModelConnectionEntity> updateModelConnection(
     String id,
     ModelConnectionToCreate update,

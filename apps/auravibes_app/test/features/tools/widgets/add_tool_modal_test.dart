@@ -12,7 +12,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 const _wsId = 'ws1';
 
-Widget _buildSubject(List overrides) {
+Widget _buildSubject(List<Object> overrides) {
   return EasyLocalization(
     supportedLocales: const [Locale('en')],
     path: 'assets/i18n',
@@ -59,7 +59,7 @@ Future<void> _showDialog(WidgetTester tester) async {
   await tester.pump();
 }
 
-List _dataOverride([
+List<Object> _dataOverride([
   List<UserToolType> tools = const [UserToolType.calculator],
 ]) {
   return [

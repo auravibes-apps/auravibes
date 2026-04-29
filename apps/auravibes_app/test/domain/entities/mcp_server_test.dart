@@ -354,7 +354,6 @@ void main() {
 
   group('OAutTokenModel', () {
     test('toEntity converts correctly', () {
-      final now = DateTime(2026);
       const model = OAutTokenModel(
         accessToken: 'access',
         refreshToken: 'refresh',

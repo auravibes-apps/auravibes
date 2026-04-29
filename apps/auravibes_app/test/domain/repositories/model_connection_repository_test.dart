@@ -1,3 +1,4 @@
+// ignore_for_file: cascade_invocations
 import 'package:auravibes_app/domain/entities/model_connection_entities.dart';
 import 'package:auravibes_app/domain/enums/chat_models_type.dart';
 import 'package:auravibes_app/domain/repositories/model_connection_repository.dart';

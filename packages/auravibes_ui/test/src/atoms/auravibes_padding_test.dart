@@ -36,7 +36,7 @@ void main() {
     });
 
     test('all constructor sets all sides', () {
-      const padding = AuraEdgeInsetsGeometry.all(AuraSpacing.lg);
+      const padding = AuraEdgeInsetsGeometry.large;
       expect(padding.left, AuraSpacing.lg);
       expect(padding.top, AuraSpacing.lg);
       expect(padding.right, AuraSpacing.lg);
@@ -90,20 +90,20 @@ void main() {
     });
 
     test('equality works for same values', () {
-      const a = AuraEdgeInsetsGeometry.all(AuraSpacing.md);
-      const b = AuraEdgeInsetsGeometry.all(AuraSpacing.md);
+      const a = AuraEdgeInsetsGeometry.medium;
+      const b = AuraEdgeInsetsGeometry.medium;
       expect(a, b);
     });
 
     test('equality fails for different values', () {
-      const a = AuraEdgeInsetsGeometry.all(AuraSpacing.md);
-      const b = AuraEdgeInsetsGeometry.all(AuraSpacing.lg);
+      const a = AuraEdgeInsetsGeometry.medium;
+      const b = AuraEdgeInsetsGeometry.large;
       expect(a, isNot(b));
     });
 
     test('hashCode is consistent', () {
-      const a = AuraEdgeInsetsGeometry.all(AuraSpacing.md);
-      const b = AuraEdgeInsetsGeometry.all(AuraSpacing.md);
+      const a = AuraEdgeInsetsGeometry.medium;
+      const b = AuraEdgeInsetsGeometry.medium;
       expect(a.hashCode, b.hashCode);
     });
   });
@@ -131,7 +131,7 @@ void main() {
           theme: ThemeData(extensions: [AuraTheme.light]),
           home: const Scaffold(
             body: AuraPadding(
-              padding: AuraEdgeInsetsGeometry.all(AuraSpacing.lg),
+              padding: AuraEdgeInsetsGeometry.large,
               child: Text('Large Padded'),
             ),
           ),
@@ -169,7 +169,7 @@ void main() {
           theme: ThemeData(extensions: [AuraTheme.light]),
           home: const Scaffold(
             body: AuraPadding(
-              padding: AuraEdgeInsetsGeometry.all(AuraSpacing.md),
+              padding: AuraEdgeInsetsGeometry.medium,
               child: SizedBox(width: 100, height: 100),
             ),
           ),

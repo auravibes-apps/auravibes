@@ -7,7 +7,8 @@ void main() {
       const ex = NoConversationSelectedException();
       expect(
         ex.toString(),
-        'NoConversationSelectedException: No conversation is currently selected',
+        'NoConversationSelectedException: No conversation is currently '
+        'selected',
       );
     });
   });

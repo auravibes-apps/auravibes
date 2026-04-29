@@ -171,7 +171,7 @@ void main() {
         await sendContainer
             .read(newChatProvider('ws-1').notifier)
             .startConversation('hello');
-      } catch (_) {}
+      } on Object catch (_) {}
 
       expect(
         sendContainer.read(newChatProvider('ws-1')).isLoading,

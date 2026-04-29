@@ -5,7 +5,8 @@ import 'package:riverpod/riverpod.dart';
 void main() {
   group('conversationSelectedProvider', () {
     test(
-      'throws ProviderException containing NoConversationSelectedException when read without override',
+      'throws ProviderException containing NoConversationSelectedException '
+      'when read without override',
       () {
         final container = ProviderContainer();
         addTearDown(container.dispose);
