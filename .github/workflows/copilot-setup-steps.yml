@@ -43,6 +43,3 @@ jobs:
         uses: bluefireteam/melos-action@3ddd2cf0f7cf2de348b114c25d953dd8fbd62907
         with:
           run-bootstrap: true
-
-      - name: 🛠️ Generate Code
-        run: melos run generate --no-select
