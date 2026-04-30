@@ -88,8 +88,8 @@ As a user, I want a dedicated screen to view and manage all my workspaces so tha
 
 ### Edge Cases
 
-- What happens when the user tries to delete the last remaining workspace?
-- How does the system handle a workspace creation or rename with an invalid name length?
+- The system prevents deleting the last remaining workspace.
+- The system validates workspace creation and rename names against the 3–20 character requirement.
 - If a workspace switch fails, the user remains on the current workspace with an error message and a retry option.
 - Rapid clicks in the dropdown are debounced; only the last selected workspace is processed.
 - The currently active workspace cannot be deleted; the user must switch to a different workspace first.
@@ -117,13 +117,12 @@ As a user, I want a dedicated screen to view and manage all my workspaces so tha
 ### Key Entities _(include if feature involves data)_
 
 - **Workspace**: Represents an isolated context for user work. Key attributes: unique identifier, name, active status (indicates if it is the currently selected workspace).
-- **Workspace List**: The collection of all workspaces available to the user. Managed through the sidebar dropdown and the workspace management screen.
 
 ## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 
-- **SC-001**: Users can switch workspaces in under 2 seconds under normal conditions.
+- **SC-001**: Users can switch workspaces in under 2 seconds on a local SQLite database with fewer than 50 workspaces.
 - **SC-002**: Users can create, edit, or delete a workspace in under 1 minute.
 - **SC-003**: 100% of workspace name validation errors provide clear, actionable feedback to the user.
 - **SC-004**: The system validates 100% of workspace names against the 3–20 character length requirement during creation or editing.
