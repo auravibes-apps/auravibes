@@ -23,7 +23,9 @@
     "pubspec.yaml": ".metadata, .packages, all_lint_rules.yaml, analysis_options.yaml, build.yaml, pubspec.lock, pubspec_overrides.yaml"
   },
   "[dart]": {
-    "editor.rulers": [80],
+    "editor.rulers": [
+      80
+    ],
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
       "source.fixAll": "explicit",
@@ -34,7 +36,9 @@
     }
   },
   "files.exclude": {},
-  "editor.rulers": [120],
+  "editor.rulers": [
+    120
+  ],
   "window.commandCenter": true,
   "debug.toolBarLocation": "commandCenter",
   "sonarlint.connectedMode.project": {
