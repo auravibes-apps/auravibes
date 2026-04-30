@@ -237,8 +237,10 @@ class _ToolOptions extends HookConsumerWidget {
       context: context,
       title: const TextLocale(LocaleKeys.tools_screen_remove_tool_title),
       message: const TextLocale(LocaleKeys.tools_screen_remove_tool_confirm),
-      confirmLabel: const TextLocale(LocaleKeys.common_remove),
-      cancelLabel: const TextLocale(LocaleKeys.common_cancel),
+      actions: const AuraConfirmDialogActions(
+        confirmLabel: TextLocale(LocaleKeys.common_remove),
+        cancelLabel: TextLocale(LocaleKeys.common_cancel),
+      ),
       isDestructive: true,
     );
 

@@ -8,10 +8,7 @@ import 'package:auravibes_app/features/chats/usecases/agent_iteration_decision.d
 import 'package:auravibes_app/features/tools/usecases/get_agent_iteration_decision_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/load_latest_message_tool_calls_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/resolve_tool_approval_decision_usecase.dart';
-import 'package:auravibes_app/notifiers/mcp_connection_notifier.dart';
-import 'package:auravibes_app/services/tools/models/resolved_tool.dart';
-import 'package:auravibes_app/services/tools/native_tool_service.dart';
-import 'package:auravibes_app/services/tools/tool_service.dart';
+import 'package:auravibes_app/features/tools/usecases/run_resolved_tool_usecase.dart';
 import 'package:auravibes_app/utils/encode.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -20,7 +17,7 @@ class RunAllowedToolsUsecase {
     required this.loadLatestMessageToolCallsUsecase,
     required this.messageRepository,
     required this.resolveToolApprovalDecision,
-    required this.mcpToolCaller,
+    required this.runResolvedToolUsecase,
     required this.getAgentIterationDecisionUsecase,
     required this.agentCancellationRuntime,
   });
@@ -28,7 +25,7 @@ class RunAllowedToolsUsecase {
   final LoadLatestMessageToolCallsUsecase loadLatestMessageToolCallsUsecase;
   final MessageRepository messageRepository;
   final ResolveToolApprovalDecisionUsecase resolveToolApprovalDecision;
-  final McpToolCaller mcpToolCaller;
+  final RunResolvedToolUsecase runResolvedToolUsecase;
   final GetAgentIterationDecisionUsecase getAgentIterationDecisionUsecase;
   final AgentCancellationRuntime agentCancellationRuntime;
 
@@ -174,7 +171,11 @@ class RunAllowedToolsUsecase {
         safeJsonDecode(toolToCall.argumentsRaw) ?? const <String, dynamic>{};
 
     try {
-      final result = await _runTool(conversationId, toolToCall.tool, arguments);
+      final result = await runResolvedToolUsecase(
+        conversationId: conversationId,
+        tool: toolToCall.tool,
+        arguments: arguments,
+      );
       if (agentCancellationRuntime.isCancellationRequested(conversationId)) {
         return const _ToolExecutionResult(
           resultStatus: ToolCallResultStatus.stoppedByUser,
@@ -194,71 +195,6 @@ class RunAllowedToolsUsecase {
         resultStatus: ToolCallResultStatus.executionError,
       );
     }
-  }
-
-  Future<Object?> _runTool(
-    String conversationId,
-    ResolvedTool tool,
-    Map<String, dynamic> arguments,
-  ) async {
-    if (tool.isBuiltIn) {
-      final input = arguments['input'];
-      if (input == null) {
-        throw const FormatException(
-          'Built-in tools require an input argument.',
-        );
-      }
-
-      final builtInTool = tool.builtInTool;
-      final toolService = builtInTool == null
-          ? null
-          : ToolService.getTool(builtInTool);
-      if (toolService == null) {
-        return null;
-      }
-      final operation = toolService.runner(input as Object);
-      agentCancellationRuntime.registerCancelableOperation(
-        conversationId,
-        operation,
-      );
-      return operation.valueOrCancellation();
-    }
-
-    if (tool.isNative) {
-      final input = arguments['input'];
-      if (input == null) {
-        throw const FormatException('Native tools require an input argument.');
-      }
-
-      final nativeTool = tool.nativeTool;
-      final toolService = nativeTool == null
-          ? null
-          : NativeToolService.getTool(nativeTool);
-      if (toolService == null) {
-        return null;
-      }
-      final operation = toolService.runner(input as Object);
-      agentCancellationRuntime.registerCancelableOperation(
-        conversationId,
-        operation,
-      );
-      return operation.valueOrCancellation();
-    }
-
-    if (tool.isMcp) {
-      final mcpServerId = tool.mcpServerId;
-      if (mcpServerId == null) {
-        return null;
-      }
-
-      return mcpToolCaller(
-        mcpServerId: mcpServerId,
-        toolIdentifier: tool.toolIdentifier,
-        arguments: arguments,
-      );
-    }
-
-    return null;
   }
 
   Future<_ToolResultUpdate> _executeSafely({
@@ -350,35 +286,12 @@ final runAllowedToolsUsecaseProvider = Provider<RunAllowedToolsUsecase>((ref) {
     resolveToolApprovalDecision: ref.watch(
       resolveToolApprovalDecisionUsecaseProvider,
     ),
-    mcpToolCaller: ref.watch(mcpToolCallerProvider),
+    runResolvedToolUsecase: ref.watch(runResolvedToolUsecaseProvider),
     getAgentIterationDecisionUsecase: ref.watch(
       getAgentIterationDecisionUsecaseProvider,
     ),
     agentCancellationRuntime: ref.watch(agentCancellationRuntimeProvider),
   );
-});
-
-typedef McpToolCaller =
-    Future<String> Function({
-      required String mcpServerId,
-      required String toolIdentifier,
-      required Map<String, dynamic> arguments,
-    });
-
-final mcpToolCallerProvider = Provider<McpToolCaller>((ref) {
-  return ({
-    required String mcpServerId,
-    required String toolIdentifier,
-    required Map<String, dynamic> arguments,
-  }) {
-    return ref
-        .read(mcpConnectionProvider.notifier)
-        .callTool(
-          mcpServerId: mcpServerId,
-          toolIdentifier: toolIdentifier,
-          arguments: arguments,
-        );
-  };
 });
 
 class _ToolResultUpdate {

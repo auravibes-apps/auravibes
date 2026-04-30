@@ -1,19 +1,10 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "model": "{env:OPENCODE_MODEL}",
-  "small_model": "{env:OPENCODE_SMALL_MODEL}",
   "lsp": {
     "custom-dart": {
       "disabled": false,
-      "command": [
-        "fvm",
-        "dart",
-        "language-server",
-        "--protocol=lsp"
-      ],
-      "extensions": [
-        ".dart"
-      ],
+      "command": ["fvm", "dart", "language-server", "--protocol=lsp"],
+      "extensions": [".dart"],
       "initialization": {
         "onlyAnalyzeProjectsWithOpenFiles": false,
         "suggestFromUnimportedLibraries": true,
@@ -29,7 +20,7 @@
   "formatter": {
     "prettier": {
       "command": ["npx", "-y", "prettier", "--write", "$FILE"],
-      "languages": ["json", "yaml", "markdown", "html"]
+      "extensions": [".json", ".yaml", ".md", ".html"]
     },
     "dart": {
       "command": ["bash", "scripts/format-dart.sh", "$FILE"],
@@ -40,17 +31,25 @@
     "dart": {
       "enabled": true,
       "type": "local",
-      "command": [
-        "fvm",
-        "dart",
-        "mcp-server",
-        "--force-roots-fallback"
-      ]
+      "command": ["fvm", "dart", "mcp-server", "--force-roots-fallback"]
     },
     "pubdev": {
       "type": "local",
       "command": ["npx", "-y", "@devqxi/pubdev-mcp-server"],
       "enabled": true
+    },
+    "sonarqube": {
+      "type": "local",
+      "command": [
+        "docker",
+        "run",
+        "--init",
+        "--rm",
+        "-i",
+        "--env-file",
+        ".env",
+        "mcp/sonarqube@sha256:edbce6ea2e688afc0acee278bd583def95ea39569a0f26434099898bca003095"
+      ]
     }
   }
 }

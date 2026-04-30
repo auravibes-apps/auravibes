@@ -2,10 +2,10 @@ import 'package:auravibes_app/domain/entities/workspace_tool.dart';
 import 'package:auravibes_app/features/tools/notifiers/conversation_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/widgets/conversation_tool_tile.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
+
+import '../../../helpers/test_app.dart';
 
 const _workspaceId = 'ws-1';
 
@@ -37,38 +37,41 @@ Widget _buildSubject({
   required ConversationToolState toolState,
   String? conversationId,
 }) {
-  return EasyLocalization(
-    supportedLocales: const [Locale('en')],
-    path: 'assets/i18n',
-    fallbackLocale: const Locale('en'),
-    startLocale: const Locale('en'),
-    useFallbackTranslations: true,
-    useOnlyLangCode: true,
-    child: ProviderScope(
-      overrides: [
-        conversationToolsProvider(
-          workspaceId: _workspaceId,
-          conversationId: conversationId,
-        ).overrideWith(
-          () => _MockConversationToolsNotifier([toolState]),
-        ),
-      ],
-      child: MaterialApp(
-        home: Theme(
-          data: ThemeData(extensions: [AuraTheme.light]),
-          child: Material(
-            child: SingleChildScrollView(
-              child: ConversationToolTile(
-                toolState: toolState,
-                workspaceId: _workspaceId,
-                conversationId: conversationId,
-              ),
-            ),
+  return testableApp(
+    overrides: [
+      conversationToolsProvider(
+        workspaceId: _workspaceId,
+        conversationId: conversationId,
+      ).overrideWith(
+        () => _MockConversationToolsNotifier([toolState]),
+      ),
+    ],
+    child: Theme(
+      data: ThemeData(extensions: [AuraTheme.light]),
+      child: Material(
+        child: SingleChildScrollView(
+          child: ConversationToolTile(
+            toolState: toolState,
+            workspaceId: _workspaceId,
+            conversationId: conversationId,
           ),
         ),
       ),
     ),
   );
+}
+
+Future<void> _pumpSubject(
+  WidgetTester tester, {
+  required ConversationToolState toolState,
+  String? conversationId,
+}) async {
+  await tester.runAsync(() async {
+    await tester.pumpWidget(
+      _buildSubject(toolState: toolState, conversationId: conversationId),
+    );
+  });
+  await tester.pumpAndSettle();
 }
 
 void main() {
@@ -82,8 +85,7 @@ void main() {
       isWorkspaceEnabled: false,
     );
 
-    await tester.pumpWidget(_buildSubject(toolState: toolState));
-    await tester.pumpAndSettle();
+    await _pumpSubject(tester, toolState: toolState);
 
     expect(find.byType(ToolPermissionSelector), findsNothing);
   });
@@ -98,8 +100,7 @@ void main() {
       isWorkspaceEnabled: true,
     );
 
-    await tester.pumpWidget(_buildSubject(toolState: toolState));
-    await tester.pumpAndSettle();
+    await _pumpSubject(tester, toolState: toolState);
 
     expect(find.byType(ToolPermissionSelector), findsNothing);
   });
@@ -112,8 +113,7 @@ void main() {
       isWorkspaceEnabled: false,
     );
 
-    await tester.pumpWidget(_buildSubject(toolState: toolState));
-    await tester.pumpAndSettle();
+    await _pumpSubject(tester, toolState: toolState);
 
     expect(find.byType(AuraCard), findsOneWidget);
     expect(find.text('custom_tool'), findsOneWidget);
@@ -127,8 +127,7 @@ void main() {
       isWorkspaceEnabled: false,
     );
 
-    await tester.pumpWidget(_buildSubject(toolState: toolState));
-    await tester.pumpAndSettle();
+    await _pumpSubject(tester, toolState: toolState);
 
     expect(find.byIcon(Icons.block), findsOneWidget);
   });
@@ -143,8 +142,7 @@ void main() {
       isWorkspaceEnabled: true,
     );
 
-    await tester.pumpWidget(_buildSubject(toolState: toolState));
-    await tester.pumpAndSettle();
+    await _pumpSubject(tester, toolState: toolState);
 
     expect(find.byIcon(Icons.circle_outlined), findsOneWidget);
   });
@@ -169,8 +167,7 @@ void main() {
       isWorkspaceEnabled: true,
     );
 
-    await tester.pumpWidget(_buildSubject(toolState: toolState));
-    await tester.pumpAndSettle();
+    await _pumpSubject(tester, toolState: toolState);
 
     expect(find.text('A test tool description'), findsOneWidget);
   });
@@ -183,8 +180,7 @@ void main() {
       isWorkspaceEnabled: false,
     );
 
-    await tester.pumpWidget(_buildSubject(toolState: toolState));
-    await tester.pumpAndSettle();
+    await _pumpSubject(tester, toolState: toolState);
 
     final auraCard = tester.widget<AuraCard>(find.byType(AuraCard));
     expect(auraCard.onTap, isNull);
@@ -200,8 +196,7 @@ void main() {
       isWorkspaceEnabled: false,
     );
 
-    await tester.pumpWidget(_buildSubject(toolState: toolState));
-    await tester.pumpAndSettle();
+    await _pumpSubject(tester, toolState: toolState);
 
     expect(find.text('Disabled in workspace'), findsOneWidget);
   });
@@ -215,8 +210,7 @@ void main() {
     );
 
     FlutterError.onError = (_) {};
-    await tester.pumpWidget(_buildSubject(toolState: toolState));
-    await tester.pump();
+    await _pumpSubject(tester, toolState: toolState);
 
     expect(find.byIcon(Icons.check_circle), findsOneWidget);
     FlutterError.onError = null;
@@ -233,8 +227,7 @@ void main() {
     );
 
     FlutterError.onError = (_) {};
-    await tester.pumpWidget(_buildSubject(toolState: toolState));
-    await tester.pump();
+    await _pumpSubject(tester, toolState: toolState);
 
     expect(find.byType(ToolPermissionSelector), findsOneWidget);
     FlutterError.onError = null;
@@ -249,8 +242,7 @@ void main() {
     );
 
     FlutterError.onError = (_) {};
-    await tester.pumpWidget(_buildSubject(toolState: toolState));
-    await tester.pump();
+    await _pumpSubject(tester, toolState: toolState);
 
     final auraCard = tester.widget<AuraCard>(find.byType(AuraCard));
     expect(auraCard.onTap, isNotNull);
@@ -265,10 +257,11 @@ void main() {
       isWorkspaceEnabled: true,
     );
 
-    await tester.pumpWidget(
-      _buildSubject(toolState: toolState, conversationId: 'conv-1'),
+    await _pumpSubject(
+      tester,
+      toolState: toolState,
+      conversationId: 'conv-1',
     );
-    await tester.pumpAndSettle();
 
     expect(find.byType(AuraCard), findsOneWidget);
   });
@@ -282,8 +275,7 @@ void main() {
     );
 
     FlutterError.onError = (_) {};
-    await tester.pumpWidget(_buildSubject(toolState: toolState));
-    await tester.pump();
+    await _pumpSubject(tester, toolState: toolState);
 
     expect(find.byType(ToolPermissionSelector), findsOneWidget);
     final selector = tester.widget<ToolPermissionSelector>(

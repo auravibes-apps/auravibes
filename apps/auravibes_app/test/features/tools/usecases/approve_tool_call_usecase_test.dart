@@ -12,6 +12,7 @@ import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dar
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/resume_conversation_if_ready_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/approve_tool_call_usecase.dart';
+import 'package:auravibes_app/features/tools/usecases/run_resolved_tool_usecase.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
@@ -84,17 +85,20 @@ void main() {
         toolResolverService: toolResolverService,
         resumeConversationIfReadyUsecase: resumeConversationIfReadyUsecase,
         agentCancellationRuntime: agentCancellationRuntime,
-        mcpToolCaller:
-            ({
-              required mcpServerId,
-              required toolIdentifier,
-              required arguments,
-            }) async {
-              calledMcpServerId = mcpServerId;
-              calledMcpToolIdentifier = toolIdentifier;
-              calledMcpArguments = arguments;
-              return 'mcp result';
-            },
+        runResolvedToolUsecase: RunResolvedToolUsecase(
+          agentCancellationRuntime: agentCancellationRuntime,
+          mcpToolCaller:
+              ({
+                required mcpServerId,
+                required toolIdentifier,
+                required arguments,
+              }) async {
+                calledMcpServerId = mcpServerId;
+                calledMcpToolIdentifier = toolIdentifier;
+                calledMcpArguments = arguments;
+                return 'mcp result';
+              },
+        ),
       );
 
       when(messageRepository.getMessageById(messageId)).thenAnswer(

@@ -109,7 +109,6 @@ bool isMessageStreaming(Ref ref, String messageId) {
   );
 }
 
-// TODO: update when messages are streaming
 @Riverpod(dependencies: [conversationSelected, chatMessages])
 Future<ConversationBusyState> conversationBusyState(Ref ref) async {
   final conversationId = ref.watch(conversationSelectedProvider);

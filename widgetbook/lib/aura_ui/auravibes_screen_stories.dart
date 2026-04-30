@@ -7,7 +7,7 @@ import 'package:widgetbook_annotation/widgetbook_annotation.dart' as widgetbook;
 Widget defaultAuraScreenUseCase(BuildContext context) {
   return AuraScreen(
     appBar: AppBar(
-      title: Text('Aura Screen'),
+      title: const Text('Aura Screen'),
       backgroundColor: context.auraColors.primary,
     ),
     variant: context.knobs.object.dropdown(
@@ -15,7 +15,7 @@ Widget defaultAuraScreenUseCase(BuildContext context) {
       options: AuraScreenVariation.values,
       labelBuilder: (value) => value.name,
     ),
-    child: Center(
+    child: const Center(
       child: AuraPadding(
         padding: .large,
         child: AuraCard(

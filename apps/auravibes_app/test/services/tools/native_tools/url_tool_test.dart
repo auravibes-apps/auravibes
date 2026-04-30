@@ -220,23 +220,35 @@ void main() {
       expect(tool.type, NativeToolType.url);
     });
 
-    test('POST with string body does not auto-add content-type header', () async {
-      final dio = Dio()
-        ..httpClientAdapter = _InspectAdapter(
-          body: 'created',
-          statusCode: 201,
-          onInspect: (method, headers, body) {},
+    test(
+      'POST with string body does not auto-add content-type header',
+      () async {
+        Map<String, dynamic>? sentHeaders;
+        final dio = Dio()
+          ..httpClientAdapter = _InspectAdapter(
+            body: 'created',
+            statusCode: 201,
+            onInspect: (method, headers, body) {
+              sentHeaders = headers;
+            },
+          );
+        final tool = UrlTool(urlService: UrlService(dio: dio));
+
+        final result = await tool
+            .runner(
+              '{"url": "https://1.1.1.1", '
+              '"method": "POST", '
+              '"body": "plain text body"}',
+            )
+            .value;
+
+        expect(result, contains('Status: 201'));
+        expect(
+          sentHeaders!.keys.map((key) => key.toLowerCase()),
+          isNot(contains('content-type')),
         );
-      final tool = UrlTool(urlService: UrlService(dio: dio));
-
-      final result = await tool
-          .runner(
-            '{"url": "https://1.1.1.1", "method": "POST", "body": "plain text body"}',
-          )
-          .value;
-
-      expect(result, contains('Status: 201'));
-    });
+      },
+    );
 
     test('rejects non-object JSON input starting with [', () {
       final tool = UrlTool();

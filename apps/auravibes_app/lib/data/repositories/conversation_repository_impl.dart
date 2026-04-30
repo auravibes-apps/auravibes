@@ -3,6 +3,11 @@ import 'package:auravibes_app/domain/entities/conversation.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:drift/drift.dart';
 
+const _conversationTitleEmpty = 'Conversation title cannot be empty';
+const _modelIdEmpty = 'Model ID cannot be empty';
+const _unknownValidationError = 'Unknown validation error';
+const _workspaceIdEmpty = 'Workspace ID cannot be empty';
+
 class ConversationRepositoryImpl implements ConversationRepository {
   ConversationRepositoryImpl(this._database);
 
@@ -98,25 +103,38 @@ class ConversationRepositoryImpl implements ConversationRepository {
   void _validateConversationToCreate(ConversationToCreate conversation) {
     if (!conversation.isValid) {
       throw ConversationValidationException(
-        conversation.title.isEmpty
-            ? 'Conversation title cannot be empty'
-            : conversation.workspaceId.isEmpty
-            ? 'Workspace ID cannot be empty'
-            : 'Unknown validation error',
+        _conversationCreateValidationMessage(conversation),
       );
     }
+  }
+
+  String _conversationCreateValidationMessage(
+    ConversationToCreate conversation,
+  ) {
+    if (conversation.title.isEmpty) return _conversationTitleEmpty;
+    if (conversation.workspaceId.isEmpty) return _workspaceIdEmpty;
+    if (conversation.modelId != null && conversation.modelId!.isEmpty) {
+      return _modelIdEmpty;
+    }
+    return _unknownValidationError;
   }
 
   void _validateConversationPatch(ConversationPatch conversation) {
     if (!conversation.isValid) {
       throw ConversationValidationException(
-        conversation.title != null && conversation.title!.isEmpty
-            ? 'Conversation title cannot be empty'
-            : conversation.modelId != null && conversation.modelId!.isEmpty
-            ? 'Model ID cannot be empty'
-            : 'Unknown validation error',
+        _conversationPatchValidationMessage(conversation),
       );
     }
+  }
+
+  String _conversationPatchValidationMessage(ConversationPatch conversation) {
+    if (conversation.title != null && conversation.title!.isEmpty) {
+      return _conversationTitleEmpty;
+    }
+    if (conversation.modelId != null && conversation.modelId!.isEmpty) {
+      return _modelIdEmpty;
+    }
+    return _unknownValidationError;
   }
 
   ConversationEntity _mapToConversation(ConversationsTable conversationTable) {

@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
 
+const _jsonAcceptHeader = {'Accept': 'application/json'};
+
 /// Result of OAuth discovery for an MCP server
 class OAuthDiscoveryResult {
   const OAuthDiscoveryResult({
@@ -90,7 +92,7 @@ class OAuthDiscoveryService {
       final response = await http
           .get(
             Uri.parse(wellKnownUrl),
-            headers: {'Accept': 'application/json'},
+            headers: _jsonAcceptHeader,
           )
           .timeout(const Duration(seconds: 5));
 
@@ -141,65 +143,78 @@ class OAuthDiscoveryService {
   ) async {
     try {
       _logger.info('Probing MCP server directly: $serverUrl');
+      final uri = Uri.tryParse(serverUrl);
+      if (uri == null || !uri.hasScheme || !uri.hasAuthority) return null;
 
-      // For SSE endpoints, try connecting and check for auth requirements
-      if (serverUrl.contains('/sse') || serverUrl.contains('/mcp')) {
-        final response = await http
-            .get(
-              Uri.parse(serverUrl),
-              headers: {'Accept': 'text/event-stream'},
-            )
-            .timeout(const Duration(seconds: 5));
+      final response = await http
+          .get(
+            uri,
+            headers: {'Accept': 'text/event-stream'},
+          )
+          .timeout(const Duration(seconds: 5));
 
-        // Check for OAuth challenge in response headers or body
-        final authHeader = response.headers['www-authenticate'];
-        if (authHeader != null && authHeader.toLowerCase().contains('bearer')) {
-          _logger.info('Server requires OAuth authentication');
-
-          // Try to extract OAuth endpoints from response headers or body
-          final authEndpoint = response.headers['x-oauth-authorization-url'];
-          final tokenEndpoint = response.headers['x-oauth-token-url'];
-
-          if (authEndpoint != null && tokenEndpoint != null) {
-            return OAuthDiscoveryResult(
-              authorizationUrl: authEndpoint,
-              tokenUrl: tokenEndpoint,
-              clientId: response.headers['x-oauth-client-id'],
-              scope: response.headers['x-oauth-scope'],
-            );
-          }
-        }
-
-        // Check for 401 Unauthorized response
-        if (response.statusCode == 401) {
-          _logger.info('Server returned 401, may require OAuth');
-
-          // Try to parse OAuth challenge from response body
-          try {
-            final body = response.body;
-            if (body.contains('oauth') || body.contains('authorization')) {
-              final bodyJson = json.decode(body) as Map<String, dynamic>?;
-              if (bodyJson != null) {
-                final authUrl = bodyJson['authorization_url'] as String?;
-                final tokenUrl = bodyJson['token_url'] as String?;
-
-                if (authUrl != null && tokenUrl != null) {
-                  return OAuthDiscoveryResult(
-                    authorizationUrl: authUrl,
-                    tokenUrl: tokenUrl,
-                    clientId: bodyJson['client_id'] as String?,
-                    scope: bodyJson['scope'] as String?,
-                  );
-                }
-              }
-            }
-          } on Exception catch (e) {
-            _logger.fine('Could not parse OAuth info from response body: $e');
-          }
-        }
-      }
+      return _parseDirectProbeResponse(response);
     } on Exception catch (e) {
       _logger.fine('Direct server probe failed: $e');
+    }
+
+    return null;
+  }
+
+  static OAuthDiscoveryResult? _parseDirectProbeResponse(
+    http.Response response,
+  ) {
+    if (response.statusCode != 401) return null;
+
+    final headerResult = _parseOAuthHeaderChallenge(response);
+    if (headerResult != null) return headerResult;
+
+    _logger.info('Server returned 401, may require OAuth');
+    return _parseOAuthBodyChallenge(response.body);
+  }
+
+  static OAuthDiscoveryResult? _parseOAuthHeaderChallenge(
+    http.Response response,
+  ) {
+    final authHeader = response.headers['www-authenticate'];
+    if (authHeader == null || !authHeader.toLowerCase().contains('bearer')) {
+      return null;
+    }
+
+    _logger.info('Server requires OAuth authentication');
+    final authEndpoint = response.headers['x-oauth-authorization-url'];
+    final tokenEndpoint = response.headers['x-oauth-token-url'];
+    if (authEndpoint == null || tokenEndpoint == null) return null;
+
+    return OAuthDiscoveryResult(
+      authorizationUrl: authEndpoint,
+      tokenUrl: tokenEndpoint,
+      clientId: response.headers['x-oauth-client-id'],
+      scope: response.headers['x-oauth-scope'],
+    );
+  }
+
+  static OAuthDiscoveryResult? _parseOAuthBodyChallenge(String body) {
+    final normalizedBody = body.toLowerCase();
+    if (!normalizedBody.contains('oauth') &&
+        !normalizedBody.contains('authorization')) {
+      return null;
+    }
+
+    try {
+      final bodyJson = json.decode(body) as Map<String, dynamic>?;
+      final authUrl = bodyJson?['authorization_url'] as String?;
+      final tokenUrl = bodyJson?['token_url'] as String?;
+      if (authUrl == null || tokenUrl == null) return null;
+
+      return OAuthDiscoveryResult(
+        authorizationUrl: authUrl,
+        tokenUrl: tokenUrl,
+        clientId: bodyJson?['client_id'] as String?,
+        scope: bodyJson?['scope'] as String?,
+      );
+    } on Exception catch (e) {
+      _logger.fine('Could not parse OAuth info from response body: $e');
     }
 
     return null;
@@ -216,7 +231,7 @@ class OAuthDiscoveryService {
       final response = await http
           .get(
             Uri.parse(metadataUrl),
-            headers: {'Accept': 'application/json'},
+            headers: _jsonAcceptHeader,
           )
           .timeout(const Duration(seconds: 5));
 
@@ -270,7 +285,7 @@ class OAuthDiscoveryService {
             Uri.parse(registrationEndpoint),
             headers: {
               'Content-Type': 'application/json',
-              'Accept': 'application/json',
+              ..._jsonAcceptHeader,
             },
             body: json.encode(clientMetadata),
           )

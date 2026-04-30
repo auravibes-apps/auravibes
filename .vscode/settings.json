@@ -36,5 +36,9 @@
   "files.exclude": {},
   "editor.rulers": [120],
   "window.commandCenter": true,
-  "debug.toolBarLocation": "commandCenter"
+  "debug.toolBarLocation": "commandCenter",
+  "sonarlint.connectedMode.project": {
+    "connectionId": "auravibes-apps",
+    "projectKey": "auravibes-apps_auravibes"
+  }
 }

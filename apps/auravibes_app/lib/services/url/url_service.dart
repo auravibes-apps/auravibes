@@ -23,11 +23,19 @@ class UrlService {
       },
     );
     final stopwatch = Stopwatch()..start();
+    final hasContentType =
+        request.headers?.keys.any(
+          (key) => key.toLowerCase() == Headers.contentTypeHeader,
+        ) ??
+        false;
+    final requestBody = request.body == null || hasContentType
+        ? request.body
+        : Stream<List<int>>.value(utf8.encode(request.body!));
 
     _dio
         .request<ResponseBody>(
           request.url,
-          data: request.body,
+          data: requestBody,
           cancelToken: cancelToken,
           options: Options(
             method: request.method.value,

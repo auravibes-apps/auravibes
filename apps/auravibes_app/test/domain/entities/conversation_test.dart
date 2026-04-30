@@ -122,6 +122,15 @@ void main() {
       expect(create.modelId, 'model_1');
       expect(create.isPinned, isTrue);
     });
+
+    test('isValid false when modelId is set to empty', () {
+      const create = ConversationToCreate(
+        title: 'Chat',
+        workspaceId: 'ws_1',
+        modelId: '',
+      );
+      expect(create.isValid, isFalse);
+    });
   });
 
   group('ConversationPatch', () {

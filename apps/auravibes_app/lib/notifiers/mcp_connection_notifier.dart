@@ -342,10 +342,8 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
 
   /// Get the timeout duration for waiting for MCP connections.
   ///
-  /// This is exposed as a method to allow future configuration via settings.
   /// Currently returns a default of 10 seconds.
   Duration getMcpConnectionTimeout() {
-    // TODO: In the future, this can be fetched from user settings/config
     return const Duration(seconds: 10);
   }
 

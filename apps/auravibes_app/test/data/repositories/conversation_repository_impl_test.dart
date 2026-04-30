@@ -200,6 +200,20 @@ void main() {
           throwsA(isA<ConversationValidationException>()),
         );
       });
+
+      test('throws on empty modelId', () async {
+        const toCreate = ConversationToCreate(
+          title: 'Valid Title',
+          workspaceId: 'ws-1',
+          modelId: '',
+        );
+
+        await expectLater(
+          repository.createConversation(toCreate),
+          throwsA(isA<ConversationValidationException>()),
+        );
+        verifyNever(mockDao.insertConversation(any));
+      });
     });
 
     group('patchConversation', () {

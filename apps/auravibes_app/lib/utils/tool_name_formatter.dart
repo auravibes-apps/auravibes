@@ -17,66 +17,73 @@ class ToolNameFormatter {
   /// Returns a [ParsedToolId] with the parsed components,
   /// or a fallback if the format is unrecognized.
   static ParsedToolId parse(String compositeId) {
-    // Try parsing as MCP tool (format: mcp_<id>_<slug>_<tool>)
-    if (compositeId.startsWith('mcp_')) {
-      final withoutPrefix = compositeId.substring(4);
-      // Split by underscore, but we need exactly 3 parts after prefix
-      // Since slug and tool can contain underscores, we need to be careful
-      // Format: <id>_<slug>_<tool> where id is numeric
-      final firstUnderscoreIdx = withoutPrefix.indexOf('_');
-      if (firstUnderscoreIdx > 0) {
-        final mcpId = withoutPrefix.substring(0, firstUnderscoreIdx);
-        final rest = withoutPrefix.substring(firstUnderscoreIdx + 1);
-        final secondUnderscoreIdx = rest.indexOf('_');
-        if (secondUnderscoreIdx > 0) {
-          final slug = rest.substring(0, secondUnderscoreIdx);
-          final tool = rest.substring(secondUnderscoreIdx + 1);
-          if (mcpId.isNotEmpty && slug.isNotEmpty && tool.isNotEmpty) {
-            return ParsedToolId.mcp(
-              mcpServerId: mcpId,
-              slugName: slug,
-              toolIdentifier: tool,
-            );
-          }
-        }
-      }
-    }
+    final mcpTool = _parseMcpTool(compositeId);
+    if (mcpTool != null) return mcpTool;
 
-    // Try parsing as built-in tool (format: built_in_<table_id>_<tool>)
-    if (compositeId.startsWith('built_in_')) {
-      final withoutPrefix = compositeId.substring(9);
-      // Split to get table_id and tool_identifier
-      final firstUnderscoreIdx = withoutPrefix.indexOf('_');
-      if (firstUnderscoreIdx > 0) {
-        final tableId = withoutPrefix.substring(0, firstUnderscoreIdx);
-        final toolIdentifier = withoutPrefix.substring(firstUnderscoreIdx + 1);
-        if (tableId.isNotEmpty && toolIdentifier.isNotEmpty) {
-          return ParsedToolId.builtIn(
-            tableId: tableId,
-            toolIdentifier: toolIdentifier,
-          );
-        }
-      }
-    }
+    final builtInTool = _parseBuiltInTool(compositeId);
+    if (builtInTool != null) return builtInTool;
 
-    // Try parsing as native tool (format: native_<table_id>_<tool>)
-    if (compositeId.startsWith('native_')) {
-      final withoutPrefix = compositeId.substring(7);
-      final firstUnderscoreIdx = withoutPrefix.indexOf('_');
-      if (firstUnderscoreIdx > 0) {
-        final tableId = withoutPrefix.substring(0, firstUnderscoreIdx);
-        final toolIdentifier = withoutPrefix.substring(firstUnderscoreIdx + 1);
-        if (tableId.isNotEmpty && toolIdentifier.isNotEmpty) {
-          return ParsedToolId.native(
-            tableId: tableId,
-            toolIdentifier: toolIdentifier,
-          );
-        }
-      }
-    }
+    final nativeTool = _parseNativeTool(compositeId);
+    if (nativeTool != null) return nativeTool;
 
-    // Fallback for unknown format
     return ParsedToolId.unknown(rawName: compositeId);
+  }
+
+  static ParsedToolId? _parseMcpTool(String compositeId) {
+    if (!compositeId.startsWith('mcp_')) return null;
+
+    final withoutPrefix = compositeId.substring(4);
+    final firstUnderscoreIdx = withoutPrefix.indexOf('_');
+    if (firstUnderscoreIdx <= 0) return null;
+
+    final mcpId = withoutPrefix.substring(0, firstUnderscoreIdx);
+    final rest = withoutPrefix.substring(firstUnderscoreIdx + 1);
+    final secondUnderscoreIdx = rest.indexOf('_');
+    if (secondUnderscoreIdx <= 0) return null;
+
+    final slug = rest.substring(0, secondUnderscoreIdx);
+    final tool = rest.substring(secondUnderscoreIdx + 1);
+    if (mcpId.isEmpty || slug.isEmpty || tool.isEmpty) return null;
+
+    return ParsedToolId.mcp(
+      mcpServerId: mcpId,
+      slugName: slug,
+      toolIdentifier: tool,
+    );
+  }
+
+  static ParsedToolId? _parseBuiltInTool(String compositeId) {
+    if (!compositeId.startsWith('built_in_')) return null;
+    return _parseTableTool(
+      compositeId.substring(9),
+      ParsedToolId.builtIn,
+    );
+  }
+
+  static ParsedToolId? _parseNativeTool(String compositeId) {
+    if (!compositeId.startsWith('native_')) return null;
+    return _parseTableTool(
+      compositeId.substring(7),
+      ParsedToolId.native,
+    );
+  }
+
+  static ParsedToolId? _parseTableTool(
+    String value,
+    ParsedToolId Function({
+      required String tableId,
+      required String toolIdentifier,
+    })
+    create,
+  ) {
+    final firstUnderscoreIdx = value.indexOf('_');
+    if (firstUnderscoreIdx <= 0) return null;
+
+    final tableId = value.substring(0, firstUnderscoreIdx);
+    final toolIdentifier = value.substring(firstUnderscoreIdx + 1);
+    if (tableId.isEmpty || toolIdentifier.isEmpty) return null;
+
+    return create(tableId: tableId, toolIdentifier: toolIdentifier);
   }
 
   /// Formats a tool display name using the parsed ID and optional server name.

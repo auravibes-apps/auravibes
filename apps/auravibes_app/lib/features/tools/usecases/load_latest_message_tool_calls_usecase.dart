@@ -101,23 +101,37 @@ class LoadLatestMessageToolCallsUsecase {
     );
     if (excludeIndex == -1) return const {};
 
-    var startIndex = 0;
+    final startIndex = _findFailedToolScanStart(messages, excludeIndex);
+    final latestStatusByToolName = _collectLatestToolStatuses(
+      messages,
+      startIndex: startIndex,
+      endIndex: excludeIndex,
+    );
+
+    return _failedToolNames(latestStatusByToolName);
+  }
+
+  int _findFailedToolScanStart(
+    List<MessageEntity> messages,
+    int excludeIndex,
+  ) {
     var userCount = 0;
     for (var i = excludeIndex - 1; i >= 0; i--) {
-      if (messages[i].isUser) {
-        userCount++;
-        if (userCount == 2) {
-          startIndex = i + 1;
-          break;
-        }
-      }
-    }
-    if (userCount < 2) {
-      startIndex = 0;
-    }
+      if (!messages[i].isUser) continue;
 
+      userCount++;
+      if (userCount == 2) return i + 1;
+    }
+    return 0;
+  }
+
+  Map<String, ToolCallResultStatus> _collectLatestToolStatuses(
+    List<MessageEntity> messages, {
+    required int startIndex,
+    required int endIndex,
+  }) {
     final latestStatusByToolName = <String, ToolCallResultStatus>{};
-    for (var i = startIndex; i < excludeIndex; i++) {
+    for (var i = startIndex; i < endIndex; i++) {
       final message = messages[i];
       if (message.isUser) continue;
       final toolCalls = message.metadata?.toolCalls ?? const [];
@@ -127,7 +141,12 @@ class LoadLatestMessageToolCallsUsecase {
         latestStatusByToolName[toolCall.name] = status;
       }
     }
+    return latestStatusByToolName;
+  }
 
+  Set<String> _failedToolNames(
+    Map<String, ToolCallResultStatus> latestStatusByToolName,
+  ) {
     final failedNames = <String>{};
     latestStatusByToolName.forEach((toolName, status) {
       if (status != ToolCallResultStatus.success &&

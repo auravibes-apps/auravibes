@@ -42,72 +42,117 @@ class RunAgentIterationUsecase {
     agentCancellationRuntime.start(conversationId);
 
     try {
-      var currentContext = context;
-
-      while (true) {
-        if (agentCancellationRuntime.isCancellationRequested(conversationId)) {
-          await _markAckMessagesSent(currentContext);
-          sendQueueRuntime.clear(conversationId);
-          return AgentIterationDecision.done;
-        }
-
-        currentContext = await _withQueuedDrafts(
-          conversationId: conversationId,
-          context: currentContext,
-        );
-
-        if (agentCancellationRuntime.isCancellationRequested(conversationId)) {
-          await _markAckMessagesSent(currentContext);
-          sendQueueRuntime.clear(conversationId);
-          return AgentIterationDecision.done;
-        }
-
-        final continueResult = await continueAgentUsecase.call(
-          conversationId: conversationId,
-          context: currentContext,
-        );
-
-        if (agentCancellationRuntime.isCancellationRequested(conversationId)) {
-          await _markAckMessagesSent(currentContext);
-          sendQueueRuntime.clear(conversationId);
-          return AgentIterationDecision.done;
-        }
-
-        currentContext = AgentIterationContext(
-          origin: currentContext?.origin ?? AgentIterationOrigin.userMessage,
-        );
-
-        if (!continueResult.hasToolCalls) {
-          final queuedContext = await _withQueuedDrafts(
-            conversationId: conversationId,
-            context: currentContext,
-          );
-          if (queuedContext == currentContext) {
-            return AgentIterationDecision.done;
-          }
-
-          currentContext = queuedContext;
-          continue;
-        }
-
-        final decision = await runAllowedToolsUsecase.call(
-          conversationId: conversationId,
-          workspaceId: conversation.workspaceId,
-        );
-
-        if (agentCancellationRuntime.isCancellationRequested(conversationId)) {
-          await _markAckMessagesSent(currentContext);
-          sendQueueRuntime.clear(conversationId);
-          return AgentIterationDecision.done;
-        }
-
-        if (decision != AgentIterationDecision.continueIteration) {
-          return decision;
-        }
-      }
+      return await _runLoop(
+        conversationId: conversationId,
+        workspaceId: conversation.workspaceId,
+        context: context,
+      );
     } finally {
       agentCancellationRuntime.clear(conversationId);
     }
+  }
+
+  Future<AgentIterationDecision> _runLoop({
+    required String conversationId,
+    required String workspaceId,
+    required AgentIterationContext? context,
+  }) async {
+    var currentContext = context;
+
+    while (true) {
+      final cancelDecision = await _cancelIfRequested(
+        conversationId,
+        currentContext,
+      );
+      if (cancelDecision != null) return cancelDecision;
+
+      final result = await _runIteration(
+        conversationId: conversationId,
+        workspaceId: workspaceId,
+        context: currentContext,
+      );
+      currentContext = result.context;
+      if (result.decision != AgentIterationDecision.continueIteration) {
+        return result.decision;
+      }
+    }
+  }
+
+  Future<_AgentIterationStep> _runIteration({
+    required String conversationId,
+    required String workspaceId,
+    required AgentIterationContext? context,
+  }) async {
+    var currentContext = await _withQueuedDrafts(
+      conversationId: conversationId,
+      context: context,
+    );
+    final cancelDecision = await _cancelIfRequested(
+      conversationId,
+      currentContext,
+    );
+    if (cancelDecision != null) {
+      return _AgentIterationStep(currentContext, cancelDecision);
+    }
+
+    final continueResult = await continueAgentUsecase.call(
+      conversationId: conversationId,
+      context: currentContext,
+    );
+    final postContinueCancel = await _cancelIfRequested(
+      conversationId,
+      currentContext,
+    );
+    if (postContinueCancel != null) {
+      return _AgentIterationStep(currentContext, postContinueCancel);
+    }
+
+    currentContext = AgentIterationContext(
+      origin: currentContext?.origin ?? AgentIterationOrigin.userMessage,
+    );
+    if (!continueResult.hasToolCalls) {
+      return _continueAfterNoToolCalls(conversationId, currentContext);
+    }
+
+    final decision = await runAllowedToolsUsecase.call(
+      conversationId: conversationId,
+      workspaceId: workspaceId,
+    );
+    final postToolCancel = await _cancelIfRequested(
+      conversationId,
+      currentContext,
+    );
+    return _AgentIterationStep(
+      currentContext,
+      postToolCancel ?? decision,
+    );
+  }
+
+  Future<_AgentIterationStep> _continueAfterNoToolCalls(
+    String conversationId,
+    AgentIterationContext currentContext,
+  ) async {
+    final queuedContext = await _withQueuedDrafts(
+      conversationId: conversationId,
+      context: currentContext,
+    );
+    final decision = queuedContext == currentContext
+        ? AgentIterationDecision.done
+        : AgentIterationDecision.continueIteration;
+    return _AgentIterationStep(queuedContext, decision);
+  }
+
+  Future<AgentIterationDecision?> _cancelIfRequested(
+    String conversationId,
+    AgentIterationContext? context,
+  ) async {
+    if (!agentCancellationRuntime.isCancellationRequested(conversationId)) {
+      return null;
+    }
+
+    await _markAckMessagesSent(context);
+    sendQueueRuntime.clear(conversationId);
+    return AgentIterationDecision.done;
   }
 
   Future<AgentIterationContext?> _withQueuedDrafts({
@@ -155,6 +200,13 @@ class RunAgentIterationUsecase {
       ),
     );
   }
+}
+
+class _AgentIterationStep {
+  const _AgentIterationStep(this.context, this.decision);
+
+  final AgentIterationContext? context;
+  final AgentIterationDecision decision;
 }
 
 final runAgentIterationUsecaseProvider = Provider<RunAgentIterationUsecase>((

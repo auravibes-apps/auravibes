@@ -15,10 +15,10 @@ Widget basicCardUseCase(BuildContext context) {
       options: AuraCardStyle.values,
       labelBuilder: (value) => value.name,
     ),
-    child: Column(
+    child: const Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: const [
+      children: [
         AuraText(style: AuraTextStyle.heading6, child: Text('Card Title')),
         SizedBox(height: 8),
         AuraText(
