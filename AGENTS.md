@@ -178,6 +178,6 @@ SomeExperimentalApi(), // ignore: experimental_member_use - Required for widgetb
 
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at `specs/008-avoid-approval-flash/plan.md`
+at `specs/009-workspace-management/plan.md`
 
 <!-- SPECKIT END -->
