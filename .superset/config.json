@@ -1,0 +1,7 @@
+{
+  "setup": [
+    "fvm use","fvm dart pub get","fvm dart run melos bootstrap"
+  ],
+  "teardown": [],
+  "run": []
+}
