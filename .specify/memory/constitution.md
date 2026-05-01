@@ -168,8 +168,8 @@ database can enforce referential integrity.
 ### Business Logic Layering Contract
 
 Business rules, validation, and orchestration decisions MUST live in domain
-usecase classes, not in providers, widgets, or repository implementations.
-Providers MUST delegate to usecases; they MUST NOT inline business logic.
+use case classes, not in providers, widgets, or repository implementations.
+Providers MUST delegate to use cases; they MUST NOT inline business logic.
 Widgets MUST delegate to providers; they MUST NOT contain business decisions.
 
 ### Reactive Data Contract
@@ -193,7 +193,7 @@ messages, tooltips).
 User-facing errors MUST be typed exception classes that carry localization keys
 or translation parameters. Raw `String` error messages passed through `AsyncValue`,
 state objects, or widget parameters are PROHIBITED. Infrastructure exceptions MAY
-bubble up untranslated; they MUST be mapped to domain exceptions at the usecase
+bubble up untranslated; they MUST be mapped to domain exceptions at the use case
 or provider boundary before reaching the UI.
 
 ### AsyncValue Pattern Contract

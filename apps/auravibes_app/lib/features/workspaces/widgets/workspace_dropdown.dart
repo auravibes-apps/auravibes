@@ -59,10 +59,7 @@ class WorkspaceDropdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final activeWorkspace = activeWorkspaceId != null
-        ? workspaces.cast<WorkspaceDropdownItem?>().firstWhere(
-            (w) => w?.id == activeWorkspaceId,
-            orElse: () => null,
-          )
+        ? workspaces.where((w) => w.id == activeWorkspaceId).firstOrNull
         : null;
 
     return AuraDropdownSelector<WorkspaceDropdownItem>(
