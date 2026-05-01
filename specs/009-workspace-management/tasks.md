@@ -19,9 +19,9 @@
 
 **Purpose**: Verify existing data layer and prepare feature directories
 
-- [ ] T001 Verify `WorkspaceRepository` supports create/update/delete/cascade and has required methods in `apps/auravibes_app/lib/features/workspaces/data/repositories/workspace_repository.dart` — if verification fails, create implementation tasks for missing CRUD or cascade behavior before proceeding
-- [ ] T002 [P] Create feature directories: `apps/auravibes_app/lib/features/workspaces/providers/` and `apps/auravibes_app/lib/features/workspaces/screens/` if missing
-- [ ] T003 [P] Create UI package directory: `packages/auravibes_ui/lib/src/molecules/` for dropdown widget
+- [x] T001 Verify `WorkspaceRepository` supports create/update/delete/cascade and has required methods in `apps/auravibes_app/lib/features/workspaces/data/repositories/workspace_repository.dart` — if verification fails, create implementation tasks for missing CRUD or cascade behavior before proceeding
+- [x] T002 [P] Create feature directories: `apps/auravibes_app/lib/features/workspaces/providers/` and `apps/auravibes_app/lib/features/workspaces/screens/` if missing
+- [x] T003 [P] Create UI package directory: `packages/auravibes_ui/lib/src/molecules/` for dropdown widget
 
 ---
 
@@ -31,12 +31,12 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T004 Add GoRouter route for workspace management screen (e.g., `/workspaces/:workspaceId/settings/workspaces`) in `apps/auravibes_app/lib/routing/app_router.dart`
-- [ ] T005 [P] Create `workspaceSwitchState` model (idle/loading/error enum + target workspace) in `apps/auravibes_app/lib/features/workspaces/models/workspace_switch_state.dart`
-- [ ] T006 [P] Create `workspaceManagementState` model (AsyncValue workspaces, create/edit/delete flags, validation error) in `apps/auravibes_app/lib/features/workspaces/models/workspace_management_state.dart`
-- [ ] T007 Create `workspaceSwitcherProvider` (AsyncNotifier) with debounce, loading guard, error handling, URL navigation, and structured logging of switch timing in `apps/auravibes_app/lib/features/workspaces/providers/workspace_switcher_provider.dart` — MUST use `AsyncValue`, immutable Freezed state, and declare provider lifecycle (`autoDispose` vs `keepAlive`)
-- [ ] T008 Create `workspaceManagementProvider` (AsyncNotifier) with CRUD orchestration, name validation (3–20 chars), active/last-workspace guards, and structured logging of CRUD operations in `apps/auravibes_app/lib/features/workspaces/providers/workspace_management_provider.dart` — MUST use `AsyncValue`, immutable Freezed state, and declare provider lifecycle (`autoDispose` vs `keepAlive`)
-- [ ] T009 [P] Add sidebar navigation button (e.g., "Manage Workspaces" icon) in the sidebar footer section of `apps/auravibes_app/lib/widgets/app_navigation_wrappers.dart` — place alongside Settings for discoverability
+- [x] T004 Add GoRouter route for workspace management screen (e.g., `/workspaces/:workspaceId/settings/workspaces`) in `apps/auravibes_app/lib/routing/app_router.dart`
+- [x] T005 [P] Create `workspaceSwitchState` model (idle/loading/error enum + target workspace) in `apps/auravibes_app/lib/features/workspaces/models/workspace_switch_state.dart`
+- [x] T006 [P] Create `workspaceManagementState` model (AsyncValue workspaces, create/edit/delete flags, validation error) in `apps/auravibes_app/lib/features/workspaces/models/workspace_management_state.dart`
+- [x] T007 Create `workspaceSwitcherProvider` (AsyncNotifier) with debounce, loading guard, error handling, URL navigation, and structured logging of switch timing in `apps/auravibes_app/lib/features/workspaces/providers/workspace_switcher_provider.dart` — MUST use `AsyncValue`, immutable Freezed state, and declare provider lifecycle (`autoDispose` vs `keepAlive`)
+- [x] T008 Create `workspaceManagementProvider` (AsyncNotifier) with CRUD orchestration, name validation (3–20 chars), active/last-workspace guards, and structured logging of CRUD operations in `apps/auravibes_app/lib/features/workspaces/providers/workspace_management_provider.dart` — MUST use `AsyncValue`, immutable Freezed state, and declare provider lifecycle (`autoDispose` vs `keepAlive`)
+- [x] T009 [P] Add sidebar navigation button (e.g., "Manage Workspaces" icon) in the sidebar footer section of `apps/auravibes_app/lib/widgets/app_navigation_wrappers.dart` — place alongside Settings for discoverability
 
 **Checkpoint**: Foundation ready — switcher provider, management provider, route, and sidebar button exist. User story implementation can now begin.
 
@@ -56,11 +56,11 @@
 
 ### Implementation for User Story 1
 
-- [ ] T013 [US1] Implement `WorkspaceDropdown` widget in `packages/auravibes_ui/lib/src/molecules/workspace_dropdown.dart` — displays active workspace, opens dropdown list, handles selection callback, shows loading state, shows error inline
-- [ ] T014 [US1] Integrate `WorkspaceDropdown` into `AuraSidebarWrapper` header in `apps/auravibes_app/lib/widgets/app_navigation_wrappers.dart` — pass active workspace, all workspaces, and switch handler
-- [ ] T015 [US1] Wire `workspaceSwitcherProvider` to GoRouter navigation in `apps/auravibes_app/lib/features/workspaces/providers/workspace_switcher_provider.dart` — on success, navigate to `/workspaces/:id/chat/new`
-- [ ] T016 [US1] Add loading indicator overlay/spinner during active switch in `apps/auravibes_app/lib/widgets/app_navigation_wrappers.dart` or dropdown
-- [ ] T017 [US1] Add error retry UI when switch fails in `packages/auravibes_ui/lib/src/molecules/workspace_dropdown.dart` or wrapper
+- [x] T013 [US1] Implement `WorkspaceDropdown` widget in `packages/auravibes_ui/lib/src/molecules/workspace_dropdown.dart` — displays active workspace, opens dropdown list, handles selection callback, shows loading state, shows error inline
+- [x] T014 [US1] Integrate `WorkspaceDropdown` into `AuraSidebarWrapper` header in `apps/auravibes_app/lib/widgets/app_navigation_wrappers.dart` — pass active workspace, all workspaces, and switch handler
+- [x] T015 [US1] Wire `workspaceSwitcherProvider` to GoRouter navigation in `apps/auravibes_app/lib/features/workspaces/providers/workspace_switcher_provider.dart` — on success, navigate to `/workspaces/:id/chat/new`
+- [x] T016 [US1] Add loading indicator overlay/spinner during active switch in `apps/auravibes_app/lib/widgets/app_navigation_wrappers.dart` or dropdown
+- [x] T017 [US1] Add error retry UI when switch fails in `packages/auravibes_ui/lib/src/molecules/workspace_dropdown.dart` or wrapper
 
 **Checkpoint**: User Story 1 is fully functional and testable independently. MVP achieved.
 
@@ -81,9 +81,9 @@
 
 ### Implementation for User Story 5
 
-- [ ] T020 [US5] Implement `WorkspaceManagementScreen` shell in `apps/auravibes_app/lib/features/workspaces/screens/workspace_management_screen.dart` — scaffold with AppBar, workspace list, and provider wiring
-- [ ] T021 [US5] Create `WorkspaceListItem` widget (or inline) in `apps/auravibes_app/lib/features/workspaces/screens/workspace_management_screen.dart` — displays workspace name with placeholder edit/delete actions
-- [ ] T022 [US5] Wire sidebar "Manage Workspaces" button to navigate to management route in `apps/auravibes_app/lib/widgets/app_navigation_wrappers.dart`
+- [x] T020 [US5] Implement `WorkspaceManagementScreen` shell in `apps/auravibes_app/lib/features/workspaces/screens/workspace_management_screen.dart` — scaffold with AppBar, workspace list, and provider wiring
+- [x] T021 [US5] Create `WorkspaceListItem` widget (or inline) in `apps/auravibes_app/lib/features/workspaces/screens/workspace_management_screen.dart` — displays workspace name with placeholder edit/delete actions
+- [x] T022 [US5] Wire sidebar "Manage Workspaces" button to navigate to management route in `apps/auravibes_app/lib/widgets/app_navigation_wrappers.dart`
 
 **Checkpoint**: Management screen exists and is reachable. User Stories 2–4 can now build on it.
 
@@ -103,10 +103,10 @@
 
 ### Implementation for User Story 2
 
-- [ ] T026 [US2] Add "Create Workspace" button/form (inline or bottom sheet) to `WorkspaceManagementScreen` in `apps/auravibes_app/lib/features/workspaces/screens/workspace_management_screen.dart`
-- [ ] T027 [US2] Implement name validation (3–20 chars) with clear error messages in `apps/auravibes_app/lib/features/workspaces/providers/workspace_management_provider.dart`
-- [ ] T028 [US2] Wire create action through `workspaceManagementProvider` to `WorkspaceRepository.create()` in `apps/auravibes_app/lib/features/workspaces/providers/workspace_management_provider.dart`
-- [ ] T029 [US2] Invalidate `allWorkspacesProvider` after successful creation so sidebar dropdown updates in `apps/auravibes_app/lib/features/workspaces/providers/workspace_management_provider.dart`
+- [x] T026 [US2] Add "Create Workspace" button/form (inline or bottom sheet) to `WorkspaceManagementScreen` in `apps/auravibes_app/lib/features/workspaces/screens/workspace_management_screen.dart`
+- [x] T027 [US2] Implement name validation (3–20 chars) with clear error messages in `apps/auravibes_app/lib/features/workspaces/providers/workspace_management_provider.dart`
+- [x] T028 [US2] Wire create action through `workspaceManagementProvider` to `WorkspaceRepository.create()` in `apps/auravibes_app/lib/features/workspaces/providers/workspace_management_provider.dart`
+- [x] T029 [US2] Invalidate `allWorkspacesProvider` after successful creation so sidebar dropdown updates in `apps/auravibes_app/lib/features/workspaces/providers/workspace_management_provider.dart`
 
 **Checkpoint**: User Stories 1 and 2 both work independently. Create operation is functional.
 
@@ -125,9 +125,9 @@
 
 ### Implementation for User Story 3
 
-- [ ] T032 [US3] Add inline edit mode to `WorkspaceListItem` in `apps/auravibes_app/lib/features/workspaces/screens/workspace_management_screen.dart` — tap edit → text field with save/cancel
-- [ ] T033 [US3] Wire edit action through `workspaceManagementProvider` to `WorkspaceRepository.update()` in `apps/auravibes_app/lib/features/workspaces/providers/workspace_management_provider.dart`
-- [ ] T034 [US3] Invalidate `allWorkspacesProvider` and refresh active workspace display after successful edit in `apps/auravibes_app/lib/features/workspaces/providers/workspace_management_provider.dart`
+- [x] T032 [US3] Add inline edit mode to `WorkspaceListItem` in `apps/auravibes_app/lib/features/workspaces/screens/workspace_management_screen.dart` — tap edit → text field with save/cancel
+- [x] T033 [US3] Wire edit action through `workspaceManagementProvider` to `WorkspaceRepository.update()` in `apps/auravibes_app/lib/features/workspaces/providers/workspace_management_provider.dart`
+- [x] T034 [US3] Invalidate `allWorkspacesProvider` and refresh active workspace display after successful edit in `apps/auravibes_app/lib/features/workspaces/providers/workspace_management_provider.dart`
 
 **Checkpoint**: Edit operation is functional. User Stories 1, 2, and 3 work independently.
 
@@ -147,12 +147,12 @@
 
 ### Implementation for User Story 4
 
-- [ ] T038 [US4] Add delete action with confirmation dialog to `WorkspaceListItem` in `apps/auravibes_app/lib/features/workspaces/screens/workspace_management_screen.dart`
-- [ ] T039 [US4] Implement delete guards in `workspaceManagementProvider` — prevent deleting active workspace and last remaining workspace in `apps/auravibes_app/lib/features/workspaces/providers/workspace_management_provider.dart`
-- [ ] T040 [US4] Wire delete action through `workspaceManagementProvider` to `WorkspaceRepository.delete()` in `apps/auravibes_app/lib/features/workspaces/providers/workspace_management_provider.dart`
-- [ ] T041 [US4] Invalidate `allWorkspacesProvider` after successful delete in `apps/auravibes_app/lib/features/workspaces/providers/workspace_management_provider.dart`
-- [ ] T042a [US4] Verify `WorkspaceRepository.delete()` cascades to related tables (`Conversations`, `Tools`, `ToolsGroups`, `McpServers`, `ModelConnections`) in `apps/auravibes_app/lib/features/workspaces/data/repositories/workspace_repository_impl.dart`
-- [ ] T042b [US4] If T042a fails, implement cascade delete in `WorkspaceRepository.delete()` for all related tables — include migration test if schema changes are required
+- [x] T038 [US4] Add delete action with confirmation dialog to `WorkspaceListItem` in `apps/auravibes_app/lib/features/workspaces/screens/workspace_management_screen.dart`
+- [x] T039 [US4] Implement delete guards in `workspaceManagementProvider` — prevent deleting active workspace and last remaining workspace in `apps/auravibes_app/lib/features/workspaces/providers/workspace_management_provider.dart`
+- [x] T040 [US4] Wire delete action through `workspaceManagementProvider` to `WorkspaceRepository.delete()` in `apps/auravibes_app/lib/features/workspaces/providers/workspace_management_provider.dart`
+- [x] T041 [US4] Invalidate `allWorkspacesProvider` after successful delete in `apps/auravibes_app/lib/features/workspaces/providers/workspace_management_provider.dart`
+- [x] T042a [US4] Verify `WorkspaceRepository.delete()` cascades to related tables (`Conversations`, `Tools`, `ToolsGroups`, `McpServers`, `ModelConnections`) in `apps/auravibes_app/lib/features/workspaces/data/repositories/workspace_repository_impl.dart`
+- [x] T042b [US4] If T042a fails, implement cascade delete in `WorkspaceRepository.delete()` for all related tables — include migration test if schema changes are required
 
 **Checkpoint**: All user stories are independently functional. Delete operation works with guards.
 
@@ -162,13 +162,13 @@
 
 **Purpose**: Accessibility, error handling polish, and validation
 
-- [ ] T043 [P] Add semantic labels and accessibility support to `WorkspaceDropdown` in `packages/auravibes_ui/lib/src/molecules/workspace_dropdown.dart`
-- [ ] T044 [P] Add semantic labels to management screen actions (create, edit, delete, confirm) in `apps/auravibes_app/lib/features/workspaces/screens/workspace_management_screen.dart`
-- [ ] T045 Add loading/error state styling using `auravibes_ui` tokens in `packages/auravibes_ui/lib/src/molecules/workspace_dropdown.dart`
-- [ ] T046 [P] Run `fvm dart run melos analyze` and fix static analysis issues across modified files
-- [ ] T047 [P] Run `fvm dart run melos format` across modified files
+- [x] T043 [P] Add semantic labels and accessibility support to `WorkspaceDropdown` in `packages/auravibes_ui/lib/src/molecules/workspace_dropdown.dart`
+- [x] T044 [P] Add semantic labels to management screen actions (create, edit, delete, confirm) in `apps/auravibes_app/lib/features/workspaces/screens/workspace_management_screen.dart`
+- [x] T045 Add loading/error state styling using `auravibes_ui` tokens in `packages/auravibes_ui/lib/src/molecules/workspace_dropdown.dart`
+- [x] T046 [P] Run `fvm dart run melos analyze` and fix static analysis issues across modified files
+- [x] T047 [P] Run `fvm dart run melos format` across modified files
 - [ ] T048 Run quickstart.md validation: switch, create, edit, delete, edge cases per `specs/009-workspace-management/quickstart.md`
-- [ ] T049 [P] Add dartdoc to public provider APIs in `apps/auravibes_app/lib/features/workspaces/providers/workspace_switcher_provider.dart` and `workspace_management_provider.dart`
+- [x] T049 [P] Add dartdoc to public provider APIs in `apps/auravibes_app/lib/features/workspaces/providers/workspace_switcher_provider.dart` and `workspace_management_provider.dart`
 
 ---
 

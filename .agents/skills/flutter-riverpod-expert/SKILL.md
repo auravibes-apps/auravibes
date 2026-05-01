@@ -33,9 +33,9 @@ Apply Riverpod 3 patterns that fit the current codebase. In AuraVibes, prefer th
 - Use hooks for local widget-only state such as controllers, focus nodes, animation controllers, debounce timers, and form-local state.
 - Use Riverpod for app/domain state shared across widgets, persisted across routes, injected into use cases, or consumed by tests.
 - Prefer `ref.watch` for reactive values, `ref.select` for narrow rebuilds, `ref.read` in event handlers and notifier methods, and `ref.listen` for side effects.
-- Prefer `AsyncValue` pattern matching or `.when` for UI. Avoid ad hoc `isLoading`/`error` flags unless a domain state object needs them for a specific UX.
+- Prefer `AsyncValue` pattern matching or switch expressions for UI. The `.when()` method is PROHIBITED in new code. Avoid ad hoc `isLoading`/`error` flags unless a domain state object needs them for a specific UX.
 - After `await` inside notifier methods, check `ref.mounted` before touching `ref` or `state` if the notifier may have been disposed.
-- Treat Riverpod 3 `Mutation` as experimental. Use it only where the project already has the pattern or the user asks for it.
+- Data mutations (CRUD) MUST use Riverpod `Mutation` or an equivalent explicit mutation pattern. Manually toggling `AsyncValue.loading()` / `AsyncValue.data()` inside notifiers to track action state is PROHIBITED. `build()`-based `AsyncNotifier` MUST be reserved for state that genuinely needs initialization logic, not for wrapping simple action methods.
 
 ## Avoid
 

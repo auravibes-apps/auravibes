@@ -11,9 +11,17 @@ export 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 @DataClassName('ConversationToolsTable')
 class ConversationTools extends Table with TableMixin {
   /// Reference to the conversation this tool setting belongs to
-  TextColumn get conversationId => text().references(Conversations, #id)();
+  TextColumn get conversationId => text().references(
+    Conversations,
+    #id,
+    onDelete: KeyAction.cascade,
+  )();
 
-  TextColumn get toolId => text().references(Tools, #id)();
+  TextColumn get toolId => text().references(
+    Tools,
+    #id,
+    onDelete: KeyAction.cascade,
+  )();
 
   /// Whether the tool is enabled for this workspace
   BoolColumn get isEnabled => boolean().withDefault(const Constant(false))();

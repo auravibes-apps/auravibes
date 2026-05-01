@@ -1,5 +1,4 @@
 ---
-
 description: "Task list template for feature implementation"
 ---
 
@@ -18,6 +17,19 @@ description: "Task list template for feature implementation"
 - **[Story]**: Which user story this task belongs to (e.g., US1, US2, US3)
 - Include exact file paths in descriptions
 
+## Constitution Compliance
+
+All tasks MUST satisfy the relevant Implementation Standards from the project constitution:
+
+- **Business Logic Layering**: Business rules, validation, and orchestration MUST live in domain usecase classes, not in providers or widgets.
+- **Reactive Data**: Repository queries feeding live-updating UI MUST return `Stream` with a corresponding `StreamProvider`.
+- **Localization**: All user-facing strings MUST use `tr()` / `LocaleKeys` / `TextLocale`. No hardcoded English in UI code.
+- **Typed Errors**: User-facing errors MUST be typed exception classes carrying localization keys. No raw `String` error messages in `AsyncValue` or state objects.
+- **AsyncValue Pattern**: Use Dart 3 switch expressions / pattern matching on `AsyncValue`. `.when()` is PROHIBITED in new code.
+- **Mutation State**: Data mutations (CRUD) MUST use Riverpod `Mutation` or equivalent explicit mutation pattern. No manual `AsyncValue.loading()` toggling in notifiers.
+- **UI Package Purity**: Widgets in `packages/auravibes_ui/` MUST be domain-agnostic and reusable across projects.
+- **Widget Size**: Each widget SHOULD watch at most one provider. Decompose large widgets into focused composable pieces.
+
 ## Path Conventions
 
 - **Single project**: `src/`, `tests/` at repository root
@@ -25,21 +37,21 @@ description: "Task list template for feature implementation"
 - **Mobile**: `api/src/`, `ios/src/` or `android/src/`
 - Paths shown below assume single project - adjust based on plan.md structure
 
-<!-- 
+<!--
   ============================================================================
   IMPORTANT: The tasks below are SAMPLE TASKS for illustration purposes only.
-  
+
   The /speckit.tasks command MUST replace these with actual tasks based on:
   - User stories from spec.md (with their priorities P1, P2, P3...)
   - Feature requirements from plan.md
   - Entities from data-model.md
   - Endpoints from contracts/
-  
+
   Tasks MUST be organized by user story so each story can be:
   - Implemented independently
   - Tested independently
   - Delivered as an MVP increment
-  
+
   DO NOT keep these sample tasks in the generated tasks.md file.
   ============================================================================
 -->
@@ -83,8 +95,8 @@ Examples of foundational tasks (adjust based on your project):
 
 > **NOTE: Write these tests before or with implementation when practical; bug fix tests should fail before the fix**
 
-- [ ] T010 [P] [US1] Contract test for [endpoint] in tests/contract/test_[name].py
-- [ ] T011 [P] [US1] Integration test for [user journey] in tests/integration/test_[name].py
+- [ ] T010 [P] [US1] Contract test for [endpoint] in tests/contract/test\_[name].py
+- [ ] T011 [P] [US1] Integration test for [user journey] in tests/integration/test\_[name].py
 
 ### Implementation for User Story 1
 
@@ -107,8 +119,8 @@ Examples of foundational tasks (adjust based on your project):
 
 ### Tests for User Story 2 (include when required by risk/behavior) ⚠️
 
-- [ ] T018 [P] [US2] Contract test for [endpoint] in tests/contract/test_[name].py
-- [ ] T019 [P] [US2] Integration test for [user journey] in tests/integration/test_[name].py
+- [ ] T018 [P] [US2] Contract test for [endpoint] in tests/contract/test\_[name].py
+- [ ] T019 [P] [US2] Integration test for [user journey] in tests/integration/test\_[name].py
 
 ### Implementation for User Story 2
 
@@ -129,8 +141,8 @@ Examples of foundational tasks (adjust based on your project):
 
 ### Tests for User Story 3 (include when required by risk/behavior) ⚠️
 
-- [ ] T024 [P] [US3] Contract test for [endpoint] in tests/contract/test_[name].py
-- [ ] T025 [P] [US3] Integration test for [user journey] in tests/integration/test_[name].py
+- [ ] T024 [P] [US3] Contract test for [endpoint] in tests/contract/test\_[name].py
+- [ ] T025 [P] [US3] Integration test for [user journey] in tests/integration/test\_[name].py
 
 ### Implementation for User Story 3
 

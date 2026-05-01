@@ -1380,6 +1380,16 @@ class MockWorkspaceDao extends _i1.Mock implements _i7.WorkspaceDao {
           as _i6.Future<List<_i2.WorkspacesTable>>);
 
   @override
+  _i6.Stream<List<_i2.WorkspacesTable>> watchAllWorkspaces() =>
+      (super.noSuchMethod(
+            Invocation.method(#watchAllWorkspaces, []),
+            returnValue: _i6.Stream<List<_i2.WorkspacesTable>>.empty(),
+            returnValueForMissingStub:
+                _i6.Stream<List<_i2.WorkspacesTable>>.empty(),
+          )
+          as _i6.Stream<List<_i2.WorkspacesTable>>);
+
+  @override
   _i6.Future<_i2.WorkspacesTable?> getWorkspaceById(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#getWorkspaceById, [id]),

@@ -29,7 +29,19 @@
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
+
+Verify compliance with the project constitution's Implementation Standards:
+
+1. **Business Logic Layering**: Will business rules, validation, and orchestration live in domain usecase classes (not providers/widgets)?
+2. **Reactive Data**: Will repository queries feeding live-updating UI return `Stream` with a corresponding `StreamProvider`?
+3. **Localization**: Are all user-facing strings using `tr()` / `LocaleKeys` / `TextLocale`? No hardcoded English in UI code?
+4. **Typed Errors**: Will user-facing errors be typed exception classes with localization keys? No raw `String` error messages?
+5. **AsyncValue Pattern**: Will `AsyncValue` be consumed via Dart 3 switch expressions / pattern matching (`.when()` is PROHIBITED)?
+6. **Mutation State**: Will data mutations (CRUD) use Riverpod `Mutation` or equivalent explicit mutation pattern? No manual `AsyncValue.loading()` toggling?
+7. **UI Package Purity**: Will `packages/auravibes_ui/` widgets remain domain-agnostic and reusable across projects?
+8. **Widget Size**: Will each widget watch at most one provider? Are large widgets decomposed into focused composable pieces?
+9. **Database Cascade**: If schema changes involve foreign keys, will `ON DELETE CASCADE` be used at the Drift schema level?
 
 [Gates determined based on constitution file]
 
@@ -48,6 +60,7 @@ specs/[###-feature]/
 ```
 
 ### Source Code (repository root)
+
 <!--
   ACTION REQUIRED: Replace the placeholder tree below with the concrete layout
   for this feature. Delete unused options and expand the chosen structure with
@@ -98,7 +111,7 @@ directories captured above]
 
 > **Fill ONLY if Constitution Check has violations that must be justified**
 
-| Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
-| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
+| Violation                  | Why Needed         | Simpler Alternative Rejected Because |
+| -------------------------- | ------------------ | ------------------------------------ |
+| [e.g., 4th project]        | [current need]     | [why 3 projects insufficient]        |
+| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient]  |

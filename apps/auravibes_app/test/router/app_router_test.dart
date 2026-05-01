@@ -122,7 +122,7 @@ void main() {
 
     test('location is full correct path', () {
       final route = ToolsRoute(workspaceId: 'ws-1');
-      expect(route.location, '/workspaces/ws-1/tools');
+      expect(route.location, '/workspaces/ws-1/more/tools');
     });
   });
 
@@ -139,7 +139,7 @@ void main() {
 
     test('location is full correct path', () {
       final route = ModelsRoute(workspaceId: 'ws-1');
-      expect(route.location, '/workspaces/ws-1/models');
+      expect(route.location, '/workspaces/ws-1/more/models');
     });
   });
 
@@ -322,14 +322,14 @@ void main() {
   group('ToolsRoute', () {
     test('location is correct with different workspace', () {
       final route = ToolsRoute(workspaceId: 'ws-tools');
-      expect(route.location, '/workspaces/ws-tools/tools');
+      expect(route.location, '/workspaces/ws-tools/more/tools');
     });
   });
 
   group('ModelsRoute', () {
     test('location is correct with different workspace', () {
       final route = ModelsRoute(workspaceId: 'ws-models');
-      expect(route.location, '/workspaces/ws-models/models');
+      expect(route.location, '/workspaces/ws-models/more/models');
     });
   });
 

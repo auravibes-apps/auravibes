@@ -14,6 +14,7 @@ Core rule: providers/widgets manage state, use cases coordinate logic, repositor
 ## When to Use
 
 Use this pattern when:
+
 - moving business logic out of providers/controllers
 - coordinating multiple repositories or services
 - returning domain values after orchestration
@@ -51,6 +52,7 @@ Use local DTOs only when needed by the flow (for example batch update structures
 metadata updates). Otherwise return the domain value directly.
 
 Rules:
+
 - use a simple class (no provider inheritance/annotations for the use case itself)
 - inject dependencies through constructor
 - expose one clear entry point, usually `call(...)`
@@ -70,6 +72,7 @@ Keep use cases focused on orchestration, not storage details.
 ## Immutable Update Pattern
 
 When a use case updates nested metadata/collections:
+
 - map by stable identifiers (for example `toolCallId`)
 - copy only affected items
 - preserve untouched items as-is
@@ -82,10 +85,39 @@ This keeps behavior deterministic and testable.
 Use cases should not wrap errors into generic result objects.
 
 Rules:
+
 - return values directly on success
 - throw only managed domain exceptions when the error is part of the business flow
 - do not catch and re-wrap unknown exceptions into another generic error
 - let infrastructure/unexpected exceptions bubble to the caller unless there is a clear domain mapping requirement
+
+## Provider Co-location
+
+When a use case needs a generated Riverpod provider for dependency wiring, co-locate the provider in the **same file** as the use case class. Do not create a separate provider file.
+
+Example:
+
+```dart
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+part 'my_use_case.g.dart';
+
+class MyUseCase {
+  const MyUseCase({required MyRepository repository})
+    : _repository = repository;
+
+  final MyRepository _repository;
+
+  Future<void> call({required String id}) async { ... }
+}
+
+@riverpod
+MyUseCase myUseCase(Ref ref) {
+  return MyUseCase(repository: ref.watch(myRepositoryProvider));
+}
+```
+
+Reference: `apps/auravibes_app/lib/features/tools/usecases/approve_tool_call_usecase.dart`
 
 ## Quick Checklist
 
@@ -95,6 +127,7 @@ Rules:
 - no provider/UI state mutation in use case
 - side effects are delegated to repositories/other use cases
 - returns a domain value directly whenever possible
+- provider (if needed) is co-located in the same file as the use case
 
 ## Common Mistakes
 
@@ -107,18 +140,21 @@ Rules:
 ## Using Use Cases in the App Layer
 
 Use case usage pattern in app modules:
+
 - instantiate use cases in an application controller/service, not in widgets
 - read repositories from provider/container, then compose use cases explicitly
 - call small use cases in sequence to form one user flow
 - keep provider/controller state focused on UI/runtime tracking only
 
 Reference implementation:
+
 - composition root and flow orchestration: `apps/auravibes_app/lib/providers/tool_execution_controller.dart`
 - provider delegation entrypoints: `apps/auravibes_app/lib/providers/tool_calling_manager_provider.dart`
 
 ### Composition Root Pattern
 
 Inside a controller method:
+
 1. Read dependencies from providers/repository providers.
 2. Build foundational use cases first (for example metadata update/checks).
 3. Inject them into higher-level orchestrator use cases.
@@ -135,11 +171,13 @@ This keeps wiring explicit, testable, and easy to refactor.
 ### App-Layer Do / Don't
 
 Do:
+
 - compose use cases per method/flow in the app layer
 - pass IDs and domain inputs into use case `call(...)`
 - let use cases coordinate business operations
 
 Don't:
+
 - instantiate repository clients directly inside widgets
 - mix UI rendering logic into use cases
 - bypass use cases by duplicating orchestration across providers/controllers
@@ -147,11 +185,13 @@ Don't:
 ## How to Use It
 
 Prompt examples:
+
 - "Create a new domain use case using the usecase-pattern skill."
 - "Refactor this provider logic into a constructor-injected use case with guard clauses."
 - "Apply immutable update and managed domain exception rules in this use case."
 
 During implementation, follow this order:
+
 1. Define input/output contracts and any managed domain exceptions.
 2. Write the use case class and constructor dependencies.
 3. Add guard clauses and orchestration flow.

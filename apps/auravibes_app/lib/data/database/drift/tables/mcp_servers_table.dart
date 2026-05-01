@@ -27,7 +27,11 @@ authenticationTypeConverter = TypeConverter.json2(
 @DataClassName('McpServersTable')
 class McpServers extends Table with TableMixin {
   /// Reference to the workspace this MCP server belongs to
-  TextColumn get workspaceId => text().references(Workspaces, #id)();
+  TextColumn get workspaceId => text().references(
+    Workspaces,
+    #id,
+    onDelete: KeyAction.cascade,
+  )();
 
   /// User-friendly name for the MCP server
   TextColumn get name => text()();

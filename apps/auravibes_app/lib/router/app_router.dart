@@ -2,8 +2,10 @@ import 'package:auravibes_app/features/chats/screens/chat_conversation_screen.da
 import 'package:auravibes_app/features/chats/screens/list_chats_screen.dart';
 import 'package:auravibes_app/features/chats/screens/new_chat_screen.dart';
 import 'package:auravibes_app/features/models/screens/models_screen.dart';
+import 'package:auravibes_app/features/settings/screens/more_screen.dart';
 import 'package:auravibes_app/features/settings/screens/settings_screen.dart';
 import 'package:auravibes_app/features/tools/screens/tools_screen.dart';
+import 'package:auravibes_app/features/workspaces/screens/workspace_management_screen.dart';
 import 'package:auravibes_app/widgets/app_navigation_wrappers.dart';
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
@@ -29,12 +31,20 @@ final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
         ),
         TypedStatefulShellBranch(
           routes: [
-            TypedGoRoute<ToolsRoute>(path: 'tools'),
-          ],
-        ),
-        TypedStatefulShellBranch(
-          routes: [
-            TypedGoRoute<ModelsRoute>(path: 'models'),
+            TypedGoRoute<MoreRoute>(
+              path: 'more',
+              routes: [
+                TypedGoRoute<WorkspaceManagementRoute>(
+                  path: 'manage-workspaces',
+                ),
+                TypedGoRoute<ToolsRoute>(
+                  path: 'tools',
+                ),
+                TypedGoRoute<ModelsRoute>(
+                  path: 'models',
+                ),
+              ],
+            ),
           ],
         ),
         TypedStatefulShellBranch(
@@ -156,5 +166,28 @@ class SettingsRoute extends GoRouteData with $SettingsRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return SettingsScreen(workspaceId: workspaceId);
+  }
+}
+
+class MoreRoute extends GoRouteData with $MoreRoute {
+  MoreRoute({required this.workspaceId});
+
+  final String workspaceId;
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) {
+    return MoreScreen(workspaceId: workspaceId);
+  }
+}
+
+class WorkspaceManagementRoute extends GoRouteData
+    with $WorkspaceManagementRoute {
+  WorkspaceManagementRoute({required this.workspaceId});
+
+  final String workspaceId;
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) {
+    return WorkspaceManagementScreen(workspaceId: workspaceId);
   }
 }

@@ -1,23 +1,13 @@
 <!--
 Sync Impact Report:
-- Version change: 1.0.0 -> 2.0.0
-- Modified principles:
-  - Start with User Needs -> User Value First
-  - Design with Data -> Layered, Package-Aware Architecture
-  - Package-First Architecture -> Layered, Package-Aware Architecture
-  - UI Kit Mandate -> UI System First
-  - Test-Driven Development (NON-NEGOTIABLE) -> Risk-Based Quality Gates
-  - Fail Fast + Explicit Errors -> Explicit Failures
-  - Simplicity + YAGNI -> Simplicity
-  - Observability + Performance -> Observable Where It Matters
-  - Security + Privacy -> Security and Privacy
-  - Code Quality Standards -> Dart and Flutter Standards
-- Added sections: Online references reviewed
-- Removed sections: Hard coverage/startup/FPS mandates without project baselines
+- Version change: 2.0.0 -> 2.1.0
+- Modified principles: None
+- Added sections: Implementation Standards (9 concrete contracts derived from
+  009-workspace-management code review)
 - Templates requiring updates:
   ✅ .specify/templates/plan-template.md - no change needed
   ✅ .specify/templates/spec-template.md - no change needed
-  ✅ .specify/templates/tasks-template.md - testing note aligned with risk-based gates
+  ✅ .specify/templates/tasks-template.md - no change needed
   ✅ .specify/templates/commands/*.md - no files present
 - Follow-up TODOs: None
 -->
@@ -162,6 +152,79 @@ formatter, and package docs keep monorepo work reviewable.
 - New dependencies MUST justify current use, maintenance health, and package-boundary impact.
 - Do not import another package's `lib/src` internals.
 
+## Implementation Standards
+
+These standards are derived from code review findings and MUST be followed by all
+new features and refactors. They capture recurring patterns that are cheaper to
+enforce at authoring time than at review time.
+
+### Database Cascade Contract
+
+Foreign key relationships that require automatic child deletion MUST use
+`ON DELETE CASCADE` at the Drift schema level. Application code MUST NOT implement
+manual cascade deletion with custom SQL or multiple repository calls when the
+database can enforce referential integrity.
+
+### Business Logic Layering Contract
+
+Business rules, validation, and orchestration decisions MUST live in domain
+usecase classes, not in providers, widgets, or repository implementations.
+Providers MUST delegate to usecases; they MUST NOT inline business logic.
+Widgets MUST delegate to providers; they MUST NOT contain business decisions.
+
+### Reactive Data Contract
+
+Repository queries that feed continuously-updating UI MUST return `Stream`.
+One-shot queries (`Future`) are acceptable only when the caller explicitly does
+not need live updates. Stream-returning repositories MUST have a corresponding
+`StreamProvider` or `StreamNotifier` in the provider layer.
+
+### Localization Contract
+
+All user-facing strings MUST use the project's localization system
+(`tr()`, `LocaleKeys`, `TextLocale`, or equivalent). Hardcoded English strings
+in UI code, error messages, labels, or tooltips are PROHIBITED. Log and debug
+strings are exempt from this rule. Prefer the `TextLocale` widget for `Text()`
+children; use `.tr()` only for non-widget contexts (String parameters, error
+messages, tooltips).
+
+### Typed Error Contract
+
+User-facing errors MUST be typed exception classes that carry localization keys
+or translation parameters. Raw `String` error messages passed through `AsyncValue`,
+state objects, or widget parameters are PROHIBITED. Infrastructure exceptions MAY
+bubble up untranslated; they MUST be mapped to domain exceptions at the usecase
+or provider boundary before reaching the UI.
+
+### AsyncValue Pattern Contract
+
+`AsyncValue` consumption in widgets MUST use Dart 3 switch expressions or pattern
+matching. The `.when()` method is PROHIBITED in new code. Loading, error, and data
+states MUST be handled exhaustively.
+
+### Mutation State Contract
+
+Asynchronous actions that mutate data (create, update, delete) MUST use
+Riverpod `Mutation` or an equivalent explicit mutation pattern. Manually toggling
+`AsyncValue.loading()` / `AsyncValue.data()` inside notifiers to track action
+state is PROHIBITED. State notifiers (`build()`-based `AsyncNotifier`) MUST be
+reserved for state that genuinely needs initialization logic, not for wrapping
+simple action methods.
+
+### UI Package Purity Contract
+
+Widgets in `packages/auravibes_ui/` MUST be domain-agnostic and reusable across
+projects. Business-specific naming (e.g., `WorkspaceDropdown`), types, or logic
+in the UI package is PROHIBITED. App-specific composition of generic UI widgets
+MUST remain in `apps/auravibes_app/`.
+
+### Widget Size Contract
+
+Widgets MUST be small and focused. Each widget SHOULD watch at most one provider.
+Large widgets that aggregate multiple provider dependencies, inline mappings, and
+conditional UI MUST be decomposed into smaller focused widgets. Widget composition
+MUST replace monolithic render methods.
+
 ## Development Workflow
 
 1. **Read before write**
@@ -240,4 +303,4 @@ reasonable for the current task.
 - If a platform requirement conflicts with this constitution, document the exception
   and keep the workaround as narrow as possible.
 
-**Version**: 2.0.0 | **Ratified**: 2026-03-09 | **Last Amended**: 2026-04-26
+**Version**: 2.1.0 | **Ratified**: 2026-03-09 | **Last Amended**: 2026-04-30

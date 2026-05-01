@@ -11,7 +11,11 @@ export 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 @DataClassName('ToolsTable')
 class Tools extends Table with TableMixin {
   /// Reference to the workspace this tool belongs to
-  TextColumn get workspaceId => text().references(Workspaces, #id)();
+  TextColumn get workspaceId => text().references(
+    Workspaces,
+    #id,
+    onDelete: KeyAction.cascade,
+  )();
 
   TextColumn get workspaceToolsGroupId => text().nullable().references(
     ToolsGroups,

@@ -1614,7 +1614,7 @@ class $ModelConnectionsTable extends ModelConnections
     type: DriftSqlType.string,
     requiredDuringInsert: true,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES workspaces (id)',
+      'REFERENCES workspaces (id) ON DELETE CASCADE',
     ),
   );
   @override
@@ -2154,7 +2154,7 @@ class $WorkspaceModelSelectionsTable extends WorkspaceModelSelections
         type: DriftSqlType.string,
         requiredDuringInsert: true,
         defaultConstraints: GeneratedColumn.constraintIsAlways(
-          'REFERENCES model_connections (id)',
+          'REFERENCES model_connections (id) ON DELETE CASCADE',
         ),
       );
   @override
@@ -2522,7 +2522,7 @@ class $ConversationsTable extends Conversations
     type: DriftSqlType.string,
     requiredDuringInsert: true,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES workspaces (id)',
+      'REFERENCES workspaces (id) ON DELETE CASCADE',
     ),
   );
   static const VerificationMeta _titleMeta = const VerificationMeta('title');
@@ -2997,7 +2997,7 @@ class $MessagesTable extends Messages
     type: DriftSqlType.string,
     requiredDuringInsert: true,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES conversations (id)',
+      'REFERENCES conversations (id) ON DELETE CASCADE',
     ),
   );
   static const VerificationMeta _contentMeta = const VerificationMeta(
@@ -3581,7 +3581,7 @@ class $McpServersTable extends McpServers
     type: DriftSqlType.string,
     requiredDuringInsert: true,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES workspaces (id)',
+      'REFERENCES workspaces (id) ON DELETE CASCADE',
     ),
   );
   static const VerificationMeta _nameMeta = const VerificationMeta('name');
@@ -4230,7 +4230,7 @@ class $ToolsGroupsTable extends ToolsGroups
     type: DriftSqlType.string,
     requiredDuringInsert: true,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES workspaces (id)',
+      'REFERENCES workspaces (id) ON DELETE CASCADE',
     ),
   );
   static const VerificationMeta _mcpServerIdMeta = const VerificationMeta(
@@ -4773,7 +4773,7 @@ class $ToolsTable extends Tools with TableInfo<$ToolsTable, ToolsTable> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES workspaces (id)',
+      'REFERENCES workspaces (id) ON DELETE CASCADE',
     ),
   );
   static const VerificationMeta _workspaceToolsGroupIdMeta =
@@ -5593,7 +5593,7 @@ class $ConversationToolsTable extends ConversationTools
     type: DriftSqlType.string,
     requiredDuringInsert: true,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES conversations (id)',
+      'REFERENCES conversations (id) ON DELETE CASCADE',
     ),
   );
   static const VerificationMeta _toolIdMeta = const VerificationMeta('toolId');
@@ -5605,7 +5605,7 @@ class $ConversationToolsTable extends ConversationTools
     type: DriftSqlType.string,
     requiredDuringInsert: true,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES tools (id)',
+      'REFERENCES tools (id) ON DELETE CASCADE',
     ),
   );
   static const VerificationMeta _isEnabledMeta = const VerificationMeta(
@@ -6097,6 +6097,50 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
     WritePropagation(
       on: TableUpdateQuery.onTableName(
+        'workspaces',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('model_connections', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'model_connections',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('workspace_model_selections', kind: UpdateKind.delete),
+      ],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'workspaces',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('conversations', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'conversations',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('messages', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'workspaces',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('mcp_servers', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'workspaces',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('tools_groups', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
         'mcp_servers',
         limitUpdateKind: UpdateKind.delete,
       ),
@@ -6104,10 +6148,31 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
+        'workspaces',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('tools', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
         'tools_groups',
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('tools', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'conversations',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('conversation_tools', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'tools',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('conversation_tools', kind: UpdateKind.delete)],
     ),
   ]);
 }

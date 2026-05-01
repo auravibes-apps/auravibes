@@ -105,3 +105,6 @@ fvm flutter pub add dev:package_name
 - `keepAlive: true` is justified by app lifetime, service lifetime, or expensive setup.
 - Long async notifier methods avoid touching disposed refs after `await`.
 - UI rebuilds are narrowed with `select` or widget splitting where state is broad.
+- Data mutations use `Mutation` or equivalent explicit pattern, not manual `AsyncValue` toggling.
+- `build()`-based `AsyncNotifier` is reserved for initialized state, not simple action wrappers.
+- `AsyncValue` is consumed via Dart 3 switch expressions, not `.when()`.

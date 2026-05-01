@@ -6,7 +6,8 @@
     "tools": "Tools",
     "models": "Models",
     "agents": "Agents",
-    "prompts": "Prompts"
+    "prompts": "Prompts",
+    "more": "More"
   },
   "models_screens": {
     "select_provider": "Select Provider",
@@ -229,6 +230,21 @@
       "cancel": "Cancel"
     }
   },
+  "more_screen": {
+    "title": "More",
+    "workspaces": {
+      "title": "Workspaces",
+      "subtitle": "Manage your workspaces"
+    },
+    "models": {
+      "title": "Model Providers",
+      "subtitle": "Manage your AI model providers"
+    },
+    "tools": {
+      "title": "Tools",
+      "subtitle": "Manage your tools and integrations"
+    }
+  },
   "sidebar": {
     "recent_chats": "Recent Chats",
     "no_recent_chats": "No recent chats",
@@ -290,5 +306,32 @@
         "hint": "This token will be stored securely"
       }
     }
+  },
+  "workspace_management": {
+    "title": "Manage Workspaces",
+    "create_button": "Create Workspace",
+    "create_title": "Create New Workspace",
+    "edit_button": "Save Changes",
+    "edit_title": "Edit Workspace",
+    "delete_button": "Delete Workspace",
+    "delete_title": "Delete Workspace",
+    "delete_confirm": "Are you sure you want to delete \"{name}\"? This action cannot be undone.",
+    "delete_active_error": "Cannot delete the active workspace. Switch to another workspace first.",
+    "delete_last_error": "Cannot delete the last remaining workspace.",
+    "name_label": "Workspace Name",
+    "name_placeholder": "Enter workspace name",
+    "name_required_error": "Workspace name is required",
+    "name_too_short_error": "Workspace name must be at least {min} characters",
+    "name_too_long_error": "Workspace name must be at most {max} characters",
+    "no_workspaces": "No workspaces available",
+    "switch_error": "Failed to switch workspace. Please try again.",
+    "loading": "Loading workspaces...",
+    "load_error": "Failed to load workspaces. Please try again.",
+    "dropdown_placeholder": "Select workspace",
+    "active_label": "Active",
+    "error_not_found": "Workspace not found",
+    "error_duplicate": "A workspace with this name already exists",
+    "edit_tooltip": "Edit {name}",
+    "delete_tooltip": "Delete {name}"
   }
 }

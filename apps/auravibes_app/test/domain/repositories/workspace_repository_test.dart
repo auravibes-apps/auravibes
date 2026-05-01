@@ -22,6 +22,11 @@ class _StubWorkspaceRepository implements WorkspaceRepository {
   Future<List<WorkspaceEntity>> getAllWorkspaces() async => allWorkspaces;
 
   @override
+  Stream<List<WorkspaceEntity>> watchAllWorkspaces() async* {
+    yield allWorkspaces;
+  }
+
+  @override
   Future<WorkspaceEntity?> getWorkspaceById(String id) async => byIdResult;
 
   @override
@@ -85,8 +90,15 @@ class _StubWorkspaceRepository implements WorkspaceRepository {
       countByTypeResult;
 
   @override
-  Future<bool> validateWorkspace(WorkspaceToCreate workspace) async =>
-      validateResult;
+  Future<bool> validateWorkspace(WorkspaceToCreate workspace) async {
+    if (!validateResult) {
+      throw const WorkspaceValidationException(
+        'Validation failed',
+        localizationKey: 'test.validation_failed',
+      );
+    }
+    return true;
+  }
 
   @override
   Future<bool> patchWorkspaceTimestamp(String id) async => patchTimestampResult;
@@ -194,6 +206,24 @@ void main() {
       );
     });
 
+    test('validateWorkspace throws for invalid name', () async {
+      final repo = _StubWorkspaceRepository();
+      repo.validateResult = false;
+
+      expect(
+        () => repo.validateWorkspace(
+          const WorkspaceToCreate(name: '  ', type: WorkspaceType.local),
+        ),
+        throwsA(
+          isA<WorkspaceValidationException>().having(
+            (e) => e.localizationKey,
+            'localizationKey',
+            isNotEmpty,
+          ),
+        ),
+      );
+    });
+
     test('validateWorkspace returns bool', () async {
       final repo = _StubWorkspaceRepository();
       const toCreate = WorkspaceToCreate(
@@ -228,7 +258,7 @@ void main() {
 
     test('toString includes cause when provided', () {
       final cause = Exception('inner');
-      final ex = WorkspaceException('test', cause);
+      final ex = WorkspaceException('test', cause: cause);
       expect(ex.toString(), contains('Caused by:'));
     });
   });
@@ -252,7 +282,7 @@ void main() {
 
     test('includes cause when provided', () {
       final cause = Exception('db error');
-      final ex = WorkspaceNotFoundException('ws-1', cause);
+      final ex = WorkspaceNotFoundException('ws-1', cause: cause);
       expect(ex.cause, cause);
     });
   });
@@ -268,7 +298,7 @@ void main() {
 
     test('includes cause when provided', () {
       final cause = Exception('unique constraint');
-      final ex = WorkspaceDuplicateException('ws-1', cause);
+      final ex = WorkspaceDuplicateException('ws-1', cause: cause);
       expect(ex.cause, cause);
     });
   });

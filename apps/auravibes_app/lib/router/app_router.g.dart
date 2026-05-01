@@ -30,14 +30,23 @@ RouteBase get $workspaceRoute => GoRouteData.$route(
         ),
         StatefulShellBranchData.$branch(
           routes: [
-            GoRouteData.$route(path: 'tools', factory: $ToolsRoute._fromState),
-          ],
-        ),
-        StatefulShellBranchData.$branch(
-          routes: [
             GoRouteData.$route(
-              path: 'models',
-              factory: $ModelsRoute._fromState,
+              path: 'more',
+              factory: $MoreRoute._fromState,
+              routes: [
+                GoRouteData.$route(
+                  path: 'manage-workspaces',
+                  factory: $WorkspaceManagementRoute._fromState,
+                ),
+                GoRouteData.$route(
+                  path: 'tools',
+                  factory: $ToolsRoute._fromState,
+                ),
+                GoRouteData.$route(
+                  path: 'models',
+                  factory: $ModelsRoute._fromState,
+                ),
+              ],
             ),
           ],
         ),
@@ -161,6 +170,58 @@ mixin $ChatsRoute on GoRouteData {
   void replace(BuildContext context) => context.replace(location);
 }
 
+mixin $MoreRoute on GoRouteData {
+  static MoreRoute _fromState(GoRouterState state) =>
+      MoreRoute(workspaceId: state.pathParameters['workspaceId']!);
+
+  MoreRoute get _self => this as MoreRoute;
+
+  @override
+  String get location => GoRouteData.$location(
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more',
+  );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $WorkspaceManagementRoute on GoRouteData {
+  static WorkspaceManagementRoute _fromState(GoRouterState state) =>
+      WorkspaceManagementRoute(
+        workspaceId: state.pathParameters['workspaceId']!,
+      );
+
+  WorkspaceManagementRoute get _self => this as WorkspaceManagementRoute;
+
+  @override
+  String get location => GoRouteData.$location(
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/manage-workspaces',
+  );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
 mixin $ToolsRoute on GoRouteData {
   static ToolsRoute _fromState(GoRouterState state) =>
       ToolsRoute(workspaceId: state.pathParameters['workspaceId']!);
@@ -169,7 +230,7 @@ mixin $ToolsRoute on GoRouteData {
 
   @override
   String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/tools',
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/tools',
   );
 
   @override
@@ -194,7 +255,7 @@ mixin $ModelsRoute on GoRouteData {
 
   @override
   String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/models',
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/models',
   );
 
   @override
