@@ -120,7 +120,9 @@ void main() {
       required String workspaceId,
       bool loading = false,
       String? error,
+      WorkspaceRepository? repo,
     }) {
+      final useRepo = repo ?? repository;
       return EasyLocalization(
         supportedLocales: const [Locale('en')],
         path: 'assets/i18n',
@@ -132,7 +134,7 @@ void main() {
           builder: (context) {
             final overrides = [
               routerProvider.overrideWithValue(router),
-              workspaceRepositoryProvider.overrideWithValue(repository),
+              workspaceRepositoryProvider.overrideWithValue(useRepo),
               currentRouteWorkspaceIdProvider.overrideWithValue(workspaceId),
             ];
             if (loading) {
@@ -446,3 +448,4 @@ void main() {
     });
   });
 }
+
