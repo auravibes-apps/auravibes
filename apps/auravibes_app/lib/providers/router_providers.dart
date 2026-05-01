@@ -31,19 +31,16 @@ final routerProvider = Provider<GoRouter>(
       redirect: (context, state) async {
         final currentUri = state.uri;
         final workspaceMatch = matchWorkspaceId(currentUri);
-        final workspaces = await ref
-            .read(workspaceRepositoryProvider)
-            .getAllWorkspaces()
-            .onError(
-              (error, stackTrace) {
-                _logger.severe(
-                  'Failed to load workspaces for router redirect',
-                  error,
-                  stackTrace,
-                );
-                return [];
-              },
+        final workspaces = await ref.read(allWorkspacesProvider.future).onError(
+          (error, stackTrace) {
+            _logger.severe(
+              'Failed to load workspaces for router redirect',
+              error,
+              stackTrace,
             );
+            return [];
+          },
+        );
         final firstWorkspaceId = workspaces.firstOrNull?.id;
 
         if (firstWorkspaceId == null) {

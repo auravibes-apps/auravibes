@@ -1,4 +1,6 @@
 // ignore_for_file: cascade_invocations
+// Required: test expectations use chaining on matchers (e.g. find.text().findsOneWidget)
+// which triggers cascade_invocations lint. Not applicable in test assertions.
 
 import 'package:auravibes_app/domain/entities/workspace.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';

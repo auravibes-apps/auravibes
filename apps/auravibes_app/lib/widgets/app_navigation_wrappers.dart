@@ -8,7 +8,6 @@ import 'package:auravibes_app/router/app_router.dart';
 import 'package:auravibes_app/widgets/responsive_sliding_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
@@ -249,12 +248,9 @@ class _WorkspaceDropdownHeader extends ConsumerWidget {
           ),
         );
       case AsyncError(:final error):
+        debugPrint('Workspace dropdown stream error: $error');
         dropdownWidget = AuraText(
-          child: Text(
-            LocaleKeys.workspace_management_switch_error.tr(
-              args: [error.toString()],
-            ),
-          ),
+          child: TextLocale(LocaleKeys.workspace_management_unexpected_error),
         );
     }
 

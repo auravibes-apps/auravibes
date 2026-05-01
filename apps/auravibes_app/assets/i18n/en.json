@@ -331,6 +331,7 @@
     "active_label": "Active",
     "error_not_found": "Workspace not found",
     "error_duplicate": "A workspace with this name already exists",
+    "unexpected_error": "An unexpected error occurred. Please try again.",
     "edit_tooltip": "Edit {name}",
     "delete_tooltip": "Delete {name}"
   }

@@ -192,7 +192,11 @@ class WorkspaceManagementScreen extends HookConsumerWidget {
   void _showError(BuildContext context, Object error) {
     final message = error is WorkspaceException
         ? error.localizationKey?.tr() ?? error.message
-        : error.toString();
+        : LocaleKeys.workspace_management_unexpected_error.tr();
+
+    if (error is! WorkspaceException) {
+      debugPrint('Workspace management unexpected error: $error');
+    }
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),

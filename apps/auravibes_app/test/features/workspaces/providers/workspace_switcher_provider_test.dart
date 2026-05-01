@@ -141,7 +141,7 @@ void main() {
     });
 
     test(
-      'switchToWorkspace with same workspaceId still navigates',
+      'switchToWorkspace navigates to correct workspace location',
       () async {
         final notifier = container.read(workspaceSwitcherProvider.notifier);
 

@@ -331,6 +331,7 @@
     "active_label": "Activo",
     "error_not_found": "Espacio de trabajo no encontrado",
     "error_duplicate": "Ya existe un espacio de trabajo con este nombre",
+    "unexpected_error": "Ocurrió un error inesperado. Inténtalo de nuevo.",
     "edit_tooltip": "Editar {name}",
     "delete_tooltip": "Eliminar {name}"
   }
