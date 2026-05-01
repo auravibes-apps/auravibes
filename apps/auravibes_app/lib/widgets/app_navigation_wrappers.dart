@@ -249,7 +249,7 @@ class _WorkspaceDropdownHeader extends ConsumerWidget {
         );
       case AsyncError(:final error):
         debugPrint('Workspace dropdown stream error: $error');
-        dropdownWidget = AuraText(
+        dropdownWidget = const AuraText(
           child: TextLocale(LocaleKeys.workspace_management_unexpected_error),
         );
     }
