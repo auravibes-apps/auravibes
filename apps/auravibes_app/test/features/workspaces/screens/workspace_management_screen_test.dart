@@ -343,5 +343,13 @@ void main() {
       expect(find.text('ToDelete'), findsNothing);
       expect(find.text('KeepMe'), findsOneWidget);
     });
+
+    testWidgets('tapping back button does not crash', (tester) async {
+      await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.arrow_back));
+      await tester.pumpAndSettle();
+    });
   });
 }
