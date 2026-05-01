@@ -302,5 +302,46 @@ void main() {
 
       expect(find.text('Workspace A'), findsOneWidget);
     });
+
+    testWidgets('back button is present', (tester) async {
+      await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.arrow_back), findsOneWidget);
+    });
+
+    testWidgets('cancel create form returns to list', (tester) async {
+      await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Create Workspace'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Create Workspace'), findsOneWidget);
+    });
+
+    testWidgets('confirm delete removes workspace', (tester) async {
+      await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'KeepMe', type: WorkspaceType.local),
+      );
+      await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'ToDelete', type: WorkspaceType.local),
+      );
+
+      await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.delete).last);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Delete'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('ToDelete'), findsNothing);
+      expect(find.text('KeepMe'), findsOneWidget);
+    });
   });
 }
