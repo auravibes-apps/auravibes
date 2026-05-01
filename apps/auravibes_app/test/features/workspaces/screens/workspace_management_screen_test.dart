@@ -428,5 +428,21 @@ void main() {
       await tester.tap(find.byIcon(Icons.arrow_back));
       await tester.pumpAndSettle();
     });
+
+    testWidgets('creates workspace with valid name through form', (
+      tester,
+    ) async {
+      await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Create Workspace'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'New Workspace');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+
+      expect(find.text('New Workspace'), findsOneWidget);
+    });
   });
 }
