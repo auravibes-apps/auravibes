@@ -116,7 +116,11 @@ void main() {
       router = _FakeGoRouter();
     });
 
-    Widget _buildScreen({required String workspaceId}) {
+    Widget _buildScreen({
+      required String workspaceId,
+      bool loading = false,
+      String? error,
+    }) {
       return EasyLocalization(
         supportedLocales: const [Locale('en')],
         path: 'assets/i18n',
@@ -126,12 +130,27 @@ void main() {
         useOnlyLangCode: true,
         child: Builder(
           builder: (context) {
+            final overrides = [
+              routerProvider.overrideWithValue(router),
+              workspaceRepositoryProvider.overrideWithValue(repository),
+              currentRouteWorkspaceIdProvider.overrideWithValue(workspaceId),
+            ];
+            if (loading) {
+              overrides.add(
+                allWorkspacesProvider.overrideWith(
+                  (ref) => const Stream.empty(),
+                ),
+              );
+            }
+            if (error != null) {
+              overrides.add(
+                allWorkspacesProvider.overrideWith(
+                  (ref) => Stream.error(Exception(error)),
+                ),
+              );
+            }
             return ProviderScope(
-              overrides: [
-                routerProvider.overrideWithValue(router),
-                workspaceRepositoryProvider.overrideWithValue(repository),
-                currentRouteWorkspaceIdProvider.overrideWithValue(workspaceId),
-              ],
+              overrides: overrides.cast(),
               child: MaterialApp(
                 locale: context.locale,
                 supportedLocales: context.supportedLocales,
@@ -155,6 +174,29 @@ void main() {
       await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
 
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    });
+
+    testWidgets('shows loading when stream has no cached data', (tester) async {
+      await _pumpAndInit(
+        tester,
+        _buildScreen(workspaceId: 'ws-1', loading: true),
+      );
+      await tester.pump();
+
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    });
+
+    testWidgets('shows error when stream fails', (tester) async {
+      await _pumpAndInit(
+        tester,
+        _buildScreen(workspaceId: 'ws-1', error: 'test error'),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Failed to load workspaces. Please try again.'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('renders workspace list after loading', (tester) async {
