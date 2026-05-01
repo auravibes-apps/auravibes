@@ -40,7 +40,7 @@ void main() {
     );
   }
 
-  testWidgets('renders title and section tiles', (tester) async {
+  testWidgets('renders title, tiles, and icons', (tester) async {
     await tester.pumpWidget(_buildScreen(workspaceId: 'ws-1'));
     await tester.pumpAndSettle();
 
@@ -48,5 +48,9 @@ void main() {
     expect(find.text('Workspaces'), findsOneWidget);
     expect(find.text('Model Providers'), findsOneWidget);
     expect(find.text('Tools'), findsOneWidget);
+    expect(find.byIcon(Icons.workspaces_outlined), findsOneWidget);
+    expect(find.byIcon(Icons.memory_outlined), findsOneWidget);
+    expect(find.byIcon(Icons.build_circle_outlined), findsOneWidget);
+    expect(find.byIcon(Icons.chevron_right), findsAtLeast(3));
   });
 }
