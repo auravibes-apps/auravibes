@@ -209,6 +209,23 @@ void main() {
       );
     });
 
+    testWidgets('shows validation error for long name', (tester) async {
+      await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Create Workspace'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'A' * 21);
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Workspace name must be at most 20 characters'),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('tapping edit shows edit form', (tester) async {
       await repository.createWorkspace(
         const WorkspaceToCreate(name: 'Workspace A', type: WorkspaceType.local),
@@ -262,6 +279,24 @@ void main() {
 
       expect(find.text('Workspace A'), findsOneWidget);
       expect(find.byIcon(Icons.close), findsNothing);
+    });
+
+    testWidgets('submitting edit via keyboard saves', (tester) async {
+      await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Workspace A', type: WorkspaceType.local),
+      );
+
+      await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.edit));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField).last, 'Keyboard Name');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Keyboard Name'), findsOneWidget);
     });
 
     testWidgets('delete confirmation dialog shown', (tester) async {
