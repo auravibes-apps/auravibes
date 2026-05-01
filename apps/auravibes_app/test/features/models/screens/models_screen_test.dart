@@ -109,4 +109,12 @@ void main() {
     const screen = ModelsScreen(workspaceId: 'ws');
     expect(screen.workspaceId, 'ws');
   });
+
+  testWidgets('back button is present and tappable', (tester) async {
+    await pumpAndInit(tester, buildSubject());
+    final backButton = find.byIcon(Icons.arrow_back);
+    expect(backButton, findsOneWidget);
+    await tester.tap(backButton);
+    await tester.pumpAndSettle();
+  });
 }
