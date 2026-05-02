@@ -30,6 +30,7 @@ Disabled/unavailable when:
 - Success: localized confirmation.
 - Failure: localized recoverable error.
 - No eligible context: localized explanation.
+- Success does not trigger assistant continuation; the app waits for the next user action.
 
 ## Settings Section Contract
 
@@ -75,6 +76,7 @@ Disabled/unavailable when:
 - Compaction summary is emitted as context/system content.
 - Compaction summary must not emit tool calls or tool results.
 - Older messages before the latest compaction summary must not be emitted.
+- Compaction summary messages are not shown in the normal chat transcript.
 
 ## Auto Compaction Contract
 
@@ -95,6 +97,7 @@ Auto compaction is checked before assistant continuation builds prompt history.
 - If required auto compaction fails, assistant continuation is blocked.
 - The compactable context remains uncompacted.
 - A visible localized chat error message is persisted so the user can see why continuation stopped.
+- The visible error message is not a compaction summary and does not move the prompt boundary.
 
 ### Safe Conversation
 

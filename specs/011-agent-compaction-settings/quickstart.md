@@ -35,9 +35,11 @@ fvm dart run build_runner build --delete-conflicting-outputs
 1. Open a conversation with several sent messages.
 2. Press compact in the chat input area.
 3. Verify a summary message is created with compaction metadata kind `manual`.
-4. Verify visible conversation history remains available.
-5. Send another message.
-6. Verify prompt selection starts at the latest compaction summary.
+4. Verify the summary message is hidden from the normal chat transcript.
+5. Verify visible conversation history remains available.
+6. Verify no assistant continuation starts automatically.
+7. Send another message.
+8. Verify prompt selection starts at the latest compaction summary.
 
 ### Auto Compaction
 
@@ -46,6 +48,7 @@ fvm dart run build_runner build --delete-conflicting-outputs
 3. Send a message in an eligible conversation.
 4. Verify compaction occurs before assistant continuation.
 5. Verify summary metadata kind is `auto`.
+6. Verify the summary message is hidden from the normal chat transcript.
 
 ### Settings
 
@@ -63,6 +66,15 @@ fvm dart run build_runner build --delete-conflicting-outputs
 3. Verify auto compaction does not run.
 4. Resolve tool approval/result.
 5. Verify compaction can run after the tool state is safe.
+
+### Required Auto Compaction Failure
+
+1. Configure thresholds so auto compaction is required.
+2. Simulate summary generation or summary persistence failure.
+3. Send or continue a conversation.
+4. Verify assistant continuation is blocked.
+5. Verify no compaction summary is written.
+6. Verify a visible localized chat error message is persisted.
 
 ## Suggested Checks
 

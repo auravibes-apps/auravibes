@@ -46,9 +46,20 @@
 - No version field: simpler but makes future metadata migrations ambiguous.
 - Separate JSON blob string for compaction: duplicates JSON parsing and weakens type safety.
 
+## Decision: Hide compaction summaries from normal chat transcript
+
+**Decision**: Compaction summary messages are persisted and used for prompt selection, but hidden from the normal visible chat transcript.
+
+**Rationale**: The summary is model context, not a conversational turn. Hiding it keeps the user transcript readable while still preserving the summary as durable prompt state.
+
+**Alternatives considered**:
+
+- Visible system checkpoint card: useful for transparency, but adds noise to normal chat flow.
+- Expandable details control: useful future enhancement, but not needed for MVP.
+
 ## Decision: Settings live in shared preferences via generated notifier
 
-**Decision**: Global compaction settings use the existing preferences pattern from theme settings: a generated keepAlive notifier reads/writes shared preferences.
+**Decision**: Global compaction settings use the existing preferences pattern from theme settings: a generated keepAlive notifier reads/writes shared preferences. Defaults are auto compaction enabled, 80% usage threshold, and 4,000 remaining-token threshold.
 
 **Rationale**: Settings are global app preferences, not conversation records. The app already uses shared preferences for theme selection.
 
@@ -83,7 +94,7 @@
 
 ## Decision: Manual compaction shares the same use case as auto compaction
 
-**Decision**: Manual compaction from the chat input calls `CompactConversationUsecase` with kind `manual`. Auto compaction calls the same use case with kind `auto`.
+**Decision**: Manual compaction from the chat input calls `CompactConversationUsecase` with kind `manual`. Auto compaction calls the same use case with kind `auto`. Manual compaction is checkpoint-only: after success, the app waits for the next user action and does not automatically ask the assistant to continue.
 
 **Rationale**: One compaction path keeps metadata, eligibility, summary generation, and failure behavior consistent.
 
@@ -91,3 +102,15 @@
 
 - Separate manual and auto implementations: likely duplication and drift.
 - Manual only creates marker without summary: does not reduce prompt context.
+- Manual compact then auto-continue: surprising because compact is an explicit maintenance/checkpoint action.
+
+## Decision: Required auto-compaction failure blocks continuation
+
+**Decision**: If auto compaction is required because thresholds are met but summary generation or persistence fails, assistant continuation is blocked. The app leaves compactable context unchanged and persists a visible localized chat error message.
+
+**Rationale**: The clarified product behavior prefers explicit failure over continuing with a prompt that has already crossed configured compaction thresholds. Persisting the error in chat makes the blocked continuation understandable and retryable.
+
+**Alternatives considered**:
+
+- Skip compaction and continue: better continuity, but violates the configured safety gate once compaction is required.
+- Transient error only: less transcript noise, but the user may lose the reason continuation stopped after navigation/restart.

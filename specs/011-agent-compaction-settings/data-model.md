@@ -68,7 +68,7 @@ A persisted message that contains the summary text used as model context for fut
 
 - Compaction summary messages do not contain thinking output.
 - Compaction summary messages do not contain tool calls.
-- Compaction summary messages remain in the persisted conversation but may be hidden or rendered specially in the chat list.
+- Compaction summary messages remain in the persisted conversation and are hidden from the normal chat list.
 - A newer compaction summary supersedes older compaction summaries for prompt selection.
 
 ## Compaction Range
@@ -117,6 +117,7 @@ Derived list sent to the LLM agent service.
 3. App generates summary.
 4. App writes summary message with `compactionKind = manual`.
 5. Future prompt selection starts at the summary message.
+6. App waits for the next user action and does not automatically request another assistant response.
 
 ### Auto Compaction
 
@@ -134,3 +135,24 @@ Derived list sent to the LLM agent service.
 3. No message range is marked compacted.
 4. Manual path shows recoverable failure without continuing the assistant.
 5. Required auto path blocks the pending assistant continuation and persists a visible chat error message.
+
+## Auto Compaction Failure Message
+
+A visible persisted message explaining that required auto compaction failed and the assistant continuation was blocked.
+
+### Fields
+
+- `id`: existing message id.
+- `conversationId`: existing conversation id.
+- `content`: localized user-facing error text or key-backed content.
+- `messageType`: system.
+- `isUser`: false.
+- `status`: error.
+- `metadata`: error metadata without compaction summary flags.
+
+### Rules
+
+- Failure messages are visible in the normal chat transcript.
+- Failure messages must not be treated as compaction summaries.
+- Failure messages must not mark any prior message range as compacted.
+- Failure messages must not be sent as prompt context unless existing prompt eligibility rules explicitly include visible error state.
