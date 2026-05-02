@@ -97,7 +97,7 @@ As a user, I want a dedicated compaction settings section where I can modify aut
 - **FR-013**: The system MUST select prompt context from the latest compaction summary forward when a compaction summary exists, and MUST select all prompt-eligible conversation messages when no compaction summary exists.
 - **FR-014**: The system MUST preserve tool-call continuity by never compacting a range that splits an unresolved tool call, pending approval, or tool result from the assistant message that produced it.
 - **FR-015**: The system MUST show clear user feedback when manual compaction starts, succeeds, fails, or is unavailable.
-- **FR-016**: The system MUST leave conversation state unchanged if compaction fails.
+- **FR-016**: The system MUST leave compactable context and compaction metadata unchanged if compaction fails, while allowing required auto-compaction failures to persist a visible chat error message.
 - **FR-017**: The system MUST record enough compaction state to identify which prior conversation content is represented by the active compaction summary.
 - **FR-018**: The system MUST allow users to reset compaction settings to default values.
 - **FR-019**: The system MUST mark each compaction summary with whether it was created manually or automatically.
@@ -128,7 +128,7 @@ As a user, I want a dedicated compaction settings section where I can modify aut
 
 ### Measurable Outcomes
 
-- **SC-001**: In test conversations that cross configured thresholds, auto compaction occurs before the next assistant response in at least 95% of eligible checks.
+- **SC-001**: In test conversations that cross configured thresholds, auto compaction occurs before the next assistant response for 100% of tested eligible checks.
 - **SC-002**: Users can manually compact an eligible conversation in no more than two actions from the chat screen.
 - **SC-003**: Users can find and update compaction settings in under 30 seconds during usability testing.
 - **SC-004**: After compaction, 100% of visible chat messages remain accessible to the user.
