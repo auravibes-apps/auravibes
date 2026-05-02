@@ -37,8 +37,9 @@ void main() {
     Future<void> _pumpWidget(WidgetTester tester, Widget child) async {
       await tester.runAsync(() async {
         await tester.pumpWidget(_buildTestableWidget(child));
+        await tester.idle();
+        await tester.pumpAndSettle();
       });
-      await tester.pump();
     }
 
     testWidgets('renders with active workspace selected', (tester) async {
