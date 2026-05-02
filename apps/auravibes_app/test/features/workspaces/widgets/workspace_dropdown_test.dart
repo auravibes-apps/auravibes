@@ -1,4 +1,5 @@
 import 'package:auravibes_app/features/workspaces/widgets/workspace_dropdown.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -143,11 +144,14 @@ void main() {
           workspaces: workspaces,
           activeWorkspaceId: 'ws-1',
           onSelected: (_) {},
-          errorLocalizationKey: 'Switch failed',
+          errorLocalizationKey: LocaleKeys.workspace_management_switch_error,
         ),
       );
 
-      expect(find.text('Switch failed'), findsOneWidget);
+      expect(
+        find.text('Failed to switch workspace. Please try again.'),
+        findsOneWidget,
+      );
     });
 
     test('WorkspaceDropdownItem equality uses id only', () {

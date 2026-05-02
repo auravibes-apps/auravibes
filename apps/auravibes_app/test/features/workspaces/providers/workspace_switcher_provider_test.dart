@@ -141,7 +141,7 @@ void main() {
     });
 
     test(
-      'switchToWorkspace navigates to correct workspace location',
+      'switchToWorkspace opens the workspace new chat route',
       () async {
         final notifier = container.read(workspaceSwitcherProvider.notifier);
 

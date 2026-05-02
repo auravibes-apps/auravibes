@@ -8,6 +8,7 @@ import 'package:auravibes_app/features/workspaces/usecases/create_workspace_usec
 import 'package:auravibes_app/features/workspaces/usecases/delete_workspace_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/edit_workspace_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/validate_workspace_name_usecase.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -69,8 +70,9 @@ class _FakeRepository implements WorkspaceRepository {
 
   @override
   Future<bool> deleteWorkspace(String id) async {
+    final before = _workspaces.length;
     _workspaces.removeWhere((w) => w.id == id);
-    return true;
+    return _workspaces.length < before;
   }
 
   @override
@@ -140,7 +142,10 @@ void main() {
         fail('Expected exception');
       } on WorkspaceValidationException catch (e) {
         expect(e.localizationKey, isNotNull);
-        expect(e.localizationKey, contains('name_too_short_error'));
+        expect(
+          e.localizationKey,
+          LocaleKeys.workspace_management_name_too_short_error,
+        );
       }
     });
 
@@ -150,7 +155,10 @@ void main() {
         fail('Expected exception');
       } on WorkspaceValidationException catch (e) {
         expect(e.localizationKey, isNotNull);
-        expect(e.localizationKey, contains('name_too_long_error'));
+        expect(
+          e.localizationKey,
+          LocaleKeys.workspace_management_name_too_long_error,
+        );
       }
     });
   });

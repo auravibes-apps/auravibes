@@ -260,6 +260,7 @@ class _WorkspaceList extends StatelessWidget {
 
         if (isEditing) {
           return _EditWorkspaceTile(
+            key: ValueKey(workspace.id),
             workspace: workspace,
             onSave: (name) => onSaveEdit(workspace.id, name),
             onCancel: onCancelEdit,
@@ -267,6 +268,7 @@ class _WorkspaceList extends StatelessWidget {
         }
 
         return _WorkspaceListTile(
+          key: ValueKey(workspace.id),
           workspace: workspace,
           isActive: workspace.id == activeWorkspaceId,
           onEdit: () => onEdit(workspace),
@@ -283,6 +285,7 @@ class _WorkspaceListTile extends StatelessWidget {
     required this.isActive,
     required this.onEdit,
     required this.onDelete,
+    super.key,
   });
 
   final WorkspaceEntity workspace;
@@ -441,6 +444,7 @@ class _EditWorkspaceTile extends StatefulWidget {
     required this.workspace,
     required this.onSave,
     required this.onCancel,
+    super.key,
   });
 
   final WorkspaceEntity workspace;

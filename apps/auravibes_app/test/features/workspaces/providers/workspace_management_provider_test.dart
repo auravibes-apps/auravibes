@@ -79,7 +79,9 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
 
   @override
   Future<List<WorkspaceEntity>> searchWorkspacesByName(String query) async =>
-      _workspaces.where((w) => w.name.contains(query)).toList();
+      _workspaces
+          .where((w) => w.name.toLowerCase().contains(query.toLowerCase()))
+          .toList();
 
   @override
   Future<bool> validateWorkspace(WorkspaceToCreate workspace) async => true;

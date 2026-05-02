@@ -56,7 +56,7 @@ void main() {
       expect(find.byType(AuraScreen), findsOneWidget);
     });
 
-    testWidgets('back button is present and tappable', (tester) async {
+    testWidgets('back button pops ToolsScreen route', (tester) async {
       await tester.runAsync(() async {
         await tester.pumpWidget(
           testableApp(
@@ -68,9 +68,17 @@ void main() {
                 _MockGroupedToolsNotifier.new,
               ),
             ],
-            child: Theme(
-              data: ThemeData(extensions: [AuraTheme.light]),
-              child: const ToolsScreen(workspaceId: 'test-ws'),
+            child: Navigator(
+              pages: [
+                const MaterialPage<void>(child: Placeholder()),
+                MaterialPage<void>(
+                  child: Theme(
+                    data: ThemeData(extensions: [AuraTheme.light]),
+                    child: const ToolsScreen(workspaceId: 'test-ws'),
+                  ),
+                ),
+              ],
+              onDidRemovePage: (_) {},
             ),
           ),
         );
@@ -81,6 +89,7 @@ void main() {
       expect(backButton, findsOneWidget);
       await tester.tap(backButton);
       await tester.pumpAndSettle();
+      expect(find.byType(ToolsScreen), findsNothing);
     });
   });
 }
