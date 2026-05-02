@@ -51,6 +51,7 @@ class MyApp extends ConsumerWidget {
     return Portal(
       child: MaterialApp.router(
         title: F.title,
+        locale: context.locale,
         localizationsDelegates: context.localizationDelegates,
         supportedLocales: context.supportedLocales,
         builder: (context, child) => AuraText(child: child!),

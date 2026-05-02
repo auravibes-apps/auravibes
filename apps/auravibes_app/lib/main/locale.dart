@@ -18,6 +18,7 @@ class MainLocale extends StatelessWidget {
       path: 'assets/i18n',
       fallbackLocale: supportedLocales.first,
       useFallbackTranslations: true,
+      useFallbackTranslationsForEmptyResources: true,
       useOnlyLangCode: true,
       child: child,
     );
