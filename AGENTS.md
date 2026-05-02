@@ -193,6 +193,6 @@ These rules are non-negotiable for all new code and refactors:
 
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at `specs/009-workspace-management/plan.md`
+at `specs/011-agent-compaction-settings/plan.md`
 
 <!-- SPECKIT END -->
