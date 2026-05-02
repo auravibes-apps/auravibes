@@ -1,5 +1,6 @@
 import 'package:auravibes_app/domain/entities/workspace.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 
 /// Repository interface for workspace data operations.
 ///
@@ -12,6 +13,11 @@ abstract class WorkspaceRepository {
   ///
   /// Returns a list of all workspaces ordered by their creation date.
   Future<List<WorkspaceEntity>> getAllWorkspaces();
+
+  /// Watches all workspaces as a reactive stream.
+  ///
+  /// Emits a new list whenever the workspaces data changes.
+  Stream<List<WorkspaceEntity>> watchAllWorkspaces();
 
   /// Retrieves a workspace by its unique identifier.
   ///
@@ -97,10 +103,14 @@ abstract class WorkspaceRepository {
 /// Base exception for workspace-related operations.
 class WorkspaceException implements Exception {
   /// Creates a new WorkspaceException
-  const WorkspaceException(this.message, [this.cause]);
+  const WorkspaceException(this.message, {this.localizationKey, this.cause});
 
-  /// Error message describing the exception
+  /// Error message describing the exception.
+  /// Used as fallback when localization is unavailable.
   final String message;
+
+  /// Localization key for user-facing error messages.
+  final String? localizationKey;
 
   /// Optional original exception that caused this exception
   final Exception? cause;
@@ -115,14 +125,21 @@ class WorkspaceException implements Exception {
 /// Exception thrown when workspace validation fails.
 class WorkspaceValidationException extends WorkspaceException {
   /// Creates a new WorkspaceValidationException
-  const WorkspaceValidationException(super.message, [super.cause]);
+  const WorkspaceValidationException(
+    super.message, {
+    super.localizationKey,
+    super.cause,
+  });
 }
 
 /// Exception thrown when a workspace is not found.
 class WorkspaceNotFoundException extends WorkspaceException {
   /// Creates a new WorkspaceNotFoundException
-  const WorkspaceNotFoundException(this.workspaceId, [Exception? cause])
-    : super('Workspace with ID "$workspaceId" not found', cause);
+  const WorkspaceNotFoundException(this.workspaceId, {super.cause})
+    : super(
+        'Workspace with ID "$workspaceId" not found',
+        localizationKey: LocaleKeys.workspace_management_error_not_found,
+      );
 
   /// ID of the workspace that was not found
   final String workspaceId;
@@ -131,9 +148,33 @@ class WorkspaceNotFoundException extends WorkspaceException {
 /// Exception thrown when attempting to create a duplicate workspace.
 class WorkspaceDuplicateException extends WorkspaceException {
   /// Creates a new WorkspaceDuplicateException
-  const WorkspaceDuplicateException(this.workspaceId, [Exception? cause])
-    : super('Workspace with ID "$workspaceId" already exists', cause);
+  const WorkspaceDuplicateException(this.workspaceId, {super.cause})
+    : super(
+        'Workspace with ID "$workspaceId" already exists',
+        localizationKey: LocaleKeys.workspace_management_error_duplicate,
+      );
 
   /// ID of the duplicate workspace
   final String workspaceId;
+}
+
+/// Exception thrown when attempting to delete the last remaining workspace.
+class WorkspaceDeleteLastException extends WorkspaceException {
+  /// Creates a new WorkspaceDeleteLastException
+  const WorkspaceDeleteLastException()
+    : super(
+        'Cannot delete the last remaining workspace.',
+        localizationKey: LocaleKeys.workspace_management_delete_last_error,
+      );
+}
+
+/// Exception thrown when attempting to delete the currently active workspace.
+class WorkspaceDeleteActiveException extends WorkspaceException {
+  /// Creates a new WorkspaceDeleteActiveException
+  const WorkspaceDeleteActiveException()
+    : super(
+        'Cannot delete the currently active workspace. '
+        'Switch to another workspace first.',
+        localizationKey: LocaleKeys.workspace_management_delete_active_error,
+      );
 }

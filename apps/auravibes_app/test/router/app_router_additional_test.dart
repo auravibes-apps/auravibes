@@ -50,12 +50,12 @@ void main() {
 
     test('ToolsRoute with numeric workspaceId', () {
       final route = ToolsRoute(workspaceId: '12345');
-      expect(route.location, '/workspaces/12345/tools');
+      expect(route.location, '/workspaces/12345/more/tools');
     });
 
     test('ModelsRoute with special chars workspaceId', () {
       final route = ModelsRoute(workspaceId: 'ws_test-123');
-      expect(route.location, '/workspaces/ws_test-123/models');
+      expect(route.location, '/workspaces/ws_test-123/more/models');
     });
 
     test('WorkspaceRoute location with hyphenated workspaceId', () {

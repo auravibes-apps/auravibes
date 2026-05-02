@@ -1,7 +1,6 @@
 import 'package:auravibes_app/features/models/providers/workspace_model_connections_providers.dart';
 import 'package:auravibes_app/features/models/screens/models_screen.dart';
 import 'package:auravibes_app/features/models/widgets/list_model_credentials.dart';
-import 'package:auravibes_app/widgets/app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/app_content.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -58,7 +57,7 @@ void main() {
 
   testWidgets('renders app bar', (tester) async {
     await pumpAndInit(tester, buildSubject());
-    expect(find.byType(AuraAppBarWithDrawer), findsOneWidget);
+    expect(find.byType(AuraAppBar), findsOneWidget);
   });
 
   testWidgets('renders add model button', (tester) async {
@@ -109,5 +108,13 @@ void main() {
   test('ModelsScreen is const constructible', () {
     const screen = ModelsScreen(workspaceId: 'ws');
     expect(screen.workspaceId, 'ws');
+  });
+
+  testWidgets('back button is present and tappable', (tester) async {
+    await pumpAndInit(tester, buildSubject());
+    final backButton = find.byIcon(Icons.arrow_back);
+    expect(backButton, findsOneWidget);
+    await tester.tap(backButton);
+    await tester.pumpAndSettle();
   });
 }

@@ -14,7 +14,7 @@ WorkspaceRepository workspaceRepository(Ref ref) {
 }
 
 @Riverpod(keepAlive: true)
-Future<List<WorkspaceEntity>> allWorkspaces(Ref ref) async {
+Stream<List<WorkspaceEntity>> allWorkspaces(Ref ref) {
   final repo = ref.watch(workspaceRepositoryProvider);
-  return repo.getAllWorkspaces();
+  return repo.watchAllWorkspaces();
 }

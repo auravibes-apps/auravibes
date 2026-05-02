@@ -65,11 +65,11 @@ final class AllWorkspacesProvider
         $FunctionalProvider<
           AsyncValue<List<WorkspaceEntity>>,
           List<WorkspaceEntity>,
-          FutureOr<List<WorkspaceEntity>>
+          Stream<List<WorkspaceEntity>>
         >
     with
         $FutureModifier<List<WorkspaceEntity>>,
-        $FutureProvider<List<WorkspaceEntity>> {
+        $StreamProvider<List<WorkspaceEntity>> {
   AllWorkspacesProvider._()
     : super(
         from: null,
@@ -86,14 +86,14 @@ final class AllWorkspacesProvider
 
   @$internal
   @override
-  $FutureProviderElement<List<WorkspaceEntity>> $createElement(
+  $StreamProviderElement<List<WorkspaceEntity>> $createElement(
     $ProviderPointer pointer,
-  ) => $FutureProviderElement(pointer);
+  ) => $StreamProviderElement(pointer);
 
   @override
-  FutureOr<List<WorkspaceEntity>> create(Ref ref) {
+  Stream<List<WorkspaceEntity>> create(Ref ref) {
     return allWorkspaces(ref);
   }
 }
 
-String _$allWorkspacesHash() => r'0389b003e260d448ab3d124c835ed5ae79866a7d';
+String _$allWorkspacesHash() => r'0d342f5e8712cd6f795014602e6071f03bfce68f';

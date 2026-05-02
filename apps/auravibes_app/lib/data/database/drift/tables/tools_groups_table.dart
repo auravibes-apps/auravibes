@@ -12,7 +12,11 @@ export 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 @DataClassName('ToolsGroupsTable')
 class ToolsGroups extends Table with TableMixin {
   /// Reference to the workspace this tools group belongs to
-  TextColumn get workspaceId => text().references(Workspaces, #id)();
+  TextColumn get workspaceId => text().references(
+    Workspaces,
+    #id,
+    onDelete: KeyAction.cascade,
+  )();
 
   /// Optional reference to the MCP server this group belongs to.
   /// When the MCP server is deleted, this group and its tools are also deleted.

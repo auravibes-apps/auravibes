@@ -152,11 +152,26 @@ SomeExperimentalApi(), // ignore: experimental_member_use - Required for widgetb
 - Prefer shorthand most strongly for enum values and typed constructor initialization such as `.new()`
 - Use the explicit type instead when shorthand would be ambiguous, surprising, or harder to scan
 
-### When Reviewing Code
+### Implementation Standards (from Constitution v2.1.0)
+
+These rules are non-negotiable for all new code and refactors:
+
+1. **Database Cascade**: Use `ON DELETE CASCADE` at the Drift schema level. No manual cascade deletion in app code.
+2. **Business Logic in Usecases**: Business rules, validation, and orchestration MUST live in domain usecase classes. Providers delegate; widgets render.
+3. **Reactive Data as Streams**: Repository queries feeding live-updating UI MUST return `Stream`. One-shot `Future` only when live updates are not needed.
+4. **Localization**: All user-facing strings MUST use `tr()` / `LocaleKeys` / `TextLocale`. No hardcoded English in UI code. Prefer the `TextLocale` widget for `Text()` children; use `.tr()` only for non-widget contexts (String parameters, error messages, tooltips).
+5. **Typed Errors**: User-facing errors MUST be typed exception classes carrying localization keys. No raw `String` error messages in `AsyncValue` or state objects.
+6. **AsyncValue Switch Pattern**: Use Dart 3 switch expressions / pattern matching on `AsyncValue`. `.when()` is PROHIBITED in new code.
+7. **Mutation State**: Data mutations (CRUD) MUST use Riverpod `Mutation` or equivalent explicit mutation pattern. No manual `AsyncValue.loading()` toggling in notifiers.
+8. **UI Package Purity**: `packages/auravibes_ui/` widgets MUST be domain-agnostic and reusable across projects. No business-specific naming or logic in the UI package.
+9. **Small Widgets**: Each widget SHOULD watch at most one provider. Decompose large widgets into focused composable pieces.
+
+## When Reviewing Code
 
 - Check if ignore directives are documented and justified
 - Prefer scoped solutions over broad ignores
 - Verify version references are consistent across README, pubspec, and FVM config
+- Verify new code follows the 9 Implementation Standards above
 
 ## Active Technologies
 
@@ -178,6 +193,6 @@ SomeExperimentalApi(), // ignore: experimental_member_use - Required for widgetb
 
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at `specs/008-avoid-approval-flash/plan.md`
+at `specs/009-workspace-management/plan.md`
 
 <!-- SPECKIT END -->

@@ -6,7 +6,8 @@
     "tools": "Herramientas",
     "models": "Modelos",
     "agents": "Agentes",
-    "prompts": "Prompts"
+    "prompts": "Prompts",
+    "more": "Más"
   },
   "models_screens": {
     "select_provider": "Seleccionar Proveedor",
@@ -229,6 +230,21 @@
       "cancel": "Cancelar"
     }
   },
+  "more_screen": {
+    "title": "Configuración",
+    "workspaces": {
+      "title": "Espacios de Trabajo",
+      "subtitle": "Administra tus espacios de trabajo"
+    },
+    "models": {
+      "title": "Proveedores de Modelos",
+      "subtitle": "Administra tus proveedores de IA"
+    },
+    "tools": {
+      "title": "Herramientas",
+      "subtitle": "Administra tus herramientas e integraciones"
+    }
+  },
   "sidebar": {
     "recent_chats": "Chats Recientes",
     "no_recent_chats": "No hay chats recientes",
@@ -290,5 +306,33 @@
         "hint": "Este token se almacenará de forma segura"
       }
     }
+  },
+  "workspace_management": {
+    "title": "Gestionar Espacios de Trabajo",
+    "create_button": "Crear Espacio de Trabajo",
+    "create_title": "Crear Nuevo Espacio de Trabajo",
+    "edit_button": "Guardar Cambios",
+    "edit_title": "Editar Espacio de Trabajo",
+    "delete_button": "Eliminar Espacio de Trabajo",
+    "delete_title": "Eliminar Espacio de Trabajo",
+    "delete_confirm": "¿Estás seguro de que deseas eliminar \"{name}\"? Esta acción no se puede deshacer.",
+    "delete_active_error": "No se puede eliminar el espacio de trabajo activo. Cambia a otro espacio de trabajo primero.",
+    "delete_last_error": "No se puede eliminar el último espacio de trabajo restante.",
+    "name_label": "Nombre del Espacio de Trabajo",
+    "name_placeholder": "Ingresa el nombre del espacio de trabajo",
+    "name_required_error": "El nombre del espacio de trabajo es obligatorio",
+    "name_too_short_error": "El nombre debe tener al menos {min} caracteres",
+    "name_too_long_error": "El nombre debe tener como máximo {max} caracteres",
+    "no_workspaces": "No hay espacios de trabajo disponibles",
+    "switch_error": "Error al cambiar de espacio de trabajo. Inténtalo de nuevo.",
+    "loading": "Cargando espacios de trabajo...",
+    "load_error": "Error al cargar espacios de trabajo. Inténtalo de nuevo.",
+    "dropdown_placeholder": "Seleccionar espacio de trabajo",
+    "active_label": "Activo",
+    "error_not_found": "Espacio de trabajo no encontrado",
+    "error_duplicate": "Ya existe un espacio de trabajo con este nombre",
+    "unexpected_error": "Ocurrió un error inesperado. Inténtalo de nuevo.",
+    "edit_tooltip": "Editar {name}",
+    "delete_tooltip": "Eliminar {name}"
   }
 }

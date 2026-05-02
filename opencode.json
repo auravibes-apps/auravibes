@@ -46,10 +46,16 @@
         "--init",
         "--rm",
         "-i",
-        "--env-file",
-        ".env",
+        "-e",
+        "SONARQUBE_ORG",
+        "-e",
+        "SONARQUBE_TOKEN",
         "mcp/sonarqube@sha256:edbce6ea2e688afc0acee278bd583def95ea39569a0f26434099898bca003095"
-      ]
+      ],
+      "environment": {
+        "SONARQUBE_ORG": "auravibes-apps",
+        "SONARQUBE_TOKEN": "{env:SONARQUBE_TOKEN}"
+      }
     }
   }
 }

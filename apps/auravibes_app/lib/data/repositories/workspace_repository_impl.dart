@@ -22,6 +22,13 @@ class WorkspaceRepositoryImpl implements WorkspaceRepository {
   }
 
   @override
+  Stream<List<WorkspaceEntity>> watchAllWorkspaces() {
+    return _database.workspaceDao.watchAllWorkspaces().map(
+      (tables) => tables.map(_mapToWorkspace).toList(),
+    );
+  }
+
+  @override
   Future<WorkspaceEntity?> getWorkspaceById(String id) async {
     final workspacesTable = await _database.workspaceDao.getWorkspaceById(id);
     return workspacesTable != null ? _mapToWorkspace(workspacesTable) : null;
@@ -95,8 +102,8 @@ class WorkspaceRepositoryImpl implements WorkspaceRepository {
       return false; // Return false instead of throwing for delete operations
     }
 
-    final deleted = await _database.workspaceDao.deleteWorkspace(id);
-    return deleted;
+    // ON DELETE CASCADE at the schema level handles all related data.
+    return _database.workspaceDao.deleteWorkspace(id);
   }
 
   @override

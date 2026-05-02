@@ -24,6 +24,11 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
   Future<List<WorkspaceEntity>> getAllWorkspaces() async => [];
 
   @override
+  Stream<List<WorkspaceEntity>> watchAllWorkspaces() async* {
+    yield [];
+  }
+
+  @override
   Future<WorkspaceEntity> createWorkspace(WorkspaceToCreate workspace) {
     throw UnimplementedError();
   }
@@ -108,7 +113,7 @@ void main() {
   });
 
   group('allWorkspacesProvider', () {
-    test('returns list from repository', () async {
+    test('emits list from repository', () async {
       final fakeRepo = _FakeWorkspaceRepository();
       final testContainer = ProviderContainer(
         overrides: [
@@ -116,6 +121,9 @@ void main() {
         ],
       );
       addTearDown(testContainer.dispose);
+
+      // Keep provider alive during async test
+      testContainer.listen(allWorkspacesProvider, (_, _) {});
 
       final result = await testContainer.read(allWorkspacesProvider.future);
       expect(result, isEmpty);
@@ -129,6 +137,9 @@ void main() {
         ],
       );
       addTearDown(testContainer.dispose);
+
+      // Keep provider alive during async test
+      testContainer.listen(allWorkspacesProvider, (_, _) {});
 
       final first = await testContainer.read(allWorkspacesProvider.future);
       final second = await testContainer.read(allWorkspacesProvider.future);

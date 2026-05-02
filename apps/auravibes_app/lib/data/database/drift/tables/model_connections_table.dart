@@ -22,5 +22,9 @@ class ModelConnections extends Table with TableMixin {
   /// Last 6 characters of API key (stored in plain text for display)
   TextColumn get keySuffix => text().nullable()();
 
-  TextColumn get workspaceId => text().references(Workspaces, #id)();
+  TextColumn get workspaceId => text().references(
+    Workspaces,
+    #id,
+    onDelete: KeyAction.cascade,
+  )();
 }

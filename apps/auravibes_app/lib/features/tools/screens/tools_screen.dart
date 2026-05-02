@@ -4,7 +4,6 @@ import 'package:auravibes_app/features/tools/widgets/add_tool_modal.dart';
 import 'package:auravibes_app/features/tools/widgets/tool_count_enabled.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_workspace_list.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
-import 'package:auravibes_app/widgets/app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -19,8 +18,12 @@ class ToolsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return AuraScreen(
-      appBar: AuraAppBarWithDrawer(
+      appBar: AuraAppBar(
         title: const TextLocale(LocaleKeys.tools_screen_title),
+        leading: AuraIconButton(
+          icon: Icons.arrow_back,
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         actions: [
           // Add MCP Server button
           AuraIconButton(

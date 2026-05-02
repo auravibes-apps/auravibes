@@ -5,6 +5,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:logging/logging.dart';
 
 /// Global route observer for listening to navigation events across the app.
 ///
@@ -13,6 +14,8 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 final routeObserverProvider = Provider<RouteObserver<ModalRoute<void>>>(
   (ref) => RouteObserver<ModalRoute<void>>(),
 );
+
+final _logger = Logger('routerProvider');
 
 final routerProvider = Provider<GoRouter>(
   (ref) {
@@ -28,7 +31,19 @@ final routerProvider = Provider<GoRouter>(
       redirect: (context, state) async {
         final currentUri = state.uri;
         final workspaceMatch = matchWorkspaceId(currentUri);
-        final workspaces = await ref.read(allWorkspacesProvider.future);
+        final workspaces = await ref
+            .read(workspaceRepositoryProvider)
+            .getAllWorkspaces()
+            .onError(
+              (error, stackTrace) {
+                _logger.severe(
+                  'Failed to load workspaces for router redirect',
+                  error,
+                  stackTrace,
+                );
+                return [];
+              },
+            );
         final firstWorkspaceId = workspaces.firstOrNull?.id;
 
         if (firstWorkspaceId == null) {

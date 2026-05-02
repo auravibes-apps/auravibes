@@ -69,86 +69,14 @@ class AppDatabase extends _$AppDatabase {
 
   /// Database schema version.
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 1;
 
   /// Migration logic for database schema upgrades.
-  ///
-  /// This method handles database migrations when the schema version changes.
   @override
   MigrationStrategy get migration {
     return MigrationStrategy(
       onCreate: (m) async {
         await m.createAll();
-      },
-      onUpgrade: (m, from, to) async {
-        if (from < 2) {
-          await customStatement(
-            'ALTER TABLE credentials ADD COLUMN key_suffix TEXT',
-          );
-        }
-
-        if (from < 3) {
-          // First, update delivered → sent (remove old enum value)
-          await customStatement(
-            "UPDATE messages SET status = 'sent' WHERE status = 'delivered'",
-          );
-          // Then, update the table schema to allow new enum values
-          // ignore: experimental_member_use - TableMigration is marked @experimental in drift package
-          await m.alterTable(TableMigration(messages));
-          // Finally, update sending → unfinished for AI responses
-          await customStatement(
-            "UPDATE messages SET status = 'unfinished' "
-            "WHERE status = 'sending' AND is_user = 0",
-          );
-        }
-
-        if (from < 4) {
-          // Deduplicate native tools: keep first (oldest), delete newer dupes
-          await customStatement(
-            'DELETE FROM tools WHERE rowid IN ('
-            '  SELECT t1.rowid FROM tools t1'
-            '  INNER JOIN tools t2 ON t1.workspace_id = t2.workspace_id'
-            '    AND t1.tool_id = t2.tool_id'
-            '    AND t1.workspace_tools_group_id IS NULL '
-            '    AND t2.workspace_tools_group_id IS NULL '
-            '    AND t1.rowid > t2.rowid '
-            ')',
-          );
-          // Unique index for native tools (groupId IS NULL)
-          await customStatement(
-            'CREATE UNIQUE INDEX IF NOT EXISTS idx_tools_unique_native '
-            'ON tools (workspace_id, tool_id) '
-            'WHERE workspace_tools_group_id IS NULL',
-          );
-          // Deduplicate MCP tools: keep first (oldest), delete newer dupes
-          await customStatement(
-            'DELETE FROM tools WHERE rowid IN ('
-            '  SELECT t1.rowid FROM tools t1'
-            '  INNER JOIN tools t2 ON t1.workspace_id = t2.workspace_id'
-            '    AND t1.tool_id = t2.tool_id'
-            '    AND t1.workspace_tools_group_id = t2.workspace_tools_group_id'
-            '    AND t1.workspace_tools_group_id IS NOT NULL '
-            '    AND t1.rowid > t2.rowid '
-            ')',
-          );
-          // Unique index for MCP tools (groupId IS NOT NULL)
-          await customStatement(
-            'CREATE UNIQUE INDEX IF NOT EXISTS idx_tools_unique_mcp '
-            'ON tools (workspace_id, tool_id, workspace_tools_group_id) '
-            'WHERE workspace_tools_group_id IS NOT NULL',
-          );
-        }
-
-        if (from < 5) {
-          // Schema version 5: Renamed credentials tables to model_connections
-          // and workspace_model_selections for clearer domain terminology.
-          // Fresh installs get the new schema automatically; existing data is
-          // discarded since this is pre-production.
-          await customStatement('DROP TABLE IF EXISTS credential_models');
-          await customStatement('DROP TABLE IF EXISTS credentials');
-          await m.createTable(modelConnections);
-          await m.createTable(workspaceModelSelections);
-        }
       },
     );
   }

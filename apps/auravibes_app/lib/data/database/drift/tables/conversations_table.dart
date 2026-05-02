@@ -8,7 +8,11 @@ import 'package:drift/drift.dart';
 
 @DataClassName('ConversationsTable')
 class Conversations extends Table with TableMixin {
-  TextColumn get workspaceId => text().references(Workspaces, #id)();
+  TextColumn get workspaceId => text().references(
+    Workspaces,
+    #id,
+    onDelete: KeyAction.cascade,
+  )();
   TextColumn get title => text()();
   TextColumn get modelId =>
       text().nullable().references(WorkspaceModelSelections, #id)();

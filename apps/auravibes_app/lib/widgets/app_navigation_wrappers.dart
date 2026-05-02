@@ -1,5 +1,8 @@
 import 'package:auravibes_app/features/chats/widgets/sidebar_conversations_widget.dart';
-import 'package:auravibes_app/flavors.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_switch_state.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_switcher_provider.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_dropdown.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/app_router.dart';
 import 'package:auravibes_app/widgets/responsive_sliding_drawer.dart';
@@ -30,12 +33,8 @@ final List<AuraNavigationData> _navigationItems = [
     label: TextLocale(LocaleKeys.menu_new_chat),
   ),
   const AuraNavigationData(
-    icon: Icon(Icons.build_circle_outlined),
-    label: TextLocale(LocaleKeys.menu_tools),
-  ),
-  const AuraNavigationData(
-    icon: Icon(Icons.memory_outlined),
-    label: TextLocale(LocaleKeys.menu_models),
+    icon: Icon(Icons.settings_applications_outlined),
+    label: TextLocale(LocaleKeys.menu_more),
   ),
   const AuraNavigationData(
     icon: Icon(Icons.settings_outlined),
@@ -64,7 +63,12 @@ int _calculateSelectedIndex(BuildContext context, int shellIndex) {
     }
   }
 
-  return shellIndex;
+  return switch (shellIndex) {
+    0 => 0, // New Chat
+    1 => 1, // App Settings
+    2 => 2, // Settings (footer)
+    _ => -1,
+  };
 }
 
 class AuraSidebarWrapper extends HookConsumerWidget {
@@ -116,10 +120,8 @@ class AuraSidebarWrapper extends HookConsumerWidget {
       case 0:
         NewChatRoute(workspaceId: workspaceId).go(context);
       case 1:
-        ToolsRoute(workspaceId: workspaceId).go(context);
+        MoreRoute(workspaceId: workspaceId).go(context);
       case 2:
-        ModelsRoute(workspaceId: workspaceId).go(context);
-      case 3:
         SettingsRoute(workspaceId: workspaceId).go(context);
     }
   }
@@ -185,7 +187,7 @@ class _AppWithResponsiveDrawerState extends State<AppWithResponsiveDrawer> {
         child: AuraSidebar(
           navigationItems: widget.navigationItems,
           onNavigationTap: widget.onNavigationTap,
-          header: const _AppLogo(),
+          header: _WorkspaceDropdownHeader(workspaceId: widget.workspaceId),
           middleSection: SidebarConversationsWidget(
             workspaceId: widget.workspaceId,
           ),
@@ -201,21 +203,62 @@ class _AppWithResponsiveDrawerState extends State<AppWithResponsiveDrawer> {
   }
 }
 
-class _AppLogo extends StatelessWidget {
-  const _AppLogo();
+class _WorkspaceDropdownHeader extends ConsumerWidget {
+  const _WorkspaceDropdownHeader({required this.workspaceId});
+
+  final String workspaceId;
 
   @override
-  Widget build(BuildContext context) {
-    final title = F.title;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final workspacesAsync = ref.watch(allWorkspacesProvider);
+    final switcherState = ref.watch(workspaceSwitcherProvider);
+
+    final Widget dropdownWidget;
+    switch (workspacesAsync) {
+      case AsyncData(:final value):
+        final items = value
+            .map(
+              (w) => WorkspaceDropdownItem(
+                id: w.id,
+                name: w.name,
+              ),
+            )
+            .toList();
+
+        final isLoading = switcherState.status == SwitchStatus.loading;
+        final errorKey = switcherState.errorLocalizationKey;
+
+        dropdownWidget = WorkspaceDropdown(
+          workspaces: items,
+          activeWorkspaceId: workspaceId,
+          onSelected: (item) {
+            if (item.id == workspaceId) return;
+            ref
+                .read(workspaceSwitcherProvider.notifier)
+                .switchToWorkspace(item.id);
+          },
+          isLoading: isLoading,
+          errorLocalizationKey: errorKey,
+        );
+      case AsyncLoading():
+        dropdownWidget = const AuraContainer(
+          height: 48,
+          child: Center(
+            child: TextLocale(LocaleKeys.workspace_management_loading),
+          ),
+        );
+      case AsyncError(:final error):
+        debugPrint('Workspace dropdown stream error: $error');
+        dropdownWidget = const AuraText(
+          child: TextLocale(LocaleKeys.workspace_management_unexpected_error),
+        );
+    }
+
     return SafeArea(
       bottom: false,
       child: AuraPadding(
         padding: .small,
-        child: AuraText(
-          style: AuraTextStyle.heading5,
-          color: AuraColorVariant.onSurface,
-          child: Text(title),
-        ),
+        child: dropdownWidget,
       ),
     );
   }

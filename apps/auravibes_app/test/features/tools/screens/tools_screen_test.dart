@@ -55,5 +55,41 @@ void main() {
       expect(find.byType(ToolsScreen), findsOneWidget);
       expect(find.byType(AuraScreen), findsOneWidget);
     });
+
+    testWidgets('back button pops ToolsScreen route', (tester) async {
+      await tester.runAsync(() async {
+        await tester.pumpWidget(
+          testableApp(
+            overrides: [
+              workspaceToolsProvider('test-ws').overrideWith(
+                _MockWorkspaceToolsNotifier.new,
+              ),
+              groupedToolsProvider('test-ws').overrideWith(
+                _MockGroupedToolsNotifier.new,
+              ),
+            ],
+            child: Navigator(
+              pages: [
+                const MaterialPage<void>(child: Placeholder()),
+                MaterialPage<void>(
+                  child: Theme(
+                    data: ThemeData(extensions: [AuraTheme.light]),
+                    child: const ToolsScreen(workspaceId: 'test-ws'),
+                  ),
+                ),
+              ],
+              onDidRemovePage: (_) {},
+            ),
+          ),
+        );
+      });
+      await tester.pump();
+      await tester.pump();
+      final backButton = find.byIcon(Icons.arrow_back);
+      expect(backButton, findsOneWidget);
+      await tester.tap(backButton);
+      await tester.pumpAndSettle();
+      expect(find.byType(ToolsScreen), findsNothing);
+    });
   });
 }

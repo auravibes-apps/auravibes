@@ -12,6 +12,9 @@ class WorkspaceModelSelections extends Table with TableMixin {
   /// model unique identifier
   TextColumn get modelId => text().references(ApiModelProviders, #id)();
 
-  TextColumn get modelConnectionId =>
-      text().references(ModelConnections, #id)();
+  TextColumn get modelConnectionId => text().references(
+    ModelConnections,
+    #id,
+    onDelete: KeyAction.cascade,
+  )();
 }

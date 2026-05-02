@@ -21,6 +21,15 @@ class WorkspaceDao extends DatabaseAccessor<AppDatabase>
     )..orderBy([(t) => OrderingTerm(expression: t.createdAt)])).get();
   }
 
+  /// Watches all workspaces as a reactive stream.
+  ///
+  /// Emits a new list whenever the workspaces table changes.
+  Stream<List<WorkspacesTable>> watchAllWorkspaces() {
+    return (select(
+      workspaces,
+    )..orderBy([(t) => OrderingTerm(expression: t.createdAt)])).watch();
+  }
+
   /// Retrieves a workspace by its ID.
   ///
   /// Returns the workspace with the given [id], or null if not found.
