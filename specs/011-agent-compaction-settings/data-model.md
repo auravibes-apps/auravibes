@@ -8,7 +8,7 @@ Global app preference controlling automatic compaction.
 
 - `autoCompactionEnabled`: boolean, default `true`.
 - `usagePercentageThreshold`: integer percent, default `80`.
-- `remainingTokenThreshold`: integer token count, default conservative app value.
+- `remainingTokenThreshold`: integer token count, default `4000`.
 - `updatedAt`: timestamp for diagnostics/debug display if needed.
 
 ### Validation
@@ -132,4 +132,5 @@ Derived list sent to the LLM agent service.
 1. Summary generation or persistence fails.
 2. No compaction summary is written.
 3. No message range is marked compacted.
-4. User-facing manual path shows recoverable failure; auto path skips compaction or reports typed failure according to continuation policy.
+4. Manual path shows recoverable failure without continuing the assistant.
+5. Required auto path blocks the pending assistant continuation and persists a visible chat error message.

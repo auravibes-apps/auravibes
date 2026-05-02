@@ -90,6 +90,12 @@ Auto compaction is checked before assistant continuation builds prompt history.
 - Remaining-token threshold is met.
 - Conversation is safe to compact.
 
+### Failure Behavior
+
+- If required auto compaction fails, assistant continuation is blocked.
+- The compactable context remains uncompacted.
+- A visible localized chat error message is persisted so the user can see why continuation stopped.
+
 ### Safe Conversation
 
 Safe means:
