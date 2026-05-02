@@ -8,6 +8,7 @@ import 'package:auravibes_app/features/workspaces/usecases/create_workspace_usec
 import 'package:auravibes_app/features/workspaces/usecases/delete_workspace_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/edit_workspace_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/validate_workspace_name_usecase.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _FakeRepository implements WorkspaceRepository {
@@ -25,7 +26,7 @@ class _FakeRepository implements WorkspaceRepository {
 
   @override
   Future<WorkspaceEntity?> getWorkspaceById(String id) async =>
-      _workspaces.firstWhere((w) => w.id == id);
+      _workspaces.firstWhereOrNull((w) => w.id == id);
 
   @override
   Future<List<WorkspaceEntity>> getWorkspacesByType(
@@ -53,6 +54,10 @@ class _FakeRepository implements WorkspaceRepository {
     WorkspacePatch workspace,
   ) async {
     final index = _workspaces.indexWhere((w) => w.id == id);
+    if (index == -1) {
+      throw WorkspaceNotFoundException(id);
+    }
+
     final existing = _workspaces[index];
     final updated = existing.copyWith(
       name: workspace.name ?? existing.name,
