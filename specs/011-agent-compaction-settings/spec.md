@@ -10,7 +10,7 @@
 ### Session 2026-05-02
 
 - Q: How should compaction summary messages appear in the chat transcript? → A: Hidden from normal chat view, used only for prompt context and metadata.
-- Q: What default remaining-token threshold should auto compaction use? → A: 4,000 tokens.
+- Q: What default remaining-token threshold should auto compaction use? → A: Dynamic safety gap: `max(maxOutputTokens, 20% of context limit)`, capped at 15,000 tokens.
 - Q: When manual compaction succeeds, should the app immediately ask the assistant to continue? → A: No, manual compaction only creates a checkpoint and waits for the next user action.
 - Q: If automatic compaction fails before an assistant continuation, what should happen? → A: Block assistant continuation and show a recoverable error.
 - Q: Should the app keep a user-visible record of automatic compaction failure after blocking continuation? → A: Persist a visible error message in the chat.
@@ -18,6 +18,13 @@
 - Q: How should in-progress compaction appear in the conversation list? → A: Show a separate temporary Compacting row (tool-like loading) instead of replacing the existing conversation widget.
 - Q: How should user messages behave while compaction is running? → A: Reuse the existing send queue and treat active compaction as a busy/queueing condition.
 - Q: How should compaction message text be stored versus sent to agent history? → A: Store the original untrimmed compaction message for user inspection, and trim/normalize only when preparing agent-history payload.
+
+### Session 2026-05-03
+
+- Q: How should automatic compaction combine configured thresholds with AI-based summarization? → A: Deterministic thresholds trigger compaction; the AI agent service generates the summary using the same provider/model as the conversation.
+- Q: Should auto compaction retry after a provider context-overflow error? → A: Retry once after safe compaction if conversation state is still eligible.
+- Q: What recent context must remain uncompressed after compaction? → A: Keep at least the latest user turn, latest assistant turn, and complete tool-call/result groups.
+- Q: Can users manually compact before automatic thresholds are met? → A: Yes, when enough eligible context exists and the conversation is not busy.
 
 ## User Scenarios & Testing _(mandatory)_
 
@@ -36,6 +43,7 @@ As a user running a long AI agent conversation, I want the app to automatically 
 3. **Given** a conversation has pending tool approvals or unresolved tool calls, **When** the conversation exceeds the configured threshold, **Then** auto compaction waits until the tool state is resolved before compacting.
 4. **Given** auto or manual compaction starts, **When** the user views the conversation list, **Then** the app shows a separate temporary Compacting row with tool-style loading until compaction completes.
 5. **Given** compaction is running, **When** the user sends messages, **Then** the system uses the existing message-send queue by treating compaction as a busy condition and sends queued messages in order after compaction finishes.
+6. **Given** an assistant request fails with a provider context-overflow error and the conversation state is safe to compact, **When** auto compaction succeeds, **Then** the app retries the assistant request once.
 
 ---
 
@@ -49,7 +57,7 @@ As a user in a long conversation, I want a manual compact control in the chat in
 
 **Acceptance Scenarios**:
 
-1. **Given** a conversation has enough eligible prior context, **When** the user presses the manual compact control, **Then** the app compacts the eligible context and shows clear completion feedback.
+1. **Given** a conversation has enough eligible prior context, even if it is below automatic compaction thresholds, **When** the user presses the manual compact control, **Then** the app compacts the eligible context and shows clear completion feedback.
 2. **Given** the conversation is currently busy, waiting for tool approval, or has no eligible context to compact, **When** the user views the chat input area, **Then** the manual compact control is disabled or unavailable with an understandable reason.
 3. **Given** manual compaction fails, **When** the failure occurs, **Then** the app leaves the conversation unchanged and shows a recoverable error message.
 4. **Given** manual compaction succeeds, **When** the summary checkpoint is created, **Then** the app waits for the next user action and does not automatically request another assistant response.
@@ -80,6 +88,7 @@ As a user, I want a dedicated compaction settings section where I can modify aut
 - Threshold settings are changed while a conversation is open: the next compaction check uses the updated settings.
 - Remaining-token threshold is greater than the selected model's context limit: the app treats the setting as invalid or asks the user to correct it before saving.
 - Compaction summary generation fails or is cancelled: no eligible conversation context is marked compacted, and the user can retry.
+- A provider returns a context-overflow error during assistant continuation: if the conversation is safe to compact, the app compacts eligible context and retries the assistant request once; if retry fails, it follows the automatic compaction failure behavior.
 - Automatic compaction fails after thresholds are met: the app blocks the pending assistant continuation, leaves compactable context unchanged, persists a visible chat error message, and allows the user to retry.
 - A conversation already has a previous compaction summary: new compaction updates the active compacted context without duplicating old compacted content in the next prompt.
 - Compaction summaries are shown in chat as a visible Compacted widget that users can tap to inspect details, while represented context still routes through compaction metadata.
@@ -118,6 +127,13 @@ As a user, I want a dedicated compaction settings section where I can modify aut
 - **FR-025**: The system MUST treat active compaction as a busy condition for sending and MUST route user messages sent during compaction through the existing message-send queue.
 - **FR-026**: The system MUST store compaction message text in its original untrimmed form for user-visible inspection.
 - **FR-027**: The system MUST apply compaction-text trimming or whitespace normalization only when constructing agent-history payload sent to the model.
+- **FR-028**: The system MUST use deterministic threshold checks to decide when automatic compaction is required.
+- **FR-029**: The system MUST generate compaction summaries by calling the AI agent service with the same model provider and model selected for the active conversation.
+- **FR-030**: The system MUST pass a compaction-specific system prompt to the AI agent service that instructs it to preserve compacted conversation state for future use cases without inventing unseen context.
+- **FR-031**: The system MUST use a default remaining-token safety gap of `max(maxOutputTokens, 20% of the selected model context limit)`, capped at 15,000 tokens, unless the user configures a different remaining-token threshold.
+- **FR-032**: The system MUST retry an assistant continuation at most once after a provider context-overflow error when safe auto compaction succeeds.
+- **FR-033**: The system MUST keep at least the latest user turn, latest assistant turn, and complete tool-call/result groups uncompressed when creating a compaction summary.
+- **FR-034**: The system MUST allow manual compaction before automatic thresholds are met when enough eligible context exists and the conversation is not busy.
 
 ### Key Entities
 
@@ -130,8 +146,12 @@ As a user, I want a dedicated compaction settings section where I can modify aut
 
 - Default auto compaction is enabled.
 - Default usage percentage threshold is 80%.
-- Default remaining-token threshold is 4,000 tokens and can be changed in compaction settings.
+- Default remaining-token threshold is `max(maxOutputTokens, 20% of the selected model context limit)`, capped at 15,000 tokens, and can be changed in compaction settings.
+- Automatic compaction eligibility is decided by configured thresholds before invoking AI summary generation.
+- Compaction summary generation uses the active conversation model/provider rather than a separate fallback summarizer model.
 - Manual compaction keeps a recent uncompressed tail rather than replacing the entire conversation context.
+- The recent uncompressed tail includes at least the latest user turn, latest assistant turn, and complete tool-call/result groups.
+- Manual compaction does not require automatic threshold conditions when enough eligible context exists.
 - Manual compaction is a checkpoint action and does not continue the assistant until the user sends or triggers another action.
 - Automatic compaction failure blocks the pending assistant continuation, persists a visible chat error message, and does not mark any context as compacted.
 - Compaction affects model context only; it does not delete or hide existing visible chat messages.
@@ -156,3 +176,7 @@ As a user, I want a dedicated compaction settings section where I can modify aut
 - **SC-013**: In tests where users send messages during compaction, 100% of messages are queued via the existing queue and later sent in original order after compaction completes.
 - **SC-014**: In compaction detail-view tests, 100% of stored compaction messages preserve original whitespace/content fidelity.
 - **SC-015**: In payload-construction tests, 100% of compaction messages sent to agent history use normalized text while stored visible content remains unchanged.
+- **SC-016**: In compaction-generation tests, 100% of summaries are requested through the AI agent service using the active conversation model provider/model and a compaction-specific system prompt.
+- **SC-017**: In context-overflow tests with safe eligible context, 100% of assistant continuations retry exactly once after successful auto compaction.
+- **SC-018**: In compaction-boundary tests, 100% of summaries keep the latest user turn, latest assistant turn, and complete tool-call/result groups outside the compacted range.
+- **SC-019**: In manual compaction tests below automatic thresholds, 100% of eligible non-busy conversations can still be compacted manually.

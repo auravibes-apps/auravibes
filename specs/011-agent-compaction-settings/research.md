@@ -11,6 +11,51 @@
 - Separate compaction table: cleaner separation, but extra migration and query complexity for MVP.
 - In-memory compaction state only: simpler initially, but lost on restart and not inspectable.
 
+## Decision: Store compaction settings globally in shared preferences
+
+**Decision**: Persist compaction settings as global app preferences containing auto-enabled state, usage percentage threshold, remaining-token threshold, and reset-to-default behavior.
+
+**Rationale**: The clarified spec requires a dedicated settings section and global defaults. Shared preferences match the current no-schema-change constraint and avoid per-conversation/per-model complexity until there is a concrete use case.
+
+**Alternatives considered**:
+
+- Per-model settings: more precise, but adds UI and migration complexity beyond MVP.
+- Drift settings table: more queryable, but unnecessary for global preferences and would add migration work.
+
+## Decision: Use deterministic thresholds for auto eligibility
+
+**Decision**: Auto compaction eligibility is decided by deterministic checks: auto compaction enabled, no unsafe tool/conversation state, usage percentage at or above threshold, and remaining tokens at or below threshold.
+
+**Rationale**: Deterministic checks make settings testable and predictable. The AI service should summarize once eligibility is known, not decide whether user settings apply.
+
+**Alternatives considered**:
+
+- Ask the AI service whether compaction is needed: harder to test and can ignore explicit user settings.
+- Percent-only trigger: unsafe across models because large and small contexts have very different remaining-token risk at the same percentage.
+
+## Decision: Default remaining-token threshold uses a dynamic safety gap
+
+**Decision**: Default remaining-token threshold is `max(maxOutputTokens, 20% of selected model context limit)`, capped at 15,000 tokens. Users can override it in settings.
+
+**Rationale**: A dynamic gap scales with model size while avoiding excessive safety buffers for very large contexts. It follows the research recommendation and reduces premature compaction on large-context models.
+
+**Alternatives considered**:
+
+- Fixed `4,000` tokens: simpler, but too small for large outputs and too rigid across providers.
+- Percent-only threshold: lacks a concrete floor for small context models.
+- Uncapped `20%`: can be too conservative for very large context windows.
+
+## Decision: Generate summaries through the active conversation model/provider
+
+**Decision**: `CompactConversationUsecase` calls the AI agent service using the same model provider and model selected for the active conversation, with a compaction-specific system prompt.
+
+**Rationale**: The user explicitly required compaction to use the AI agent service and same model provider. This also avoids adding a separate summarizer-model setting for MVP.
+
+**Alternatives considered**:
+
+- Dedicated weak/cheap summarizer model: can reduce cost, but adds new settings and provider compatibility questions.
+- Local rule-based summarization: avoids provider calls but produces lower-quality summaries and diverges from agent-compaction patterns.
+
 ## Decision: Keep stored compaction content untrimmed; normalize only for model payload
 
 **Decision**: Persist original compaction text exactly as generated. Apply trimming/whitespace normalization only when building agent history payload.
@@ -66,6 +111,17 @@
 - Filter by covered message IDs each turn: more precise but more expensive and fragile.
 - Include all history plus summary: duplicates context, violates FR-012/SC-006.
 
+## Decision: Keep a safe recent tail outside compacted ranges
+
+**Decision**: Compaction range selection must keep at least the latest user turn, latest assistant turn, and complete tool-call/result groups uncompressed.
+
+**Rationale**: Recent tail preservation reduces summary ambiguity and prevents invalid model histories caused by splitting tool-call/result relationships.
+
+**Alternatives considered**:
+
+- Compact all messages before latest summary: may remove important active context.
+- Keep only the latest user message: insufficient for assistant/tool continuity.
+
 ## Decision: Auto compaction executes before continuation and blocks on required failure
 
 **Decision**: Auto check runs before assistant continuation. If thresholds require compaction and compaction fails, continuation is blocked and a visible recoverable error is persisted.
@@ -76,3 +132,14 @@
 
 - Continue without compaction on failure: keeps flow moving but violates required threshold behavior.
 - Surface transient error only: risks losing failure context after navigation/restart.
+
+## Decision: Retry context-overflow continuations once after safe compaction
+
+**Decision**: If an assistant continuation fails with a provider context-overflow error and the conversation is safe to compact, run auto compaction and retry the assistant request exactly once.
+
+**Rationale**: This recovers from inaccurate prompt-token estimates without creating infinite retry loops or duplicate assistant requests.
+
+**Alternatives considered**:
+
+- No retry: leaves recoverable long-context failures unresolved.
+- Unlimited retries: risks loops and provider cost spikes.
