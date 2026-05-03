@@ -14,8 +14,12 @@
 - Q: When manual compaction succeeds, should the app immediately ask the assistant to continue? → A: No, manual compaction only creates a checkpoint and waits for the next user action.
 - Q: If automatic compaction fails before an assistant continuation, what should happen? → A: Block assistant continuation and show a recoverable error.
 - Q: Should the app keep a user-visible record of automatic compaction failure after blocking continuation? → A: Persist a visible error message in the chat.
+- Q: How should compaction summaries appear in chat history? → A: Show a visible Compacted widget in chat history that can be tapped to open compaction details.
+- Q: How should in-progress compaction appear in the conversation list? → A: Show a separate temporary Compacting row (tool-like loading) instead of replacing the existing conversation widget.
+- Q: How should user messages behave while compaction is running? → A: Reuse the existing send queue and treat active compaction as a busy/queueing condition.
+- Q: How should compaction message text be stored versus sent to agent history? → A: Store the original untrimmed compaction message for user inspection, and trim/normalize only when preparing agent-history payload.
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Automatic Compaction Prevents Context Exhaustion (Priority: P1)
 
@@ -30,6 +34,8 @@ As a user running a long AI agent conversation, I want the app to automatically 
 1. **Given** auto compaction is enabled and a conversation exceeds the configured percentage threshold and remaining-token threshold, **When** the user sends a message or the agent prepares its next response, **Then** the app compacts eligible prior context before the assistant response is requested.
 2. **Given** a conversation is below either configured threshold, **When** the user sends a message, **Then** the app does not compact automatically.
 3. **Given** a conversation has pending tool approvals or unresolved tool calls, **When** the conversation exceeds the configured threshold, **Then** auto compaction waits until the tool state is resolved before compacting.
+4. **Given** auto or manual compaction starts, **When** the user views the conversation list, **Then** the app shows a separate temporary Compacting row with tool-style loading until compaction completes.
+5. **Given** compaction is running, **When** the user sends messages, **Then** the system uses the existing message-send queue by treating compaction as a busy condition and sends queued messages in order after compaction finishes.
 
 ---
 
@@ -47,6 +53,8 @@ As a user in a long conversation, I want a manual compact control in the chat in
 2. **Given** the conversation is currently busy, waiting for tool approval, or has no eligible context to compact, **When** the user views the chat input area, **Then** the manual compact control is disabled or unavailable with an understandable reason.
 3. **Given** manual compaction fails, **When** the failure occurs, **Then** the app leaves the conversation unchanged and shows a recoverable error message.
 4. **Given** manual compaction succeeds, **When** the summary checkpoint is created, **Then** the app waits for the next user action and does not automatically request another assistant response.
+5. **Given** a compaction summary exists, **When** the user views chat history, **Then** the app shows a visible Compacted widget that can be tapped to view compaction details.
+6. **Given** a user opens compaction details, **When** compaction content is displayed, **Then** the app shows the stored original text without trimming or whitespace normalization.
 
 ---
 
@@ -74,11 +82,12 @@ As a user, I want a dedicated compaction settings section where I can modify aut
 - Compaction summary generation fails or is cancelled: no eligible conversation context is marked compacted, and the user can retry.
 - Automatic compaction fails after thresholds are met: the app blocks the pending assistant continuation, leaves compactable context unchanged, persists a visible chat error message, and allows the user to retry.
 - A conversation already has a previous compaction summary: new compaction updates the active compacted context without duplicating old compacted content in the next prompt.
-- Compaction summary messages are hidden from the normal chat transcript while still being available for prompt context and metadata-driven behavior.
+- Compaction summaries are shown in chat as a visible Compacted widget that users can tap to inspect details, while represented context still routes through compaction metadata.
 - The latest messages contain unresolved tool approvals, active tool calls, unsent user drafts, or failed messages: compaction skips unsafe ranges and never splits tool calls from their results.
 - The selected model has no known context limit: auto compaction does not run from percentage-based thresholds, and the app communicates that context-limit data is unavailable.
+- While compaction is running, conversation list state shows a temporary Compacting row and removes it when compaction finishes or fails.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -102,9 +111,13 @@ As a user, I want a dedicated compaction settings section where I can modify aut
 - **FR-018**: The system MUST allow users to reset compaction settings to default values.
 - **FR-019**: The system MUST mark each compaction summary with whether it was created manually or automatically.
 - **FR-020**: The system MUST ensure compaction summary messages do not contain thinking output or tool-call metadata.
-- **FR-021**: The system MUST hide compaction summary messages from the normal chat transcript while preserving them for prompt context and metadata-driven behavior.
+- **FR-021**: The system MUST show each compaction summary in the normal chat transcript as a visible `Compacted` widget that users can tap to inspect compaction details.
 - **FR-022**: The system MUST NOT automatically request an assistant response after a manual compaction succeeds.
 - **FR-023**: The system MUST block the pending assistant continuation and persist a visible recoverable chat error message if required automatic compaction fails.
+- **FR-024**: The system MUST show a temporary `Compacting` row with tool-like loading in the conversation list while compaction is in progress, without replacing the existing conversation row.
+- **FR-025**: The system MUST treat active compaction as a busy condition for sending and MUST route user messages sent during compaction through the existing message-send queue.
+- **FR-026**: The system MUST store compaction message text in its original untrimmed form for user-visible inspection.
+- **FR-027**: The system MUST apply compaction-text trimming or whitespace normalization only when constructing agent-history payload sent to the model.
 
 ### Key Entities
 
@@ -124,7 +137,7 @@ As a user, I want a dedicated compaction settings section where I can modify aut
 - Compaction affects model context only; it does not delete or hide existing visible chat messages.
 - Settings apply globally to all conversations unless a future feature adds per-workspace or per-model overrides.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 
@@ -136,6 +149,10 @@ As a user, I want a dedicated compaction settings section where I can modify aut
 - **SC-006**: No assistant response is requested with duplicated compacted content and summary content after a successful compaction.
 - **SC-007**: Compaction never proceeds in test cases with unresolved tool approvals or pending tool calls.
 - **SC-008**: 100% of compaction summary messages created in tests are marked as manual or automatic and contain no tool-call metadata.
-- **SC-009**: 100% of compaction summary messages created in tests are absent from the normal visible chat transcript.
+- **SC-009**: 100% of compaction summary messages created in tests are shown as a visible `Compacted` widget in the normal chat transcript with a working details interaction.
 - **SC-010**: 100% of successful manual compaction tests produce no automatic assistant continuation.
 - **SC-011**: 100% of failed required auto-compaction tests block assistant continuation, preserve uncompacted context, and create a visible chat error message.
+- **SC-012**: 100% of compaction runs show a temporary `Compacting` row in the conversation list during execution, and remove it on completion or failure.
+- **SC-013**: In tests where users send messages during compaction, 100% of messages are queued via the existing queue and later sent in original order after compaction completes.
+- **SC-014**: In compaction detail-view tests, 100% of stored compaction messages preserve original whitespace/content fidelity.
+- **SC-015**: In payload-construction tests, 100% of compaction messages sent to agent history use normalized text while stored visible content remains unchanged.

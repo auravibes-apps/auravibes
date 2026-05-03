@@ -5,35 +5,38 @@
 
 ## Summary
 
-Add manual and automatic conversation compaction for long-running AI agent chats, plus a settings section that makes auto-compaction thresholds user-configurable. The MVP stores compaction state in existing message metadata: the compaction result is a normal persisted system message marked as a compaction summary, with metadata identifying whether it was created manually or automatically and which prior messages it represents. Prompt assembly sends only messages from the latest compaction summary forward; conversations without a compaction summary continue sending the full prompt-eligible message list. Compaction summaries are hidden from the normal chat transcript and contain no thinking output or tool-call metadata. Manual compaction is checkpoint-only. Required auto-compaction failure blocks assistant continuation and persists a visible recoverable chat error message.
+Add automatic and manual conversation compaction with configurable thresholds, plus transparent UI states for compaction progress and results. Implementation keeps full visible conversation history, inserts compaction checkpoints into message history as dedicated system messages, shows a tappable `Compacted` widget in chat, shows a temporary `Compacting` row in conversation list, and routes sends through the existing queue when compaction is active.
 
 ## Technical Context
 
-**Language/Version**: Dart 3.11+ with Flutter 3.41.4+ via FVM  
-**Primary Dependencies**: Flutter SDK, hooks_riverpod/Riverpod 3 code generation, Drift, Freezed, dartantic_ai, shared_preferences, auravibes_ui  
-**Storage**: Existing Drift `messages` metadata JSON for compaction summaries and visible auto-failure chat errors; shared preferences for global compaction settings; no new Drift table for MVP  
-**Testing**: Flutter unit/widget tests, provider/usecase tests, build_runner for generated Freezed/Riverpod code  
-**Target Platform**: macOS, iOS, Android, Web, Linux, Windows  
-**Project Type**: Flutter monorepo app  
-**Performance Goals**: Manual compaction starts feedback within 250ms; auto compaction check adds no visible delay when thresholds are not met; prompt assembly does not duplicate compacted content  
-**Constraints**: Preserve visible chat history; hide compaction summary messages from normal transcript; do not compact pending tools/approvals; no hardcoded user thresholds; default remaining-token threshold is 4,000; all UI strings localized; use existing FVM/Melos commands  
-**Scale/Scope**: One app feature affecting chat prompt assembly, message metadata, compaction settings UI, visible chat filtering, auto-failure messages, and focused tests
+**Language/Version**: Dart 3.11+ / Flutter 3.41.4+ (FVM pinned)
+**Primary Dependencies**: Flutter SDK, hooks_riverpod/Riverpod 3 (code generation), drift, freezed/json_serializable, auravibes_ui, dartantic_ai
+**Storage**: Drift SQLite (`messages` metadata JSON, conversations/messages tables) + shared preferences for global compaction settings
+**Testing**: flutter_test, mocktail, Riverpod/provider tests, use case tests, widget tests
+**Target Platform**: macOS, iOS, Android, Web, Linux, Windows
+**Project Type**: Flutter monorepo application
+**Performance Goals**: Auto compaction executes before continuation on all required checks; no duplicate pre-summary payload; queue ordering preserved during compaction
+**Constraints**: Never split unresolved tool-call/result chains; no thinking/tool metadata in compaction summaries; manual compaction must not trigger auto-continue; stored compaction text remains untrimmed for user inspection
+**Scale/Scope**: Long-running single-user local conversations; multiple compaction cycles per conversation; global settings apply across conversations
 
 ## Constitution Check
 
-_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
+_GATE: Must pass before Phase 0 research. Re-checked after Phase 1 design._
 
-| Principle | Check | Status |
-| --- | --- | --- |
-| Business Logic Layering | Compaction policy, eligibility, summary creation, prompt slicing, and failure decisions live in chat use cases; providers expose state only; widgets forward intent. | Pass |
-| Reactive Data | Existing chat message streams remain for visible UI; filtering hidden compaction summaries occurs through provider/usecase-level presentation mapping. Settings can use a keepAlive generated notifier backed by shared preferences. | Pass |
-| Localization | Manual compact button, settings labels, validation errors, visible auto-failure chat message, loading/success/failure feedback require `LocaleKeys`/`TextLocale`/`tr()`. | Pass |
-| Typed Errors | Compaction failures and settings validation errors require typed exceptions carrying localization keys before reaching UI or persisted visible errors. | Pass |
-| AsyncValue Pattern | Any new widget consuming async state must use switch expressions/pattern matching, not `.when()`. | Pass |
-| Mutation State | Manual compact and settings save actions use Riverpod `Mutation` or equivalent explicit mutation pattern. | Pass |
-| UI Package Purity | App-specific compaction UI stays in `apps/auravibes_app`; `auravibes_ui` only supplies generic existing controls. | Pass |
-| Widget Size | Settings section, chat input additions, visible error rendering, and hidden-summary filtering are decomposed into focused widgets/providers where practical. | Pass |
-| Database Cascade | No schema changes planned. Existing message rows remain under conversation cascade. | Pass |
+| Principle                               | Check                                                                                                   | Status |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------- | ------ |
+| I. User Value First                     | Spec contains independently testable P1-P3 stories for auto compaction, manual compaction, and settings | PASS   |
+| II. Layered, Package-Aware Architecture | Business logic planned in use cases/providers; UI state in widgets; persistence in repositories/DAOs    | PASS   |
+| III. UI System First                    | New compacting/compacted UI states will use existing `auravibes_ui` components and localization         | PASS   |
+| IV. Data and State Correctness          | Existing Drift message metadata extended with versioned fields; provider lifecycle explicit             | PASS   |
+| V. Risk-Based Quality Gates             | Use case tests + widget tests + prompt selection tests cover behavior changes                           | PASS   |
+| VI. Explicit Failures                   | Required auto-compaction failure blocks continuation and persists recoverable visible error             | PASS   |
+| VII. Security and Privacy               | No secret logging; compaction content persisted locally; no extra credential surface                    | PASS   |
+| VIII. Observable Where It Matters       | Compaction start/success/failure and blocked continuations can be logged without sensitive payload      | PASS   |
+| IX. Simplicity                          | Reuse existing queue, message stream, and settings patterns; no new table for MVP                       | PASS   |
+| X. Dart and Flutter Standards           | FVM, analyzer, formatter, tests required before completion                                              | PASS   |
+
+**Post-Design Re-check**: PASS. Design artifacts keep use-case layering, typed metadata, UI localization, and queue reuse without constitution exceptions.
 
 ## Project Structure
 
@@ -47,8 +50,7 @@ specs/011-agent-compaction-settings/
 ├── quickstart.md
 ├── contracts/
 │   └── ui-contracts.md
-└── checklists/
-    └── requirements.md
+└── tasks.md
 ```
 
 ### Source Code (repository root)
@@ -56,69 +58,75 @@ specs/011-agent-compaction-settings/
 ```text
 apps/auravibes_app/
 ├── lib/
-│   ├── domain/
-│   │   ├── entities/messages.dart                 # Add compaction/error metadata fields
-│   │   └── enums/message_types.dart               # Reuse MessageType.system for summaries
-│   ├── core/exceptions/
-│   │   └── conversation_exceptions.dart           # Add typed compaction/settings failures
-│   ├── features/
-│   │   ├── chats/
-│   │   │   ├── providers/
-│   │   │   │   ├── compaction_providers.dart      # Eligibility/status/mutations
-│   │   │   │   └── messages_providers.dart        # Visible filtering + usage consumers
-│   │   │   ├── usecases/
-│   │   │   │   ├── compact_conversation_usecase.dart
-│   │   │   │   ├── select_prompt_messages_usecase.dart
-│   │   │   │   ├── should_auto_compact_usecase.dart
-│   │   │   │   └── continue_agent_usecase.dart    # Auto check before prompt build
-│   │   │   ├── widgets/
-│   │   │   │   ├── chat_input_widget.dart         # Manual compact control
-│   │   │   │   └── conversation_context_usage_pill.dart
-│   │   │   └── screens/chat_conversation_screen.dart
-│   │   └── settings/
-│   │       ├── notifiers/compaction_settings_notifier.dart
-│   │       ├── screens/settings_screen.dart
-│   │       └── widgets/compaction_settings_section.dart
-│   ├── i18n/
-│   │   └── locale_keys.dart                       # Generated localization keys
-│   └── services/
-│       └── chatbot_service/
-│           ├── build_prompt_chat_messages.dart    # Map summary/system messages
-│           └── chatbot_service.dart               # Summary generation entrypoint
+│   ├── features/chats/
+│   │   ├── usecases/
+│   │   │   ├── compact_conversation_usecase.dart
+│   │   │   ├── should_auto_compact_usecase.dart
+│   │   │   └── select_prompt_messages_usecase.dart
+│   │   ├── widgets/
+│   │   │   ├── chat_messages_widget.dart
+│   │   │   ├── chat_list_widget.dart
+│   │   │   ├── chat_input_widget.dart
+│   │   │   └── sidebar_conversations_widget.dart
+│   │   └── providers/
+│   │       └── compaction_* providers/notifiers
+│   ├── data/
+│   │   ├── repositories/message_repository_impl.dart
+│   │   └── database/drift/
+│   │       ├── daos/message_dao.dart
+│   │       └── tables/messages_table.dart
+│   └── services/chatbot_service/
+│       └── build_prompt_chat_messages.dart
 └── test/
     ├── features/chats/usecases/
     ├── features/chats/widgets/
-    ├── features/settings/
-    └── services/chatbot_service/
+    └── features/settings/
 ```
 
-**Structure Decision**: Keep all business logic in app feature use cases. Reuse existing message metadata JSON to avoid a schema migration. Keep app-specific compaction controls out of `packages/auravibes_ui`. Use visible chat filtering to hide compaction summaries while preserving their persisted records for prompt selection.
+**Structure Decision**: Keep feature logic in `apps/auravibes_app` chat and settings layers. Reuse existing storage and queue infrastructure. Do not add domain-specific widgets to `packages/auravibes_ui` unless a second concrete reuse appears.
 
 ## Complexity Tracking
 
-> No constitution violations. The feature adds metadata and use cases, but no new package, schema table, or broad repository refactor.
+No constitution violations expected.
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
-| --- | --- | --- |
-| - | - | - |
+| --------- | ---------- | ------------------------------------ |
+| None      | N/A        | N/A                                  |
 
-## Research & Decisions
+## Phase 0: Research & Decisions
 
-See [research.md](research.md).
+Research complete in [research.md](research.md). All prior ambiguities resolved.
 
-## Design Artifacts
+Key decisions:
+
+1. Persist compaction summaries as metadata-marked system messages in the existing message stream.
+2. Show summaries in chat as a tappable `Compacted` widget; show in-progress conversation-list state as separate temporary `Compacting` row.
+3. Reuse existing send queue by treating active compaction as busy.
+4. Store original (untrimmed) compaction text; normalize only when building model payload.
+5. Select prompt context from latest compaction summary forward.
+
+## Phase 1: Design & Contracts
+
+Design artifacts:
 
 - [data-model.md](data-model.md)
 - [contracts/ui-contracts.md](contracts/ui-contracts.md)
 - [quickstart.md](quickstart.md)
 
-## Post-Design Constitution Check
+Design scope:
 
-All gates still pass after Phase 1 design:
+1. Extend message metadata with compaction identity/range fields and persisted content policy.
+2. Define UI behavior contracts for loading, queued sends, and compacted-message detail view.
+3. Define prompt boundary rules and failure handling contracts.
+4. Define settings validation and defaults.
 
-- No schema migration needed for MVP; metadata shape is versioned.
-- Manual and auto compaction orchestration stays in use cases.
-- Required auto-compaction failure is explicit: assistant continuation is blocked, a visible localized chat error message is persisted, and no compacted state is marked.
-- Settings are persisted through existing preferences pattern with defaults: auto enabled, 80% usage threshold, 4,000 remaining-token threshold.
-- UI changes use localized strings and generic `auravibes_ui` components.
-- Tests cover prompt slicing from latest compaction, hidden summary filtering, metadata kind (`manual`/`auto`), unsafe tool boundaries, checkpoint-only manual compaction, auto-failure visible error, and settings validation.
+## Phase 2: Task Planning Approach
+
+Task generation (`/speckit.tasks`) should split work by vertical behavior slices:
+
+1. Compaction domain/use-case logic and metadata writes.
+2. Prompt selection boundary integration.
+3. Conversation list + chat message UI states (`Compacting`, `Compacted`, detail tap).
+4. Queue/busy integration with existing send queue.
+5. Settings UI, persistence, and validation.
+6. Tests for auto/manual flows, failure paths, and payload normalization behavior.

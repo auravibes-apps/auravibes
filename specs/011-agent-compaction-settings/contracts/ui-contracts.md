@@ -4,124 +4,66 @@
 
 ### Control
 
-- Location: chat input area footer alongside existing tool/stop/send controls.
-- Icon-only button with localized tooltip and accessibility label.
-- Uses existing generic UI components.
+- Located in chat input controls.
+- Localized tooltip/label.
+- Uses existing app/UI component patterns.
 
-### Enabled State
+### Enabled/Disabled Conditions
 
 Enabled when:
 
-- Current conversation is not busy.
-- No pending tool approvals are visible.
-- No unresolved tool calls are pending.
-- Conversation has eligible prior context to compact.
+- Conversation has compactable context.
+- No unresolved tool approval/call constraints.
+- Conversation not in blocked state.
 
-Disabled/unavailable when:
+Disabled when:
 
-- Conversation is streaming or running tools.
-- Tool approval is pending.
-- Conversation has no eligible context.
-- Compaction mutation is already running.
+- Conversation has no eligible range.
+- Tool approval unresolved or unsafe compaction boundary.
+- Manual compaction already running.
 
 ### Feedback
 
-- Start: visible loading or disabled state.
-- Success: localized confirmation.
-- Failure: localized recoverable error.
-- No eligible context: localized explanation.
-- Success does not trigger assistant continuation; the app waits for the next user action.
+- Start: visible running state.
+- Success: checkpoint created, no auto-continue.
+- Failure: visible recoverable localized error.
 
-## Settings Section Contract
+## Conversation List Compacting Contract
 
-### Location
+- While compaction executes (manual or auto), list shows a separate temporary `Compacting` row with tool-like loading.
+- Existing conversation row remains unchanged.
+- Temporary row is removed on success or failure.
 
-- Dedicated compaction section in the existing settings screen.
+## Chat Transcript Compacted Widget Contract
 
-### Fields
+- Every compaction summary appears as a visible `Compacted` widget in chat transcript.
+- Widget indicates manual/auto origin.
+- Tap opens detail view analogous to tool-result inspection.
+- Detail view renders stored original compaction content (no storage-time trim normalization).
 
-- Auto compaction enabled toggle.
-- Usage percentage threshold numeric control.
-- Remaining-token threshold numeric control.
-- Reset to defaults action.
+## Send Queue During Compaction Contract
 
-### Validation
-
-- Percentage must be in accepted range.
-- Remaining-token threshold must be positive.
-- Invalid values cannot be saved.
-- Validation messages are localized and visible near the relevant field or in a recoverable error area.
-
-### Save Behavior
-
-- Saved settings affect subsequent auto-compaction checks.
-- Open conversations use updated settings on the next check.
-- Reset restores defaults and persists them.
+- Active compaction is treated as a busy condition for send flow.
+- Messages sent while compaction is active use existing queue implementation.
+- After compaction success, queued messages are sent in original order.
+- Queue behavior and ordering rules remain single-source-of-truth in existing queue subsystem.
 
 ## Prompt Selection Contract
 
-### Inputs
+- Input: ordered persisted messages for a conversation.
+- Boundary anchor: latest sent message with `metadata.isCompactionSummary = true`.
+- If no anchor exists: include all prompt-eligible messages.
+- If anchor exists: include anchor and all later prompt-eligible messages.
+- Summary is context/system content, never tool-call output.
 
-- Ordered persisted messages for one conversation.
+## Storage vs Payload Content Contract
 
-### Output
+- Persist compaction summary `content` exactly as generated.
+- Do not trim/normalize at persistence.
+- Apply trimming/normalization only in model payload construction path.
 
-- Ordered prompt messages for the LLM agent service.
+## Required Auto-Compaction Failure Contract
 
-### Rules
-
-- If no compaction summary exists, output all prompt-eligible messages.
-- If a compaction summary exists, output the latest compaction summary and all later prompt-eligible messages.
-- Latest compaction summary is the newest sent message with `metadata.isCompactionSummary = true`.
-- Compaction summary is emitted as context/system content.
-- Compaction summary must not emit tool calls or tool results.
-- Older messages before the latest compaction summary must not be emitted.
-- Compaction summary messages are not shown in the normal chat transcript.
-
-## Auto Compaction Contract
-
-### Trigger Check
-
-Auto compaction is checked before assistant continuation builds prompt history.
-
-### Required Conditions
-
-- Auto compaction setting is enabled.
-- Selected model context limit is known.
-- Usage percentage threshold is met.
-- Remaining-token threshold is met.
-- Conversation is safe to compact.
-
-### Failure Behavior
-
-- If required auto compaction fails, assistant continuation is blocked.
-- The compactable context remains uncompacted.
-- A visible localized chat error message is persisted so the user can see why continuation stopped.
-- The visible error message is not a compaction summary and does not move the prompt boundary.
-
-### Safe Conversation
-
-Safe means:
-
-- No unresolved tool call.
-- No pending approval.
-- No active tool execution.
-- No unfinished assistant message in the compactable range.
-- No sending user message in the compactable range.
-
-## Compaction Summary Content Contract
-
-Summary must preserve:
-
-- User goals and constraints.
-- Decisions already made.
-- Current state and next useful steps.
-- Important files, ids, models, providers, and tool names.
-- Errors and resolved outcomes.
-
-Summary must not include:
-
-- Thinking traces.
-- Raw tool call metadata.
-- Pending tool calls represented as completed.
-- Secrets or credentials.
+- If auto compaction is required and fails, assistant continuation is blocked.
+- Persist visible localized recoverable error message.
+- Do not modify compaction boundary metadata on failure.

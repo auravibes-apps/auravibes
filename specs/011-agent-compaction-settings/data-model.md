@@ -1,158 +1,118 @@
 # Data Model: Agent Conversation Compaction Settings
 
-## Compaction Settings
+## CompactionSettings
 
-Global app preference controlling automatic compaction.
-
-### Fields
-
-- `autoCompactionEnabled`: boolean, default `true`.
-- `usagePercentageThreshold`: integer percent, default `80`.
-- `remainingTokenThreshold`: integer token count, default `4000`.
-- `updatedAt`: timestamp for diagnostics/debug display if needed.
-
-### Validation
-
-- `usagePercentageThreshold` must be between `5` and `100`, inclusive.
-- `remainingTokenThreshold` must be greater than `0`.
-- If selected model context limit is known, `remainingTokenThreshold` must be lower than that context limit before auto compaction can run for that conversation.
-- Reset restores all default values.
-
-### Persistence
-
-- Stored as global app settings.
-- Applies to all conversations.
-- Later features may add workspace/model overrides without changing MVP behavior.
-
-## Message Metadata Compaction Fields
-
-Existing message metadata is extended to describe compaction summaries.
+Global app-level preferences controlling auto-compaction behavior.
 
 ### Fields
 
-- `metadataVersion`: integer, required for new metadata writes, default `1` for legacy reads.
-- `toolCalls`: existing list of tool-call metadata.
-- `promptTokens`: existing optional prompt token count.
-- `completionTokens`: existing optional completion token count.
-- `totalTokens`: existing optional total token count.
-- `isCompactionSummary`: boolean, default `false`.
-- `compactionKind`: enum, nullable; values `manual` or `auto`.
-- `compactedFromMessageId`: string, nullable; first message represented by this summary.
-- `compactedThroughMessageId`: string, nullable; last message represented by this summary.
-- `compactedMessageIds`: list of strings, default empty; message ids represented by this summary.
-- `compactionCreatedAt`: timestamp, nullable.
+- `autoCompactionEnabled`: bool, default `true`
+- `usagePercentageThreshold`: int percent, default `80`
+- `remainingTokenThreshold`: int, default `4000`
+- `updatedAt`: DateTime, optional diagnostics
 
-### Validation
+### Validation Rules
 
-- If `isCompactionSummary` is `true`, `compactionKind`, `compactedFromMessageId`, `compactedThroughMessageId`, `compactionCreatedAt`, and at least one `compactedMessageIds` entry are required.
-- If `isCompactionSummary` is `true`, `toolCalls` must be empty.
-- If `isCompactionSummary` is `false`, compaction range fields should be absent or ignored.
-- Compaction summary metadata must never mark unresolved tool-call content as compacted unless the full tool-call/result group is safely represented.
+- `usagePercentageThreshold` in accepted range (spec-defined; currently 5-100 inclusive).
+- `remainingTokenThreshold` > 0.
+- If selected model context limit known, threshold must be lower than model context limit to be saveable.
+- Reset restores defaults.
 
-## Compaction Summary Message
+## MessageMetadata (extended)
 
-A persisted message that contains the summary text used as model context for future responses.
+Existing metadata JSON structure with compaction fields.
 
-### Fields
+### Existing Fields (unchanged)
 
-- `id`: existing message id.
-- `conversationId`: existing conversation id.
-- `content`: summary text.
-- `messageType`: system.
-- `isUser`: false.
-- `status`: sent.
-- `metadata`: `MessageMetadataEntity` with `isCompactionSummary = true`.
-- `createdAt` / `updatedAt`: existing timestamps.
+- `toolCalls`
+- `promptTokens`
+- `completionTokens`
+- `totalTokens`
 
-### Rules
+### New Fields
 
-- Compaction summary messages do not contain thinking output.
-- Compaction summary messages do not contain tool calls.
-- Compaction summary messages remain in the persisted conversation and are hidden from the normal chat list.
-- A newer compaction summary supersedes older compaction summaries for prompt selection.
+- `metadataVersion`: int (required on new writes)
+- `isCompactionSummary`: bool, default `false`
+- `compactionKind`: enum `manual | auto`, nullable when not summary
+- `compactedFromMessageId`: String?
+- `compactedThroughMessageId`: String?
+- `compactedMessageIds`: List<String>, default `[]`
+- `compactionCreatedAt`: DateTime?
 
-## Compaction Range
+### Metadata Invariants
 
-The ordered conversation segment represented by a compaction summary.
+- If `isCompactionSummary == true`, `compactionKind`, range fields, timestamp, and non-empty `compactedMessageIds` are required.
+- Compaction summaries must not carry tool-call metadata.
+- Non-summary messages must ignore/omit compaction range fields.
+
+## CompactionSummaryMessage
+
+Persisted message row representing compacted context.
 
 ### Fields
 
-- `fromMessageId`: first compacted message.
-- `throughMessageId`: last compacted message.
-- `messageIds`: ordered compacted message ids.
-- `kind`: `manual` or `auto`.
+- `id`, `conversationId`, `createdAt`, `updatedAt`: existing message identity/timestamps
+- `messageType`: `system`
+- `isUser`: `false`
+- `status`: `sent`
+- `content`: summary text stored in original untrimmed form
+- `metadata`: `MessageMetadata` with compaction fields populated
 
-### Rules
+### Behavior Rules
 
-- Range must be non-empty.
-- Range must not include the new compaction summary message itself.
-- Range must not split an unresolved tool call, pending approval, or tool result from the assistant message that produced it.
-- Range should include all prior prompt-relevant messages before the new compaction summary.
+- Visible in chat transcript as dedicated `Compacted` widget.
+- Tappable to open compaction details view.
+- Used as prompt boundary anchor.
+- Must not contain thinking output or tool-call metadata.
 
-## Prompt Message Selection
+## CompactionExecutionState
 
-Derived list sent to the LLM agent service.
+Ephemeral UI/domain state for an ongoing compaction run.
 
-### Selection Rules
+### Fields
 
-1. Load conversation messages in chronological order.
-2. Find the latest sent message where metadata marks `isCompactionSummary = true`.
-3. If no compaction summary exists, send all prompt-eligible messages.
-4. If a compaction summary exists, send that compaction summary message and every later prompt-eligible message.
-5. Exclude prompt-ineligible UI-only/error/unfinished messages according to existing prompt rules.
-6. Map compaction summary/system messages as model context, not assistant tool output.
+- `conversationId`: String
+- `trigger`: enum `manual | auto`
+- `startedAt`: DateTime
+- `status`: enum `running | success | failure`
+
+### Behavior Rules
+
+- While `running`, conversation list shows temporary `Compacting` row.
+- While `running`, send flow treats conversation as busy and routes sends through existing queue.
+- Row is removed when status changes to `success` or `failure`.
+
+## PromptPayloadSegment (derived)
+
+Derived message list sent to model.
+
+### Construction Rules
+
+1. Load prompt-eligible conversation messages in chronological order.
+2. Find latest sent message with `metadata.isCompactionSummary == true`.
+3. If none exists, include all prompt-eligible messages.
+4. If one exists, include that summary and all later prompt-eligible messages.
+5. Apply content normalization (trim/whitespace handling) at payload-build time only.
 
 ### Invariants
 
-- The selected prompt list must never include both a compaction summary and messages older than that summary.
-- The selected prompt list must never include tool-call metadata on the compaction summary.
-- A conversation with no compaction summary behaves exactly as before.
+- Never include both compacted-predecessor content and its summary.
+- Stored message content remains unchanged by payload normalization.
 
-## State Transitions
+## AutoCompactionFailureMessage
 
-### Manual Compaction
-
-1. User presses compact.
-2. App validates conversation eligibility.
-3. App generates summary.
-4. App writes summary message with `compactionKind = manual`.
-5. Future prompt selection starts at the summary message.
-6. App waits for the next user action and does not automatically request another assistant response.
-
-### Auto Compaction
-
-1. Assistant continuation prepares to build prompt.
-2. App checks settings and context thresholds.
-3. App validates conversation eligibility.
-4. App generates summary.
-5. App writes summary message with `compactionKind = auto`.
-6. Current continuation uses prompt selection from the latest summary.
-
-### Failure
-
-1. Summary generation or persistence fails.
-2. No compaction summary is written.
-3. No message range is marked compacted.
-4. Manual path shows recoverable failure without continuing the assistant.
-5. Required auto path blocks the pending assistant continuation and persists a visible chat error message.
-
-## Auto Compaction Failure Message
-
-A visible persisted message explaining that required auto compaction failed and the assistant continuation was blocked.
+Persisted visible recoverable error message when required auto compaction fails.
 
 ### Fields
 
-- `id`: existing message id.
-- `conversationId`: existing conversation id.
-- `content`: localized user-facing error text or key-backed content.
-- `messageType`: system.
-- `isUser`: false.
-- `status`: error.
-- `metadata`: error metadata without compaction summary flags.
+- Existing message identity fields
+- `messageType`: `system`
+- `status`: `error`
+- Localized user-facing failure content/key
+- Metadata without `isCompactionSummary`
 
 ### Rules
 
-- Failure messages are visible in the normal chat transcript.
-- Failure messages must not be treated as compaction summaries.
-- Failure messages must not mark any prior message range as compacted.
-- Failure messages must not be sent as prompt context unless existing prompt eligibility rules explicitly include visible error state.
+- Visible in chat transcript.
+- Does not move prompt compaction boundary.
+- Indicates blocked continuation reason.
