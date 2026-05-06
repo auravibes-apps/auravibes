@@ -6,7 +6,7 @@ reusables:
       events:
         - tag
       tag_patterns:
-        - pattern: 'auravibes_app-v+([0-9]).+([0-9]).+([0-9])'
+        - pattern: "^auravibes_app-v([0-9]+)\\.([0-9]+)\\.([0-9]+)(-beta\\.[0-9]+)?$"
           include: true
 scripts:
   - &script_setup_environment
@@ -14,7 +14,7 @@ scripts:
     script: |
       echo PATH="$PATH":"$FLUTTER_ROOT/.pub-cache/bin" >> $CM_ENV
       echo PATH="$PATH":"$FLUTTER_ROOT/bin" >> $CM_ENV
-  
+
   - &script_install_melos
     name: Install Melos
     script: |
@@ -30,29 +30,28 @@ scripts:
     name: Generate
     script: |
       echo "Running generations..."
-      melos generate
-      melos localization
+      melos run generate
+      melos run generate:localization
 
-  
   - &script_parse_tag
     name: Parse Tag and Set Environment
     script: |
       # Parse tag to extract version and environment
       TAG_VERSION=${CM_TAG##*-v} # Remove '<package-name>-v' prefix
-      
+
       if [[ $TAG_VERSION == *"-beta"* ]]; then
         FLAVOR="beta"
       else
         FLAVOR="prod"
       fi
-      
+
       # Extract version from tag (1.2.3 or 1.2.3-beta.1)
       VERSION=${TAG_VERSION%%-*}
       echo "Version: $VERSION"
-      
+
       # Set environment variables for build
       echo "BUILD_NAME=$VERSION" >> $CM_ENV
-      
+
       # Set automatic build number
       echo "BUILD_NUMBER=$PROJECT_BUILD_NUMBER" >> $CM_ENV
       echo "FLAVOR=$FLAVOR" >> $CM_ENV
@@ -101,9 +100,9 @@ workflows:
           echo "Build Name: $BUILD_NAME"
           echo "Build Number: $BUILD_NUMBER"
           echo "Flavor: $FLAVOR"
-          
+
           cd apps/auravibes_app
-          
+
           flutter build ipa --release \
             --flavor=$FLAVOR \
             --build-name=$BUILD_NAME \
@@ -118,14 +117,14 @@ workflows:
       - /tmp/xcodebuild_logs/*.log
       - flutter_drive.log
 
-    publishing:      
+    publishing:
       app_store_connect:
         auth: integration
         submit_to_testflight: true
         beta_groups:
           - Beta Testers
         submit_to_app_store: false
-      
+
       scripts:
         - name: Publish iOS artifacts to GitHub Release
           script: |
@@ -174,10 +173,10 @@ workflows:
           echo "Flavor: $FLAVOR"
           echo "Package Name: $PACKAGE_NAME"
           echo "Track: $GOOGLE_PLAY_TRACK"
-          
+
           cd apps/auravibes_app
-          
-          
+
+
           flutter build appbundle \
             --release \
             --flavor=$FLAVOR \
@@ -197,7 +196,7 @@ workflows:
         credentials: $GOOGLE_PLAY_SERVICE_ACCOUNT_CREDENTIALS
         track: $GOOGLE_PLAY_TRACK
         submit_as_draft: true
-      
+
       scripts:
         - name: Publish Android artifacts to GitHub Release
           script: |

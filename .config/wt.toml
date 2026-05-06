@@ -7,8 +7,4 @@ copy = "wt step copy-ignored"
 
 [[pre-start]]
 # Install the FVM Flutter version configured in .fvmrc
-fvm = "fvm install && fvm use"
-
-[[pre-start]]
-# Get root dependencies first, then bootstrap melos packages
-bootstrap = "fvm dart pub get && fvm dart run melos bootstrap"
+fvm = "fvm use"

@@ -30,7 +30,7 @@ This skill covers the complete workflow for adding, structuring, generating, and
 
 ```bash
 # Generate LocaleKeys after editing JSON files
-fvm dart run melos run localization
+fvm dart run melos run generate:localization
 
 # Or directly in the app package:
 fvm dart pub run easy_localization:generate \
@@ -400,8 +400,6 @@ MaterialApp.router(
 
 **Critical:** `locale: context.locale` is required. Without it, `context.setLocale()` won't trigger a rebuild and the UI won't update when switching languages.
 
-```dart
-
 ### Switching Locale
 
 ```dart
@@ -647,7 +645,7 @@ Without this, iOS may not recognize supported languages.
 ## Workflow Summary
 
 1. **Add/change strings** in `assets/i18n/en.json` (and `es.json` if applicable).
-2. **Run generation**: `fvm dart run melos run localization`
+2. **Run generation**: `fvm dart run melos run generate:localization`
 3. **Use keys** via `LocaleKeys.*` in widgets and logic.
 4. **Render text** with `TextLocale(LocaleKeys.your_key)` or `.tr()` directly.
 5. **Test** unit logic with `LocaleKeys` constants; widget tests with `testableApp`.
@@ -657,7 +655,7 @@ Without this, iOS may not recognize supported languages.
 
 | Problem                     | Cause                               | Fix                                                |
 | --------------------------- | ----------------------------------- | -------------------------------------------------- |
-| `LocaleKeys` not found      | Forgot to run generator             | Run `melos run localization`                       |
+| `LocaleKeys` not found      | Forgot to run generator             | Run `fvm dart run melos run generate:localization` |
 | Key shows raw string        | Missing in target JSON, no fallback | Add to `en.json`, enable `useFallbackTranslations` |
 | `{}` not replaced           | Args list empty/mismatch            | Pass `args: [value]` to `TextLocale` or `.tr()`    |
 | Plural always uses `other`  | `pluralValue` not passed            | Use `.tr(pluralValue: count, args: [...])`         |
