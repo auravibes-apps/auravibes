@@ -11,14 +11,14 @@ workspace:
 dev_dependencies:
   dependency_validator: ^5.0.4
   import_sorter: ^4.6.0
-  melos: ^7.6.0
+  melos: ^7.7.0
   very_good_analysis: ^10.2.0
 
 dependency_validator:
   ignore:
     - state_notifier
   exclude:
-    - 'test/**/*.mocks.dart'
+    - "test/**/*.mocks.dart"
 
 melos:
   sdkPath: .fvm/flutter_sdk
@@ -28,10 +28,10 @@ melos:
     packages:
       - "packages/**"
   command:
-      bootstrap:
-        runPubGetInParallel: false
-        environment:
-          sdk: ^3.11.0
+    bootstrap:
+      runPubGetInParallel: false
+      environment:
+        sdk: ^3.11.0
   scripts:
     analyze:
       run: dart analyze
@@ -67,8 +67,8 @@ melos:
       packageFilters:
         dependsOn: build_runner
       concurrency: 10
-    
-    localization:
+
+    generate:localization:
       # Run build_runner and format only the generated files
       exec: dart pub run easy_localization:generate -S assets/i18n -f keys -O lib/i18n -o locale_keys.dart --skip-unnecessary-keys && dart format lib/i18n/locale_keys.dart
       concurrency: 1
@@ -86,15 +86,14 @@ melos:
     validate:
       run: |
         melos analyze &&
-        melos run format &&
-        melos run test &&
-        melos run build
+        melos run format:check &&
+        melos run test
       description: Full validation pipeline for CI/CD
 
     validate:quick:
       run: |
         melos analyze &&
-        melos run format
+        melos run format:check
       description: Quick validation for development
 
     # Development Scripts
@@ -112,8 +111,8 @@ melos:
       steps:
         - melos clean
         - melos bootstrap
-        -  melos run generate
-    
+        - melos run generate
+
     generate:flavors:
       exec: dart pub run flutter_flavorizr -f
       concurrency: 1
@@ -131,5 +130,3 @@ melos:
       packageFilters:
         dependsOn:
           - flutter_launcher_icons
-
-
