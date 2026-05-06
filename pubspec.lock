@@ -1686,10 +1686,10 @@ packages:
     dependency: transitive
     description:
       name: widgetbook
-      sha256: d4723df880c59e5df00da7ee02c5e29faf230d860319547e8fea011821ae93a9
+      sha256: "4ff857b441b7fc43432a69ec6fe56494184c895e36cec502e400648024710b9c"
       url: "https://pub.dev"
     source: hosted
-    version: "3.22.0"
+    version: "3.23.0"
   widgetbook_annotation:
     dependency: transitive
     description:
@@ -1756,4 +1756,4 @@ packages:
     version: "2.2.4"
 sdks:
   dart: ">=3.11.0 <4.0.0"
-  flutter: ">=3.38.9 <4.0.0"
+  flutter: ">=3.38.9"
