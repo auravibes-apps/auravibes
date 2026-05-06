@@ -1,4 +1,4 @@
-name: Dependabot Autofix
+name: Generated Artifact Drift Check
 
 on:
   pull_request:
@@ -8,20 +8,15 @@ on:
       - stage
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  autofix:
-    if: github.actor == 'dependabot[bot]'
+  validate-generated-artifacts:
     runs-on: macos-latest
 
     steps:
       - name: 📚 Git Checkout
         uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          persist-credentials: false
 
       - name: 🔧 Setup FVM
         uses: kuhnroyal/flutter-fvm-config-action/config@c378498f1d1962d33039c3989411093ef8a17b2c
@@ -45,31 +40,14 @@ jobs:
           melos-version: 7.4.0
           run-bootstrap: true
 
-      - name: 📦 Check for lockfile changes
-        id: changes
+      - name: 🛠️ Generate Code
+        run: melos run generate --no-select
+
+      - name: 📦 Check for generated artifact drift
         run: |
-          git add pubspec.lock
-          if git diff --staged --quiet; then
-            echo "changed=false" >> $GITHUB_OUTPUT
-            echo "No lockfile changes needed"
-          else
-            echo "changed=true" >> $GITHUB_OUTPUT
-            echo "Lockfile changes detected"
-            git diff --staged
+          if ! git diff --quiet; then
+            echo "::error::Generated artifacts are out of date. Run 'fvm dart run melos bootstrap' and 'fvm dart run melos run generate', then commit the resulting changes."
+            git diff --name-only
+            git diff --stat
+            git diff --exit-code
           fi
-
-      - name: 🔧 Configure Git
-        if: steps.changes.outputs.changed == 'true'
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-
-      - name: 📤 Push corrected lockfile
-        if: steps.changes.outputs.changed == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
-          PR_HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
-        run: |
-          git commit -m "chore: fix pubspec.lock SDK constraints"
-          git push "https://x-access-token:${GH_TOKEN}@github.com/${PR_HEAD_REPO}.git" "HEAD:${PR_HEAD_REF}"
