@@ -12,6 +12,13 @@ on:
       - dev
       - stage
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -19,6 +26,21 @@ jobs:
     steps:
       - name: 📚 Git Checkout
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: 🔧 Check FVM artifact drift
+        run: |
+          flutter_version="$(ruby -rjson -e 'puts JSON.parse(File.read(".fvmrc")).fetch("flutter")')"
+          vscode_sdk_path="$(ruby -rjson -e 'puts JSON.parse(File.read(".vscode/settings.json")).fetch("dart.flutterSdkPath")')"
+          expected_path=".fvm/versions/${flutter_version}"
+
+          if [ "$vscode_sdk_path" != "$expected_path" ]; then
+            echo "::error::.vscode/settings.json is out of sync with .fvmrc. Run 'fvm use' and commit tracked changes."
+            echo "Expected dart.flutterSdkPath: ${expected_path}"
+            echo "Actual dart.flutterSdkPath: ${vscode_sdk_path}"
+            exit 1
+          fi
 
       - name: 🔧 Setup FVM
         uses: kuhnroyal/flutter-fvm-config-action/config@v3
@@ -32,7 +54,7 @@ jobs:
           cache: true
           cache-key: "flutter-:os:-:channel:-:version:-:arch:" # optional, change this to force refresh cache
           cache-path: "${{ runner.tool_cache }}/flutter/:channel:-:version:-:arch:" # optional, change this to specify the cache path
-          pub-cache-key: "flutter-pub-:os:-:channel:-:version:-:arch:-${{ hashFiles('pubspec.lock') }}" # optional, change this to force refresh cache of dart pub get dependencies
+          pub-cache-key: "flutter-pub-:os:-:channel:-:version:-:arch:-:hash:" # optional, change this to force refresh cache of dart pub get dependencies
           # pub-cache-path: "${{ runner.tool_cache }}/flutter/:channel:-:version:-:arch:" # optional, change this to specify the cache path
       - name: 🔗 Create FVM symlink for CI
         run: |
@@ -42,8 +64,27 @@ jobs:
       - uses: bluefireteam/melos-action@main
         with:
           run-bootstrap: true
+
+      - name: 📦 Check dependency artifact drift
+        run: |
+          if ! git diff --quiet; then
+            echo "::error::Dependency artifacts are out of date. Run 'fvm dart run melos bootstrap', then commit the resulting changes."
+            git diff --name-only
+            git diff --stat
+            git diff --exit-code
+          fi
+
       - name: 🛠️ Generate Code
         run: melos run generate --no-select
+
+      - name: 📦 Check generated artifact drift
+        run: |
+          if ! git diff --quiet; then
+            echo "::error::Generated artifacts are out of date. Run 'fvm dart run melos run generate', then commit the resulting changes."
+            git diff --name-only
+            git diff --stat
+            git diff --exit-code
+          fi
 
       - name: ✨ Check Formatting
         run: melos run format:check
