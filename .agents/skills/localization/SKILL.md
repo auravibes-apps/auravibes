@@ -400,8 +400,6 @@ MaterialApp.router(
 
 **Critical:** `locale: context.locale` is required. Without it, `context.setLocale()` won't trigger a rebuild and the UI won't update when switching languages.
 
-````dart
-
 ### Switching Locale
 
 ```dart
@@ -416,7 +414,7 @@ print(context.deviceLocale); // Locale('en', 'US')
 
 // Clear saved locale from storage
 context.deleteSaveLocale();
-````
+```
 
 ### Locale String Utilities
 
@@ -657,7 +655,7 @@ Without this, iOS may not recognize supported languages.
 
 | Problem                     | Cause                               | Fix                                                |
 | --------------------------- | ----------------------------------- | -------------------------------------------------- |
-| `LocaleKeys` not found      | Forgot to run generator             | Run `melos run generate:localization`              |
+| `LocaleKeys` not found      | Forgot to run generator             | Run `fvm dart run melos run generate:localization` |
 | Key shows raw string        | Missing in target JSON, no fallback | Add to `en.json`, enable `useFallbackTranslations` |
 | `{}` not replaced           | Args list empty/mismatch            | Pass `args: [value]` to `TextLocale` or `.tr()`    |
 | Plural always uses `other`  | `pluralValue` not passed            | Use `.tr(pluralValue: count, args: [...])`         |

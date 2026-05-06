@@ -6,7 +6,7 @@ reusables:
       events:
         - tag
       tag_patterns:
-        - pattern: "auravibes_app-v+([0-9]).+([0-9]).+([0-9])"
+        - pattern: "^auravibes_app-v([0-9]+)\\.([0-9]+)\\.([0-9]+)(-beta\\.[0-9]+)?$"
           include: true
 scripts:
   - &script_setup_environment
@@ -30,8 +30,8 @@ scripts:
     name: Generate
     script: |
       echo "Running generations..."
-      melos generate
-      melos generate:localization
+      melos run generate
+      melos run generate:localization
 
   - &script_parse_tag
     name: Parse Tag and Set Environment
