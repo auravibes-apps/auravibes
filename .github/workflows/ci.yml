@@ -12,6 +12,13 @@ on:
       - dev
       - stage
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -19,25 +26,8 @@ jobs:
     steps:
       - name: 📚 Git Checkout
         uses: actions/checkout@v6
-
-      - name: 🔧 Setup FVM
-        uses: kuhnroyal/flutter-fvm-config-action/config@v3
-        id: fvm-config-action
-
-      - name: 🐦 Setup Flutter
-        uses: subosito/flutter-action@v2
         with:
-          flutter-version: ${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}
-          channel: ${{ steps.fvm-config-action.outputs.FLUTTER_CHANNEL }}
-          cache: true
-          cache-key: "flutter-:os:-:channel:-:version:-:arch:" # optional, change this to force refresh cache
-          cache-path: "${{ runner.tool_cache }}/flutter/:channel:-:version:-:arch:" # optional, change this to specify the cache path
-          pub-cache-key: "flutter-pub-:os:-:channel:-:version:-:arch:-${{ hashFiles('pubspec.lock') }}" # optional, change this to force refresh cache of dart pub get dependencies
-          # pub-cache-path: "${{ runner.tool_cache }}/flutter/:channel:-:version:-:arch:" # optional, change this to specify the cache path
-      - name: 🔗 Create FVM symlink for CI
-        run: |
-          mkdir -p .fvm
-          ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
+          persist-credentials: false
 
       - name: 🔧 Check FVM artifact drift
         run: |
@@ -51,6 +41,25 @@ jobs:
             echo "Actual dart.flutterSdkPath: ${vscode_sdk_path}"
             exit 1
           fi
+
+      - name: 🔧 Setup FVM
+        uses: kuhnroyal/flutter-fvm-config-action/config@v3
+        id: fvm-config-action
+
+      - name: 🐦 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}
+          channel: ${{ steps.fvm-config-action.outputs.FLUTTER_CHANNEL }}
+          cache: true
+          cache-key: "flutter-:os:-:channel:-:version:-:arch:" # optional, change this to force refresh cache
+          cache-path: "${{ runner.tool_cache }}/flutter/:channel:-:version:-:arch:" # optional, change this to specify the cache path
+          pub-cache-key: "flutter-pub-:os:-:channel:-:version:-:arch:-:hash:" # optional, change this to force refresh cache of dart pub get dependencies
+          # pub-cache-path: "${{ runner.tool_cache }}/flutter/:channel:-:version:-:arch:" # optional, change this to specify the cache path
+      - name: 🔗 Create FVM symlink for CI
+        run: |
+          mkdir -p .fvm
+          ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
 
       - uses: bluefireteam/melos-action@main
         with:
