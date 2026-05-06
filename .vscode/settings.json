@@ -5,7 +5,7 @@
     "https://raw.githubusercontent.com/weaveworks/eksctl/main/pkg/apis/eksctl.io/v1alpha5/assets/schema.json": "*.eksctl.yaml",
     "https://codemagic.io/codemagic-schema.json": "codemagic.yaml"
   },
-  "dart.flutterSdkPath": ".fvm/versions/3.41.8",
+  "dart.flutterSdkPath": ".fvm/versions/3.41.9",
   "dart.sdkPath": ".fvm/flutter_sdk/bin/cache/dart-sdk",
   "dart.lineLength": 80,
   "dart.previewFlutterUiGuides": true,
