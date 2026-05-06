@@ -42,8 +42,27 @@ jobs:
       - uses: bluefireteam/melos-action@main
         with:
           run-bootstrap: true
+
+      - name: 📦 Check dependency artifact drift
+        run: |
+          if ! git diff --quiet; then
+            echo "::error::Dependency artifacts are out of date. Run 'fvm dart run melos bootstrap', then commit the resulting changes."
+            git diff --name-only
+            git diff --stat
+            git diff --exit-code
+          fi
+
       - name: 🛠️ Generate Code
         run: melos run generate --no-select
+
+      - name: 📦 Check generated artifact drift
+        run: |
+          if ! git diff --quiet; then
+            echo "::error::Generated artifacts are out of date. Run 'fvm dart run melos run generate', then commit the resulting changes."
+            git diff --name-only
+            git diff --stat
+            git diff --exit-code
+          fi
 
       - name: ✨ Check Formatting
         run: melos run format:check
