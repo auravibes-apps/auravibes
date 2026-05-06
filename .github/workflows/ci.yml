@@ -39,6 +39,19 @@ jobs:
           mkdir -p .fvm
           ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
 
+      - name: 🔧 Check FVM artifact drift
+        run: |
+          flutter_version="$(ruby -rjson -e 'puts JSON.parse(File.read(".fvmrc")).fetch("flutter")')"
+          vscode_sdk_path="$(ruby -rjson -e 'puts JSON.parse(File.read(".vscode/settings.json")).fetch("dart.flutterSdkPath")')"
+          expected_path=".fvm/versions/${flutter_version}"
+
+          if [ "$vscode_sdk_path" != "$expected_path" ]; then
+            echo "::error::.vscode/settings.json is out of sync with .fvmrc. Run 'fvm use' and commit tracked changes."
+            echo "Expected dart.flutterSdkPath: ${expected_path}"
+            echo "Actual dart.flutterSdkPath: ${vscode_sdk_path}"
+            exit 1
+          fi
+
       - uses: bluefireteam/melos-action@main
         with:
           run-bootstrap: true
