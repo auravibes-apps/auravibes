@@ -87,6 +87,8 @@ abstract class OAutTokenModel with _$OAutTokenModel {
   }
 }
 
+typedef OAuthTokenModel = OAutTokenModel;
+
 @freezed
 abstract class OAutTokenEntity with _$OAutTokenEntity {
   const factory OAutTokenEntity({
