@@ -3,15 +3,14 @@
 **Input**: Design documents from `/specs/008-avoid-approval-flash/`
 **Prerequisites**: plan.md, spec.md, research.md, data-model.md, contracts/approval-display-contract.md, quickstart.md
 
-**Tests**: Included because the implementation plan requires TDD and quickstart lists tests-first verification.
-
 **Organization**: Tasks are grouped by user story to keep each behavior independently implementable and testable.
 
 ## Format: `[ID] [P?] [Story] Description`
 
-- **[P]**: Can run in parallel because it touches different files and has no dependency on incomplete tasks
+- **[P] (optional)**: Can run in parallel because it touches different files and has no dependency on incomplete tasks
 - **[Story]**: User story label from `spec.md`
 - All tasks include exact file paths
+- **Tests**: Included because the implementation plan requires TDD and quickstart lists tests-first verification.
 
 ## Phase 1: Setup (Shared Infrastructure)
 
