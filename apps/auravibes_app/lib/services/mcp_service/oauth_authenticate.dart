@@ -147,7 +147,7 @@ class OauthAuthenticate {
       },
       options: Options(
         contentType: Headers.formUrlEncodedContentType,
-        responseType: .json,
+        responseType: ResponseType.json,
       ),
     );
 
