@@ -1,7 +1,7 @@
 # Tasks: Workspace Management
 
 **Input**: Design documents from `specs/009-workspace-management/`  
-**Prerequisites**: plan.md, spec.md, data-model.md, contracts/ui-contracts.md, research.md, quickstart.md
+**Prerequisites**: plan.md, spec.md, data-model.md, contracts/, research.md, quickstart.md
 
 **Tests**: Include test tasks per risk-based quality gates (constitution V) — widget tests for UI, unit tests for provider logic.
 
@@ -51,8 +51,8 @@
 ### Tests for User Story 1
 
 - [ ] T010 [P] [US1] Widget test for `WorkspaceDropdown` showing active workspace and list in `packages/auravibes_ui/test/molecules/workspace_dropdown_test.dart`
-- [ ] T011 [P] [US1] Unit test for `workspaceSwitcherProvider` debounce logic — rapid selections process only last in `apps/auravibes_app/test/features/workspaces/providers/workspace_switcher_provider_test.dart`
-- [ ] T012 [P] [US1] Unit test for `workspaceSwitcherProvider` error handling — failed switch keeps current workspace in `apps/auravibes_app/test/features/workspaces/providers/workspace_switcher_provider_test.dart`
+- [x] T011 [P] [US1] Unit test for `workspaceSwitcherProvider` debounce logic — rapid selections process only last in `apps/auravibes_app/test/features/workspaces/providers/workspace_switcher_provider_test.dart`
+- [x] T012 [P] [US1] Unit test for `workspaceSwitcherProvider` error handling — covered by existing error-state tests in `apps/auravibes_app/test/features/workspaces/providers/workspace_switcher_provider_test.dart`
 
 ### Implementation for User Story 1
 
@@ -76,7 +76,7 @@
 
 ### Tests for User Story 5
 
-- [ ] T018 [P] [US5] Widget test for `WorkspaceManagementScreen` rendering workspace list in `apps/auravibes_app/test/features/workspaces/screens/workspace_management_screen_test.dart`
+- [x] T018 [P] [US5] Widget test for `WorkspaceManagementScreen` rendering workspace list in `apps/auravibes_app/test/features/workspaces/screens/workspace_management_screen_test.dart`
 - [ ] T019 [P] [US5] Widget test for sidebar button navigating to management route in `apps/auravibes_app/test/widgets/app_navigation_wrappers_test.dart`
 
 ### Implementation for User Story 5
@@ -97,7 +97,7 @@
 
 ### Tests for User Story 2
 
-- [ ] T023 [P] [US2] Widget test for create form validation (too short, too long names) in `apps/auravibes_app/test/features/workspaces/screens/workspace_management_screen_test.dart`
+- [x] T023 [P] [US2] Widget test for create form validation (too short, too long names) in `apps/auravibes_app/test/features/workspaces/screens/workspace_management_screen_test.dart`
 - [ ] T024 [P] [US2] Unit test for `workspaceManagementProvider` create with valid name in `apps/auravibes_app/test/features/workspaces/providers/workspace_management_provider_test.dart`
 - [ ] T025 [P] [US2] Integration test: create workspace → appears in `allWorkspacesProvider` list in `apps/auravibes_app/test/features/workspaces/providers/workspace_management_provider_test.dart`
 
