@@ -181,8 +181,8 @@ void main() {
   });
 
   testWidgets(
-    'workspaceId from route state is available synchronously'
-    ' — no Riverpod dependency',
+    'workspaceId from route state is available synchronously:'
+    ' no Riverpod dependency',
     (tester) async {
       String? capturedWorkspaceId;
 
@@ -281,6 +281,9 @@ void main() {
       );
 
       expect(capturedWorkspaceId, 'ws-redirect-test');
+
+      await tester.pumpAndSettle();
+      expect(find.text('workspaceId: ws-redirect-test'), findsOneWidget);
     },
   );
 
