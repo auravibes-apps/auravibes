@@ -66,7 +66,7 @@ class OauthAuthenticate {
   /// Returns the OAuth token on success.
   /// Throws an exception if OAuth discovery fails or authentication is
   /// cancelled.
-  Future<OAutTokenModel> authenticate(
+  Future<OAuthTokenModel> authenticate(
     OAuthDiscoveryResult oAuthResult,
   ) async {
     final codeVerifier = _generateRandomString(128);
