@@ -111,6 +111,9 @@ void main() {
 
       expect(capturedShellIndex, 0);
     });
+
+      await tester.pumpAndSettle();
+      expect(find.text('workspaceId: ws-redirect-test'), findsOneWidget);
   });
 
   group('AuraSidebarWrapper', () {
