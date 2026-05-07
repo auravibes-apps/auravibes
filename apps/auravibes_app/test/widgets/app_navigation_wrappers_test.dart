@@ -4,7 +4,7 @@ import 'package:auravibes_app/domain/entities/conversation.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/flavors.dart';
-import 'package:auravibes_app/providers/router_providers.dart';
+    'workspaceId from route state is available synchronously: no Riverpod dependency',
 import 'package:auravibes_app/widgets/app_navigation_wrappers.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
