@@ -38,9 +38,10 @@ enum UrlResponseFormat {
   };
 
   static UrlResponseFormat fromString(String? value) {
-    if (value == null || value.isEmpty) return .defaultFormat;
+    final normalized = value?.trim().toLowerCase();
+    if (normalized == null || normalized.isEmpty) return .defaultFormat;
     return values.firstWhere(
-      (f) => f.label == value,
+      (f) => f.label == normalized,
       orElse: () => throw FormatException(
         'Unsupported format: $value. '
         'Supported formats: markdown, text, html.',

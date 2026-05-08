@@ -13,6 +13,7 @@ class UrlContentTransformer {
   const UrlContentTransformer();
 
   static const int maxOutputLength = 1024 * 1024;
+  static const _truncationSuffix = '\n... [truncated]';
 
   static final Set<String> _blockTags = {
     'div',
@@ -95,7 +96,9 @@ class UrlContentTransformer {
       };
     }
 
-    if (contentType.contains('application/json')) {
+    final isJson =
+        contentType == 'application/json' || contentType.endsWith('+json');
+    if (isJson) {
       return _passthrough(
         body,
         originalLength,
@@ -104,8 +107,17 @@ class UrlContentTransformer {
       );
     }
 
-    if (contentType.contains('text/plain') ||
-        contentType.contains('text/markdown')) {
+    if (contentType.contains('text/markdown') ||
+        contentType.contains('text/x-markdown')) {
+      return _passthrough(
+        body,
+        originalLength,
+        contentType,
+        UrlContentFormat.markdown,
+      );
+    }
+
+    if (contentType.contains('text/plain')) {
       return _passthrough(
         body,
         originalLength,
@@ -137,7 +149,8 @@ class UrlContentTransformer {
     final bodyElement = document.body;
     if (bodyElement == null) {
       final text = document.text?.trim() ?? '';
-      final (output, truncated) = _truncateIfNeeded(text, originalLength);
+      final escaped = _escapeMarkdownText(text);
+      final (output, truncated) = _truncateIfNeeded(escaped, originalLength);
       return TransformedUrlContent(
         body: output,
         format: .markdown,
@@ -247,6 +260,22 @@ class UrlContentTransformer {
         .replaceAll('~', r'\~');
   }
 
+  String _escapeCodeContent(String text) {
+    if (!text.contains('`')) return '`$text`';
+    var maxRun = 0;
+    var run = 0;
+    for (var i = 0; i < text.length; i++) {
+      if (text[i] == '`') {
+        run++;
+        if (run > maxRun) maxRun = run;
+      } else {
+        run = 0;
+      }
+    }
+    final fence = '`' * (maxRun + 1);
+    return '$fence $text $fence';
+  }
+
   void _processElementNode(
     dom.Element element,
     StringBuffer buffer,
@@ -306,49 +335,24 @@ class UrlContentTransformer {
         _processChildren(element, buffer, depth);
         return;
       case 'a':
-        final href = element.attributes['href'];
-        final inlineBuffer = StringBuffer();
-        _processInlineChildren(element, inlineBuffer);
-        final text = inlineBuffer.toString().trim();
-        if (text.isEmpty) return;
-        if (href != null && href.isNotEmpty) {
-          buffer.write('[$text]($href)');
-        } else {
-          buffer.write(text);
-        }
+        _processAnchor(element, buffer);
         return;
       case 'strong':
       case 'b':
-        final inlineBuffer = StringBuffer();
-        _processInlineChildren(element, inlineBuffer);
-        final text = inlineBuffer.toString().trim();
-        if (text.isNotEmpty) {
-          buffer.write('**$text**');
-        }
+        _processBold(element, buffer);
         return;
       case 'em':
       case 'i':
-        final inlineBuffer = StringBuffer();
-        _processInlineChildren(element, inlineBuffer);
-        final text = inlineBuffer.toString().trim();
-        if (text.isNotEmpty) {
-          buffer.write('*$text*');
-        }
+        _processItalic(element, buffer);
         return;
       case 'code':
-        if (_isPreChild(element)) {
-          return;
-        }
-        final text = element.text.trim();
-        if (text.isNotEmpty) {
-          buffer.write('`$text`');
-        }
+        _processInlineCode(element, buffer);
         return;
       case 'pre':
         _processPreElement(element, buffer);
         return;
       case 'blockquote':
-        _processBlockquote(element, buffer, depth);
+        _processBlockquote(element, buffer);
         return;
       case 'img':
         final alt = element.attributes['alt'] ?? '';
@@ -407,7 +411,6 @@ class UrlContentTransformer {
   void _processBlockquote(
     dom.Element element,
     StringBuffer buffer,
-    int depth,
   ) {
     _ensureNewline(buffer);
 
@@ -442,12 +445,7 @@ class UrlContentTransformer {
       if (row.length > colCount) colCount = row.length;
     }
 
-    buffer.write('| ');
-    for (var i = 0; i < colCount; i++) {
-      buffer.write(i < rows[0].length ? rows[0][i] : '');
-      buffer.write(' | ');
-    }
-    buffer.writeln();
+    _writeTableRow(rows[0], colCount, buffer);
 
     buffer.write('| ');
     for (var i = 0; i < colCount; i++) {
@@ -456,12 +454,7 @@ class UrlContentTransformer {
     buffer.writeln();
 
     for (var i = 1; i < rows.length; i++) {
-      buffer.write('| ');
-      for (var j = 0; j < colCount; j++) {
-        buffer.write(j < rows[i].length ? rows[i][j] : '');
-        buffer.write(' | ');
-      }
-      buffer.writeln();
+      _writeTableRow(rows[i], colCount, buffer);
     }
   }
 
@@ -489,11 +482,58 @@ class UrlContentTransformer {
   }
 
   void _ensureNewline(StringBuffer buffer) {
-    if (buffer.isEmpty) return;
-    final str = buffer.toString();
-    if (!str.endsWith('\n\n') && !str.endsWith('\n\n\n')) {
-      buffer.writeln();
+    final length = buffer.length;
+    if (length == 0) return;
+    if (length >= 2 && buffer.toString().endsWith('\n\n')) return;
+    buffer.writeln();
+  }
+
+  void _processAnchor(dom.Element element, StringBuffer buffer) {
+    final href = element.attributes['href'];
+    final inlineBuffer = StringBuffer();
+    _processInlineChildren(element, inlineBuffer);
+    final text = inlineBuffer.toString().trim();
+    if (text.isEmpty) return;
+    if (href != null && href.isNotEmpty) {
+      buffer.write('[$text]($href)');
+    } else {
+      buffer.write(text);
     }
+  }
+
+  void _processBold(dom.Element element, StringBuffer buffer) {
+    final inlineBuffer = StringBuffer();
+    _processInlineChildren(element, inlineBuffer);
+    final text = inlineBuffer.toString().trim();
+    if (text.isNotEmpty) {
+      buffer.write('**$text**');
+    }
+  }
+
+  void _processItalic(dom.Element element, StringBuffer buffer) {
+    final inlineBuffer = StringBuffer();
+    _processInlineChildren(element, inlineBuffer);
+    final text = inlineBuffer.toString().trim();
+    if (text.isNotEmpty) {
+      buffer.write('*$text*');
+    }
+  }
+
+  void _processInlineCode(dom.Element element, StringBuffer buffer) {
+    if (_isPreChild(element)) return;
+    final text = element.text.trim();
+    if (text.isNotEmpty) {
+      buffer.write(_escapeCodeContent(text));
+    }
+  }
+
+  void _writeTableRow(List<String> cells, int colCount, StringBuffer buffer) {
+    buffer.write('| ');
+    for (var i = 0; i < colCount; i++) {
+      buffer.write(i < cells.length ? cells[i] : '');
+      buffer.write(' | ');
+    }
+    buffer.writeln();
   }
 
   String _collapseBlankLines(String markdown) {
@@ -531,7 +571,11 @@ class UrlContentTransformer {
     if (body.length <= maxOutputLength) {
       return (body, false);
     }
-    return ('${body.substring(0, maxOutputLength)}\n... [truncated]', true);
+    return (
+      '${body.substring(0, maxOutputLength - _truncationSuffix.length)}'
+          '$_truncationSuffix',
+      true,
+    );
   }
 
   String? _extractContentType(Map<String, List<String>> headers) {

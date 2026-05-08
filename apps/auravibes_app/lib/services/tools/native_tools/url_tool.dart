@@ -141,6 +141,14 @@ final class UrlTool extends NativeToolEntity<String, String> {
     };
     final isStructuredBody = rawBody != null && rawBody is! String;
 
+    final format = switch (json['format']) {
+      null => UrlResponseFormat.defaultFormat,
+      final String s => UrlResponseFormat.fromString(s),
+      _ => throw const FormatException(
+        'Format must be a string: markdown, text, or html.',
+      ),
+    };
+
     final resolvedHost = await _ensurePublicHost(uri.host);
 
     final effectiveHeaders = <String, String>{
@@ -155,14 +163,6 @@ final class UrlTool extends NativeToolEntity<String, String> {
     final effectiveUrl = uri.scheme == 'https'
         ? uri.toString()
         : uri.replace(host: resolvedHost).toString();
-
-    final format = switch (json['format']) {
-      null => UrlResponseFormat.defaultFormat,
-      final String s => UrlResponseFormat.fromString(s),
-      _ => throw const FormatException(
-        'Format must be a string: markdown, text, or html.',
-      ),
-    };
 
     return UrlRequest(
       url: effectiveUrl,

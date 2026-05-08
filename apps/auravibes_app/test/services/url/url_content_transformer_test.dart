@@ -377,6 +377,13 @@ void main() {
           );
           expect(txt.format, UrlContentFormat.text);
           expect(txt.body, 'Hello world');
+
+          final html = transformer.transform(
+            response,
+            requestedFormat: UrlResponseFormat.html,
+          );
+          expect(html.format, UrlContentFormat.text);
+          expect(html.body, 'Hello world');
         },
       );
     });
@@ -625,6 +632,6 @@ UrlResponse _responseWithContentType(String body, String? contentType) {
             'content-type': [contentType],
           }
         : {},
-    elapsed: Duration.zero,
+    elapsed: .zero,
   );
 }

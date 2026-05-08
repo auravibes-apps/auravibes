@@ -23,37 +23,10 @@ class UrlService {
       },
     );
     final stopwatch = Stopwatch()..start();
-    final hasContentType =
-        request.headers?.keys.any(
-          (key) => key.toLowerCase() == Headers.contentTypeHeader,
-        ) ??
-        false;
-    final hasAccept =
-        request.headers?.keys.any(
-          (key) => key.toLowerCase() == Headers.acceptHeader,
-        ) ??
-        false;
-    final hasUserAgent =
-        request.headers?.keys.any(
-          (key) => key.toLowerCase() == 'user-agent',
-        ) ??
-        false;
-    final hasAcceptLanguage =
-        request.headers?.keys.any(
-          (key) => key.toLowerCase() == 'accept-language',
-        ) ??
-        false;
-    final effectiveHeaders = <String, String>{
-      ...?request.headers,
-      if (!hasAccept) Headers.acceptHeader: request.format.acceptHeader,
-      if (!hasUserAgent)
-        'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
-            'AppleWebKit/537.36 (KHTML, like Gecko) '
-            'Chrome/143.0.0.0 Safari/537.36',
-      if (!hasAcceptLanguage) 'Accept-Language': 'en-US,en;q=0.9',
-    };
-    final requestBody = request.body == null || hasContentType
+    final effectiveHeaders = _buildEffectiveHeaders(request);
+    final requestBody =
+        request.body == null ||
+            _hasHeader(request.headers, Headers.contentTypeHeader)
         ? request.body
         : Stream<List<int>>.value(utf8.encode(request.body!));
 
@@ -178,5 +151,26 @@ class UrlService {
     }
 
     return '${body.substring(0, _maxResponseSize)}\n... [truncated]';
+  }
+
+  Map<String, String> _buildEffectiveHeaders(UrlRequest request) {
+    final headers = request.headers;
+    return <String, String>{
+      ...?headers,
+      if (!_hasHeader(headers, Headers.acceptHeader))
+        Headers.acceptHeader: request.format.acceptHeader,
+      if (!_hasHeader(headers, 'user-agent'))
+        'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+            'AppleWebKit/537.36 (KHTML, like Gecko) '
+            'Chrome/143.0.0.0 Safari/537.36',
+      if (!_hasHeader(headers, 'accept-language'))
+        'Accept-Language': 'en-US,en;q=0.9',
+    };
+  }
+
+  bool _hasHeader(Map<String, String>? headers, String name) {
+    if (headers == null) return false;
+    return headers.keys.any((k) => k.toLowerCase() == name);
   }
 }
