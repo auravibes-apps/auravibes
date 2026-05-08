@@ -6,15 +6,19 @@ import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/services/tools/native_tool_entity.dart';
 import 'package:auravibes_app/services/url/models/url_request.dart';
 import 'package:auravibes_app/services/url/models/url_response.dart';
+import 'package:auravibes_app/services/url/url_content_transformer.dart';
 import 'package:auravibes_app/services/url/url_service.dart';
 
 const _privateNetworkUrlError =
     'Private or local network URLs are not allowed.';
 
 final class UrlTool extends NativeToolEntity<String, String> {
-  UrlTool({UrlService? urlService}) : _urlService = urlService;
+  UrlTool({UrlService? urlService, UrlContentTransformer? transformer})
+    : _urlService = urlService,
+      _transformer = transformer ?? const UrlContentTransformer();
 
   final UrlService? _urlService;
+  final UrlContentTransformer _transformer;
 
   @override
   ToolSpec getTool() {
@@ -36,7 +40,11 @@ final class UrlTool extends NativeToolEntity<String, String> {
                 '"method" (optional) - HTTP method '
                 '(GET, POST, PUT, DELETE, PATCH, HEAD), '
                 '"headers" (optional) - JSON object of HTTP headers, '
-                '"body" (optional) - request body for POST/PUT/PATCH.',
+                '"body" (optional) - request body for POST/PUT/PATCH, '
+                '"format" (optional) - markdown, text, html, '
+                'or omit for default (markdown). '
+                'Controls the Accept header sent and how the response '
+                'body is transformed before being returned.',
           },
         },
         'required': ['input'],
@@ -65,7 +73,7 @@ final class UrlTool extends NativeToolEntity<String, String> {
         return;
       }
 
-      completer.complete(_formatResponse(response));
+      completer.complete(_formatResponse(response, request.format));
     }().catchError((Object error, StackTrace stackTrace) {
       if (completer.isCanceled) {
         return;
@@ -77,15 +85,26 @@ final class UrlTool extends NativeToolEntity<String, String> {
     return completer.operation;
   }
 
-  String _formatResponse(UrlResponse response) {
+  String _formatResponse(
+    UrlResponse response,
+    UrlResponseFormat requestedFormat,
+  ) {
+    final transformed = _transformer.transform(
+      response,
+      requestedFormat: requestedFormat,
+    );
     final headerLines = response.headers.entries
         .expand((e) => e.value.map((v) => '${e.key}: $v'))
         .join('\n');
 
+    final truncatedNote = transformed.truncated ? ' (truncated)' : '';
+
     return 'Status: ${response.statusCode}\n'
         'Elapsed: ${response.elapsed.inMilliseconds}ms\n'
+        'Content-Type: ${transformed.contentType ?? 'unknown'}\n'
+        'Format: ${transformed.format.label}$truncatedNote\n'
         'Headers:\n$headerLines\n\n'
-        '${response.body}';
+        '${transformed.body}';
   }
 
   Future<UrlRequest> _buildRequest(String toolInput) async {
@@ -122,6 +141,14 @@ final class UrlTool extends NativeToolEntity<String, String> {
     };
     final isStructuredBody = rawBody != null && rawBody is! String;
 
+    final format = switch (json['format']) {
+      null => UrlResponseFormat.defaultFormat,
+      final String s => UrlResponseFormat.fromString(s),
+      _ => throw const FormatException(
+        'Format must be a string: markdown, text, or html.',
+      ),
+    };
+
     final resolvedHost = await _ensurePublicHost(uri.host);
 
     final effectiveHeaders = <String, String>{
@@ -142,6 +169,7 @@ final class UrlTool extends NativeToolEntity<String, String> {
       method: method,
       headers: effectiveHeaders,
       body: body,
+      format: format,
     );
   }
 

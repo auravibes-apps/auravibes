@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$UrlRequest {
 
- String get url; UrlRequestMethod get method; Map<String, String>? get headers; String? get body; Duration get timeout;
+ String get url; UrlRequestMethod get method; Map<String, String>? get headers; String? get body; Duration get timeout; UrlResponseFormat get format;
 /// Create a copy of UrlRequest
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $UrlRequestCopyWith<UrlRequest> get copyWith => _$UrlRequestCopyWithImpl<UrlRequ
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is UrlRequest&&(identical(other.url, url) || other.url == url)&&(identical(other.method, method) || other.method == method)&&const DeepCollectionEquality().equals(other.headers, headers)&&(identical(other.body, body) || other.body == body)&&(identical(other.timeout, timeout) || other.timeout == timeout));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is UrlRequest&&(identical(other.url, url) || other.url == url)&&(identical(other.method, method) || other.method == method)&&const DeepCollectionEquality().equals(other.headers, headers)&&(identical(other.body, body) || other.body == body)&&(identical(other.timeout, timeout) || other.timeout == timeout)&&(identical(other.format, format) || other.format == format));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,url,method,const DeepCollectionEquality().hash(headers),body,timeout);
+int get hashCode => Object.hash(runtimeType,url,method,const DeepCollectionEquality().hash(headers),body,timeout,format);
 
 @override
 String toString() {
-  return 'UrlRequest(url: $url, method: $method, headers: $headers, body: $body, timeout: $timeout)';
+  return 'UrlRequest(url: $url, method: $method, headers: $headers, body: $body, timeout: $timeout, format: $format)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $UrlRequestCopyWith<$Res>  {
   factory $UrlRequestCopyWith(UrlRequest value, $Res Function(UrlRequest) _then) = _$UrlRequestCopyWithImpl;
 @useResult
 $Res call({
- String url, UrlRequestMethod method, Map<String, String>? headers, String? body, Duration timeout
+ String url, UrlRequestMethod method, Map<String, String>? headers, String? body, Duration timeout, UrlResponseFormat format
 });
 
 
@@ -62,14 +62,15 @@ class _$UrlRequestCopyWithImpl<$Res>
 
 /// Create a copy of UrlRequest
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? url = null,Object? method = null,Object? headers = freezed,Object? body = freezed,Object? timeout = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? url = null,Object? method = null,Object? headers = freezed,Object? body = freezed,Object? timeout = null,Object? format = null,}) {
   return _then(_self.copyWith(
 url: null == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
 as String,method: null == method ? _self.method : method // ignore: cast_nullable_to_non_nullable
 as UrlRequestMethod,headers: freezed == headers ? _self.headers : headers // ignore: cast_nullable_to_non_nullable
 as Map<String, String>?,body: freezed == body ? _self.body : body // ignore: cast_nullable_to_non_nullable
 as String?,timeout: null == timeout ? _self.timeout : timeout // ignore: cast_nullable_to_non_nullable
-as Duration,
+as Duration,format: null == format ? _self.format : format // ignore: cast_nullable_to_non_nullable
+as UrlResponseFormat,
   ));
 }
 
@@ -154,10 +155,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String url,  UrlRequestMethod method,  Map<String, String>? headers,  String? body,  Duration timeout)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String url,  UrlRequestMethod method,  Map<String, String>? headers,  String? body,  Duration timeout,  UrlResponseFormat format)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _UrlRequest() when $default != null:
-return $default(_that.url,_that.method,_that.headers,_that.body,_that.timeout);case _:
+return $default(_that.url,_that.method,_that.headers,_that.body,_that.timeout,_that.format);case _:
   return orElse();
 
 }
@@ -175,10 +176,10 @@ return $default(_that.url,_that.method,_that.headers,_that.body,_that.timeout);c
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String url,  UrlRequestMethod method,  Map<String, String>? headers,  String? body,  Duration timeout)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String url,  UrlRequestMethod method,  Map<String, String>? headers,  String? body,  Duration timeout,  UrlResponseFormat format)  $default,) {final _that = this;
 switch (_that) {
 case _UrlRequest():
-return $default(_that.url,_that.method,_that.headers,_that.body,_that.timeout);case _:
+return $default(_that.url,_that.method,_that.headers,_that.body,_that.timeout,_that.format);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -195,10 +196,10 @@ return $default(_that.url,_that.method,_that.headers,_that.body,_that.timeout);c
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String url,  UrlRequestMethod method,  Map<String, String>? headers,  String? body,  Duration timeout)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String url,  UrlRequestMethod method,  Map<String, String>? headers,  String? body,  Duration timeout,  UrlResponseFormat format)?  $default,) {final _that = this;
 switch (_that) {
 case _UrlRequest() when $default != null:
-return $default(_that.url,_that.method,_that.headers,_that.body,_that.timeout);case _:
+return $default(_that.url,_that.method,_that.headers,_that.body,_that.timeout,_that.format);case _:
   return null;
 
 }
@@ -210,7 +211,7 @@ return $default(_that.url,_that.method,_that.headers,_that.body,_that.timeout);c
 
 
 class _UrlRequest implements UrlRequest {
-  const _UrlRequest({required this.url, this.method = UrlRequestMethod.get, final  Map<String, String>? headers, this.body, this.timeout = const Duration(seconds: 30)}): _headers = headers;
+  const _UrlRequest({required this.url, this.method = UrlRequestMethod.get, final  Map<String, String>? headers, this.body, this.timeout = const Duration(seconds: 30), this.format = UrlResponseFormat.defaultFormat}): _headers = headers;
   
 
 @override final  String url;
@@ -226,6 +227,7 @@ class _UrlRequest implements UrlRequest {
 
 @override final  String? body;
 @override@JsonKey() final  Duration timeout;
+@override@JsonKey() final  UrlResponseFormat format;
 
 /// Create a copy of UrlRequest
 /// with the given fields replaced by the non-null parameter values.
@@ -237,16 +239,16 @@ _$UrlRequestCopyWith<_UrlRequest> get copyWith => __$UrlRequestCopyWithImpl<_Url
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _UrlRequest&&(identical(other.url, url) || other.url == url)&&(identical(other.method, method) || other.method == method)&&const DeepCollectionEquality().equals(other._headers, _headers)&&(identical(other.body, body) || other.body == body)&&(identical(other.timeout, timeout) || other.timeout == timeout));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _UrlRequest&&(identical(other.url, url) || other.url == url)&&(identical(other.method, method) || other.method == method)&&const DeepCollectionEquality().equals(other._headers, _headers)&&(identical(other.body, body) || other.body == body)&&(identical(other.timeout, timeout) || other.timeout == timeout)&&(identical(other.format, format) || other.format == format));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,url,method,const DeepCollectionEquality().hash(_headers),body,timeout);
+int get hashCode => Object.hash(runtimeType,url,method,const DeepCollectionEquality().hash(_headers),body,timeout,format);
 
 @override
 String toString() {
-  return 'UrlRequest(url: $url, method: $method, headers: $headers, body: $body, timeout: $timeout)';
+  return 'UrlRequest(url: $url, method: $method, headers: $headers, body: $body, timeout: $timeout, format: $format)';
 }
 
 
@@ -257,7 +259,7 @@ abstract mixin class _$UrlRequestCopyWith<$Res> implements $UrlRequestCopyWith<$
   factory _$UrlRequestCopyWith(_UrlRequest value, $Res Function(_UrlRequest) _then) = __$UrlRequestCopyWithImpl;
 @override @useResult
 $Res call({
- String url, UrlRequestMethod method, Map<String, String>? headers, String? body, Duration timeout
+ String url, UrlRequestMethod method, Map<String, String>? headers, String? body, Duration timeout, UrlResponseFormat format
 });
 
 
@@ -274,14 +276,15 @@ class __$UrlRequestCopyWithImpl<$Res>
 
 /// Create a copy of UrlRequest
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? url = null,Object? method = null,Object? headers = freezed,Object? body = freezed,Object? timeout = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? url = null,Object? method = null,Object? headers = freezed,Object? body = freezed,Object? timeout = null,Object? format = null,}) {
   return _then(_UrlRequest(
 url: null == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
 as String,method: null == method ? _self.method : method // ignore: cast_nullable_to_non_nullable
 as UrlRequestMethod,headers: freezed == headers ? _self._headers : headers // ignore: cast_nullable_to_non_nullable
 as Map<String, String>?,body: freezed == body ? _self.body : body // ignore: cast_nullable_to_non_nullable
 as String?,timeout: null == timeout ? _self.timeout : timeout // ignore: cast_nullable_to_non_nullable
-as Duration,
+as Duration,format: null == format ? _self.format : format // ignore: cast_nullable_to_non_nullable
+as UrlResponseFormat,
   ));
 }
 

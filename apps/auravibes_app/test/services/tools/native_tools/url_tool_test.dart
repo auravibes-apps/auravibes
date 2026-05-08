@@ -345,6 +345,192 @@ void main() {
 
       expect(result, contains('Status: 200'));
     });
+
+    test('transforms HTML response to markdown with format header', () async {
+      final dio = Dio()
+        ..httpClientAdapter = _SuccessAdapter(
+          body: '<html><body><h1>Hello</h1><p>World</p></body></html>',
+          statusCode: 200,
+          extraHeaders: {
+            'content-type': ['text/html'],
+          },
+        );
+      final tool = UrlTool(urlService: UrlService(dio: dio));
+
+      final result = await tool.runner('https://1.1.1.1').value;
+
+      expect(result, contains('Format: markdown'));
+      expect(result, contains('Content-Type: text/html'));
+      expect(result, contains('# Hello'));
+      expect(result, contains('World'));
+    });
+
+    test('transforms JSON response with json format header', () async {
+      final dio = Dio()
+        ..httpClientAdapter = _SuccessAdapter(
+          body: '{"key": "value"}',
+          statusCode: 200,
+          extraHeaders: {
+            'content-type': ['application/json'],
+          },
+        );
+      final tool = UrlTool(urlService: UrlService(dio: dio));
+
+      final result = await tool.runner('https://1.1.1.1').value;
+
+      expect(result, contains('Format: json'));
+      expect(result, contains('Content-Type: application/json'));
+      expect(result, contains('{"key": "value"}'));
+    });
+
+    test('transforms plain text with text format header', () async {
+      final dio = Dio()
+        ..httpClientAdapter = _SuccessAdapter(
+          body: 'Hello world',
+          statusCode: 200,
+          extraHeaders: {
+            'content-type': ['text/plain'],
+          },
+        );
+      final tool = UrlTool(urlService: UrlService(dio: dio));
+
+      final result = await tool.runner('https://1.1.1.1').value;
+
+      expect(result, contains('Format: text'));
+      expect(result, contains('Content-Type: text/plain'));
+      expect(result, contains('Hello world'));
+    });
+
+    test('handles unknown content type with unsupported format', () async {
+      final dio = Dio()
+        ..httpClientAdapter = _SuccessAdapter(
+          body: 'data',
+          statusCode: 200,
+        );
+      final tool = UrlTool(urlService: UrlService(dio: dio));
+
+      final result = await tool.runner('https://1.1.1.1').value;
+
+      expect(result, contains('Format: unsupported'));
+      expect(result, contains('Content-Type: unknown'));
+    });
+
+    group('format parameter', () {
+      test('accepts format: markdown', () async {
+        String? sentAccept;
+        final dio = Dio()
+          ..httpClientAdapter = _InspectAdapter(
+            body: '<html><body><h1>Hi</h1></body></html>',
+            statusCode: 200,
+            extraHeaders: {
+              'content-type': ['text/html'],
+            },
+            onInspect: (method, headers, body) {
+              sentAccept = headers?['accept'] as String?;
+            },
+          );
+        final tool = UrlTool(urlService: UrlService(dio: dio));
+
+        final result = await tool
+            .runner(
+              '{"url": "https://1.1.1.1", "format": "markdown"}',
+            )
+            .value;
+
+        expect(result, contains('Format: markdown'));
+        expect(result, contains('# Hi'));
+        expect(sentAccept, isNotNull);
+        expect(sentAccept, contains('text/html'));
+        expect(sentAccept, contains('text/markdown'));
+      });
+
+      test('accepts format: text', () async {
+        final dio = Dio()
+          ..httpClientAdapter = _SuccessAdapter(
+            body: '<html><body><h1>Title</h1><p>Content</p></body></html>',
+            statusCode: 200,
+            extraHeaders: {
+              'content-type': ['text/html'],
+            },
+          );
+        final tool = UrlTool(urlService: UrlService(dio: dio));
+
+        final result = await tool
+            .runner(
+              '{"url": "https://1.1.1.1", "format": "text"}',
+            )
+            .value;
+
+        expect(result, contains('Format: text'));
+        expect(result, contains('Title'));
+        expect(result, contains('Content'));
+        expect(result, isNot(contains('#')));
+      });
+
+      test('accepts format: html', () async {
+        final dio = Dio()
+          ..httpClientAdapter = _SuccessAdapter(
+            body: '<html><body><h1>Raw</h1></body></html>',
+            statusCode: 200,
+            extraHeaders: {
+              'content-type': ['text/html'],
+            },
+          );
+        final tool = UrlTool(urlService: UrlService(dio: dio));
+
+        final result = await tool
+            .runner(
+              '{"url": "https://1.1.1.1", "format": "html"}',
+            )
+            .value;
+
+        expect(result, contains('Format: html'));
+        expect(result, contains('<h1>Raw</h1>'));
+      });
+
+      test('omitted format defaults to markdown', () async {
+        final dio = Dio()
+          ..httpClientAdapter = _SuccessAdapter(
+            body: '<html><body><h1>Hello</h1></body></html>',
+            statusCode: 200,
+            extraHeaders: {
+              'content-type': ['text/html'],
+            },
+          );
+        final tool = UrlTool(urlService: UrlService(dio: dio));
+
+        final result = await tool.runner('https://1.1.1.1').value;
+
+        expect(result, contains('Format: markdown'));
+        expect(result, contains('# Hello'));
+      });
+
+      test('rejects invalid format string', () {
+        final tool = UrlTool();
+
+        expect(
+          tool
+              .runner(
+                '{"url": "https://example.com", "format": "unknown"}',
+              )
+              .value,
+          throwsA(isA<FormatException>()),
+        );
+      });
+
+      test('rejects non-string format value', () {
+        final tool = UrlTool();
+
+        expect(
+          tool
+              .runner(
+                '{"url": "https://example.com", "format": 123}',
+              )
+              .value,
+          throwsA(isA<FormatException>()),
+        );
+      });
+    });
   });
 }
 
@@ -381,11 +567,13 @@ final class _InspectAdapter implements HttpClientAdapter {
     required this.body,
     required this.statusCode,
     required this.onInspect,
+    this.extraHeaders,
   });
 
   final String body;
   final int statusCode;
   final void Function(String?, Map<String, dynamic>?, String?) onInspect;
+  final Map<String, List<String>>? extraHeaders;
 
   @override
   Future<ResponseBody> fetch(
@@ -402,7 +590,11 @@ final class _InspectAdapter implements HttpClientAdapter {
       requestBody = String.fromCharCodes(bytes);
     }
     onInspect(options.method, options.headers, requestBody);
-    return ResponseBody.fromString(body, statusCode);
+    return ResponseBody.fromString(
+      body,
+      statusCode,
+      headers: extraHeaders ?? const {},
+    );
   }
 
   @override

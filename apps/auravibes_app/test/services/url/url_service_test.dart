@@ -281,6 +281,168 @@ void main() {
 
       expect(response.elapsed, greaterThanOrEqualTo(Duration.zero));
     });
+
+    group('Accept header', () {
+      test('adds Accept header based on format', () async {
+        String? acceptHeader;
+        final adapter = _FakeHttpClientAdapter(
+          onFetch: (options, _, _) async {
+            acceptHeader = options.headers['accept'] as String?;
+            return ResponseBody.fromString('ok', 200);
+          },
+        );
+        final dio = Dio()..httpClientAdapter = adapter;
+        final service = UrlService(dio: dio);
+
+        await service
+            .execute(
+              const UrlRequest(
+                url: 'https://example.com',
+                format: UrlResponseFormat.markdown,
+              ),
+            )
+            .value;
+
+        expect(acceptHeader, isNotNull);
+        expect(acceptHeader, contains('text/html'));
+        expect(acceptHeader, contains('text/markdown'));
+      });
+
+      test('uses html Accept header for html format', () async {
+        String? acceptHeader;
+        final adapter = _FakeHttpClientAdapter(
+          onFetch: (options, _, _) async {
+            acceptHeader = options.headers['accept'] as String?;
+            return ResponseBody.fromString('ok', 200);
+          },
+        );
+        final dio = Dio()..httpClientAdapter = adapter;
+        final service = UrlService(dio: dio);
+
+        await service
+            .execute(
+              const UrlRequest(
+                url: 'https://example.com',
+                format: UrlResponseFormat.html,
+              ),
+            )
+            .value;
+
+        expect(acceptHeader, isNotNull);
+        expect(acceptHeader, contains('text/html'));
+        expect(acceptHeader, contains('application/xhtml+xml'));
+      });
+
+      test('preserves user-provided Accept header', () async {
+        String? acceptHeader;
+        final adapter = _FakeHttpClientAdapter(
+          onFetch: (options, _, _) async {
+            acceptHeader = options.headers['accept'] as String?;
+            return ResponseBody.fromString('ok', 200);
+          },
+        );
+        final dio = Dio()..httpClientAdapter = adapter;
+        final service = UrlService(dio: dio);
+
+        await service
+            .execute(
+              const UrlRequest(
+                url: 'https://example.com',
+                headers: {'Accept': 'application/json'},
+              ),
+            )
+            .value;
+
+        expect(acceptHeader, 'application/json');
+      });
+
+      test('adds default User-Agent header', () async {
+        String? userAgent;
+        final adapter = _FakeHttpClientAdapter(
+          onFetch: (options, _, _) async {
+            userAgent = options.headers['user-agent'] as String?;
+            return ResponseBody.fromString('ok', 200);
+          },
+        );
+        final dio = Dio()..httpClientAdapter = adapter;
+        final service = UrlService(dio: dio);
+
+        await service
+            .execute(
+              const UrlRequest(url: 'https://example.com'),
+            )
+            .value;
+
+        expect(userAgent, contains('Mozilla/5.0'));
+        expect(userAgent, contains('Chrome/'));
+      });
+
+      test('preserves user-provided User-Agent header', () async {
+        String? userAgent;
+        final adapter = _FakeHttpClientAdapter(
+          onFetch: (options, _, _) async {
+            userAgent = options.headers['user-agent'] as String?;
+            return ResponseBody.fromString('ok', 200);
+          },
+        );
+        final dio = Dio()..httpClientAdapter = adapter;
+        final service = UrlService(dio: dio);
+
+        await service
+            .execute(
+              const UrlRequest(
+                url: 'https://example.com',
+                headers: {'User-Agent': 'MyBot/1.0'},
+              ),
+            )
+            .value;
+
+        expect(userAgent, 'MyBot/1.0');
+      });
+
+      test('adds default Accept-Language header', () async {
+        String? acceptLanguage;
+        final adapter = _FakeHttpClientAdapter(
+          onFetch: (options, _, _) async {
+            acceptLanguage = options.headers['accept-language'] as String?;
+            return ResponseBody.fromString('ok', 200);
+          },
+        );
+        final dio = Dio()..httpClientAdapter = adapter;
+        final service = UrlService(dio: dio);
+
+        await service
+            .execute(
+              const UrlRequest(url: 'https://example.com'),
+            )
+            .value;
+
+        expect(acceptLanguage, 'en-US,en;q=0.9');
+      });
+
+      test('preserves user-provided Accept-Language header', () async {
+        String? acceptLanguage;
+        final adapter = _FakeHttpClientAdapter(
+          onFetch: (options, _, _) async {
+            acceptLanguage = options.headers['accept-language'] as String?;
+            return ResponseBody.fromString('ok', 200);
+          },
+        );
+        final dio = Dio()..httpClientAdapter = adapter;
+        final service = UrlService(dio: dio);
+
+        await service
+            .execute(
+              const UrlRequest(
+                url: 'https://example.com',
+                headers: {'Accept-Language': 'es-ES'},
+              ),
+            )
+            .value;
+
+        expect(acceptLanguage, 'es-ES');
+      });
+    });
   });
 }
 
