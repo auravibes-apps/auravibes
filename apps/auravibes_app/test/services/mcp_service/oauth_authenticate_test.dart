@@ -1,6 +1,9 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:auravibes_app/services/mcp_service/oauth_authenticate.dart';
+import 'package:auravibes_app/services/mcp_service/oauth_discovery.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -221,5 +224,72 @@ void main() {
         expect(results.toSet().length, 1);
       });
     });
+
+    group('exchangeCodeForToken', () {
+      test('uses injected dio instance for token exchange', () async {
+        final adapter = _FakeHttpClientAdapter(
+          onFetch: (options, _, _) async {
+            expect(
+              options.responseType,
+              ResponseType.json,
+            );
+            return ResponseBody.fromString(
+              '{"access_token":"token-123","token_type":"Bearer"}',
+              200,
+              headers: {
+                Headers.contentTypeHeader: ['application/json'],
+              },
+            );
+          },
+        );
+        final dio = Dio()..httpClientAdapter = adapter;
+        final auth = OauthAuthenticate(
+          callbackUrlScheme: 'auravibes',
+          clientName: 'AuraVibes',
+          dio: dio,
+        );
+
+        final token = await auth.exchangeCodeForToken(
+          code: 'auth-code',
+          oAuthResult: const OAuthDiscoveryResult(
+            authorizationUrl: 'https://example.com/authorize',
+            tokenUrl: 'https://example.com/token',
+            clientId: 'client-id',
+            scope: null,
+          ),
+          codeVerifier: 'verifier',
+          redirectUrl: 'auravibes:/',
+        );
+
+        expect(token.accessToken, 'token-123');
+        expect(token.tokenType, 'Bearer');
+      });
+    });
   });
+}
+
+typedef _FetchCallback =
+    Future<ResponseBody> Function(
+      RequestOptions options,
+      Stream<Uint8List>? requestStream,
+      Future<void>? cancelFuture,
+    );
+
+final class _FakeHttpClientAdapter implements HttpClientAdapter {
+  _FakeHttpClientAdapter({required _FetchCallback onFetch})
+    : _onFetch = onFetch;
+
+  final _FetchCallback _onFetch;
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) {
+    return _onFetch(options, requestStream, cancelFuture);
+  }
+
+  @override
+  void close({bool force = false}) {}
 }

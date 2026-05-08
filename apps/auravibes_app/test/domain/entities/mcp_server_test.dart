@@ -265,9 +265,9 @@ void main() {
     });
   });
 
-  group('OAutTokenEntity', () {
+  group('OAuthTokenEntity', () {
     test('isOAuthTokenExpired returns true when expiresIn is null', () {
-      final token = OAutTokenEntity(
+      final token = OAuthTokenEntity(
         accessToken: 'access',
         issuedAt: DateTime(2026),
       );
@@ -275,7 +275,7 @@ void main() {
     });
 
     test('isOAuthTokenExpired returns true when token is old', () {
-      final token = OAutTokenEntity(
+      final token = OAuthTokenEntity(
         accessToken: 'access',
         issuedAt: DateTime(2020),
         expiresIn: 60,
@@ -284,7 +284,7 @@ void main() {
     });
 
     test('isOAuthTokenExpired returns false for fresh token', () {
-      final token = OAutTokenEntity(
+      final token = OAuthTokenEntity(
         accessToken: 'access',
         issuedAt: DateTime.now(),
         expiresIn: 3600,
@@ -293,7 +293,7 @@ void main() {
     });
 
     test('needsOAuthTokenRefresh true when expired with refresh token', () {
-      final token = OAutTokenEntity(
+      final token = OAuthTokenEntity(
         accessToken: 'access',
         issuedAt: DateTime(2020),
         expiresIn: 60,
@@ -303,7 +303,7 @@ void main() {
     });
 
     test('needsOAuthTokenRefresh false when expired without refresh token', () {
-      final token = OAutTokenEntity(
+      final token = OAuthTokenEntity(
         accessToken: 'access',
         issuedAt: DateTime(2020),
         expiresIn: 60,
@@ -312,7 +312,7 @@ void main() {
     });
 
     test('needsOAuthTokenRefresh false for fresh token with refresh token', () {
-      final token = OAutTokenEntity(
+      final token = OAuthTokenEntity(
         accessToken: 'access',
         issuedAt: DateTime.now(),
         expiresIn: 3600,
@@ -322,7 +322,7 @@ void main() {
     });
 
     test('copyCryptor encrypts accessToken and refreshToken', () async {
-      final token = OAutTokenEntity(
+      final token = OAuthTokenEntity(
         accessToken: 'plain-access',
         issuedAt: DateTime(2026),
         refreshToken: 'plain-refresh',
@@ -341,7 +341,7 @@ void main() {
     });
 
     test('copyCryptor handles null refreshToken', () async {
-      final token = OAutTokenEntity(
+      final token = OAuthTokenEntity(
         accessToken: 'access',
         issuedAt: DateTime(2026),
       );
@@ -352,9 +352,9 @@ void main() {
     });
   });
 
-  group('OAutTokenModel', () {
+  group('OAuthTokenModel', () {
     test('toEntity converts correctly', () {
-      const model = OAutTokenModel(
+      const model = OAuthTokenModel(
         accessToken: 'access',
         refreshToken: 'refresh',
         expiresIn: 3600,
@@ -371,7 +371,7 @@ void main() {
     });
 
     test('toEntity handles null optional fields', () {
-      const model = OAutTokenModel(
+      const model = OAuthTokenModel(
         accessToken: 'access',
       );
 
@@ -403,7 +403,7 @@ void main() {
 
     test('oauth encrypts token fields', () async {
       final auth = McpAuthenticationTypeOAuth(
-        token: OAutTokenEntity(
+        token: OAuthTokenEntity(
           accessToken: 'access',
           issuedAt: DateTime(2026),
           refreshToken: 'refresh',

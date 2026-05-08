@@ -12,7 +12,10 @@ class OauthAuthenticate {
   OauthAuthenticate({
     required this.callbackUrlScheme,
     required this.clientName,
-  });
+    Dio? dio,
+  }) : _dio = dio ?? Dio();
+
+  final Dio _dio;
 
   final String callbackUrlScheme;
   final String clientName;
@@ -66,7 +69,7 @@ class OauthAuthenticate {
   /// Returns the OAuth token on success.
   /// Throws an exception if OAuth discovery fails or authentication is
   /// cancelled.
-  Future<OAutTokenModel> authenticate(
+  Future<OAuthTokenModel> authenticate(
     OAuthDiscoveryResult oAuthResult,
   ) async {
     final codeVerifier = _generateRandomString(128);
@@ -129,13 +132,13 @@ class OauthAuthenticate {
     return code;
   }
 
-  Future<OAutTokenModel> exchangeCodeForToken({
+  Future<OAuthTokenModel> exchangeCodeForToken({
     required String code,
     required OAuthDiscoveryResult oAuthResult,
     required String codeVerifier,
     required String redirectUrl,
   }) async {
-    final response = await Dio().post<Map<String, dynamic>>(
+    final response = await _dio.post<Map<String, dynamic>>(
       oAuthResult.tokenUrl,
       data: {
         'grant_type': 'authorization_code',
@@ -147,7 +150,7 @@ class OauthAuthenticate {
       },
       options: Options(
         contentType: Headers.formUrlEncodedContentType,
-        responseType: .json,
+        responseType: ResponseType.json,
       ),
     );
 
@@ -162,6 +165,6 @@ class OauthAuthenticate {
       throw Exception('No data received from token endpoint');
     }
 
-    return OAutTokenModel.fromJson(response.data!);
+    return OAuthTokenModel.fromJson(response.data!);
   }
 }

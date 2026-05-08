@@ -10,9 +10,9 @@ class McpManagerClient {
   final mcp.Client _client;
   final mcp.OAuthTokenManager? _tokenManager;
 
-  Stream<OAutTokenEntity>? get onTokenUpdate =>
+  Stream<OAuthTokenEntity>? get onTokenUpdate =>
       _tokenManager?.onTokenUpdate.map(
-        (mcpToken) => OAutTokenEntity(
+        (mcpToken) => OAuthTokenEntity(
           accessToken: mcpToken.accessToken,
           issuedAt: mcpToken.issuedAt,
           refreshToken: mcpToken.refreshToken,

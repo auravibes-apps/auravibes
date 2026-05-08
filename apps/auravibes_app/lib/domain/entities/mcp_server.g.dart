@@ -6,8 +6,8 @@ part of 'mcp_server.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_OAutTokenModel _$OAutTokenModelFromJson(Map<String, dynamic> json) =>
-    _OAutTokenModel(
+_OAuthTokenModel _$OAuthTokenModelFromJson(Map<String, dynamic> json) =>
+    _OAuthTokenModel(
       accessToken: json['access_token'] as String,
       refreshToken: json['refresh_token'] as String?,
       expiresIn: (json['expires_in'] as num?)?.toInt(),
@@ -15,7 +15,7 @@ _OAutTokenModel _$OAutTokenModelFromJson(Map<String, dynamic> json) =>
       scope: json['scope'] as String?,
     );
 
-Map<String, dynamic> _$OAutTokenModelToJson(_OAutTokenModel instance) =>
+Map<String, dynamic> _$OAuthTokenModelToJson(_OAuthTokenModel instance) =>
     <String, dynamic>{
       'access_token': instance.accessToken,
       'refresh_token': instance.refreshToken,
@@ -24,8 +24,8 @@ Map<String, dynamic> _$OAutTokenModelToJson(_OAutTokenModel instance) =>
       'scope': instance.scope,
     };
 
-_OAutTokenEntity _$OAutTokenEntityFromJson(Map<String, dynamic> json) =>
-    _OAutTokenEntity(
+_OAuthTokenEntity _$OAuthTokenEntityFromJson(Map<String, dynamic> json) =>
+    _OAuthTokenEntity(
       accessToken: json['accessToken'] as String,
       issuedAt: DateTime.parse(json['issuedAt'] as String),
       refreshToken: json['refreshToken'] as String?,
@@ -36,7 +36,7 @@ _OAutTokenEntity _$OAutTokenEntityFromJson(Map<String, dynamic> json) =>
           .toList(),
     );
 
-Map<String, dynamic> _$OAutTokenEntityToJson(_OAutTokenEntity instance) =>
+Map<String, dynamic> _$OAuthTokenEntityToJson(_OAuthTokenEntity instance) =>
     <String, dynamic>{
       'accessToken': instance.accessToken,
       'issuedAt': instance.issuedAt.toIso8601String(),
@@ -57,7 +57,7 @@ Map<String, dynamic> _$McpAuthenticationTypeNoneToJson(
 McpAuthenticationTypeOAuth _$McpAuthenticationTypeOAuthFromJson(
   Map<String, dynamic> json,
 ) => McpAuthenticationTypeOAuth(
-  token: OAutTokenEntity.fromJson(json['token'] as Map<String, dynamic>),
+  token: OAuthTokenEntity.fromJson(json['token'] as Map<String, dynamic>),
   clientId: json['clientId'] as String,
   authorizationEndpoint: json['authorizationEndpoint'] as String,
   tokenEndpoint: json['tokenEndpoint'] as String,

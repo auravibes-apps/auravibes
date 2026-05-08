@@ -123,7 +123,7 @@ void main() {
 
       test('OAuth toJson produces correct runtimeType', () {
         final auth = McpAuthenticationTypeOAuth(
-          token: OAutTokenEntity(
+          token: OAuthTokenEntity(
             accessToken: 'at',
             issuedAt: DateTime(2026),
           ),
@@ -139,7 +139,7 @@ void main() {
 
       test('OAuth toJson includes token data', () {
         final auth = McpAuthenticationTypeOAuth(
-          token: OAutTokenEntity(
+          token: OAuthTokenEntity(
             accessToken: 'access-tok',
             issuedAt: DateTime(2026, 1, 15),
           ),
@@ -151,8 +151,8 @@ void main() {
         expect(json['runtimeType'], 'oauth');
         expect(json['clientId'], 'my-client');
         final tokenData = json['token'];
-        expect(tokenData, isA<OAutTokenEntity>());
-        expect((tokenData as OAutTokenEntity).accessToken, 'access-tok');
+        expect(tokenData, isA<OAuthTokenEntity>());
+        expect((tokenData as OAuthTokenEntity).accessToken, 'access-tok');
         expect(
           json['authorizationEndpoint'],
           'https://auth.example.com/authorize',
@@ -162,7 +162,7 @@ void main() {
 
       test('OAuth toJson produces correct runtimeType', () {
         final auth = McpAuthenticationTypeOAuth(
-          token: OAutTokenEntity(
+          token: OAuthTokenEntity(
             accessToken: 'at',
             issuedAt: DateTime(2026),
           ),
@@ -178,7 +178,7 @@ void main() {
 
       test('OAuth round-trip through converter', () {
         final original = McpAuthenticationTypeOAuth(
-          token: OAutTokenEntity(
+          token: OAuthTokenEntity(
             accessToken: 'round-trip-token',
             issuedAt: DateTime(2026, 3, 15),
           ),
@@ -365,7 +365,7 @@ void main() {
 
     test('oauth is a McpAuthenticationType', () {
       final auth = McpAuthenticationTypeOAuth(
-        token: OAutTokenEntity(
+        token: OAuthTokenEntity(
           accessToken: 'at',
           issuedAt: DateTime(2026),
         ),
