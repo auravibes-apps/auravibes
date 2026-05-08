@@ -28,6 +28,31 @@ class UrlService {
           (key) => key.toLowerCase() == Headers.contentTypeHeader,
         ) ??
         false;
+    final hasAccept =
+        request.headers?.keys.any(
+          (key) => key.toLowerCase() == Headers.acceptHeader,
+        ) ??
+        false;
+    final hasUserAgent =
+        request.headers?.keys.any(
+          (key) => key.toLowerCase() == 'user-agent',
+        ) ??
+        false;
+    final hasAcceptLanguage =
+        request.headers?.keys.any(
+          (key) => key.toLowerCase() == 'accept-language',
+        ) ??
+        false;
+    final effectiveHeaders = <String, String>{
+      ...?request.headers,
+      if (!hasAccept) Headers.acceptHeader: request.format.acceptHeader,
+      if (!hasUserAgent)
+        'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+            'AppleWebKit/537.36 (KHTML, like Gecko) '
+            'Chrome/143.0.0.0 Safari/537.36',
+      if (!hasAcceptLanguage) 'Accept-Language': 'en-US,en;q=0.9',
+    };
     final requestBody = request.body == null || hasContentType
         ? request.body
         : Stream<List<int>>.value(utf8.encode(request.body!));
@@ -39,7 +64,7 @@ class UrlService {
           cancelToken: cancelToken,
           options: Options(
             method: request.method.value,
-            headers: request.headers,
+            headers: effectiveHeaders,
             sendTimeout: request.timeout,
             receiveTimeout: request.timeout,
             responseType: ResponseType.stream,
