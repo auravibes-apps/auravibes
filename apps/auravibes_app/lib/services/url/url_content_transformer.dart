@@ -281,7 +281,6 @@ class UrlContentTransformer {
     StringBuffer buffer,
     int depth,
   ) {
-    // ignore: long-method - HTML tag dispatch switch covers all elements
     final tag = element.localName?.toLowerCase() ?? '';
 
     if (_stripTags.contains(tag)) {
@@ -294,45 +293,16 @@ class UrlContentTransformer {
 
     switch (tag) {
       case 'br':
-        buffer.writeln();
-        return;
       case 'hr':
-        buffer.writeln();
-        buffer.writeln('---');
-        buffer.writeln();
-        return;
       case 'h1':
       case 'h2':
       case 'h3':
       case 'h4':
       case 'h5':
       case 'h6':
-        final level = int.parse(tag.substring(1));
-        final inlineBuffer = StringBuffer();
-        _processInlineChildren(element, inlineBuffer);
-        final text = inlineBuffer.toString().trim();
-        if (text.isNotEmpty) {
-          _ensureNewline(buffer);
-          buffer.writeln('${'#' * level} $text');
-          _ensureNewline(buffer);
-        }
-        return;
       case 'p':
-        final inlineBuffer = StringBuffer();
-        _processInlineChildren(element, inlineBuffer);
-        final text = inlineBuffer.toString().trim();
-        if (text.isNotEmpty) {
-          _ensureNewline(buffer);
-          buffer.writeln(text);
-        }
-        return;
       case 'li':
-        _ensureNewline(buffer);
-        final indent = '  ' * (depth > 0 ? depth - 1 : 0);
-        final isOrdered = _isInsideOrderedList(element);
-        final marker = isOrdered ? '1. ' : '- ';
-        buffer.write('$indent$marker');
-        _processChildren(element, buffer, depth);
+        _processTextBlockElement(element, buffer, depth, tag);
         return;
       case 'a':
         _processAnchor(element, buffer);
@@ -524,6 +494,56 @@ class UrlContentTransformer {
     final text = element.text.trim();
     if (text.isNotEmpty) {
       buffer.write(_escapeCodeContent(text));
+    }
+  }
+
+  void _processTextBlockElement(
+    dom.Element element,
+    StringBuffer buffer,
+    int depth,
+    String tag,
+  ) {
+    switch (tag) {
+      case 'br':
+        buffer.writeln();
+        return;
+      case 'hr':
+        buffer.writeln();
+        buffer.writeln('---');
+        buffer.writeln();
+        return;
+      case 'h1':
+      case 'h2':
+      case 'h3':
+      case 'h4':
+      case 'h5':
+      case 'h6':
+        final level = int.parse(tag.substring(1));
+        final inlineBuffer = StringBuffer();
+        _processInlineChildren(element, inlineBuffer);
+        final text = inlineBuffer.toString().trim();
+        if (text.isNotEmpty) {
+          _ensureNewline(buffer);
+          buffer.writeln('${'#' * level} $text');
+          _ensureNewline(buffer);
+        }
+        return;
+      case 'p':
+        final inlineBuffer = StringBuffer();
+        _processInlineChildren(element, inlineBuffer);
+        final text = inlineBuffer.toString().trim();
+        if (text.isNotEmpty) {
+          _ensureNewline(buffer);
+          buffer.writeln(text);
+        }
+        return;
+      case 'li':
+        _ensureNewline(buffer);
+        final indent = '  ' * (depth > 0 ? depth - 1 : 0);
+        final isOrdered = _isInsideOrderedList(element);
+        final marker = isOrdered ? '1. ' : '- ';
+        buffer.write('$indent$marker');
+        _processChildren(element, buffer, depth);
     }
   }
 
