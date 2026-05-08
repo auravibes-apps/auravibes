@@ -19,7 +19,7 @@ class BuildPromptChatMessages {
         message.metadata?.toolCalls ?? const <MessageToolCallEntity>[];
 
     final parts = <Part>[
-      TextPart(message.content),
+      if (message.content.isNotEmpty) TextPart(message.content),
       for (final toolCall in toolCalls)
         ToolPart.call(
           callId: toolCall.id,
@@ -28,24 +28,19 @@ class BuildPromptChatMessages {
         ),
     ];
 
-    final results = <ChatMessage>[];
-    for (final toolCall in toolCalls) {
-      if (toolCall.isResolved) {
-        results.add(
-          ChatMessage.model(
-            '',
-            parts: [
-              ToolPart.result(
-                callId: toolCall.id,
-                toolName: toolCall.name,
-                result: toolCall.getResponseForAI(),
-              ),
-            ],
+    final resultParts = [
+      for (final toolCall in toolCalls)
+        if (toolCall.isResolved)
+          ToolPart.result(
+            callId: toolCall.id,
+            toolName: toolCall.name,
+            result: toolCall.getResponseForAI(),
           ),
-        );
-      }
-    }
+    ];
 
-    return [ChatMessage.model('', parts: parts), ...results];
+    return [
+      ChatMessage.model('', parts: parts),
+      if (resultParts.isNotEmpty) ChatMessage.user('', parts: resultParts),
+    ];
   }
 }

@@ -84,7 +84,7 @@ void main() {
       expect(modelMsg.toolCalls.single.toolName, 'calculator');
 
       final resultMsg = result[1];
-      expect(resultMsg.role.name, 'model');
+      expect(resultMsg.role.name, 'user');
       expect(resultMsg.toolResults, hasLength(1));
       expect(resultMsg.toolResults.single.callId, 'tc1');
     });
