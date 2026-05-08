@@ -58,9 +58,56 @@ void main() {
       );
 
       final resultMessage = result[2];
-      expect(resultMessage.role.name, 'model');
+      expect(resultMessage.role.name, 'user');
       expect(resultMessage.toolResults, hasLength(1));
       expect(resultMessage.toolResults.single.callId, 'tool-1');
+    });
+
+    test('groups resolved tool responses in one user message', () {
+      final messages = [
+        MessageEntity(
+          id: 'assistant-1',
+          conversationId: 'conversation-1',
+          content: '',
+          messageType: MessageType.text,
+          isUser: false,
+          status: MessageStatus.sent,
+          createdAt: DateTime(2025),
+          updatedAt: DateTime(2025),
+          metadata: const MessageMetadataEntity(
+            toolCalls: [
+              MessageToolCallEntity(
+                id: 'tool-1',
+                name: 'first_tool',
+                argumentsRaw: '{}',
+                responseRaw: 'first result',
+                resultStatus: ToolCallResultStatus.success,
+              ),
+              MessageToolCallEntity(
+                id: 'tool-2',
+                name: 'second_tool',
+                argumentsRaw: '{}',
+                responseRaw: 'second result',
+                resultStatus: ToolCallResultStatus.success,
+              ),
+            ],
+          ),
+        ),
+      ];
+
+      final result = usecase.call(messages);
+
+      expect(result, hasLength(2));
+      expect(result.first.role.name, 'model');
+      expect(result.first.toolCalls, hasLength(2));
+
+      final resultMessage = result.last;
+      expect(resultMessage.role.name, 'user');
+      expect(resultMessage.toolResults, hasLength(2));
+      expect(resultMessage.toolResults.map((part) => part.callId), [
+        'tool-1',
+        'tool-2',
+      ]);
     });
 
     test(
@@ -94,6 +141,7 @@ void main() {
         expect(result, hasLength(2));
         final resultMessage = result[1];
         expect(resultMessage.toolResults, hasLength(1));
+        expect(resultMessage.role.name, 'user');
         expect(
           resultMessage.toolResults.single.result,
           ToolCallResultStatus.toolNotFound.toResponseString(),
