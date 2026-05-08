@@ -60,23 +60,23 @@ class McpTransportTypeStreamableHttp extends McpTransportType {
 }
 
 @freezed
-abstract class OAutTokenModel with _$OAutTokenModel {
+abstract class OAuthTokenModel with _$OAuthTokenModel {
   // ignore: invalid_annotation_target
   @JsonSerializable(fieldRename: .snake)
-  const factory OAutTokenModel({
+  const factory OAuthTokenModel({
     required String accessToken,
     String? refreshToken,
     int? expiresIn,
     String? tokenType,
     String? scope,
-  }) = _OAutTokenModel;
+  }) = _OAuthTokenModel;
 
-  factory OAutTokenModel.fromJson(Map<String, dynamic> json) =>
-      _$OAutTokenModelFromJson(json);
-  const OAutTokenModel._();
+  factory OAuthTokenModel.fromJson(Map<String, dynamic> json) =>
+      _$OAuthTokenModelFromJson(json);
+  const OAuthTokenModel._();
 
-  OAutTokenEntity toEntity() {
-    return OAutTokenEntity(
+  OAuthTokenEntity toEntity() {
+    return OAuthTokenEntity(
       accessToken: accessToken,
       issuedAt: DateTime.now(),
       refreshToken: refreshToken,
@@ -87,23 +87,21 @@ abstract class OAutTokenModel with _$OAutTokenModel {
   }
 }
 
-typedef OAuthTokenModel = OAutTokenModel;
-
 @freezed
-abstract class OAutTokenEntity with _$OAutTokenEntity {
-  const factory OAutTokenEntity({
+abstract class OAuthTokenEntity with _$OAuthTokenEntity {
+  const factory OAuthTokenEntity({
     required String accessToken,
     required DateTime issuedAt,
     String? refreshToken,
     int? expiresIn,
     String? tokenType,
     List<String>? scopes,
-  }) = _OAutTokenEntity;
+  }) = _OAuthTokenEntity;
 
-  const OAutTokenEntity._();
+  const OAuthTokenEntity._();
 
-  factory OAutTokenEntity.fromJson(Map<String, dynamic> json) =>
-      _$OAutTokenEntityFromJson(json);
+  factory OAuthTokenEntity.fromJson(Map<String, dynamic> json) =>
+      _$OAuthTokenEntityFromJson(json);
 
   /// Returns true if the stored OAuth token is expired or unavailable.
   bool get isOAuthTokenExpired {
@@ -120,10 +118,10 @@ abstract class OAutTokenEntity with _$OAutTokenEntity {
   bool get needsOAuthTokenRefresh =>
       isOAuthTokenExpired && refreshToken != null;
 
-  Future<OAutTokenEntity> copyCryptor(
+  Future<OAuthTokenEntity> copyCryptor(
     Future<String> Function(String) encryptor,
   ) async {
-    return OAutTokenEntity(
+    return OAuthTokenEntity(
       accessToken: await encryptor(accessToken),
       issuedAt: issuedAt,
       refreshToken: refreshToken != null
@@ -142,7 +140,7 @@ sealed class McpAuthenticationType with _$McpAuthenticationType {
   const factory McpAuthenticationType.none() = McpAuthenticationTypeNone;
 
   const factory McpAuthenticationType.oauth({
-    required OAutTokenEntity token,
+    required OAuthTokenEntity token,
     required String clientId,
     required String authorizationEndpoint,
     required String tokenEndpoint,
