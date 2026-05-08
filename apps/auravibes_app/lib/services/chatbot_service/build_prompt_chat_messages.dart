@@ -39,7 +39,7 @@ class BuildPromptChatMessages {
     ];
 
     return [
-      ChatMessage.model('', parts: parts),
+      if (parts.isNotEmpty) ChatMessage.model('', parts: parts),
       if (resultParts.isNotEmpty) ChatMessage.user('', parts: resultParts),
     ];
   }
