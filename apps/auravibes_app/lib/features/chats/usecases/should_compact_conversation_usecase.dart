@@ -79,10 +79,19 @@ class ShouldCompactConversationUsecase {
     final usagePercentage = estimate.usagePercentage ?? 0;
     final remainingTokens = estimate.remainingTokens ?? 0;
 
+    final effectiveRemainingThreshold =
+        settings.remainingTokenThreshold ==
+            CompactionSettings.defaults.remainingTokenThreshold
+        ? CompactionSettings.defaultRemainingTokenThreshold(
+            maxOutputTokens: maxOutputTokens,
+            contextLimit: contextLimit,
+          )
+        : settings.remainingTokenThreshold;
+
     final meetsUsageThreshold =
         usagePercentage >= settings.usagePercentageThreshold;
     final meetsRemainingThreshold =
-        remainingTokens <= settings.remainingTokenThreshold;
+        remainingTokens <= effectiveRemainingThreshold;
 
     if (meetsUsageThreshold || meetsRemainingThreshold) {
       return CompactionDecision(

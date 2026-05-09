@@ -8,7 +8,7 @@ AuraVibes can support both auto and manual conversation compaction. The practica
 
 1. Keep the full visible conversation in Drift.
 2. Add a compacted summary message/metadata that affects only the prompt sent to the model.
-3. Auto-compact before each assistant continuation when context usage crosses both a percentage threshold and a remaining-token floor.
+3. Auto-compact before each assistant continuation when context usage crosses either the percentage threshold or the remaining-token floor (OR logic — triggers when either condition is met).
 4. Manual compact from the chat input/context controls should call the same compaction use case.
 5. Never split unresolved assistant tool calls from their tool results.
 
@@ -16,17 +16,17 @@ This matches the direction used by current agents: Cline, Goose, Kiro, OpenHands
 
 ## External Findings
 
-| Agent | Auto compaction | Manual compaction | Trigger model | Notes |
-| --- | --- | --- | --- | --- |
-| Cline | Yes | Not documented as primary user command in reviewed page | Near context limit; context management docs say around 80% | Summarizes conversation, replaces active history with summary, shows summarization tool call/cost, falls back to rule-based truncation for unsupported models. |
-| Goose | Yes | Desktop `Compact now`; CLI `/summarize` | Default 80%; configurable with `GOOSE_AUTO_COMPACT_THRESHOLD`; `0.0` disables | Two-tier strategy: proactive compaction, then fallback context strategy. Desktop uses summarization only; CLI can summarize/truncate/clear/prompt. |
-| Kiro | Yes | Not found in reviewed doc | 80% context usage | Chat panel context meter shows usage; Kiro automatically summarizes when usage reaches 80%. |
-| OpenHands | Yes | API condensation request | Event-count condenser defaults, e.g. max 120 events to target 60 in reviewed docs | Rolling condenser keeps initial events and recent tail, summarizes middle into condensation event. |
-| Continue CLI | Yes in CLI source per subagent research | `/compact` | Computed remaining-token gap, not only percent | Stores `conversationSummary`; prompt history becomes system/context plus compacted summary and recent messages. |
-| Aider | Yes | Mostly `/clear`, `/drop`, token/history controls | Soft `--max-chat-history-tokens`; default model-derived | Uses weak model for chat-history summarization; exposes token and history knobs. |
-| Roo Code | Yes if enabled | Likely UI/manual condense, source confirms condense pipeline | Configurable percent, valid range 5-100, plus token buffer | Non-destructive tagging model; fallback sliding-window truncation. |
-| Claude Code | Long-session compaction documented | `/compact` | Exact auto threshold not confirmed from official source | Documents what survives compaction; path-scoped rules can be lost until re-read. |
-| OpenAI Codex CLI | Yes | Manual compact operation | Model/config catalog token limit | Has pre-turn and mid-turn compaction paths; can compact after tool results before follow-up sampling. |
+| Agent            | Auto compaction                         | Manual compaction                                            | Trigger model                                                                     | Notes                                                                                                                                                          |
+| ---------------- | --------------------------------------- | ------------------------------------------------------------ | --------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Cline            | Yes                                     | Not documented as primary user command in reviewed page      | Near context limit; context management docs say around 80%                        | Summarizes conversation, replaces active history with summary, shows summarization tool call/cost, falls back to rule-based truncation for unsupported models. |
+| Goose            | Yes                                     | Desktop `Compact now`; CLI `/summarize`                      | Default 80%; configurable with `GOOSE_AUTO_COMPACT_THRESHOLD`; `0.0` disables     | Two-tier strategy: proactive compaction, then fallback context strategy. Desktop uses summarization only; CLI can summarize/truncate/clear/prompt.             |
+| Kiro             | Yes                                     | Not found in reviewed doc                                    | 80% context usage                                                                 | Chat panel context meter shows usage; Kiro automatically summarizes when usage reaches 80%.                                                                    |
+| OpenHands        | Yes                                     | API condensation request                                     | Event-count condenser defaults, e.g. max 120 events to target 60 in reviewed docs | Rolling condenser keeps initial events and recent tail, summarizes middle into condensation event.                                                             |
+| Continue CLI     | Yes in CLI source per subagent research | `/compact`                                                   | Computed remaining-token gap, not only percent                                    | Stores `conversationSummary`; prompt history becomes system/context plus compacted summary and recent messages.                                                |
+| Aider            | Yes                                     | Mostly `/clear`, `/drop`, token/history controls             | Soft `--max-chat-history-tokens`; default model-derived                           | Uses weak model for chat-history summarization; exposes token and history knobs.                                                                               |
+| Roo Code         | Yes if enabled                          | Likely UI/manual condense, source confirms condense pipeline | Configurable percent, valid range 5-100, plus token buffer                        | Non-destructive tagging model; fallback sliding-window truncation.                                                                                             |
+| Claude Code      | Long-session compaction documented      | `/compact`                                                   | Exact auto threshold not confirmed from official source                           | Documents what survives compaction; path-scoped rules can be lost until re-read.                                                                               |
+| OpenAI Codex CLI | Yes                                     | Manual compact operation                                     | Model/config catalog token limit                                                  | Has pre-turn and mid-turn compaction paths; can compact after tool results before follow-up sampling.                                                          |
 
 ## Source Notes
 
@@ -70,7 +70,7 @@ Auto compaction:
 
 - Check before every assistant continuation, after tools have finished if applicable, and before `BuildPromptChatMessages`.
 - Run only when no unresolved tool approvals/tool calls are pending.
-- Trigger when both conditions are true:
+- Trigger when either condition is true (OR logic):
   - used context percent is at or above a threshold, recommended default `80%`;
   - remaining context is below a safety gap, recommended default `max(maxOutputTokens, 20% of contextLimit)` capped around `15000` tokens.
 - If provider returns a context-overflow error, compact and retry once if the conversation state is still safe.
@@ -92,7 +92,9 @@ Prompt behavior after compaction:
 
 ## What Can Be Developed In AuraVibes
 
-Can build without Drift schema migration:
+> **Note (May 2026):** Schema v2 with a dedicated `workspace_compaction_settings` table was implemented in PR #306. Most items below the first two sections have been delivered; sections are retained as historical design notes.
+
+Implemented without schema migration (historical snapshot — since implemented):
 
 - A `CompactConversationUsecase` under `features/chats/usecases/`.
 - A `ShouldCompactConversationUsecase` or policy class using selected model context limit and prompt-token estimates.
@@ -116,12 +118,12 @@ Can build with small app-layer changes:
 - Extend context usage provider to report estimated prompt usage instead of only latest provider usage.
 - Add retry-on-context-overflow in `ContinueAgentUsecase`.
 
-Can build later with schema migration:
+Implemented with schema migration (PR #306):
 
-- Dedicated `conversation_compactions` table for summaries, covered message ranges, token estimates, and audit data.
-- Conversation-level compacted-through pointer.
-- Multiple summary revisions with rollback.
-- User-visible compaction history/checkpoints.
+- ~~Dedicated `conversation_compactions` table~~ → Delivered as `workspace_compaction_settings` table (schema v2) with per-workspace override columns (autoCompactEnabled, usagePercentageThreshold, remainingTokenThreshold).
+- ~~Conversation-level compacted-through pointer~~ → Delivered via `compactedThroughMessageId` in message metadata.
+- Multiple summary revisions with rollback (future enhancement).
+- User-visible compaction history/checkpoints (future enhancement).
 
 ## What Cannot Or Should Not Be Developed Yet
 

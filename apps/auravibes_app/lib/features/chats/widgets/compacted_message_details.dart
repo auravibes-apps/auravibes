@@ -1,6 +1,7 @@
 import 'package:auravibes_app/domain/entities/messages.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/utils/relative_time_formatter.dart';
+import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -26,9 +27,9 @@ class CompactedMessageDetails extends StatelessWidget {
       child: AuraColumn(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            LocaleKeys.compaction_compacted_details_title.tr(),
-            style: const TextStyle(
+          const TextLocale(
+            LocaleKeys.compaction_compacted_details_title,
+            style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 18,
             ),
@@ -38,7 +39,8 @@ class CompactedMessageDetails extends StatelessWidget {
             label: LocaleKeys.compaction_compacted_details_origin.tr(),
             value: originLabel,
           ),
-          if (metadata?.compactedFromMessageId != null)
+          if (metadata?.compactedFromMessageId != null &&
+              metadata?.compactedThroughMessageId != null)
             _DetailRow(
               label: LocaleKeys.compaction_compacted_details_range.tr(),
               value:
@@ -58,8 +60,8 @@ class CompactedMessageDetails extends StatelessWidget {
             value: '${metadata?.compactedMessageIds.length ?? 0}',
           ),
           SizedBox(height: context.auraTheme.spacing.md),
-          Text(
-            LocaleKeys.compaction_compacted_details_content_label.tr(),
+          TextLocale(
+            LocaleKeys.compaction_compacted_details_content_label,
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: auraColors.onSurfaceVariant,

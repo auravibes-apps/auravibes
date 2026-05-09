@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:auravibes_app/domain/entities/compaction.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -5,8 +7,15 @@ part 'compaction_providers.g.dart';
 
 @Riverpod(keepAlive: true)
 class CompactionExecution extends _$CompactionExecution {
+  final Map<String, Timer> _cleanupTimers = {};
+
   @override
   Map<String, CompactionExecutionState> build() {
+    ref.onDispose(() {
+      for (final timer in _cleanupTimers.values) {
+        timer.cancel();
+      }
+    });
     return {};
   }
 
@@ -30,14 +39,20 @@ class CompactionExecution extends _$CompactionExecution {
       ),
     };
 
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (state[conversationId]?.status == CompactionExecutionStatus.success) {
-        state = {
-          for (final entry in state.entries)
-            if (entry.key != conversationId) entry.key: entry.value,
-        };
-      }
-    });
+    _cleanupTimers[conversationId]?.cancel();
+    _cleanupTimers[conversationId] = Timer(
+      const Duration(milliseconds: 500),
+      () {
+        if (state[conversationId]?.status ==
+            CompactionExecutionStatus.success) {
+          state = {
+            for (final entry in state.entries)
+              if (entry.key != conversationId) entry.key: entry.value,
+          };
+        }
+        _cleanupTimers.remove(conversationId);
+      },
+    );
   }
 
   void markFailure(String conversationId) {
@@ -51,14 +66,20 @@ class CompactionExecution extends _$CompactionExecution {
       ),
     };
 
-    Future.delayed(const Duration(seconds: 3), () {
-      if (state[conversationId]?.status == CompactionExecutionStatus.failure) {
-        state = {
-          for (final entry in state.entries)
-            if (entry.key != conversationId) entry.key: entry.value,
-        };
-      }
-    });
+    _cleanupTimers[conversationId]?.cancel();
+    _cleanupTimers[conversationId] = Timer(
+      const Duration(seconds: 3),
+      () {
+        if (state[conversationId]?.status ==
+            CompactionExecutionStatus.failure) {
+          state = {
+            for (final entry in state.entries)
+              if (entry.key != conversationId) entry.key: entry.value,
+          };
+        }
+        _cleanupTimers.remove(conversationId);
+      },
+    );
   }
 
   bool isCompacting(String conversationId) {

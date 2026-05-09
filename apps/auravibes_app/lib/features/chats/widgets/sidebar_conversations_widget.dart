@@ -282,11 +282,11 @@ class _CompactingRow extends ConsumerWidget {
         horizontal: context.auraTheme.spacing.sm,
         vertical: context.auraTheme.spacing.xs,
       ),
-      child: AuraTile(
+      child: const AuraTile(
         variant: AuraTileVariant.ghost,
         size: AuraTileSize.small,
-        onTap: () {},
-        leading: const Padding(
+        onTap: null,
+        leading: Padding(
           padding: EdgeInsets.all(4),
           child: SizedBox(
             width: 16,
@@ -294,7 +294,7 @@ class _CompactingRow extends ConsumerWidget {
             child: AuraSpinner(),
           ),
         ),
-        child: const AuraText(
+        child: AuraText(
           style: AuraTextStyle.bodySmall,
           color: AuraColorVariant.onSurfaceVariant,
           child: TextLocale(

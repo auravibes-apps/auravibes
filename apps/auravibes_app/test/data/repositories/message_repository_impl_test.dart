@@ -486,7 +486,7 @@ void main() {
           compactedMessageIds: ['msg-1', 'msg-2'],
         ).toJson();
 
-        await repository.createMessage(
+        final created = await repository.createMessage(
           MessageToCreate(
             conversationId: 'conv-1',
             content: 'Compaction summary content',
@@ -495,6 +495,10 @@ void main() {
             status: MessageStatus.sending,
             metadata: jsonEncode(compactionMetadata),
           ),
+        );
+        await repository.patchMessage(
+          created.id,
+          const MessagePatch(status: MessageStatus.sent),
         );
 
         final summary = await repository.getLatestCompactionSummary('conv-1');

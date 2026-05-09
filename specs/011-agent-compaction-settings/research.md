@@ -15,12 +15,12 @@
 
 **Decision**: Persist compaction settings as global app preferences containing auto-enabled state, usage percentage threshold, remaining-token threshold, and reset-to-default behavior.
 
-**Rationale**: The clarified spec requires a dedicated settings section and global defaults. Shared preferences match the current no-schema-change constraint and avoid per-conversation/per-model complexity until there is a concrete use case.
+**Rationale**: The clarified spec requires a dedicated settings section and per-workspace defaults stored in Drift. Storing settings per workspace in the database avoids per-conversation/per-model complexity while allowing workspace-scoped configuration without requiring shared preferences for non-global data.
 
 **Alternatives considered**:
 
 - Per-model settings: more precise, but adds UI and migration complexity beyond MVP.
-- Drift settings table: more queryable, but unnecessary for global preferences and would add migration work.
+- SharedPreferences: simpler to implement, but does not support per-workspace scoping and adds a second persistence surface beyond Drift.
 
 ## Decision: Use deterministic thresholds for auto eligibility
 

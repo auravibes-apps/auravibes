@@ -131,7 +131,9 @@ class _CompactionSettingsSectionState
               AuraButton(
                 size: AuraButtonSize.small,
                 onPressed: _save,
-                child: Text(LocaleKeys.settings_screen_actions_save.tr()),
+                child: const TextLocale(
+                  LocaleKeys.settings_screen_actions_save,
+                ),
               ),
             ],
           ),
@@ -186,7 +188,7 @@ class _CompactionSettingsSectionState
     } on Exception {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: TextLocale(LocaleKeys.compaction_settings_reset_error),
           ),
         );

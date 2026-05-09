@@ -104,7 +104,7 @@ As a user, I want a dedicated compaction settings section where I can modify aut
 - **FR-002**: The system MUST evaluate auto compaction before each assistant continuation when the conversation is not waiting on unresolved tool approval or tool execution state.
 - **FR-003**: The system MUST support a configurable usage percentage threshold for auto compaction.
 - **FR-004**: The system MUST support a configurable remaining-token threshold for auto compaction.
-- **FR-005**: The system MUST require auto compaction to satisfy both configured percentage and remaining-token threshold conditions before compacting automatically.
+- **FR-005**: The system MUST require auto compaction to satisfy either the configured percentage threshold or the configured remaining-token threshold before compacting automatically (OR logic).
 - **FR-006**: The system MUST expose a dedicated compaction section in settings where users can enable or disable auto compaction and change compaction thresholds.
 - **FR-007**: The system MUST persist compaction settings so they continue to apply after app restart.
 - **FR-008**: The system MUST validate compaction settings before saving and reject invalid percentage or token values.

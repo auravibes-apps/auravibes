@@ -24,10 +24,6 @@ void main() {
       expect(settings.updatedAt, isNull);
     });
 
-    test('defaults constant matches default constructor', () {
-      expect(CompactionSettings.defaults, CompactionSettings.defaults);
-    });
-
     test(
       'defaultRemainingTokenThreshold returns 2000 for null contextLimit',
       () {

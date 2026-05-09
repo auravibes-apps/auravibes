@@ -73,7 +73,7 @@ class ChatInputWidget extends HookConsumerWidget {
                   message: LocaleKeys.compaction_manual_button_tooltip.tr(),
                   child: AuraButton(
                     onPressed: compact,
-                    disabled: isBusy || isCompacting,
+                    disabled: disabled || isBusy || isCompacting,
                     variant: AuraButtonVariant.secondary,
                     size: AuraButtonSize.small,
                     child: isCompacting

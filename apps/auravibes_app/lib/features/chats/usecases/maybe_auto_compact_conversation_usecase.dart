@@ -9,6 +9,8 @@ import 'package:auravibes_app/features/models/providers/api_model_repository_pro
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
 import 'package:riverpod/riverpod.dart';
 
+const _kDefaultMaxOutputTokens = 4096;
+
 class MaybeAutoCompactConversationUsecase {
   const MaybeAutoCompactConversationUsecase({
     required this.conversationRepository,
@@ -47,7 +49,7 @@ class MaybeAutoCompactConversationUsecase {
       workspaceId: conversation.workspaceId,
       selectedModelId: foundModel.workspaceModelSelection.modelId,
       selectedProviderId: foundModel.modelsProvider.id,
-      maxOutputTokens: apiModel?.limitOutput ?? 4096,
+      maxOutputTokens: apiModel?.limitOutput ?? _kDefaultMaxOutputTokens,
       contextLimit: apiModel?.limitContext,
     );
 

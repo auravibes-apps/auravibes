@@ -47,7 +47,6 @@ class SelectCompactionRangeUsecase {
 
     final tailStart = lastUserIndex;
 
-    final safeStart = tailStart;
     for (var i = tailStart; i >= 0; i--) {
       if (!messages[i].isUser) {
         final toolCalls = messages[i].metadata?.toolCalls;
@@ -56,16 +55,13 @@ class SelectCompactionRangeUsecase {
           if (hasUnresolved) {
             throw const CompactionUnsafeException();
           }
-
-          // Tool call results live inside the same MessageToolCallEntity
-          // as the call itself — no need to scan for matching IDs.
         }
       }
 
       if (messages[i].isUser && i != tailStart) break;
     }
 
-    return safeStart;
+    return tailStart;
   }
 
   List<MessageEntity> _excludeUnsafeMessages(List<MessageEntity> messages) {

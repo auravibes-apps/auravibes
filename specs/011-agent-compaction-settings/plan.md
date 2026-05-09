@@ -18,7 +18,7 @@ Add automatic and manual conversation compaction for long-running AuraVibes agen
 **Target Platform**: Flutter app targets supported by `apps/auravibes_app`  
 **Project Type**: Flutter monorepo mobile/desktop app feature  
 **Performance Goals**: Avoid duplicated compacted context in 100% of prompt payload tests; retry context-overflow continuations at most once; keep compaction prompt-building work bounded to conversation message count  
-**Constraints**: No destructive transcript deletion; no Drift schema migration for MVP; no compaction while unresolved tool approvals/tool calls are pending; all user-facing strings localized; compaction business logic in use cases; active compaction uses explicit mutation/busy state  
+**Constraints**: No destructive transcript deletion; Drift schema v2 migration for workspace_compaction_settings table; no compaction while unresolved tool approvals/tool calls are pending; all user-facing strings localized; compaction business logic in use cases; active compaction uses explicit mutation/busy state  
 **Scale/Scope**: One app feature in `apps/auravibes_app`; global settings section; message metadata extension; prompt-building, assistant-continuation, chat-input, conversation-list, and chat-transcript integration points
 
 ## Constitution Check
