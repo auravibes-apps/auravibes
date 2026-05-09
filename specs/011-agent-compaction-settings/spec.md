@@ -9,7 +9,7 @@
 
 ### Session 2026-05-02
 
-- Q: How should compaction summary messages appear in the chat transcript? → A: Hidden from normal chat view, used only for prompt context and metadata.
+- Q: How should compaction summary messages appear in the chat transcript? → A: Show a visible Compacted widget in chat history that can be tapped to open compaction details.
 - Q: What default remaining-token threshold should auto compaction use? → A: Dynamic safety gap: `max(maxOutputTokens, 20% of context limit)`, capped at 15,000 tokens.
 - Q: When manual compaction succeeds, should the app immediately ask the assistant to continue? → A: No, manual compaction only creates a checkpoint and waits for the next user action.
 - Q: If automatic compaction fails before an assistant continuation, what should happen? → A: Block assistant continuation and show a recoverable error.
@@ -38,7 +38,7 @@ As a user running a long AI agent conversation, I want the app to automatically 
 
 **Acceptance Scenarios**:
 
-1. **Given** auto compaction is enabled and a conversation exceeds the configured percentage threshold and remaining-token threshold, **When** the user sends a message or the agent prepares its next response, **Then** the app compacts eligible prior context before the assistant response is requested.
+1. **Given** auto compaction is enabled and a conversation exceeds the configured percentage threshold or remaining-token threshold, **When** the user sends a message or the agent prepares its next response, **Then** the app compacts eligible prior context before the assistant response is requested.
 2. **Given** a conversation is below either configured threshold, **When** the user sends a message, **Then** the app does not compact automatically.
 3. **Given** a conversation has pending tool approvals or unresolved tool calls, **When** the conversation exceeds the configured threshold, **Then** auto compaction waits until the tool state is resolved before compacting.
 4. **Given** auto or manual compaction starts, **When** the user views the conversation list, **Then** the app shows a separate temporary Compacting row with tool-style loading until compaction completes.

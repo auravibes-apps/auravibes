@@ -12,6 +12,8 @@ MessageEntity _makeMessage({
   String content = '',
   bool isUser = true,
   MessageMetadataEntity? metadata,
+  DateTime? createdAt,
+  DateTime? updatedAt,
 }) {
   return MessageEntity(
     id: id,
@@ -21,8 +23,8 @@ MessageEntity _makeMessage({
     isUser: isUser,
     status: MessageStatus.sent,
     metadata: metadata,
-    createdAt: DateTime(2026),
-    updatedAt: DateTime(2026),
+    createdAt: createdAt ?? DateTime(2026),
+    updatedAt: updatedAt ?? DateTime(2026),
   );
 }
 

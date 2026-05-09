@@ -13,7 +13,7 @@ Add automatic and manual conversation compaction for long-running AuraVibes agen
 
 **Language/Version**: Dart 3.11+ / Flutter 3.41.4+ via repository-pinned FVM SDK  
 **Primary Dependencies**: Flutter SDK, hooks_riverpod/Riverpod 3 with code generation, Drift, Freezed/json_serializable, auravibes_ui, dartantic_ai / existing AI agent service  
-**Storage**: Existing Drift SQLite `messages` metadata JSON for compaction summaries and ranges; shared preferences for global compaction settings  
+**Storage**: Existing Drift SQLite `messages` metadata JSON for compaction summaries and ranges; Drift v2 `workspace_compaction_settings` table for per-workspace compaction settings  
 **Testing**: `fvm flutter test` for focused package tests; `fvm dart run melos analyze`, `fvm dart run melos format`, `fvm dart run melos run test`, `fvm dart run melos run validate:quick` for workspace checks  
 **Target Platform**: Flutter app targets supported by `apps/auravibes_app`  
 **Project Type**: Flutter monorepo mobile/desktop app feature  

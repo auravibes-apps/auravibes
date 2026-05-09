@@ -100,6 +100,15 @@ void main() {
         ),
       );
 
+      final captured =
+          verify(
+                () => mockDao.upsert('ws-1', captureAny()),
+              ).captured.single
+              as WorkspaceCompactionSettingsCompanion;
+      expect(captured.autoCompactEnabled.value, isFalse);
+      expect(captured.usagePercentageThreshold.value, 90);
+      expect(captured.remainingTokenThreshold.value, 5000);
+
       expect(settings.autoCompactionEnabled, isFalse);
       expect(settings.usagePercentageThreshold, 90);
       expect(settings.remainingTokenThreshold, 5000);

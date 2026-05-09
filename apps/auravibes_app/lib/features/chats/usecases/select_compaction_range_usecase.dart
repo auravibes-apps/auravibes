@@ -28,15 +28,21 @@ class SelectCompactionRangeUsecase {
   }
 
   int _findSafeTailStart(List<MessageEntity> messages) {
+    final tailStart = _findTailStart(messages);
+    if (tailStart <= 0) return 0;
+    _validateTailSafety(messages, tailStart);
+    return tailStart;
+  }
+
+  int _findTailStart(List<MessageEntity> messages) {
     var lastUserIndex = -1;
     var lastAssistantIndex = -1;
 
     for (var i = messages.length - 1; i >= 0; i--) {
-      if (messages[i].isUser && lastUserIndex == -1) {
-        lastUserIndex = i;
-      }
-      if (!messages[i].isUser &&
-          messages[i].messageType == MessageType.text &&
+      final m = messages[i];
+      if (m.isUser && lastUserIndex == -1) lastUserIndex = i;
+      if (!m.isUser &&
+          m.messageType == MessageType.text &&
           lastAssistantIndex == -1) {
         lastAssistantIndex = i;
       }
@@ -44,9 +50,10 @@ class SelectCompactionRangeUsecase {
     }
 
     if (lastUserIndex == -1 || lastAssistantIndex == -1) return 0;
+    return lastUserIndex;
+  }
 
-    final tailStart = lastUserIndex;
-
+  void _validateTailSafety(List<MessageEntity> messages, int tailStart) {
     for (var i = tailStart; i >= 0; i--) {
       if (!messages[i].isUser) {
         final toolCalls = messages[i].metadata?.toolCalls;
@@ -60,32 +67,35 @@ class SelectCompactionRangeUsecase {
 
       if (messages[i].isUser && i != tailStart) break;
     }
-
-    return tailStart;
   }
 
   List<MessageEntity> _excludeUnsafeMessages(List<MessageEntity> messages) {
-    return messages.where((m) {
-      if (m.status == MessageStatus.error) return false;
-      if (m.status == MessageStatus.sending) return false;
-      if (m.status == MessageStatus.unfinished) return false;
-
-      if (!m.isUser) {
-        final toolCalls = m.metadata?.toolCalls;
-        if (toolCalls != null) {
-          final hasPendingApproval = toolCalls.any((tc) => tc.isPending);
-          if (hasPendingApproval) return false;
-        }
-      }
-
-      if (m.messageType == MessageType.system &&
-          m.metadata?.isCompactionSummary == true) {
-        return false;
-      }
-
-      return true;
-    }).toList();
+    return messages.where(_isSafeToCompact).toList();
   }
+
+  bool _isSafeToCompact(MessageEntity m) {
+    if (_hasErrorStatus(m)) return false;
+    if (_hasUnfinishedStatus(m)) return false;
+    if (_hasPendingToolApproval(m)) return false;
+    if (_isCompactionSummary(m)) return false;
+    return true;
+  }
+
+  static bool _hasErrorStatus(MessageEntity m) =>
+      m.status == MessageStatus.error;
+
+  static bool _hasUnfinishedStatus(MessageEntity m) =>
+      m.status == MessageStatus.sending || m.status == MessageStatus.unfinished;
+
+  static bool _hasPendingToolApproval(MessageEntity m) {
+    if (m.isUser) return false;
+    final toolCalls = m.metadata?.toolCalls;
+    return toolCalls != null && toolCalls.any((tc) => tc.isPending);
+  }
+
+  static bool _isCompactionSummary(MessageEntity m) =>
+      m.messageType == MessageType.system &&
+      m.metadata?.isCompactionSummary == true;
 }
 
 final selectCompactionRangeUsecaseProvider =

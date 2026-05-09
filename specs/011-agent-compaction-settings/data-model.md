@@ -53,7 +53,7 @@ Result of deterministic policy evaluation.
 
 ### Rules
 
-- Auto compaction requires enabled settings, safe conversation state, usage percentage at or above threshold, and remaining tokens at or below threshold.
+- Auto compaction requires enabled settings, safe conversation state, and either usage percentage at or above threshold or remaining tokens at or below threshold.
 - Manual compaction does not require automatic threshold conditions but still requires enough eligible context and safe conversation state.
 
 ## MessageMetadata (extended)

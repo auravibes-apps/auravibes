@@ -11,9 +11,9 @@
 - Separate compaction table: cleaner separation, but extra migration and query complexity for MVP.
 - In-memory compaction state only: simpler initially, but lost on restart and not inspectable.
 
-## Decision: Store compaction settings globally in shared preferences
+## Decision: Store compaction settings per workspace in Drift
 
-**Decision**: Persist compaction settings as global app preferences containing auto-enabled state, usage percentage threshold, remaining-token threshold, and reset-to-default behavior.
+**Decision**: Persist compaction settings per workspace in the Drift `workspace_compaction_settings` table with nullable override columns (auto-enabled, usage percentage threshold, remaining-token threshold) that reset to defaults when null.
 
 **Rationale**: The clarified spec requires a dedicated settings section and per-workspace defaults stored in Drift. Storing settings per workspace in the database avoids per-conversation/per-model complexity while allowing workspace-scoped configuration without requiring shared preferences for non-global data.
 

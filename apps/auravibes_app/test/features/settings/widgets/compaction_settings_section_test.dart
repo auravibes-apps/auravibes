@@ -115,7 +115,7 @@ void main() {
   });
 
   group('_save', () {
-    testWidgets('shows success snackbar on valid save', (tester) async {
+    testWidgets('calls save usecase with parsed thresholds', (tester) async {
       when(
         () => mockSave(
           workspaceId: testWorkspaceId,
@@ -190,7 +190,7 @@ void main() {
   });
 
   group('_resetDefaults', () {
-    testWidgets('shows error snackbar when reset fails', (tester) async {
+    testWidgets('calls reset usecase even when it fails', (tester) async {
       when(
         () => mockReset(workspaceId: testWorkspaceId),
       ).thenThrow(Exception('DB error'));

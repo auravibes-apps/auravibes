@@ -52,7 +52,7 @@ fvm dart run melos bs
 ### Auto compaction
 
 1. Enable auto compaction and set thresholds for test trigger.
-2. Send a message that crosses both thresholds.
+2. Send a message that crosses either threshold (usage percentage or remaining-token threshold).
 3. Confirm temporary `Compacting` row appears in conversation list.
 4. Confirm compaction uses the AI agent service with the active conversation provider/model.
 5. Confirm compaction completes before continuation.
