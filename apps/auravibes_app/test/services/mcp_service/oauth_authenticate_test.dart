@@ -357,7 +357,13 @@ void main() {
             codeVerifier: 'verifier',
             redirectUrl: 'auravibes:/',
           ),
-          throwsA(isA<Exception>()),
+          throwsA(
+            isA<Exception>().having(
+              (error) => error.toString(),
+              'message',
+              contains('access_token'),
+            ),
+          ),
         );
       });
     });
