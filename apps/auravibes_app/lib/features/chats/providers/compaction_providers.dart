@@ -42,17 +42,19 @@ class CompactionExecution extends _$CompactionExecution {
     _cleanupTimers[conversationId]?.cancel();
     _cleanupTimers[conversationId] = Timer(
       const Duration(milliseconds: 500),
-      () {
-        if (state[conversationId]?.status ==
-            CompactionExecutionStatus.success) {
-          state = {
-            for (final entry in state.entries)
-              if (entry.key != conversationId) entry.key: entry.value,
-          };
-        }
-        _cleanupTimers.remove(conversationId);
-      },
+      () => markSuccessCleanup(conversationId),
     );
+  }
+
+  /// @visibleForTesting
+  void markSuccessCleanup(String conversationId) {
+    if (state[conversationId]?.status == CompactionExecutionStatus.success) {
+      state = {
+        for (final entry in state.entries)
+          if (entry.key != conversationId) entry.key: entry.value,
+      };
+    }
+    _cleanupTimers.remove(conversationId);
   }
 
   void markFailure(String conversationId) {
@@ -69,17 +71,19 @@ class CompactionExecution extends _$CompactionExecution {
     _cleanupTimers[conversationId]?.cancel();
     _cleanupTimers[conversationId] = Timer(
       const Duration(seconds: 3),
-      () {
-        if (state[conversationId]?.status ==
-            CompactionExecutionStatus.failure) {
-          state = {
-            for (final entry in state.entries)
-              if (entry.key != conversationId) entry.key: entry.value,
-          };
-        }
-        _cleanupTimers.remove(conversationId);
-      },
+      () => markFailureCleanup(conversationId),
     );
+  }
+
+  /// @visibleForTesting
+  void markFailureCleanup(String conversationId) {
+    if (state[conversationId]?.status == CompactionExecutionStatus.failure) {
+      state = {
+        for (final entry in state.entries)
+          if (entry.key != conversationId) entry.key: entry.value,
+      };
+    }
+    _cleanupTimers.remove(conversationId);
   }
 
   bool isCompacting(String conversationId) {

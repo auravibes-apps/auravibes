@@ -180,5 +180,41 @@ void main() {
         returnsNormally,
       );
     });
+
+    test('markSuccessCleanup removes entry when status is success', () {
+      final notifier = container.read(compactionExecutionProvider.notifier);
+
+      notifier.markRunning(
+        CompactionExecutionState(
+          conversationId: 'conv-1',
+          trigger: CompactionTrigger.auto,
+          startedAt: DateTime.now(),
+          status: CompactionExecutionStatus.running,
+        ),
+      );
+
+      notifier.markSuccess('conv-1');
+      notifier.markSuccessCleanup('conv-1');
+
+      expect(container.read(compactionExecutionProvider)['conv-1'], isNull);
+    });
+
+    test('markFailureCleanup removes entry when status is failure', () {
+      final notifier = container.read(compactionExecutionProvider.notifier);
+
+      notifier.markRunning(
+        CompactionExecutionState(
+          conversationId: 'conv-1',
+          trigger: CompactionTrigger.manual,
+          startedAt: DateTime.now(),
+          status: CompactionExecutionStatus.running,
+        ),
+      );
+
+      notifier.markFailure('conv-1');
+      notifier.markFailureCleanup('conv-1');
+
+      expect(container.read(compactionExecutionProvider)['conv-1'], isNull);
+    });
   });
 }
