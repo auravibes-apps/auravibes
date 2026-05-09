@@ -61,7 +61,7 @@ melos:
       description: Run tests for all packages with coverage
 
     test:ci:
-      exec: flutter test --coverage --reporter=compact -P ci
+      exec: flutter test --coverage --concurrency=2 --timeout=30s --reporter=compact
       packageFilters:
         dirExists: test
       description: Run tests in CI mode (coverage + optimized settings)

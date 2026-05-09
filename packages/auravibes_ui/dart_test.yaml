@@ -1,11 +1,5 @@
-# Disable chained stack traces for faster async test execution.
-# Trade-off: stack traces are less detailed but tests run faster.
 chain_stack_traces: false
-
-# Default concurrency for local development.
-# Adjust up/down based on your machine's CPU cores.
 concurrency: 8
-
 timeout: 30s
 
 tags:
