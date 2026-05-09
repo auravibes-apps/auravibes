@@ -47,7 +47,7 @@ final class CompactionExecutionProvider
 }
 
 String _$compactionExecutionHash() =>
-    r'c813404a6f9f43987074f3d00e9032bf8517f8f9';
+    r'a9a3b71b7a74daf93ad0e98dbcce5ca46b79a84d';
 
 abstract class _$CompactionExecution
     extends $Notifier<Map<String, CompactionExecutionState>> {
