@@ -87,6 +87,116 @@ void main() {
       expect(response.body, 'Server Error');
     });
 
+    test('reads streamed DioException response data', () async {
+      final adapter = _FakeHttpClientAdapter(
+        onFetch: (options, _, _) async {
+          throw DioException(
+            requestOptions: RequestOptions(path: options.path),
+            response: Response(
+              requestOptions: RequestOptions(),
+              statusCode: 404,
+              data: ResponseBody.fromString('Not Found', 404),
+            ),
+            type: DioExceptionType.badResponse,
+          );
+        },
+      );
+      final dio = Dio()..httpClientAdapter = adapter;
+      final service = UrlService(dio: dio);
+
+      final response = await service
+          .execute(const UrlRequest(url: 'https://example.com/missing'))
+          .value;
+
+      expect(response.statusCode, 404);
+      expect(response.body, 'Not Found');
+      expect(response.body, isNot(contains('ResponseBody')));
+    });
+
+    test('decodes byte list DioException response data', () async {
+      final adapter = _FakeHttpClientAdapter(
+        onFetch: (options, _, _) async {
+          throw DioException(
+            requestOptions: RequestOptions(path: options.path),
+            response: Response(
+              requestOptions: RequestOptions(),
+              statusCode: 400,
+              data: 'Bad Request'.codeUnits,
+            ),
+            type: DioExceptionType.badResponse,
+          );
+        },
+      );
+      final dio = Dio()..httpClientAdapter = adapter;
+      final service = UrlService(dio: dio);
+
+      final response = await service
+          .execute(const UrlRequest(url: 'https://example.com/bad'))
+          .value;
+
+      expect(response.statusCode, 400);
+      expect(response.body, 'Bad Request');
+    });
+
+    test('truncates byte list DioException response data', () async {
+      final data = Uint8List(1024 * 1024 + 100)
+        ..fillRange(0, 1024 * 1024 + 100, 120);
+      final adapter = _FakeHttpClientAdapter(
+        onFetch: (options, _, _) async {
+          throw DioException(
+            requestOptions: RequestOptions(path: options.path),
+            response: Response(
+              requestOptions: RequestOptions(),
+              statusCode: 500,
+              data: data,
+            ),
+            type: DioExceptionType.badResponse,
+          );
+        },
+      );
+      final dio = Dio()..httpClientAdapter = adapter;
+      final service = UrlService(dio: dio);
+
+      final response = await service
+          .execute(const UrlRequest(url: 'https://example.com/large'))
+          .value;
+
+      expect(response.body, contains('[truncated]'));
+      expect(response.body.length, lessThan(data.length));
+    });
+
+    test(
+      'falls back to DioException message when error stream fails',
+      () async {
+        final adapter = _FakeHttpClientAdapter(
+          onFetch: (options, _, _) async {
+            throw DioException(
+              requestOptions: RequestOptions(path: options.path),
+              response: Response(
+                requestOptions: RequestOptions(),
+                statusCode: 502,
+                data: ResponseBody(
+                  Stream<Uint8List>.error(StateError('stream failed')),
+                  502,
+                ),
+              ),
+              message: 'Bad gateway',
+              type: DioExceptionType.badResponse,
+            );
+          },
+        );
+        final dio = Dio()..httpClientAdapter = adapter;
+        final service = UrlService(dio: dio);
+
+        final response = await service
+            .execute(const UrlRequest(url: 'https://example.com/bad-gateway'))
+            .value;
+
+        expect(response.statusCode, 502);
+        expect(response.body, 'Bad gateway');
+      },
+    );
+
     test('truncates large DioException response data', () async {
       final largeBody = 'x' * (1024 * 1024 + 100);
       final adapter = _FakeHttpClientAdapter(
@@ -113,11 +223,35 @@ void main() {
       expect(response.body.length, lessThan(largeBody.length));
     });
 
-    test('handles DioException without response', () async {
+    test(
+      'handles DioException without response and with request path',
+      () async {
+        final adapter = _FakeHttpClientAdapter(
+          onFetch: (options, _, _) async {
+            throw DioException(
+              requestOptions: RequestOptions(path: options.path),
+              message: 'Connection refused',
+              type: DioExceptionType.connectionError,
+            );
+          },
+        );
+        final dio = Dio()..httpClientAdapter = adapter;
+        final service = UrlService(dio: dio);
+
+        final response = await service
+            .execute(const UrlRequest(url: 'https://example.com'))
+            .value;
+
+        expect(response.statusCode, 0);
+        expect(response.body, contains('Connection refused'));
+      },
+    );
+
+    test('handles DioException without response or request path', () async {
       final adapter = _FakeHttpClientAdapter(
         onFetch: (options, _, _) async {
           throw DioException(
-            requestOptions: RequestOptions(path: options.path),
+            requestOptions: RequestOptions(),
             message: 'Connection refused',
             type: DioExceptionType.connectionError,
           );
@@ -134,13 +268,10 @@ void main() {
       expect(response.body, contains('Connection refused'));
     });
 
-    test('rethrows non-Dio exceptions as DioException', () async {
+    test('handles adapter errors wrapped by Dio', () async {
       final adapter = _FakeHttpClientAdapter(
         onFetch: (options, _, _) async {
-          throw DioException(
-            requestOptions: RequestOptions(path: options.path),
-            error: StateError('unexpected'),
-          );
+          throw StateError('unexpected');
         },
       );
       final dio = Dio()..httpClientAdapter = adapter;
@@ -243,6 +374,29 @@ void main() {
 
       expect(response.body, contains('[truncated]'));
       expect(response.body.length, lessThanOrEqualTo(1024 * 1024 + 50));
+    });
+
+    test('truncates response body after exact limit chunk', () async {
+      final adapter = _FakeHttpClientAdapter(
+        onFetch: (options, _, _) async {
+          return ResponseBody(
+            Stream<Uint8List>.fromIterable([
+              Uint8List(1024 * 1024)..fillRange(0, 1024 * 1024, 120),
+              Uint8List.fromList('overflow'.codeUnits),
+            ]),
+            200,
+          );
+        },
+      );
+      final dio = Dio()..httpClientAdapter = adapter;
+      final service = UrlService(dio: dio);
+
+      final response = await service
+          .execute(const UrlRequest(url: 'https://example.com'))
+          .value;
+
+      expect(response.body, contains('[truncated]'));
+      expect(response.body, isNot(contains('overflow')));
     });
 
     test('includes elapsed duration in response', () async {

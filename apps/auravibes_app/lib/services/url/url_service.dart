@@ -12,6 +12,7 @@ class UrlService {
   final Dio _dio;
 
   static const int _maxResponseSize = 1024 * 1024;
+  static const String _truncatedSuffix = '\n... [truncated]';
 
   CancelableOperation<UrlResponse> execute(UrlRequest request) {
     final cancelToken = CancelToken();
@@ -59,36 +60,82 @@ class UrlService {
             ),
           );
         })
-        .catchError((Object error, StackTrace stackTrace) {
-          if (completer.isCanceled) {
-            return;
-          }
-
-          stopwatch.stop();
-
-          if (error is DioException && error.type == DioExceptionType.cancel) {
-            completer.operation.cancel();
-            return;
-          }
-
-          if (error is DioException) {
-            completer.complete(
-              UrlResponse(
-                statusCode: error.response?.statusCode ?? 0,
-                body: _truncateText(
-                  error.response?.data?.toString() ?? error.message ?? '',
-                ),
-                headers: error.response?.headers.map ?? const {},
-                elapsed: stopwatch.elapsed,
-              ),
-            );
-            return;
-          }
-
-          completer.completeError(error, stackTrace);
+        .catchError((Object error, StackTrace stackTrace) async {
+          await _handleRequestError(
+            error,
+            stackTrace,
+            completer,
+            stopwatch,
+          );
         });
 
     return completer.operation;
+  }
+
+  Future<void> _handleRequestError(
+    Object error,
+    StackTrace stackTrace,
+    CancelableCompleter<UrlResponse> completer,
+    Stopwatch stopwatch,
+  ) async {
+    if (completer.isCanceled) {
+      return;
+    }
+
+    stopwatch.stop();
+
+    if (error is! DioException) {
+      completer.completeError(error, stackTrace);
+      return;
+    }
+
+    if (error.type == DioExceptionType.cancel) {
+      completer.operation.cancel();
+      return;
+    }
+
+    final body = await _safeReadErrorResponseBody(
+      error.response?.data,
+      error.message,
+    );
+    if (completer.isCanceled) {
+      return;
+    }
+
+    completer.complete(
+      UrlResponse(
+        statusCode: error.response?.statusCode ?? 0,
+        body: body,
+        headers: error.response?.headers.map ?? const {},
+        elapsed: stopwatch.elapsed,
+      ),
+    );
+  }
+
+  Future<String> _safeReadErrorResponseBody(
+    Object? data,
+    String? message,
+  ) async {
+    try {
+      return await _readErrorResponseBody(data, message);
+    } on Object {
+      return _truncateText(message ?? '');
+    }
+  }
+
+  Future<String> _readErrorResponseBody(Object? data, String? message) async =>
+      switch (data) {
+        ResponseBody() => _readResponseBody(data),
+        List<int>() => _decodeErrorBytes(data),
+        _ => _truncateText(data?.toString() ?? message ?? ''),
+      };
+
+  String _decodeErrorBytes(List<int> data) {
+    final bytes = data.length <= _maxResponseSize
+        ? data
+        : data.take(_maxResponseSize).toList(growable: false);
+    final body = utf8.decode(bytes, allowMalformed: true);
+    return data.length <= _maxResponseSize ? body : '$body$_truncatedSuffix';
   }
 
   Future<String> _readResponseBody(ResponseBody? responseBody) async {
@@ -109,7 +156,7 @@ class UrlService {
 
         final remainingChars = _maxResponseSize - receivedChars;
         if (remainingChars <= 0) {
-          buffer.write('\n... [truncated]');
+          buffer.write(_truncatedSuffix);
           completer.complete(buffer.toString());
           unawaited(subscription.cancel());
           return;
@@ -124,7 +171,7 @@ class UrlService {
 
         buffer
           ..write(decodedChunk.substring(0, remainingChars))
-          ..write('\n... [truncated]');
+          ..write(_truncatedSuffix);
         receivedChars += remainingChars;
         completer.complete(buffer.toString());
         unawaited(subscription.cancel());
@@ -150,7 +197,7 @@ class UrlService {
       return body;
     }
 
-    return '${body.substring(0, _maxResponseSize)}\n... [truncated]';
+    return '${body.substring(0, _maxResponseSize)}$_truncatedSuffix';
   }
 
   Map<String, String> _buildEffectiveHeaders(UrlRequest request) {
