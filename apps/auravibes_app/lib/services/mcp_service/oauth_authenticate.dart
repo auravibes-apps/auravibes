@@ -168,8 +168,14 @@ class OauthAuthenticate {
 
     final accessToken = data['access_token'];
     final tokenType = data['token_type'];
-    if (accessToken is! String || accessToken.isEmpty || tokenType is! String) {
-      throw Exception('Invalid token response: missing required token fields');
+    if (accessToken is! String) {
+      throw Exception('Invalid token response: access_token must be a string');
+    }
+    if (accessToken.isEmpty) {
+      throw Exception('Invalid token response: access_token cannot be empty');
+    }
+    if (tokenType is! String) {
+      throw Exception('Invalid token response: token_type must be a string');
     }
 
     return OAuthTokenModel.fromJson(data);
