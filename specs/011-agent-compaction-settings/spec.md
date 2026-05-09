@@ -155,7 +155,7 @@ As a user, I want a dedicated compaction settings section where I can modify aut
 - Manual compaction is a checkpoint action and does not continue the assistant until the user sends or triggers another action.
 - Automatic compaction failure blocks the pending assistant continuation, persists a visible chat error message, and does not mark any context as compacted.
 - Compaction affects model context only; it does not delete or hide existing visible chat messages.
-- Settings apply globally to all conversations unless a future feature adds per-workspace or per-model overrides.
+- Settings are stored per-workspace in the local database; each workspace maintains independent compaction overrides.
 
 ## Success Criteria _(mandatory)_
 

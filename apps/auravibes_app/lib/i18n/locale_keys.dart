@@ -443,6 +443,8 @@ abstract class LocaleKeys {
       'compaction.settings.reset_defaults';
   static const compaction_settings_reset_success =
       'compaction.settings.reset_success';
+  static const compaction_settings_reset_error =
+      'compaction.settings.reset_error';
   static const compaction_settings_save_success =
       'compaction.settings.save_success';
   static const compaction_settings_validation_usage_range =

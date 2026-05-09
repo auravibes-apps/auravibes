@@ -681,34 +681,24 @@ void main() {
       );
 
       test(
-        'continues past compaction failures',
+        'propagates compaction failure to stop agent loop',
         () async {
           when(
             maybeAutoCompactConversationUsecase.call(
               conversationId: 'conversation-1',
             ),
           ).thenThrow(Exception('compaction error'));
-          when(
+
+          await expectLater(
+            usecase.call(conversationId: 'conversation-1'),
+            throwsA(isA<Exception>()),
+          );
+          verifyNever(
             continueAgentUsecase.call(
-              conversationId: 'conversation-1',
+              conversationId: anyNamed('conversationId'),
               context: anyNamed('context'),
-            ),
-          ).thenAnswer(
-            (_) async => const ContinueAgentResult(
-              messageId: 'assistant-1',
-              hasToolCalls: false,
             ),
           );
-
-          final result = await usecase.call(conversationId: 'conversation-1');
-
-          expect(result, AgentIterationDecision.done);
-          verify(
-            continueAgentUsecase.call(
-              conversationId: 'conversation-1',
-              context: anyNamed('context'),
-            ),
-          ).called(1);
         },
       );
 

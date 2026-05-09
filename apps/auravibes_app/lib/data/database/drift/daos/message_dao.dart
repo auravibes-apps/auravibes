@@ -150,6 +150,7 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
               (tbl) =>
                   tbl.conversationId.equals(conversationId) &
                   tbl.messageType.equals(MessagesTableType.system.value) &
+                  tbl.status.equals(MessageTableStatus.sent.value) &
                   tbl.metadata.isNotNull(),
             )
             ..orderBy([

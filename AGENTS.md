@@ -174,10 +174,9 @@ These rules are non-negotiable for all new code and refactors:
 - Verify new code follows the 9 Implementation Standards above
 
 ## Active Technologies
+
 - Dart 3.11+ / Flutter 3.41.4+ (FVM pinned) + Flutter SDK, hooks_riverpod/Riverpod 3 (code generation), drift, freezed/json_serializable, auravibes_ui, dartantic_ai (011-agent-compaction-settings)
-- Drift SQLite (`messages` metadata JSON, conversations/messages tables) + shared preferences for global compaction settings (011-agent-compaction-settings)
-- Dart 3.11+ / Flutter 3.41.4+ via repository-pinned FVM SDK + Flutter SDK, hooks_riverpod/Riverpod 3 with code generation, Drift, Freezed/json_serializable, auravibes_ui, dartantic_ai / existing AI agent service (011-agent-compaction-settings)
-- Existing Drift SQLite `messages` metadata JSON for compaction summaries and ranges; shared preferences for global compaction settings (011-agent-compaction-settings)
+- Drift SQLite — new `workspace_compaction_settings` table with per‑workspace override columns; `messages` metadata JSON for compaction summaries and ranges (011-agent-compaction-settings)
 
 - Dart 3.11+ with Flutter 3.41.4+ via FVM + Flutter, hooks_riverpod/Riverpod 3, riverpod_generator, Freezed, Drift, auravibes_ui (008-avoid-approval-flash)
 - Existing Drift `messages` metadata JSON and tool permission tables; no schema changes planned (008-avoid-approval-flash)

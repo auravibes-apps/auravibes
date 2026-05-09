@@ -326,7 +326,7 @@ void _showCompactionDetails(BuildContext context, MessageEntity message) {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(dialogContext).pop(),
-          child: const Text('Close'),
+          child: const TextLocale(LocaleKeys.common_close),
         ),
       ],
     ),

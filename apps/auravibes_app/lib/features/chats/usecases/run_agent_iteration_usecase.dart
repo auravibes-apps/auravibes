@@ -98,13 +98,9 @@ class RunAgentIterationUsecase {
       return _AgentIterationStep(currentContext, cancelDecision);
     }
 
-    try {
-      await maybeAutoCompactConversationUsecase.call(
-        conversationId: conversationId,
-      );
-    } on Exception {
-      // Best-effort compaction – failures shouldn't block the agent loop.
-    }
+    await maybeAutoCompactConversationUsecase.call(
+      conversationId: conversationId,
+    );
 
     final continueResult = await continueAgentUsecase.call(
       conversationId: conversationId,

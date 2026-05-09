@@ -52,6 +52,14 @@ class _CompactionSettingsSectionState
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(compactionSettingsProvider(widget.workspaceId), (_, next) {
+      final settings = next.asData?.value;
+      if (settings == null) return;
+      _usageController.text = '${settings.usagePercentageThreshold}';
+      _remainingController.text = '${settings.remainingTokenThreshold}';
+      setState(() => _autoEnabled = settings.autoCompactionEnabled);
+    });
+
     return AuraCard(
       child: AuraColumn(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -170,10 +178,21 @@ class _CompactionSettingsSectionState
     }
   }
 
-  void _resetDefaults() {
-    ref.read(resetWorkspaceCompactionSettingsUsecaseProvider)(
-      workspaceId: widget.workspaceId,
-    );
+  Future<void> _resetDefaults() async {
+    try {
+      await ref.read(resetWorkspaceCompactionSettingsUsecaseProvider)(
+        workspaceId: widget.workspaceId,
+      );
+    } on Exception {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: TextLocale(LocaleKeys.compaction_settings_reset_error),
+          ),
+        );
+      }
+      return;
+    }
     const defaults = CompactionSettings.defaults;
     setState(() {
       _autoEnabled = defaults.autoCompactionEnabled;

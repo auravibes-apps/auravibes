@@ -6205,7 +6205,7 @@ class $WorkspaceCompactionSettingsTable extends WorkspaceCompactionSettings
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => const {};
+  Set<GeneratedColumn> get $primaryKey => {workspaceId};
   @override
   WorkspaceCompactionSettingsTable map(
     Map<String, dynamic> data, {

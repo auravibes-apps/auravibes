@@ -320,6 +320,7 @@
       "remaining_threshold_hint": "Comprimir cuando los tokens restantes caigan por debajo de este valor",
       "reset_defaults": "Restaurar Predeterminados",
       "reset_success": "Configuración restaurada a valores predeterminados",
+      "reset_error": "Error al restaurar configuración. Intenta de nuevo.",
       "save_success": "Configuración de compresión guardada",
       "validation": {
         "usage_range": "El umbral de uso debe estar entre 5 y 100",

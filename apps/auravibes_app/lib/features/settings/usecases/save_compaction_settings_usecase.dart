@@ -13,12 +13,13 @@ class SaveWorkspaceCompactionSettingsUsecase {
   Future<CompactionSettings> call({
     required String workspaceId,
     required CompactionSettings settings,
+    int? contextLimit,
   }) async {
-    _validate(settings);
+    _validate(settings, contextLimit: contextLimit);
     return repository.saveOverrides(workspaceId, settings);
   }
 
-  void _validate(CompactionSettings settings) {
+  void _validate(CompactionSettings settings, {int? contextLimit}) {
     if (settings.usagePercentageThreshold < 5 ||
         settings.usagePercentageThreshold > 100) {
       throw const CompactionSettingsValidationException(
@@ -28,6 +29,12 @@ class SaveWorkspaceCompactionSettingsUsecase {
     if (settings.remainingTokenThreshold <= 0) {
       throw const CompactionSettingsValidationException(
         LocaleKeys.compaction_settings_validation_remaining_positive,
+      );
+    }
+    if (contextLimit != null &&
+        settings.remainingTokenThreshold >= contextLimit) {
+      throw const CompactionSettingsValidationException(
+        LocaleKeys.compaction_settings_validation_remaining_below_limit,
       );
     }
   }

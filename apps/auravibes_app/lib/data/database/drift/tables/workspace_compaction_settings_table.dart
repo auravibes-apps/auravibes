@@ -15,4 +15,7 @@ class WorkspaceCompactionSettings extends Table with TableMixin {
   IntColumn get usagePercentageThreshold => integer().nullable()();
 
   IntColumn get remainingTokenThreshold => integer().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {workspaceId};
 }

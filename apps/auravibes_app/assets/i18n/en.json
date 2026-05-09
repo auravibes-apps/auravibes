@@ -320,6 +320,7 @@
       "remaining_threshold_hint": "Compact when remaining tokens fall below this value",
       "reset_defaults": "Reset to Defaults",
       "reset_success": "Settings reset to defaults",
+      "reset_error": "Failed to reset settings. Please try again.",
       "save_success": "Compaction settings saved",
       "validation": {
         "usage_range": "Usage threshold must be between 5 and 100",
