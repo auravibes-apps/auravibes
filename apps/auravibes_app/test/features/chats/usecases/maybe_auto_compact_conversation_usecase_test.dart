@@ -7,11 +7,15 @@ import 'package:auravibes_app/domain/entities/workspace_model_selection_entities
 import 'package:auravibes_app/domain/repositories/api_model_repository.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/repositories/workspace_model_selection_repository.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/compact_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/maybe_auto_compact_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/should_compact_conversation_usecase.dart';
+import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
+import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:riverpod/riverpod.dart';
 
 class MockConversationRepository extends Mock
     implements ConversationRepository {}
@@ -283,5 +287,28 @@ void main() {
         maxOutputTokens: 4096,
       ),
     ).called(1);
+  });
+
+  test('provider creates usecase with all dependencies', () {
+    final container = ProviderContainer(
+      overrides: [
+        conversationRepositoryProvider.overrideWith((ref) => mockConvRepo),
+        workspaceModelSelectionRepositoryProvider.overrideWith(
+          (ref) => mockModelRepo,
+        ),
+        apiModelRepositoryProvider.overrideWith((ref) => mockApiModelRepo),
+        shouldCompactConversationUsecaseProvider.overrideWith(
+          (ref) => mockShouldCompact,
+        ),
+        compactConversationUsecaseProvider.overrideWith(
+          (ref) => mockCompact,
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    final result = container.read(maybeAutoCompactConversationUsecaseProvider);
+
+    expect(result, isA<MaybeAutoCompactConversationUsecase>());
   });
 }

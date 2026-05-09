@@ -1,5 +1,6 @@
 // ignore_for_file: cascade_invocations
 // Required: Test readability
+
 import 'package:auravibes_app/domain/entities/compaction.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_providers.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -159,6 +160,25 @@ void main() {
       final state = container.read(compactionExecutionStateProvider('conv-1'));
       expect(state?.status, CompactionExecutionStatus.running);
       expect(state?.trigger, CompactionTrigger.auto);
+    });
+    test('onDispose cancels pending timers without crashing', () {
+      final notifier = container.read(compactionExecutionProvider.notifier);
+
+      notifier.markRunning(
+        CompactionExecutionState(
+          conversationId: 'conv-1',
+          trigger: CompactionTrigger.auto,
+          startedAt: DateTime.now(),
+          status: CompactionExecutionStatus.running,
+        ),
+      );
+
+      notifier.markSuccess('conv-1');
+
+      expect(
+        () => container.dispose(),
+        returnsNormally,
+      );
     });
   });
 }

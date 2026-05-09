@@ -4,6 +4,7 @@ import 'package:auravibes_app/features/chats/usecases/compact_conversation_useca
 import 'package:auravibes_app/features/chats/usecases/manual_compact_conversation_usecase.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:riverpod/riverpod.dart';
 
 class MockCompactConversationUsecase extends Mock
     implements CompactConversationUsecase {}
@@ -85,6 +86,21 @@ void main() {
         () => usecase('conv-1'),
         throwsA(isA<Exception>()),
       );
+    });
+
+    test('provider creates usecase with correct dependency', () {
+      final container = ProviderContainer(
+        overrides: [
+          compactConversationUsecaseProvider.overrideWith(
+            (ref) => mockCompact,
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final result = container.read(manualCompactConversationUsecaseProvider);
+
+      expect(result, isA<ManualCompactConversationUsecase>());
     });
   });
 }
