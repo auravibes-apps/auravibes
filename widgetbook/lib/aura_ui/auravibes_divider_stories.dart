@@ -14,7 +14,7 @@ Widget basicHorizontalDividerUseCase(BuildContext context) {
       max: 100,
     ),
     height: context.knobs.double.slider(
-      label: 'Width',
+      label: 'Height',
       initialValue: 0,
       min: 0,
       max: 1,
@@ -37,7 +37,7 @@ Widget basicHorizontalDividerUseCase(BuildContext context) {
 Widget verticalDividerUseCase(BuildContext context) {
   return AuraDivider.vertical(
     width: context.knobs.double.slider(
-      label: 'Height',
+      label: 'Width',
       initialValue: 0,
       min: 0,
       max: 1,
