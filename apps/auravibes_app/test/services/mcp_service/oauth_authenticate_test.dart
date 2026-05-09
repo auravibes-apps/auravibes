@@ -311,7 +311,7 @@ void main() {
             codeVerifier: 'verifier',
             redirectUrl: 'auravibes:/',
           ),
-          throwsA(isA<Exception>()),
+          throwsA(isA<DioException>()),
         );
       });
 
@@ -346,7 +346,7 @@ void main() {
             codeVerifier: 'verifier',
             redirectUrl: 'auravibes:/',
           ),
-          throwsA(isA<Error>()),
+          throwsA(isA<TypeError>()),
         );
       });
     });
