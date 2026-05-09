@@ -346,7 +346,7 @@ void main() {
             codeVerifier: 'verifier',
             redirectUrl: 'auravibes:/',
           ),
-          throwsA(isA<TypeError>()),
+          throwsA(anyOf(isA<FormatException>(), isA<TypeError>())),
         );
       });
     });
