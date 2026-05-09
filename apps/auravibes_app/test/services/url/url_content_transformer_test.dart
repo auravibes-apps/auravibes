@@ -632,6 +632,6 @@ UrlResponse _responseWithContentType(String body, String? contentType) {
             'content-type': [contentType],
           }
         : {},
-    elapsed: .zero,
+    elapsed: Duration.zero,
   );
 }
