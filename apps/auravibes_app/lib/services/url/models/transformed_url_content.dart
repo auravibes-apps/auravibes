@@ -21,6 +21,7 @@ class TransformedUrlContent {
     required this.format,
     required this.originalLength,
     required this.truncated,
+    required this.elapsed,
     this.contentType,
   });
 
@@ -29,4 +30,5 @@ class TransformedUrlContent {
   final String? contentType;
   final int originalLength;
   final bool truncated;
+  final Duration elapsed;
 }
