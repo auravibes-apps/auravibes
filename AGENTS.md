@@ -62,11 +62,14 @@ fvm flutter pub add dev:build_runner dev:json_serializable
 valid on melos >7
 
 ```bash
-fvm dart run melos analyze            # Analyze code quality
+fvm dart run melos analyze                # Analyze code quality
 fvm dart run melos format             # Check code formatting
-fvm dart run melos run test               # Run all tests
+fvm dart run melos run test               # Run all tests (fast, no coverage)
+fvm dart run melos run test:coverage      # Run all tests with coverage
+fvm dart run melos run test:ci            # Run tests in CI mode (coverage + optimized)
 fvm dart run melos run validate:quick     # Quick development check
-fvm dart run melos run validate           # Full CI validation
+fvm dart run melos run validate           # Full CI validation (without coverage)
+fvm dart run melos run validate:ci        # Full CI validation with coverage
 ```
 
 ### Running Specific Tests
@@ -74,7 +77,26 @@ fvm dart run melos run validate           # Full CI validation
 in the package directory, use:
 
 ```bash
-fvm flutter test test/test_file_one.dart test/test_file_two.dart --no-pub
+# Single file
+fvm flutter test test/path/to/file_test.dart --no-pub
+
+# Multiple files
+fvm flutter test test/file_one_test.dart test/file_two_test.dart --no-pub
+
+# Entire directory
+fvm flutter test test/domain/usecases/ --no-pub
+
+# Filter by test name (regex)
+fvm flutter test --name "should emit loading" --no-pub
+
+# Filter by tag (see dart_test.yaml for defined tags)
+fvm flutter test --tags slow --no-pub
+
+# Exclude tagged tests
+fvm flutter test --exclude-tags widget --no-pub
+
+# Use CI preset (reduced concurrency for 2-core runners)
+fvm flutter test -P ci --no-pub
 ```
 
 ### Code Generation
