@@ -139,28 +139,31 @@ void main() {
       expect(response.body.length, lessThan(largeBody.length));
     });
 
-    test('handles DioException without response', () async {
-      final adapter = _FakeHttpClientAdapter(
-        onFetch: (options, _, _) async {
-          throw DioException(
-            requestOptions: RequestOptions(path: options.path),
-            message: 'Connection refused',
-            type: DioExceptionType.connectionError,
-          );
-        },
-      );
-      final dio = Dio()..httpClientAdapter = adapter;
-      final service = UrlService(dio: dio);
+    test(
+      'handles DioException without response and with request path',
+      () async {
+        final adapter = _FakeHttpClientAdapter(
+          onFetch: (options, _, _) async {
+            throw DioException(
+              requestOptions: RequestOptions(path: options.path),
+              message: 'Connection refused',
+              type: DioExceptionType.connectionError,
+            );
+          },
+        );
+        final dio = Dio()..httpClientAdapter = adapter;
+        final service = UrlService(dio: dio);
 
-      final response = await service
-          .execute(const UrlRequest(url: 'https://example.com'))
-          .value;
+        final response = await service
+            .execute(const UrlRequest(url: 'https://example.com'))
+            .value;
 
-      expect(response.statusCode, 0);
-      expect(response.body, contains('Connection refused'));
-    });
+        expect(response.statusCode, 0);
+        expect(response.body, contains('Connection refused'));
+      },
+    );
 
-    test('handles DioException without response', () async {
+    test('handles DioException without response or request path', () async {
       final adapter = _FakeHttpClientAdapter(
         onFetch: (options, _, _) async {
           throw DioException(
