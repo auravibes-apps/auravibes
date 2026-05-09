@@ -315,7 +315,13 @@ void main() {
               codeVerifier: 'verifier',
               redirectUrl: 'auravibes:/',
             ),
-            throwsA(isA<Exception>()),
+            throwsA(
+              isA<DioException>().having(
+                (error) => error.type,
+                'type',
+                DioExceptionType.connectionError,
+              ),
+            ),
           );
         },
       );
