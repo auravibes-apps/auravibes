@@ -65,6 +65,7 @@ class UrlContentTransformer {
     final contentType = _extractContentType(response.headers);
     final body = response.body;
     final originalLength = body.length;
+    final elapsed = response.elapsed;
 
     final effectiveFormat = requestedFormat == UrlResponseFormat.defaultFormat
         ? UrlResponseFormat.markdown
@@ -76,6 +77,7 @@ class UrlContentTransformer {
         originalLength,
         contentType,
         UrlContentFormat.unsupported,
+        elapsed,
       );
     }
 
@@ -86,13 +88,15 @@ class UrlContentTransformer {
           originalLength,
           contentType,
           UrlContentFormat.html,
+          elapsed,
         ),
         UrlResponseFormat.text => _transformHtmlToText(
           body,
           originalLength,
           contentType,
+          elapsed,
         ),
-        _ => _transformHtml(body, originalLength, contentType),
+        _ => _transformHtml(body, originalLength, contentType, elapsed),
       };
     }
 
@@ -104,6 +108,7 @@ class UrlContentTransformer {
         originalLength,
         contentType,
         UrlContentFormat.json,
+        elapsed,
       );
     }
 
@@ -114,6 +119,7 @@ class UrlContentTransformer {
         originalLength,
         contentType,
         UrlContentFormat.markdown,
+        elapsed,
       );
     }
 
@@ -123,6 +129,7 @@ class UrlContentTransformer {
         originalLength,
         contentType,
         UrlContentFormat.text,
+        elapsed,
       );
     }
 
@@ -131,6 +138,7 @@ class UrlContentTransformer {
       originalLength,
       contentType,
       UrlContentFormat.unsupported,
+      elapsed,
     );
   }
 
@@ -138,6 +146,7 @@ class UrlContentTransformer {
     String body,
     int originalLength,
     String contentType,
+    Duration elapsed,
   ) {
     final document = parser.parse(body);
 
@@ -157,6 +166,7 @@ class UrlContentTransformer {
         contentType: contentType,
         originalLength: originalLength,
         truncated: truncated,
+        elapsed: elapsed,
       );
     }
 
@@ -181,6 +191,7 @@ class UrlContentTransformer {
       contentType: contentType,
       originalLength: originalLength,
       truncated: truncated,
+      elapsed: elapsed,
     );
   }
 
@@ -188,6 +199,7 @@ class UrlContentTransformer {
     String body,
     int originalLength,
     String contentType,
+    Duration elapsed,
   ) {
     final document = parser.parse(body);
 
@@ -209,6 +221,7 @@ class UrlContentTransformer {
       contentType: contentType,
       originalLength: originalLength,
       truncated: truncated,
+      elapsed: elapsed,
     );
   }
 
@@ -565,6 +578,7 @@ class UrlContentTransformer {
     int originalLength,
     String? contentType,
     UrlContentFormat format,
+    Duration elapsed,
   ) {
     if (body.isEmpty) {
       return TransformedUrlContent(
@@ -573,6 +587,7 @@ class UrlContentTransformer {
         contentType: contentType,
         originalLength: originalLength,
         truncated: false,
+        elapsed: elapsed,
       );
     }
 
@@ -584,6 +599,7 @@ class UrlContentTransformer {
       contentType: contentType,
       originalLength: originalLength,
       truncated: truncated,
+      elapsed: elapsed,
     );
   }
 
