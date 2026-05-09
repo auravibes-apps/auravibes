@@ -161,10 +161,17 @@ class OauthAuthenticate {
       );
     }
 
-    if (response.data == null) {
+    final data = response.data;
+    if (data == null) {
       throw Exception('No data received from token endpoint');
     }
 
-    return OAuthTokenModel.fromJson(response.data!);
+    final accessToken = data['access_token'];
+    final tokenType = data['token_type'];
+    if (accessToken is! String || accessToken.isEmpty || tokenType is! String) {
+      throw Exception('Invalid token response: missing required token fields');
+    }
+
+    return OAuthTokenModel.fromJson(data);
   }
 }
