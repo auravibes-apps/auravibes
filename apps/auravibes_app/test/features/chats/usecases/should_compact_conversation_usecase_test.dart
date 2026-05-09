@@ -1,6 +1,7 @@
 import 'package:auravibes_app/domain/entities/compaction.dart';
 import 'package:auravibes_app/domain/entities/messages.dart';
 import 'package:auravibes_app/domain/enums/message_types.dart';
+import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/repositories/workspace_compaction_settings_repository.dart';
 import 'package:auravibes_app/features/chats/usecases/should_compact_conversation_usecase.dart';
@@ -529,6 +530,62 @@ void main() {
         expect(
           decision.reason,
           CompactionDecisionReason.eligible,
+        );
+      },
+    );
+
+    test(
+      'character estimation counts tool call arguments and responses',
+      () async {
+        final settings = CompactionSettings(
+          usagePercentageThreshold: 1,
+          updatedAt: DateTime(2026),
+        );
+        when(() => mockSettingsRepo.getEffectiveSettings(any())).thenAnswer(
+          (_) async => settings,
+        );
+        usecase = ShouldCompactConversationUsecase(
+          messageRepository: mockRepository,
+          settingsRepository: mockSettingsRepo,
+        );
+
+        final messages = [
+          _makeMessage(
+            id: 'msg-tool',
+            isUser: false,
+            content: '',
+            metadata: const MessageMetadataEntity(
+              toolCalls: [
+                MessageToolCallEntity(
+                  id: 'tc-1',
+                  name: 'test',
+                  argumentsRaw: '0123456789',
+                  responseRaw: 'ABCDEFGHIJ',
+                  resultStatus: ToolCallResultStatus.success,
+                ),
+              ],
+            ),
+          ),
+        ];
+
+        when(
+          () => mockRepository.getMessagesByConversation('conv-1'),
+        ).thenAnswer((_) async => messages);
+
+        final decision = await usecase(
+          conversationId: 'conv-1',
+          workspaceId: 'workspace-1',
+          selectedModelId: 'model-1',
+          selectedProviderId: 'provider-1',
+          maxOutputTokens: 4096,
+          contextLimit: 128000,
+        );
+
+        // 10 args + 10 response + 0 content = 20 chars / 4 = 5 tokens
+        // 5/128000 = 0.004% → way below 1% → char count fallback works
+        expect(
+          decision.reason,
+          CompactionDecisionReason.belowPercentageThreshold,
         );
       },
     );

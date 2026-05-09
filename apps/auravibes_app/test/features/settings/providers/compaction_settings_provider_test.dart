@@ -79,6 +79,88 @@ void main() {
     });
   });
 
+  group('Compaction entities JSON', () {
+    test('ConversationPromptEstimate fromJson/toJson', () {
+      final json = <String, dynamic>{
+        'conversationId': 'c1',
+        'selectedModelId': 'm1',
+        'selectedProviderId': 'p1',
+        'estimatedPromptTokens': 1000,
+        'maxOutputTokens': 4096,
+        'contextLimit': 128000,
+        'remainingTokens': 127000,
+        'usagePercentage': 0.78,
+      };
+      final e = ConversationPromptEstimate.fromJson(json);
+      expect(e.conversationId, 'c1');
+      expect(e.estimatedPromptTokens, 1000);
+      expect(e.remainingTokens, 127000);
+      expect(e.usagePercentage, 0.78);
+      expect(e.toJson()['conversationId'], 'c1');
+    });
+
+    test('CompactionDecision fromJson/toJson', () {
+      final json = <String, dynamic>{
+        'shouldCompact': true,
+        'reason': 'eligible',
+        'trigger': 'auto',
+      };
+      final d = CompactionDecision.fromJson(json);
+      expect(d.shouldCompact, isTrue);
+      expect(d.reason, CompactionDecisionReason.eligible);
+      expect(d.trigger, CompactionTrigger.auto);
+      expect(d.toJson()['shouldCompact'], isTrue);
+    });
+
+    test('CompactionRange fromJson/toJson', () {
+      final json = <String, dynamic>{
+        'fromMessageId': 'a',
+        'throughMessageId': 'b',
+        'messageIds': ['a', 'b'],
+        'keptTailMessageIds': ['c'],
+      };
+      final r = CompactionRange.fromJson(json);
+      expect(r.fromMessageId, 'a');
+      expect(r.throughMessageId, 'b');
+      expect(r.messageIds, ['a', 'b']);
+      expect(r.toJson()['fromMessageId'], 'a');
+    });
+
+    test('CompactionExecutionState fromJson/toJson', () {
+      final json = <String, String>{
+        'conversationId': 'c1',
+        'trigger': 'manual',
+        'startedAt': '2026-01-01T00:00:00.000',
+        'status': 'running',
+      };
+      final s = CompactionExecutionState.fromJson(json);
+      expect(s.conversationId, 'c1');
+      expect(s.trigger, CompactionTrigger.manual);
+      expect(s.status, CompactionExecutionStatus.running);
+      expect(s.toJson()['conversationId'], 'c1');
+    });
+
+    test('ContextOverflowRetryState fromJson/toJson', () {
+      final json = <String, dynamic>{
+        'conversationId': 'c1',
+        'assistantRequestId': 'r1',
+        'hasRetriedAfterCompaction': true,
+      };
+      final s = ContextOverflowRetryState.fromJson(json);
+      expect(s.conversationId, 'c1');
+      expect(s.hasRetriedAfterCompaction, isTrue);
+      expect(s.toJson()['conversationId'], 'c1');
+    });
+
+    test('ContextOverflowRetryState defaults hasRetriedAfterCompaction', () {
+      const s = ContextOverflowRetryState(
+        conversationId: 'c1',
+        assistantRequestId: 'r1',
+      );
+      expect(s.hasRetriedAfterCompaction, isFalse);
+    });
+  });
+
   group('compactionSettingsProvider', () {
     test('reads overridden value', () async {
       final container = ProviderContainer(

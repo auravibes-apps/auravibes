@@ -39,19 +39,24 @@ void main() {
   });
 
   group('ContextOverflowRetryFailedException', () {
-    test('has correct locale key', () {
+    test('has correct locale key and recovery hint', () {
       const ex = ContextOverflowRetryFailedException();
       expect(
         ex.localeKey,
+        LocaleKeys.compaction_errors_context_overflow_retry_failed,
+      );
+      expect(
+        ex.recoveryHint,
         LocaleKeys.compaction_errors_context_overflow_retry_failed,
       );
     });
   });
 
   group('AutoCompactionBlockedException', () {
-    test('has correct locale key', () {
+    test('has correct locale key and recovery hint', () {
       const ex = AutoCompactionBlockedException();
       expect(ex.localeKey, LocaleKeys.compaction_errors_auto_blocked);
+      expect(ex.recoveryHint, LocaleKeys.compaction_errors_auto_blocked);
     });
   });
 
