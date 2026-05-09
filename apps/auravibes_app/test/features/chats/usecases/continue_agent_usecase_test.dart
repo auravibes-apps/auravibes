@@ -626,6 +626,41 @@ void main() {
         }
       },
     );
+    test(
+      'throws StateError when stream completes empty without cancellation',
+      () async {
+        when(
+          conversationRepository.getConversationById('conversation-1'),
+        ).thenAnswer((_) async => _conversation);
+        when(
+          workspaceModelSelectionsRepository.getWorkspaceModelSelectionById(
+            'model-1',
+          ),
+        ).thenAnswer((_) async => _model);
+        when(
+          loadConversationToolSpecsUsecase(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+          ),
+        ).thenAnswer((_) async => []);
+        when(messageRepository.createMessage(any)).thenAnswer(
+          (_) async => _unfinishedAssistantMessage,
+        );
+        when(messageRepository.patchMessage(any, any)).thenAnswer(
+          (_) async => _unfinishedAssistantMessage,
+        );
+        when(
+          chatbotService.sendMessage(_model, any, tools: const []),
+        ).thenAnswer((_) => const Stream.empty());
+
+        await expectLater(
+          usecase.call(conversationId: 'conversation-1'),
+          throwsA(
+            predicate<StateError>((e) => '$e'.contains('without any result')),
+          ),
+        );
+      },
+    );
   });
 
   group('ContinueAgentUsecase prompt selection', () {
