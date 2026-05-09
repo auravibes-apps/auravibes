@@ -117,6 +117,11 @@ class _FakeMessageRepository implements MessageRepository {
   Future<bool> validateMessage(MessageToCreate message) {
     throw UnimplementedError();
   }
+
+  @override
+  Future<MessageEntity?> getLatestCompactionSummary(String conversationId) {
+    throw UnimplementedError();
+  }
 }
 
 void main() {

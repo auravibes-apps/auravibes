@@ -406,7 +406,7 @@ final class ConversationBusyStateProvider
 }
 
 String _$conversationBusyStateHash() =>
-    r'358d9eafe18707c0d5ee53a3dd69a66c194b2d83';
+    r'8143fd429918c4de2ca489ac18e5adbe3775537d';
 
 @ProviderFor(conversationQueuedDrafts)
 final conversationQueuedDraftsProvider = ConversationQueuedDraftsProvider._();
@@ -461,6 +461,61 @@ final class ConversationQueuedDraftsProvider
 
 String _$conversationQueuedDraftsHash() =>
     r'7d2c31a851b4b67b2239e180f10a8d6f2bb5d9d9';
+
+@ProviderFor(conversationCompactionExecutionState)
+final conversationCompactionExecutionStateProvider =
+    ConversationCompactionExecutionStateProvider._();
+
+final class ConversationCompactionExecutionStateProvider
+    extends
+        $FunctionalProvider<
+          CompactionExecutionState?,
+          CompactionExecutionState?,
+          CompactionExecutionState?
+        >
+    with $Provider<CompactionExecutionState?> {
+  ConversationCompactionExecutionStateProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'conversationCompactionExecutionStateProvider',
+        isAutoDispose: true,
+        dependencies: <ProviderOrFamily>[conversationSelectedProvider],
+        $allTransitiveDependencies: <ProviderOrFamily>[
+          ConversationCompactionExecutionStateProvider
+              .$allTransitiveDependencies0,
+        ],
+      );
+
+  static final $allTransitiveDependencies0 = conversationSelectedProvider;
+
+  @override
+  String debugGetCreateSourceHash() =>
+      _$conversationCompactionExecutionStateHash();
+
+  @$internal
+  @override
+  $ProviderElement<CompactionExecutionState?> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  CompactionExecutionState? create(Ref ref) {
+    return conversationCompactionExecutionState(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(CompactionExecutionState? value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<CompactionExecutionState?>(value),
+    );
+  }
+}
+
+String _$conversationCompactionExecutionStateHash() =>
+    r'4c9ceb397968d65fffdf98fa866da936210dd803';
 
 /// Provides the pending MCP server IDs for the current conversation.
 ///

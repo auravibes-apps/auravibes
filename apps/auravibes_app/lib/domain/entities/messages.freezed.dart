@@ -300,7 +300,7 @@ as ToolCallResultStatus?,
 /// @nodoc
 mixin _$MessageMetadataEntity {
 
- List<MessageToolCallEntity> get toolCalls; int? get promptTokens; int? get completionTokens; int? get totalTokens;
+ List<MessageToolCallEntity> get toolCalls; int? get promptTokens; int? get completionTokens; int? get totalTokens; int get metadataVersion; bool get isCompactionSummary; CompactionKind? get compactionKind; String? get compactedFromMessageId; String? get compactedThroughMessageId; List<String> get compactedMessageIds; DateTime? get compactionCreatedAt;
 /// Create a copy of MessageMetadataEntity
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -313,16 +313,16 @@ $MessageMetadataEntityCopyWith<MessageMetadataEntity> get copyWith => _$MessageM
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageMetadataEntity&&const DeepCollectionEquality().equals(other.toolCalls, toolCalls)&&(identical(other.promptTokens, promptTokens) || other.promptTokens == promptTokens)&&(identical(other.completionTokens, completionTokens) || other.completionTokens == completionTokens)&&(identical(other.totalTokens, totalTokens) || other.totalTokens == totalTokens));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageMetadataEntity&&const DeepCollectionEquality().equals(other.toolCalls, toolCalls)&&(identical(other.promptTokens, promptTokens) || other.promptTokens == promptTokens)&&(identical(other.completionTokens, completionTokens) || other.completionTokens == completionTokens)&&(identical(other.totalTokens, totalTokens) || other.totalTokens == totalTokens)&&(identical(other.metadataVersion, metadataVersion) || other.metadataVersion == metadataVersion)&&(identical(other.isCompactionSummary, isCompactionSummary) || other.isCompactionSummary == isCompactionSummary)&&(identical(other.compactionKind, compactionKind) || other.compactionKind == compactionKind)&&(identical(other.compactedFromMessageId, compactedFromMessageId) || other.compactedFromMessageId == compactedFromMessageId)&&(identical(other.compactedThroughMessageId, compactedThroughMessageId) || other.compactedThroughMessageId == compactedThroughMessageId)&&const DeepCollectionEquality().equals(other.compactedMessageIds, compactedMessageIds)&&(identical(other.compactionCreatedAt, compactionCreatedAt) || other.compactionCreatedAt == compactionCreatedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(toolCalls),promptTokens,completionTokens,totalTokens);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(toolCalls),promptTokens,completionTokens,totalTokens,metadataVersion,isCompactionSummary,compactionKind,compactedFromMessageId,compactedThroughMessageId,const DeepCollectionEquality().hash(compactedMessageIds),compactionCreatedAt);
 
 @override
 String toString() {
-  return 'MessageMetadataEntity(toolCalls: $toolCalls, promptTokens: $promptTokens, completionTokens: $completionTokens, totalTokens: $totalTokens)';
+  return 'MessageMetadataEntity(toolCalls: $toolCalls, promptTokens: $promptTokens, completionTokens: $completionTokens, totalTokens: $totalTokens, metadataVersion: $metadataVersion, isCompactionSummary: $isCompactionSummary, compactionKind: $compactionKind, compactedFromMessageId: $compactedFromMessageId, compactedThroughMessageId: $compactedThroughMessageId, compactedMessageIds: $compactedMessageIds, compactionCreatedAt: $compactionCreatedAt)';
 }
 
 
@@ -333,7 +333,7 @@ abstract mixin class $MessageMetadataEntityCopyWith<$Res>  {
   factory $MessageMetadataEntityCopyWith(MessageMetadataEntity value, $Res Function(MessageMetadataEntity) _then) = _$MessageMetadataEntityCopyWithImpl;
 @useResult
 $Res call({
- List<MessageToolCallEntity> toolCalls, int? promptTokens, int? completionTokens, int? totalTokens
+ List<MessageToolCallEntity> toolCalls, int? promptTokens, int? completionTokens, int? totalTokens, int metadataVersion, bool isCompactionSummary, CompactionKind? compactionKind, String? compactedFromMessageId, String? compactedThroughMessageId, List<String> compactedMessageIds, DateTime? compactionCreatedAt
 });
 
 
@@ -350,13 +350,20 @@ class _$MessageMetadataEntityCopyWithImpl<$Res>
 
 /// Create a copy of MessageMetadataEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? toolCalls = null,Object? promptTokens = freezed,Object? completionTokens = freezed,Object? totalTokens = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? toolCalls = null,Object? promptTokens = freezed,Object? completionTokens = freezed,Object? totalTokens = freezed,Object? metadataVersion = null,Object? isCompactionSummary = null,Object? compactionKind = freezed,Object? compactedFromMessageId = freezed,Object? compactedThroughMessageId = freezed,Object? compactedMessageIds = null,Object? compactionCreatedAt = freezed,}) {
   return _then(_self.copyWith(
 toolCalls: null == toolCalls ? _self.toolCalls : toolCalls // ignore: cast_nullable_to_non_nullable
 as List<MessageToolCallEntity>,promptTokens: freezed == promptTokens ? _self.promptTokens : promptTokens // ignore: cast_nullable_to_non_nullable
 as int?,completionTokens: freezed == completionTokens ? _self.completionTokens : completionTokens // ignore: cast_nullable_to_non_nullable
 as int?,totalTokens: freezed == totalTokens ? _self.totalTokens : totalTokens // ignore: cast_nullable_to_non_nullable
-as int?,
+as int?,metadataVersion: null == metadataVersion ? _self.metadataVersion : metadataVersion // ignore: cast_nullable_to_non_nullable
+as int,isCompactionSummary: null == isCompactionSummary ? _self.isCompactionSummary : isCompactionSummary // ignore: cast_nullable_to_non_nullable
+as bool,compactionKind: freezed == compactionKind ? _self.compactionKind : compactionKind // ignore: cast_nullable_to_non_nullable
+as CompactionKind?,compactedFromMessageId: freezed == compactedFromMessageId ? _self.compactedFromMessageId : compactedFromMessageId // ignore: cast_nullable_to_non_nullable
+as String?,compactedThroughMessageId: freezed == compactedThroughMessageId ? _self.compactedThroughMessageId : compactedThroughMessageId // ignore: cast_nullable_to_non_nullable
+as String?,compactedMessageIds: null == compactedMessageIds ? _self.compactedMessageIds : compactedMessageIds // ignore: cast_nullable_to_non_nullable
+as List<String>,compactionCreatedAt: freezed == compactionCreatedAt ? _self.compactionCreatedAt : compactionCreatedAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,
   ));
 }
 
@@ -441,10 +448,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<MessageToolCallEntity> toolCalls,  int? promptTokens,  int? completionTokens,  int? totalTokens)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<MessageToolCallEntity> toolCalls,  int? promptTokens,  int? completionTokens,  int? totalTokens,  int metadataVersion,  bool isCompactionSummary,  CompactionKind? compactionKind,  String? compactedFromMessageId,  String? compactedThroughMessageId,  List<String> compactedMessageIds,  DateTime? compactionCreatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _MessageMetadataEntity() when $default != null:
-return $default(_that.toolCalls,_that.promptTokens,_that.completionTokens,_that.totalTokens);case _:
+return $default(_that.toolCalls,_that.promptTokens,_that.completionTokens,_that.totalTokens,_that.metadataVersion,_that.isCompactionSummary,_that.compactionKind,_that.compactedFromMessageId,_that.compactedThroughMessageId,_that.compactedMessageIds,_that.compactionCreatedAt);case _:
   return orElse();
 
 }
@@ -462,10 +469,10 @@ return $default(_that.toolCalls,_that.promptTokens,_that.completionTokens,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<MessageToolCallEntity> toolCalls,  int? promptTokens,  int? completionTokens,  int? totalTokens)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<MessageToolCallEntity> toolCalls,  int? promptTokens,  int? completionTokens,  int? totalTokens,  int metadataVersion,  bool isCompactionSummary,  CompactionKind? compactionKind,  String? compactedFromMessageId,  String? compactedThroughMessageId,  List<String> compactedMessageIds,  DateTime? compactionCreatedAt)  $default,) {final _that = this;
 switch (_that) {
 case _MessageMetadataEntity():
-return $default(_that.toolCalls,_that.promptTokens,_that.completionTokens,_that.totalTokens);case _:
+return $default(_that.toolCalls,_that.promptTokens,_that.completionTokens,_that.totalTokens,_that.metadataVersion,_that.isCompactionSummary,_that.compactionKind,_that.compactedFromMessageId,_that.compactedThroughMessageId,_that.compactedMessageIds,_that.compactionCreatedAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -482,10 +489,10 @@ return $default(_that.toolCalls,_that.promptTokens,_that.completionTokens,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<MessageToolCallEntity> toolCalls,  int? promptTokens,  int? completionTokens,  int? totalTokens)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<MessageToolCallEntity> toolCalls,  int? promptTokens,  int? completionTokens,  int? totalTokens,  int metadataVersion,  bool isCompactionSummary,  CompactionKind? compactionKind,  String? compactedFromMessageId,  String? compactedThroughMessageId,  List<String> compactedMessageIds,  DateTime? compactionCreatedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _MessageMetadataEntity() when $default != null:
-return $default(_that.toolCalls,_that.promptTokens,_that.completionTokens,_that.totalTokens);case _:
+return $default(_that.toolCalls,_that.promptTokens,_that.completionTokens,_that.totalTokens,_that.metadataVersion,_that.isCompactionSummary,_that.compactionKind,_that.compactedFromMessageId,_that.compactedThroughMessageId,_that.compactedMessageIds,_that.compactionCreatedAt);case _:
   return null;
 
 }
@@ -497,7 +504,7 @@ return $default(_that.toolCalls,_that.promptTokens,_that.completionTokens,_that.
 @JsonSerializable()
 
 class _MessageMetadataEntity extends MessageMetadataEntity {
-  const _MessageMetadataEntity({final  List<MessageToolCallEntity> toolCalls = const <MessageToolCallEntity>[], this.promptTokens, this.completionTokens, this.totalTokens}): _toolCalls = toolCalls,super._();
+  const _MessageMetadataEntity({final  List<MessageToolCallEntity> toolCalls = const <MessageToolCallEntity>[], this.promptTokens, this.completionTokens, this.totalTokens, this.metadataVersion = 1, this.isCompactionSummary = false, this.compactionKind, this.compactedFromMessageId, this.compactedThroughMessageId, final  List<String> compactedMessageIds = const <String>[], this.compactionCreatedAt}): _toolCalls = toolCalls,_compactedMessageIds = compactedMessageIds,super._();
   factory _MessageMetadataEntity.fromJson(Map<String, dynamic> json) => _$MessageMetadataEntityFromJson(json);
 
  final  List<MessageToolCallEntity> _toolCalls;
@@ -510,6 +517,19 @@ class _MessageMetadataEntity extends MessageMetadataEntity {
 @override final  int? promptTokens;
 @override final  int? completionTokens;
 @override final  int? totalTokens;
+@override@JsonKey() final  int metadataVersion;
+@override@JsonKey() final  bool isCompactionSummary;
+@override final  CompactionKind? compactionKind;
+@override final  String? compactedFromMessageId;
+@override final  String? compactedThroughMessageId;
+ final  List<String> _compactedMessageIds;
+@override@JsonKey() List<String> get compactedMessageIds {
+  if (_compactedMessageIds is EqualUnmodifiableListView) return _compactedMessageIds;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_compactedMessageIds);
+}
+
+@override final  DateTime? compactionCreatedAt;
 
 /// Create a copy of MessageMetadataEntity
 /// with the given fields replaced by the non-null parameter values.
@@ -524,16 +544,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageMetadataEntity&&const DeepCollectionEquality().equals(other._toolCalls, _toolCalls)&&(identical(other.promptTokens, promptTokens) || other.promptTokens == promptTokens)&&(identical(other.completionTokens, completionTokens) || other.completionTokens == completionTokens)&&(identical(other.totalTokens, totalTokens) || other.totalTokens == totalTokens));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageMetadataEntity&&const DeepCollectionEquality().equals(other._toolCalls, _toolCalls)&&(identical(other.promptTokens, promptTokens) || other.promptTokens == promptTokens)&&(identical(other.completionTokens, completionTokens) || other.completionTokens == completionTokens)&&(identical(other.totalTokens, totalTokens) || other.totalTokens == totalTokens)&&(identical(other.metadataVersion, metadataVersion) || other.metadataVersion == metadataVersion)&&(identical(other.isCompactionSummary, isCompactionSummary) || other.isCompactionSummary == isCompactionSummary)&&(identical(other.compactionKind, compactionKind) || other.compactionKind == compactionKind)&&(identical(other.compactedFromMessageId, compactedFromMessageId) || other.compactedFromMessageId == compactedFromMessageId)&&(identical(other.compactedThroughMessageId, compactedThroughMessageId) || other.compactedThroughMessageId == compactedThroughMessageId)&&const DeepCollectionEquality().equals(other._compactedMessageIds, _compactedMessageIds)&&(identical(other.compactionCreatedAt, compactionCreatedAt) || other.compactionCreatedAt == compactionCreatedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_toolCalls),promptTokens,completionTokens,totalTokens);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_toolCalls),promptTokens,completionTokens,totalTokens,metadataVersion,isCompactionSummary,compactionKind,compactedFromMessageId,compactedThroughMessageId,const DeepCollectionEquality().hash(_compactedMessageIds),compactionCreatedAt);
 
 @override
 String toString() {
-  return 'MessageMetadataEntity(toolCalls: $toolCalls, promptTokens: $promptTokens, completionTokens: $completionTokens, totalTokens: $totalTokens)';
+  return 'MessageMetadataEntity(toolCalls: $toolCalls, promptTokens: $promptTokens, completionTokens: $completionTokens, totalTokens: $totalTokens, metadataVersion: $metadataVersion, isCompactionSummary: $isCompactionSummary, compactionKind: $compactionKind, compactedFromMessageId: $compactedFromMessageId, compactedThroughMessageId: $compactedThroughMessageId, compactedMessageIds: $compactedMessageIds, compactionCreatedAt: $compactionCreatedAt)';
 }
 
 
@@ -544,7 +564,7 @@ abstract mixin class _$MessageMetadataEntityCopyWith<$Res> implements $MessageMe
   factory _$MessageMetadataEntityCopyWith(_MessageMetadataEntity value, $Res Function(_MessageMetadataEntity) _then) = __$MessageMetadataEntityCopyWithImpl;
 @override @useResult
 $Res call({
- List<MessageToolCallEntity> toolCalls, int? promptTokens, int? completionTokens, int? totalTokens
+ List<MessageToolCallEntity> toolCalls, int? promptTokens, int? completionTokens, int? totalTokens, int metadataVersion, bool isCompactionSummary, CompactionKind? compactionKind, String? compactedFromMessageId, String? compactedThroughMessageId, List<String> compactedMessageIds, DateTime? compactionCreatedAt
 });
 
 
@@ -561,13 +581,20 @@ class __$MessageMetadataEntityCopyWithImpl<$Res>
 
 /// Create a copy of MessageMetadataEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? toolCalls = null,Object? promptTokens = freezed,Object? completionTokens = freezed,Object? totalTokens = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? toolCalls = null,Object? promptTokens = freezed,Object? completionTokens = freezed,Object? totalTokens = freezed,Object? metadataVersion = null,Object? isCompactionSummary = null,Object? compactionKind = freezed,Object? compactedFromMessageId = freezed,Object? compactedThroughMessageId = freezed,Object? compactedMessageIds = null,Object? compactionCreatedAt = freezed,}) {
   return _then(_MessageMetadataEntity(
 toolCalls: null == toolCalls ? _self._toolCalls : toolCalls // ignore: cast_nullable_to_non_nullable
 as List<MessageToolCallEntity>,promptTokens: freezed == promptTokens ? _self.promptTokens : promptTokens // ignore: cast_nullable_to_non_nullable
 as int?,completionTokens: freezed == completionTokens ? _self.completionTokens : completionTokens // ignore: cast_nullable_to_non_nullable
 as int?,totalTokens: freezed == totalTokens ? _self.totalTokens : totalTokens // ignore: cast_nullable_to_non_nullable
-as int?,
+as int?,metadataVersion: null == metadataVersion ? _self.metadataVersion : metadataVersion // ignore: cast_nullable_to_non_nullable
+as int,isCompactionSummary: null == isCompactionSummary ? _self.isCompactionSummary : isCompactionSummary // ignore: cast_nullable_to_non_nullable
+as bool,compactionKind: freezed == compactionKind ? _self.compactionKind : compactionKind // ignore: cast_nullable_to_non_nullable
+as CompactionKind?,compactedFromMessageId: freezed == compactedFromMessageId ? _self.compactedFromMessageId : compactedFromMessageId // ignore: cast_nullable_to_non_nullable
+as String?,compactedThroughMessageId: freezed == compactedThroughMessageId ? _self.compactedThroughMessageId : compactedThroughMessageId // ignore: cast_nullable_to_non_nullable
+as String?,compactedMessageIds: null == compactedMessageIds ? _self._compactedMessageIds : compactedMessageIds // ignore: cast_nullable_to_non_nullable
+as List<String>,compactionCreatedAt: freezed == compactionCreatedAt ? _self.compactionCreatedAt : compactionCreatedAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,
   ));
 }
 

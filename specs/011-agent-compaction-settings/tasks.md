@@ -21,10 +21,10 @@ All implementation tasks must keep compaction business rules in use cases, use l
 
 **Purpose**: Prepare localization and generated-code scaffolding used by all stories.
 
-- [ ] T001 Add English compaction settings, compacting, compacted, details, and failure strings in `apps/auravibes_app/assets/i18n/en.json`
-- [ ] T002 [P] Add Spanish compaction settings, compacting, compacted, details, and failure strings in `apps/auravibes_app/assets/i18n/es.json`
-- [ ] T003 Regenerate localization keys for new compaction copy in `apps/auravibes_app/lib/i18n/locale_keys.dart`
-- [ ] T004 Confirm build_runner, Freezed, JSON, and Riverpod generator dependencies remain available in `apps/auravibes_app/pubspec.yaml`
+- [x] T001 Add English compaction settings, compacting, compacted, details, and failure strings in `apps/auravibes_app/assets/i18n/en.json`
+- [x] T002 [P] Add Spanish compaction settings, compacting, compacted, details, and failure strings in `apps/auravibes_app/assets/i18n/es.json`
+- [x] T003 Regenerate localization keys for new compaction copy in `apps/auravibes_app/lib/i18n/locale_keys.dart`
+- [x] T004 Confirm build_runner, Freezed, JSON, and Riverpod generator dependencies remain available in `apps/auravibes_app/pubspec.yaml`
 
 ---
 
@@ -43,10 +43,10 @@ All implementation tasks must keep compaction business rules in use cases, use l
 - [ ] T011 Implement repository support for compaction summary writes and latest-summary lookup in `apps/auravibes_app/lib/data/repositories/message_repository_impl.dart`
 - [ ] T012 Implement Drift DAO support for latest compaction summary lookup by conversation in `apps/auravibes_app/lib/data/database/drift/daos/message_dao.dart`
 - [ ] T013 [P] Add compaction settings repository/provider backed by shared preferences in `apps/auravibes_app/lib/features/settings/providers/compaction_settings_provider.dart`
-- [ ] T014 [P] Add compaction prompt-message selection use case anchored at the latest summary in `apps/auravibes_app/lib/features/chats/usecases/select_prompt_messages_usecase.dart`
-- [ ] T015 [P] Add compaction-range selection use case that preserves recent tail and complete tool-call/result groups in `apps/auravibes_app/lib/features/chats/usecases/select_compaction_range_usecase.dart`
-- [ ] T016 [P] Update prompt builder to map `MessageType.system` compaction summaries to system/context messages and normalize payload text only in `apps/auravibes_app/lib/services/chatbot_service/build_prompt_chat_messages.dart`
-- [ ] T017 Add provider registrations for compaction use cases and mutations in `apps/auravibes_app/lib/features/chats/providers/compaction_providers.dart`
+- [x] T014 [P] Add compaction prompt-message selection use case anchored at the latest summary in `apps/auravibes_app/lib/features/chats/usecases/select_prompt_messages_usecase.dart`
+- [x] T015 [P] Add compaction-range selection use case that preserves recent tail and complete tool-call/result groups in `apps/auravibes_app/lib/features/chats/usecases/select_compaction_range_usecase.dart`
+- [x] T016 [P] Update prompt builder to map `MessageType.system` compaction summaries to system/context messages and normalize payload text only in `apps/auravibes_app/lib/services/chatbot_service/build_prompt_chat_messages.dart`
+- [x] T017 Add provider registrations for compaction use cases and mutations in `apps/auravibes_app/lib/features/chats/providers/compaction_providers.dart`
 
 **Checkpoint**: Metadata, settings persistence, typed errors, range selection, prompt selection, and provider wiring are ready for story implementation.
 
@@ -60,26 +60,26 @@ All implementation tasks must keep compaction business rules in use cases, use l
 
 ### Tests for User Story 1
 
-- [ ] T018 [P] [US1] Add token estimate and threshold-decision tests for auto compaction in `apps/auravibes_app/test/features/chats/usecases/should_compact_conversation_usecase_test.dart`
-- [ ] T019 [P] [US1] Add compaction range tests for safe tail, resolved tool-call groups, unresolved tools, failed messages, and pending approvals in `apps/auravibes_app/test/features/chats/usecases/select_compaction_range_usecase_test.dart`
-- [ ] T020 [P] [US1] Add prompt payload tests proving latest summary anchoring and no duplicated compacted predecessors in `apps/auravibes_app/test/features/chats/usecases/select_prompt_messages_usecase_test.dart`
-- [ ] T021 [P] [US1] Add auto compaction execution tests proving active provider/model, compaction system prompt, metadata writes, and failure no-boundary-change behavior in `apps/auravibes_app/test/features/chats/usecases/compact_conversation_usecase_test.dart`
-- [ ] T022 [P] [US1] Add continuation tests for pre-continuation compaction, required-failure blocking, visible error persistence, and context-overflow retry-once in `apps/auravibes_app/test/features/chats/usecases/continue_agent_usecase_test.dart`
-- [ ] T023 [P] [US1] Add queue behavior tests for compaction-as-busy ordering in `apps/auravibes_app/test/features/chats/notifiers/conversation_send_queue_notifier_test.dart`
-- [ ] T024 [P] [US1] Add conversation list widget test for temporary separate `Compacting` row lifecycle in `apps/auravibes_app/test/features/chats/widgets/sidebar_conversations_widget_test.dart`
+- [x] T018 [P] [US1] Add token estimate and threshold-decision tests for auto compaction in `apps/auravibes_app/test/features/chats/usecases/should_compact_conversation_usecase_test.dart`
+- [x] T019 [P] [US1] Add compaction range tests for safe tail, resolved tool-call groups, unresolved tools, failed messages, and pending approvals in `apps/auravibes_app/test/features/chats/usecases/select_compaction_range_usecase_test.dart`
+- [x] T020 [P] [US1] Add prompt payload tests proving latest summary anchoring and no duplicated compacted predecessors in `apps/auravibes_app/test/features/chats/usecases/select_prompt_messages_usecase_test.dart`
+- [x] T021 [P] [US1] Add auto compaction execution tests proving active provider/model, compaction system prompt, metadata writes, and failure no-boundary-change behavior in `apps/auravibes_app/test/features/chats/usecases/compact_conversation_usecase_test.dart`
+- [x] T022 [P] [US1] Add continuation tests for pre-continuation compaction, required-failure blocking, visible error persistence, and context-overflow retry-once in `apps/auravibes_app/test/features/chats/usecases/continue_agent_usecase_test.dart`
+- [x] T023 [P] [US1] Add queue behavior tests for compaction-as-busy ordering in `apps/auravibes_app/test/features/chats/notifiers/conversation_send_queue_notifier_test.dart`
+- [x] T024 [P] [US1] Add conversation list widget test for temporary separate `Compacting` row lifecycle in `apps/auravibes_app/test/features/chats/widgets/sidebar_conversations_widget_test.dart`
 
 ### Implementation for User Story 1
 
-- [ ] T025 [US1] Implement prompt-token estimation using latest usage data and conservative fallback approximation in `apps/auravibes_app/lib/features/chats/usecases/estimate_conversation_prompt_tokens_usecase.dart`
-- [ ] T026 [US1] Implement deterministic auto/manual compaction decisions with both threshold checks and unsafe-state reasons in `apps/auravibes_app/lib/features/chats/usecases/should_compact_conversation_usecase.dart`
-- [ ] T027 [US1] Implement AI-agent-service summary generation with active conversation provider/model and compaction-specific system prompt in `apps/auravibes_app/lib/features/chats/usecases/compact_conversation_usecase.dart`
-- [ ] T028 [US1] Persist auto compaction summary messages and visible required-failure system error messages without moving boundaries on failure in `apps/auravibes_app/lib/features/chats/usecases/compact_conversation_usecase.dart`
-- [ ] T029 [US1] Integrate auto compaction before assistant history construction and assistant continuation in `apps/auravibes_app/lib/features/chats/usecases/continue_agent_usecase.dart`
-- [ ] T030 [US1] Add provider context-overflow detection and retry-once guard around assistant continuation in `apps/auravibes_app/lib/features/chats/usecases/continue_agent_usecase.dart`
-- [ ] T031 [US1] Treat active compaction as conversation busy state for send flow in `apps/auravibes_app/lib/features/chats/usecases/get_conversation_busy_state_usecase.dart`
-- [ ] T032 [US1] Route sends during compaction through the existing queue in `apps/auravibes_app/lib/features/chats/usecases/send_message_usecase.dart`
-- [ ] T033 [US1] Expose compaction execution state for conversation list rendering in `apps/auravibes_app/lib/features/chats/providers/compaction_providers.dart`
-- [ ] T034 [US1] Render and remove the temporary separate `Compacting` row in the conversations list in `apps/auravibes_app/lib/features/chats/widgets/sidebar_conversations_widget.dart`
+- [x] T025 [US1] Implement prompt-token estimation using latest usage data and conservative fallback approximation in `apps/auravibes_app/lib/features/chats/usecases/estimate_conversation_prompt_tokens_usecase.dart`
+- [x] T026 [US1] Implement deterministic auto/manual compaction decisions with both threshold checks and unsafe-state reasons in `apps/auravibes_app/lib/features/chats/usecases/should_compact_conversation_usecase.dart`
+- [x] T027 [US1] Implement AI-agent-service summary generation with active conversation provider/model and compaction-specific system prompt in `apps/auravibes_app/lib/features/chats/usecases/compact_conversation_usecase.dart`
+- [x] T028 [US1] Persist auto compaction summary messages and visible required-failure system error messages without moving boundaries on failure in `apps/auravibes_app/lib/features/chats/usecases/compact_conversation_usecase.dart`
+- [x] T029 [US1] Integrate auto compaction before assistant history construction and assistant continuation in `apps/auravibes_app/lib/features/chats/usecases/continue_agent_usecase.dart`
+- [x] T030 [US1] Add provider context-overflow detection and retry-once guard around assistant continuation in `apps/auravibes_app/lib/features/chats/usecases/continue_agent_usecase.dart`
+- [x] T031 [US1] Treat active compaction as conversation busy state for send flow in `apps/auravibes_app/lib/features/chats/usecases/get_conversation_busy_state_usecase.dart`
+- [x] T032 [US1] Route sends during compaction through the existing queue in `apps/auravibes_app/lib/features/chats/usecases/send_message_usecase.dart`
+- [x] T033 [US1] Expose compaction execution state for conversation list rendering in `apps/auravibes_app/lib/features/chats/providers/compaction_providers.dart`
+- [x] T034 [US1] Render and remove the temporary separate `Compacting` row in the conversations list in `apps/auravibes_app/lib/features/chats/widgets/sidebar_conversations_widget.dart`
 
 **Checkpoint**: US1 is functional and independently testable as the MVP auto-compaction safety behavior.
 
@@ -93,20 +93,20 @@ All implementation tasks must keep compaction business rules in use cases, use l
 
 ### Tests for User Story 2
 
-- [ ] T035 [P] [US2] Add manual compaction tests for below-threshold eligibility, busy/unsafe disabled reasons, success metadata kind, failure unchanged state, and no auto-continue in `apps/auravibes_app/test/features/chats/usecases/compact_conversation_usecase_test.dart`
-- [ ] T036 [P] [US2] Add chat input widget tests for manual compact button enabled, disabled, running, success, and failure feedback states in `apps/auravibes_app/test/features/chats/widgets/chat_input_widget_test.dart`
-- [ ] T037 [P] [US2] Add chat messages widget tests for visible `Compacted` widget, manual/auto origin, and details tap behavior in `apps/auravibes_app/test/features/chats/widgets/chat_messages_widget_test.dart`
-- [ ] T038 [P] [US2] Add payload-vs-storage fidelity tests for raw stored summary content and normalized model payload content in `apps/auravibes_app/test/services/chatbot_service/build_prompt_chat_messages_test.dart`
+- [x] T035 [P] [US2] Add manual compaction tests for below-threshold eligibility, busy/unsafe disabled reasons, success metadata kind, failure unchanged state, and no auto-continue in `apps/auravibes_app/test/features/chats/usecases/compact_conversation_usecase_test.dart`
+- [x] T036 [P] [US2] Add chat input widget tests for manual compact button enabled, disabled, running, success, and failure feedback states in `apps/auravibes_app/test/features/chats/widgets/chat_input_widget_test.dart`
+- [x] T037 [P] [US2] Add chat messages widget tests for visible `Compacted` widget, manual/auto origin, and details tap behavior in `apps/auravibes_app/test/features/chats/widgets/chat_messages_widget_test.dart`
+- [x] T038 [P] [US2] Add payload-vs-storage fidelity tests for raw stored summary content and normalized model payload content in `apps/auravibes_app/test/services/chatbot_service/build_prompt_chat_messages_test.dart`
 
 ### Implementation for User Story 2
 
-- [ ] T039 [US2] Add manual trigger support to compaction execution while ignoring auto thresholds but enforcing safe eligible context in `apps/auravibes_app/lib/features/chats/usecases/compact_conversation_usecase.dart`
-- [ ] T040 [US2] Add manual compact mutation state and localized feedback mapping in `apps/auravibes_app/lib/features/chats/providers/compaction_providers.dart`
-- [ ] T041 [US2] Add manual compact control, tooltip, disabled reason, and running state to chat input in `apps/auravibes_app/lib/features/chats/widgets/chat_input_widget.dart`
-- [ ] T042 [US2] Wire manual compaction callbacks from conversation screen to chat input in `apps/auravibes_app/lib/features/chats/screens/chat_conversation_screen.dart`
-- [ ] T043 [US2] Render visible `Compacted` transcript widget for compaction summary messages in `apps/auravibes_app/lib/features/chats/widgets/chat_messages_widget.dart`
-- [ ] T044 [US2] Implement compacted-message details modal/card that displays stored untrimmed content in `apps/auravibes_app/lib/features/chats/widgets/compacted_message_details.dart`
-- [ ] T045 [US2] Ensure manual compaction does not call assistant continuation after success in `apps/auravibes_app/lib/features/chats/usecases/run_agent_iteration_usecase.dart`
+- [x] T039 [US2] Add manual trigger support to compaction execution while ignoring auto thresholds but enforcing safe eligible context in `apps/auravibes_app/lib/features/chats/usecases/compact_conversation_usecase.dart`
+- [x] T040 [US2] Add manual compact mutation state and localized feedback mapping in `apps/auravibes_app/lib/features/chats/providers/compaction_providers.dart`
+- [x] T041 [US2] Add manual compact control, tooltip, disabled reason, and running state to chat input in `apps/auravibes_app/lib/features/chats/widgets/chat_input_widget.dart`
+- [x] T042 [US2] Wire manual compaction callbacks from conversation screen to chat input in `apps/auravibes_app/lib/features/chats/screens/chat_conversation_screen.dart`
+- [x] T043 [US2] Render visible `Compacted` transcript widget for compaction summary messages in `apps/auravibes_app/lib/features/chats/widgets/chat_messages_widget.dart`
+- [x] T044 [US2] Implement compacted-message details modal/card that displays stored untrimmed content in `apps/auravibes_app/lib/features/chats/widgets/compacted_message_details.dart`
+- [x] T045 [US2] Ensure manual compaction does not call assistant continuation after success in `apps/auravibes_app/lib/features/chats/usecases/run_agent_iteration_usecase.dart`
 
 **Checkpoint**: US2 is functional and independently testable without requiring auto thresholds.
 
@@ -120,18 +120,18 @@ All implementation tasks must keep compaction business rules in use cases, use l
 
 ### Tests for User Story 3
 
-- [ ] T046 [P] [US3] Add provider tests for default settings, shared-preferences persistence, save validation, reset defaults, and dynamic capped remaining-token fallback in `apps/auravibes_app/test/features/settings/providers/compaction_settings_provider_test.dart`
-- [ ] T047 [P] [US3] Add settings section widget tests for localized labels, editing, invalid save blocking, and reset behavior in `apps/auravibes_app/test/features/settings/widgets/compaction_settings_section_test.dart`
-- [ ] T048 [P] [US3] Add integration tests proving saved settings feed auto compaction decisions in `apps/auravibes_app/test/features/chats/usecases/should_compact_conversation_usecase_test.dart`
+- [x] T046 [P] [US3] Add provider tests for default settings, shared-preferences persistence, save validation, reset defaults, and dynamic capped remaining-token fallback in `apps/auravibes_app/test/features/settings/providers/compaction_settings_provider_test.dart`
+- [x] T047 [P] [US3] Add settings section widget tests for localized labels, editing, invalid save blocking, and reset behavior in `apps/auravibes_app/test/features/settings/widgets/compaction_settings_section_test.dart`
+- [x] T048 [P] [US3] Add integration tests proving saved settings feed auto compaction decisions in `apps/auravibes_app/test/features/chats/usecases/should_compact_conversation_usecase_test.dart`
 
 ### Implementation for User Story 3
 
-- [ ] T049 [US3] Implement settings validation, default calculation, save, load, and reset logic in `apps/auravibes_app/lib/features/settings/providers/compaction_settings_provider.dart`
-- [ ] T050 [US3] Add compaction settings section UI with auto toggle, usage threshold field, remaining-token field, save, validation, and reset controls in `apps/auravibes_app/lib/features/settings/widgets/compaction_settings_section.dart`
-- [ ] T051 [US3] Wire compaction settings section into the existing settings screen card layout in `apps/auravibes_app/lib/features/settings/screens/settings_screen.dart`
-- [ ] T052 [US3] Inject saved compaction settings into auto compaction decision logic in `apps/auravibes_app/lib/features/chats/usecases/should_compact_conversation_usecase.dart`
-- [ ] T053 [US3] Localize settings validation errors and reset/save feedback in `apps/auravibes_app/assets/i18n/en.json`
-- [ ] T054 [US3] Localize settings validation errors and reset/save feedback in `apps/auravibes_app/assets/i18n/es.json`
+- [x] T049 [US3] Implement settings validation, default calculation, save, load, and reset logic in `apps/auravibes_app/lib/features/settings/providers/compaction_settings_provider.dart`
+- [x] T050 [US3] Add compaction settings section UI with auto toggle, usage threshold field, remaining-token field, save, validation, and reset controls in `apps/auravibes_app/lib/features/settings/widgets/compaction_settings_section.dart`
+- [x] T051 [US3] Wire compaction settings section into the existing settings screen card layout in `apps/auravibes_app/lib/features/settings/screens/settings_screen.dart`
+- [x] T052 [US3] Inject saved compaction settings into auto compaction decision logic in `apps/auravibes_app/lib/features/chats/usecases/should_compact_conversation_usecase.dart`
+- [x] T053 [US3] Localize settings validation errors and reset/save feedback in `apps/auravibes_app/assets/i18n/en.json`
+- [x] T054 [US3] Localize settings validation errors and reset/save feedback in `apps/auravibes_app/assets/i18n/es.json`
 
 **Checkpoint**: US3 is functional and independently testable as a settings-only increment plus auto-check integration.
 
@@ -141,12 +141,12 @@ All implementation tasks must keep compaction business rules in use cases, use l
 
 **Purpose**: Generated-code, formatting, validation, and documentation alignment after selected stories are complete.
 
-- [ ] T055 Regenerate Freezed/JSON/Riverpod outputs after implementation changes in `apps/auravibes_app/lib/domain/entities/messages.g.dart`
-- [ ] T056 [P] Update quickstart validation notes with final implemented file names and commands in `specs/011-agent-compaction-settings/quickstart.md`
-- [ ] T057 Run focused chat use case tests from quickstart and fix failures in `apps/auravibes_app/test/features/chats/usecases/continue_agent_usecase_test.dart`
-- [ ] T058 Run focused chat widget tests from quickstart and fix failures in `apps/auravibes_app/test/features/chats/widgets/chat_messages_widget_test.dart`
-- [ ] T059 Run focused settings tests from quickstart and fix failures in `apps/auravibes_app/test/features/settings/providers/compaction_settings_provider_test.dart`
-- [ ] T060 Run `fvm dart run melos analyze`, `fvm dart run melos format`, and `fvm dart run melos run test` using workspace config `melos.yaml`
+- [x] T055 Regenerate Freezed/JSON/Riverpod outputs after implementation changes in `apps/auravibes_app/lib/domain/entities/messages.g.dart`
+- [x] T056 [P] Update quickstart validation notes with final implemented file names and commands in `specs/011-agent-compaction-settings/quickstart.md`
+- [x] T057 Run focused chat use case tests from quickstart and fix failures in `apps/auravibes_app/test/features/chats/usecases/continue_agent_usecase_test.dart`
+- [x] T058 Run focused chat widget tests from quickstart and fix failures in `apps/auravibes_app/test/features/chats/widgets/chat_messages_widget_test.dart`
+- [x] T059 Run focused settings tests from quickstart and fix failures in `apps/auravibes_app/test/features/settings/providers/compaction_settings_provider_test.dart`
+- [x] T060 Run `fvm dart run melos analyze`, `fvm dart run melos format`, and `fvm dart run melos run test` using workspace config `melos.yaml`
 
 ---
 

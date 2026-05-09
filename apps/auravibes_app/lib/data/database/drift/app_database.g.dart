@@ -6033,6 +6033,535 @@ class ConversationToolsCompanion
   }
 }
 
+class $WorkspaceCompactionSettingsTable extends WorkspaceCompactionSettings
+    with
+        TableInfo<
+          $WorkspaceCompactionSettingsTable,
+          WorkspaceCompactionSettingsTable
+        > {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WorkspaceCompactionSettingsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: () => const UuidV7().generate(),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _workspaceIdMeta = const VerificationMeta(
+    'workspaceId',
+  );
+  @override
+  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
+    'workspace_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES workspaces (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _autoCompactEnabledMeta =
+      const VerificationMeta('autoCompactEnabled');
+  @override
+  late final GeneratedColumn<bool> autoCompactEnabled = GeneratedColumn<bool>(
+    'auto_compact_enabled',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("auto_compact_enabled" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _usagePercentageThresholdMeta =
+      const VerificationMeta('usagePercentageThreshold');
+  @override
+  late final GeneratedColumn<int> usagePercentageThreshold =
+      GeneratedColumn<int>(
+        'usage_percentage_threshold',
+        aliasedName,
+        true,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _remainingTokenThresholdMeta =
+      const VerificationMeta('remainingTokenThreshold');
+  @override
+  late final GeneratedColumn<int> remainingTokenThreshold =
+      GeneratedColumn<int>(
+        'remaining_token_threshold',
+        aliasedName,
+        true,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    createdAt,
+    updatedAt,
+    workspaceId,
+    autoCompactEnabled,
+    usagePercentageThreshold,
+    remainingTokenThreshold,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'workspace_compaction_settings';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WorkspaceCompactionSettingsTable> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+        _workspaceIdMeta,
+        workspaceId.isAcceptableOrUnknown(
+          data['workspace_id']!,
+          _workspaceIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_workspaceIdMeta);
+    }
+    if (data.containsKey('auto_compact_enabled')) {
+      context.handle(
+        _autoCompactEnabledMeta,
+        autoCompactEnabled.isAcceptableOrUnknown(
+          data['auto_compact_enabled']!,
+          _autoCompactEnabledMeta,
+        ),
+      );
+    }
+    if (data.containsKey('usage_percentage_threshold')) {
+      context.handle(
+        _usagePercentageThresholdMeta,
+        usagePercentageThreshold.isAcceptableOrUnknown(
+          data['usage_percentage_threshold']!,
+          _usagePercentageThresholdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('remaining_token_threshold')) {
+      context.handle(
+        _remainingTokenThresholdMeta,
+        remainingTokenThreshold.isAcceptableOrUnknown(
+          data['remaining_token_threshold']!,
+          _remainingTokenThresholdMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => const {};
+  @override
+  WorkspaceCompactionSettingsTable map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WorkspaceCompactionSettingsTable(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      workspaceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}workspace_id'],
+      )!,
+      autoCompactEnabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}auto_compact_enabled'],
+      ),
+      usagePercentageThreshold: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}usage_percentage_threshold'],
+      ),
+      remainingTokenThreshold: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}remaining_token_threshold'],
+      ),
+    );
+  }
+
+  @override
+  $WorkspaceCompactionSettingsTable createAlias(String alias) {
+    return $WorkspaceCompactionSettingsTable(attachedDatabase, alias);
+  }
+}
+
+class WorkspaceCompactionSettingsTable extends DataClass
+    implements Insertable<WorkspaceCompactionSettingsTable> {
+  ///Primary key column as string
+  final String id;
+
+  /// when was created timestamp
+  final DateTime createdAt;
+
+  /// when was last updated timestamp
+  final DateTime updatedAt;
+  final String workspaceId;
+  final bool? autoCompactEnabled;
+  final int? usagePercentageThreshold;
+  final int? remainingTokenThreshold;
+  const WorkspaceCompactionSettingsTable({
+    required this.id,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.workspaceId,
+    this.autoCompactEnabled,
+    this.usagePercentageThreshold,
+    this.remainingTokenThreshold,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['workspace_id'] = Variable<String>(workspaceId);
+    if (!nullToAbsent || autoCompactEnabled != null) {
+      map['auto_compact_enabled'] = Variable<bool>(autoCompactEnabled);
+    }
+    if (!nullToAbsent || usagePercentageThreshold != null) {
+      map['usage_percentage_threshold'] = Variable<int>(
+        usagePercentageThreshold,
+      );
+    }
+    if (!nullToAbsent || remainingTokenThreshold != null) {
+      map['remaining_token_threshold'] = Variable<int>(remainingTokenThreshold);
+    }
+    return map;
+  }
+
+  WorkspaceCompactionSettingsCompanion toCompanion(bool nullToAbsent) {
+    return WorkspaceCompactionSettingsCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      workspaceId: Value(workspaceId),
+      autoCompactEnabled: autoCompactEnabled == null && nullToAbsent
+          ? const Value.absent()
+          : Value(autoCompactEnabled),
+      usagePercentageThreshold: usagePercentageThreshold == null && nullToAbsent
+          ? const Value.absent()
+          : Value(usagePercentageThreshold),
+      remainingTokenThreshold: remainingTokenThreshold == null && nullToAbsent
+          ? const Value.absent()
+          : Value(remainingTokenThreshold),
+    );
+  }
+
+  factory WorkspaceCompactionSettingsTable.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WorkspaceCompactionSettingsTable(
+      id: serializer.fromJson<String>(json['id']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      workspaceId: serializer.fromJson<String>(json['workspaceId']),
+      autoCompactEnabled: serializer.fromJson<bool?>(
+        json['autoCompactEnabled'],
+      ),
+      usagePercentageThreshold: serializer.fromJson<int?>(
+        json['usagePercentageThreshold'],
+      ),
+      remainingTokenThreshold: serializer.fromJson<int?>(
+        json['remainingTokenThreshold'],
+      ),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'workspaceId': serializer.toJson<String>(workspaceId),
+      'autoCompactEnabled': serializer.toJson<bool?>(autoCompactEnabled),
+      'usagePercentageThreshold': serializer.toJson<int?>(
+        usagePercentageThreshold,
+      ),
+      'remainingTokenThreshold': serializer.toJson<int?>(
+        remainingTokenThreshold,
+      ),
+    };
+  }
+
+  WorkspaceCompactionSettingsTable copyWith({
+    String? id,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    String? workspaceId,
+    Value<bool?> autoCompactEnabled = const Value.absent(),
+    Value<int?> usagePercentageThreshold = const Value.absent(),
+    Value<int?> remainingTokenThreshold = const Value.absent(),
+  }) => WorkspaceCompactionSettingsTable(
+    id: id ?? this.id,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    workspaceId: workspaceId ?? this.workspaceId,
+    autoCompactEnabled: autoCompactEnabled.present
+        ? autoCompactEnabled.value
+        : this.autoCompactEnabled,
+    usagePercentageThreshold: usagePercentageThreshold.present
+        ? usagePercentageThreshold.value
+        : this.usagePercentageThreshold,
+    remainingTokenThreshold: remainingTokenThreshold.present
+        ? remainingTokenThreshold.value
+        : this.remainingTokenThreshold,
+  );
+  WorkspaceCompactionSettingsTable copyWithCompanion(
+    WorkspaceCompactionSettingsCompanion data,
+  ) {
+    return WorkspaceCompactionSettingsTable(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      workspaceId: data.workspaceId.present
+          ? data.workspaceId.value
+          : this.workspaceId,
+      autoCompactEnabled: data.autoCompactEnabled.present
+          ? data.autoCompactEnabled.value
+          : this.autoCompactEnabled,
+      usagePercentageThreshold: data.usagePercentageThreshold.present
+          ? data.usagePercentageThreshold.value
+          : this.usagePercentageThreshold,
+      remainingTokenThreshold: data.remainingTokenThreshold.present
+          ? data.remainingTokenThreshold.value
+          : this.remainingTokenThreshold,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceCompactionSettingsTable(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('autoCompactEnabled: $autoCompactEnabled, ')
+          ..write('usagePercentageThreshold: $usagePercentageThreshold, ')
+          ..write('remainingTokenThreshold: $remainingTokenThreshold')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    createdAt,
+    updatedAt,
+    workspaceId,
+    autoCompactEnabled,
+    usagePercentageThreshold,
+    remainingTokenThreshold,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WorkspaceCompactionSettingsTable &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.workspaceId == this.workspaceId &&
+          other.autoCompactEnabled == this.autoCompactEnabled &&
+          other.usagePercentageThreshold == this.usagePercentageThreshold &&
+          other.remainingTokenThreshold == this.remainingTokenThreshold);
+}
+
+class WorkspaceCompactionSettingsCompanion
+    extends UpdateCompanion<WorkspaceCompactionSettingsTable> {
+  final Value<String> id;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<String> workspaceId;
+  final Value<bool?> autoCompactEnabled;
+  final Value<int?> usagePercentageThreshold;
+  final Value<int?> remainingTokenThreshold;
+  final Value<int> rowid;
+  const WorkspaceCompactionSettingsCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.workspaceId = const Value.absent(),
+    this.autoCompactEnabled = const Value.absent(),
+    this.usagePercentageThreshold = const Value.absent(),
+    this.remainingTokenThreshold = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WorkspaceCompactionSettingsCompanion.insert({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    required String workspaceId,
+    this.autoCompactEnabled = const Value.absent(),
+    this.usagePercentageThreshold = const Value.absent(),
+    this.remainingTokenThreshold = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : workspaceId = Value(workspaceId);
+  static Insertable<WorkspaceCompactionSettingsTable> custom({
+    Expression<String>? id,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? workspaceId,
+    Expression<bool>? autoCompactEnabled,
+    Expression<int>? usagePercentageThreshold,
+    Expression<int>? remainingTokenThreshold,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (autoCompactEnabled != null)
+        'auto_compact_enabled': autoCompactEnabled,
+      if (usagePercentageThreshold != null)
+        'usage_percentage_threshold': usagePercentageThreshold,
+      if (remainingTokenThreshold != null)
+        'remaining_token_threshold': remainingTokenThreshold,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WorkspaceCompactionSettingsCompanion copyWith({
+    Value<String>? id,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<String>? workspaceId,
+    Value<bool?>? autoCompactEnabled,
+    Value<int?>? usagePercentageThreshold,
+    Value<int?>? remainingTokenThreshold,
+    Value<int>? rowid,
+  }) {
+    return WorkspaceCompactionSettingsCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      workspaceId: workspaceId ?? this.workspaceId,
+      autoCompactEnabled: autoCompactEnabled ?? this.autoCompactEnabled,
+      usagePercentageThreshold:
+          usagePercentageThreshold ?? this.usagePercentageThreshold,
+      remainingTokenThreshold:
+          remainingTokenThreshold ?? this.remainingTokenThreshold,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<String>(workspaceId.value);
+    }
+    if (autoCompactEnabled.present) {
+      map['auto_compact_enabled'] = Variable<bool>(autoCompactEnabled.value);
+    }
+    if (usagePercentageThreshold.present) {
+      map['usage_percentage_threshold'] = Variable<int>(
+        usagePercentageThreshold.value,
+      );
+    }
+    if (remainingTokenThreshold.present) {
+      map['remaining_token_threshold'] = Variable<int>(
+        remainingTokenThreshold.value,
+      );
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceCompactionSettingsCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('autoCompactEnabled: $autoCompactEnabled, ')
+          ..write('usagePercentageThreshold: $usagePercentageThreshold, ')
+          ..write('remainingTokenThreshold: $remainingTokenThreshold, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -6052,6 +6581,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ToolsTable tools = $ToolsTable(this);
   late final $ConversationToolsTable conversationTools =
       $ConversationToolsTable(this);
+  late final $WorkspaceCompactionSettingsTable workspaceCompactionSettings =
+      $WorkspaceCompactionSettingsTable(this);
   late final WorkspaceDao workspaceDao = WorkspaceDao(this as AppDatabase);
   late final ModelConnectionsDao modelConnectionsDao = ModelConnectionsDao(
     this as AppDatabase,
@@ -6076,6 +6607,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     this as AppDatabase,
   );
   late final McpServersDao mcpServersDao = McpServersDao(this as AppDatabase);
+  late final WorkspaceCompactionSettingsDao workspaceCompactionSettingsDao =
+      WorkspaceCompactionSettingsDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -6092,6 +6625,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     toolsGroups,
     tools,
     conversationTools,
+    workspaceCompactionSettings,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -6173,6 +6707,15 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('conversation_tools', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'workspaces',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('workspace_compaction_settings', kind: UpdateKind.delete),
+      ],
     ),
   ]);
 }
@@ -6302,6 +6845,34 @@ final class $$WorkspacesTableReferences
     ).filter((f) => f.workspaceId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_toolsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $WorkspaceCompactionSettingsTable,
+    List<WorkspaceCompactionSettingsTable>
+  >
+  _workspaceCompactionSettingsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.workspaceCompactionSettings,
+        aliasName: $_aliasNameGenerator(
+          db.workspaces.id,
+          db.workspaceCompactionSettings.workspaceId,
+        ),
+      );
+
+  $$WorkspaceCompactionSettingsTableProcessedTableManager
+  get workspaceCompactionSettingsRefs {
+    final manager = $$WorkspaceCompactionSettingsTableTableManager(
+      $_db,
+      $_db.workspaceCompactionSettings,
+    ).filter((f) => f.workspaceId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _workspaceCompactionSettingsRefsTable($_db),
+    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -6470,6 +7041,35 @@ class $$WorkspacesTableFilterComposer
                 $removeJoinBuilderFromRootComposer,
           ),
     );
+    return f(composer);
+  }
+
+  Expression<bool> workspaceCompactionSettingsRefs(
+    Expression<bool> Function(
+      $$WorkspaceCompactionSettingsTableFilterComposer f,
+    )
+    f,
+  ) {
+    final $$WorkspaceCompactionSettingsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.workspaceCompactionSettings,
+          getReferencedColumn: (t) => t.workspaceId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WorkspaceCompactionSettingsTableFilterComposer(
+                $db: $db,
+                $table: $db.workspaceCompactionSettings,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
     return f(composer);
   }
 }
@@ -6665,6 +7265,35 @@ class $$WorkspacesTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> workspaceCompactionSettingsRefs<T extends Object>(
+    Expression<T> Function(
+      $$WorkspaceCompactionSettingsTableAnnotationComposer a,
+    )
+    f,
+  ) {
+    final $$WorkspaceCompactionSettingsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.workspaceCompactionSettings,
+          getReferencedColumn: (t) => t.workspaceId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WorkspaceCompactionSettingsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.workspaceCompactionSettings,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$WorkspacesTableTableManager
@@ -6686,6 +7315,7 @@ class $$WorkspacesTableTableManager
             bool mcpServersRefs,
             bool toolsGroupsRefs,
             bool toolsRefs,
+            bool workspaceCompactionSettingsRefs,
           })
         > {
   $$WorkspacesTableTableManager(_$AppDatabase db, $WorkspacesTable table)
@@ -6750,6 +7380,7 @@ class $$WorkspacesTableTableManager
                 mcpServersRefs = false,
                 toolsGroupsRefs = false,
                 toolsRefs = false,
+                workspaceCompactionSettingsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -6759,6 +7390,8 @@ class $$WorkspacesTableTableManager
                     if (mcpServersRefs) db.mcpServers,
                     if (toolsGroupsRefs) db.toolsGroups,
                     if (toolsRefs) db.tools,
+                    if (workspaceCompactionSettingsRefs)
+                      db.workspaceCompactionSettings,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -6868,6 +7501,27 @@ class $$WorkspacesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (workspaceCompactionSettingsRefs)
+                        await $_getPrefetchedData<
+                          WorkspacesTable,
+                          $WorkspacesTable,
+                          WorkspaceCompactionSettingsTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$WorkspacesTableReferences
+                              ._workspaceCompactionSettingsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$WorkspacesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).workspaceCompactionSettingsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.workspaceId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -6894,6 +7548,7 @@ typedef $$WorkspacesTableProcessedTableManager =
         bool mcpServersRefs,
         bool toolsGroupsRefs,
         bool toolsRefs,
+        bool workspaceCompactionSettingsRefs,
       })
     >;
 typedef $$ApiModelProvidersTableCreateCompanionBuilder =
@@ -12384,6 +13039,400 @@ typedef $$ConversationToolsTableProcessedTableManager =
       ConversationToolsTable,
       PrefetchHooks Function({bool conversationId, bool toolId})
     >;
+typedef $$WorkspaceCompactionSettingsTableCreateCompanionBuilder =
+    WorkspaceCompactionSettingsCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      required String workspaceId,
+      Value<bool?> autoCompactEnabled,
+      Value<int?> usagePercentageThreshold,
+      Value<int?> remainingTokenThreshold,
+      Value<int> rowid,
+    });
+typedef $$WorkspaceCompactionSettingsTableUpdateCompanionBuilder =
+    WorkspaceCompactionSettingsCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<String> workspaceId,
+      Value<bool?> autoCompactEnabled,
+      Value<int?> usagePercentageThreshold,
+      Value<int?> remainingTokenThreshold,
+      Value<int> rowid,
+    });
+
+final class $$WorkspaceCompactionSettingsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $WorkspaceCompactionSettingsTable,
+          WorkspaceCompactionSettingsTable
+        > {
+  $$WorkspaceCompactionSettingsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $WorkspacesTable _workspaceIdTable(_$AppDatabase db) =>
+      db.workspaces.createAlias(
+        $_aliasNameGenerator(
+          db.workspaceCompactionSettings.workspaceId,
+          db.workspaces.id,
+        ),
+      );
+
+  $$WorkspacesTableProcessedTableManager get workspaceId {
+    final $_column = $_itemColumn<String>('workspace_id')!;
+
+    final manager = $$WorkspacesTableTableManager(
+      $_db,
+      $_db.workspaces,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_workspaceIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$WorkspaceCompactionSettingsTableFilterComposer
+    extends Composer<_$AppDatabase, $WorkspaceCompactionSettingsTable> {
+  $$WorkspaceCompactionSettingsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get autoCompactEnabled => $composableBuilder(
+    column: $table.autoCompactEnabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get usagePercentageThreshold => $composableBuilder(
+    column: $table.usagePercentageThreshold,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get remainingTokenThreshold => $composableBuilder(
+    column: $table.remainingTokenThreshold,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$WorkspacesTableFilterComposer get workspaceId {
+    final $$WorkspacesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableFilterComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkspaceCompactionSettingsTableOrderingComposer
+    extends Composer<_$AppDatabase, $WorkspaceCompactionSettingsTable> {
+  $$WorkspaceCompactionSettingsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get autoCompactEnabled => $composableBuilder(
+    column: $table.autoCompactEnabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get usagePercentageThreshold => $composableBuilder(
+    column: $table.usagePercentageThreshold,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get remainingTokenThreshold => $composableBuilder(
+    column: $table.remainingTokenThreshold,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$WorkspacesTableOrderingComposer get workspaceId {
+    final $$WorkspacesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableOrderingComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkspaceCompactionSettingsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $WorkspaceCompactionSettingsTable> {
+  $$WorkspaceCompactionSettingsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get autoCompactEnabled => $composableBuilder(
+    column: $table.autoCompactEnabled,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get usagePercentageThreshold => $composableBuilder(
+    column: $table.usagePercentageThreshold,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get remainingTokenThreshold => $composableBuilder(
+    column: $table.remainingTokenThreshold,
+    builder: (column) => column,
+  );
+
+  $$WorkspacesTableAnnotationComposer get workspaceId {
+    final $$WorkspacesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkspaceCompactionSettingsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $WorkspaceCompactionSettingsTable,
+          WorkspaceCompactionSettingsTable,
+          $$WorkspaceCompactionSettingsTableFilterComposer,
+          $$WorkspaceCompactionSettingsTableOrderingComposer,
+          $$WorkspaceCompactionSettingsTableAnnotationComposer,
+          $$WorkspaceCompactionSettingsTableCreateCompanionBuilder,
+          $$WorkspaceCompactionSettingsTableUpdateCompanionBuilder,
+          (
+            WorkspaceCompactionSettingsTable,
+            $$WorkspaceCompactionSettingsTableReferences,
+          ),
+          WorkspaceCompactionSettingsTable,
+          PrefetchHooks Function({bool workspaceId})
+        > {
+  $$WorkspaceCompactionSettingsTableTableManager(
+    _$AppDatabase db,
+    $WorkspaceCompactionSettingsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WorkspaceCompactionSettingsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$WorkspaceCompactionSettingsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$WorkspaceCompactionSettingsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<String> workspaceId = const Value.absent(),
+                Value<bool?> autoCompactEnabled = const Value.absent(),
+                Value<int?> usagePercentageThreshold = const Value.absent(),
+                Value<int?> remainingTokenThreshold = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceCompactionSettingsCompanion(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                workspaceId: workspaceId,
+                autoCompactEnabled: autoCompactEnabled,
+                usagePercentageThreshold: usagePercentageThreshold,
+                remainingTokenThreshold: remainingTokenThreshold,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                required String workspaceId,
+                Value<bool?> autoCompactEnabled = const Value.absent(),
+                Value<int?> usagePercentageThreshold = const Value.absent(),
+                Value<int?> remainingTokenThreshold = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceCompactionSettingsCompanion.insert(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                workspaceId: workspaceId,
+                autoCompactEnabled: autoCompactEnabled,
+                usagePercentageThreshold: usagePercentageThreshold,
+                remainingTokenThreshold: remainingTokenThreshold,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$WorkspaceCompactionSettingsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({workspaceId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (workspaceId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.workspaceId,
+                                referencedTable:
+                                    $$WorkspaceCompactionSettingsTableReferences
+                                        ._workspaceIdTable(db),
+                                referencedColumn:
+                                    $$WorkspaceCompactionSettingsTableReferences
+                                        ._workspaceIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$WorkspaceCompactionSettingsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $WorkspaceCompactionSettingsTable,
+      WorkspaceCompactionSettingsTable,
+      $$WorkspaceCompactionSettingsTableFilterComposer,
+      $$WorkspaceCompactionSettingsTableOrderingComposer,
+      $$WorkspaceCompactionSettingsTableAnnotationComposer,
+      $$WorkspaceCompactionSettingsTableCreateCompanionBuilder,
+      $$WorkspaceCompactionSettingsTableUpdateCompanionBuilder,
+      (
+        WorkspaceCompactionSettingsTable,
+        $$WorkspaceCompactionSettingsTableReferences,
+      ),
+      WorkspaceCompactionSettingsTable,
+      PrefetchHooks Function({bool workspaceId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -12413,4 +13462,10 @@ class $AppDatabaseManager {
       $$ToolsTableTableManager(_db, _db.tools);
   $$ConversationToolsTableTableManager get conversationTools =>
       $$ConversationToolsTableTableManager(_db, _db.conversationTools);
+  $$WorkspaceCompactionSettingsTableTableManager
+  get workspaceCompactionSettings =>
+      $$WorkspaceCompactionSettingsTableTableManager(
+        _db,
+        _db.workspaceCompactionSettings,
+      );
 }

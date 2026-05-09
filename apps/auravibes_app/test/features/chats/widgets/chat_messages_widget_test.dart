@@ -14,6 +14,7 @@ void main() {
   Widget buildSubject({
     required List<String> messages,
     required List<Object> overrides,
+    String conversationId = 'conv-1',
   }) {
     return EasyLocalization(
       supportedLocales: const [Locale('en')],
@@ -23,7 +24,10 @@ void main() {
       useFallbackTranslations: true,
       useOnlyLangCode: true,
       child: ProviderScope(
-        overrides: overrides.cast(),
+        overrides: [
+          conversationSelectedProvider.overrideWithValue(conversationId),
+          ...overrides.cast(),
+        ],
         child: Builder(
           builder: (context) {
             return MaterialApp(
@@ -33,7 +37,9 @@ void main() {
               home: Theme(
                 data: ThemeData(extensions: [AuraTheme.light]),
                 child: Material(
-                  child: ChatMessagesWidget(messages: messages),
+                  child: ChatMessagesWidget(
+                    messages: messages,
+                  ),
                 ),
               ),
             );

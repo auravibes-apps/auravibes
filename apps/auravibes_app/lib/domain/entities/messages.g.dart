@@ -39,6 +39,22 @@ _MessageMetadataEntity _$MessageMetadataEntityFromJson(
   promptTokens: (json['promptTokens'] as num?)?.toInt(),
   completionTokens: (json['completionTokens'] as num?)?.toInt(),
   totalTokens: (json['totalTokens'] as num?)?.toInt(),
+  metadataVersion: (json['metadataVersion'] as num?)?.toInt() ?? 1,
+  isCompactionSummary: json['isCompactionSummary'] as bool? ?? false,
+  compactionKind: $enumDecodeNullable(
+    _$CompactionKindEnumMap,
+    json['compactionKind'],
+  ),
+  compactedFromMessageId: json['compactedFromMessageId'] as String?,
+  compactedThroughMessageId: json['compactedThroughMessageId'] as String?,
+  compactedMessageIds:
+      (json['compactedMessageIds'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList() ??
+      const <String>[],
+  compactionCreatedAt: json['compactionCreatedAt'] == null
+      ? null
+      : DateTime.parse(json['compactionCreatedAt'] as String),
 );
 
 Map<String, dynamic> _$MessageMetadataEntityToJson(
@@ -48,4 +64,16 @@ Map<String, dynamic> _$MessageMetadataEntityToJson(
   'promptTokens': instance.promptTokens,
   'completionTokens': instance.completionTokens,
   'totalTokens': instance.totalTokens,
+  'metadataVersion': instance.metadataVersion,
+  'isCompactionSummary': instance.isCompactionSummary,
+  'compactionKind': _$CompactionKindEnumMap[instance.compactionKind],
+  'compactedFromMessageId': instance.compactedFromMessageId,
+  'compactedThroughMessageId': instance.compactedThroughMessageId,
+  'compactedMessageIds': instance.compactedMessageIds,
+  'compactionCreatedAt': instance.compactionCreatedAt?.toIso8601String(),
+};
+
+const _$CompactionKindEnumMap = {
+  CompactionKind.manual: 'manual',
+  CompactionKind.auto: 'auto',
 };

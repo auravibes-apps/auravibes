@@ -1,4 +1,6 @@
+import 'package:auravibes_app/domain/entities/compaction.dart';
 import 'package:auravibes_app/domain/entities/conversation.dart';
+import 'package:auravibes_app/features/chats/providers/compaction_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -52,13 +54,15 @@ class SidebarConversationsWidget extends ConsumerWidget {
         return Column(
           children: [
             _buildSectionHeader(context),
-            ...chats.map(
-              (chat) => _SidebarConversationTile(
+            for (final chat in chats) ...[
+              _SidebarConversationTile(
                 chat: chat,
                 workspaceId: workspaceId,
                 isActive: chat.id == currentChatId,
               ),
-            ),
+              if (_isCompacting(ref, chat.id))
+                _CompactingRow(conversationId: chat.id),
+            ],
             _buildViewAllButton(context, workspaceId),
           ],
         );
@@ -142,6 +146,12 @@ class SidebarConversationsWidget extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  bool _isCompacting(WidgetRef ref, String conversationId) {
+    final execution = ref.watch(compactionExecutionProvider);
+    final entry = execution[conversationId];
+    return entry != null && entry.status == CompactionExecutionStatus.running;
   }
 }
 
@@ -253,6 +263,42 @@ class _SidebarConversationTileState
                 widget.chat.title,
             overflow: TextOverflow.ellipsis,
             maxLines: 1,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CompactingRow extends ConsumerWidget {
+  const _CompactingRow({required this.conversationId});
+
+  final String conversationId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: context.auraTheme.spacing.sm,
+        vertical: context.auraTheme.spacing.xs,
+      ),
+      child: AuraTile(
+        variant: AuraTileVariant.ghost,
+        size: AuraTileSize.small,
+        onTap: () {},
+        leading: const Padding(
+          padding: EdgeInsets.all(4),
+          child: SizedBox(
+            width: 16,
+            height: 16,
+            child: AuraSpinner(),
+          ),
+        ),
+        child: const AuraText(
+          style: AuraTextStyle.bodySmall,
+          color: AuraColorVariant.onSurfaceVariant,
+          child: TextLocale(
+            LocaleKeys.compaction_compacting_row_label,
           ),
         ),
       ),

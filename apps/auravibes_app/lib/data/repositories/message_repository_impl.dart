@@ -192,6 +192,16 @@ class MessageRepositoryImpl implements MessageRepository {
     return true;
   }
 
+  @override
+  Future<MessageEntity?> getLatestCompactionSummary(
+    String conversationId,
+  ) async {
+    final row = await _database.messageDao.getLatestCompactionSummary(
+      conversationId,
+    );
+    return row != null ? _mapToMessage(row) : null;
+  }
+
   void _validateMessagePatch(MessagePatch message) {
     final validationError = _getValidationErrorPatch(message);
     if (validationError != null) {

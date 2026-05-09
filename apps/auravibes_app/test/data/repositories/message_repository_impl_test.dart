@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/message_dao.dart';
@@ -447,6 +448,82 @@ void main() {
       expect(found!.metadata, isNotNull);
       expect(found.metadata!.promptTokens, 10);
     });
+
+    test('getLatestCompactionSummary returns null when no summaries', () async {
+      await repository.createMessage(
+        const MessageToCreate(
+          conversationId: 'conv-1',
+          content: 'regular msg',
+          messageType: MessageType.text,
+          isUser: true,
+          status: MessageStatus.sending,
+        ),
+      );
+
+      final summary = await repository.getLatestCompactionSummary('conv-1');
+      expect(summary, isNull);
+    });
+
+    test(
+      'getLatestCompactionSummary returns latest compaction summary',
+      () async {
+        await repository.createMessage(
+          const MessageToCreate(
+            conversationId: 'conv-1',
+            content: 'user msg',
+            messageType: MessageType.text,
+            isUser: true,
+            status: MessageStatus.sending,
+          ),
+        );
+
+        final compactionMetadata = const MessageMetadataEntity(
+          metadataVersion: 2,
+          isCompactionSummary: true,
+          compactionKind: CompactionKind.auto,
+          compactedFromMessageId: 'msg-1',
+          compactedThroughMessageId: 'msg-2',
+          compactedMessageIds: ['msg-1', 'msg-2'],
+        ).toJson();
+
+        await repository.createMessage(
+          MessageToCreate(
+            conversationId: 'conv-1',
+            content: 'Compaction summary content',
+            messageType: MessageType.system,
+            isUser: false,
+            status: MessageStatus.sending,
+            metadata: jsonEncode(compactionMetadata),
+          ),
+        );
+
+        final summary = await repository.getLatestCompactionSummary('conv-1');
+        expect(summary, isNotNull);
+        expect(summary!.content, 'Compaction summary content');
+        expect(summary.messageType, MessageType.system);
+        expect(summary.metadata, isNotNull);
+        expect(summary.metadata!.isCompactionSummary, isTrue);
+        expect(summary.metadata!.compactionKind, CompactionKind.auto);
+      },
+    );
+
+    test(
+      'getLatestCompactionSummary skips non-summary system messages',
+      () async {
+        await repository.createMessage(
+          const MessageToCreate(
+            conversationId: 'conv-1',
+            content: 'system note',
+            messageType: MessageType.system,
+            isUser: false,
+            status: MessageStatus.sending,
+          ),
+        );
+
+        final summary = await repository.getLatestCompactionSummary('conv-1');
+        expect(summary, isNull);
+      },
+    );
   });
 }
 

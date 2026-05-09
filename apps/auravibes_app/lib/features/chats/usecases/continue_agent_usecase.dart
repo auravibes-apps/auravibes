@@ -10,6 +10,7 @@ import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtim
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/streaming_runtime_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_context.dart';
+import 'package:auravibes_app/features/chats/usecases/select_prompt_messages_usecase.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
 import 'package:auravibes_app/providers/chatbot_service_provider.dart';
@@ -18,6 +19,7 @@ import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
 import 'package:auravibes_app/services/monitoring_service.dart';
 import 'package:auravibes_app/utils/chat_result_extension.dart';
 import 'package:auravibes_app/utils/coalescing_save_extension.dart';
+import 'package:collection/collection.dart';
 import 'package:dartantic_ai/dartantic_ai.dart' hide Provider;
 import 'package:riverpod/riverpod.dart';
 import 'package:rxdart/rxdart.dart';
@@ -43,6 +45,7 @@ class ContinueAgentUsecase {
     required this.conversationStreamingRuntime,
     required this.agentCancellationRuntime,
     required this.monitoringService,
+    required this.selectPromptMessagesUsecase,
   });
 
   final ChatbotService chatbotService;
@@ -54,6 +57,7 @@ class ContinueAgentUsecase {
   final ConversationStreamingRuntime conversationStreamingRuntime;
   final AgentCancellationRuntime agentCancellationRuntime;
   final MonitoringService monitoringService;
+  final SelectPromptMessagesUsecase selectPromptMessagesUsecase;
 
   Future<ContinueAgentResult> call({
     required String conversationId,
@@ -65,10 +69,6 @@ class ContinueAgentUsecase {
     if (conversation == null) {
       throw Exception('Conversation not found');
     }
-
-    final messages = await messageRepository.getMessagesByConversation(
-      conversationId,
-    );
 
     final modelId = conversation.modelId;
     if (modelId == null) {
@@ -83,12 +83,27 @@ class ContinueAgentUsecase {
       throw Exception('Selected model not found');
     }
 
+    final messages = await _selectPromptMessages(conversationId);
+
     final tools = await loadConversationToolSpecsUsecase.call(
       conversationId: conversationId,
       workspaceId: conversation.workspaceId,
     );
 
     final chatHistory = const BuildPromptChatMessages()(messages);
+
+    assert(
+      () {
+        final firstNonSystem = chatHistory.cast<ChatMessage?>().firstWhere(
+          (m) => m?.role != ChatMessageRole.system,
+          orElse: () => null,
+        );
+        return firstNonSystem == null ||
+            firstNonSystem.role == ChatMessageRole.user;
+      }(),
+      'First non-system message after compaction must be user, '
+      'got ${chatHistory.where((m) => m.role != ChatMessageRole.system).firstOrNull?.role}',
+    );
 
     final subs = CompositeSubscription();
     conversationStreamingRuntime.start(conversationId);
@@ -300,9 +315,11 @@ class ContinueAgentUsecase {
       subs.dispose();
     }
 
+    final hasToolCalls = accumulatedResult!.entityTools.isNotEmpty;
+
     return ContinueAgentResult(
       messageId: firstMessage!.id,
-      hasToolCalls: accumulatedResult!.entityTools.isNotEmpty,
+      hasToolCalls: hasToolCalls,
     );
   }
 
@@ -406,6 +423,12 @@ class ContinueAgentUsecase {
       }).toList(),
     );
   }
+
+  Future<List<MessageEntity>> _selectPromptMessages(
+    String conversationId,
+  ) async {
+    return selectPromptMessagesUsecase(conversationId);
+  }
 }
 
 final continueAgentUsecaseProvider = Provider<ContinueAgentUsecase>(
@@ -426,6 +449,9 @@ final continueAgentUsecaseProvider = Provider<ContinueAgentUsecase>(
       ),
       agentCancellationRuntime: ref.watch(agentCancellationRuntimeProvider),
       monitoringService: ref.watch(monitoringServiceProvider),
+      selectPromptMessagesUsecase: ref.watch(
+        selectPromptMessagesUsecaseProvider,
+      ),
     );
   },
 );

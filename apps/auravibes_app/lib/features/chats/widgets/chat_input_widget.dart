@@ -13,6 +13,8 @@ class ChatInputWidget extends HookConsumerWidget {
     this.disabled = false,
     this.isBusy = false,
     this.onStop,
+    this.onCompact,
+    this.isCompacting = false,
     super.key,
   });
 
@@ -21,6 +23,8 @@ class ChatInputWidget extends HookConsumerWidget {
   final void Function(String message) onSendMessage;
   final VoidCallback? onToolsPress;
   final VoidCallback? onStop;
+  final VoidCallback? onCompact;
+  final bool isCompacting;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -39,6 +43,8 @@ class ChatInputWidget extends HookConsumerWidget {
       },
       [controller, onSendMessage, isEmpty],
     );
+
+    final compact = onCompact;
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -59,6 +65,23 @@ class ChatInputWidget extends HookConsumerWidget {
               ),
 
             const Spacer(),
+
+            if (compact != null)
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Tooltip(
+                  message: LocaleKeys.compaction_manual_button_tooltip.tr(),
+                  child: AuraButton(
+                    onPressed: compact,
+                    disabled: isCompacting,
+                    variant: AuraButtonVariant.secondary,
+                    size: AuraButtonSize.small,
+                    child: isCompacting
+                        ? const AuraSpinner(size: AuraSpinnerSize.small)
+                        : const AuraIcon(Icons.compress_outlined),
+                  ),
+                ),
+              ),
 
             if (isBusy && onStop != null)
               Padding(

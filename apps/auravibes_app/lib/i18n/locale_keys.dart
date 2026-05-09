@@ -290,6 +290,7 @@ abstract class LocaleKeys {
   static const settings_screen_theme = 'settings_screen.theme';
   static const settings_screen_actions_cancel =
       'settings_screen.actions.cancel';
+  static const settings_screen_actions_save = 'settings_screen.actions.save';
   static const settings_screen_actions = 'settings_screen.actions';
   static const settings_screen = 'settings_screen';
   static const more_screen_title = 'more_screen.title';
@@ -424,4 +425,86 @@ abstract class LocaleKeys {
   static const workspace_management_delete_tooltip =
       'workspace_management.delete_tooltip';
   static const workspace_management = 'workspace_management';
+  static const compaction_settings_title = 'compaction.settings.title';
+  static const compaction_settings_subtitle = 'compaction.settings.subtitle';
+  static const compaction_settings_auto_enabled =
+      'compaction.settings.auto_enabled';
+  static const compaction_settings_auto_enabled_hint =
+      'compaction.settings.auto_enabled_hint';
+  static const compaction_settings_usage_threshold =
+      'compaction.settings.usage_threshold';
+  static const compaction_settings_usage_threshold_hint =
+      'compaction.settings.usage_threshold_hint';
+  static const compaction_settings_remaining_threshold =
+      'compaction.settings.remaining_threshold';
+  static const compaction_settings_remaining_threshold_hint =
+      'compaction.settings.remaining_threshold_hint';
+  static const compaction_settings_reset_defaults =
+      'compaction.settings.reset_defaults';
+  static const compaction_settings_reset_success =
+      'compaction.settings.reset_success';
+  static const compaction_settings_save_success =
+      'compaction.settings.save_success';
+  static const compaction_settings_validation_usage_range =
+      'compaction.settings.validation.usage_range';
+  static const compaction_settings_validation_remaining_positive =
+      'compaction.settings.validation.remaining_positive';
+  static const compaction_settings_validation_remaining_below_limit =
+      'compaction.settings.validation.remaining_below_limit';
+  static const compaction_settings_validation_settings_invalid =
+      'compaction.settings.validation.settings_invalid';
+  static const compaction_settings_validation =
+      'compaction.settings.validation';
+  static const compaction_settings = 'compaction.settings';
+  static const compaction_compacting_row_label =
+      'compaction.compacting.row_label';
+  static const compaction_compacting_tooltip = 'compaction.compacting.tooltip';
+  static const compaction_compacting = 'compaction.compacting';
+  static const compaction_compacted_widget_label =
+      'compaction.compacted.widget_label';
+  static const compaction_compacted_manual_origin =
+      'compaction.compacted.manual_origin';
+  static const compaction_compacted_auto_origin =
+      'compaction.compacted.auto_origin';
+  static const compaction_compacted_details_title =
+      'compaction.compacted.details_title';
+  static const compaction_compacted_details_origin =
+      'compaction.compacted.details_origin';
+  static const compaction_compacted_details_range =
+      'compaction.compacted.details_range';
+  static const compaction_compacted_details_created =
+      'compaction.compacted.details_created';
+  static const compaction_compacted_details_messages =
+      'compaction.compacted.details_messages';
+  static const compaction_compacted_details_content_label =
+      'compaction.compacted.details_content_label';
+  static const compaction_compacted = 'compaction.compacted';
+  static const compaction_manual_button_tooltip =
+      'compaction.manual.button_tooltip';
+  static const compaction_manual_disabled_tooltip_busy =
+      'compaction.manual.disabled_tooltip_busy';
+  static const compaction_manual_disabled_tooltip_unsafe =
+      'compaction.manual.disabled_tooltip_unsafe';
+  static const compaction_manual_disabled_tooltip_no_range =
+      'compaction.manual.disabled_tooltip_no_range';
+  static const compaction_manual_disabled_tooltip_running =
+      'compaction.manual.disabled_tooltip_running';
+  static const compaction_manual_running = 'compaction.manual.running';
+  static const compaction_manual_success = 'compaction.manual.success';
+  static const compaction_manual_failure = 'compaction.manual.failure';
+  static const compaction_manual = 'compaction.manual';
+  static const compaction_errors_compaction_failed =
+      'compaction.errors.compaction_failed';
+  static const compaction_errors_compaction_unsafe =
+      'compaction.errors.compaction_unsafe';
+  static const compaction_errors_compaction_unavailable =
+      'compaction.errors.compaction_unavailable';
+  static const compaction_errors_context_overflow_retry_failed =
+      'compaction.errors.context_overflow_retry_failed';
+  static const compaction_errors_auto_blocked =
+      'compaction.errors.auto_blocked';
+  static const compaction_errors_settings_invalid =
+      'compaction.errors.settings_invalid';
+  static const compaction_errors = 'compaction.errors';
+  static const compaction = 'compaction';
 }

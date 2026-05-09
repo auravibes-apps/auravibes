@@ -1,0 +1,117 @@
+import 'package:auravibes_app/domain/entities/messages.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/utils/relative_time_formatter.dart';
+import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/material.dart';
+
+class CompactedMessageDetails extends StatelessWidget {
+  const CompactedMessageDetails({required this.message, super.key});
+
+  final MessageEntity message;
+
+  @override
+  Widget build(BuildContext context) {
+    final auraColors = context.auraColors;
+    final metadata = message.metadata;
+    final kind = metadata?.compactionKind;
+    final originLabel = switch (kind) {
+      CompactionKind.manual =>
+        LocaleKeys.compaction_compacted_manual_origin.tr(),
+      CompactionKind.auto => LocaleKeys.compaction_compacted_auto_origin.tr(),
+      _ => LocaleKeys.compaction_compacted_widget_label.tr(),
+    };
+
+    return SingleChildScrollView(
+      child: AuraColumn(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            LocaleKeys.compaction_compacted_details_title.tr(),
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
+          ),
+          SizedBox(height: context.auraTheme.spacing.md),
+          _DetailRow(
+            label: LocaleKeys.compaction_compacted_details_origin.tr(),
+            value: originLabel,
+          ),
+          if (metadata?.compactedFromMessageId != null)
+            _DetailRow(
+              label: LocaleKeys.compaction_compacted_details_range.tr(),
+              value:
+                  '${metadata!.compactedFromMessageId} → '
+                  '${metadata.compactedThroughMessageId}',
+            ),
+          _DetailRow(
+            label: LocaleKeys.compaction_compacted_details_created.tr(),
+            value: metadata?.compactionCreatedAt != null
+                ? const RelativeTimeFormatter().format(
+                    metadata!.compactionCreatedAt!,
+                  )
+                : '',
+          ),
+          _DetailRow(
+            label: LocaleKeys.compaction_compacted_details_messages.tr(),
+            value: '${metadata?.compactedMessageIds.length ?? 0}',
+          ),
+          SizedBox(height: context.auraTheme.spacing.md),
+          Text(
+            LocaleKeys.compaction_compacted_details_content_label.tr(),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: auraColors.onSurfaceVariant,
+              fontSize: DesignTypography.fontSizeSm,
+            ),
+          ),
+          SizedBox(height: context.auraTheme.spacing.xs),
+          SelectableText(
+            message.content,
+            style: const TextStyle(
+              fontSize: DesignTypography.fontSizeSm,
+              fontFamily: DesignTypography.monoFontFamily,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  const _DetailRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: context.auraTheme.spacing.xs),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: context.auraColors.onSurfaceVariant,
+                fontSize: DesignTypography.fontSizeSm,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: DesignTypography.fontSizeSm),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

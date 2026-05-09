@@ -15,6 +15,12 @@ class BuildPromptChatMessages {
       return [ChatMessage.user(message.content)];
     }
 
+    if (message.metadata?.isCompactionSummary == true) {
+      final normalized = message.content.trim();
+      if (normalized.isEmpty) return const [];
+      return [ChatMessage.system(normalized)];
+    }
+
     final toolCalls =
         message.metadata?.toolCalls ?? const <MessageToolCallEntity>[];
 

@@ -1,20 +1,27 @@
+import 'package:auravibes_app/domain/entities/compaction.dart';
 import 'package:auravibes_app/domain/entities/messages.dart';
 import 'package:auravibes_app/domain/enums/message_types.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/providers/messages_providers.dart';
 import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
+import 'package:auravibes_app/features/chats/widgets/compacted_message_details.dart';
 import 'package:auravibes_app/features/chats/widgets/tool_call_response_preview.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/utils/relative_time_formatter.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
 import 'package:auravibes_app/utils/try_decode_tool_metadata.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class ChatMessagesWidget extends HookConsumerWidget {
-  const ChatMessagesWidget({required this.messages, super.key});
+  const ChatMessagesWidget({
+    required this.messages,
+    super.key,
+  });
 
   final List<String> messages;
 
@@ -22,18 +29,30 @@ class ChatMessagesWidget extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final data = useMemoized(() => messages.reversed.toList(), [messages]);
     final controller = useScrollController();
-    // The last message in the original list is at index 0 in reversed list
     final lastMessageId = data.isNotEmpty ? data.first : null;
+
+    final compactionState = ref.watch(
+      conversationCompactionExecutionStateProvider,
+    );
+    final isCompacting =
+        compactionState?.status == CompactionExecutionStatus.running;
+
+    final itemCount = isCompacting ? data.length + 1 : data.length;
 
     return ListView.builder(
       controller: controller,
       padding: const EdgeInsets.all(16),
       reverse: true,
       addAutomaticKeepAlives: false,
-      itemCount: data.length,
+      itemCount: itemCount,
       cacheExtent: 500,
       itemBuilder: (context, index) {
-        final messageId = data[index];
+        if (isCompacting && index == 0) {
+          return const _CompactingIndicator();
+        }
+
+        final messageIndex = isCompacting ? index - 1 : index;
+        final messageId = data[messageIndex];
         final isLastMessage = messageId == lastMessageId;
 
         return _ChatMessageRow(
@@ -67,6 +86,26 @@ class _ChatMessageRow extends HookConsumerWidget {
         (value) => value.maybeWhen(data: (state) => state, orElse: () => null),
       ),
     );
+
+    final isCompactionSummary = message.metadata?.isCompactionSummary == true;
+    final isErrorSystemMessage =
+        !message.isUser &&
+        message.messageType == MessageType.system &&
+        message.status == MessageStatus.error;
+
+    if (isCompactionSummary) {
+      return _CompactedMessageWidget(
+        key: ValueKey(message.id),
+        message: message,
+      );
+    }
+
+    if (isErrorSystemMessage) {
+      return _ErrorMessageWidget(
+        key: ValueKey(message.id),
+        content: message.content,
+      );
+    }
 
     final allToolCalls =
         message.metadata?.toolCalls ?? const <MessageToolCallEntity>[];
@@ -276,6 +315,122 @@ class _ToolCallWidget extends ConsumerWidget {
   }
 }
 
+void _showCompactionDetails(BuildContext context, MessageEntity message) {
+  showDialog<void>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      content: SizedBox(
+        width: MediaQuery.of(dialogContext).size.width * 0.8,
+        child: CompactedMessageDetails(message: message),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(),
+          child: const Text('Close'),
+        ),
+      ],
+    ),
+  );
+}
+
+class _CompactedMessageWidget extends StatelessWidget {
+  const _CompactedMessageWidget({required this.message, super.key});
+
+  final MessageEntity message;
+
+  @override
+  Widget build(BuildContext context) {
+    final auraColors = context.auraColors;
+    final kind = message.metadata?.compactionKind;
+    final originLabel = switch (kind) {
+      CompactionKind.manual =>
+        LocaleKeys.compaction_compacted_manual_origin.tr(),
+      CompactionKind.auto => LocaleKeys.compaction_compacted_auto_origin.tr(),
+      _ => LocaleKeys.compaction_compacted_widget_label.tr(),
+    };
+
+    return GestureDetector(
+      onTap: () => _showCompactionDetails(context, message),
+      child: AuraContainer(
+        backgroundColor: AuraColorVariant.surfaceVariant,
+        borderRadius: 10,
+        margin: .small,
+        padding: .medium,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.compress_outlined,
+                  size: 16,
+                  color: auraColors.onSurfaceVariant,
+                ),
+                SizedBox(width: context.auraTheme.spacing.xs),
+                Text(
+                  originLabel,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: auraColors.onSurfaceVariant,
+                    fontSize: DesignTypography.fontSizeSm,
+                  ),
+                ),
+                const Spacer(),
+                Icon(
+                  Icons.info_outline,
+                  size: 14,
+                  color: auraColors.onSurfaceVariant,
+                ),
+              ],
+            ),
+            SizedBox(height: context.auraTheme.spacing.xs),
+            Text(
+              message.content,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: auraColors.onSurfaceVariant,
+                fontSize: DesignTypography.fontSizeSm,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ErrorMessageWidget extends StatelessWidget {
+  const _ErrorMessageWidget({required this.content, super.key});
+
+  final String content;
+
+  @override
+  Widget build(BuildContext context) {
+    final auraColors = context.auraColors;
+
+    return AuraContainer(
+      backgroundColor: AuraColorVariant.error,
+      borderRadius: 10,
+      margin: .small,
+      padding: .medium,
+      child: Row(
+        children: [
+          Icon(
+            Icons.error_outline,
+            size: 16,
+            color: auraColors.onError,
+          ),
+          SizedBox(width: context.auraTheme.spacing.xs),
+          Flexible(
+            child: TextLocale(content),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// A small status indicator widget with icon and text.
 class _ToolCallStatusIndicator extends StatelessWidget {
   const _ToolCallStatusIndicator({
@@ -303,6 +458,42 @@ class _ToolCallStatusIndicator extends StatelessWidget {
               color: color,
             ),
             child: statusText,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CompactingIndicator extends StatelessWidget {
+  const _CompactingIndicator();
+
+  @override
+  Widget build(BuildContext context) {
+    final auraColors = context.auraColors;
+
+    return AuraContainer(
+      backgroundColor: AuraColorVariant.surfaceVariant,
+      borderRadius: 10,
+      margin: .small,
+      padding: .medium,
+      child: Row(
+        children: [
+          const Padding(
+            padding: EdgeInsets.all(4),
+            child: SizedBox(
+              width: 16,
+              height: 16,
+              child: AuraSpinner(),
+            ),
+          ),
+          SizedBox(width: context.auraTheme.spacing.sm),
+          Text(
+            LocaleKeys.compaction_compacting_row_label.tr(),
+            style: TextStyle(
+              color: auraColors.onSurfaceVariant,
+              fontSize: DesignTypography.fontSizeSm,
+            ),
           ),
         ],
       ),

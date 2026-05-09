@@ -227,7 +227,8 @@
       "system_default": "System Default"
     },
     "actions": {
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "save": "Save"
     }
   },
   "more_screen": {
@@ -305,6 +306,60 @@
         "placeholder": "Enter your bearer token",
         "hint": "This token will be stored securely"
       }
+    }
+  },
+  "compaction": {
+    "settings": {
+      "title": "Conversation Compaction",
+      "subtitle": "Configure automatic context compaction behavior",
+      "auto_enabled": "Auto Compaction",
+      "auto_enabled_hint": "Automatically compact older context when thresholds are met",
+      "usage_threshold": "Usage Percentage Threshold",
+      "usage_threshold_hint": "Compact when context usage reaches this percentage",
+      "remaining_threshold": "Remaining Token Threshold",
+      "remaining_threshold_hint": "Compact when remaining tokens fall below this value",
+      "reset_defaults": "Reset to Defaults",
+      "reset_success": "Settings reset to defaults",
+      "save_success": "Compaction settings saved",
+      "validation": {
+        "usage_range": "Usage threshold must be between 5 and 100",
+        "remaining_positive": "Remaining token threshold must be greater than 0",
+        "remaining_below_limit": "Remaining token threshold must be below the model context limit",
+        "settings_invalid": "Please enter valid numeric values for all fields"
+      }
+    },
+    "compacting": {
+      "row_label": "Compacting...",
+      "tooltip": "Compressing conversation history"
+    },
+    "compacted": {
+      "widget_label": "Compacted",
+      "manual_origin": "Manual",
+      "auto_origin": "Automatic",
+      "details_title": "Compaction Details",
+      "details_origin": "Origin",
+      "details_range": "Compacted Range",
+      "details_created": "Created",
+      "details_messages": "Messages compacted",
+      "details_content_label": "Summary Content"
+    },
+    "manual": {
+      "button_tooltip": "Compact conversation",
+      "disabled_tooltip_busy": "Cannot compact while conversation is busy",
+      "disabled_tooltip_unsafe": "Cannot compact due to pending tool approvals",
+      "disabled_tooltip_no_range": "No eligible messages to compact",
+      "disabled_tooltip_running": "Compaction already in progress",
+      "running": "Compacting...",
+      "success": "Conversation compacted successfully",
+      "failure": "Compaction failed. Please try again."
+    },
+    "errors": {
+      "compaction_failed": "Compaction failed. Your conversation is still intact.",
+      "compaction_unsafe": "Compaction is not safe while tools are pending approval.",
+      "compaction_unavailable": "Compaction is not available for this conversation.",
+      "context_overflow_retry_failed": "Context overflow occurred and recovery compaction failed. Please try compacting manually.",
+      "auto_blocked": "Automatic compaction is required but failed. Assistant continuation is blocked. Try compacting manually.",
+      "settings_invalid": "Invalid compaction settings. Please check your values."
     }
   },
   "workspace_management": {

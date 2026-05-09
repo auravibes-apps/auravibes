@@ -6,6 +6,7 @@ import 'package:auravibes_app/data/database/drift/daos/mcp_servers_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/message_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/model_connections_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/tools_groups_dao.dart';
+import 'package:auravibes_app/data/database/drift/daos/workspace_compaction_settings_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_model_selections_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_tools_dao.dart';
@@ -18,6 +19,7 @@ import 'package:auravibes_app/data/database/drift/tables/messages_table.dart';
 import 'package:auravibes_app/data/database/drift/tables/model_connections_table.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools_groups_table.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools_table.dart';
+import 'package:auravibes_app/data/database/drift/tables/workspace_compaction_settings_table.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_model_selections_table.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspaces_table.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
@@ -44,6 +46,7 @@ part 'app_database.g.dart';
     ToolsGroups,
     ConversationTools,
     McpServers,
+    WorkspaceCompactionSettings,
   ],
   daos: [
     WorkspaceDao,
@@ -57,6 +60,7 @@ part 'app_database.g.dart';
     ToolsGroupsDao,
     ConversationToolsDao,
     McpServersDao,
+    WorkspaceCompactionSettingsDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -69,7 +73,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// Database schema version.
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   /// Migration logic for database schema upgrades.
   @override
@@ -77,6 +81,11 @@ class AppDatabase extends _$AppDatabase {
     return MigrationStrategy(
       onCreate: (m) async {
         await m.createAll();
+      },
+      onUpgrade: (m, from, to) async {
+        if (from < 2) {
+          await m.createTable(workspaceCompactionSettings);
+        }
       },
     );
   }
