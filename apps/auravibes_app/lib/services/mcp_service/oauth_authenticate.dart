@@ -138,7 +138,7 @@ class OauthAuthenticate {
     required String codeVerifier,
     required String redirectUrl,
   }) async {
-    final response = await _dio.post<Map<String, dynamic>>(
+    final response = await _dio.post<dynamic>(
       oAuthResult.tokenUrl,
       data: {
         'grant_type': 'authorization_code',
@@ -164,6 +164,9 @@ class OauthAuthenticate {
     final data = response.data;
     if (data == null) {
       throw Exception('No data received from token endpoint');
+    }
+    if (data is! Map<String, dynamic>) {
+      throw Exception('Invalid token response: expected a JSON object');
     }
 
     final accessToken = data['access_token'];

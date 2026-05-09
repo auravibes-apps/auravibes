@@ -366,6 +366,47 @@ void main() {
           ),
         );
       });
+
+      test('throws when token response is not a JSON object', () async {
+        final adapter = _FakeHttpClientAdapter(
+          onFetch: (_, _, _) async {
+            return ResponseBody.fromString(
+              '["not-an-object"]',
+              200,
+              headers: {
+                Headers.contentTypeHeader: ['application/json'],
+              },
+            );
+          },
+        );
+        final dio = Dio()..httpClientAdapter = adapter;
+        final auth = OauthAuthenticate(
+          callbackUrlScheme: 'auravibes',
+          clientName: 'AuraVibes',
+          dio: dio,
+        );
+
+        await expectLater(
+          () => auth.exchangeCodeForToken(
+            code: 'auth-code',
+            oAuthResult: const OAuthDiscoveryResult(
+              authorizationUrl: 'https://example.com/authorize',
+              tokenUrl: 'https://example.com/token',
+              clientId: 'client-id',
+              scope: null,
+            ),
+            codeVerifier: 'verifier',
+            redirectUrl: 'auravibes:/',
+          ),
+          throwsA(
+            isA<Exception>().having(
+              (error) => error.toString(),
+              'message',
+              contains('JSON object'),
+            ),
+          ),
+        );
+      });
     });
   });
 }
