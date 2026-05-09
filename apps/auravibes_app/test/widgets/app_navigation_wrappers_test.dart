@@ -1,8 +1,11 @@
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/conversation.dart';
+import 'package:auravibes_app/domain/entities/workspace.dart';
+import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/flavors.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/widgets/app_navigation_wrappers.dart';
@@ -462,7 +465,10 @@ void main() {
     setUpAll(() {
       try {
         F.appFlavor = Flavor.dev;
-      } on Object catch (_) {}
+      } on Object catch (_) {
+        // Intentionally ignored: app flavor may already be initialized in test
+        // bootstrap, and reassigning it can throw.
+      }
     });
 
     setUp(() {
@@ -487,12 +493,15 @@ void main() {
             routes: [
               StatefulShellRoute.indexedStack(
                 builder: (context, state, navigationShell) {
+                  final workspaceId = state.pathParameters['workspaceId'] ?? '';
                   return Theme(
                     data: ThemeData(extensions: [AuraTheme.light]),
                     child: Material(
-                      child: AuraSidebarWrapper(
-                        navigationShell: navigationShell,
-                        workspaceId: '',
+                      child: Portal(
+                        child: AuraSidebarWrapper(
+                          navigationShell: navigationShell,
+                          workspaceId: workspaceId,
+                        ),
                       ),
                     ),
                   );
@@ -516,6 +525,17 @@ void main() {
             return ProviderScope(
               overrides: [
                 conversationRepositoryProvider.overrideWithValue(repo),
+                allWorkspacesProvider.overrideWith(
+                  (ref) => Stream.value([
+                    WorkspaceEntity(
+                      id: 'ws-test',
+                      name: 'Test workspace',
+                      type: WorkspaceType.local,
+                      createdAt: DateTime(2026),
+                      updatedAt: DateTime(2026),
+                    ),
+                  ]),
+                ),
                 routerPathSegmentsProvider.overrideWithValue(const []),
               ],
               child: MaterialApp.router(
@@ -576,7 +596,7 @@ void main() {
           branches: branches,
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
 
       expect(find.byType(AuraSidebarWrapper), findsOneWidget);
 
@@ -586,7 +606,7 @@ void main() {
           branches: branches,
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
 
       expect(find.byType(AuraSidebarWrapper), findsOneWidget);
 
@@ -596,7 +616,7 @@ void main() {
           branches: branches,
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
 
       expect(find.byType(AuraSidebarWrapper), findsOneWidget);
 
@@ -606,7 +626,7 @@ void main() {
           branches: branches,
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
 
       expect(find.byType(AuraSidebarWrapper), findsOneWidget);
 
@@ -616,7 +636,7 @@ void main() {
           branches: branches,
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
 
       expect(find.byType(AuraSidebarWrapper), findsOneWidget);
     });
@@ -645,6 +665,7 @@ class _RecordingConversationRepository implements ConversationRepository {
       onCancel: () => _controllers.remove(controller),
     );
     _controllers.add(controller);
+    controller.add(const []);
     return controller.stream;
   }
 
