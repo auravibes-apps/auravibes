@@ -59,7 +59,7 @@ class UrlService {
             ),
           );
         })
-        .catchError((Object error, StackTrace stackTrace) {
+        .catchError((Object error, StackTrace stackTrace) async {
           if (completer.isCanceled) {
             return;
           }
@@ -72,12 +72,18 @@ class UrlService {
           }
 
           if (error is DioException) {
+            final body = await _readErrorResponseBody(
+              error.response?.data,
+              error.message,
+            );
+            if (completer.isCanceled) {
+              return;
+            }
+
             completer.complete(
               UrlResponse(
                 statusCode: error.response?.statusCode ?? 0,
-                body: _truncateText(
-                  error.response?.data?.toString() ?? error.message ?? '',
-                ),
+                body: body,
                 headers: error.response?.headers.map ?? const {},
                 elapsed: stopwatch.elapsed,
               ),
@@ -89,6 +95,18 @@ class UrlService {
         });
 
     return completer.operation;
+  }
+
+  Future<String> _readErrorResponseBody(Object? data, String? message) async {
+    if (data is ResponseBody) {
+      return _readResponseBody(data);
+    }
+
+    if (data is List<int>) {
+      return _truncateText(utf8.decode(data, allowMalformed: true));
+    }
+
+    return _truncateText(data?.toString() ?? message ?? '');
   }
 
   Future<String> _readResponseBody(ResponseBody? responseBody) async {

@@ -87,6 +87,32 @@ void main() {
       expect(response.body, 'Server Error');
     });
 
+    test('reads streamed DioException response data', () async {
+      final adapter = _FakeHttpClientAdapter(
+        onFetch: (options, _, _) async {
+          throw DioException(
+            requestOptions: RequestOptions(path: options.path),
+            response: Response(
+              requestOptions: RequestOptions(),
+              statusCode: 404,
+              data: ResponseBody.fromString('Not Found', 404),
+            ),
+            type: DioExceptionType.badResponse,
+          );
+        },
+      );
+      final dio = Dio()..httpClientAdapter = adapter;
+      final service = UrlService(dio: dio);
+
+      final response = await service
+          .execute(const UrlRequest(url: 'https://example.com/missing'))
+          .value;
+
+      expect(response.statusCode, 404);
+      expect(response.body, 'Not Found');
+      expect(response.body, isNot(contains('ResponseBody')));
+    });
+
     test('truncates large DioException response data', () async {
       final largeBody = 'x' * (1024 * 1024 + 100);
       final adapter = _FakeHttpClientAdapter(
