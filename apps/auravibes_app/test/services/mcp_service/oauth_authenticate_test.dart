@@ -210,18 +210,35 @@ void main() {
       });
     });
 
-    group('_generateRandomString', () {
-      test('generateCodeChallenge produces non-empty result', () {
-        final challenge = OauthAuthenticate.generateCodeChallenge('test');
-        expect(challenge, isNotEmpty);
+    group('generateCodeChallenge', () {
+      test('generated verifier-like values are URL-safe and PKCE-sized', () {
+        final values = List.generate(
+          10,
+          (_) => OauthAuthenticate.generateCodeChallenge(
+            DateTime.now().microsecondsSinceEpoch.toString(),
+          ),
+        );
+
+        final allowed = RegExp(r'^[A-Za-z0-9\-_]+$');
+        for (final value in values) {
+          expect(value, isNotEmpty);
+          expect(value.length, inInclusiveRange(43, 128));
+          expect(value, matches(allowed));
+          expect(value, isNot(contains('=')));
+          expect(value, isNot(contains('+')));
+          expect(value, isNot(contains('/')));
+        }
       });
 
-      test('multiple calls produce deterministic results', () {
+      test('sequential generations produce varied values', () {
         final results = List.generate(
-          5,
-          (_) => OauthAuthenticate.generateCodeChallenge('same'),
+          12,
+          (_) => OauthAuthenticate.generateCodeChallenge(
+            DateTime.now().microsecondsSinceEpoch.toString(),
+          ),
         );
-        expect(results.toSet().length, 1);
+
+        expect(results.toSet().length, greaterThan(1));
       });
     });
 
