@@ -612,7 +612,10 @@ void main() {
     group('Response metadata', () {
       test('preserves elapsed duration from response metadata', () {
         const elapsed = Duration(milliseconds: 250);
-        final response = _htmlResponse('<p>Timed content</p>', elapsed: elapsed);
+        final response = _htmlResponse(
+          '<p>Timed content</p>',
+          elapsed: elapsed,
+        );
         final result = transformer.transform(response);
 
         expect(result.elapsed, elapsed);
