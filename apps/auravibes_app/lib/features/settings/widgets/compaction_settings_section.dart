@@ -171,7 +171,7 @@ class _CompactionSettingsSectionState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: TextLocale(LocaleKeys.compaction_settings_save_error),
+            content: TextLocale(LocaleKeys.compaction_settings_save_success),
           ),
         );
       }
@@ -181,7 +181,7 @@ class _CompactionSettingsSectionState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: TextLocale(LocaleKeys.compaction_settings_reset_error),
+            content: TextLocale(LocaleKeys.compaction_settings_save_error),
           ),
         );
       }
