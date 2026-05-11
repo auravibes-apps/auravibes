@@ -447,6 +447,8 @@ abstract class LocaleKeys {
       'compaction.settings.reset_error';
   static const compaction_settings_save_success =
       'compaction.settings.save_success';
+  static const compaction_settings_save_error =
+      'compaction.settings.save_error';
   static const compaction_settings_validation_usage_range =
       'compaction.settings.validation.usage_range';
   static const compaction_settings_validation_remaining_positive =

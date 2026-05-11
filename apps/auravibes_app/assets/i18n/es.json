@@ -322,6 +322,7 @@
       "reset_success": "Configuración restaurada a valores predeterminados",
       "reset_error": "Error al restaurar configuración. Intenta de nuevo.",
       "save_success": "Configuración de compresión guardada",
+      "save_error": "Error al guardar configuración. Intenta de nuevo.",
       "validation": {
         "usage_range": "El umbral de uso debe estar entre 5 y 100",
         "remaining_positive": "El umbral de tokens restantes debe ser mayor que 0",

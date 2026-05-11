@@ -7,7 +7,7 @@
 
 ## Summary
 
-Add automatic and manual conversation compaction for long-running AuraVibes agent chats. Compaction eligibility is decided by deterministic global settings (enabled, usage percentage threshold, remaining-token threshold), while summary generation calls the AI agent service using the same provider/model selected for the active conversation and a compaction-specific system prompt. The full transcript remains visible; prompt assembly uses the latest compaction summary plus a safe recent tail so old compacted content is not duplicated in model context.
+Add automatic and manual conversation compaction for long-running AuraVibes agent chats. Compaction eligibility is decided by deterministic per-workspace settings (enabled, usage percentage threshold, remaining-token threshold), while summary generation calls the AI agent service using the same provider/model selected for the active conversation and a compaction-specific system prompt. The full transcript remains visible; prompt assembly uses the latest compaction summary plus a safe recent tail so old compacted content is not duplicated in model context.
 
 ## Technical Context
 

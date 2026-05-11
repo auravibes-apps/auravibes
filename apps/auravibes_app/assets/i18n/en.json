@@ -322,6 +322,7 @@
       "reset_success": "Settings reset to defaults",
       "reset_error": "Failed to reset settings. Please try again.",
       "save_success": "Compaction settings saved",
+      "save_error": "Failed to save settings. Please try again.",
       "validation": {
         "usage_range": "Usage threshold must be between 5 and 100",
         "remaining_positive": "Remaining token threshold must be greater than 0",

@@ -1,6 +1,3 @@
-// ignore_for_file: cascade_invocations
-// Required: Test readability
-
 import 'package:auravibes_app/domain/entities/compaction.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_providers.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -114,6 +111,7 @@ void main() {
     test('multiple conversations can compact simultaneously', () {
       final notifier = container.read(compactionExecutionProvider.notifier);
 
+      // ignore: cascade_invocations, multiple cascades for test readability
       notifier
         ..markRunning(
           CompactionExecutionState(
