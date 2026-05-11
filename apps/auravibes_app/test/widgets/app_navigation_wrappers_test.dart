@@ -464,7 +464,10 @@ void main() {
       try {
         F.appFlavor = Flavor.dev;
       } catch (error) {
-        if (error.runtimeType.toString() != 'LateInitializationError') {
+        final isLateInitializationError =
+            error is Error &&
+            error.toString().startsWith('LateInitializationError');
+        if (!isLateInitializationError) {
           rethrow;
         }
         // Intentionally ignored: app flavor may already be initialized in test
