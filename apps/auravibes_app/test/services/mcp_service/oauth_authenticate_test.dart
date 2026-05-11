@@ -464,6 +464,9 @@ void main() {
 
         expect(result.accessToken, 'access-token');
         expect(result.tokenType, 'Bearer');
+        expect(result.refreshToken, 'refresh-token');
+        expect(result.expiresIn, 3600);
+        expect(result.scope, 'profile email');
       });
     });
   });
