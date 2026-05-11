@@ -26,7 +26,7 @@ UI component library following const-first design.
 
 ## Commands
 
-All dart related commands should prefix with `fvm ` to ensure correct SDK version is used.
+All Dart-related commands should be prefixed with `fvm ` to ensure the correct SDK version is used.
 
 e.g. `fvm dart run melos bootstrap`
 
@@ -59,7 +59,7 @@ fvm flutter pub add dev:build_runner dev:json_serializable
 
 ### Quality & Testing
 
-Valid on Melos >7.
+Valid on Melos 7+.
 
 ```bash
 fvm dart run melos analyze                # Analyze code quality
@@ -197,10 +197,10 @@ These rules are non-negotiable for all new code and refactors:
 
 ## Active Technologies
 
-- **Current baseline (workspace-wide):** Dart 3.11+ with Flutter 3.41.4+ via FVM, Flutter, Riverpod (hooks_riverpod/Riverpod 3 + code generation), Freezed, Drift, auravibes_ui.
+- **Current baseline (workspace-wide):** Dart 3.11+ with Flutter 3.41.9 via FVM, Flutter, Riverpod (hooks_riverpod/Riverpod 3 + code generation), Freezed, Drift, auravibes_ui.
 - **Spec-specific additions/notes:**
   - (008-avoid-approval-flash) Existing Drift `messages` metadata JSON and tool permission tables; no schema changes planned.
-  - (001-two-step-model-selector) Drift database is existing; no schema changes needed.
+  - (001-two-step-model-selector) Existing Drift database; no schema changes needed.
   - (001-ui-library-widgets) Uses `flutter_portal` and `gpt_markdown` with existing Riverpod setup.
   - (003-token-usage-context) Uses `dartantic_ai` (`ChatResult<ChatMessage>` / `LanguageModelUsage`) and existing Drift `messages` metadata JSON (no schema migration planned).
 
