@@ -47,7 +47,6 @@ Widget verticalDividerUseCase(BuildContext context) {
       initialValue: 0,
       max: 100,
     ),
-
     indent: context.knobs.double.slider(
       label: 'Indent',
       initialValue: 0,
@@ -66,7 +65,6 @@ Widget verticalDividerUseCase(BuildContext context) {
 Widget dividerWithLabelUseCase(BuildContext context) {
   return AuraDivider.withLabel(
     label: const Text('Section 1'),
-
     height: context.knobs.double.slider(
       label: 'Height',
       initialValue: 0,
@@ -78,7 +76,6 @@ Widget dividerWithLabelUseCase(BuildContext context) {
       initialValue: 0,
       max: 100,
     ),
-
     indent: context.knobs.double.slider(
       label: 'Indent',
       initialValue: 0,
