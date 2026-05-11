@@ -17,7 +17,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 void main() {
-  group('_calculateSelectedIndex', () {
+  group('navigation shell index calculation', () {
     testWidgets('returns shellIndex for root workspace path', (tester) async {
       int? result;
 
@@ -460,7 +460,7 @@ void main() {
   );
 
   group('AuraSidebarWrapper rendering', () {
-    setUpAll(() {
+    setUp(() {
       try {
         F.appFlavor = Flavor.dev;
       } on Object catch (_) {
@@ -474,7 +474,9 @@ void main() {
       required List<StatefulShellBranch> branches,
     }) {
       final repo = _FakeConversationRepository();
-      addTearDown(repo.close);
+      addTearDown(() async {
+        await repo.close();
+      });
       final router = GoRouter(
         initialLocation: initialLocation,
         routes: [
