@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:auravibes_app/services/tools/native_tool_entity.dart';
 import 'package:auravibes_app/services/tools/native_tools/url_tool.dart';
 import 'package:auravibes_app/services/url/url_service.dart';
@@ -529,6 +531,84 @@ void main() {
               .value,
           throwsA(isA<FormatException>()),
         );
+      });
+    });
+
+    group('output truncation', () {
+      test('truncates large response body and preserves metadata', () async {
+        final largeContent = List.generate(
+          3000,
+          (i) => 'Line $i: ${'x' * 60}',
+        ).join('\n');
+        final dio = Dio()
+          ..httpClientAdapter = _SuccessAdapter(
+            body: largeContent,
+            statusCode: 200,
+          );
+        final tool = UrlTool(urlService: UrlService(dio: dio));
+
+        final result = await tool.runner('{"url": "https://1.1.1.1"}').value;
+
+        expect(result, contains('Status: 200'));
+        expect(result, contains('Content-Type:'));
+        expect(result, contains('Format:'));
+        expect(result, contains('Headers:'));
+        expect(result, contains('[truncated:'));
+        expect(result, contains('bytes omitted'));
+        expect(result, contains('Line 0:'));
+        expect(result, isNot(contains('Line 2999:')));
+
+        final resultBytes = utf8.encode(result).length;
+        expect(resultBytes, lessThanOrEqualTo(52000));
+      });
+
+      test('marks format as truncated', () async {
+        final largeContent = List.generate(
+          3000,
+          (i) => 'Line $i: ${'x' * 60}',
+        ).join('\n');
+        final dio = Dio()
+          ..httpClientAdapter = _SuccessAdapter(
+            body: largeContent,
+            statusCode: 200,
+          );
+        final tool = UrlTool(urlService: UrlService(dio: dio));
+
+        final result = await tool.runner('{"url": "https://1.1.1.1"}').value;
+
+        expect(result, contains('Format:'));
+        expect(result, contains('(truncated)'));
+      });
+
+      test('does not truncate small response body', () async {
+        final dio = Dio()
+          ..httpClientAdapter = _SuccessAdapter(
+            body: 'Hello world',
+            statusCode: 200,
+          );
+        final tool = UrlTool(urlService: UrlService(dio: dio));
+
+        final result = await tool.runner('{"url": "https://1.1.1.1"}').value;
+
+        expect(result, contains('Hello world'));
+        expect(result, isNot(contains('[truncated:')));
+        expect(result, isNot(contains('(truncated)')));
+      });
+
+      test('truncates response exceeding line limit', () async {
+        final manyLines = List.generate(2500, (i) => 'Line $i').join('\n');
+        final dio = Dio()
+          ..httpClientAdapter = _SuccessAdapter(
+            body: manyLines,
+            statusCode: 200,
+          );
+        final tool = UrlTool(urlService: UrlService(dio: dio));
+
+        final result = await tool.runner('{"url": "https://1.1.1.1"}').value;
+
+        expect(result, contains('[truncated:'));
+        expect(result, contains('Line 0'));
+        expect(result, isNot(contains('Line 2499')));
       });
     });
   });

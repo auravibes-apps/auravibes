@@ -97,14 +97,55 @@ final class UrlTool extends NativeToolEntity<String, String> {
         .expand((e) => e.value.map((v) => '${e.key}: $v'))
         .join('\n');
 
-    final truncatedNote = transformed.truncated ? ' (truncated)' : '';
+    final bodyResult = _truncateBody(transformed.body);
+    final wasTruncated = transformed.truncated || bodyResult.truncated;
+    final truncatedNote = wasTruncated ? ' (truncated)' : '';
 
     return 'Status: ${response.statusCode}\n'
         'Elapsed: ${response.elapsed.inMilliseconds}ms\n'
         'Content-Type: ${transformed.contentType ?? 'unknown'}\n'
         'Format: ${transformed.format.label}$truncatedNote\n'
         'Headers:\n$headerLines\n\n'
-        '${transformed.body}';
+        '${bodyResult.body}';
+  }
+
+  static const int _maxToolOutputBytes = 50 * 1024;
+  static const _maxToolOutputLines = 2000;
+
+  ({String body, bool truncated}) _truncateBody(String body) {
+    final originalByteCount = utf8.encode(body).length;
+    final allLines = const LineSplitter().convert(body);
+
+    if (allLines.length <= _maxToolOutputLines &&
+        originalByteCount <= _maxToolOutputBytes) {
+      return (body: body, truncated: false);
+    }
+
+    var result = allLines.length > _maxToolOutputLines
+        ? allLines.take(_maxToolOutputLines).join('\n')
+        : body;
+
+    const noteReserve = 55;
+    const maxContentBytes = _maxToolOutputBytes - noteReserve;
+    if (utf8.encode(result).length > maxContentBytes) {
+      result = _truncateUtf8(result, maxContentBytes);
+    }
+
+    final omitted = originalByteCount - utf8.encode(result).length;
+    final note = '\n... [truncated: $omitted bytes omitted]';
+
+    return (body: '$result$note', truncated: true);
+  }
+
+  String _truncateUtf8(String text, int maxBytes) {
+    final bytes = utf8.encode(text);
+    if (bytes.length <= maxBytes) return text;
+
+    var end = maxBytes;
+    while (end > 0 && (bytes[end - 1] & 0xC0) == 0x80) {
+      end--;
+    }
+    return utf8.decode(bytes.sublist(0, end));
   }
 
   Future<UrlRequest> _buildRequest(String toolInput) async {
