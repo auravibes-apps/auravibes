@@ -70,7 +70,7 @@ void main() {
 
         expect(result.format, UrlContentFormat.markdown);
         expect(result.body, contains('1. First'));
-        expect(result.body, contains('1. Second'));
+        expect(result.body, contains('2. Second'));
       });
 
       test('converts blockquotes', () {
@@ -609,12 +609,14 @@ void main() {
       });
     });
 
-    test('preserves elapsed duration from response metadata', () {
-      const elapsed = Duration(milliseconds: 250);
-      final response = _htmlResponse('<p>Timed content</p>', elapsed: elapsed);
-      final result = transformer.transform(response);
+    group('Response metadata', () {
+      test('preserves elapsed duration from response metadata', () {
+        const elapsed = Duration(milliseconds: 250);
+        final response = _htmlResponse('<p>Timed content</p>', elapsed: elapsed);
+        final result = transformer.transform(response);
 
-      expect(result.elapsed, elapsed);
+        expect(result.elapsed, elapsed);
+      });
     });
   });
 }
