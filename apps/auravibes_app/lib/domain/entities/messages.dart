@@ -62,6 +62,8 @@ String? _toolCallResultStatusToJson(ToolCallResultStatus? status) {
   return const ToolCallResultStatusConverter().toJson(status);
 }
 
+enum CompactionKind { manual, auto }
+
 @freezed
 abstract class MessageMetadataEntity with _$MessageMetadataEntity {
   const factory MessageMetadataEntity({
@@ -69,6 +71,13 @@ abstract class MessageMetadataEntity with _$MessageMetadataEntity {
     int? promptTokens,
     int? completionTokens,
     int? totalTokens,
+    @Default(1) int metadataVersion,
+    @Default(false) bool isCompactionSummary,
+    CompactionKind? compactionKind,
+    String? compactedFromMessageId,
+    String? compactedThroughMessageId,
+    @Default(<String>[]) List<String> compactedMessageIds,
+    DateTime? compactionCreatedAt,
   }) = _MessageMetadataEntity;
   const MessageMetadataEntity._();
 

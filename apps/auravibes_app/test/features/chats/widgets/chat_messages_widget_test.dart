@@ -1,3 +1,4 @@
+import 'package:auravibes_app/domain/entities/compaction.dart';
 import 'package:auravibes_app/domain/entities/messages.dart';
 import 'package:auravibes_app/domain/enums/message_types.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
@@ -14,6 +15,7 @@ void main() {
   Widget buildSubject({
     required List<String> messages,
     required List<Object> overrides,
+    String conversationId = 'conv-1',
   }) {
     return EasyLocalization(
       supportedLocales: const [Locale('en')],
@@ -23,7 +25,10 @@ void main() {
       useFallbackTranslations: true,
       useOnlyLangCode: true,
       child: ProviderScope(
-        overrides: overrides.cast(),
+        overrides: [
+          conversationSelectedProvider.overrideWithValue(conversationId),
+          ...overrides.cast(),
+        ],
         child: Builder(
           builder: (context) {
             return MaterialApp(
@@ -33,7 +38,9 @@ void main() {
               home: Theme(
                 data: ThemeData(extensions: [AuraTheme.light]),
                 child: Material(
-                  child: ChatMessagesWidget(messages: messages),
+                  child: ChatMessagesWidget(
+                    messages: messages,
+                  ),
                 ),
               ),
             );
@@ -49,12 +56,13 @@ void main() {
     bool isUser = true,
     MessageStatus status = MessageStatus.sent,
     MessageMetadataEntity? metadata,
+    MessageType messageType = MessageType.text,
   }) {
     return MessageEntity(
       id: id,
       conversationId: 'conv-1',
       content: content,
-      messageType: MessageType.text,
+      messageType: messageType,
       isUser: isUser,
       status: status,
       createdAt: DateTime(2025),
@@ -482,6 +490,108 @@ void main() {
       );
 
       expect(find.byIcon(Icons.block), findsOneWidget);
+    });
+
+    testWidgets('renders compacting indicator when compaction is running', (
+      tester,
+    ) async {
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          overrides: [
+            conversationCompactionExecutionStateProvider.overrideWithValue(
+              CompactionExecutionState(
+                conversationId: 'conv-1',
+                trigger: CompactionTrigger.auto,
+                startedAt: DateTime(2025),
+                status: CompactionExecutionStatus.running,
+              ),
+            ),
+            messageConversationByIdProvider.overrideWith(
+              (ref, id) => _createMessage(),
+            ),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      expect(find.byType(AuraSpinner), findsOneWidget);
+      expect(find.text('Compacting...'), findsOneWidget);
+      expect(find.text('Hello'), findsOneWidget);
+    });
+
+    testWidgets('renders compacted message widget for compaction summary', (
+      tester,
+    ) async {
+      final message = _createMessage(
+        content: 'Summary of older messages',
+        isUser: false,
+        metadata: const MessageMetadataEntity(
+          isCompactionSummary: true,
+          compactionKind: CompactionKind.auto,
+          compactedMessageIds: ['old-1', 'old-2'],
+          compactedFromMessageId: 'old-1',
+          compactedThroughMessageId: 'old-2',
+        ),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          overrides: [
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      expect(find.byIcon(Icons.compress_outlined), findsOneWidget);
+      expect(find.text('Automatic'), findsOneWidget);
+      expect(find.text('Summary of older messages'), findsOneWidget);
+    });
+
+    testWidgets('renders error widget for non-user system error message', (
+      tester,
+    ) async {
+      final message = _createMessage(
+        content: 'compaction.errors.compaction_failed',
+        isUser: false,
+        status: MessageStatus.error,
+        messageType: MessageType.system,
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          overrides: [
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      expect(find.byIcon(Icons.error_outline), findsOneWidget);
     });
   });
 }

@@ -148,5 +148,27 @@ void main() {
         );
       },
     );
+
+    test('maps compaction summary to system role', () {
+      final messages = [
+        MessageEntity(
+          id: 'summary-1',
+          conversationId: 'conversation-1',
+          content: '<compaction summary content>',
+          messageType: MessageType.system,
+          isUser: false,
+          status: MessageStatus.sent,
+          createdAt: DateTime(2025),
+          updatedAt: DateTime(2025),
+          metadata: const MessageMetadataEntity(isCompactionSummary: true),
+        ),
+      ];
+
+      final result = usecase.call(messages);
+
+      expect(result, hasLength(1));
+      expect(result.single.role.name, 'system');
+      expect(result.single.text, '<compaction summary content>');
+    });
   });
 }

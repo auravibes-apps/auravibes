@@ -1,4 +1,5 @@
 import 'package:auravibes_app/features/settings/notifiers/theme_notifier.dart';
+import 'package:auravibes_app/features/settings/widgets/compaction_settings_section.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -80,6 +81,7 @@ class SettingsScreen extends ConsumerWidget {
                 ],
               ),
             ),
+            CompactionSettingsSection(workspaceId: workspaceId),
           ],
         ),
       ),

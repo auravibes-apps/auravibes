@@ -36,10 +36,10 @@ void main() {
 
       test('does not suppress title when h1 is inside a skipped tag', () {
         final response = _htmlResponse(
-          '<html><head><title>Title</title></head>'
-          '<body>'
-          '<nav><h1>Title</h1></nav>'
-          '<main><p>Main content</p></main>'
+          '<html><head><title>Title</title></head>' //
+          '<body>' //
+          '<nav><h1>Title</h1></nav>' //
+          '<main><p>Main content</p></main>' //
           '</body></html>',
         );
         final result = transformer.transform(response);
@@ -389,10 +389,7 @@ void main() {
           expect(html.format, UrlContentFormat.json);
           expect(html.body, '{"key": "value"}');
 
-          final defaultFmt = transformer.transform(
-            response,
-            requestedFormat: UrlResponseFormat.defaultFormat,
-          );
+          final defaultFmt = transformer.transform(response);
           expect(defaultFmt.format, UrlContentFormat.json);
           expect(defaultFmt.body, '{"key": "value"}');
         },

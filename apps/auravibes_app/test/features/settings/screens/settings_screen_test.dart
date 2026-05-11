@@ -76,5 +76,29 @@ void main() {
       expect(find.byType(AuraScreen), findsOneWidget);
       expect(find.byType(AuraAppBarWithDrawer), findsOneWidget);
     });
+
+    testWidgets('tapping theme tile shows radio group dialog', (tester) async {
+      await tester.runAsync(() async {
+        await tester.pumpWidget(
+          testableApp(
+            overrides: [themeProvider.overrideWith(_MockThemeNotifier.new)],
+            child: Theme(
+              data: ThemeData(extensions: [AuraTheme.light]),
+              child: const SettingsScreen(workspaceId: 'test-ws'),
+            ),
+          ),
+        );
+      });
+      await tester.pumpAndSettle();
+
+      final themeTiles = find.descendant(
+        of: find.byType(SettingsScreen),
+        matching: find.byType(AuraTile),
+      );
+      await tester.tap(themeTiles.first);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AuraRadioGroup<AppTheme>), findsOneWidget);
+    });
   });
 }

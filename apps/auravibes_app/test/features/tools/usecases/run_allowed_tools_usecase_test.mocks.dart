@@ -310,6 +310,16 @@ class MockMessageRepository extends _i1.Mock implements _i2.MessageRepository {
             returnValue: _i10.Future<bool>.value(false),
           )
           as _i10.Future<bool>);
+
+  @override
+  _i10.Future<_i5.MessageEntity?> getLatestCompactionSummary(
+    String? conversationId,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#getLatestCompactionSummary, [conversationId]),
+            returnValue: _i10.Future<_i5.MessageEntity?>.value(),
+          )
+          as _i10.Future<_i5.MessageEntity?>);
 }
 
 /// A class which mocks [ResolveToolApprovalDecisionUsecase].

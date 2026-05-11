@@ -400,6 +400,11 @@ class _FakeMessageRepository implements MessageRepository {
   }
 
   @override
+  Future<MessageEntity?> getLatestCompactionSummary(String conversationId) {
+    throw UnimplementedError();
+  }
+
+  @override
   Stream<List<MessageEntity>> watchMessagesByConversation(
     String conversationId,
   ) {

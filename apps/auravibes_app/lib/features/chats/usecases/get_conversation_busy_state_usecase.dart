@@ -8,12 +8,14 @@ class ConversationBusyState {
   const ConversationBusyState({
     required this.isStreaming,
     required this.hasPendingTools,
+    this.isCompacting = false,
   });
 
   final bool isStreaming;
   final bool hasPendingTools;
+  final bool isCompacting;
 
-  bool get isBusy => isStreaming || hasPendingTools;
+  bool get isBusy => isStreaming || hasPendingTools || isCompacting;
 }
 
 class GetConversationBusyStateUsecase {
@@ -27,6 +29,7 @@ class GetConversationBusyStateUsecase {
 
   Future<ConversationBusyState> call({
     required String conversationId,
+    bool isCompacting = false,
   }) async {
     final messages = await messageRepository.getMessagesByConversation(
       conversationId,
@@ -46,6 +49,7 @@ class GetConversationBusyStateUsecase {
     return ConversationBusyState(
       isStreaming: isStreaming,
       hasPendingTools: hasPendingTools,
+      isCompacting: isCompacting,
     );
   }
 

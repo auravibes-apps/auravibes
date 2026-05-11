@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/messages_table.dart';
 import 'package:drift/drift.dart';
@@ -141,4 +143,34 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
               ),
             ]))
           .get();
+
+  Future<MessagesTable?> getLatestCompactionSummary(String conversationId) =>
+      (select(messages)
+            ..where(
+              (tbl) =>
+                  tbl.conversationId.equals(conversationId) &
+                  tbl.messageType.equals(MessagesTableType.system.value) &
+                  tbl.status.equals(MessageTableStatus.sent.value) &
+                  tbl.metadata.isNotNull(),
+            )
+            ..orderBy([
+              (tbl) => OrderingTerm(
+                expression: tbl.createdAt,
+                mode: OrderingMode.desc,
+              ),
+            ]))
+          .get()
+          .then((rows) {
+            for (final row in rows) {
+              final metadataStr = row.metadata;
+              if (metadataStr == null) continue;
+              try {
+                final json = jsonDecode(metadataStr) as Map<String, dynamic>;
+                if (json['isCompactionSummary'] == true) return row;
+              } on Exception {
+                continue;
+              }
+            }
+            return null;
+          });
 }

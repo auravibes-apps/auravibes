@@ -227,7 +227,8 @@
       "system_default": "Predeterminado del Sistema"
     },
     "actions": {
-      "cancel": "Cancelar"
+      "cancel": "Cancelar",
+      "save": "Guardar"
     }
   },
   "more_screen": {
@@ -305,6 +306,62 @@
         "placeholder": "Ingresa tu token bearer",
         "hint": "Este token se almacenará de forma segura"
       }
+    }
+  },
+  "compaction": {
+    "settings": {
+      "title": "Compresión de Conversación",
+      "subtitle": "Configura el comportamiento de compresión automática de contexto",
+      "auto_enabled": "Compresión Automática",
+      "auto_enabled_hint": "Comprimir automáticamente el contexto antiguo cuando se alcancen los umbrales",
+      "usage_threshold": "Umbral de Porcentaje de Uso",
+      "usage_threshold_hint": "Comprimir cuando el uso de contexto alcance este porcentaje",
+      "remaining_threshold": "Umbral de Tokens Restantes",
+      "remaining_threshold_hint": "Comprimir cuando los tokens restantes caigan por debajo de este valor",
+      "reset_defaults": "Restaurar Predeterminados",
+      "reset_success": "Configuración restaurada a valores predeterminados",
+      "reset_error": "Error al restaurar configuración. Intenta de nuevo.",
+      "save_success": "Configuración de compresión guardada",
+      "save_error": "Error al guardar configuración. Intenta de nuevo.",
+      "validation": {
+        "usage_range": "El umbral de uso debe estar entre 5 y 100",
+        "remaining_positive": "El umbral de tokens restantes debe ser mayor que 0",
+        "remaining_below_limit": "El umbral de tokens restantes debe ser menor que el límite de contexto del modelo",
+        "settings_invalid": "Por favor, ingresa valores numéricos válidos en todos los campos"
+      }
+    },
+    "compacting": {
+      "row_label": "Comprimiendo...",
+      "tooltip": "Comprimiendo historial de conversación"
+    },
+    "compacted": {
+      "widget_label": "Comprimido",
+      "manual_origin": "Manual",
+      "auto_origin": "Automático",
+      "details_title": "Detalles de Compresión",
+      "details_origin": "Origen",
+      "details_range": "Rango Comprimido",
+      "details_created": "Creado",
+      "details_messages": "Mensajes comprimidos",
+      "details_content_label": "Contenido del Resumen"
+    },
+    "manual": {
+      "button_tooltip": "Comprimir conversación",
+      "disabled_tooltip_busy": "No se puede comprimir mientras la conversación está ocupada",
+      "disabled_tooltip_unsafe": "No se puede comprimir debido a aprobaciones de herramientas pendientes",
+      "disabled_tooltip_no_range": "No hay mensajes elegibles para comprimir",
+      "disabled_tooltip_running": "Compresión ya en progreso",
+      "running": "Comprimiendo...",
+      "success": "Conversación comprimida exitosamente",
+      "failure": "Error al comprimir. Inténtalo de nuevo."
+    },
+    "errors": {
+      "compaction_failed": "Error al comprimir. Tu conversación sigue intacta.",
+      "compaction_unsafe": "La compresión no es segura mientras hay herramientas pendientes de aprobación.",
+      "compaction_unavailable": "La compresión no está disponible para esta conversación.",
+      "context_overflow_retry_failed": "Se produjo un desbordamiento de contexto y la compresión de recuperación falló. Intenta comprimir manualmente.",
+      "auto_blocked": "La compresión automática es necesaria pero falló. La continuación del asistente está bloqueada. Intenta comprimir manualmente.",
+      "settings_invalid": "Configuración de compresión inválida. Verifica tus valores."
     }
   },
   "workspace_management": {

@@ -14,6 +14,7 @@ import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtim
 import 'package:auravibes_app/features/chats/providers/streaming_runtime_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_context.dart';
 import 'package:auravibes_app/features/chats/usecases/continue_agent_usecase.dart';
+import 'package:auravibes_app/features/chats/usecases/select_prompt_messages_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
 import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
 import 'package:auravibes_app/services/monitoring_service.dart';
@@ -21,6 +22,7 @@ import 'package:dartantic_ai/dartantic_ai.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
+import 'package:riverpod/riverpod.dart';
 
 import 'continue_agent_usecase_test.mocks.dart';
 
@@ -31,6 +33,7 @@ import 'continue_agent_usecase_test.mocks.dart';
   ConversationRepository,
   LoadConversationToolSpecsUsecase,
   MonitoringService,
+  SelectPromptMessagesUsecase,
 ])
 void main() {
   group('ContinueAgentUsecase', () {
@@ -41,6 +44,7 @@ void main() {
     late MockConversationRepository conversationRepository;
     late MockLoadConversationToolSpecsUsecase loadConversationToolSpecsUsecase;
     late MockMonitoringService monitoringService;
+    late MockSelectPromptMessagesUsecase selectPromptMessagesUsecase;
     late ContinueAgentUsecase usecase;
     late List<String> removedMessageIds;
     late List<String> startedConversationIds;
@@ -58,6 +62,7 @@ void main() {
       conversationRepository = MockConversationRepository();
       loadConversationToolSpecsUsecase = MockLoadConversationToolSpecsUsecase();
       monitoringService = MockMonitoringService();
+      selectPromptMessagesUsecase = MockSelectPromptMessagesUsecase();
       removedMessageIds = [];
       startedConversationIds = [];
       removedConversationIds = [];
@@ -92,6 +97,7 @@ void main() {
         ),
         agentCancellationRuntime: agentCancellationRuntime,
         monitoringService: monitoringService,
+        selectPromptMessagesUsecase: selectPromptMessagesUsecase,
       );
 
       when(
@@ -99,6 +105,9 @@ void main() {
       ).thenAnswer((_) async => _conversation);
       when(
         messageRepository.getMessagesByConversation('conversation-1'),
+      ).thenAnswer((_) async => [_userMessage]);
+      when(
+        selectPromptMessagesUsecase.call('conversation-1'),
       ).thenAnswer((_) async => [_userMessage]);
       when(
         workspaceModelSelectionsRepository.getWorkspaceModelSelectionById(
@@ -481,6 +490,7 @@ void main() {
     late MockConversationRepository conversationRepository;
     late MockLoadConversationToolSpecsUsecase loadConversationToolSpecsUsecase;
     late MockMonitoringService monitoringService;
+    late MockSelectPromptMessagesUsecase selectPromptMessagesUsecase;
     late ContinueAgentUsecase usecase;
     late AgentCancellationRuntime agentCancellationRuntime;
 
@@ -492,6 +502,7 @@ void main() {
       conversationRepository = MockConversationRepository();
       loadConversationToolSpecsUsecase = MockLoadConversationToolSpecsUsecase();
       monitoringService = MockMonitoringService();
+      selectPromptMessagesUsecase = MockSelectPromptMessagesUsecase();
       agentCancellationRuntime = AgentCancellationRuntime()
         ..start('conversation-1');
 
@@ -513,7 +524,12 @@ void main() {
         ),
         agentCancellationRuntime: agentCancellationRuntime,
         monitoringService: monitoringService,
+        selectPromptMessagesUsecase: selectPromptMessagesUsecase,
       );
+
+      when(
+        selectPromptMessagesUsecase.call('conversation-1'),
+      ).thenAnswer((_) async => [_userMessage]);
     });
 
     test('throws when conversation not found', () async {
@@ -611,6 +627,154 @@ void main() {
         }
       },
     );
+    test(
+      'throws StateError when stream completes empty without cancellation',
+      () async {
+        when(
+          conversationRepository.getConversationById('conversation-1'),
+        ).thenAnswer((_) async => _conversation);
+        when(
+          workspaceModelSelectionsRepository.getWorkspaceModelSelectionById(
+            'model-1',
+          ),
+        ).thenAnswer((_) async => _model);
+        when(
+          loadConversationToolSpecsUsecase(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+          ),
+        ).thenAnswer((_) async => []);
+        when(messageRepository.createMessage(any)).thenAnswer(
+          (_) async => _unfinishedAssistantMessage,
+        );
+        when(messageRepository.patchMessage(any, any)).thenAnswer(
+          (_) async => _unfinishedAssistantMessage,
+        );
+        when(
+          chatbotService.sendMessage(_model, any, tools: const []),
+        ).thenAnswer((_) => const Stream.empty());
+
+        await expectLater(
+          usecase.call(conversationId: 'conversation-1'),
+          throwsA(
+            predicate<StateError>((e) => '$e'.contains('without any result')),
+          ),
+        );
+      },
+    );
+  });
+
+  group('ContinueAgentUsecase prompt selection', () {
+    late MockChatbotService chatbotService;
+    late MockMessageRepository messageRepository;
+    late MockWorkspaceModelSelectionRepository
+    workspaceModelSelectionsRepository;
+    late MockConversationRepository conversationRepository;
+    late MockLoadConversationToolSpecsUsecase loadConversationToolSpecsUsecase;
+    late MockMonitoringService monitoringService;
+    late MockSelectPromptMessagesUsecase selectPromptMessagesUsecase;
+    late ContinueAgentUsecase usecase;
+    late AgentCancellationRuntime agentCancellationRuntime;
+
+    setUp(() {
+      chatbotService = MockChatbotService();
+      messageRepository = MockMessageRepository();
+      workspaceModelSelectionsRepository =
+          MockWorkspaceModelSelectionRepository();
+      conversationRepository = MockConversationRepository();
+      loadConversationToolSpecsUsecase = MockLoadConversationToolSpecsUsecase();
+      monitoringService = MockMonitoringService();
+      selectPromptMessagesUsecase = MockSelectPromptMessagesUsecase();
+      agentCancellationRuntime = AgentCancellationRuntime()
+        ..start('conversation-1');
+
+      usecase = ContinueAgentUsecase(
+        chatbotService: chatbotService,
+        messageRepository: messageRepository,
+        workspaceModelSelectionsRepository: workspaceModelSelectionsRepository,
+        conversationRepository: conversationRepository,
+        loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
+        messagesStreamingRuntime: MessagesStreamingRuntime(
+          startSubscription: (_, _) {},
+          updateResult: (_, _) {},
+          remove: (_) async {},
+        ),
+        conversationStreamingRuntime: ConversationStreamingRuntime(
+          start: (_) {},
+          isStreaming: (_) => false,
+          remove: (_) {},
+        ),
+        agentCancellationRuntime: agentCancellationRuntime,
+        monitoringService: monitoringService,
+        selectPromptMessagesUsecase: selectPromptMessagesUsecase,
+      );
+
+      when(
+        conversationRepository.getConversationById(any),
+      ).thenAnswer((_) async => _conversation);
+      when(
+        workspaceModelSelectionsRepository.getWorkspaceModelSelectionById(any),
+      ).thenAnswer((_) async => _model);
+      when(
+        loadConversationToolSpecsUsecase.call(
+          conversationId: anyNamed('conversationId'),
+          workspaceId: anyNamed('workspaceId'),
+        ),
+      ).thenAnswer((_) async => const []);
+      when(
+        selectPromptMessagesUsecase.call(any),
+      ).thenAnswer((_) async => [_userMessage]);
+      when(
+        messageRepository.createMessage(any),
+      ).thenAnswer((_) async => _unfinishedAssistantMessage);
+      when(
+        messageRepository.patchMessage(any, any),
+      ).thenAnswer((_) async => _unfinishedAssistantMessage);
+      when(
+        messageRepository.getMessagesByConversation(any),
+      ).thenAnswer((_) async => [_userMessage]);
+    });
+
+    test('uses selectPromptMessages for prompt construction', () async {
+      when(selectPromptMessagesUsecase.call(any)).thenAnswer(
+        (_) async => [
+          _userMessage,
+        ],
+      );
+      when(
+        chatbotService.sendMessage(_model, any, tools: const []),
+      ).thenAnswer(
+        (_) => Stream.fromIterable([
+          ChatResult<ChatMessage>(
+            output: ChatMessage.model('Done'),
+            finishReason: FinishReason.stop,
+            usage: const LanguageModelUsage(),
+          ),
+        ]),
+      );
+
+      await usecase.call(conversationId: 'conversation-1');
+
+      verify(selectPromptMessagesUsecase.call('conversation-1')).called(1);
+      verifyNever(
+        messageRepository.getMessagesByConversation('conversation-1'),
+      );
+    });
+
+    test('provider returns usecase with selectPromptMessages wired', () {
+      final container = ProviderContainer(
+        overrides: [
+          selectPromptMessagesUsecaseProvider.overrideWith(
+            (ref) => MockSelectPromptMessagesUsecase(),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final usecase = container.read(continueAgentUsecaseProvider);
+
+      expect(usecase, isA<ContinueAgentUsecase>());
+    });
   });
 }
 

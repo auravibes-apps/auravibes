@@ -9,6 +9,7 @@ import 'package:auravibes_app/features/chats/providers/send_queue_runtime_provid
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_context.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_decision.dart';
 import 'package:auravibes_app/features/chats/usecases/continue_agent_usecase.dart';
+import 'package:auravibes_app/features/chats/usecases/maybe_auto_compact_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/run_agent_iteration_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/run_allowed_tools_usecase.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -23,6 +24,7 @@ import 'run_agent_iteration_usecase_test.mocks.dart';
   RunAllowedToolsUsecase,
   ConversationRepository,
   MessageRepository,
+  MaybeAutoCompactConversationUsecase,
 ])
 void main() {
   group('RunAgentIterationUsecase', () {
@@ -30,6 +32,8 @@ void main() {
     late MockRunAllowedToolsUsecase runAllowedToolsUsecase;
     late MockConversationRepository conversationRepository;
     late MockMessageRepository messageRepository;
+    late MockMaybeAutoCompactConversationUsecase
+    maybeAutoCompactConversationUsecase;
     late ProviderContainer container;
     late AgentCancellationRuntime agentCancellationRuntime;
     late RunAgentIterationUsecase usecase;
@@ -39,6 +43,8 @@ void main() {
       runAllowedToolsUsecase = MockRunAllowedToolsUsecase();
       conversationRepository = MockConversationRepository();
       messageRepository = MockMessageRepository();
+      maybeAutoCompactConversationUsecase =
+          MockMaybeAutoCompactConversationUsecase();
       container = ProviderContainer();
       agentCancellationRuntime = AgentCancellationRuntime();
       usecase = RunAgentIterationUsecase(
@@ -46,6 +52,8 @@ void main() {
         runAllowedToolsUsecase: runAllowedToolsUsecase,
         conversationRepository: conversationRepository,
         messageRepository: messageRepository,
+        maybeAutoCompactConversationUsecase:
+            maybeAutoCompactConversationUsecase,
         sendQueueRuntime: container.read(conversationSendQueueRuntimeProvider),
         agentCancellationRuntime: agentCancellationRuntime,
       );
@@ -600,5 +608,202 @@ void main() {
         );
       },
     );
+
+    group('compaction integration', () {
+      test(
+        'triggers auto compaction before the first AI call',
+        () async {
+          when(
+            continueAgentUsecase.call(
+              conversationId: 'conversation-1',
+              context: anyNamed('context'),
+            ),
+          ).thenAnswer(
+            (_) async => const ContinueAgentResult(
+              messageId: 'assistant-1',
+              hasToolCalls: false,
+            ),
+          );
+
+          await usecase.call(conversationId: 'conversation-1');
+
+          verifyInOrder([
+            maybeAutoCompactConversationUsecase.call(
+              conversationId: 'conversation-1',
+            ),
+            continueAgentUsecase.call(
+              conversationId: 'conversation-1',
+              context: anyNamed('context'),
+            ),
+          ]);
+        },
+      );
+
+      test(
+        'triggers auto compaction in every loop iteration before the AI call',
+        () async {
+          var callCount = 0;
+          when(
+            continueAgentUsecase.call(
+              conversationId: 'conversation-1',
+              context: anyNamed('context'),
+            ),
+          ).thenAnswer((_) async {
+            callCount += 1;
+            if (callCount == 1) {
+              return const ContinueAgentResult(
+                messageId: 'assistant-1',
+                hasToolCalls: true,
+              );
+            }
+            return const ContinueAgentResult(
+              messageId: 'assistant-2',
+              hasToolCalls: false,
+            );
+          });
+          when(
+            runAllowedToolsUsecase.call(
+              conversationId: 'conversation-1',
+              workspaceId: 'workspace-1',
+            ),
+          ).thenAnswer(
+            (_) async => AgentIterationDecision.continueIteration,
+          );
+
+          await usecase.call(conversationId: 'conversation-1');
+
+          verify(
+            maybeAutoCompactConversationUsecase.call(
+              conversationId: 'conversation-1',
+            ),
+          ).called(2);
+        },
+      );
+
+      test(
+        'propagates compaction failure to stop agent loop',
+        () async {
+          when(
+            maybeAutoCompactConversationUsecase.call(
+              conversationId: 'conversation-1',
+            ),
+          ).thenThrow(Exception('compaction error'));
+
+          await expectLater(
+            usecase.call(conversationId: 'conversation-1'),
+            throwsA(isA<Exception>()),
+          );
+          verifyNever(
+            continueAgentUsecase.call(
+              conversationId: anyNamed('conversationId'),
+              context: anyNamed('context'),
+            ),
+          );
+        },
+      );
+
+      test(
+        'runs compaction after queued drafts drain but before AI call',
+        () async {
+          container
+              .read(conversationSendQueueProvider.notifier)
+              .enqueue(
+                conversationId: 'conversation-1',
+                content: 'Queued follow-up',
+              );
+
+          when(
+            continueAgentUsecase.call(
+              conversationId: 'conversation-1',
+              context: anyNamed('context'),
+            ),
+          ).thenAnswer(
+            (_) async => const ContinueAgentResult(
+              messageId: 'assistant-1',
+              hasToolCalls: false,
+            ),
+          );
+
+          await usecase.call(conversationId: 'conversation-1');
+
+          verifyInOrder([
+            messageRepository.createMessage(any),
+            maybeAutoCompactConversationUsecase.call(
+              conversationId: 'conversation-1',
+            ),
+            continueAgentUsecase.call(
+              conversationId: 'conversation-1',
+              context: anyNamed('context'),
+            ),
+          ]);
+        },
+      );
+
+      test(
+        'skips compaction and AI call when cancelled after drain',
+        () async {
+          container
+              .read(conversationSendQueueProvider.notifier)
+              .enqueue(
+                conversationId: 'conversation-1',
+                content: 'Queued follow-up',
+              );
+          when(messageRepository.createMessage(any)).thenAnswer((_) async {
+            agentCancellationRuntime.requestStop('conversation-1');
+            return MessageEntity(
+              id: 'queued-user-1',
+              conversationId: 'conversation-1',
+              content: 'Queued follow-up',
+              messageType: MessageType.text,
+              isUser: true,
+              status: MessageStatus.sending,
+              createdAt: DateTime(2025),
+              updatedAt: DateTime(2025),
+            );
+          });
+          when(messageRepository.patchMessage('queued-user-1', any)).thenAnswer(
+            (_) async => MessageEntity(
+              id: 'queued-user-1',
+              conversationId: 'conversation-1',
+              content: 'Queued follow-up',
+              messageType: MessageType.text,
+              isUser: true,
+              status: MessageStatus.sent,
+              createdAt: DateTime(2025),
+              updatedAt: DateTime(2025),
+            ),
+          );
+
+          await usecase.call(conversationId: 'conversation-1');
+
+          verifyNever(
+            maybeAutoCompactConversationUsecase.call(
+              conversationId: 'conversation-1',
+            ),
+          );
+          verifyNever(
+            continueAgentUsecase.call(
+              conversationId: 'conversation-1',
+              context: anyNamed('context'),
+            ),
+          );
+        },
+      );
+    });
+
+    test('provider returns usecase with maybeAutoCompact wired', () {
+      final container = ProviderContainer(
+        overrides: [
+          maybeAutoCompactConversationUsecaseProvider.overrideWith(
+            (ref) => MockMaybeAutoCompactConversationUsecase(),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final usecase = container.read(runAgentIterationUsecaseProvider);
+
+      expect(usecase, isA<RunAgentIterationUsecase>());
+    });
   });
 }

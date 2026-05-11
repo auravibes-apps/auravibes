@@ -27,7 +27,7 @@ void main() {
     });
 
     test('has correct schema version', () {
-      expect(database.schemaVersion, 1);
+      expect(database.schemaVersion, 2);
     });
 
     test('creates successfully with in-memory connection', () {
@@ -114,8 +114,8 @@ void main() {
       expect(strategy, isNotNull);
     });
 
-    test('schemaVersion is 1', () {
-      expect(database.schemaVersion, 1);
+    test('schemaVersion is 2', () {
+      expect(database.schemaVersion, 2);
     });
 
     test('getDatabaseStats returns valid types', () async {

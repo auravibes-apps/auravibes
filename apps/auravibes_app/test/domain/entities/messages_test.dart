@@ -158,6 +158,81 @@ void main() {
         expect(metadata.usedTokens, 100);
       });
     });
+
+    group('compaction fields', () {
+      test('defaults are non-summary with empty range', () {
+        const metadata = MessageMetadataEntity();
+        expect(metadata.metadataVersion, 1);
+        expect(metadata.isCompactionSummary, isFalse);
+        expect(metadata.compactionKind, isNull);
+        expect(metadata.compactedFromMessageId, isNull);
+        expect(metadata.compactedThroughMessageId, isNull);
+        expect(metadata.compactedMessageIds, isEmpty);
+        expect(metadata.compactionCreatedAt, isNull);
+      });
+
+      test('parses compaction summary metadata from JSON', () {
+        final metadata = MessageMetadataEntity.fromJsonString('''
+          {
+            "metadataVersion": 2,
+            "isCompactionSummary": true,
+            "compactionKind": "auto",
+            "compactedFromMessageId": "msg-1",
+            "compactedThroughMessageId": "msg-5",
+            "compactedMessageIds": ["msg-1", "msg-2", "msg-3", "msg-4", "msg-5"],
+            "compactionCreatedAt": "2026-05-03T10:00:00.000Z"
+          }
+        ''');
+        expect(metadata, isNotNull);
+        expect(metadata!.isCompactionSummary, isTrue);
+        expect(metadata.compactionKind, CompactionKind.auto);
+        expect(metadata.compactedFromMessageId, 'msg-1');
+        expect(metadata.compactedThroughMessageId, 'msg-5');
+        expect(metadata.compactedMessageIds, hasLength(5));
+        expect(metadata.compactionCreatedAt, isNotNull);
+      });
+
+      test('old rows without compaction fields are non-summary', () {
+        final metadata = MessageMetadataEntity.fromJsonString('''
+          {"promptTokens": 10, "completionTokens": 5, "totalTokens": 15}
+        ''');
+        expect(metadata, isNotNull);
+        expect(metadata!.isCompactionSummary, isFalse);
+        expect(metadata.compactionKind, isNull);
+        expect(metadata.compactedMessageIds, isEmpty);
+      });
+
+      test('no tool metadata invariant for compaction summaries', () {
+        const metadata = MessageMetadataEntity(
+          isCompactionSummary: true,
+          compactionKind: CompactionKind.manual,
+          compactedFromMessageId: 'msg-1',
+          compactedThroughMessageId: 'msg-3',
+          compactedMessageIds: ['msg-1', 'msg-2', 'msg-3'],
+        );
+        expect(metadata.toolCalls, isEmpty);
+        expect(metadata.isCompactionSummary, isTrue);
+      });
+
+      test('serializes and deserializes round-trip', () {
+        final now = DateTime(2026, 5, 3);
+        final metadata = MessageMetadataEntity(
+          metadataVersion: 2,
+          isCompactionSummary: true,
+          compactionKind: CompactionKind.auto,
+          compactedFromMessageId: 'a',
+          compactedThroughMessageId: 'b',
+          compactedMessageIds: ['a', 'b'],
+          compactionCreatedAt: now,
+        );
+        final json = metadata.toJson();
+        final restored = MessageMetadataEntity.fromJson(json);
+        expect(restored.isCompactionSummary, isTrue);
+        expect(restored.compactionKind, CompactionKind.auto);
+        expect(restored.compactedMessageIds, ['a', 'b']);
+        expect(restored.metadataVersion, 2);
+      });
+    });
   });
 
   group('MessageEntity', () {

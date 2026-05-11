@@ -133,6 +133,11 @@ class _StubMessageRepository implements MessageRepository {
   Future<bool> validateMessage(MessageToCreate message) async {
     return validateResult;
   }
+
+  @override
+  Future<MessageEntity?> getLatestCompactionSummary(String conversationId) {
+    throw UnimplementedError();
+  }
 }
 
 void main() {
