@@ -171,7 +171,9 @@ class UrlContentTransformer {
     }
 
     final buffer = StringBuffer();
-    if (title != null && title.isNotEmpty) {
+    final firstH1 = bodyElement.querySelector('h1');
+    final titleMatchesH1 = firstH1 != null && firstH1.text.trim() == title;
+    if (title != null && title.isNotEmpty && !titleMatchesH1) {
       buffer
         ..writeln('# $title')
         ..writeln();
