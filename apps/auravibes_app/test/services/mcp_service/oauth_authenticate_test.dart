@@ -7,7 +7,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('OauthAuthenticate', () {
+  group('OAuthAuthenticate', () {
     test('stores callbackUrlScheme and clientName', () {
       final auth = OauthAuthenticate(
         callbackUrlScheme: 'auravibes',
@@ -214,9 +214,7 @@ void main() {
       test('generated verifier-like values are URL-safe and PKCE-sized', () {
         final values = List.generate(
           10,
-          (_) => OauthAuthenticate.generateCodeChallenge(
-            DateTime.now().microsecondsSinceEpoch.toString(),
-          ),
+          (i) => OauthAuthenticate.generateCodeChallenge('seed_$i'),
         );
 
         final allowed = RegExp(r'^[A-Za-z0-9\-_]+$');
@@ -233,12 +231,10 @@ void main() {
       test('sequential generations produce varied values', () {
         final results = List.generate(
           12,
-          (_) => OauthAuthenticate.generateCodeChallenge(
-            DateTime.now().microsecondsSinceEpoch.toString(),
-          ),
+          (index) => OauthAuthenticate.generateCodeChallenge('seed-$index'),
         );
 
-        expect(results.toSet().length, greaterThan(1));
+        expect(results.toSet().length, results.length);
       });
     });
 
