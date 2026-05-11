@@ -26,7 +26,7 @@ UI component library following const-first design.
 
 ## Commands
 
-all dart related commands should prefix with `fvm ` to ensure correct SDK version is used.
+All dart related commands should prefix with `fvm ` to ensure correct SDK version is used.
 
 e.g. `fvm dart run melos bootstrap`
 
@@ -59,7 +59,7 @@ fvm flutter pub add dev:build_runner dev:json_serializable
 
 ### Quality & Testing
 
-valid on melos >7
+Valid on Melos >7.
 
 ```bash
 fvm dart run melos analyze                # Analyze code quality
@@ -74,7 +74,7 @@ fvm dart run melos run validate:ci        # Full CI validation with coverage
 
 ### Running Specific Tests
 
-in the package directory, use:
+In the package directory, use:
 
 ```bash
 # Single file
@@ -197,14 +197,12 @@ These rules are non-negotiable for all new code and refactors:
 
 ## Active Technologies
 
-- Dart 3.11+ with Flutter 3.41.4+ via FVM + Flutter, hooks_riverpod/Riverpod 3, riverpod_generator, Freezed, Drift, auravibes_ui (008-avoid-approval-flash)
-- Existing Drift `messages` metadata JSON and tool permission tables; no schema changes planned (008-avoid-approval-flash)
-
-- Dart 3.x (FVM pinned to 3.41.4+) + Flutter, Riverpod (with code generation), Freezed, auravibes_ui (001-two-step-model-selector)
-- Drift database (existing, no schema changes needed) (001-two-step-model-selector)
-- Dart 3.11+ (Flutter 3.41.4+ via FVM) + Flutter SDK, flutter_portal, gpt_markdown, riverpod (existing) (001-ui-library-widgets)
-- Dart 3.11+ with Flutter 3.41.4+ (FVM pinned) + Flutter, Riverpod, Drift, dartantic_ai (`ChatResult<ChatMessage>` / `LanguageModelUsage`), auravibes_ui (003-token-usage-context)
-- Existing Drift `messages` table metadata JSON (no schema migration planned) (003-token-usage-context)
+- **Current baseline (workspace-wide):** Dart 3.11+ with Flutter 3.41.4+ via FVM, Flutter, Riverpod (hooks_riverpod/Riverpod 3 + code generation), Freezed, Drift, auravibes_ui.
+- **Spec-specific additions/notes:**
+  - (008-avoid-approval-flash) Existing Drift `messages` metadata JSON and tool permission tables; no schema changes planned.
+  - (001-two-step-model-selector) Drift database is existing; no schema changes needed.
+  - (001-ui-library-widgets) Uses `flutter_portal` and `gpt_markdown` with existing Riverpod setup.
+  - (003-token-usage-context) Uses `dartantic_ai` (`ChatResult<ChatMessage>` / `LanguageModelUsage`) and existing Drift `messages` metadata JSON (no schema migration planned).
 
 ## Recent Changes
 
