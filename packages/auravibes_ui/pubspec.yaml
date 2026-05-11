@@ -12,7 +12,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_portal: ^1.1.4
-  gpt_markdown: ^1.1.4
+  gpt_markdown: ^1.1.7
 
 dev_dependencies:
   flutter_test:
