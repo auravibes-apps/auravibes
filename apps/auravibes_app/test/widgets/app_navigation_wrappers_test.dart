@@ -463,7 +463,13 @@ void main() {
     setUp(() {
       try {
         F.appFlavor = Flavor.dev;
-      } on Object catch (_) {
+      } catch (error) {
+        final isLateInitializationError =
+            error is Error &&
+            error.toString().startsWith('LateInitializationError');
+        if (!isLateInitializationError) {
+          rethrow;
+        }
         // Intentionally ignored: app flavor may already be initialized in test
         // bootstrap, and reassigning it can throw.
       }
@@ -653,10 +659,8 @@ class _FakeConversationRepository implements ConversationRepository {
     String workspaceId, {
     int? limit,
   }) {
-    late final StreamController<List<ConversationEntity>> controller;
-    controller = StreamController<List<ConversationEntity>>.broadcast(
-      onCancel: () => _controllers.remove(controller),
-    );
+    final controller = StreamController<List<ConversationEntity>>.broadcast();
+    controller.onCancel = () => _controllers.remove(controller);
     _controllers.add(controller);
     controller.add(const []);
     return controller.stream;
