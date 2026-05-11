@@ -100,7 +100,7 @@ melos:
         melos analyze &&
         melos run format:check &&
         melos run test
-      description: Full validation pipeline for CI/CD
+      description: Full validation pipeline (no coverage, fast)
 
     validate:ci:
       run: |

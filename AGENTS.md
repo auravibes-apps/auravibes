@@ -95,8 +95,8 @@ fvm flutter test --tags slow --no-pub
 # Exclude tagged tests
 fvm flutter test --exclude-tags widget --no-pub
 
-# Use CI preset (reduced concurrency for 2-core runners)
-fvm flutter test -P ci --no-pub
+# Use CI flags (reduced concurrency for 2-core runners)
+fvm flutter test --concurrency=2 --timeout=30s --reporter=compact --no-pub
 ```
 
 ### Code Generation
