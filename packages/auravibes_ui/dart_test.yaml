@@ -1,0 +1,12 @@
+chain_stack_traces: false
+concurrency: 8
+timeout: 30s
+
+tags:
+  slow:
+    timeout: 2x
+  widget:
+    timeout: 2x
+
+# CI-specific settings are passed via CLI flags in the melos test:ci script.
+# See pubspec.yaml: flutter test --coverage --concurrency=2 --timeout=30s --reporter=compact

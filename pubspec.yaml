@@ -49,10 +49,22 @@ melos:
 
     # Testing Scripts
     test:
-      exec: flutter test --coverage --reporter=expanded
+      exec: flutter test --reporter=compact
+      packageFilters:
+        dirExists: test
+      description: Run tests for all packages (fast, no coverage)
+
+    test:coverage:
+      exec: flutter test --coverage --reporter=compact
       packageFilters:
         dirExists: test
       description: Run tests for all packages with coverage
+
+    test:ci:
+      exec: flutter test --coverage --concurrency=2 --timeout=30s --reporter=compact
+      packageFilters:
+        dirExists: test
+      description: Run tests in CI mode (coverage + optimized settings)
 
     # Code Generation Scripts
     generate:
@@ -88,7 +100,14 @@ melos:
         melos analyze &&
         melos run format:check &&
         melos run test
-      description: Full validation pipeline for CI/CD
+      description: Full validation pipeline (no coverage, fast)
+
+    validate:ci:
+      run: |
+        melos analyze &&
+        melos run format:check &&
+        melos run test:ci
+      description: Validation pipeline with coverage (CI mode)
 
     validate:quick:
       run: |
