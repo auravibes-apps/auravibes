@@ -22,6 +22,7 @@ import 'package:dartantic_ai/dartantic_ai.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
+import 'package:riverpod/riverpod.dart';
 
 import 'continue_agent_usecase_test.mocks.dart';
 
@@ -758,6 +759,21 @@ void main() {
       verifyNever(
         messageRepository.getMessagesByConversation('conversation-1'),
       );
+    });
+
+    test('provider returns usecase with selectPromptMessages wired', () {
+      final container = ProviderContainer(
+        overrides: [
+          selectPromptMessagesUsecaseProvider.overrideWith(
+            (ref) => MockSelectPromptMessagesUsecase(),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final usecase = container.read(continueAgentUsecaseProvider);
+
+      expect(usecase, isA<ContinueAgentUsecase>());
     });
   });
 }

@@ -790,5 +790,20 @@ void main() {
         },
       );
     });
+
+    test('provider returns usecase with maybeAutoCompact wired', () {
+      final container = ProviderContainer(
+        overrides: [
+          maybeAutoCompactConversationUsecaseProvider.overrideWith(
+            (ref) => MockMaybeAutoCompactConversationUsecase(),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final usecase = container.read(runAgentIterationUsecaseProvider);
+
+      expect(usecase, isA<RunAgentIterationUsecase>());
+    });
   });
 }
