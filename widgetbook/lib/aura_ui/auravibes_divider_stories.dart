@@ -22,11 +22,8 @@ double _heightKnob(BuildContext context) {
   );
 }
 
-double _indentKnob(BuildContext context) => context.knobs.double.slider(
-      label: 'Indent',
-      initialValue: 0,
-      max: 100,
-    );
+double _indentKnob(BuildContext context) =>
+    context.knobs.double.slider(label: 'Indent', initialValue: 0, max: 100);
 
 double _thicknessKnob(BuildContext context) {
   return context.knobs.double.slider(
