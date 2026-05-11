@@ -8,8 +8,8 @@ import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 
-class OauthAuthenticate {
-  OauthAuthenticate({
+class OAuthAuthenticate {
+  OAuthAuthenticate({
     required this.callbackUrlScheme,
     required this.clientName,
     Dio? dio,

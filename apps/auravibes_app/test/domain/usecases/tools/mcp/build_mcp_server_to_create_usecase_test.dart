@@ -4,7 +4,7 @@ import 'package:auravibes_app/services/mcp_service/oauth_authenticate.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  final authenticator = OauthAuthenticate(
+  final authenticator = OAuthAuthenticate(
     callbackUrlScheme: 'test',
     clientName: 'test',
   );
