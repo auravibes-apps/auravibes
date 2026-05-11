@@ -65,6 +65,7 @@ class UrlContentTransformer {
     final contentType = _extractContentType(response.headers);
     final body = response.body;
     final originalLength = body.length;
+    final elapsed = response.elapsed;
 
     final effectiveFormat = requestedFormat == UrlResponseFormat.defaultFormat
         ? UrlResponseFormat.markdown
@@ -74,6 +75,7 @@ class UrlContentTransformer {
       return _passthrough(
         body,
         originalLength,
+        elapsed,
         contentType,
         UrlContentFormat.unsupported,
       );
@@ -84,15 +86,17 @@ class UrlContentTransformer {
         UrlResponseFormat.html => _passthrough(
           body,
           originalLength,
+          elapsed,
           contentType,
           UrlContentFormat.html,
         ),
         UrlResponseFormat.text => _transformHtmlToText(
           body,
           originalLength,
+          elapsed,
           contentType,
         ),
-        _ => _transformHtml(body, originalLength, contentType),
+        _ => _transformHtml(body, originalLength, elapsed, contentType),
       };
     }
 
@@ -102,6 +106,7 @@ class UrlContentTransformer {
       return _passthrough(
         body,
         originalLength,
+        elapsed,
         contentType,
         UrlContentFormat.json,
       );
@@ -112,6 +117,7 @@ class UrlContentTransformer {
       return _passthrough(
         body,
         originalLength,
+        elapsed,
         contentType,
         UrlContentFormat.markdown,
       );
@@ -121,6 +127,7 @@ class UrlContentTransformer {
       return _passthrough(
         body,
         originalLength,
+        elapsed,
         contentType,
         UrlContentFormat.text,
       );
@@ -129,6 +136,7 @@ class UrlContentTransformer {
     return _passthrough(
       body,
       originalLength,
+      elapsed,
       contentType,
       UrlContentFormat.unsupported,
     );
@@ -137,6 +145,7 @@ class UrlContentTransformer {
   TransformedUrlContent _transformHtml(
     String body,
     int originalLength,
+    Duration elapsed,
     String contentType,
   ) {
     final document = parser.parse(body);
@@ -157,6 +166,7 @@ class UrlContentTransformer {
         contentType: contentType,
         originalLength: originalLength,
         truncated: truncated,
+        elapsed: elapsed,
       );
     }
 
@@ -181,12 +191,14 @@ class UrlContentTransformer {
       contentType: contentType,
       originalLength: originalLength,
       truncated: truncated,
+      elapsed: elapsed,
     );
   }
 
   TransformedUrlContent _transformHtmlToText(
     String body,
     int originalLength,
+    Duration elapsed,
     String contentType,
   ) {
     final document = parser.parse(body);
@@ -209,6 +221,7 @@ class UrlContentTransformer {
       contentType: contentType,
       originalLength: originalLength,
       truncated: truncated,
+      elapsed: elapsed,
     );
   }
 
@@ -541,7 +554,17 @@ class UrlContentTransformer {
         _ensureNewline(buffer);
         final indent = '  ' * (depth > 0 ? depth - 1 : 0);
         final isOrdered = _isInsideOrderedList(element);
-        final marker = isOrdered ? '1. ' : '- ';
+        final String marker;
+        if (isOrdered) {
+          var index = 1;
+          for (final sibling in element.parent?.children ?? []) {
+            if (identical(sibling, element)) break;
+            if (sibling.localName?.toLowerCase() == 'li') index++;
+          }
+          marker = '$index. ';
+        } else {
+          marker = '- ';
+        }
         buffer.write('$indent$marker');
         _processChildren(element, buffer, depth);
     }
@@ -563,6 +586,7 @@ class UrlContentTransformer {
   TransformedUrlContent _passthrough(
     String body,
     int originalLength,
+    Duration elapsed,
     String? contentType,
     UrlContentFormat format,
   ) {
@@ -573,6 +597,7 @@ class UrlContentTransformer {
         contentType: contentType,
         originalLength: originalLength,
         truncated: false,
+        elapsed: elapsed,
       );
     }
 
@@ -584,6 +609,7 @@ class UrlContentTransformer {
       contentType: contentType,
       originalLength: originalLength,
       truncated: truncated,
+      elapsed: elapsed,
     );
   }
 

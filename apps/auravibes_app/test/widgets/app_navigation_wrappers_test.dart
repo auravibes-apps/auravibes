@@ -17,7 +17,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 void main() {
-  group('_calculateSelectedIndex', () {
+  group('navigation shell index calculation', () {
     testWidgets('returns shellIndex for root workspace path', (tester) async {
       int? result;
 
@@ -460,9 +460,7 @@ void main() {
   );
 
   group('AuraSidebarWrapper rendering', () {
-    late _RecordingConversationRepository repository;
-
-    setUpAll(() {
+    setUp(() {
       try {
         F.appFlavor = Flavor.dev;
       } on Object catch (_) {
@@ -471,19 +469,14 @@ void main() {
       }
     });
 
-    setUp(() {
-      repository = _RecordingConversationRepository();
-    });
-
-    tearDown(() async {
-      await repository.close();
-    });
-
     Widget _buildTestApp({
       required String initialLocation,
       required List<StatefulShellBranch> branches,
     }) {
-      final repo = repository;
+      final repo = _FakeConversationRepository();
+      addTearDown(() async {
+        await repo.close();
+      });
       final router = GoRouter(
         initialLocation: initialLocation,
         routes: [
@@ -531,8 +524,8 @@ void main() {
                       id: 'ws-test',
                       name: 'Test workspace',
                       type: WorkspaceType.local,
-                      createdAt: DateTime(2026),
-                      updatedAt: DateTime(2026),
+                      createdAt: DateTime(2020),
+                      updatedAt: DateTime(2020),
                     ),
                   ]),
                 ),
@@ -652,7 +645,7 @@ class _FakeNavigationShell extends Fake implements StatefulNavigationShell {
       '_FakeNavigationShell';
 }
 
-class _RecordingConversationRepository implements ConversationRepository {
+class _FakeConversationRepository implements ConversationRepository {
   final _controllers = <StreamController<List<ConversationEntity>>>[];
 
   @override

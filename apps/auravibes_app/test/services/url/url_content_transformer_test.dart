@@ -70,7 +70,7 @@ void main() {
 
         expect(result.format, UrlContentFormat.markdown);
         expect(result.body, contains('1. First'));
-        expect(result.body, contains('1. Second'));
+        expect(result.body, contains('2. Second'));
       });
 
       test('converts blockquotes', () {
@@ -608,22 +608,54 @@ void main() {
         expect(result.body, isNot(contains('Home')));
       });
     });
+
+    group('Response metadata', () {
+      test('preserves elapsed duration from response metadata', () {
+        const elapsed = Duration(milliseconds: 250);
+        final response = _htmlResponse(
+          '<p>Timed content</p>',
+          elapsed: elapsed,
+        );
+        final result = transformer.transform(response);
+
+        expect(result.elapsed, elapsed);
+      });
+    });
   });
 }
 
-UrlResponse _htmlResponse(String html) {
-  return _responseWithContentType(html, 'text/html');
+UrlResponse _htmlResponse(String html, {Duration elapsed = Duration.zero}) {
+  return _responseWithContentType(
+    html,
+    'text/html',
+    elapsed: elapsed,
+  );
 }
 
-UrlResponse _jsonResponse(String json) {
-  return _responseWithContentType(json, 'application/json');
+UrlResponse _jsonResponse(String json, {Duration elapsed = Duration.zero}) {
+  return _responseWithContentType(
+    json,
+    'application/json',
+    elapsed: elapsed,
+  );
 }
 
-UrlResponse _plainTextResponse(String text) {
-  return _responseWithContentType(text, 'text/plain');
+UrlResponse _plainTextResponse(
+  String text, {
+  Duration elapsed = Duration.zero,
+}) {
+  return _responseWithContentType(
+    text,
+    'text/plain',
+    elapsed: elapsed,
+  );
 }
 
-UrlResponse _responseWithContentType(String body, String? contentType) {
+UrlResponse _responseWithContentType(
+  String body,
+  String? contentType, {
+  Duration elapsed = Duration.zero,
+}) {
   return UrlResponse(
     statusCode: 200,
     body: body,
@@ -632,6 +664,6 @@ UrlResponse _responseWithContentType(String body, String? contentType) {
             'content-type': [contentType],
           }
         : {},
-    elapsed: Duration.zero,
+    elapsed: elapsed,
   );
 }

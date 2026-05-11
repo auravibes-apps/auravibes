@@ -8,8 +8,8 @@ import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 
-class OauthAuthenticate {
-  OauthAuthenticate({
+class OAuthAuthenticate {
+  OAuthAuthenticate({
     required this.callbackUrlScheme,
     required this.clientName,
     Dio? dio,
@@ -138,7 +138,7 @@ class OauthAuthenticate {
     required String codeVerifier,
     required String redirectUrl,
   }) async {
-    final response = await _dio.post<Map<String, dynamic>>(
+    final response = await _dio.post<dynamic>(
       oAuthResult.tokenUrl,
       data: {
         'grant_type': 'authorization_code',
@@ -161,10 +161,26 @@ class OauthAuthenticate {
       );
     }
 
-    if (response.data == null) {
+    final data = response.data;
+    if (data == null) {
       throw Exception('No data received from token endpoint');
     }
+    if (data is! Map<String, dynamic>) {
+      throw Exception('Invalid token response: expected a JSON object');
+    }
 
-    return OAuthTokenModel.fromJson(response.data!);
+    final accessToken = data['access_token'];
+    final tokenType = data['token_type'];
+    if (accessToken is! String) {
+      throw Exception('Invalid token response: access_token must be a string');
+    }
+    if (accessToken.isEmpty) {
+      throw Exception('Invalid token response: access_token cannot be empty');
+    }
+    if (tokenType is! String) {
+      throw Exception('Invalid token response: token_type must be a string');
+    }
+
+    return OAuthTokenModel.fromJson(data);
   }
 }

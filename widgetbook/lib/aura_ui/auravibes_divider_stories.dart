@@ -17,7 +17,7 @@ Widget basicHorizontalDividerUseCase(BuildContext context) {
       label: 'Height',
       initialValue: 0,
       min: 0,
-      max: 1,
+      max: 20,
     ),
     indent: context.knobs.double.slider(
       label: 'Indent',
@@ -27,7 +27,7 @@ Widget basicHorizontalDividerUseCase(BuildContext context) {
     thickness: context.knobs.double.slider(
       label: 'Thickness',
       initialValue: 1,
-      max: 1,
+      max: 10,
       min: 0,
     ),
   );
@@ -40,14 +40,13 @@ Widget verticalDividerUseCase(BuildContext context) {
       label: 'Width',
       initialValue: 0,
       min: 0,
-      max: 1,
+      max: 20,
     ),
     endIndent: context.knobs.double.slider(
       label: _endIndentLabel,
       initialValue: 0,
       max: 100,
     ),
-
     indent: context.knobs.double.slider(
       label: 'Indent',
       initialValue: 0,
@@ -56,7 +55,7 @@ Widget verticalDividerUseCase(BuildContext context) {
     thickness: context.knobs.double.slider(
       label: 'Thickness',
       initialValue: 1,
-      max: 1,
+      max: 10,
       min: 0,
     ),
   );
@@ -66,19 +65,17 @@ Widget verticalDividerUseCase(BuildContext context) {
 Widget dividerWithLabelUseCase(BuildContext context) {
   return AuraDivider.withLabel(
     label: const Text('Section 1'),
-
     height: context.knobs.double.slider(
       label: 'Height',
       initialValue: 0,
       min: 0,
-      max: 1,
+      max: 20,
     ),
     endIndent: context.knobs.double.slider(
       label: _endIndentLabel,
       initialValue: 0,
       max: 100,
     ),
-
     indent: context.knobs.double.slider(
       label: 'Indent',
       initialValue: 0,
@@ -87,7 +84,7 @@ Widget dividerWithLabelUseCase(BuildContext context) {
     thickness: context.knobs.double.slider(
       label: 'Thickness',
       initialValue: 1,
-      max: 1,
+      max: 10,
       min: 0,
     ),
   );
