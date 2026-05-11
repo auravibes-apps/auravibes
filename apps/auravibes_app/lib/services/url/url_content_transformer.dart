@@ -562,7 +562,7 @@ class UrlContentTransformer {
                   .toList() ??
               [];
           final index = siblings.indexOf(element);
-          marker = '${index + 1}. ';
+          marker = '${(index < 0 ? 0 : index) + 1}. ';
         } else {
           marker = '- ';
         }
