@@ -171,8 +171,9 @@ class UrlContentTransformer {
     }
 
     final buffer = StringBuffer();
-    final firstH1 = bodyElement.querySelector('h1');
-    final titleMatchesH1 = firstH1 != null && firstH1.text.trim() == title?.trim();
+    final firstRenderedH1 = _firstRenderedH1(bodyElement);
+    final titleMatchesH1 =
+        firstRenderedH1 != null && firstRenderedH1.text.trim() == title?.trim();
     if (title != null && title.isNotEmpty && !titleMatchesH1) {
       buffer
         ..writeln('# $title')
@@ -445,6 +446,24 @@ class UrlContentTransformer {
 
   bool _isBlockTag(String tag) {
     return _blockTags.contains(tag);
+  }
+
+  /// Returns the first `<h1>` in [parent] whose ancestor chain does not
+  /// include any element in [_skipContentTags], or `null` if none exists.
+  dom.Element? _firstRenderedH1(dom.Element parent) {
+    for (final h1 in parent.querySelectorAll('h1')) {
+      var ancestor = h1.parent;
+      var skipped = false;
+      while (ancestor != null && ancestor != parent) {
+        if (_skipContentTags.contains(ancestor.localName?.toLowerCase())) {
+          skipped = true;
+          break;
+        }
+        ancestor = ancestor.parent;
+      }
+      if (!skipped) return h1;
+    }
+    return null;
   }
 
   bool _isInsideOrderedList(dom.Element element) {

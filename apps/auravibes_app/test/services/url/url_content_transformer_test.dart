@@ -26,10 +26,28 @@ void main() {
 
         expect(result.format, UrlContentFormat.markdown);
         expect(result.body, contains('# Title'));
-        final headingMatches =
-            RegExp(r'^#\s+Title$', multiLine: true).allMatches(result.body);
+        final headingMatches = RegExp(
+          r'^#\s+Title$',
+          multiLine: true,
+        ).allMatches(result.body);
         expect(headingMatches.length, 1);
         expect(result.body, contains('Content here.'));
+      });
+
+      test('does not suppress title when h1 is inside a skipped tag', () {
+        final response = _htmlResponse(
+          '<html><head><title>Title</title></head>'
+          '<body>'
+          '<nav><h1>Title</h1></nav>'
+          '<main><p>Main content</p></main>'
+          '</body></html>',
+        );
+        final result = transformer.transform(response);
+
+        expect(result.format, UrlContentFormat.markdown);
+        expect(result.body, contains('# Title'));
+        expect(result.body, contains('Main content'));
+        expect(result.body, isNot(contains('Title\n# Title')));
       });
 
       test('strips script and style tags', () {
