@@ -103,7 +103,17 @@ final class UrlTool extends NativeToolEntity<String, String> {
           'Status: ${response.statusCode}\n'
           'Elapsed: ${response.elapsed.inMilliseconds}ms\n'
           'Content-Type: ${transformed.contentType ?? 'unknown'}\n'
-          'Format: $formatLabel\n'
+          'Format: $formatLabel (truncated)\n'
+          'Headers:\n$headerLines\n\n',
+        )
+        .length;
+
+    final metaLines = const LineSplitter()
+        .convert(
+          'Status:${response.statusCode}\n'
+          'Elapsed:${response.elapsed.inMilliseconds}ms\n'
+          'Content-Type:${transformed.contentType ?? 'unknown'}\n'
+          'Format:$formatLabel (truncated)\n'
           'Headers:\n$headerLines\n\n',
         )
         .length;
@@ -112,7 +122,18 @@ final class UrlTool extends NativeToolEntity<String, String> {
       0,
       _maxToolOutputBytes,
     );
-    final bodyResult = _truncateBody(transformed.body, maxBytes: bodyBudget);
+    final bodyLineBudget = (_maxToolOutputLines - metaLines).clamp(
+      0,
+      _maxToolOutputLines,
+    );
+
+    final bodyResult = bodyBudget > 0
+        ? _truncateBody(
+            transformed.body,
+            maxBytes: bodyBudget,
+            maxLines: bodyLineBudget,
+          )
+        : (body: '', truncated: transformed.body.isNotEmpty);
     final wasTruncated = transformed.truncated || bodyResult.truncated;
 
     return 'Status: ${response.statusCode}\n'
@@ -127,18 +148,39 @@ final class UrlTool extends NativeToolEntity<String, String> {
   static const int _maxToolOutputLines = 2000;
   static const int _truncationNoteReserve = 55;
 
-  ({String body, bool truncated}) _truncateBody(String body, {int? maxBytes}) {
-    final effectiveMaxBytes = maxBytes ?? _maxToolOutputBytes;
-    final originalByteCount = utf8.encode(body).length;
-    final allLines = const LineSplitter().convert(body);
+  List<String> _takeLines(String text, int limit) {
+    final lines = <String>[];
+    var start = 0;
+    for (var i = 0; i < text.length; i++) {
+      if (text[i] == '\n') {
+        lines.add(text.substring(start, i));
+        start = i + 1;
+        if (lines.length > limit) break;
+      }
+    }
+    if (start < text.length && lines.length <= limit) {
+      lines.add(text.substring(start));
+    }
+    return lines;
+  }
 
-    if (allLines.length <= _maxToolOutputLines &&
+  ({String body, bool truncated}) _truncateBody(
+    String body, {
+    int? maxBytes,
+    int? maxLines,
+  }) {
+    final effectiveMaxBytes = maxBytes ?? _maxToolOutputBytes;
+    final effectiveMaxLines = maxLines ?? _maxToolOutputLines;
+    final originalByteCount = utf8.encode(body).length;
+    final allLines = _takeLines(body, effectiveMaxLines);
+
+    if (allLines.length <= effectiveMaxLines &&
         originalByteCount <= effectiveMaxBytes) {
       return (body: body, truncated: false);
     }
 
-    var result = allLines.length > _maxToolOutputLines
-        ? allLines.take(_maxToolOutputLines).join('\n')
+    var result = allLines.length > effectiveMaxLines
+        ? allLines.sublist(0, effectiveMaxLines).join('\n')
         : body;
 
     final maxContentBytes = (effectiveMaxBytes - _truncationNoteReserve).clamp(
@@ -151,8 +193,16 @@ final class UrlTool extends NativeToolEntity<String, String> {
 
     final omitted = originalByteCount - utf8.encode(result).length;
     final note = '\n... [truncated: $omitted bytes omitted]';
+    final combined = '$result$note';
 
-    return (body: '$result$note', truncated: true);
+    if (utf8.encode(combined).length > effectiveMaxBytes) {
+      return (
+        body: _truncateUtf8(combined, effectiveMaxBytes),
+        truncated: true,
+      );
+    }
+
+    return (body: combined, truncated: true);
   }
 
   String _truncateUtf8(String text, int maxBytes) {

@@ -559,7 +559,7 @@ void main() {
         expect(result, isNot(contains('Line 2999:')));
 
         final resultBytes = utf8.encode(result).length;
-        expect(resultBytes, lessThanOrEqualTo(52000));
+        expect(resultBytes, lessThanOrEqualTo(50 * 1024));
       });
 
       test('marks format as truncated', () async {
