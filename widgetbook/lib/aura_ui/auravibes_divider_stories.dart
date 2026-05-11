@@ -17,7 +17,7 @@ Widget basicHorizontalDividerUseCase(BuildContext context) {
       label: 'Height',
       initialValue: 0,
       min: 0,
-      max: 1,
+      max: 20,
     ),
     indent: context.knobs.double.slider(
       label: 'Indent',
@@ -27,7 +27,7 @@ Widget basicHorizontalDividerUseCase(BuildContext context) {
     thickness: context.knobs.double.slider(
       label: 'Thickness',
       initialValue: 1,
-      max: 1,
+      max: 10,
       min: 0,
     ),
   );
@@ -40,7 +40,7 @@ Widget verticalDividerUseCase(BuildContext context) {
       label: 'Width',
       initialValue: 0,
       min: 0,
-      max: 1,
+      max: 20,
     ),
     endIndent: context.knobs.double.slider(
       label: _endIndentLabel,
@@ -56,7 +56,7 @@ Widget verticalDividerUseCase(BuildContext context) {
     thickness: context.knobs.double.slider(
       label: 'Thickness',
       initialValue: 1,
-      max: 1,
+      max: 10,
       min: 0,
     ),
   );
@@ -71,7 +71,7 @@ Widget dividerWithLabelUseCase(BuildContext context) {
       label: 'Height',
       initialValue: 0,
       min: 0,
-      max: 1,
+      max: 20,
     ),
     endIndent: context.knobs.double.slider(
       label: _endIndentLabel,
@@ -87,7 +87,7 @@ Widget dividerWithLabelUseCase(BuildContext context) {
     thickness: context.knobs.double.slider(
       label: 'Thickness',
       initialValue: 1,
-      max: 1,
+      max: 10,
       min: 0,
     ),
   );
