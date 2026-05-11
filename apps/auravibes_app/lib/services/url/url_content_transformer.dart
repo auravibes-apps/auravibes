@@ -556,13 +556,12 @@ class UrlContentTransformer {
         final isOrdered = _isInsideOrderedList(element);
         final String marker;
         if (isOrdered) {
-          final siblings =
-              element.parent?.children
-                  .where((e) => e.localName?.toLowerCase() == 'li')
-                  .toList() ??
-              [];
-          final index = siblings.indexOf(element);
-          marker = '${(index < 0 ? 0 : index) + 1}. ';
+          var index = 1;
+          for (final sibling in element.parent?.children ?? []) {
+            if (identical(sibling, element)) break;
+            if (sibling.localName?.toLowerCase() == 'li') index++;
+          }
+          marker = '$index. ';
         } else {
           marker = '- ';
         }
