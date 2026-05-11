@@ -5,6 +5,15 @@ import 'package:widgetbook_annotation/widgetbook_annotation.dart' as widgetbook;
 
 const _endIndentLabel = 'End Indent';
 
+double _thicknessKnob(BuildContext context) {
+  return context.knobs.double.slider(
+    label: 'Thickness',
+    initialValue: 1,
+    max: 10,
+    min: 0,
+  );
+}
+
 @widgetbook.UseCase(name: 'Horizontal Divider', type: AuraDivider)
 Widget basicHorizontalDividerUseCase(BuildContext context) {
   return AuraDivider(
@@ -24,12 +33,7 @@ Widget basicHorizontalDividerUseCase(BuildContext context) {
       initialValue: 0,
       max: 100,
     ),
-    thickness: context.knobs.double.slider(
-      label: 'Thickness',
-      initialValue: 1,
-      max: 10,
-      min: 0,
-    ),
+    thickness: _thicknessKnob(context),
   );
 }
 
@@ -52,12 +56,7 @@ Widget verticalDividerUseCase(BuildContext context) {
       initialValue: 0,
       max: 100,
     ),
-    thickness: context.knobs.double.slider(
-      label: 'Thickness',
-      initialValue: 1,
-      max: 10,
-      min: 0,
-    ),
+    thickness: _thicknessKnob(context),
   );
 }
 
@@ -81,11 +80,6 @@ Widget dividerWithLabelUseCase(BuildContext context) {
       initialValue: 0,
       max: 100,
     ),
-    thickness: context.knobs.double.slider(
-      label: 'Thickness',
-      initialValue: 1,
-      max: 10,
-      min: 0,
-    ),
+    thickness: _thicknessKnob(context),
   );
 }
