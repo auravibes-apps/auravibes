@@ -14,12 +14,7 @@ double _endIndentKnob(BuildContext context) {
 }
 
 double _heightKnob(BuildContext context) {
-  return context.knobs.double.slider(
-    label: 'Height',
-    initialValue: 0,
-    min: 0,
-    max: 20,
-  );
+  return context.knobs.double.slider(label: 'Height', initialValue: 0, max: 20);
 }
 
 double _indentKnob(BuildContext context) =>
