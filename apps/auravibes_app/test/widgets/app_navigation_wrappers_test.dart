@@ -475,7 +475,7 @@ void main() {
       }
     });
 
-    Widget _buildTestApp({
+    ({Widget app, GoRouter router}) _buildTestApp({
       required String initialLocation,
       required List<StatefulShellBranch> branches,
     }) {
@@ -512,7 +512,7 @@ void main() {
         ],
       );
       addTearDown(router.dispose);
-      return EasyLocalization(
+      final app = EasyLocalization(
         supportedLocales: const [Locale('en')],
         path: 'assets/i18n',
         fallbackLocale: const Locale('en'),
@@ -547,6 +547,7 @@ void main() {
           },
         ),
       );
+      return (app: app, router: router);
     }
 
     testWidgets('renders sidebar for multiple routes', (tester) async {
@@ -589,52 +590,31 @@ void main() {
         ),
       ];
 
-      await tester.pumpWidget(
-        _buildTestApp(
-          initialLocation: '/workspaces/ws-test/tools',
-          branches: branches,
-        ),
+      final (:app, :router) = _buildTestApp(
+        initialLocation: '/workspaces/ws-test/tools',
+        branches: branches,
       );
+      await tester.pumpWidget(app);
       await tester.pump();
 
       expect(find.byType(AuraSidebarWrapper), findsOneWidget);
 
-      await tester.pumpWidget(
-        _buildTestApp(
-          initialLocation: '/workspaces/ws-test/chat/new',
-          branches: branches,
-        ),
-      );
+      router.go('/workspaces/ws-test/chat/new');
       await tester.pump();
 
       expect(find.byType(AuraSidebarWrapper), findsOneWidget);
 
-      await tester.pumpWidget(
-        _buildTestApp(
-          initialLocation: '/workspaces/ws-test/chats/chat-123',
-          branches: branches,
-        ),
-      );
+      router.go('/workspaces/ws-test/chats/chat-123');
       await tester.pump();
 
       expect(find.byType(AuraSidebarWrapper), findsOneWidget);
 
-      await tester.pumpWidget(
-        _buildTestApp(
-          initialLocation: '/workspaces/ws-test/models',
-          branches: branches,
-        ),
-      );
+      router.go('/workspaces/ws-test/models');
       await tester.pump();
 
       expect(find.byType(AuraSidebarWrapper), findsOneWidget);
 
-      await tester.pumpWidget(
-        _buildTestApp(
-          initialLocation: '/workspaces/ws-test/settings',
-          branches: branches,
-        ),
-      );
+      router.go('/workspaces/ws-test/settings');
       await tester.pump();
 
       expect(find.byType(AuraSidebarWrapper), findsOneWidget);
@@ -667,8 +647,10 @@ class _FakeConversationRepository implements ConversationRepository {
   }
 
   Future<void> close() async {
+    final controllersSnapshot =
+        List<StreamController<List<ConversationEntity>>>.from(_controllers);
     await Future.wait(
-      _controllers.where((c) => !c.isClosed).map((c) => c.close()),
+      controllersSnapshot.where((c) => !c.isClosed).map((c) => c.close()),
     );
   }
 
