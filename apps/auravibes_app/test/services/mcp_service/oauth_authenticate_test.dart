@@ -6,6 +6,32 @@ import 'package:auravibes_app/services/mcp_service/oauth_discovery.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+typedef _FetchCallback =
+    Future<ResponseBody> Function(
+      RequestOptions options,
+      Stream<Uint8List>? requestStream,
+      Future<void>? cancelFuture,
+    );
+
+final class _FakeHttpClientAdapter implements HttpClientAdapter {
+  _FakeHttpClientAdapter({required _FetchCallback onFetch})
+    : _fetchCallback = onFetch;
+
+  final _FetchCallback _fetchCallback;
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) {
+    return _fetchCallback(options, requestStream, cancelFuture);
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
+
 void main() {
   group('OAuthAuthenticate', () {
     test('stores callbackUrlScheme and clientName', () {
@@ -470,30 +496,4 @@ void main() {
       });
     });
   });
-}
-
-typedef _FetchCallback =
-    Future<ResponseBody> Function(
-      RequestOptions options,
-      Stream<Uint8List>? requestStream,
-      Future<void>? cancelFuture,
-    );
-
-final class _FakeHttpClientAdapter implements HttpClientAdapter {
-  _FakeHttpClientAdapter({required _FetchCallback onFetch})
-    : _fetchCallback = onFetch;
-
-  final _FetchCallback _fetchCallback;
-
-  @override
-  Future<ResponseBody> fetch(
-    RequestOptions options,
-    Stream<Uint8List>? requestStream,
-    Future<void>? cancelFuture,
-  ) {
-    return _fetchCallback(options, requestStream, cancelFuture);
-  }
-
-  @override
-  void close({bool force = false}) {}
 }
