@@ -97,14 +97,163 @@ final class UrlTool extends NativeToolEntity<String, String> {
         .expand((e) => e.value.map((v) => '${e.key}: $v'))
         .join('\n');
 
-    final truncatedNote = transformed.truncated ? ' (truncated)' : '';
+    final formatLabel = transformed.format.label;
+    final metadataOverhead = utf8
+        .encode(
+          'Status: ${response.statusCode}\n'
+          'Elapsed: ${response.elapsed.inMilliseconds}ms\n'
+          'Content-Type: ${transformed.contentType ?? 'unknown'}\n'
+          'Format: $formatLabel (truncated)\n'
+          'Headers:\n$headerLines\n\n',
+        )
+        .length;
 
-    return 'Status: ${response.statusCode}\n'
+    final metaLines = const LineSplitter()
+        .convert(
+          'Status:${response.statusCode}\n'
+          'Elapsed:${response.elapsed.inMilliseconds}ms\n'
+          'Content-Type:${transformed.contentType ?? 'unknown'}\n'
+          'Format:$formatLabel (truncated)\n'
+          'Headers:\n$headerLines\n\n',
+        )
+        .length;
+
+    final bodyBudget = (_maxToolOutputBytes - metadataOverhead).clamp(
+      0,
+      _maxToolOutputBytes,
+    );
+    final bodyLineBudget = (_maxToolOutputLines - metaLines).clamp(
+      0,
+      _maxToolOutputLines,
+    );
+
+    final bodyResult = bodyBudget > 0
+        ? _truncateBody(
+            transformed.body,
+            maxBytes: bodyBudget,
+            maxLines: bodyLineBudget,
+          )
+        : (body: '', truncated: transformed.body.isNotEmpty);
+    var wasTruncated = transformed.truncated || bodyResult.truncated;
+
+    var result =
+        'Status: ${response.statusCode}\n'
         'Elapsed: ${response.elapsed.inMilliseconds}ms\n'
         'Content-Type: ${transformed.contentType ?? 'unknown'}\n'
-        'Format: ${transformed.format.label}$truncatedNote\n'
+        'Format: $formatLabel${wasTruncated ? ' (truncated)' : ''}\n'
         'Headers:\n$headerLines\n\n'
-        '${transformed.body}';
+        '${bodyResult.body}';
+
+    final resultBytes = utf8.encode(result).length;
+    final resultLines = _takeLines(result, _maxToolOutputLines + 1).length;
+
+    if (resultBytes > _maxToolOutputBytes ||
+        resultLines > _maxToolOutputLines) {
+      wasTruncated = true;
+      result = _truncateTotal(
+        'Status: ${response.statusCode}\n'
+        'Elapsed: ${response.elapsed.inMilliseconds}ms\n'
+        'Content-Type: ${transformed.contentType ?? 'unknown'}\n'
+        'Format: $formatLabel (truncated)\n'
+        'Headers:\n$headerLines\n\n'
+        '${bodyResult.body}',
+      );
+    }
+
+    return result;
+  }
+
+  static const int _maxToolOutputBytes = 50 * 1024;
+  static const int _maxToolOutputLines = 2000;
+  static const int _truncationNoteReserve = 55;
+
+  List<String> _takeLines(String text, int limit) {
+    final lines = <String>[];
+    var start = 0;
+    for (var i = 0; i < text.length; i++) {
+      if (text[i] == '\n') {
+        lines.add(text.substring(start, i));
+        start = i + 1;
+        if (lines.length > limit) break;
+      }
+    }
+    if (start < text.length && lines.length <= limit) {
+      lines.add(text.substring(start));
+    }
+    return lines;
+  }
+
+  ({String body, bool truncated}) _truncateBody(
+    String body, {
+    int? maxBytes,
+    int? maxLines,
+  }) {
+    final effectiveMaxBytes = maxBytes ?? _maxToolOutputBytes;
+    final effectiveMaxLines = maxLines ?? _maxToolOutputLines;
+    final originalByteCount = utf8.encode(body).length;
+    final allLines = _takeLines(body, effectiveMaxLines);
+
+    if (allLines.length <= effectiveMaxLines &&
+        originalByteCount <= effectiveMaxBytes) {
+      return (body: body, truncated: false);
+    }
+
+    var result = allLines.length > effectiveMaxLines
+        ? allLines.sublist(0, effectiveMaxLines).join('\n')
+        : body;
+
+    final maxContentBytes = (effectiveMaxBytes - _truncationNoteReserve).clamp(
+      0,
+      effectiveMaxBytes,
+    );
+    if (utf8.encode(result).length > maxContentBytes) {
+      result = _truncateUtf8(result, maxContentBytes);
+    }
+
+    final omitted = originalByteCount - utf8.encode(result).length;
+    final note = '\n... [truncated: $omitted bytes omitted]';
+    final combined = '$result$note';
+
+    if (utf8.encode(combined).length > effectiveMaxBytes) {
+      return (
+        body: _truncateUtf8(combined, effectiveMaxBytes),
+        truncated: true,
+      );
+    }
+
+    return (body: combined, truncated: true);
+  }
+
+  String _truncateUtf8(String text, int maxBytes) {
+    final bytes = utf8.encode(text);
+    if (bytes.length <= maxBytes) return text;
+
+    var end = maxBytes;
+    while (end > 0 && (bytes[end - 1] & 0xC0) == 0x80) {
+      end--;
+    }
+    if (end > 0 && bytes[end - 1] >= 0xC0) {
+      end--;
+    }
+    return utf8.decode(bytes.sublist(0, end));
+  }
+
+  String _truncateTotal(String text) {
+    var output = text;
+
+    final lines = _takeLines(output, _maxToolOutputLines + 1);
+    if (lines.length > _maxToolOutputLines) {
+      output = lines.sublist(0, _maxToolOutputLines).join('\n');
+    }
+
+    final originalBytes = utf8.encode(output).length;
+    output = _truncateUtf8(
+      output,
+      _maxToolOutputBytes - _truncationNoteReserve,
+    );
+
+    final omitted = originalBytes - utf8.encode(output).length;
+    return '$output\n... [truncated: $omitted bytes omitted]';
   }
 
   Future<UrlRequest> _buildRequest(String toolInput) async {
