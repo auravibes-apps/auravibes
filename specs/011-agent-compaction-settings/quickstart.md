@@ -12,7 +12,7 @@ fvm dart run melos bs
 ## Implementation Flow
 
 1. Extend message metadata entity/model with compaction fields and metadata version.
-2. Add global compaction settings persistence and validation for enabled state, percentage threshold, remaining-token threshold, and reset defaults.
+2. Add per-workspace compaction settings persistence via Drift workspace_compaction_settings table and validation for enabled state, percentage threshold, remaining-token threshold, and reset defaults.
 3. Implement compaction use cases:
    - prompt-token estimate
    - deterministic auto-compaction eligibility check

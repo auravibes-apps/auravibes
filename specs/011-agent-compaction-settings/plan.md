@@ -103,7 +103,7 @@ Research output is captured in `specs/011-agent-compaction-settings/research.md`
 All technical unknowns are resolved:
 
 - Use existing Drift message metadata JSON, not a new table, for MVP compaction summaries and ranges.
-- Persist settings globally in shared preferences.
+- Persist settings per workspace in Drift v2 workspace_compaction_settings table.
 - Decide auto eligibility deterministically from thresholds.
 - Generate summaries through the active conversation model/provider via AI agent service.
 - Keep a minimum recent tail and complete tool-call/result groups outside compacted ranges.

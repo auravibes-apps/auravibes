@@ -2,7 +2,7 @@
 
 ## CompactionSettings
 
-Global app-level preferences controlling automatic compaction behavior.
+Per-workspace compaction settings stored in Drift workspace_compaction_settings table.
 
 ### Fields
 

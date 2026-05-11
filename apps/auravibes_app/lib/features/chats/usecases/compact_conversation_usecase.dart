@@ -112,8 +112,6 @@ class CompactConversationUsecase {
         if (trigger == CompactionTrigger.auto) {
           await _persistRequiredFailureMessage(
             conversationId: conversationId,
-            range: range,
-            cause: e,
           );
         }
 
@@ -148,6 +146,8 @@ class CompactConversationUsecase {
     for (final message in messages) {
       if (message.isUser) {
         history.add(ChatMessage.user(message.content));
+      } else if (message.messageType == MessageType.system) {
+        history.add(ChatMessage.system(message.content));
       } else {
         history.add(ChatMessage.model(message.content));
       }
@@ -184,6 +184,7 @@ class CompactConversationUsecase {
     required CompactionTrigger trigger,
   }) async {
     final metadata = MessageMetadataEntity(
+      metadataVersion: 2,
       isCompactionSummary: true,
       compactionKind: trigger == CompactionTrigger.auto
           ? CompactionKind.auto
@@ -213,8 +214,6 @@ class CompactConversationUsecase {
 
   Future<void> _persistRequiredFailureMessage({
     required String conversationId,
-    required CompactionRange range,
-    required Exception cause,
   }) async {
     final created = await messageRepository.createMessage(
       MessageToCreate(

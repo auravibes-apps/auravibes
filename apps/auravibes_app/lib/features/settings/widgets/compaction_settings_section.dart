@@ -177,6 +177,14 @@ class _CompactionSettingsSectionState
       }
     } on CompactionSettingsValidationException catch (e) {
       setState(() => _validationError = e.localeKey.tr());
+    } on Exception {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: TextLocale(LocaleKeys.compaction_settings_reset_error),
+          ),
+        );
+      }
     }
   }
 

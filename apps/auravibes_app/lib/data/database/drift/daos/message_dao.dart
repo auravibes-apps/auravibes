@@ -167,7 +167,7 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
               try {
                 final json = jsonDecode(metadataStr) as Map<String, dynamic>;
                 if (json['isCompactionSummary'] == true) return row;
-              } on FormatException {
+              } on Exception {
                 continue;
               }
             }

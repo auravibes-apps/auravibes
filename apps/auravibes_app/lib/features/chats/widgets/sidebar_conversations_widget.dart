@@ -60,8 +60,7 @@ class SidebarConversationsWidget extends ConsumerWidget {
                 workspaceId: workspaceId,
                 isActive: chat.id == currentChatId,
               ),
-              if (_isCompacting(ref, chat.id))
-                _CompactingRow(conversationId: chat.id),
+              if (_isCompacting(ref, chat.id)) const _CompactingRow(),
             ],
             _buildViewAllButton(context, workspaceId),
           ],
@@ -271,9 +270,7 @@ class _SidebarConversationTileState
 }
 
 class _CompactingRow extends ConsumerWidget {
-  const _CompactingRow({required this.conversationId});
-
-  final String conversationId;
+  const _CompactingRow();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
