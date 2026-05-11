@@ -176,6 +176,7 @@ class _CompactionSettingsSectionState
         );
       }
     } on CompactionSettingsValidationException catch (e) {
+      if (!mounted) return;
       setState(() => _validationError = e.localeKey.tr());
     } on Exception {
       if (mounted) {
@@ -204,6 +205,7 @@ class _CompactionSettingsSectionState
       return;
     }
     const defaults = CompactionSettings.defaults;
+    if (!mounted) return;
     setState(() {
       _autoEnabled = defaults.autoCompactionEnabled;
       _usageController.text = '${defaults.usagePercentageThreshold}';

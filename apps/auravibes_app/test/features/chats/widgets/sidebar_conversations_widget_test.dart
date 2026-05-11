@@ -383,7 +383,6 @@ class _TestCompactionExecution extends CompactionExecution {
 
   @override
   Map<String, CompactionExecutionState> build() {
-    ref.onDispose(() {});
     return Map.unmodifiable(_initialState);
   }
 }
