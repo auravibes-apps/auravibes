@@ -3,10 +3,10 @@ import 'package:auravibes_app/services/mcp_service/oauth_authenticate.dart';
 
 class BuildMcpServerToCreateUseCase {
   const BuildMcpServerToCreateUseCase({
-    required OauthAuthenticate authenticator,
+    required OAuthAuthenticate authenticator,
   }) : _authenticator = authenticator;
 
-  final OauthAuthenticate _authenticator;
+  final OAuthAuthenticate _authenticator;
 
   Future<McpServerToCreate> call(McpServerFormToCreate serverToCreate) async {
     final serverInfo = McpServerToCreate(

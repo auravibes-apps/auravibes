@@ -208,7 +208,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
   }) async {
     final serverInfo =
         await BuildMcpServerToCreateUseCase(
-          authenticator: OauthAuthenticate(
+          authenticator: OAuthAuthenticate(
             callbackUrlScheme: 'me-auravibes',
             clientName: 'Aura Vibes MCP Client',
           ),

@@ -554,7 +554,17 @@ class UrlContentTransformer {
         _ensureNewline(buffer);
         final indent = '  ' * (depth > 0 ? depth - 1 : 0);
         final isOrdered = _isInsideOrderedList(element);
-        final marker = isOrdered ? '1. ' : '- ';
+        final String marker;
+        if (isOrdered) {
+          var index = 1;
+          for (final sibling in element.parent?.children ?? []) {
+            if (identical(sibling, element)) break;
+            if (sibling.localName?.toLowerCase() == 'li') index++;
+          }
+          marker = '$index. ';
+        } else {
+          marker = '- ';
+        }
         buffer.write('$indent$marker');
         _processChildren(element, buffer, depth);
     }

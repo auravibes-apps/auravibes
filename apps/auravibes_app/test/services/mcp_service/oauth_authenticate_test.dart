@@ -7,9 +7,9 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('OauthAuthenticate', () {
+  group('OAuthAuthenticate', () {
     test('stores callbackUrlScheme and clientName', () {
-      final auth = OauthAuthenticate(
+      final auth = OAuthAuthenticate(
         callbackUrlScheme: 'auravibes',
         clientName: 'AuraVibes',
       );
@@ -20,7 +20,7 @@ void main() {
 
     test('can be constructed', () {
       expect(
-        () => OauthAuthenticate(
+        () => OAuthAuthenticate(
           callbackUrlScheme: 'myapp',
           clientName: 'MyApp',
         ),
@@ -30,7 +30,7 @@ void main() {
 
     group('validateGetCode', () {
       test('returns code when URL has valid code and matching state', () {
-        final code = OauthAuthenticate.validateGetCode(
+        final code = OAuthAuthenticate.validateGetCode(
           urlResult: 'test:/?state=abc123&code=auth_code_123',
           stateParam: 'abc123',
         );
@@ -39,7 +39,7 @@ void main() {
       });
 
       test('returns code regardless of parameter order', () {
-        final code = OauthAuthenticate.validateGetCode(
+        final code = OAuthAuthenticate.validateGetCode(
           urlResult: 'test:/?code=auth_code&state=mystate',
           stateParam: 'mystate',
         );
@@ -49,7 +49,7 @@ void main() {
 
       test('throws when error parameter is present', () {
         expect(
-          () => OauthAuthenticate.validateGetCode(
+          () => OAuthAuthenticate.validateGetCode(
             urlResult:
                 'test:/?error=access_denied&error_description=User+cancelled',
             stateParam: 'abc123',
@@ -66,7 +66,7 @@ void main() {
 
       test('throws when error is present without description', () {
         expect(
-          () => OauthAuthenticate.validateGetCode(
+          () => OAuthAuthenticate.validateGetCode(
             urlResult: 'test:/?error=unauthorized',
             stateParam: 'abc123',
           ),
@@ -82,7 +82,7 @@ void main() {
 
       test('throws when state parameter does not match', () {
         expect(
-          () => OauthAuthenticate.validateGetCode(
+          () => OAuthAuthenticate.validateGetCode(
             urlResult: 'test:/?state=wrong_state&code=auth_code',
             stateParam: 'expected_state',
           ),
@@ -98,7 +98,7 @@ void main() {
 
       test('throws when state is missing from URL', () {
         expect(
-          () => OauthAuthenticate.validateGetCode(
+          () => OAuthAuthenticate.validateGetCode(
             urlResult: 'test:/?code=auth_code',
             stateParam: 'expected_state',
           ),
@@ -114,7 +114,7 @@ void main() {
 
       test('throws when code parameter is missing', () {
         expect(
-          () => OauthAuthenticate.validateGetCode(
+          () => OAuthAuthenticate.validateGetCode(
             urlResult: 'test:/?state=abc123',
             stateParam: 'abc123',
           ),
@@ -130,7 +130,7 @@ void main() {
 
       test('throws when code parameter is empty', () {
         expect(
-          () => OauthAuthenticate.validateGetCode(
+          () => OAuthAuthenticate.validateGetCode(
             urlResult: 'test:/?state=abc123&code=',
             stateParam: 'abc123',
           ),
@@ -147,7 +147,7 @@ void main() {
 
     group('generateCodeChallenge', () {
       test('produces base64url string without padding', () {
-        final challenge = OauthAuthenticate.generateCodeChallenge(
+        final challenge = OAuthAuthenticate.generateCodeChallenge(
           'test_verifier',
         );
 
@@ -155,7 +155,7 @@ void main() {
       });
 
       test('output is valid base64url', () {
-        final challenge = OauthAuthenticate.generateCodeChallenge(
+        final challenge = OAuthAuthenticate.generateCodeChallenge(
           'test_verifier',
         );
         final padded = challenge.padRight((challenge.length + 3) ~/ 4 * 4, '=');
@@ -164,21 +164,21 @@ void main() {
       });
 
       test('is deterministic for same input', () {
-        final a = OauthAuthenticate.generateCodeChallenge('same_input');
-        final b = OauthAuthenticate.generateCodeChallenge('same_input');
+        final a = OAuthAuthenticate.generateCodeChallenge('same_input');
+        final b = OAuthAuthenticate.generateCodeChallenge('same_input');
 
         expect(a, b);
       });
 
       test('different inputs produce different outputs', () {
-        final a = OauthAuthenticate.generateCodeChallenge('input_a');
-        final b = OauthAuthenticate.generateCodeChallenge('input_b');
+        final a = OAuthAuthenticate.generateCodeChallenge('input_a');
+        final b = OAuthAuthenticate.generateCodeChallenge('input_b');
 
         expect(a, isNot(b));
       });
 
       test('matches RFC 7636 test vector', () {
-        final challenge = OauthAuthenticate.generateCodeChallenge(
+        final challenge = OAuthAuthenticate.generateCodeChallenge(
           'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk',
         );
 
@@ -186,7 +186,7 @@ void main() {
       });
 
       test('handles empty string', () {
-        final challenge = OauthAuthenticate.generateCodeChallenge('');
+        final challenge = OAuthAuthenticate.generateCodeChallenge('');
 
         expect(challenge, isNotEmpty);
         expect(challenge, isNot(contains('=')));
@@ -195,16 +195,16 @@ void main() {
       test(
         'produces different results for sequential calls with different inputs',
         () {
-          final a = OauthAuthenticate.generateCodeChallenge('input1');
-          final b = OauthAuthenticate.generateCodeChallenge('input2');
-          final c = OauthAuthenticate.generateCodeChallenge('input3');
+          final a = OAuthAuthenticate.generateCodeChallenge('input1');
+          final b = OAuthAuthenticate.generateCodeChallenge('input2');
+          final c = OAuthAuthenticate.generateCodeChallenge('input3');
           expect({a, b, c}.length, 3);
         },
       );
 
       test('handles long input string', () {
         final longInput = 'a' * 1000;
-        final challenge = OauthAuthenticate.generateCodeChallenge(longInput);
+        final challenge = OAuthAuthenticate.generateCodeChallenge(longInput);
         expect(challenge, isNotEmpty);
         expect(challenge, isNot(contains('=')));
       });
@@ -214,9 +214,7 @@ void main() {
       test('generated verifier-like values are URL-safe and PKCE-sized', () {
         final values = List.generate(
           10,
-          (_) => OauthAuthenticate.generateCodeChallenge(
-            DateTime.now().microsecondsSinceEpoch.toString(),
-          ),
+          (i) => OAuthAuthenticate.generateCodeChallenge('seed_$i'),
         );
 
         final allowed = RegExp(r'^[A-Za-z0-9\-_]+$');
@@ -233,12 +231,10 @@ void main() {
       test('sequential generations produce varied values', () {
         final results = List.generate(
           12,
-          (_) => OauthAuthenticate.generateCodeChallenge(
-            DateTime.now().microsecondsSinceEpoch.toString(),
-          ),
+          (index) => OAuthAuthenticate.generateCodeChallenge('seed-$index'),
         );
 
-        expect(results.toSet().length, greaterThan(1));
+        expect(results.toSet().length, results.length);
       });
     });
 
@@ -260,7 +256,7 @@ void main() {
           },
         );
         final dio = Dio()..httpClientAdapter = adapter;
-        final auth = OauthAuthenticate(
+        final auth = OAuthAuthenticate(
           callbackUrlScheme: 'auravibes',
           clientName: 'AuraVibes',
           dio: dio,
@@ -297,7 +293,7 @@ void main() {
             },
           );
           final dio = Dio()..httpClientAdapter = adapter;
-          final auth = OauthAuthenticate(
+          final auth = OAuthAuthenticate(
             callbackUrlScheme: 'auravibes',
             clientName: 'AuraVibes',
             dio: dio,
@@ -339,7 +335,7 @@ void main() {
           },
         );
         final dio = Dio()..httpClientAdapter = adapter;
-        final auth = OauthAuthenticate(
+        final auth = OAuthAuthenticate(
           callbackUrlScheme: 'auravibes',
           clientName: 'AuraVibes',
           dio: dio,
@@ -380,7 +376,7 @@ void main() {
           },
         );
         final dio = Dio()..httpClientAdapter = adapter;
-        final auth = OauthAuthenticate(
+        final auth = OAuthAuthenticate(
           callbackUrlScheme: 'auravibes',
           clientName: 'AuraVibes',
           dio: dio,

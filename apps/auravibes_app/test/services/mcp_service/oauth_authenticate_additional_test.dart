@@ -2,9 +2,9 @@ import 'package:auravibes_app/services/mcp_service/oauth_authenticate.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('OauthAuthenticate.validateGetCode additional', () {
+  group('OAuthAuthenticate.validateGetCode additional', () {
     test('handles URL with additional query parameters', () {
-      final code = OauthAuthenticate.validateGetCode(
+      final code = OAuthAuthenticate.validateGetCode(
         urlResult: 'test:/?state=abc&code=xyz&extra=param',
         stateParam: 'abc',
       );
@@ -12,7 +12,7 @@ void main() {
     });
 
     test('handles URL with fragment', () {
-      final code = OauthAuthenticate.validateGetCode(
+      final code = OAuthAuthenticate.validateGetCode(
         urlResult: 'test:/?state=abc&code=xyz#fragment',
         stateParam: 'abc',
       );
@@ -21,7 +21,7 @@ void main() {
 
     test('handles complex error with description', () {
       expect(
-        () => OauthAuthenticate.validateGetCode(
+        () => OAuthAuthenticate.validateGetCode(
           urlResult:
               'test:/?error=invalid_request&error_description=Missing+parameter',
           stateParam: 'abc',
@@ -31,9 +31,9 @@ void main() {
     });
   });
 
-  group('OauthAuthenticate construction', () {
+  group('OAuthAuthenticate construction', () {
     test('stores callbackUrlScheme', () {
-      final auth = OauthAuthenticate(
+      final auth = OAuthAuthenticate(
         callbackUrlScheme: 'myapp',
         clientName: 'MyApp',
       );
@@ -41,7 +41,7 @@ void main() {
     });
 
     test('stores clientName', () {
-      final auth = OauthAuthenticate(
+      final auth = OAuthAuthenticate(
         callbackUrlScheme: 'myapp',
         clientName: 'MyApp',
       );
