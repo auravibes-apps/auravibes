@@ -172,7 +172,7 @@ class UrlContentTransformer {
 
     final buffer = StringBuffer();
     final firstH1 = bodyElement.querySelector('h1');
-    final titleMatchesH1 = firstH1 != null && firstH1.text.trim() == title;
+    final titleMatchesH1 = firstH1 != null && firstH1.text.trim() == title?.trim();
     if (title != null && title.isNotEmpty && !titleMatchesH1) {
       buffer
         ..writeln('# $title')

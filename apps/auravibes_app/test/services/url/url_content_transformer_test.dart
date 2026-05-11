@@ -26,7 +26,9 @@ void main() {
 
         expect(result.format, UrlContentFormat.markdown);
         expect(result.body, contains('# Title'));
-        expect(RegExp(r'^#\s+Title$', multiLine: true).allMatches(result.body).length, 1);
+        final headingMatches =
+            RegExp(r'^#\s+Title$', multiLine: true).allMatches(result.body);
+        expect(headingMatches.length, 1);
         expect(result.body, contains('Content here.'));
       });
 
