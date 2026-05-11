@@ -14,7 +14,8 @@ typedef _FetchCallback =
     );
 
 final class _FakeHttpClientAdapter implements HttpClientAdapter {
-  _FakeHttpClientAdapter({required _FetchCallback onFetch}) : _fetchCallback = onFetch;
+  _FakeHttpClientAdapter({required _FetchCallback onFetch})
+    : _fetchCallback = onFetch;
 
   final _FetchCallback _fetchCallback;
 
