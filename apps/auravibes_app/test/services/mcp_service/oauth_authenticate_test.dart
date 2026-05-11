@@ -210,7 +210,7 @@ void main() {
       });
     });
 
-    group('generateCodeChallenge', () {
+    group('generateCodeChallenge variability', () {
       test('generated verifier-like values are URL-safe and PKCE-sized', () {
         final values = List.generate(
           10,
@@ -280,6 +280,132 @@ void main() {
 
         expect(token.accessToken, 'token-123');
         expect(token.tokenType, 'Bearer');
+      });
+
+      test(
+        'throws when token exchange fails due to network/client error',
+        () async {
+          final adapter = _FakeHttpClientAdapter(
+            onFetch: (_, _, _) async {
+              throw DioException(
+                requestOptions: RequestOptions(
+                  path: 'https://example.com/token',
+                ),
+                type: DioExceptionType.connectionError,
+                error: 'network down',
+              );
+            },
+          );
+          final dio = Dio()..httpClientAdapter = adapter;
+          final auth = OauthAuthenticate(
+            callbackUrlScheme: 'auravibes',
+            clientName: 'AuraVibes',
+            dio: dio,
+          );
+
+          await expectLater(
+            () => auth.exchangeCodeForToken(
+              code: 'auth-code',
+              oAuthResult: const OAuthDiscoveryResult(
+                authorizationUrl: 'https://example.com/authorize',
+                tokenUrl: 'https://example.com/token',
+                clientId: 'client-id',
+                scope: null,
+              ),
+              codeVerifier: 'verifier',
+              redirectUrl: 'auravibes:/',
+            ),
+            throwsA(
+              isA<DioException>().having(
+                (error) => error.type,
+                'type',
+                DioExceptionType.connectionError,
+              ),
+            ),
+          );
+        },
+      );
+
+      test('throws when token response is missing required fields', () async {
+        final adapter = _FakeHttpClientAdapter(
+          onFetch: (_, _, _) async {
+            return ResponseBody.fromString(
+              '{"token_type":"Bearer"}',
+              200,
+              headers: {
+                Headers.contentTypeHeader: ['application/json'],
+              },
+            );
+          },
+        );
+        final dio = Dio()..httpClientAdapter = adapter;
+        final auth = OauthAuthenticate(
+          callbackUrlScheme: 'auravibes',
+          clientName: 'AuraVibes',
+          dio: dio,
+        );
+
+        await expectLater(
+          () => auth.exchangeCodeForToken(
+            code: 'auth-code',
+            oAuthResult: const OAuthDiscoveryResult(
+              authorizationUrl: 'https://example.com/authorize',
+              tokenUrl: 'https://example.com/token',
+              clientId: 'client-id',
+              scope: null,
+            ),
+            codeVerifier: 'verifier',
+            redirectUrl: 'auravibes:/',
+          ),
+          throwsA(
+            isA<Exception>().having(
+              (error) => error.toString(),
+              'message',
+              contains('access_token'),
+            ),
+          ),
+        );
+      });
+
+      test('throws when token response is not a JSON object', () async {
+        final adapter = _FakeHttpClientAdapter(
+          onFetch: (_, _, _) async {
+            return ResponseBody.fromString(
+              '["not-an-object"]',
+              200,
+              headers: {
+                Headers.contentTypeHeader: ['application/json'],
+              },
+            );
+          },
+        );
+        final dio = Dio()..httpClientAdapter = adapter;
+        final auth = OauthAuthenticate(
+          callbackUrlScheme: 'auravibes',
+          clientName: 'AuraVibes',
+          dio: dio,
+        );
+
+        await expectLater(
+          () => auth.exchangeCodeForToken(
+            code: 'auth-code',
+            oAuthResult: const OAuthDiscoveryResult(
+              authorizationUrl: 'https://example.com/authorize',
+              tokenUrl: 'https://example.com/token',
+              clientId: 'client-id',
+              scope: null,
+            ),
+            codeVerifier: 'verifier',
+            redirectUrl: 'auravibes:/',
+          ),
+          throwsA(
+            isA<Exception>().having(
+              (error) => error.toString(),
+              'message',
+              contains('JSON object'),
+            ),
+          ),
+        );
       });
     });
   });
