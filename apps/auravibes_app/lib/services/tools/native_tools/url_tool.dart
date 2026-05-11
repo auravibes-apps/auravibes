@@ -134,14 +134,33 @@ final class UrlTool extends NativeToolEntity<String, String> {
             maxLines: bodyLineBudget,
           )
         : (body: '', truncated: transformed.body.isNotEmpty);
-    final wasTruncated = transformed.truncated || bodyResult.truncated;
+    var wasTruncated = transformed.truncated || bodyResult.truncated;
 
-    return 'Status: ${response.statusCode}\n'
+    var result =
+        'Status: ${response.statusCode}\n'
         'Elapsed: ${response.elapsed.inMilliseconds}ms\n'
         'Content-Type: ${transformed.contentType ?? 'unknown'}\n'
         'Format: $formatLabel${wasTruncated ? ' (truncated)' : ''}\n'
         'Headers:\n$headerLines\n\n'
         '${bodyResult.body}';
+
+    final resultBytes = utf8.encode(result).length;
+    final resultLines = _takeLines(result, _maxToolOutputLines + 1).length;
+
+    if (resultBytes > _maxToolOutputBytes ||
+        resultLines > _maxToolOutputLines) {
+      wasTruncated = true;
+      result = _truncateTotal(
+        'Status: ${response.statusCode}\n'
+        'Elapsed: ${response.elapsed.inMilliseconds}ms\n'
+        'Content-Type: ${transformed.contentType ?? 'unknown'}\n'
+        'Format: $formatLabel (truncated)\n'
+        'Headers:\n$headerLines\n\n'
+        '${bodyResult.body}',
+      );
+    }
+
+    return result;
   }
 
   static const int _maxToolOutputBytes = 50 * 1024;
@@ -217,6 +236,24 @@ final class UrlTool extends NativeToolEntity<String, String> {
       end--;
     }
     return utf8.decode(bytes.sublist(0, end));
+  }
+
+  String _truncateTotal(String text) {
+    var output = text;
+
+    final lines = _takeLines(output, _maxToolOutputLines + 1);
+    if (lines.length > _maxToolOutputLines) {
+      output = lines.sublist(0, _maxToolOutputLines).join('\n');
+    }
+
+    final originalBytes = utf8.encode(output).length;
+    output = _truncateUtf8(
+      output,
+      _maxToolOutputBytes - _truncationNoteReserve,
+    );
+
+    final omitted = originalBytes - utf8.encode(output).length;
+    return '$output\n... [truncated: $omitted bytes omitted]';
   }
 
   Future<UrlRequest> _buildRequest(String toolInput) async {

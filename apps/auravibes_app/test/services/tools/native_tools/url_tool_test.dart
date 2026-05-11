@@ -610,6 +610,30 @@ void main() {
         expect(result, contains('Line 0'));
         expect(result, isNot(contains('Line 2499')));
       });
+
+      test('truncates total output when metadata exceeds cap', () async {
+        final largeHeaders = <String, List<String>>{
+          for (var i = 0; i < 2500; i++) 'x-header-$i': [('y' * 60)],
+        };
+        final dio = Dio()
+          ..httpClientAdapter = _SuccessAdapter(
+            body: 'small body',
+            statusCode: 200,
+            extraHeaders: largeHeaders,
+          );
+        final tool = UrlTool(urlService: UrlService(dio: dio));
+
+        final result = await tool.runner('{"url": "https://1.1.1.1"}').value;
+
+        expect(result, contains('[truncated:'));
+        expect(result, contains('(truncated)'));
+
+        final resultBytes = utf8.encode(result).length;
+        expect(resultBytes, lessThanOrEqualTo(50 * 1024));
+
+        final lineCount = const LineSplitter().convert(result).length;
+        expect(lineCount, lessThanOrEqualTo(2000));
+      });
     });
   });
 }
