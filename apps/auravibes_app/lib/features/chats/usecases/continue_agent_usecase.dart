@@ -19,7 +19,6 @@ import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
 import 'package:auravibes_app/services/monitoring_service.dart';
 import 'package:auravibes_app/utils/chat_result_extension.dart';
 import 'package:auravibes_app/utils/coalescing_save_extension.dart';
-import 'package:collection/collection.dart';
 import 'package:dartantic_ai/dartantic_ai.dart' hide Provider;
 import 'package:riverpod/riverpod.dart';
 import 'package:rxdart/rxdart.dart';
@@ -101,8 +100,14 @@ class ContinueAgentUsecase {
         return firstNonSystem == null ||
             firstNonSystem.role == ChatMessageRole.user;
       }(),
-      'First non-system message after compaction must be user, '
-      'got ${chatHistory.where((m) => m.role != ChatMessageRole.system).firstOrNull?.role}',
+      () {
+        final firstNonSystemRole = chatHistory
+            .where((m) => m.role != ChatMessageRole.system)
+            .firstOrNull
+            ?.role;
+        return 'First non-system message after compaction must '
+            'be user, got $firstNonSystemRole';
+      }(),
     );
 
     final subs = CompositeSubscription();
