@@ -463,7 +463,10 @@ void main() {
     setUp(() {
       try {
         F.appFlavor = Flavor.dev;
-      } on Exception catch (_) {
+      } catch (error) {
+        if (error.runtimeType.toString() != 'LateInitializationError') {
+          rethrow;
+        }
         // Intentionally ignored: app flavor may already be initialized in test
         // bootstrap, and reassigning it can throw.
       }
