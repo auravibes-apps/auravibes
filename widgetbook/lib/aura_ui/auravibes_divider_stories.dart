@@ -30,7 +30,7 @@ double _thicknessKnob(BuildContext context) {
 }
 
 @widgetbook.UseCase(name: 'Horizontal Divider', type: AuraDivider)
-Widget basicHorizontalDividerUseCase(BuildContext context) {
+Widget horizontalDividerUseCase(BuildContext context) {
   return AuraDivider(
     endIndent: _endIndentKnob(context),
     height: _heightKnob(context),
