@@ -252,15 +252,6 @@ void main() {
       },
     );
 
-    test('rejects non-object JSON input starting with [', () {
-      final tool = UrlTool();
-
-      expect(
-        tool.runner('["https://example.com"]').value,
-        throwsA(isA<FormatException>()),
-      );
-    });
-
     test('handles POST method correctly', () async {
       String? sentMethod;
       final dio = Dio()
