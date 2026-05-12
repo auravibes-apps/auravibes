@@ -633,15 +633,19 @@ class _FakeConversationRepository implements ConversationRepository {
   final _controllers = <StreamController<List<ConversationEntity>>>[];
   final _pendingRemoval = <StreamController<List<ConversationEntity>>>{};
 
+  void _processPendingRemovals() {
+    if (_pendingRemoval.isNotEmpty) {
+      _controllers.removeWhere(_pendingRemoval.contains);
+      _pendingRemoval.clear();
+    }
+  }
+
   @override
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
     int? limit,
   }) {
-    if (_pendingRemoval.isNotEmpty) {
-      _controllers.removeWhere(_pendingRemoval.contains);
-      _pendingRemoval.clear();
-    }
+    _processPendingRemovals();
 
     final controller = StreamController<List<ConversationEntity>>.broadcast();
     controller.onCancel = () => _pendingRemoval.add(controller);
@@ -651,10 +655,7 @@ class _FakeConversationRepository implements ConversationRepository {
   }
 
   Future<void> close() async {
-    if (_pendingRemoval.isNotEmpty) {
-      _controllers.removeWhere(_pendingRemoval.contains);
-      _pendingRemoval.clear();
-    }
+    _processPendingRemovals();
 
     final controllersSnapshot =
         List<StreamController<List<ConversationEntity>>>.from(_controllers);
