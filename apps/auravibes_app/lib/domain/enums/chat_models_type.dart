@@ -2,8 +2,7 @@
 enum CredentialsModelType {
   openai('openai'),
   anthropic('anthropic'),
-  google('google')
-  ;
+  google('google');
 
   /// Creates a new CredentialsModelType with the given string value
   const CredentialsModelType(this.value);

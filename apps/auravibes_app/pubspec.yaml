@@ -72,6 +72,7 @@ dependency_validator:
     - "test/**/*.mocks.dart"
 
 dependency_overrides:
+  # Pin to 0.2.0: 0.3.0 Package.swift declares iOS 12 but uses CryptoKit (iOS 13+)
   flutter_secure_storage_darwin: 0.2.0
 
 flutter:
