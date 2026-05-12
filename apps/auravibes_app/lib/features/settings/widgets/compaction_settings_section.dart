@@ -74,15 +74,18 @@ class _CompactionSettingsSectionState
             color: AuraColorVariant.onSurfaceVariant,
             child: TextLocale(LocaleKeys.compaction_settings_subtitle),
           ),
-          SwitchListTile(
-            title: const TextLocale(
-              LocaleKeys.compaction_settings_auto_enabled,
+          Material(
+            color: Colors.transparent,
+            child: SwitchListTile(
+              title: const TextLocale(
+                LocaleKeys.compaction_settings_auto_enabled,
+              ),
+              subtitle: const TextLocale(
+                LocaleKeys.compaction_settings_auto_enabled_hint,
+              ),
+              value: _autoEnabled,
+              onChanged: (value) => setState(() => _autoEnabled = value),
             ),
-            subtitle: const TextLocale(
-              LocaleKeys.compaction_settings_auto_enabled_hint,
-            ),
-            value: _autoEnabled,
-            onChanged: (value) => setState(() => _autoEnabled = value),
           ),
           if (_validationError != null)
             Padding(

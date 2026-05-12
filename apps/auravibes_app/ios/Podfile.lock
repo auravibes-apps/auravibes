@@ -1,81 +1,15 @@
 PODS:
-  - connectivity_plus (0.0.1):
-    - Flutter
   - Flutter (1.0.0)
-  - flutter_secure_storage_darwin (10.0.0):
-    - Flutter
-    - FlutterMacOS
-  - flutter_web_auth_2 (5.0.0):
-    - Flutter
-  - shared_preferences_foundation (0.0.1):
-    - Flutter
-    - FlutterMacOS
-  - sqlite3 (3.52.0):
-    - sqlite3/common (= 3.52.0)
-  - sqlite3/common (3.52.0)
-  - sqlite3/dbstatvtab (3.52.0):
-    - sqlite3/common
-  - sqlite3/fts5 (3.52.0):
-    - sqlite3/common
-  - sqlite3/math (3.52.0):
-    - sqlite3/common
-  - sqlite3/perf-threadsafe (3.52.0):
-    - sqlite3/common
-  - sqlite3/rtree (3.52.0):
-    - sqlite3/common
-  - sqlite3/session (3.52.0):
-    - sqlite3/common
-  - sqlite3_flutter_libs (0.0.1):
-    - Flutter
-    - FlutterMacOS
-    - sqlite3 (~> 3.52.0)
-    - sqlite3/dbstatvtab
-    - sqlite3/fts5
-    - sqlite3/math
-    - sqlite3/perf-threadsafe
-    - sqlite3/rtree
-    - sqlite3/session
-  - url_launcher_ios (0.0.1):
-    - Flutter
 
 DEPENDENCIES:
-  - connectivity_plus (from `.symlinks/plugins/connectivity_plus/ios`)
   - Flutter (from `Flutter`)
-  - flutter_secure_storage_darwin (from `.symlinks/plugins/flutter_secure_storage_darwin/darwin`)
-  - flutter_web_auth_2 (from `.symlinks/plugins/flutter_web_auth_2/ios`)
-  - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
-  - sqlite3_flutter_libs (from `.symlinks/plugins/sqlite3_flutter_libs/darwin`)
-  - url_launcher_ios (from `.symlinks/plugins/url_launcher_ios/ios`)
-
-SPEC REPOS:
-  trunk:
-    - sqlite3
 
 EXTERNAL SOURCES:
-  connectivity_plus:
-    :path: ".symlinks/plugins/connectivity_plus/ios"
   Flutter:
     :path: Flutter
-  flutter_secure_storage_darwin:
-    :path: ".symlinks/plugins/flutter_secure_storage_darwin/darwin"
-  flutter_web_auth_2:
-    :path: ".symlinks/plugins/flutter_web_auth_2/ios"
-  shared_preferences_foundation:
-    :path: ".symlinks/plugins/shared_preferences_foundation/darwin"
-  sqlite3_flutter_libs:
-    :path: ".symlinks/plugins/sqlite3_flutter_libs/darwin"
-  url_launcher_ios:
-    :path: ".symlinks/plugins/url_launcher_ios/ios"
 
 SPEC CHECKSUMS:
-  connectivity_plus: cb623214f4e1f6ef8fe7403d580fdad517d2f7dd
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
-  flutter_secure_storage_darwin: acdb3f316ed05a3e68f856e0353b133eec373a23
-  flutter_web_auth_2: 646fc9df97a01c59e5eea99b237da2c6360f8439
-  shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
-  sqlite3: a51c07cf16e023d6c48abd5e5791a61a47354921
-  sqlite3_flutter_libs: b3e120efe9a82017e5552a620f696589ed4f62ab
-  url_launcher_ios: 7a95fa5b60cc718a708b8f2966718e93db0cef1b
 
 PODFILE CHECKSUM: 2ee93498573e8a91107f515db5616478f2909a43
 

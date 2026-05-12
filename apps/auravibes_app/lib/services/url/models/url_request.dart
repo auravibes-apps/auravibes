@@ -8,8 +8,7 @@ enum UrlRequestMethod {
   put('PUT'),
   delete('DELETE'),
   patch('PATCH'),
-  head('HEAD')
-  ;
+  head('HEAD');
 
   const UrlRequestMethod(this.value);
   final String value;
@@ -19,8 +18,7 @@ enum UrlResponseFormat {
   defaultFormat(''),
   markdown('markdown'),
   text('text'),
-  html('html')
-  ;
+  html('html');
 
   const UrlResponseFormat(this.label);
   final String label;

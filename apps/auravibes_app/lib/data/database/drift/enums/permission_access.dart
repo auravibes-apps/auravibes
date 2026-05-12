@@ -1,7 +1,6 @@
 enum PermissionAccess {
   ask('ask'),
-  granted('granted')
-  ;
+  granted('granted');
 
   const PermissionAccess(this.value);
 

@@ -14,6 +14,7 @@ import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -40,12 +41,12 @@ class ChatMessagesWidget extends HookConsumerWidget {
     final itemCount = isCompacting ? data.length + 1 : data.length;
 
     return ListView.builder(
+      scrollCacheExtent: const ScrollCacheExtent.pixels(500),
       controller: controller,
       padding: const EdgeInsets.all(16),
       reverse: true,
       addAutomaticKeepAlives: false,
       itemCount: itemCount,
-      cacheExtent: 500,
       itemBuilder: (context, index) {
         if (isCompacting && index == 0) {
           return const _CompactingIndicator();
