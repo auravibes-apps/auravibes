@@ -6,7 +6,6 @@ import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
-import 'package:auravibes_app/flavors.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/widgets/app_navigation_wrappers.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -460,21 +459,6 @@ void main() {
   );
 
   group('AuraSidebarWrapper rendering', () {
-    setUp(() {
-      try {
-        F.appFlavor = Flavor.dev;
-      } catch (error) {
-        final isLateInitializationError =
-            error is Error &&
-            error.toString().startsWith('LateInitializationError');
-        if (!isLateInitializationError) {
-          rethrow;
-        }
-        // Intentionally ignored: app flavor may already be initialized in test
-        // bootstrap, and reassigning it can throw.
-      }
-    });
-
     ({Widget app, GoRouter router}) _buildTestApp({
       required String initialLocation,
       required List<StatefulShellBranch> branches,
@@ -619,6 +603,20 @@ void main() {
 
       expect(find.byType(AuraSidebarWrapper), findsOneWidget);
     });
+
+    test(
+      'fake conversation repository close clears tracked controllers',
+      () async {
+        final repo = _FakeConversationRepository()
+          ..watchConversationsByWorkspace('ws-test');
+
+        expect(repo._controllers, hasLength(1));
+
+        await repo.close();
+
+        expect(repo._controllers, isEmpty);
+      },
+    );
   });
 }
 
@@ -649,6 +647,7 @@ class _FakeConversationRepository implements ConversationRepository {
   Future<void> close() async {
     final controllersSnapshot =
         List<StreamController<List<ConversationEntity>>>.from(_controllers);
+    _controllers.clear();
     await Future.wait(
       controllersSnapshot.where((c) => !c.isClosed).map((c) => c.close()),
     );
