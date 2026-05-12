@@ -46,11 +46,21 @@ jobs:
         uses: kuhnroyal/flutter-fvm-config-action/config@v3
         id: fvm-config-action
 
+      - name: 🔍 Detect Flutter channel
+        id: channel-detect
+        run: |
+          version="${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}"
+          if echo "$version" | grep -qE '\.pre$|\.dev\.|-beta\.'; then
+            echo "channel=beta" >> "$GITHUB_OUTPUT"
+          else
+            echo "channel=${{ steps.fvm-config-action.outputs.FLUTTER_CHANNEL }}" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: 🐦 Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: ${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}
-          channel: ${{ steps.fvm-config-action.outputs.FLUTTER_CHANNEL }}
+          channel: ${{ steps.channel-detect.outputs.channel }}
           cache: true
           cache-key: "flutter-:os:-:channel:-:version:-:arch:" # optional, change this to force refresh cache
           cache-path: "${{ runner.tool_cache }}/flutter/:channel:-:version:-:arch:" # optional, change this to specify the cache path
