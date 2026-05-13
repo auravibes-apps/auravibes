@@ -37,24 +37,6 @@ class ModelConnectionException implements Exception {
   }
 }
 
-/// Exception thrown when model connection validation fails.
-class ModelConnectionValidationException extends ModelConnectionException {
-  /// Creates a new ModelConnectionValidationException
-  const ModelConnectionValidationException(super.message, [super.cause]);
-}
-
-/// Exception thrown when a model connection is not found.
-class ModelConnectionNotFoundException extends ModelConnectionException {
-  /// Creates a new ModelConnectionNotFoundException
-  const ModelConnectionNotFoundException(
-    this.modelConnectionId, [
-    Exception? cause,
-  ]) : super('Model connection with ID "$modelConnectionId" not found', cause);
-
-  /// ID of the model connection that was not found
-  final String modelConnectionId;
-}
-
 /// Exception thrown when a model connection has no models.
 class ModelConnectionNoModelsException extends ModelConnectionException {
   /// Creates a new ModelConnectionNoModelsException

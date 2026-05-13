@@ -337,21 +337,4 @@ void main() {
       expect(ex.message, 'bad');
     });
   });
-
-  group('WorkspaceToolNotFoundException', () {
-    test('contains workspace and tool type in message', () {
-      const ex = WorkspaceToolNotFoundException('ws-1', 'search');
-      expect(ex, isA<WorkspaceToolsException>());
-      expect(ex.workspaceId, 'ws-1');
-      expect(ex.toolType, 'search');
-      expect(ex.toString(), contains('ws-1'));
-      expect(ex.toString(), contains('search'));
-    });
-
-    test('includes cause when provided', () {
-      final cause = Exception('db error');
-      final ex = WorkspaceToolNotFoundException('ws-1', 'tool', cause);
-      expect(ex.cause, cause);
-    });
-  });
 }

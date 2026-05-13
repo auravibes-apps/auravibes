@@ -9,18 +9,6 @@ extension on num {
   bool isBetween(num min, num max) => this >= min && this <= max;
 }
 
-/// Extension on [Color] to convert it to the OKLCH color space.
-extension ColorToOklch on Color {
-  /// Converts a Flutter [Color] to an [OKLCHColor].
-  OKLCHColor toOklch() {
-    final rgbColor = RgbColor.fromColor(this);
-    final lab = rgbColor.toOklab();
-    final lch = lab.toLch();
-
-    return lch;
-  }
-}
-
 /// Abstract base class for color representations that can be validated.
 abstract class ValueColor {
   /// Creates a new [ValueColor] instance.

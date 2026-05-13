@@ -38,43 +38,6 @@ void main() {
     });
   });
 
-  group('ContextOverflowRetryFailedException', () {
-    test('has correct locale key and recovery hint', () {
-      const ex = ContextOverflowRetryFailedException();
-      expect(
-        ex.localeKey,
-        LocaleKeys.compaction_errors_context_overflow_retry_failed,
-      );
-      expect(
-        ex.recoveryHint,
-        LocaleKeys.compaction_errors_context_overflow_retry_failed,
-      );
-      expect(ex.cause, isNull);
-    });
-
-    test('accepts optional cause', () {
-      final inner = Exception('inner');
-      final ex = ContextOverflowRetryFailedException(cause: inner);
-      expect(ex.cause, same(inner));
-      expect(ex.toString(), contains('Caused by: $inner'));
-    });
-  });
-
-  group('AutoCompactionBlockedException', () {
-    test('has correct locale key and recovery hint', () {
-      const ex = AutoCompactionBlockedException();
-      expect(ex.localeKey, LocaleKeys.compaction_errors_auto_blocked);
-      expect(ex.recoveryHint, LocaleKeys.compaction_errors_auto_blocked);
-      expect(ex.cause, isNull);
-    });
-
-    test('accepts optional cause', () {
-      final inner = Exception('inner');
-      final ex = AutoCompactionBlockedException(cause: inner);
-      expect(ex.cause, same(inner));
-    });
-  });
-
   group('CompactionSettingsValidationException', () {
     test('uses custom locale key', () {
       const ex = CompactionSettingsValidationException(

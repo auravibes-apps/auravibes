@@ -39,25 +39,6 @@ class CompactionUnavailableException extends CompactionException {
       );
 }
 
-class ContextOverflowRetryFailedException extends CompactionException {
-  const ContextOverflowRetryFailedException({Exception? cause})
-    : super(
-        LocaleKeys.compaction_errors_context_overflow_retry_failed,
-        recoveryHint:
-            LocaleKeys.compaction_errors_context_overflow_retry_failed,
-        cause: cause,
-      );
-}
-
-class AutoCompactionBlockedException extends CompactionException {
-  const AutoCompactionBlockedException({Exception? cause})
-    : super(
-        LocaleKeys.compaction_errors_auto_blocked,
-        recoveryHint: LocaleKeys.compaction_errors_auto_blocked,
-        cause: cause,
-      );
-}
-
 class CompactionSettingsValidationException extends CompactionException {
   const CompactionSettingsValidationException(super.localeKey);
 }

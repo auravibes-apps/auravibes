@@ -225,20 +225,4 @@ void main() {
       expect(ex.toString(), contains('Caused by:'));
     });
   });
-
-  group('ConversationDuplicateException', () {
-    test('contains id in message', () {
-      const ex = ConversationDuplicateException('c-99');
-      expect(ex, isA<ConversationException>());
-      expect(ex.conversationId, 'c-99');
-      expect(ex.toString(), contains('c-99'));
-      expect(ex.toString(), contains('already exists'));
-    });
-
-    test('includes cause when provided', () {
-      final cause = Exception('unique constraint');
-      final ex = ConversationDuplicateException('c-1', cause);
-      expect(ex.cause, cause);
-    });
-  });
 }

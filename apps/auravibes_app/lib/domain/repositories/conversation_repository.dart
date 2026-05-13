@@ -45,10 +45,3 @@ class ConversationNotFoundException extends ConversationException {
 
   final String conversationId;
 }
-
-class ConversationDuplicateException extends ConversationException {
-  const ConversationDuplicateException(this.conversationId, [Exception? cause])
-    : super('Conversation with ID "$conversationId" already exists', cause);
-
-  final String conversationId;
-}
