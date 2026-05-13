@@ -2,8 +2,7 @@ enum MessageType {
   text('text'),
   image('image'),
   toolCall('tool_call'),
-  system('system')
-  ;
+  system('system');
 
   const MessageType(this.value);
 
@@ -73,8 +72,7 @@ enum MessageStatus {
   sent('sent'),
 
   /// Message failed - check error details in metadata.
-  error('error')
-  ;
+  error('error');
 
   const MessageStatus(this.value);
 
