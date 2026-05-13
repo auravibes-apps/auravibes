@@ -22,8 +22,7 @@ enum ContextUsageLevel {
   elevated,
   warning,
   overflow,
-  unknown
-  ;
+  unknown;
 
   static ContextUsageLevel fromUsage({
     required int usedTokens,

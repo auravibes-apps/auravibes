@@ -7,8 +7,7 @@ part 'theme_notifier.g.dart';
 enum AppTheme {
   light,
   dark,
-  system
-  ;
+  system;
 
   ThemeMode get themeMode {
     switch (this) {

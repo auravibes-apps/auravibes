@@ -2,8 +2,7 @@ import 'package:async/async.dart';
 import 'package:auravibes_app/domain/entities/tool_spec.dart';
 
 enum UserToolType {
-  calculator('calculator')
-  ;
+  calculator('calculator');
 
   const UserToolType(this.value);
   static UserToolType? fromValue(String value) {

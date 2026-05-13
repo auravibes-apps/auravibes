@@ -290,8 +290,7 @@ enum OKLCHShades {
   /// Darkest shade (lowest lightness, low chroma).
   ///
   /// Use for text or the most prominent dark elements.
-  s900
-  ;
+  s900;
 
   /// The chroma value for this shade.
   double get chroma => switch (this) {

@@ -2,8 +2,7 @@ import 'package:async/async.dart';
 import 'package:auravibes_app/domain/entities/tool_spec.dart';
 
 enum NativeToolType {
-  url('url')
-  ;
+  url('url');
 
   const NativeToolType(this.value);
 

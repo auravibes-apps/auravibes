@@ -6,8 +6,7 @@ part 'api_model_provider.g.dart';
 
 enum ModelProvidersType {
   openai('openai'),
-  anthropic('anthropic')
-  ;
+  anthropic('anthropic');
 
   const ModelProvidersType(this.value);
   final String value;
