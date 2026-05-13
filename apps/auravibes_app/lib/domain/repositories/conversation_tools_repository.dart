@@ -213,24 +213,3 @@ class ConversationToolsValidationException extends ConversationToolsException {
   /// Creates a new ConversationToolsValidationException
   const ConversationToolsValidationException(super.message, [super.cause]);
 }
-
-/// Exception thrown when a conversation tool is not found.
-class ConversationToolNotFoundException extends ConversationToolsException {
-  /// Creates a new ConversationToolNotFoundException
-  const ConversationToolNotFoundException(
-    this.conversationId,
-    this.toolId, [
-    Exception? cause,
-  ]) : super(
-         '''
-Conversation tool "$toolId" not found in conversation "$conversationId"
-''',
-         cause,
-       );
-
-  /// ID of the conversation
-  final String conversationId;
-
-  /// Type of the tool that was not found
-  final String toolId;
-}

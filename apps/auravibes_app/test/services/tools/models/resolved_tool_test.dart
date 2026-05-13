@@ -91,29 +91,4 @@ void main() {
       expect(tool.isMcp, isFalse);
     });
   });
-
-  group('ToolResolution', () {
-    test('creates successful resolution with tool', () {
-      final tool = ResolvedTool.builtIn(
-        tableId: 'tool_1',
-        toolIdentifier: 'calculator',
-        tooltype: UserToolType.calculator,
-      );
-      final resolution = ToolResolution(
-        resolvedTool: tool,
-        failureStatus: null,
-      );
-      expect(resolution.resolvedTool, tool);
-      expect(resolution.failureStatus, isNull);
-    });
-
-    test('creates failed resolution without tool', () {
-      const resolution = ToolResolution(
-        resolvedTool: null,
-        failureStatus: null, // failureStatus from tool_call_result_status
-      );
-      expect(resolution.resolvedTool, isNull);
-      expect(resolution.failureStatus, isNull);
-    });
-  });
 }

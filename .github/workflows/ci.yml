@@ -105,6 +105,12 @@ jobs:
       - name: 🕵️‍♂️ Analyze
         run: melos analyze
 
+      - name: 🗑️ Check unused files
+        run: melos run unused:files --no-select
+
+      - name: 🗑️ Check unused code
+        run: melos run unused:code --no-select
+
       - name: 🧪 Run Tests
         run: melos run test:ci
 

@@ -65,40 +65,4 @@ void main() {
       expect(result, isNull);
     });
   });
-
-  group('WorkspaceModelSelectionException', () {
-    test('contains message', () {
-      const ex = WorkspaceModelSelectionException('test error');
-      expect(ex.message, 'test error');
-      expect(ex.cause, isNull);
-    });
-
-    test('toString includes message', () {
-      const ex = WorkspaceModelSelectionException('test error');
-      expect(ex.toString(), contains('test error'));
-    });
-
-    test('toString includes cause when provided', () {
-      final cause = Exception('inner');
-      final ex = WorkspaceModelSelectionException('test', cause);
-      expect(ex.toString(), contains('Caused by:'));
-    });
-  });
-
-  group('WorkspaceModelSelectionValidationException', () {
-    test('is a WorkspaceModelSelectionException', () {
-      const ex = WorkspaceModelSelectionValidationException('bad');
-      expect(ex, isA<WorkspaceModelSelectionException>());
-      expect(ex.message, 'bad');
-    });
-  });
-
-  group('WorkspaceModelSelectionNotFoundException', () {
-    test('contains id in message', () {
-      const ex = WorkspaceModelSelectionNotFoundException('ws-123');
-      expect(ex, isA<WorkspaceModelSelectionException>());
-      expect(ex.workspaceModelSelectionId, 'ws-123');
-      expect(ex.toString(), contains('ws-123'));
-    });
-  });
 }

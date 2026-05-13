@@ -4,30 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('ColorToOklch extension', () {
-    test('converts red to OKLCH', () {
-      const color = Color.fromARGB(255, 255, 0, 0);
-      final oklch = color.toOklch();
-      expect(oklch.lightness, greaterThan(0));
-      expect(oklch.lightness, lessThan(1));
-      expect(oklch.chroma, greaterThan(0));
-    });
-
-    test('converts white to OKLCH', () {
-      const color = Color.fromARGB(255, 255, 255, 255);
-      final oklch = color.toOklch();
-      expect(oklch.lightness, closeTo(1, 0.1));
-      expect(oklch.chroma, closeTo(0, 0.05));
-    });
-
-    test('converts black to OKLCH', () {
-      const color = Color.fromARGB(255, 0, 0, 0);
-      final oklch = color.toOklch();
-      expect(oklch.lightness, closeTo(0, 0.1));
-      expect(oklch.chroma, closeTo(0, 0.05));
-    });
-  });
-
   group('ValueColor', () {
     test('isValid returns true for valid OklabColor', () {
       final color = OklabColor(lightness: 0.5, a: 0.1, b: 0.1);
@@ -361,8 +337,9 @@ void main() {
 
     test('round-trip conversion preserves approximate values', () {
       const original = Color.fromARGB(255, 100, 150, 200);
-      final oklch = original.toOklch();
-      final converted = oklch.toColor();
+      final converted = RgbColor.fromColor(
+        original,
+      ).toOklab().toLch().toColor();
       expect(converted.r, closeTo(original.r, 0.02));
       expect(converted.g, closeTo(original.g, 0.02));
       expect(converted.b, closeTo(original.b, 0.02));

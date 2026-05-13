@@ -9,6 +9,7 @@ workspace:
   - widgetbook
 
 dev_dependencies:
+  dart_code_linter: ^4.0.3
   dependency_validator: ^5.0.4
   import_sorter: ^4.6.0
   melos: ^7.7.0
@@ -38,6 +39,14 @@ melos:
 
     analyze:fix:
       run: dart fix --apply
+
+    unused:files:
+      run: dart run dart_code_linter:metrics check-unused-files --monorepo --exclude='{**/*.g.dart,**/*.freezed.dart,**/.dart_tool/**.dart}' apps/auravibes_app/lib packages/auravibes_ui/lib
+      description: Fail when unused Dart files are detected
+
+    unused:code:
+      run: dart run dart_code_linter:metrics check-unused-code --monorepo apps/auravibes_app/lib packages/auravibes_ui/lib
+      description: Fail when production unused declarations are detected
 
     format:check:
       run: dart format --line-length 80 -o none --set-exit-if-changed .
@@ -98,6 +107,8 @@ melos:
     validate:
       run: |
         melos analyze &&
+        melos run unused:files &&
+        melos run unused:code &&
         melos run format:check &&
         melos run test
       description: Full validation pipeline (no coverage, fast)
@@ -105,6 +116,8 @@ melos:
     validate:ci:
       run: |
         melos analyze &&
+        melos run unused:files &&
+        melos run unused:code &&
         melos run format:check &&
         melos run test:ci
       description: Validation pipeline with coverage (CI mode)
@@ -112,6 +125,8 @@ melos:
     validate:quick:
       run: |
         melos analyze &&
+        melos run unused:files &&
+        melos run unused:code &&
         melos run format:check
       description: Quick validation for development
 

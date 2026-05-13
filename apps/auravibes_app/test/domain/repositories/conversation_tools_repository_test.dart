@@ -358,21 +358,4 @@ void main() {
       expect(ex.message, 'bad');
     });
   });
-
-  group('ConversationToolNotFoundException', () {
-    test('contains conversation and tool id in message', () {
-      const ex = ConversationToolNotFoundException('c-1', 't-1');
-      expect(ex, isA<ConversationToolsException>());
-      expect(ex.conversationId, 'c-1');
-      expect(ex.toolId, 't-1');
-      expect(ex.toString(), contains('c-1'));
-      expect(ex.toString(), contains('t-1'));
-    });
-
-    test('includes cause when provided', () {
-      final cause = Exception('db error');
-      final ex = ConversationToolNotFoundException('c-1', 't-1', cause);
-      expect(ex.cause, cause);
-    });
-  });
 }
