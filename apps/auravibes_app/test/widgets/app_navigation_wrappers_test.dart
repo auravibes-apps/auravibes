@@ -631,25 +631,39 @@ class _FakeNavigationShell extends Fake implements StatefulNavigationShell {
 
 class _FakeConversationRepository implements ConversationRepository {
   final _controllers = <StreamController<List<ConversationEntity>>>[];
+  final _pendingRemoval = <StreamController<List<ConversationEntity>>>{};
+
+  void _processPendingRemovals() {
+    if (_pendingRemoval.isNotEmpty) {
+      _controllers.removeWhere(_pendingRemoval.contains);
+      _pendingRemoval.clear();
+    }
+  }
 
   @override
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
     int? limit,
   }) {
+    _processPendingRemovals();
+
     final controller = StreamController<List<ConversationEntity>>.broadcast();
-    controller.onCancel = () => _controllers.remove(controller);
+    controller.onCancel = () => _pendingRemoval.add(controller);
     _controllers.add(controller);
     controller.add(const []);
     return controller.stream;
   }
 
   Future<void> close() async {
+    _processPendingRemovals();
+
     final controllersSnapshot =
         List<StreamController<List<ConversationEntity>>>.from(_controllers);
     _controllers.clear();
+    _pendingRemoval.clear();
     await Future.wait(
       controllersSnapshot.where((c) => !c.isClosed).map((c) => c.close()),
+      eagerError: false,
     );
   }
 
