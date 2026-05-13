@@ -6,19 +6,19 @@ import 'package:auravibes_app/services/mcp_service/oauth_discovery.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-typedef _FetchCallback =
+typedef MockHttpFetchCallback =
     Future<ResponseBody> Function(
       RequestOptions options,
       Stream<Uint8List>? requestStream,
       Future<void>? cancelFuture,
     );
 
-final class _FakeHttpClientAdapter implements HttpClientAdapter {
-  _FakeHttpClientAdapter({
-    required _FetchCallback onFetch,
+final class FakeHttpClientAdapter implements HttpClientAdapter {
+  FakeHttpClientAdapter({
+    required MockHttpFetchCallback onFetch,
   }) : _fetchCallback = onFetch;
 
-  final _FetchCallback _fetchCallback;
+  final MockHttpFetchCallback _fetchCallback;
 
   @override
   Future<ResponseBody> fetch(
@@ -43,16 +43,6 @@ void main() {
 
       expect(auth.callbackUrlScheme, 'auravibes');
       expect(auth.clientName, 'AuraVibes');
-    });
-
-    test('can be constructed', () {
-      expect(
-        () => OAuthAuthenticate(
-          callbackUrlScheme: 'myapp',
-          clientName: 'MyApp',
-        ),
-        returnsNormally,
-      );
     });
 
     group('validateGetCode', () {
@@ -267,7 +257,7 @@ void main() {
 
     group('exchangeCodeForToken', () {
       test('uses injected dio instance for token exchange', () async {
-        final adapter = _FakeHttpClientAdapter(
+        final adapter = FakeHttpClientAdapter(
           onFetch: (options, _, _) async {
             expect(
               options.responseType,
@@ -329,7 +319,7 @@ void main() {
       test(
         'throws when token exchange fails due to network/client error',
         () async {
-          final adapter = _FakeHttpClientAdapter(
+          final adapter = FakeHttpClientAdapter(
             onFetch: (_, _, _) async {
               throw DioException(
                 requestOptions: RequestOptions(
@@ -371,7 +361,7 @@ void main() {
       );
 
       test('throws when token response is missing required fields', () async {
-        final adapter = _FakeHttpClientAdapter(
+        final adapter = FakeHttpClientAdapter(
           onFetch: (_, _, _) async {
             return ResponseBody.fromString(
               '{"token_type":"Bearer"}',
@@ -412,7 +402,7 @@ void main() {
       });
 
       test('throws when token response is not a JSON object', () async {
-        final adapter = _FakeHttpClientAdapter(
+        final adapter = FakeHttpClientAdapter(
           onFetch: (_, _, _) async {
             return ResponseBody.fromString(
               '["not-an-object"]',
@@ -453,7 +443,7 @@ void main() {
       });
 
       test('handles token response with optional OAuth fields', () async {
-        final adapter = _FakeHttpClientAdapter(
+        final adapter = FakeHttpClientAdapter(
           onFetch: (_, _, _) async {
             return ResponseBody.fromString(
               jsonEncode(<String, Object?>{
