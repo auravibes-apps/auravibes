@@ -23,8 +23,10 @@ class BuildPromptChatMessages {
 
     final toolCalls =
         message.metadata?.toolCalls ?? const <MessageToolCallEntity>[];
+    final thinking = message.metadata?.thinking?.trim();
 
     final parts = <Part>[
+      if (thinking != null && thinking.isNotEmpty) ThinkingPart(thinking),
       if (message.content.isNotEmpty) TextPart(message.content),
       for (final toolCall in toolCalls)
         ToolPart.call(

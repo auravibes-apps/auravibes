@@ -53,6 +53,19 @@ void main() {
       expect(model.openWeights, false);
     });
 
+    test('parses reasoning support flag', () {
+      final model = ApiModelEntity.fromJson('openai', {
+        ...baseJson,
+        'reasoning': true,
+      });
+      expect(model.supportsReasoning, isTrue);
+    });
+
+    test('defaults reasoning support to false', () {
+      final model = ApiModelEntity.fromJson('openai', baseJson);
+      expect(model.supportsReasoning, isFalse);
+    });
+
     test('handles missing cost with nullable types', () {
       final json = <String, dynamic>{
         'id': 'free-model',

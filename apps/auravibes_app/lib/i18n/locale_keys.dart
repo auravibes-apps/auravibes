@@ -105,6 +105,8 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.waiting_for_tools_named';
   static const chats_screens_chat_conversation_thinking_status =
       'chats_screens.chat_conversation.thinking_status';
+  static const chats_screens_chat_conversation_reasoning_summary =
+      'chats_screens.chat_conversation.reasoning_summary';
   static const chats_screens_chat_conversation_tool_resolution_status =
       'chats_screens.chat_conversation.tool_resolution_status';
   static const chats_screens_chat_conversation_queued_messages_count =

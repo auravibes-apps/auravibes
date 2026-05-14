@@ -96,7 +96,10 @@ MessageEntity? messageConversationById(
 
   if (streamingResult == null) return messageEntity;
 
-  return messageEntity.copyWith(content: streamingResult.output.text);
+  return messageEntity.copyWith(
+    content: streamingResult.output.text,
+    metadata: streamingResult.entityMetadata ?? messageEntity.metadata,
+  );
 }
 
 @Riverpod(dependencies: [MessagesStreamingNotifier])

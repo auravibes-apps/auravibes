@@ -51,6 +51,7 @@ void main() {
       costInput: 30,
       costOutput: 60,
       openWeights: false,
+      supportsReasoning: false,
     );
 
     group('getAllProviders', () {
@@ -108,6 +109,7 @@ void main() {
         expect(result.first.costInput, 30.0);
         expect(result.first.costOutput, 60.0);
         expect(result.first.openWeights, false);
+        expect(result.first.supportsReasoning, false);
       });
     });
 

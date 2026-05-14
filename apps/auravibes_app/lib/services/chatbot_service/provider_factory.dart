@@ -12,6 +12,7 @@ class ProviderFactory {
   }) {
     final type = config.modelsProvider.type;
     final modelId = config.workspaceModelSelection.modelId;
+    final supportsReasoning = config.workspaceModelSelection.supportsReasoning;
     final baseUrl = config.modelConnection.url ?? config.modelsProvider.url;
 
     if (type == null) {
@@ -20,20 +21,21 @@ class ProviderFactory {
           apiKey: apiKey,
           baseUrl: baseUrl,
           modelId: modelId,
+          supportsReasoning: supportsReasoning,
           tools: tools,
         );
       }
       throw ArgumentError('Provider type is null and no baseUrl provided');
     }
 
-    final resolvedBaseUrl =
-        (_hasCustomUrl(config) ? baseUrl : null) ?? config.modelsProvider.url;
+    final resolvedBaseUrl = _resolveBaseUrl(config);
 
     return _createChatModel(
       apiKey: apiKey,
       modelId: modelId,
       providerType: type,
       baseUrl: resolvedBaseUrl,
+      supportsReasoning: supportsReasoning,
       tools: tools,
     );
   }
@@ -57,8 +59,7 @@ class ProviderFactory {
       );
     }
 
-    final resolvedBaseUrl =
-        (_hasCustomUrl(config) ? baseUrl : null) ?? config.modelsProvider.url;
+    final resolvedBaseUrl = _resolveBaseUrl(config);
 
     return _createAgentOnly(
       apiKey: apiKey,
@@ -73,14 +74,24 @@ class ProviderFactory {
     required String modelId,
     ModelProvidersType? providerType,
     String? baseUrl,
+    bool supportsReasoning = false,
     List<Tool>? tools,
   }) {
     final provider = _createProvider(
       providerType: providerType,
       apiKey: apiKey,
       baseUrl: baseUrl,
+      supportsReasoning: supportsReasoning,
     );
-    return provider.createChatModel(name: modelId, tools: tools);
+    return provider.createChatModel(
+      name: modelId,
+      tools: tools,
+      enableThinking: _canEnableThinking(
+        providerType: providerType,
+        baseUrl: baseUrl,
+        supportsReasoning: supportsReasoning,
+      ),
+    );
   }
 
   Agent _createAgentOnly({
@@ -101,7 +112,19 @@ class ProviderFactory {
     required String apiKey,
     ModelProvidersType? providerType,
     String? baseUrl,
+    bool supportsReasoning = false,
   }) {
+    if (_usesOpenAIResponses(
+      providerType: providerType,
+      baseUrl: baseUrl,
+      supportsReasoning: supportsReasoning,
+    )) {
+      return OpenAIResponsesProvider(
+        apiKey: apiKey,
+        baseUrl: baseUrl != null ? Uri.parse(baseUrl) : null,
+      );
+    }
+
     // AnthropicProvider doesn't accept baseUrl in its constructor.
     // When a custom URL is set, fall through to OpenAIProvider which
     // supports custom endpoints (most Anthropic proxies are OpenAI-compatible).
@@ -115,11 +138,58 @@ class ProviderFactory {
     );
   }
 
+  bool _canEnableThinking({
+    required ModelProvidersType? providerType,
+    required String? baseUrl,
+    required bool supportsReasoning,
+  }) {
+    if (!supportsReasoning) return false;
+    if (providerType == ModelProvidersType.anthropic && baseUrl == null) {
+      return true;
+    }
+    return _usesOpenAIResponses(
+      providerType: providerType,
+      baseUrl: baseUrl,
+      supportsReasoning: supportsReasoning,
+    );
+  }
+
+  bool _usesOpenAIResponses({
+    required ModelProvidersType? providerType,
+    required String? baseUrl,
+    required bool supportsReasoning,
+  }) {
+    return supportsReasoning &&
+        providerType == ModelProvidersType.openai &&
+        _isOfficialProviderUrl(providerType, baseUrl);
+  }
+
   bool _hasCustomUrl(
     WorkspaceModelSelectionWithConnectionEntity config,
   ) {
     final connectionUrl = config.modelConnection.url;
     final providerUrl = config.modelsProvider.url;
     return connectionUrl != null && connectionUrl != providerUrl;
+  }
+
+  String? _resolveBaseUrl(WorkspaceModelSelectionWithConnectionEntity config) {
+    final connectionUrl = config.modelConnection.url;
+    final providerUrl = config.modelsProvider.url;
+
+    if (_hasCustomUrl(config)) return connectionUrl;
+    if (_isOfficialProviderUrl(config.modelsProvider.type, providerUrl)) {
+      return null;
+    }
+    return providerUrl;
+  }
+
+  bool _isOfficialProviderUrl(ModelProvidersType? type, String? url) {
+    final host = url == null ? null : Uri.tryParse(url)?.host;
+    return switch (type) {
+      ModelProvidersType.openai => host == null || host == 'api.openai.com',
+      ModelProvidersType.anthropic =>
+        host == null || host == 'api.anthropic.com',
+      null => false,
+    };
   }
 }

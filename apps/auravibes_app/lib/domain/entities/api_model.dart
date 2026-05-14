@@ -39,6 +39,9 @@ abstract class ApiModelEntity with _$ApiModelEntity {
 
     /// Whether the model is open source
     bool? openWeights,
+
+    /// Whether the provider reports reasoning/thinking support for this model.
+    @Default(false) bool supportsReasoning,
   }) = _ApiModelEntity;
   const ApiModelEntity._();
 
@@ -61,6 +64,7 @@ abstract class ApiModelEntity with _$ApiModelEntity {
       limitOutput: limit.get('output'),
       modalitiesInput: (modalities.get<List<dynamic>?>('input') ?? []).cast(),
       modalitiesOuput: (modalities.get<List<dynamic>?>('output') ?? []).cast(),
+      supportsReasoning: json.get<bool?>('reasoning') ?? false,
     );
   }
 
