@@ -35,7 +35,7 @@ class WorkspaceModelSelectionRepositoryImpl
   ) async {
     final tableResults = await _database.workspaceModelSelectionsDao
         .getAllWorkspaceModelSelectionsByWorkspace(
-          workspaceIds: filter.workspaces ?? [],
+          workspaceIds: filter.workspaces,
         );
     return tableResults.map(_withProviderTableToEntity).toList();
   }

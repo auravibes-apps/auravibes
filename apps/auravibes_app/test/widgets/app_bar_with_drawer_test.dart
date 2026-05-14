@@ -10,7 +10,9 @@ void main() {
       MaterialApp(
         theme: ThemeData(extensions: [AuraTheme.light]),
         home: const Scaffold(
-          appBar: AuraAppBarWithDrawer(),
+          appBar: AuraAppBarWithDrawer(
+            title: Text('Test AppBar'),
+          ),
         ),
       ),
     );
@@ -40,6 +42,7 @@ void main() {
         theme: ThemeData(extensions: [AuraTheme.light]),
         home: const Scaffold(
           appBar: AuraAppBarWithDrawer(
+            title: Text('Test AppBar'),
             actions: [
               Icon(Icons.settings),
             ],
@@ -53,6 +56,7 @@ void main() {
 
   testWidgets('preferredSize includes bottom height', (tester) async {
     const bar = AuraAppBarWithDrawer(
+      title: Text('Test AppBar'),
       bottom: PreferredSize(
         preferredSize: Size.fromHeight(48),
         child: SizedBox.shrink(),
@@ -66,7 +70,9 @@ void main() {
   });
 
   testWidgets('preferredSize without bottom is kToolbarHeight', (tester) async {
-    const bar = AuraAppBarWithDrawer();
+    const bar = AuraAppBarWithDrawer(
+      title: Text('Test AppBar'),
+    );
 
     expect(bar.preferredSize, equals(const Size.fromHeight(kToolbarHeight)));
   });
@@ -80,7 +86,9 @@ void main() {
         home: ResponsiveSlidingDrawerProvider(
           controller: controller,
           child: const Scaffold(
-            appBar: AuraAppBarWithDrawer(),
+            appBar: AuraAppBarWithDrawer(
+              title: Text('Test AppBar'),
+            ),
           ),
         ),
       ),

@@ -92,11 +92,11 @@ class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
   Future<List<ModelConnectionEntity>> getModelConnections(
     ModelConnectionFilter filter,
   ) async {
-    if (filter.workspaces?.isNotEmpty != true) {
+    if (filter.workspaces.isEmpty) {
       return [];
     }
     final modelConnections = await _database.modelConnectionsDao
-        .getAllModelConnectionsByWorkspace(workspaceIds: filter.workspaces!);
+        .getAllModelConnectionsByWorkspace(workspaceIds: filter.workspaces);
 
     return modelConnections.map(_modelProviderTableToEntity).toList();
   }

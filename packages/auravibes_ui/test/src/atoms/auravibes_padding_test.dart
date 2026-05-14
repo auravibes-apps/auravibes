@@ -147,20 +147,6 @@ void main() {
       expect(edgeInsets.bottom, AuraTheme.light.spacing.lg);
     });
 
-    testWidgets('renders with null child', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: ThemeData(extensions: [AuraTheme.light]),
-          home: const Scaffold(
-            body: AuraPadding(child: null),
-          ),
-        ),
-      );
-
-      final paddingWidget = tester.widget<Padding>(find.byType(Padding));
-      expect(paddingWidget.child, isNull);
-    });
-
     testWidgets('applies correct padding values through context', (
       tester,
     ) async {

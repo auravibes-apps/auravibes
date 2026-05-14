@@ -35,9 +35,9 @@ enum UrlResponseFormat {
           'text/plain;q=0.8, text/html;q=0.7, */*;q=0.1',
   };
 
-  static UrlResponseFormat fromString(String? value) {
-    final normalized = value?.trim().toLowerCase();
-    if (normalized == null || normalized.isEmpty) return .defaultFormat;
+  static UrlResponseFormat fromString(String value) {
+    final normalized = value.trim().toLowerCase();
+    if (normalized.isEmpty) return .defaultFormat;
     return values.firstWhere(
       (f) => f.label == normalized,
       orElse: () => throw FormatException(
@@ -53,7 +53,7 @@ abstract class UrlRequest with _$UrlRequest {
   const factory UrlRequest({
     required String url,
     @Default(UrlRequestMethod.get) UrlRequestMethod method,
-    Map<String, String>? headers,
+    @Default({}) Map<String, String> headers,
     String? body,
     @Default(Duration(seconds: 30)) Duration timeout,
     @Default(UrlResponseFormat.defaultFormat) UrlResponseFormat format,

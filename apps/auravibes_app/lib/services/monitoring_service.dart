@@ -5,7 +5,7 @@ class MonitoringService {
   void trackError(
     String concept, {
     required Object? error,
-    StackTrace? stackTrace,
+    required StackTrace stackTrace,
   }) {
     debugPrint('Concept: $concept');
     debugPrint('Error: $error');

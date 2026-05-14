@@ -508,7 +508,7 @@ class MockMonitoringService extends _i1.Mock implements _i17.MonitoringService {
   void trackError(
     String? concept, {
     required Object? error,
-    StackTrace? stackTrace,
+    required StackTrace? stackTrace,
   }) => super.noSuchMethod(
     Invocation.method(
       #trackError,

@@ -25,6 +25,8 @@ void main() {
           const AuraConfirmDialog(
             title: Text('Confirm Action'),
             message: Text('Are you sure you want to proceed?'),
+            confirmLabel: Text('Confirm'),
+            cancelLabel: Text('Cancel'),
           ),
         ),
       );
@@ -39,6 +41,8 @@ void main() {
           const AuraConfirmDialog(
             title: Text('Delete Item'),
             message: Text('This action cannot be undone.'),
+            confirmLabel: Text('Confirm'),
+            cancelLabel: Text('Cancel'),
           ),
         ),
       );
@@ -56,6 +60,8 @@ void main() {
           const AuraConfirmDialog(
             title: Text('Delete'),
             message: Text('Are you sure?'),
+            confirmLabel: Text('Confirm'),
+            cancelLabel: Text('Cancel'),
             isDestructive: true,
           ),
         ),
@@ -99,6 +105,8 @@ void main() {
           AuraConfirmDialog(
             title: const Text('Dialog Title'),
             message: const Text('Message'),
+            confirmLabel: const Text('Confirm'),
+            cancelLabel: const Text('Cancel'),
             onConfirm: () {
               confirmCalled = true;
             },
@@ -127,6 +135,8 @@ void main() {
           AuraConfirmDialog(
             title: const Text('Dialog Title'),
             message: const Text('Message'),
+            confirmLabel: const Text('Confirm'),
+            cancelLabel: const Text('Cancel'),
             onCancel: () {
               cancelCalled = true;
             },
@@ -148,6 +158,7 @@ void main() {
           const AuraAlertDialog(
             title: Text('Alert'),
             message: Text('Something happened.'),
+            dismissLabel: Text('OK'),
           ),
         ),
       );
@@ -162,6 +173,7 @@ void main() {
           const AuraAlertDialog(
             title: Text('Alert'),
             message: Text('Message'),
+            dismissLabel: Text('OK'),
           ),
         ),
       );

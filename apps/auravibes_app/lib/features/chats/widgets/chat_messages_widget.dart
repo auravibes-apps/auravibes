@@ -176,13 +176,13 @@ class _ChatMessageRow extends HookConsumerWidget {
 class _AiMessageContent extends StatelessWidget {
   const _AiMessageContent({
     required this.content,
+    required this.timestamp,
     super.key,
-    this.timestamp,
     this.status = AuraMessageDeliveryStatus.sent,
   });
 
   final String content;
-  final DateTime? timestamp;
+  final DateTime timestamp;
   final AuraMessageDeliveryStatus status;
 
   @override
@@ -201,17 +201,15 @@ class _AiMessageContent extends StatelessWidget {
             height: DesignTypography.lineHeightBase,
           ),
         ),
-        if (timestamp != null) ...[
-          SizedBox(height: context.auraTheme.spacing.xs),
-          Text(
-            const RelativeTimeFormatter().format(timestamp!),
-            style: TextStyle(
-              color: auraColors.onSurfaceVariant,
-              fontSize: DesignTypography.fontSizeXs,
-              fontFamily: DesignTypography.bodyFontFamily,
-            ),
+        SizedBox(height: context.auraTheme.spacing.xs),
+        Text(
+          const RelativeTimeFormatter().format(timestamp),
+          style: TextStyle(
+            color: auraColors.onSurfaceVariant,
+            fontSize: DesignTypography.fontSizeXs,
+            fontFamily: DesignTypography.bodyFontFamily,
           ),
-        ],
+        ),
         if (status != AuraMessageDeliveryStatus.sent) ...[
           SizedBox(height: context.auraTheme.spacing.xs / 2),
           AuraMessageStatus(status: status),

@@ -287,7 +287,7 @@ void main() {
         () => usecase.call(
           id: 'ws-1',
           workspaceCount: 1,
-          activeWorkspaceId: null,
+          activeWorkspaceId: 'ws-1',
         ),
         throwsA(isA<WorkspaceDeleteLastException>()),
       );

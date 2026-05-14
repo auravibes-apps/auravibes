@@ -164,14 +164,14 @@ class AuraNavigationData {
 class _AuraSidebarItem extends StatelessWidget {
   const _AuraSidebarItem({
     required this.label,
+    required this.icon,
     required this.onTap,
-    this.icon,
     this.selected = false,
   });
 
   final Widget label;
 
-  final Widget? icon;
+  final Widget icon;
 
   final bool selected;
 
@@ -194,7 +194,7 @@ class _AuraSidebarItem extends StatelessWidget {
           child: AuraRow(
             spacing: .sm,
             children: [
-              ?icon,
+              icon,
               label,
             ],
           ),
