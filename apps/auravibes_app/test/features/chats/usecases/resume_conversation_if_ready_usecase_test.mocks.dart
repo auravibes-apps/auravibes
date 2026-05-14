@@ -583,7 +583,7 @@ class MockRunAgentIterationUsecase extends _i1.Mock
   @override
   _i15.Future<_i17.AgentIterationDecision> call({
     required String? conversationId,
-    _i19.AgentIterationContext? context,
+    required _i19.AgentIterationContext? context,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#call, [], {
