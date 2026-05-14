@@ -28,8 +28,8 @@ enum AuraSnackBarVariant {
 class AuraSnackBarController {
   /// Creates a controller with the dismiss callback.
   AuraSnackBarController({
-    required this._dismissCallback,
-  });
+    required void Function() dismissCallback,
+  }) : _dismissCallback = dismissCallback;
 
   final void Function() _dismissCallback;
 

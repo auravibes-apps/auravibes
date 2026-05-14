@@ -6,8 +6,8 @@ import 'package:riverpod/riverpod.dart';
 
 class StopAllPendingToolCallsUsecase {
   const StopAllPendingToolCallsUsecase({
-    required this._messageRepository,
-  });
+    required MessageRepository messageRepository,
+  }) : _messageRepository = messageRepository;
 
   final MessageRepository _messageRepository;
 

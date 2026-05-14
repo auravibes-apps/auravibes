@@ -1,1 +1,6 @@
 include: package:very_good_analysis/analysis_options.yaml
+
+analyzer:
+  errors:
+    # SonarCloud does not support Dart 3.12 private named parameters yet.
+    prefer_initializing_formals: ignore

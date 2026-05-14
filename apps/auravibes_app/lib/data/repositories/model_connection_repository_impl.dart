@@ -14,10 +14,12 @@ import 'package:drift/drift.dart';
 /// exceptions.
 class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
   ModelConnectionRepositoryImpl({
-    required this._database,
-    required this._encryptionService,
+    required AppDatabase database,
+    required EncryptionService encryptionService,
     ModelProviderServices? modelProviderServices,
-  }) : _modelProviderServices =
+  }) : _database = database,
+       _encryptionService = encryptionService,
+       _modelProviderServices =
            modelProviderServices ?? ModelProviderServices();
 
   final AppDatabase _database;

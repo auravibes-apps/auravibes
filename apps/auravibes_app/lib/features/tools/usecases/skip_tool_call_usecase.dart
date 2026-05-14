@@ -7,9 +7,10 @@ import 'package:riverpod/riverpod.dart';
 
 class SkipToolCallUsecase {
   const SkipToolCallUsecase({
-    required this._messageRepository,
-    required this._resumeConversationIfReadyUsecase,
-  });
+    required MessageRepository messageRepository,
+    required ResumeConversationIfReadyUsecase resumeConversationIfReadyUsecase,
+  }) : _messageRepository = messageRepository,
+       _resumeConversationIfReadyUsecase = resumeConversationIfReadyUsecase;
 
   final MessageRepository _messageRepository;
   final ResumeConversationIfReadyUsecase _resumeConversationIfReadyUsecase;

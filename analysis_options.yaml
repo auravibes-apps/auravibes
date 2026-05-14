@@ -3,7 +3,6 @@ include: package:very_good_analysis/analysis_options.yaml
 formatter:
   page_width: 80
 
-
 analyzer:
   exclude:
     - "**/**.g.dart"
@@ -36,10 +35,10 @@ analyzer:
     require_trailing_commas: info
     sort_child_properties_last: warning
     no_leading_underscores_for_local_identifiers: info
+    # SonarCloud does not support Dart 3.12 private named parameters yet.
+    prefer_initializing_formals: ignore
     use_string_in_part_of_directives: ignore
-    
 
-   
 linter:
   rules:
     always_use_package_imports: true
@@ -50,7 +49,7 @@ linter:
     avoid_returning_null_for_void: true
     avoid_unnecessary_containers: true
     camel_case_types: true
-    always_declare_return_types: true    
+    always_declare_return_types: true
     require_trailing_commas: true
     sort_child_properties_last: true
     library_private_types_in_public_api: false
@@ -61,5 +60,3 @@ linter:
     ##
     flutter_style_todos: false
     discarded_futures: false
-
-

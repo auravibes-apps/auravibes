@@ -8,10 +8,12 @@ import 'package:riverpod/riverpod.dart';
 
 class StopConversationUsecase {
   const StopConversationUsecase({
-    required this._agentCancellationRuntime,
-    required this._sendQueueRuntime,
-    required this._messageRepository,
-  });
+    required AgentCancellationRuntime agentCancellationRuntime,
+    required ConversationSendQueueRuntime sendQueueRuntime,
+    required MessageRepository messageRepository,
+  }) : _agentCancellationRuntime = agentCancellationRuntime,
+       _sendQueueRuntime = sendQueueRuntime,
+       _messageRepository = messageRepository;
 
   final AgentCancellationRuntime _agentCancellationRuntime;
   final ConversationSendQueueRuntime _sendQueueRuntime;

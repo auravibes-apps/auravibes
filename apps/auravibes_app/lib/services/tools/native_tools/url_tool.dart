@@ -13,8 +13,9 @@ const _privateNetworkUrlError =
     'Private or local network URLs are not allowed.';
 
 final class UrlTool extends NativeToolEntity<String, String> {
-  UrlTool({this._urlService, UrlContentTransformer? transformer})
-    : _transformer = transformer ?? const UrlContentTransformer();
+  UrlTool({UrlService? urlService, UrlContentTransformer? transformer})
+    : _urlService = urlService,
+      _transformer = transformer ?? const UrlContentTransformer();
 
   final UrlService? _urlService;
   final UrlContentTransformer _transformer;

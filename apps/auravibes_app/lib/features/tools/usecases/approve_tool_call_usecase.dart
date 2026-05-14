@@ -20,15 +20,22 @@ import 'package:riverpod/riverpod.dart';
 
 class ApproveToolCallUsecase {
   const ApproveToolCallUsecase({
-    required this._messageRepository,
-    required this._conversationToolsRepository,
-    required this._toolsGroupsRepository,
-    required this._workspaceToolsRepository,
-    required this._toolResolverService,
-    required this._resumeConversationIfReadyUsecase,
-    required this._runResolvedToolUsecase,
-    required this._agentCancellationRuntime,
-  });
+    required MessageRepository messageRepository,
+    required ConversationToolsRepository conversationToolsRepository,
+    required ToolsGroupsRepository toolsGroupsRepository,
+    required WorkspaceToolsRepository workspaceToolsRepository,
+    required ToolResolverService toolResolverService,
+    required ResumeConversationIfReadyUsecase resumeConversationIfReadyUsecase,
+    required RunResolvedToolUsecase runResolvedToolUsecase,
+    required AgentCancellationRuntime agentCancellationRuntime,
+  }) : _messageRepository = messageRepository,
+       _conversationToolsRepository = conversationToolsRepository,
+       _toolsGroupsRepository = toolsGroupsRepository,
+       _workspaceToolsRepository = workspaceToolsRepository,
+       _toolResolverService = toolResolverService,
+       _resumeConversationIfReadyUsecase = resumeConversationIfReadyUsecase,
+       _runResolvedToolUsecase = runResolvedToolUsecase,
+       _agentCancellationRuntime = agentCancellationRuntime;
 
   final MessageRepository _messageRepository;
   final ConversationToolsRepository _conversationToolsRepository;

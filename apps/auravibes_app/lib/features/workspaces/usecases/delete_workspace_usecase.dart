@@ -11,8 +11,8 @@ part 'delete_workspace_usecase.g.dart';
 /// - Cannot delete the currently active workspace.
 class DeleteWorkspaceUseCase {
   const DeleteWorkspaceUseCase({
-    required this._repository,
-  });
+    required WorkspaceRepository repository,
+  }) : _repository = repository;
 
   final WorkspaceRepository _repository;
 

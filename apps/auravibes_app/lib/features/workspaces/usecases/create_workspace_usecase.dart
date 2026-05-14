@@ -12,9 +12,10 @@ part 'create_workspace_usecase.g.dart';
 /// Orchestrates name validation and repository creation.
 class CreateWorkspaceUseCase {
   const CreateWorkspaceUseCase({
-    required this._repository,
-    required this._validateName,
-  });
+    required WorkspaceRepository repository,
+    required ValidateWorkspaceNameUseCase validateName,
+  }) : _repository = repository,
+       _validateName = validateName;
 
   final WorkspaceRepository _repository;
   final ValidateWorkspaceNameUseCase _validateName;

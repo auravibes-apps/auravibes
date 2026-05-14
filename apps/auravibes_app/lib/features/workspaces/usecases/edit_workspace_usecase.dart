@@ -11,9 +11,10 @@ part 'edit_workspace_usecase.g.dart';
 /// Orchestrates name validation and repository patch.
 class EditWorkspaceUseCase {
   const EditWorkspaceUseCase({
-    required this._repository,
-    required this._validateName,
-  });
+    required WorkspaceRepository repository,
+    required ValidateWorkspaceNameUseCase validateName,
+  }) : _repository = repository,
+       _validateName = validateName;
 
   final WorkspaceRepository _repository;
   final ValidateWorkspaceNameUseCase _validateName;

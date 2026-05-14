@@ -4,9 +4,10 @@ import 'package:rxdart/rxdart.dart';
 
 class _CoalescingSaver<T> {
   _CoalescingSaver({
-    required this._store,
-    required this._onSaved,
-  });
+    required Future<void> Function(T state) store,
+    required void Function(T state) onSaved,
+  }) : _store = store,
+       _onSaved = onSaved;
 
   final Future<void> Function(T state) _store;
   final void Function(T state) _onSaved;
