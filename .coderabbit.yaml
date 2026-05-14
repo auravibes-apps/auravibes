@@ -69,18 +69,7 @@ reviews:
         - No test-of-tests or trivial assertions
 
   auto_review:
-    enabled: true
-    drafts: false
-    auto_incremental_review: true
-    auto_pause_after_reviewed_commits: 0
-    ignore_title_keywords:
-      - "WIP"
-      - "wip"
-    base_branches:
-      - "main"
-      - "develop"
-      - "feat/*"
-      - "setup/*"
+    enabled: false
 
   finishing_touches:
     docstrings:
