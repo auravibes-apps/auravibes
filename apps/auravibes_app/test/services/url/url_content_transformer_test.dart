@@ -38,8 +38,8 @@ void main() {
         final response = _htmlResponse(
           '<html><head><title>Title</title></head>' //
           '<body>' //
-          '<nav><h1>Title</h1></nav>' //
-          '<main><p>Main content</p></main>' //
+          '<nav><h1>Title</h1></nav> ' //
+          '<main><p>Main content</p></main> ' //
           '</body></html>',
         );
         final result = transformer.transform(response);

@@ -7,15 +7,9 @@ import 'package:auravibes_app/services/tools/tool_service.dart';
 
 class BuildCombinedToolSpecsUseCase {
   const BuildCombinedToolSpecsUseCase({
-    required Future<ToolsGroupEntity?> Function(String groupId)
-    getToolsGroupById,
-    required ToolSpec? Function({
-      required String mcpServerId,
-      required String toolName,
-    })
-    getMcpToolSpec,
-  }) : _getToolsGroupById = getToolsGroupById,
-       _getMcpToolSpec = getMcpToolSpec;
+    required this._getToolsGroupById,
+    required this._getMcpToolSpec,
+  });
 
   final Future<ToolsGroupEntity?> Function(String groupId) _getToolsGroupById;
   final ToolSpec? Function({

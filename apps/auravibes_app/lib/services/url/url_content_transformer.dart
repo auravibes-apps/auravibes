@@ -578,7 +578,8 @@ class UrlContentTransformer {
         final String marker;
         if (isOrdered) {
           var index = 1;
-          for (final sibling in element.parent?.children ?? []) {
+          for (final sibling
+              in element.parent?.children ?? const <dom.Element>[]) {
             if (identical(sibling, element)) break;
             if (sibling.localName?.toLowerCase() == 'li') index++;
           }

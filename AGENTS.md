@@ -115,14 +115,14 @@ fvm dart run build_runner build --delete-conflicting-outputs --build-filter="lib
 
 ### Badge Versions vs FVM Pinned Version
 
-- **Badge versions** in README.md reflect the **exact FVM pinned version** (e.g., `3.41.4+`)
+- **Badge versions** in README.md reflect the **exact FVM pinned version** (e.g., `3.44.0-0.3.pre`)
 - This aligns with `.fvmrc` configuration for consistency
-- The `+` suffix indicates "this version or compatible updates"
+- Prerelease versions should be shown exactly as pinned by FVM
 
 ### SDK Constraints in pubspec.yaml
 
-- Use caret syntax for minimum version: `sdk: ^3.11.0`
-- This allows any compatible version within the major version range
+- Use explicit prerelease lower bounds while the pinned SDK is beta: `sdk: ">=3.12.0-327.4.beta <4.0.0"`
+- Switch back to caret syntax after stable Dart 3.12 lands: `sdk: ^3.12.0`
 
 ## Analyzer Ignore Directives
 
@@ -166,7 +166,7 @@ SomeExperimentalApi(), // ignore: experimental_member_use - Required for widgetb
 - This is a **Flutter monorepo** using Melos for workspace management
 - **Always use `fvm` prefix** for Dart/Flutter commands to ensure correct SDK version
 - The project uses `very_good_analysis` for linting with strict rules
-- Prefer Dart dot shorthand syntax when possible in Dart 3.11+ code if the context type is clear, especially for enums, constructors, and obvious static members
+- Prefer Dart dot shorthand syntax when possible in Dart 3.12+ code if the context type is clear, especially for enums, constructors, and obvious static members
 
 ### Dart Style
 
@@ -197,7 +197,7 @@ These rules are non-negotiable for all new code and refactors:
 
 ## Active Technologies
 
-- **Current baseline (workspace-wide):** Dart 3.11+ with Flutter 3.41.9 via FVM, Flutter, Riverpod (hooks_riverpod/Riverpod 3 + code generation), Freezed, Drift, auravibes_ui.
+- **Current baseline (workspace-wide):** Dart 3.12+ with Flutter 3.44.0-0.3.pre via FVM, Flutter, Riverpod (hooks_riverpod/Riverpod 3 + code generation), Freezed, Drift, auravibes_ui.
 - **Spec-specific additions/notes:**
   - (008-avoid-approval-flash) Existing Drift `messages` metadata JSON and tool permission tables; no schema changes planned.
   - (001-two-step-model-selector) Existing Drift database; no schema changes needed.

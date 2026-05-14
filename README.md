@@ -1,7 +1,7 @@
 # AuraVibes
 
-[![Flutter](https://img.shields.io/badge/Flutter-3.41.4+-02569B?style=flat-square&logo=flutter)](https://flutter.dev)
-[![Dart](https://img.shields.io/badge/Dart-3.11.1+-0175C2?style=flat-square&logo=dart)](https://dart.dev)
+[![Flutter](https://img.shields.io/badge/Flutter-3.44.0--0.3.pre-02569B?style=flat-square&logo=flutter)](https://flutter.dev)
+[![Dart](https://img.shields.io/badge/Dart-3.12.0--327.4.beta-0175C2?style=flat-square&logo=dart)](https://dart.dev)
 [![Melos](https://img.shields.io/badge/Melos-7.3.0-42a5f5?style=flat-square)](https://melos.invertase.dev)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-iOS%20%7C%20Android%20%7C%20macOS%20%7C%20Web%20%7C%20Linux%20%7C%20Windows-lightgrey)](#)
@@ -19,7 +19,7 @@
   <img src="assets/screenshots/settings.png" width="250" alt="Settings Screen">
 </div>
 
-*TODO: Add actual screenshots showing key app features*
+_TODO: Add actual screenshots showing key app features_
 
 ## ✨ Features
 
@@ -31,7 +31,7 @@
 - 🌐 **Multi-Language**: Support for English and Spanish with easy localization
 - 🔒 **Secure Storage**: Secure local storage for API keys and sensitive data
 
-*TODO: Verify feature list is current and accurate*
+_TODO: Verify feature list is current and accurate_
 
 ## 🚀 Getting Started
 
@@ -41,13 +41,13 @@ Before you begin, ensure you have the following installed:
 
 #### Required Software
 
-- **Flutter SDK**: 3.41.4 or higher (managed via FVM)
+- **Flutter SDK**: 3.44.0-0.3.pre (managed via FVM)
   - Download from [flutter.dev](https://flutter.dev/docs/get-started/install)
   - Install [FVM](https://fvm.app) first: `dart pub global activate fvm`
 
-- **Dart SDK**: 3.11.1 or higher (included with Flutter)
-  
+- **Dart SDK**: 3.12.0-327.4.beta (included with pinned Flutter)
 - **FVM (Flutter Version Management)**: 4.0.5 or higher
+
   ```bash
   dart pub global activate fvm
   ```
@@ -56,36 +56,41 @@ Before you begin, ensure you have the following installed:
   ```bash
   dart pub global activate melos
   ```
-<details>
+  <details>
 
 <summary>Platform-Specific Requirements</summary>
 
 **Android Development**
+
 - Android Studio (latest version) with Flutter and Dart plugins
 - Android SDK API level 21 or higher
 - Android SDK Build-Tools
 
 **iOS Development** (macOS only)
+
 - Xcode 14.0 or higher
 - CocoaPods: `sudo gem install cocoapods`
 - iOS Simulator or physical iOS device
 
 **macOS Development**
+
 - Xcode 14.0 or higher
 - CocoaPods
 
 **Linux Development**
+
 - GTK 3.0 development libraries
 - See [Linux setup guide](https://flutter.dev/docs/desktop#additional-linux-requirements)
 
 **Windows Development**
+
 - Visual Studio 2022 with C++ desktop development
 - See [Windows setup guide](https://flutter.dev/docs/desktop#additional-windows-requirements)
 
 **Web Development**
+
 - Chrome browser (latest version)
 </details>
-
 
 ### Installation
 
@@ -134,7 +139,7 @@ The app supports two flavors: **dev** (development) and **prod** (production).
 The project includes pre-configured launch configurations in `.vscode/launch.json`:
 
 - **prod Debug**: Production flavor, debug mode
-- **prod Profile**: Production flavor, profile mode  
+- **prod Profile**: Production flavor, profile mode
 - **prod Release**: Production flavor, release mode
 - **dev Debug**: Development flavor, debug mode
 - **dev Profile**: Development flavor, profile mode
@@ -184,8 +189,6 @@ fvm flutter run -d linux --flavor prod
 - **Networking**: [Dio](https://pub.dev/packages/dio) for HTTP requests
 - **Localization**: [Easy Localization](https://pub.dev/packages/easy_localization)
 - **Code Generation**: [Build Runner](https://pub.dev/packages/build_runner), [Freezed](https://pub.dev/packages/freezed)
-
-
 
 ---
 

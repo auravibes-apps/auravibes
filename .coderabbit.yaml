@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
 language: "en-US"
 early_access: false
-tone_instructions: "Be concise. Follow very_good_analysis lint rules. Prefer Dart 3.11+ dot shorthand syntax when context is clear. Provide architectural insights on system design, scalability, and long-term maintainability."
+tone_instructions: "Be concise. Follow very_good_analysis lint rules. Prefer Dart 3.12+ dot shorthand syntax when context is clear. Provide architectural insights on system design, scalability, and long-term maintainability."
 
 reviews:
   profile: "chill"
@@ -37,7 +37,7 @@ reviews:
         - Widget const constructors and performance (const-first design)
         - No business logic in widgets (use controller/usecase pattern)
         - Proper lifecycle management and dispose patterns
-        - FVM-compatible SDK usage (Dart 3.x / Flutter 3.41.4+)
+        - FVM-compatible SDK usage (Dart 3.12+ / Flutter 3.44.0-0.3.pre)
         - Cross-package dependency management and system design impact
 
     - path: "packages/auravibes_ui/**/*.dart"
@@ -55,7 +55,7 @@ reviews:
         - Architectural patterns: clean API boundaries, proper abstraction layers
         - Proper use of Freezed for immutable data classes
         - Drift database patterns (type-safe queries, reactive streams)
-        - Dart 3.11+ dot shorthand syntax when context is clear
+        - Dart 3.12+ dot shorthand syntax when context is clear
         - No comments unless explicitly requested
         - Guard clause pattern and single responsibility principle
         - Scalability and long-term maintainability of the package API
