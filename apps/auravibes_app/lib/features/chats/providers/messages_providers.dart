@@ -17,16 +17,11 @@ import 'package:auravibes_app/utils/chat_result_extension.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:riverpod/experimental/mutation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 export 'conversation_selection_provider.dart';
 
 part 'messages_providers.g.dart';
-
-final addMessageMutation = Mutation<MessageEntity>();
-final deleteMessageMutation = Mutation<void>();
-final updateMessageMutation = Mutation<MessageEntity>();
 
 @riverpod
 Stream<List<MessageEntity>> chatMessagesByConversation(

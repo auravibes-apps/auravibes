@@ -132,18 +132,6 @@ void main() {
   });
 
   group('Predefined matrices', () {
-    test('xyzToRgb is defined', () {
-      expect(xyzToRgb, isA<MatrixTransformation>());
-    });
-
-    test('rgbToXyz is defined', () {
-      expect(rgbToXyz, isA<MatrixTransformation>());
-    });
-
-    test('xyzToLms is defined', () {
-      expect(xyzToLms, isA<MatrixTransformation>());
-    });
-
     test('lmsToOklab is defined', () {
       expect(lmsToOklab, isA<MatrixTransformation>());
     });
@@ -152,25 +140,12 @@ void main() {
       expect(oklabToLms, isA<MatrixTransformation>());
     });
 
-    test('lmsToXyz is defined', () {
-      expect(lmsToXyz, isA<MatrixTransformation>());
-    });
-
     test('lrgbToLms is defined', () {
       expect(lrgbToLms, isA<MatrixTransformation>());
     });
 
     test('lmsTolrgb is defined', () {
       expect(lmsTolrgb, isA<MatrixTransformation>());
-    });
-
-    test('rgbToXyz and xyzToRgb are approximate inverses', () {
-      const v = Vector(0.5, 0.3, 0.2);
-      final rgb = xyzToRgb.transform(v);
-      final back = rgbToXyz.transform(rgb);
-      expect(back.x, closeTo(v.x, 0.0001));
-      expect(back.y, closeTo(v.y, 0.0001));
-      expect(back.z, closeTo(v.z, 0.0001));
     });
   });
 }

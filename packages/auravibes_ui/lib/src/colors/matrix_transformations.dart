@@ -68,27 +68,6 @@ class MatrixTransformation {
       MatrixTransformation.multiply(this, other);
 }
 
-/// Matrix transformation from XYZ to RGB color space.
-const MatrixTransformation xyzToRgb = MatrixTransformation(
-  Vector(3.2404542, -1.5371385, -0.4985314),
-  Vector(-0.9692660, 1.8760108, 0.0415560),
-  Vector(0.0556434, -0.2040259, 1.0572252),
-);
-
-/// Matrix transformation from RGB to XYZ color space.
-const MatrixTransformation rgbToXyz = MatrixTransformation(
-  Vector(0.4124564, 0.3575761, 0.1804375),
-  Vector(0.2126729, 0.7151522, 0.0721750),
-  Vector(0.0193339, 0.1191920, 0.9503041),
-);
-
-/// Matrix transformation from XYZ to LMS color space.
-const xyzToLms = MatrixTransformation(
-  Vector(0.4002, 0.7075, -0.0808),
-  Vector(-0.2263, 1.1653, 0.0457),
-  Vector(0, 0, 0.9182),
-);
-
 /// Matrix transformation from LMS to Oklab color space.
 const lmsToOklab = MatrixTransformation(
   Vector(0.2104542553, 0.793617785, -0.0040720468),
@@ -113,13 +92,6 @@ const oklabToLms = MatrixTransformation(
     -0.089484182094965759684,
     -1.2914855378640917399,
   ),
-);
-
-/// Matrix transformation from LMS to XYZ color space.
-const lmsToXyz = MatrixTransformation(
-  Vector(1.860066952, -1.129480001, 0.219899976),
-  Vector(0.361301753, 0.6388125, -0.000091348),
-  Vector(0, 0, 1.0890636),
 );
 
 /// Matrix transformation from linear RGB to LMS color space.

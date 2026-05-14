@@ -58,30 +58,6 @@ void main() {
     });
   });
 
-  group('ModelConnectionValidationException', () {
-    test('is a ModelConnectionException', () {
-      const ex = ModelConnectionValidationException('bad input');
-      expect(ex, isA<ModelConnectionException>());
-    });
-
-    test('message is accessible', () {
-      const ex = ModelConnectionValidationException('bad input');
-      expect(ex.message, 'bad input');
-    });
-  });
-
-  group('ModelConnectionNotFoundException', () {
-    test('stores modelConnectionId', () {
-      const ex = ModelConnectionNotFoundException('mc-123');
-      expect(ex.modelConnectionId, 'mc-123');
-    });
-
-    test('message contains id', () {
-      const ex = ModelConnectionNotFoundException('mc-456');
-      expect(ex.message, contains('mc-456'));
-    });
-  });
-
   group('ModelConnectionNoModelsException', () {
     test('stores modelId', () {
       const ex = ModelConnectionNoModelsException('gpt-4');

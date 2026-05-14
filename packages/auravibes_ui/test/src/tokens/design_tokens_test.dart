@@ -148,52 +148,11 @@ void main() {
     });
   });
 
-  group('DesignZIndex', () {
-    test('has expected z-index values', () {
-      expect(DesignZIndex.dropdown, 1000);
-      expect(DesignZIndex.sticky, 1020);
-      expect(DesignZIndex.fixed, 1030);
-      expect(DesignZIndex.modal, 1040);
-      expect(DesignZIndex.popover, 1050);
-      expect(DesignZIndex.toast, 1060);
-    });
-  });
-
-  group('DesignButtonSizes', () {
-    test('has expected button size values', () {
-      expect(DesignButtonSizes.heightSm, 32);
-      expect(DesignButtonSizes.heightMd, 40);
-      expect(DesignButtonSizes.heightLg, 48);
-    });
-
-    test('has expected button padding', () {
-      expect(
-        DesignButtonSizes.paddingSm,
-        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      );
-      expect(
-        DesignButtonSizes.paddingMd,
-        const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-      );
-      expect(
-        DesignButtonSizes.paddingLg,
-        const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-      );
-    });
-  });
-
   group('DesignInputSizes', () {
     test('has expected input size values', () {
       expect(DesignInputSizes.heightSm, 32);
       expect(DesignInputSizes.heightMd, 40);
       expect(DesignInputSizes.heightLg, 48);
-    });
-  });
-
-  group('DesignNavigationSizes', () {
-    test('has expected navigation size values', () {
-      expect(DesignNavigationSizes.desktopHeight, 64);
-      expect(DesignNavigationSizes.mobileHeight, 56);
     });
   });
 

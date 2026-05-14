@@ -237,8 +237,8 @@ void main() {
       });
     });
 
-    group('generateCodeChallenge variability', () {
-      test('generated verifier-like values are URL-safe and PKCE-sized', () {
+    group('generateCodeChallenge properties', () {
+      test('generated code challenges are URL-safe and PKCE-sized', () {
         final values = List.generate(
           10,
           (i) => OAuthAuthenticate.generateCodeChallenge('seed_$i'),
@@ -247,7 +247,7 @@ void main() {
         final allowed = RegExp(r'^[A-Za-z0-9\-_]+$');
         for (final value in values) {
           expect(value, isNotEmpty);
-          expect(value.length, inInclusiveRange(43, 128));
+          expect(value.length, 43);
           expect(value, matches(allowed));
           expect(value, isNot(contains('=')));
           expect(value, isNot(contains('+')));

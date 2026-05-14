@@ -175,24 +175,6 @@ abstract class AuraPopupMenuEntry {
   Widget build(BuildContext context);
 }
 
-/// A menu entry that builds a custom widget.
-///
-/// This allows for arbitrary widgets to be included in the menu.
-class AuraPopupMenuBuilder extends AuraPopupMenuEntry {
-  /// Creates a custom menu entry.
-  ///
-  /// [_build] is the function that builds the widget for this entry.
-  const AuraPopupMenuBuilder(this._build);
-
-  /// The builder function for this menu entry.
-  final Widget Function(BuildContext context) _build;
-
-  @override
-  Widget build(BuildContext context) {
-    return _build(context);
-  }
-}
-
 /// A divider for separating menu items.
 ///
 /// Displays a horizontal line between menu items.

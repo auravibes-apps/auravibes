@@ -380,70 +380,6 @@ class DesignBreakpoints {
   static const double xl2 = 1536;
 }
 
-/// Z-index tokens for consistent element layering and stacking.
-///
-/// Provides a hierarchy for positioning elements above or below others.
-class DesignZIndex {
-  DesignZIndex._();
-
-  /// Z-index for dropdown menus and overlays.
-  static const int dropdown = 1000;
-
-  /// Z-index for sticky positioned elements.
-  static const int sticky = 1020;
-
-  /// Z-index for fixed positioned elements.
-  static const int fixed = 1030;
-
-  /// Z-index for modal dialogs and overlays.
-  static const int modal = 1040;
-
-  /// Z-index for popover tooltips and callouts.
-  static const int popover = 1050;
-
-  /// Z-index for toast notifications and alerts.
-  static const int toast = 1060;
-}
-
-/// Component size tokens
-class DesignComponentSizes {
-  DesignComponentSizes._();
-}
-
-/// Button size tokens for consistent button dimensions and spacing.
-///
-/// Defines heights and padding for small, medium, and large button variants.
-class DesignButtonSizes {
-  DesignButtonSizes._();
-
-  /// Small button height (32px, 2rem) for compact button layouts.
-  static const double heightSm = 32;
-
-  /// Medium button height (40px, 2.5rem) for standard button layouts.
-  static const double heightMd = 40;
-
-  /// Large button height (48px, 3rem) for prominent button layouts.
-  static const double heightLg = 48;
-
-  /// Small button padding for compact buttons.
-  static const EdgeInsets paddingSm = EdgeInsets.symmetric(
-    horizontal: 16,
-    vertical: 8,
-  );
-
-  /// Medium button padding for standard buttons.
-  static const EdgeInsets paddingMd = EdgeInsets.symmetric(
-    horizontal: 24,
-    vertical: 12,
-  );
-
-  /// Large button padding for prominent buttons.
-  static const EdgeInsets paddingLg = EdgeInsets.symmetric(
-    horizontal: 32,
-    vertical: 16,
-  );
-}
-
 /// Input size tokens for consistent form input dimensions and spacing.
 ///
 /// Defines heights and padding for small, medium, and large input variants.
@@ -475,29 +411,6 @@ class DesignInputSizes {
   static const EdgeInsets paddingLg = EdgeInsets.symmetric(
     horizontal: 16,
     vertical: 12,
-  );
-}
-
-/// Navigation size tokens for consistent navigation bar dimensions.
-///
-/// Defines heights and padding for desktop and mobile navigation layouts.
-class DesignNavigationSizes {
-  DesignNavigationSizes._();
-
-  /// Desktop navigation height (64px, 4rem) for desktop layouts.
-  static const double desktopHeight = 64;
-
-  /// Mobile navigation height (56px, 3.5rem) for mobile layouts.
-  static const double mobileHeight = 56;
-
-  /// Desktop navigation padding for spacious desktop layouts.
-  static const EdgeInsets desktopPadding = EdgeInsets.symmetric(
-    horizontal: 24,
-  );
-
-  /// Mobile navigation padding for compact mobile layouts.
-  static const EdgeInsets mobilePadding = EdgeInsets.symmetric(
-    horizontal: 16,
   );
 }
 
