@@ -270,7 +270,13 @@ void main() {
           ),
         ).thenAnswer((_) async => AgentIterationDecision.continueIteration);
 
-        final result = await usecase.call(conversationId: 'conversation-1');
+        final result = await usecase.call(
+          conversationId: 'conversation-1',
+          context: const AgentIterationContext(
+            origin: AgentIterationOrigin.userMessage,
+            ackMessageIds: ['user-1'],
+          ),
+        );
 
         expect(result, AgentIterationDecision.done);
         verify(
@@ -320,7 +326,13 @@ void main() {
           return AgentIterationDecision.continueIteration;
         });
 
-        final result = await usecase.call(conversationId: 'conversation-1');
+        final result = await usecase.call(
+          conversationId: 'conversation-1',
+          context: const AgentIterationContext(
+            origin: AgentIterationOrigin.userMessage,
+            ackMessageIds: ['user-1'],
+          ),
+        );
 
         expect(result, AgentIterationDecision.done);
         expect(callCount, 1);
@@ -361,7 +373,7 @@ void main() {
             updatedAt: DateTime(2025),
           );
         });
-        when(messageRepository.patchMessage('queued-user-1', any)).thenAnswer(
+        when(messageRepository.patchMessage(any, any)).thenAnswer(
           (_) async => MessageEntity(
             id: 'queued-user-1',
             conversationId: 'conversation-1',
@@ -374,7 +386,13 @@ void main() {
           ),
         );
 
-        final result = await usecase.call(conversationId: 'conversation-1');
+        final result = await usecase.call(
+          conversationId: 'conversation-1',
+          context: const AgentIterationContext(
+            origin: AgentIterationOrigin.userMessage,
+            ackMessageIds: ['user-1'],
+          ),
+        );
 
         expect(result, AgentIterationDecision.done);
         verifyNever(
@@ -398,6 +416,10 @@ void main() {
         when(
           continueAgentUsecase.call(
             conversationId: 'conversation-1',
+            context: const AgentIterationContext(
+              origin: AgentIterationOrigin.userMessage,
+              ackMessageIds: ['user-1'],
+            ),
           ),
         ).thenAnswer(
           (_) async => const ContinueAgentResult(
@@ -412,7 +434,13 @@ void main() {
           ),
         ).thenAnswer((_) async => AgentIterationDecision.waitForToolApproval);
 
-        final result = await usecase.call(conversationId: 'conversation-1');
+        final result = await usecase.call(
+          conversationId: 'conversation-1',
+          context: const AgentIterationContext(
+            origin: AgentIterationOrigin.userMessage,
+            ackMessageIds: ['user-1'],
+          ),
+        );
 
         expect(result, AgentIterationDecision.waitForToolApproval);
       },
@@ -519,7 +547,13 @@ void main() {
           return AgentIterationDecision.continueIteration;
         });
 
-        final result = await usecase.call(conversationId: 'conversation-1');
+        final result = await usecase.call(
+          conversationId: 'conversation-1',
+          context: const AgentIterationContext(
+            origin: AgentIterationOrigin.userMessage,
+            ackMessageIds: ['user-1'],
+          ),
+        );
 
         expect(result, AgentIterationDecision.done);
         verify(messageRepository.createMessage(any)).called(1);
@@ -625,7 +659,13 @@ void main() {
             ),
           );
 
-          await usecase.call(conversationId: 'conversation-1');
+          await usecase.call(
+            conversationId: 'conversation-1',
+            context: const AgentIterationContext(
+              origin: AgentIterationOrigin.userMessage,
+              ackMessageIds: ['user-1'],
+            ),
+          );
 
           verifyInOrder([
             maybeAutoCompactConversationUsecase.call(
@@ -670,7 +710,13 @@ void main() {
             (_) async => AgentIterationDecision.continueIteration,
           );
 
-          await usecase.call(conversationId: 'conversation-1');
+          await usecase.call(
+            conversationId: 'conversation-1',
+            context: const AgentIterationContext(
+              origin: AgentIterationOrigin.userMessage,
+              ackMessageIds: ['user-1'],
+            ),
+          );
 
           verify(
             maybeAutoCompactConversationUsecase.call(
@@ -690,7 +736,13 @@ void main() {
           ).thenThrow(Exception('compaction error'));
 
           await expectLater(
-            usecase.call(conversationId: 'conversation-1'),
+            usecase.call(
+              conversationId: 'conversation-1',
+              context: const AgentIterationContext(
+                origin: AgentIterationOrigin.userMessage,
+                ackMessageIds: ['user-1'],
+              ),
+            ),
             throwsA(isA<Exception>()),
           );
           verifyNever(
@@ -724,7 +776,13 @@ void main() {
             ),
           );
 
-          await usecase.call(conversationId: 'conversation-1');
+          await usecase.call(
+            conversationId: 'conversation-1',
+            context: const AgentIterationContext(
+              origin: AgentIterationOrigin.userMessage,
+              ackMessageIds: ['user-1'],
+            ),
+          );
 
           verifyInOrder([
             messageRepository.createMessage(any),
@@ -761,7 +819,7 @@ void main() {
               updatedAt: DateTime(2025),
             );
           });
-          when(messageRepository.patchMessage('queued-user-1', any)).thenAnswer(
+          when(messageRepository.patchMessage(any, any)).thenAnswer(
             (_) async => MessageEntity(
               id: 'queued-user-1',
               conversationId: 'conversation-1',
@@ -774,7 +832,13 @@ void main() {
             ),
           );
 
-          await usecase.call(conversationId: 'conversation-1');
+          await usecase.call(
+            conversationId: 'conversation-1',
+            context: const AgentIterationContext(
+              origin: AgentIterationOrigin.userMessage,
+              ackMessageIds: ['user-1'],
+            ),
+          );
 
           verifyNever(
             maybeAutoCompactConversationUsecase.call(

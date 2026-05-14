@@ -30,13 +30,12 @@ class SidebarConversationsWidget extends ConsumerWidget {
     this.limit = 10,
   });
 
-  final String? workspaceId;
+  final String workspaceId;
   final int limit;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final workspaceId = this.workspaceId;
-    if (workspaceId == null || workspaceId.isEmpty) {
+    if (workspaceId.isEmpty) {
       return const SizedBox.shrink();
     }
 
@@ -279,11 +278,12 @@ class _CompactingRow extends ConsumerWidget {
         horizontal: context.auraTheme.spacing.sm,
         vertical: context.auraTheme.spacing.xs,
       ),
-      child: const AuraTile(
+      child: AuraTile(
         variant: AuraTileVariant.ghost,
         size: AuraTileSize.small,
-        onTap: null,
-        leading: Padding(
+        enabled: false,
+        onTap: () {},
+        leading: const Padding(
           padding: EdgeInsets.all(4),
           child: SizedBox(
             width: 16,
@@ -291,7 +291,7 @@ class _CompactingRow extends ConsumerWidget {
             child: AuraSpinner(),
           ),
         ),
-        child: AuraText(
+        child: const AuraText(
           style: AuraTextStyle.bodySmall,
           color: AuraColorVariant.onSurfaceVariant,
           child: TextLocale(

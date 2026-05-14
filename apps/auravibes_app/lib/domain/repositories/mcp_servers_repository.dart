@@ -78,6 +78,7 @@ abstract class McpServersRepository {
 
 /// Base exception for MCP servers-related operations.
 class McpServersException implements Exception {
+  // ignore: unnecessary-nullable
   /// Creates a new McpServersException
   const McpServersException(this.message, [this.cause]);
 

@@ -70,6 +70,7 @@ abstract class WorkspaceToCreate with _$WorkspaceToCreate {
 
 @freezed
 abstract class WorkspacePatch with _$WorkspacePatch {
+  // ignore: unnecessary-nullable
   const factory WorkspacePatch({
     String? name,
     WorkspaceType? type,

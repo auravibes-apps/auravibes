@@ -26,7 +26,7 @@ class DeleteWorkspaceUseCase {
   Future<void> call({
     required String id,
     required int workspaceCount,
-    required String? activeWorkspaceId,
+    required String activeWorkspaceId,
   }) async {
     if (workspaceCount <= 1) {
       throw const WorkspaceDeleteLastException();

@@ -125,6 +125,7 @@ abstract class MessageRepository {
 
 /// Base exception for message-related operations.
 class MessageException implements Exception {
+  // ignore: unnecessary-nullable
   /// Creates a new MessageException
   const MessageException(this.message, [this.cause]);
 

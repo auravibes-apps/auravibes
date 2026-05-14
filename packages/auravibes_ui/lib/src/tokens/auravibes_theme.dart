@@ -714,6 +714,7 @@ extension AuraThemeExtension on BuildContext {
   AuraColorScheme get auraColors => auraTheme.colors;
 }
 
+// ignore: unnecessary-nullable
 /// Helper function to provide null-safe lerp for doubles.
 double? lerpDouble(double? a, double? b, double t) {
   if (a == null && b == null) return null;

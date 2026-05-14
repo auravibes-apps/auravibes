@@ -8,7 +8,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 void main() {
   Widget buildSubject({
     required void Function(String) onSendMessage,
-    VoidCallback? onToolsPress,
+    VoidCallback onToolsPress = _noop,
     bool disabled = false,
     bool isBusy = false,
     VoidCallback? onStop,
@@ -74,10 +74,10 @@ void main() {
     expect(find.byIcon(Icons.build_circle_outlined), findsOneWidget);
   });
 
-  testWidgets('hides tools button when onToolsPress is null', (tester) async {
+  testWidgets('shows tools button by default', (tester) async {
     await pumpAndInit(tester, buildSubject(onSendMessage: (_) {}));
 
-    expect(find.byIcon(Icons.build_circle_outlined), findsNothing);
+    expect(find.byIcon(Icons.build_circle_outlined), findsOneWidget);
   });
 
   testWidgets('shows stop button when isBusy and onStop provided', (
@@ -119,3 +119,5 @@ void main() {
     expect(find.byIcon(Icons.stop_rounded), findsNothing);
   });
 }
+
+void _noop() {}

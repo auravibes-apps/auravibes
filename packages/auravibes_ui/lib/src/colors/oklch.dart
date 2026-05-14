@@ -352,6 +352,7 @@ class OKLCHColor {
       'OKLCH(${lightness.toStringAsFixed(2)}, '
       '${chroma.toStringAsFixed(2)}, ${hue.toStringAsFixed(2)})';
 
+  // ignore: unnecessary-nullable
   /// Creates a copy of this OKLCH color with optionally replaced values.
   OKLCHColor copyWith({
     double? lightness,

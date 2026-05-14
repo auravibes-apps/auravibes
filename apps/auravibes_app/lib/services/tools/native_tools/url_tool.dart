@@ -185,11 +185,11 @@ final class UrlTool extends NativeToolEntity<String, String> {
 
   ({String body, bool truncated}) _truncateBody(
     String body, {
-    int? maxBytes,
-    int? maxLines,
+    required int maxBytes,
+    required int maxLines,
   }) {
-    final effectiveMaxBytes = maxBytes ?? _maxToolOutputBytes;
-    final effectiveMaxLines = maxLines ?? _maxToolOutputLines;
+    final effectiveMaxBytes = maxBytes;
+    final effectiveMaxLines = maxLines;
     final originalByteCount = utf8.encode(body).length;
     final allLines = _takeLines(body, effectiveMaxLines);
 

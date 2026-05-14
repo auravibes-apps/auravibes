@@ -6,9 +6,9 @@ import 'package:flutter/widgets.dart';
 class _DelayTween extends Tween<double> {
   _DelayTween({
     required this.delay,
-    super.begin,
-    super.end,
-  });
+    required double begin,
+    required double end,
+  }) : super(begin: begin, end: end);
 
   final double delay;
 
@@ -25,22 +25,18 @@ class _DelayTween extends Tween<double> {
 class AuraLoadingCircle extends StatefulWidget {
   /// constructor
   const AuraLoadingCircle({
+    required this.color,
     super.key,
-    this.color,
     this.size = 50.0,
     this.itemSize,
     this.itemCount,
     this.itemBuilder,
     this.duration = const Duration(milliseconds: 1200),
     this.controller,
-  }) : assert(
-         !(itemBuilder is IndexedWidgetBuilder && color is Color) &&
-             !(itemBuilder == null && color == null),
-         'You should specify either a itemBuilder or a color',
-       );
+  });
 
   /// color
-  final Color? color;
+  final Color color;
 
   /// size
   final double size;

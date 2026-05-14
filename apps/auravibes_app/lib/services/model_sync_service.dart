@@ -224,6 +224,7 @@ class ModelSyncResult {
     return 'Synchronized $changeStr$durationStr';
   }
 
+  // ignore: unnecessary-nullable
   /// Creates a copy with updated timing values.
   ModelSyncResult withTiming({
     Duration? duration,

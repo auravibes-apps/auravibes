@@ -32,7 +32,7 @@ abstract class ModelConnectionToCreate with _$ModelConnectionToCreate {
 @freezed
 abstract class ModelConnectionFilter with _$ModelConnectionFilter {
   const factory ModelConnectionFilter({
-    List<String>? workspaces,
+    @Default([]) List<String> workspaces,
     List<CredentialsModelType>? types,
   }) = _ModelConnectionFilter;
 }

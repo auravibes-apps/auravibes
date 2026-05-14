@@ -23,7 +23,7 @@ class AuraTile extends StatelessWidget {
   });
 
   /// The callback that is called when the tile is tapped.
-  final VoidCallback? onTap;
+  final VoidCallback onTap;
 
   /// The widget to display inside the tile.
   final Widget child;

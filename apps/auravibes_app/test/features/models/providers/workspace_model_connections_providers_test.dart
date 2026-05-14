@@ -13,9 +13,9 @@ class _FakeModelConnectionRepository implements ModelConnectionRepository {
   Future<List<ModelConnectionEntity>> getModelConnections(
     ModelConnectionFilter filter,
   ) async {
-    if (filter.workspaces != null) {
+    if (filter.workspaces.isNotEmpty) {
       return connections
-          .where((c) => filter.workspaces!.contains(c.workspaceId))
+          .where((c) => filter.workspaces.contains(c.workspaceId))
           .toList();
     }
     return connections;

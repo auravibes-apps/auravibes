@@ -21,7 +21,7 @@ class ChatInputWidget extends HookConsumerWidget {
   final bool disabled;
   final bool isBusy;
   final void Function(String message) onSendMessage;
-  final VoidCallback? onToolsPress;
+  final VoidCallback onToolsPress;
   final VoidCallback? onStop;
   final VoidCallback? onCompact;
   final bool isCompacting;
@@ -52,17 +52,16 @@ class ChatInputWidget extends HookConsumerWidget {
         controller: controller,
         footer: Row(
           children: [
-            if (onToolsPress != null)
-              // Tools button - always show, modal will handle availability
-              Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: AuraButton(
-                  onPressed: onToolsPress!,
-                  variant: AuraButtonVariant.secondary,
-                  size: AuraButtonSize.small,
-                  child: const AuraIcon(Icons.build_circle_outlined),
-                ),
+            // Tools button - always show, modal will handle availability
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: AuraButton(
+                onPressed: onToolsPress,
+                variant: AuraButtonVariant.secondary,
+                size: AuraButtonSize.small,
+                child: const AuraIcon(Icons.build_circle_outlined),
               ),
+            ),
 
             const Spacer(),
 

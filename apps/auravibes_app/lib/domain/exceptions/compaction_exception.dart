@@ -15,6 +15,7 @@ abstract class CompactionException implements Exception {
 }
 
 class CompactionFailedException extends CompactionException {
+  // ignore: unnecessary-nullable
   const CompactionFailedException({Exception? cause})
     : super(
         LocaleKeys.compaction_errors_compaction_failed,
