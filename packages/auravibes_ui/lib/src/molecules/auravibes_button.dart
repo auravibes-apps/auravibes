@@ -71,7 +71,7 @@ class AuraButton extends StatelessWidget {
                     width: 20,
                     height: 20,
                     child: AuraLoadingCircle(
-                      color: _getLoadingColor(auraColors),
+                      colorVariant: _getLoadingColorVariant(),
                     ),
                   )
                 : DefaultTextStyle(
@@ -121,18 +121,16 @@ class AuraButton extends StatelessWidget {
     };
   }
 
-  Color _getLoadingColor(AuraColorScheme colors) {
-    if (disabled) return colors.onSurfaceVariant;
+  AuraColorVariant _getLoadingColorVariant() {
+    if (disabled) return AuraColorVariant.onSurfaceVariant;
 
     return switch (variant) {
-      AuraButtonVariant.primary => colors.onPrimary,
-      AuraButtonVariant.secondary => colors.onSecondary,
-      AuraButtonVariant.outlined =>
-        colors.getColorOrNull(colorVariant) ?? colors.primary,
-      AuraButtonVariant.ghost =>
-        colors.getColorOrNull(colorVariant) ?? colors.primary,
-      AuraButtonVariant.elevated => colors.onPrimary,
-      AuraButtonVariant.text => colors.onSurfaceVariant,
+      AuraButtonVariant.primary => AuraColorVariant.onPrimary,
+      AuraButtonVariant.secondary => AuraColorVariant.onPrimary,
+      AuraButtonVariant.outlined => colorVariant ?? AuraColorVariant.primary,
+      AuraButtonVariant.ghost => colorVariant ?? AuraColorVariant.primary,
+      AuraButtonVariant.elevated => AuraColorVariant.onPrimary,
+      AuraButtonVariant.text => AuraColorVariant.onSurfaceVariant,
     };
   }
 

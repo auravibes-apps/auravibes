@@ -70,6 +70,7 @@ abstract class WorkspaceToCreate with _$WorkspaceToCreate {
 
 @freezed
 abstract class WorkspacePatch with _$WorkspacePatch {
+  // Null fields mean the patch leaves those values unchanged.
   // ignore: unnecessary-nullable
   const factory WorkspacePatch({
     String? name,

@@ -401,12 +401,19 @@ void main() {
             context: anyNamed('context'),
           ),
         );
-        final patch =
-            verify(
-                  messageRepository.patchMessage('queued-user-1', captureAny),
-                ).captured.single
-                as MessagePatch;
-        expect(patch.status, MessageStatus.sent);
+        final capturedPatches = verify(
+          messageRepository.patchMessage(captureAny, captureAny),
+        ).captured;
+        expect(capturedPatches.whereType<String>(), [
+          'user-1',
+          'queued-user-1',
+        ]);
+        expect(
+          capturedPatches.whereType<MessagePatch>().map(
+            (patch) => patch.status,
+          ),
+          everyElement(MessageStatus.sent),
+        );
       },
     );
 
@@ -850,6 +857,19 @@ void main() {
               conversationId: 'conversation-1',
               context: anyNamed('context'),
             ),
+          );
+          final capturedPatches = verify(
+            messageRepository.patchMessage(captureAny, captureAny),
+          ).captured;
+          expect(capturedPatches.whereType<String>(), [
+            'user-1',
+            'queued-user-1',
+          ]);
+          expect(
+            capturedPatches.whereType<MessagePatch>().map(
+              (patch) => patch.status,
+            ),
+            everyElement(MessageStatus.sent),
           );
         },
       );

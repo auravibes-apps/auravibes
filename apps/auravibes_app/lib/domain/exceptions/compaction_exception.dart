@@ -15,6 +15,7 @@ abstract class CompactionException implements Exception {
 }
 
 class CompactionFailedException extends CompactionException {
+  // Cause is absent for user-triggered failures.
   // ignore: unnecessary-nullable
   const CompactionFailedException({Exception? cause})
     : super(

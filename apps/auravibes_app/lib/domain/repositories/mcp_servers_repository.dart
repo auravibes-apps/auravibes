@@ -78,9 +78,13 @@ abstract class McpServersRepository {
 
 /// Base exception for MCP servers-related operations.
 class McpServersException implements Exception {
+  // Cause is optional because not all domain failures wrap an exception.
   // ignore: unnecessary-nullable
   /// Creates a new McpServersException
-  const McpServersException(this.message, [this.cause]);
+  const McpServersException(
+    this.message, [
+    this.cause,
+  ]);
 
   /// Error message describing the exception
   final String message;

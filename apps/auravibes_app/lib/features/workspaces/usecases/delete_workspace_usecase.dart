@@ -16,6 +16,8 @@ class DeleteWorkspaceUseCase {
 
   final WorkspaceRepository _repository;
 
+  // Null active workspace ID means there is no active workspace to protect.
+  // ignore: unnecessary-nullable
   /// Deletes the workspace with [id].
   ///
   /// [workspaceCount] is the current total number of workspaces.
@@ -26,7 +28,7 @@ class DeleteWorkspaceUseCase {
   Future<void> call({
     required String id,
     required int workspaceCount,
-    required String activeWorkspaceId,
+    required String? activeWorkspaceId,
   }) async {
     if (workspaceCount <= 1) {
       throw const WorkspaceDeleteLastException();

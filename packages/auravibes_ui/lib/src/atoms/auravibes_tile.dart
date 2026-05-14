@@ -9,11 +9,13 @@ import 'package:flutter/material.dart';
 /// They support multiple variants, sizes, and states while maintaining
 /// consistency with the design tokens.
 class AuraTile extends StatelessWidget {
+  // Null onTap creates a non-interactive tile for status rows.
+  // ignore: unnecessary-nullable
   /// Creates a Aura tile.
   const AuraTile({
-    required this.onTap,
     required this.child,
     super.key,
+    this.onTap,
     this.variant = AuraTileVariant.primary,
     this.size = AuraTileSize.medium,
     this.isLoading = false,
@@ -23,7 +25,7 @@ class AuraTile extends StatelessWidget {
   });
 
   /// The callback that is called when the tile is tapped.
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   /// The widget to display inside the tile.
   final Widget child;
@@ -56,7 +58,7 @@ class AuraTile extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: (enabled && !isLoading) ? onTap : null,
+          onTap: enabled && !isLoading ? onTap : null,
           borderRadius: BorderRadius.circular(auraTheme.borderRadius.lg),
           child: AnimatedContainer(
             duration: auraTheme.animation.normal,

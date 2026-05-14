@@ -24,18 +24,21 @@ final _currentChatIdProvider = Provider<String?>(
 );
 
 class SidebarConversationsWidget extends ConsumerWidget {
+  // Null workspace ID means no workspace has been selected yet.
+  // ignore: unnecessary-nullable
   const SidebarConversationsWidget({
     required this.workspaceId,
     super.key,
     this.limit = 10,
   });
 
-  final String workspaceId;
+  final String? workspaceId;
   final int limit;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (workspaceId.isEmpty) {
+    final workspaceId = this.workspaceId;
+    if (workspaceId == null || workspaceId.isEmpty) {
       return const SizedBox.shrink();
     }
 
@@ -278,12 +281,11 @@ class _CompactingRow extends ConsumerWidget {
         horizontal: context.auraTheme.spacing.sm,
         vertical: context.auraTheme.spacing.xs,
       ),
-      child: AuraTile(
+      child: const AuraTile(
         variant: AuraTileVariant.ghost,
         size: AuraTileSize.small,
         enabled: false,
-        onTap: () {},
-        leading: const Padding(
+        leading: Padding(
           padding: EdgeInsets.all(4),
           child: SizedBox(
             width: 16,
@@ -291,7 +293,7 @@ class _CompactingRow extends ConsumerWidget {
             child: AuraSpinner(),
           ),
         ),
-        child: const AuraText(
+        child: AuraText(
           style: AuraTextStyle.bodySmall,
           color: AuraColorVariant.onSurfaceVariant,
           child: TextLocale(

@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:math' as math show pi, sin;
 
+import 'package:auravibes_ui/src/tokens/auravibes_theme.dart';
+import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/widgets.dart';
 
 class _DelayTween extends Tween<double> {
@@ -25,7 +27,7 @@ class _DelayTween extends Tween<double> {
 class AuraLoadingCircle extends StatefulWidget {
   /// constructor
   const AuraLoadingCircle({
-    required this.color,
+    required this.colorVariant,
     super.key,
     this.size = 50.0,
     this.itemSize,
@@ -35,8 +37,11 @@ class AuraLoadingCircle extends StatefulWidget {
     this.controller,
   });
 
-  /// color
-  final Color color;
+  /// Dot color used by the default item builder.
+  ///
+  /// Ignored when [itemBuilder] is provided, because custom builders own their
+  /// rendering.
+  final AuraColorVariant colorVariant;
 
   /// size
   final double size;
@@ -124,7 +129,7 @@ class _AuraLoadingCircleState extends State<AuraLoadingCircle>
       ? widget.itemBuilder!(context, index)
       : DecoratedBox(
           decoration: BoxDecoration(
-            color: widget.color,
+            color: context.auraColors.getColor(widget.colorVariant),
             shape: BoxShape.circle,
           ),
         );

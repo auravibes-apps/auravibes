@@ -10,7 +10,8 @@ String? safeJsonEncode(Object? object) {
 
 Map<String, dynamic>? safeJsonDecode(String source) {
   try {
-    return jsonDecode(source) as Map<String, dynamic>;
-  } on Exception catch (_) {}
+    final decoded = jsonDecode(source);
+    if (decoded is Map<String, dynamic>) return decoded;
+  } on Object catch (_) {}
   return null;
 }
