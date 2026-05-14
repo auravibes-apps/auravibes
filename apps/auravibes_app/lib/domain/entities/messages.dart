@@ -71,6 +71,7 @@ abstract class MessageMetadataEntity with _$MessageMetadataEntity {
     int? promptTokens,
     int? completionTokens,
     int? totalTokens,
+    String? thinking,
     @Default(1) int metadataVersion,
     @Default(false) bool isCompactionSummary,
     CompactionKind? compactionKind,

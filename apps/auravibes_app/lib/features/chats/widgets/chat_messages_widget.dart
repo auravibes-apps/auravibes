@@ -120,6 +120,8 @@ class _ChatMessageRow extends HookConsumerWidget {
         : allToolCalls;
     final hasVisibleToolCalls = visibleToolCalls.isNotEmpty;
     final hasContent = message.content.trim().isNotEmpty;
+    final thinking = message.metadata?.thinking?.trim();
+    final hasThinking = thinking != null && thinking.isNotEmpty;
     final showTextBubble = hasContent || !hasVisibleToolCalls;
 
     return AnimatedSize(
@@ -138,11 +140,17 @@ class _ChatMessageRow extends HookConsumerWidget {
                 status: _mapMessageStatus(message.status, isStreaming),
               )
             else
-              _AiMessageContent(
-                key: ValueKey(message.id),
-                content: message.content,
-                timestamp: message.createdAt,
-                status: _mapMessageStatus(message.status, isStreaming),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (hasThinking) _ReasoningSummary(content: thinking),
+                  _AiMessageContent(
+                    key: ValueKey(message.id),
+                    content: message.content,
+                    timestamp: message.createdAt,
+                    status: _mapMessageStatus(message.status, isStreaming),
+                  ),
+                ],
               ),
           if (hasVisibleToolCalls) ...[
             for (final toolCall in visibleToolCalls)
@@ -170,6 +178,59 @@ class _ChatMessageRow extends HookConsumerWidget {
       MessageStatus.sent => AuraMessageDeliveryStatus.sent,
       MessageStatus.error => AuraMessageDeliveryStatus.error,
     };
+  }
+}
+
+class _ReasoningSummary extends StatelessWidget {
+  const _ReasoningSummary({required this.content});
+
+  final String content;
+
+  @override
+  Widget build(BuildContext context) {
+    final auraColors = context.auraColors;
+
+    return AuraContainer(
+      backgroundColor: AuraColorVariant.surfaceVariant,
+      borderRadius: 10,
+      margin: .small,
+      padding: .medium,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.psychology_outlined,
+                size: DesignSpacing.lg,
+                color: auraColors.onSurfaceVariant,
+              ),
+              SizedBox(width: context.auraTheme.spacing.xs),
+              TextLocale(
+                LocaleKeys.chats_screens_chat_conversation_reasoning_summary,
+                style: TextStyle(
+                  color: auraColors.onSurfaceVariant,
+                  fontSize: DesignTypography.fontSizeSm,
+                  fontFamily: DesignTypography.bodyFontFamily,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: context.auraTheme.spacing.xs),
+          GptMarkdown(
+            content,
+            style: TextStyle(
+              color: auraColors.onSurfaceVariant,
+              fontSize: DesignTypography.fontSizeSm,
+              fontFamily: DesignTypography.bodyFontFamily,
+              height: DesignTypography.lineHeightBase,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

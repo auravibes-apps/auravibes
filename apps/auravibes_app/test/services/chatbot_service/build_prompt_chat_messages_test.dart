@@ -2,6 +2,7 @@ import 'package:auravibes_app/domain/entities/messages.dart';
 import 'package:auravibes_app/domain/enums/message_types.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/services/chatbot_service/build_prompt_chat_messages.dart';
+import 'package:dartantic_ai/dartantic_ai.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -169,6 +170,33 @@ void main() {
       expect(result, hasLength(1));
       expect(result.single.role.name, 'system');
       expect(result.single.text, '<compaction summary content>');
+    });
+
+    test('maps assistant thinking metadata to thinking part', () {
+      final messages = [
+        MessageEntity(
+          id: 'assistant-1',
+          conversationId: 'conversation-1',
+          content: 'Final answer',
+          messageType: MessageType.text,
+          isUser: false,
+          status: MessageStatus.sent,
+          createdAt: DateTime(2025),
+          updatedAt: DateTime(2025),
+          metadata: const MessageMetadataEntity(
+            thinking: 'Reasoning summary',
+          ),
+        ),
+      ];
+
+      final result = usecase.call(messages);
+
+      expect(result, hasLength(1));
+      expect(result.single.text, 'Final answer');
+      expect(
+        result.single.parts.whereType<ThinkingPart>().single.text,
+        'Reasoning summary',
+      );
     });
   });
 }

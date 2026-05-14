@@ -158,6 +158,7 @@ class ApiModelRepositoryImpl implements ApiModelRepository {
       modelProvider: modelTable.modelProvider,
 
       openWeights: modelTable.openWeights,
+      supportsReasoning: modelTable.supportsReasoning,
     );
   }
 
@@ -175,6 +176,7 @@ class ApiModelRepositoryImpl implements ApiModelRepository {
       modalitiesOuput: .new(entity.modalitiesOuput),
       modelProvider: .new(entity.modelProvider),
       openWeights: .new(entity.openWeights),
+      supportsReasoning: .new(entity.supportsReasoning),
     );
   }
 }

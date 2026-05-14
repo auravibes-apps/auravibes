@@ -151,6 +151,37 @@ void main() {
       expect(find.text('Hello user'), findsOneWidget);
     });
 
+    testWidgets('renders AI reasoning summary separately', (tester) async {
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          overrides: [
+            messageConversationByIdProvider.overrideWith(
+              (ref, id) => _createMessage(
+                content: 'Final answer',
+                isUser: false,
+                metadata: const MessageMetadataEntity(
+                  thinking: 'Reasoned before answering',
+                ),
+              ),
+            ),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      expect(find.text('Reasoning summary'), findsOneWidget);
+      expect(find.text('Reasoned before answering'), findsOneWidget);
+      expect(find.text('Final answer'), findsOneWidget);
+    });
+
     testWidgets('handles null message gracefully', (tester) async {
       await pumpAndInit(
         tester,

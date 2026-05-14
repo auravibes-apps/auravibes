@@ -854,6 +854,21 @@ class $ApiModelsTable extends ApiModels
       'CHECK ("open_weights" IN (0, 1))',
     ),
   );
+  static const VerificationMeta _supportsReasoningMeta = const VerificationMeta(
+    'supportsReasoning',
+  );
+  @override
+  late final GeneratedColumn<bool> supportsReasoning = GeneratedColumn<bool>(
+    'supports_reasoning',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("supports_reasoning" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _costInputMeta = const VerificationMeta(
     'costInput',
   );
@@ -917,6 +932,7 @@ class $ApiModelsTable extends ApiModels
     modalitiesInput,
     modalitiesOuput,
     openWeights,
+    supportsReasoning,
     costInput,
     costOutput,
     costCacheRead,
@@ -965,6 +981,15 @@ class $ApiModelsTable extends ApiModels
         openWeights.isAcceptableOrUnknown(
           data['open_weights']!,
           _openWeightsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('supports_reasoning')) {
+      context.handle(
+        _supportsReasoningMeta,
+        supportsReasoning.isAcceptableOrUnknown(
+          data['supports_reasoning']!,
+          _supportsReasoningMeta,
         ),
       );
     }
@@ -1048,6 +1073,10 @@ class $ApiModelsTable extends ApiModels
         DriftSqlType.bool,
         data['${effectivePrefix}open_weights'],
       ),
+      supportsReasoning: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}supports_reasoning'],
+      )!,
       costInput: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}cost_input'],
@@ -1102,6 +1131,7 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
   final List<String>? modalitiesInput;
   final List<String>? modalitiesOuput;
   final bool? openWeights;
+  final bool supportsReasoning;
   final double? costInput;
   final double? costOutput;
   final double? costCacheRead;
@@ -1114,6 +1144,7 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
     this.modalitiesInput,
     this.modalitiesOuput,
     this.openWeights,
+    required this.supportsReasoning,
     this.costInput,
     this.costOutput,
     this.costCacheRead,
@@ -1139,6 +1170,7 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
     if (!nullToAbsent || openWeights != null) {
       map['open_weights'] = Variable<bool>(openWeights);
     }
+    map['supports_reasoning'] = Variable<bool>(supportsReasoning);
     if (!nullToAbsent || costInput != null) {
       map['cost_input'] = Variable<double>(costInput);
     }
@@ -1167,6 +1199,7 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
       openWeights: openWeights == null && nullToAbsent
           ? const Value.absent()
           : Value(openWeights),
+      supportsReasoning: Value(supportsReasoning),
       costInput: costInput == null && nullToAbsent
           ? const Value.absent()
           : Value(costInput),
@@ -1197,6 +1230,7 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
         serializer.fromJson<Object?>(json['modalitiesOuput']),
       ),
       openWeights: serializer.fromJson<bool?>(json['openWeights']),
+      supportsReasoning: serializer.fromJson<bool>(json['supportsReasoning']),
       costInput: serializer.fromJson<double?>(json['costInput']),
       costOutput: serializer.fromJson<double?>(json['costOutput']),
       costCacheRead: serializer.fromJson<double?>(json['costCacheRead']),
@@ -1218,6 +1252,7 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
         $ApiModelsTable.$convertermodalitiesOuputn.toJson(modalitiesOuput),
       ),
       'openWeights': serializer.toJson<bool?>(openWeights),
+      'supportsReasoning': serializer.toJson<bool>(supportsReasoning),
       'costInput': serializer.toJson<double?>(costInput),
       'costOutput': serializer.toJson<double?>(costOutput),
       'costCacheRead': serializer.toJson<double?>(costCacheRead),
@@ -1233,6 +1268,7 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
     Value<List<String>?> modalitiesInput = const Value.absent(),
     Value<List<String>?> modalitiesOuput = const Value.absent(),
     Value<bool?> openWeights = const Value.absent(),
+    bool? supportsReasoning,
     Value<double?> costInput = const Value.absent(),
     Value<double?> costOutput = const Value.absent(),
     Value<double?> costCacheRead = const Value.absent(),
@@ -1249,6 +1285,7 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
         ? modalitiesOuput.value
         : this.modalitiesOuput,
     openWeights: openWeights.present ? openWeights.value : this.openWeights,
+    supportsReasoning: supportsReasoning ?? this.supportsReasoning,
     costInput: costInput.present ? costInput.value : this.costInput,
     costOutput: costOutput.present ? costOutput.value : this.costOutput,
     costCacheRead: costCacheRead.present
@@ -1273,6 +1310,9 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
       openWeights: data.openWeights.present
           ? data.openWeights.value
           : this.openWeights,
+      supportsReasoning: data.supportsReasoning.present
+          ? data.supportsReasoning.value
+          : this.supportsReasoning,
       costInput: data.costInput.present ? data.costInput.value : this.costInput,
       costOutput: data.costOutput.present
           ? data.costOutput.value
@@ -1298,6 +1338,7 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
           ..write('modalitiesInput: $modalitiesInput, ')
           ..write('modalitiesOuput: $modalitiesOuput, ')
           ..write('openWeights: $openWeights, ')
+          ..write('supportsReasoning: $supportsReasoning, ')
           ..write('costInput: $costInput, ')
           ..write('costOutput: $costOutput, ')
           ..write('costCacheRead: $costCacheRead, ')
@@ -1315,6 +1356,7 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
     modalitiesInput,
     modalitiesOuput,
     openWeights,
+    supportsReasoning,
     costInput,
     costOutput,
     costCacheRead,
@@ -1331,6 +1373,7 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
           other.modalitiesInput == this.modalitiesInput &&
           other.modalitiesOuput == this.modalitiesOuput &&
           other.openWeights == this.openWeights &&
+          other.supportsReasoning == this.supportsReasoning &&
           other.costInput == this.costInput &&
           other.costOutput == this.costOutput &&
           other.costCacheRead == this.costCacheRead &&
@@ -1345,6 +1388,7 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
   final Value<List<String>?> modalitiesInput;
   final Value<List<String>?> modalitiesOuput;
   final Value<bool?> openWeights;
+  final Value<bool> supportsReasoning;
   final Value<double?> costInput;
   final Value<double?> costOutput;
   final Value<double?> costCacheRead;
@@ -1358,6 +1402,7 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
     this.modalitiesInput = const Value.absent(),
     this.modalitiesOuput = const Value.absent(),
     this.openWeights = const Value.absent(),
+    this.supportsReasoning = const Value.absent(),
     this.costInput = const Value.absent(),
     this.costOutput = const Value.absent(),
     this.costCacheRead = const Value.absent(),
@@ -1372,6 +1417,7 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
     this.modalitiesInput = const Value.absent(),
     this.modalitiesOuput = const Value.absent(),
     this.openWeights = const Value.absent(),
+    this.supportsReasoning = const Value.absent(),
     this.costInput = const Value.absent(),
     this.costOutput = const Value.absent(),
     this.costCacheRead = const Value.absent(),
@@ -1390,6 +1436,7 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
     Expression<String>? modalitiesInput,
     Expression<String>? modalitiesOuput,
     Expression<bool>? openWeights,
+    Expression<bool>? supportsReasoning,
     Expression<double>? costInput,
     Expression<double>? costOutput,
     Expression<double>? costCacheRead,
@@ -1404,6 +1451,7 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
       if (modalitiesInput != null) 'modalities_input': modalitiesInput,
       if (modalitiesOuput != null) 'modalities_ouput': modalitiesOuput,
       if (openWeights != null) 'open_weights': openWeights,
+      if (supportsReasoning != null) 'supports_reasoning': supportsReasoning,
       if (costInput != null) 'cost_input': costInput,
       if (costOutput != null) 'cost_output': costOutput,
       if (costCacheRead != null) 'cost_cache_read': costCacheRead,
@@ -1420,6 +1468,7 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
     Value<List<String>?>? modalitiesInput,
     Value<List<String>?>? modalitiesOuput,
     Value<bool?>? openWeights,
+    Value<bool>? supportsReasoning,
     Value<double?>? costInput,
     Value<double?>? costOutput,
     Value<double?>? costCacheRead,
@@ -1434,6 +1483,7 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
       modalitiesInput: modalitiesInput ?? this.modalitiesInput,
       modalitiesOuput: modalitiesOuput ?? this.modalitiesOuput,
       openWeights: openWeights ?? this.openWeights,
+      supportsReasoning: supportsReasoning ?? this.supportsReasoning,
       costInput: costInput ?? this.costInput,
       costOutput: costOutput ?? this.costOutput,
       costCacheRead: costCacheRead ?? this.costCacheRead,
@@ -1468,6 +1518,9 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
     if (openWeights.present) {
       map['open_weights'] = Variable<bool>(openWeights.value);
     }
+    if (supportsReasoning.present) {
+      map['supports_reasoning'] = Variable<bool>(supportsReasoning.value);
+    }
     if (costInput.present) {
       map['cost_input'] = Variable<double>(costInput.value);
     }
@@ -1498,6 +1551,7 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
           ..write('modalitiesInput: $modalitiesInput, ')
           ..write('modalitiesOuput: $modalitiesOuput, ')
           ..write('openWeights: $openWeights, ')
+          ..write('supportsReasoning: $supportsReasoning, ')
           ..write('costInput: $costInput, ')
           ..write('costOutput: $costOutput, ')
           ..write('costCacheRead: $costCacheRead, ')
@@ -7998,6 +8052,7 @@ typedef $$ApiModelsTableCreateCompanionBuilder =
       Value<List<String>?> modalitiesInput,
       Value<List<String>?> modalitiesOuput,
       Value<bool?> openWeights,
+      Value<bool> supportsReasoning,
       Value<double?> costInput,
       Value<double?> costOutput,
       Value<double?> costCacheRead,
@@ -8013,6 +8068,7 @@ typedef $$ApiModelsTableUpdateCompanionBuilder =
       Value<List<String>?> modalitiesInput,
       Value<List<String>?> modalitiesOuput,
       Value<bool?> openWeights,
+      Value<bool> supportsReasoning,
       Value<double?> costInput,
       Value<double?> costOutput,
       Value<double?> costCacheRead,
@@ -8104,6 +8160,11 @@ class $$ApiModelsTableFilterComposer
 
   ColumnFilters<bool> get openWeights => $composableBuilder(
     column: $table.openWeights,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get supportsReasoning => $composableBuilder(
+    column: $table.supportsReasoning,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -8215,6 +8276,11 @@ class $$ApiModelsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get supportsReasoning => $composableBuilder(
+    column: $table.supportsReasoning,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get costInput => $composableBuilder(
     column: $table.costInput,
     builder: (column) => ColumnOrderings(column),
@@ -8293,6 +8359,11 @@ class $$ApiModelsTableAnnotationComposer
 
   GeneratedColumn<bool> get openWeights => $composableBuilder(
     column: $table.openWeights,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get supportsReasoning => $composableBuilder(
+    column: $table.supportsReasoning,
     builder: (column) => column,
   );
 
@@ -8406,6 +8477,7 @@ class $$ApiModelsTableTableManager
                 Value<List<String>?> modalitiesInput = const Value.absent(),
                 Value<List<String>?> modalitiesOuput = const Value.absent(),
                 Value<bool?> openWeights = const Value.absent(),
+                Value<bool> supportsReasoning = const Value.absent(),
                 Value<double?> costInput = const Value.absent(),
                 Value<double?> costOutput = const Value.absent(),
                 Value<double?> costCacheRead = const Value.absent(),
@@ -8419,6 +8491,7 @@ class $$ApiModelsTableTableManager
                 modalitiesInput: modalitiesInput,
                 modalitiesOuput: modalitiesOuput,
                 openWeights: openWeights,
+                supportsReasoning: supportsReasoning,
                 costInput: costInput,
                 costOutput: costOutput,
                 costCacheRead: costCacheRead,
@@ -8434,6 +8507,7 @@ class $$ApiModelsTableTableManager
                 Value<List<String>?> modalitiesInput = const Value.absent(),
                 Value<List<String>?> modalitiesOuput = const Value.absent(),
                 Value<bool?> openWeights = const Value.absent(),
+                Value<bool> supportsReasoning = const Value.absent(),
                 Value<double?> costInput = const Value.absent(),
                 Value<double?> costOutput = const Value.absent(),
                 Value<double?> costCacheRead = const Value.absent(),
@@ -8447,6 +8521,7 @@ class $$ApiModelsTableTableManager
                 modalitiesInput: modalitiesInput,
                 modalitiesOuput: modalitiesOuput,
                 openWeights: openWeights,
+                supportsReasoning: supportsReasoning,
                 costInput: costInput,
                 costOutput: costOutput,
                 costCacheRead: costCacheRead,

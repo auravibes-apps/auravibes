@@ -30,6 +30,9 @@ class ApiModels extends Table {
 
   BoolColumn get openWeights => boolean().nullable()();
 
+  BoolColumn get supportsReasoning =>
+      boolean().withDefault(const Constant(false))();
+
   // cost
   RealColumn get costInput => real().nullable()();
   RealColumn get costOutput => real().nullable()();

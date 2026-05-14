@@ -11,9 +11,16 @@ extension ChatResultConcat on ChatResult<ChatMessage> {
       usage: usage != null && delta.usage != null
           ? usage!.concat(delta.usage!)
           : delta.usage ?? usage,
+      thinking: _concatThinking(thinking, delta.thinking),
       messages: [...messages, ...delta.messages],
       metadata: {...metadata, ...delta.metadata},
     );
+  }
+
+  String? _concatThinking(String? current, String? delta) {
+    if (delta == null || delta.isEmpty) return current;
+    if (current == null || current.isEmpty) return delta;
+    return '$current$delta';
   }
 }
 
@@ -43,13 +50,27 @@ extension ChatResultEntities on ChatResult<ChatMessage> {
 
   String get entityText => output.text;
 
+  String? get entityThinking {
+    final chunks = <String>[
+      if (thinking case final value? when value.trim().isNotEmpty) value,
+      for (final part in output.parts.whereType<ThinkingPart>())
+        if (part.text.trim().isNotEmpty) part.text,
+      for (final message in messages)
+        for (final part in message.parts.whereType<ThinkingPart>())
+          if (part.text.trim().isNotEmpty) part.text,
+    ];
+
+    if (chunks.isEmpty) return null;
+    return chunks.join().trim();
+  }
+
   MessageMetadataEntity? get entityMetadata {
     final hasUsage =
         usage?.promptTokens != null ||
         usage?.responseTokens != null ||
         usage?.totalTokens != null;
 
-    if (entityTools.isEmpty && !hasUsage) {
+    if (entityTools.isEmpty && !hasUsage && entityThinking == null) {
       return null;
     }
 
@@ -58,6 +79,7 @@ extension ChatResultEntities on ChatResult<ChatMessage> {
       promptTokens: usage?.promptTokens,
       completionTokens: usage?.responseTokens,
       totalTokens: usage?.totalTokens,
+      thinking: entityThinking,
     );
   }
 }

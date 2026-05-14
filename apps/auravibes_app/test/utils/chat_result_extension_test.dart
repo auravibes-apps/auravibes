@@ -1,0 +1,53 @@
+import 'package:auravibes_app/utils/chat_result_extension.dart';
+import 'package:dartantic_ai/dartantic_ai.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+void main() {
+  group('ChatResultConcat', () {
+    test('appends streaming thinking deltas', () {
+      final first = ChatResult<ChatMessage>(
+        output: ChatMessage.model('Hello'),
+        thinking: 'First ',
+      );
+      final second = ChatResult<ChatMessage>(
+        output: ChatMessage.model('world'),
+        thinking: 'second',
+      );
+
+      final result = first.concat(second);
+
+      expect(result.output.text, 'Helloworld');
+      expect(result.thinking, 'First second');
+    });
+  });
+
+  group('ChatResultEntities', () {
+    test('persists thinking metadata from ChatResult thinking', () {
+      final result = ChatResult<ChatMessage>(
+        output: ChatMessage.model('Answer'),
+        thinking: 'Reasoned summary',
+      );
+
+      expect(result.entityThinking, 'Reasoned summary');
+      expect(result.entityMetadata?.thinking, 'Reasoned summary');
+    });
+
+    test('persists thinking metadata from ThinkingPart chunks', () {
+      final result = ChatResult<ChatMessage>(
+        output: ChatMessage.model(
+          '',
+          parts: const [ThinkingPart('OpenAI reasoning ')],
+        ),
+        messages: [
+          ChatMessage.model(
+            '',
+            parts: const [ThinkingPart('summary')],
+          ),
+        ],
+      );
+
+      expect(result.entityThinking, 'OpenAI reasoning summary');
+      expect(result.entityMetadata?.thinking, 'OpenAI reasoning summary');
+    });
+  });
+}
