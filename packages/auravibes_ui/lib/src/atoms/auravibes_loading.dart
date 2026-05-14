@@ -129,7 +129,9 @@ class _AuraLoadingCircleState extends State<AuraLoadingCircle>
       ? widget.itemBuilder!(context, index)
       : DecoratedBox(
           decoration: BoxDecoration(
-            color: context.auraColors.getColor(widget.colorVariant),
+            color:
+                context.auraColors.getColorOrNull(widget.colorVariant) ??
+                context.auraColors.primary,
             shape: BoxShape.circle,
           ),
         );

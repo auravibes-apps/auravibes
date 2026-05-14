@@ -31,8 +31,6 @@ class WorkspaceDropdownItem {
 ///
 /// Uses [AuraDropdownSelector] for consistent design-system styling.
 class WorkspaceDropdown extends StatelessWidget {
-  // Null active workspace ID means no active workspace is selected.
-  // ignore: unnecessary-nullable
   /// Creates a [WorkspaceDropdown].
   const WorkspaceDropdown({
     required this.workspaces,
@@ -47,7 +45,9 @@ class WorkspaceDropdown extends StatelessWidget {
   final List<WorkspaceDropdownItem> workspaces;
 
   /// ID of the currently active workspace.
-  final String? activeWorkspaceId;
+  ///
+  /// Empty string means no active workspace is selected.
+  final String activeWorkspaceId;
 
   /// Callback when a workspace is selected.
   final ValueChanged<WorkspaceDropdownItem> onSelected;
