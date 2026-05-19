@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entities.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -24,15 +26,30 @@ listWorkspaceModelSelections(
 @riverpod
 Stream<Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>>
 listModelsGroupedByProvider(Ref ref, {required String workspaceId}) {
-  final workspaceModelSelectionRepository = ref.watch(
-    workspaceModelSelectionRepositoryProvider,
+  final controller =
+      StreamController<
+        Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>
+      >();
+  final subscription = ref.listen(
+    listWorkspaceModelSelectionsProvider(workspaceId: workspaceId),
+    (_, next) {
+      switch (next) {
+        case AsyncData(:final value):
+          controller.add(_groupModelsByProvider(value));
+        case AsyncError(:final error, :final stackTrace):
+          controller.addError(error, stackTrace);
+        case AsyncLoading():
+      }
+    },
+    fireImmediately: true,
   );
 
-  return workspaceModelSelectionRepository
-      .watchWorkspaceModelSelections(
-        WorkspaceModelSelectionFilter(workspaces: [workspaceId]),
-      )
-      .map(_groupModelsByProvider);
+  ref.onDispose(() {
+    subscription.close();
+    unawaited(controller.close());
+  });
+
+  return controller.stream;
 }
 
 Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>
