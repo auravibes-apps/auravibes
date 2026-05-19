@@ -68,6 +68,9 @@ class AppDatabase extends _$AppDatabase {
   ///
   /// If [connection] is provided, uses that connection.
   /// Otherwise, creates a default SQLite database connection.
+  /// When [connection] is null, [dbPrefix] is used to prefix the underlying
+  /// database name for the default connection. If [connection] is provided,
+  /// [dbPrefix] has no effect.
   AppDatabase({QueryExecutor? connection, String? dbPrefix})
     : super(connection ?? _openConnection(dbPrefix: dbPrefix));
 
