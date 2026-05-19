@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:auravibes_app/domain/entities/api_model_provider.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entities.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entities.dart';
@@ -9,8 +11,14 @@ import 'package:riverpod/riverpod.dart';
 
 class _FakeWorkspaceModelSelectionRepository
     implements WorkspaceModelSelectionRepository {
-  _FakeWorkspaceModelSelectionRepository([this.selections = const []]);
+  _FakeWorkspaceModelSelectionRepository([
+    this.selections = const [],
+    this.selectionStream,
+  ]);
+
   final List<WorkspaceModelSelectionWithConnectionEntity> selections;
+  final Stream<List<WorkspaceModelSelectionWithConnectionEntity>>?
+  selectionStream;
 
   @override
   Future<List<WorkspaceModelSelectionWithConnectionEntity>>
@@ -21,7 +29,7 @@ class _FakeWorkspaceModelSelectionRepository
   @override
   Stream<List<WorkspaceModelSelectionWithConnectionEntity>>
   watchWorkspaceModelSelections(WorkspaceModelSelectionFilter filter) {
-    return Stream.value(selections);
+    return selectionStream ?? Stream.value(selections);
   }
 
   @override
@@ -88,6 +96,92 @@ void main() {
         result.first.workspaceModelSelection.id,
         'sel-1',
       );
+    });
+
+    test('emits updated selections after initial value', () async {
+      final now = DateTime(2026);
+      final initialSelection = WorkspaceModelSelectionWithConnectionEntity(
+        workspaceModelSelection: WorkspaceModelSelectionEntity(
+          id: 'sel-1',
+          modelId: 'gpt-4',
+          modelConnectionId: 'conn-1',
+          createdAt: now,
+          updatedAt: now,
+        ),
+        modelConnection: ModelConnectionEntity(
+          id: 'conn-1',
+          name: 'OpenAI',
+          key: 'key',
+          modelId: 'gpt-4',
+          workspaceId: 'ws-1',
+          createdAt: now,
+          updatedAt: now,
+        ),
+        modelsProvider: const ApiModelProviderEntity(
+          id: 'openai',
+          name: 'OpenAI',
+          type: null,
+        ),
+      );
+      final updatedSelection = WorkspaceModelSelectionWithConnectionEntity(
+        workspaceModelSelection: WorkspaceModelSelectionEntity(
+          id: 'sel-2',
+          modelId: 'claude-3',
+          modelConnectionId: 'conn-2',
+          createdAt: now,
+          updatedAt: now,
+        ),
+        modelConnection: ModelConnectionEntity(
+          id: 'conn-2',
+          name: 'Anthropic',
+          key: 'key',
+          modelId: 'claude-3',
+          workspaceId: 'ws-1',
+          createdAt: now,
+          updatedAt: now,
+        ),
+        modelsProvider: const ApiModelProviderEntity(
+          id: 'anthropic',
+          name: 'Anthropic',
+          type: null,
+        ),
+      );
+      final controller =
+          StreamController<List<WorkspaceModelSelectionWithConnectionEntity>>();
+      addTearDown(controller.close);
+      final container = ProviderContainer(
+        overrides: [
+          workspaceModelSelectionRepositoryProvider.overrideWithValue(
+            _FakeWorkspaceModelSelectionRepository([], controller.stream),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final provider = listWorkspaceModelSelectionsProvider(
+        workspaceId: 'ws-1',
+      );
+      final secondEmission =
+          Completer<List<WorkspaceModelSelectionWithConnectionEntity>>();
+      var emissionCount = 0;
+      final subscription = container.listen(provider, (_, next) {
+        switch (next) {
+          case AsyncData(:final value):
+            emissionCount++;
+            if (emissionCount == 2) {
+              secondEmission.complete(value);
+            }
+          case AsyncError() || AsyncLoading():
+        }
+      });
+      addTearDown(subscription.close);
+
+      final firstEmission = container.read(provider.future);
+      controller.add([initialSelection]);
+      expect(await firstEmission, hasLength(1));
+
+      controller.add([initialSelection, updatedSelection]);
+      expect(await secondEmission.future, hasLength(2));
     });
   });
 

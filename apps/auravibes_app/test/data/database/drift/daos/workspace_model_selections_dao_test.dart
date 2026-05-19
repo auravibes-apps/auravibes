@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
@@ -73,20 +75,15 @@ void main() {
         ),
       );
 
-      final initial = await database.workspaceModelSelectionsDao
+      final stream = database.workspaceModelSelectionsDao
           .watchAllWorkspaceModelSelectionsByWorkspace(
             workspaceIds: [workspaceId],
-          )
-          .first;
-      expect(initial, isEmpty);
+          );
+      final iterator = StreamIterator(stream);
+      addTearDown(iterator.cancel);
 
-      final expectation = expectLater(
-        database.workspaceModelSelectionsDao
-            .watchAllWorkspaceModelSelectionsByWorkspace(
-              workspaceIds: [workspaceId],
-            ),
-        emitsThrough(hasLength(1)),
-      );
+      expect(await iterator.moveNext(), isTrue);
+      expect(iterator.current, isEmpty);
 
       await database.workspaceModelSelectionsDao.insertWorkspaceModelSelections(
         [
@@ -97,7 +94,8 @@ void main() {
         ],
       );
 
-      await expectation;
+      expect(await iterator.moveNext(), isTrue);
+      expect(iterator.current, hasLength(1));
     });
 
     test(
