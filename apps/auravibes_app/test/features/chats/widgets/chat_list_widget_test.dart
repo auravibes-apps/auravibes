@@ -85,7 +85,7 @@ void main() {
           overrides: [
             conversationRepositoryProvider.overrideWithValue(repo),
             listWorkspaceModelSelectionsProvider.overrideWith(
-              (ref, workspaceId) async => [],
+              (ref, workspaceId) => Stream.value([]),
             ),
           ],
         ),
@@ -109,7 +109,7 @@ void main() {
           overrides: [
             conversationRepositoryProvider.overrideWithValue(repo),
             listWorkspaceModelSelectionsProvider.overrideWith(
-              (ref, workspaceId) async => [],
+              (ref, workspaceId) => Stream.value([]),
             ),
           ],
         ),
@@ -135,7 +135,7 @@ void main() {
             conversationRepositoryProvider.overrideWithValue(repo),
             streamingTitleProvider.overrideWith((ref, id) => null),
             listWorkspaceModelSelectionsProvider.overrideWith(
-              (ref, workspaceId) async => [],
+              (ref, workspaceId) => Stream.value([]),
             ),
           ],
         ),
@@ -161,7 +161,7 @@ void main() {
             conversationRepositoryProvider.overrideWithValue(repo),
             streamingTitleProvider.overrideWith((ref, id) => null),
             listWorkspaceModelSelectionsProvider.overrideWith(
-              (ref, workspaceId) async => [],
+              (ref, workspaceId) => Stream.value([]),
             ),
           ],
         ),
@@ -186,7 +186,7 @@ void main() {
             conversationRepositoryProvider.overrideWithValue(repo),
             streamingTitleProvider.overrideWith((ref, id) => null),
             listWorkspaceModelSelectionsProvider.overrideWith(
-              (ref, workspaceId) async => [],
+              (ref, workspaceId) => Stream.value([]),
             ),
           ],
         ),
@@ -210,7 +210,7 @@ void main() {
           overrides: [
             conversationRepositoryProvider.overrideWithValue(repo),
             listWorkspaceModelSelectionsProvider.overrideWith(
-              (ref, workspaceId) async => [],
+              (ref, workspaceId) => Stream.value([]),
             ),
           ],
         ),
@@ -238,7 +238,7 @@ void main() {
             conversationRepositoryProvider.overrideWithValue(repo),
             streamingTitleProvider.overrideWith((ref, id) => null),
             listWorkspaceModelSelectionsProvider.overrideWith(
-              (ref, workspaceId) async => [],
+              (ref, workspaceId) => Stream.value([]),
             ),
           ],
         ),
@@ -265,7 +265,7 @@ void main() {
               (ref, id) => 'Streamed Title',
             ),
             listWorkspaceModelSelectionsProvider.overrideWith(
-              (ref, workspaceId) async => [],
+              (ref, workspaceId) => Stream.value([]),
             ),
           ],
         ),
@@ -292,7 +292,7 @@ void main() {
             conversationRepositoryProvider.overrideWithValue(repo),
             streamingTitleProvider.overrideWith((ref, id) => null),
             listWorkspaceModelSelectionsProvider.overrideWith(
-              (ref, workspaceId) async => [],
+              (ref, workspaceId) => Stream.value([]),
             ),
           ],
         ),
@@ -315,7 +315,7 @@ void main() {
           overrides: [
             conversationRepositoryProvider.overrideWithValue(repo),
             listWorkspaceModelSelectionsProvider.overrideWith(
-              (ref, workspaceId) async => [],
+              (ref, workspaceId) => Stream.value([]),
             ),
           ],
         ),

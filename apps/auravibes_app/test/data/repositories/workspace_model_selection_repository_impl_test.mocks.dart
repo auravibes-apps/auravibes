@@ -391,6 +391,28 @@ class MockWorkspaceModelSelectionsDao extends _i1.Mock
           as _i6.Future<List<_i5.WorkspaceModelSelectionWithConnection>>);
 
   @override
+  _i6.Stream<List<_i5.WorkspaceModelSelectionWithConnection>>
+  watchAllWorkspaceModelSelectionsByWorkspace({
+    required List<String>? workspaceIds,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(
+              #watchAllWorkspaceModelSelectionsByWorkspace,
+              [],
+              {#workspaceIds: workspaceIds},
+            ),
+            returnValue:
+                _i6.Stream<
+                  List<_i5.WorkspaceModelSelectionWithConnection>
+                >.empty(),
+            returnValueForMissingStub:
+                _i6.Stream<
+                  List<_i5.WorkspaceModelSelectionWithConnection>
+                >.empty(),
+          )
+          as _i6.Stream<List<_i5.WorkspaceModelSelectionWithConnection>>);
+
+  @override
   _i6.Future<_i5.WorkspaceModelSelectionWithConnection?>
   getWorkspaceModelSelectionById(String? id) =>
       (super.noSuchMethod(

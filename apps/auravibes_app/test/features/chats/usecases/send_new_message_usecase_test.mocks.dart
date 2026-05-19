@@ -221,6 +221,20 @@ class MockWorkspaceModelSelectionRepository extends _i1.Mock
           >);
 
   @override
+  _i11.Stream<List<_i13.WorkspaceModelSelectionWithConnectionEntity>>
+  watchWorkspaceModelSelections(_i13.WorkspaceModelSelectionFilter? filter) =>
+      (super.noSuchMethod(
+            Invocation.method(#watchWorkspaceModelSelections, [filter]),
+            returnValue:
+                _i11.Stream<
+                  List<_i13.WorkspaceModelSelectionWithConnectionEntity>
+                >.empty(),
+          )
+          as _i11.Stream<
+            List<_i13.WorkspaceModelSelectionWithConnectionEntity>
+          >);
+
+  @override
   _i11.Future<_i13.WorkspaceModelSelectionWithConnectionEntity?>
   getWorkspaceModelSelectionById(String? id) =>
       (super.noSuchMethod(

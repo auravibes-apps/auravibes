@@ -41,6 +41,21 @@ class WorkspaceModelSelectionRepositoryImpl
   }
 
   @override
+  Stream<List<WorkspaceModelSelectionWithConnectionEntity>>
+  watchWorkspaceModelSelections(
+    WorkspaceModelSelectionFilter filter,
+  ) {
+    return _database.workspaceModelSelectionsDao
+        .watchAllWorkspaceModelSelectionsByWorkspace(
+          workspaceIds: filter.workspaces,
+        )
+        .map(
+          (tableResults) =>
+              tableResults.map(_withProviderTableToEntity).toList(),
+        );
+  }
+
+  @override
   Future<WorkspaceModelSelectionWithConnectionEntity?>
   getWorkspaceModelSelectionById(
     String id,
