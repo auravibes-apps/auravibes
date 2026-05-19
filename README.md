@@ -19,7 +19,7 @@
   <img src="assets/screenshots/settings.png" width="250" alt="Settings Screen">
 </div>
 
-*TODO: Add actual screenshots showing key app features*
+_TODO: Add actual screenshots showing key app features_
 
 ## ✨ Features
 
@@ -31,7 +31,7 @@
 - 🌐 **Multi-Language**: Support for English and Spanish with easy localization
 - 🔒 **Secure Storage**: Secure local storage for API keys and sensitive data
 
-*TODO: Verify feature list is current and accurate*
+_TODO: Verify feature list is current and accurate_
 
 ## 🚀 Getting Started
 
@@ -46,8 +46,8 @@ Before you begin, ensure you have the following installed:
   - Install [FVM](https://fvm.app) first: `dart pub global activate fvm`
 
 - **Dart SDK**: 3.11.1 or higher (included with Flutter)
-  
 - **FVM (Flutter Version Management)**: 4.0.5 or higher
+
   ```bash
   dart pub global activate fvm
   ```
@@ -56,36 +56,41 @@ Before you begin, ensure you have the following installed:
   ```bash
   dart pub global activate melos
   ```
-<details>
+  <details>
 
 <summary>Platform-Specific Requirements</summary>
 
 **Android Development**
+
 - Android Studio (latest version) with Flutter and Dart plugins
 - Android SDK API level 21 or higher
 - Android SDK Build-Tools
 
 **iOS Development** (macOS only)
+
 - Xcode 14.0 or higher
 - CocoaPods: `sudo gem install cocoapods`
 - iOS Simulator or physical iOS device
 
 **macOS Development**
+
 - Xcode 14.0 or higher
 - CocoaPods
 
 **Linux Development**
+
 - GTK 3.0 development libraries
 - See [Linux setup guide](https://flutter.dev/docs/desktop#additional-linux-requirements)
 
 **Windows Development**
+
 - Visual Studio 2022 with C++ desktop development
 - See [Windows setup guide](https://flutter.dev/docs/desktop#additional-windows-requirements)
 
 **Web Development**
+
 - Chrome browser (latest version)
 </details>
-
 
 ### Installation
 
@@ -133,12 +138,10 @@ The app supports two flavors: **dev** (development) and **prod** (production).
 
 The project includes pre-configured launch configurations in `.vscode/launch.json`:
 
-- **prod Debug**: Production flavor, debug mode
-- **prod Profile**: Production flavor, profile mode  
-- **prod Release**: Production flavor, release mode
 - **dev Debug**: Development flavor, debug mode
-- **dev Profile**: Development flavor, profile mode
-- **dev Release**: Development flavor, release mode
+- **dev Debug (DB prefix)**: Development flavor, debug mode with a
+  workspace-folder database prefix for isolated worktrees
+- **Widgetbook**: UI component catalog, debug mode
 
 #### Using Command Line
 
@@ -184,8 +187,6 @@ fvm flutter run -d linux --flavor prod
 - **Networking**: [Dio](https://pub.dev/packages/dio) for HTTP requests
 - **Localization**: [Easy Localization](https://pub.dev/packages/easy_localization)
 - **Code Generation**: [Build Runner](https://pub.dev/packages/build_runner), [Freezed](https://pub.dev/packages/freezed)
-
-
 
 ---
 
