@@ -50,7 +50,7 @@ jobs:
         id: channel-detect
         run: |
           # fvm-config-action may output a pre-release version string
-          # (for example 3.44.0) but still report stable channel.
+          # (for example 3.44.0-0.3.pre) but still report stable channel.
           # For .pre/.dev/-beta builds force beta; otherwise keep action output.
           version="${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}"
           if echo "$version" | grep -qE '\.pre$|\.dev\.|-beta\.'; then
