@@ -45,6 +45,20 @@ class WorkspaceModelSelectionsDao extends DatabaseAccessor<AppDatabase>
         .get();
   }
 
+  Stream<List<WorkspaceModelSelectionWithConnection>>
+  watchAllWorkspaceModelSelectionsByWorkspace({
+    required List<String> workspaceIds,
+  }) {
+    final query = _queryJoins()
+      ..where(modelConnections.workspaceId.isIn(workspaceIds));
+
+    return query
+        .map(
+          _mapJoin,
+        )
+        .watch();
+  }
+
   Future<WorkspaceModelSelectionWithConnection?> getWorkspaceModelSelectionById(
     String id,
   ) {

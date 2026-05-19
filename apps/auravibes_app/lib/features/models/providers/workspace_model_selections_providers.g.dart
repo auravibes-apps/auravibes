@@ -18,11 +18,11 @@ final class ListWorkspaceModelSelectionsProvider
         $FunctionalProvider<
           AsyncValue<List<WorkspaceModelSelectionWithConnectionEntity>>,
           List<WorkspaceModelSelectionWithConnectionEntity>,
-          FutureOr<List<WorkspaceModelSelectionWithConnectionEntity>>
+          Stream<List<WorkspaceModelSelectionWithConnectionEntity>>
         >
     with
         $FutureModifier<List<WorkspaceModelSelectionWithConnectionEntity>>,
-        $FutureProvider<List<WorkspaceModelSelectionWithConnectionEntity>> {
+        $StreamProvider<List<WorkspaceModelSelectionWithConnectionEntity>> {
   ListWorkspaceModelSelectionsProvider._({
     required ListWorkspaceModelSelectionsFamily super.from,
     required String super.argument,
@@ -46,11 +46,11 @@ final class ListWorkspaceModelSelectionsProvider
 
   @$internal
   @override
-  $FutureProviderElement<List<WorkspaceModelSelectionWithConnectionEntity>>
-  $createElement($ProviderPointer pointer) => $FutureProviderElement(pointer);
+  $StreamProviderElement<List<WorkspaceModelSelectionWithConnectionEntity>>
+  $createElement($ProviderPointer pointer) => $StreamProviderElement(pointer);
 
   @override
-  FutureOr<List<WorkspaceModelSelectionWithConnectionEntity>> create(Ref ref) {
+  Stream<List<WorkspaceModelSelectionWithConnectionEntity>> create(Ref ref) {
     final argument = this.argument as String;
     return listWorkspaceModelSelections(ref, workspaceId: argument);
   }
@@ -68,12 +68,12 @@ final class ListWorkspaceModelSelectionsProvider
 }
 
 String _$listWorkspaceModelSelectionsHash() =>
-    r'5b21df64ae426016853c1310564c0c7484076b2a';
+    r'740a84131efe0dc2bdac9b61bb74cfb93138b680';
 
 final class ListWorkspaceModelSelectionsFamily extends $Family
     with
         $FunctionalFamilyOverride<
-          FutureOr<List<WorkspaceModelSelectionWithConnectionEntity>>,
+          Stream<List<WorkspaceModelSelectionWithConnectionEntity>>,
           String
         > {
   ListWorkspaceModelSelectionsFamily._()
@@ -109,15 +109,13 @@ final class ListModelsGroupedByProviderProvider
             Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>
           >,
           Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>,
-          FutureOr<
-            Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>
-          >
+          Stream<Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>>
         >
     with
         $FutureModifier<
           Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>
         >,
-        $FutureProvider<
+        $StreamProvider<
           Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>
         > {
   /// Groups models by provider name for two-step model selection.
@@ -145,14 +143,15 @@ final class ListModelsGroupedByProviderProvider
 
   @$internal
   @override
-  $FutureProviderElement<
+  $StreamProviderElement<
     Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>
   >
-  $createElement($ProviderPointer pointer) => $FutureProviderElement(pointer);
+  $createElement($ProviderPointer pointer) => $StreamProviderElement(pointer);
 
   @override
-  FutureOr<Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>>
-  create(Ref ref) {
+  Stream<Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>> create(
+    Ref ref,
+  ) {
     final argument = this.argument as String;
     return listModelsGroupedByProvider(ref, workspaceId: argument);
   }
@@ -170,7 +169,7 @@ final class ListModelsGroupedByProviderProvider
 }
 
 String _$listModelsGroupedByProviderHash() =>
-    r'bf84c1bc14d9b96f4fc7874e12097a4a4f391180';
+    r'c1ddc90a50b0b6adc8c3fc7e9b1005f6fc4a87f3';
 
 /// Groups models by provider name for two-step model selection.
 /// Returns a map where keys are provider names and values are lists of models.
@@ -178,7 +177,7 @@ String _$listModelsGroupedByProviderHash() =>
 final class ListModelsGroupedByProviderFamily extends $Family
     with
         $FunctionalFamilyOverride<
-          FutureOr<
+          Stream<
             Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>
           >,
           String

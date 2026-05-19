@@ -60,6 +60,46 @@ void main() {
       expect(results.length, equals(1));
     });
 
+    test('watchAllWorkspaceModelSelectionsByWorkspace emits inserts', () async {
+      await database.apiModelProvidersDao.upsertProvider(
+        ApiModelProvidersCompanion.insert(id: 'openai', name: 'OpenAI'),
+      );
+      final conn = await database.modelConnectionsDao.insertModelConnection(
+        ModelConnectionsCompanion.insert(
+          name: 'Conn',
+          modelId: 'openai',
+          keyValue: 'key',
+          workspaceId: workspaceId,
+        ),
+      );
+
+      final initial = await database.workspaceModelSelectionsDao
+          .watchAllWorkspaceModelSelectionsByWorkspace(
+            workspaceIds: [workspaceId],
+          )
+          .first;
+      expect(initial, isEmpty);
+
+      final expectation = expectLater(
+        database.workspaceModelSelectionsDao
+            .watchAllWorkspaceModelSelectionsByWorkspace(
+              workspaceIds: [workspaceId],
+            ),
+        emitsThrough(hasLength(1)),
+      );
+
+      await database.workspaceModelSelectionsDao.insertWorkspaceModelSelections(
+        [
+          WorkspaceModelSelectionsCompanion.insert(
+            modelId: 'openai',
+            modelConnectionId: conn.id,
+          ),
+        ],
+      );
+
+      await expectation;
+    });
+
     test(
       'getAllWorkspaceModelSelectionsByWorkspace returns empty for no match',
       () async {

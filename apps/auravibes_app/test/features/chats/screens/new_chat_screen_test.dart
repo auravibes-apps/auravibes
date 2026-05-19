@@ -78,7 +78,7 @@ void main() {
                 const NewChatState(),
               ),
               listModelsGroupedByProviderProvider.overrideWith(
-                (ref, workspaceId) => {},
+                (ref, workspaceId) => Stream.value({}),
               ),
             ],
             child: Theme(

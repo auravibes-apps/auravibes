@@ -19,6 +19,12 @@ class _FakeWorkspaceModelSelectionRepository
   }
 
   @override
+  Stream<List<WorkspaceModelSelectionWithConnectionEntity>>
+  watchWorkspaceModelSelections(WorkspaceModelSelectionFilter filter) {
+    return Stream.value(selections);
+  }
+
+  @override
   Future<void> createWorkspaceModelSelections(
     List<WorkspaceModelSelectionToCreate> selections,
   ) {
@@ -70,9 +76,13 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      final result = await container.read(
-        listWorkspaceModelSelectionsProvider(workspaceId: 'ws-1').future,
+      final provider = listWorkspaceModelSelectionsProvider(
+        workspaceId: 'ws-1',
       );
+      final subscription = container.listen(provider, (_, _) {});
+      addTearDown(subscription.close);
+
+      final result = await container.read(provider.future);
       expect(result, hasLength(1));
       expect(
         result.first.workspaceModelSelection.id,
@@ -164,9 +174,11 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      final result = await container.read(
-        listModelsGroupedByProviderProvider(workspaceId: 'ws-1').future,
-      );
+      final provider = listModelsGroupedByProviderProvider(workspaceId: 'ws-1');
+      final subscription = container.listen(provider, (_, _) {});
+      addTearDown(subscription.close);
+
+      final result = await container.read(provider.future);
 
       expect(result.keys, equals(['Anthropic', 'OpenAI']));
       expect(result['OpenAI'], hasLength(2));
@@ -183,9 +195,11 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      final result = await container.read(
-        listModelsGroupedByProviderProvider(workspaceId: 'ws-1').future,
-      );
+      final provider = listModelsGroupedByProviderProvider(workspaceId: 'ws-1');
+      final subscription = container.listen(provider, (_, _) {});
+      addTearDown(subscription.close);
+
+      final result = await container.read(provider.future);
       expect(result, isEmpty);
     });
   });
