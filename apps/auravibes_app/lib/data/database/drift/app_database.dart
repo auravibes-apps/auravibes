@@ -68,8 +68,8 @@ class AppDatabase extends _$AppDatabase {
   ///
   /// If [connection] is provided, uses that connection.
   /// Otherwise, creates a default SQLite database connection.
-  AppDatabase({QueryExecutor? connection})
-    : super(connection ?? _openConnection());
+  AppDatabase({QueryExecutor? connection, String? dbPrefix})
+    : super(connection ?? _openConnection(dbPrefix: dbPrefix));
 
   /// Database schema version.
   @override
@@ -94,16 +94,14 @@ class AppDatabase extends _$AppDatabase {
   ///
   /// This method sets up a cross-platform SQLite database connection
   /// with proper configuration for mobile and desktop platforms.
-  static QueryExecutor _openConnection() {
+  static QueryExecutor _openConnection({String? dbPrefix}) {
     return driftDatabase(
-      name: 'auravibes_app',
+      name: '${dbPrefix ?? ''}auravibes_app',
       web: .new(
         sqlite3Wasm: Uri.parse('sqlite3.wasm'),
         driftWorker: Uri.parse('drift_worker.dart.js'),
       ),
-      native: const DriftNativeOptions(
-        shareAcrossIsolates: true,
-      ),
+      native: const DriftNativeOptions(shareAcrossIsolates: true),
     );
   }
 

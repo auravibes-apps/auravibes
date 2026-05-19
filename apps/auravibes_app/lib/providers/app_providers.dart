@@ -10,5 +10,8 @@ Future<SharedPreferences> sharedPreferences(Ref ref) =>
 
 @Riverpod(keepAlive: true)
 AppDatabase appDatabase(Ref ref) {
-  return AppDatabase();
+  const dbPrefix = String.fromEnvironment('DB_PREFIX');
+  return AppDatabase(
+    dbPrefix: dbPrefix.isNotEmpty ? dbPrefix : null,
+  );
 }

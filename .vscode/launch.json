@@ -1,83 +1,33 @@
 {
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "prod Debug",
-            "request": "launch",
-            "type": "dart",
-            "flutterMode": "debug",
-            "cwd": "apps/auravibes_app",
-            "args": [
-                "--flavor",
-                "prod"
-            ],
-            "program": "lib/main.dart"
-        },
-        {
-            "name": "prod Profile",
-            "request": "launch",
-            "type": "dart",
-            "flutterMode": "profile",
-            "cwd": "apps/auravibes_app",
-            "args": [
-                "--flavor",
-                "prod"
-            ],
-            "program": "lib/main.dart"
-        },
-        {
-            "name": "prod Release",
-            "request": "launch",
-            "type": "dart",
-            "flutterMode": "release",
-            "cwd": "apps/auravibes_app",
-            "args": [
-                "--flavor",
-                "prod"
-            ],
-            "program": "lib/main.dart"
-        },
-        {
-            "name": "dev Debug",
-            "request": "launch",
-            "type": "dart",
-            "flutterMode": "debug",
-            "cwd": "apps/auravibes_app",
-            "args": [
-                "--flavor",
-                "dev"
-            ],
-            "program": "lib/main.dart"
-        },
-        {
-            "name": "dev Profile",
-            "request": "launch",
-            "type": "dart",
-            "flutterMode": "profile",
-            "cwd": "apps/auravibes_app",
-            "args": [
-                "--flavor",
-                "dev"
-            ],
-            "program": "lib/main.dart"
-        },
-        {
-            "name": "dev Release",
-            "request": "launch",
-            "type": "dart",
-            "flutterMode": "release",
-            "cwd": "apps/auravibes_app",
-            "args": [
-                "--flavor",
-                "dev"
-            ],
-            "program": "lib/main.dart"
-        },
-        {
-            "name": "Widgetbook",
-            "cwd": "widgetbook",
-            "request": "launch",
-            "type": "dart"
-        },
-    ]
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "dev Debug",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "debug",
+      "cwd": "apps/auravibes_app",
+      "toolArgs": ["--flavor", "dev"],
+      "program": "lib/main.dart"
+    },
+    {
+      "name": "dev Debug (DB prefix)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "debug",
+      "cwd": "apps/auravibes_app",
+      "toolArgs": [
+        "--flavor",
+        "dev",
+        "--dart-define=DB_PREFIX=${workspaceFolderBasename}_"
+      ],
+      "program": "lib/main.dart"
+    },
+    {
+      "name": "Widgetbook",
+      "cwd": "widgetbook",
+      "request": "launch",
+      "type": "dart"
+    }
+  ]
 }
