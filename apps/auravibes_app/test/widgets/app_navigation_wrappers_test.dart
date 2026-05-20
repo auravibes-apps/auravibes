@@ -663,7 +663,6 @@ class _FakeConversationRepository implements ConversationRepository {
     _pendingRemoval.clear();
     await Future.wait(
       controllersSnapshot.where((c) => !c.isClosed).map((c) => c.close()),
-      eagerError: false,
     );
   }
 
