@@ -52,6 +52,18 @@ void main() {
       expect(chatModel.name, 'gpt-4o');
     });
 
+    test('keeps official non-reasoning OpenAI models on chat completions', () {
+      final config = makeConfig(
+        type: ModelProvidersType.openai,
+        providerUrl: 'https://api.openai.com/v1',
+      );
+      final chatModel = factory(config, apiKey: 'sk-test');
+
+      expect(chatModel, isA<ChatModel>());
+      expect(chatModel.name, 'gpt-4o');
+      expect(chatModel.runtimeType.toString(), 'OpenAIChatModel');
+    });
+
     test('enables OpenAI responses for official reasoning models', () {
       final config = makeConfig(
         type: ModelProvidersType.openai,

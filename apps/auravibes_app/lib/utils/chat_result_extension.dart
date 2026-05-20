@@ -23,7 +23,7 @@ extension ChatResultConcat on ChatResult<ChatMessage> {
   String? _concatThinking(String? current, String? delta) {
     if (delta == null || delta.isEmpty) return current;
     if (current == null || current.isEmpty) return delta;
-    return '$current$delta';
+    return _joinThinking(current, delta);
   }
 }
 
@@ -64,7 +64,7 @@ extension ChatResultEntities on ChatResult<ChatMessage> {
     ];
 
     if (chunks.isEmpty) return null;
-    return chunks.join().trim();
+    return chunks.reduce(_joinThinking).trim();
   }
 
   Map<String, Object?> get entityModelMetadata {
@@ -97,4 +97,13 @@ extension ChatResultEntities on ChatResult<ChatMessage> {
       modelMetadata: entityModelMetadata,
     );
   }
+}
+
+String _joinThinking(String current, String delta) {
+  final needsSeparator =
+      current.trim().isNotEmpty &&
+      delta.trim().isNotEmpty &&
+      !RegExp(r'\s$').hasMatch(current) &&
+      !RegExp(r'^\s').hasMatch(delta);
+  return needsSeparator ? '$current $delta' : '$current$delta';
 }

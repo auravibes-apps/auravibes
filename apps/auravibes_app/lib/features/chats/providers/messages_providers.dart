@@ -96,9 +96,33 @@ MessageEntity? messageConversationById(
 
   if (streamingResult == null) return messageEntity;
 
+  final streamingMetadata = streamingResult.entityMetadata;
+  final metadata = streamingMetadata == null
+      ? messageEntity.metadata
+      : (messageEntity.metadata ?? const MessageMetadataEntity()).copyWith(
+          toolCalls: streamingMetadata.toolCalls.isEmpty
+              ? messageEntity.metadata?.toolCalls ?? const []
+              : streamingMetadata.toolCalls,
+          promptTokens:
+              streamingMetadata.promptTokens ??
+              messageEntity.metadata?.promptTokens,
+          completionTokens:
+              streamingMetadata.completionTokens ??
+              messageEntity.metadata?.completionTokens,
+          totalTokens:
+              streamingMetadata.totalTokens ??
+              messageEntity.metadata?.totalTokens,
+          thinking:
+              streamingMetadata.thinking ?? messageEntity.metadata?.thinking,
+          modelMetadata: {
+            ...?messageEntity.metadata?.modelMetadata,
+            ...streamingMetadata.modelMetadata,
+          },
+        );
+
   return messageEntity.copyWith(
     content: streamingResult.output.text,
-    metadata: streamingResult.entityMetadata ?? messageEntity.metadata,
+    metadata: metadata,
   );
 }
 

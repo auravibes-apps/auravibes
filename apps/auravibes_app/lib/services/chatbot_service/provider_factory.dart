@@ -121,7 +121,7 @@ class ProviderFactory {
     )) {
       return OpenAIResponsesProvider(
         apiKey: apiKey,
-        baseUrl: baseUrl != null ? Uri.parse(baseUrl) : null,
+        baseUrl: _openAIResponsesBaseUrl(providerType, baseUrl),
       );
     }
 
@@ -177,10 +177,12 @@ class ProviderFactory {
     final providerUrl = config.modelsProvider.url;
 
     if (_hasCustomUrl(config)) return connectionUrl;
-    if (_isOfficialProviderUrl(config.modelsProvider.type, providerUrl)) {
-      return null;
-    }
     return providerUrl;
+  }
+
+  Uri? _openAIResponsesBaseUrl(ModelProvidersType? type, String? baseUrl) {
+    if (_isOfficialProviderUrl(type, baseUrl)) return null;
+    return baseUrl != null ? Uri.parse(baseUrl) : null;
   }
 
   bool _isOfficialProviderUrl(ModelProvidersType? type, String? url) {

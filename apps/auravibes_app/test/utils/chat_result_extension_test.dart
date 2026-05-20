@@ -20,6 +20,21 @@ void main() {
       expect(result.thinking, 'First second');
     });
 
+    test('separates streaming thinking deltas without whitespace', () {
+      final first = ChatResult<ChatMessage>(
+        output: ChatMessage.model(''),
+        thinking: 'First',
+      );
+      final second = ChatResult<ChatMessage>(
+        output: ChatMessage.model(''),
+        thinking: 'second',
+      );
+
+      final result = first.concat(second);
+
+      expect(result.thinking, 'First second');
+    });
+
     test('merges output metadata before concatenating chunks', () {
       final first = ChatResult<ChatMessage>(
         output: ChatMessage.model('Hello'),
@@ -67,6 +82,24 @@ void main() {
 
       expect(result.entityThinking, 'OpenAI reasoning summary');
       expect(result.entityMetadata?.thinking, 'OpenAI reasoning summary');
+    });
+
+    test('separates ThinkingPart chunks without whitespace', () {
+      final result = ChatResult<ChatMessage>(
+        output: ChatMessage.model(
+          '',
+          parts: const [ThinkingPart('First')],
+        ),
+        messages: [
+          ChatMessage.model(
+            '',
+            parts: const [ThinkingPart('second')],
+          ),
+        ],
+      );
+
+      expect(result.entityThinking, 'First second');
+      expect(result.entityMetadata?.thinking, 'First second');
     });
 
     test('persists model metadata for provider continuation', () {
