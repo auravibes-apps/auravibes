@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 
@@ -20,19 +22,23 @@ class AppLogBuffer {
   }
 
   String dump() => _entries.join('\n');
+
+  @visibleForTesting
+  void clear() => _entries.clear();
 }
 
 class AppLogging {
   AppLogging._();
 
   static bool _configured = false;
+  static StreamSubscription<LogRecord>? _subscription;
 
   static void configure({required bool enabled}) {
     if (_configured || !enabled) return;
     _configured = true;
 
     Logger.root.level = Level.ALL;
-    Logger.root.onRecord.listen(_handleRecord);
+    _subscription = Logger.root.onRecord.listen(_handleRecord);
 
     final previousFlutterError = FlutterError.onError;
     FlutterError.onError = (details) {
@@ -73,5 +79,12 @@ class AppLogging {
       AppLogBuffer.instance.add(stackLine);
       debugPrint(stackLine);
     }
+  }
+
+  @visibleForTesting
+  static void resetForTesting() {
+    _configured = false;
+    _subscription?.cancel();
+    _subscription = null;
   }
 }
