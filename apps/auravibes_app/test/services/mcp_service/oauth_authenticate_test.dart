@@ -15,8 +15,8 @@ typedef _FetchCallback =
 
 final class _FakeHttpClientAdapter implements HttpClientAdapter {
   _FakeHttpClientAdapter({
-    required _FetchCallback onFetch,
-  }) : _fetchCallback = onFetch;
+    required this._fetchCallback,
+  });
 
   final _FetchCallback _fetchCallback;
 
@@ -268,7 +268,7 @@ void main() {
     group('exchangeCodeForToken', () {
       test('uses injected dio instance for token exchange', () async {
         final adapter = _FakeHttpClientAdapter(
-          onFetch: (options, _, _) async {
+          fetchCallback: (options, _, _) async {
             expect(
               options.responseType,
               ResponseType.json,
@@ -330,7 +330,7 @@ void main() {
         'throws when token exchange fails due to network/client error',
         () async {
           final adapter = _FakeHttpClientAdapter(
-            onFetch: (_, _, _) async {
+            fetchCallback: (_, _, _) async {
               throw DioException(
                 requestOptions: RequestOptions(
                   path: 'https://example.com/token',
@@ -372,7 +372,7 @@ void main() {
 
       test('throws when token response is missing required fields', () async {
         final adapter = _FakeHttpClientAdapter(
-          onFetch: (_, _, _) async {
+          fetchCallback: (_, _, _) async {
             return ResponseBody.fromString(
               '{"token_type":"Bearer"}',
               200,
@@ -413,7 +413,7 @@ void main() {
 
       test('throws when token response is not a JSON object', () async {
         final adapter = _FakeHttpClientAdapter(
-          onFetch: (_, _, _) async {
+          fetchCallback: (_, _, _) async {
             return ResponseBody.fromString(
               '["not-an-object"]',
               200,
@@ -454,7 +454,7 @@ void main() {
 
       test('handles token response with optional OAuth fields', () async {
         final adapter = _FakeHttpClientAdapter(
-          onFetch: (_, _, _) async {
+          fetchCallback: (_, _, _) async {
             return ResponseBody.fromString(
               jsonEncode(<String, Object?>{
                 'access_token': 'access-token',

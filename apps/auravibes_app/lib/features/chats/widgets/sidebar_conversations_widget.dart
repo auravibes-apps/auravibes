@@ -24,6 +24,8 @@ final _currentChatIdProvider = Provider<String?>(
 );
 
 class SidebarConversationsWidget extends ConsumerWidget {
+  // Null workspace ID means no workspace has been selected yet.
+  // ignore: unnecessary-nullable
   const SidebarConversationsWidget({
     required this.workspaceId,
     super.key,
@@ -282,7 +284,7 @@ class _CompactingRow extends ConsumerWidget {
       child: const AuraTile(
         variant: AuraTileVariant.ghost,
         size: AuraTileSize.small,
-        onTap: null,
+        enabled: false,
         leading: Padding(
           padding: EdgeInsets.all(4),
           child: SizedBox(

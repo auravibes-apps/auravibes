@@ -62,7 +62,7 @@ void main() {
         tester,
         WorkspaceDropdown(
           workspaces: workspaces,
-          activeWorkspaceId: null,
+          activeWorkspaceId: '',
           onSelected: (_) {},
         ),
       );
@@ -90,7 +90,7 @@ void main() {
         tester,
         WorkspaceDropdown(
           workspaces: const [],
-          activeWorkspaceId: null,
+          activeWorkspaceId: '',
           onSelected: (_) {},
         ),
       );

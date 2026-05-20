@@ -16,6 +16,8 @@ abstract class CompactionSettings with _$CompactionSettings {
   factory CompactionSettings.fromJson(Map<String, dynamic> json) =>
       _$CompactionSettingsFromJson(json);
 
+  // Null context limit means the model has no known limit.
+  // ignore: unnecessary-nullable
   static int defaultRemainingTokenThreshold({
     required int maxOutputTokens,
     required int? contextLimit,
@@ -36,6 +38,8 @@ abstract class CompactionSettings with _$CompactionSettings {
 
 @freezed
 abstract class ConversationPromptEstimate with _$ConversationPromptEstimate {
+  // Null fields represent unavailable provider estimates.
+  // ignore: unnecessary-nullable
   const factory ConversationPromptEstimate({
     required String conversationId,
     required String selectedModelId,
@@ -65,6 +69,8 @@ enum CompactionTrigger { auto, manual }
 
 @freezed
 abstract class CompactionDecision with _$CompactionDecision {
+  // Null settings mean defaults were used for the decision.
+  // ignore: unnecessary-nullable
   const factory CompactionDecision({
     required bool shouldCompact,
     required CompactionDecisionReason reason,

@@ -266,7 +266,7 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
                   height: _getLoadingSize(),
                   child: AuraLoadingCircle(
                     size: _getLoadingSize(),
-                    color: foregroundColor,
+                    colorVariant: _getLoadingColorVariant(),
                   ),
                 )
               : DefaultTextStyle(
@@ -378,6 +378,18 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
       AuraButtonGroupVariant.outlined =>
         isActive ? colors.onPrimary : colors.primary,
       AuraButtonGroupVariant.ghost => colors.primary,
+    };
+  }
+
+  AuraColorVariant _getLoadingColorVariant() {
+    if (widget.disabled) return AuraColorVariant.onSurfaceVariant;
+
+    final isActive = widget.isSelected || _isPressed;
+    return switch (widget.variant) {
+      AuraButtonGroupVariant.filled => AuraColorVariant.onPrimary,
+      AuraButtonGroupVariant.outlined =>
+        isActive ? AuraColorVariant.onPrimary : AuraColorVariant.primary,
+      AuraButtonGroupVariant.ghost => AuraColorVariant.primary,
     };
   }
 

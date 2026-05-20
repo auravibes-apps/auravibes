@@ -1,7 +1,7 @@
 name: auravibes_workspace
 publish_to: none
 environment:
-  sdk: ^3.11.0
+  sdk: ^3.12.0
 
 workspace:
   - apps/auravibes_app
@@ -32,7 +32,7 @@ melos:
     bootstrap:
       runPubGetInParallel: false
       environment:
-        sdk: ^3.11.0
+        sdk: ^3.12.0
   scripts:
     analyze:
       run: dart analyze
@@ -47,6 +47,10 @@ melos:
     unused:code:
       run: dart run dart_code_linter:metrics check-unused-code --monorepo apps/auravibes_app/lib packages/auravibes_ui/lib
       description: Fail when production unused declarations are detected
+
+    unnecessary:nullable:
+      run: dart run dart_code_linter:metrics check-unnecessary-nullable --monorepo apps/auravibes_app/lib packages/auravibes_ui/lib
+      description: Fail when unnecessary nullable parameters are detected
 
     format:check:
       run: dart format --line-length 80 -o none --set-exit-if-changed .
@@ -109,6 +113,7 @@ melos:
         melos analyze &&
         melos run unused:files &&
         melos run unused:code &&
+        melos run unnecessary:nullable &&
         melos run format:check &&
         melos run test
       description: Full validation pipeline (no coverage, fast)
@@ -118,6 +123,7 @@ melos:
         melos analyze &&
         melos run unused:files &&
         melos run unused:code &&
+        melos run unnecessary:nullable &&
         melos run format:check &&
         melos run test:ci
       description: Validation pipeline with coverage (CI mode)
@@ -127,6 +133,7 @@ melos:
         melos analyze &&
         melos run unused:files &&
         melos run unused:code &&
+        melos run unnecessary:nullable &&
         melos run format:check
       description: Quick validation for development
 

@@ -203,7 +203,7 @@ class UrlService {
   Map<String, String> _buildEffectiveHeaders(UrlRequest request) {
     final headers = request.headers;
     return <String, String>{
-      ...?headers,
+      ...headers,
       if (!_hasHeader(headers, Headers.acceptHeader))
         Headers.acceptHeader: request.format.acceptHeader,
       if (!_hasHeader(headers, 'user-agent'))
@@ -216,8 +216,7 @@ class UrlService {
     };
   }
 
-  bool _hasHeader(Map<String, String>? headers, String name) {
-    if (headers == null) return false;
+  bool _hasHeader(Map<String, String> headers, String name) {
     return headers.keys.any((k) => k.toLowerCase() == name);
   }
 }

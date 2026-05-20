@@ -111,6 +111,9 @@ jobs:
       - name: 🗑️ Check unused code
         run: melos run unused:code --no-select
 
+      - name: 🧹 Check unnecessary nullable parameters
+        run: melos run unnecessary:nullable --no-select
+
       - name: 🧪 Run Tests
         run: melos run test:ci
 
@@ -127,7 +130,7 @@ jobs:
 
       - name: ☁️ SonarCloud Scan
         if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
-        uses: SonarSource/sonarqube-scan-action@59db25f34e16620e48ab4bb9e4a5dce155cb5432
+        uses: SonarSource/sonarqube-scan-action@7006c4492b2e0ee0f816d36501671557c97f5995
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 

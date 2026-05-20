@@ -579,18 +579,15 @@ void main() {
   });
 }
 
-typedef _FetchCallback =
-    Future<ResponseBody> Function(
-      RequestOptions options,
-      Stream<Uint8List>? requestStream,
-      Future<void>? cancelFuture,
-    );
-
 final class _FakeHttpClientAdapter implements HttpClientAdapter {
-  _FakeHttpClientAdapter({required _FetchCallback onFetch})
-    : _onFetch = onFetch;
+  _FakeHttpClientAdapter({required this._onFetch});
 
-  final _FetchCallback _onFetch;
+  final Future<ResponseBody> Function(
+    RequestOptions,
+    Stream<Uint8List>?,
+    Future<void>?,
+  )
+  _onFetch;
 
   @override
   Future<ResponseBody> fetch(
