@@ -107,7 +107,7 @@ class AuraPadding extends StatelessWidget {
   });
 
   /// pading chilg
-  final Widget? child;
+  final Widget child;
 
   /// spacing for padding
   final AuraEdgeInsetsGeometry padding;

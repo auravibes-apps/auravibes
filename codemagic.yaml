@@ -55,11 +55,6 @@ scripts:
       # Set automatic build number
       echo "BUILD_NUMBER=$PROJECT_BUILD_NUMBER" >> $CM_ENV
       echo "FLAVOR=$FLAVOR" >> $CM_ENV
-  - &script_install_cocoapods
-    name: Install CocoaPods
-    script: |
-      echo "Installing CocoaPods dependencies..."
-      find . -name "Podfile" -execdir pod install \;
 
 workflows:
   # iOS Release Workflow
@@ -80,7 +75,7 @@ workflows:
         - ~/.pub-cache
         - $FLUTTER_ROOT/.pub-cache
         - ~/.pub-cache/hosted
-        - ~/Library/Caches/CocoaPods
+
     scripts:
       - *script_setup_environment
       - *script_install_melos
@@ -91,8 +86,6 @@ workflows:
       - name: Set up code signing settings on Xcode project
         script: |
           xcode-project use-profiles
-
-      - *script_install_cocoapods
 
       - name: Build iOS IPA with Obfuscation and Split Debug Info
         script: |

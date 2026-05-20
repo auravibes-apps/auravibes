@@ -5,6 +5,9 @@ formatter:
 
 
 analyzer:
+  enable-experiment:
+    - private-named-parameters
+
   exclude:
     - "**/**.g.dart"
     - "lib/**.g.dart"
@@ -61,5 +64,4 @@ linter:
     ##
     flutter_style_todos: false
     discarded_futures: false
-
 

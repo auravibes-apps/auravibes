@@ -9,14 +9,11 @@ import 'package:riverpod/riverpod.dart';
 
 class ResumeConversationIfReadyUsecase {
   const ResumeConversationIfReadyUsecase({
-    required MessageRepository messageRepository,
-    required ConversationRepository conversationRepository,
-    required RunAllowedToolsUsecase runAllowedToolsUsecase,
-    required RunAgentIterationUsecase runAgentIterationUsecase,
-  }) : _messageRepository = messageRepository,
-       _conversationRepository = conversationRepository,
-       _runAllowedToolsUsecase = runAllowedToolsUsecase,
-       _runAgentIterationUsecase = runAgentIterationUsecase;
+    required this._messageRepository,
+    required this._conversationRepository,
+    required this._runAllowedToolsUsecase,
+    required this._runAgentIterationUsecase,
+  });
 
   final MessageRepository _messageRepository;
   final ConversationRepository _conversationRepository;

@@ -125,8 +125,13 @@ abstract class MessageRepository {
 
 /// Base exception for message-related operations.
 class MessageException implements Exception {
+  // Cause is optional because not all domain failures wrap an exception.
+  // ignore: unnecessary-nullable
   /// Creates a new MessageException
-  const MessageException(this.message, [this.cause]);
+  const MessageException(
+    this.message, [
+    this.cause,
+  ]);
 
   /// Error message describing the exception
   final String message;

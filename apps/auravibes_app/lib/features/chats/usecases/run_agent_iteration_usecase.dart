@@ -33,7 +33,7 @@ class RunAgentIterationUsecase {
 
   Future<AgentIterationDecision> call({
     required String conversationId,
-    AgentIterationContext? context,
+    required AgentIterationContext context,
   }) async {
     final conversation = await conversationRepository.getConversationById(
       conversationId,
@@ -58,9 +58,9 @@ class RunAgentIterationUsecase {
   Future<AgentIterationDecision> _runLoop({
     required String conversationId,
     required String workspaceId,
-    required AgentIterationContext? context,
+    required AgentIterationContext context,
   }) async {
-    var currentContext = context;
+    AgentIterationContext? currentContext = context;
 
     while (true) {
       final cancelDecision = await _cancelIfRequested(

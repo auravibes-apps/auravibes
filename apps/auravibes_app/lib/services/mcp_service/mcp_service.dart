@@ -5,8 +5,8 @@ import 'package:mcp_client/mcp_client.dart' as mcp;
 class McpManagerClient {
   McpManagerClient._(
     this._client, {
-    mcp.OAuthTokenManager? tokenManager,
-  }) : _tokenManager = tokenManager;
+    this._tokenManager,
+  });
   final mcp.Client _client;
   final mcp.OAuthTokenManager? _tokenManager;
 

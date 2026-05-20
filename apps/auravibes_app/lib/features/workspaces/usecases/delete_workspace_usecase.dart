@@ -11,11 +11,13 @@ part 'delete_workspace_usecase.g.dart';
 /// - Cannot delete the currently active workspace.
 class DeleteWorkspaceUseCase {
   const DeleteWorkspaceUseCase({
-    required WorkspaceRepository repository,
-  }) : _repository = repository;
+    required this._repository,
+  });
 
   final WorkspaceRepository _repository;
 
+  // Null active workspace ID means there is no active workspace to protect.
+  // ignore: unnecessary-nullable
   /// Deletes the workspace with [id].
   ///
   /// [workspaceCount] is the current total number of workspaces.

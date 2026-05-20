@@ -3,8 +3,8 @@ import 'package:auravibes_app/services/mcp_service/oauth_authenticate.dart';
 
 class BuildMcpServerToCreateUseCase {
   const BuildMcpServerToCreateUseCase({
-    required OAuthAuthenticate authenticator,
-  }) : _authenticator = authenticator;
+    required this._authenticator,
+  });
 
   final OAuthAuthenticate _authenticator;
 

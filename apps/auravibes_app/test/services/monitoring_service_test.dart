@@ -20,18 +20,23 @@ void main() {
       final service = MonitoringService();
 
       expect(
-        () => service.trackError('test_concept', error: null),
+        () => service.trackError(
+          'test_concept',
+          error: null,
+          stackTrace: StackTrace.current,
+        ),
         returnsNormally,
       );
     });
 
-    test('trackError handles null stackTrace', () {
+    test('trackError handles stackTrace', () {
       final service = MonitoringService();
 
       expect(
         () => service.trackError(
           'test_concept',
           error: Exception('test'),
+          stackTrace: StackTrace.current,
         ),
         returnsNormally,
       );
