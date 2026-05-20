@@ -112,7 +112,7 @@ void main() {
 
   group('ResponsiveSlidingDrawer', () {
     Widget buildDrawer({
-      ResponsiveSlidingDrawerController? controller,
+      required ResponsiveSlidingDrawerController controller,
       Duration animationDuration = const Duration(milliseconds: 250),
       VoidCallback? onFinishedOpening,
       VoidCallback? onFinishedClosing,
@@ -141,7 +141,8 @@ void main() {
     }
 
     testWidgets('renders drawer and body widgets', (tester) async {
-      await tester.pumpWidget(buildDrawer());
+      final controller = ResponsiveSlidingDrawerController();
+      await tester.pumpWidget(buildDrawer(controller: controller));
 
       expect(find.text('Drawer'), findsOneWidget);
       expect(find.text('Body'), findsOneWidget);

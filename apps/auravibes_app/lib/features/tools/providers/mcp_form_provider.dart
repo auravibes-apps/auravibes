@@ -146,7 +146,7 @@ class McpFormNotifier extends _$McpFormNotifier {
   }
 
   /// Set error message
-  void setError(String? message) {
+  void setError(String message) {
     state = state.copyWith(errorMessage: message);
   }
 

@@ -378,6 +378,20 @@ class MockWorkspaceModelSelectionRepository extends _i1.Mock
           >);
 
   @override
+  _i8.Stream<List<_i10.WorkspaceModelSelectionWithConnectionEntity>>
+  watchWorkspaceModelSelections(_i10.WorkspaceModelSelectionFilter? filter) =>
+      (super.noSuchMethod(
+            Invocation.method(#watchWorkspaceModelSelections, [filter]),
+            returnValue:
+                _i8.Stream<
+                  List<_i10.WorkspaceModelSelectionWithConnectionEntity>
+                >.empty(),
+          )
+          as _i8.Stream<
+            List<_i10.WorkspaceModelSelectionWithConnectionEntity>
+          >);
+
+  @override
   _i8.Future<_i10.WorkspaceModelSelectionWithConnectionEntity?>
   getWorkspaceModelSelectionById(String? id) =>
       (super.noSuchMethod(
@@ -508,7 +522,7 @@ class MockMonitoringService extends _i1.Mock implements _i17.MonitoringService {
   void trackError(
     String? concept, {
     required Object? error,
-    StackTrace? stackTrace,
+    required StackTrace? stackTrace,
   }) => super.noSuchMethod(
     Invocation.method(
       #trackError,

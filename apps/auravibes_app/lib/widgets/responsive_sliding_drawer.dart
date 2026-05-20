@@ -51,6 +51,7 @@ class ResponsiveSlidingDrawer extends StatefulWidget {
     required this.drawer,
     required this.body,
     required this.isDarkMode,
+    required this.controller,
     this.animationDuration = const Duration(milliseconds: 250),
     this.openRatio = 0.80,
     this.desktopOpenRatio = 0.3,
@@ -65,7 +66,6 @@ class ResponsiveSlidingDrawer extends StatefulWidget {
     this.onStartedClosing,
     this.dividerWidth = 5.0,
     this.centerDivider = true,
-    this.controller,
     this.desktopDragAreaWidth = 10.0,
     this.scrimColorLightMode = Colors.black,
     this.scrimColorDarkMode = Colors.white,
@@ -136,7 +136,7 @@ class ResponsiveSlidingDrawer extends StatefulWidget {
 
   /// An optional controller to programmatically open, close, or toggle the
   /// drawer state.
-  final ResponsiveSlidingDrawerController? controller;
+  final ResponsiveSlidingDrawerController controller;
 
   /// The width of the invisible area on the edge of the screen (or drawer edge
   /// when open) that triggers the drag gesture on desktop.
@@ -206,15 +206,15 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
       duration: widget.animationDuration,
     );
     _controller.addListener(() => setState(() {}));
-    widget.controller?._state = this;
+    widget.controller._state = this;
   }
 
   @override
   void didUpdateWidget(covariant ResponsiveSlidingDrawer oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.controller != widget.controller) {
-      oldWidget.controller?._state = null;
-      widget.controller?._state = this;
+      oldWidget.controller._state = null;
+      widget.controller._state = this;
     }
   }
 
@@ -647,7 +647,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
 
   @override
   void dispose() {
-    widget.controller?._state = null;
+    widget.controller._state = null;
     _controller.dispose();
     super.dispose();
   }

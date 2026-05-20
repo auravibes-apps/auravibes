@@ -441,6 +441,14 @@ class _FakeWorkspaceModelSelectionRepository
   ) {
     throw UnimplementedError();
   }
+
+  @override
+  Stream<List<WorkspaceModelSelectionWithConnectionEntity>>
+  watchWorkspaceModelSelections(
+    WorkspaceModelSelectionFilter filter,
+  ) {
+    throw UnimplementedError();
+  }
 }
 
 class _FakeApiModelRepository implements ApiModelRepository {

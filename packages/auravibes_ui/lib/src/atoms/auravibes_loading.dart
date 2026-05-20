@@ -1,14 +1,16 @@
 import 'dart:async';
 import 'dart:math' as math show pi, sin;
 
+import 'package:auravibes_ui/src/tokens/auravibes_theme.dart';
+import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/widgets.dart';
 
 class _DelayTween extends Tween<double> {
   _DelayTween({
     required this.delay,
-    super.begin,
-    super.end,
-  });
+    required double begin,
+    required double end,
+  }) : super(begin: begin, end: end);
 
   final double delay;
 
@@ -25,22 +27,21 @@ class _DelayTween extends Tween<double> {
 class AuraLoadingCircle extends StatefulWidget {
   /// constructor
   const AuraLoadingCircle({
+    required this.colorVariant,
     super.key,
-    this.color,
     this.size = 50.0,
     this.itemSize,
     this.itemCount,
     this.itemBuilder,
     this.duration = const Duration(milliseconds: 1200),
     this.controller,
-  }) : assert(
-         !(itemBuilder is IndexedWidgetBuilder && color is Color) &&
-             !(itemBuilder == null && color == null),
-         'You should specify either a itemBuilder or a color',
-       );
+  });
 
-  /// color
-  final Color? color;
+  /// Dot color used by the default item builder.
+  ///
+  /// Ignored when [itemBuilder] is provided, because custom builders own their
+  /// rendering.
+  final AuraColorVariant colorVariant;
 
   /// size
   final double size;
@@ -128,7 +129,9 @@ class _AuraLoadingCircleState extends State<AuraLoadingCircle>
       ? widget.itemBuilder!(context, index)
       : DecoratedBox(
           decoration: BoxDecoration(
-            color: widget.color,
+            color:
+                context.auraColors.getColorOrNull(widget.colorVariant) ??
+                context.auraColors.primary,
             shape: BoxShape.circle,
           ),
         );

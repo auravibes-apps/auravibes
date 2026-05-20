@@ -45,7 +45,9 @@ class WorkspaceDropdown extends StatelessWidget {
   final List<WorkspaceDropdownItem> workspaces;
 
   /// ID of the currently active workspace.
-  final String? activeWorkspaceId;
+  ///
+  /// Empty string means no active workspace is selected.
+  final String activeWorkspaceId;
 
   /// Callback when a workspace is selected.
   final ValueChanged<WorkspaceDropdownItem> onSelected;
@@ -58,9 +60,9 @@ class WorkspaceDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final activeWorkspace = activeWorkspaceId != null
-        ? workspaces.where((w) => w.id == activeWorkspaceId).firstOrNull
-        : null;
+    final activeWorkspace = workspaces
+        .where((w) => w.id == activeWorkspaceId)
+        .firstOrNull;
 
     return AuraDropdownSelector<WorkspaceDropdownItem>(
       value: activeWorkspace,

@@ -203,14 +203,6 @@ void main() {
         expect(result, isEmpty);
       });
 
-      test('returns empty list when workspaces is empty', () async {
-        const filter = ModelConnectionFilter(workspaces: []);
-
-        final result = await repository.getModelConnections(filter);
-
-        expect(result, isEmpty);
-      });
-
       test('returns mapped connections for workspaces', () async {
         when(
           mockConnectionsDao.getAllModelConnectionsByWorkspace(

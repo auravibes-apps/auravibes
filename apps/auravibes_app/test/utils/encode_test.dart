@@ -31,10 +31,6 @@ void main() {
   });
 
   group('safeJsonDecode', () {
-    test('returns null for null input', () {
-      expect(safeJsonDecode(null), isNull);
-    });
-
     test('decodes a valid JSON string', () {
       final result = safeJsonDecode('{"key":"value"}');
       expect(result, {'key': 'value'});

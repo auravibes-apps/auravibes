@@ -17,6 +17,11 @@ abstract class WorkspaceModelSelectionRepository {
     WorkspaceModelSelectionFilter filter,
   );
 
+  Stream<List<WorkspaceModelSelectionWithConnectionEntity>>
+  watchWorkspaceModelSelections(
+    WorkspaceModelSelectionFilter filter,
+  );
+
   Future<WorkspaceModelSelectionWithConnectionEntity?>
   getWorkspaceModelSelectionById(
     String id,

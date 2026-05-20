@@ -13,12 +13,10 @@ class _FakeModelConnectionRepository implements ModelConnectionRepository {
   Future<List<ModelConnectionEntity>> getModelConnections(
     ModelConnectionFilter filter,
   ) async {
-    if (filter.workspaces != null) {
-      return connections
-          .where((c) => filter.workspaces!.contains(c.workspaceId))
-          .toList();
-    }
-    return connections;
+    if (filter.workspaces.isEmpty) return [];
+    return connections
+        .where((c) => filter.workspaces.contains(c.workspaceId))
+        .toList();
   }
 
   @override

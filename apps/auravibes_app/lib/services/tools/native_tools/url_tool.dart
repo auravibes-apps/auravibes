@@ -13,9 +13,8 @@ const _privateNetworkUrlError =
     'Private or local network URLs are not allowed.';
 
 final class UrlTool extends NativeToolEntity<String, String> {
-  UrlTool({UrlService? urlService, UrlContentTransformer? transformer})
-    : _urlService = urlService,
-      _transformer = transformer ?? const UrlContentTransformer();
+  UrlTool({this._urlService, UrlContentTransformer? transformer})
+    : _transformer = transformer ?? const UrlContentTransformer();
 
   final UrlService? _urlService;
   final UrlContentTransformer _transformer;
@@ -185,26 +184,23 @@ final class UrlTool extends NativeToolEntity<String, String> {
 
   ({String body, bool truncated}) _truncateBody(
     String body, {
-    int? maxBytes,
-    int? maxLines,
+    required int maxBytes,
+    required int maxLines,
   }) {
-    final effectiveMaxBytes = maxBytes ?? _maxToolOutputBytes;
-    final effectiveMaxLines = maxLines ?? _maxToolOutputLines;
     final originalByteCount = utf8.encode(body).length;
-    final allLines = _takeLines(body, effectiveMaxLines);
+    final allLines = _takeLines(body, maxLines);
 
-    if (allLines.length <= effectiveMaxLines &&
-        originalByteCount <= effectiveMaxBytes) {
+    if (allLines.length <= maxLines && originalByteCount <= maxBytes) {
       return (body: body, truncated: false);
     }
 
-    var result = allLines.length > effectiveMaxLines
-        ? allLines.sublist(0, effectiveMaxLines).join('\n')
+    var result = allLines.length > maxLines
+        ? allLines.sublist(0, maxLines).join('\n')
         : body;
 
-    final maxContentBytes = (effectiveMaxBytes - _truncationNoteReserve).clamp(
+    final maxContentBytes = (maxBytes - _truncationNoteReserve).clamp(
       0,
-      effectiveMaxBytes,
+      maxBytes,
     );
     if (utf8.encode(result).length > maxContentBytes) {
       result = _truncateUtf8(result, maxContentBytes);
@@ -214,9 +210,9 @@ final class UrlTool extends NativeToolEntity<String, String> {
     final note = '\n... [truncated: $omitted bytes omitted]';
     final combined = '$result$note';
 
-    if (utf8.encode(combined).length > effectiveMaxBytes) {
+    if (utf8.encode(combined).length > maxBytes) {
       return (
-        body: _truncateUtf8(combined, effectiveMaxBytes),
+        body: _truncateUtf8(combined, maxBytes),
         truncated: true,
       );
     }

@@ -8,10 +8,9 @@ import 'package:riverpod/riverpod.dart';
 
 class LoadConversationToolSpecsUsecase {
   const LoadConversationToolSpecsUsecase({
-    required ConversationToolsRepository conversationToolsRepository,
-    required BuildCombinedToolSpecsUseCase buildCombinedToolSpecsUseCase,
-  }) : _conversationToolsRepository = conversationToolsRepository,
-       _buildCombinedToolSpecsUseCase = buildCombinedToolSpecsUseCase;
+    required this._conversationToolsRepository,
+    required this._buildCombinedToolSpecsUseCase,
+  });
 
   final ConversationToolsRepository _conversationToolsRepository;
   final BuildCombinedToolSpecsUseCase _buildCombinedToolSpecsUseCase;

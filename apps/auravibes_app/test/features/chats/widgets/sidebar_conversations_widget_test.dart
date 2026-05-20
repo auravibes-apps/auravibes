@@ -182,11 +182,11 @@ void main() {
     expect(widget.limit, 5);
   });
 
-  test('SidebarConversationsWidget workspaceId can be null', () {
+  test('SidebarConversationsWidget accepts empty workspaceId', () {
     const widget = SidebarConversationsWidget(
-      workspaceId: null,
+      workspaceId: '',
     );
-    expect(widget.workspaceId, isNull);
+    expect(widget.workspaceId, isEmpty);
   });
 
   test('SidebarConversationsWidget default limit is 10', () {
@@ -398,7 +398,7 @@ class _SidebarWorkspaceHost extends StatefulWidget {
 }
 
 class _SidebarWorkspaceHostState extends State<_SidebarWorkspaceHost> {
-  String? _workspaceId;
+  String _workspaceId = '';
 
   @override
   Widget build(BuildContext context) {

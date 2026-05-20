@@ -603,7 +603,7 @@ $ApiModelProviderEntityCopyWith<$Res> get modelsProvider {
 /// @nodoc
 mixin _$WorkspaceModelSelectionFilter {
 
- List<String>? get workspaces; List<CredentialsModelType>? get types;
+ List<String> get workspaces; List<CredentialsModelType>? get types;
 /// Create a copy of WorkspaceModelSelectionFilter
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -634,7 +634,7 @@ abstract mixin class $WorkspaceModelSelectionFilterCopyWith<$Res>  {
   factory $WorkspaceModelSelectionFilterCopyWith(WorkspaceModelSelectionFilter value, $Res Function(WorkspaceModelSelectionFilter) _then) = _$WorkspaceModelSelectionFilterCopyWithImpl;
 @useResult
 $Res call({
- List<String>? workspaces, List<CredentialsModelType>? types
+ List<String> workspaces, List<CredentialsModelType>? types
 });
 
 
@@ -651,10 +651,10 @@ class _$WorkspaceModelSelectionFilterCopyWithImpl<$Res>
 
 /// Create a copy of WorkspaceModelSelectionFilter
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? workspaces = freezed,Object? types = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? workspaces = null,Object? types = freezed,}) {
   return _then(_self.copyWith(
-workspaces: freezed == workspaces ? _self.workspaces : workspaces // ignore: cast_nullable_to_non_nullable
-as List<String>?,types: freezed == types ? _self.types : types // ignore: cast_nullable_to_non_nullable
+workspaces: null == workspaces ? _self.workspaces : workspaces // ignore: cast_nullable_to_non_nullable
+as List<String>,types: freezed == types ? _self.types : types // ignore: cast_nullable_to_non_nullable
 as List<CredentialsModelType>?,
   ));
 }
@@ -740,7 +740,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<String>? workspaces,  List<CredentialsModelType>? types)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<String> workspaces,  List<CredentialsModelType>? types)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _WorkspaceModelSelectionFilter() when $default != null:
 return $default(_that.workspaces,_that.types);case _:
@@ -761,7 +761,7 @@ return $default(_that.workspaces,_that.types);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<String>? workspaces,  List<CredentialsModelType>? types)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<String> workspaces,  List<CredentialsModelType>? types)  $default,) {final _that = this;
 switch (_that) {
 case _WorkspaceModelSelectionFilter():
 return $default(_that.workspaces,_that.types);case _:
@@ -781,7 +781,7 @@ return $default(_that.workspaces,_that.types);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<String>? workspaces,  List<CredentialsModelType>? types)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<String> workspaces,  List<CredentialsModelType>? types)?  $default,) {final _that = this;
 switch (_that) {
 case _WorkspaceModelSelectionFilter() when $default != null:
 return $default(_that.workspaces,_that.types);case _:
@@ -796,16 +796,14 @@ return $default(_that.workspaces,_that.types);case _:
 
 
 class _WorkspaceModelSelectionFilter implements WorkspaceModelSelectionFilter {
-  const _WorkspaceModelSelectionFilter({final  List<String>? workspaces, final  List<CredentialsModelType>? types}): _workspaces = workspaces,_types = types;
+  const _WorkspaceModelSelectionFilter({final  List<String> workspaces = const [], final  List<CredentialsModelType>? types}): _workspaces = workspaces,_types = types;
   
 
- final  List<String>? _workspaces;
-@override List<String>? get workspaces {
-  final value = _workspaces;
-  if (value == null) return null;
+ final  List<String> _workspaces;
+@override@JsonKey() List<String> get workspaces {
   if (_workspaces is EqualUnmodifiableListView) return _workspaces;
   // ignore: implicit_dynamic_type
-  return EqualUnmodifiableListView(value);
+  return EqualUnmodifiableListView(_workspaces);
 }
 
  final  List<CredentialsModelType>? _types;
@@ -848,7 +846,7 @@ abstract mixin class _$WorkspaceModelSelectionFilterCopyWith<$Res> implements $W
   factory _$WorkspaceModelSelectionFilterCopyWith(_WorkspaceModelSelectionFilter value, $Res Function(_WorkspaceModelSelectionFilter) _then) = __$WorkspaceModelSelectionFilterCopyWithImpl;
 @override @useResult
 $Res call({
- List<String>? workspaces, List<CredentialsModelType>? types
+ List<String> workspaces, List<CredentialsModelType>? types
 });
 
 
@@ -865,10 +863,10 @@ class __$WorkspaceModelSelectionFilterCopyWithImpl<$Res>
 
 /// Create a copy of WorkspaceModelSelectionFilter
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? workspaces = freezed,Object? types = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? workspaces = null,Object? types = freezed,}) {
   return _then(_WorkspaceModelSelectionFilter(
-workspaces: freezed == workspaces ? _self._workspaces : workspaces // ignore: cast_nullable_to_non_nullable
-as List<String>?,types: freezed == types ? _self._types : types // ignore: cast_nullable_to_non_nullable
+workspaces: null == workspaces ? _self._workspaces : workspaces // ignore: cast_nullable_to_non_nullable
+as List<String>,types: freezed == types ? _self._types : types // ignore: cast_nullable_to_non_nullable
 as List<CredentialsModelType>?,
   ));
 }

@@ -23,6 +23,14 @@ class _StubRepository implements WorkspaceModelSelectionRepository {
   }
 
   @override
+  Stream<List<WorkspaceModelSelectionWithConnectionEntity>>
+  watchWorkspaceModelSelections(
+    WorkspaceModelSelectionFilter filter,
+  ) {
+    return Stream.value(selectionResults);
+  }
+
+  @override
   Future<WorkspaceModelSelectionWithConnectionEntity?>
   getWorkspaceModelSelectionById(
     String id,
@@ -53,6 +61,18 @@ void main() {
       final result = await repo.getWorkspaceModelSelections(
         const WorkspaceModelSelectionFilter(),
       );
+
+      expect(result, isEmpty);
+    });
+
+    test('watchWorkspaceModelSelections streams empty by default', () async {
+      final repo = _StubRepository();
+
+      final result = await repo
+          .watchWorkspaceModelSelections(
+            const WorkspaceModelSelectionFilter(),
+          )
+          .first;
 
       expect(result, isEmpty);
     });

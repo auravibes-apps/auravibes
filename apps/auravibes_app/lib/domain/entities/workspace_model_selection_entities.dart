@@ -32,7 +32,7 @@ abstract class WorkspaceModelSelectionWithConnectionEntity
 abstract class WorkspaceModelSelectionFilter
     with _$WorkspaceModelSelectionFilter {
   const factory WorkspaceModelSelectionFilter({
-    List<String>? workspaces,
+    @Default([]) List<String> workspaces,
     List<CredentialsModelType>? types,
   }) = _WorkspaceModelSelectionFilter;
 }

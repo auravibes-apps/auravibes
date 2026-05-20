@@ -37,14 +37,22 @@ class WorkspaceModelSelectionsDao extends DatabaseAccessor<AppDatabase>
   getAllWorkspaceModelSelectionsByWorkspace({
     required List<String> workspaceIds,
   }) {
-    final query = _queryJoins()
-      ..where(modelConnections.workspaceId.isIn(workspaceIds));
-
-    return query
+    return _queryWorkspaceModelSelectionsByWorkspace(workspaceIds: workspaceIds)
         .map(
           _mapJoin,
         )
         .get();
+  }
+
+  Stream<List<WorkspaceModelSelectionWithConnection>>
+  watchAllWorkspaceModelSelectionsByWorkspace({
+    required List<String> workspaceIds,
+  }) {
+    return _queryWorkspaceModelSelectionsByWorkspace(workspaceIds: workspaceIds)
+        .map(
+          _mapJoin,
+        )
+        .watch();
   }
 
   Future<WorkspaceModelSelectionWithConnection?> getWorkspaceModelSelectionById(
@@ -78,6 +86,14 @@ class WorkspaceModelSelectionsDao extends DatabaseAccessor<AppDatabase>
             apiModels.modelProvider.equalsExp(modelConnections.modelId),
       ),
     ]);
+  }
+
+  JoinedSelectStatement<HasResultSet, dynamic>
+  _queryWorkspaceModelSelectionsByWorkspace({
+    required List<String> workspaceIds,
+  }) {
+    return _queryJoins()
+      ..where(modelConnections.workspaceId.isIn(workspaceIds));
   }
 
   WorkspaceModelSelectionWithConnection _mapJoin(TypedResult row) =>
