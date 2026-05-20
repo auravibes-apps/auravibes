@@ -198,5 +198,30 @@ void main() {
         'Reasoning summary',
       );
     });
+
+    test('maps assistant model metadata to model message metadata', () {
+      final messages = [
+        MessageEntity(
+          id: 'assistant-1',
+          conversationId: 'conversation-1',
+          content: 'Final answer',
+          messageType: MessageType.text,
+          isUser: false,
+          status: MessageStatus.sent,
+          createdAt: DateTime(2025),
+          updatedAt: DateTime(2025),
+          metadata: const MessageMetadataEntity(
+            thinking: 'Reasoning summary',
+            modelMetadata: {'_anthropic_thinking_signature': 'signature'},
+          ),
+        ),
+      ];
+
+      final result = usecase.call(messages);
+
+      expect(result.single.metadata, {
+        '_anthropic_thinking_signature': 'signature',
+      });
+    });
   });
 }

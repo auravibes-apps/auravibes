@@ -40,6 +40,9 @@ _MessageMetadataEntity _$MessageMetadataEntityFromJson(
   completionTokens: (json['completionTokens'] as num?)?.toInt(),
   totalTokens: (json['totalTokens'] as num?)?.toInt(),
   thinking: json['thinking'] as String?,
+  modelMetadata:
+      json['modelMetadata'] as Map<String, dynamic>? ??
+      const <String, Object?>{},
   metadataVersion: (json['metadataVersion'] as num?)?.toInt() ?? 1,
   isCompactionSummary: json['isCompactionSummary'] as bool? ?? false,
   compactionKind: $enumDecodeNullable(
@@ -66,6 +69,7 @@ Map<String, dynamic> _$MessageMetadataEntityToJson(
   'completionTokens': instance.completionTokens,
   'totalTokens': instance.totalTokens,
   'thinking': instance.thinking,
+  'modelMetadata': instance.modelMetadata,
   'metadataVersion': instance.metadataVersion,
   'isCompactionSummary': instance.isCompactionSummary,
   'compactionKind': _$CompactionKindEnumMap[instance.compactionKind],

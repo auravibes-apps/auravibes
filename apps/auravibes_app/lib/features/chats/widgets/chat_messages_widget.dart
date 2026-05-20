@@ -122,7 +122,7 @@ class _ChatMessageRow extends HookConsumerWidget {
     final hasContent = message.content.trim().isNotEmpty;
     final thinking = message.metadata?.thinking?.trim();
     final hasThinking = thinking != null && thinking.isNotEmpty;
-    final showTextBubble = hasContent || !hasVisibleToolCalls;
+    final showTextBubble = hasContent || hasThinking || !hasVisibleToolCalls;
 
     return AnimatedSize(
       duration: const Duration(microseconds: 200),
@@ -144,12 +144,13 @@ class _ChatMessageRow extends HookConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (hasThinking) _ReasoningSummary(content: thinking),
-                  _AiMessageContent(
-                    key: ValueKey(message.id),
-                    content: message.content,
-                    timestamp: message.createdAt,
-                    status: _mapMessageStatus(message.status, isStreaming),
-                  ),
+                  if (hasContent)
+                    _AiMessageContent(
+                      key: ValueKey(message.id),
+                      content: message.content,
+                      timestamp: message.createdAt,
+                      status: _mapMessageStatus(message.status, isStreaming),
+                    ),
                 ],
               ),
           if (hasVisibleToolCalls) ...[

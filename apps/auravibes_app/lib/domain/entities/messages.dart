@@ -72,6 +72,7 @@ abstract class MessageMetadataEntity with _$MessageMetadataEntity {
     int? completionTokens,
     int? totalTokens,
     String? thinking,
+    @Default(<String, Object?>{}) Map<String, Object?> modelMetadata,
     @Default(1) int metadataVersion,
     @Default(false) bool isCompactionSummary,
     CompactionKind? compactionKind,

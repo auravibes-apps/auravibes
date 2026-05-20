@@ -47,7 +47,12 @@ class BuildPromptChatMessages {
     ];
 
     return [
-      if (parts.isNotEmpty) ChatMessage.model('', parts: parts),
+      if (parts.isNotEmpty)
+        ChatMessage.model(
+          '',
+          parts: parts,
+          metadata: message.metadata?.modelMetadata ?? const {},
+        ),
       if (resultParts.isNotEmpty) ChatMessage.user('', parts: resultParts),
     ];
   }

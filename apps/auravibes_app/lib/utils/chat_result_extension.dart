@@ -3,8 +3,11 @@ import 'package:dartantic_ai/dartantic_ai.dart';
 
 extension ChatResultConcat on ChatResult<ChatMessage> {
   ChatResult<ChatMessage> concat(ChatResult<ChatMessage> delta) {
+    final outputMetadata = {...output.metadata, ...delta.output.metadata};
     return ChatResult<ChatMessage>(
-      output: output.concatenate(delta.output),
+      output: output
+          .copyWith(metadata: outputMetadata)
+          .concatenate(delta.output.copyWith(metadata: outputMetadata)),
       finishReason: delta.finishReason != FinishReason.unspecified
           ? delta.finishReason
           : finishReason,
@@ -64,13 +67,24 @@ extension ChatResultEntities on ChatResult<ChatMessage> {
     return chunks.join().trim();
   }
 
+  Map<String, Object?> get entityModelMetadata {
+    final metadata = <String, Object?>{
+      ...output.metadata,
+      for (final message in messages) ...message.metadata,
+    }..removeWhere((_, value) => value == null);
+    return metadata;
+  }
+
   MessageMetadataEntity? get entityMetadata {
     final hasUsage =
         usage?.promptTokens != null ||
         usage?.responseTokens != null ||
         usage?.totalTokens != null;
 
-    if (entityTools.isEmpty && !hasUsage && entityThinking == null) {
+    if (entityTools.isEmpty &&
+        !hasUsage &&
+        entityThinking == null &&
+        entityModelMetadata.isEmpty) {
       return null;
     }
 
@@ -80,6 +94,7 @@ extension ChatResultEntities on ChatResult<ChatMessage> {
       completionTokens: usage?.responseTokens,
       totalTokens: usage?.totalTokens,
       thinking: entityThinking,
+      modelMetadata: entityModelMetadata,
     );
   }
 }
