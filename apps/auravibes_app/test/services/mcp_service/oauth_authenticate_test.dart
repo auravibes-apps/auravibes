@@ -6,19 +6,17 @@ import 'package:auravibes_app/services/mcp_service/oauth_discovery.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-typedef _FetchCallback =
-    Future<ResponseBody> Function(
-      RequestOptions options,
-      Stream<Uint8List>? requestStream,
-      Future<void>? cancelFuture,
-    );
-
 final class _FakeHttpClientAdapter implements HttpClientAdapter {
   _FakeHttpClientAdapter({
     required this._fetchCallback,
   });
 
-  final _FetchCallback _fetchCallback;
+  final Future<ResponseBody> Function(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  )
+  _fetchCallback;
 
   @override
   Future<ResponseBody> fetch(
