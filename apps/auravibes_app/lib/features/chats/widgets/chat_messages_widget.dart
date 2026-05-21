@@ -4,6 +4,7 @@ import 'package:auravibes_app/domain/enums/message_types.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/providers/messages_providers.dart';
 import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
+import 'package:auravibes_app/features/chats/usecases/get_conversation_busy_state_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/compacted_message_details.dart';
 import 'package:auravibes_app/features/chats/widgets/tool_call_response_preview.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -108,21 +109,13 @@ class _ChatMessageRow extends HookConsumerWidget {
       );
     }
 
-    final allToolCalls =
-        message.metadata?.toolCalls ?? const <MessageToolCallEntity>[];
-    final hidePendingToolCalls =
-        !message.isUser &&
-        isLastMessage &&
-        (busyState?.hasPendingTools ?? false) &&
-        !(busyState?.isStreaming ?? false);
-    final visibleToolCalls = hidePendingToolCalls
-        ? allToolCalls.where((toolCall) => toolCall.isResolved).toList()
-        : allToolCalls;
+    final visibleToolCalls = _visibleToolCalls(message, busyState);
     final hasVisibleToolCalls = visibleToolCalls.isNotEmpty;
     final hasContent = message.content.trim().isNotEmpty;
     final thinking = message.metadata?.thinking?.trim();
     final hasThinking = thinking != null && thinking.isNotEmpty;
     final showTextBubble = hasContent || hasThinking || !hasVisibleToolCalls;
+    final status = _mapMessageStatus(message.status, isStreaming);
 
     return AnimatedSize(
       duration: const Duration(microseconds: 200),
@@ -131,39 +124,39 @@ class _ChatMessageRow extends HookConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (showTextBubble)
-            if (message.isUser)
-              AuraMessageBubble(
-                key: ValueKey(message.id),
-                content: message.content,
-                isUser: true,
-                timestamp: message.createdAt,
-                status: _mapMessageStatus(message.status, isStreaming),
-              )
-            else
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (hasThinking) _ReasoningSummary(content: thinking),
-                  if (hasContent)
-                    _AiMessageContent(
-                      key: ValueKey(message.id),
-                      content: message.content,
-                      timestamp: message.createdAt,
-                      status: _mapMessageStatus(message.status, isStreaming),
-                    ),
-                ],
-              ),
-          if (hasVisibleToolCalls) ...[
-            for (final toolCall in visibleToolCalls)
-              _ToolCallWidget(
-                key: ValueKey('tool_${toolCall.id}'),
-                toolCall: toolCall,
-                messageId: message.id,
-              ),
-          ],
+            _MessageTextContent(
+              message: message,
+              thinking: thinking,
+              hasContent: hasContent,
+              hasThinking: hasThinking,
+              status: status,
+            ),
+          for (final toolCall in visibleToolCalls)
+            _ToolCallWidget(
+              key: ValueKey('tool_${toolCall.id}'),
+              toolCall: toolCall,
+              messageId: message.id,
+            ),
         ],
       ),
     );
+  }
+
+  List<MessageToolCallEntity> _visibleToolCalls(
+    MessageEntity message,
+    ConversationBusyState? busyState,
+  ) {
+    final allToolCalls =
+        message.metadata?.toolCalls ?? const <MessageToolCallEntity>[];
+    final hidePendingToolCalls =
+        !message.isUser &&
+        isLastMessage &&
+        (busyState?.hasPendingTools ?? false) &&
+        !(busyState?.isStreaming ?? false);
+
+    if (!hidePendingToolCalls) return allToolCalls;
+
+    return allToolCalls.where((toolCall) => toolCall.isResolved).toList();
   }
 
   AuraMessageDeliveryStatus _mapMessageStatus(
@@ -179,6 +172,49 @@ class _ChatMessageRow extends HookConsumerWidget {
       MessageStatus.sent => AuraMessageDeliveryStatus.sent,
       MessageStatus.error => AuraMessageDeliveryStatus.error,
     };
+  }
+}
+
+class _MessageTextContent extends StatelessWidget {
+  const _MessageTextContent({
+    required this.message,
+    required this.thinking,
+    required this.hasContent,
+    required this.hasThinking,
+    required this.status,
+  });
+
+  final MessageEntity message;
+  final String? thinking;
+  final bool hasContent;
+  final bool hasThinking;
+  final AuraMessageDeliveryStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    if (message.isUser) {
+      return AuraMessageBubble(
+        key: ValueKey(message.id),
+        content: message.content,
+        isUser: true,
+        timestamp: message.createdAt,
+        status: status,
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (hasThinking) _ReasoningSummary(content: thinking!),
+        if (hasContent)
+          _AiMessageContent(
+            key: ValueKey(message.id),
+            content: message.content,
+            timestamp: message.createdAt,
+            status: status,
+          ),
+      ],
+    );
   }
 }
 
