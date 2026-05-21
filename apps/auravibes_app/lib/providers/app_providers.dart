@@ -5,11 +5,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 part 'app_providers.g.dart';
 
 @Riverpod(keepAlive: true)
-Future<SharedPreferences> sharedPreferences(Ref ref) =>
+Future<SharedPreferences> sharedPreferences(Ref _ref) =>
     SharedPreferences.getInstance();
 
 @Riverpod(keepAlive: true)
-AppDatabase appDatabase(Ref ref) {
+AppDatabase appDatabase(Ref _ref) {
   const dbPrefix = String.fromEnvironment('DB_PREFIX');
   return AppDatabase(
     dbPrefix: dbPrefix.isNotEmpty ? dbPrefix : null,
