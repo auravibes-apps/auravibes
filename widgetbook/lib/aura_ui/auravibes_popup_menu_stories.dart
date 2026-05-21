@@ -10,7 +10,7 @@ Widget basicContextMenuUseCase(BuildContext context) {
     controller: controller,
     items: [
       AuraPopupMenuItem(title: const Text('Item 1'), onTap: () {}),
-      AuraPopupMenuDivider(),
+      const AuraPopupMenuDivider(),
       AuraPopupMenuItem(title: const Text('Item 2'), onTap: () {}),
     ],
     child: MaterialButton(
