@@ -6,7 +6,7 @@ import 'package:auravibes_app/services/mcp_service/oauth_discovery.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-typedef MockHttpFetchCallback =
+typedef FakeHttpFetchCallback =
     Future<ResponseBody> Function(
       RequestOptions options,
       Stream<Uint8List>? requestStream,
@@ -15,9 +15,9 @@ typedef MockHttpFetchCallback =
 
 final class FakeHttpClientAdapter implements HttpClientAdapter {
   FakeHttpClientAdapter({
-    required MockHttpFetchCallback fetchCallback,
+    required FakeHttpFetchCallback fetchCallback,
   }) : _fetchCallback = fetchCallback;
-  final MockHttpFetchCallback _fetchCallback;
+  final FakeHttpFetchCallback _fetchCallback;
 
   @override
   Future<ResponseBody> fetch(
@@ -233,10 +233,13 @@ void main() {
           (i) => OAuthAuthenticate.generateCodeChallenge('seed_$i'),
         );
 
+        // RFC 7636 (PKCE, S256): SHA-256 digest is 32 bytes, which encodes to
+        // 43 base64url characters when padding is omitted.
+        const expectedPkceS256CodeChallengeLength = 43;
         final allowed = RegExp(r'^[A-Za-z0-9\-_]+$');
         for (final value in values) {
           expect(value, isNotEmpty);
-          expect(value.length, 43);
+          expect(value.length, expectedPkceS256CodeChallengeLength);
           expect(value, matches(allowed));
           expect(value, isNot(contains('=')));
           expect(value, isNot(contains('+')));
@@ -274,7 +277,10 @@ void main() {
             } else if (data is Map) {
               body = Map<String, dynamic>.from(data);
             } else {
-              fail('Unexpected token request body type: ${data.runtimeType}');
+              fail(
+                'Unexpected token request body type: ${data.runtimeType} '
+                '(expected FormData or Map)',
+              );
             }
 
             expect(body['grant_type'], 'authorization_code');
