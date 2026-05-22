@@ -13,12 +13,12 @@ class _FakeWorkspaceModelSelectionRepository
     implements WorkspaceModelSelectionRepository {
   _FakeWorkspaceModelSelectionRepository([
     this.selections = const [],
-    this.selectionStream,
+    this.workspaceModelSelectionStream,
   ]);
 
   final List<WorkspaceModelSelectionWithConnectionEntity> selections;
   final Stream<List<WorkspaceModelSelectionWithConnectionEntity>>?
-  selectionStream;
+  workspaceModelSelectionStream;
 
   @override
   Future<List<WorkspaceModelSelectionWithConnectionEntity>>
@@ -29,7 +29,7 @@ class _FakeWorkspaceModelSelectionRepository
   @override
   Stream<List<WorkspaceModelSelectionWithConnectionEntity>>
   watchWorkspaceModelSelections(WorkspaceModelSelectionFilter filter) {
-    return selectionStream ?? Stream.value(selections);
+    return workspaceModelSelectionStream ?? Stream.value(selections);
   }
 
   @override
@@ -49,7 +49,7 @@ class _FakeWorkspaceModelSelectionRepository
 void main() {
   group('listWorkspaceModelSelectionsProvider', () {
     test('returns selections for given workspace', () async {
-      final now = DateTime(2026);
+      final now = DateTime(2024, 1, 1);
       final selections = [
         WorkspaceModelSelectionWithConnectionEntity(
           workspaceModelSelection: WorkspaceModelSelectionEntity(
@@ -277,6 +277,100 @@ void main() {
       expect(result.keys, equals(['Anthropic', 'OpenAI']));
       expect(result['OpenAI'], hasLength(2));
       expect(result['Anthropic'], hasLength(1));
+    });
+
+    test('sorts provider groups alphabetically by provider name', () async {
+      final now = DateTime(2026);
+      final selections = [
+        WorkspaceModelSelectionWithConnectionEntity(
+          workspaceModelSelection: WorkspaceModelSelectionEntity(
+            id: 'sel-zebra',
+            modelId: 'model-z',
+            modelConnectionId: 'conn-z',
+            createdAt: now,
+            updatedAt: now,
+          ),
+          modelConnection: ModelConnectionEntity(
+            id: 'conn-z',
+            name: 'Zebra Key',
+            key: 'key',
+            modelId: 'model-z',
+            workspaceId: 'ws-1',
+            createdAt: now,
+            updatedAt: now,
+          ),
+          modelsProvider: const ApiModelProviderEntity(
+            id: 'zebra',
+            name: 'Zebra',
+            type: null,
+          ),
+        ),
+        WorkspaceModelSelectionWithConnectionEntity(
+          workspaceModelSelection: WorkspaceModelSelectionEntity(
+            id: 'sel-apple',
+            modelId: 'model-a',
+            modelConnectionId: 'conn-a',
+            createdAt: now,
+            updatedAt: now,
+          ),
+          modelConnection: ModelConnectionEntity(
+            id: 'conn-a',
+            name: 'Apple Key',
+            key: 'key',
+            modelId: 'model-a',
+            workspaceId: 'ws-1',
+            createdAt: now,
+            updatedAt: now,
+          ),
+          modelsProvider: const ApiModelProviderEntity(
+            id: 'apple',
+            name: 'Apple',
+            type: null,
+          ),
+        ),
+        WorkspaceModelSelectionWithConnectionEntity(
+          workspaceModelSelection: WorkspaceModelSelectionEntity(
+            id: 'sel-microsoft',
+            modelId: 'model-m',
+            modelConnectionId: 'conn-m',
+            createdAt: now,
+            updatedAt: now,
+          ),
+          modelConnection: ModelConnectionEntity(
+            id: 'conn-m',
+            name: 'Microsoft Key',
+            key: 'key',
+            modelId: 'model-m',
+            workspaceId: 'ws-1',
+            createdAt: now,
+            updatedAt: now,
+          ),
+          modelsProvider: const ApiModelProviderEntity(
+            id: 'microsoft',
+            name: 'Microsoft',
+            type: null,
+          ),
+        ),
+      ];
+      final container = ProviderContainer(
+        overrides: [
+          workspaceModelSelectionRepositoryProvider.overrideWithValue(
+            _FakeWorkspaceModelSelectionRepository(selections),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final provider = listModelsGroupedByProviderProvider(workspaceId: 'ws-1');
+      final subscription = container.listen(provider, (_, _) {});
+      addTearDown(subscription.close);
+
+      final result = await container.read(provider.future);
+
+      expect(result.keys, equals(['Apple', 'Microsoft', 'Zebra']));
+      expect(result['Apple'], hasLength(1));
+      expect(result['Microsoft'], hasLength(1));
+      expect(result['Zebra'], hasLength(1));
     });
 
     test('returns empty map when no selections', () async {

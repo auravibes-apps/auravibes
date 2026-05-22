@@ -552,43 +552,64 @@ class UrlContentTransformer {
       case 'h4':
       case 'h5':
       case 'h6':
-        final level = int.parse(tag.substring(1));
-        final inlineBuffer = StringBuffer();
-        _processInlineChildren(element, inlineBuffer);
-        final text = inlineBuffer.toString().trim();
-        if (text.isNotEmpty) {
-          _ensureNewline(buffer);
-          buffer.writeln('${'#' * level} $text');
-          _ensureNewline(buffer);
-        }
+        _processHeading(element, buffer, tag);
         return;
       case 'p':
-        final inlineBuffer = StringBuffer();
-        _processInlineChildren(element, inlineBuffer);
-        final text = inlineBuffer.toString().trim();
-        if (text.isNotEmpty) {
-          _ensureNewline(buffer);
-          buffer.writeln(text);
-        }
+        _processParagraph(element, buffer);
         return;
       case 'li':
-        _ensureNewline(buffer);
-        final indent = '  ' * (depth > 0 ? depth - 1 : 0);
-        final isOrdered = _isInsideOrderedList(element);
-        final String marker;
-        if (isOrdered) {
-          var index = 1;
-          for (final sibling in element.parent?.children ?? []) {
-            if (identical(sibling, element)) break;
-            if (sibling.localName?.toLowerCase() == 'li') index++;
-          }
-          marker = '$index. ';
-        } else {
-          marker = '- ';
-        }
-        buffer.write('$indent$marker');
-        _processChildren(element, buffer, depth);
+        _processListItem(element, buffer, depth);
+        return;
     }
+  }
+
+  void _processHeading(
+    dom.Element element,
+    StringBuffer buffer,
+    String tag,
+  ) {
+    final level = int.parse(tag.substring(1));
+    final inlineBuffer = StringBuffer();
+    _processInlineChildren(element, inlineBuffer);
+    final text = inlineBuffer.toString().trim();
+    if (text.isEmpty) return;
+
+    _ensureNewline(buffer);
+    buffer.writeln('${'#' * level} $text');
+    _ensureNewline(buffer);
+  }
+
+  void _processParagraph(dom.Element element, StringBuffer buffer) {
+    final inlineBuffer = StringBuffer();
+    _processInlineChildren(element, inlineBuffer);
+    final text = inlineBuffer.toString().trim();
+    if (text.isEmpty) return;
+
+    _ensureNewline(buffer);
+    buffer.writeln(text);
+  }
+
+  void _processListItem(
+    dom.Element element,
+    StringBuffer buffer,
+    int depth,
+  ) {
+    _ensureNewline(buffer);
+    final indent = '  ' * (depth > 0 ? depth - 1 : 0);
+    buffer.write('$indent${_listMarker(element)}');
+    _processChildren(element, buffer, depth);
+  }
+
+  String _listMarker(dom.Element element) {
+    if (!_isInsideOrderedList(element)) return '- ';
+
+    var index = 1;
+    final siblings = element.parent?.children ?? const <dom.Element>[];
+    for (final sibling in siblings) {
+      if (identical(sibling, element)) break;
+      if (sibling.localName?.toLowerCase() == 'li') index++;
+    }
+    return '$index. ';
   }
 
   void _writeTableRow(List<String> cells, int colCount, StringBuffer buffer) {
