@@ -1,5 +1,5 @@
-import 'package:auravibes_app/domain/entities/mcp_server.dart';
-import 'package:auravibes_app/features/tools/providers/mcp_form_provider.dart';
+import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
+import 'package:auravibes_app/features/tools/providers/mcp_form_state.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/app_dropdown_base.dart';
 import 'package:auravibes_app/widgets/app_group_button_single_base.dart';

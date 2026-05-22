@@ -1,5 +1,5 @@
 import 'package:auravibes_app/features/tools/models/conversation_tools_group_with_tools.dart';
-import 'package:auravibes_app/features/tools/notifiers/conversation_tools_notifier.dart';
+import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_conversation_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_management_modal.dart';
 import 'package:auravibes_ui/ui.dart';

@@ -1,4 +1,4 @@
-import 'package:auravibes_ui/src/molecules/auravibes_radio.dart';
+import 'package:auravibes_ui/src/molecules/aura_radio_option.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';

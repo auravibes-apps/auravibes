@@ -1,7 +1,7 @@
-import 'package:auravibes_app/domain/entities/tools_group.dart';
-import 'package:auravibes_app/domain/models/grouped_tools_view_item.dart';
+import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
+import 'package:auravibes_app/domain/models/mcp_connection_view_status.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
-import 'package:auravibes_app/notifiers/mcp_connection_notifier.dart';
+import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 
 mixin ToolsGroupMixin {
   ToolsGroupEntity? get group;

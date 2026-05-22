@@ -1,4 +1,4 @@
-import 'package:auravibes_app/domain/entities/conversation.dart';
+import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 
 abstract class ConversationRepository {
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(

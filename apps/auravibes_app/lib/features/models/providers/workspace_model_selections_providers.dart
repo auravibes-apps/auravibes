@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:auravibes_app/domain/entities/workspace_model_selection_entities.dart';
+import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 

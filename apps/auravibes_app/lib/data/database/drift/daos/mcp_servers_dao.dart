@@ -1,7 +1,7 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/data/database/drift/tables/mcp_servers_table.dart';
-import 'package:auravibes_app/data/database/drift/tables/tools_groups_table.dart';
-import 'package:auravibes_app/data/database/drift/tables/tools_table.dart';
+import 'package:auravibes_app/data/database/drift/tables/mcp_servers.dart';
+import 'package:auravibes_app/data/database/drift/tables/tools.dart';
+import 'package:auravibes_app/data/database/drift/tables/tools_groups.dart';
 import 'package:drift/drift.dart';
 
 part 'mcp_servers_dao.g.dart';

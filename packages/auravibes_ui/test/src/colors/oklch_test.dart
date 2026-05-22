@@ -1,5 +1,5 @@
-import 'package:auravibes_ui/src/colors/matrix_transformations.dart';
-import 'package:auravibes_ui/src/colors/oklch.dart';
+import 'package:auravibes_ui/src/colors/value_color.dart';
+import 'package:auravibes_ui/src/colors/vector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

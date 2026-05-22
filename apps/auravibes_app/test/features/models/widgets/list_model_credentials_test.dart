@@ -1,5 +1,5 @@
-import 'package:auravibes_app/domain/entities/model_connection_entities.dart';
-import 'package:auravibes_app/features/models/widgets/list_model_credentials.dart';
+import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
+import 'package:auravibes_app/features/models/widgets/list_model_connections_widget.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 

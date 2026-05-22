@@ -1,4 +1,4 @@
-import 'package:auravibes_app/widgets/app_error.dart';
+import 'package:auravibes_app/widgets/app_error_widget.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';

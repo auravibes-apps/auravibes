@@ -1,4 +1,4 @@
-import 'package:auravibes_app/services/tools/native_tool_entity.dart';
+import 'package:auravibes_app/services/tools/native_tool_type.dart';
 import 'package:auravibes_app/services/tools/native_tools/url_tool.dart';
 import 'package:collection/collection.dart';
 

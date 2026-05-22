@@ -1,5 +1,5 @@
-import 'package:auravibes_app/services/url/models/transformed_url_content.dart';
-import 'package:auravibes_app/services/url/models/url_request.dart';
+import 'package:auravibes_app/services/url/models/url_content_format.dart';
+import 'package:auravibes_app/services/url/models/url_request_method.dart';
 import 'package:auravibes_app/services/url/models/url_response.dart';
 import 'package:auravibes_app/services/url/url_content_transformer.dart';
 import 'package:flutter_test/flutter_test.dart';

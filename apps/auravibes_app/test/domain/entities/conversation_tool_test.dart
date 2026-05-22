@@ -1,5 +1,5 @@
-import 'package:auravibes_app/domain/entities/conversation_tool.dart';
-import 'package:auravibes_app/domain/entities/workspace_tool.dart';
+import 'package:auravibes_app/domain/entities/conversation_tool_entity.dart';
+import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

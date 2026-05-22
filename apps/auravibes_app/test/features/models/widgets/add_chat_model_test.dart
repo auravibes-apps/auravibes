@@ -1,5 +1,5 @@
 import 'package:auravibes_app/domain/repositories/model_connection_repository.dart';
-import 'package:auravibes_app/features/models/widgets/add_chat_model.dart';
+import 'package:auravibes_app/features/models/widgets/add_model_provider_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';

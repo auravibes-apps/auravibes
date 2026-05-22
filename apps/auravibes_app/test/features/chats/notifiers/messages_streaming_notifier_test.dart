@@ -1,5 +1,5 @@
 // ignore_for_file: cascade_invocations
-import 'package:auravibes_app/features/chats/notifiers/messages_streaming_notifier.dart';
+import 'package:auravibes_app/features/chats/notifiers/messages_streaming_state.dart';
 import 'package:dartantic_ai/dartantic_ai.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';

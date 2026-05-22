@@ -1,5 +1,5 @@
 import 'package:auravibes_app/data/repositories/workspace_repository_impl.dart';
-import 'package:auravibes_app/domain/entities/workspace.dart';
+import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/repositories/workspace_repository.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';

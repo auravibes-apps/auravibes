@@ -1,7 +1,7 @@
-import 'package:auravibes_app/notifiers/mcp_connection_notifier.dart';
-import 'package:auravibes_app/services/tools/models/resolved_tool.dart';
-import 'package:auravibes_app/services/tools/native_tool_entity.dart';
-import 'package:auravibes_app/services/tools/user_tools_entity.dart';
+import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
+import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
+import 'package:auravibes_app/services/tools/native_tool_type.dart';
+import 'package:auravibes_app/services/tools/user_tool_type.dart';
 
 class _BuiltInToolIdComponents {
   const _BuiltInToolIdComponents({

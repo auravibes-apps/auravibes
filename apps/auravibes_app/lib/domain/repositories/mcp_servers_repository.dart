@@ -1,4 +1,4 @@
-import 'package:auravibes_app/domain/entities/mcp_server.dart';
+import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 
 /// Repository interface for MCP server data operations.

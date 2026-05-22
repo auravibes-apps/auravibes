@@ -5,8 +5,9 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i4;
 
-import 'package:auravibes_app/domain/entities/messages.dart' as _i2;
-import 'package:auravibes_app/domain/enums/message_types.dart' as _i5;
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart'
+    as _i2;
+import 'package:auravibes_app/domain/enums/message_type.dart' as _i5;
 import 'package:auravibes_app/domain/repositories/message_repository.dart'
     as _i3;
 import 'package:mockito/mockito.dart' as _i1;

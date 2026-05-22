@@ -1,8 +1,8 @@
-import 'package:auravibes_app/domain/models/grouped_tools_view_item.dart';
+import 'package:auravibes_app/domain/models/mcp_connection_view_status.dart';
 import 'package:auravibes_app/features/tools/models/conversation_tools_group_with_tools.dart';
-import 'package:auravibes_app/features/tools/notifiers/conversation_tools_notifier.dart';
+import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
-import 'package:auravibes_app/notifiers/mcp_connection_notifier.dart';
+import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:collection/collection.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 

@@ -15,16 +15,16 @@
 // export 'card.dart';
 // export 'navigation_item.dart';
 // export 'form_field.dart';
-export 'auravibes_badge.dart' show AuraBadge, AuraBadgeSize, AuraBadgeVariant;
-export 'auravibes_button.dart';
-export 'auravibes_card.dart';
-export 'auravibes_container.dart';
-export 'auravibes_divider.dart' show AuraDivider;
-export 'auravibes_dropdown_option.dart';
-export 'auravibes_floating_action_button.dart';
-export 'auravibes_message_bubble.dart';
-export 'auravibes_radio.dart' show AuraRadio, AuraRadioOption;
-export 'auravibes_screen.dart';
-export 'auravibes_snackbar.dart' show AuraSnackBarVariant, showAuraSnackBar;
+export 'aura_badge.dart' show AuraBadge, AuraBadgeSize, AuraBadgeVariant;
+export 'aura_button.dart';
+export 'aura_card.dart';
+export 'aura_container.dart';
+export 'aura_divider.dart' show AuraDivider;
+export 'aura_dropdown_option.dart';
+export 'aura_floating_action_button.dart';
+export 'aura_message_bubble.dart';
+export 'aura_radio_option.dart' show AuraRadio, AuraRadioOption;
+export 'aura_screen.dart';
+export 'aura_snack_bar_variant.dart' show AuraSnackBarVariant, showAuraSnackBar;
 
 // WorkspaceDropdown moved to app layer per UI Package Purity Contract

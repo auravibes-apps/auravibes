@@ -1,4 +1,4 @@
-import 'package:auravibes_app/utils/chat_result_extension.dart';
+import 'package:auravibes_app/utils/chat_result_concat.dart';
 import 'package:dartantic_ai/dartantic_ai.dart';
 import 'package:flutter_test/flutter_test.dart';
 

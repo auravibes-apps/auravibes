@@ -1,10 +1,10 @@
-import 'package:auravibes_app/features/chats/notifiers/new_chat_notifier.dart';
+import 'package:auravibes_app/features/chats/notifiers/new_chat_state.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
-import 'package:auravibes_app/features/models/widgets/select_chat_model.dart';
+import 'package:auravibes_app/features/models/widgets/select_workspace_model_selection_widget.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_management_modal.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
-import 'package:auravibes_app/router/app_router.dart';
-import 'package:auravibes_app/widgets/app_bar_with_drawer.dart';
+import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';

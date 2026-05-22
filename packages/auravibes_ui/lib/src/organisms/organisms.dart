@@ -11,17 +11,17 @@
 // - Settings panel with multiple form sections
 
 // Export all organism components here
-export 'auravibes_button_group.dart';
-export 'auravibes_dialog.dart';
-export 'auravibes_dropdown_selector.dart';
-export 'auravibes_input.dart';
-export 'auravibes_popup_menu.dart'
+export 'aura_button_group.dart';
+export 'aura_confirm_dialog.dart';
+export 'aura_dropdown_selector.dart';
+export 'aura_input.dart';
+export 'aura_popup_menu_controller.dart'
     show
         AuraPopupMenu,
         AuraPopupMenuController,
         AuraPopupMenuDivider,
         AuraPopupMenuItem;
-export 'auravibes_radio_group.dart'
+export 'aura_radio_group.dart'
     show AuraRadioGroup, AuraRadioListTile, AuraRadioOption;
-export 'auravibes_sidebar.dart';
-export 'auravibes_switch.dart';
+export 'aura_sidebar.dart';
+export 'aura_switch.dart';

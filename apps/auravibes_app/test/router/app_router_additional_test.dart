@@ -1,4 +1,4 @@
-import 'package:auravibes_app/router/app_router.dart';
+import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

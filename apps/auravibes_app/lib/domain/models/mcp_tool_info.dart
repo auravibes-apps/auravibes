@@ -2,8 +2,8 @@
 // MCP Tool Info
 // ============================================================
 
-import 'package:auravibes_app/data/database/drift/tables/mcp_servers_table.dart';
-import 'package:auravibes_app/domain/entities/workspace_tool.dart';
+import 'package:auravibes_app/data/database/drift/tables/mcp_servers.dart';
+import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'mcp_tool_info.freezed.dart';

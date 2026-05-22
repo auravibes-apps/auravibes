@@ -1,6 +1,6 @@
-import 'package:auravibes_ui/src/atoms/auravibes_padding.dart';
-import 'package:auravibes_ui/src/atoms/auravibes_pressable.dart';
-import 'package:auravibes_ui/src/molecules/auravibes_card.dart';
+import 'package:auravibes_ui/src/atoms/aura_edge_insets_geometry.dart';
+import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
+import 'package:auravibes_ui/src/molecules/aura_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

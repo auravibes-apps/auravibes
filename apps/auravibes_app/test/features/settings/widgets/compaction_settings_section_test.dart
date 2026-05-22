@@ -1,10 +1,10 @@
 import 'dart:async';
 
-import 'package:auravibes_app/domain/entities/compaction.dart';
+import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/features/settings/providers/compaction_settings_provider.dart';
-import 'package:auravibes_app/features/settings/usecases/reset_compaction_settings_usecase.dart';
-import 'package:auravibes_app/features/settings/usecases/save_compaction_settings_usecase.dart';
+import 'package:auravibes_app/features/settings/usecases/reset_workspace_compaction_settings_usecase.dart';
+import 'package:auravibes_app/features/settings/usecases/save_workspace_compaction_settings_usecase.dart';
 import 'package:auravibes_app/features/settings/widgets/compaction_settings_section.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';

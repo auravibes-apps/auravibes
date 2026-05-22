@@ -1,5 +1,5 @@
 import 'package:auravibes_app/features/models/models/add_model_provider_model.dart';
-import 'package:auravibes_app/features/models/providers/add_model_providers.dart';
+import 'package:auravibes_app/features/models/providers/add_model_provider_state.dart';
 import 'package:auravibes_app/features/models/widgets/enhanced_model_input.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';

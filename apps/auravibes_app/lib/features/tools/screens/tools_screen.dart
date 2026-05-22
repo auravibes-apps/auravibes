@@ -1,8 +1,8 @@
-import 'package:auravibes_app/features/tools/providers/workspace_tools_provider.dart';
+import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/widgets/add_mcp_modal.dart';
 import 'package:auravibes_app/features/tools/widgets/add_tool_modal.dart';
-import 'package:auravibes_app/features/tools/widgets/tool_count_enabled.dart';
-import 'package:auravibes_app/features/tools/widgets/tools_workspace_list.dart';
+import 'package:auravibes_app/features/tools/widgets/tool_count_enabled_widget.dart';
+import 'package:auravibes_app/features/tools/widgets/tools_workspace_list_widget.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';

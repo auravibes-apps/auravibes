@@ -1,5 +1,5 @@
-import 'package:auravibes_app/domain/entities/api_model.dart';
-import 'package:auravibes_app/domain/entities/api_model_provider.dart';
+import 'package:auravibes_app/domain/entities/api_model_entity.dart';
+import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 
 /// Repository interface for API model and provider data operations.
 ///

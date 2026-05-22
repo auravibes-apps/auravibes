@@ -1,6 +1,6 @@
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
-import 'package:auravibes_app/router/app_router.dart';
-import 'package:auravibes_app/utils/ref_extensions.dart';
+import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/utils/change_notifier_with_code_gen_extension.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';

@@ -1,0 +1,236 @@
+import 'package:auravibes_ui/src/atoms/aura_message_status.dart';
+import 'package:auravibes_ui/src/tokens/aura_theme.dart';
+import 'package:auravibes_ui/src/tokens/design_tokens.dart';
+import 'package:flutter/material.dart';
+import 'package:gpt_markdown/gpt_markdown.dart';
+
+/// A message bubble component for chat interfaces.
+///
+/// This component displays chat messages with proper styling for user and AI
+/// messages, including different states and content types.
+class AuraMessageBubble extends StatelessWidget {
+  /// Creates a Aura message bubble.
+  const AuraMessageBubble({
+    required this.content,
+    required this.isUser,
+    super.key,
+    this.status = AuraMessageDeliveryStatus.sent,
+    this.timestamp,
+    this.contentType = AuraMessageContentType.text,
+    this.onTap,
+    this.onLongPress,
+    this.maxWidth,
+  });
+
+  /// The content of the message.
+  final String content;
+
+  /// Whether this message is from the user (true) or AI (false).
+  final bool isUser;
+
+  /// The delivery status of the message.
+  final AuraMessageDeliveryStatus status;
+
+  /// The timestamp when the message was sent.
+  final DateTime? timestamp;
+
+  /// The type of content in the message.
+  final AuraMessageContentType contentType;
+
+  /// Called when the message bubble is tapped.
+  final VoidCallback? onTap;
+
+  /// Called when the message bubble is long pressed.
+  final VoidCallback? onLongPress;
+
+  /// Maximum width of the message bubble.
+  final double? maxWidth;
+
+  @override
+  Widget build(BuildContext context) {
+    final auraColors = context.auraColors;
+
+    return Align(
+      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+      child: GestureDetector(
+        onTap: onTap,
+        onLongPress: onLongPress,
+        child: Container(
+          constraints: BoxConstraints(
+            maxWidth: maxWidth ?? MediaQuery.of(context).size.width * 0.75,
+          ),
+          margin: EdgeInsets.only(
+            left: isUser ? DesignSpacing.xl : DesignSpacing.md,
+            right: isUser ? DesignSpacing.md : DesignSpacing.xl,
+            bottom: DesignSpacing.sm,
+          ),
+          child: Column(
+            crossAxisAlignment: isUser
+                ? CrossAxisAlignment.end
+                : CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: _getPadding(),
+                decoration: _getDecoration(auraColors),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildContent(auraColors),
+                    if (timestamp != null) ...[
+                      const SizedBox(height: DesignSpacing.xs),
+                      _buildTimestamp(auraColors),
+                    ],
+                  ],
+                ),
+              ),
+              if (status != AuraMessageDeliveryStatus.sent) ...[
+                const SizedBox(height: DesignSpacing.xs / 2),
+                AuraMessageStatus(
+                  status: status,
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  EdgeInsets _getPadding() {
+    return switch (contentType) {
+      AuraMessageContentType.text => const EdgeInsets.symmetric(
+        horizontal: DesignSpacing.md,
+        vertical: DesignSpacing.sm,
+      ),
+      AuraMessageContentType.image => const EdgeInsets.all(DesignSpacing.xs),
+      AuraMessageContentType.file => const EdgeInsets.all(DesignSpacing.sm),
+    };
+  }
+
+  BoxDecoration _getDecoration(AuraColorScheme auraColors) {
+    final baseColor = isUser ? auraColors.primary : auraColors.surfaceVariant;
+
+    final errorColor = status == AuraMessageDeliveryStatus.error
+        ? auraColors.error.withValues(alpha: 0.1)
+        : null;
+
+    return BoxDecoration(
+      color: errorColor ?? baseColor,
+      borderRadius: BorderRadius.circular(DesignBorderRadius.xl),
+      border: status == AuraMessageDeliveryStatus.error
+          ? Border.all(color: auraColors.error)
+          : null,
+      boxShadow: [
+        if (status != AuraMessageDeliveryStatus.error) DesignShadows.sm,
+      ],
+    );
+  }
+
+  Widget _buildContent(AuraColorScheme auraColors) {
+    final textColor = isUser ? auraColors.onPrimary : auraColors.onSurface;
+
+    return switch (contentType) {
+      AuraMessageContentType.text => GptMarkdown(
+        content,
+        key: ValueKey(content),
+        style: TextStyle(
+          color: textColor,
+          fontSize: DesignTypography.fontSizeBase,
+          fontFamily: DesignTypography.bodyFontFamily,
+          height: DesignTypography.lineHeightBase,
+        ),
+      ),
+      AuraMessageContentType.image => ClipRRect(
+        borderRadius: BorderRadius.circular(DesignBorderRadius.md),
+        child: Image.network(
+          content,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => Container(
+            padding: const EdgeInsets.all(DesignSpacing.md),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.broken_image,
+                  color: textColor,
+                  size: 20,
+                ),
+                const SizedBox(width: DesignSpacing.sm),
+                Text(
+                  'Failed to load image',
+                  style: TextStyle(color: textColor),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      AuraMessageContentType.file => Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.attach_file,
+            color: textColor,
+            size: 20,
+          ),
+          const SizedBox(width: DesignSpacing.sm),
+          Flexible(
+            child: Text(
+              content,
+              style: TextStyle(
+                color: textColor,
+                fontSize: DesignTypography.fontSizeBase,
+                fontFamily: DesignTypography.bodyFontFamily,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    };
+  }
+
+  Widget _buildTimestamp(AuraColorScheme auraColors) {
+    final textColor = isUser
+        ? auraColors.onPrimary.withValues(alpha: 0.7)
+        : auraColors.onSurfaceVariant;
+
+    return Text(
+      _formatTimestamp(timestamp!),
+      style: TextStyle(
+        color: textColor,
+        fontSize: DesignTypography.fontSizeXs,
+        fontFamily: DesignTypography.bodyFontFamily,
+      ),
+    );
+  }
+
+  String _formatTimestamp(DateTime timestamp) {
+    final now = DateTime.now();
+    final difference = now.difference(timestamp);
+
+    if (difference.inMinutes < 1) {
+      return 'Just now';
+    } else if (difference.inHours < 1) {
+      return '${difference.inMinutes}m ago';
+    } else if (difference.inDays < 1) {
+      return '${difference.inHours}h ago';
+    } else {
+      return '${timestamp.day}/${timestamp.month}/${timestamp.year}';
+    }
+  }
+}
+
+/// The delivery status of a message.
+
+/// The type of content in a message.
+enum AuraMessageContentType {
+  /// Plain text content.
+  text,
+
+  /// Image content.
+  image,
+
+  /// File attachment.
+  file,
+}

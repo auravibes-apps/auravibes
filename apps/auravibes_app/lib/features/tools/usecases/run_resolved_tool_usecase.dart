@@ -1,6 +1,6 @@
-import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime_provider.dart';
-import 'package:auravibes_app/notifiers/mcp_connection_notifier.dart';
-import 'package:auravibes_app/services/tools/models/resolved_tool.dart';
+import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
+import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
+import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/native_tool_service.dart';
 import 'package:auravibes_app/services/tools/tool_service.dart';
 import 'package:riverpod/riverpod.dart';

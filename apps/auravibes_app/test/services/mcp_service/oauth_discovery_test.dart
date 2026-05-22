@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:auravibes_app/services/mcp_service/oauth_discovery.dart';
+import 'package:auravibes_app/services/mcp_service/o_auth_discovery_result.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart';
 import 'package:http/testing.dart';

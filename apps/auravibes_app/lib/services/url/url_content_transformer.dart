@@ -3,8 +3,8 @@
 // The _processTable method's for-loop bodies separate consecutive
 // buffer calls where cascading across control flow is misleading.
 
-import 'package:auravibes_app/services/url/models/transformed_url_content.dart';
-import 'package:auravibes_app/services/url/models/url_request.dart';
+import 'package:auravibes_app/services/url/models/url_content_format.dart';
+import 'package:auravibes_app/services/url/models/url_request_method.dart';
 import 'package:auravibes_app/services/url/models/url_response.dart';
 import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart' as parser;

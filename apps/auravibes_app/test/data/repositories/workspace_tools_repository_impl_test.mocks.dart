@@ -10,8 +10,7 @@ import 'package:auravibes_app/data/database/drift/daos/workspace_dao.dart'
     as _i7;
 import 'package:auravibes_app/data/database/drift/daos/workspace_tools_dao.dart'
     as _i5;
-import 'package:auravibes_app/data/database/drift/tables/tools_table.dart'
-    as _i9;
+import 'package:auravibes_app/data/database/drift/tables/tools.dart' as _i9;
 import 'package:auravibes_app/domain/enums/workspace_type.dart' as _i10;
 import 'package:drift/drift.dart' as _i3;
 import 'package:drift/src/runtime/executor/stream_queries.dart' as _i4;

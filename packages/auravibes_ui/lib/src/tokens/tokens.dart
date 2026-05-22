@@ -5,7 +5,7 @@
 /// across the application.
 library;
 
-export 'auravibes_theme.dart'
+export 'aura_theme.dart'
     show
         AuraAnimationTheme,
         AuraBorderRadiusTheme,

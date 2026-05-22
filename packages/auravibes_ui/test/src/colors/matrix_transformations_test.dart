@@ -1,4 +1,4 @@
-import 'package:auravibes_ui/src/colors/matrix_transformations.dart';
+import 'package:auravibes_ui/src/colors/vector.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

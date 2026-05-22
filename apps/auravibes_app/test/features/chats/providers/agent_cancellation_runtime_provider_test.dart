@@ -1,5 +1,5 @@
 // ignore_for_file: cascade_invocations
-import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime_provider.dart';
+import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

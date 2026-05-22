@@ -1,9 +1,9 @@
 import 'dart:async';
 
-import 'package:auravibes_app/features/tools/providers/workspace_tools_provider.dart';
+import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/widgets/add_tool_modal.dart';
-import 'package:auravibes_app/services/tools/user_tools_entity.dart';
-import 'package:auravibes_app/widgets/app_error.dart';
+import 'package:auravibes_app/services/tools/user_tool_type.dart';
+import 'package:auravibes_app/widgets/app_error_widget.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';

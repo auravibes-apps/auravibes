@@ -1,6 +1,6 @@
-import 'package:auravibes_app/domain/entities/mcp_server.dart';
-import 'package:auravibes_app/domain/usecases/tools/mcp/build_mcp_server_to_create_usecase.dart';
-import 'package:auravibes_app/services/mcp_service/oauth_authenticate.dart';
+import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
+import 'package:auravibes_app/domain/usecases/tools/mcp/build_mcp_server_to_create_use_case.dart';
+import 'package:auravibes_app/services/mcp_service/o_auth_authenticate.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

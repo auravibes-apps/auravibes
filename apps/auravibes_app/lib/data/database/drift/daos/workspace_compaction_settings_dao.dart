@@ -1,5 +1,5 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/data/database/drift/tables/workspace_compaction_settings_table.dart';
+import 'package:auravibes_app/data/database/drift/tables/workspace_compaction_settings.dart';
 import 'package:drift/drift.dart';
 
 part 'workspace_compaction_settings_dao.g.dart';

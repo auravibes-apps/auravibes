@@ -5,8 +5,8 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i4;
 
-import 'package:auravibes_app/domain/entities/api_model.dart' as _i6;
-import 'package:auravibes_app/domain/entities/api_model_provider.dart' as _i5;
+import 'package:auravibes_app/domain/entities/api_model_entity.dart' as _i6;
+import 'package:auravibes_app/domain/entities/model_providers_type.dart' as _i5;
 import 'package:auravibes_app/domain/repositories/api_model_repository.dart'
     as _i3;
 import 'package:auravibes_app/services/model_api_service.dart' as _i2;

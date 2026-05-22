@@ -1,8 +1,8 @@
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
+import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/tool_spec.dart';
-import 'package:auravibes_app/domain/entities/tools_group.dart';
-import 'package:auravibes_app/domain/entities/workspace_tool.dart';
-import 'package:auravibes_app/domain/usecases/tools/mcp/build_combined_tool_specs_usecase.dart';
+import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
+import 'package:auravibes_app/domain/usecases/tools/mcp/build_combined_tool_specs_use_case.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 WorkspaceToolEntity _tool({

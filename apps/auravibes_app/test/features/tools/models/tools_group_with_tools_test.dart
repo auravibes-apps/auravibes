@@ -1,7 +1,7 @@
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
-import 'package:auravibes_app/domain/entities/tools_group.dart';
-import 'package:auravibes_app/domain/entities/workspace_tool.dart';
-import 'package:auravibes_app/domain/models/grouped_tools_view_item.dart';
+import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
+import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
+import 'package:auravibes_app/domain/models/mcp_connection_view_status.dart';
 import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
 import 'package:flutter_test/flutter_test.dart';
 

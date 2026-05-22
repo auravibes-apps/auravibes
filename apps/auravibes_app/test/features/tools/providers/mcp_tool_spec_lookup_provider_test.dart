@@ -1,5 +1,5 @@
 import 'package:auravibes_app/domain/entities/tool_spec.dart';
-import 'package:auravibes_app/features/tools/providers/mcp_tool_spec_lookup_provider.dart';
+import 'package:auravibes_app/features/tools/providers/mcp_tool_spec_lookup.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 

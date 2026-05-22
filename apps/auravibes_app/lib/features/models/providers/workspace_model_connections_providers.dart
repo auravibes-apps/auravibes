@@ -1,4 +1,4 @@
-import 'package:auravibes_app/domain/entities/model_connection_entities.dart';
+import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 

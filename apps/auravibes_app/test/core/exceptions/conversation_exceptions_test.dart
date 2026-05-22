@@ -1,4 +1,4 @@
-import 'package:auravibes_app/core/exceptions/conversation_exceptions.dart';
+import 'package:auravibes_app/core/exceptions/no_conversation_selected_exception.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

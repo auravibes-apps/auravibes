@@ -10,12 +10,12 @@ import 'package:auravibes_app/data/database/drift/daos/api_model_providers_dao.d
     as _i5;
 import 'package:auravibes_app/data/database/drift/daos/model_connections_dao.dart'
     as _i7;
-import 'package:auravibes_app/data/database/drift/daos/workspace_model_selections_dao.dart'
+import 'package:auravibes_app/data/database/drift/daos/workspace_model_selection_with_connection.dart'
     as _i8;
-import 'package:auravibes_app/domain/entities/workspace_model_selection_entities.dart'
+import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart'
     as _i12;
 import 'package:auravibes_app/services/encryption_service.dart' as _i10;
-import 'package:auravibes_app/services/model_provider_services/model_provider_services.dart'
+import 'package:auravibes_app/services/model_provider_services/model_provider.dart'
     as _i11;
 import 'package:drift/drift.dart' as _i3;
 import 'package:drift/src/runtime/executor/stream_queries.dart' as _i4;

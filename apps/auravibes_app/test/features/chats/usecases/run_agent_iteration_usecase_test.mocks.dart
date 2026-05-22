@@ -5,9 +5,10 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i21;
 
-import 'package:auravibes_app/domain/entities/conversation.dart' as _i16;
-import 'package:auravibes_app/domain/entities/messages.dart' as _i17;
-import 'package:auravibes_app/domain/enums/message_types.dart' as _i25;
+import 'package:auravibes_app/domain/entities/conversation_entity.dart' as _i16;
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart'
+    as _i17;
+import 'package:auravibes_app/domain/enums/message_type.dart' as _i25;
 import 'package:auravibes_app/domain/repositories/api_model_repository.dart'
     as _i18;
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart'
@@ -16,9 +17,9 @@ import 'package:auravibes_app/domain/repositories/message_repository.dart'
     as _i3;
 import 'package:auravibes_app/domain/repositories/workspace_model_selection_repository.dart'
     as _i4;
-import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime_provider.dart'
+import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart'
     as _i8;
-import 'package:auravibes_app/features/chats/providers/streaming_runtime_provider.dart'
+import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart'
     as _i7;
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_context.dart'
     as _i22;
@@ -26,7 +27,7 @@ import 'package:auravibes_app/features/chats/usecases/agent_iteration_decision.d
     as _i24;
 import 'package:auravibes_app/features/chats/usecases/compact_conversation_usecase.dart'
     as _i20;
-import 'package:auravibes_app/features/chats/usecases/continue_agent_usecase.dart'
+import 'package:auravibes_app/features/chats/usecases/continue_agent_result.dart'
     as _i11;
 import 'package:auravibes_app/features/chats/usecases/maybe_auto_compact_conversation_usecase.dart'
     as _i26;
@@ -38,14 +39,14 @@ import 'package:auravibes_app/features/tools/usecases/get_agent_iteration_decisi
     as _i15;
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart'
     as _i6;
-import 'package:auravibes_app/features/tools/usecases/load_latest_message_tool_calls_usecase.dart'
+import 'package:auravibes_app/features/tools/usecases/load_latest_message_tool_calls_result.dart'
     as _i12;
-import 'package:auravibes_app/features/tools/usecases/resolve_tool_approval_decision_usecase.dart'
-    as _i13;
 import 'package:auravibes_app/features/tools/usecases/run_allowed_tools_usecase.dart'
     as _i23;
 import 'package:auravibes_app/features/tools/usecases/run_resolved_tool_usecase.dart'
     as _i14;
+import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart'
+    as _i13;
 import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart'
     as _i2;
 import 'package:auravibes_app/services/monitoring_service.dart' as _i9;

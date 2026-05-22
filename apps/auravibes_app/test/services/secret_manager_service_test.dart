@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:auravibes_app/services/secret_manager_service.dart';
+import 'package:auravibes_app/services/secret_key_manager.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';

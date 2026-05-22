@@ -1,4 +1,4 @@
-import 'package:auravibes_app/features/workspaces/models/workspace_switch_state.dart';
+import 'package:auravibes_app/features/workspaces/models/switch_status.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

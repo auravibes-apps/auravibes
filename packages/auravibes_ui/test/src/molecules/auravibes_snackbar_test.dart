@@ -1,5 +1,5 @@
-import 'package:auravibes_ui/src/molecules/auravibes_snackbar.dart';
-import 'package:auravibes_ui/src/tokens/auravibes_theme.dart';
+import 'package:auravibes_ui/src/molecules/aura_snack_bar_variant.dart';
+import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

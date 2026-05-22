@@ -1,4 +1,4 @@
-import 'package:auravibes_app/domain/entities/model_connection_entities.dart';
+import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 
 /// Repository interface for model connection data operations.
 ///

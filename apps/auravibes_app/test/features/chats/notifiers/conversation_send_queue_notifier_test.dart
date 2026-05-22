@@ -1,7 +1,7 @@
 // ignore_for_file: cascade_invocations
 // Required: enqueue() returns ConversationQueuedDraft, not the notifier,
 // so cascading is not possible when calling multiple notifier methods.
-import 'package:auravibes_app/features/chats/notifiers/conversation_send_queue_notifier.dart';
+import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 

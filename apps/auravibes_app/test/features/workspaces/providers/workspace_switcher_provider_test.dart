@@ -1,7 +1,7 @@
 // ignore_for_file: cascade_invocations
 
-import 'package:auravibes_app/features/workspaces/models/workspace_switch_state.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_switcher_provider.dart';
+import 'package:auravibes_app/features/workspaces/models/switch_status.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_switcher.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';

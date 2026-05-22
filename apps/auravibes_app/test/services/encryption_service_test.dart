@@ -1,5 +1,5 @@
 import 'package:auravibes_app/services/encryption_service.dart';
-import 'package:auravibes_app/services/secret_manager_service.dart';
+import 'package:auravibes_app/services/secret_key_manager.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter_test/flutter_test.dart';
 

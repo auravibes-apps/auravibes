@@ -1,4 +1,4 @@
-import 'package:auravibes_app/domain/entities/compaction.dart';
+import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/repositories/api_model_repository.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/repositories/workspace_model_selection_repository.dart';

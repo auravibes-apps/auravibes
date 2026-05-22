@@ -1,6 +1,6 @@
 // ignore_for_file: cascade_invocations
-import 'package:auravibes_app/domain/entities/model_connection_entities.dart';
-import 'package:auravibes_app/domain/enums/chat_models_type.dart';
+import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
+import 'package:auravibes_app/domain/enums/credentials_model_type.dart';
 import 'package:auravibes_app/domain/repositories/model_connection_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 

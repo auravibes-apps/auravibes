@@ -1,6 +1,6 @@
-import 'package:auravibes_app/domain/entities/workspace.dart';
+import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
-import 'package:auravibes_app/features/workspaces/models/workspace_management_state.dart';
+import 'package:auravibes_app/features/workspaces/models/management_mode.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 WorkspaceEntity _workspace({

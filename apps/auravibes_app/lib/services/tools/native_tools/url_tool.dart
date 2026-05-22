@@ -3,8 +3,8 @@ import 'dart:io';
 
 import 'package:async/async.dart';
 import 'package:auravibes_app/domain/entities/tool_spec.dart';
-import 'package:auravibes_app/services/tools/native_tool_entity.dart';
-import 'package:auravibes_app/services/url/models/url_request.dart';
+import 'package:auravibes_app/services/tools/native_tool_type.dart';
+import 'package:auravibes_app/services/url/models/url_request_method.dart';
 import 'package:auravibes_app/services/url/models/url_response.dart';
 import 'package:auravibes_app/services/url/url_content_transformer.dart';
 import 'package:auravibes_app/services/url/url_service.dart';

@@ -1,8 +1,8 @@
 import 'dart:math' as math;
 
-import 'package:auravibes_app/domain/entities/messages.dart';
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/tool_grant_level.dart';
-import 'package:auravibes_app/features/chats/providers/messages_providers.dart';
+import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
 import 'package:auravibes_app/features/tools/usecases/approve_tool_call_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/skip_tool_call_usecase.dart';

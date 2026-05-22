@@ -1,9 +1,9 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/domain/entities/model_connection_entities.dart';
-import 'package:auravibes_app/domain/entities/workspace_model_selection_entities.dart';
+import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
+import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
-import 'package:auravibes_app/services/model_provider_services/model_provider_services.dart';
+import 'package:auravibes_app/services/model_provider_services/model_provider.dart';
 import 'package:drift/drift.dart';
 
 /// Implementation of the [ModelConnectionRepository] interface.

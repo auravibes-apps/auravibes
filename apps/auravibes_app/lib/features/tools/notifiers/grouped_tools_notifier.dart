@@ -1,10 +1,10 @@
 import 'package:auravibes_app/data/repositories/tools_groups_repository_impl.dart';
-import 'package:auravibes_app/domain/models/grouped_tools_view_item.dart';
+import 'package:auravibes_app/domain/models/mcp_connection_view_status.dart';
 import 'package:auravibes_app/domain/repositories/tools_groups_repository.dart';
-import 'package:auravibes_app/domain/usecases/tools/groups/build_grouped_tools_view_usecase.dart';
+import 'package:auravibes_app/domain/usecases/tools/groups/build_grouped_tools_view_use_case.dart';
 import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
-import 'package:auravibes_app/features/tools/providers/workspace_tools_provider.dart';
-import 'package:auravibes_app/notifiers/mcp_connection_notifier.dart';
+import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
+import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 

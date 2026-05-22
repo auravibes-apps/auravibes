@@ -1,5 +1,5 @@
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
-import 'package:auravibes_app/features/chats/screens/list_chats_screen.dart';
+import 'package:auravibes_app/features/chats/screens/chats_list_screen.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';

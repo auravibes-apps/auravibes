@@ -1,5 +1,5 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/data/database/drift/tables/api_model_table.dart';
+import 'package:auravibes_app/data/database/drift/tables/api_models.dart';
 import 'package:drift/drift.dart';
 import 'package:logging/logging.dart';
 

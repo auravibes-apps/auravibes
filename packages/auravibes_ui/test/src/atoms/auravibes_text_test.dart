@@ -1,4 +1,4 @@
-import 'package:auravibes_ui/src/atoms/auravibes_text.dart';
+import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

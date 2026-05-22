@@ -1,5 +1,5 @@
+import 'package:auravibes_app/services/tools/user_tool_type.dart';
 import 'package:auravibes_app/services/tools/user_tools/calculator_tool.dart';
-import 'package:auravibes_app/services/tools/user_tools_entity.dart';
 import 'package:collection/collection.dart';
 
 /// Service for managing app-defined AI tools with context-aware resolution.
