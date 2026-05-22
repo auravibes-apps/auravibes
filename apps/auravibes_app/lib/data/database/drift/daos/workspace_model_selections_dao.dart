@@ -10,11 +10,13 @@ class WorkspaceModelSelectionWithConnection {
     required this.model,
     required this.modelConnection,
     required this.modelProvider,
+    this.apiModel,
   });
 
   final WorkspaceModelSelectionTable model;
   final ModelConnectionTable modelConnection;
   final ApiModelProvidersTable modelProvider;
+  final ApiModelsTable? apiModel;
 }
 
 /// Data Access Object for workspace operations.
@@ -78,6 +80,11 @@ class WorkspaceModelSelectionsDao extends DatabaseAccessor<AppDatabase>
         apiModelProviders,
         apiModelProviders.id.equalsExp(modelConnections.modelId),
       ),
+      leftOuterJoin(
+        apiModels,
+        apiModels.id.equalsExp(workspaceModelSelections.modelId) &
+            apiModels.modelProvider.equalsExp(modelConnections.modelId),
+      ),
     ]);
   }
 
@@ -94,5 +101,6 @@ class WorkspaceModelSelectionsDao extends DatabaseAccessor<AppDatabase>
         modelConnection: row.readTable(modelConnections),
         model: row.readTable(workspaceModelSelections),
         modelProvider: row.readTable(apiModelProviders),
+        apiModel: row.readTableOrNull(apiModels),
       );
 }

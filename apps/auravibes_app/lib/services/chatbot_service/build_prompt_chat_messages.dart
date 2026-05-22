@@ -23,8 +23,10 @@ class BuildPromptChatMessages {
 
     final toolCalls =
         message.metadata?.toolCalls ?? const <MessageToolCallEntity>[];
+    final thinking = message.metadata?.thinking?.trim();
 
     final parts = <Part>[
+      if (thinking != null && thinking.isNotEmpty) ThinkingPart(thinking),
       if (message.content.isNotEmpty) TextPart(message.content),
       for (final toolCall in toolCalls)
         ToolPart.call(
@@ -45,7 +47,12 @@ class BuildPromptChatMessages {
     ];
 
     return [
-      if (parts.isNotEmpty) ChatMessage.model('', parts: parts),
+      if (parts.isNotEmpty)
+        ChatMessage.model(
+          '',
+          parts: parts,
+          metadata: message.metadata?.modelMetadata ?? const {},
+        ),
       if (resultParts.isNotEmpty) ChatMessage.user('', parts: resultParts),
     ];
   }

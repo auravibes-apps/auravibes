@@ -49,7 +49,7 @@ class _FakeWorkspaceModelSelectionRepository
 void main() {
   group('listWorkspaceModelSelectionsProvider', () {
     test('returns selections for given workspace', () async {
-      final now = DateTime(2024, 1, 1);
+      final now = DateTime(2024);
       final selections = [
         WorkspaceModelSelectionWithConnectionEntity(
           workspaceModelSelection: WorkspaceModelSelectionEntity(

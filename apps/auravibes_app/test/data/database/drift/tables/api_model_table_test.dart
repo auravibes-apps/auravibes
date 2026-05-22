@@ -69,12 +69,13 @@ void main() {
           'cost_cache_read',
           'limit_context',
           'limit_output',
+          'supports_reasoning',
         ]),
       );
     });
 
-    test('has 11 columns', () {
-      expect(columns.length, 11);
+    test('has 12 columns', () {
+      expect(columns.length, 12);
     });
 
     test('composite primary key on id and model_provider', () {
@@ -129,6 +130,14 @@ void main() {
       );
       expect(col.read<int>('notnull'), 1);
     });
+
+    test('supports_reasoning defaults to false', () {
+      final col = columns.firstWhere(
+        (r) => r.read<String>('name') == 'supports_reasoning',
+      );
+      expect(col.read<int>('notnull'), 1);
+      expect(col.read<String>('dflt_value'), '0');
+    });
   });
 
   group('ApiModels column accessors', () {
@@ -153,6 +162,7 @@ void main() {
       expect(table.costCacheRead, isNotNull);
       expect(table.limitContext, isNotNull);
       expect(table.limitOutput, isNotNull);
+      expect(table.supportsReasoning, isNotNull);
     });
 
     test('primaryKey contains id and modelProvider', () {
@@ -175,11 +185,12 @@ void main() {
       expect(table.costCacheRead.name, 'cost_cache_read');
       expect(table.limitContext.name, 'limit_context');
       expect(table.limitOutput.name, 'limit_output');
+      expect(table.supportsReasoning.name, 'supports_reasoning');
     });
 
-    test(r'$columns returns all 11 columns', () {
+    test(r'$columns returns all 12 columns', () {
       final table = db.apiModels;
-      expect(table.$columns.length, 11);
+      expect(table.$columns.length, 12);
     });
 
     test('table name is api_models', () {

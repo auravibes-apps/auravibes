@@ -14,6 +14,7 @@ void main() {
       String modelId = 'gpt-4o',
       String? connectionUrl,
       String? providerUrl,
+      bool supportsReasoning = false,
     }) {
       return WorkspaceModelSelectionWithConnectionEntity(
         workspaceModelSelection: WorkspaceModelSelectionEntity(
@@ -22,6 +23,7 @@ void main() {
           createdAt: DateTime(2025),
           updatedAt: DateTime(2025),
           modelConnectionId: 'mc1',
+          supportsReasoning: supportsReasoning,
         ),
         modelConnection: ModelConnectionEntity(
           id: 'mc1',
@@ -48,6 +50,47 @@ void main() {
 
       expect(chatModel, isA<ChatModel>());
       expect(chatModel.name, 'gpt-4o');
+    });
+
+    test('keeps official non-reasoning OpenAI models on chat completions', () {
+      final config = makeConfig(
+        type: ModelProvidersType.openai,
+        providerUrl: 'https://api.openai.com/v1',
+      );
+      final chatModel = factory(config, apiKey: 'sk-test');
+
+      expect(chatModel, isA<ChatModel>());
+      expect(chatModel.name, 'gpt-4o');
+      expect(chatModel.runtimeType.toString(), 'OpenAIChatModel');
+    });
+
+    test('enables OpenAI responses for official reasoning models', () {
+      final config = makeConfig(
+        type: ModelProvidersType.openai,
+        modelId: 'gpt-5',
+        providerUrl: 'https://api.openai.com/v1',
+        supportsReasoning: true,
+      );
+      final chatModel = factory(config, apiKey: 'sk-test');
+
+      expect(chatModel, isA<ChatModel>());
+      expect(chatModel.name, 'gpt-5');
+      expect(chatModel.runtimeType.toString(), 'OpenAIResponsesChatModel');
+    });
+
+    test('keeps custom compatible reasoning models on chat completions', () {
+      final config = makeConfig(
+        type: ModelProvidersType.openai,
+        modelId: 'deepseek-reasoner',
+        connectionUrl: 'https://custom.example.com/v1',
+        providerUrl: 'https://api.openai.com/v1',
+        supportsReasoning: true,
+      );
+      final chatModel = factory(config, apiKey: 'sk-test');
+
+      expect(chatModel, isA<ChatModel>());
+      expect(chatModel.name, 'deepseek-reasoner');
+      expect(chatModel.runtimeType.toString(), 'OpenAIChatModel');
     });
 
     test('creates ChatModel for anthropic provider', () {

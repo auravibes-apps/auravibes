@@ -23,8 +23,11 @@ import 'package:auravibes_app/services/monitoring_service.dart';
 import 'package:auravibes_app/utils/chat_result_extension.dart';
 import 'package:auravibes_app/utils/coalescing_save_extension.dart';
 import 'package:dartantic_ai/dartantic_ai.dart' hide Provider;
+import 'package:logging/logging.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:rxdart/rxdart.dart';
+
+final _logger = Logger('continue_agent_usecase');
 
 class ContinueAgentResult {
   const ContinueAgentResult({
@@ -54,6 +57,10 @@ class _ContinueAgentRunState {
   Future<void>? persistenceFuture;
   StreamSubscription<ChatResult<ChatMessage>>? responseSubscription;
   Future<void>? activeChunkProcessing;
+  final Stopwatch stopwatch = Stopwatch()..start();
+  String stage = 'start';
+  int chunkCount = 0;
+  bool streamingRuntimeRemoved = false;
 }
 
 class ContinueAgentUsecase {
@@ -85,6 +92,8 @@ class ContinueAgentUsecase {
     required String conversationId,
     AgentIterationContext? context,
   }) async {
+    _logger.info('debug:start conversation=$conversationId');
+
     final conversation = await _loadConversation(conversationId);
     final foundModel = await _loadSelectedModel(conversation);
     final messages = await _selectPromptMessages(conversationId);
@@ -125,6 +134,13 @@ class ContinueAgentUsecase {
     if (foundModel == null) {
       throw Exception('Selected model not found');
     }
+    final selectedModel = foundModel.workspaceModelSelection;
+    _logger.info(
+      'debug:model loaded '
+      'modelId=${selectedModel.modelId} '
+      'provider=${foundModel.modelsProvider.type} '
+      'supportsReasoning=${selectedModel.supportsReasoning}',
+    );
     return foundModel;
   }
 
@@ -136,6 +152,11 @@ class ContinueAgentUsecase {
     required List<ToolSpec> tools,
   }) async {
     final chatHistory = const BuildPromptChatMessages()(messages);
+    _logger.info(
+      'debug:prompt ready conversation=$conversationId '
+      'messages=${messages.length} chatHistory=${chatHistory.length} '
+      'tools=${tools.length}',
+    );
     assert(
       () {
         final firstNonSystem = chatHistory.cast<ChatMessage?>().firstWhere(
@@ -159,10 +180,12 @@ class ContinueAgentUsecase {
       pendingUserMessageIds: context?.ackMessageIds ?? const <String>[],
     );
     conversationStreamingRuntime.start(conversationId);
-
     try {
+      state.stage = 'start_persistence_stream';
       _startPersistence(state);
 
+      state.stage = 'send_message';
+      _logger.info('debug:send stream start conversation=$conversationId');
       final responseStream = chatbotService
           .sendMessage(foundModel, chatHistory, tools: tools)
           .doOnError((error, stackTrace) {
@@ -174,6 +197,7 @@ class ContinueAgentUsecase {
           });
 
       _listenToResponse(state, responseStream);
+      state.stage = 'await_response_completion';
       await state.responseCompleter.future;
 
       if (agentCancellationRuntime.isCancellationRequested(conversationId)) {
@@ -183,11 +207,33 @@ class ContinueAgentUsecase {
       if (state.accumulatedResult == null || state.firstMessage == null) {
         throw StateError('Agent stream completed without any result');
       }
+      final completedMessage = state.firstMessage!;
+      final completedResult = state.accumulatedResult!;
 
+      state.stage = 'close_persistence_stream';
       await _closePersistence(state);
+
+      state.stage = 'remove_streaming_runtime_before_final_patch';
+      _logger.info(
+        'debug:remove streaming runtime before final patch '
+        'conversation=$conversationId message=${completedMessage.id} '
+        'chunks=${state.chunkCount} '
+        'hasThinking=${completedResult.entityThinking != null} '
+        'hasModelMetadata='
+        '${completedResult.entityModelMetadata.isNotEmpty}',
+      );
+      await messagesStreamingRuntime.remove(completedMessage.id);
+      state
+        ..streamingRuntimeRemoved = true
+        ..stage = 'persist_completed_message';
       await _persistCompletedAssistantMessage(
-        state.firstMessage!,
-        state.accumulatedResult!,
+        completedMessage,
+        completedResult,
+      );
+      _logger.info(
+        'debug:completed persisted conversation=$conversationId '
+        'message=${completedMessage.id} chunks=${state.chunkCount} '
+        'durationMs=${state.stopwatch.elapsedMilliseconds}',
       );
     } on Object catch (error, stackTrace) {
       await _handleContinuationError(state, error, stackTrace);
@@ -234,9 +280,15 @@ class ContinueAgentUsecase {
     state.responseSubscription = responseStream.listen(
       null,
       onError: (Object error, StackTrace stackTrace) {
+        state.stage = 'response_stream_error';
         _handleResponseError(state, error, stackTrace);
       },
       onDone: () {
+        state.stage = 'response_stream_done';
+        _logger.info(
+          'debug:stream done conversation=${state.conversationId} '
+          'chunks=${state.chunkCount} message=${state.firstMessage?.id}',
+        );
         _completeResponse(state);
       },
       cancelOnError: true,
@@ -252,17 +304,25 @@ class ContinueAgentUsecase {
     ChatResult<ChatMessage> chunk,
   ) async {
     try {
+      state.stage = 'handle_chunk';
       await _handleChunk(state, chunk);
       if (agentCancellationRuntime.isCancellationRequested(
         state.conversationId,
       )) {
+        state.stage = 'cancel_response_subscription';
+        _logger.info(
+          'debug:cancellation requested conversation=${state.conversationId} '
+          'chunks=${state.chunkCount} message=${state.firstMessage?.id}',
+        );
         await state.responseSubscription?.cancel();
         _completeResponse(state);
         return;
       }
 
+      state.stage = 'resume_response_subscription';
       state.responseSubscription?.resume();
     } on Object catch (error, stackTrace) {
+      state.stage = 'chunk_processing_error';
       await state.responseSubscription?.cancel();
       _completeResponseError(state, error, stackTrace);
     }
@@ -275,16 +335,24 @@ class ContinueAgentUsecase {
     if (agentCancellationRuntime.isCancellationRequested(
       state.conversationId,
     )) {
+      _logger.info(
+        'debug:chunk ignored after cancellation '
+        'conversation=${state.conversationId}',
+      );
       return;
     }
 
-    state.accumulatedResult = state.accumulatedResult?.concat(chunk) ?? chunk;
-    final currentResult = state.accumulatedResult!;
+    final currentResult = state.accumulatedResult?.concat(chunk) ?? chunk;
+    state
+      ..chunkCount += 1
+      ..stage = 'acknowledge_pending_users'
+      ..accumulatedResult = currentResult;
 
-    state.hasAcknowledgedPendingUsers = await _acknowledgePendingUsers(
+    final hasAcknowledgedPendingUsers = await _acknowledgePendingUsers(
       state.pendingUserMessageIds,
       alreadyAcknowledged: state.hasAcknowledgedPendingUsers,
     );
+    state.hasAcknowledgedPendingUsers = hasAcknowledgedPendingUsers;
 
     await _ensureAssistantMessage(state, currentResult);
     final currentMessage = state.firstMessage!;
@@ -299,7 +367,8 @@ class ContinueAgentUsecase {
   ) async {
     if (state.firstMessage != null) return;
 
-    state.firstMessage = await messageRepository.createMessage(
+    state.stage = 'create_assistant_message';
+    final firstMessage = await messageRepository.createMessage(
       .new(
         conversationId: state.conversationId,
         content: currentResult.output.text,
@@ -308,9 +377,17 @@ class ContinueAgentUsecase {
         status: .unfinished,
       ),
     );
+    state.firstMessage = firstMessage;
+    _logger.info(
+      'debug:first assistant message conversation=${state.conversationId} '
+      'message=${firstMessage.id} chunks=${state.chunkCount} '
+      'hasThinking=${currentResult.entityThinking != null} '
+      'hasModelMetadata=${currentResult.entityModelMetadata.isNotEmpty}',
+    );
+    state.stage = 'start_message_streaming_runtime';
     messagesStreamingRuntime.startSubscription(
       state.subs,
-      state.firstMessage!.id,
+      firstMessage.id,
     );
   }
 
@@ -322,6 +399,10 @@ class ContinueAgentUsecase {
     if (agentCancellationRuntime.isCancellationRequested(
       state.conversationId,
     )) {
+      _logger.info(
+        'debug:stream error during cancellation '
+        'conversation=${state.conversationId} chunks=${state.chunkCount}',
+      );
       monitoringService.trackError(
         'Stream error during cancellation',
         error: error,
@@ -353,6 +434,11 @@ class ContinueAgentUsecase {
   Future<ContinueAgentResult> _completeCancelledRun(
     _ContinueAgentRunState state,
   ) async {
+    state.stage = 'persist_stopped_message';
+    _logger.info(
+      'debug:persist stopped conversation=${state.conversationId} '
+      'chunks=${state.chunkCount} message=${state.firstMessage?.id}',
+    );
     await _closePersistence(state);
     state.hasAcknowledgedPendingUsers = await _acknowledgePendingUsers(
       state.pendingUserMessageIds,
@@ -382,6 +468,14 @@ class ContinueAgentUsecase {
     Object error,
     StackTrace stackTrace,
   ) async {
+    _logger.severe(
+      'debug:continue agent failed conversation=${state.conversationId} '
+      'stage=${state.stage} chunks=${state.chunkCount} '
+      'message=${state.firstMessage?.id} '
+      'streamingRuntimeRemoved=${state.streamingRuntimeRemoved}',
+      error,
+      stackTrace,
+    );
     await _markPendingUsersErrored(
       state.pendingUserMessageIds,
       alreadyAcknowledged: state.hasAcknowledgedPendingUsers,
@@ -396,14 +490,21 @@ class ContinueAgentUsecase {
   }
 
   Future<void> _cleanupContinuation(_ContinueAgentRunState state) async {
+    state.stage = 'cleanup';
     await state.responseSubscription?.cancel();
     await state.streamingController?.close();
     await state.persistenceFuture;
     conversationStreamingRuntime.remove(state.conversationId);
-    if (state.firstMessage != null) {
+    if (state.firstMessage != null && !state.streamingRuntimeRemoved) {
       await messagesStreamingRuntime.remove(state.firstMessage!.id);
     }
     state.subs.dispose();
+    _logger.info(
+      'debug:cleanup done conversation=${state.conversationId} '
+      'chunks=${state.chunkCount} message=${state.firstMessage?.id} '
+      'streamingRuntimeRemoved=${state.streamingRuntimeRemoved} '
+      'durationMs=${state.stopwatch.elapsedMilliseconds}',
+    );
   }
 
   Future<bool> _acknowledgePendingUsers(

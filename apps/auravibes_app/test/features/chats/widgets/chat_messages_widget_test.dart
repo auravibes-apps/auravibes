@@ -151,6 +151,37 @@ void main() {
       expect(find.text('Hello user'), findsOneWidget);
     });
 
+    testWidgets('renders AI reasoning summary separately', (tester) async {
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          overrides: [
+            messageConversationByIdProvider.overrideWith(
+              (ref, id) => _createMessage(
+                content: 'Final answer',
+                isUser: false,
+                metadata: const MessageMetadataEntity(
+                  thinking: 'Reasoned before answering',
+                ),
+              ),
+            ),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      expect(find.text('Reasoning summary'), findsOneWidget);
+      expect(find.text('Reasoned before answering'), findsOneWidget);
+      expect(find.text('Final answer'), findsOneWidget);
+    });
+
     testWidgets('handles null message gracefully', (tester) async {
       await pumpAndInit(
         tester,
@@ -204,6 +235,46 @@ void main() {
         ),
       );
 
+      expect(find.byIcon(Icons.check_circle_outline), findsOneWidget);
+    });
+
+    testWidgets('renders reasoning summary when tool calls hide empty answer', (
+      tester,
+    ) async {
+      const toolCall = MessageToolCallEntity(
+        id: 'tc-1',
+        name: 'built_in_1_read_file',
+        argumentsRaw: '{"input": "test.txt"}',
+        resultStatus: ToolCallResultStatus.success,
+      );
+      final message = _createMessage(
+        content: '',
+        isUser: false,
+        metadata: const MessageMetadataEntity(
+          thinking: 'Need to inspect the file first',
+          toolCalls: [toolCall],
+        ),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          overrides: [
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      expect(find.text('Reasoning summary'), findsOneWidget);
+      expect(find.text('Need to inspect the file first'), findsOneWidget);
       expect(find.byIcon(Icons.check_circle_outline), findsOneWidget);
     });
 

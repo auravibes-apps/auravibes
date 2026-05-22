@@ -71,6 +71,7 @@
       "waiting_for_tools": "Waiting for tools to connect...",
       "waiting_for_tools_named": "Waiting for {tools} to connect...",
       "thinking_status": "Thinking...",
+      "reasoning_summary": "Reasoning summary",
       "tool_resolution_status": "Waiting for tool resolution...",
       "queued_messages_count": {
         "one": "1 queued message",

@@ -40,7 +40,7 @@ void main() {
           '<body>' //
           '<nav><h1>Title</h1></nav>' //
           '<main><p>Main content</p></main>' //
-          '</body></html>',
+          ' </body></html>',
         );
         final result = transformer.transform(response);
 

@@ -14,6 +14,7 @@ abstract class WorkspaceModelSelectionEntity
     required DateTime createdAt,
     required DateTime updatedAt,
     required String modelConnectionId,
+    @Default(false) bool supportsReasoning,
   }) = _WorkspaceModelSelectionEntity;
 }
 

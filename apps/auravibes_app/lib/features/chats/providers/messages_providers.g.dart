@@ -248,7 +248,7 @@ final class MessageConversationByIdProvider
 }
 
 String _$messageConversationByIdHash() =>
-    r'02813ab0ac34207846c3a7cf9440a161bf1ba471';
+    r'0f28d8489671a9e5848185b0396ab01c52113ad4';
 
 final class MessageConversationByIdFamily extends $Family
     with $FunctionalFamilyOverride<MessageEntity?, String> {
