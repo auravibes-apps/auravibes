@@ -325,10 +325,10 @@ packages:
     dependency: transitive
     description:
       name: dartantic_ai
-      sha256: "2c6cf66ef2ee081a2b863c11b7d8343e0f760380ba1a367df567a537c520bd14"
+      sha256: "32a3cb9f47d37d8d0da9dee2c9bfa7d1ad421b5c10b53428751b526fa6ece28f"
       url: "https://pub.dev"
     source: hosted
-    version: "3.4.0"
+    version: "3.4.1"
   dartantic_interface:
     dependency: transitive
     description:
