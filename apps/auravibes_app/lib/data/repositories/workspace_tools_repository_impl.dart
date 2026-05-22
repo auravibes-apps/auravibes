@@ -1,7 +1,7 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_tools_dao.dart';
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
-import 'package:auravibes_app/domain/entities/workspace_tool.dart';
+import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/services/tools/native_tool_service.dart';
 import 'package:auravibes_app/services/tools/tool_service.dart';

@@ -1,4 +1,4 @@
-import 'package:auravibes_app/domain/enums/message_types.dart';
+import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

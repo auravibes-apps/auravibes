@@ -1,6 +1,6 @@
-import 'package:auravibes_app/features/chats/providers/messages_providers.dart';
+import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
-import 'package:auravibes_app/notifiers/mcp_connection_notifier.dart';
+import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';

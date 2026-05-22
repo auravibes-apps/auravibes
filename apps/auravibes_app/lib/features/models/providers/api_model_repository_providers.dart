@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:auravibes_app/data/repositories/api_model_repository_impl.dart';
-import 'package:auravibes_app/domain/entities/api_model.dart';
-import 'package:auravibes_app/domain/entities/api_model_provider.dart';
+import 'package:auravibes_app/domain/entities/api_model_entity.dart';
+import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/repositories/api_model_repository.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/services/model_api_service.dart';

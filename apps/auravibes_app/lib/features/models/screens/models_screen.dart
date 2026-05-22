@@ -1,7 +1,7 @@
-import 'package:auravibes_app/features/models/providers/add_model_providers.dart';
+import 'package:auravibes_app/features/models/providers/add_model_provider_state.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_connections_providers.dart';
-import 'package:auravibes_app/features/models/widgets/add_chat_model.dart';
-import 'package:auravibes_app/features/models/widgets/list_model_credentials.dart';
+import 'package:auravibes_app/features/models/widgets/add_model_provider_widget.dart';
+import 'package:auravibes_app/features/models/widgets/list_model_connections_widget.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/app_content.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';

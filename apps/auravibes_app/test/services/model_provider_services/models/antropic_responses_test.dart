@@ -1,4 +1,4 @@
-import 'package:auravibes_app/services/model_provider_services/models/antropic_responses.dart';
+import 'package:auravibes_app/services/model_provider_services/models/antropic_response_models_item.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

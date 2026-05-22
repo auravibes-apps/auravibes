@@ -1,7 +1,7 @@
-import 'package:auravibes_app/domain/entities/compaction.dart';
+import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/features/chats/usecases/compact_conversation_usecase.dart';
-import 'package:auravibes_app/features/chats/usecases/manual_compact_conversation_usecase.dart';
+import 'package:auravibes_app/features/chats/usecases/manual_compaction_result.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';

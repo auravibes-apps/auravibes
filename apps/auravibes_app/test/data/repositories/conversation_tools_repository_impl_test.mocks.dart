@@ -5,7 +5,7 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i4;
 
-import 'package:auravibes_app/domain/entities/workspace_tool.dart' as _i2;
+import 'package:auravibes_app/domain/entities/tool_permission_mode.dart' as _i2;
 import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dart'
     as _i3;
 import 'package:mockito/mockito.dart' as _i1;

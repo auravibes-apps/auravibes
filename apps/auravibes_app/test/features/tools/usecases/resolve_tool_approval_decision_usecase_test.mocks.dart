@@ -5,9 +5,10 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i4;
 
-import 'package:auravibes_app/domain/entities/conversation_tool.dart' as _i5;
-import 'package:auravibes_app/domain/entities/tools_group.dart' as _i8;
-import 'package:auravibes_app/domain/entities/workspace_tool.dart' as _i2;
+import 'package:auravibes_app/domain/entities/conversation_tool_entity.dart'
+    as _i5;
+import 'package:auravibes_app/domain/entities/tool_permission_mode.dart' as _i2;
+import 'package:auravibes_app/domain/entities/tools_group_entity.dart' as _i8;
 import 'package:auravibes_app/domain/enums/tool_permission_result.dart' as _i6;
 import 'package:auravibes_app/domain/repositories/conversation_tools_repository.dart'
     as _i3;

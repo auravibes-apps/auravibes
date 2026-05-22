@@ -5,12 +5,13 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i8;
 
-import 'package:auravibes_app/domain/entities/conversation.dart' as _i5;
-import 'package:auravibes_app/domain/entities/messages.dart' as _i4;
+import 'package:auravibes_app/domain/entities/conversation_entity.dart' as _i5;
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart'
+    as _i4;
 import 'package:auravibes_app/domain/entities/tool_spec.dart' as _i11;
-import 'package:auravibes_app/domain/entities/workspace_model_selection_entities.dart'
+import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart'
     as _i10;
-import 'package:auravibes_app/domain/enums/message_types.dart' as _i13;
+import 'package:auravibes_app/domain/enums/message_type.dart' as _i13;
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart'
     as _i15;
 import 'package:auravibes_app/domain/repositories/message_repository.dart'

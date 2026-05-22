@@ -1,4 +1,4 @@
-import 'package:auravibes_app/domain/entities/workspace.dart';
+import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 

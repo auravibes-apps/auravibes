@@ -1,5 +1,5 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/data/database/drift/tables/model_connections_table.dart';
+import 'package:auravibes_app/data/database/drift/tables/model_connections.dart';
 import 'package:drift/drift.dart';
 
 part 'model_connections_dao.g.dart';

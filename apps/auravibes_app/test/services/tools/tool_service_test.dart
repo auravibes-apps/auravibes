@@ -1,5 +1,5 @@
 import 'package:auravibes_app/services/tools/tool_service.dart';
-import 'package:auravibes_app/services/tools/user_tools_entity.dart';
+import 'package:auravibes_app/services/tools/user_tool_type.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

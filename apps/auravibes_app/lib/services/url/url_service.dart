@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:async/async.dart';
-import 'package:auravibes_app/services/url/models/url_request.dart';
+import 'package:auravibes_app/services/url/models/url_request_method.dart';
 import 'package:auravibes_app/services/url/models/url_response.dart';
 import 'package:dio/dio.dart';
 

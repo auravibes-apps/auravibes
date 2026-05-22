@@ -1,4 +1,4 @@
-import 'package:auravibes_app/domain/entities/workspace_tool.dart';
+import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 
 /// Repository interface for workspace tool data operations.
 ///

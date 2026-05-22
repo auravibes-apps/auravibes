@@ -6,7 +6,7 @@
 import 'dart:async' as _i6;
 
 import 'package:auravibes_app/data/database/drift/app_database.dart' as _i2;
-import 'package:auravibes_app/data/database/drift/daos/workspace_model_selections_dao.dart'
+import 'package:auravibes_app/data/database/drift/daos/workspace_model_selection_with_connection.dart'
     as _i5;
 import 'package:drift/drift.dart' as _i3;
 import 'package:drift/src/runtime/executor/stream_queries.dart' as _i4;

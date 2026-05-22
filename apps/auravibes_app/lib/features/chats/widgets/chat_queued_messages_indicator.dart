@@ -1,5 +1,5 @@
-import 'package:auravibes_app/features/chats/notifiers/conversation_send_queue_notifier.dart';
-import 'package:auravibes_app/features/chats/providers/messages_providers.dart';
+import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
+import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';

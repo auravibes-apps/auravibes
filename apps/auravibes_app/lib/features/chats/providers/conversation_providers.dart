@@ -1,4 +1,4 @@
-import 'package:auravibes_app/domain/entities/conversation.dart';
+import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/chats/notifiers/titles_streams_notifier.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';

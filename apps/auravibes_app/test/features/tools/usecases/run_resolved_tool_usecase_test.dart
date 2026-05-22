@@ -1,8 +1,8 @@
-import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime_provider.dart';
+import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/tools/usecases/run_resolved_tool_usecase.dart';
-import 'package:auravibes_app/services/tools/models/resolved_tool.dart';
-import 'package:auravibes_app/services/tools/native_tool_entity.dart';
-import 'package:auravibes_app/services/tools/user_tools_entity.dart';
+import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
+import 'package:auravibes_app/services/tools/native_tool_type.dart';
+import 'package:auravibes_app/services/tools/user_tool_type.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 

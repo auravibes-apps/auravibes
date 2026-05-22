@@ -1,5 +1,5 @@
-import 'package:auravibes_app/domain/enums/chat_models_type.dart';
-import 'package:auravibes_app/services/model_provider_services/model_provider_services.dart';
+import 'package:auravibes_app/domain/enums/credentials_model_type.dart';
+import 'package:auravibes_app/services/model_provider_services/model_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nock/nock.dart';
 

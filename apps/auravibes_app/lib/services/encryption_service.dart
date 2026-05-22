@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:auravibes_app/services/secret_manager_service.dart';
+import 'package:auravibes_app/services/secret_key_manager.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:riverpod/riverpod.dart';
 

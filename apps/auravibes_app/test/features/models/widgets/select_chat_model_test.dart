@@ -1,7 +1,7 @@
-import 'package:auravibes_app/domain/entities/api_model_provider.dart';
-import 'package:auravibes_app/domain/entities/model_connection_entities.dart';
-import 'package:auravibes_app/domain/entities/workspace_model_selection_entities.dart';
-import 'package:auravibes_app/features/models/widgets/select_chat_model.dart';
+import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
+import 'package:auravibes_app/domain/entities/model_providers_type.dart';
+import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
+import 'package:auravibes_app/features/models/widgets/select_workspace_model_selection_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

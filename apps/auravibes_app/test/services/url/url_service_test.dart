@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:auravibes_app/services/url/models/url_request.dart';
+import 'package:auravibes_app/services/url/models/url_request_method.dart';
 import 'package:auravibes_app/services/url/url_service.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';

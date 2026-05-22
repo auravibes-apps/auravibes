@@ -1,4 +1,4 @@
-import 'package:auravibes_app/router/app_router.dart';
+import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';

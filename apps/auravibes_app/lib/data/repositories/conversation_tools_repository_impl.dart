@@ -1,8 +1,8 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/conversation_tools_dao.dart';
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
-import 'package:auravibes_app/domain/entities/conversation_tool.dart';
-import 'package:auravibes_app/domain/entities/workspace_tool.dart';
+import 'package:auravibes_app/domain/entities/conversation_tool_entity.dart';
+import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
 import 'package:auravibes_app/domain/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dart';

@@ -1,5 +1,5 @@
-import 'package:auravibes_ui/src/atoms/auravibes_loading.dart';
-import 'package:auravibes_ui/src/molecules/auravibes_button.dart';
+import 'package:auravibes_ui/src/atoms/aura_loading_circle.dart';
+import 'package:auravibes_ui/src/molecules/aura_button.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';

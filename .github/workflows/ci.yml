@@ -105,6 +105,9 @@ jobs:
       - name: 🕵️‍♂️ Analyze
         run: melos analyze
 
+      - name: 🧭 Dart Code Linter
+        run: melos run dcl:analyze --no-select
+
       - name: 🗑️ Check unused files
         run: melos run unused:files --no-select
 

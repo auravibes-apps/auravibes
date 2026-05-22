@@ -1,8 +1,8 @@
-import 'package:auravibes_app/features/tools/providers/workspace_tools_provider.dart';
-import 'package:auravibes_app/features/tools/widgets/tool_extensions_widgets.dart';
+import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
+import 'package:auravibes_app/features/tools/widgets/user_tool_type_widgets.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
-import 'package:auravibes_app/services/tools/user_tools_entity.dart';
-import 'package:auravibes_app/widgets/app_error.dart';
+import 'package:auravibes_app/services/tools/user_tool_type.dart';
+import 'package:auravibes_app/widgets/app_error_widget.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';

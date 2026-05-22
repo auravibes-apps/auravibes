@@ -1,5 +1,5 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/data/database/drift/tables/messages_table.dart';
+import 'package:auravibes_app/data/database/drift/tables/messages.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';

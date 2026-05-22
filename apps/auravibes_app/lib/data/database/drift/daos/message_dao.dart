@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/data/database/drift/tables/messages_table.dart';
+import 'package:auravibes_app/data/database/drift/tables/messages.dart';
 import 'package:drift/drift.dart';
 
 part 'message_dao.g.dart';

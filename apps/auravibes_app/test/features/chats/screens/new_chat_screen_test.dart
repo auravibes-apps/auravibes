@@ -1,4 +1,4 @@
-import 'package:auravibes_app/features/chats/notifiers/new_chat_notifier.dart';
+import 'package:auravibes_app/features/chats/notifiers/new_chat_state.dart';
 import 'package:auravibes_app/features/chats/screens/new_chat_screen.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';

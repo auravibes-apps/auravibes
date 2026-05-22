@@ -1,5 +1,5 @@
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
-import 'package:auravibes_app/domain/entities/tools_group.dart';
+import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

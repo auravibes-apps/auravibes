@@ -1,7 +1,7 @@
-import 'package:auravibes_app/domain/entities/workspace_tool.dart';
+import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dart';
-import 'package:auravibes_app/features/tools/providers/workspace_tools_provider.dart';
-import 'package:auravibes_app/services/tools/user_tools_entity.dart';
+import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
+import 'package:auravibes_app/services/tools/user_tool_type.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 

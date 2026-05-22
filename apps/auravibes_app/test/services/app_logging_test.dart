@@ -1,6 +1,6 @@
 import 'dart:ui';
 
-import 'package:auravibes_app/services/app_logging.dart';
+import 'package:auravibes_app/services/app_log_buffer.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:logging/logging.dart';

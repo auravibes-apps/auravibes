@@ -1,10 +1,10 @@
 import 'dart:async';
 
-import 'package:auravibes_app/domain/entities/compaction.dart';
-import 'package:auravibes_app/features/chats/notifiers/conversation_chat_notifier.dart';
-import 'package:auravibes_app/features/chats/providers/compaction_providers.dart';
-import 'package:auravibes_app/features/chats/providers/messages_providers.dart';
-import 'package:auravibes_app/features/chats/usecases/manual_compact_conversation_usecase.dart';
+import 'package:auravibes_app/domain/entities/compaction_settings.dart';
+import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
+import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
+import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
+import 'package:auravibes_app/features/chats/usecases/manual_compaction_result.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/stop_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
@@ -14,11 +14,11 @@ import 'package:auravibes_app/features/chats/widgets/chat_thinking_indicator.dar
 import 'package:auravibes_app/features/chats/widgets/chat_tool_approval_card.dart';
 import 'package:auravibes_app/features/chats/widgets/conversation_context_usage_pill.dart';
 import 'package:auravibes_app/features/chats/widgets/mcp_connecting_indicator.dart';
-import 'package:auravibes_app/features/models/widgets/select_chat_model.dart';
+import 'package:auravibes_app/features/models/widgets/select_workspace_model_selection_widget.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_management_modal.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
-import 'package:auravibes_app/widgets/app_bar_with_drawer.dart';
-import 'package:auravibes_app/widgets/app_error.dart';
+import 'package:auravibes_app/widgets/app_error_widget.dart';
+import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';

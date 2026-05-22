@@ -1,7 +1,7 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/data/database/drift/tables/api_model_provider_table.dart';
-import 'package:auravibes_app/domain/entities/api_model.dart';
-import 'package:auravibes_app/domain/entities/api_model_provider.dart';
+import 'package:auravibes_app/data/database/drift/tables/model_providers_table_type.dart';
+import 'package:auravibes_app/domain/entities/api_model_entity.dart';
+import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/repositories/api_model_repository.dart';
 
 /// Implementation of the [ApiModelRepository] interface.

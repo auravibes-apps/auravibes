@@ -1,4 +1,4 @@
-import 'package:auravibes_app/flavors.dart';
+import 'package:auravibes_app/flavor.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

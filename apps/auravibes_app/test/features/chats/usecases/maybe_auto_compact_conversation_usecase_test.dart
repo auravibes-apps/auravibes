@@ -1,9 +1,9 @@
-import 'package:auravibes_app/domain/entities/api_model.dart';
-import 'package:auravibes_app/domain/entities/api_model_provider.dart';
-import 'package:auravibes_app/domain/entities/compaction.dart';
-import 'package:auravibes_app/domain/entities/conversation.dart';
-import 'package:auravibes_app/domain/entities/model_connection_entities.dart';
-import 'package:auravibes_app/domain/entities/workspace_model_selection_entities.dart';
+import 'package:auravibes_app/domain/entities/api_model_entity.dart';
+import 'package:auravibes_app/domain/entities/compaction_settings.dart';
+import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
+import 'package:auravibes_app/domain/entities/model_providers_type.dart';
+import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/repositories/api_model_repository.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/repositories/workspace_model_selection_repository.dart';

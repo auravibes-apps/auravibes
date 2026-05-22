@@ -2,8 +2,8 @@
 // Required: Test readability — sequential notifier calls are clearer
 // than cascades for readability in test method call chains.
 
-import 'package:auravibes_app/domain/entities/compaction.dart';
-import 'package:auravibes_app/features/chats/providers/compaction_providers.dart';
+import 'package:auravibes_app/domain/entities/compaction_settings.dart';
+import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 

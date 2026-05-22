@@ -1,4 +1,4 @@
-import 'package:auravibes_app/domain/entities/compaction.dart';
+import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 
 abstract class WorkspaceCompactionSettingsRepository {
   Stream<CompactionSettings> watchEffectiveSettings(String workspaceId);

@@ -1,4 +1,4 @@
-import 'package:auravibes_app/features/chats/providers/streaming_runtime_provider.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:rxdart/rxdart.dart';

@@ -1,4 +1,4 @@
-import 'package:auravibes_app/domain/entities/api_model_provider.dart';
+import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

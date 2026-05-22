@@ -1,9 +1,9 @@
-import 'package:auravibes_app/domain/entities/messages.dart';
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
-import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime_provider.dart';
+import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
-import 'package:auravibes_app/features/chats/providers/send_queue_runtime_provider.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_send_queue_runtime.dart';
 import 'package:riverpod/riverpod.dart';
 
 class StopConversationUsecase {

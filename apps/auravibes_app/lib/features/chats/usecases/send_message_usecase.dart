@@ -1,8 +1,8 @@
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
-import 'package:auravibes_app/features/chats/providers/send_queue_runtime_provider.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_send_queue_runtime.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_context.dart';
-import 'package:auravibes_app/features/chats/usecases/get_conversation_busy_state_usecase.dart';
+import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
 import 'package:auravibes_app/features/chats/usecases/run_agent_iteration_usecase.dart';
 import 'package:riverpod/riverpod.dart';
 

@@ -1,5 +1,5 @@
-import 'package:auravibes_app/domain/entities/messages.dart';
-import 'package:auravibes_app/domain/enums/message_types.dart';
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/features/chats/widgets/compacted_message_details.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';

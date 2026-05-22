@@ -16,15 +16,15 @@ library;
 
 // Export all atomic components alphabetically
 
-export 'auravibes_flex.dart';
-export 'auravibes_icon.dart';
-export 'auravibes_message_status.dart';
-export 'auravibes_padding.dart';
-export 'auravibes_pressable.dart' show AuraPressable;
-export 'auravibes_selectable_text.dart';
-export 'auravibes_spinner.dart'
+export 'aura_column.dart';
+export 'aura_edge_insets_geometry.dart';
+export 'aura_icon.dart';
+export 'aura_message_status.dart';
+export 'aura_pressable.dart' show AuraPressable;
+export 'aura_selectable_text.dart';
+export 'aura_spinner.dart'
     show AuraLoadingOverlay, AuraSpinner, AuraSpinnerSize;
-export 'auravibes_text.dart';
-export 'auravibes_tile.dart';
-export 'auravibes_tooltip.dart';
-export 'auravibes_typing_indicator.dart';
+export 'aura_text.dart';
+export 'aura_tile.dart';
+export 'aura_tooltip.dart';
+export 'aura_typing_indicator.dart';

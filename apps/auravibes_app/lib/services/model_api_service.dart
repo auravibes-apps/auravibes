@@ -1,5 +1,5 @@
-import 'package:auravibes_app/domain/entities/api_model.dart';
-import 'package:auravibes_app/domain/entities/api_model_provider.dart';
+import 'package:auravibes_app/domain/entities/api_model_entity.dart';
+import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:dio/dio.dart';
 import 'package:dio_smart_retry/dio_smart_retry.dart';
 

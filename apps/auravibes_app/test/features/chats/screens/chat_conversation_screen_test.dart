@@ -1,13 +1,13 @@
 import 'dart:async';
 
-import 'package:auravibes_app/domain/entities/conversation.dart';
+import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
-import 'package:auravibes_app/features/chats/notifiers/conversation_chat_notifier.dart';
+import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
-import 'package:auravibes_app/features/chats/providers/messages_providers.dart';
+import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/screens/chat_conversation_screen.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
-import 'package:auravibes_app/widgets/app_error.dart';
+import 'package:auravibes_app/widgets/app_error_widget.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';

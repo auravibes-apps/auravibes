@@ -1,5 +1,5 @@
 import 'package:auravibes_app/domain/entities/tool_spec.dart';
-import 'package:auravibes_app/domain/entities/workspace_model_selection_entities.dart';
+import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/services/chatbot_service/provider_factory.dart';
 import 'package:auravibes_app/services/chatbot_service/tool_adapter.dart';

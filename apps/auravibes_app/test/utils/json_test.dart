@@ -1,4 +1,4 @@
-import 'package:auravibes_app/utils/json.dart';
+import 'package:auravibes_app/utils/map_exception.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

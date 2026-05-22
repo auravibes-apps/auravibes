@@ -1,11 +1,11 @@
-import 'package:auravibes_app/domain/entities/compaction.dart';
-import 'package:auravibes_app/domain/entities/conversation.dart';
-import 'package:auravibes_app/features/chats/providers/compaction_providers.dart';
+import 'package:auravibes_app/domain/entities/compaction_settings.dart';
+import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
-import 'package:auravibes_app/router/app_router.dart';
+import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';

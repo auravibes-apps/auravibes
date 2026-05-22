@@ -1,4 +1,4 @@
-import 'package:auravibes_app/domain/entities/workspace_model_selection_entities.dart';
+import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 
 /// Repository interface for workspaceModelSelection data operations.
 ///

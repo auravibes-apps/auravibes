@@ -1,5 +1,5 @@
-import 'package:auravibes_app/domain/entities/messages.dart';
-import 'package:auravibes_app/features/chats/providers/messages_providers.dart';
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_tool_approval_card.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';

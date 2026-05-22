@@ -1,4 +1,4 @@
-import 'package:auravibes_app/domain/entities/mcp_server.dart';
+import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

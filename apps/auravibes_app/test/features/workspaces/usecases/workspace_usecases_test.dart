@@ -1,13 +1,13 @@
 // Required: test expectations use chaining on matchers which triggers
 // cascade_invocations lint. Not applicable in test assertions.
 
-import 'package:auravibes_app/domain/entities/workspace.dart';
+import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/domain/repositories/workspace_repository.dart';
-import 'package:auravibes_app/features/workspaces/usecases/create_workspace_usecase.dart';
-import 'package:auravibes_app/features/workspaces/usecases/delete_workspace_usecase.dart';
-import 'package:auravibes_app/features/workspaces/usecases/edit_workspace_usecase.dart';
-import 'package:auravibes_app/features/workspaces/usecases/validate_workspace_name_usecase.dart';
+import 'package:auravibes_app/features/workspaces/usecases/create_workspace_use_case.dart';
+import 'package:auravibes_app/features/workspaces/usecases/delete_workspace_use_case.dart';
+import 'package:auravibes_app/features/workspaces/usecases/edit_workspace_use_case.dart';
+import 'package:auravibes_app/features/workspaces/usecases/validate_workspace_name_use_case.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_test/flutter_test.dart';

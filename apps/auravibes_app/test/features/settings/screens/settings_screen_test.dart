@@ -1,6 +1,6 @@
-import 'package:auravibes_app/features/settings/notifiers/theme_notifier.dart';
+import 'package:auravibes_app/features/settings/notifiers/app_theme.dart';
 import 'package:auravibes_app/features/settings/screens/settings_screen.dart';
-import 'package:auravibes_app/widgets/app_bar_with_drawer.dart';
+import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';

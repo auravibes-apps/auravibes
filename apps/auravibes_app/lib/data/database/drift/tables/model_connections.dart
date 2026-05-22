@@ -1,0 +1,30 @@
+// coverage:ignore-file
+// Required: Drift table DSL is unreachable at runtime
+// (see api_models.dart).
+import 'package:auravibes_app/data/database/drift/tables/api_models.dart';
+import 'package:auravibes_app/data/database/drift/tables/table_mixin.dart';
+import 'package:auravibes_app/data/database/drift/tables/workspaces.dart';
+import 'package:drift/drift.dart';
+
+@DataClassName('ModelConnectionTable')
+class ModelConnections extends Table with TableMixin {
+  /// Human-readable name of the chat model
+  TextColumn get name => text()();
+
+  TextColumn get modelId => text().references(ApiModels, #id)();
+
+  /// URL for remote chat models, null for default urls
+  TextColumn get url => text().nullable()();
+
+  /// UUID reference to securely stored API key
+  TextColumn get keyValue => text()();
+
+  /// Last 6 characters of API key (stored in plain text for display)
+  TextColumn get keySuffix => text().nullable()();
+
+  TextColumn get workspaceId => text().references(
+    Workspaces,
+    #id,
+    onDelete: KeyAction.cascade,
+  )();
+}

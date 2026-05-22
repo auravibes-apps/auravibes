@@ -1,6 +1,6 @@
-import 'package:auravibes_app/domain/entities/mcp_server.dart';
-import 'package:auravibes_app/features/tools/providers/mcp_form_provider.dart';
-import 'package:auravibes_app/notifiers/mcp_connection_notifier.dart';
+import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
+import 'package:auravibes_app/features/tools/providers/mcp_form_state.dart';
+import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 

@@ -5,11 +5,13 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i5;
 
-import 'package:auravibes_app/domain/entities/conversation_tool.dart' as _i8;
-import 'package:auravibes_app/domain/entities/messages.dart' as _i2;
-import 'package:auravibes_app/domain/entities/tools_group.dart' as _i11;
-import 'package:auravibes_app/domain/entities/workspace_tool.dart' as _i3;
-import 'package:auravibes_app/domain/enums/message_types.dart' as _i6;
+import 'package:auravibes_app/domain/entities/conversation_tool_entity.dart'
+    as _i8;
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart'
+    as _i2;
+import 'package:auravibes_app/domain/entities/tool_permission_mode.dart' as _i3;
+import 'package:auravibes_app/domain/entities/tools_group_entity.dart' as _i11;
+import 'package:auravibes_app/domain/enums/message_type.dart' as _i6;
 import 'package:auravibes_app/domain/enums/tool_permission_result.dart' as _i9;
 import 'package:auravibes_app/domain/repositories/conversation_tools_repository.dart'
     as _i7;
@@ -21,7 +23,8 @@ import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dar
     as _i12;
 import 'package:auravibes_app/features/chats/usecases/resume_conversation_if_ready_usecase.dart'
     as _i15;
-import 'package:auravibes_app/services/tools/models/resolved_tool.dart' as _i14;
+import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart'
+    as _i14;
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart'
     as _i13;
 import 'package:mockito/mockito.dart' as _i1;

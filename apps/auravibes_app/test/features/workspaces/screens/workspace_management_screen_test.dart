@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:auravibes_app/domain/entities/workspace.dart';
+import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/domain/repositories/workspace_repository.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';

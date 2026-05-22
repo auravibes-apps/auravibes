@@ -1,4 +1,4 @@
-import 'package:auravibes_app/services/mcp_service/oauth_authenticate.dart';
+import 'package:auravibes_app/services/mcp_service/o_auth_authenticate.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

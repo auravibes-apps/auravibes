@@ -1,4 +1,4 @@
-import 'package:auravibes_app/domain/entities/compaction.dart';
+import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/features/settings/providers/workspace_compaction_settings_repository_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 

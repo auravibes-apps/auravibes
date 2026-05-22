@@ -1,17 +1,17 @@
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
-import 'package:auravibes_app/domain/entities/conversation_tool.dart';
-import 'package:auravibes_app/domain/entities/tools_group.dart';
-import 'package:auravibes_app/domain/entities/workspace_tool.dart';
+import 'package:auravibes_app/domain/entities/conversation_tool_entity.dart';
+import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
+import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
-import 'package:auravibes_app/domain/models/grouped_tools_view_item.dart';
+import 'package:auravibes_app/domain/models/mcp_connection_view_status.dart';
 import 'package:auravibes_app/domain/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/domain/repositories/tools_groups_repository.dart';
 import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dart';
-import 'package:auravibes_app/features/tools/notifiers/conversation_tools_notifier.dart';
+import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_conversation_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
-import 'package:auravibes_app/features/tools/providers/workspace_tools_provider.dart';
-import 'package:auravibes_app/notifiers/mcp_connection_notifier.dart';
+import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
+import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 

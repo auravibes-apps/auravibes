@@ -1,5 +1,5 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/domain/entities/workspace.dart';
+import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/domain/repositories/workspace_repository.dart';
 import 'package:drift/drift.dart';

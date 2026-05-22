@@ -1,6 +1,6 @@
 import 'package:async/async.dart';
 import 'package:auravibes_app/domain/entities/tool_spec.dart';
-import 'package:auravibes_app/services/tools/user_tools_entity.dart';
+import 'package:auravibes_app/services/tools/user_tool_type.dart';
 import 'package:math_expressions/math_expressions.dart';
 
 /// Represents an available tool in the app

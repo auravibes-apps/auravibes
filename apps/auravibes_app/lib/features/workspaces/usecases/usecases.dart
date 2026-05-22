@@ -1,4 +1,4 @@
-export 'create_workspace_usecase.dart';
-export 'delete_workspace_usecase.dart';
-export 'edit_workspace_usecase.dart';
-export 'validate_workspace_name_usecase.dart';
+export 'create_workspace_use_case.dart';
+export 'delete_workspace_use_case.dart';
+export 'edit_workspace_use_case.dart';
+export 'validate_workspace_name_use_case.dart';

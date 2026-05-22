@@ -1,14 +1,14 @@
 import 'dart:convert';
 
-import 'package:auravibes_app/domain/entities/compaction.dart';
-import 'package:auravibes_app/domain/entities/messages.dart';
-import 'package:auravibes_app/domain/entities/workspace_model_selection_entities.dart';
-import 'package:auravibes_app/domain/enums/message_types.dart';
+import 'package:auravibes_app/domain/entities/compaction_settings.dart';
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
+import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/repositories/workspace_model_selection_repository.dart';
-import 'package:auravibes_app/features/chats/providers/compaction_providers.dart';
+import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/select_compaction_range_usecase.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';

@@ -12,8 +12,7 @@ import 'package:auravibes_app/data/database/drift/daos/tools_groups_dao.dart'
     as _i7;
 import 'package:auravibes_app/data/database/drift/daos/workspace_tools_dao.dart'
     as _i8;
-import 'package:auravibes_app/data/database/drift/tables/tools_groups_table.dart'
-    as _i10;
+import 'package:auravibes_app/data/database/drift/tables/tools.dart' as _i10;
 import 'package:drift/drift.dart' as _i3;
 import 'package:drift/src/runtime/executor/stream_queries.dart' as _i4;
 import 'package:mockito/mockito.dart' as _i1;

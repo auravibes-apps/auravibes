@@ -1,4 +1,4 @@
-import 'package:auravibes_app/domain/entities/messages.dart';
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:dartantic_ai/dartantic_ai.dart';
 
 class BuildPromptChatMessages {

@@ -1,10 +1,10 @@
-import 'package:auravibes_app/domain/entities/messages.dart';
-import 'package:auravibes_app/domain/enums/message_types.dart';
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
-import 'package:auravibes_app/features/chats/notifiers/conversation_send_queue_notifier.dart';
-import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime_provider.dart';
-import 'package:auravibes_app/features/chats/providers/send_queue_runtime_provider.dart';
+import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
+import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_send_queue_runtime.dart';
 import 'package:auravibes_app/features/chats/usecases/stop_conversation_usecase.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';

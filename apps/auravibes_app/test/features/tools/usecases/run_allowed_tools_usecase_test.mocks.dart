@@ -5,8 +5,9 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i10;
 
-import 'package:auravibes_app/domain/entities/messages.dart' as _i5;
-import 'package:auravibes_app/domain/enums/message_types.dart' as _i11;
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart'
+    as _i5;
+import 'package:auravibes_app/domain/enums/message_type.dart' as _i11;
 import 'package:auravibes_app/domain/repositories/conversation_tools_repository.dart'
     as _i6;
 import 'package:auravibes_app/domain/repositories/message_repository.dart'
@@ -19,11 +20,12 @@ import 'package:auravibes_app/features/chats/usecases/agent_iteration_decision.d
     as _i14;
 import 'package:auravibes_app/features/tools/usecases/get_agent_iteration_decision_usecase.dart'
     as _i13;
-import 'package:auravibes_app/features/tools/usecases/load_latest_message_tool_calls_usecase.dart'
+import 'package:auravibes_app/features/tools/usecases/load_latest_message_tool_calls_result.dart'
     as _i4;
-import 'package:auravibes_app/features/tools/usecases/resolve_tool_approval_decision_usecase.dart'
+import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart'
     as _i9;
-import 'package:auravibes_app/services/tools/models/resolved_tool.dart' as _i12;
+import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart'
+    as _i12;
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart' as _i3;
 import 'package:mockito/mockito.dart' as _i1;
 

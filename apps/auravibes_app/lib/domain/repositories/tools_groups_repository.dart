@@ -1,4 +1,4 @@
-import 'package:auravibes_app/domain/entities/tools_group.dart';
+import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 
 /// Repository interface for managing tools groups.
 ///

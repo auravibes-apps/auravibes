@@ -1,5 +1,5 @@
-import 'package:auravibes_app/domain/entities/messages.dart';
-import 'package:auravibes_app/domain/enums/message_types.dart';
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/enums/message_type.dart';
 
 /// Repository interface for message data operations.
 ///

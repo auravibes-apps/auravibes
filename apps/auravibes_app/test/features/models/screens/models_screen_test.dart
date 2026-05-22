@@ -1,6 +1,6 @@
 import 'package:auravibes_app/features/models/providers/workspace_model_connections_providers.dart';
 import 'package:auravibes_app/features/models/screens/models_screen.dart';
-import 'package:auravibes_app/features/models/widgets/list_model_credentials.dart';
+import 'package:auravibes_app/features/models/widgets/list_model_connections_widget.dart';
 import 'package:auravibes_app/widgets/app_content.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';

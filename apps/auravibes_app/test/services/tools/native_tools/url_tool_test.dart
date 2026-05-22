@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:auravibes_app/services/tools/native_tool_entity.dart';
+import 'package:auravibes_app/services/tools/native_tool_type.dart';
 import 'package:auravibes_app/services/tools/native_tools/url_tool.dart';
 import 'package:auravibes_app/services/url/url_service.dart';
 import 'package:dio/dio.dart';

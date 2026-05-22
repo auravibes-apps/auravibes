@@ -1,4 +1,4 @@
-import 'package:auravibes_app/domain/entities/workspace_model_selection_entities.dart';
+import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/repositories/workspace_model_selection_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 

@@ -1,5 +1,5 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/domain/entities/tools_group.dart';
+import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 import 'package:auravibes_app/domain/repositories/tools_groups_repository.dart';
 
 /// Implementation of [ToolsGroupsRepository] using Drift database.

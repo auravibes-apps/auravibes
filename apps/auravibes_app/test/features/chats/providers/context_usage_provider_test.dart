@@ -1,4 +1,4 @@
-import 'package:auravibes_app/features/chats/providers/context_usage_provider.dart';
+import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

@@ -5,25 +5,26 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i13;
 
-import 'package:auravibes_app/domain/entities/messages.dart' as _i9;
-import 'package:auravibes_app/domain/enums/message_types.dart' as _i16;
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart'
+    as _i9;
+import 'package:auravibes_app/domain/enums/message_type.dart' as _i16;
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart'
     as _i5;
 import 'package:auravibes_app/domain/repositories/message_repository.dart'
     as _i6;
-import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime_provider.dart'
+import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart'
     as _i8;
-import 'package:auravibes_app/features/chats/providers/send_queue_runtime_provider.dart'
+import 'package:auravibes_app/features/chats/providers/conversation_send_queue_runtime.dart'
     as _i7;
-import 'package:auravibes_app/features/chats/providers/streaming_runtime_provider.dart'
+import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart'
     as _i10;
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_context.dart'
     as _i15;
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_decision.dart'
     as _i14;
-import 'package:auravibes_app/features/chats/usecases/continue_agent_usecase.dart'
+import 'package:auravibes_app/features/chats/usecases/continue_agent_result.dart'
     as _i2;
-import 'package:auravibes_app/features/chats/usecases/get_conversation_busy_state_usecase.dart'
+import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart'
     as _i11;
 import 'package:auravibes_app/features/chats/usecases/maybe_auto_compact_conversation_usecase.dart'
     as _i4;

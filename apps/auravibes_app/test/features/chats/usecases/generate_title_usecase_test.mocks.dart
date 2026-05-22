@@ -5,9 +5,9 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i6;
 
-import 'package:auravibes_app/domain/entities/conversation.dart' as _i2;
+import 'package:auravibes_app/domain/entities/conversation_entity.dart' as _i2;
 import 'package:auravibes_app/domain/entities/tool_spec.dart' as _i10;
-import 'package:auravibes_app/domain/entities/workspace_model_selection_entities.dart'
+import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart'
     as _i9;
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart'
     as _i5;
