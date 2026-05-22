@@ -559,6 +559,7 @@ class UrlContentTransformer {
         return;
       case 'li':
         _processListItem(element, buffer, depth);
+        return;
     }
   }
 
