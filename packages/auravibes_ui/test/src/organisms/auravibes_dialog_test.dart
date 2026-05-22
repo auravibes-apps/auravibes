@@ -17,6 +17,23 @@ Widget wrapWithAuraTheme(Widget child) {
   );
 }
 
+/// Finds an [AuraButton] whose child is a [Text] widget with [label].
+Finder findAuraButtonByLabel(String label) {
+  return find.byWidgetPredicate(
+    (widget) =>
+        widget is AuraButton &&
+        widget.child is Text &&
+        (widget.child as Text).data == label,
+  );
+}
+
+/// Finds an [AuraButton] with the given [AuraColorVariant].
+Finder findAuraButtonByColorVariant(AuraColorVariant variant) {
+  return find.byWidgetPredicate(
+    (widget) => widget is AuraButton && widget.colorVariant == variant,
+  );
+}
+
 void main() {
   group('AuraConfirmDialog', () {
     testWidgets('renders with required parameters', (tester) async {
@@ -68,14 +85,8 @@ void main() {
       );
 
       // The confirm button should have error styling
-      final confirmButton = find.byWidgetPredicate(
-        (widget) {
-          if (widget is AuraButton) {
-            final button = widget;
-            return button.colorVariant == AuraColorVariant.error;
-          }
-          return false;
-        },
+      final confirmButton = findAuraButtonByColorVariant(
+        AuraColorVariant.error,
       );
 
       expect(confirmButton, findsOneWidget);
@@ -97,6 +108,24 @@ void main() {
       expect(find.text('No'), findsOneWidget);
     });
 
+    testWidgets('applies custom colorVariant when provided', (tester) async {
+      await tester.pumpWidget(
+        wrapWithAuraTheme(
+          const AuraConfirmDialog(
+            title: Text('Warning'),
+            message: Text('Proceed with caution'),
+            confirmLabel: Text('Confirm'),
+            cancelLabel: Text('Cancel'),
+            colorVariant: AuraColorVariant.error,
+          ),
+        ),
+      );
+
+      final confirmButtonFinder = findAuraButtonByLabel('Confirm');
+      final confirmButton = tester.widget<AuraButton>(confirmButtonFinder);
+      expect(confirmButton.colorVariant, AuraColorVariant.error);
+    });
+
     testWidgets('calls onConfirm when confirm button tapped', (tester) async {
       var confirmCalled = false;
 
@@ -115,12 +144,7 @@ void main() {
       );
 
       // Use widget type finder to avoid matching title text
-      final confirmButtons = find.byWidgetPredicate(
-        (widget) =>
-            widget is AuraButton &&
-            widget.child is Text &&
-            (widget.child as Text).data == 'Confirm',
-      );
+      final confirmButtons = findAuraButtonByLabel('Confirm');
       await tester.tap(confirmButtons);
       await tester.pump();
 
@@ -224,12 +248,7 @@ void main() {
       expect(find.byType(AuraConfirmDialog), findsOneWidget);
 
       // Use widget type finder to avoid matching title
-      final confirmButtons = find.byWidgetPredicate(
-        (widget) =>
-            widget is AuraButton &&
-            widget.child is Text &&
-            (widget.child as Text).data == 'Confirm',
-      );
+      final confirmButtons = findAuraButtonByLabel('Confirm');
       await tester.tap(confirmButtons);
       await tester.pumpAndSettle();
 
@@ -366,38 +385,6 @@ void main() {
 
       // Instead, it should use a custom Container
       expect(find.byType(Container), findsWidgets);
-    });
-
-    testWidgets('showAuraConfirmDialog returns true on confirm', (
-      tester,
-    ) async {
-      bool? result;
-
-      await tester.pumpWidget(
-        wrapWithAuraTheme(
-          Builder(
-            builder: (context) => TextButton(
-              onPressed: () async {
-                result = await showAuraConfirmDialog(
-                  context: context,
-                  title: const Text('Title'),
-                  message: const Text('Message'),
-                );
-              },
-              child: const Text('Open'),
-            ),
-          ),
-        ),
-      );
-
-      await tester.tap(find.text('Open'));
-      await tester.pumpAndSettle();
-
-      // Tap confirm button
-      await tester.tap(find.text('Confirm'));
-      await tester.pumpAndSettle();
-
-      expect(result, isTrue);
     });
 
     testWidgets('showAuraConfirmDialog returns false on cancel', (
