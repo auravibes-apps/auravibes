@@ -8,7 +8,7 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 version: 0.0.2
 
 environment:
-  sdk: ^3.11.0
+  sdk: ^3.12.0
 
 dependencies:
   async: ^2.13.0
@@ -21,8 +21,8 @@ dependencies:
   dartantic_ai: ^3.4.0
   dio: ^5.9.2
   dio_smart_retry: ^7.0.1
-  drift: ^2.31.0
-  drift_flutter: ^0.2.8
+  drift: ^2.33.0
+  drift_flutter: ^0.3.0
   easy_localization: ^3.0.8
   easy_localization_loader: ^2.0.2
   equatable: ^2.0.8
@@ -30,45 +30,50 @@ dependencies:
     sdk: flutter
   flutter_hooks: ^0.21.3+1
   flutter_secure_storage: ^10.1.0
-  flutter_svg: ^2.2.4
+  flutter_svg: ^2.3.0
   flutter_web_auth_2: ^5.0.2
   freezed_annotation: ^3.1.0
   go_router: ^17.2.3
-  hooks_riverpod: ^3.0.3
+  hooks_riverpod: 3.3.2-dev.2
   html: ^0.15.6
   http: ^1.6.0
-  json_annotation: ^4.9.0
+  json_annotation: ^4.12.0
   logging: ^1.3.0
   math_expressions: ^3.1.0
   mcp_client: ^2.0.0
   openai_dart: ^1.1.0
 
   # Other dependencies
-  riverpod: ^3.0.3
-  riverpod_annotation: ^4.0.0
+  riverpod: 3.3.2-dev.2
+  riverpod_annotation: 4.0.3-dev.2
   rxdart: ^0.28.0
   shared_preferences: ^2.5.4
-  sqlite3_flutter_libs: ^0.5.42
+  sqlite3_flutter_libs: ^0.6.0
   uuid: ^4.5.3
 dev_dependencies:
   # Code generation for JSON serialization
   build_runner: ^2.15.0
   dartantic_interface: ^4.0.0
   # Code generation for Drift
-  drift_dev: ^2.31.0
+  drift_dev: ^2.33.0
   flutter_flavorizr: ^2.4.2
   flutter_launcher_icons: ^0.14.4
   flutter_test:
     sdk: flutter
-  freezed: ^3.2.3
+  freezed: 3.2.6-dev.1
   go_router_builder: ^4.3.0
-  json_serializable: ^6.11.2
+  json_serializable: ^6.14.0
   mockito: ^5.6.3
+  mocktail: ^1.0.4
   nock: ^1.2.3
-  riverpod_generator: ^4.0.0+1
+  riverpod_generator: 4.0.4-dev.3
 dependency_validator:
   exclude:
     - "test/**/*.mocks.dart"
+
+dependency_overrides:
+  # Pin to 0.2.0: 0.3.0 Package.swift declares iOS 12 but uses CryptoKit (iOS 13+)
+  flutter_secure_storage_darwin: 0.2.0
 
 flutter:
   assets:

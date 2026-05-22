@@ -173,22 +173,3 @@ class WorkspaceToolsValidationException extends WorkspaceToolsException {
   /// Creates a new WorkspaceToolsValidationException
   const WorkspaceToolsValidationException(super.message, [super.cause]);
 }
-
-/// Exception thrown when a workspace tool is not found.
-class WorkspaceToolNotFoundException extends WorkspaceToolsException {
-  /// Creates a new WorkspaceToolNotFoundException
-  const WorkspaceToolNotFoundException(
-    this.workspaceId,
-    this.toolType, [
-    Exception? cause,
-  ]) : super(
-         'Workspace tool "$toolType" not found in workspace "$workspaceId"',
-         cause,
-       );
-
-  /// ID of the workspace
-  final String workspaceId;
-
-  /// Type of the tool that was not found
-  final String toolType;
-}

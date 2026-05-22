@@ -1,9 +1,11 @@
 import 'dart:collection';
 
+import 'package:auravibes_app/domain/entities/compaction.dart';
 import 'package:auravibes_app/domain/entities/messages.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_send_queue_notifier.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_notifier.dart';
 import 'package:auravibes_app/features/chats/notifiers/messages_streaming_notifier.dart';
+import 'package:auravibes_app/features/chats/providers/compaction_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_selection_provider.dart';
@@ -15,16 +17,11 @@ import 'package:auravibes_app/utils/chat_result_extension.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:riverpod/experimental/mutation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 export 'conversation_selection_provider.dart';
 
 part 'messages_providers.g.dart';
-
-final addMessageMutation = Mutation<MessageEntity>();
-final deleteMessageMutation = Mutation<void>();
-final updateMessageMutation = Mutation<MessageEntity>();
 
 @riverpod
 Stream<List<MessageEntity>> chatMessagesByConversation(
@@ -109,7 +106,9 @@ bool isMessageStreaming(Ref ref, String messageId) {
   );
 }
 
-@Riverpod(dependencies: [conversationSelected, chatMessages])
+@Riverpod(
+  dependencies: [conversationSelected, chatMessages],
+)
 Future<ConversationBusyState> conversationBusyState(Ref ref) async {
   final conversationId = ref.watch(conversationSelectedProvider);
   ref
@@ -120,9 +119,17 @@ Future<ConversationBusyState> conversationBusyState(Ref ref) async {
     )
     ..watch(chatMessagesProvider);
 
+  final compactionExecution = ref.watch(compactionExecutionProvider);
+  final isCompacting =
+      compactionExecution[conversationId]?.status ==
+      CompactionExecutionStatus.running;
+
   final usecase = ref.watch(getConversationBusyStateUsecaseProvider);
 
-  return usecase.call(conversationId: conversationId);
+  return usecase.call(
+    conversationId: conversationId,
+    isCompacting: isCompacting,
+  );
 }
 
 @Riverpod(dependencies: [conversationSelected])
@@ -134,6 +141,12 @@ List<ConversationQueuedDraft> conversationQueuedDrafts(Ref ref) {
       (queues) => queues[conversationId] ?? const <ConversationQueuedDraft>[],
     ),
   );
+}
+
+@Riverpod(dependencies: [conversationSelected])
+CompactionExecutionState? conversationCompactionExecutionState(Ref ref) {
+  final conversationId = ref.watch(conversationSelectedProvider);
+  return ref.watch(compactionExecutionStateProvider(conversationId));
 }
 
 /// Provides the pending MCP server IDs for the current conversation.

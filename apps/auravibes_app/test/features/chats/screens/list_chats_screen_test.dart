@@ -34,7 +34,7 @@ void main() {
                     Stream.value([]),
               ),
               listWorkspaceModelSelectionsProvider.overrideWith(
-                (ref, workspaceId) => [],
+                (ref, workspaceId) => Stream.value([]),
               ),
               streamingTitleProvider.overrideWith((ref, id) => null),
             ],

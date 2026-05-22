@@ -400,6 +400,11 @@ class _FakeMessageRepository implements MessageRepository {
   }
 
   @override
+  Future<MessageEntity?> getLatestCompactionSummary(String conversationId) {
+    throw UnimplementedError();
+  }
+
+  @override
   Stream<List<MessageEntity>> watchMessagesByConversation(
     String conversationId,
   ) {
@@ -432,6 +437,14 @@ class _FakeWorkspaceModelSelectionRepository
   @override
   Future<List<WorkspaceModelSelectionWithConnectionEntity>>
   getWorkspaceModelSelections(
+    WorkspaceModelSelectionFilter filter,
+  ) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Stream<List<WorkspaceModelSelectionWithConnectionEntity>>
+  watchWorkspaceModelSelections(
     WorkspaceModelSelectionFilter filter,
   ) {
     throw UnimplementedError();

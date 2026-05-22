@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
@@ -58,6 +60,42 @@ void main() {
             workspaceIds: [workspaceId],
           );
       expect(results.length, equals(1));
+    });
+
+    test('watchAllWorkspaceModelSelectionsByWorkspace emits inserts', () async {
+      await database.apiModelProvidersDao.upsertProvider(
+        ApiModelProvidersCompanion.insert(id: 'openai', name: 'OpenAI'),
+      );
+      final conn = await database.modelConnectionsDao.insertModelConnection(
+        ModelConnectionsCompanion.insert(
+          name: 'Conn',
+          modelId: 'openai',
+          keyValue: 'key',
+          workspaceId: workspaceId,
+        ),
+      );
+
+      final stream = database.workspaceModelSelectionsDao
+          .watchAllWorkspaceModelSelectionsByWorkspace(
+            workspaceIds: [workspaceId],
+          );
+      final iterator = StreamIterator(stream);
+      addTearDown(iterator.cancel);
+
+      expect(await iterator.moveNext(), isTrue);
+      expect(iterator.current, isEmpty);
+
+      await database.workspaceModelSelectionsDao.insertWorkspaceModelSelections(
+        [
+          WorkspaceModelSelectionsCompanion.insert(
+            modelId: 'openai',
+            modelConnectionId: conn.id,
+          ),
+        ],
+      );
+
+      expect(await iterator.moveNext(), isTrue);
+      expect(iterator.current, hasLength(1));
     });
 
     test(

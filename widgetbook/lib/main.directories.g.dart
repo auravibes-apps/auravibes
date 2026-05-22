@@ -245,7 +245,7 @@ final directories = <_widgetbook.WidgetbookNode>[
           _widgetbook.WidgetbookUseCase(
             name: 'Horizontal Divider',
             builder: _widgetbook_workspace_aura_ui_auravibes_divider_stories
-                .basicHorizontalDividerUseCase,
+                .horizontalDividerUseCase,
           ),
           _widgetbook.WidgetbookUseCase(
             name: 'Vertical Divider',

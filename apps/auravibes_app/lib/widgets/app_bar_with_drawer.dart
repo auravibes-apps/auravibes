@@ -5,13 +5,13 @@ import 'package:flutter/material.dart';
 class AuraAppBarWithDrawer extends StatelessWidget
     implements PreferredSizeWidget {
   const AuraAppBarWithDrawer({
+    required this.title,
     super.key,
-    this.title,
     this.actions,
     this.bottom,
   });
 
-  final Widget? title;
+  final Widget title;
   final List<Widget>? actions;
   final PreferredSizeWidget? bottom;
 

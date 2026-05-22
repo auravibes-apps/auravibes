@@ -3,31 +3,33 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i7;
+import 'dart:async' as _i8;
 
 import 'package:auravibes_app/domain/entities/conversation.dart' as _i5;
 import 'package:auravibes_app/domain/entities/messages.dart' as _i4;
-import 'package:auravibes_app/domain/entities/tool_spec.dart' as _i10;
+import 'package:auravibes_app/domain/entities/tool_spec.dart' as _i11;
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entities.dart'
-    as _i9;
+    as _i10;
 import 'package:auravibes_app/domain/enums/message_types.dart' as _i13;
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart'
     as _i15;
 import 'package:auravibes_app/domain/repositories/message_repository.dart'
-    as _i12;
+    as _i6;
 import 'package:auravibes_app/domain/repositories/model_connection_repository.dart'
     as _i2;
 import 'package:auravibes_app/domain/repositories/workspace_model_selection_repository.dart'
     as _i14;
+import 'package:auravibes_app/features/chats/usecases/select_prompt_messages_usecase.dart'
+    as _i18;
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart'
     as _i16;
 import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart'
-    as _i6;
+    as _i7;
 import 'package:auravibes_app/services/encryption_service.dart' as _i3;
 import 'package:auravibes_app/services/monitoring_service.dart' as _i17;
-import 'package:dartantic_ai/dartantic_ai.dart' as _i8;
+import 'package:dartantic_ai/dartantic_ai.dart' as _i9;
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:mockito/src/dummies.dart' as _i11;
+import 'package:mockito/src/dummies.dart' as _i12;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -67,10 +69,16 @@ class _FakeConversationEntity_3 extends _i1.SmartFake
     : super(parent, parentInvocation);
 }
 
+class _FakeMessageRepository_4 extends _i1.SmartFake
+    implements _i6.MessageRepository {
+  _FakeMessageRepository_4(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
 /// A class which mocks [ChatbotService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockChatbotService extends _i1.Mock implements _i6.ChatbotService {
+class MockChatbotService extends _i1.Mock implements _i7.ChatbotService {
   MockChatbotService() {
     _i1.throwOnMissingStub(this);
   }
@@ -111,10 +119,10 @@ class MockChatbotService extends _i1.Mock implements _i6.ChatbotService {
   );
 
   @override
-  _i7.Stream<_i8.ChatResult<_i8.ChatMessage>> sendMessage(
-    _i9.WorkspaceModelSelectionWithConnectionEntity? chatProvider,
-    List<_i8.ChatMessage>? history, {
-    List<_i10.ToolSpec>? tools,
+  _i8.Stream<_i9.ChatResult<_i9.ChatMessage>> sendMessage(
+    _i10.WorkspaceModelSelectionWithConnectionEntity? chatProvider,
+    List<_i9.ChatMessage>? history, {
+    List<_i11.ToolSpec>? tools,
   }) =>
       (super.noSuchMethod(
             Invocation.method(
@@ -122,70 +130,70 @@ class MockChatbotService extends _i1.Mock implements _i6.ChatbotService {
               [chatProvider, history],
               {#tools: tools},
             ),
-            returnValue: _i7.Stream<_i8.ChatResult<_i8.ChatMessage>>.empty(),
+            returnValue: _i8.Stream<_i9.ChatResult<_i9.ChatMessage>>.empty(),
           )
-          as _i7.Stream<_i8.ChatResult<_i8.ChatMessage>>);
+          as _i8.Stream<_i9.ChatResult<_i9.ChatMessage>>);
 
   @override
-  _i7.Future<String> generateTitle(
-    _i9.WorkspaceModelSelectionWithConnectionEntity? chatProvider,
+  _i8.Future<String> generateTitle(
+    _i10.WorkspaceModelSelectionWithConnectionEntity? chatProvider,
     String? firstMessage,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#generateTitle, [chatProvider, firstMessage]),
-            returnValue: _i7.Future<String>.value(
-              _i11.dummyValue<String>(
+            returnValue: _i8.Future<String>.value(
+              _i12.dummyValue<String>(
                 this,
                 Invocation.method(#generateTitle, [chatProvider, firstMessage]),
               ),
             ),
           )
-          as _i7.Future<String>);
+          as _i8.Future<String>);
 
   @override
-  _i7.Stream<String> streamTitle(
-    _i9.WorkspaceModelSelectionWithConnectionEntity? chatProvider,
+  _i8.Stream<String> streamTitle(
+    _i10.WorkspaceModelSelectionWithConnectionEntity? chatProvider,
     String? firstMessage,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#streamTitle, [chatProvider, firstMessage]),
-            returnValue: _i7.Stream<String>.empty(),
+            returnValue: _i8.Stream<String>.empty(),
           )
-          as _i7.Stream<String>);
+          as _i8.Stream<String>);
 }
 
 /// A class which mocks [MessageRepository].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockMessageRepository extends _i1.Mock implements _i12.MessageRepository {
+class MockMessageRepository extends _i1.Mock implements _i6.MessageRepository {
   MockMessageRepository() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i7.Future<List<_i4.MessageEntity>> getMessagesByConversation(
+  _i8.Future<List<_i4.MessageEntity>> getMessagesByConversation(
     String? conversationId,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getMessagesByConversation, [conversationId]),
-            returnValue: _i7.Future<List<_i4.MessageEntity>>.value(
+            returnValue: _i8.Future<List<_i4.MessageEntity>>.value(
               <_i4.MessageEntity>[],
             ),
           )
-          as _i7.Future<List<_i4.MessageEntity>>);
+          as _i8.Future<List<_i4.MessageEntity>>);
 
   @override
-  _i7.Stream<List<_i4.MessageEntity>> watchMessagesByConversation(
+  _i8.Stream<List<_i4.MessageEntity>> watchMessagesByConversation(
     String? conversationId,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#watchMessagesByConversation, [conversationId]),
-            returnValue: _i7.Stream<List<_i4.MessageEntity>>.empty(),
+            returnValue: _i8.Stream<List<_i4.MessageEntity>>.empty(),
           )
-          as _i7.Stream<List<_i4.MessageEntity>>);
+          as _i8.Stream<List<_i4.MessageEntity>>);
 
   @override
-  _i7.Future<List<_i4.MessageEntity>> getMessagesByConversationPaginated(
+  _i8.Future<List<_i4.MessageEntity>> getMessagesByConversationPaginated(
     String? conversationId,
     int? limit,
     int? offset,
@@ -196,14 +204,14 @@ class MockMessageRepository extends _i1.Mock implements _i12.MessageRepository {
               limit,
               offset,
             ]),
-            returnValue: _i7.Future<List<_i4.MessageEntity>>.value(
+            returnValue: _i8.Future<List<_i4.MessageEntity>>.value(
               <_i4.MessageEntity>[],
             ),
           )
-          as _i7.Future<List<_i4.MessageEntity>>);
+          as _i8.Future<List<_i4.MessageEntity>>);
 
   @override
-  _i7.Future<List<_i4.MessageEntity>> getMessagesByType(
+  _i8.Future<List<_i4.MessageEntity>> getMessagesByType(
     String? conversationId,
     _i13.MessageType? messageType,
   ) =>
@@ -212,115 +220,125 @@ class MockMessageRepository extends _i1.Mock implements _i12.MessageRepository {
               conversationId,
               messageType,
             ]),
-            returnValue: _i7.Future<List<_i4.MessageEntity>>.value(
+            returnValue: _i8.Future<List<_i4.MessageEntity>>.value(
               <_i4.MessageEntity>[],
             ),
           )
-          as _i7.Future<List<_i4.MessageEntity>>);
+          as _i8.Future<List<_i4.MessageEntity>>);
 
   @override
-  _i7.Future<List<_i4.MessageEntity>> getUserMessages(String? conversationId) =>
+  _i8.Future<List<_i4.MessageEntity>> getUserMessages(String? conversationId) =>
       (super.noSuchMethod(
             Invocation.method(#getUserMessages, [conversationId]),
-            returnValue: _i7.Future<List<_i4.MessageEntity>>.value(
+            returnValue: _i8.Future<List<_i4.MessageEntity>>.value(
               <_i4.MessageEntity>[],
             ),
           )
-          as _i7.Future<List<_i4.MessageEntity>>);
+          as _i8.Future<List<_i4.MessageEntity>>);
 
   @override
-  _i7.Future<List<_i4.MessageEntity>> getSystemMessages(
+  _i8.Future<List<_i4.MessageEntity>> getSystemMessages(
     String? conversationId,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getSystemMessages, [conversationId]),
-            returnValue: _i7.Future<List<_i4.MessageEntity>>.value(
+            returnValue: _i8.Future<List<_i4.MessageEntity>>.value(
               <_i4.MessageEntity>[],
             ),
           )
-          as _i7.Future<List<_i4.MessageEntity>>);
+          as _i8.Future<List<_i4.MessageEntity>>);
 
   @override
-  _i7.Future<_i4.MessageEntity?> getMessageById(String? id) =>
+  _i8.Future<_i4.MessageEntity?> getMessageById(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#getMessageById, [id]),
-            returnValue: _i7.Future<_i4.MessageEntity?>.value(),
+            returnValue: _i8.Future<_i4.MessageEntity?>.value(),
           )
-          as _i7.Future<_i4.MessageEntity?>);
+          as _i8.Future<_i4.MessageEntity?>);
 
   @override
-  _i7.Future<_i4.MessageEntity> createMessage(_i4.MessageToCreate? message) =>
+  _i8.Future<_i4.MessageEntity> createMessage(_i4.MessageToCreate? message) =>
       (super.noSuchMethod(
             Invocation.method(#createMessage, [message]),
-            returnValue: _i7.Future<_i4.MessageEntity>.value(
+            returnValue: _i8.Future<_i4.MessageEntity>.value(
               _FakeMessageEntity_2(
                 this,
                 Invocation.method(#createMessage, [message]),
               ),
             ),
           )
-          as _i7.Future<_i4.MessageEntity>);
+          as _i8.Future<_i4.MessageEntity>);
 
   @override
-  _i7.Future<_i4.MessageEntity> patchMessage(
+  _i8.Future<_i4.MessageEntity> patchMessage(
     String? id,
     _i4.MessagePatch? message,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#patchMessage, [id, message]),
-            returnValue: _i7.Future<_i4.MessageEntity>.value(
+            returnValue: _i8.Future<_i4.MessageEntity>.value(
               _FakeMessageEntity_2(
                 this,
                 Invocation.method(#patchMessage, [id, message]),
               ),
             ),
           )
-          as _i7.Future<_i4.MessageEntity>);
+          as _i8.Future<_i4.MessageEntity>);
 
   @override
-  _i7.Future<bool> deleteMessage(String? id) =>
+  _i8.Future<bool> deleteMessage(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#deleteMessage, [id]),
-            returnValue: _i7.Future<bool>.value(false),
+            returnValue: _i8.Future<bool>.value(false),
           )
-          as _i7.Future<bool>);
+          as _i8.Future<bool>);
 
   @override
-  _i7.Future<bool> messageExists(String? id) =>
+  _i8.Future<bool> messageExists(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#messageExists, [id]),
-            returnValue: _i7.Future<bool>.value(false),
+            returnValue: _i8.Future<bool>.value(false),
           )
-          as _i7.Future<bool>);
+          as _i8.Future<bool>);
 
   @override
-  _i7.Future<List<_i4.MessageEntity>> getMessagesByStatus(
+  _i8.Future<List<_i4.MessageEntity>> getMessagesByStatus(
     String? conversationId,
     _i13.MessageStatus? status,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getMessagesByStatus, [conversationId, status]),
-            returnValue: _i7.Future<List<_i4.MessageEntity>>.value(
+            returnValue: _i8.Future<List<_i4.MessageEntity>>.value(
               <_i4.MessageEntity>[],
             ),
           )
-          as _i7.Future<List<_i4.MessageEntity>>);
+          as _i8.Future<List<_i4.MessageEntity>>);
 
   @override
-  _i7.Future<int> getMessageCountByConversation(String? conversationId) =>
+  _i8.Future<int> getMessageCountByConversation(String? conversationId) =>
       (super.noSuchMethod(
             Invocation.method(#getMessageCountByConversation, [conversationId]),
-            returnValue: _i7.Future<int>.value(0),
+            returnValue: _i8.Future<int>.value(0),
           )
-          as _i7.Future<int>);
+          as _i8.Future<int>);
 
   @override
-  _i7.Future<bool> validateMessage(_i4.MessageToCreate? message) =>
+  _i8.Future<bool> validateMessage(_i4.MessageToCreate? message) =>
       (super.noSuchMethod(
             Invocation.method(#validateMessage, [message]),
-            returnValue: _i7.Future<bool>.value(false),
+            returnValue: _i8.Future<bool>.value(false),
           )
-          as _i7.Future<bool>);
+          as _i8.Future<bool>);
+
+  @override
+  _i8.Future<_i4.MessageEntity?> getLatestCompactionSummary(
+    String? conversationId,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#getLatestCompactionSummary, [conversationId]),
+            returnValue: _i8.Future<_i4.MessageEntity?>.value(),
+          )
+          as _i8.Future<_i4.MessageEntity?>);
 }
 
 /// A class which mocks [WorkspaceModelSelectionRepository].
@@ -333,41 +351,57 @@ class MockWorkspaceModelSelectionRepository extends _i1.Mock
   }
 
   @override
-  _i7.Future<void> createWorkspaceModelSelections(
-    List<_i9.WorkspaceModelSelectionToCreate>? workspaceModelSelections,
+  _i8.Future<void> createWorkspaceModelSelections(
+    List<_i10.WorkspaceModelSelectionToCreate>? workspaceModelSelections,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#createWorkspaceModelSelections, [
               workspaceModelSelections,
             ]),
-            returnValue: _i7.Future<void>.value(),
-            returnValueForMissingStub: _i7.Future<void>.value(),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
           )
-          as _i7.Future<void>);
+          as _i8.Future<void>);
 
   @override
-  _i7.Future<List<_i9.WorkspaceModelSelectionWithConnectionEntity>>
-  getWorkspaceModelSelections(_i9.WorkspaceModelSelectionFilter? filter) =>
+  _i8.Future<List<_i10.WorkspaceModelSelectionWithConnectionEntity>>
+  getWorkspaceModelSelections(_i10.WorkspaceModelSelectionFilter? filter) =>
       (super.noSuchMethod(
             Invocation.method(#getWorkspaceModelSelections, [filter]),
             returnValue:
-                _i7.Future<
-                  List<_i9.WorkspaceModelSelectionWithConnectionEntity>
-                >.value(<_i9.WorkspaceModelSelectionWithConnectionEntity>[]),
+                _i8.Future<
+                  List<_i10.WorkspaceModelSelectionWithConnectionEntity>
+                >.value(<_i10.WorkspaceModelSelectionWithConnectionEntity>[]),
           )
-          as _i7.Future<List<_i9.WorkspaceModelSelectionWithConnectionEntity>>);
+          as _i8.Future<
+            List<_i10.WorkspaceModelSelectionWithConnectionEntity>
+          >);
 
   @override
-  _i7.Future<_i9.WorkspaceModelSelectionWithConnectionEntity?>
+  _i8.Stream<List<_i10.WorkspaceModelSelectionWithConnectionEntity>>
+  watchWorkspaceModelSelections(_i10.WorkspaceModelSelectionFilter? filter) =>
+      (super.noSuchMethod(
+            Invocation.method(#watchWorkspaceModelSelections, [filter]),
+            returnValue:
+                _i8.Stream<
+                  List<_i10.WorkspaceModelSelectionWithConnectionEntity>
+                >.empty(),
+          )
+          as _i8.Stream<
+            List<_i10.WorkspaceModelSelectionWithConnectionEntity>
+          >);
+
+  @override
+  _i8.Future<_i10.WorkspaceModelSelectionWithConnectionEntity?>
   getWorkspaceModelSelectionById(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#getWorkspaceModelSelectionById, [id]),
             returnValue:
-                _i7.Future<
-                  _i9.WorkspaceModelSelectionWithConnectionEntity?
+                _i8.Future<
+                  _i10.WorkspaceModelSelectionWithConnectionEntity?
                 >.value(),
           )
-          as _i7.Future<_i9.WorkspaceModelSelectionWithConnectionEntity?>);
+          as _i8.Future<_i10.WorkspaceModelSelectionWithConnectionEntity?>);
 }
 
 /// A class which mocks [ConversationRepository].
@@ -380,7 +414,7 @@ class MockConversationRepository extends _i1.Mock
   }
 
   @override
-  _i7.Stream<List<_i5.ConversationEntity>> watchConversationsByWorkspace(
+  _i8.Stream<List<_i5.ConversationEntity>> watchConversationsByWorkspace(
     String? workspaceId, {
     int? limit,
   }) =>
@@ -390,64 +424,64 @@ class MockConversationRepository extends _i1.Mock
               [workspaceId],
               {#limit: limit},
             ),
-            returnValue: _i7.Stream<List<_i5.ConversationEntity>>.empty(),
+            returnValue: _i8.Stream<List<_i5.ConversationEntity>>.empty(),
           )
-          as _i7.Stream<List<_i5.ConversationEntity>>);
+          as _i8.Stream<List<_i5.ConversationEntity>>);
 
   @override
-  _i7.Stream<_i5.ConversationEntity?> watchConversationById(String? id) =>
+  _i8.Stream<_i5.ConversationEntity?> watchConversationById(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#watchConversationById, [id]),
-            returnValue: _i7.Stream<_i5.ConversationEntity?>.empty(),
+            returnValue: _i8.Stream<_i5.ConversationEntity?>.empty(),
           )
-          as _i7.Stream<_i5.ConversationEntity?>);
+          as _i8.Stream<_i5.ConversationEntity?>);
 
   @override
-  _i7.Future<_i5.ConversationEntity?> getConversationById(String? id) =>
+  _i8.Future<_i5.ConversationEntity?> getConversationById(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#getConversationById, [id]),
-            returnValue: _i7.Future<_i5.ConversationEntity?>.value(),
+            returnValue: _i8.Future<_i5.ConversationEntity?>.value(),
           )
-          as _i7.Future<_i5.ConversationEntity?>);
+          as _i8.Future<_i5.ConversationEntity?>);
 
   @override
-  _i7.Future<_i5.ConversationEntity> createConversation(
+  _i8.Future<_i5.ConversationEntity> createConversation(
     _i5.ConversationToCreate? conversation,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#createConversation, [conversation]),
-            returnValue: _i7.Future<_i5.ConversationEntity>.value(
+            returnValue: _i8.Future<_i5.ConversationEntity>.value(
               _FakeConversationEntity_3(
                 this,
                 Invocation.method(#createConversation, [conversation]),
               ),
             ),
           )
-          as _i7.Future<_i5.ConversationEntity>);
+          as _i8.Future<_i5.ConversationEntity>);
 
   @override
-  _i7.Future<_i5.ConversationEntity> patchConversation(
+  _i8.Future<_i5.ConversationEntity> patchConversation(
     String? id,
     _i5.ConversationPatch? conversation,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#patchConversation, [id, conversation]),
-            returnValue: _i7.Future<_i5.ConversationEntity>.value(
+            returnValue: _i8.Future<_i5.ConversationEntity>.value(
               _FakeConversationEntity_3(
                 this,
                 Invocation.method(#patchConversation, [id, conversation]),
               ),
             ),
           )
-          as _i7.Future<_i5.ConversationEntity>);
+          as _i8.Future<_i5.ConversationEntity>);
 
   @override
-  _i7.Future<bool> deleteConversation(String? id) =>
+  _i8.Future<bool> deleteConversation(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#deleteConversation, [id]),
-            returnValue: _i7.Future<bool>.value(false),
+            returnValue: _i8.Future<bool>.value(false),
           )
-          as _i7.Future<bool>);
+          as _i8.Future<bool>);
 }
 
 /// A class which mocks [LoadConversationToolSpecsUsecase].
@@ -460,7 +494,7 @@ class MockLoadConversationToolSpecsUsecase extends _i1.Mock
   }
 
   @override
-  _i7.Future<List<_i10.ToolSpec>> call({
+  _i8.Future<List<_i11.ToolSpec>> call({
     required String? conversationId,
     required String? workspaceId,
   }) =>
@@ -469,11 +503,11 @@ class MockLoadConversationToolSpecsUsecase extends _i1.Mock
               #conversationId: conversationId,
               #workspaceId: workspaceId,
             }),
-            returnValue: _i7.Future<List<_i10.ToolSpec>>.value(
-              <_i10.ToolSpec>[],
+            returnValue: _i8.Future<List<_i11.ToolSpec>>.value(
+              <_i11.ToolSpec>[],
             ),
           )
-          as _i7.Future<List<_i10.ToolSpec>>);
+          as _i8.Future<List<_i11.ToolSpec>>);
 }
 
 /// A class which mocks [MonitoringService].
@@ -488,7 +522,7 @@ class MockMonitoringService extends _i1.Mock implements _i17.MonitoringService {
   void trackError(
     String? concept, {
     required Object? error,
-    StackTrace? stackTrace,
+    required StackTrace? stackTrace,
   }) => super.noSuchMethod(
     Invocation.method(
       #trackError,
@@ -497,4 +531,35 @@ class MockMonitoringService extends _i1.Mock implements _i17.MonitoringService {
     ),
     returnValueForMissingStub: null,
   );
+}
+
+/// A class which mocks [SelectPromptMessagesUsecase].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockSelectPromptMessagesUsecase extends _i1.Mock
+    implements _i18.SelectPromptMessagesUsecase {
+  MockSelectPromptMessagesUsecase() {
+    _i1.throwOnMissingStub(this);
+  }
+
+  @override
+  _i6.MessageRepository get messageRepository =>
+      (super.noSuchMethod(
+            Invocation.getter(#messageRepository),
+            returnValue: _FakeMessageRepository_4(
+              this,
+              Invocation.getter(#messageRepository),
+            ),
+          )
+          as _i6.MessageRepository);
+
+  @override
+  _i8.Future<List<_i4.MessageEntity>> call(String? conversationId) =>
+      (super.noSuchMethod(
+            Invocation.method(#call, [conversationId]),
+            returnValue: _i8.Future<List<_i4.MessageEntity>>.value(
+              <_i4.MessageEntity>[],
+            ),
+          )
+          as _i8.Future<List<_i4.MessageEntity>>);
 }

@@ -8,6 +8,7 @@ import 'package:auravibes_app/features/chats/providers/send_queue_runtime_provid
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_context.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_decision.dart';
 import 'package:auravibes_app/features/chats/usecases/continue_agent_usecase.dart';
+import 'package:auravibes_app/features/chats/usecases/maybe_auto_compact_conversation_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/run_allowed_tools_usecase.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -15,6 +16,7 @@ class RunAgentIterationUsecase {
   const RunAgentIterationUsecase({
     required this.continueAgentUsecase,
     required this.runAllowedToolsUsecase,
+    required this.maybeAutoCompactConversationUsecase,
     required this.conversationRepository,
     required this.messageRepository,
     required this.sendQueueRuntime,
@@ -23,6 +25,7 @@ class RunAgentIterationUsecase {
 
   final ContinueAgentUsecase continueAgentUsecase;
   final RunAllowedToolsUsecase runAllowedToolsUsecase;
+  final MaybeAutoCompactConversationUsecase maybeAutoCompactConversationUsecase;
   final ConversationRepository conversationRepository;
   final MessageRepository messageRepository;
   final ConversationSendQueueRuntime sendQueueRuntime;
@@ -30,7 +33,7 @@ class RunAgentIterationUsecase {
 
   Future<AgentIterationDecision> call({
     required String conversationId,
-    AgentIterationContext? context,
+    required AgentIterationContext context,
   }) async {
     final conversation = await conversationRepository.getConversationById(
       conversationId,
@@ -55,9 +58,9 @@ class RunAgentIterationUsecase {
   Future<AgentIterationDecision> _runLoop({
     required String conversationId,
     required String workspaceId,
-    required AgentIterationContext? context,
+    required AgentIterationContext context,
   }) async {
-    var currentContext = context;
+    AgentIterationContext? currentContext = context;
 
     while (true) {
       final cancelDecision = await _cancelIfRequested(
@@ -94,6 +97,10 @@ class RunAgentIterationUsecase {
     if (cancelDecision != null) {
       return _AgentIterationStep(currentContext, cancelDecision);
     }
+
+    await maybeAutoCompactConversationUsecase.call(
+      conversationId: conversationId,
+    );
 
     final continueResult = await continueAgentUsecase.call(
       conversationId: conversationId,
@@ -215,6 +222,9 @@ final runAgentIterationUsecaseProvider = Provider<RunAgentIterationUsecase>((
   return RunAgentIterationUsecase(
     continueAgentUsecase: ref.watch(continueAgentUsecaseProvider),
     runAllowedToolsUsecase: ref.watch(runAllowedToolsUsecaseProvider),
+    maybeAutoCompactConversationUsecase: ref.watch(
+      maybeAutoCompactConversationUsecaseProvider,
+    ),
     conversationRepository: ref.watch(conversationRepositoryProvider),
     messageRepository: ref.watch(messageRepositoryProvider),
     sendQueueRuntime: ref.watch(conversationSendQueueRuntimeProvider),

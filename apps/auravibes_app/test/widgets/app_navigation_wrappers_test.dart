@@ -6,7 +6,6 @@ import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
-import 'package:auravibes_app/flavors.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/widgets/app_navigation_wrappers.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -460,16 +459,7 @@ void main() {
   );
 
   group('AuraSidebarWrapper rendering', () {
-    setUp(() {
-      try {
-        F.appFlavor = Flavor.dev;
-      } on Object catch (_) {
-        // Intentionally ignored: app flavor may already be initialized in test
-        // bootstrap, and reassigning it can throw.
-      }
-    });
-
-    Widget _buildTestApp({
+    ({Widget app, GoRouter router}) _buildTestApp({
       required String initialLocation,
       required List<StatefulShellBranch> branches,
     }) {
@@ -506,7 +496,7 @@ void main() {
         ],
       );
       addTearDown(router.dispose);
-      return EasyLocalization(
+      final app = EasyLocalization(
         supportedLocales: const [Locale('en')],
         path: 'assets/i18n',
         fallbackLocale: const Locale('en'),
@@ -541,6 +531,7 @@ void main() {
           },
         ),
       );
+      return (app: app, router: router);
     }
 
     testWidgets('renders sidebar for multiple routes', (tester) async {
@@ -583,56 +574,49 @@ void main() {
         ),
       ];
 
-      await tester.pumpWidget(
-        _buildTestApp(
-          initialLocation: '/workspaces/ws-test/tools',
-          branches: branches,
-        ),
+      final (:app, :router) = _buildTestApp(
+        initialLocation: '/workspaces/ws-test/tools',
+        branches: branches,
       );
+      await tester.pumpWidget(app);
       await tester.pump();
 
       expect(find.byType(AuraSidebarWrapper), findsOneWidget);
 
-      await tester.pumpWidget(
-        _buildTestApp(
-          initialLocation: '/workspaces/ws-test/chat/new',
-          branches: branches,
-        ),
-      );
+      router.go('/workspaces/ws-test/chat/new');
       await tester.pump();
 
       expect(find.byType(AuraSidebarWrapper), findsOneWidget);
 
-      await tester.pumpWidget(
-        _buildTestApp(
-          initialLocation: '/workspaces/ws-test/chats/chat-123',
-          branches: branches,
-        ),
-      );
+      router.go('/workspaces/ws-test/chats/chat-123');
       await tester.pump();
 
       expect(find.byType(AuraSidebarWrapper), findsOneWidget);
 
-      await tester.pumpWidget(
-        _buildTestApp(
-          initialLocation: '/workspaces/ws-test/models',
-          branches: branches,
-        ),
-      );
+      router.go('/workspaces/ws-test/models');
       await tester.pump();
 
       expect(find.byType(AuraSidebarWrapper), findsOneWidget);
 
-      await tester.pumpWidget(
-        _buildTestApp(
-          initialLocation: '/workspaces/ws-test/settings',
-          branches: branches,
-        ),
-      );
+      router.go('/workspaces/ws-test/settings');
       await tester.pump();
 
       expect(find.byType(AuraSidebarWrapper), findsOneWidget);
     });
+
+    test(
+      'fake conversation repository close clears tracked controllers',
+      () async {
+        final repo = _FakeConversationRepository()
+          ..watchConversationsByWorkspace('ws-test');
+
+        expect(repo._controllers, hasLength(1));
+
+        await repo.close();
+
+        expect(repo._controllers, isEmpty);
+      },
+    );
   });
 }
 
@@ -647,24 +631,38 @@ class _FakeNavigationShell extends Fake implements StatefulNavigationShell {
 
 class _FakeConversationRepository implements ConversationRepository {
   final _controllers = <StreamController<List<ConversationEntity>>>[];
+  final _pendingRemoval = <StreamController<List<ConversationEntity>>>{};
+
+  void _processPendingRemovals() {
+    if (_pendingRemoval.isNotEmpty) {
+      _controllers.removeWhere(_pendingRemoval.contains);
+      _pendingRemoval.clear();
+    }
+  }
 
   @override
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
     int? limit,
   }) {
-    late final StreamController<List<ConversationEntity>> controller;
-    controller = StreamController<List<ConversationEntity>>.broadcast(
-      onCancel: () => _controllers.remove(controller),
-    );
+    _processPendingRemovals();
+
+    final controller = StreamController<List<ConversationEntity>>.broadcast();
+    controller.onCancel = () => _pendingRemoval.add(controller);
     _controllers.add(controller);
     controller.add(const []);
     return controller.stream;
   }
 
   Future<void> close() async {
+    _processPendingRemovals();
+
+    final controllersSnapshot =
+        List<StreamController<List<ConversationEntity>>>.from(_controllers);
+    _controllers.clear();
+    _pendingRemoval.clear();
     await Future.wait(
-      _controllers.where((c) => !c.isClosed).map((c) => c.close()),
+      controllersSnapshot.where((c) => !c.isClosed).map((c) => c.close()),
     );
   }
 

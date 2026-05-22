@@ -9,18 +9,6 @@ extension on num {
   bool isBetween(num min, num max) => this >= min && this <= max;
 }
 
-/// Extension on [Color] to convert it to the OKLCH color space.
-extension ColorToOklch on Color {
-  /// Converts a Flutter [Color] to an [OKLCHColor].
-  OKLCHColor toOklch() {
-    final rgbColor = RgbColor.fromColor(this);
-    final lab = rgbColor.toOklab();
-    final lch = lab.toLch();
-
-    return lch;
-  }
-}
-
 /// Abstract base class for color representations that can be validated.
 abstract class ValueColor {
   /// Creates a new [ValueColor] instance.
@@ -290,8 +278,7 @@ enum OKLCHShades {
   /// Darkest shade (lowest lightness, low chroma).
   ///
   /// Use for text or the most prominent dark elements.
-  s900
-  ;
+  s900;
 
   /// The chroma value for this shade.
   double get chroma => switch (this) {
@@ -365,6 +352,8 @@ class OKLCHColor {
       'OKLCH(${lightness.toStringAsFixed(2)}, '
       '${chroma.toStringAsFixed(2)}, ${hue.toStringAsFixed(2)})';
 
+  // Null keeps the current channel value.
+  // ignore: unnecessary-nullable
   /// Creates a copy of this OKLCH color with optionally replaced values.
   OKLCHColor copyWith({
     double? lightness,

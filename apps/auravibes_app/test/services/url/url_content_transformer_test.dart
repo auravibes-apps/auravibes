@@ -18,6 +18,38 @@ void main() {
         expect(result.body, contains('Content here.'));
       });
 
+      test('does not duplicate heading when both title and h1 are present', () {
+        final response = _htmlResponse(
+          '<html><head><title>Title</title></head><body><h1>Title</h1><p>Content here.</p></body></html>',
+        );
+        final result = transformer.transform(response);
+
+        expect(result.format, UrlContentFormat.markdown);
+        expect(result.body, contains('# Title'));
+        final headingMatches = RegExp(
+          r'^#\s+Title$',
+          multiLine: true,
+        ).allMatches(result.body);
+        expect(headingMatches.length, 1);
+        expect(result.body, contains('Content here.'));
+      });
+
+      test('does not suppress title when h1 is inside a skipped tag', () {
+        final response = _htmlResponse(
+          '<html><head><title>Title</title></head>' //
+          '<body>' //
+          '<nav><h1>Title</h1></nav>' //
+          '<main><p>Main content</p></main>' //
+          '</body></html>',
+        );
+        final result = transformer.transform(response);
+
+        expect(result.format, UrlContentFormat.markdown);
+        expect(result.body, contains('# Title'));
+        expect(result.body, contains('Main content'));
+        expect(result.body, isNot(contains('Title\n# Title')));
+      });
+
       test('strips script and style tags', () {
         final response = _htmlResponse(
           '<html><head><script>alert("xss")</script><style>body { color: red; }</style></head><body><p>Safe content</p></body></html>',
@@ -356,6 +388,10 @@ void main() {
           );
           expect(html.format, UrlContentFormat.json);
           expect(html.body, '{"key": "value"}');
+
+          final defaultFmt = transformer.transform(response);
+          expect(defaultFmt.format, UrlContentFormat.json);
+          expect(defaultFmt.body, '{"key": "value"}');
         },
       );
 
@@ -572,6 +608,20 @@ void main() {
         expect(result.body, contains('| A | B | C |'));
         expect(result.body, contains('| 1 | 2 |  |'));
       });
+
+      test('handles table with extra cells in data row', () {
+        final response = _htmlResponse(
+          '<table>'
+          '<tr><th>A</th><th>B</th></tr>'
+          '<tr><td>1</td><td>2</td><td>3</td></tr>'
+          '</table>',
+        );
+        final result = transformer.transform(response);
+
+        expect(result.format, UrlContentFormat.markdown);
+        expect(result.body, contains('| A | B |  |'));
+        expect(result.body, contains('| 1 | 2 | 3 |'));
+      });
     });
 
     group('Nested list indentation', () {
@@ -597,7 +647,7 @@ void main() {
       });
     });
 
-    group('Skip content tags', () {
+    group('Skip nav element', () {
       test('skips nav element content entirely', () {
         final response = _htmlResponse(
           '<nav><ul><li><a href="/">Home</a></li></ul></nav><main><p>Main content</p></main>',

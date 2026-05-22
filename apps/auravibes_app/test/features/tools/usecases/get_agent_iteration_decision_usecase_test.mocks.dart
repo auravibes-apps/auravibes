@@ -198,4 +198,14 @@ class MockMessageRepository extends _i1.Mock implements _i3.MessageRepository {
             returnValue: _i4.Future<bool>.value(false),
           )
           as _i4.Future<bool>);
+
+  @override
+  _i4.Future<_i2.MessageEntity?> getLatestCompactionSummary(
+    String? conversationId,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#getLatestCompactionSummary, [conversationId]),
+            returnValue: _i4.Future<_i2.MessageEntity?>.value(),
+          )
+          as _i4.Future<_i2.MessageEntity?>);
 }

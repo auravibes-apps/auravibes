@@ -13,6 +13,7 @@ import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtim
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/streaming_runtime_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_context.dart';
+import 'package:auravibes_app/features/chats/usecases/select_prompt_messages_usecase.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
 import 'package:auravibes_app/providers/chatbot_service_provider.dart';
@@ -66,6 +67,7 @@ class ContinueAgentUsecase {
     required this.conversationStreamingRuntime,
     required this.agentCancellationRuntime,
     required this.monitoringService,
+    required this.selectPromptMessagesUsecase,
   });
 
   final ChatbotService chatbotService;
@@ -77,16 +79,15 @@ class ContinueAgentUsecase {
   final ConversationStreamingRuntime conversationStreamingRuntime;
   final AgentCancellationRuntime agentCancellationRuntime;
   final MonitoringService monitoringService;
+  final SelectPromptMessagesUsecase selectPromptMessagesUsecase;
 
   Future<ContinueAgentResult> call({
     required String conversationId,
     AgentIterationContext? context,
   }) async {
     final conversation = await _loadConversation(conversationId);
-    final messages = await messageRepository.getMessagesByConversation(
-      conversationId,
-    );
     final foundModel = await _loadSelectedModel(conversation);
+    final messages = await _selectPromptMessages(conversationId);
     final tools = await loadConversationToolSpecsUsecase.call(
       conversationId: conversationId,
       workspaceId: conversation.workspaceId,
@@ -120,9 +121,7 @@ class ContinueAgentUsecase {
     }
 
     final foundModel = await workspaceModelSelectionsRepository
-        .getWorkspaceModelSelectionById(
-          modelId,
-        );
+        .getWorkspaceModelSelectionById(modelId);
     if (foundModel == null) {
       throw Exception('Selected model not found');
     }
@@ -137,6 +136,24 @@ class ContinueAgentUsecase {
     required List<ToolSpec> tools,
   }) async {
     final chatHistory = const BuildPromptChatMessages()(messages);
+    assert(
+      () {
+        final firstNonSystem = chatHistory.cast<ChatMessage?>().firstWhere(
+          (m) => m?.role != ChatMessageRole.system,
+          orElse: () => null,
+        );
+        return firstNonSystem == null ||
+            firstNonSystem.role == ChatMessageRole.user;
+      }(),
+      () {
+        final firstNonSystemRole = chatHistory
+            .where((m) => m.role != ChatMessageRole.system)
+            .firstOrNull
+            ?.role;
+        return 'First non-system message after compaction must '
+            'be user, got $firstNonSystemRole';
+      }(),
+    );
     final state = _ContinueAgentRunState(
       conversationId: conversationId,
       pendingUserMessageIds: context?.ackMessageIds ?? const <String>[],
@@ -147,11 +164,7 @@ class ContinueAgentUsecase {
       _startPersistence(state);
 
       final responseStream = chatbotService
-          .sendMessage(
-            foundModel,
-            chatHistory,
-            tools: tools,
-          )
+          .sendMessage(foundModel, chatHistory, tools: tools)
           .doOnError((error, stackTrace) {
             monitoringService.trackError(
               'Error in continue agent stream',
@@ -213,14 +226,11 @@ class ContinueAgentUsecase {
     _ContinueAgentRunState state,
     Stream<ChatResult<ChatMessage>> responseStream,
   ) {
-    agentCancellationRuntime.registerCleanup(
-      state.conversationId,
-      () async {
-        await state.responseSubscription?.cancel();
-        await state.activeChunkProcessing;
-        _completeResponse(state);
-      },
-    );
+    agentCancellationRuntime.registerCleanup(state.conversationId, () async {
+      await state.responseSubscription?.cancel();
+      await state.activeChunkProcessing;
+      _completeResponse(state);
+    });
     state.responseSubscription = responseStream.listen(
       null,
       onError: (Object error, StackTrace stackTrace) {
@@ -280,10 +290,7 @@ class ContinueAgentUsecase {
     final currentMessage = state.firstMessage!;
 
     state.streamingController!.add(currentResult);
-    messagesStreamingRuntime.updateResult(
-      currentResult,
-      currentMessage.id,
-    );
+    messagesStreamingRuntime.updateResult(currentResult, currentMessage.id);
   }
 
   Future<void> _ensureAssistantMessage(
@@ -438,10 +445,7 @@ class ContinueAgentUsecase {
   ) async {
     await messageRepository.patchMessage(
       message.id,
-      .new(
-        metadata: result.entityMetadata,
-        status: .sent,
-      ),
+      .new(metadata: result.entityMetadata, status: .sent),
     );
   }
 
@@ -499,26 +503,31 @@ class ContinueAgentUsecase {
       }).toList(),
     );
   }
+
+  Future<List<MessageEntity>> _selectPromptMessages(
+    String conversationId,
+  ) async {
+    return selectPromptMessagesUsecase(conversationId);
+  }
 }
 
-final continueAgentUsecaseProvider = Provider<ContinueAgentUsecase>(
-  (ref) {
-    return ContinueAgentUsecase(
-      chatbotService: ref.watch(chatbotServiceProvider),
-      messageRepository: ref.watch(messageRepositoryProvider),
-      workspaceModelSelectionsRepository: ref.watch(
-        workspaceModelSelectionRepositoryProvider,
-      ),
-      conversationRepository: ref.watch(conversationRepositoryProvider),
-      loadConversationToolSpecsUsecase: ref.watch(
-        loadConversationToolSpecsUsecaseProvider,
-      ),
-      messagesStreamingRuntime: ref.watch(messagesStreamingRuntimeProvider),
-      conversationStreamingRuntime: ref.watch(
-        conversationStreamingRuntimeProvider,
-      ),
-      agentCancellationRuntime: ref.watch(agentCancellationRuntimeProvider),
-      monitoringService: ref.watch(monitoringServiceProvider),
-    );
-  },
-);
+final continueAgentUsecaseProvider = Provider<ContinueAgentUsecase>((ref) {
+  return ContinueAgentUsecase(
+    chatbotService: ref.watch(chatbotServiceProvider),
+    messageRepository: ref.watch(messageRepositoryProvider),
+    workspaceModelSelectionsRepository: ref.watch(
+      workspaceModelSelectionRepositoryProvider,
+    ),
+    conversationRepository: ref.watch(conversationRepositoryProvider),
+    loadConversationToolSpecsUsecase: ref.watch(
+      loadConversationToolSpecsUsecaseProvider,
+    ),
+    messagesStreamingRuntime: ref.watch(messagesStreamingRuntimeProvider),
+    conversationStreamingRuntime: ref.watch(
+      conversationStreamingRuntimeProvider,
+    ),
+    agentCancellationRuntime: ref.watch(agentCancellationRuntimeProvider),
+    monitoringService: ref.watch(monitoringServiceProvider),
+    selectPromptMessagesUsecase: ref.watch(selectPromptMessagesUsecaseProvider),
+  );
+});

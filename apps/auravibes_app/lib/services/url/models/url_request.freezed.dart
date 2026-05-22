@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$UrlRequest {
 
- String get url; UrlRequestMethod get method; Map<String, String>? get headers; String? get body; Duration get timeout; UrlResponseFormat get format;
+ String get url; UrlRequestMethod get method; Map<String, String> get headers; String? get body; Duration get timeout; UrlResponseFormat get format;
 /// Create a copy of UrlRequest
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -45,7 +45,7 @@ abstract mixin class $UrlRequestCopyWith<$Res>  {
   factory $UrlRequestCopyWith(UrlRequest value, $Res Function(UrlRequest) _then) = _$UrlRequestCopyWithImpl;
 @useResult
 $Res call({
- String url, UrlRequestMethod method, Map<String, String>? headers, String? body, Duration timeout, UrlResponseFormat format
+ String url, UrlRequestMethod method, Map<String, String> headers, String? body, Duration timeout, UrlResponseFormat format
 });
 
 
@@ -62,12 +62,12 @@ class _$UrlRequestCopyWithImpl<$Res>
 
 /// Create a copy of UrlRequest
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? url = null,Object? method = null,Object? headers = freezed,Object? body = freezed,Object? timeout = null,Object? format = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? url = null,Object? method = null,Object? headers = null,Object? body = freezed,Object? timeout = null,Object? format = null,}) {
   return _then(_self.copyWith(
 url: null == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
 as String,method: null == method ? _self.method : method // ignore: cast_nullable_to_non_nullable
-as UrlRequestMethod,headers: freezed == headers ? _self.headers : headers // ignore: cast_nullable_to_non_nullable
-as Map<String, String>?,body: freezed == body ? _self.body : body // ignore: cast_nullable_to_non_nullable
+as UrlRequestMethod,headers: null == headers ? _self.headers : headers // ignore: cast_nullable_to_non_nullable
+as Map<String, String>,body: freezed == body ? _self.body : body // ignore: cast_nullable_to_non_nullable
 as String?,timeout: null == timeout ? _self.timeout : timeout // ignore: cast_nullable_to_non_nullable
 as Duration,format: null == format ? _self.format : format // ignore: cast_nullable_to_non_nullable
 as UrlResponseFormat,
@@ -155,7 +155,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String url,  UrlRequestMethod method,  Map<String, String>? headers,  String? body,  Duration timeout,  UrlResponseFormat format)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String url,  UrlRequestMethod method,  Map<String, String> headers,  String? body,  Duration timeout,  UrlResponseFormat format)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _UrlRequest() when $default != null:
 return $default(_that.url,_that.method,_that.headers,_that.body,_that.timeout,_that.format);case _:
@@ -176,7 +176,7 @@ return $default(_that.url,_that.method,_that.headers,_that.body,_that.timeout,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String url,  UrlRequestMethod method,  Map<String, String>? headers,  String? body,  Duration timeout,  UrlResponseFormat format)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String url,  UrlRequestMethod method,  Map<String, String> headers,  String? body,  Duration timeout,  UrlResponseFormat format)  $default,) {final _that = this;
 switch (_that) {
 case _UrlRequest():
 return $default(_that.url,_that.method,_that.headers,_that.body,_that.timeout,_that.format);case _:
@@ -196,7 +196,7 @@ return $default(_that.url,_that.method,_that.headers,_that.body,_that.timeout,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String url,  UrlRequestMethod method,  Map<String, String>? headers,  String? body,  Duration timeout,  UrlResponseFormat format)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String url,  UrlRequestMethod method,  Map<String, String> headers,  String? body,  Duration timeout,  UrlResponseFormat format)?  $default,) {final _that = this;
 switch (_that) {
 case _UrlRequest() when $default != null:
 return $default(_that.url,_that.method,_that.headers,_that.body,_that.timeout,_that.format);case _:
@@ -211,18 +211,16 @@ return $default(_that.url,_that.method,_that.headers,_that.body,_that.timeout,_t
 
 
 class _UrlRequest implements UrlRequest {
-  const _UrlRequest({required this.url, this.method = UrlRequestMethod.get, final  Map<String, String>? headers, this.body, this.timeout = const Duration(seconds: 30), this.format = UrlResponseFormat.defaultFormat}): _headers = headers;
+  const _UrlRequest({required this.url, this.method = UrlRequestMethod.get, final  Map<String, String> headers = const {}, this.body, this.timeout = const Duration(seconds: 30), this.format = UrlResponseFormat.defaultFormat}): _headers = headers;
   
 
 @override final  String url;
 @override@JsonKey() final  UrlRequestMethod method;
- final  Map<String, String>? _headers;
-@override Map<String, String>? get headers {
-  final value = _headers;
-  if (value == null) return null;
+ final  Map<String, String> _headers;
+@override@JsonKey() Map<String, String> get headers {
   if (_headers is EqualUnmodifiableMapView) return _headers;
   // ignore: implicit_dynamic_type
-  return EqualUnmodifiableMapView(value);
+  return EqualUnmodifiableMapView(_headers);
 }
 
 @override final  String? body;
@@ -259,7 +257,7 @@ abstract mixin class _$UrlRequestCopyWith<$Res> implements $UrlRequestCopyWith<$
   factory _$UrlRequestCopyWith(_UrlRequest value, $Res Function(_UrlRequest) _then) = __$UrlRequestCopyWithImpl;
 @override @useResult
 $Res call({
- String url, UrlRequestMethod method, Map<String, String>? headers, String? body, Duration timeout, UrlResponseFormat format
+ String url, UrlRequestMethod method, Map<String, String> headers, String? body, Duration timeout, UrlResponseFormat format
 });
 
 
@@ -276,12 +274,12 @@ class __$UrlRequestCopyWithImpl<$Res>
 
 /// Create a copy of UrlRequest
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? url = null,Object? method = null,Object? headers = freezed,Object? body = freezed,Object? timeout = null,Object? format = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? url = null,Object? method = null,Object? headers = null,Object? body = freezed,Object? timeout = null,Object? format = null,}) {
   return _then(_UrlRequest(
 url: null == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
 as String,method: null == method ? _self.method : method // ignore: cast_nullable_to_non_nullable
-as UrlRequestMethod,headers: freezed == headers ? _self._headers : headers // ignore: cast_nullable_to_non_nullable
-as Map<String, String>?,body: freezed == body ? _self.body : body // ignore: cast_nullable_to_non_nullable
+as UrlRequestMethod,headers: null == headers ? _self._headers : headers // ignore: cast_nullable_to_non_nullable
+as Map<String, String>,body: freezed == body ? _self.body : body // ignore: cast_nullable_to_non_nullable
 as String?,timeout: null == timeout ? _self.timeout : timeout // ignore: cast_nullable_to_non_nullable
 as Duration,format: null == format ? _self.format : format // ignore: cast_nullable_to_non_nullable
 as UrlResponseFormat,

@@ -224,6 +224,8 @@ class ModelSyncResult {
     return 'Synchronized $changeStr$durationStr';
   }
 
+  // Null keeps the existing timing value.
+  // ignore: unnecessary-nullable
   /// Creates a copy with updated timing values.
   ModelSyncResult withTiming({
     Duration? duration,
@@ -241,117 +243,5 @@ class ModelSyncResult {
       modelsRemoved: modelsRemoved,
       errors: List.unmodifiable(errors),
     );
-  }
-}
-
-/// Result of a sync validation operation.
-class ModelSyncValidation {
-  ModelSyncValidation({
-    required this.isValid,
-    this.missingProviderIds = const [],
-    this.extraProviderIds = const [],
-    this.missingModelIds = const [],
-    this.extraModelIds = const [],
-    this.apiStatus,
-    this.error,
-  });
-
-  /// Whether the sync state is valid
-  final bool isValid;
-
-  /// Provider IDs that exist in API but not locally
-  final List<String> missingProviderIds;
-
-  /// Provider IDs that exist locally but not in API
-  final List<String> extraProviderIds;
-
-  /// Model IDs that exist in API but not locally
-  final List<String> missingModelIds;
-
-  /// Model IDs that exist locally but not in API
-  final List<String> extraModelIds;
-
-  /// API status information
-  final ModelApiStatus? apiStatus;
-
-  /// Error message if validation failed
-  final String? error;
-
-  /// Total number of discrepancies
-  int get totalDiscrepancies =>
-      missingProviderIds.length +
-      extraProviderIds.length +
-      missingModelIds.length +
-      extraModelIds.length;
-
-  /// Human-readable validation summary
-  String get summary {
-    if (isValid) {
-      return 'Sync state is valid';
-    }
-
-    if (error != null) {
-      return 'Validation failed: $error';
-    }
-
-    final issues = <String>[];
-    if (missingProviderIds.isNotEmpty) {
-      issues.add('${missingProviderIds.length} missing providers');
-    }
-    if (extraProviderIds.isNotEmpty) {
-      issues.add('${extraProviderIds.length} extra providers');
-    }
-    if (missingModelIds.isNotEmpty) {
-      issues.add('${missingModelIds.length} missing models');
-    }
-    if (extraModelIds.isNotEmpty) {
-      issues.add('${extraModelIds.length} extra models');
-    }
-
-    return 'Discrepancies found: ${issues.join(', ')}';
-  }
-}
-
-/// Current synchronization status.
-class ModelSyncStatus {
-  ModelSyncStatus({
-    required this.localProviderCount,
-    required this.localModelCount,
-    required this.isApiAccessible,
-    required this.lastApiCheck,
-    required this.apiStatus,
-    this.error,
-  });
-
-  /// Number of providers in local database
-  final int localProviderCount;
-
-  /// Number of models in local database
-  final int localModelCount;
-
-  /// Whether the API is currently accessible
-  final bool isApiAccessible;
-
-  /// When the API was last checked
-  final DateTime lastApiCheck;
-
-  /// API status message
-  final String apiStatus;
-
-  /// Error message if status check failed
-  final String? error;
-
-  /// Whether the status is healthy
-  bool get isHealthy => isApiAccessible && error == null;
-
-  /// Human-readable status summary
-  String get summary {
-    if (!isHealthy) {
-      return 'Status unhealthy: ${error ?? 'API not accessible'}';
-    }
-
-    return '''
-Healthy: $localProviderCount providers, $localModelCount models, API accessible
-''';
   }
 }

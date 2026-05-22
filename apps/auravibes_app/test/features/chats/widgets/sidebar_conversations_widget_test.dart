@@ -1,11 +1,14 @@
 import 'dart:async';
 
+import 'package:auravibes_app/domain/entities/compaction.dart';
 import 'package:auravibes_app/domain/entities/conversation.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
+import 'package:auravibes_app/features/chats/providers/compaction_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/widgets/sidebar_conversations_widget.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -179,11 +182,11 @@ void main() {
     expect(widget.limit, 5);
   });
 
-  test('SidebarConversationsWidget workspaceId can be null', () {
+  test('SidebarConversationsWidget accepts empty workspaceId', () {
     const widget = SidebarConversationsWidget(
-      workspaceId: null,
+      workspaceId: '',
     );
-    expect(widget.workspaceId, isNull);
+    expect(widget.workspaceId, isEmpty);
   });
 
   test('SidebarConversationsWidget default limit is 10', () {
@@ -265,6 +268,123 @@ void main() {
 
     expect(find.byType(AuraSpinner), findsOneWidget);
   });
+
+  testWidgets(
+    'renders conversations with compacting row when compaction is running',
+    (
+      tester,
+    ) async {
+      final conversations = [
+        ConversationEntity(
+          id: 'conv-1',
+          workspaceId: 'workspace-1',
+          title: 'Test Chat',
+          isPinned: false,
+          createdAt: DateTime(2025),
+          updatedAt: DateTime(2025),
+        ),
+      ];
+
+      final repository = _SeededConversationRepository(conversations);
+      addTearDown(repository.close);
+
+      await tester.runAsync(() async {
+        await tester.pumpWidget(
+          EasyLocalization(
+            supportedLocales: const [Locale('en')],
+            path: 'assets/i18n',
+            fallbackLocale: const Locale('en'),
+            startLocale: const Locale('en'),
+            useFallbackTranslations: true,
+            useOnlyLangCode: true,
+            child: Builder(
+              builder: (context) {
+                return Portal(
+                  child: ProviderScope(
+                    overrides: [
+                      conversationRepositoryProvider.overrideWithValue(
+                        repository,
+                      ),
+                      compactionExecutionProvider.overrideWith(() {
+                        return _TestCompactionExecution({
+                          'conv-1': CompactionExecutionState(
+                            conversationId: 'conv-1',
+                            trigger: CompactionTrigger.auto,
+                            startedAt: DateTime(2025),
+                            status: CompactionExecutionStatus.running,
+                          ),
+                        });
+                      }),
+                      routerPathSegmentsProvider.overrideWithValue(const []),
+                    ],
+                    child: MaterialApp(
+                      locale: context.locale,
+                      supportedLocales: context.supportedLocales,
+                      localizationsDelegates: context.localizationDelegates,
+                      home: Theme(
+                        data: ThemeData(extensions: [AuraTheme.light]),
+                        child: const Material(
+                          child: SizedBox(
+                            width: 300,
+                            height: 800,
+                            child: SidebarConversationsWidget(
+                              workspaceId: 'workspace-1',
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+      });
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(AuraSpinner), findsOneWidget);
+      expect(find.text('Test Chat'), findsOneWidget);
+    },
+  );
+}
+
+class _SeededConversationRepository extends _RecordingConversationRepository {
+  _SeededConversationRepository(this._conversations);
+
+  final List<ConversationEntity> _conversations;
+
+  @override
+  Stream<List<ConversationEntity>> watchConversationsByWorkspace(
+    String workspaceId, {
+    int? limit,
+  }) {
+    workspaceWatchCalls.add(
+      _WorkspaceWatchCall(workspaceId: workspaceId, limit: limit),
+    );
+
+    late final StreamController<List<ConversationEntity>> controller;
+    controller = StreamController<List<ConversationEntity>>.broadcast(
+      onCancel: () => _controllers.remove(controller),
+    );
+    _controllers.add(controller);
+
+    Future.microtask(() => controller.add(_conversations));
+
+    return controller.stream;
+  }
+}
+
+class _TestCompactionExecution extends CompactionExecution {
+  _TestCompactionExecution(this._initialState);
+
+  final Map<String, CompactionExecutionState> _initialState;
+
+  @override
+  Map<String, CompactionExecutionState> build() {
+    return Map.unmodifiable(_initialState);
+  }
 }
 
 class _SidebarWorkspaceHost extends StatefulWidget {
@@ -278,7 +398,7 @@ class _SidebarWorkspaceHost extends StatefulWidget {
 }
 
 class _SidebarWorkspaceHostState extends State<_SidebarWorkspaceHost> {
-  String? _workspaceId;
+  String _workspaceId = '';
 
   @override
   Widget build(BuildContext context) {

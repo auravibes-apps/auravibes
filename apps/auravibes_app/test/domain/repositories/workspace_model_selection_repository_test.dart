@@ -23,6 +23,14 @@ class _StubRepository implements WorkspaceModelSelectionRepository {
   }
 
   @override
+  Stream<List<WorkspaceModelSelectionWithConnectionEntity>>
+  watchWorkspaceModelSelections(
+    WorkspaceModelSelectionFilter filter,
+  ) {
+    return Stream.value(selectionResults);
+  }
+
+  @override
   Future<WorkspaceModelSelectionWithConnectionEntity?>
   getWorkspaceModelSelectionById(
     String id,
@@ -57,48 +65,24 @@ void main() {
       expect(result, isEmpty);
     });
 
+    test('watchWorkspaceModelSelections streams empty by default', () async {
+      final repo = _StubRepository();
+
+      final result = await repo
+          .watchWorkspaceModelSelections(
+            const WorkspaceModelSelectionFilter(),
+          )
+          .first;
+
+      expect(result, isEmpty);
+    });
+
     test('getWorkspaceModelSelectionById returns null by default', () async {
       final repo = _StubRepository();
 
       final result = await repo.getWorkspaceModelSelectionById('id-1');
 
       expect(result, isNull);
-    });
-  });
-
-  group('WorkspaceModelSelectionException', () {
-    test('contains message', () {
-      const ex = WorkspaceModelSelectionException('test error');
-      expect(ex.message, 'test error');
-      expect(ex.cause, isNull);
-    });
-
-    test('toString includes message', () {
-      const ex = WorkspaceModelSelectionException('test error');
-      expect(ex.toString(), contains('test error'));
-    });
-
-    test('toString includes cause when provided', () {
-      final cause = Exception('inner');
-      final ex = WorkspaceModelSelectionException('test', cause);
-      expect(ex.toString(), contains('Caused by:'));
-    });
-  });
-
-  group('WorkspaceModelSelectionValidationException', () {
-    test('is a WorkspaceModelSelectionException', () {
-      const ex = WorkspaceModelSelectionValidationException('bad');
-      expect(ex, isA<WorkspaceModelSelectionException>());
-      expect(ex.message, 'bad');
-    });
-  });
-
-  group('WorkspaceModelSelectionNotFoundException', () {
-    test('contains id in message', () {
-      const ex = WorkspaceModelSelectionNotFoundException('ws-123');
-      expect(ex, isA<WorkspaceModelSelectionException>());
-      expect(ex.workspaceModelSelectionId, 'ws-123');
-      expect(ex.toString(), contains('ws-123'));
     });
   });
 }

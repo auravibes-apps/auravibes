@@ -46,11 +46,24 @@ jobs:
         uses: kuhnroyal/flutter-fvm-config-action/config@v3
         id: fvm-config-action
 
+      - name: 🔍 Detect Flutter channel
+        id: channel-detect
+        run: |
+          # fvm-config-action may output a pre-release version string
+          # (for example 3.44.0-0.3.pre) but still report stable channel.
+          # For .pre/.dev/-beta builds force beta; otherwise keep action output.
+          version="${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}"
+          if echo "$version" | grep -qE '\.pre$|\.dev\.|-beta\.'; then
+            echo "channel=beta" >> "$GITHUB_OUTPUT"
+          else
+            echo "channel=${{ steps.fvm-config-action.outputs.FLUTTER_CHANNEL }}" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: 🐦 Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: ${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}
-          channel: ${{ steps.fvm-config-action.outputs.FLUTTER_CHANNEL }}
+          channel: ${{ steps.channel-detect.outputs.channel }}
           cache: true
           cache-key: "flutter-:os:-:channel:-:version:-:arch:" # optional, change this to force refresh cache
           cache-path: "${{ runner.tool_cache }}/flutter/:channel:-:version:-:arch:" # optional, change this to specify the cache path
@@ -92,6 +105,15 @@ jobs:
       - name: 🕵️‍♂️ Analyze
         run: melos analyze
 
+      - name: 🗑️ Check unused files
+        run: melos run unused:files --no-select
+
+      - name: 🗑️ Check unused code
+        run: melos run unused:code --no-select
+
+      - name: 🧹 Check unnecessary nullable parameters
+        run: melos run unnecessary:nullable --no-select
+
       - name: 🧪 Run Tests
         run: melos run test:ci
 
@@ -108,7 +130,7 @@ jobs:
 
       - name: ☁️ SonarCloud Scan
         if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
-        uses: SonarSource/sonarqube-scan-action@59db25f34e16620e48ab4bb9e4a5dce155cb5432
+        uses: SonarSource/sonarqube-scan-action@7006c4492b2e0ee0f816d36501671557c97f5995
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 

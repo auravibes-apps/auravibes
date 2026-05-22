@@ -6,6 +6,7 @@ import 'package:auravibes_app/data/database/drift/daos/mcp_servers_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/message_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/model_connections_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/tools_groups_dao.dart';
+import 'package:auravibes_app/data/database/drift/daos/workspace_compaction_settings_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_model_selections_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_tools_dao.dart';
@@ -18,6 +19,7 @@ import 'package:auravibes_app/data/database/drift/tables/messages_table.dart';
 import 'package:auravibes_app/data/database/drift/tables/model_connections_table.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools_groups_table.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools_table.dart';
+import 'package:auravibes_app/data/database/drift/tables/workspace_compaction_settings_table.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_model_selections_table.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspaces_table.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
@@ -44,6 +46,7 @@ part 'app_database.g.dart';
     ToolsGroups,
     ConversationTools,
     McpServers,
+    WorkspaceCompactionSettings,
   ],
   daos: [
     WorkspaceDao,
@@ -57,6 +60,7 @@ part 'app_database.g.dart';
     ToolsGroupsDao,
     ConversationToolsDao,
     McpServersDao,
+    WorkspaceCompactionSettingsDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -64,12 +68,15 @@ class AppDatabase extends _$AppDatabase {
   ///
   /// If [connection] is provided, uses that connection.
   /// Otherwise, creates a default SQLite database connection.
-  AppDatabase({QueryExecutor? connection})
-    : super(connection ?? _openConnection());
+  /// When [connection] is null, [dbPrefix] is used to prefix the underlying
+  /// database name for the default connection. If [connection] is provided,
+  /// [dbPrefix] has no effect.
+  AppDatabase({QueryExecutor? connection, String? dbPrefix})
+    : super(connection ?? _openConnection(dbPrefix: dbPrefix));
 
   /// Database schema version.
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   /// Migration logic for database schema upgrades.
   @override
@@ -78,6 +85,11 @@ class AppDatabase extends _$AppDatabase {
       onCreate: (m) async {
         await m.createAll();
       },
+      onUpgrade: (m, from, to) async {
+        if (from < 2) {
+          await m.createTable(workspaceCompactionSettings);
+        }
+      },
     );
   }
 
@@ -85,16 +97,14 @@ class AppDatabase extends _$AppDatabase {
   ///
   /// This method sets up a cross-platform SQLite database connection
   /// with proper configuration for mobile and desktop platforms.
-  static QueryExecutor _openConnection() {
+  static QueryExecutor _openConnection({String? dbPrefix}) {
     return driftDatabase(
-      name: 'auravibes_app',
+      name: '${dbPrefix ?? ''}auravibes_app',
       web: .new(
         sqlite3Wasm: Uri.parse('sqlite3.wasm'),
         driftWorker: Uri.parse('drift_worker.dart.js'),
       ),
-      native: const DriftNativeOptions(
-        shareAcrossIsolates: true,
-      ),
+      native: const DriftNativeOptions(shareAcrossIsolates: true),
     );
   }
 

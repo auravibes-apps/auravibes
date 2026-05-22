@@ -14,12 +14,10 @@ import 'package:drift/drift.dart';
 /// exceptions.
 class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
   ModelConnectionRepositoryImpl({
-    required AppDatabase database,
-    required EncryptionService encryptionService,
+    required this._database,
+    required this._encryptionService,
     ModelProviderServices? modelProviderServices,
-  }) : _database = database,
-       _encryptionService = encryptionService,
-       _modelProviderServices =
+  }) : _modelProviderServices =
            modelProviderServices ?? ModelProviderServices();
 
   final AppDatabase _database;
@@ -92,11 +90,11 @@ class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
   Future<List<ModelConnectionEntity>> getModelConnections(
     ModelConnectionFilter filter,
   ) async {
-    if (filter.workspaces?.isNotEmpty != true) {
+    if (filter.workspaces.isEmpty) {
       return [];
     }
     final modelConnections = await _database.modelConnectionsDao
-        .getAllModelConnectionsByWorkspace(workspaceIds: filter.workspaces!);
+        .getAllModelConnectionsByWorkspace(workspaceIds: filter.workspaces);
 
     return modelConnections.map(_modelProviderTableToEntity).toList();
   }

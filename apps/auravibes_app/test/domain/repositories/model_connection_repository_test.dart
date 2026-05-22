@@ -123,30 +123,6 @@ void main() {
     });
   });
 
-  group('ModelConnectionValidationException', () {
-    test('is a ModelConnectionException', () {
-      const ex = ModelConnectionValidationException('bad');
-      expect(ex, isA<ModelConnectionException>());
-      expect(ex.message, 'bad');
-    });
-  });
-
-  group('ModelConnectionNotFoundException', () {
-    test('contains id in message', () {
-      const ex = ModelConnectionNotFoundException('mc-42');
-      expect(ex, isA<ModelConnectionException>());
-      expect(ex.modelConnectionId, 'mc-42');
-      expect(ex.toString(), contains('mc-42'));
-      expect(ex.toString(), contains('not found'));
-    });
-
-    test('includes cause when provided', () {
-      final cause = Exception('db error');
-      final ex = ModelConnectionNotFoundException('mc-1', cause);
-      expect(ex.cause, cause);
-    });
-  });
-
   group('ModelConnectionNoModelsException', () {
     test('contains model id in message', () {
       const ex = ModelConnectionNoModelsException('provider-1');

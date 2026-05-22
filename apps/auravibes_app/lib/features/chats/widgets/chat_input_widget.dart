@@ -13,14 +13,18 @@ class ChatInputWidget extends HookConsumerWidget {
     this.disabled = false,
     this.isBusy = false,
     this.onStop,
+    this.onCompact,
+    this.isCompacting = false,
     super.key,
   });
 
   final bool disabled;
   final bool isBusy;
   final void Function(String message) onSendMessage;
-  final VoidCallback? onToolsPress;
+  final VoidCallback onToolsPress;
   final VoidCallback? onStop;
+  final VoidCallback? onCompact;
+  final bool isCompacting;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -40,25 +44,43 @@ class ChatInputWidget extends HookConsumerWidget {
       [controller, onSendMessage, isEmpty],
     );
 
+    final compact = onCompact;
+
     return Padding(
       padding: const EdgeInsets.all(16),
       child: AuraInput(
         controller: controller,
         footer: Row(
           children: [
-            if (onToolsPress != null)
-              // Tools button - always show, modal will handle availability
-              Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: AuraButton(
-                  onPressed: onToolsPress!,
-                  variant: AuraButtonVariant.secondary,
-                  size: AuraButtonSize.small,
-                  child: const AuraIcon(Icons.build_circle_outlined),
-                ),
+            // Tools button - always show, modal will handle availability
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: AuraButton(
+                onPressed: onToolsPress,
+                variant: AuraButtonVariant.secondary,
+                size: AuraButtonSize.small,
+                child: const AuraIcon(Icons.build_circle_outlined),
               ),
+            ),
 
             const Spacer(),
+
+            if (compact != null)
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Tooltip(
+                  message: LocaleKeys.compaction_manual_button_tooltip.tr(),
+                  child: AuraButton(
+                    onPressed: compact,
+                    disabled: disabled || isBusy || isCompacting,
+                    variant: AuraButtonVariant.secondary,
+                    size: AuraButtonSize.small,
+                    child: isCompacting
+                        ? const AuraSpinner(size: AuraSpinnerSize.small)
+                        : const AuraIcon(Icons.compress_outlined),
+                  ),
+                ),
+              ),
 
             if (isBusy && onStop != null)
               Padding(

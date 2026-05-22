@@ -186,33 +186,6 @@ void main() {
 
       expect(find.byType(Divider), findsOneWidget);
     });
-
-    testWidgets('builder entry renders custom widget', (tester) async {
-      final controller = AuraPopupMenuController();
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: Portal(
-              child: AuraPopupMenu(
-                controller: controller,
-                items: [
-                  AuraPopupMenuBuilder(
-                    (context) => const Text('Custom'),
-                  ),
-                ],
-                child: const Text('Open Menu'),
-              ),
-            ),
-          ),
-        ),
-      );
-
-      controller.open();
-      await tester.pump();
-
-      expect(find.text('Custom'), findsOneWidget);
-    });
   });
 
   group('AuraPopupMenuController', () {

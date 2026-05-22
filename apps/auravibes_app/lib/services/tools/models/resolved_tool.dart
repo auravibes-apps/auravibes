@@ -1,4 +1,3 @@
-import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/services/tools/native_tool_entity.dart';
 import 'package:auravibes_app/services/tools/user_tools_entity.dart';
 
@@ -82,17 +81,4 @@ class ResolvedTool {
   bool get isMcp => type == ResolvedToolType.mcp;
 
   bool get isNative => type == ResolvedToolType.native;
-}
-
-/// Internal class to hold tool resolution result.
-class ToolResolution {
-  const ToolResolution({
-    required this.resolvedTool,
-    required this.failureStatus,
-  });
-
-  final ResolvedTool? resolvedTool;
-
-  /// The status to use if tool resolution failed (null if resolved)
-  final ToolCallResultStatus? failureStatus;
 }

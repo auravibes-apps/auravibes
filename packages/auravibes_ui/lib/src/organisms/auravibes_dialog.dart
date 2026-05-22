@@ -12,9 +12,9 @@ class AuraConfirmDialog extends StatelessWidget {
   const AuraConfirmDialog({
     required this.title,
     required this.message,
+    required this.confirmLabel,
+    required this.cancelLabel,
     super.key,
-    this.confirmLabel,
-    this.cancelLabel,
     this.onConfirm,
     this.onCancel,
     this.isDestructive = false,
@@ -28,10 +28,10 @@ class AuraConfirmDialog extends StatelessWidget {
   final Widget message;
 
   /// Label for the confirm button. Defaults to localized "Confirm".
-  final Widget? confirmLabel;
+  final Widget confirmLabel;
 
   /// Label for the cancel button. Defaults to localized "Cancel".
-  final Widget? cancelLabel;
+  final Widget cancelLabel;
 
   /// Called when the confirm button is pressed.
   final VoidCallback? onConfirm;
@@ -57,7 +57,7 @@ class AuraConfirmDialog extends StatelessWidget {
             Navigator.of(context).pop(false);
             onCancel?.call();
           },
-          child: cancelLabel ?? const Text('Cancel'),
+          child: cancelLabel,
         ),
         const SizedBox(width: 8),
         AuraButton(
@@ -69,7 +69,7 @@ class AuraConfirmDialog extends StatelessWidget {
           colorVariant: isDestructive
               ? AuraColorVariant.error
               : colorVariant ?? AuraColorVariant.primary,
-          child: confirmLabel ?? const Text('Confirm'),
+          child: confirmLabel,
         ),
       ],
     );
@@ -85,8 +85,8 @@ class AuraAlertDialog extends StatelessWidget {
   const AuraAlertDialog({
     required this.title,
     required this.message,
+    required this.dismissLabel,
     super.key,
-    this.dismissLabel,
     this.colorVariant,
   });
 
@@ -97,7 +97,7 @@ class AuraAlertDialog extends StatelessWidget {
   final Widget message;
 
   /// Label for the dismiss button. Defaults to "OK".
-  final Widget? dismissLabel;
+  final Widget dismissLabel;
 
   /// The accent color for the dialog.
   final AuraColorVariant? colorVariant;
@@ -114,7 +114,7 @@ class AuraAlertDialog extends StatelessWidget {
             Navigator.of(context).pop();
           },
           colorVariant: colorVariant,
-          child: dismissLabel ?? const Text('OK'),
+          child: dismissLabel,
         ),
       ],
     );

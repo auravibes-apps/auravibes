@@ -6,6 +6,32 @@ import 'package:auravibes_app/services/mcp_service/oauth_discovery.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+typedef MockHttpFetchCallback =
+    Future<ResponseBody> Function(
+      RequestOptions options,
+      Stream<Uint8List>? requestStream,
+      Future<void>? cancelFuture,
+    );
+
+final class FakeHttpClientAdapter implements HttpClientAdapter {
+  FakeHttpClientAdapter({
+    required MockHttpFetchCallback fetchCallback,
+  }) : _fetchCallback = fetchCallback;
+  final MockHttpFetchCallback _fetchCallback;
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) {
+    return _fetchCallback(options, requestStream, cancelFuture);
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
+
 void main() {
   group('OAuthAuthenticate', () {
     test('stores callbackUrlScheme and clientName', () {
@@ -16,16 +42,6 @@ void main() {
 
       expect(auth.callbackUrlScheme, 'auravibes');
       expect(auth.clientName, 'AuraVibes');
-    });
-
-    test('can be constructed', () {
-      expect(
-        () => OAuthAuthenticate(
-          callbackUrlScheme: 'myapp',
-          clientName: 'MyApp',
-        ),
-        returnsNormally,
-      );
     });
 
     group('validateGetCode', () {
@@ -210,8 +226,8 @@ void main() {
       });
     });
 
-    group('generateCodeChallenge variability', () {
-      test('generated verifier-like values are URL-safe and PKCE-sized', () {
+    group('generateCodeChallenge properties', () {
+      test('generated code challenges are URL-safe and PKCE-sized', () {
         final values = List.generate(
           10,
           (i) => OAuthAuthenticate.generateCodeChallenge('seed_$i'),
@@ -220,7 +236,7 @@ void main() {
         final allowed = RegExp(r'^[A-Za-z0-9\-_]+$');
         for (final value in values) {
           expect(value, isNotEmpty);
-          expect(value.length, inInclusiveRange(43, 128));
+          expect(value.length, 43);
           expect(value, matches(allowed));
           expect(value, isNot(contains('=')));
           expect(value, isNot(contains('+')));
@@ -240,12 +256,33 @@ void main() {
 
     group('exchangeCodeForToken', () {
       test('uses injected dio instance for token exchange', () async {
-        final adapter = _FakeHttpClientAdapter(
-          onFetch: (options, _, _) async {
+        final adapter = FakeHttpClientAdapter(
+          fetchCallback: (options, _, _) async {
             expect(
               options.responseType,
               ResponseType.json,
             );
+            expect(options.method, 'POST');
+            expect(options.path, 'https://example.com/token');
+
+            final data = options.data;
+            final Map<String, dynamic> body;
+            if (data is FormData) {
+              body = {
+                for (final field in data.fields) field.key: field.value,
+              };
+            } else if (data is Map) {
+              body = Map<String, dynamic>.from(data);
+            } else {
+              fail('Unexpected token request body type: ${data.runtimeType}');
+            }
+
+            expect(body['grant_type'], 'authorization_code');
+            expect(body['code'], 'auth-code');
+            expect(body['code_verifier'], 'verifier');
+            expect(body['redirect_uri'], 'auravibes:/');
+            expect(body['client_id'], 'client-id');
+
             return ResponseBody.fromString(
               '{"access_token":"token-123","token_type":"Bearer"}',
               200,
@@ -281,8 +318,8 @@ void main() {
       test(
         'throws when token exchange fails due to network/client error',
         () async {
-          final adapter = _FakeHttpClientAdapter(
-            onFetch: (_, _, _) async {
+          final adapter = FakeHttpClientAdapter(
+            fetchCallback: (_, _, _) async {
               throw DioException(
                 requestOptions: RequestOptions(
                   path: 'https://example.com/token',
@@ -323,8 +360,8 @@ void main() {
       );
 
       test('throws when token response is missing required fields', () async {
-        final adapter = _FakeHttpClientAdapter(
-          onFetch: (_, _, _) async {
+        final adapter = FakeHttpClientAdapter(
+          fetchCallback: (_, _, _) async {
             return ResponseBody.fromString(
               '{"token_type":"Bearer"}',
               200,
@@ -364,8 +401,8 @@ void main() {
       });
 
       test('throws when token response is not a JSON object', () async {
-        final adapter = _FakeHttpClientAdapter(
-          onFetch: (_, _, _) async {
+        final adapter = FakeHttpClientAdapter(
+          fetchCallback: (_, _, _) async {
             return ResponseBody.fromString(
               '["not-an-object"]',
               200,
@@ -403,32 +440,50 @@ void main() {
           ),
         );
       });
+
+      test('handles token response with optional OAuth fields', () async {
+        final adapter = FakeHttpClientAdapter(
+          fetchCallback: (_, _, _) async {
+            return ResponseBody.fromString(
+              jsonEncode(<String, Object?>{
+                'access_token': 'access-token',
+                'token_type': 'Bearer',
+                'refresh_token': 'refresh-token',
+                'expires_in': 3600,
+                'scope': 'profile email',
+              }),
+              200,
+              headers: {
+                Headers.contentTypeHeader: ['application/json'],
+              },
+            );
+          },
+        );
+        final dio = Dio()..httpClientAdapter = adapter;
+        final auth = OAuthAuthenticate(
+          callbackUrlScheme: 'auravibes',
+          clientName: 'AuraVibes',
+          dio: dio,
+        );
+
+        final result = await auth.exchangeCodeForToken(
+          code: 'auth-code',
+          oAuthResult: const OAuthDiscoveryResult(
+            authorizationUrl: 'https://example.com/authorize',
+            tokenUrl: 'https://example.com/token',
+            clientId: 'client-id',
+            scope: null,
+          ),
+          codeVerifier: 'verifier',
+          redirectUrl: 'auravibes:/',
+        );
+
+        expect(result.accessToken, 'access-token');
+        expect(result.tokenType, 'Bearer');
+        expect(result.refreshToken, 'refresh-token');
+        expect(result.expiresIn, 3600);
+        expect(result.scope, 'profile email');
+      });
     });
   });
-}
-
-typedef _FetchCallback =
-    Future<ResponseBody> Function(
-      RequestOptions options,
-      Stream<Uint8List>? requestStream,
-      Future<void>? cancelFuture,
-    );
-
-final class _FakeHttpClientAdapter implements HttpClientAdapter {
-  _FakeHttpClientAdapter({required _FetchCallback onFetch})
-    : _onFetch = onFetch;
-
-  final _FetchCallback _onFetch;
-
-  @override
-  Future<ResponseBody> fetch(
-    RequestOptions options,
-    Stream<Uint8List>? requestStream,
-    Future<void>? cancelFuture,
-  ) {
-    return _onFetch(options, requestStream, cancelFuture);
-  }
-
-  @override
-  void close({bool force = false}) {}
 }

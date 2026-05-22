@@ -115,12 +115,23 @@ abstract class MessageRepository {
   /// Returns true if the message data is valid.
   /// Throws [MessageValidationException] if message data is invalid.
   Future<bool> validateMessage(MessageToCreate message);
+
+  /// Retrieves the latest compaction summary message for a conversation.
+  ///
+  /// Returns the most recent sent message with
+  /// `metadata.isCompactionSummary == true`, or null if none exists.
+  Future<MessageEntity?> getLatestCompactionSummary(String conversationId);
 }
 
 /// Base exception for message-related operations.
 class MessageException implements Exception {
+  // Cause is optional because not all domain failures wrap an exception.
+  // ignore: unnecessary-nullable
   /// Creates a new MessageException
-  const MessageException(this.message, [this.cause]);
+  const MessageException(
+    this.message, [
+    this.cause,
+  ]);
 
   /// Error message describing the exception
   final String message;

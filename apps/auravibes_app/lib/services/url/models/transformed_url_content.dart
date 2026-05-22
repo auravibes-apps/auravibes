@@ -3,8 +3,7 @@ enum UrlContentFormat {
   text,
   json,
   html,
-  unsupported
-  ;
+  unsupported;
 
   String get label => switch (this) {
     markdown => 'markdown',

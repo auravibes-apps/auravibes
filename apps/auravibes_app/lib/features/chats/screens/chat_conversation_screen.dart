@@ -1,7 +1,10 @@
 import 'dart:async';
 
+import 'package:auravibes_app/domain/entities/compaction.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_chat_notifier.dart';
+import 'package:auravibes_app/features/chats/providers/compaction_providers.dart';
 import 'package:auravibes_app/features/chats/providers/messages_providers.dart';
+import 'package:auravibes_app/features/chats/usecases/manual_compact_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/stop_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
@@ -111,10 +114,19 @@ class _ChatConversationScreen extends HookConsumerWidget {
       [ref],
     );
 
+    final onCompact = useCallback(() async {
+      await _manualCompact(context, ref, conversation.id);
+    }, [ref, conversation.id]);
+
     final busyState = ref.watch(conversationBusyStateProvider).asData?.value;
     final queuedDrafts = ref.watch(conversationQueuedDraftsProvider);
     final pendingCalls = ref.watch(pendingToolCallsProvider).value ?? const [];
     final hasPendingApprovals = pendingCalls.isNotEmpty;
+    final compactionState = ref.watch(
+      compactionExecutionStateProvider(conversation.id),
+    );
+    final isCompacting =
+        compactionState?.status == CompactionExecutionStatus.running;
 
     return AuraScreen(
       appBar: AuraAppBarWithDrawer(
@@ -144,6 +156,8 @@ class _ChatConversationScreen extends HookConsumerWidget {
               isBusy: busyState?.isBusy ?? false,
               onStop: onStop,
               onSendMessage: onSendMessage,
+              onCompact: onCompact,
+              isCompacting: isCompacting,
             ),
           ),
         ],
@@ -223,6 +237,31 @@ Future<void> _sendMessage(
         content: Text(
           LocaleKeys.chats_screens_chat_conversation_send_error.tr(),
         ),
+      ),
+    );
+  }
+}
+
+Future<void> _manualCompact(
+  BuildContext context,
+  WidgetRef ref,
+  String conversationId,
+) async {
+  final result = await ref.read(manualCompactConversationUsecaseProvider)(
+    conversationId,
+  );
+  if (!context.mounted) return;
+
+  if (result.success) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(LocaleKeys.compaction_manual_success.tr()),
+      ),
+    );
+  } else if (result.error != null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(LocaleKeys.compaction_manual_failure.tr()),
       ),
     );
   }
