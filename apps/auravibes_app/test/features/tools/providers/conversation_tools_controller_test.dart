@@ -83,8 +83,8 @@ void main() {
           ToolPermissionMode.alwaysAsk,
         );
         expect(result.firstOrNull?.isWorkspaceEnabled, isTrue);
-        expect(result.lastOrNull?.tool.id, 'tool-2');
-        expect(result.lastOrNull?.isEnabled, isFalse);
+        expect(result.last.tool.id, 'tool-2');
+        expect(result.last.isEnabled, isFalse);
         expect(result.last.permissionMode, ToolPermissionMode.alwaysAsk);
         expect(
           conversationToolsRepository.lastConversationId,

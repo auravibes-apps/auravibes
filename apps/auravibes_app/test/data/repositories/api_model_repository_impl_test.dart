@@ -87,8 +87,8 @@ void main() {
 
         final result = await repository.getProvidersByType('openai');
 
-        expect(result, isNotEmpty);
-        expect(result.firstOrNull?.id, 'openai');
+        expect(result, hasLength(1));
+        expect(result.single.id, 'openai');
       });
     });
 

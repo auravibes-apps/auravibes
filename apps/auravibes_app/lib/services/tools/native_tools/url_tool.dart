@@ -379,13 +379,13 @@ final class UrlTool extends NativeToolEntity<String, String> {
     }
 
     final addresses = await InternetAddress.lookup(host);
-    final firstAdress = addresses.firstOrNull;
-    if (firstAdress == null || addresses.any(_isPrivateAddress)) {
+    final firstAddress = addresses.firstOrNull;
+    if (firstAddress == null || addresses.any(_isPrivateAddress)) {
       throw const FormatException(
         _privateNetworkUrlError,
       );
     }
-    return firstAdress.address;
+    return firstAddress.address;
   }
 
   bool _isBlockedHostLabel(String host) {

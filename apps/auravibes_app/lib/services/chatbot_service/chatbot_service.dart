@@ -84,9 +84,9 @@ class ChatbotService {
                 processedTitle.length - 1,
               );
             }
-            if (processedTitle.startsWith('''
-) &&
-                processedTitle.endsWith(''')) {
+            if (processedTitle.length > 1 &&
+                processedTitle.codeUnitAt(0) == 39 &&
+                processedTitle.codeUnitAt(processedTitle.length - 1) == 39) {
               processedTitle = processedTitle.substring(
                 1,
                 processedTitle.length - 1,

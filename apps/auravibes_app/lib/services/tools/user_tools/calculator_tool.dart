@@ -39,7 +39,7 @@ final class CalculatorTool extends UserToolEntity<String, Object, String> {
           final exp = parser.parse(toolInput);
           return evaluator.evaluate(exp).toString();
         } on Exception catch (_) {
-          return '''I don't know how to do that.''';
+          return 'I don${String.fromCharCode(39)}t know how to do that.';
         }
       }),
     );
