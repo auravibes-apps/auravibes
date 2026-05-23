@@ -146,7 +146,7 @@ class ConversationToolsNotifier extends _$ConversationToolsNotifier {
         (t) => t.tool.id == toolId,
       );
       if (index != -1) {
-        final updatedList = List<ConversationToolState>.from(currentList);
+        final updatedList = List<ConversationToolState>.of(currentList);
         updatedList[index] = patch(currentList[index]);
         state = AsyncData(updatedList);
       }

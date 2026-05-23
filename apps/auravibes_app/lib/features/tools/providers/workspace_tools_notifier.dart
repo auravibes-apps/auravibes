@@ -28,9 +28,7 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
   Future<List<WorkspaceToolEntity>> build(String workspaceId) async {
     _repository = ref.watch(workspaceToolsRepositoryProvider);
     _workspaceId = workspaceId;
-    final workspaceTools = await _repository.getWorkspaceTools(workspaceId);
-
-    return workspaceTools;
+    return _repository.getWorkspaceTools(workspaceId);
   }
 
   /// Add a new built-in tool to the workspace

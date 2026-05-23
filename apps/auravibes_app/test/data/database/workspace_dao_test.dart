@@ -74,7 +74,8 @@ void main() {
       final workspaces = await workspaceDao.getAllWorkspaces();
 
       expect(workspaces.length, equals(2));
-      expect(workspaces[0].name, equals('Workspace 1'));
+      expect(workspaces.firstOrNull?.name, equals('Workspace 1'));
+      expect(workspaces.firstOrNull?.type, equals(WorkspaceType.local));
       expect(workspaces[1].name, equals('Workspace 2'));
     });
 
@@ -148,7 +149,7 @@ void main() {
       final results = await workspaceDao.searchWorkspacesByName('Development');
 
       expect(results.length, equals(1));
-      expect(results[0].name, equals('Development Workspace'));
+      expect(results.firstOrNull?.name, equals('Development Workspace'));
     });
 
     test('should get workspace count by type', () async {

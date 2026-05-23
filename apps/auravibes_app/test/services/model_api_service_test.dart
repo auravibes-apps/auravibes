@@ -159,7 +159,7 @@ void main() {
         );
 
         expect(response.allModels, hasLength(2));
-        expect(response.allModels[0].id, 'gpt-4');
+        expect(response.allModels.first.id, 'gpt-4');
         expect(response.allModels[1].id, 'claude-3');
       });
 

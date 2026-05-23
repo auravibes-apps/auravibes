@@ -77,11 +77,11 @@ void main() {
 
       expect(result, hasLength(2));
 
-      final modelMsg = result[0];
-      expect(modelMsg.role.name, 'model');
-      expect(modelMsg.toolCalls, hasLength(1));
-      expect(modelMsg.toolCalls.single.callId, 'tc1');
-      expect(modelMsg.toolCalls.single.toolName, 'calculator');
+      final modelMsg = result.firstOrNull;
+      expect(modelMsg?.role.name, 'model');
+      expect(modelMsg?.toolCalls, hasLength(1));
+      expect(modelMsg?.toolCalls.single.callId, 'tc1');
+      expect(modelMsg?.toolCalls.single.toolName, 'calculator');
 
       final resultMsg = result[1];
       expect(resultMsg.role.name, 'user');
@@ -146,7 +146,7 @@ void main() {
       final result = adapter(messages);
 
       expect(result, hasLength(2));
-      expect(result[0].role.name, 'user');
+      expect(result.firstOrNull?.role.name, 'user');
       expect(result[1].role.name, 'model');
     });
   });

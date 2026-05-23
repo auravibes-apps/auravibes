@@ -46,7 +46,7 @@ void main() {
     );
 
     expect(result.length, 2);
-    expect(result.first.group, isNull);
+    expect(result.firstOrNull?.group, isNull);
     expect(result.last.group?.id, 'g1');
     expect(result.last.mcpConnection, isNotNull);
   });

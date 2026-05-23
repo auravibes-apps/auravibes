@@ -121,7 +121,7 @@ void main() {
       final result = await repo.getAllWorkspaces();
 
       expect(result, hasLength(1));
-      expect(result.first.id, 'ws-1');
+      expect(result.firstOrNull?.id, 'ws-1');
     });
 
     test('getWorkspaceById returns null when not found', () async {

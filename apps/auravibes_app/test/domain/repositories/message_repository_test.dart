@@ -160,7 +160,7 @@ void main() {
       final result = await repo.getMessagesByConversation('c-1');
 
       expect(result, hasLength(1));
-      expect(result.first.id, 'm-1');
+      expect(result.firstOrNull?.id, 'm-1');
     });
 
     test('watchMessagesByConversation emits list', () async {

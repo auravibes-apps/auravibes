@@ -40,11 +40,8 @@ class ConversationSendQueue extends _$ConversationSendQueue {
 
   ConversationQueuedDraft? peek(String conversationId) {
     final drafts = state[conversationId];
-    if (drafts == null || drafts.isEmpty) {
-      return null;
-    }
 
-    return drafts.first;
+    return drafts?.firstOrNull;
   }
 
   ConversationQueuedDraft? dequeue(String conversationId) {
@@ -52,9 +49,7 @@ class ConversationSendQueue extends _$ConversationSendQueue {
     if (drafts == null || drafts.isEmpty) {
       return null;
     }
-
-    final nextDraft = drafts.first;
-    final remainingDrafts = drafts.sublist(1);
+    final [nextDraft, ...remainingDrafts] = drafts;
 
     state = {
       for (final entry in state.entries)

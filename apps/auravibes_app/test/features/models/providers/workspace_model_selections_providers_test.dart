@@ -93,7 +93,7 @@ void main() {
       final result = await container.read(provider.future);
       expect(result, hasLength(1));
       expect(
-        result.first.workspaceModelSelection.id,
+        result.firstOrNull?.workspaceModelSelection.id,
         'sel-1',
       );
     });

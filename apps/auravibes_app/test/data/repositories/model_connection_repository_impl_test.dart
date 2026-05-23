@@ -214,11 +214,11 @@ void main() {
         final result = await repository.getModelConnections(filter);
 
         expect(result, hasLength(1));
-        expect(result.first.id, 'conn-1');
-        expect(result.first.name, 'My Connection');
-        expect(result.first.key, 'encrypted-key');
-        expect(result.first.keySuffix, 'abc123');
-        expect(result.first.workspaceId, 'ws-1');
+        expect(result.firstOrNull?.id, 'conn-1');
+        expect(result.firstOrNull?.name, 'My Connection');
+        expect(result.firstOrNull?.key, 'encrypted-key');
+        expect(result.firstOrNull?.keySuffix, 'abc123');
+        expect(result.firstOrNull?.workspaceId, 'ws-1');
       });
     });
 

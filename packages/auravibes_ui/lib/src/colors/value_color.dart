@@ -18,15 +18,15 @@ abstract class ValueColor {
   Vector get vector;
 
   /// The valid limits for this color space.
-  (Vector, Vector) get validLimits;
+  ({Vector min, Vector max}) get validLimits;
 
   /// Whether this color has valid component values.
   bool get isValid {
-    final (validLimits1, validLimits2) = validLimits;
+    final (:min, :max) = validLimits;
 
-    return vector.x.isBetween(validLimits1.x, validLimits2.x) &&
-        vector.y.isBetween(validLimits1.y, validLimits2.y) &&
-        vector.z.isBetween(validLimits1.z, validLimits2.z);
+    return vector.x.isBetween(min.x, max.x) &&
+        vector.y.isBetween(min.y, max.y) &&
+        vector.z.isBetween(min.z, max.z);
   }
 }
 
@@ -66,7 +66,7 @@ class LinearSrgbColor extends ValueColor {
       return sign * (1.055 * math.pow(abs, 1.0 / 2.4)) - 0.055;
     }
 
-    return 12.92 * val;
+    return val * 12.92;
   }
 
   /// Converts to sRGB color space.
@@ -81,18 +81,16 @@ class LinearSrgbColor extends ValueColor {
   OklabColor toOkLab() {
     final lms = vector.transform(lrgbToLms).cbrt();
     final oklab = lms.transform(lmsToOklab);
-    final oklabColor = OklabColor.fromVector(oklab, alpha: alpha);
-
-    return oklabColor;
+    return OklabColor.fromVector(oklab, alpha: alpha);
   }
 
   @override
   Vector get vector => Vector(red, green, blue);
 
   @override
-  (Vector, Vector) get validLimits => (
-    const Vector(0, 0, 0),
-    const Vector(1, 1, 1),
+  ({Vector min, Vector max}) get validLimits => (
+    min: const Vector(0, 0, 0),
+    max: const Vector(1, 1, 1),
   );
 }
 
@@ -151,12 +149,7 @@ class RgbColor {
       c <= 0.04045 ? c / 12.92 : math.pow((c + 0.055) / 1.055, 2.4).toDouble();
 
   /// Converts to Oklab color space.
-  OklabColor toOklab() {
-    final lrgb = toLrgb();
-    final lab = lrgb.toOkLab();
-
-    return lab;
-  }
+  OklabColor toOklab() => toLrgb().toOkLab();
 }
 
 /// Represents a color in Oklab color space.
@@ -172,8 +165,8 @@ class OklabColor extends ValueColor {
   /// Creates an Oklab color from a vector.
   OklabColor.fromVector(Vector vector, {this.alpha = 1})
     : lightness = vector.x.fit(0, 1).toDouble(),
-      a = vector.y.fit(-.4, .4).toDouble(),
-      b = vector.z.fit(-.4, .4).toDouble();
+      a = vector.y.fit(-0.4, 0.4).toDouble(),
+      b = vector.z.fit(-0.4, 0.4).toDouble();
 
   /// The lightness component in range [0, 1].
   double lightness;
@@ -223,9 +216,9 @@ class OklabColor extends ValueColor {
   /// Values outside this range represent colors that cannot be
   /// rendered in standard sRGB displays.
   @override
-  (Vector, Vector) get validLimits => (
-    const Vector(0, -0.4, -0.4),
-    const Vector(1, 0.4, 0.4),
+  ({Vector min, Vector max}) get validLimits => (
+    min: const Vector(0, -0.4, -0.4),
+    max: const Vector(1, 0.4, 0.4),
   );
 }
 
@@ -293,9 +286,9 @@ enum OKLCHShades {
   double get lightness => switch (this) {
     OKLCHShades.s100 => 0.97,
     OKLCHShades.s200 => 0.89,
-    OKLCHShades.s300 => 0.80,
+    OKLCHShades.s300 => 0.8,
     OKLCHShades.s400 => 0.71,
-    OKLCHShades.s500 => 0.60,
+    OKLCHShades.s500 => 0.6,
     OKLCHShades.s600 => 0.49,
     OKLCHShades.s700 => 0.38,
     OKLCHShades.s800 => 0.25,
@@ -320,9 +313,7 @@ class OKLCHColor {
   factory OKLCHColor.fromColor(Color color) {
     final rgbColor = RgbColor.fromColor(color);
     final lab = rgbColor.toOklab();
-    final lch = lab.toLch();
-
-    return lch;
+    return lab.toLch();
   }
 
   /// Lightness component of the OKLCH color model.

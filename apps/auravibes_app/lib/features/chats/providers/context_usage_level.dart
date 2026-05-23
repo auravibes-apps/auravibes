@@ -31,7 +31,7 @@ enum ContextUsageLevel {
     if (usedTokens > limitTokens) return ContextUsageLevel.overflow;
     final ratio = limitTokens > 0 ? usedTokens / limitTokens : 0.0;
     if (ratio >= 0.85) return ContextUsageLevel.warning;
-    if (ratio >= 0.70) return ContextUsageLevel.elevated;
+    if (ratio >= 0.7) return ContextUsageLevel.elevated;
     return ContextUsageLevel.normal;
   }
 

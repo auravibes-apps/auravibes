@@ -55,7 +55,7 @@ void main() {
         final result = await usecase('conv-1');
 
         expect(result.length, 3);
-        expect(result[0].id, 'msg-1');
+        expect(result.firstOrNull?.id, 'msg-1');
       },
     );
 
@@ -85,7 +85,7 @@ void main() {
         final result = await usecase('conv-1');
 
         expect(result.length, 3);
-        expect(result[0].id, 'msg-summary');
+        expect(result.firstOrNull?.id, 'msg-summary');
         expect(result[1].id, 'msg-4');
         expect(result[2].id, 'msg-5');
       },
@@ -144,7 +144,7 @@ void main() {
       final result = await usecase('conv-1');
 
       expect(result.length, 2);
-      expect(result[0].id, 'summary-2');
+      expect(result.firstOrNull?.id, 'summary-2');
     });
 
     test(
@@ -170,7 +170,7 @@ void main() {
         final result = await usecase('conv-1');
 
         expect(result.length, 4);
-        expect(result[0].id, 'err-1');
+        expect(result.firstOrNull?.id, 'err-1');
       },
     );
 
@@ -197,7 +197,7 @@ void main() {
       final result = await usecase('conv-1');
 
       expect(result.length, 2);
-      expect(result[0].id, 'summary');
+      expect(result.firstOrNull?.id, 'summary');
       expect(result[1].id, 'new-1');
     });
 
@@ -229,8 +229,8 @@ void main() {
 
         final result = await usecase('conv-1');
 
-        expect(result.length, 3);
-        expect(result[0].id, 'summary');
+        expect(result.firstOrNull, isNotNull);
+        expect(result.firstOrNull?.id, 'summary');
         expect(result[1].id, 'kept-1');
         expect(result[2].id, 'kept-2');
       },
@@ -272,7 +272,7 @@ void main() {
         final result = await usecase('conv-1');
 
         expect(result.length, 1);
-        expect(result[0].id, 'summary-2');
+        expect(result.firstOrNull?.id, 'summary-2');
         expect(result.any((m) => m.id == 'a-1'), isFalse);
         expect(result.any((m) => m.id == 'a-2'), isFalse);
         expect(result.any((m) => m.id == 'summary-1'), isFalse);
@@ -304,7 +304,7 @@ void main() {
         final result = await usecase('conv-1');
 
         expect(result.length, 2);
-        expect(result[0].id, 'summary');
+        expect(result.firstOrNull?.id, 'summary');
         expect(result[1].id, 'kept-1');
       },
     );
@@ -331,9 +331,8 @@ void main() {
       ).thenAnswer((_) async => messages);
 
       final result = await usecase('conv-1');
-
       expect(result.length, 2);
-      expect(result[0].id, 'summary');
+      expect(result.firstOrNull?.id, 'summary');
       expect(result[1].id, 'latest-user');
       expect(result.any((m) => m.id == 'assistant'), isFalse);
     });
@@ -359,9 +358,8 @@ void main() {
       ).thenAnswer((_) async => messages);
 
       final result = await usecase('conv-1');
-
       expect(result.length, 1);
-      expect(result[0].id, 'summary');
+      expect(result.firstOrNull?.id, 'summary');
     });
 
     test('preserves tool messages after first user in tail', () async {
@@ -389,7 +387,7 @@ void main() {
       final result = await usecase('conv-1');
 
       expect(result.length, 3);
-      expect(result[0].id, 'summary');
+      expect(result.firstOrNull?.id, 'summary');
       expect(result[1].id, 'user-msg');
       expect(result[2].id, 'tool-result');
     });

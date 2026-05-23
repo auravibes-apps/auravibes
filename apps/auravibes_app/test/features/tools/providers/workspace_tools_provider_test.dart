@@ -212,7 +212,7 @@ void main() {
         workspaceToolsProvider('ws1').future,
       );
       expect(result.length, 2);
-      expect(result[0].id, 't1');
+      expect(result.firstOrNull?.id, 't1');
     });
 
     test('setToolEnabled updates tool in state', () async {
@@ -232,7 +232,7 @@ void main() {
       final result = await container.read(
         workspaceToolsProvider('ws1').future,
       );
-      expect(result.first.isEnabled, isFalse);
+      expect(result.firstOrNull?.isEnabled, isFalse);
     });
 
     test('removeToolById removes tool from state', () async {

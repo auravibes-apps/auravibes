@@ -62,7 +62,7 @@ void main() {
 
       // Assert
       expect(result.length, 2);
-      expect(result[0].name, 'Test Workspace 1');
+      expect(result.firstOrNull?.name, 'Test Workspace 1');
       expect(result[1].name, 'Test Workspace 2');
     });
 
@@ -178,7 +178,7 @@ void main() {
 
       // Assert
       expect(result.length, 1);
-      expect(result[0].name, 'Development Workspace');
+      expect(result.firstOrNull?.name, 'Development Workspace');
     });
 
     test('should handle invalid workspace creation', () async {

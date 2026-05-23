@@ -36,9 +36,9 @@ class AddMcpModal extends HookConsumerWidget {
         borderRadius: BorderRadius.circular(context.auraTheme.borderRadius.xl),
       ),
       child: Container(
-        width: MediaQuery.of(context).size.width * 0.9,
+        width: MediaQuery.sizeOf(context).width * 0.9,
         constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.85,
+          maxHeight: MediaQuery.sizeOf(context).height * 0.85,
           maxWidth: 450,
         ),
         child: Column(
@@ -221,21 +221,24 @@ class _Footer extends HookConsumerWidget {
       ),
     );
 
-    final onSave = useCallback(() async {
-      final notifier = ref.read(mcpFormProvider(workspaceId).notifier);
-      final success = await notifier.submit();
+    final onSave = useCallback(
+      () async {
+        final notifier = ref.read(mcpFormProvider(workspaceId).notifier);
+        final success = await notifier.submit();
 
-      if (success && context.mounted) {
-        showAuraSnackBar(
-          context: context,
-          content: const Text(
-            'MCP Server configuration saved (TODO: implement)',
-          ),
-          variant: AuraSnackBarVariant.success,
-        );
-        Navigator.of(context).pop();
-      }
-    }, [ref, context, workspaceId]);
+        if (success && context.mounted) {
+          showAuraSnackBar(
+            context: context,
+            content: const Text(
+              'MCP Server configuration saved (TODO: implement)',
+            ),
+            variant: AuraSnackBarVariant.success,
+          );
+          Navigator.of(context).pop();
+        }
+      },
+      [ref, context, workspaceId],
+    );
     return Container(
       padding: EdgeInsets.all(context.auraTheme.spacing.md),
       decoration: BoxDecoration(

@@ -68,8 +68,8 @@ void main() {
       );
 
       expect(tools.length, 1);
-      expect(tools.first.name, 'test_tool');
-      expect(tools.first.description, 'A test tool');
+      expect(tools.firstOrNull?.name, 'test_tool');
+      expect(tools.firstOrNull?.description, 'A test tool');
     });
 
     test('handles empty tool specs list', () {
@@ -102,7 +102,7 @@ void main() {
       );
 
       expect(tools.length, 2);
-      expect(tools[0].name, 'tool_a');
+      expect(tools.firstOrNull?.name, 'tool_a');
       expect(tools[1].name, 'tool_b');
     });
   });

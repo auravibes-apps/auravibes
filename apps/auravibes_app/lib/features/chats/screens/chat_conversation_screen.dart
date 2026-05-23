@@ -98,17 +98,23 @@ class _ChatConversationScreen extends HookConsumerWidget {
 
     final conversation = conversationResult.conversation;
 
-    final onToolsPress = useCallback(() async {
-      _showToolsModal(
-        context: context,
-        workspaceId: workspaceId,
-        conversationId: conversation.id,
-      );
-    }, [ref, workspaceId, conversation.id]);
+    final onToolsPress = useCallback(
+      () async {
+        _showToolsModal(
+          context: context,
+          workspaceId: workspaceId,
+          conversationId: conversation.id,
+        );
+      },
+      [ref, workspaceId, conversation.id],
+    );
 
-    final onStop = useCallback(() async {
-      await _stopConversation(context, ref);
-    }, [ref]);
+    final onStop = useCallback(
+      () async {
+        await _stopConversation(context, ref);
+      },
+      [ref],
+    );
 
     final onSendMessage = useCallback<Future<void> Function(String)>(
       (message) async {
@@ -117,9 +123,12 @@ class _ChatConversationScreen extends HookConsumerWidget {
       [ref],
     );
 
-    final onCompact = useCallback(() async {
-      await _manualCompact(context, ref, conversation.id);
-    }, [ref, conversation.id]);
+    final onCompact = useCallback(
+      () async {
+        await _manualCompact(context, ref, conversation.id);
+      },
+      [ref, conversation.id],
+    );
 
     final busyState = ref.watch(conversationBusyStateProvider).asData?.value;
     final queuedDrafts = ref.watch(conversationQueuedDraftsProvider);

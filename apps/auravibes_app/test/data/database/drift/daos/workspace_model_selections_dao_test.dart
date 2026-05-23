@@ -134,7 +134,7 @@ void main() {
             workspaceIds: [workspaceId],
           );
       final found = await database.workspaceModelSelectionsDao
-          .getWorkspaceModelSelectionById(all.first.model.id);
+          .getWorkspaceModelSelectionById(all.firstOrNull!.model.id);
       expect(found, isNotNull);
       expect(found!.model.modelId, equals('openai'));
     });

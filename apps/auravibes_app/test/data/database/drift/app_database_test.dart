@@ -41,8 +41,8 @@ void main() {
 
         final workspaces = await database.workspaceDao.getAllWorkspaces();
         expect(workspaces, hasLength(1));
-        expect(workspaces.first.name, 'Default Workspace');
-        expect(workspaces.first.type, WorkspaceType.local);
+        expect(workspaces.firstOrNull?.name, 'Default Workspace');
+        expect(workspaces.firstOrNull?.type, WorkspaceType.local);
       },
     );
 
@@ -148,7 +148,8 @@ void main() {
 
       final workspaces = await database.workspaceDao.getAllWorkspaces();
       expect(workspaces, hasLength(1));
-      expect(workspaces.first.name, 'Test Workspace');
+      expect(workspaces.firstOrNull?.name, 'Test Workspace');
+      expect(workspaces.firstOrNull?.type, WorkspaceType.local);
     });
 
     test('can insert multiple workspaces', () async {
@@ -188,7 +189,8 @@ void main() {
 
         final workspaces = await database.workspaceDao.getAllWorkspaces();
         expect(workspaces, hasLength(1));
-        expect(workspaces.first.name, 'Manual');
+        expect(workspaces.firstOrNull?.name, 'Manual');
+        expect(workspaces.firstOrNull?.type, WorkspaceType.local);
       },
     );
 

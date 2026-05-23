@@ -87,7 +87,7 @@ void main() {
       final result = await repo.watchConversationsByWorkspace('ws-1').first;
 
       expect(result, hasLength(1));
-      expect(result.first.id, '1');
+      expect(result.firstOrNull?.id, '1');
     });
 
     test('watchConversationsByWorkspace respects limit parameter', () async {

@@ -161,11 +161,11 @@ void main() {
 
       final rows = await db.apiModelProvidersDao.getAllProviders();
       expect(rows, hasLength(1));
-      expect(rows.first.id, 'test-provider');
-      expect(rows.first.name, 'Test Provider');
-      expect(rows.first.type, isNull);
-      expect(rows.first.url, isNull);
-      expect(rows.first.doc, isNull);
+      expect(rows.firstOrNull?.id, 'test-provider');
+      expect(rows.firstOrNull?.name, 'Test Provider');
+      expect(rows.firstOrNull?.type, isNull);
+      expect(rows.firstOrNull?.url, isNull);
+      expect(rows.firstOrNull?.doc, isNull);
     });
 
     test('can insert provider with all fields', () async {
@@ -183,11 +183,11 @@ void main() {
 
       final rows = await db.apiModelProvidersDao.getAllProviders();
       expect(rows, hasLength(1));
-      expect(rows.first.id, 'full-provider');
-      expect(rows.first.name, 'Full Provider');
-      expect(rows.first.type, ModelProvidersTableType.openai);
-      expect(rows.first.url, 'https://api.test.com');
-      expect(rows.first.doc, 'Test docs');
+      expect(rows.firstOrNull?.id, 'full-provider');
+      expect(rows.firstOrNull?.name, 'Full Provider');
+      expect(rows.firstOrNull?.type, ModelProvidersTableType.openai);
+      expect(rows.firstOrNull?.url, 'https://api.test.com');
+      expect(rows.firstOrNull?.doc, 'Test docs');
     });
 
     test('can insert multiple providers', () async {

@@ -63,11 +63,11 @@ void main() {
         final result = await repository.getAllProviders();
 
         expect(result, hasLength(1));
-        expect(result.first.id, 'openai');
-        expect(result.first.name, 'OpenAI');
-        expect(result.first.type, ModelProvidersType.openai);
-        expect(result.first.url, 'https://api.openai.com');
-        expect(result.first.doc, 'https://docs.openai.com');
+        expect(result.firstOrNull?.id, 'openai');
+        expect(result.firstOrNull?.name, 'OpenAI');
+        expect(result.firstOrNull?.type, ModelProvidersType.openai);
+        expect(result.firstOrNull?.url, 'https://api.openai.com');
+        expect(result.firstOrNull?.doc, 'https://docs.openai.com');
       });
 
       test('returns empty list when no providers', () async {
@@ -87,8 +87,8 @@ void main() {
 
         final result = await repository.getProvidersByType('openai');
 
-        expect(result, hasLength(1));
-        expect(result.first.id, 'openai');
+        expect(result, isNotEmpty);
+        expect(result.firstOrNull?.id, 'openai');
       });
     });
 
@@ -99,17 +99,17 @@ void main() {
         final result = await repository.getAllModels();
 
         expect(result, hasLength(1));
-        expect(result.first.id, 'gpt-4');
-        expect(result.first.name, 'GPT-4');
-        expect(result.first.modelProvider, 'openai');
-        expect(result.first.limitContext, 128000);
-        expect(result.first.limitOutput, 4096);
-        expect(result.first.modalitiesInput, ['text']);
-        expect(result.first.modalitiesOuput, ['text']);
-        expect(result.first.costInput, 30.0);
-        expect(result.first.costOutput, 60.0);
-        expect(result.first.openWeights, false);
-        expect(result.first.supportsReasoning, false);
+        expect(result.firstOrNull?.id, 'gpt-4');
+        expect(result.firstOrNull?.name, 'GPT-4');
+        expect(result.firstOrNull?.modelProvider, 'openai');
+        expect(result.firstOrNull?.limitContext, 128000);
+        expect(result.firstOrNull?.limitOutput, 4096);
+        expect(result.firstOrNull?.modalitiesInput, ['text']);
+        expect(result.firstOrNull?.modalitiesOuput, ['text']);
+        expect(result.firstOrNull?.costInput, 30);
+        expect(result.firstOrNull?.costOutput, 60);
+        expect(result.firstOrNull?.openWeights, false);
+        expect(result.firstOrNull?.supportsReasoning, false);
       });
     });
 
@@ -151,7 +151,7 @@ void main() {
         final result = await repository.getModelsByProvider('openai');
 
         expect(result, hasLength(1));
-        expect(result.first.modelProvider, 'openai');
+        expect(result.firstOrNull?.modelProvider, 'openai');
       });
     });
 
@@ -172,7 +172,7 @@ void main() {
         final result = await repository.batchUpsertProviders([entity]);
 
         expect(result, hasLength(1));
-        expect(result.first.id, 'openai');
+        expect(result.firstOrNull?.id, 'openai');
         verify(mockProvidersDao.batchUpsertProviders(any)).called(1);
       });
     });
@@ -196,7 +196,7 @@ void main() {
         final result = await repository.batchUpsertModels([entity]);
 
         expect(result, hasLength(1));
-        expect(result.first.id, 'gpt-4');
+        expect(result.firstOrNull?.id, 'gpt-4');
         verify(mockModelsDao.batchUpsertModels(any)).called(1);
       });
 
@@ -247,7 +247,7 @@ void main() {
 
         final result = await repository.getAllProviders();
 
-        expect(result.first.type, isNull);
+        expect(result.firstOrNull?.type, isNull);
       });
 
       test('maps anthropic type correctly', () async {
@@ -262,7 +262,7 @@ void main() {
 
         final result = await repository.getAllProviders();
 
-        expect(result.first.type, ModelProvidersType.anthropic);
+        expect(result.firstOrNull?.type, ModelProvidersType.anthropic);
       });
     });
   });

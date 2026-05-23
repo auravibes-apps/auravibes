@@ -142,8 +142,8 @@ void main() {
         );
 
         expect(result, hasLength(1));
-        expect(result.first.group?.id, 'group-1');
-        expect(result.first.tools, hasLength(1));
+        expect(result.firstOrNull?.group?.id, 'group-1');
+        expect(result.firstOrNull?.tools, hasLength(1));
       },
     );
 
@@ -158,7 +158,7 @@ void main() {
       );
 
       expect(result, hasLength(1));
-      expect(result.first.isDefaultGroup, isTrue);
+      expect(result.firstOrNull?.isDefaultGroup, isTrue);
     });
 
     test(

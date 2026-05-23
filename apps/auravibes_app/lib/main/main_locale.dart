@@ -16,7 +16,7 @@ class MainLocale extends StatelessWidget {
     return EasyLocalization(
       supportedLocales: supportedLocales,
       path: 'assets/i18n',
-      fallbackLocale: supportedLocales.first,
+      fallbackLocale: supportedLocales.firstOrNull,
       useFallbackTranslations: true,
       useFallbackTranslationsForEmptyResources: true,
       useOnlyLangCode: true,

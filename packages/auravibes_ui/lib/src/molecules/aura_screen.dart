@@ -41,8 +41,7 @@ class AuraScreen extends StatelessWidget {
     if (appBar != null) {
       content = Padding(
         padding: .only(
-          top:
-              appBar!.preferredSize.height + MediaQuery.of(context).padding.top,
+          top: appBar!.preferredSize.height + MediaQuery.paddingOf(context).top,
         ),
         child: content,
       );

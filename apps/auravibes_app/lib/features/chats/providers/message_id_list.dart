@@ -243,11 +243,7 @@ Future<int?> conversationContextLimit(Ref ref) async {
 
   if (conversationModelId == null) return null;
 
-  final selectedModel = await ref.watch(
-    modelContextLimitProvider(conversationModelId).future,
-  );
-
-  return selectedModel;
+  return await ref.watch(modelContextLimitProvider(conversationModelId).future);
 }
 
 @Riverpod(

@@ -73,8 +73,7 @@ abstract class WorkspaceToolEntity with _$WorkspaceToolEntity {
   bool get hasInputSchema => inputSchema != null && inputSchema!.isNotEmpty;
 
   UserToolType? get buildInType {
-    final type = UserToolType.fromValue(toolId);
-    return type;
+    return UserToolType.fromValue(toolId);
   }
 
   NativeToolType? get nativeType {

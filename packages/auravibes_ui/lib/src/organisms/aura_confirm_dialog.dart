@@ -214,7 +214,7 @@ Future<bool?> showAuraConfirmDialog({
   bool barrierDismissible = true,
   AuraColorVariant? colorVariant,
 }) async {
-  final result = await showGeneralDialog<bool>(
+  return showGeneralDialog<bool>(
     context: context,
     barrierDismissible: barrierDismissible,
     barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
@@ -233,19 +233,15 @@ Future<bool?> showAuraConfirmDialog({
       return FadeTransition(
         opacity: animation,
         child: ScaleTransition(
-          scale: Tween<double>(begin: 0.95, end: 1).animate(
-            CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeOut,
-            ),
-          ),
+          scale: Tween<double>(
+            begin: 0.95,
+            end: 1,
+          ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut)),
           child: child,
         ),
       );
     },
   );
-
-  return result;
 }
 
 /// Labels used by [showAuraConfirmDialog].

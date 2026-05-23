@@ -32,7 +32,9 @@ class ConversationContextUsagePill extends ConsumerWidget {
             ),
             borderRadius: context.auraTheme.borderRadius.full,
             backgroundColor: AuraColorVariant.surfaceVariant,
-            border: Border.all(color: auraColors.outlineVariant),
+            border: Border.fromBorderSide(
+              BorderSide(color: auraColors.outlineVariant),
+            ),
             child: AuraRow(
               mainAxisSize: MainAxisSize.min,
               spacing: AuraSpacing.xs,

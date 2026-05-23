@@ -133,7 +133,7 @@ void main() {
         'Open',
       );
       expect(results.length, equals(1));
-      expect(results.first.name, equals('OpenAI'));
+      expect(results.firstOrNull?.name, equals('OpenAI'));
     });
 
     test('getProviderCount returns correct count', () async {
@@ -155,7 +155,7 @@ void main() {
         ApiModelProvidersCompanion.insert(id: 'zzz', name: 'ZZZ Provider'),
       );
       final providers = await database.apiModelProvidersDao.getAllProviders();
-      expect(providers[0].id, equals('openai'));
+      expect(providers.firstOrNull?.id, equals('openai'));
       expect(providers[1].id, equals('deepseek'));
       expect(providers[2].id, equals('zzz'));
     });

@@ -53,7 +53,7 @@ class ResponsiveSlidingDrawer extends StatefulWidget {
     required this.isDarkMode,
     required this.controller,
     this.animationDuration = const Duration(milliseconds: 250),
-    this.openRatio = 0.80,
+    this.openRatio = 0.8,
     this.desktopOpenRatio = 0.3,
     this.desktopMinDrawerWidth = 150.0,
     this.desktopMaxDrawerWidth = 400.0,
@@ -195,7 +195,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
 
   bool _hasStartedDragCallback = false;
 
-  bool get isDesktop => MediaQuery.of(context).size.width >= 600;
+  bool get isDesktop => MediaQuery.sizeOf(context).width >= 600;
 
   @override
   void initState() {
@@ -222,7 +222,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (isDesktop) {
-      final screenWidth = MediaQuery.of(context).size.width;
+      final screenWidth = MediaQuery.sizeOf(context).width;
       _desktopDrawerWidth ??= widget.desktopOpenRatio * screenWidth;
       _desktopDrawerWidth = _desktopDrawerWidth!.clamp(
         widget.desktopMinDrawerWidth,
@@ -327,7 +327,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
   }
 
   double get _currentDrawerWidth {
-    final screenWidth = MediaQuery.of(context).size.width;
+    final screenWidth = MediaQuery.sizeOf(context).width;
     return isDesktop
         ? (_desktopDrawerWidth ?? (widget.desktopOpenRatio * screenWidth))
         : widget.openRatio * screenWidth;
@@ -448,7 +448,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
             onHorizontalDragEnd: enableGestures ? _handleDragEnd : null,
             child: SizedBox(
               width: drawerWidth,
-              height: MediaQuery.of(context).size.height,
+              height: MediaQuery.sizeOf(context).height,
               child: widget.drawer,
             ),
           ),

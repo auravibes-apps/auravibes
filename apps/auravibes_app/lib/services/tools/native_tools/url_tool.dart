@@ -379,12 +379,13 @@ final class UrlTool extends NativeToolEntity<String, String> {
     }
 
     final addresses = await InternetAddress.lookup(host);
-    if (addresses.isEmpty || addresses.any(_isPrivateAddress)) {
+    final firstAdress = addresses.firstOrNull;
+    if (firstAdress == null || addresses.any(_isPrivateAddress)) {
       throw const FormatException(
         _privateNetworkUrlError,
       );
     }
-    return addresses.first.address;
+    return firstAdress.address;
   }
 
   bool _isBlockedHostLabel(String host) {
@@ -405,7 +406,7 @@ final class UrlTool extends NativeToolEntity<String, String> {
 
     if (address.type == InternetAddressType.IPv6 && raw.length == 16) {
       final isMapped =
-          raw[0] == 0 &&
+          raw.firstOrNull == 0 &&
           raw[1] == 0 &&
           raw[2] == 0 &&
           raw[3] == 0 &&
@@ -424,22 +425,26 @@ final class UrlTool extends NativeToolEntity<String, String> {
 
     final isUnspecified = raw.every((b) => b == 0);
     return isUnspecified ||
-        raw[0] == 0xfc ||
-        raw[0] == 0xfd ||
-        raw[0] == 0xff ||
-        (raw[0] == 0xfe && (raw[1] & 0xc0) == 0x80);
+        raw.firstOrNull == 0xfc ||
+        raw.firstOrNull == 0xfd ||
+        raw.firstOrNull == 0xff ||
+        (raw.firstOrNull == 0xfe && (raw[1] & 0xc0) == 0x80);
   }
 
   bool _isPrivateIPv4(List<int> b) {
-    return b[0] == 10 ||
-        (b[0] == 172 && b[1] >= 16 && b[1] <= 31) ||
-        (b[0] == 192 && b[1] == 168) ||
-        (b[0] == 169 && b[1] == 254) ||
-        b[0] == 127 ||
-        b[0] == 0 ||
-        (b[0] == 100 && b[1] >= 64 && b[1] <= 127) ||
-        (b[0] >= 224 && b[0] <= 239) ||
-        b[0] >= 240;
+    final firstByte = b.firstOrNull;
+    if (firstByte == null) {
+      return false;
+    }
+    return firstByte == 10 ||
+        (firstByte == 172 && b[1] >= 16 && b[1] <= 31) ||
+        (firstByte == 192 && b[1] == 168) ||
+        (firstByte == 169 && b[1] == 254) ||
+        firstByte == 127 ||
+        firstByte == 0 ||
+        (firstByte == 100 && b[1] >= 64 && b[1] <= 127) ||
+        (firstByte >= 224 && firstByte <= 239) ||
+        firstByte >= 240;
   }
 
   @override

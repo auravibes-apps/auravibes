@@ -4,6 +4,9 @@ formatter:
   page_width: 80
 
 analyzer:
+  plugins:
+    - dart_code_linter
+
   enable-experiment:
     - private-named-parameters
 
@@ -64,9 +67,23 @@ linter:
 
 dart_code_linter:
   rules:
+    - avoid-double-slash-imports
+    - avoid-duplicate-exports
+    - avoid-border-all
+    - avoid-expanded-as-spacer
+    - avoid-unnecessary-conditionals
+    - binary-expression-operand-order
+    - correct-game-instantiating
+    - double-literal-format
+    - no-boolean-literal-compare
+    - only-barrel-import
+    - prefer-correct-edge-insets-constructor
+    - prefer-first-or-null
+    - prefer-intl-name
     - prefer-match-file-name:
         exclude:
           - test/**
+          - "**/test/**"
           - "**/*.g.dart"
           - "**/*.freezed.dart"
           - "**/atoms.dart"
@@ -79,3 +96,12 @@ dart_code_linter:
           - apps/auravibes_app/lib/main.dart
           - apps/auravibes_app/lib/i18n/**
           - apps/auravibes_app/web/**
+    - prefer-first
+    - prefer-immediate-return
+    - prefer-iterable-of
+    - prefer-last
+    - prefer-media-query-direct-access
+    - prefer-named-record-fields
+    - prefer-single-quotes
+    - prefer-trailing-comma
+    - tag-name

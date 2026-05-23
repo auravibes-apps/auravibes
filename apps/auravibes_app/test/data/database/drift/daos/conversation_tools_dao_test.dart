@@ -38,9 +38,9 @@ void main() {
           ])
           .then((_) async {
             final t = await database.workspaceToolsDao.getWorkspaceTools(ws.id);
-            return t.first;
+            return t.firstOrNull;
           });
-      toolId = tool.id;
+      toolId = tool!.id;
     });
 
     tearDown(() async {
@@ -261,7 +261,7 @@ void main() {
       final ws = await database.workspaceDao.getAllWorkspaces();
       final conv2 = await database.conversationDao.insertConversation(
         ConversationsCompanion.insert(
-          workspaceId: ws.first.id,
+          workspaceId: ws.firstOrNull!.id,
           title: 'Conv2',
         ),
       );
@@ -358,11 +358,14 @@ void main() {
       final ws = await database.workspaceDao.getAllWorkspaces();
       final tool2 = await database.workspaceToolsDao
           .insertToolsBatch([
-            ToolsCompanion.insert(workspaceId: ws.first.id, toolId: 'tool2'),
+            ToolsCompanion.insert(
+              workspaceId: ws.firstOrNull!.id,
+              toolId: 'tool2',
+            ),
           ])
           .then((_) async {
             final t = await database.workspaceToolsDao.getWorkspaceTools(
-              ws.first.id,
+              ws.firstOrNull!.id,
             );
             return t.firstWhere((e) => e.toolId == 'tool2');
           });

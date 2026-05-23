@@ -46,11 +46,15 @@ void main() {
 
     test('updates from repository stream without one-shot refetches', () async {
       final secondEmission = Completer<void>();
-      container.listen(chatMessagesProvider, (_, next) {
-        if (next.value?.length == 2 && !secondEmission.isCompleted) {
-          secondEmission.complete();
-        }
-      }, fireImmediately: true);
+      container.listen(
+        chatMessagesProvider,
+        (_, next) {
+          if (next.value?.length == 2 && !secondEmission.isCompleted) {
+            secondEmission.complete();
+          }
+        },
+        fireImmediately: true,
+      );
 
       repository.emit([
         _message(id: 'message-1', content: 'hello', isUser: true),

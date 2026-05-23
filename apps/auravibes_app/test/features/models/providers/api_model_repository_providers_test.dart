@@ -104,7 +104,7 @@ void main() {
 
       final result = await container.read(apiModelProvidersProvider.future);
       expect(result, hasLength(1));
-      expect(result.first.id, 'openai');
+      expect(result.firstOrNull?.id, 'openai');
     });
   });
 
@@ -132,7 +132,7 @@ void main() {
 
       final result = await container.read(getAllModelsProvider.future);
       expect(result, hasLength(1));
-      expect(result.first.id, 'gpt-4');
+      expect(result.firstOrNull?.id, 'gpt-4');
     });
   });
 
@@ -242,7 +242,7 @@ void main() {
         getModelsByProviderProvider(providerId: 'openai').future,
       );
       expect(result, hasLength(1));
-      expect(result.first.id, 'gpt-4');
+      expect(result.firstOrNull?.id, 'gpt-4');
     });
   });
 }

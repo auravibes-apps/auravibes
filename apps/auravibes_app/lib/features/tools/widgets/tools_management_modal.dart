@@ -38,9 +38,9 @@ class ToolsManagementModal extends ConsumerWidget {
         borderRadius: BorderRadius.circular(DesignBorderRadius.xl),
       ),
       child: Container(
-        width: MediaQuery.of(context).size.width * 0.9,
+        width: MediaQuery.sizeOf(context).width * 0.9,
         constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.7,
+          maxHeight: MediaQuery.sizeOf(context).height * 0.7,
           maxWidth: 500,
         ),
         child: Column(

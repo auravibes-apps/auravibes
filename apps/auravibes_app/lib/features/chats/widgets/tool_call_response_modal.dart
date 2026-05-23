@@ -43,9 +43,9 @@ class ToolCallResponseModal extends StatelessWidget {
         borderRadius: BorderRadius.circular(context.auraTheme.borderRadius.xl),
       ),
       child: Container(
-        width: MediaQuery.of(context).size.width * 0.9,
+        width: MediaQuery.sizeOf(context).width * 0.9,
         constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.85,
+          maxHeight: MediaQuery.sizeOf(context).height * 0.85,
           maxWidth: 600,
         ),
         child: Column(

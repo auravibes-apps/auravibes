@@ -318,10 +318,10 @@ void main() {
 
       final tools = await repository.getConversationTools('conv-1');
       expect(tools, hasLength(1));
-      expect(tools.first.conversationId, 'conv-1');
-      expect(tools.first.toolId, 'tool-1');
-      expect(tools.first.isEnabled, isTrue);
-      expect(tools.first.permissionMode, ToolPermissionMode.alwaysAllow);
+      expect(tools.firstOrNull?.conversationId, 'conv-1');
+      expect(tools.firstOrNull?.toolId, 'tool-1');
+      expect(tools.firstOrNull?.isEnabled, isTrue);
+      expect(tools.firstOrNull?.permissionMode, ToolPermissionMode.alwaysAllow);
     });
   });
 
@@ -686,7 +686,10 @@ void main() {
 
       final tools = await repository.getConversationTools('conv-2');
       expect(tools, hasLength(1));
-      expect(tools.first.toolId, 'tool-1');
+      expect(tools.firstOrNull?.conversationId, 'conv-2');
+      expect(tools.firstOrNull?.toolId, 'tool-1');
+      expect(tools.firstOrNull?.isEnabled, isTrue);
+      expect(tools.firstOrNull?.permissionMode, ToolPermissionMode.alwaysAllow);
     });
   });
 
@@ -845,7 +848,7 @@ void main() {
         'ws-1',
       );
       expect(result, hasLength(1));
-      expect(result.first, 'read_file');
+      expect(result.firstOrNull, 'read_file');
     });
 
     test('returns empty when no workspace tools', () async {
@@ -928,7 +931,7 @@ void main() {
         'ws-1',
       );
       expect(result, hasLength(1));
-      expect(result.first.id, 'tool-1');
+      expect(result.firstOrNull?.id, 'tool-1');
     });
   });
 

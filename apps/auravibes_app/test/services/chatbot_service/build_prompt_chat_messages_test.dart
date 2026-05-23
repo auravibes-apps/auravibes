@@ -47,7 +47,7 @@ void main() {
       final result = usecase.call(messages);
 
       expect(result, hasLength(3));
-      expect(result[0].role.name, 'user');
+      expect(result.firstOrNull?.role.name, 'user');
 
       final modelMessage = result[1];
       expect(modelMessage.role.name, 'model');
@@ -99,8 +99,8 @@ void main() {
       final result = usecase.call(messages);
 
       expect(result, hasLength(2));
-      expect(result.first.role.name, 'model');
-      expect(result.first.toolCalls, hasLength(2));
+      expect(result.firstOrNull?.role.name, 'model');
+      expect(result.firstOrNull?.toolCalls, hasLength(2));
 
       final resultMessage = result.last;
       expect(resultMessage.role.name, 'user');

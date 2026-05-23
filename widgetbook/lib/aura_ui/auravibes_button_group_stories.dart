@@ -191,7 +191,7 @@ class _MultiSelectionDemoState extends State<_MultiSelectionDemo> {
               isLoading: widget.isLoading,
             ),
             const SizedBox(height: 16),
-            Text('Selected: ${_selectedValues.join(", ")}'),
+            Text('Selected: ${_selectedValues.join(', ')}'),
           ],
         ),
       ),

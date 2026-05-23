@@ -307,18 +307,21 @@ class _SelectModelProvider extends HookConsumerWidget {
     );
 
     // Filter models based on search query using useMemoized
-    final filteredModels = useMemoized(() {
-      if (models == null) return <ApiModelProviderEntity>[];
+    final filteredModels = useMemoized(
+      () {
+        if (models == null) return <ApiModelProviderEntity>[];
 
-      if (searchQuery.value.isEmpty) {
-        return models;
-      }
+        if (searchQuery.value.isEmpty) {
+          return models;
+        }
 
-      final query = searchQuery.value.toLowerCase();
-      return models.where((model) {
-        return model.name.toLowerCase().contains(query);
-      }).toList();
-    }, [models, searchQuery.value]);
+        final query = searchQuery.value.toLowerCase();
+        return models.where((model) {
+          return model.name.toLowerCase().contains(query);
+        }).toList();
+      },
+      [models, searchQuery.value],
+    );
 
     if (models == null) {
       return AuraButton(

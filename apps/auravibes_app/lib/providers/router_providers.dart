@@ -101,7 +101,7 @@ String? matchWorkspaceId(Uri uri) {
     return null;
   }
 
-  if (pathSegments.first != 'workspaces') {
+  if (pathSegments.firstOrNull != 'workspaces') {
     return null;
   }
 

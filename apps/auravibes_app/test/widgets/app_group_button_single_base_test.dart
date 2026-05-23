@@ -21,7 +21,7 @@ void main() {
 
     expect(widget.labelLocaleKey, 'settings.label');
     expect(widget.items, hasLength(2));
-    expect(widget.items[0].value, 'x');
+    expect(widget.items.first.value, 'x');
     expect(widget.items[1].value, 'y');
   });
 
