@@ -684,7 +684,7 @@ final class ConversationContextLimitProvider
 }
 
 String _$conversationContextLimitHash() =>
-    r'aac733245a054f2361851780eee60d742b6db20b';
+    r'e72f627dae6987d016c284d7c04111f0a968a63a';
 
 @ProviderFor(pendingToolCalls)
 final pendingToolCallsProvider = PendingToolCallsProvider._();
