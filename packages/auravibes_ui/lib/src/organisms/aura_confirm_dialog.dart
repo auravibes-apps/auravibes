@@ -213,7 +213,7 @@ Future<bool?> showAuraConfirmDialog({
   bool isDestructive = false,
   bool barrierDismissible = true,
   AuraColorVariant? colorVariant,
-}) async {
+}) {
   return showGeneralDialog<bool>(
     context: context,
     barrierDismissible: barrierDismissible,

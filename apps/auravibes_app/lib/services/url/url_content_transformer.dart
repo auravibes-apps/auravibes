@@ -165,7 +165,7 @@ class UrlContentTransformer {
         format: .markdown,
         contentType: contentType,
         originalLength: originalLength,
-        truncated: truncatedOutput.flag,
+        truncated: truncatedOutput.truncated,
         elapsed: elapsed,
       );
     }
@@ -193,7 +193,7 @@ class UrlContentTransformer {
       format: .markdown,
       contentType: contentType,
       originalLength: originalLength,
-      truncated: truncatedOutput.flag,
+      truncated: truncatedOutput.truncated,
       elapsed: elapsed,
     );
   }
@@ -223,7 +223,7 @@ class UrlContentTransformer {
       format: .text,
       contentType: contentType,
       originalLength: originalLength,
-      truncated: truncatedOutput.flag,
+      truncated: truncatedOutput.truncated,
       elapsed: elapsed,
     );
   }
@@ -651,23 +651,23 @@ class UrlContentTransformer {
       format: format,
       contentType: contentType,
       originalLength: originalLength,
-      truncated: truncatedOutput.flag,
+      truncated: truncatedOutput.truncated,
       elapsed: elapsed,
     );
   }
 
-  ({String text, bool flag}) _truncateIfNeeded(
+  ({String text, bool truncated}) _truncateIfNeeded(
     String body,
     int originalLength,
   ) {
     if (body.length <= maxOutputLength) {
-      return (text: body, flag: false);
+      return (text: body, truncated: false);
     }
     return (
       text:
           '${body.substring(0, maxOutputLength - _truncationSuffix.length)}'
           '$_truncationSuffix',
-      flag: true,
+      truncated: true,
     );
   }
 
