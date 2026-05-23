@@ -12,7 +12,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'api_model_repository_providers.g.dart';
 
 /// Provider for the API model repository
-@riverpod
+@Riverpod(keepAlive: true)
 ApiModelRepository apiModelRepository(Ref ref) {
   final appDatabase = ref.watch(appDatabaseProvider);
   return ApiModelRepositoryImpl(appDatabase);

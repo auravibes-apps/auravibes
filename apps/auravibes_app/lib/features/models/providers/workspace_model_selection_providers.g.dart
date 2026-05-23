@@ -34,9 +34,6 @@ final class WorkspaceModelSelectionByIdProvider
          $allTransitiveDependencies: null,
        );
 
-  static final $allTransitiveDependencies0 =
-      workspaceModelSelectionRepositoryProvider;
-
   @override
   String debugGetCreateSourceHash() => _$workspaceModelSelectionByIdHash();
 
@@ -71,7 +68,7 @@ final class WorkspaceModelSelectionByIdProvider
 }
 
 String _$workspaceModelSelectionByIdHash() =>
-    r'9725387f6a39a753e5d0846aba87942300570dca';
+    r'74c353bbe50d08c3bd6bd9e1c7a60638e95d0219';
 
 final class WorkspaceModelSelectionByIdFamily extends $Family
     with
@@ -83,12 +80,8 @@ final class WorkspaceModelSelectionByIdFamily extends $Family
     : super(
         retry: null,
         name: r'workspaceModelSelectionByIdProvider',
-        dependencies: <ProviderOrFamily>[
-          workspaceModelSelectionRepositoryProvider,
-        ],
-        $allTransitiveDependencies: <ProviderOrFamily>[
-          WorkspaceModelSelectionByIdProvider.$allTransitiveDependencies0,
-        ],
+        dependencies: null,
+        $allTransitiveDependencies: null,
         isAutoDispose: true,
       );
 
@@ -118,13 +111,6 @@ final class ModelContextLimitProvider
          dependencies: null,
          $allTransitiveDependencies: null,
        );
-
-  static final $allTransitiveDependencies0 =
-      workspaceModelSelectionByIdProvider;
-  static final $allTransitiveDependencies1 =
-      WorkspaceModelSelectionByIdProvider.$allTransitiveDependencies0;
-  static final $allTransitiveDependencies2 =
-      getModelByProviderAndModelIdProvider;
 
   @override
   String debugGetCreateSourceHash() => _$modelContextLimitHash();
@@ -158,7 +144,7 @@ final class ModelContextLimitProvider
   }
 }
 
-String _$modelContextLimitHash() => r'638a326785cec00196dffb5af182a3b035c5c460';
+String _$modelContextLimitHash() => r'3aff8654283c89e3f3d0e772cab82693f4d80435';
 
 final class ModelContextLimitFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<int?>, String> {
@@ -166,15 +152,8 @@ final class ModelContextLimitFamily extends $Family
     : super(
         retry: null,
         name: r'modelContextLimitProvider',
-        dependencies: <ProviderOrFamily>[
-          workspaceModelSelectionByIdProvider,
-          getModelByProviderAndModelIdProvider,
-        ],
-        $allTransitiveDependencies: <ProviderOrFamily>[
-          ModelContextLimitProvider.$allTransitiveDependencies0,
-          ModelContextLimitProvider.$allTransitiveDependencies1,
-          ModelContextLimitProvider.$allTransitiveDependencies2,
-        ],
+        dependencies: null,
+        $allTransitiveDependencies: null,
         isAutoDispose: true,
       );
 

@@ -1,7 +1,12 @@
+// ignore_for_file: provider_dependencies
+// Required: provider unit tests read scoped providers directly.
+
 import 'package:auravibes_app/features/chats/providers/conversation_selection_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
+@Dependencies([conversationSelected])
 void main() {
   group('conversationSelectedProvider', () {
     test(

@@ -4,7 +4,9 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
+@Dependencies([contextUsage])
 class ConversationContextUsagePill extends ConsumerWidget {
   const ConversationContextUsagePill({super.key});
 

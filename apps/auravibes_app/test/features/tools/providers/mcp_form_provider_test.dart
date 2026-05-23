@@ -5,15 +5,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 
 class _FakeMcpConnectionNotifier extends McpConnectionNotifier {
-  McpServerFormToCreate? lastCreated;
-
   @override
   Future<void> addMcpServer(
     McpServerFormToCreate serverToCreate, {
     required String workspaceId,
-  }) async {
-    lastCreated = serverToCreate;
-  }
+  }) async {}
 }
 
 void main() {

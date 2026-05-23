@@ -26,7 +26,7 @@ final class WorkspaceRepositoryProvider
         argument: null,
         retry: null,
         name: r'workspaceRepositoryProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -55,7 +55,7 @@ final class WorkspaceRepositoryProvider
 }
 
 String _$workspaceRepositoryHash() =>
-    r'd51ca97d44faba0dbdd10033490149b5a87933c5';
+    r'5a62259280096e729c8c14f246c4a0458a653971';
 
 @ProviderFor(allWorkspaces)
 final allWorkspacesProvider = AllWorkspacesProvider._();

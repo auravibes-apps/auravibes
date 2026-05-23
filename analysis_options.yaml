@@ -1,12 +1,29 @@
 include: package:very_good_analysis/analysis_options.yaml
 
+plugins:
+  riverpod_lint:
+    version: ^3.1.3
+    diagnostics:
+      async_value_nullable_pattern: true
+      avoid_build_context_in_providers: true
+      avoid_keep_alive_dependency_inside_auto_dispose: true
+      avoid_public_notifier_properties: true
+      avoid_ref_inside_state_dispose: true
+      functional_ref: true
+      missing_provider_scope: true
+      notifier_build: true
+      notifier_extends: true
+      protected_notifier_properties: true
+      provider_dependencies: false
+      provider_parameters: true
+      riverpod_syntax_error: true
+      scoped_providers_should_specify_dependencies: false
+      unsupported_provider_value: true
+
 formatter:
   page_width: 80
 
 analyzer:
-  plugins:
-    - dart_code_linter
-
   enable-experiment:
     - private-named-parameters
 

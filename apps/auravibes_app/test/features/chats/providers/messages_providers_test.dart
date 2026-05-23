@@ -1,3 +1,6 @@
+// ignore_for_file: provider_dependencies
+// Required: provider unit tests read scoped providers directly.
+
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
@@ -8,6 +11,7 @@ import 'package:auravibes_app/features/chats/providers/conversation_repository_p
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 import 'package:rxdart/rxdart.dart';
 
 MessageEntity _message({
@@ -124,6 +128,12 @@ class _FakeMessageRepository implements MessageRepository {
   }
 }
 
+@Dependencies([
+  chatMessageIds,
+  chatMessages,
+  conversationQueuedDrafts,
+  conversationUsedTokens,
+])
 void main() {
   group('MessageIdList', () {
     test('returns empty list for empty messages', () {

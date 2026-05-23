@@ -1,3 +1,6 @@
+// ignore_for_file: provider_dependencies
+// Required: provider unit tests read scoped providers directly.
+
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
@@ -18,12 +21,15 @@ import 'package:auravibes_app/features/models/providers/workspace_model_selectio
 import 'package:dartantic_ai/dartantic_ai.dart' hide Provider;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 import 'package:rxdart/rxdart.dart';
 
+@Dependencies([chatMessages])
 List<String> _messageIds(ProviderContainer container) =>
     container.read(chatMessagesProvider).value?.map((m) => m.id).toList() ??
     const [];
 
+@Dependencies([chatMessages, conversationUsedTokens, messageConversationById])
 void main() {
   group('chatMessagesProvider', () {
     late _FakeMessageRepository repository;

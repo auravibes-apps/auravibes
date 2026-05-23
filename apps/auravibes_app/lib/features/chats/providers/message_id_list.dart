@@ -77,7 +77,7 @@ class MessageIdList extends ListBase<String> {
   int get hashCode => const DeepCollectionEquality().hash(_ids);
 }
 
-@Riverpod(dependencies: [chatMessages, MessagesStreamingNotifier])
+@Riverpod(dependencies: [chatMessages])
 MessageEntity? messageConversationById(
   Ref ref,
   String messageId,
@@ -132,7 +132,7 @@ MessageMetadataEntity? _mergeStreamingMetadata(
   );
 }
 
-@Riverpod(dependencies: [MessagesStreamingNotifier])
+@riverpod
 bool isMessageStreaming(Ref ref, String messageId) {
   return ref.watch(
     messagesStreamingProvider.select((state) => state.containsKey(messageId)),
@@ -140,7 +140,10 @@ bool isMessageStreaming(Ref ref, String messageId) {
 }
 
 @Riverpod(
-  dependencies: [conversationSelected, chatMessages],
+  dependencies: [
+    conversationSelected,
+    chatMessages,
+  ],
 )
 Future<ConversationBusyState> conversationBusyState(Ref ref) async {
   final conversationId = ref.watch(conversationSelectedProvider);
@@ -186,7 +189,7 @@ CompactionExecutionState? conversationCompactionExecutionState(Ref ref) {
 ///
 /// Returns a list of MCP server IDs that are being waited on for connection,
 /// or an empty list if not waiting.
-@Riverpod(dependencies: [conversationSelected])
+@riverpod
 List<String> pendingMcpConnections(Ref ref) {
   // The current streaming state only exposes the last `ChatResult`, and it no
   // longer carries pending MCP server IDs. Until that runtime state is modeled
@@ -204,7 +207,7 @@ class PendingToolCall {
   final String messageId;
 }
 
-@Riverpod(dependencies: [chatMessages, MessagesStreamingNotifier])
+@Riverpod(dependencies: [chatMessages])
 int conversationUsedTokens(Ref ref) {
   final messages = ref.watch(
     chatMessagesProvider.select((value) => value.value),
@@ -230,8 +233,6 @@ int conversationUsedTokens(Ref ref) {
 @Riverpod(
   dependencies: [
     conversationSelected,
-    conversationByIdStream,
-    modelContextLimit,
   ],
 )
 Future<int?> conversationContextLimit(Ref ref) async {
@@ -250,7 +251,6 @@ Future<int?> conversationContextLimit(Ref ref) async {
   dependencies: [
     conversationSelected,
     chatMessages,
-    conversationByIdStream,
   ],
 )
 Future<List<PendingToolCall>> pendingToolCalls(Ref ref) async {

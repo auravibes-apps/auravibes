@@ -6,7 +6,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'workspace_repository_providers.g.dart';
 
-@riverpod
+@Riverpod(keepAlive: true)
 WorkspaceRepository workspaceRepository(Ref ref) {
   final appDatabase = ref.watch(appDatabaseProvider);
 

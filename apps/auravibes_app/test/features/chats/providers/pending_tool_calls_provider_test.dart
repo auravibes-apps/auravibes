@@ -1,3 +1,6 @@
+// ignore_for_file: provider_dependencies
+// Required: provider unit tests read scoped providers directly.
+
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
@@ -12,6 +15,7 @@ import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dar
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
 MessageToolCallEntity _pendingToolCall({
   required String id,
@@ -81,6 +85,7 @@ class _NoOpWorkspaceToolsRepository implements WorkspaceToolsRepository {
   dynamic noSuchMethod(Invocation invocation) => null;
 }
 
+@Dependencies([pendingToolCalls])
 void main() {
   group('pendingToolCallsProvider', () {
     late ProviderContainer container;

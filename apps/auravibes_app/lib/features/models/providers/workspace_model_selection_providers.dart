@@ -5,9 +5,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'workspace_model_selection_providers.g.dart';
 
-@Riverpod(
-  dependencies: [workspaceModelSelectionRepository],
-)
+@riverpod
 Future<WorkspaceModelSelectionWithConnectionEntity?>
 workspaceModelSelectionById(
   Ref ref,
@@ -18,9 +16,7 @@ workspaceModelSelectionById(
       .getWorkspaceModelSelectionById(workspaceModelSelectionId);
 }
 
-@Riverpod(
-  dependencies: [workspaceModelSelectionById, getModelByProviderAndModelId],
-)
+@riverpod
 Future<int?> modelContextLimit(
   Ref ref,
   String workspaceModelSelectionId,

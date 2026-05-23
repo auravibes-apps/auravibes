@@ -18,7 +18,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
+@Dependencies([
+  conversationCompactionExecutionState,
+])
 class ChatMessagesWidget extends HookConsumerWidget {
   const ChatMessagesWidget({
     required this.messages,
@@ -66,6 +70,10 @@ class ChatMessagesWidget extends HookConsumerWidget {
   }
 }
 
+@Dependencies([
+  conversationBusyState,
+  messageConversationById,
+])
 class _ChatMessageRow extends HookConsumerWidget {
   const _ChatMessageRow({
     required this.messageId,

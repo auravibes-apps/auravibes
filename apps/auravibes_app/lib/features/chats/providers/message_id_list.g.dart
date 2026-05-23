@@ -204,7 +204,6 @@ final class MessageConversationByIdProvider
   static final $allTransitiveDependencies0 = chatMessagesProvider;
   static final $allTransitiveDependencies1 =
       ChatMessagesProvider.$allTransitiveDependencies0;
-  static final $allTransitiveDependencies2 = messagesStreamingProvider;
 
   @override
   String debugGetCreateSourceHash() => _$messageConversationByIdHash();
@@ -248,7 +247,7 @@ final class MessageConversationByIdProvider
 }
 
 String _$messageConversationByIdHash() =>
-    r'0f28d8489671a9e5848185b0396ab01c52113ad4';
+    r'7e40a605b5151cf15d412ccfd70236e18daff4b4';
 
 final class MessageConversationByIdFamily extends $Family
     with $FunctionalFamilyOverride<MessageEntity?, String> {
@@ -256,14 +255,10 @@ final class MessageConversationByIdFamily extends $Family
     : super(
         retry: null,
         name: r'messageConversationByIdProvider',
-        dependencies: <ProviderOrFamily>[
-          chatMessagesProvider,
-          messagesStreamingProvider,
-        ],
+        dependencies: <ProviderOrFamily>[chatMessagesProvider],
         $allTransitiveDependencies: <ProviderOrFamily>[
           MessageConversationByIdProvider.$allTransitiveDependencies0,
           MessageConversationByIdProvider.$allTransitiveDependencies1,
-          MessageConversationByIdProvider.$allTransitiveDependencies2,
         ],
         isAutoDispose: true,
       );
@@ -291,8 +286,6 @@ final class IsMessageStreamingProvider
          dependencies: null,
          $allTransitiveDependencies: null,
        );
-
-  static final $allTransitiveDependencies0 = messagesStreamingProvider;
 
   @override
   String debugGetCreateSourceHash() => _$isMessageStreamingHash();
@@ -335,7 +328,7 @@ final class IsMessageStreamingProvider
 }
 
 String _$isMessageStreamingHash() =>
-    r'060b0ab87cea0121ad17df4c0d7d8540ba9926ed';
+    r'b3ad448813470d5bd7e581b2a83d212609f23dc2';
 
 final class IsMessageStreamingFamily extends $Family
     with $FunctionalFamilyOverride<bool, String> {
@@ -343,10 +336,8 @@ final class IsMessageStreamingFamily extends $Family
     : super(
         retry: null,
         name: r'isMessageStreamingProvider',
-        dependencies: <ProviderOrFamily>[messagesStreamingProvider],
-        $allTransitiveDependencies: <ProviderOrFamily>[
-          IsMessageStreamingProvider.$allTransitiveDependencies0,
-        ],
+        dependencies: null,
+        $allTransitiveDependencies: null,
         isAutoDispose: true,
       );
 
@@ -544,13 +535,9 @@ final class PendingMcpConnectionsProvider
         retry: null,
         name: r'pendingMcpConnectionsProvider',
         isAutoDispose: true,
-        dependencies: <ProviderOrFamily>[conversationSelectedProvider],
-        $allTransitiveDependencies: <ProviderOrFamily>[
-          PendingMcpConnectionsProvider.$allTransitiveDependencies0,
-        ],
+        dependencies: null,
+        $allTransitiveDependencies: null,
       );
-
-  static final $allTransitiveDependencies0 = conversationSelectedProvider;
 
   @override
   String debugGetCreateSourceHash() => _$pendingMcpConnectionsHash();
@@ -575,7 +562,7 @@ final class PendingMcpConnectionsProvider
 }
 
 String _$pendingMcpConnectionsHash() =>
-    r'5b6294cc874c79b7f7ba586e39f6aa5a234b37c1';
+    r'dbaf55ab4c11b2f28685b5b2ad8a4dd040eed340';
 
 @ProviderFor(conversationUsedTokens)
 final conversationUsedTokensProvider = ConversationUsedTokensProvider._();
@@ -590,21 +577,16 @@ final class ConversationUsedTokensProvider
         retry: null,
         name: r'conversationUsedTokensProvider',
         isAutoDispose: true,
-        dependencies: <ProviderOrFamily>[
-          chatMessagesProvider,
-          messagesStreamingProvider,
-        ],
+        dependencies: <ProviderOrFamily>[chatMessagesProvider],
         $allTransitiveDependencies: <ProviderOrFamily>[
           ConversationUsedTokensProvider.$allTransitiveDependencies0,
           ConversationUsedTokensProvider.$allTransitiveDependencies1,
-          ConversationUsedTokensProvider.$allTransitiveDependencies2,
         ],
       );
 
   static final $allTransitiveDependencies0 = chatMessagesProvider;
   static final $allTransitiveDependencies1 =
       ChatMessagesProvider.$allTransitiveDependencies0;
-  static final $allTransitiveDependencies2 = messagesStreamingProvider;
 
   @override
   String debugGetCreateSourceHash() => _$conversationUsedTokensHash();
@@ -629,7 +611,7 @@ final class ConversationUsedTokensProvider
 }
 
 String _$conversationUsedTokensHash() =>
-    r'c14b6ff48489c0e7716849f58f36b2a34d5cf69f';
+    r'd6ec1ef3e4f93b68f0ec31dab03c986a4ea3cf7b';
 
 @ProviderFor(conversationContextLimit)
 final conversationContextLimitProvider = ConversationContextLimitProvider._();
@@ -644,30 +626,13 @@ final class ConversationContextLimitProvider
         retry: null,
         name: r'conversationContextLimitProvider',
         isAutoDispose: true,
-        dependencies: <ProviderOrFamily>[
-          conversationSelectedProvider,
-          conversationByIdStreamProvider,
-          modelContextLimitProvider,
-        ],
-        $allTransitiveDependencies: <ProviderOrFamily>{
+        dependencies: <ProviderOrFamily>[conversationSelectedProvider],
+        $allTransitiveDependencies: <ProviderOrFamily>[
           ConversationContextLimitProvider.$allTransitiveDependencies0,
-          ConversationContextLimitProvider.$allTransitiveDependencies1,
-          ConversationContextLimitProvider.$allTransitiveDependencies2,
-          ConversationContextLimitProvider.$allTransitiveDependencies3,
-          ConversationContextLimitProvider.$allTransitiveDependencies4,
-          ConversationContextLimitProvider.$allTransitiveDependencies5,
-        },
+        ],
       );
 
   static final $allTransitiveDependencies0 = conversationSelectedProvider;
-  static final $allTransitiveDependencies1 = conversationByIdStreamProvider;
-  static final $allTransitiveDependencies2 = modelContextLimitProvider;
-  static final $allTransitiveDependencies3 =
-      ModelContextLimitProvider.$allTransitiveDependencies0;
-  static final $allTransitiveDependencies4 =
-      ModelContextLimitProvider.$allTransitiveDependencies1;
-  static final $allTransitiveDependencies5 =
-      ModelContextLimitProvider.$allTransitiveDependencies2;
 
   @override
   String debugGetCreateSourceHash() => _$conversationContextLimitHash();
@@ -684,7 +649,7 @@ final class ConversationContextLimitProvider
 }
 
 String _$conversationContextLimitHash() =>
-    r'e72f627dae6987d016c284d7c04111f0a968a63a';
+    r'fc1033c7702142f76e8a6e56d19ecbf493bef72a';
 
 @ProviderFor(pendingToolCalls)
 final pendingToolCallsProvider = PendingToolCallsProvider._();
@@ -709,18 +674,15 @@ final class PendingToolCallsProvider
         dependencies: <ProviderOrFamily>[
           conversationSelectedProvider,
           chatMessagesProvider,
-          conversationByIdStreamProvider,
         ],
         $allTransitiveDependencies: <ProviderOrFamily>[
           PendingToolCallsProvider.$allTransitiveDependencies0,
           PendingToolCallsProvider.$allTransitiveDependencies1,
-          PendingToolCallsProvider.$allTransitiveDependencies2,
         ],
       );
 
   static final $allTransitiveDependencies0 = conversationSelectedProvider;
   static final $allTransitiveDependencies1 = chatMessagesProvider;
-  static final $allTransitiveDependencies2 = conversationByIdStreamProvider;
 
   @override
   String debugGetCreateSourceHash() => _$pendingToolCallsHash();
@@ -737,4 +699,4 @@ final class PendingToolCallsProvider
   }
 }
 
-String _$pendingToolCallsHash() => r'fbbe70350d0a7160e27d286cf865fccb3aeb6f99';
+String _$pendingToolCallsHash() => r'b798f2ab62009e516db82ae97cc7687427703f75';
