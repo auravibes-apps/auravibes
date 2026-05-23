@@ -69,8 +69,8 @@ void main() {
             .first;
 
         expect(result, hasLength(1));
-        expect(result.first.id, 'c1');
-        expect(result.first.title, 'Test Conversation');
+        expect(result.firstOrNull?.id, 'c1');
+        expect(result.firstOrNull?.title, 'Test Conversation');
       });
 
       test('passes limit parameter', () async {

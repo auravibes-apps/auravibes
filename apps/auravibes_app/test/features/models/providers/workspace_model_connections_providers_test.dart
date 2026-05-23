@@ -68,7 +68,7 @@ void main() {
         listWorkspaceModelConnectionsProvider(workspaceId: 'ws-1').future,
       );
       expect(result, hasLength(1));
-      expect(result.first.id, 'conn-1');
+      expect(result.firstOrNull?.id, 'conn-1');
     });
 
     test('returns empty list when no connections match', () async {

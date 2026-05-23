@@ -24,9 +24,9 @@ void main() {
       final tools = adapter(specs, onCall: (_, _) async => {});
 
       expect(tools, hasLength(1));
-      expect(tools.first.name, 'calculator');
-      expect(tools.first.description, 'Perform calculations');
-      expect(tools.first.inputSchema, isNotNull);
+      expect(tools.firstOrNull?.name, 'calculator');
+      expect(tools.firstOrNull?.description, 'Perform calculations');
+      expect(tools.firstOrNull?.inputSchema, isNotNull);
     });
 
     test('wires onCall callback with tool name and args', () async {
@@ -55,7 +55,7 @@ void main() {
         },
       );
 
-      final result = await tools.first.onCall({'query': 'test'});
+      final result = await tools.firstOrNull?.onCall({'query': 'test'});
 
       expect(capturedName, 'search');
       expect(capturedArgs, {'query': 'test'});
@@ -85,7 +85,7 @@ void main() {
       final tools = adapter(specs, onCall: (_, _) async => {});
 
       expect(tools, hasLength(2));
-      expect(tools[0].name, 'tool_a');
+      expect(tools.firstOrNull?.name, 'tool_a');
       expect(tools[1].name, 'tool_b');
     });
   });

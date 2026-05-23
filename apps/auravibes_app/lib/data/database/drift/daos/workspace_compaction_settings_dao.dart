@@ -25,7 +25,7 @@ class WorkspaceCompactionSettingsDao extends DatabaseAccessor<AppDatabase>
           ..where((t) => t.workspaceId.equals(workspaceId))
           ..limit(1))
         .watch()
-        .map((rows) => rows.isNotEmpty ? rows.first : null);
+        .map((rows) => rows.firstOrNull);
   }
 
   Future<WorkspaceCompactionSettingsTable> upsert(

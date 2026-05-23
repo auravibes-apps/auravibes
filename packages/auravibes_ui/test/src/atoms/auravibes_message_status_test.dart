@@ -352,7 +352,7 @@ void main() {
       final containers = tester.widgetList<Container>(find.byType(Container));
 
       // Check padding for each size
-      expect(containers.elementAt(0).padding, const EdgeInsets.all(2));
+      expect(containers.firstOrNull?.padding, const EdgeInsets.all(2));
       expect(containers.elementAt(1).padding, const EdgeInsets.all(4));
       expect(containers.elementAt(2).padding, const EdgeInsets.all(6));
     });

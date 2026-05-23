@@ -159,13 +159,13 @@ class UrlContentTransformer {
     if (bodyElement == null) {
       final text = document.text?.trim() ?? '';
       final escaped = _escapeMarkdownText(text);
-      final (output, truncated) = _truncateIfNeeded(escaped, originalLength);
+      final truncatedOutput = _truncateIfNeeded(escaped, originalLength);
       return TransformedUrlContent(
-        body: output,
+        body: truncatedOutput.text,
         format: .markdown,
         contentType: contentType,
         originalLength: originalLength,
-        truncated: truncated,
+        truncated: truncatedOutput.truncated,
         elapsed: elapsed,
       );
     }
@@ -186,14 +186,14 @@ class UrlContentTransformer {
 
     markdown = _collapseBlankLines(markdown);
 
-    final (output, truncated) = _truncateIfNeeded(markdown, originalLength);
+    final truncatedOutput = _truncateIfNeeded(markdown, originalLength);
 
     return TransformedUrlContent(
-      body: output,
+      body: truncatedOutput.text,
       format: .markdown,
       contentType: contentType,
       originalLength: originalLength,
-      truncated: truncated,
+      truncated: truncatedOutput.truncated,
       elapsed: elapsed,
     );
   }
@@ -216,14 +216,14 @@ class UrlContentTransformer {
         .replaceAll(RegExp(r'\n{3,}'), '\n\n')
         .trim();
 
-    final (output, truncated) = _truncateIfNeeded(cleaned, originalLength);
+    final truncatedOutput = _truncateIfNeeded(cleaned, originalLength);
 
     return TransformedUrlContent(
-      body: output,
+      body: truncatedOutput.text,
       format: .text,
       contentType: contentType,
       originalLength: originalLength,
-      truncated: truncated,
+      truncated: truncatedOutput.truncated,
       elapsed: elapsed,
     );
   }
@@ -423,15 +423,16 @@ class UrlContentTransformer {
       }
       if (cells.isNotEmpty) rows.add(cells);
     }
+    final firstRow = rows.firstOrNull;
 
-    if (rows.isEmpty) return;
+    if (firstRow == null) return;
 
     var colCount = 0;
     for (final row in rows) {
       if (row.length > colCount) colCount = row.length;
     }
 
-    _writeTableRow(rows[0], colCount, buffer);
+    _writeTableRow(firstRow, colCount, buffer);
 
     buffer.write('| ');
     for (var i = 0; i < colCount; i++) {
@@ -643,26 +644,30 @@ class UrlContentTransformer {
       );
     }
 
-    final (output, truncated) = _truncateIfNeeded(body, originalLength);
+    final truncatedOutput = _truncateIfNeeded(body, originalLength);
 
     return TransformedUrlContent(
-      body: output,
+      body: truncatedOutput.text,
       format: format,
       contentType: contentType,
       originalLength: originalLength,
-      truncated: truncated,
+      truncated: truncatedOutput.truncated,
       elapsed: elapsed,
     );
   }
 
-  (String, bool) _truncateIfNeeded(String body, int originalLength) {
+  ({String text, bool truncated}) _truncateIfNeeded(
+    String body,
+    int originalLength,
+  ) {
     if (body.length <= maxOutputLength) {
-      return (body, false);
+      return (text: body, truncated: false);
     }
     return (
-      '${body.substring(0, maxOutputLength - _truncationSuffix.length)}'
+      text:
+          '${body.substring(0, maxOutputLength - _truncationSuffix.length)}'
           '$_truncationSuffix',
-      true,
+      truncated: true,
     );
   }
 
@@ -670,8 +675,9 @@ class UrlContentTransformer {
     for (final entry in headers.entries) {
       if (entry.key.toLowerCase() == 'content-type') {
         final values = entry.value;
-        if (values.isNotEmpty) {
-          return values.first.split(';').first.trim().toLowerCase();
+        final contentType = values.firstOrNull;
+        if (contentType != null) {
+          return contentType.split(';').first.trim().toLowerCase();
         }
       }
     }

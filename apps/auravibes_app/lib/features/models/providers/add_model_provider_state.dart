@@ -60,7 +60,7 @@ class AddModelProviderState extends _$AddModelProviderState {
     try {
       final repo = ref.read(modelConnectionRepositoryProvider);
 
-      final provider = await repo.createModelConnection(
+      return await repo.createModelConnection(
         ModelConnectionToCreate(
           name: state.name!,
           modelId: state.modelId!,
@@ -69,7 +69,6 @@ class AddModelProviderState extends _$AddModelProviderState {
           workspaceId: _workspaceId,
         ),
       );
-      return provider;
     } on Exception catch (e, s) {
       _log.severe('addModelProvider error', e, s);
       rethrow;

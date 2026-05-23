@@ -54,14 +54,13 @@ class OAuthAuthenticate {
   }
 
   Future<OAuthDiscoveryResult?> discover(String url) async {
-    final oAuthResult = await OAuthDiscoveryService.discoverOAuth(
+    return OAuthDiscoveryService.discoverOAuth(
       OAuthConnector(
         clientName: clientName,
         serverUrl: url,
         redirectUrl: '$callbackUrlScheme:/',
       ),
     );
-    return oAuthResult;
   }
 
   /// Authenticates with the MCP server using OAuth.

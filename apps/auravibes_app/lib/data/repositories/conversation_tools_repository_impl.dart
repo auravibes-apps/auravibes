@@ -235,11 +235,9 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
         .toSet();
 
     // Available tools = workspace enabled tools - disabled tools
-    final availableTools = workspaceEnabledToolTypes
+    return workspaceEnabledToolTypes
         .where((toolType) => !disabledToolTypes.contains(toolType))
         .toList();
-
-    return availableTools;
   }
 
   @override
@@ -263,11 +261,9 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
         .toSet();
 
     // Available tools = workspace enabled tools - disabled tools
-    final availableTools = workspaceEnabledTools
+    return workspaceEnabledTools
         .where((tool) => !disabledToolTypes.contains(tool.toolId))
         .toList();
-
-    return availableTools;
   }
 
   ConversationToolEntity _tableToEntity(ConversationToolsTable table) {

@@ -62,8 +62,8 @@ void main() {
       final result = await repository.getToolsGroupsForWorkspace('ws-1');
 
       expect(result, hasLength(2));
-      expect(result[0].id, 'g1');
-      expect(result[0].name, 'Group 1');
+      expect(result.firstOrNull?.id, 'g1');
+      expect(result.firstOrNull?.name, 'Group 1');
       expect(result[1].id, 'g2');
       verify(mockDao.getToolsGroupsForWorkspace('ws-1')).called(1);
     });

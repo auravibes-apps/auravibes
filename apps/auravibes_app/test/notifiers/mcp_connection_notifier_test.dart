@@ -341,7 +341,7 @@ void main() {
         'server-2',
       ]);
       expect(connecting.length, 1);
-      expect(connecting.first.server.id, 'server-1');
+      expect(connecting.firstOrNull?.server.id, 'server-1');
     });
 
     test('getConnectingServers returns empty when none match', () {
@@ -419,8 +419,8 @@ void main() {
 
       final state = container.read(mcpConnectionProvider);
       expect(state.length, 1);
-      expect(state.first.status, McpConnectionStatus.disconnected);
-      expect(state.first.client, isNull);
+      expect(state.firstOrNull?.status, McpConnectionStatus.disconnected);
+      expect(state.firstOrNull?.client, isNull);
     });
 
     test('disconnectMcpServer does nothing for missing server', () {
@@ -433,7 +433,7 @@ void main() {
 
       final state = container.read(mcpConnectionProvider);
       expect(state.length, 1);
-      expect(state.first.status, McpConnectionStatus.connected);
+      expect(state.firstOrNull?.status, McpConnectionStatus.connected);
     });
 
     test('deleteMcpServer removes from state and database', () async {
@@ -453,7 +453,7 @@ void main() {
 
       final state = container.read(mcpConnectionProvider);
       expect(state.length, 1);
-      expect(state.first.server.id, 'server-2');
+      expect(state.firstOrNull?.server.id, 'server-2');
       expect(mcpServersRepository.deletedIds, ['server-1']);
     });
 
@@ -548,7 +548,7 @@ void main() {
 
       final state = testContainer.read(mcpConnectionProvider);
       expect(state.length, 1);
-      expect(state.first.status, McpConnectionStatus.error);
+      expect(state.firstOrNull?.status, McpConnectionStatus.error);
     });
 
     test('reconnectMcpServer loads from repo when not in state', () async {
@@ -568,8 +568,8 @@ void main() {
 
       final state = testContainer.read(mcpConnectionProvider);
       expect(state.length, 1);
-      expect(state.first.status, McpConnectionStatus.error);
-      expect(state.first.server.id, 'server-2');
+      expect(state.firstOrNull?.status, McpConnectionStatus.error);
+      expect(state.firstOrNull?.server.id, 'server-2');
     });
 
     test('dispose cleans up connections', () async {

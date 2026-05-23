@@ -658,7 +658,7 @@ class _FakeConversationRepository implements ConversationRepository {
     _processPendingRemovals();
 
     final controllersSnapshot =
-        List<StreamController<List<ConversationEntity>>>.from(_controllers);
+        List<StreamController<List<ConversationEntity>>>.of(_controllers);
     _controllers.clear();
     _pendingRemoval.clear();
     await Future.wait(

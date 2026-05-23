@@ -96,7 +96,7 @@ void main() {
               workspaceIds: [workspaceId],
             );
         expect(conns.length, equals(1));
-        expect(conns.first.name, equals('C1'));
+        expect(conns.firstOrNull?.name, equals('C1'));
       },
     );
 

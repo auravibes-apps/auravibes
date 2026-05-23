@@ -201,7 +201,7 @@ void main() {
     ]);
 
     expect(result, hasLength(3));
-    expect(result[0].name, startsWith('built_in_'));
+    expect(result.firstOrNull?.name, startsWith('built_in_'));
     expect(result[1].name, startsWith('native_'));
     expect(result[2].name, 'mcp_tool');
   });

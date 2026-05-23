@@ -57,7 +57,7 @@ class AuraMessageBubble extends StatelessWidget {
         onLongPress: onLongPress,
         child: Container(
           constraints: BoxConstraints(
-            maxWidth: maxWidth ?? MediaQuery.of(context).size.width * 0.75,
+            maxWidth: maxWidth ?? MediaQuery.sizeOf(context).width * 0.75,
           ),
           margin: EdgeInsets.only(
             left: isUser ? DesignSpacing.xl : DesignSpacing.md,
@@ -118,7 +118,7 @@ class AuraMessageBubble extends StatelessWidget {
       color: errorColor ?? baseColor,
       borderRadius: BorderRadius.circular(DesignBorderRadius.xl),
       border: status == AuraMessageDeliveryStatus.error
-          ? Border.all(color: auraColors.error)
+          ? Border.fromBorderSide(BorderSide(color: auraColors.error))
           : null,
       boxShadow: [
         if (status != AuraMessageDeliveryStatus.error) DesignShadows.sm,

@@ -71,7 +71,7 @@ void main() {
 
     when(() => mockMessageRepo.createMessage(any())).thenAnswer(
       (invocation) async {
-        final msg = invocation.positionalArguments[0] as MessageToCreate;
+        final msg = invocation.positionalArguments.first as MessageToCreate;
         return MessageEntity(
           id: 'created-${DateTime.now().microsecondsSinceEpoch}',
           conversationId: msg.conversationId,
@@ -87,7 +87,7 @@ void main() {
     );
     when(() => mockMessageRepo.patchMessage(any(), any())).thenAnswer(
       (invocation) async {
-        final id = invocation.positionalArguments[0] as String;
+        final id = invocation.positionalArguments.first as String;
         return MessageEntity(
           id: id,
           conversationId: 'conv-1',

@@ -76,10 +76,13 @@ void main() {
         );
 
         expect(result, hasLength(2));
-        expect(result.first.tool.id, 'tool-1');
-        expect(result.first.isEnabled, isFalse);
-        expect(result.first.permissionMode, ToolPermissionMode.alwaysAsk);
-        expect(result.first.isWorkspaceEnabled, isTrue);
+        expect(result.firstOrNull?.tool.id, 'tool-1');
+        expect(result.firstOrNull?.isEnabled, isFalse);
+        expect(
+          result.firstOrNull?.permissionMode,
+          ToolPermissionMode.alwaysAsk,
+        );
+        expect(result.firstOrNull?.isWorkspaceEnabled, isTrue);
         expect(result.last.tool.id, 'tool-2');
         expect(result.last.isEnabled, isFalse);
         expect(result.last.permissionMode, ToolPermissionMode.alwaysAsk);

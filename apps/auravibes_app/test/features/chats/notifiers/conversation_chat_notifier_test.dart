@@ -188,7 +188,7 @@ void main() {
       await notifier.setModel('model-1');
 
       expect(patched, hasLength(1));
-      expect(patched.first.modelId, 'model-1');
+      expect(patched.firstOrNull?.modelId, 'model-1');
 
       final state = container.read(conversationChatProvider('ws-1')).value;
       expect(state, isA<ConversationFound>());

@@ -78,13 +78,16 @@ void main() {
         );
 
         expect(result, hasLength(2));
-        expect(result.first.tool.id, 'tool-1');
-        expect(result.first.isEnabled, isFalse);
-        expect(result.first.permissionMode, ToolPermissionMode.alwaysAsk);
-        expect(result.first.isWorkspaceEnabled, isTrue);
-        expect(result.last.tool.id, 'tool-2');
-        expect(result.last.isEnabled, isFalse);
-        expect(result.last.isWorkspaceEnabled, isFalse);
+        expect(result.firstOrNull?.tool.id, 'tool-1');
+        expect(result.firstOrNull?.isEnabled, isFalse);
+        expect(
+          result.firstOrNull?.permissionMode,
+          ToolPermissionMode.alwaysAsk,
+        );
+        expect(result.firstOrNull?.isWorkspaceEnabled, isTrue);
+        expect(result.lastOrNull?.tool.id, 'tool-2');
+        expect(result.lastOrNull?.isEnabled, isFalse);
+        expect(result.lastOrNull?.isWorkspaceEnabled, isFalse);
       },
     );
 
@@ -288,7 +291,7 @@ void main() {
 
       final states = notifier.getToolStates();
       expect(states, hasLength(2));
-      expect(states.first.tool.id, 'tool-1');
+      expect(states.firstOrNull?.tool.id, 'tool-1');
     });
 
     test('setToolPermission updates state with conversationId', () async {
@@ -429,8 +432,8 @@ void main() {
         );
 
         expect(result, hasLength(1));
-        expect(result.first.tool.id, 'tool-1');
-        expect(result.first.isEnabled, isTrue);
+        expect(result.firstOrNull?.tool.id, 'tool-1');
+        expect(result.firstOrNull?.isEnabled, isTrue);
       },
     );
 
@@ -581,7 +584,7 @@ void main() {
       );
 
       expect(result, hasLength(1));
-      expect(result.first.id, 'tool-1');
+      expect(result.firstOrNull?.id, 'tool-1');
     });
 
     test('refresh reloads entities', () async {

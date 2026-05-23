@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 String mockTranslate(String key, {List<String>? args}) {
   if (args != null && args.isNotEmpty) {
-    return '$key:${args.first}';
+    return '$key:${args.firstOrNull}';
   }
   return key;
 }

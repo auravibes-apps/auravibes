@@ -134,7 +134,7 @@ void main() {
     test('returns correct length and elements', () {
       final list = MessageIdList(const ['a', 'b', 'c']);
       expect(list.length, 3);
-      expect(list[0], 'a');
+      expect(list.firstOrNull, 'a');
       expect(list[2], 'c');
     });
 
@@ -158,6 +158,7 @@ void main() {
 
     test('setting index throws', () {
       final list = MessageIdList(const ['a']);
+      // ignore: prefer-first-or-null, prefer-first
       expect(() => list[0] = 'b', throwsUnsupportedError);
     });
   });

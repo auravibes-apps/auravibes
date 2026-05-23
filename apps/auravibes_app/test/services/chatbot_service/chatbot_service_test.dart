@@ -131,7 +131,8 @@ void main() {
     });
 
     test('strips single quotes from title', () async {
-      final stripped = _stripQuotes("'My Title'");
+      final quote = String.fromCharCode(39);
+      final stripped = _stripQuotes('${quote}My Title$quote');
       expect(stripped, 'My Title');
     });
 
@@ -170,7 +171,9 @@ String _stripQuotes(String title) {
   if (processed.startsWith('"') && processed.endsWith('"')) {
     processed = processed.substring(1, processed.length - 1);
   }
-  if (processed.startsWith("'") && processed.endsWith("'")) {
+  if (processed.length > 1 &&
+      processed.codeUnitAt(0) == 39 &&
+      processed.codeUnitAt(processed.length - 1) == 39) {
     processed = processed.substring(1, processed.length - 1);
   }
   return processed;
@@ -192,7 +195,9 @@ String _processTitle(String title) {
   if (processed.startsWith('"') && processed.endsWith('"')) {
     processed = processed.substring(1, processed.length - 1);
   }
-  if (processed.startsWith("'") && processed.endsWith("'")) {
+  if (processed.length > 1 &&
+      processed.codeUnitAt(0) == 39 &&
+      processed.codeUnitAt(processed.length - 1) == 39) {
     processed = processed.substring(1, processed.length - 1);
   }
   if (processed.startsWith('Title:')) {

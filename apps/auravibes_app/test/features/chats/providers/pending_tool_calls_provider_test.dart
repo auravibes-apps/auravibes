@@ -147,7 +147,7 @@ void main() {
       final result = await container.read(pendingToolCallsProvider.future);
 
       expect(result.length, 1);
-      expect(result.first.toolCall.id, 'tc-needs-confirm');
+      expect(result.firstOrNull?.toolCall.id, 'tc-needs-confirm');
     });
 
     test('includes needsConfirmation tool calls in approval UI', () async {
@@ -269,7 +269,7 @@ void main() {
       final result = await container.read(pendingToolCallsProvider.future);
 
       expect(result.length, 1);
-      expect(result.first.toolCall.id, 'tc-needs-confirm');
+      expect(result.firstOrNull?.toolCall.id, 'tc-needs-confirm');
     });
 
     test('returns empty when all pending tools are granted', () async {
@@ -387,7 +387,7 @@ void main() {
 
         final first = await container.read(pendingToolCallsProvider.future);
         expect(first.length, 1);
-        expect(first.first.toolCall.id, 'tc-1');
+        expect(first.firstOrNull?.toolCall.id, 'tc-1');
 
         container.dispose();
 
@@ -556,7 +556,7 @@ void main() {
 
         final result = await container.read(pendingToolCallsProvider.future);
         expect(result.length, 1);
-        expect(result.first.toolCall.id, 'tc-needs-confirm');
+        expect(result.firstOrNull?.toolCall.id, 'tc-needs-confirm');
       },
     );
   });

@@ -16,10 +16,10 @@ final _currentChatIdProvider = Provider<String?>(
   (ref) {
     final pathSegments = ref.watch(routerPathSegmentsProvider);
     if (pathSegments.length < 4) return null;
-    if (pathSegments[0] != 'workspaces') return null;
-    if (pathSegments[2] != 'chats') return null;
-    final chatId = pathSegments[3];
-    return chatId;
+    final [firstSegment, _, thirdSegment, fourthSegment, ...] = pathSegments;
+    if (firstSegment != 'workspaces') return null;
+    if (thirdSegment != 'chats') return null;
+    return fourthSegment;
   },
 );
 

@@ -31,7 +31,7 @@ class ChatMessagesWidget extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final data = useMemoized(() => messages.reversed.toList(), [messages]);
     final controller = useScrollController();
-    final lastMessageId = data.isNotEmpty ? data.first : null;
+    final lastMessageId = data.firstOrNull;
 
     final compactionState = ref.watch(
       conversationCompactionExecutionStateProvider,
@@ -417,7 +417,7 @@ void _showCompactionDetails(BuildContext context, MessageEntity message) {
     context: context,
     builder: (dialogContext) => AlertDialog(
       content: SizedBox(
-        width: MediaQuery.of(dialogContext).size.width * 0.8,
+        width: MediaQuery.sizeOf(dialogContext).width * 0.8,
         child: CompactedMessageDetails(message: message),
       ),
       actions: [

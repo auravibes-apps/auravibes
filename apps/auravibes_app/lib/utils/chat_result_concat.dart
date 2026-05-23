@@ -68,11 +68,10 @@ extension ChatResultEntities on ChatResult<ChatMessage> {
   }
 
   Map<String, Object?> get entityModelMetadata {
-    final metadata = <String, Object?>{
+    return <String, Object?>{
       ...output.metadata,
       for (final message in messages) ...message.metadata,
     }..removeWhere((_, value) => value == null);
-    return metadata;
   }
 
   MessageMetadataEntity? get entityMetadata {

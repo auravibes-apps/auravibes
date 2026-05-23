@@ -66,7 +66,7 @@ void main() {
       final toolCalls = updated.metadata?.toolCalls;
 
       expect(toolCalls, isNotNull);
-      expect(toolCalls?[0].resultStatus, ToolCallResultStatus.stoppedByUser);
+      expect(toolCalls?.first.resultStatus, ToolCallResultStatus.stoppedByUser);
       expect(toolCalls?[1].resultStatus, ToolCallResultStatus.success);
       expect(toolCalls?[2].resultStatus, ToolCallResultStatus.stoppedByUser);
     });

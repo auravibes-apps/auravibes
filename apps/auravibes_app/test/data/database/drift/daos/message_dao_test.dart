@@ -143,7 +143,7 @@ void main() {
         conversationId,
       );
       expect(msgs.length, equals(2));
-      expect(msgs.first.content, equals('First'));
+      expect(msgs.firstOrNull?.content, equals('First'));
       expect(msgs.last.content, equals('Second'));
     });
 
@@ -191,7 +191,7 @@ void main() {
         MessagesTableType.text,
       );
       expect(textMsgs.length, equals(1));
-      expect(textMsgs.first.content, equals('Text msg'));
+      expect(textMsgs.firstOrNull?.content, equals('Text msg'));
     });
 
     test('getUserMessages returns only user messages', () async {
@@ -217,7 +217,7 @@ void main() {
         conversationId,
       );
       expect(userMsgs.length, equals(1));
-      expect(userMsgs.first.content, equals('User'));
+      expect(userMsgs.firstOrNull?.content, equals('User'));
     });
 
     test('getSystemMessages returns only non-user messages', () async {
@@ -243,7 +243,7 @@ void main() {
         conversationId,
       );
       expect(sysMsgs.length, equals(1));
-      expect(sysMsgs.first.content, equals('AI'));
+      expect(sysMsgs.firstOrNull?.content, equals('AI'));
     });
 
     test('getMessageCountByConversation returns count', () async {
@@ -304,7 +304,7 @@ void main() {
         'sent',
       );
       expect(sent.length, equals(1));
-      expect(sent.first.content, equals('Sent'));
+      expect(sent.firstOrNull?.content, equals('Sent'));
     });
   });
 }

@@ -146,7 +146,7 @@ final class WorkspaceToolsNotifierProvider
 }
 
 String _$workspaceToolsNotifierHash() =>
-    r'f6b4329abc5f3efb03bca433566ff358c11b2443';
+    r'd2b996bf9ef85a627d04b2a7aa94408470292edb';
 
 final class WorkspaceToolsNotifierFamily extends $Family
     with

@@ -101,12 +101,15 @@ void main() {
         final result = await repository.getWorkspaceModelSelections(filter);
 
         expect(result, hasLength(1));
-        expect(result.first.workspaceModelSelection.id, 'sel-1');
-        expect(result.first.workspaceModelSelection.modelId, 'openai');
-        expect(result.first.modelConnection.id, 'conn-1');
-        expect(result.first.modelConnection.name, 'My Connection');
-        expect(result.first.modelsProvider.id, 'openai');
-        expect(result.first.modelsProvider.type, ModelProvidersType.openai);
+        expect(result.firstOrNull?.workspaceModelSelection.id, 'sel-1');
+        expect(result.firstOrNull?.workspaceModelSelection.modelId, 'openai');
+        expect(result.firstOrNull?.modelConnection.id, 'conn-1');
+        expect(result.firstOrNull?.modelConnection.name, 'My Connection');
+        expect(result.firstOrNull?.modelsProvider.id, 'openai');
+        expect(
+          result.firstOrNull?.modelsProvider.type,
+          ModelProvidersType.openai,
+        );
       });
 
       test('handles null workspaces filter', () async {

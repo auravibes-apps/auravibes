@@ -15,12 +15,13 @@ class SelectCompactionRangeUsecase {
 
     final compactable = messages.sublist(0, safeTailStart);
     final compactableSafe = _excludeUnsafeMessages(compactable);
-    if (compactableSafe.isEmpty) return null;
+    final firstCompactable = compactableSafe.firstOrNull;
+    if (firstCompactable == null) return null;
 
     final keptTail = messages.sublist(safeTailStart);
 
     return CompactionRange(
-      fromMessageId: compactableSafe.first.id,
+      fromMessageId: firstCompactable.id,
       throughMessageId: compactableSafe.last.id,
       messageIds: compactableSafe.map((m) => m.id).toList(),
       keptTailMessageIds: keptTail.map((m) => m.id).toList(),

@@ -159,7 +159,7 @@ void main() {
       );
       expect(result, isNotNull);
       expect(result!.length, 1);
-      expect(result.first.modelId, 'claude-3');
+      expect(result.firstOrNull?.modelId, 'claude-3');
     });
 
     test('getWorkspaceModelSelections with openai returns models', () async {
@@ -181,7 +181,7 @@ void main() {
       );
       expect(result, isNotNull);
       expect(result!.length, 1);
-      expect(result.first.modelId, 'gpt-4');
+      expect(result.firstOrNull?.modelId, 'gpt-4');
     });
 
     test('anthropic models pagination', () async {
@@ -226,7 +226,7 @@ void main() {
       );
       expect(result, isNotNull);
       expect(result!.length, 2);
-      expect(result[0].modelId, 'claude-1');
+      expect(result.firstOrNull?.modelId, 'claude-1');
       expect(result[1].modelId, 'claude-2');
     });
   });

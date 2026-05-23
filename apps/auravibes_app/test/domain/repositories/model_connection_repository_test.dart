@@ -73,7 +73,7 @@ void main() {
       );
 
       expect(result, hasLength(1));
-      expect(result.first.name, 'OpenAI');
+      expect(result.firstOrNull?.name, 'OpenAI');
     });
 
     test('createModelConnection returns entity', () async {

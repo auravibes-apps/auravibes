@@ -115,7 +115,7 @@ void main() {
             workspaceId,
           );
       expect(enabled.length, equals(1));
-      expect(enabled.first.name, equals('Enabled'));
+      expect(enabled.firstOrNull?.name, equals('Enabled'));
     });
 
     test('deleteMcpServer deletes server with tool group and tools', () async {

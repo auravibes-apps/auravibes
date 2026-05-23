@@ -267,7 +267,7 @@ class _DropdownMenuState<T> extends State<_DropdownMenu<T>> {
     return Container(
       constraints: const BoxConstraints(maxHeight: 300),
       decoration: BoxDecoration(
-        border: Border.all(color: auraColors.outline),
+        border: Border.fromBorderSide(BorderSide(color: auraColors.outline)),
         borderRadius: BorderRadius.circular(DesignBorderRadius.md),
         color: auraColors.surface,
       ),

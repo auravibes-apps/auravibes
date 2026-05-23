@@ -35,7 +35,7 @@ class AuraSpinner extends StatelessWidget {
     final spinnerColor = color ?? auraColors.primary;
     final spinnerStrokeWidth = strokeWidth ?? _getDefaultStrokeWidth();
 
-    final Widget spinner = SizedBox(
+    return SizedBox(
       width: spinnerSize,
       height: spinnerSize,
       child: CircularProgressIndicator(
@@ -44,8 +44,6 @@ class AuraSpinner extends StatelessWidget {
         semanticsLabel: semanticLabel ?? 'Loading',
       ),
     );
-
-    return spinner;
   }
 
   double _getSpinnerSize() {

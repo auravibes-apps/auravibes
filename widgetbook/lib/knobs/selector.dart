@@ -37,9 +37,7 @@ class SelectorKnob<T> extends Knob<T> {
 
   @override
   T valueFromQueryGroup(Map<String, String> group) {
-    final value = valueOf<T>('$label.val', group) as T;
-
-    return value;
+    return valueOf<T>('$label.val', group) as T;
   }
 }
 
@@ -50,7 +48,7 @@ class SelectorField<T> extends Field<T> {
     required this.selectors,
     super.initialValue,
   }) : super(
-         defaultValue: initialValue ?? selectors.first.value,
+         defaultValue: initialValue ?? selectors.firstOrNull!.value,
          type: FieldType.objectDropdown,
          codec: FieldCodec(
            toParam: (value) =>

@@ -131,7 +131,7 @@ void main() {
         'openai',
       );
       expect(openaiModels.length, equals(1));
-      expect(openaiModels.first.name, equals('GPT-4'));
+      expect(openaiModels.firstOrNull?.name, equals('GPT-4'));
     });
 
     test('deleteModel removes model and returns true', () async {
@@ -217,7 +217,7 @@ void main() {
       );
       final results = await database.apiModelsDao.searchModelsByName('Turbo');
       expect(results.length, equals(1));
-      expect(results.first.name, equals('GPT-4 Turbo'));
+      expect(results.firstOrNull?.name, equals('GPT-4 Turbo'));
     });
 
     test('getModelCount returns correct count', () async {
@@ -326,7 +326,7 @@ void main() {
         0.05,
       );
       expect(results.length, equals(1));
-      expect(results.first.name, equals('GPT-4'));
+      expect(results.firstOrNull?.name, equals('GPT-4'));
     });
 
     test('getModelsByMinContextLimit filters by context', () async {
@@ -353,7 +353,7 @@ void main() {
         100000,
       );
       expect(results.length, equals(1));
-      expect(results.first.name, equals('GPT-4'));
+      expect(results.firstOrNull?.name, equals('GPT-4'));
     });
 
     test('getOpenWeightsModels returns only open weights', () async {
@@ -380,7 +380,7 @@ void main() {
       );
       final results = await database.apiModelsDao.getOpenWeightsModels();
       expect(results.length, equals(1));
-      expect(results.first.name, equals('GPT-OSS'));
+      expect(results.firstOrNull?.name, equals('GPT-OSS'));
     });
 
     test('getModelsByCostEfficiency sorts by cost ascending', () async {
@@ -406,8 +406,8 @@ void main() {
         ),
       );
       final results = await database.apiModelsDao.getModelsByCostEfficiency();
-      expect(results.first.name, equals('GPT-3.5'));
-      expect(results.last.name, equals('GPT-4'));
+      expect(results.firstOrNull?.name, equals('GPT-3.5'));
+      expect(results.lastOrNull?.name, equals('GPT-4'));
     });
 
     test('deleteAllModels removes all models', () async {

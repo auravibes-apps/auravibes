@@ -74,8 +74,8 @@ void main() {
         final result = await repository.getWorkspaceTools('ws-1');
 
         expect(result, hasLength(2));
-        expect(result[0].id, 't1');
-        expect(result[0].toolId, 'url');
+        expect(result.firstOrNull?.id, 't1');
+        expect(result.firstOrNull?.toolId, 'url');
         expect(result[1].toolId, 'calculator');
       });
     });
@@ -91,7 +91,7 @@ void main() {
         final result = await repository.getEnabledWorkspaceTools('ws-1');
 
         expect(result, hasLength(1));
-        expect(result.first.isEnabled, true);
+        expect(result.firstOrNull?.isEnabled, true);
       });
     });
 
@@ -380,7 +380,7 @@ void main() {
         );
 
         expect(result, hasLength(1));
-        expect(result.first.config, '{"new": "config"}');
+        expect(result.firstOrNull?.config, '{"new": "config"}');
       });
 
       test('throws WorkspaceToolsException on dao error', () async {

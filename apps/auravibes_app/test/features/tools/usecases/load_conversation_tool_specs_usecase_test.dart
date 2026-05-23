@@ -83,7 +83,7 @@ void main() {
         workspaceId: 'ws-1',
       );
       expect(result, hasLength(1));
-      expect(result.first.name, 'tool-1');
+      expect(result.firstOrNull?.name, 'tool-1');
     });
 
     test('passes correct conversationId and workspaceId', () async {

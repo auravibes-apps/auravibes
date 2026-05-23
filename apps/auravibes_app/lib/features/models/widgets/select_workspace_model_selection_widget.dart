@@ -57,10 +57,13 @@ class SelectWorkspaceModelSelectionWidget extends HookConsumerWidget
       listModelsGroupedByProviderProvider(workspaceId: workspaceId),
     );
 
-    final onSelectProvider = useCallback<void Function(String?)>((provider) {
-      onProviderChanged(provider);
-      selectWorkspaceModelSelectionId(null);
-    }, [onProviderChanged, selectWorkspaceModelSelectionId]);
+    final onSelectProvider = useCallback<void Function(String?)>(
+      (provider) {
+        onProviderChanged(provider);
+        selectWorkspaceModelSelectionId(null);
+      },
+      [onProviderChanged, selectWorkspaceModelSelectionId],
+    );
 
     return switch (groupedModelsAsync) {
       AsyncLoading() => const AuraPadding(
@@ -108,7 +111,7 @@ class SelectChatData extends HookWidget {
     final controller = useTextEditingController();
 
     // Responsive layout - stacked below md breakpoint (768px)
-    final screenWidth = MediaQuery.of(context).size.width;
+    final screenWidth = MediaQuery.sizeOf(context).width;
     final isCompact = screenWidth < DesignBreakpoints.md;
 
     final searchValue = useState<String>('');
@@ -122,33 +125,42 @@ class SelectChatData extends HookWidget {
     final effectiveProviderId =
         selectedProviderId ?? internalProviderId.value ?? derivedProviderId;
 
-    useEffect(() {
-      if (selectedProviderId == null && internalProviderId.value != null) {
-        internalProviderId.value = null;
-      }
-      return null;
-    }, [selectedProviderId]);
-
-    useEffect(() {
-      if (selectedProviderId != null || internalProviderId.value != null) {
+    useEffect(
+      () {
+        if (selectedProviderId == null && internalProviderId.value != null) {
+          internalProviderId.value = null;
+        }
         return null;
-      }
+      },
+      [selectedProviderId],
+    );
 
-      if (derivedProviderId != null) {
-        internalProviderId.value = derivedProviderId;
-      }
+    useEffect(
+      () {
+        if (selectedProviderId != null || internalProviderId.value != null) {
+          return null;
+        }
 
-      return null;
-    }, [selectedProviderId, internalProviderId.value, derivedProviderId]);
+        if (derivedProviderId != null) {
+          internalProviderId.value = derivedProviderId;
+        }
 
-    final onSelectProviderCallback = useCallback<void Function(String?)>((
-      provider,
-    ) {
-      if (selectedProviderId == null) {
-        internalProviderId.value = provider;
-      }
-      onSelectProvider(provider);
-    }, [onSelectProvider, selectedProviderId]);
+        return null;
+      },
+      [selectedProviderId, internalProviderId.value, derivedProviderId],
+    );
+
+    final onSelectProviderCallback = useCallback<void Function(String?)>(
+      (
+        provider,
+      ) {
+        if (selectedProviderId == null) {
+          internalProviderId.value = provider;
+        }
+        onSelectProvider(provider);
+      },
+      [onSelectProvider, selectedProviderId],
+    );
 
     // Filter models by search - computed unconditionally (not in hook)
     final modelsForProvider = effectiveProviderId != null

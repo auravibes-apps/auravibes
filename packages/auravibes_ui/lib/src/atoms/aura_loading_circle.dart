@@ -98,7 +98,7 @@ class _AuraLoadingCircleState extends State<AuraLoadingCircle>
         size: Size.square(widget.size),
         child: Stack(
           children: List.generate(itemCount, (i) {
-            final position = widget.size * .5;
+            final position = widget.size * 0.5;
             return Positioned.fill(
               left: position,
               top: position,

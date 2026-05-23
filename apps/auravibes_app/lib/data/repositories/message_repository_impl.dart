@@ -158,8 +158,7 @@ class MessageRepositoryImpl implements MessageRepository {
       return false; // Return false instead of throwing for delete operations
     }
 
-    final deleted = await _database.messageDao.deleteMessage(id);
-    return deleted;
+    return _database.messageDao.deleteMessage(id);
   }
 
   @override

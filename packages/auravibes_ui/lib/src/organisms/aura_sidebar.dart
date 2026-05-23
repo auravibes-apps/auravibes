@@ -184,7 +184,7 @@ class _AuraSidebarItem extends StatelessWidget {
       color: colors.primary.withValues(alpha: 0.8),
       onPressed: onTap,
       decoration: BoxDecoration(
-        color: selected ? colors.primary.withValues(alpha: .1) : null,
+        color: selected ? colors.primary.withValues(alpha: 0.1) : null,
         borderRadius: BorderRadius.circular(context.auraTheme.borderRadius.xl),
       ),
       child: AuraPadding(

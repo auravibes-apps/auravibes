@@ -30,61 +30,73 @@ class EnhancedModelInput extends HookConsumerWidget {
     );
 
     // Get field-specific values
-    final (value, error, hint, label, placeholder, keyboardType) =
-        _getFieldData(fieldType, state);
+    final fieldData = _getFieldData(fieldType, state);
 
-    final controller = useTextEditingController(text: value ?? '');
+    final controller = useTextEditingController(text: fieldData.value ?? '');
 
     return AuraInput(
       controller: controller,
-      placeholder: TextLocale(placeholder),
-      label: TextLocale(label),
-      hint: hint != null ? TextLocale(hint) : null,
-      error: error != null ? Text(error) : null,
-      keyboardType: keyboardType,
+      placeholder: TextLocale(fieldData.placeholder),
+      label: TextLocale(fieldData.label),
+      hint: fieldData.hint != null ? TextLocale(fieldData.hint!) : null,
+      error: fieldData.error != null ? Text(fieldData.error!) : null,
+      keyboardType: fieldData.keyboardType,
       focusNode: focusNode,
       onChanged: (newValue) => _onFieldChanged(fieldType, newValue, notifier),
       onSubmitted: (_) => onSubmitted?.call(),
       textInputAction: _getTextInputAction(fieldType),
       autofocus: fieldType == ModelInputFieldType.name && focusNode == null,
       isRequired: _isRequired(fieldType),
-      state: error != null ? AuraInputState.error : AuraInputState.normal,
+      state: fieldData.error != null
+          ? AuraInputState.error
+          : AuraInputState.normal,
     );
   }
 
-  (String?, String?, String?, String, String, TextInputType) _getFieldData(
+  ({
+    String? value,
+    String? error,
+    String? hint,
+    String label,
+    String placeholder,
+    TextInputType keyboardType,
+  })
+  _getFieldData(
     ModelInputFieldType type,
     AddModelProviderModel state,
   ) {
     switch (type) {
       case ModelInputFieldType.name:
         return (
-          state.name,
-          state.validateName(),
-          LocaleKeys.models_screens_add_provider_fields_name_hint,
-          LocaleKeys.models_screens_add_provider_fields_name_label,
-          LocaleKeys.models_screens_add_provider_fields_name_placeholder,
-          TextInputType.text,
+          value: state.name,
+          error: state.validateName(),
+          hint: LocaleKeys.models_screens_add_provider_fields_name_hint,
+          label: LocaleKeys.models_screens_add_provider_fields_name_label,
+          placeholder:
+              LocaleKeys.models_screens_add_provider_fields_name_placeholder,
+          keyboardType: TextInputType.text,
         );
 
       case ModelInputFieldType.key:
         return (
-          state.key,
-          state.validateKey(),
-          LocaleKeys.models_screens_add_provider_fields_key_hint,
-          LocaleKeys.models_screens_add_provider_fields_key_label,
-          LocaleKeys.models_screens_add_provider_fields_key_placeholder,
-          TextInputType.visiblePassword,
+          value: state.key,
+          error: state.validateKey(),
+          hint: LocaleKeys.models_screens_add_provider_fields_key_hint,
+          label: LocaleKeys.models_screens_add_provider_fields_key_label,
+          placeholder:
+              LocaleKeys.models_screens_add_provider_fields_key_placeholder,
+          keyboardType: TextInputType.visiblePassword,
         );
 
       case ModelInputFieldType.url:
         return (
-          state.url,
-          state.validateUrl(),
-          LocaleKeys.models_screens_add_provider_fields_url_hint,
-          LocaleKeys.models_screens_add_provider_fields_url_label,
-          LocaleKeys.models_screens_add_provider_fields_url_placeholder,
-          TextInputType.url,
+          value: state.url,
+          error: state.validateUrl(),
+          hint: LocaleKeys.models_screens_add_provider_fields_url_hint,
+          label: LocaleKeys.models_screens_add_provider_fields_url_label,
+          placeholder:
+              LocaleKeys.models_screens_add_provider_fields_url_placeholder,
+          keyboardType: TextInputType.url,
         );
     }
   }

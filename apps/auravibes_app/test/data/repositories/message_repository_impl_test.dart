@@ -35,12 +35,12 @@ void main() {
           .first;
 
       expect(messages, hasLength(2));
-      expect(messages.first.id, 'message-1');
-      expect(messages.first.content, 'hello');
-      expect(messages.first.messageType, MessageType.text);
-      expect(messages.last.id, 'message-2');
-      expect(messages.last.content, 'hi');
-      expect(messages.last.isUser, isFalse);
+      expect(messages.firstOrNull?.id, 'message-1');
+      expect(messages.firstOrNull?.content, 'hello');
+      expect(messages.firstOrNull?.messageType, MessageType.text);
+      expect(messages.lastOrNull?.id, 'message-2');
+      expect(messages.lastOrNull?.content, 'hi');
+      expect(messages.lastOrNull?.isUser, isFalse);
     });
 
     test('wraps stream Exceptions in MessageException', () async {
@@ -152,7 +152,7 @@ void main() {
 
       final messages = await repository.getMessagesByConversation('conv-1');
       expect(messages, hasLength(1));
-      expect(messages.first.id, created.id);
+      expect(messages.firstOrNull?.id, created.id);
     });
 
     test('getMessageById returns null for non-existent', () async {
@@ -385,7 +385,7 @@ void main() {
 
       final userMessages = await repository.getUserMessages('conv-1');
       expect(userMessages, hasLength(1));
-      expect(userMessages.first.isUser, isTrue);
+      expect(userMessages.firstOrNull?.isUser, isTrue);
     });
 
     test('getSystemMessages returns only non-user messages', () async {
@@ -410,7 +410,7 @@ void main() {
 
       final systemMessages = await repository.getSystemMessages('conv-1');
       expect(systemMessages, hasLength(1));
-      expect(systemMessages.first.isUser, isFalse);
+      expect(systemMessages.firstOrNull?.isUser, isFalse);
     });
 
     test('patchMessage with status updates status', () async {

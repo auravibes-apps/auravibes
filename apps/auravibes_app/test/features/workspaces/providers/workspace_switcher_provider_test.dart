@@ -75,7 +75,7 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 350));
 
       expect(states.length, greaterThanOrEqualTo(3));
-      expect(states[0].status, SwitchStatus.idle);
+      expect(states.firstOrNull?.status, SwitchStatus.idle);
 
       // Loading state
       final loadingState = states.firstWhere(

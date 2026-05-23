@@ -150,7 +150,7 @@ void main() {
         'cfg_tool',
         '{"key":"val"}',
       );
-      expect(results.first.config, equals('{"key":"val"}'));
+      expect(results.firstOrNull?.config, equals('{"key":"val"}'));
     });
 
     test('deleteWorkspaceToolByToolId deletes by toolId', () async {
@@ -196,7 +196,7 @@ void main() {
         workspaceId,
       );
       expect(enabled.length, equals(1));
-      expect(enabled.first.toolId, equals('on'));
+      expect(enabled.firstOrNull?.toolId, equals('on'));
     });
 
     test('getEnabledToolByToolName returns enabled tool in group', () async {

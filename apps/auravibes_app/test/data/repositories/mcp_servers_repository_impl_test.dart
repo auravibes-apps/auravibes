@@ -310,9 +310,9 @@ void main() {
         final result = await repository.getMcpServersForWorkspace('ws-1');
 
         expect(result, hasLength(1));
-        expect(result.first.id, 'mcp-1');
-        expect(result.first.name, 'Test Server');
-        expect(result.first.workspaceId, 'ws-1');
+        expect(result.firstOrNull?.id, 'mcp-1');
+        expect(result.firstOrNull?.name, 'Test Server');
+        expect(result.firstOrNull?.workspaceId, 'ws-1');
       });
 
       test('throws McpServersException on failure', () async {

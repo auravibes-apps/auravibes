@@ -46,7 +46,7 @@ void main() {
 
     test('validLimits returns 0-1 range', () {
       final color = LinearSrgbColor(red: 0.5, green: 0.3, blue: 0.2);
-      final (min, max) = color.validLimits;
+      final (:min, :max) = color.validLimits;
       expect(min.x, 0);
       expect(max.x, 1);
     });
@@ -196,7 +196,7 @@ void main() {
 
     test('validLimits returns correct ranges', () {
       final color = OklabColor(lightness: 0.5, a: 0, b: 0);
-      final (min, max) = color.validLimits;
+      final (:min, :max) = color.validLimits;
       expect(min.x, 0);
       expect(max.x, 1);
       expect(min.y, -0.4);
@@ -215,7 +215,7 @@ void main() {
     });
 
     test('s500 is mid shade', () {
-      expect(OKLCHShades.s500.lightness, closeTo(0.60, 0.01));
+      expect(OKLCHShades.s500.lightness, closeTo(0.6, 0.01));
       expect(OKLCHShades.s500.chroma, closeTo(0.27, 0.01));
     });
 
