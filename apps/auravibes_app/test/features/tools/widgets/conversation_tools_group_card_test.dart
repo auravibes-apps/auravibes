@@ -13,11 +13,11 @@ import 'package:auravibes_app/features/tools/widgets/conversation_group_header.d
 import 'package:auravibes_app/features/tools/widgets/conversation_tool_tile.dart';
 import 'package:auravibes_app/features/tools/widgets/conversation_tools_group_card.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
+import 'package:auravibes_app/test_helpers/test_provider_scope.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 const _workspaceId = 'ws-1';
 
@@ -92,7 +92,7 @@ Widget _buildSubject(Widget child) {
     startLocale: const Locale('en'),
     useFallbackTranslations: true,
     useOnlyLangCode: true,
-    child: ProviderScope(
+    child: TestProviderScope(
       overrides: [
         conversationToolsProvider(
           workspaceId: _workspaceId,

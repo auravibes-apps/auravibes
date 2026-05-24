@@ -58,6 +58,7 @@ class ChatConversationScreen extends ConsumerWidget {
   conversationBusyState,
   conversationQueuedDrafts,
   conversationSelected,
+  messageConversationById,
   pendingToolCalls,
 ])
 class _ChatConversationScreen extends HookConsumerWidget {

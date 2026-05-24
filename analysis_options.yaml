@@ -13,11 +13,12 @@ plugins:
       missing_provider_scope: true
       notifier_build: true
       notifier_extends: true
+      only_use_keep_alive_inside_keep_alive: true
       protected_notifier_properties: true
-      provider_dependencies: false
+      provider_dependencies: true
       provider_parameters: true
       riverpod_syntax_error: true
-      scoped_providers_should_specify_dependencies: false
+      scoped_providers_should_specify_dependencies: true
       unsupported_provider_value: true
 
 formatter:

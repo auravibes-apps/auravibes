@@ -21,7 +21,9 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod_annotation/experimental/scope.dart';
 
 @Dependencies([
+  conversationBusyState,
   conversationCompactionExecutionState,
+  messageConversationById,
 ])
 class ChatMessagesWidget extends HookConsumerWidget {
   const ChatMessagesWidget({
@@ -70,6 +72,10 @@ class ChatMessagesWidget extends HookConsumerWidget {
   }
 }
 
+@Dependencies([
+  conversationBusyState,
+  messageConversationById,
+])
 @Dependencies([
   conversationBusyState,
   messageConversationById,

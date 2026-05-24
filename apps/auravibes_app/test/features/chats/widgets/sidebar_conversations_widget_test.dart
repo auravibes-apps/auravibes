@@ -10,11 +10,11 @@ import 'package:auravibes_app/features/chats/providers/compaction_execution.dart
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/widgets/sidebar_conversations_widget.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
+import 'package:auravibes_app/test_helpers/test_provider_scope.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 void main() {
   testWidgets(
@@ -24,7 +24,7 @@ void main() {
       addTearDown(repository.close);
 
       await tester.pumpWidget(
-        ProviderScope(
+        TestProviderScope(
           overrides: [
             conversationRepositoryProvider.overrideWithValue(repository),
             routerPathSegmentsProvider.overrideWithValue(const []),
@@ -56,7 +56,7 @@ void main() {
       addTearDown(repository.close);
 
       await tester.pumpWidget(
-        ProviderScope(
+        TestProviderScope(
           overrides: [
             conversationRepositoryProvider.overrideWithValue(repository),
             routerPathSegmentsProvider.overrideWithValue(const []),
@@ -102,7 +102,7 @@ void main() {
     addTearDown(repository.close);
 
     await tester.pumpWidget(
-      ProviderScope(
+      TestProviderScope(
         overrides: [
           conversationRepositoryProvider.overrideWithValue(repository),
           routerPathSegmentsProvider.overrideWithValue(const []),
@@ -122,7 +122,7 @@ void main() {
     addTearDown(repository.close);
 
     await tester.pumpWidget(
-      ProviderScope(
+      TestProviderScope(
         overrides: [
           conversationRepositoryProvider.overrideWithValue(repository),
           routerPathSegmentsProvider.overrideWithValue(const []),
@@ -144,7 +144,7 @@ void main() {
     addTearDown(repository.close);
 
     await tester.pumpWidget(
-      ProviderScope(
+      TestProviderScope(
         overrides: [
           conversationRepositoryProvider.overrideWithValue(repository),
           routerPathSegmentsProvider.overrideWithValue(const []),
@@ -214,7 +214,7 @@ void main() {
     addTearDown(repository.close);
 
     await tester.pumpWidget(
-      ProviderScope(
+      TestProviderScope(
         overrides: [
           conversationRepositoryProvider.overrideWithValue(repository),
           routerPathSegmentsProvider.overrideWithValue(const []),
@@ -246,7 +246,7 @@ void main() {
     addTearDown(repository.close);
 
     await tester.pumpWidget(
-      ProviderScope(
+      TestProviderScope(
         overrides: [
           conversationRepositoryProvider.overrideWithValue(repository),
           routerPathSegmentsProvider.overrideWithValue(const []),
@@ -303,7 +303,7 @@ void main() {
             child: Builder(
               builder: (context) {
                 return Portal(
-                  child: ProviderScope(
+                  child: TestProviderScope(
                     overrides: [
                       conversationRepositoryProvider.overrideWithValue(
                         repository,

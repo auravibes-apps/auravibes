@@ -6,12 +6,12 @@ import 'dart:async';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/widgets/tool_count_enabled_widget.dart';
+import 'package:auravibes_app/test_helpers/test_provider_scope.dart';
 import 'package:auravibes_app/widgets/app_error_widget.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 WorkspaceToolEntity _tool({
   String id = 'tool-1',
@@ -65,7 +65,7 @@ void main() {
         startLocale: const Locale('en'),
         useFallbackTranslations: true,
         useOnlyLangCode: true,
-        child: ProviderScope(
+        child: TestProviderScope(
           overrides: [
             workspaceToolsProvider(
               workspaceId,
@@ -106,7 +106,7 @@ void main() {
         useOnlyLangCode: true,
         child: Builder(
           builder: (context) {
-            return ProviderScope(
+            return TestProviderScope(
               overrides: [
                 workspaceToolsProvider(workspaceId).overrideWith(
                   () => _DataToolsNotifier(tools),
@@ -137,7 +137,7 @@ void main() {
 
   testWidgets('shows error widget on error', (tester) async {
     await tester.pumpWidget(
-      ProviderScope(
+      TestProviderScope(
         overrides: [
           workspaceToolsProvider(workspaceId).overrideWith(
             _ErrorToolsNotifier.new,
