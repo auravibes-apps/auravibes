@@ -104,14 +104,24 @@ void main() {
       expect(model.validateUrl(), isNull);
     });
 
-    test('returns null for valid HTTP URL', () {
+    test('returns null for localhost HTTP URL', () {
       const model = AddModelProviderModel(url: 'http://localhost:8080');
+      expect(model.validateUrl(), isNull);
+    });
+
+    test('returns null for loopback HTTP URL', () {
+      const model = AddModelProviderModel(url: 'http://127.0.0.1:8080');
       expect(model.validateUrl(), isNull);
     });
 
     test('returns null for valid HTTPS URL', () {
       const model = AddModelProviderModel(url: 'https://api.example.com');
       expect(model.validateUrl(), isNull);
+    });
+
+    test('returns error for remote HTTP URL', () {
+      const model = AddModelProviderModel(url: 'http://api.example.com');
+      expect(model.validateUrl(), 'Remote URLs must use https://');
     });
 
     test('returns error for URL without scheme', () {
