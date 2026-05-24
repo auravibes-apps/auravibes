@@ -4,19 +4,18 @@ import 'package:riverpod/riverpod.dart';
 class MonitoringService {
   MonitoringService({
     DebugPrintCallback? debugLogger,
-    bool enableConsoleLogging = kDebugMode,
-  }) : _debugLogger = debugLogger ?? debugPrint,
-       _enableConsoleLogging = enableConsoleLogging;
+    this.enableConsoleLogging = kDebugMode,
+  }) : _debugLogger = debugLogger ?? debugPrint;
 
   final DebugPrintCallback _debugLogger;
-  final bool _enableConsoleLogging;
+  final bool enableConsoleLogging;
 
   void trackError(
     String concept, {
     required Object? error,
     required StackTrace stackTrace,
   }) {
-    if (!_enableConsoleLogging) {
+    if (!enableConsoleLogging) {
       return;
     }
 
@@ -25,8 +24,6 @@ class MonitoringService {
     _debugLogger('StackTrace: ${_sanitize(stackTrace)}');
     // Implement error tracking logic here, e.g. send to Sentry.
   }
-
-  static const _maxLogFieldLength = 500;
 
   String _sanitize(Object? value) {
     final normalized = '$value'.replaceAll(RegExp(r'\s+'), ' ').trim();
@@ -37,6 +34,8 @@ class MonitoringService {
 
     return '${normalized.substring(0, _maxLogFieldLength)}...';
   }
+
+  static const _maxLogFieldLength = 500;
 }
 
 final monitoringServiceProvider = Provider<MonitoringService>((ref) {

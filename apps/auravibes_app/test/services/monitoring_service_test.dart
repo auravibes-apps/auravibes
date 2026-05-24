@@ -44,12 +44,10 @@ void main() {
 
     test('trackError does not log when console logging disabled', () {
       final messages = <String?>[];
-      final service = MonitoringService(
-        debugLogger: messages.add,
+      MonitoringService(
+        debugLogger: (message, {wrapWidth}) => messages.add(message),
         enableConsoleLogging: false,
-      );
-
-      service.trackError(
+      ).trackError(
         'test_concept',
         error: Exception('secret token'),
         stackTrace: StackTrace.current,
@@ -60,12 +58,9 @@ void main() {
 
     test('trackError sanitizes multiline payloads', () {
       final messages = <String?>[];
-      final service = MonitoringService(
-        debugLogger: messages.add,
-        enableConsoleLogging: true,
-      );
-
-      service.trackError(
+      MonitoringService(
+        debugLogger: (message, {wrapWidth}) => messages.add(message),
+      ).trackError(
         'stream_failure',
         error: Exception('line 1\nline 2'),
         stackTrace: StackTrace.fromString('frame 1\nframe 2'),
