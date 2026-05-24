@@ -66,6 +66,9 @@ linter:
     discarded_futures: false
 
 dart_code_linter:
+  extends:
+    - package:dart_code_linter/presets/all.yaml
+
   rules:
     - avoid-double-slash-imports
     - avoid-duplicate-exports
@@ -91,6 +94,10 @@ dart_code_linter:
           - "**/organisms.dart"
           - "**/tokens.dart"
           - "**/ui.dart"
+          - widgetbook/lib/aura_ui/**
+          - widgetbook/lib/knobs/**
+          - lib/aura_ui/**
+          - lib/knobs/**
           - main.dart
           - "**/main.dart"
           - apps/auravibes_app/lib/main.dart
@@ -105,3 +112,40 @@ dart_code_linter:
     - prefer-single-quotes
     - prefer-trailing-comma
     - tag-name
+
+    # Disabled: enabling the full DCL preset on the existing codebase surfaces
+    # thousands of style-only changes across production, tests, and widgetbook.
+    - arguments-ordering: false
+    - avoid-dynamic: false
+    - avoid-global-state: false
+    - avoid-ignoring-return-values: false
+    - avoid-late-keyword: false
+    - avoid-non-ascii-symbols: false
+    - avoid-non-null-assertion: false
+    - avoid-passing-async-when-sync-expected: false
+    - avoid-redundant-async: false
+    - avoid-returning-widgets: false
+    - avoid-substring: false
+    - avoid-throw-in-catch-block: false
+    - avoid-top-level-members-in-tests: false
+    - avoid-unused-parameters: false
+    - format-comment: false
+    - member-ordering: false
+    - missing-test-assertion: false
+    - newline-before-return: false
+    - no-empty-block: false
+    - no-equal-arguments: false
+    - no-magic-number: false
+    - no-object-declaration: false
+    - prefer-async-await: false
+    - prefer-commenting-analyzer-ignores: false
+    - prefer-conditional-expressions: false
+    - prefer-const-border-radius: false
+    - prefer-correct-identifier-length: false
+    - prefer-correct-type-name: false
+    - prefer-enums-by-name: false
+    - prefer-extracting-callbacks: false
+    - prefer-moving-to-variable: false
+    - prefer-single-widget-per-file: false
+    - prefer-static-class: false
+    - prefer-using-list-view: false
