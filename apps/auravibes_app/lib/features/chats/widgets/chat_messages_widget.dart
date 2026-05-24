@@ -76,10 +76,6 @@ class ChatMessagesWidget extends HookConsumerWidget {
   conversationBusyState,
   messageConversationById,
 ])
-@Dependencies([
-  conversationBusyState,
-  messageConversationById,
-])
 class _ChatMessageRow extends HookConsumerWidget {
   const _ChatMessageRow({
     required this.messageId,
