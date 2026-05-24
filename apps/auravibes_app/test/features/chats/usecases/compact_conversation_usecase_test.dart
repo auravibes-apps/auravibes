@@ -492,6 +492,73 @@ void main() {
 
       verify(() => mockChatbotService.sendMessage(any(), any())).called(1);
     });
+
+    test(
+      'preserves tool calls and resolved tool results in compaction prompt',
+      () async {
+        final messages = [
+          _makeMessage(id: 'msg-1', content: 'Need weather for Bogota'),
+          _makeMessage(
+            id: 'msg-2',
+            isUser: false,
+            content: '',
+            metadata: const MessageMetadataEntity(
+              toolCalls: [
+                MessageToolCallEntity(
+                  id: 'tool-1',
+                  name: 'weather_lookup',
+                  argumentsRaw: '{"city":"Bogota"}',
+                  responseRaw: '{"temperature":"18C"}',
+                  resultStatus: ToolCallResultStatus.success,
+                ),
+              ],
+            ),
+          ),
+          _makeMessage(id: 'msg-3', content: 'Summarize it'),
+          _makeMessage(id: 'msg-4', isUser: false, content: 'Done'),
+        ];
+
+        when(
+          () => mockConversationRepo.getConversationById('conv-1'),
+        ).thenAnswer((_) async => _makeConversation());
+        when(
+          () =>
+              mockModelSelectionRepo.getWorkspaceModelSelectionById('model-1'),
+        ).thenAnswer((_) async => _makeModelSelection());
+        when(
+          () => mockMessageRepo.getMessagesByConversation('conv-1'),
+        ).thenAnswer((_) async => messages);
+        when(() => mockChatbotService.sendMessage(any(), any())).thenAnswer(
+          (_) => Stream.value(
+            ChatResult<ChatMessage>(
+              output: ChatMessage.model('Summary'),
+              usage: const LanguageModelUsage(),
+            ),
+          ),
+        );
+
+        await usecase(
+          conversationId: 'conv-1',
+          trigger: CompactionTrigger.manual,
+        );
+
+        final captured =
+            verify(
+                  () => mockChatbotService.sendMessage(any(), captureAny()),
+                ).captured.single
+                as List<ChatMessage>;
+
+        expect(captured, hasLength(6));
+        expect(captured[1].role.name, 'user');
+        expect(captured[1].text, 'Need weather for Bogota');
+        expect(captured[2].role.name, 'model');
+        expect(captured[2].toolCalls, hasLength(1));
+        expect(captured[2].toolCalls.single.toolName, 'weather_lookup');
+        expect(captured[3].role.name, 'user');
+        expect(captured[3].toolResults, hasLength(1));
+        expect(captured[3].toolResults.single.result, '{"temperature":"18C"}');
+      },
+    );
   });
 }
 
