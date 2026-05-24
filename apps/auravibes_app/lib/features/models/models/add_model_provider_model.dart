@@ -59,15 +59,13 @@ abstract class AddModelProviderModel with _$AddModelProviderModel {
       return null; // URL is optional
     }
     final trimmedUrl = url.trim();
+    if (!trimmedUrl.startsWith('http://') &&
+        !trimmedUrl.startsWith('https://')) {
+      return 'URL must start with http:// or https://';
+    }
     try {
       final uri = Uri.parse(trimmedUrl);
-      if (uri.host.isEmpty) {
-        return 'Please enter a valid URL';
-      }
-
-      if (!uri.hasScheme || (uri.scheme != 'http' && uri.scheme != 'https')) {
-        return 'URL must start with http:// or https://';
-      }
+      if (uri.host.isEmpty) return 'Please enter a valid URL';
 
       if (uri.scheme == 'http' && !_isLoopbackHost(uri.host)) {
         return 'Remote URLs must use https://';
