@@ -2,6 +2,14 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'add_model_provider_model.freezed.dart';
 
+bool _isLoopbackHost(String host) {
+  return switch (host.toLowerCase()) {
+    'localhost' || '127.0.0.1' || '::1' => true,
+    _ when host.endsWith('.localhost') => true,
+    _ => false,
+  };
+}
+
 @freezed
 abstract class AddModelProviderModel with _$AddModelProviderModel {
   const factory AddModelProviderModel({
@@ -51,14 +59,18 @@ abstract class AddModelProviderModel with _$AddModelProviderModel {
       return null; // URL is optional
     }
     final trimmedUrl = url.trim();
-    if (!trimmedUrl.startsWith('http://') &&
-        !trimmedUrl.startsWith('https://')) {
-      return 'URL must start with http:// or https://';
-    }
     try {
       final uri = Uri.parse(trimmedUrl);
       if (uri.host.isEmpty) {
         return 'Please enter a valid URL';
+      }
+
+      if (!uri.hasScheme || (uri.scheme != 'http' && uri.scheme != 'https')) {
+        return 'URL must start with http:// or https://';
+      }
+
+      if (uri.scheme == 'http' && !_isLoopbackHost(uri.host)) {
+        return 'Remote URLs must use https://';
       }
     } on FormatException {
       return 'Please enter a valid URL';
