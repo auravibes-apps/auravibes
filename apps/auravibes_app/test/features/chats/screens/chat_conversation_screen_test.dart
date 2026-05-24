@@ -5,13 +5,17 @@ import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
+import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/screens/chat_conversation_screen.dart';
+import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
+import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/widgets/app_error_widget.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -400,6 +404,32 @@ void main() {
                         ConversationFound(conversation),
                       ),
                     ),
+                    conversationBusyStateProvider.overrideWith(
+                      (ref) async => const ConversationBusyState(
+                        isStreaming: false,
+                        hasPendingTools: false,
+                      ),
+                    ),
+                    chatMessagesProvider.overrideWith(
+                      (ref) async => const <MessageEntity>[],
+                    ),
+                    chatMessageIdsProvider.overrideWith(
+                      (ref) => MessageIdList.empty,
+                    ),
+                    contextUsageProvider.overrideWith(
+                      (ref) => ContextUsageData.compute(
+                        usedTokens: 0,
+                        limitTokens: null,
+                      ),
+                    ),
+                    pendingToolCallsProvider.overrideWith(
+                      (ref) async => const <PendingToolCall>[],
+                    ),
+                    listModelsGroupedByProviderProvider(
+                      workspaceId: _workspaceId,
+                    ).overrideWith(
+                      (ref) => Stream.value(const {}),
+                    ),
                   ],
                   child: MaterialApp(
                     locale: context.locale,
@@ -457,6 +487,32 @@ void main() {
                     () => _ResultChatNotifier(
                       ConversationFound(conversation),
                     ),
+                  ),
+                  conversationBusyStateProvider.overrideWith(
+                    (ref) async => const ConversationBusyState(
+                      isStreaming: false,
+                      hasPendingTools: false,
+                    ),
+                  ),
+                  chatMessagesProvider.overrideWith(
+                    (ref) async => const <MessageEntity>[],
+                  ),
+                  chatMessageIdsProvider.overrideWith(
+                    (ref) => MessageIdList.empty,
+                  ),
+                  contextUsageProvider.overrideWith(
+                    (ref) => ContextUsageData.compute(
+                      usedTokens: 0,
+                      limitTokens: null,
+                    ),
+                  ),
+                  pendingToolCallsProvider.overrideWith(
+                    (ref) async => const <PendingToolCall>[],
+                  ),
+                  listModelsGroupedByProviderProvider(
+                    workspaceId: _workspaceId,
+                  ).overrideWith(
+                    (ref) => Stream.value(const {}),
                   ),
                   compactionExecutionStateProvider(_chatId).overrideWithValue(
                     CompactionExecutionState(
