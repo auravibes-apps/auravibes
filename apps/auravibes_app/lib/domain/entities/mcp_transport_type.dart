@@ -59,7 +59,12 @@ class McpTransportTypeStreamableHttp extends McpTransportType {
   }
 }
 
-@freezed
+String _redactedSecret(String? value) {
+  if (value == null) return 'null';
+  return '[REDACTED]';
+}
+
+@Freezed(toStringOverride: false)
 abstract class OAuthTokenModel with _$OAuthTokenModel {
   // ignore: invalid_annotation_target
   @JsonSerializable(fieldRename: .snake)
@@ -75,6 +80,17 @@ abstract class OAuthTokenModel with _$OAuthTokenModel {
       _$OAuthTokenModelFromJson(json);
   const OAuthTokenModel._();
 
+  @override
+  String toString() {
+    return 'OAuthTokenModel('
+        'accessToken: ${_redactedSecret(accessToken)}, '
+        'refreshToken: ${_redactedSecret(refreshToken)}, '
+        'expiresIn: $expiresIn, '
+        'tokenType: $tokenType, '
+        'scope: $scope'
+        ')';
+  }
+
   OAuthTokenEntity toEntity() {
     return OAuthTokenEntity(
       accessToken: accessToken,
@@ -87,7 +103,7 @@ abstract class OAuthTokenModel with _$OAuthTokenModel {
   }
 }
 
-@freezed
+@Freezed(toStringOverride: false)
 abstract class OAuthTokenEntity with _$OAuthTokenEntity {
   const factory OAuthTokenEntity({
     required String accessToken,
@@ -102,6 +118,18 @@ abstract class OAuthTokenEntity with _$OAuthTokenEntity {
 
   factory OAuthTokenEntity.fromJson(Map<String, dynamic> json) =>
       _$OAuthTokenEntityFromJson(json);
+
+  @override
+  String toString() {
+    return 'OAuthTokenEntity('
+        'accessToken: ${_redactedSecret(accessToken)}, '
+        'issuedAt: $issuedAt, '
+        'refreshToken: ${_redactedSecret(refreshToken)}, '
+        'expiresIn: $expiresIn, '
+        'tokenType: $tokenType, '
+        'scopes: $scopes'
+        ')';
+  }
 
   /// Returns true if the stored OAuth token is expired or unavailable.
   bool get isOAuthTokenExpired {
@@ -134,7 +162,7 @@ abstract class OAuthTokenEntity with _$OAuthTokenEntity {
   }
 }
 
-@freezed
+@Freezed(toStringOverride: false)
 sealed class McpAuthenticationType with _$McpAuthenticationType {
   const McpAuthenticationType._();
   const factory McpAuthenticationType.none() = McpAuthenticationTypeNone;
@@ -168,6 +196,26 @@ sealed class McpAuthenticationType with _$McpAuthenticationType {
           bearerToken: await encryptor(bearerToken),
         );
     }
+  }
+
+  @override
+  String toString() {
+    return switch (this) {
+      McpAuthenticationTypeNone() => 'McpAuthenticationType.none()',
+      McpAuthenticationTypeOAuth(
+        :final clientId,
+        :final authorizationEndpoint,
+        :final tokenEndpoint,
+      ) =>
+        'McpAuthenticationType.oauth('
+            'token: [REDACTED], '
+            'clientId: $clientId, '
+            'authorizationEndpoint: $authorizationEndpoint, '
+            'tokenEndpoint: $tokenEndpoint'
+            ')',
+      McpAuthenticationTypeBearerToken() =>
+        'McpAuthenticationType.bearerToken(bearerToken: [REDACTED])',
+    };
   }
 }
 
