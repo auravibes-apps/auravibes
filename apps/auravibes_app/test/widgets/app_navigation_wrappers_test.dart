@@ -10,7 +10,6 @@ import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
-import 'package:auravibes_app/test_helpers/test_provider_scope.dart';
 import 'package:auravibes_app/widgets/aura_sidebar_wrapper.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -18,6 +17,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+
+import '../helpers/test_provider_scope.dart';
 
 void main() {
   group('navigation shell index calculation', () {

@@ -10,11 +10,12 @@ import 'package:auravibes_app/features/chats/providers/compaction_execution.dart
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/widgets/sidebar_conversations_widget.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
-import 'package:auravibes_app/test_helpers/test_provider_scope.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../../../helpers/test_provider_scope.dart';
 
 void main() {
   testWidgets(

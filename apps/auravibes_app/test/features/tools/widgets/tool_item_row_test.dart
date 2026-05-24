@@ -6,11 +6,12 @@ import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart'
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/widgets/tool_item_row.dart';
-import 'package:auravibes_app/test_helpers/test_provider_scope.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../../../helpers/test_provider_scope.dart';
 
 const _workspaceId = 'ws-1';
 

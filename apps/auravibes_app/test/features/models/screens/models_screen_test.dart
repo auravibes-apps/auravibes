@@ -4,12 +4,13 @@
 import 'package:auravibes_app/features/models/providers/workspace_model_connections_providers.dart';
 import 'package:auravibes_app/features/models/screens/models_screen.dart';
 import 'package:auravibes_app/features/models/widgets/list_model_connections_widget.dart';
-import 'package:auravibes_app/test_helpers/test_provider_scope.dart';
 import 'package:auravibes_app/widgets/app_content.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../../../helpers/test_provider_scope.dart';
 
 void main() {
   Widget buildSubject() {
