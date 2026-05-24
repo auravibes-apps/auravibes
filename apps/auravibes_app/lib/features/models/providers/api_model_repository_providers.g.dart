@@ -30,7 +30,7 @@ final class ApiModelRepositoryProvider
         argument: null,
         retry: null,
         name: r'apiModelRepositoryProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -59,7 +59,7 @@ final class ApiModelRepositoryProvider
 }
 
 String _$apiModelRepositoryHash() =>
-    r'9f10065210102105fdbff3757c08f5b3708f97dc';
+    r'ce28c9a1ada0e032e779e224d152730e2fb9ad85';
 
 /// Provider for the model API service
 

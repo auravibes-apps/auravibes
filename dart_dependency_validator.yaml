@@ -1,3 +1,5 @@
 ignore:
-  - import_sorter   # Development tool with executables
-  - melos          # Development tool with executables
+  - riverpod_lint
+  - state_notifier
+exclude:
+  - "test/**/*.mocks.dart"

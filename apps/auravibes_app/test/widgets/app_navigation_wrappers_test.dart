@@ -1,3 +1,6 @@
+// ignore_for_file: scoped_providers_should_specify_dependencies
+// Required: widget tests override scoped providers directly.
+
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
@@ -14,6 +17,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+
+import '../helpers/test_provider_scope.dart';
 
 void main() {
   group('navigation shell index calculation', () {
@@ -505,7 +510,7 @@ void main() {
         useOnlyLangCode: true,
         child: Builder(
           builder: (context) {
-            return ProviderScope(
+            return TestProviderScope(
               overrides: [
                 conversationRepositoryProvider.overrideWithValue(repo),
                 allWorkspacesProvider.overrideWith(

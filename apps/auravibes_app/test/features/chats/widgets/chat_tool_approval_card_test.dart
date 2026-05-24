@@ -1,3 +1,6 @@
+// ignore_for_file: provider_dependencies
+// Required: widget tests override scoped providers directly.
+
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_tool_approval_card.dart';
@@ -6,8 +9,11 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
+@Dependencies([pendingToolCalls])
 void main() {
+  @Dependencies([pendingToolCalls])
   Widget buildSubject({
     required List<Object> overrides,
   }) {

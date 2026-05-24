@@ -1,3 +1,6 @@
+// ignore_for_file: scoped_providers_should_specify_dependencies
+// Required: widget tests override scoped providers directly.
+
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
@@ -13,7 +16,8 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
+
+import '../../../helpers/test_provider_scope.dart';
 
 const _workspaceId = 'ws-1';
 
@@ -64,7 +68,7 @@ Widget _buildSubject(Widget child) {
     startLocale: const Locale('en'),
     useFallbackTranslations: true,
     useOnlyLangCode: true,
-    child: ProviderScope(
+    child: TestProviderScope(
       overrides: [
         groupedToolsProvider(
           _workspaceId,

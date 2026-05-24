@@ -1,3 +1,6 @@
+// ignore_for_file: scoped_providers_should_specify_dependencies
+// Required: widget tests override scoped providers directly.
+
 import 'package:auravibes_app/features/models/providers/workspace_model_connections_providers.dart';
 import 'package:auravibes_app/features/models/screens/models_screen.dart';
 import 'package:auravibes_app/features/models/widgets/list_model_connections_widget.dart';
@@ -6,7 +9,8 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
+
+import '../../../helpers/test_provider_scope.dart';
 
 void main() {
   Widget buildSubject() {
@@ -17,7 +21,7 @@ void main() {
       startLocale: const Locale('en'),
       useFallbackTranslations: true,
       useOnlyLangCode: true,
-      child: ProviderScope(
+      child: TestProviderScope(
         overrides: [
           listWorkspaceModelConnectionsProvider.overrideWith(
             (ref, workspaceId) => [],

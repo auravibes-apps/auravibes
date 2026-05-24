@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
+import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/usecases/manual_compaction_result.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
@@ -50,8 +51,15 @@ class ChatConversationScreen extends ConsumerWidget {
 
 @Dependencies([
   ConversationChatNotifier,
+  chatMessageIds,
   chatMessages,
-  pendingMcpConnections,
+  contextUsage,
+  conversationCompactionExecutionState,
+  conversationBusyState,
+  conversationQueuedDrafts,
+  conversationSelected,
+  messageConversationById,
+  pendingToolCalls,
 ])
 class _ChatConversationScreen extends HookConsumerWidget {
   const _ChatConversationScreen({required this.workspaceId});
@@ -196,6 +204,7 @@ void _showToolsModal({
   );
 }
 
+@Dependencies([conversationSelected])
 Future<void> _stopConversation(BuildContext context, WidgetRef ref) async {
   final conversationId = ref.read(conversationSelectedProvider);
   try {
@@ -223,6 +232,7 @@ Future<void> _stopConversation(BuildContext context, WidgetRef ref) async {
   }
 }
 
+@Dependencies([conversationSelected])
 Future<void> _sendMessage(
   BuildContext context,
   WidgetRef ref,
@@ -284,6 +294,13 @@ Future<void> _manualCompact(
   }
 }
 
+@Dependencies([
+  chatMessageIds,
+  chatMessages,
+  conversationBusyState,
+  conversationCompactionExecutionState,
+  messageConversationById,
+])
 class _ChatList extends ConsumerWidget {
   const _ChatList();
 

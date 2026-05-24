@@ -1,11 +1,21 @@
+// ignore_for_file: scoped_providers_should_specify_dependencies
+// Required: widget tests override scoped providers directly.
+
 import 'dart:async';
 
+import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
+import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
+import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/screens/chat_conversation_screen.dart';
+import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
+import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/widgets/app_error_widget.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -13,7 +23,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
+
+import '../../../helpers/test_provider_scope.dart';
 
 const _workspaceId = 'ws-1';
 const _chatId = 'chat-1';
@@ -79,7 +90,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      ProviderScope(
+      TestProviderScope(
         overrides: [
           conversationSelectedProvider.overrideWithValue(_chatId),
           routerPathSegmentsProvider.overrideWithValue(const []),
@@ -105,7 +116,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      ProviderScope(
+      TestProviderScope(
         overrides: [
           conversationSelectedProvider.overrideWithValue(_chatId),
           routerPathSegmentsProvider.overrideWithValue(const []),
@@ -131,7 +142,7 @@ void main() {
 
   testWidgets('shows error for ConversationNotFound result', (tester) async {
     await tester.pumpWidget(
-      ProviderScope(
+      TestProviderScope(
         overrides: [
           conversationSelectedProvider.overrideWithValue(_chatId),
           routerPathSegmentsProvider.overrideWithValue(const []),
@@ -160,7 +171,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      ProviderScope(
+      TestProviderScope(
         overrides: [
           conversationSelectedProvider.overrideWithValue(_chatId),
           routerPathSegmentsProvider.overrideWithValue(const []),
@@ -233,7 +244,7 @@ void main() {
 
   testWidgets('shows error for null conversation result', (tester) async {
     await tester.pumpWidget(
-      ProviderScope(
+      TestProviderScope(
         overrides: [
           conversationSelectedProvider.overrideWithValue(_chatId),
           routerPathSegmentsProvider.overrideWithValue(const []),
@@ -381,7 +392,7 @@ void main() {
             useOnlyLangCode: true,
             child: Builder(
               builder: (context) {
-                return ProviderScope(
+                return TestProviderScope(
                   overrides: [
                     conversationSelectedProvider.overrideWithValue(_chatId),
                     routerPathSegmentsProvider.overrideWithValue(const []),
@@ -392,6 +403,32 @@ void main() {
                       () => _ResultChatNotifier(
                         ConversationFound(conversation),
                       ),
+                    ),
+                    conversationBusyStateProvider.overrideWith(
+                      (ref) async => const ConversationBusyState(
+                        isStreaming: false,
+                        hasPendingTools: false,
+                      ),
+                    ),
+                    chatMessagesProvider.overrideWith(
+                      (ref) async => const <MessageEntity>[],
+                    ),
+                    chatMessageIdsProvider.overrideWith(
+                      (ref) => MessageIdList.empty,
+                    ),
+                    contextUsageProvider.overrideWith(
+                      (ref) => ContextUsageData.compute(
+                        usedTokens: 0,
+                        limitTokens: null,
+                      ),
+                    ),
+                    pendingToolCallsProvider.overrideWith(
+                      (ref) async => const <PendingToolCall>[],
+                    ),
+                    listModelsGroupedByProviderProvider(
+                      workspaceId: _workspaceId,
+                    ).overrideWith(
+                      (ref) => Stream.value(const {}),
                     ),
                   ],
                   child: MaterialApp(
@@ -417,6 +454,98 @@ void main() {
       expect(find.text('Chat'), findsOneWidget);
     },
   );
+
+  testWidgets('passes running compaction state to chat input', (tester) async {
+    final conversation = ConversationEntity(
+      id: _chatId,
+      title: 'Chat',
+      workspaceId: _workspaceId,
+      isPinned: false,
+      createdAt: DateTime(2026),
+      updatedAt: DateTime(2026),
+    );
+
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        EasyLocalization(
+          supportedLocales: const [Locale('en')],
+          path: 'assets/i18n',
+          fallbackLocale: const Locale('en'),
+          startLocale: const Locale('en'),
+          useFallbackTranslations: true,
+          useOnlyLangCode: true,
+          child: Builder(
+            builder: (context) {
+              return TestProviderScope(
+                overrides: [
+                  conversationSelectedProvider.overrideWithValue(_chatId),
+                  routerPathSegmentsProvider.overrideWithValue(const []),
+                  conversationRepositoryProvider.overrideWithValue(
+                    _StubConversationRepository(),
+                  ),
+                  conversationChatProvider(_workspaceId).overrideWith(
+                    () => _ResultChatNotifier(
+                      ConversationFound(conversation),
+                    ),
+                  ),
+                  conversationBusyStateProvider.overrideWith(
+                    (ref) async => const ConversationBusyState(
+                      isStreaming: false,
+                      hasPendingTools: false,
+                    ),
+                  ),
+                  chatMessagesProvider.overrideWith(
+                    (ref) async => const <MessageEntity>[],
+                  ),
+                  chatMessageIdsProvider.overrideWith(
+                    (ref) => MessageIdList.empty,
+                  ),
+                  contextUsageProvider.overrideWith(
+                    (ref) => ContextUsageData.compute(
+                      usedTokens: 0,
+                      limitTokens: null,
+                    ),
+                  ),
+                  pendingToolCallsProvider.overrideWith(
+                    (ref) async => const <PendingToolCall>[],
+                  ),
+                  listModelsGroupedByProviderProvider(
+                    workspaceId: _workspaceId,
+                  ).overrideWith(
+                    (ref) => Stream.value(const {}),
+                  ),
+                  compactionExecutionStateProvider(_chatId).overrideWithValue(
+                    CompactionExecutionState(
+                      conversationId: _chatId,
+                      trigger: CompactionTrigger.manual,
+                      startedAt: DateTime(2026),
+                      status: CompactionExecutionStatus.running,
+                    ),
+                  ),
+                ],
+                child: MaterialApp(
+                  locale: context.locale,
+                  supportedLocales: context.supportedLocales,
+                  localizationsDelegates: context.localizationDelegates,
+                  home: const ChatConversationScreen(
+                    workspaceId: _workspaceId,
+                    chatId: _chatId,
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+    });
+    await tester.pump();
+    await tester.pump();
+
+    final input = tester.widget<ChatInputWidget>(find.byType(ChatInputWidget));
+    expect(input.isCompacting, isTrue);
+  });
 }
 
 class _ForeverLoadingChatNotifier extends ConversationChatNotifier {
