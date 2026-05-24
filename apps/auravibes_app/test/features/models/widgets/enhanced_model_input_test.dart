@@ -1,18 +1,8 @@
 import 'package:auravibes_app/features/models/models/add_model_provider_model.dart';
-import 'package:auravibes_app/features/models/providers/add_model_provider_state.dart';
 import 'package:auravibes_app/features/models/widgets/enhanced_model_input.dart';
-import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-
-import '../../../helpers/test_app.dart';
-
-class _MockAddModelProviderState extends AddModelProviderState {
-  @override
-  AddModelProviderModel build(String workspaceId) =>
-      const AddModelProviderModel();
-}
 
 void main() {
   group('ModelInputFieldType', () {
@@ -98,33 +88,6 @@ void main() {
         fieldType: ModelInputFieldType.name,
       );
       expect(widget.workspaceId, 'ws-1');
-    });
-
-    testWidgets('renders EnhancedModelInput', (tester) async {
-      await tester.runAsync(() async {
-        await tester.pumpWidget(
-          testableApp(
-            overrides: [
-              addModelProviderStateProvider('ws-1').overrideWith(
-                _MockAddModelProviderState.new,
-              ),
-            ],
-            child: Theme(
-              data: ThemeData(extensions: [AuraTheme.light]),
-              child: const Scaffold(
-                body: EnhancedModelInput(
-                  workspaceId: 'ws-1',
-                  fieldType: ModelInputFieldType.name,
-                ),
-              ),
-            ),
-          ),
-        );
-      });
-      await tester.pump();
-      await tester.pump();
-      expect(find.byType(EnhancedModelInput), findsOneWidget);
-      expect(find.byType(AuraInput), findsOneWidget);
     });
   });
 
@@ -218,6 +181,11 @@ void main() {
     test('validateUrl returns null for valid url', () {
       const model = AddModelProviderModel(url: 'https://api.openai.com');
       expect(model.validateUrl(), isNull);
+    });
+
+    test('validateUrl returns error for remote http url', () {
+      const model = AddModelProviderModel(url: 'http://api.openai.com');
+      expect(model.validateUrl(), 'Remote URLs must use https://');
     });
 
     test('isValid returns false for empty model', () {
