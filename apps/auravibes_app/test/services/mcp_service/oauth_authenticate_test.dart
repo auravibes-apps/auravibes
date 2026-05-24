@@ -160,6 +160,46 @@ void main() {
       });
     });
 
+    group('buildAuthorizationUri', () {
+      test('includes discovered scope when provided', () {
+        final uri = OAuthAuthenticate.buildAuthorizationUri(
+          oAuthResult: const OAuthDiscoveryResult(
+            authorizationUrl: 'https://example.com/oauth/authorize',
+            tokenUrl: 'https://example.com/oauth/token',
+            clientId: 'client-123',
+            scope: 'tools.read tools.write',
+          ),
+          redirectUrl: 'auravibes:/',
+          stateParam: 'state-123',
+          codeChallenge: 'challenge-123',
+        );
+
+        expect(
+          uri.toString(),
+          'https://example.com/oauth/authorize?response_type=code'
+          '&redirect_uri=auravibes%3A%2F&state=state-123'
+          '&code_challenge=challenge-123&code_challenge_method=S256'
+          '&client_id=client-123&scope=tools.read+tools.write',
+        );
+      });
+
+      test('omits scope when discovery did not provide one', () {
+        final uri = OAuthAuthenticate.buildAuthorizationUri(
+          oAuthResult: const OAuthDiscoveryResult(
+            authorizationUrl: 'https://example.com/oauth/authorize',
+            tokenUrl: 'https://example.com/oauth/token',
+            clientId: 'client-123',
+            scope: '',
+          ),
+          redirectUrl: 'auravibes:/',
+          stateParam: 'state-123',
+          codeChallenge: 'challenge-123',
+        );
+
+        expect(uri.queryParameters.containsKey('scope'), isFalse);
+      });
+    });
+
     group('generateCodeChallenge', () {
       test('produces base64url string without padding', () {
         final challenge = OAuthAuthenticate.generateCodeChallenge(
