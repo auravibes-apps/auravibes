@@ -3,12 +3,15 @@
 
 import 'dart:async';
 
+import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
+import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/screens/chat_conversation_screen.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/widgets/app_error_widget.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -421,6 +424,72 @@ void main() {
       expect(find.text('Chat'), findsOneWidget);
     },
   );
+
+  testWidgets('passes running compaction state to chat input', (tester) async {
+    final conversation = ConversationEntity(
+      id: _chatId,
+      title: 'Chat',
+      workspaceId: _workspaceId,
+      isPinned: false,
+      createdAt: DateTime(2026),
+      updatedAt: DateTime(2026),
+    );
+
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        EasyLocalization(
+          supportedLocales: const [Locale('en')],
+          path: 'assets/i18n',
+          fallbackLocale: const Locale('en'),
+          startLocale: const Locale('en'),
+          useFallbackTranslations: true,
+          useOnlyLangCode: true,
+          child: Builder(
+            builder: (context) {
+              return TestProviderScope(
+                overrides: [
+                  conversationSelectedProvider.overrideWithValue(_chatId),
+                  routerPathSegmentsProvider.overrideWithValue(const []),
+                  conversationRepositoryProvider.overrideWithValue(
+                    _StubConversationRepository(),
+                  ),
+                  conversationChatProvider(_workspaceId).overrideWith(
+                    () => _ResultChatNotifier(
+                      ConversationFound(conversation),
+                    ),
+                  ),
+                  compactionExecutionStateProvider(_chatId).overrideWithValue(
+                    CompactionExecutionState(
+                      conversationId: _chatId,
+                      trigger: CompactionTrigger.manual,
+                      startedAt: DateTime(2026),
+                      status: CompactionExecutionStatus.running,
+                    ),
+                  ),
+                ],
+                child: MaterialApp(
+                  locale: context.locale,
+                  supportedLocales: context.supportedLocales,
+                  localizationsDelegates: context.localizationDelegates,
+                  home: const ChatConversationScreen(
+                    workspaceId: _workspaceId,
+                    chatId: _chatId,
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+    });
+    await tester.pump();
+    await tester.pump();
+
+    final input = tester.widget<ChatInputWidget>(find.byType(ChatInputWidget));
+    expect(input.isCompacting, isTrue);
+  });
 }
 
 class _ForeverLoadingChatNotifier extends ConversationChatNotifier {
