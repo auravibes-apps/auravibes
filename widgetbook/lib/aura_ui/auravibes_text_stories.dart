@@ -6,29 +6,29 @@ import 'package:widgetbook_annotation/widgetbook_annotation.dart' as widgetbook;
 @widgetbook.UseCase(name: 'AuraText', type: AuraText)
 Widget textStylesUseCase(BuildContext context) {
   return AuraText(
-    style: context.knobs.object.dropdown(
-      label: 'Style',
-      options: AuraTextStyle.values,
-      labelBuilder: (value) => value.name,
-      initialOption: .body,
-    ),
-    color: context.knobs.objectOrNull.dropdown(
-      label: 'Color',
-      options: AuraColorVariant.values,
-      labelBuilder: (value) => value.name,
-      initialOption: null,
-    ),
-    textAlign: context.knobs.objectOrNull.dropdown(
-      label: 'Text Align',
-      options: TextAlign.values,
-      labelBuilder: (value) => value.name,
-      initialOption: null,
-    ),
     child: Text(
       context.knobs.string(
         label: 'Text',
         initialValue: 'This is an example of AuraText widget.',
       ),
+    ),
+    style: context.knobs.object.dropdown(
+      label: 'Style',
+      options: AuraTextStyle.values,
+      initialOption: .body,
+      labelBuilder: (value) => value.name,
+    ),
+    textAlign: context.knobs.objectOrNull.dropdown(
+      label: 'Text Align',
+      options: TextAlign.values,
+      initialOption: null,
+      labelBuilder: (value) => value.name,
+    ),
+    color: context.knobs.objectOrNull.dropdown(
+      label: 'Color',
+      options: AuraColorVariant.values,
+      initialOption: null,
+      labelBuilder: (value) => value.name,
     ),
   );
 }

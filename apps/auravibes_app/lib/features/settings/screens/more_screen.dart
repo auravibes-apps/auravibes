@@ -18,9 +18,6 @@ class MoreScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraScreen(
-      appBar: const AuraAppBarWithDrawer(
-        title: TextLocale(LocaleKeys.more_screen_title),
-      ),
       child: ListView(
         children: [
           _SectionTile(
@@ -48,6 +45,9 @@ class MoreScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
+      appBar: const AuraAppBarWithDrawer(
+        title: TextLocale(LocaleKeys.more_screen_title),
       ),
     );
   }

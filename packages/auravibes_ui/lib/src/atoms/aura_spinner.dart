@@ -117,18 +117,18 @@ class AuraSpinnerWithLabel extends StatelessWidget {
     final labelWidget = Text(
       label,
       style: TextStyle(
-        fontFamily: DesignTypography.bodyFontFamily,
+        color: auraColors.onSurfaceVariant,
         fontSize: _getLabelFontSize(),
         fontWeight: DesignTypography.fontWeightRegular,
-        color: auraColors.onSurfaceVariant,
+        fontFamily: DesignTypography.bodyFontFamily,
       ),
       textAlign: TextAlign.center,
     );
 
     if (direction == Axis.horizontal) {
       return Row(
-        mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
           spinner,
           SizedBox(width: spacing),
@@ -138,8 +138,8 @@ class AuraSpinnerWithLabel extends StatelessWidget {
     }
 
     return Column(
-      mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
       children: [
         spinner,
         SizedBox(height: spacing),

@@ -133,15 +133,15 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData.light().copyWith(
-            extensions: [AuraTheme.light],
-          ),
           home: Scaffold(
             body: AuraFloatingActionButton(
               onPressed: () {},
               icon: Icons.add,
               backgroundColor: customColor,
             ),
+          ),
+          theme: ThemeData.light().copyWith(
+            extensions: [AuraTheme.light],
           ),
         ),
       );
@@ -158,15 +158,15 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData.light().copyWith(
-            extensions: [AuraTheme.light],
-          ),
           home: Scaffold(
             body: AuraFloatingActionButton(
               onPressed: () {},
               icon: Icons.add,
               foregroundColor: customColor,
             ),
+          ),
+          theme: ThemeData.light().copyWith(
+            extensions: [AuraTheme.light],
           ),
         ),
       );
@@ -185,14 +185,14 @@ void main() {
     testWidgets('applies default colors correctly', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData.light().copyWith(
-            extensions: [AuraTheme.light],
-          ),
           home: Scaffold(
             body: AuraFloatingActionButton(
               onPressed: () {},
               icon: Icons.add,
             ),
+          ),
+          theme: ThemeData.light().copyWith(
+            extensions: [AuraTheme.light],
           ),
         ),
       );

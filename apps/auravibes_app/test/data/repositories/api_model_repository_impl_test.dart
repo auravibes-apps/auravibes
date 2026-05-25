@@ -41,17 +41,17 @@ void main() {
     );
 
     const modelRow = ApiModelsTable(
-      id: 'gpt-4',
       modelProvider: 'openai',
+      id: 'gpt-4',
       name: 'GPT-4',
-      limitContext: 128000,
-      limitOutput: 4096,
       modalitiesInput: ['text'],
       modalitiesOuput: ['text'],
-      costInput: 30,
-      costOutput: 60,
       openWeights: false,
       supportsReasoning: false,
+      costInput: 30,
+      costOutput: 60,
+      limitContext: 128000,
+      limitOutput: 4096,
     );
 
     group('getAllProviders', () {
@@ -180,9 +180,9 @@ void main() {
     group('batchUpsertModels', () {
       test('maps entities to companions and back', () async {
         const entity = ApiModelEntity(
+          modelProvider: 'openai',
           id: 'gpt-4',
           name: 'GPT-4',
-          modelProvider: 'openai',
           limitContext: 128000,
           limitOutput: 4096,
           modalitiesInput: ['text'],
@@ -205,9 +205,9 @@ void main() {
 
         await repository.batchUpsertModels([
           const ApiModelEntity(
+            modelProvider: 'openai',
             id: 'gpt-4',
             name: 'GPT-4',
-            modelProvider: 'openai',
             limitContext: 128000,
             limitOutput: 4096,
             modalitiesInput: [],

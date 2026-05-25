@@ -52,15 +52,10 @@ class NewChatScreen extends ConsumerWidget {
     }
 
     return AuraScreen(
-      appBar: const AuraAppBarWithDrawer(
-        title: TextLocale(LocaleKeys.home_screen_actions_start_new_chat),
-      ),
       child: Column(
         children: [
           SelectWorkspaceModelSelectionWidget(
             workspaceId: workspaceId,
-            workspaceModelSelectionId: state.modelId,
-            selectedProviderId: state.providerId,
             selectWorkspaceModelSelectionId: (value) {
               ref.read(newChatProvider(workspaceId).notifier).setModelId(value);
             },
@@ -69,15 +64,17 @@ class NewChatScreen extends ConsumerWidget {
                   .read(newChatProvider(workspaceId).notifier)
                   .setProvider(provider);
             },
+            workspaceModelSelectionId: state.modelId,
+            selectedProviderId: state.providerId,
           ),
           Expanded(
             child: Stack(
               children: [
                 Center(
                   child: ChatInputWidget(
-                    disabled: state.isLoading || state.modelId == null,
                     onSendMessage: handleSendMessage,
                     onToolsPress: onToolsPress,
+                    disabled: state.isLoading || state.modelId == null,
                   ),
                 ),
                 if (state.isLoading)
@@ -89,6 +86,9 @@ class NewChatScreen extends ConsumerWidget {
             ),
           ),
         ],
+      ),
+      appBar: const AuraAppBarWithDrawer(
+        title: TextLocale(LocaleKeys.home_screen_actions_start_new_chat),
       ),
     );
   }

@@ -13,9 +13,9 @@ void main() {
           home: Scaffold(
             body: Portal(
               child: AuraDropdownSelector<String>(
-                placeholder: const Text('Select an option'),
                 options: const [],
                 onChanged: (_) {},
+                placeholder: const Text('Select an option'),
               ),
             ),
           ),
@@ -31,13 +31,13 @@ void main() {
           home: Scaffold(
             body: Portal(
               child: AuraDropdownSelector<String>(
-                value: 'Selected',
                 options: const [
                   AuraDropdownOption(
                     value: 'Selected',
                     child: Text('Selected'),
                   ),
                 ],
+                value: 'Selected',
                 onChanged: (_) {},
               ),
             ),
@@ -54,7 +54,6 @@ void main() {
           home: Scaffold(
             body: Portal(
               child: AuraDropdownSelector<String>(
-                placeholder: const Text('Select'),
                 options: const [
                   AuraDropdownOption(
                     value: 'Option 1',
@@ -66,6 +65,7 @@ void main() {
                   ),
                 ],
                 onChanged: (_) {},
+                placeholder: const Text('Select'),
               ),
             ),
           ),
@@ -87,8 +87,6 @@ void main() {
           home: Scaffold(
             body: Portal(
               child: AuraDropdownSelector<String>(
-                value: 'Option 2',
-                placeholder: const Text('Select'),
                 options: const [
                   AuraDropdownOption(
                     value: 'Option 1',
@@ -99,7 +97,9 @@ void main() {
                     child: Text('Option 2'),
                   ),
                 ],
+                value: 'Option 2',
                 onChanged: (_) {},
+                placeholder: const Text('Select'),
               ),
             ),
           ),
@@ -119,7 +119,6 @@ void main() {
           home: Scaffold(
             body: Portal(
               child: AuraDropdownSelector<String>(
-                placeholder: const Text('Select'),
                 options: const [
                   AuraDropdownOption(
                     value: 'Option 1',
@@ -127,6 +126,7 @@ void main() {
                   ),
                 ],
                 onChanged: (_) {},
+                placeholder: const Text('Select'),
               ),
             ),
           ),
@@ -149,16 +149,16 @@ void main() {
           home: Scaffold(
             body: Portal(
               child: AuraDropdownSelector<String>(
-                placeholder: const Text('Select'),
                 options: const [
                   AuraDropdownOption(
                     value: 'Option 1',
                     child: Text('Option 1'),
                   ),
                 ],
+                onChanged: (_) {},
+                placeholder: const Text('Select'),
                 optionBuilder: (context, option) =>
                     Text('Custom: ${option.value}'),
-                onChanged: (_) {},
               ),
             ),
           ),
@@ -177,15 +177,15 @@ void main() {
           home: Scaffold(
             body: Portal(
               child: AuraDropdownSelector<String>(
-                placeholder: const Text('Select'),
                 options: const [
                   AuraDropdownOption(
                     value: 'Option 1',
-                    leading: Icon(Icons.star),
                     child: Text('Option 1'),
+                    leading: Icon(Icons.star),
                   ),
                 ],
                 onChanged: (_) {},
+                placeholder: const Text('Select'),
               ),
             ),
           ),
@@ -204,8 +204,6 @@ void main() {
           home: Scaffold(
             body: Portal(
               child: AuraDropdownSelector<String>(
-                placeholder: const Text('Select'),
-                isEnabled: false,
                 options: const [
                   AuraDropdownOption(
                     value: 'Option 1',
@@ -213,6 +211,8 @@ void main() {
                   ),
                 ],
                 onChanged: (_) {},
+                placeholder: const Text('Select'),
+                isEnabled: false,
               ),
             ),
           ),
@@ -233,7 +233,6 @@ void main() {
               child: Column(
                 children: [
                   AuraDropdownSelector<String>(
-                    placeholder: const Text('Select'),
                     options: const [
                       AuraDropdownOption(
                         value: 'Option 1',
@@ -241,6 +240,7 @@ void main() {
                       ),
                     ],
                     onChanged: (_) {},
+                    placeholder: const Text('Select'),
                   ),
                   const SizedBox(height: 100),
                   const Text('Outside'),

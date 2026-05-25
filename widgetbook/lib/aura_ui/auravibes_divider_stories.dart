@@ -24,18 +24,18 @@ double _thicknessKnob(BuildContext context) {
   return context.knobs.double.slider(
     label: 'Thickness',
     initialValue: 1,
-    max: 10,
     min: 0,
+    max: 10,
   );
 }
 
 @widgetbook.UseCase(name: 'Horizontal Divider', type: AuraDivider)
 Widget horizontalDividerUseCase(BuildContext context) {
   return AuraDivider(
-    endIndent: _endIndentKnob(context),
     height: _heightKnob(context),
-    indent: _indentKnob(context),
     thickness: _thicknessKnob(context),
+    indent: _indentKnob(context),
+    endIndent: _endIndentKnob(context),
   );
 }
 
@@ -48,9 +48,9 @@ Widget verticalDividerUseCase(BuildContext context) {
       min: 0,
       max: 20,
     ),
-    endIndent: _endIndentKnob(context),
-    indent: _indentKnob(context),
     thickness: _thicknessKnob(context),
+    indent: _indentKnob(context),
+    endIndent: _endIndentKnob(context),
   );
 }
 
@@ -59,8 +59,8 @@ Widget dividerWithLabelUseCase(BuildContext context) {
   return AuraDivider.withLabel(
     label: const Text('Section 1'),
     height: _heightKnob(context),
-    endIndent: _endIndentKnob(context),
-    indent: _indentKnob(context),
     thickness: _thicknessKnob(context),
+    indent: _indentKnob(context),
+    endIndent: _endIndentKnob(context),
   );
 }

@@ -84,8 +84,8 @@ void main() {
       final patched = await database.messageDao.patchMessage(
         created.id,
         MessagesCompanion(
-          content: const Value('Updated'),
           updatedAt: Value(DateTime.now()),
+          content: const Value('Updated'),
         ),
       );
       expect(patched, isNotNull);

@@ -87,35 +87,18 @@ class AuraPressableState extends State<AuraPressable> {
     if (widget.onPressed == null) {
       return Container(
         decoration: widget.decoration,
+        child: widget.child,
         clipBehavior: widget.decoration == null
             ? Clip.none
             : widget.clipBehavior ?? Clip.none,
-        child: widget.child,
       );
     }
 
     return GestureDetector(
-      behavior: HitTestBehavior.translucent,
-      onTap: widget.onPressed,
-      onLongPress: widget.onLongPress,
-      onTapDown: (_) => _onPressed(),
-      onTapUp: (_) {
-        _timer?.cancel();
-        _timer = Timer(
-          auraTheme.animation.normal,
-          _onExitPressed,
-        );
-      },
-      onTapCancel: _onExitPressed,
       child: AuraPadding(
-        padding: widget.padding ?? .none,
         child: Container(
           decoration: widget.decoration,
-          clipBehavior: widget.decoration == null
-              ? Clip.none
-              : widget.clipBehavior ?? Clip.none,
           child: AnimatedContainer(
-            duration: auraTheme.animation.normal,
             color: selectedColor.withValues(alpha: alpha),
             child: MouseRegion(
               onEnter: (details) => _onHover(),
@@ -123,13 +106,25 @@ class AuraPressableState extends State<AuraPressable> {
               cursor: canChangeColor
                   ? SystemMouseCursors.click
                   : MouseCursor.defer,
-              child: Listener(
-                child: widget.child,
-              ),
+              child: Listener(child: widget.child),
             ),
+            duration: auraTheme.animation.normal,
           ),
+          clipBehavior: widget.decoration == null
+              ? Clip.none
+              : widget.clipBehavior ?? Clip.none,
         ),
+        padding: widget.padding ?? .none,
       ),
+      onTapDown: (_) => _onPressed(),
+      onTapUp: (_) {
+        _timer?.cancel();
+        _timer = Timer(auraTheme.animation.normal, _onExitPressed);
+      },
+      onTap: widget.onPressed,
+      onTapCancel: _onExitPressed,
+      onLongPress: widget.onLongPress,
+      behavior: HitTestBehavior.translucent,
     );
   }
 }

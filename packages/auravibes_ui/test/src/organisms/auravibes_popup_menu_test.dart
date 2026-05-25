@@ -13,9 +13,9 @@ void main() {
           home: Scaffold(
             body: Portal(
               child: AuraPopupMenu(
-                controller: controller,
-                items: const [],
                 child: const Text('Open Menu'),
+                items: const [],
+                controller: controller,
               ),
             ),
           ),
@@ -33,11 +33,11 @@ void main() {
           home: Scaffold(
             body: Portal(
               child: AuraPopupMenu(
-                controller: controller,
+                child: const Text('Open Menu'),
                 items: const [
                   AuraPopupMenuItem(title: Text('Item 1')),
                 ],
-                child: const Text('Open Menu'),
+                controller: controller,
               ),
             ),
           ),
@@ -61,11 +61,11 @@ void main() {
           home: Scaffold(
             body: Portal(
               child: AuraPopupMenu(
-                controller: controller,
+                child: const Text('Open Menu'),
                 items: const [
                   AuraPopupMenuItem(title: Text('Item 1')),
                 ],
-                child: const Text('Open Menu'),
+                controller: controller,
               ),
             ),
           ),
@@ -90,11 +90,11 @@ void main() {
           home: Scaffold(
             body: Portal(
               child: AuraPopupMenu(
-                controller: controller,
+                child: const Text('Open Menu'),
                 items: const [
                   AuraPopupMenuItem(title: Text('Item 1')),
                 ],
-                child: const Text('Open Menu'),
+                controller: controller,
               ),
             ),
           ),
@@ -139,11 +139,11 @@ void main() {
           home: Scaffold(
             body: Portal(
               child: AuraPopupMenu(
-                controller: controller,
+                child: const Text('Open Menu'),
                 items: const [
                   AuraPopupMenuItem(title: Text('Item 1')),
                 ],
-                child: const Text('Open Menu'),
+                controller: controller,
               ),
             ),
           ),
@@ -170,11 +170,11 @@ void main() {
           home: Scaffold(
             body: Portal(
               child: AuraPopupMenu(
-                controller: controller,
+                child: const Text('Open Menu'),
                 items: const [
                   AuraPopupMenuDivider(),
                 ],
-                child: const Text('Open Menu'),
+                controller: controller,
               ),
             ),
           ),

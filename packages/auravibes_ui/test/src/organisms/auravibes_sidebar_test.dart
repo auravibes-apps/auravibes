@@ -55,7 +55,6 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: AuraSidebar(
-              isExpanded: false,
               navigationItems: const [
                 AuraNavigationData(
                   icon: Icon(Icons.home),
@@ -63,6 +62,7 @@ void main() {
                 ),
               ],
               onNavigationTap: (_) {},
+              isExpanded: false,
             ),
           ),
         ),
@@ -104,9 +104,9 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: AuraSidebar(
-              header: const Text('Header'),
               navigationItems: const [],
               onNavigationTap: (_) {},
+              header: const Text('Header'),
             ),
           ),
         ),
@@ -120,9 +120,9 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: AuraSidebar(
-              footer: const Text('Footer'),
               navigationItems: const [],
               onNavigationTap: (_) {},
+              footer: const Text('Footer'),
             ),
           ),
         ),
@@ -136,9 +136,9 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: AuraSidebar(
-              middleSection: const Text('Middle'),
               navigationItems: const [],
               onNavigationTap: (_) {},
+              middleSection: const Text('Middle'),
             ),
           ),
         ),

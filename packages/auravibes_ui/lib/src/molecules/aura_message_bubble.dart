@@ -53,8 +53,6 @@ class AuraMessageBubble extends StatelessWidget {
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: GestureDetector(
-        onTap: onTap,
-        onLongPress: onLongPress,
         child: Container(
           constraints: BoxConstraints(
             maxWidth: maxWidth ?? MediaQuery.sizeOf(context).width * 0.75,
@@ -92,6 +90,8 @@ class AuraMessageBubble extends StatelessWidget {
             ],
           ),
         ),
+        onTap: onTap,
+        onLongPress: onLongPress,
       ),
     );
   }
@@ -99,8 +99,8 @@ class AuraMessageBubble extends StatelessWidget {
   EdgeInsets _getPadding() {
     return switch (contentType) {
       AuraMessageContentType.text => const EdgeInsets.symmetric(
-        horizontal: DesignSpacing.md,
         vertical: DesignSpacing.sm,
+        horizontal: DesignSpacing.md,
       ),
       AuraMessageContentType.image => const EdgeInsets.all(DesignSpacing.xs),
       AuraMessageContentType.file => const EdgeInsets.all(DesignSpacing.sm),
@@ -116,10 +116,10 @@ class AuraMessageBubble extends StatelessWidget {
 
     return BoxDecoration(
       color: errorColor ?? baseColor,
-      borderRadius: BorderRadius.circular(DesignBorderRadius.xl),
       border: status == AuraMessageDeliveryStatus.error
           ? Border.fromBorderSide(BorderSide(color: auraColors.error))
           : null,
+      borderRadius: BorderRadius.circular(DesignBorderRadius.xl),
       boxShadow: [
         if (status != AuraMessageDeliveryStatus.error) DesignShadows.sm,
       ],
@@ -136,15 +136,14 @@ class AuraMessageBubble extends StatelessWidget {
         style: TextStyle(
           color: textColor,
           fontSize: DesignTypography.fontSizeBase,
-          fontFamily: DesignTypography.bodyFontFamily,
           height: DesignTypography.lineHeightBase,
+          fontFamily: DesignTypography.bodyFontFamily,
         ),
       ),
       AuraMessageContentType.image => ClipRRect(
         borderRadius: BorderRadius.circular(DesignBorderRadius.md),
         child: Image.network(
           content,
-          fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) => Container(
             padding: const EdgeInsets.all(DesignSpacing.md),
             child: Row(
@@ -152,8 +151,8 @@ class AuraMessageBubble extends StatelessWidget {
               children: [
                 Icon(
                   Icons.broken_image,
-                  color: textColor,
                   size: 20,
+                  color: textColor,
                 ),
                 const SizedBox(width: DesignSpacing.sm),
                 Text(
@@ -163,6 +162,7 @@ class AuraMessageBubble extends StatelessWidget {
               ],
             ),
           ),
+          fit: BoxFit.cover,
         ),
       ),
       AuraMessageContentType.file => Row(
@@ -170,8 +170,8 @@ class AuraMessageBubble extends StatelessWidget {
         children: [
           Icon(
             Icons.attach_file,
-            color: textColor,
             size: 20,
+            color: textColor,
           ),
           const SizedBox(width: DesignSpacing.sm),
           Flexible(

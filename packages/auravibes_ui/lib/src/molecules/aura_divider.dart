@@ -95,8 +95,8 @@ class AuraDivider extends StatelessWidget {
       ),
       child: Center(
         child: Container(
-          height: dividerThickness,
           color: dividerColor,
+          height: dividerThickness,
         ),
       ),
     );
@@ -111,8 +111,8 @@ class AuraDivider extends StatelessWidget {
       ),
       child: Center(
         child: Container(
-          width: dividerThickness,
           color: dividerColor,
+          width: dividerThickness,
         ),
       ),
     );
@@ -133,8 +133,8 @@ class AuraDivider extends StatelessWidget {
         children: [
           Expanded(
             child: Container(
-              height: dividerThickness,
               color: dividerColor,
+              height: dividerThickness,
             ),
           ),
           Padding(
@@ -142,15 +142,15 @@ class AuraDivider extends StatelessWidget {
               horizontal: DesignSpacing.md,
             ),
             child: AuraText(
+              child: label!,
               style: AuraTextStyle.caption,
               color: AuraColorVariant.onSurfaceVariant,
-              child: label!,
             ),
           ),
           Expanded(
             child: Container(
-              height: dividerThickness,
               color: dividerColor,
+              height: dividerThickness,
             ),
           ),
         ],

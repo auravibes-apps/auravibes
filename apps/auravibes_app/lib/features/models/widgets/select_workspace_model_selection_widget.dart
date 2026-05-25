@@ -67,8 +67,8 @@ class SelectWorkspaceModelSelectionWidget extends HookConsumerWidget
 
     return switch (groupedModelsAsync) {
       AsyncLoading() => const AuraPadding(
-        padding: AuraEdgeInsetsGeometry.vertical(.md),
         child: AuraSpinner(),
+        padding: AuraEdgeInsetsGeometry.vertical(.md),
       ),
       AsyncError(:final error, :final stackTrace) => AppErrorWidget(
         error: error,
@@ -177,10 +177,10 @@ class SelectChatData extends HookWidget {
 
     if (groupedModels.isEmpty) {
       return const AuraPadding(
-        padding: AuraEdgeInsetsGeometry.vertical(.md),
         child: TextLocale(
           LocaleKeys.models_screens_no_providers_configured,
         ),
+        padding: AuraEdgeInsetsGeometry.vertical(.md),
       );
     }
 
@@ -205,22 +205,16 @@ class SelectChatData extends HookWidget {
     );
 
     return AuraPadding(
-      padding: const AuraEdgeInsetsGeometry.only(
-        bottom: .sm,
-        left: .md,
-        right: .md,
-      ),
       child: isCompact
           ? AuraColumn(
-              spacing: .sm,
-              mainAxisSize: MainAxisSize.min,
               children: [
                 provider,
                 modelDropdown,
               ],
+              spacing: .sm,
+              mainAxisSize: MainAxisSize.min,
             )
           : AuraRow(
-              spacing: .sm,
               children: [
                 Expanded(
                   child: provider,
@@ -229,7 +223,13 @@ class SelectChatData extends HookWidget {
                   child: modelDropdown,
                 ),
               ],
+              spacing: .sm,
             ),
+      padding: const AuraEdgeInsetsGeometry.only(
+        left: .md,
+        right: .md,
+        bottom: .sm,
+      ),
     );
   }
 }
@@ -249,9 +249,6 @@ class _ProviderDropdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraDropdownSelector<String>(
-      value: selectedProvider,
-      onChanged: onChanged,
-      placeholder: const TextLocale(LocaleKeys.models_screens_select_provider),
       options: providerNames
           .map(
             (name) => AuraDropdownOption(
@@ -260,6 +257,9 @@ class _ProviderDropdown extends StatelessWidget {
             ),
           )
           .toList(),
+      value: selectedProvider,
+      onChanged: onChanged,
+      placeholder: const TextLocale(LocaleKeys.models_screens_select_provider),
     );
   }
 }
@@ -291,18 +291,15 @@ class _ModelDropdown extends StatelessWidget {
     if (!providerSelected) {
       // Disabled state - show placeholder (FR-002)
       return const AuraDropdownSelector<String>(
-        isEnabled: false,
+        options: [],
         placeholder: TextLocale(
           LocaleKeys.models_screens_select_provider_first,
         ),
-        options: [], // Empty when disabled
+        isEnabled: false, // Empty when disabled
       );
     }
 
     return AuraDropdownSelector<String>(
-      value: selectedModelId,
-      onChanged: onChanged,
-      placeholder: const TextLocale(LocaleKeys.models_screens_select_model),
       options: models
           .map(
             (model) => AuraDropdownOption(
@@ -311,17 +308,20 @@ class _ModelDropdown extends StatelessWidget {
             ),
           )
           .toList(),
+      value: selectedModelId,
+      onChanged: onChanged,
+      placeholder: const TextLocale(LocaleKeys.models_screens_select_model),
       header: !hasModelsForProvider
           ? const AuraPadding(
-              padding: AuraEdgeInsetsGeometry.medium,
               child: TextLocale(LocaleKeys.models_screens_no_models_available),
+              padding: AuraEdgeInsetsGeometry.medium,
             )
           : AuraPadding(
-              padding: AuraEdgeInsetsGeometry.medium,
               child: AuraInput(
                 controller: controller,
                 onChanged: onSearchChanged,
               ),
+              padding: AuraEdgeInsetsGeometry.medium,
             ),
     );
   }

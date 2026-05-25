@@ -50,6 +50,14 @@ class ChatInputWidget extends HookConsumerWidget {
       padding: const EdgeInsets.all(16),
       child: AuraInput(
         controller: controller,
+        placeholder: const TextLocale(
+          LocaleKeys.chats_screens_chat_conversation_message_placeholder,
+        ),
+        textInputAction: TextInputAction.send,
+        maxLines: 2,
+        onSubmitted: (value) {
+          sendMessage.call();
+        },
         footer: Row(
           children: [
             // Tools button - always show, modal will handle availability
@@ -57,9 +65,9 @@ class ChatInputWidget extends HookConsumerWidget {
               padding: const EdgeInsets.only(right: 8),
               child: AuraButton(
                 onPressed: onToolsPress,
+                child: const AuraIcon(Icons.build_circle_outlined),
                 variant: AuraButtonVariant.secondary,
                 size: AuraButtonSize.small,
-                child: const AuraIcon(Icons.build_circle_outlined),
               ),
             ),
 
@@ -72,12 +80,12 @@ class ChatInputWidget extends HookConsumerWidget {
                   message: LocaleKeys.compaction_manual_button_tooltip.tr(),
                   child: AuraButton(
                     onPressed: compact,
-                    disabled: disabled || isBusy || isCompacting,
-                    variant: AuraButtonVariant.secondary,
-                    size: AuraButtonSize.small,
                     child: isCompacting
                         ? const AuraSpinner(size: AuraSpinnerSize.small)
                         : const AuraIcon(Icons.compress_outlined),
+                    variant: AuraButtonVariant.secondary,
+                    size: AuraButtonSize.small,
+                    disabled: disabled || isBusy || isCompacting,
                   ),
                 ),
               ),
@@ -91,31 +99,23 @@ class ChatInputWidget extends HookConsumerWidget {
                       .tr(),
                   child: AuraButton(
                     onPressed: onStop!,
+                    child: const AuraIcon(Icons.stop_rounded),
                     variant: AuraButtonVariant.outlined,
                     colorVariant: AuraColorVariant.error,
                     size: AuraButtonSize.small,
-                    child: const AuraIcon(Icons.stop_rounded),
                   ),
                 ),
               ),
 
             // Send button
             AuraButton(
-              disabled: isEmpty || disabled,
               onPressed: sendMessage,
-              size: AuraButtonSize.small,
               child: const AuraIcon(Icons.arrow_upward),
+              size: AuraButtonSize.small,
+              disabled: isEmpty || disabled,
             ),
           ],
         ),
-        placeholder: const TextLocale(
-          LocaleKeys.chats_screens_chat_conversation_message_placeholder,
-        ),
-        maxLines: 2,
-        textInputAction: TextInputAction.send,
-        onSubmitted: (value) {
-          sendMessage.call();
-        },
       ),
     );
   }

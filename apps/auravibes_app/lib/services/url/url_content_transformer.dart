@@ -163,10 +163,10 @@ class UrlContentTransformer {
       return TransformedUrlContent(
         body: truncatedOutput.text,
         format: .markdown,
-        contentType: contentType,
         originalLength: originalLength,
         truncated: truncatedOutput.truncated,
         elapsed: elapsed,
+        contentType: contentType,
       );
     }
 
@@ -191,10 +191,10 @@ class UrlContentTransformer {
     return TransformedUrlContent(
       body: truncatedOutput.text,
       format: .markdown,
-      contentType: contentType,
       originalLength: originalLength,
       truncated: truncatedOutput.truncated,
       elapsed: elapsed,
+      contentType: contentType,
     );
   }
 
@@ -221,10 +221,10 @@ class UrlContentTransformer {
     return TransformedUrlContent(
       body: truncatedOutput.text,
       format: .text,
-      contentType: contentType,
       originalLength: originalLength,
       truncated: truncatedOutput.truncated,
       elapsed: elapsed,
+      contentType: contentType,
     );
   }
 
@@ -637,10 +637,10 @@ class UrlContentTransformer {
       return TransformedUrlContent(
         body: body,
         format: format,
-        contentType: contentType,
         originalLength: originalLength,
         truncated: false,
         elapsed: elapsed,
+        contentType: contentType,
       );
     }
 
@@ -649,10 +649,10 @@ class UrlContentTransformer {
     return TransformedUrlContent(
       body: truncatedOutput.text,
       format: format,
-      contentType: contentType,
       originalLength: originalLength,
       truncated: truncatedOutput.truncated,
       elapsed: elapsed,
+      contentType: contentType,
     );
   }
 

@@ -149,19 +149,16 @@ class _ChatConversationScreen extends HookConsumerWidget {
         compactionState?.status == CompactionExecutionStatus.running;
 
     return AuraScreen(
-      appBar: AuraAppBarWithDrawer(
-        title: Text(conversation.title),
-      ),
       child: AuraColumn(
         children: [
           const ConversationContextUsagePill(),
           SelectWorkspaceModelSelectionWidget(
             workspaceId: workspaceId,
-            workspaceModelSelectionId: conversation.modelId,
             selectWorkspaceModelSelectionId: ref
                 .watch(conversationChatProvider(workspaceId).notifier)
                 .setModel,
             onProviderChanged: (_) {},
+            workspaceModelSelectionId: conversation.modelId,
           ),
           const Expanded(child: _ChatList()),
           const McpConnectingIndicator(),
@@ -172,15 +169,18 @@ class _ChatConversationScreen extends HookConsumerWidget {
           Offstage(
             offstage: hasPendingApprovals,
             child: ChatInputWidget(
+              onSendMessage: onSendMessage,
               onToolsPress: onToolsPress,
               isBusy: busyState?.isBusy ?? false,
               onStop: onStop,
-              onSendMessage: onSendMessage,
               onCompact: onCompact,
               isCompacting: isCompacting,
             ),
           ),
         ],
+      ),
+      appBar: AuraAppBarWithDrawer(
+        title: Text(conversation.title),
       ),
     );
   }
@@ -197,8 +197,8 @@ void _showToolsModal({
     showDialog<void>(
       context: context,
       builder: (context) => ToolsManagementModal(
-        conversationId: conversationId,
         workspaceId: workspaceId,
+        conversationId: conversationId,
       ),
     ),
   );

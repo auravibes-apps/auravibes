@@ -81,12 +81,12 @@ class _AuraTooltipState extends State<AuraTooltip> {
       onEnter: _handlePointerEnter,
       onExit: _handlePointerExit,
       child: GestureDetector(
-        behavior: HitTestBehavior.translucent,
-        onLongPress: _handleLongPress,
         child: CompositedTransformTarget(
           link: _layerLink,
           child: widget.child,
         ),
+        onLongPress: _handleLongPress,
+        behavior: HitTestBehavior.translucent,
       ),
     );
   }
@@ -141,22 +141,22 @@ class _AuraTooltipState extends State<AuraTooltip> {
                       ? Alignment.topCenter
                       : Alignment.bottomCenter,
                   child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 4,
+                      horizontal: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: backgroundColor,
                       borderRadius: BorderRadius.circular(8),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withValues(alpha: 0.15),
-                          blurRadius: 8,
                           offset: const Offset(0, 2),
+                          blurRadius: 8,
                         ),
                       ],
                     ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
+                    margin: const EdgeInsets.symmetric(horizontal: 8),
                     child: Text(
                       widget.message,
                       style: TextStyle(

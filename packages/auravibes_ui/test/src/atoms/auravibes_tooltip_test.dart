@@ -45,8 +45,8 @@ void main() {
           home: Scaffold(
             body: AuraTooltip(
               message: 'Tooltip text',
-              showDuration: Duration(milliseconds: 100),
               child: Text('Target'),
+              showDuration: Duration(milliseconds: 100),
             ),
           ),
         ),
@@ -110,8 +110,8 @@ void main() {
           home: Scaffold(
             body: AuraTooltip(
               message: 'Above',
-              preferBelow: false,
               child: Text('Target'),
+              preferBelow: false,
             ),
           ),
         ),

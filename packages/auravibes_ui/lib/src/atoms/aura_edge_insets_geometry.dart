@@ -71,10 +71,10 @@ class AuraEdgeInsetsGeometry {
 
   EdgeInsetsGeometry _padding(BuildContext context) {
     return EdgeInsetsGeometry.only(
-      bottom: context.auraTheme.fromSpacing(bottom),
       left: context.auraTheme.fromSpacing(left),
-      top: context.auraTheme.fromSpacing(top),
       right: context.auraTheme.fromSpacing(right),
+      top: context.auraTheme.fromSpacing(top),
+      bottom: context.auraTheme.fromSpacing(bottom),
     );
   }
 

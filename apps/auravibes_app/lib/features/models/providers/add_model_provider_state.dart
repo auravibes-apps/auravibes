@@ -63,10 +63,10 @@ class AddModelProviderState extends _$AddModelProviderState {
       return await repo.createModelConnection(
         ModelConnectionToCreate(
           name: state.name!,
-          modelId: state.modelId!,
           key: state.key!,
-          url: state.url,
           workspaceId: _workspaceId,
+          modelId: state.modelId!,
+          url: state.url,
         ),
       );
     } on Exception catch (e, s) {

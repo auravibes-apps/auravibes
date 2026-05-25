@@ -62,29 +62,28 @@ class _CompactionSettingsSectionState
 
     return AuraCard(
       child: AuraColumn(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const AuraText(
+            child: TextLocale(LocaleKeys.compaction_settings_title),
             style: AuraTextStyle.heading6,
             color: AuraColorVariant.onSurface,
-            child: TextLocale(LocaleKeys.compaction_settings_title),
           ),
           const AuraText(
+            child: TextLocale(LocaleKeys.compaction_settings_subtitle),
             style: AuraTextStyle.bodySmall,
             color: AuraColorVariant.onSurfaceVariant,
-            child: TextLocale(LocaleKeys.compaction_settings_subtitle),
           ),
           Material(
             color: Colors.transparent,
             child: SwitchListTile(
+              value: _autoEnabled,
+              onChanged: (value) => setState(() => _autoEnabled = value),
               title: const TextLocale(
                 LocaleKeys.compaction_settings_auto_enabled,
               ),
               subtitle: const TextLocale(
                 LocaleKeys.compaction_settings_auto_enabled_hint,
               ),
-              value: _autoEnabled,
-              onChanged: (value) => setState(() => _autoEnabled = value),
             ),
           ),
           if (_validationError != null)
@@ -123,24 +122,25 @@ class _CompactionSettingsSectionState
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               AuraButton(
-                variant: AuraButtonVariant.ghost,
-                size: AuraButtonSize.small,
                 onPressed: _resetDefaults,
                 child: const TextLocale(
                   LocaleKeys.compaction_settings_reset_defaults,
                 ),
+                variant: AuraButtonVariant.ghost,
+                size: AuraButtonSize.small,
               ),
               const SizedBox(width: 8),
               AuraButton(
-                size: AuraButtonSize.small,
                 onPressed: _save,
                 child: const TextLocale(
                   LocaleKeys.settings_screen_actions_save,
                 ),
+                size: AuraButtonSize.small,
               ),
             ],
           ),
         ],
+        crossAxisAlignment: CrossAxisAlignment.start,
       ),
     );
   }

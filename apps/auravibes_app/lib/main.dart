@@ -52,25 +52,25 @@ class MyApp extends ConsumerWidget {
 
     return Portal(
       child: MaterialApp.router(
-        title: F.title,
-        locale: context.locale,
-        localizationsDelegates: context.localizationDelegates,
-        supportedLocales: context.supportedLocales,
+        routerConfig: routerConfig,
         builder: (context, child) => AuraText(child: child!),
+        title: F.title,
         theme: ThemeData(
           extensions: [
             AuraTheme.light,
           ],
         ),
         darkTheme: ThemeData(
-          colorScheme: const ColorScheme.dark(),
           extensions: [
             AuraTheme.dark,
           ],
+          colorScheme: const ColorScheme.dark(),
         ),
-        debugShowCheckedModeBanner: F.appFlavor != Flavor.prod,
         themeMode: themeMode,
-        routerConfig: routerConfig,
+        locale: context.locale,
+        localizationsDelegates: context.localizationDelegates,
+        supportedLocales: context.supportedLocales,
+        debugShowCheckedModeBanner: F.appFlavor != Flavor.prod,
       ),
     );
   }

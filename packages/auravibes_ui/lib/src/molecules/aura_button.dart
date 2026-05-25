@@ -55,16 +55,7 @@ class AuraButton extends StatelessWidget {
     return SizedBox(
       width: isFullWidth ? double.infinity : null,
       child: AuraPressable(
-        color: DesignColors.transparent,
-        onPressed: (disabled || isLoading) ? null : onPressed,
-        decoration: BoxDecoration(
-          color: _getBackgroundColor(auraColors),
-          borderRadius: BorderRadius.circular(auraTheme.borderRadius.xl),
-          boxShadow: _getBoxShadow(),
-          border: _getBorder(auraColors),
-        ),
         child: AuraPadding(
-          padding: _getPadding(),
           child: Center(
             child: isLoading
                 ? SizedBox(
@@ -79,7 +70,16 @@ class AuraButton extends StatelessWidget {
                     child: child,
                   ),
           ),
+          padding: _getPadding(),
         ),
+        color: DesignColors.transparent,
+        decoration: BoxDecoration(
+          color: _getBackgroundColor(auraColors),
+          border: _getBorder(auraColors),
+          borderRadius: BorderRadius.circular(auraTheme.borderRadius.xl),
+          boxShadow: _getBoxShadow(),
+        ),
+        onPressed: (disabled || isLoading) ? null : onPressed,
       ),
     );
   }
@@ -194,9 +194,9 @@ class AuraButton extends StatelessWidget {
     };
 
     return TextStyle(
+      color: _getForegroundColor(colors),
       fontSize: fontSize,
       fontWeight: fontWeight,
-      color: _getForegroundColor(colors),
       height: typography.lineHeights.base,
     );
   }

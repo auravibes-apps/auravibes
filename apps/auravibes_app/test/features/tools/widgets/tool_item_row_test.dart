@@ -47,12 +47,6 @@ class _MockGroupedNotifier extends GroupedToolsNotifier {
 
 Widget _buildSubject(Widget child) {
   return EasyLocalization(
-    supportedLocales: const [Locale('en')],
-    path: 'assets/i18n',
-    fallbackLocale: const Locale('en'),
-    startLocale: const Locale('en'),
-    useFallbackTranslations: true,
-    useOnlyLangCode: true,
     child: TestProviderScope(
       overrides: [
         workspaceToolsProvider(_workspaceId).overrideWith(
@@ -69,6 +63,12 @@ Widget _buildSubject(Widget child) {
         ),
       ),
     ),
+    supportedLocales: const [Locale('en')],
+    path: 'assets/i18n',
+    fallbackLocale: const Locale('en'),
+    startLocale: const Locale('en'),
+    useOnlyLangCode: true,
+    useFallbackTranslations: true,
   );
 }
 

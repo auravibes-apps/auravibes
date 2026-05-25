@@ -30,10 +30,10 @@ class AuraBadge extends StatelessWidget {
          size: size,
          semanticLabel: semanticLabel,
          child: AuraText(
+           child: child,
            style: size == AuraBadgeSize.small
                ? AuraTextStyle.caption
                : AuraTextStyle.bodySmall,
-           child: child,
          ),
        );
 
@@ -51,10 +51,10 @@ class AuraBadge extends StatelessWidget {
          size: size,
          semanticLabel: semanticLabel ?? '$count notifications',
          child: AuraText(
+           child: Text(count > maxCount ? '$maxCount+' : count.toString()),
            style: size == AuraBadgeSize.small
                ? AuraTextStyle.caption
                : AuraTextStyle.bodySmall,
-           child: Text(count > maxCount ? '$maxCount+' : count.toString()),
          ),
        );
 
@@ -64,11 +64,11 @@ class AuraBadge extends StatelessWidget {
     AuraBadgeVariant variant = AuraBadgeVariant.primary,
     String? semanticLabel,
   }) : this(
+         child: const SizedBox(width: 6, height: 6),
          key: key,
          variant: variant,
          size: AuraBadgeSize.small,
          semanticLabel: semanticLabel ?? 'notification indicator',
-         child: const SizedBox(width: 6, height: 6),
        );
 
   /// The widget to display inside the badge.
@@ -91,12 +91,12 @@ class AuraBadge extends StatelessWidget {
       padding: _getPadding(),
       decoration: BoxDecoration(
         color: _getBackgroundColor(auraColors),
-        borderRadius: BorderRadius.circular(_getBorderRadius()),
         border: variant == AuraBadgeVariant.outlined
             ? Border.all(
                 color: _getBorderColor(auraColors),
               )
             : null,
+        borderRadius: BorderRadius.circular(_getBorderRadius()),
       ),
       child: DefaultTextStyle(
         style: TextStyle(
@@ -109,8 +109,8 @@ class AuraBadge extends StatelessWidget {
 
     if (semanticLabel != null) {
       badge = Semantics(
-        label: semanticLabel,
         child: badge,
+        label: semanticLabel,
       );
     }
 
@@ -120,16 +120,16 @@ class AuraBadge extends StatelessWidget {
   EdgeInsets _getPadding() {
     return switch (size) {
       AuraBadgeSize.small => const EdgeInsets.symmetric(
-        horizontal: DesignSpacing.xs,
         vertical: 2,
+        horizontal: DesignSpacing.xs,
       ),
       AuraBadgeSize.medium => const EdgeInsets.symmetric(
-        horizontal: DesignSpacing.sm,
         vertical: DesignSpacing.xs,
+        horizontal: DesignSpacing.sm,
       ),
       AuraBadgeSize.large => const EdgeInsets.symmetric(
-        horizontal: DesignSpacing.sm,
         vertical: DesignSpacing.xs,
+        horizontal: DesignSpacing.sm,
       ),
     };
   }
@@ -260,10 +260,10 @@ class AuraPositionedBadge extends StatelessWidget {
       children: [
         child,
         Positioned(
+          left: _getLeft(),
           top: _getTop(),
           right: _getRight(),
           bottom: _getBottom(),
-          left: _getLeft(),
           child: badge,
         ),
       ],

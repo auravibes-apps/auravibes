@@ -7,17 +7,17 @@ Widget basicContextMenuUseCase(BuildContext context) {
   final controller = AuraPopupMenuController();
 
   return AuraPopupMenu(
-    controller: controller,
-    items: [
-      AuraPopupMenuItem(title: const Text('Item 1'), onTap: () {}),
-      const AuraPopupMenuDivider(),
-      AuraPopupMenuItem(title: const Text('Item 2'), onTap: () {}),
-    ],
     child: MaterialButton(
       onPressed: () {
         controller.toggle();
       },
       child: const Text('Open Popup Menu'),
     ),
+    items: [
+      AuraPopupMenuItem(title: const Text('Item 1'), onTap: () {}),
+      const AuraPopupMenuDivider(),
+      AuraPopupMenuItem(title: const Text('Item 2'), onTap: () {}),
+    ],
+    controller: controller,
   );
 }

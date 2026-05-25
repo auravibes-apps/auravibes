@@ -415,11 +415,11 @@ void main() {
           ..httpClientAdapter = _InspectAdapter(
             body: '<html><body><h1>Hi</h1></body></html>',
             statusCode: 200,
-            extraHeaders: {
-              'content-type': ['text/html'],
-            },
             onInspect: (method, headers, body) {
               sentAccept = headers?['accept'] as String?;
+            },
+            extraHeaders: {
+              'content-type': ['text/html'],
             },
           );
         final tool = UrlTool(urlService: UrlService(dio: dio));

@@ -60,12 +60,7 @@ class ConversationToolTile extends HookConsumerWidget {
     final isWorkspaceEnabled = toolState.isWorkspaceEnabled;
 
     return AuraCard(
-      padding: .none,
-      style: AuraCardStyle.border,
-      onTap: isWorkspaceEnabled ? onToggle : null,
       child: AuraColumn(
-        spacing: AuraSpacing.none,
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _ToolSummaryRow(
             toolState: toolState,
@@ -78,7 +73,12 @@ class ConversationToolTile extends HookConsumerWidget {
               onChanged: onPermissionChanged,
             ),
         ],
+        spacing: AuraSpacing.none,
+        crossAxisAlignment: CrossAxisAlignment.start,
       ),
+      padding: .none,
+      onTap: isWorkspaceEnabled ? onToggle : null,
+      style: AuraCardStyle.border,
     );
   }
 }
@@ -97,9 +97,7 @@ class _ToolSummaryRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraPadding(
-      padding: .medium,
       child: AuraRow(
-        spacing: AuraSpacing.md,
         children: [
           _ToolIcon(
             toolState: toolState,
@@ -117,7 +115,9 @@ class _ToolSummaryRow extends StatelessWidget {
             isWorkspaceEnabled: isWorkspaceEnabled,
           ),
         ],
+        spacing: AuraSpacing.md,
       ),
+      padding: .medium,
     );
   }
 }
@@ -136,14 +136,14 @@ class _ToolIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 40,
-      height: 40,
       decoration: BoxDecoration(
         color: isEnabled && isWorkspaceEnabled
             ? context.auraColors.primary.withValues(alpha: 0.1)
             : context.auraColors.surfaceVariant,
         borderRadius: BorderRadius.circular(DesignBorderRadius.md),
       ),
+      width: 40,
+      height: 40,
       child: toolState.tool.getIconWidget(),
     );
   }
@@ -161,37 +161,37 @@ class _ToolDescription extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraColumn(
-      spacing: AuraSpacing.xs,
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         AuraText(
+          child: toolState.tool.getNameWidget(),
           color: isWorkspaceEnabled
               ? AuraColorVariant.onSurface
               : AuraColorVariant.onSurfaceVariant,
-          child: toolState.tool.getNameWidget(),
         ),
         if (isWorkspaceEnabled)
           AuraText(
-            style: AuraTextStyle.bodySmall,
-            color: AuraColorVariant.onSurfaceVariant,
             child: DefaultTextStyle.merge(
-              maxLines: 1,
               overflow: TextOverflow.ellipsis,
+              maxLines: 1,
               child: toolState.tool.getDescriptionWidget(),
             ),
+            style: AuraTextStyle.bodySmall,
+            color: AuraColorVariant.onSurfaceVariant,
           )
         else
           AuraText(
-            style: AuraTextStyle.bodySmall,
-            color: AuraColorVariant.onSurfaceVariant,
             child: DefaultTextStyle.merge(
               style: const TextStyle(fontStyle: FontStyle.italic),
               child: const TextLocale(
                 LocaleKeys.tools_screen_disabled_in_workspace,
               ),
             ),
+            style: AuraTextStyle.bodySmall,
+            color: AuraColorVariant.onSurfaceVariant,
           ),
       ],
+      spacing: AuraSpacing.xs,
+      crossAxisAlignment: CrossAxisAlignment.start,
     );
   }
 }
@@ -239,26 +239,26 @@ class _ToolPermissionSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraColumn(
-      spacing: AuraSpacing.none,
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const AuraDivider(),
         AuraPadding(
-          padding: .medium,
           child: AuraColumn(
-            spacing: AuraSpacing.sm,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const AuraText(
+                child: TextLocale(LocaleKeys.tools_screen_permission_label),
                 style: AuraTextStyle.bodySmall,
                 color: AuraColorVariant.onSurfaceVariant,
-                child: TextLocale(LocaleKeys.tools_screen_permission_label),
               ),
               ToolPermissionSelector(value: value, onChanged: onChanged),
             ],
+            spacing: AuraSpacing.sm,
+            crossAxisAlignment: CrossAxisAlignment.start,
           ),
+          padding: .medium,
         ),
       ],
+      spacing: AuraSpacing.none,
+      crossAxisAlignment: CrossAxisAlignment.start,
     );
   }
 }

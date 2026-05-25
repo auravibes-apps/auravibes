@@ -22,24 +22,8 @@ class ConversationContextUsagePill extends ConsumerWidget {
       child: AuraTooltip(
         message: tooltip,
         child: Semantics(
-          label: LocaleKeys.chats_screens_chat_conversation_context_usage_label
-              .tr(),
-          value: semanticValue,
-          container: true,
-          excludeSemantics: true,
           child: AuraContainer(
-            padding: const AuraEdgeInsetsGeometry.symmetric(
-              horizontal: AuraSpacing.sm,
-              vertical: AuraSpacing.xs,
-            ),
-            borderRadius: context.auraTheme.borderRadius.full,
-            backgroundColor: AuraColorVariant.surfaceVariant,
-            border: Border.fromBorderSide(
-              BorderSide(color: auraColors.outlineVariant),
-            ),
             child: AuraRow(
-              mainAxisSize: MainAxisSize.min,
-              spacing: AuraSpacing.xs,
               children: [
                 AuraIcon(
                   data.level.icon,
@@ -53,28 +37,44 @@ class ConversationContextUsagePill extends ConsumerWidget {
                       DesignBorderRadius.full,
                     ),
                     child: LinearProgressIndicator(
-                      minHeight: 4,
                       value: data.progress.clamp(0.0, 1.0),
-                      color: data.progressColor(auraColors),
                       backgroundColor: auraColors.onSurfaceVariant.withValues(
                         alpha: 0.25,
                       ),
+                      color: data.progressColor(auraColors),
+                      minHeight: 4,
                     ),
                   ),
                 ),
                 AuraText(
+                  child: Text(data.usageLabel),
                   style: AuraTextStyle.caption,
                   color: AuraColorVariant.onSurfaceVariant,
-                  child: Text(data.usageLabel),
                 ),
                 AuraBadge.text(
-                  size: AuraBadgeSize.small,
-                  variant: data.level.badgeVariant,
                   child: Text(data.percentLabel),
+                  variant: data.level.badgeVariant,
+                  size: AuraBadgeSize.small,
                 ),
               ],
+              spacing: AuraSpacing.xs,
+              mainAxisSize: MainAxisSize.min,
+            ),
+            padding: const AuraEdgeInsetsGeometry.symmetric(
+              horizontal: AuraSpacing.sm,
+              vertical: AuraSpacing.xs,
+            ),
+            backgroundColor: AuraColorVariant.surfaceVariant,
+            borderRadius: context.auraTheme.borderRadius.full,
+            border: Border.fromBorderSide(
+              BorderSide(color: auraColors.outlineVariant),
             ),
           ),
+          container: true,
+          excludeSemantics: true,
+          label: LocaleKeys.chats_screens_chat_conversation_context_usage_label
+              .tr(),
+          value: semanticValue,
         ),
       ),
     );

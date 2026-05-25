@@ -30,8 +30,8 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraContainer(
-              padding: customPadding,
               child: Text('Content'),
+              padding: customPadding,
             ),
           ),
         ),
@@ -48,8 +48,8 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraContainer(
-              margin: customMargin,
               child: Text('Content'),
+              margin: customMargin,
             ),
           ),
         ),
@@ -66,8 +66,8 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraContainer(
-              backgroundColor: customColor,
               child: Text('Content'),
+              backgroundColor: customColor,
             ),
           ),
         ),
@@ -86,8 +86,8 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraContainer(
-              borderRadius: customRadius,
               child: Text('Content'),
+              borderRadius: customRadius,
             ),
           ),
         ),
@@ -107,8 +107,8 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraContainer(
-              border: customBorder,
               child: Text('Content'),
+              border: customBorder,
             ),
           ),
         ),
@@ -127,9 +127,9 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraContainer(
+              child: Text('Content'),
               width: customWidth,
               height: customHeight,
-              child: Text('Content'),
             ),
           ),
         ),
@@ -147,8 +147,8 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraContainer(
-              alignment: customAlignment,
               child: Text('Content'),
+              alignment: customAlignment,
             ),
           ),
         ),
@@ -179,8 +179,8 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraContainer(
-              shadow: AuraContainerShadow.sm,
               child: Text('Content'),
+              shadow: AuraContainerShadow.sm,
             ),
           ),
         ),
@@ -196,8 +196,8 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraContainer(
-              shadow: AuraContainerShadow.md,
               child: Text('Content'),
+              shadow: AuraContainerShadow.md,
             ),
           ),
         ),
@@ -213,8 +213,8 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraContainer(
-              shadow: AuraContainerShadow.lg,
               child: Text('Content'),
+              shadow: AuraContainerShadow.lg,
             ),
           ),
         ),
@@ -230,8 +230,8 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraContainer(
-              shadow: AuraContainerShadow.xl,
               child: Text('Content'),
+              shadow: AuraContainerShadow.xl,
             ),
           ),
         ),
@@ -247,8 +247,8 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraContainer(
-              shadow: AuraContainerShadow.inner,
               child: Text('Content'),
+              shadow: AuraContainerShadow.inner,
             ),
           ),
         ),
@@ -264,8 +264,8 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraContainer(
-              shadow: AuraContainerShadow.glass,
               child: Text('Content'),
+              shadow: AuraContainerShadow.glass,
             ),
           ),
         ),
@@ -283,8 +283,8 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraContainer(
-              semanticLabel: semanticLabel,
               child: Text('Content'),
+              semanticLabel: semanticLabel,
             ),
           ),
         ),

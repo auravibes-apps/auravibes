@@ -27,9 +27,6 @@ class McpConnectingIndicator extends ConsumerWidget {
         .toList();
 
     return AuraContainer(
-      backgroundColor: AuraColorVariant.surfaceVariant,
-      padding: .small,
-      margin: .small,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -37,8 +34,8 @@ class McpConnectingIndicator extends ConsumerWidget {
             width: 16,
             height: 16,
             child: CircularProgressIndicator(
-              strokeWidth: 2,
               color: context.auraColors.primary,
+              strokeWidth: 2,
             ),
           ),
           SizedBox(width: context.auraTheme.spacing.sm),
@@ -56,6 +53,9 @@ class McpConnectingIndicator extends ConsumerWidget {
           ),
         ],
       ),
+      padding: .small,
+      margin: .small,
+      backgroundColor: AuraColorVariant.surfaceVariant,
     );
   }
 }

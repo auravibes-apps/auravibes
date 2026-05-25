@@ -42,12 +42,12 @@ void main() {
     }) async {
       final companion = ToolsCompanion.insert(
         workspaceId: workspaceId,
-        toolId: toolId,
-        isEnabled: Value(isEnabled),
-        config: config != null ? Value(config) : const Value.absent(),
         workspaceToolsGroupId: groupId != null
             ? Value(groupId)
             : const Value.absent(),
+        toolId: toolId,
+        config: config != null ? Value(config) : const Value.absent(),
+        isEnabled: Value(isEnabled),
       );
       return database.workspaceToolsDao
           .insertToolsBatch([companion])
@@ -210,9 +210,9 @@ void main() {
       await database.workspaceToolsDao.insertToolsBatch([
         ToolsCompanion.insert(
           workspaceId: workspaceId,
+          workspaceToolsGroupId: Value(group.id),
           toolId: 'mcp_tool',
           isEnabled: const Value(true),
-          workspaceToolsGroupId: Value(group.id),
         ),
       ]);
       final found = await database.workspaceToolsDao.getEnabledToolByToolName(
@@ -326,13 +326,13 @@ void main() {
       await database.workspaceToolsDao.insertToolsBatch([
         ToolsCompanion.insert(
           workspaceId: workspaceId,
-          toolId: 'gt1',
           workspaceToolsGroupId: Value(group.id),
+          toolId: 'gt1',
         ),
         ToolsCompanion.insert(
           workspaceId: workspaceId,
-          toolId: 'gt2',
           workspaceToolsGroupId: Value(group.id),
+          toolId: 'gt2',
         ),
       ]);
       final deleted = await database.workspaceToolsDao.deleteToolsByGroupId(
@@ -352,8 +352,8 @@ void main() {
       await database.workspaceToolsDao.insertToolsBatch([
         ToolsCompanion.insert(
           workspaceId: workspaceId,
-          toolId: 'gt1',
           workspaceToolsGroupId: Value(group.id),
+          toolId: 'gt1',
         ),
       ]);
       final tools = await database.workspaceToolsDao.getToolsByGroupId(

@@ -397,20 +397,20 @@ class DesignInputSizes {
 
   /// Small input padding for compact input fields.
   static const EdgeInsets paddingSm = EdgeInsets.symmetric(
-    horizontal: 8,
     vertical: 6,
+    horizontal: 8,
   );
 
   /// Medium input padding for standard input fields.
   static const EdgeInsets paddingMd = EdgeInsets.symmetric(
-    horizontal: 12,
     vertical: 8,
+    horizontal: 12,
   );
 
   /// Large input padding for prominent input fields.
   static const EdgeInsets paddingLg = EdgeInsets.symmetric(
-    horizontal: 16,
     vertical: 12,
+    horizontal: 16,
   );
 }
 

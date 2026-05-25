@@ -18,70 +18,42 @@ class ToolsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return AuraScreen(
-      appBar: AuraAppBar(
-        title: const TextLocale(LocaleKeys.tools_screen_title),
-        leading: AuraIconButton(
-          icon: Icons.arrow_back,
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        actions: [
-          // Add MCP Server button
-          AuraIconButton(
-            icon: Icons.extension,
-            onPressed: () =>
-                AddMcpModal.show(context, workspaceId: workspaceId),
-            tooltip: LocaleKeys.mcp_modal_add_mcp_tooltip.tr(context: context),
-          ),
-          AuraIconButton(
-            icon: Icons.refresh,
-            onPressed: () {
-              ref.invalidate(workspaceToolsProvider(workspaceId));
-            },
-            tooltip: LocaleKeys.tools_screen_refresh_tooltip.tr(
-              context: context,
-            ),
-          ),
-        ],
-      ),
       child: Stack(
         children: [
           Padding(
             padding: const EdgeInsets.all(8),
             child: AuraColumn(
               children: [
-                // Header section
                 AuraCard(
                   child: AuraColumn(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    spacing: AuraSpacing.sm,
                     children: [
                       const AuraRow(
                         children: [
                           AuraText(
+                            child: Icon(Icons.build_circle_outlined),
                             style: AuraTextStyle.heading3,
                             color: AuraColorVariant.primary,
-                            child: Icon(Icons.build_circle_outlined),
                           ),
                           AuraText(
-                            style: AuraTextStyle.heading4,
                             child: TextLocale(
                               LocaleKeys.tools_screen_workspace_ai_tools,
                             ),
+                            style: AuraTextStyle.heading4,
                           ),
                         ],
                       ),
                       const AuraText(
-                        color: AuraColorVariant.onSurfaceVariant,
                         child: TextLocale(
                           LocaleKeys.tools_screen_enable_configure_description,
                         ),
+                        color: AuraColorVariant.onSurfaceVariant,
                       ),
                       Row(
                         children: [
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
                               vertical: 6,
+                              horizontal: 12,
                             ),
                             decoration: BoxDecoration(
                               color: Colors.green[100],
@@ -105,30 +77,53 @@ class ToolsScreen extends ConsumerWidget {
                         ],
                       ),
                     ],
+                    spacing: AuraSpacing.sm,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                   ),
                 ),
-
-                // Tools list
                 Expanded(
                   child: ToolsWorkspaceListWidget(workspaceId: workspaceId),
                 ),
               ],
             ),
           ),
-          // Floating Action Button
           Positioned(
             right: context.auraTheme.spacing.md,
             bottom: context.auraTheme.spacing.md,
             child: AuraFloatingActionButton(
-              icon: Icons.add,
               onPressed: () =>
                   AddToolModal.show(context, workspaceId: workspaceId),
+              icon: Icons.add,
               tooltip: LocaleKeys.tools_screen_add_tool_tooltip.tr(
                 context: context,
               ),
             ),
           ),
         ],
+      ),
+      appBar: AuraAppBar(
+        title: const TextLocale(LocaleKeys.tools_screen_title),
+        actions: [
+          AuraIconButton(
+            icon: Icons.extension,
+            onPressed: () =>
+                AddMcpModal.show(context, workspaceId: workspaceId),
+            tooltip: LocaleKeys.mcp_modal_add_mcp_tooltip.tr(context: context),
+          ),
+          AuraIconButton(
+            icon: Icons.refresh,
+            onPressed: () {
+              ref.invalidate(workspaceToolsProvider(workspaceId));
+            },
+            tooltip: LocaleKeys.tools_screen_refresh_tooltip.tr(
+              context: context,
+            ),
+          ),
+        ],
+        leading: AuraIconButton(
+          icon: Icons.arrow_back,
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
     );
   }

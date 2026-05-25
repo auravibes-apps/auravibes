@@ -28,8 +28,8 @@ class ChatQueuedMessagesIndicator extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: DesignSpacing.md),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
@@ -40,30 +40,30 @@ class ChatQueuedMessagesIndicator extends ConsumerWidget {
               ),
               SizedBox(width: context.auraTheme.spacing.sm),
               AuraText(
-                style: AuraTextStyle.caption,
                 child: Text(
                   LocaleKeys
                       .chats_screens_chat_conversation_queued_messages_count
                       .plural(queuedDrafts.length),
                 ),
+                style: AuraTextStyle.caption,
               ),
               const Spacer(),
               AuraButton(
-                variant: AuraButtonVariant.text,
-                size: AuraButtonSize.small,
                 onPressed: () => notifier.clear(conversationId),
                 child: Text(
                   LocaleKeys.chats_screens_chat_conversation_queued_clear_all
                       .tr(),
                 ),
+                variant: AuraButtonVariant.text,
+                size: AuraButtonSize.small,
               ),
             ],
           ),
           const Divider(height: 1),
           for (final (index, draft) in queuedDrafts.indexed)
             Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
                   padding: const EdgeInsets.symmetric(
@@ -73,27 +73,27 @@ class ChatQueuedMessagesIndicator extends ConsumerWidget {
                     children: [
                       Expanded(
                         child: AuraText(
-                          style: AuraTextStyle.caption,
                           child: Text(
                             draft.content,
-                            maxLines: 1,
                             overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                           ),
+                          style: AuraTextStyle.caption,
                         ),
                       ),
                       SizedBox(width: context.auraTheme.spacing.xs),
                       IconButton(
-                        icon: const Icon(Icons.close, size: 20),
+                        padding: const EdgeInsets.all(14),
                         onPressed: () => notifier.remove(
                           conversationId: conversationId,
                           draftId: draft.id,
                         ),
+                        tooltip: LocaleKeys.common_remove.tr(),
                         constraints: const BoxConstraints(
                           minWidth: 48,
                           minHeight: 48,
                         ),
-                        padding: const EdgeInsets.all(14),
-                        tooltip: LocaleKeys.common_remove.tr(),
+                        icon: const Icon(Icons.close, size: 20),
                       ),
                     ],
                   ),
