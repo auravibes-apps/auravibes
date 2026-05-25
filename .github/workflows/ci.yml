@@ -26,7 +26,7 @@ jobs:
 
     steps:
       - name: 📚 Git Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
 
@@ -44,7 +44,7 @@ jobs:
           fi
 
       - name: 🔧 Setup FVM
-        uses: kuhnroyal/flutter-fvm-config-action/config@v3
+        uses: kuhnroyal/flutter-fvm-config-action/config@c378498f1d1962d33039c3989411093ef8a17b2c # v3
         id: fvm-config-action
 
       - name: 🔍 Detect Flutter channel
@@ -61,7 +61,7 @@ jobs:
           fi
 
       - name: 🐦 Setup Flutter
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           flutter-version: ${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}
           channel: ${{ steps.channel-detect.outputs.channel }}
@@ -106,7 +106,7 @@ jobs:
 
     steps:
       - name: 📚 Git Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
 
@@ -124,7 +124,7 @@ jobs:
           fi
 
       - name: 🔧 Setup FVM
-        uses: kuhnroyal/flutter-fvm-config-action/config@v3
+        uses: kuhnroyal/flutter-fvm-config-action/config@c378498f1d1962d33039c3989411093ef8a17b2c # v3
         id: fvm-config-action
 
       - name: 🔍 Detect Flutter channel
@@ -141,7 +141,7 @@ jobs:
           fi
 
       - name: 🐦 Setup Flutter
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           flutter-version: ${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}
           channel: ${{ steps.channel-detect.outputs.channel }}
@@ -222,12 +222,12 @@ jobs:
 
     steps:
       - name: 📚 Git Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
 
       - name: 🔧 Setup FVM
-        uses: kuhnroyal/flutter-fvm-config-action/config@v3
+        uses: kuhnroyal/flutter-fvm-config-action/config@c378498f1d1962d33039c3989411093ef8a17b2c # v3
         id: fvm-config-action
 
       - name: 🔍 Detect Flutter channel
@@ -244,7 +244,7 @@ jobs:
           fi
 
       - name: 🐦 Setup Flutter
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           flutter-version: ${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}
           channel: ${{ steps.channel-detect.outputs.channel }}
@@ -311,7 +311,7 @@ jobs:
           RUBY
 
       - name: 📤 Upload Coverage
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: coverage-${{ matrix.id }}
           path: ${{ matrix.package }}/coverage/lcov.info
@@ -325,7 +325,7 @@ jobs:
 
     steps:
       - name: 📚 Git Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
           fetch-depth: 0
@@ -343,7 +343,7 @@ jobs:
 
       - name: 📥 Download Coverage
         if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
           pattern: coverage-*
           path: coverage-artifacts
