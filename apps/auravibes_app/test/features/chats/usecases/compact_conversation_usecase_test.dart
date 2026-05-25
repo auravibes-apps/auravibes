@@ -5,6 +5,7 @@ import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
+import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
@@ -497,7 +498,7 @@ void main() {
       'preserves tool calls and resolved tool results in compaction prompt',
       () async {
         final messages = [
-          _makeMessage(id: 'msg-1', content: 'Need weather for Bogota'),
+          _makeMessage(content: 'Need weather for Bogota'),
           _makeMessage(
             id: 'msg-2',
             isUser: false,
@@ -548,7 +549,7 @@ void main() {
                 ).captured.single
                 as List<ChatMessage>;
 
-        expect(captured, hasLength(6));
+        expect(captured, hasLength(5));
         expect(captured[1].role.name, 'user');
         expect(captured[1].text, 'Need weather for Bogota');
         expect(captured[2].role.name, 'model');
