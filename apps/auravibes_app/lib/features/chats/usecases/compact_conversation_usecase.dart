@@ -14,6 +14,7 @@ import 'package:auravibes_app/features/chats/usecases/select_compaction_range_us
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/providers/chatbot_service_provider.dart';
+import 'package:auravibes_app/services/chatbot_service/build_prompt_chat_messages.dart';
 import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
 import 'package:dartantic_ai/dartantic_ai.dart' hide Provider;
 import 'package:riverpod/riverpod.dart';
@@ -37,6 +38,8 @@ class CompactConversationUsecase {
 
   static const String _failureMessageKey =
       LocaleKeys.compaction_errors_auto_blocked;
+  static const BuildPromptChatMessages _buildPromptChatMessages =
+      BuildPromptChatMessages();
 
   static const String _compactionSystemPrompt =
       ''
@@ -110,9 +113,7 @@ class CompactConversationUsecase {
         summaryText = await _generateSummary(foundModel, chatHistory);
       } on Exception catch (e) {
         if (trigger == CompactionTrigger.auto) {
-          await _persistRequiredFailureMessage(
-            conversationId: conversationId,
-          );
+          await _persistRequiredFailureMessage(conversationId: conversationId);
         }
 
         throw CompactionFailedException(cause: e);
@@ -139,28 +140,14 @@ class CompactConversationUsecase {
   }
 
   List<ChatMessage> _buildCompactionPrompt(List<MessageEntity> messages) {
-    final history = <ChatMessage>[
+    return [
       ChatMessage.system(_compactionSystemPrompt),
-    ];
-
-    for (final message in messages) {
-      if (message.isUser) {
-        history.add(ChatMessage.user(message.content));
-      } else if (message.messageType == MessageType.system) {
-        history.add(ChatMessage.system(message.content));
-      } else {
-        history.add(ChatMessage.model(message.content));
-      }
-    }
-
-    history.add(
+      ..._buildPromptChatMessages(messages),
       ChatMessage.user(
         'Please create a comprehensive summary of the above conversation. '
         'Preserve all goals, decisions, technical details, and current status.',
       ),
-    );
-
-    return history;
+    ];
   }
 
   Future<String> _generateSummary(
