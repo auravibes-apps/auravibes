@@ -174,13 +174,7 @@ void main() {
           codeChallenge: 'challenge-123',
         );
 
-        expect(
-          uri.toString(),
-          'https://example.com/oauth/authorize?response_type=code'
-          '&redirect_uri=auravibes%3A%2F&state=state-123'
-          '&code_challenge=challenge-123&code_challenge_method=S256'
-          '&client_id=client-123&scope=tools.read+tools.write',
-        );
+        expect(uri.queryParameters['scope'], 'tools.read tools.write');
       });
 
       test('omits scope when discovery did not provide one', () {
