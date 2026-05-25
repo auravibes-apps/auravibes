@@ -11,7 +11,7 @@
 			isa = PBXAggregateTarget;
 			buildConfigurationList = 33CC111B2044C6BA0003C045 /* Build configuration list for PBXAggregateTarget "Flutter Assemble" */;
 			buildPhases = (
-				33CC111E2044C6BF0003C045 /* ShellScript */,
+				33CC111E2044C6BF0003C045,
 			);
 			dependencies = (
 			);
@@ -32,28 +32,28 @@
 		33CC11132044BFA00003C045 /* MainFlutterWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33CC11122044BFA00003C045 /* MainFlutterWindow.swift */; };
 		3D4D057F6628BA37FAD56848 /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C9E337DA165623B7DF7B1204 /* Pods_RunnerTests.framework */; };
 		4E7872404299F525F7499FCD /* prodProfile.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 0CC193C27F89F8C2D8191B6B /* prodProfile.xcconfig */; };
+		78A318202AECB46A00862997 = {isa = PBXBuildFile; productRef = 78A3181F2AECB46A00862997; };
 		7F0C20592132039ECDFF1F00 /* devDebug.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = A5768BDDCD37924333561EB0 /* devDebug.xcconfig */; };
 		956E953B9DFCADA611245F92 /* devRelease.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 1A37D7DBAAB8EFB5C82C2F4E /* devRelease.xcconfig */; };
 		A16C8D1F08AF732C9786504B /* prodRelease.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 3EBF5C26151B63B051CBDE7D /* prodRelease.xcconfig */; };
 		B2811709B109E45B294064EE /* betaProfile.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = D4E965B4A9D59545F5C64434 /* betaProfile.xcconfig */; };
 		BD6902CB2673424304E412A5 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 11C4EC1501DCA7073D17CA33 /* Pods_Runner.framework */; };
 		D3466AD6880F90956EDCDB50 /* devProfile.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = D356F51D32FD6850C565D1EA /* devProfile.xcconfig */; };
-		78A318202AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage in Frameworks */ = {isa = PBXBuildFile; productRef = 78A3181F2AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		331C80D9294CF71000263BE5 /* PBXContainerItemProxy */ = {
+		331C80D9294CF71000263BE5 = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 33CC10E52044A3C60003C045 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 33CC10EC2044A3C60003C045;
+			remoteGlobalIDString = 33CC10EC2044A3C60003C045 /* Runner */;
 			remoteInfo = Runner;
 		};
-		33CC111F2044C79F0003C045 /* PBXContainerItemProxy */ = {
+		33CC111F2044C79F0003C045 = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 33CC10E52044A3C60003C045 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 33CC111A2044C6BA0003C045;
+			remoteGlobalIDString = 33CC111A2044C6BA0003C045 /* Flutter Assemble */;
 			remoteInfo = FLX;
 		};
 /* End PBXContainerItemProxy section */
@@ -105,6 +105,7 @@
 		6D9266E12899186562B139E1 /* Pods-RunnerTests.debug-dev.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.debug-dev.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.debug-dev.xcconfig"; sourceTree = "<group>"; };
 		75CDAE332E89C6797CE15DD7 /* Pods-Runner.release-prod.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release-prod.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release-prod.xcconfig"; sourceTree = "<group>"; };
 		7806A7D41DF9E623675DE79F /* betaRelease.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = betaRelease.xcconfig; path = Runner/Configs/betaRelease.xcconfig; sourceTree = "<group>"; };
+		78E0A7A72DC9AD7400C4905E /* FlutterGeneratedPluginSwiftPackage */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = FlutterGeneratedPluginSwiftPackage; path = ephemeral/Packages/FlutterGeneratedPluginSwiftPackage; sourceTree = "<group>"; };
 		7904073869B2E33DEF3F228F /* Pods-Runner.debug-prod.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug-prod.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug-prod.xcconfig"; sourceTree = "<group>"; };
 		7AFA3C8E1D35360C0083082E /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
 		848FC8A3F3699FEC1D4E9FE7 /* Pods-Runner.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile.xcconfig"; sourceTree = "<group>"; };
@@ -125,7 +126,6 @@
 		D4E965B4A9D59545F5C64434 /* betaProfile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = betaProfile.xcconfig; path = Runner/Configs/betaProfile.xcconfig; sourceTree = "<group>"; };
 		DE0161DE32C78B2BC43B9C25 /* Pods-Runner.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"; sourceTree = "<group>"; };
 		F625EEBE2D96145E5FD77783 /* Pods-RunnerTests.debug-beta.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.debug-beta.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.debug-beta.xcconfig"; sourceTree = "<group>"; };
-		78E0A7A72DC9AD7400C4905E /* FlutterGeneratedPluginSwiftPackage */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = FlutterGeneratedPluginSwiftPackage; path = ephemeral/Packages/FlutterGeneratedPluginSwiftPackage; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -141,7 +141,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				78A318202AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage in Frameworks */,
+				78A318202AECB46A00862997,
 				BD6902CB2673424304E412A5 /* Pods_Runner.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -289,7 +289,7 @@
 			buildRules = (
 			);
 			dependencies = (
-				331C80DA294CF71000263BE5 /* PBXTargetDependency */,
+				331C80DA294CF71000263BE5,
 			);
 			name = RunnerTests;
 			productName = RunnerTests;
@@ -297,9 +297,6 @@
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 		33CC10EC2044A3C60003C045 /* Runner */ = {
-			packageProductDependencies = (
-				78A3181F2AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage */,
-			);
 			isa = PBXNativeTarget;
 			buildConfigurationList = 33CC10FB2044A3C60003C045 /* Build configuration list for PBXNativeTarget "Runner" */;
 			buildPhases = (
@@ -308,15 +305,18 @@
 				33CC10EA2044A3C60003C045 /* Frameworks */,
 				33CC10EB2044A3C60003C045 /* Resources */,
 				33CC110E2044A8840003C045 /* Bundle Framework */,
-				3399D490228B24CF009A79C7 /* ShellScript */,
+				3399D490228B24CF009A79C7,
 				9D54A2217D4B4027F0C39216 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				33CC11202044C79F0003C045 /* PBXTargetDependency */,
+				33CC11202044C79F0003C045,
 			);
 			name = Runner;
+			packageProductDependencies = (
+				78A3181F2AECB46A00862997,
+			);
 			productName = Runner;
 			productReference = 33CC10ED2044A3C60003C045 /* auravibes.app */;
 			productType = "com.apple.product-type.application";
@@ -325,9 +325,6 @@
 
 /* Begin PBXProject section */
 		33CC10E52044A3C60003C045 /* Project object */ = {
-			packageReferences = (
-				781AD8BC2B33823900A9FFBB /* XCLocalSwiftPackageReference "Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage" */,
-			);
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
@@ -337,7 +334,7 @@
 				TargetAttributes = {
 					331C80D4294CF70F00263BE5 = {
 						CreatedOnToolsVersion = 14.0;
-						TestTargetID = 33CC10EC2044A3C60003C045;
+						TestTargetID = 33CC10EC2044A3C60003C045 /* Runner */;
 					};
 					33CC10EC2044A3C60003C045 = {
 						CreatedOnToolsVersion = 9.2;
@@ -364,6 +361,9 @@
 				Base,
 			);
 			mainGroup = 33CC10E42044A3C60003C045;
+			packageReferences = (
+				781AD8BC2B33823900A9FFBB,
+			);
 			productRefGroup = 33CC10EE2044A3C60003C045 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -426,7 +426,7 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		3399D490228B24CF009A79C7 /* ShellScript */ = {
+		3399D490228B24CF009A79C7 = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -444,7 +444,7 @@
 			shellPath = /bin/sh;
 			shellScript = "echo \"$PRODUCT_NAME.app\" > \"$PROJECT_DIR\"/Flutter/ephemeral/.app_filename && \"$FLUTTER_ROOT\"/packages/flutter_tools/bin/macos_assemble.sh embed\n";
 		};
-		33CC111E2044C6BF0003C045 /* ShellScript */ = {
+		33CC111E2044C6BF0003C045 = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -527,15 +527,15 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		331C80DA294CF71000263BE5 /* PBXTargetDependency */ = {
+		331C80DA294CF71000263BE5 = {
 			isa = PBXTargetDependency;
 			target = 33CC10EC2044A3C60003C045 /* Runner */;
-			targetProxy = 331C80D9294CF71000263BE5 /* PBXContainerItemProxy */;
+			targetProxy = 331C80D9294CF71000263BE5;
 		};
-		33CC11202044C79F0003C045 /* PBXTargetDependency */ = {
+		33CC11202044C79F0003C045 = {
 			isa = PBXTargetDependency;
 			target = 33CC111A2044C6BA0003C045 /* Flutter Assemble */;
-			targetProxy = 33CC111F2044C79F0003C045 /* PBXContainerItemProxy */;
+			targetProxy = 33CC111F2044C79F0003C045;
 		};
 /* End PBXTargetDependency section */
 
@@ -568,7 +568,7 @@
 			baseConfigurationReference = 1A37D7DBAAB8EFB5C82C2F4E /* devRelease.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_APPICON_NAME = "$(ASSET_PREFIX)AppIcon";
+				ASSETCATALOG_COMPILER_APPICON_NAME = "AppIcon-$(ASSET_PREFIX)";
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
@@ -612,7 +612,7 @@
 				INFOPLIST_FILE = Runner/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
-					"@executable_path/Frameworks",
+					"@executable_path/../Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
@@ -628,12 +628,20 @@
 			};
 			name = "Release-dev";
 		};
+		1EEBC606DFFDA3825B973241 /* Release-dev */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 1A37D7DBAAB8EFB5C82C2F4E /* devRelease.xcconfig */;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = "Release-dev";
+		};
 		251296C2A0ADB028E1F5C691 /* Release-beta */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 7806A7D41DF9E623675DE79F /* betaRelease.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_APPICON_NAME = "$(ASSET_PREFIX)AppIcon";
+				ASSETCATALOG_COMPILER_APPICON_NAME = "AppIcon-$(ASSET_PREFIX)";
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
@@ -677,7 +685,7 @@
 				INFOPLIST_FILE = Runner/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
-					"@executable_path/Frameworks",
+					"@executable_path/../Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
@@ -692,6 +700,14 @@
 				SWIFT_VERSION = 5.0;
 			};
 			name = "Release-beta";
+		};
+		2BBB8E7EBF3EFEE3AF58ADA6 /* Debug-prod */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 8D69B5B72633623B2DDFB155 /* prodDebug.xcconfig */;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = "Debug-prod";
 		};
 		331C80DB294CF71000263BE5 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -980,6 +996,22 @@
 			};
 			name = Release;
 		};
+		3A824BFD48FFB4CF73B32AAB /* Profile-dev */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = D356F51D32FD6850C565D1EA /* devProfile.xcconfig */;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = "Profile-dev";
+		};
+		43EF2DC963F7E072868B7779 /* Release-beta */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7806A7D41DF9E623675DE79F /* betaRelease.xcconfig */;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = "Release-beta";
+		};
 		49A4542A151C75AD5EFBF971 /* Release-beta */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 7806A7D41DF9E623675DE79F /* betaRelease.xcconfig */;
@@ -1007,7 +1039,7 @@
 			baseConfigurationReference = B25491BD36C2C724EE636C53 /* betaDebug.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_APPICON_NAME = "$(ASSET_PREFIX)AppIcon";
+				ASSETCATALOG_COMPILER_APPICON_NAME = "AppIcon-$(ASSET_PREFIX)";
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
@@ -1057,7 +1089,7 @@
 				INFOPLIST_FILE = Runner/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
-					"@executable_path/Frameworks",
+					"@executable_path/../Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1231,6 +1263,14 @@
 			};
 			name = "Release-dev";
 		};
+		7A1B9AB5DDDBB530218CE0E0 /* Profile-prod */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 0CC193C27F89F8C2D8191B6B /* prodProfile.xcconfig */;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = "Profile-prod";
+		};
 		7CF54389C4834D033CF88FF1 /* Debug-dev */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = A5768BDDCD37924333561EB0 /* devDebug.xcconfig */;
@@ -1247,7 +1287,7 @@
 			baseConfigurationReference = 3EBF5C26151B63B051CBDE7D /* prodRelease.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_APPICON_NAME = "$(ASSET_PREFIX)AppIcon";
+				ASSETCATALOG_COMPILER_APPICON_NAME = "AppIcon-$(ASSET_PREFIX)";
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
@@ -1291,7 +1331,7 @@
 				INFOPLIST_FILE = Runner/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
-					"@executable_path/Frameworks",
+					"@executable_path/../Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1312,7 +1352,7 @@
 			baseConfigurationReference = A5768BDDCD37924333561EB0 /* devDebug.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_APPICON_NAME = "$(ASSET_PREFIX)AppIcon";
+				ASSETCATALOG_COMPILER_APPICON_NAME = "AppIcon-$(ASSET_PREFIX)";
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
@@ -1362,7 +1402,7 @@
 				INFOPLIST_FILE = Runner/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
-					"@executable_path/Frameworks",
+					"@executable_path/../Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1384,7 +1424,7 @@
 			baseConfigurationReference = 0CC193C27F89F8C2D8191B6B /* prodProfile.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_APPICON_NAME = "$(ASSET_PREFIX)AppIcon";
+				ASSETCATALOG_COMPILER_APPICON_NAME = "AppIcon-$(ASSET_PREFIX)";
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
@@ -1428,7 +1468,7 @@
 				INFOPLIST_FILE = Runner/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
-					"@executable_path/Frameworks",
+					"@executable_path/../Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1449,7 +1489,7 @@
 			baseConfigurationReference = D4E965B4A9D59545F5C64434 /* betaProfile.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_APPICON_NAME = "$(ASSET_PREFIX)AppIcon";
+				ASSETCATALOG_COMPILER_APPICON_NAME = "AppIcon-$(ASSET_PREFIX)";
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
@@ -1493,7 +1533,7 @@
 				INFOPLIST_FILE = Runner/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
-					"@executable_path/Frameworks",
+					"@executable_path/../Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1508,6 +1548,14 @@
 				SWIFT_VERSION = 5.0;
 			};
 			name = "Profile-beta";
+		};
+		B3128E6B82B9345BD906E7C4 /* Release-prod */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 3EBF5C26151B63B051CBDE7D /* prodRelease.xcconfig */;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = "Release-prod";
 		};
 		C59A8943B5518B44CF65F6FB /* Release-prod */ = {
 			isa = XCBuildConfiguration;
@@ -1542,12 +1590,20 @@
 			};
 			name = "Release-dev";
 		};
+		E41C10DF8563123F5CE4562B /* Profile-beta */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = D4E965B4A9D59545F5C64434 /* betaProfile.xcconfig */;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = "Profile-beta";
+		};
 		EB7784108211F1E070E6E77A /* Debug-prod */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 8D69B5B72633623B2DDFB155 /* prodDebug.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_APPICON_NAME = "$(ASSET_PREFIX)AppIcon";
+				ASSETCATALOG_COMPILER_APPICON_NAME = "AppIcon-$(ASSET_PREFIX)";
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
@@ -1597,7 +1653,7 @@
 				INFOPLIST_FILE = Runner/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
-					"@executable_path/Frameworks",
+					"@executable_path/../Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1619,7 +1675,7 @@
 			baseConfigurationReference = D356F51D32FD6850C565D1EA /* devProfile.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_APPICON_NAME = "$(ASSET_PREFIX)AppIcon";
+				ASSETCATALOG_COMPILER_APPICON_NAME = "AppIcon-$(ASSET_PREFIX)";
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
@@ -1663,7 +1719,7 @@
 				INFOPLIST_FILE = Runner/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
-					"@executable_path/Frameworks",
+					"@executable_path/../Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1678,6 +1734,22 @@
 				SWIFT_VERSION = 5.0;
 			};
 			name = "Profile-dev";
+		};
+		FD1EA0C8E2FC667CE1E0DBE9 /* Debug-dev */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = A5768BDDCD37924333561EB0 /* devDebug.xcconfig */;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = "Debug-dev";
+		};
+		FE848A24D1D71D5C1793B508 /* Debug-beta */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = B25491BD36C2C724EE636C53 /* betaDebug.xcconfig */;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = "Debug-beta";
 		};
 /* End XCBuildConfiguration section */
 
@@ -1735,6 +1807,15 @@
 				61E02DAA173AD83DD3B815B7 /* Debug-beta */,
 				190CA7ABFBC760216BD6F17F /* Profile-beta */,
 				49A4542A151C75AD5EFBF971 /* Release-beta */,
+				2BBB8E7EBF3EFEE3AF58ADA6 /* Debug-prod */,
+				7A1B9AB5DDDBB530218CE0E0 /* Profile-prod */,
+				B3128E6B82B9345BD906E7C4 /* Release-prod */,
+				FD1EA0C8E2FC667CE1E0DBE9 /* Debug-dev */,
+				3A824BFD48FFB4CF73B32AAB /* Profile-dev */,
+				1EEBC606DFFDA3825B973241 /* Release-dev */,
+				FE848A24D1D71D5C1793B508 /* Debug-beta */,
+				E41C10DF8563123F5CE4562B /* Profile-beta */,
+				43EF2DC963F7E072868B7779 /* Release-beta */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -1759,14 +1840,16 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
 /* Begin XCLocalSwiftPackageReference section */
-		781AD8BC2B33823900A9FFBB /* XCLocalSwiftPackageReference "Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage" */ = {
+		781AD8BC2B33823900A9FFBB = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage;
 		};
 /* End XCLocalSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
-		78A3181F2AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage */ = {
+		78A3181F2AECB46A00862997 = {
 			isa = XCSwiftPackageProductDependency;
 			productName = FlutterGeneratedPluginSwiftPackage;
 		};

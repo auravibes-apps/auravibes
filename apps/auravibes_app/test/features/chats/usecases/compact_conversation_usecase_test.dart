@@ -5,6 +5,7 @@ import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
+import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
@@ -492,6 +493,95 @@ void main() {
 
       verify(() => mockChatbotService.sendMessage(any(), any())).called(1);
     });
+
+    test(
+      'preserves tool calls and resolved tool results in compaction prompt',
+      () async {
+        final messages = [
+          _makeMessage(content: 'Need weather for Bogota'),
+          _makeMessage(
+            id: 'msg-2',
+            isUser: false,
+            content: '',
+            metadata: const MessageMetadataEntity(
+              toolCalls: [
+                MessageToolCallEntity(
+                  id: 'tool-1',
+                  name: 'weather_lookup',
+                  argumentsRaw: '{"city":"Bogota"}',
+                  responseRaw: '{"temperature":"18C"}',
+                  resultStatus: ToolCallResultStatus.success,
+                ),
+              ],
+            ),
+          ),
+          _makeMessage(id: 'msg-3', content: 'Summarize it'),
+          _makeMessage(id: 'msg-4', isUser: false, content: 'Done'),
+        ];
+
+        when(
+          () => mockConversationRepo.getConversationById('conv-1'),
+        ).thenAnswer((_) async => _makeConversation());
+        when(
+          () =>
+              mockModelSelectionRepo.getWorkspaceModelSelectionById('model-1'),
+        ).thenAnswer((_) async => _makeModelSelection());
+        when(
+          () => mockMessageRepo.getMessagesByConversation('conv-1'),
+        ).thenAnswer((_) async => messages);
+        when(() => mockChatbotService.sendMessage(any(), any())).thenAnswer(
+          (_) => Stream.value(
+            ChatResult<ChatMessage>(
+              output: ChatMessage.model('Summary'),
+              usage: const LanguageModelUsage(),
+            ),
+          ),
+        );
+
+        await usecase(
+          conversationId: 'conv-1',
+          trigger: CompactionTrigger.manual,
+        );
+
+        final captured =
+            verify(
+                  () => mockChatbotService.sendMessage(any(), captureAny()),
+                ).captured.single
+                as List<ChatMessage>;
+
+        final userMessage = captured
+            .where((message) => message.text == 'Need weather for Bogota')
+            .firstOrNull;
+        final toolCallMessage = captured
+            .where(
+              (message) => message.toolCalls.any(
+                (toolCall) => toolCall.toolName == 'weather_lookup',
+              ),
+            )
+            .firstOrNull;
+        final toolResultMessage = captured
+            .where(
+              (message) => message.toolResults.any(
+                (result) => result.result == '{"temperature":"18C"}',
+              ),
+            )
+            .firstOrNull;
+
+        expect(userMessage?.role, ChatMessageRole.user);
+        expect(toolCallMessage?.role, ChatMessageRole.model);
+        expect(toolCallMessage?.toolCalls, hasLength(1));
+        expect(
+          toolCallMessage?.toolCalls.firstOrNull?.toolName,
+          'weather_lookup',
+        );
+        expect(toolResultMessage?.role, ChatMessageRole.user);
+        expect(toolResultMessage?.toolResults, hasLength(1));
+        expect(
+          toolResultMessage?.toolResults.firstOrNull?.result,
+          '{"temperature":"18C"}',
+        );
+      },
+    );
   });
 }
 
