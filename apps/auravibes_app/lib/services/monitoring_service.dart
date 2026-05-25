@@ -3,11 +3,11 @@ import 'package:riverpod/riverpod.dart';
 
 class MonitoringService {
   MonitoringService({
-    DebugPrintCallback? debugLogger,
+    ValueSetter<String>? debugLogger,
     this.enableConsoleLogging = kDebugMode,
-  }) : _debugLogger = debugLogger ?? debugPrint;
+  }) : _debugLogger = debugLogger ?? _defaultDebugLogger;
 
-  final DebugPrintCallback _debugLogger;
+  final ValueSetter<String> _debugLogger;
   final bool enableConsoleLogging;
 
   void trackError(
@@ -36,6 +36,10 @@ class MonitoringService {
   }
 
   static const _maxLogFieldLength = 500;
+
+  static void _defaultDebugLogger(String message) {
+    debugPrint(message);
+  }
 }
 
 final monitoringServiceProvider = Provider<MonitoringService>((ref) {

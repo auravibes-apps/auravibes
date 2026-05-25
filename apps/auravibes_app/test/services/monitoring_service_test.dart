@@ -43,9 +43,9 @@ void main() {
     });
 
     test('trackError does not log when console logging disabled', () {
-      final messages = <String?>[];
+      final messages = <String>[];
       MonitoringService(
-        debugLogger: (message, {wrapWidth}) => messages.add(message),
+        debugLogger: messages.add,
         enableConsoleLogging: false,
       ).trackError(
         'test_concept',
@@ -57,9 +57,9 @@ void main() {
     });
 
     test('trackError sanitizes multiline payloads', () {
-      final messages = <String?>[];
+      final messages = <String>[];
       MonitoringService(
-        debugLogger: (message, {wrapWidth}) => messages.add(message),
+        debugLogger: messages.add,
       ).trackError(
         'stream_failure',
         error: Exception('line 1\nline 2'),
