@@ -39,9 +39,9 @@ class ChatListWidget extends ConsumerWidget {
         );
       }(),
       AsyncLoading() => const Center(child: AuraSpinner()),
-      AsyncError(:final error, stackTrace: _) => Center(
+      AsyncError() => const Center(
         child: AuraText(
-          child: Text('Error loading chats: $error'),
+          child: TextLocale(LocaleKeys.workspace_management_unexpected_error),
         ),
       ),
     };
@@ -61,13 +61,18 @@ class ChatListWidget extends ConsumerWidget {
             ),
             SizedBox(height: 16),
             AuraText(
-              child: Text('No Chats Yet'),
               style: AuraTextStyle.heading3,
+              child: TextLocale(
+                LocaleKeys.home_screen_conversation_states_no_chats_yet,
+              ),
             ),
             SizedBox(height: 8),
             AuraText(
-              child: Text('Start your first conversation with Aura AI'),
               textAlign: TextAlign.center,
+              child: TextLocale(
+                LocaleKeys
+                    .home_screen_conversation_states_start_first_conversation,
+              ),
             ),
           ],
         ),
