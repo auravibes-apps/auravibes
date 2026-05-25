@@ -300,7 +300,7 @@ void main() {
   });
 
   group('MessageToCreate', () {
-    test('hasValidContent false when status is sent and content not empty', () {
+    test('hasValidContent true when content is not empty', () {
       const msg = MessageToCreate(
         conversationId: 'conv_1',
         content: 'Hello',
@@ -308,18 +308,18 @@ void main() {
         isUser: true,
         status: MessageStatus.sent,
       );
-      expect(msg.hasValidContent, isFalse);
+      expect(msg.hasValidContent, isTrue);
     });
 
-    test('hasValidContent true when status is not sent', () {
+    test('hasValidContent false when content is empty', () {
       const msg = MessageToCreate(
         conversationId: 'conv_1',
-        content: 'Hello',
+        content: '',
         messageType: MessageType.text,
         isUser: true,
         status: MessageStatus.sending,
       );
-      expect(msg.hasValidContent, isTrue);
+      expect(msg.hasValidContent, isFalse);
     });
 
     test(

@@ -172,7 +172,7 @@ abstract class MessageToCreate with _$MessageToCreate {
 
   /// Returns true if the message has valid content
   bool get hasValidContent {
-    return !(status == MessageStatus.sent && content.isNotEmpty);
+    return content.isNotEmpty;
   }
 
   /// Returns true if the message is in a valid state
