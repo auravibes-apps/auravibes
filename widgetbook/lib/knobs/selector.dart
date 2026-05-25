@@ -60,7 +60,7 @@ class SelectorField<T> extends Field<T> {
                (selectors.firstWhereOrNull(
                          (selector) => selector.label == param,
                        ) ??
-                       selectors.first)
+                       selectors.firstOrNull!)
                    .value,
          ),
        );

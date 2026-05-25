@@ -13,9 +13,9 @@ Widget basicSpinnerUseCase(BuildContext context) {
     ),
     strokeWidth: context.knobs.double.slider(
       label: 'strokeWidth',
-      initialValue: 4.0,
-      min: 1.0,
-      max: 10.0,
+      initialValue: 4,
+      min: 1,
+      max: 10,
     ),
     color: context.knobs.color(label: 'color', initialValue: Colors.blue),
   );

@@ -10,7 +10,7 @@ Widget basicContainerUseCase(BuildContext context) {
     backgroundColor: AuraColorVariant.surfaceVariant,
     padding: context.knobs.padding(),
     margin: context.knobs.padding(label: 'margin'),
-    borderRadius: 8.0,
+    borderRadius: 8,
     shadow: context.knobs.object.dropdown(
       label: 'shadow',
       options: AuraContainerShadow.values,
