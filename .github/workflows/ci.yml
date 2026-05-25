@@ -272,7 +272,43 @@ jobs:
         env:
           SOURCE_PREFIX: ${{ matrix.source_prefix }}
         run: |
-          ruby -i -pe 'sub(%r{^SF:lib/}, "SF:#{ENV.fetch("SOURCE_PREFIX")}/lib/")' coverage/lcov.info
+          ruby <<'RUBY'
+          input = 'coverage/lcov.info'
+          prefix = ENV.fetch('SOURCE_PREFIX')
+
+          records = []
+          current = []
+
+          File.foreach(input, chomp: true) do |line|
+            current << line
+            next unless line == 'end_of_record'
+
+            records << current
+            current = []
+          end
+
+          records << current unless current.empty?
+
+          filtered = records.filter_map do |record|
+            sf_index = record.index { |line| line.start_with?('SF:') }
+            next if sf_index.nil?
+
+            path = record[sf_index].delete_prefix('SF:')
+            path = path.sub(%r{\Alib/}, "#{prefix}/lib/")
+
+            excluded = path.end_with?('.g.dart') ||
+              path.end_with?('.freezed.dart') ||
+              path.end_with?('.mocks.dart') ||
+              path.end_with?('/drift_worker.js')
+            next if excluded
+
+            record[sf_index] = "SF:#{path}"
+            record
+          end
+
+          output = filtered.map { |record| record.join("\n") }.join("\n")
+          File.write(input, "#{output}\n")
+          RUBY
 
       - name: 📤 Upload Coverage
         uses: actions/upload-artifact@v7
