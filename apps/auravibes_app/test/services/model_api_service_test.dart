@@ -10,8 +10,8 @@ Dio _createDioWithResponse(Map<String, dynamic> data, {int statusCode = 200}) {
     InterceptorsWrapper(
       onResponse: (options, handler) => handler.resolve(
         Response(
-          requestOptions: options.requestOptions,
           data: data,
+          requestOptions: options.requestOptions,
           statusCode: statusCode,
         ),
       ),
@@ -41,8 +41,8 @@ Dio _createDioWithNon200({int statusCode = 500}) {
     InterceptorsWrapper(
       onResponse: (options, handler) => handler.resolve(
         Response(
-          requestOptions: options.requestOptions,
           data: {'error': 'fail'},
+          requestOptions: options.requestOptions,
           statusCode: statusCode,
         ),
       ),
@@ -79,8 +79,8 @@ Dio _createDioWithError() {
       onRequest: (options, handler) => handler.reject(
         DioException(
           requestOptions: options,
-          error: Exception('Connection refused'),
           type: DioExceptionType.connectionError,
+          error: Exception('Connection refused'),
         ),
       ),
     ),
@@ -348,9 +348,9 @@ void main() {
       test('statusMessage returns accessible with response time', () {
         final status = ModelApiStatus(
           isAccessible: true,
+          lastChecked: DateTime(2025),
           statusCode: 200,
           responseTime: const Duration(milliseconds: 150),
-          lastChecked: DateTime(2025),
         );
 
         expect(status.statusMessage, 'Accessible (150ms)');
@@ -387,8 +387,8 @@ void main() {
       test('statusCode is stored correctly', () {
         final status = ModelApiStatus(
           isAccessible: true,
-          statusCode: 200,
           lastChecked: DateTime(2025),
+          statusCode: 200,
         );
         expect(status.statusCode, 200);
       });
@@ -405,8 +405,8 @@ void main() {
       test('responseTime is stored correctly', () {
         final status = ModelApiStatus(
           isAccessible: true,
-          responseTime: const Duration(milliseconds: 250),
           lastChecked: DateTime(2025),
+          responseTime: const Duration(milliseconds: 250),
         );
         expect(status.responseTime, const Duration(milliseconds: 250));
       });

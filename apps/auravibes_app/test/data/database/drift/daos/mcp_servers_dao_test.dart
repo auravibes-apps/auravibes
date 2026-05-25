@@ -125,16 +125,16 @@ void main() {
       final group = await database.toolsGroupsDao.insertToolsGroup(
         ToolsGroupsCompanion.insert(
           workspaceId: workspaceId,
-          name: 'Group',
           mcpServerId: Value(server.id),
+          name: 'Group',
           permissions: PermissionAccess.ask,
         ),
       );
       await database.workspaceToolsDao.insertToolsBatch([
         ToolsCompanion.insert(
           workspaceId: workspaceId,
-          toolId: 'tool1',
           workspaceToolsGroupId: Value(group.id),
+          toolId: 'tool1',
         ),
       ]);
       final deleted = await database.mcpServersDao.deleteMcpServer(server.id);

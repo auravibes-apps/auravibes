@@ -28,8 +28,8 @@ class ToolCountEnabledWidget extends ConsumerWidget {
         LocaleKeys.tools_screen_enabled_count.plural(count),
         style: TextStyle(
           color: Colors.green[700],
-          fontWeight: FontWeight.w500,
           fontSize: 14,
+          fontWeight: FontWeight.w500,
         ),
       ),
 

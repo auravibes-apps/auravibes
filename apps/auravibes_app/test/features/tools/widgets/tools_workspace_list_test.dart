@@ -67,12 +67,6 @@ void main() {
   testWidgets('shows loading spinner while loading', (tester) async {
     await tester.pumpWidget(
       EasyLocalization(
-        supportedLocales: const [Locale('en')],
-        path: 'assets/i18n',
-        fallbackLocale: const Locale('en'),
-        startLocale: const Locale('en'),
-        useFallbackTranslations: true,
-        useOnlyLangCode: true,
         child: TestProviderScope(
           overrides: [
             groupedToolsProvider(
@@ -88,6 +82,12 @@ void main() {
             ),
           ),
         ),
+        supportedLocales: const [Locale('en')],
+        path: 'assets/i18n',
+        fallbackLocale: const Locale('en'),
+        startLocale: const Locale('en'),
+        useOnlyLangCode: true,
+        useFallbackTranslations: true,
       ),
     );
     await tester.pump();
@@ -103,12 +103,6 @@ void main() {
 
     await tester.pumpWidget(
       EasyLocalization(
-        supportedLocales: const [Locale('en')],
-        path: 'assets/i18n',
-        fallbackLocale: const Locale('en'),
-        startLocale: const Locale('en'),
-        useFallbackTranslations: true,
-        useOnlyLangCode: true,
         child: TestProviderScope(
           overrides: [
             groupedToolsProvider(
@@ -124,6 +118,12 @@ void main() {
             ),
           ),
         ),
+        supportedLocales: const [Locale('en')],
+        path: 'assets/i18n',
+        fallbackLocale: const Locale('en'),
+        startLocale: const Locale('en'),
+        useOnlyLangCode: true,
+        useFallbackTranslations: true,
       ),
     );
     await tester.pumpAndSettle();

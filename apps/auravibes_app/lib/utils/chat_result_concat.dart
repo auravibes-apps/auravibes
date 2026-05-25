@@ -11,12 +11,12 @@ extension ChatResultConcat on ChatResult<ChatMessage> {
       finishReason: delta.finishReason != FinishReason.unspecified
           ? delta.finishReason
           : finishReason,
+      metadata: {...metadata, ...delta.metadata},
       usage: usage != null && delta.usage != null
           ? usage!.concat(delta.usage!)
           : delta.usage ?? usage,
-      thinking: _concatThinking(thinking, delta.thinking),
       messages: [...messages, ...delta.messages],
-      metadata: {...metadata, ...delta.metadata},
+      thinking: _concatThinking(thinking, delta.thinking),
     );
   }
 
@@ -35,9 +35,9 @@ extension ChatResultEntities on ChatResult<ChatMessage> {
     return allToolCalls
         .map(
           (tc) => MessageToolCallEntity(
-            argumentsRaw: tc.argumentsRaw,
             id: tc.callId,
             name: tc.toolName,
+            argumentsRaw: tc.argumentsRaw,
           ),
         )
         .toList();

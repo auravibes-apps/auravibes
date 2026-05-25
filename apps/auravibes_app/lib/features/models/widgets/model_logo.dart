@@ -30,15 +30,15 @@ class ModelLogo extends StatelessWidget {
     }
     return SvgPicture.network(
       url,
-      height: height,
       width: width,
+      height: height,
+      placeholderBuilder: (context) {
+        return const AuraSpinner();
+      },
       colorFilter: ColorFilter.mode(
         context.auraColors.onBackground,
         BlendMode.srcIn,
       ),
-      placeholderBuilder: (context) {
-        return const AuraSpinner();
-      },
       errorBuilder: (context, error, stackTrace) {
         return const AuraText(
           child: TextLocale(

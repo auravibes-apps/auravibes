@@ -84,7 +84,6 @@ void main() {
         workspaceToolsRepository: workspaceToolsRepository,
         toolResolverService: toolResolverService,
         resumeConversationIfReadyUsecase: resumeConversationIfReadyUsecase,
-        agentCancellationRuntime: agentCancellationRuntime,
         runResolvedToolUsecase: RunResolvedToolUsecase(
           agentCancellationRuntime: agentCancellationRuntime,
           mcpToolCaller:
@@ -99,6 +98,7 @@ void main() {
                 return 'mcp result';
               },
         ),
+        agentCancellationRuntime: agentCancellationRuntime,
       );
 
       when(messageRepository.getMessageById(messageId)).thenAnswer(

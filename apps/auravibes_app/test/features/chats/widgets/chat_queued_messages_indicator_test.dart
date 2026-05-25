@@ -15,13 +15,13 @@ class _EasyLocalizationTestWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return EasyLocalization(
+      child: child,
       supportedLocales: const [Locale('en')],
       path: 'assets/i18n',
       fallbackLocale: const Locale('en'),
       startLocale: const Locale('en'),
-      useFallbackTranslations: true,
       useOnlyLangCode: true,
-      child: child,
+      useFallbackTranslations: true,
     );
   }
 }
@@ -38,9 +38,6 @@ void main() {
         child: Builder(
           builder: (context) {
             return MaterialApp(
-              locale: context.locale,
-              supportedLocales: context.supportedLocales,
-              localizationsDelegates: context.localizationDelegates,
               home: Theme(
                 data: ThemeData(extensions: [AuraTheme.light]),
                 child: Material(
@@ -49,6 +46,9 @@ void main() {
                   ),
                 ),
               ),
+              locale: context.locale,
+              localizationsDelegates: context.localizationDelegates,
+              supportedLocales: context.supportedLocales,
             );
           },
         ),

@@ -171,9 +171,9 @@ void main() {
           name: 'MCP Group',
           isEnabled: true,
           permissions: PermissionAccess.ask,
-          mcpServerId: 'srv1',
           createdAt: DateTime(2026),
           updatedAt: DateTime(2026),
+          mcpServerId: 'srv1',
         ),
         tools: [],
         mcpConnectionState: McpConnectionState(

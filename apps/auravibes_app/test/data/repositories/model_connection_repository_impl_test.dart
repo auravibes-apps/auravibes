@@ -67,13 +67,13 @@ void main() {
 
     final connectionRow = ModelConnectionTable(
       id: 'conn-1',
+      createdAt: now,
+      updatedAt: now,
       name: 'My Connection',
       modelId: 'openai',
       keyValue: 'encrypted-key',
       keySuffix: 'abc123',
       workspaceId: 'ws-1',
-      createdAt: now,
-      updatedAt: now,
     );
 
     group('createModelConnection', () {

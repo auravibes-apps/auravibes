@@ -1,8 +1,7 @@
 import 'package:auravibes_app/features/tools/models/conversation_tools_group_with_tools.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_conversation_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/widgets/conversation_tools_group_card.dart';
-import 'package:auravibes_app/i18n/locale_keys.dart';
-import 'package:auravibes_app/widgets/text_locale.dart';
+import 'package:auravibes_app/features/tools/widgets/tools_empty_state.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -40,8 +39,8 @@ class ToolsManagementModal extends ConsumerWidget {
       child: Container(
         width: MediaQuery.sizeOf(context).width * 0.9,
         constraints: BoxConstraints(
-          maxHeight: MediaQuery.sizeOf(context).height * 0.7,
           maxWidth: 500,
+          maxHeight: MediaQuery.sizeOf(context).height * 0.7,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -59,16 +58,16 @@ class ToolsManagementModal extends ConsumerWidget {
               child: Row(
                 children: [
                   const AuraText(
-                    style: AuraTextStyle.heading6,
                     child: Text('Manage Tools'),
+                    style: AuraTextStyle.heading6,
                   ),
                   const Spacer(),
                   IconButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    icon: const AuraIcon(Icons.close),
                     style: IconButton.styleFrom(
                       foregroundColor: context.auraColors.onSurfaceVariant,
                     ),
+                    icon: const AuraIcon(Icons.close),
                   ),
                 ],
               ),
@@ -80,13 +79,13 @@ class ToolsManagementModal extends ConsumerWidget {
                 AsyncLoading() => const Center(child: AuraSpinner()),
                 AsyncData(:final value) => _GroupedToolsList(
                   groups: value,
-                  conversationId: conversationId,
                   workspaceId: workspaceId,
+                  conversationId: conversationId,
                 ),
                 AsyncError(:final error) => Center(
                   child: AuraText(
-                    color: AuraColorVariant.error,
                     child: Text('Error loading tools: $error'),
+                    color: AuraColorVariant.error,
                   ),
                 ),
               },
@@ -116,43 +115,12 @@ class _GroupedToolsList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (groups.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.all(DesignSpacing.lg),
-        child: Center(
-          child: AuraColumn(
-            mainAxisSize: MainAxisSize.min,
-            spacing: AuraSpacing.md,
-            children: [
-              Opacity(
-                opacity: 0.5,
-                child: AuraIcon(
-                  Icons.build_circle_outlined,
-                  size: AuraIconSize.extraLarge,
-                  color: AuraColorVariant.onSurfaceVariant,
-                ),
-              ),
-              AuraText(
-                style: AuraTextStyle.heading6,
-                color: AuraColorVariant.onSurfaceVariant,
-                textAlign: TextAlign.center,
-                child: TextLocale(LocaleKeys.tools_screen_no_tools_added),
-              ),
-              AuraText(
-                style: AuraTextStyle.bodySmall,
-                color: AuraColorVariant.onSurfaceVariant,
-                textAlign: TextAlign.center,
-                child: TextLocale(LocaleKeys.tools_screen_add_tools_hint),
-              ),
-            ],
-          ),
-        ),
-      );
+      return const ToolsEmptyState();
     }
 
     return ListView.builder(
       shrinkWrap: true,
       padding: const EdgeInsets.all(DesignSpacing.md),
-      itemCount: groups.length,
       itemBuilder: (context, index) {
         final group = groups[index];
 
@@ -162,6 +130,7 @@ class _GroupedToolsList extends StatelessWidget {
           conversationId: conversationId,
         );
       },
+      itemCount: groups.length,
     );
   }
 }

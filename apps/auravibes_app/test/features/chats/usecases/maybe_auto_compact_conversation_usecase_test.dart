@@ -34,9 +34,9 @@ class MockCompactConversationUsecase extends Mock
 final _modelSelection = WorkspaceModelSelectionEntity(
   id: 'sel-1',
   modelId: 'model-1',
-  modelConnectionId: 'conn-1',
   createdAt: DateTime(2026),
   updatedAt: DateTime(2026),
+  modelConnectionId: 'conn-1',
 );
 
 const _provider = ApiModelProviderEntity(
@@ -50,9 +50,9 @@ final _connection = ModelConnectionEntity(
   name: 'Test Conn',
   key: 'key-v-1',
   modelId: 'model-1',
-  workspaceId: 'ws-1',
   createdAt: DateTime(2026),
   updatedAt: DateTime(2026),
+  workspaceId: 'ws-1',
 );
 
 final _completion = WorkspaceModelSelectionWithConnectionEntity(
@@ -85,12 +85,12 @@ ConversationEntity _makeConv({
 }) {
   return ConversationEntity(
     id: id,
-    workspaceId: workspaceId,
     title: 'Test',
+    workspaceId: workspaceId,
     isPinned: false,
-    modelId: modelId,
     createdAt: DateTime(2026),
     updatedAt: DateTime(2026),
+    modelId: modelId,
   );
 }
 

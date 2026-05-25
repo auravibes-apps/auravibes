@@ -45,7 +45,6 @@ class AuraSidebar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: isExpanded ? 280 : 80,
       decoration: BoxDecoration(
         color: context.auraColors.surface,
         border: Border(
@@ -61,6 +60,7 @@ class AuraSidebar extends StatelessWidget {
           ),
         ],
       ),
+      width: isExpanded ? 280 : 80,
       child: Column(
         children: [
           if (header != null)
@@ -102,15 +102,15 @@ class AuraSidebar extends StatelessWidget {
         final item = navigationItems[currentIndex];
         if (item.footer != footer) return null;
         return AuraPadding(
+          child: _AuraSidebarItem(
+            label: isExpanded ? item.label : const SizedBox.shrink(),
+            icon: item.icon,
+            onTap: () => onNavigationTap(currentIndex),
+            selected: currentIndex == selectedIndex,
+          ),
           padding: const .symmetric(
             horizontal: .sm,
             vertical: .xs,
-          ),
-          child: _AuraSidebarItem(
-            selected: currentIndex == selectedIndex,
-            icon: item.icon,
-            onTap: () => onNavigationTap(currentIndex),
-            label: isExpanded ? item.label : const SizedBox.shrink(),
           ),
         );
       }).whereType<Widget>().toList(),
@@ -180,25 +180,19 @@ class _AuraSidebarItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.auraColors;
     return AuraPressable(
+      child: AuraPadding(
+        child: AuraText(
+          child: AuraRow(children: [icon, label], spacing: .sm),
+          color: selected ? .primary : null,
+        ),
+        padding: .small,
+      ),
       color: colors.primary.withValues(alpha: 0.8),
-      onPressed: onTap,
       decoration: BoxDecoration(
         color: selected ? colors.primary.withValues(alpha: 0.1) : null,
         borderRadius: BorderRadius.circular(context.auraTheme.borderRadius.xl),
       ),
-      child: AuraPadding(
-        padding: .small,
-        child: AuraText(
-          color: selected ? .primary : null,
-          child: AuraRow(
-            spacing: .sm,
-            children: [
-              icon,
-              label,
-            ],
-          ),
-        ),
-      ),
+      onPressed: onTap,
     );
   }
 }

@@ -68,20 +68,20 @@ class AuraCard extends StatelessWidget {
       shadows = [
         BoxShadow(
           color: Colors.black.withValues(alpha: 0.06),
-          blurRadius: 28,
           offset: const Offset(0, 12),
+          blurRadius: 28,
         ),
         BoxShadow(
           color: Colors.black.withValues(alpha: 0.02),
-          blurRadius: 4,
           offset: const Offset(0, 1),
+          blurRadius: 4,
         ),
       ];
     }
 
     final Widget cardContent = AuraPadding(
-      padding: padding,
       child: child,
+      padding: padding,
     );
 
     Widget card;
@@ -95,11 +95,16 @@ class AuraCard extends StatelessWidget {
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
           child: AuraPressable(
+            child: cardContent,
             color: auraColors.onBackground,
-            onPressed: onTap,
             decoration: BoxDecoration(
               // Use a subtle gradient for better glass effect than flat color
               // color: auraColors.inverseSurface.withValues(alpha: 0.3),
+              border: Border.all(
+                color: auraColors.background.withValues(alpha: 0.05),
+                width: 1.5,
+              ),
+              borderRadius: BorderRadius.circular(DesignBorderRadius.xl),
               gradient: LinearGradient(
                 begin: .topLeft,
                 end: .bottomCenter,
@@ -108,35 +113,30 @@ class AuraCard extends StatelessWidget {
                   auraColors.onBackground.withValues(alpha: 0.03),
                 ],
               ),
-              borderRadius: BorderRadius.circular(DesignBorderRadius.xl),
-              border: Border.all(
-                color: auraColors.background.withValues(alpha: 0.05),
-                width: 1.5,
-              ),
             ),
-            child: cardContent,
+            onPressed: onTap,
           ),
         ),
       );
     } else {
       card = AuraPressable(
+        child: cardContent,
         color: auraColors.primary,
         decoration: BoxDecoration(
           color: backgroundColor,
-          borderRadius: BorderRadius.circular(DesignBorderRadius.xl),
           border: border,
+          borderRadius: BorderRadius.circular(DesignBorderRadius.xl),
           boxShadow: shadows,
         ),
         onPressed: onTap,
-        child: cardContent,
       );
     }
 
     if (semanticLabel != null) {
       card = Semantics(
-        label: semanticLabel,
-        container: true,
         child: card,
+        container: true,
+        label: semanticLabel,
       );
     }
 

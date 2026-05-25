@@ -39,7 +39,6 @@ class ToolsGroupCard extends HookConsumerWidget {
       padding: EdgeInsets.only(bottom: context.auraTheme.spacing.md),
       child: AuraCard(
         child: AuraColumn(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header
             ToolsGroupHeader(
@@ -69,6 +68,7 @@ class ToolsGroupCard extends HookConsumerWidget {
               ),
             ],
           ],
+          crossAxisAlignment: CrossAxisAlignment.start,
         ),
       ),
     );
@@ -148,9 +148,9 @@ class _ToolsList extends StatelessWidget {
         ),
         child: Center(
           child: AuraText(
+            child: Text(_kNoToolsInGroup.tr()),
             style: AuraTextStyle.bodySmall,
             color: AuraColorVariant.onSurfaceVariant,
-            child: Text(_kNoToolsInGroup.tr()),
           ),
         ),
       );

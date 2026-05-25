@@ -18,35 +18,35 @@ class SettingsScreen extends ConsumerWidget {
     final currentTheme = themeAsync.asData?.value ?? AppTheme.system;
 
     return AuraScreen(
-      appBar: const AuraAppBarWithDrawer(
-        title: TextLocale(LocaleKeys.settings_screen_title),
-      ),
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: AuraColumn(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // App Settings Section
             AuraCard(
               child: AuraColumn(
-                spacing: .none,
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const AuraText(
-                    style: AuraTextStyle.heading6,
-                    color: AuraColorVariant.onSurface,
                     child: TextLocale(
                       LocaleKeys.settings_screen_app_settings_title,
                     ),
+                    style: AuraTextStyle.heading6,
+                    color: AuraColorVariant.onSurface,
                   ),
                   const AuraText(
-                    style: AuraTextStyle.bodySmall,
-                    color: AuraColorVariant.onSurfaceVariant,
                     child: TextLocale(
                       LocaleKeys.settings_screen_app_settings_subtitle,
                     ),
+                    style: AuraTextStyle.bodySmall,
+                    color: AuraColorVariant.onSurfaceVariant,
                   ),
                   AuraTile(
+                    child: const AuraText(
+                      child: TextLocale(LocaleKeys.settings_screen_theme_title),
+                      style: AuraTextStyle.bodyLarge,
+                    ),
+                    onTap: () {
+                      _showThemeDialog(context, ref, currentTheme);
+                    },
                     variant: AuraTileVariant.ghost,
                     leading: Icon(
                       Icons.palette_outlined,
@@ -70,20 +70,19 @@ class SettingsScreen extends ConsumerWidget {
                         ),
                       ],
                     ),
-                    onTap: () {
-                      _showThemeDialog(context, ref, currentTheme);
-                    },
-                    child: const AuraText(
-                      style: AuraTextStyle.bodyLarge,
-                      child: TextLocale(LocaleKeys.settings_screen_theme_title),
-                    ),
                   ),
                 ],
+                spacing: .none,
+                crossAxisAlignment: CrossAxisAlignment.start,
               ),
             ),
             CompactionSettingsSection(workspaceId: workspaceId),
           ],
+          crossAxisAlignment: CrossAxisAlignment.start,
         ),
+      ),
+      appBar: const AuraAppBarWithDrawer(
+        title: TextLocale(LocaleKeys.settings_screen_title),
       ),
     );
   }

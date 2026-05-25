@@ -99,20 +99,19 @@ class _ApprovalCardContent extends ConsumerWidget {
     );
 
     return Container(
-      width: double.infinity,
-      margin: EdgeInsets.all(spacing.md),
+      padding: EdgeInsets.all(spacing.md),
       decoration: BoxDecoration(
         color: auraColors.warning.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(
-          context.auraTheme.borderRadius.lg,
-        ),
         border: Border.all(
           color: auraColors.warning.withValues(alpha: 0.3),
         ),
+        borderRadius: BorderRadius.circular(
+          context.auraTheme.borderRadius.lg,
+        ),
       ),
-      padding: EdgeInsets.all(spacing.md),
+      width: double.infinity,
+      margin: EdgeInsets.all(spacing.md),
       child: AuraColumn(
-        spacing: AuraSpacing.sm,
         children: [
           _NavigationHeader(
             currentIndex: currentIndex,
@@ -131,6 +130,7 @@ class _ApprovalCardContent extends ConsumerWidget {
             messageId: current.messageId,
           ),
         ],
+        spacing: AuraSpacing.sm,
       ),
     );
   }
@@ -171,9 +171,9 @@ class _NavigationHeader extends StatelessWidget {
               args: [(currentIndex + 1).toString(), totalCount.toString()],
             ),
             style: TextStyle(
+              color: auraColors.onSurface,
               fontSize: DesignTypography.fontSizeSm,
               fontWeight: FontWeight.w600,
-              color: auraColors.onSurface,
             ),
           ),
         ),
@@ -209,21 +209,21 @@ class _NavButton extends StatelessWidget {
       width: 32,
       height: 32,
       child: IconButton(
-        onPressed: onPressed,
-        icon: Icon(
-          icon,
-          size: 18,
-          color: isEnabled
-              ? auraColors.onSurface
-              : auraColors.onSurfaceVariant.withValues(alpha: 0.3),
-        ),
         padding: EdgeInsets.zero,
+        onPressed: onPressed,
         constraints: const BoxConstraints(
           minWidth: 32,
           minHeight: 32,
         ),
         style: IconButton.styleFrom(
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+        icon: Icon(
+          icon,
+          size: 18,
+          color: isEnabled
+              ? auraColors.onSurface
+              : auraColors.onSurfaceVariant.withValues(alpha: 0.3),
         ),
       ),
     );
@@ -245,21 +245,21 @@ class _ToolCallInfo extends StatelessWidget {
     final decodedArgs = tryDecodeToolMetadata(argumentsRaw);
 
     return Container(
-      width: double.infinity,
       padding: EdgeInsets.all(context.auraTheme.spacing.sm),
       decoration: BoxDecoration(
         color: auraColors.surfaceVariant.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(context.auraTheme.borderRadius.sm),
       ),
+      width: double.infinity,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             displayName,
             style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: DesignTypography.fontSizeSm,
               color: auraColors.onSurface,
+              fontSize: DesignTypography.fontSizeSm,
+              fontWeight: FontWeight.bold,
             ),
           ),
           if (decodedArgs != null) ...[
@@ -267,11 +267,11 @@ class _ToolCallInfo extends StatelessWidget {
             Text(
               decodedArgs,
               style: TextStyle(
-                fontSize: DesignTypography.fontSizeXs,
                 color: auraColors.onSurfaceVariant,
+                fontSize: DesignTypography.fontSizeXs,
               ),
-              maxLines: 3,
               overflow: TextOverflow.ellipsis,
+              maxLines: 3,
             ),
           ],
         ],
@@ -292,28 +292,27 @@ class _ConfirmationButtons extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return AuraColumn(
-      spacing: AuraSpacing.sm,
       children: [
         AuraRow(
           children: [
             Expanded(
               child: AuraButton(
-                size: AuraButtonSize.small,
-                variant: AuraButtonVariant.outlined,
                 onPressed: () => _onAllowOnce(ref, context),
                 child: const TextLocale(
                   LocaleKeys.tool_confirmation_allow_once,
                 ),
+                variant: AuraButtonVariant.outlined,
+                size: AuraButtonSize.small,
               ),
             ),
             Expanded(
               child: AuraButton(
-                size: AuraButtonSize.small,
-                variant: AuraButtonVariant.outlined,
                 onPressed: () => _onAllowForConversation(ref, context),
                 child: const TextLocale(
                   LocaleKeys.tool_confirmation_allow_conversation,
                 ),
+                variant: AuraButtonVariant.outlined,
+                size: AuraButtonSize.small,
               ),
             ),
           ],
@@ -322,27 +321,28 @@ class _ConfirmationButtons extends ConsumerWidget {
           children: [
             Expanded(
               child: AuraButton(
-                size: AuraButtonSize.small,
-                variant: AuraButtonVariant.outlined,
-                colorVariant: .primary,
                 onPressed: () => _onSkip(ref, context),
                 child: const TextLocale(LocaleKeys.tool_confirmation_skip),
+                variant: AuraButtonVariant.outlined,
+                colorVariant: .primary,
+                size: AuraButtonSize.small,
               ),
             ),
             Expanded(
               child: AuraButton(
-                size: AuraButtonSize.small,
-                variant: AuraButtonVariant.outlined,
-                colorVariant: .error,
                 onPressed: () => _onStopAll(ref, context),
                 child: const TextLocale(
                   LocaleKeys.tool_confirmation_stop_all,
                 ),
+                variant: AuraButtonVariant.outlined,
+                colorVariant: .error,
+                size: AuraButtonSize.small,
               ),
             ),
           ],
         ),
       ],
+      spacing: AuraSpacing.sm,
     );
   }
 

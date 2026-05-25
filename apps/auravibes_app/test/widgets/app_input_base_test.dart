@@ -8,10 +8,10 @@ void main() {
     final onChangedProvider = Provider<void Function(String)?>((ref) => null);
 
     final widget = AppInputBase(
-      value: valueProvider,
-      onChanged: onChangedProvider,
       labelLocaleKey: 'input.label',
       placeholderLocaleKey: 'input.placeholder',
+      value: valueProvider,
+      onChanged: onChangedProvider,
     );
 
     expect(widget.labelLocaleKey, 'input.label');
@@ -25,10 +25,10 @@ void main() {
     final onChangedProvider = Provider<void Function(String)?>((ref) => null);
 
     final widget = AppInputBase(
-      value: valueProvider,
-      onChanged: onChangedProvider,
       labelLocaleKey: 'input.label',
       placeholderLocaleKey: 'input.placeholder',
+      value: valueProvider,
+      onChanged: onChangedProvider,
       hintLocaleKey: 'input.hint',
       obscureText: true,
     );
@@ -42,10 +42,10 @@ void main() {
     final onChangedProvider = Provider<void Function(String)?>((ref) => null);
 
     final widget = AppInputBase(
-      value: valueProvider,
-      onChanged: onChangedProvider,
       labelLocaleKey: 'test',
       placeholderLocaleKey: 'test',
+      value: valueProvider,
+      onChanged: onChangedProvider,
     );
 
     expect(widget, isA<AppInputBase>());

@@ -7,6 +7,20 @@ import 'package:widgetbook_workspace/knobs/padding.dart';
 @widgetbook.UseCase(name: 'Basic Card', type: AuraCard)
 Widget basicCardUseCase(BuildContext context) {
   return AuraCard(
+    child: const Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AuraText(child: Text('Card Title'), style: AuraTextStyle.heading6),
+        SizedBox(height: 8),
+        AuraText(
+          child: Text(
+            'This is a basic card with some content inside it. Cards are great for organizing information.',
+          ),
+          style: AuraTextStyle.body,
+        ),
+      ],
+    ),
     padding: context.knobs.padding(),
     onTap: context.knobs.boolean(label: 'Enable Tap') ? () {} : null,
     semanticLabel: context.knobs.stringOrNull(label: 'Semantic Label'),
@@ -14,20 +28,6 @@ Widget basicCardUseCase(BuildContext context) {
       label: 'style',
       options: AuraCardStyle.values,
       labelBuilder: (value) => value.name,
-    ),
-    child: const Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        AuraText(style: AuraTextStyle.heading6, child: Text('Card Title')),
-        SizedBox(height: 8),
-        AuraText(
-          style: AuraTextStyle.body,
-          child: Text(
-            'This is a basic card with some content inside it. Cards are great for organizing information.',
-          ),
-        ),
-      ],
     ),
   );
 }

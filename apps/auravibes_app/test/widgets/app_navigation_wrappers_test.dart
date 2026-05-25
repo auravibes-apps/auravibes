@@ -26,17 +26,12 @@ void main() {
       int? result;
 
       final router = GoRouter(
-        initialLocation: '/workspaces/ws-test/tools',
         routes: [
           GoRoute(
             path: '/workspaces/:workspaceId',
             builder: (context, state) => const SizedBox.shrink(),
             routes: [
               StatefulShellRoute.indexedStack(
-                builder: (context, state, navigationShell) {
-                  result = navigationShell.currentIndex;
-                  return navigationShell;
-                },
                 branches: [
                   StatefulShellBranch(
                     routes: [
@@ -56,10 +51,15 @@ void main() {
                     ],
                   ),
                 ],
+                builder: (context, state, navigationShell) {
+                  result = navigationShell.currentIndex;
+                  return navigationShell;
+                },
               ),
             ],
           ),
         ],
+        initialLocation: '/workspaces/ws-test/tools',
       );
       addTearDown(router.dispose);
 
@@ -73,17 +73,12 @@ void main() {
       int? capturedShellIndex;
 
       final router = GoRouter(
-        initialLocation: '/workspaces/ws-test/chats/chat-123',
         routes: [
           GoRoute(
             path: '/workspaces/:workspaceId',
             builder: (context, state) => const SizedBox.shrink(),
             routes: [
               StatefulShellRoute.indexedStack(
-                builder: (context, state, navigationShell) {
-                  capturedShellIndex = navigationShell.currentIndex;
-                  return navigationShell;
-                },
                 branches: [
                   StatefulShellBranch(
                     routes: [
@@ -106,10 +101,15 @@ void main() {
                     ],
                   ),
                 ],
+                builder: (context, state, navigationShell) {
+                  capturedShellIndex = navigationShell.currentIndex;
+                  return navigationShell;
+                },
               ),
             ],
           ),
         ],
+        initialLocation: '/workspaces/ws-test/chats/chat-123',
       );
       addTearDown(router.dispose);
 
@@ -153,11 +153,11 @@ void main() {
   group('AppWithResponsiveDrawer', () {
     test('constructor stores properties', () {
       final widget = AppWithResponsiveDrawer(
+        child: const SizedBox(),
         navigationItems: const [],
         onNavigationTap: (_) {},
         selectedIndex: 0,
         workspaceId: 'ws-1',
-        child: const SizedBox(),
       );
       expect(widget.workspaceId, 'ws-1');
       expect(widget.selectedIndex, 0);
@@ -165,23 +165,23 @@ void main() {
 
     test('constructor accepts optional key', () {
       final widget = AppWithResponsiveDrawer(
+        child: const SizedBox(),
         navigationItems: const [],
         onNavigationTap: (_) {},
         selectedIndex: 0,
         workspaceId: 'ws-1',
         key: const Key('drawer-key'),
-        child: const SizedBox(),
       );
       expect(widget.key, const Key('drawer-key'));
     });
 
     test('is a StatefulWidget', () {
       final widget = AppWithResponsiveDrawer(
+        child: const SizedBox(),
         navigationItems: const [],
         onNavigationTap: (_) {},
         selectedIndex: 0,
         workspaceId: 'ws-1',
-        child: const SizedBox(),
       );
       expect(widget, isA<StatefulWidget>());
     });
@@ -194,17 +194,12 @@ void main() {
       String? capturedWorkspaceId;
 
       final router = GoRouter(
-        initialLocation: '/workspaces/ws-test/tools',
         routes: [
           GoRoute(
             path: '/workspaces/:workspaceId',
             builder: (context, state) => const SizedBox.shrink(),
             routes: [
               StatefulShellRoute.indexedStack(
-                builder: (context, state, navigationShell) {
-                  capturedWorkspaceId = state.pathParameters['workspaceId'];
-                  return Text('workspaceId: $capturedWorkspaceId');
-                },
                 branches: [
                   StatefulShellBranch(
                     routes: [
@@ -224,10 +219,15 @@ void main() {
                     ],
                   ),
                 ],
+                builder: (context, state, navigationShell) {
+                  capturedWorkspaceId = state.pathParameters['workspaceId'];
+                  return Text('workspaceId: $capturedWorkspaceId');
+                },
               ),
             ],
           ),
         ],
+        initialLocation: '/workspaces/ws-test/tools',
       );
       addTearDown(router.dispose);
 
@@ -248,17 +248,12 @@ void main() {
       String? capturedWorkspaceId;
 
       final router = GoRouter(
-        initialLocation: '/',
         routes: [
           GoRoute(
             path: '/workspaces/:workspaceId',
             builder: (context, state) => const SizedBox.shrink(),
             routes: [
               StatefulShellRoute.indexedStack(
-                builder: (context, state, navigationShell) {
-                  capturedWorkspaceId = state.pathParameters['workspaceId'];
-                  return Text('workspaceId: $capturedWorkspaceId');
-                },
                 branches: [
                   StatefulShellBranch(
                     routes: [
@@ -270,6 +265,10 @@ void main() {
                     ],
                   ),
                 ],
+                builder: (context, state, navigationShell) {
+                  capturedWorkspaceId = state.pathParameters['workspaceId'];
+                  return Text('workspaceId: $capturedWorkspaceId');
+                },
               ),
             ],
           ),
@@ -280,6 +279,7 @@ void main() {
           }
           return null;
         },
+        initialLocation: '/',
       );
       addTearDown(router.dispose);
 
@@ -300,17 +300,12 @@ void main() {
       int? capturedShellIndex;
 
       final router = GoRouter(
-        initialLocation: '/workspaces/ws-test/chats/chat-123',
         routes: [
           GoRoute(
             path: '/workspaces/:workspaceId',
             builder: (context, state) => const SizedBox.shrink(),
             routes: [
               StatefulShellRoute.indexedStack(
-                builder: (context, state, navigationShell) {
-                  capturedShellIndex = navigationShell.currentIndex;
-                  return navigationShell;
-                },
                 branches: [
                   StatefulShellBranch(
                     routes: [
@@ -333,10 +328,15 @@ void main() {
                     ],
                   ),
                 ],
+                builder: (context, state, navigationShell) {
+                  capturedShellIndex = navigationShell.currentIndex;
+                  return navigationShell;
+                },
               ),
             ],
           ),
         ],
+        initialLocation: '/workspaces/ws-test/chats/chat-123',
       );
       addTearDown(router.dispose);
 
@@ -356,17 +356,12 @@ void main() {
       int? capturedShellIndex;
 
       final router = GoRouter(
-        initialLocation: '/workspaces/ws-test/tools',
         routes: [
           GoRoute(
             path: '/workspaces/:workspaceId',
             builder: (context, state) => const SizedBox.shrink(),
             routes: [
               StatefulShellRoute.indexedStack(
-                builder: (context, state, navigationShell) {
-                  capturedShellIndex = navigationShell.currentIndex;
-                  return navigationShell;
-                },
                 branches: [
                   StatefulShellBranch(
                     routes: [
@@ -385,10 +380,15 @@ void main() {
                     ],
                   ),
                 ],
+                builder: (context, state, navigationShell) {
+                  capturedShellIndex = navigationShell.currentIndex;
+                  return navigationShell;
+                },
               ),
             ],
           ),
         ],
+        initialLocation: '/workspaces/ws-test/tools',
       );
       addTearDown(router.dispose);
 
@@ -408,17 +408,12 @@ void main() {
       int? capturedShellIndex;
 
       final router = GoRouter(
-        initialLocation: '/workspaces/ws-test/settings',
         routes: [
           GoRoute(
             path: '/workspaces/:workspaceId',
             builder: (context, state) => const SizedBox.shrink(),
             routes: [
               StatefulShellRoute.indexedStack(
-                builder: (context, state, navigationShell) {
-                  capturedShellIndex = navigationShell.currentIndex;
-                  return navigationShell;
-                },
                 branches: [
                   StatefulShellBranch(
                     routes: [
@@ -446,10 +441,15 @@ void main() {
                     ],
                   ),
                 ],
+                builder: (context, state, navigationShell) {
+                  capturedShellIndex = navigationShell.currentIndex;
+                  return navigationShell;
+                },
               ),
             ],
           ),
         ],
+        initialLocation: '/workspaces/ws-test/settings',
       );
       addTearDown(router.dispose);
 
@@ -473,13 +473,13 @@ void main() {
         await repo.close();
       });
       final router = GoRouter(
-        initialLocation: initialLocation,
         routes: [
           GoRoute(
             path: '/workspaces/:workspaceId',
             builder: (context, state) => const SizedBox.shrink(),
             routes: [
               StatefulShellRoute.indexedStack(
+                branches: branches,
                 builder: (context, state, navigationShell) {
                   final workspaceId = state.pathParameters['workspaceId'] ?? '';
                   return Theme(
@@ -494,20 +494,14 @@ void main() {
                     ),
                   );
                 },
-                branches: branches,
               ),
             ],
           ),
         ],
+        initialLocation: initialLocation,
       );
       addTearDown(router.dispose);
       final app = EasyLocalization(
-        supportedLocales: const [Locale('en')],
-        path: 'assets/i18n',
-        fallbackLocale: const Locale('en'),
-        startLocale: const Locale('en'),
-        useFallbackTranslations: true,
-        useOnlyLangCode: true,
         child: Builder(
           builder: (context) {
             return TestProviderScope(
@@ -528,13 +522,19 @@ void main() {
               ],
               child: MaterialApp.router(
                 routerConfig: router,
+                locale: context.locale,
                 localizationsDelegates: context.localizationDelegates,
                 supportedLocales: context.supportedLocales,
-                locale: context.locale,
               ),
             );
           },
         ),
+        supportedLocales: const [Locale('en')],
+        path: 'assets/i18n',
+        fallbackLocale: const Locale('en'),
+        startLocale: const Locale('en'),
+        useOnlyLangCode: true,
+        useFallbackTranslations: true,
       );
       return (app: app, router: router);
     }

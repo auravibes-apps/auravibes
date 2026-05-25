@@ -17,9 +17,9 @@ class ModelApiService {
   static Dio _createDefaultDio() {
     final dio = Dio(
       BaseOptions(
-        baseUrl: 'https://models.dev',
         connectTimeout: const Duration(seconds: 10),
         receiveTimeout: const Duration(seconds: 30),
+        baseUrl: 'https://models.dev',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -67,9 +67,9 @@ class ModelApiService {
 
       return ModelApiStatus(
         isAccessible: response.statusCode == 200,
+        lastChecked: DateTime.now(),
         statusCode: response.statusCode,
         responseTime: responseTime,
-        lastChecked: DateTime.now(),
       );
     } on Exception catch (e) {
       return ModelApiStatus(

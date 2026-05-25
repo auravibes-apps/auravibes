@@ -55,6 +55,8 @@ void main() {
     }) {
       return McpServersTable(
         id: id,
+        createdAt: now,
+        updatedAt: now,
         workspaceId: workspaceId,
         name: name,
         url: 'http://localhost:3000',
@@ -62,8 +64,6 @@ void main() {
         authenticationType: const McpAuthenticationType.none(),
         description: 'A test server',
         isEnabled: true,
-        createdAt: now,
-        updatedAt: now,
       );
     }
 
@@ -74,13 +74,13 @@ void main() {
     }) {
       return ToolsGroupsTable(
         id: id,
+        createdAt: now,
+        updatedAt: now,
         workspaceId: workspaceId,
+        mcpServerId: mcpServerId,
         name: 'Test Group',
         isEnabled: true,
         permissions: PermissionAccess.ask,
-        createdAt: now,
-        updatedAt: now,
-        mcpServerId: mcpServerId,
       );
     }
 
@@ -216,12 +216,12 @@ void main() {
         final groupRow = createGroupRow(id: 'g1', mcpServerId: 'mcp-1');
         final existingTool = ToolsTable(
           id: 't1',
+          createdAt: now,
+          updatedAt: now,
           workspaceId: 'ws-1',
           toolId: 'old_tool',
           isEnabled: true,
           permissions: PermissionAccess.ask,
-          createdAt: now,
-          updatedAt: now,
         );
 
         when(
@@ -270,12 +270,12 @@ void main() {
         final groupRow = createGroupRow(id: 'g1', mcpServerId: 'mcp-1');
         final existingTool = ToolsTable(
           id: 't1',
+          createdAt: now,
+          updatedAt: now,
           workspaceId: 'ws-1',
           toolId: 'tool1',
           isEnabled: true,
           permissions: PermissionAccess.ask,
-          createdAt: now,
-          updatedAt: now,
         );
 
         when(

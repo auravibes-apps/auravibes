@@ -38,9 +38,9 @@ class UrlService {
           cancelToken: cancelToken,
           options: Options(
             method: request.method.value,
-            headers: effectiveHeaders,
             sendTimeout: request.timeout,
             receiveTimeout: request.timeout,
+            headers: effectiveHeaders,
             responseType: ResponseType.stream,
           ),
         )

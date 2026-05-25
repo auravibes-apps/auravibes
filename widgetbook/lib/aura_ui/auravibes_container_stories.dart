@@ -7,18 +7,18 @@ import 'package:widgetbook_workspace/knobs/padding.dart';
 @widgetbook.UseCase(name: 'Basic Container', type: AuraContainer)
 Widget basicContainerUseCase(BuildContext context) {
   return AuraContainer(
-    backgroundColor: AuraColorVariant.surfaceVariant,
+    child: const AuraText(
+      child: Text('Basic Container'),
+      style: AuraTextStyle.body,
+    ),
     padding: context.knobs.padding(),
     margin: context.knobs.padding(label: 'margin'),
+    backgroundColor: AuraColorVariant.surfaceVariant,
     borderRadius: 8,
     shadow: context.knobs.object.dropdown(
       label: 'shadow',
       options: AuraContainerShadow.values,
       labelBuilder: (value) => value.name,
-    ),
-    child: const AuraText(
-      style: AuraTextStyle.body,
-      child: Text('Basic Container'),
     ),
   );
 }

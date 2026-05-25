@@ -25,13 +25,12 @@ class CompactedMessageDetails extends StatelessWidget {
 
     return SingleChildScrollView(
       child: AuraColumn(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const TextLocale(
             LocaleKeys.compaction_compacted_details_title,
             style: TextStyle(
-              fontWeight: FontWeight.bold,
               fontSize: 18,
+              fontWeight: FontWeight.bold,
             ),
           ),
           SizedBox(height: context.auraTheme.spacing.md),
@@ -63,9 +62,9 @@ class CompactedMessageDetails extends StatelessWidget {
           TextLocale(
             LocaleKeys.compaction_compacted_details_content_label,
             style: TextStyle(
-              fontWeight: FontWeight.bold,
               color: auraColors.onSurfaceVariant,
               fontSize: DesignTypography.fontSizeSm,
+              fontWeight: FontWeight.bold,
             ),
           ),
           SizedBox(height: context.auraTheme.spacing.xs),
@@ -77,6 +76,7 @@ class CompactedMessageDetails extends StatelessWidget {
             ),
           ),
         ],
+        crossAxisAlignment: CrossAxisAlignment.start,
       ),
     );
   }
@@ -100,9 +100,9 @@ class _DetailRow extends StatelessWidget {
             child: Text(
               label,
               style: TextStyle(
-                fontWeight: FontWeight.w600,
                 color: context.auraColors.onSurfaceVariant,
                 fontSize: DesignTypography.fontSizeSm,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),

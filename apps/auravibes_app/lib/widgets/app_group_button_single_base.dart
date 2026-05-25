@@ -22,20 +22,20 @@ class AppGroupButtonSingleBase<T> extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return AuraColumn(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: AuraSpacing.xs,
       children: [
         AuraText(
+          child: TextLocale(labelLocaleKey),
           style: AuraTextStyle.bodySmall,
           color: AuraColorVariant.onSurfaceVariant,
-          child: TextLocale(labelLocaleKey),
         ),
         AuraButtonGroup<T>.single(
+          items: items,
           selectedValue: ref.watch(value),
           onChanged: ref.watch(onChanged),
-          items: items,
         ),
       ],
+      spacing: AuraSpacing.xs,
+      crossAxisAlignment: CrossAxisAlignment.start,
     );
   }
 }

@@ -107,8 +107,8 @@ void main() {
       test('nulls empty description', () {
         const state = McpFormState(
           name: 'Test',
-          url: 'https://example.com',
           description: '   ',
+          url: 'https://example.com',
         );
         final entity = state.toCreateEntity();
         expect(entity.description, isNull);

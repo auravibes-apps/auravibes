@@ -40,16 +40,16 @@ class EnhancedModelInput extends HookConsumerWidget {
       label: TextLocale(fieldData.label),
       hint: fieldData.hint != null ? TextLocale(fieldData.hint!) : null,
       error: fieldData.error != null ? Text(fieldData.error!) : null,
-      keyboardType: fieldData.keyboardType,
-      focusNode: focusNode,
-      onChanged: (newValue) => _onFieldChanged(fieldType, newValue, notifier),
-      onSubmitted: (_) => onSubmitted?.call(),
-      textInputAction: _getTextInputAction(fieldType),
-      autofocus: fieldType == ModelInputFieldType.name && focusNode == null,
       isRequired: _isRequired(fieldType),
       state: fieldData.error != null
           ? AuraInputState.error
           : AuraInputState.normal,
+      keyboardType: fieldData.keyboardType,
+      textInputAction: _getTextInputAction(fieldType),
+      autofocus: fieldType == ModelInputFieldType.name && focusNode == null,
+      onChanged: (newValue) => _onFieldChanged(fieldType, newValue, notifier),
+      onSubmitted: (_) => onSubmitted?.call(),
+      focusNode: focusNode,
     );
   }
 

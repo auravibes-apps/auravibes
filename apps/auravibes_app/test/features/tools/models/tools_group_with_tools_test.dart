@@ -111,9 +111,9 @@ void main() {
         name: 'MCP Group',
         isEnabled: true,
         permissions: PermissionAccess.ask,
-        mcpServerId: 'server1',
         createdAt: DateTime(2025),
         updatedAt: DateTime(2025),
+        mcpServerId: 'server1',
       );
       final grouped = ToolsGroupWithTools(
         group: mcpGroup,
@@ -129,9 +129,9 @@ void main() {
         name: 'MCP Group',
         isEnabled: true,
         permissions: PermissionAccess.ask,
-        mcpServerId: 'server_42',
         createdAt: DateTime(2025),
         updatedAt: DateTime(2025),
+        mcpServerId: 'server_42',
       );
       final grouped = ToolsGroupWithTools(
         group: mcpGroup,

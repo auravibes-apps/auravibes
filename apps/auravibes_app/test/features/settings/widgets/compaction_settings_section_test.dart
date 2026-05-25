@@ -44,6 +44,16 @@ void main() {
 
   Widget buildSubject() {
     return testableApp(
+      child: Theme(
+        data: ThemeData(extensions: [AuraTheme.light]),
+        child: const Scaffold(
+          body: Material(
+            child: CompactionSettingsSection(
+              workspaceId: testWorkspaceId,
+            ),
+          ),
+        ),
+      ),
       overrides: [
         compactionSettingsProvider(testWorkspaceId).overrideWith(
           (ref) => settingsController.stream,
@@ -55,16 +65,6 @@ void main() {
           (ref) => mockReset,
         ),
       ],
-      child: Theme(
-        data: ThemeData(extensions: [AuraTheme.light]),
-        child: const Scaffold(
-          body: Material(
-            child: CompactionSettingsSection(
-              workspaceId: testWorkspaceId,
-            ),
-          ),
-        ),
-      ),
     );
   }
 

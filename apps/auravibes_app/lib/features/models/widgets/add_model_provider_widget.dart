@@ -58,13 +58,13 @@ class AddModelProviderWidget extends HookConsumerWidget {
         _SelectedModelHeader(workspaceId: workspaceId),
         Flexible(
           child: SingleChildScrollView(
-            controller: scrollController,
             padding: EdgeInsets.all(context.auraTheme.spacing.lg),
+            controller: scrollController,
             child: Form(
               key: formKey,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   EnhancedModelInput(
                     workspaceId: workspaceId,
@@ -109,15 +109,15 @@ class _ModalHeader extends StatelessWidget {
         children: [
           const Expanded(
             child: AuraText(
-              style: AuraTextStyle.heading5,
               child: TextLocale(
                 LocaleKeys.models_screens_add_provider_title,
               ),
+              style: AuraTextStyle.heading5,
             ),
           ),
           AuraIconButton(
-            onPressed: onClose,
             icon: Icons.close,
+            onPressed: onClose,
             semanticLabel: 'Close dialog',
           ),
         ],
@@ -171,8 +171,8 @@ class _HiddenSection extends HookWidget {
             TextLocale(
               title,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
                 color: context.auraColors.primary,
+                fontWeight: FontWeight.w600,
               ),
             ),
             AuraIconButton(
@@ -187,8 +187,8 @@ class _HiddenSection extends HookWidget {
         ),
         SizedBox(height: context.auraTheme.spacing.md),
         Visibility(
-          visible: visibilityState.value,
           child: child,
+          visible: visibilityState.value,
         ),
       ],
     );
@@ -217,17 +217,17 @@ class _ErrorBanner extends ConsumerWidget {
       padding: EdgeInsets.all(context.auraTheme.spacing.md),
       decoration: BoxDecoration(
         color: context.auraColors.error.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(DesignBorderRadius.md),
         border: Border.all(
           color: context.auraColors.error,
         ),
+        borderRadius: BorderRadius.circular(DesignBorderRadius.md),
       ),
       child: Row(
         children: [
           Icon(
             Icons.error_outline,
-            color: context.auraColors.error,
             size: 20,
+            color: context.auraColors.error,
           ),
           SizedBox(width: context.auraTheme.spacing.sm),
           Expanded(
@@ -279,14 +279,14 @@ class _CreateButton extends HookConsumerWidget {
       children: [
         const _ErrorBanner(),
         AuraButton(
-          disabled: isSubmitting || !isValid,
           onPressed: onSubmit,
-          isLoading: isSubmitting,
-          isFullWidth: true,
-          size: AuraButtonSize.large,
           child: const TextLocale(
             LocaleKeys.models_screens_add_provider_create_button,
           ),
+          size: AuraButtonSize.large,
+          isLoading: isSubmitting,
+          isFullWidth: true,
+          disabled: isSubmitting || !isValid,
         ),
       ],
     );
@@ -340,6 +340,7 @@ class _SelectModelProvider extends HookConsumerWidget {
         SizedBox(height: context.auraTheme.spacing.md),
         // Search input field
         AuraInput(
+          initialValue: searchQuery.value,
           placeholder: const AuraText(
             child: TextLocale(
               LocaleKeys.models_screens_add_provider_search_placeholder,
@@ -349,7 +350,6 @@ class _SelectModelProvider extends HookConsumerWidget {
             Icons.search,
             color: context.auraColors.onSurfaceVariant,
           ),
-          initialValue: searchQuery.value,
           onChanged: (value) {
             searchQuery.value = value;
           },
@@ -368,23 +368,19 @@ class _SelectModelProvider extends HookConsumerWidget {
                       ),
                       SizedBox(height: context.auraTheme.spacing.sm),
                       const AuraText(
-                        style: AuraTextStyle.bodyLarge,
-                        color: AuraColorVariant.onSurfaceVariant,
                         child: TextLocale(
                           AddModelProviderWidget.noModelsFoundKey,
                         ),
+                        style: AuraTextStyle.bodyLarge,
+                        color: AuraColorVariant.onSurfaceVariant,
                       ),
                     ],
                   ),
                 )
               : ListView.builder(
-                  itemCount: filteredModels.length,
                   itemBuilder: (context, index) {
                     final model = filteredModels[index];
                     return AuraCard(
-                      onTap: () {
-                        addModelProvider.setModel(model.id);
-                      },
                       child: Row(
                         mainAxisAlignment: .spaceBetween,
                         children: [
@@ -396,8 +392,12 @@ class _SelectModelProvider extends HookConsumerWidget {
                           ),
                         ],
                       ),
+                      onTap: () {
+                        addModelProvider.setModel(model.id);
+                      },
                     );
                   },
+                  itemCount: filteredModels.length,
                 ),
         ),
       ],
@@ -436,10 +436,10 @@ class _SelectedModelHeader extends HookConsumerWidget {
     return Row(
       children: [
         AuraIconButton(
+          icon: Icons.arrow_back,
           onPressed: () {
             addModelProvider.setModel(null);
           },
-          icon: Icons.arrow_back,
           semanticLabel: 'Back to model selection',
         ),
         SizedBox(width: context.auraTheme.spacing.md),
@@ -450,8 +450,8 @@ class _SelectedModelHeader extends HookConsumerWidget {
         SizedBox(width: context.auraTheme.spacing.md),
         Expanded(
           child: AuraText(
-            style: AuraTextStyle.bodyLarge,
             child: Text(selectedModel.name),
+            style: AuraTextStyle.bodyLarge,
           ),
         ),
       ],

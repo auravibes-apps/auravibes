@@ -124,8 +124,8 @@ void main() {
             AsyncValue<ConversationEntity?>.data(
               ConversationEntity(
                 id: 'conv-1',
-                workspaceId: 'ws-1',
                 title: 'Test',
+                workspaceId: 'ws-1',
                 isPinned: false,
                 createdAt: DateTime(2026),
                 updatedAt: DateTime(2026),
@@ -185,8 +185,8 @@ void main() {
             AsyncValue<ConversationEntity?>.data(
               ConversationEntity(
                 id: 'conv-1',
-                workspaceId: 'ws-1',
                 title: 'Test',
+                workspaceId: 'ws-1',
                 isPinned: false,
                 createdAt: DateTime(2026),
                 updatedAt: DateTime(2026),
@@ -251,8 +251,8 @@ void main() {
             AsyncValue<ConversationEntity?>.data(
               ConversationEntity(
                 id: 'conv-1',
-                workspaceId: 'ws-1',
                 title: 'Test',
+                workspaceId: 'ws-1',
                 isPinned: false,
                 createdAt: DateTime(2026),
                 updatedAt: DateTime(2026),
@@ -301,8 +301,8 @@ void main() {
             AsyncValue<ConversationEntity?>.data(
               ConversationEntity(
                 id: 'conv-1',
-                workspaceId: 'ws-1',
                 title: 'Test',
+                workspaceId: 'ws-1',
                 isPinned: false,
                 createdAt: DateTime(2026),
                 updatedAt: DateTime(2026),
@@ -376,8 +376,8 @@ void main() {
               AsyncValue<ConversationEntity?>.data(
                 ConversationEntity(
                   id: 'conv-1',
-                  workspaceId: 'ws-1',
                   title: 'Test',
+                  workspaceId: 'ws-1',
                   isPinned: false,
                   createdAt: DateTime(2026),
                   updatedAt: DateTime(2026),
@@ -408,8 +408,8 @@ void main() {
               AsyncValue<ConversationEntity?>.data(
                 ConversationEntity(
                   id: 'conv-1',
-                  workspaceId: 'ws-1',
                   title: 'Test',
+                  workspaceId: 'ws-1',
                   isPinned: false,
                   createdAt: DateTime(2026),
                   updatedAt: DateTime(2026),
@@ -473,8 +473,8 @@ void main() {
               AsyncValue<ConversationEntity?>.data(
                 ConversationEntity(
                   id: 'conv-1',
-                  workspaceId: 'ws-1',
                   title: 'Test',
+                  workspaceId: 'ws-1',
                   isPinned: false,
                   createdAt: DateTime(2026),
                   updatedAt: DateTime(2026),
@@ -539,8 +539,8 @@ void main() {
               AsyncValue<ConversationEntity?>.data(
                 ConversationEntity(
                   id: 'conv-1',
-                  workspaceId: 'ws-1',
                   title: 'Test',
+                  workspaceId: 'ws-1',
                   isPinned: false,
                   createdAt: DateTime(2026),
                   updatedAt: DateTime(2026),

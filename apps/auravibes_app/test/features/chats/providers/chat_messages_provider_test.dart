@@ -274,9 +274,9 @@ ApiModelEntity _apiModel({
   required int limit,
 }) {
   return ApiModelEntity(
+    modelProvider: providerId,
     id: id,
     name: id,
-    modelProvider: providerId,
     limitContext: limit,
     limitOutput: 4096,
     modalitiesInput: const ['text'],
@@ -295,18 +295,18 @@ _workspaceModelSelectionWithProvider({
     workspaceModelSelection: WorkspaceModelSelectionEntity(
       id: credentialModelId,
       modelId: modelId,
-      modelConnectionId: 'cred-1',
       createdAt: now,
       updatedAt: now,
+      modelConnectionId: 'cred-1',
     ),
     modelConnection: ModelConnectionEntity(
       id: 'cred-1',
       name: 'Test Provider',
       key: 'encrypted',
-      workspaceId: 'workspace-1',
       modelId: providerId,
       createdAt: now,
       updatedAt: now,
+      workspaceId: 'workspace-1',
     ),
     modelsProvider: ApiModelProviderEntity(
       id: providerId,
