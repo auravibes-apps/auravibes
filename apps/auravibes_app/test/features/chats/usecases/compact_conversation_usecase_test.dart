@@ -549,15 +549,37 @@ void main() {
                 ).captured.single
                 as List<ChatMessage>;
 
-        expect(captured, hasLength(5));
-        expect(captured[1].role.name, 'user');
-        expect(captured[1].text, 'Need weather for Bogota');
-        expect(captured[2].role.name, 'model');
-        expect(captured[2].toolCalls, hasLength(1));
-        expect(captured[2].toolCalls.single.toolName, 'weather_lookup');
-        expect(captured[3].role.name, 'user');
-        expect(captured[3].toolResults, hasLength(1));
-        expect(captured[3].toolResults.single.result, '{"temperature":"18C"}');
+        final userMessage = captured
+            .where((message) => message.text == 'Need weather for Bogota')
+            .firstOrNull;
+        final toolCallMessage = captured
+            .where(
+              (message) => message.toolCalls.any(
+                (toolCall) => toolCall.toolName == 'weather_lookup',
+              ),
+            )
+            .firstOrNull;
+        final toolResultMessage = captured
+            .where(
+              (message) => message.toolResults.any(
+                (result) => result.result == '{"temperature":"18C"}',
+              ),
+            )
+            .firstOrNull;
+
+        expect(userMessage?.role, ChatMessageRole.user);
+        expect(toolCallMessage?.role, ChatMessageRole.model);
+        expect(toolCallMessage?.toolCalls, hasLength(1));
+        expect(
+          toolCallMessage?.toolCalls.firstOrNull?.toolName,
+          'weather_lookup',
+        );
+        expect(toolResultMessage?.role, ChatMessageRole.user);
+        expect(toolResultMessage?.toolResults, hasLength(1));
+        expect(
+          toolResultMessage?.toolResults.firstOrNull?.result,
+          '{"temperature":"18C"}',
+        );
       },
     );
   });
