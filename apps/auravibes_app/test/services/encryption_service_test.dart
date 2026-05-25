@@ -79,7 +79,9 @@ void main() {
     });
 
     test('decrypt rejects payloads shorter than nonce plus mac', () async {
-      final shortPayload = List<int>.filled(27, 0);
+      final encrypted = await service.encrypt('');
+      final payload = base64Decode(encrypted);
+      final shortPayload = payload.sublist(0, payload.length - 1);
 
       expect(
         service.decrypt(base64Encode(shortPayload)),
