@@ -520,6 +520,14 @@ class MockMonitoringService extends _i1.Mock implements _i17.MonitoringService {
   }
 
   @override
+  bool get enableConsoleLogging =>
+      (super.noSuchMethod(
+            Invocation.getter(#enableConsoleLogging),
+            returnValue: false,
+          )
+          as bool);
+
+  @override
   void trackError(
     String? concept, {
     required Object? error,
