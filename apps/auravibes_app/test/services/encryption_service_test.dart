@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/secret_key_manager.dart';
 import 'package:cryptography/cryptography.dart';
@@ -74,6 +76,28 @@ void main() {
       final encrypted = await service.encrypt(plaintext);
       final decrypted = await service.decrypt(encrypted);
       expect(decrypted, plaintext);
+    });
+
+    test('decrypt rejects payloads shorter than nonce plus mac', () async {
+      final encrypted = await service.encrypt('');
+      final payload = base64Decode(encrypted);
+      final shortPayload = payload.sublist(0, payload.length - 1);
+
+      expect(
+        service.decrypt(base64Encode(shortPayload)),
+        throwsA(isA<FormatException>()),
+      );
+      expect(
+        service.decrypt(''),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('decrypt rejects malformed base64 payloads', () async {
+      expect(
+        service.decrypt('not-valid-base64%%%'),
+        throwsA(isA<FormatException>()),
+      );
     });
   });
 
