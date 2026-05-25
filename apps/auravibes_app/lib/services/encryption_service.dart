@@ -37,13 +37,13 @@ class EncryptionService {
 
   /// Decrypts a base64-encoded ciphertext
   Future<String> decrypt(String encryptedBase64) async {
-    final key = await _keyManager.getOrCreateSecretKey();
     final combined = base64Decode(encryptedBase64);
     if (combined.length < _minimumPayloadLength) {
       throw const FormatException(
         'Encrypted payload is shorter than the AES-GCM nonce and MAC.',
       );
     }
+    final key = await _keyManager.getOrCreateSecretKey();
 
     // Extract components (nonce: 12 bytes, mac: 16 bytes).
     final nonce = combined.sublist(0, _nonceLength);
