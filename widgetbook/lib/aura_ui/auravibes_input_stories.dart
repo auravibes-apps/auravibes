@@ -26,8 +26,14 @@ Widget basicInputUseCase(BuildContext context) {
   );
 
   return AuraInput(
+    initialValue: context.knobs.stringOrNull(
+      label: 'Initial Value',
+      initialValue: null,
+    ),
     placeholder: placeholderText != null ? Text(placeholderText) : null,
     hint: hintText != null ? Text(hintText) : null,
+    prefixIcon: prefixIcon != null ? Icon(prefixIcon) : null,
+    suffixIcon: suffixIcon != null ? Icon(suffixIcon) : null,
     size: context.knobs.object.dropdown(
       label: 'size',
       options: AuraInputSize.values,
@@ -38,18 +44,12 @@ Widget basicInputUseCase(BuildContext context) {
       options: AuraInputState.values,
       labelBuilder: (value) => value.name,
     ),
-    initialValue: context.knobs.stringOrNull(
-      label: 'Initial Value',
-      initialValue: null,
-    ),
-    prefixIcon: prefixIcon != null ? Icon(prefixIcon) : null,
-    suffixIcon: suffixIcon != null ? Icon(suffixIcon) : null,
-    enabled: context.knobs.boolean(label: 'Enabled', initialValue: true),
     keyboardType: context.knobs.objectOrNull.dropdown(
       label: 'Keyboard Type',
       options: TextInputType.values,
       labelBuilder: (value) => value.toString(),
     ),
+    enabled: context.knobs.boolean(label: 'Enabled', initialValue: true),
     maxLines: context.knobs.int.slider(
       label: 'Max Lines',
       initialValue: 1,

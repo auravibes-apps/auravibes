@@ -243,37 +243,29 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
     final border = _getBorder();
 
     return MouseRegion(
+      onEnter: (_) => setState(() => _isHovering = true),
+      onExit: (_) => setState(() => _isHovering = false),
       cursor: widget.disabled || widget.isLoading
           ? SystemMouseCursors.basic
           : SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _isHovering = true),
-      onExit: (_) => setState(() => _isHovering = false),
       child: GestureDetector(
-        onTap: widget.onTap,
-        onTapDown: (_) => setState(() => _isPressed = true),
-        onTapUp: (_) => setState(() => _isPressed = false),
-        onTapCancel: () => setState(() => _isPressed = false),
         child: AnimatedContainer(
-          duration: widget.auraTheme.animation.normal,
           padding: padding,
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            border: border,
-          ),
+          decoration: BoxDecoration(color: backgroundColor, border: border),
           child: widget.isLoading
               ? SizedBox(
                   width: _getLoadingSize(),
                   height: _getLoadingSize(),
                   child: AuraLoadingCircle(
-                    size: _getLoadingSize(),
                     colorVariant: _getLoadingColorVariant(),
+                    size: _getLoadingSize(),
                   ),
                 )
               : DefaultTextStyle(
                   style: TextStyle(
+                    color: foregroundColor,
                     fontSize: _getFontSize(),
                     fontWeight: widget.auraTheme.typography.weights.medium,
-                    color: foregroundColor,
                   ),
                   child: IconTheme(
                     data: IconThemeData(
@@ -283,7 +275,12 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
                     child: widget.item.child,
                   ),
                 ),
+          duration: widget.auraTheme.animation.normal,
         ),
+        onTapDown: (_) => setState(() => _isPressed = true),
+        onTapUp: (_) => setState(() => _isPressed = false),
+        onTap: widget.onTap,
+        onTapCancel: () => setState(() => _isPressed = false),
       ),
     );
   }
@@ -291,16 +288,16 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
   EdgeInsets _getPadding() {
     return switch (widget.size) {
       AuraButtonGroupSize.sm => const EdgeInsets.symmetric(
-        horizontal: DesignSpacing.sm,
         vertical: DesignSpacing.xs,
+        horizontal: DesignSpacing.sm,
       ),
       AuraButtonGroupSize.base => const EdgeInsets.symmetric(
-        horizontal: DesignSpacing.md,
         vertical: DesignSpacing.sm,
+        horizontal: DesignSpacing.md,
       ),
       AuraButtonGroupSize.lg => const EdgeInsets.symmetric(
-        horizontal: DesignSpacing.lg,
         vertical: DesignSpacing.md,
+        horizontal: DesignSpacing.lg,
       ),
     };
   }

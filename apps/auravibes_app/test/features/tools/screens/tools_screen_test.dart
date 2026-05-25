@@ -35,6 +35,10 @@ void main() {
       await tester.runAsync(() async {
         await tester.pumpWidget(
           testableApp(
+            child: Theme(
+              data: ThemeData(extensions: [AuraTheme.light]),
+              child: const ToolsScreen(workspaceId: 'test-ws'),
+            ),
             overrides: [
               workspaceToolsProvider('test-ws').overrideWith(
                 _MockWorkspaceToolsNotifier.new,
@@ -43,10 +47,6 @@ void main() {
                 _MockGroupedToolsNotifier.new,
               ),
             ],
-            child: Theme(
-              data: ThemeData(extensions: [AuraTheme.light]),
-              child: const ToolsScreen(workspaceId: 'test-ws'),
-            ),
           ),
         );
       });
@@ -60,14 +60,6 @@ void main() {
       await tester.runAsync(() async {
         await tester.pumpWidget(
           testableApp(
-            overrides: [
-              workspaceToolsProvider('test-ws').overrideWith(
-                _MockWorkspaceToolsNotifier.new,
-              ),
-              groupedToolsProvider('test-ws').overrideWith(
-                _MockGroupedToolsNotifier.new,
-              ),
-            ],
             child: Navigator(
               pages: [
                 const MaterialPage<void>(child: Placeholder()),
@@ -80,6 +72,14 @@ void main() {
               ],
               onDidRemovePage: (_) {},
             ),
+            overrides: [
+              workspaceToolsProvider('test-ws').overrideWith(
+                _MockWorkspaceToolsNotifier.new,
+              ),
+              groupedToolsProvider('test-ws').overrideWith(
+                _MockGroupedToolsNotifier.new,
+              ),
+            ],
           ),
         );
       });

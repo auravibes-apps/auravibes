@@ -15,22 +15,22 @@ void main() {
 
     Widget _buildTestableWidget(Widget child) {
       return EasyLocalization(
+        child: Builder(
+          builder: (context) {
+            return MaterialApp(
+              home: Scaffold(body: Portal(child: child)),
+              locale: context.locale,
+              localizationsDelegates: context.localizationDelegates,
+              supportedLocales: context.supportedLocales,
+            );
+          },
+        ),
         supportedLocales: const [Locale('en')],
         path: 'assets/i18n',
         fallbackLocale: const Locale('en'),
         startLocale: const Locale('en'),
-        useFallbackTranslations: true,
         useOnlyLangCode: true,
-        child: Builder(
-          builder: (context) {
-            return MaterialApp(
-              locale: context.locale,
-              supportedLocales: context.supportedLocales,
-              localizationsDelegates: context.localizationDelegates,
-              home: Scaffold(body: Portal(child: child)),
-            );
-          },
-        ),
+        useFallbackTranslations: true,
       );
     }
 

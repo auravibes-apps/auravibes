@@ -45,8 +45,8 @@ class ToolCallResponseModal extends StatelessWidget {
       child: Container(
         width: MediaQuery.sizeOf(context).width * 0.9,
         constraints: BoxConstraints(
-          maxHeight: MediaQuery.sizeOf(context).height * 0.85,
           maxWidth: 600,
+          maxHeight: MediaQuery.sizeOf(context).height * 0.85,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -96,16 +96,16 @@ class ToolCallResponseModal extends StatelessWidget {
           SizedBox(width: context.auraTheme.spacing.sm),
           Expanded(
             child: AuraText(
-              style: AuraTextStyle.heading6,
               child: Text(toolName),
+              style: AuraTextStyle.heading6,
             ),
           ),
           IconButton(
             onPressed: () => Navigator.of(context).pop(),
-            icon: const AuraIcon(Icons.close),
             style: IconButton.styleFrom(
               foregroundColor: context.auraColors.onSurfaceVariant,
             ),
+            icon: const AuraIcon(Icons.close),
           ),
         ],
       ),
@@ -125,9 +125,9 @@ class ToolCallResponseModal extends StatelessWidget {
       child: SizedBox(
         width: double.infinity,
         child: AuraButton(
-          variant: AuraButtonVariant.outlined,
           onPressed: () => Navigator.of(context).pop(),
           child: const TextLocale(LocaleKeys.common_close),
+          variant: AuraButtonVariant.outlined,
         ),
       ),
     );

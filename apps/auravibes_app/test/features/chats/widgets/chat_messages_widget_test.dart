@@ -27,12 +27,6 @@ void main() {
     String conversationId = 'conv-1',
   }) {
     return EasyLocalization(
-      supportedLocales: const [Locale('en')],
-      path: 'assets/i18n',
-      fallbackLocale: const Locale('en'),
-      startLocale: const Locale('en'),
-      useFallbackTranslations: true,
-      useOnlyLangCode: true,
       child: ProviderScope(
         overrides: [
           conversationSelectedProvider.overrideWithValue(conversationId),
@@ -41,9 +35,6 @@ void main() {
         child: Builder(
           builder: (context) {
             return MaterialApp(
-              locale: context.locale,
-              supportedLocales: context.supportedLocales,
-              localizationsDelegates: context.localizationDelegates,
               home: Theme(
                 data: ThemeData(extensions: [AuraTheme.light]),
                 child: Material(
@@ -52,10 +43,19 @@ void main() {
                   ),
                 ),
               ),
+              locale: context.locale,
+              localizationsDelegates: context.localizationDelegates,
+              supportedLocales: context.supportedLocales,
             );
           },
         ),
       ),
+      supportedLocales: const [Locale('en')],
+      path: 'assets/i18n',
+      fallbackLocale: const Locale('en'),
+      startLocale: const Locale('en'),
+      useOnlyLangCode: true,
+      useFallbackTranslations: true,
     );
   }
 
@@ -260,8 +260,8 @@ void main() {
         content: '',
         isUser: false,
         metadata: const MessageMetadataEntity(
-          thinking: 'Need to inspect the file first',
           toolCalls: [toolCall],
+          thinking: 'Need to inspect the file first',
         ),
       );
 
@@ -616,9 +616,9 @@ void main() {
         metadata: const MessageMetadataEntity(
           isCompactionSummary: true,
           compactionKind: CompactionKind.auto,
-          compactedMessageIds: ['old-1', 'old-2'],
           compactedFromMessageId: 'old-1',
           compactedThroughMessageId: 'old-2',
+          compactedMessageIds: ['old-1', 'old-2'],
         ),
       );
 

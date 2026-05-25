@@ -31,8 +31,8 @@ class AuraScreen extends StatelessWidget {
     var container = child;
     if (padding != null) {
       container = AuraPadding(
-        padding: padding!,
         child: container,
+        padding: padding!,
       );
     }
 
@@ -61,11 +61,11 @@ class AuraScreen extends StatelessWidget {
     };
 
     return Scaffold(
-      extendBodyBehindAppBar: true,
       appBar: appBar,
       body: Portal(
         child: content,
       ),
+      extendBodyBehindAppBar: true,
     );
   }
 }
@@ -96,18 +96,18 @@ class AuraAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      centerTitle: true,
+      leading: leading,
       title: title == null
           ? null
           : AuraText(
-              style: AuraTextStyle.heading3,
               child: title!,
+              style: AuraTextStyle.heading3,
             ),
       actions: actions,
-      leading: leading,
       bottom: bottom,
-      backgroundColor: const Color(0x00000000),
       elevation: 0,
+      backgroundColor: const Color(0x00000000),
+      centerTitle: true,
     );
   }
 
@@ -138,8 +138,8 @@ class _AuroraBackground extends StatelessWidget {
         Container(color: colors.background),
         // Blob 1 (Top Left - Primary)
         Positioned(
-          top: -100,
           left: -100,
+          top: -100,
           child: _Blob(
             color: colors.primary.withAlpha(102),
             size: 400,
@@ -156,8 +156,8 @@ class _AuroraBackground extends StatelessWidget {
         ),
         // Blob 3 (Bottom Left - Primary/Accent)
         Positioned(
-          bottom: -50,
           left: -50,
+          bottom: -50,
           child: _Blob(
             color: colors.primary.withAlpha(76),
             size: 350,
@@ -181,15 +181,15 @@ class _Blob extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: size,
-      height: size,
       decoration: BoxDecoration(
-        shape: BoxShape.circle,
         gradient: RadialGradient(
           colors: [color, color.withAlpha(0)],
           stops: const [0.0, 1.0],
         ),
+        shape: BoxShape.circle,
       ),
+      width: size,
+      height: size,
     );
   }
 }

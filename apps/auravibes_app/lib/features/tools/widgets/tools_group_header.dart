@@ -57,17 +57,15 @@ class ToolsGroupHeader extends StatelessWidget {
         // Group name and status
         Expanded(
           child: AuraColumn(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            spacing: AuraSpacing.xs,
             children: [
               // Name row with status badge
               AuraText(
-                style: AuraTextStyle.heading6,
                 child: Text(
                   groupWithTools.localizedDisplayNameKey?.tr() ??
                       groupWithTools.group!.name,
                   overflow: TextOverflow.ellipsis,
                 ),
+                style: AuraTextStyle.heading6,
               ),
 
               if (groupWithTools.isMcpGroup)
@@ -78,8 +76,6 @@ class ToolsGroupHeader extends StatelessWidget {
                 ),
               // Tool count
               AuraText(
-                style: AuraTextStyle.bodySmall,
-                color: AuraColorVariant.onSurfaceVariant,
                 child: Text(
                   LocaleKeys.tools_screen_tools_count.tr(
                     namedArgs: {
@@ -88,52 +84,51 @@ class ToolsGroupHeader extends StatelessWidget {
                     },
                   ),
                 ),
+                style: AuraTextStyle.bodySmall,
+                color: AuraColorVariant.onSurfaceVariant,
               ),
             ],
+            spacing: AuraSpacing.xs,
+            crossAxisAlignment: CrossAxisAlignment.start,
           ),
         ),
 
         // Actions row
         AuraRow(
-          spacing: AuraSpacing.xs,
           children: [
-            // Delete button for MCP groups
             if (groupWithTools.isMcpGroup && onDelete != null)
               IconButton(
+                padding: EdgeInsets.zero,
                 onPressed: onDelete,
+                tooltip: LocaleKeys.common_delete.tr(),
+                constraints: const BoxConstraints(),
                 icon: const AuraIcon(
                   Icons.delete_outline,
                   size: AuraIconSize.small,
                   color: AuraColorVariant.error,
                 ),
-                tooltip: LocaleKeys.common_delete.tr(),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
               ),
-
-            // Master toggle (not for default group)
             if (!groupWithTools.isDefaultGroup && onToggleEnabled != null)
               AuraSwitch(
                 value: groupWithTools.isEnabled,
                 onChanged: onToggleEnabled,
                 size: AuraSwitchSize.sm,
               ),
-
-            // Expand/collapse chevron
             IconButton(
+              padding: EdgeInsets.zero,
               onPressed: onToggleExpand,
+              constraints: const BoxConstraints(),
               icon: AnimatedRotation(
-                turns: isExpanded ? 0.5 : 0,
-                duration: const Duration(milliseconds: 200),
                 child: const AuraIcon(
                   Icons.keyboard_arrow_down,
                   color: AuraColorVariant.onSurfaceVariant,
                 ),
+                turns: isExpanded ? 0.5 : 0,
+                duration: const Duration(milliseconds: 200),
               ),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
             ),
           ],
+          spacing: AuraSpacing.xs,
         ),
       ],
     );
@@ -152,8 +147,6 @@ class _GroupIcon extends StatelessWidget {
     final isMcp = groupWithTools.isMcpGroup;
 
     return Container(
-      width: 40,
-      height: 40,
       decoration: BoxDecoration(
         color: isEnabled
             ? context.auraColors.primary.withValues(alpha: 0.1)
@@ -162,6 +155,8 @@ class _GroupIcon extends StatelessWidget {
           context.auraTheme.borderRadius.md,
         ),
       ),
+      width: 40,
+      height: 40,
       child: Center(
         child: AuraIcon(
           isMcp ? Icons.extension : Icons.build_circle_outlined,
@@ -199,9 +194,9 @@ class _McpStatusBadge extends StatelessWidget {
         child: AuraSpinner(size: AuraSpinnerSize.small),
       ),
       McpConnectionStatus.connected => AuraBadge.text(
+        child: Text(LocaleKeys.tools_screen_mcp_connected.tr()),
         variant: AuraBadgeVariant.success,
         size: AuraBadgeSize.small,
-        child: Text(LocaleKeys.tools_screen_mcp_connected.tr()),
       ),
       McpConnectionStatus.error => _ErrorBadge(
         groupWithTools: groupWithTools,
@@ -230,18 +225,11 @@ class _ErrorBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraRow(
-      mainAxisSize: MainAxisSize.min,
-      spacing: .xs,
       children: [
-        // Error badge (compact)
         AuraTooltip(
           message: groupWithTools.mcpErrorMessage ?? '',
           child: AuraBadge.text(
-            variant: .error,
-            size: AuraBadgeSize.small,
             child: AuraRow(
-              spacing: AuraSpacing.xs,
-              mainAxisSize: MainAxisSize.min,
               children: [
                 const AuraIcon(
                   Icons.error_outline,
@@ -249,30 +237,30 @@ class _ErrorBadge extends StatelessWidget {
                 ),
                 Text(LocaleKeys.tools_screen_mcp_error.tr()),
               ],
+              spacing: AuraSpacing.xs,
+              mainAxisSize: MainAxisSize.min,
             ),
+            variant: .error,
+            size: AuraBadgeSize.small,
           ),
         ),
-
-        // View details button (icon-only)
         if (onViewError != null && groupWithTools.mcpErrorMessage != null)
           AuraIconButton(
-            onPressed: onViewError,
             icon: Icons.visibility_outlined,
-            tooltip: LocaleKeys.tools_screen_mcp_view_error.tr(),
+            onPressed: onViewError,
             size: .small,
+            tooltip: LocaleKeys.tools_screen_mcp_view_error.tr(),
           ),
-
-        // Reconnect button (icon-only)
         if (onReconnect != null)
           AuraIconButton(
-            onPressed: onReconnect,
             icon: Icons.refresh,
-            tooltip: LocaleKeys.tools_screen_mcp_reconnect.tr(),
+            onPressed: onReconnect,
             size: .small,
-            // padding: EdgeInsets.zero,
-            // constraints: const BoxConstraints(),
+            tooltip: LocaleKeys.tools_screen_mcp_reconnect.tr(),
           ),
       ],
+      spacing: .xs,
+      mainAxisSize: MainAxisSize.min,
     );
   }
 }
@@ -286,29 +274,29 @@ class _DisconnectedBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraRow(
-      mainAxisSize: MainAxisSize.min,
-      spacing: AuraSpacing.xs,
       children: [
         AuraBadge.text(
+          child: Text(LocaleKeys.tools_screen_mcp_disconnected.tr()),
           variant: AuraBadgeVariant.warning,
           size: AuraBadgeSize.small,
-          child: Text(LocaleKeys.tools_screen_mcp_disconnected.tr()),
         ),
         if (onReconnect != null)
           IconButton(
-            onPressed: onReconnect,
-            icon: const AuraIcon(
-              Icons.refresh,
-              size: AuraIconSize.small,
-            ),
-            tooltip: LocaleKeys.tools_screen_mcp_reconnect.tr(),
             padding: EdgeInsets.zero,
+            onPressed: onReconnect,
+            tooltip: LocaleKeys.tools_screen_mcp_reconnect.tr(),
             constraints: const BoxConstraints(),
             style: IconButton.styleFrom(
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
+            icon: const AuraIcon(
+              Icons.refresh,
+              size: AuraIconSize.small,
+            ),
           ),
       ],
+      spacing: AuraSpacing.xs,
+      mainAxisSize: MainAxisSize.min,
     );
   }
 }

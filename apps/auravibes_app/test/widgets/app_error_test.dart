@@ -9,13 +9,13 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        theme: ThemeData(extensions: [AuraTheme.light]),
         home: const Scaffold(
           body: AppErrorWidget(
             error: error,
             stackTrace: StackTrace.empty,
           ),
         ),
+        theme: ThemeData(extensions: [AuraTheme.light]),
       ),
     );
 
@@ -27,13 +27,13 @@ void main() {
   testWidgets('renders different error types', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
-        theme: ThemeData(extensions: [AuraTheme.light]),
         home: const Scaffold(
           body: AppErrorWidget(
             error: 42,
             stackTrace: StackTrace.empty,
           ),
         ),
+        theme: ThemeData(extensions: [AuraTheme.light]),
       ),
     );
 

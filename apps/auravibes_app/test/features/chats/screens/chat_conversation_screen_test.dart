@@ -335,9 +335,9 @@ void main() {
       title: 'Test',
       workspaceId: 'ws1',
       isPinned: false,
-      modelId: 'gpt-4',
       createdAt: DateTime(2026),
       updatedAt: DateTime(2026),
+      modelId: 'gpt-4',
     );
     expect(entity.modelId, 'gpt-4');
   });
@@ -384,12 +384,6 @@ void main() {
       await tester.runAsync(() async {
         await tester.pumpWidget(
           EasyLocalization(
-            supportedLocales: const [Locale('en')],
-            path: 'assets/i18n',
-            fallbackLocale: const Locale('en'),
-            startLocale: const Locale('en'),
-            useFallbackTranslations: true,
-            useOnlyLangCode: true,
             child: Builder(
               builder: (context) {
                 return TestProviderScope(
@@ -432,17 +426,23 @@ void main() {
                     ),
                   ],
                   child: MaterialApp(
-                    locale: context.locale,
-                    supportedLocales: context.supportedLocales,
-                    localizationsDelegates: context.localizationDelegates,
                     home: const ChatConversationScreen(
                       workspaceId: _workspaceId,
                       chatId: _chatId,
                     ),
+                    locale: context.locale,
+                    localizationsDelegates: context.localizationDelegates,
+                    supportedLocales: context.supportedLocales,
                   ),
                 );
               },
             ),
+            supportedLocales: const [Locale('en')],
+            path: 'assets/i18n',
+            fallbackLocale: const Locale('en'),
+            startLocale: const Locale('en'),
+            useOnlyLangCode: true,
+            useFallbackTranslations: true,
           ),
         );
         await tester.pump();
@@ -468,12 +468,6 @@ void main() {
     await tester.runAsync(() async {
       await tester.pumpWidget(
         EasyLocalization(
-          supportedLocales: const [Locale('en')],
-          path: 'assets/i18n',
-          fallbackLocale: const Locale('en'),
-          startLocale: const Locale('en'),
-          useFallbackTranslations: true,
-          useOnlyLangCode: true,
           child: Builder(
             builder: (context) {
               return TestProviderScope(
@@ -524,17 +518,23 @@ void main() {
                   ),
                 ],
                 child: MaterialApp(
-                  locale: context.locale,
-                  supportedLocales: context.supportedLocales,
-                  localizationsDelegates: context.localizationDelegates,
                   home: const ChatConversationScreen(
                     workspaceId: _workspaceId,
                     chatId: _chatId,
                   ),
+                  locale: context.locale,
+                  localizationsDelegates: context.localizationDelegates,
+                  supportedLocales: context.supportedLocales,
                 ),
               );
             },
           ),
+          supportedLocales: const [Locale('en')],
+          path: 'assets/i18n',
+          fallbackLocale: const Locale('en'),
+          startLocale: const Locale('en'),
+          useOnlyLangCode: true,
+          useFallbackTranslations: true,
         ),
       );
       await tester.pump();

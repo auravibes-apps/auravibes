@@ -23,11 +23,6 @@ final routerProvider = Provider<GoRouter>(
 
     return GoRouter(
       routes: $appRoutes,
-      initialLocation: '/',
-      navigatorKey: rootNavigatorKey,
-      observers: [
-        routeObserver,
-      ],
       redirect: (context, state) async {
         final currentUri = state.uri;
         final workspaceMatch = matchWorkspaceId(currentUri);
@@ -66,6 +61,11 @@ final routerProvider = Provider<GoRouter>(
 
         return NewChatRoute(workspaceId: firstWorkspaceId).location;
       },
+      initialLocation: '/',
+      observers: [
+        routeObserver,
+      ],
+      navigatorKey: rootNavigatorKey,
     );
   },
 );

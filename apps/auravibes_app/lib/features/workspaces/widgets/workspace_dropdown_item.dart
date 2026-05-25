@@ -65,17 +65,17 @@ class WorkspaceDropdown extends StatelessWidget {
         .firstOrNull;
 
     return AuraDropdownSelector<WorkspaceDropdownItem>(
-      value: activeWorkspace,
       options: workspaces
           .map(
             (w) => AuraDropdownOption<WorkspaceDropdownItem>(
               value: w,
+              child: Text(w.name),
               semanticLabel:
                   '${LocaleKeys.workspace_management_title.tr()}: ${w.name}',
-              child: Text(w.name),
             ),
           )
           .toList(),
+      value: activeWorkspace,
       onChanged: isLoading
           ? null
           : (item) {

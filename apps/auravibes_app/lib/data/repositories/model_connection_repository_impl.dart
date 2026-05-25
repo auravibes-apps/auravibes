@@ -106,11 +106,11 @@ class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
   ) {
     return ModelConnectionsCompanion(
       name: .new(modelConnection.name),
+      modelId: .new(modelConnection.modelId),
+      url: .absentIfNull(modelConnection.url),
       keyValue: .new(encryptedApiKey),
       keySuffix: .new(keySuffix),
-      url: .absentIfNull(modelConnection.url),
       workspaceId: .new(modelConnection.workspaceId),
-      modelId: .new(modelConnection.modelId),
     );
   }
 
@@ -120,13 +120,13 @@ class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
     return ModelConnectionEntity(
       id: modelConnection.id,
       name: modelConnection.name,
-      modelId: modelConnection.modelId,
       key: modelConnection.keyValue,
-      keySuffix: modelConnection.keySuffix,
-      url: modelConnection.url,
+      modelId: modelConnection.modelId,
       createdAt: modelConnection.createdAt,
       updatedAt: modelConnection.updatedAt,
       workspaceId: modelConnection.workspaceId,
+      url: modelConnection.url,
+      keySuffix: modelConnection.keySuffix,
     );
   }
 

@@ -165,7 +165,7 @@ void main() {
     });
 
     test('isValid true when isPinned and other field set', () {
-      const patch = ConversationPatch(isPinned: false, title: 'X');
+      const patch = ConversationPatch(title: 'X', isPinned: false);
       expect(patch.isValid, isTrue);
     });
   });

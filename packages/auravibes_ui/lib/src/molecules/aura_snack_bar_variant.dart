@@ -93,10 +93,10 @@ AuraSnackBarController showAuraSnackBar({
     backgroundColor: backgroundColor,
     foregroundColor: foregroundColor,
     content: content,
+    dismissCallback: dismissWithCleanup,
+    duration: validatedDuration,
     actionLabel: actionLabel,
     onAction: onAction,
-    duration: validatedDuration,
-    dismissCallback: dismissWithCleanup,
   );
 
   // Create overlay entry
@@ -150,8 +150,8 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
 
     // Initialize animation controller
     _animationController = AnimationController(
-      vsync: this,
       duration: const Duration(milliseconds: 300),
+      vsync: this,
     );
 
     // Set up slide animation (slide up from bottom)
@@ -236,8 +236,8 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.15),
-                    blurRadius: 10,
                     offset: const Offset(0, 4),
+                    blurRadius: 10,
                   ),
                 ],
               ),
@@ -245,8 +245,8 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
                 top: false,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
                     vertical: 14,
+                    horizontal: 16,
                   ),
                   child: Row(
                     children: [
@@ -265,15 +265,10 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
                       if (widget.actionLabel != null) ...[
                         const SizedBox(width: 8),
                         GestureDetector(
-                          onTap: () {
-                            // Use provided callback or default no-op
-                            (widget.onAction ?? () {})();
-                            dismiss();
-                          },
                           child: Padding(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
                               vertical: 4,
+                              horizontal: 8,
                             ),
                             child: Text(
                               widget.actionLabel!,
@@ -284,6 +279,11 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
                               ),
                             ),
                           ),
+                          onTap: () {
+                            // Use provided callback or default no-op
+                            (widget.onAction ?? () {})();
+                            dismiss();
+                          },
                         ),
                       ],
                     ],

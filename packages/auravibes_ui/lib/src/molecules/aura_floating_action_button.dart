@@ -65,21 +65,21 @@ class AuraFloatingActionButton extends StatelessWidget {
     final isExtended = size == AuraFABSize.extended;
 
     Widget fab = FloatingActionButton(
-      onPressed: onPressed,
-      backgroundColor:
-          auraColors.getColorOrNull(backgroundColor) ?? auraColors.primary,
+      child: isExtended
+          ? _buildExtendedContent(auraColors)
+          : _buildRegularContent(auraColors),
       foregroundColor:
           auraColors.getColorOrNull(foregroundColor) ?? auraColors.onPrimary,
+      backgroundColor:
+          auraColors.getColorOrNull(backgroundColor) ?? auraColors.primary,
       elevation: _getElevation(),
       focusElevation: _getFocusElevation(),
       hoverElevation: _getHoverElevation(),
       highlightElevation: _getHighlightElevation(),
+      onPressed: onPressed,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(_getBorderRadius()),
       ),
-      child: isExtended
-          ? _buildExtendedContent(auraColors)
-          : _buildRegularContent(auraColors),
     );
 
     // Override size for mini and large variants
@@ -88,35 +88,35 @@ class AuraFloatingActionButton extends StatelessWidget {
         width: _getFABSize(),
         height: _getFABSize(),
         child: FloatingActionButton(
-          onPressed: onPressed,
-          backgroundColor:
-              auraColors.getColorOrNull(backgroundColor) ?? auraColors.primary,
+          child: _buildRegularContent(auraColors),
           foregroundColor:
               auraColors.getColorOrNull(foregroundColor) ??
               auraColors.onPrimary,
+          backgroundColor:
+              auraColors.getColorOrNull(backgroundColor) ?? auraColors.primary,
           elevation: _getElevation(),
           focusElevation: _getFocusElevation(),
           hoverElevation: _getHoverElevation(),
           highlightElevation: _getHighlightElevation(),
+          onPressed: onPressed,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(_getBorderRadius()),
           ),
-          child: _buildRegularContent(auraColors),
         ),
       );
     }
 
     if (isExtended) {
       fab = FloatingActionButton.extended(
-        onPressed: onPressed,
-        backgroundColor:
-            auraColors.getColorOrNull(backgroundColor) ?? auraColors.primary,
         foregroundColor:
             auraColors.getColorOrNull(foregroundColor) ?? auraColors.onPrimary,
+        backgroundColor:
+            auraColors.getColorOrNull(backgroundColor) ?? auraColors.primary,
         elevation: _getElevation(),
         focusElevation: _getFocusElevation(),
         hoverElevation: _getHoverElevation(),
         highlightElevation: _getHighlightElevation(),
+        onPressed: onPressed,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(_getBorderRadius()),
         ),
@@ -147,9 +147,9 @@ class AuraFloatingActionButton extends StatelessWidget {
 
     if (semanticLabel != null) {
       fab = Semantics(
-        label: semanticLabel,
-        button: true,
         child: fab,
+        button: true,
+        label: semanticLabel,
       );
     }
 

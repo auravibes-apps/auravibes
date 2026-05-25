@@ -7,12 +7,12 @@ void main() {
   testWidgets('renders child widget', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
-        theme: ThemeData(extensions: [AuraTheme.light]),
         home: const Scaffold(
           body: AppContent(
             child: Text('child content'),
           ),
         ),
+        theme: ThemeData(extensions: [AuraTheme.light]),
       ),
     );
 
@@ -23,12 +23,12 @@ void main() {
   testWidgets('constrains max width to DesignBreakpoints.sm', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
-        theme: ThemeData(extensions: [AuraTheme.light]),
         home: const Scaffold(
           body: AppContent(
             child: SizedBox.shrink(),
           ),
         ),
+        theme: ThemeData(extensions: [AuraTheme.light]),
       ),
     );
 

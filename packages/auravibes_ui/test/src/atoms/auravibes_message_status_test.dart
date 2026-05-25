@@ -9,14 +9,14 @@ void main() {
     testWidgets('renders sending status with correct icon', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData.light().copyWith(
-            extensions: [AuraTheme.light],
-          ),
           home: const Scaffold(
             body: AuraMessageStatus(
               status: AuraMessageDeliveryStatus.sending,
               showAnimation: false, // Disable animation for stable testing
             ),
+          ),
+          theme: ThemeData.light().copyWith(
+            extensions: [AuraTheme.light],
           ),
         ),
       );
@@ -32,14 +32,14 @@ void main() {
     testWidgets('renders sent status with correct icon', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData.light().copyWith(
-            extensions: [AuraTheme.light],
-          ),
           home: const Scaffold(
             body: AuraMessageStatus(
               status: AuraMessageDeliveryStatus.sent,
               showAnimation: false, // Disable animation for stable testing
             ),
+          ),
+          theme: ThemeData.light().copyWith(
+            extensions: [AuraTheme.light],
           ),
         ),
       );

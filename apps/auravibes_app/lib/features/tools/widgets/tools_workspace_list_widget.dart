@@ -1,8 +1,7 @@
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
+import 'package:auravibes_app/features/tools/widgets/tools_empty_state.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_group_card.dart';
-import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/app_error_widget.dart';
-import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -29,61 +28,25 @@ class ToolsWorkspaceListWidget extends ConsumerWidget {
 
     return switch (groupedToolsAsync) {
       AsyncLoading() => const Center(child: AuraSpinner()),
-      AsyncData(value: final groups) when groups.isEmpty => _EmptyToolsState(),
+      AsyncData(value: final groups) when groups.isEmpty => ToolsEmptyState(
+        padding: EdgeInsets.all(context.auraTheme.spacing.xl),
+      ),
       AsyncData(value: final groups) => ListView.builder(
         padding: EdgeInsets.symmetric(
           vertical: context.auraTheme.spacing.sm,
         ),
-        itemCount: groups.length,
         itemBuilder: (context, index) {
           return ToolsGroupCard(
             groupWithTools: groups[index],
             workspaceId: workspaceId,
           );
         },
+        itemCount: groups.length,
       ),
       AsyncError(:final error, :final stackTrace) => AppErrorWidget(
         error: error,
         stackTrace: stackTrace,
       ),
     };
-  }
-}
-
-/// Empty state when no tools are configured.
-class _EmptyToolsState extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.all(context.auraTheme.spacing.xl),
-        child: const AuraColumn(
-          mainAxisSize: MainAxisSize.min,
-          spacing: AuraSpacing.md,
-          children: [
-            Opacity(
-              opacity: 0.5,
-              child: AuraIcon(
-                Icons.build_circle_outlined,
-                size: AuraIconSize.extraLarge,
-                color: AuraColorVariant.onSurfaceVariant,
-              ),
-            ),
-            AuraText(
-              style: AuraTextStyle.heading6,
-              color: AuraColorVariant.onSurfaceVariant,
-              textAlign: TextAlign.center,
-              child: TextLocale(LocaleKeys.tools_screen_no_tools_added),
-            ),
-            AuraText(
-              style: AuraTextStyle.bodySmall,
-              color: AuraColorVariant.onSurfaceVariant,
-              textAlign: TextAlign.center,
-              child: TextLocale(LocaleKeys.tools_screen_add_tools_hint),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }

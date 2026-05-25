@@ -11,21 +11,12 @@ Widget defaultTooltipUseCase(BuildContext context) {
         label: 'message',
         initialValue: 'This is a helpful tooltip!',
       ),
+      child: IconButton(onPressed: () {}, icon: const Icon(Icons.info_outline)),
       colorVariant: context.knobs.object.dropdown(
         label: 'colorVariant',
         options: AuraColorVariant.values,
         initialOption: AuraColorVariant.onSurface,
         labelBuilder: (value) => value.name,
-      ),
-      waitDuration: Duration(
-        milliseconds: context.knobs.double
-            .slider(
-              label: 'waitDuration (ms)',
-              initialValue: 0,
-              min: 0,
-              max: 2000,
-            )
-            .toInt(),
       ),
       showDuration: Duration(
         milliseconds: context.knobs.double
@@ -37,7 +28,16 @@ Widget defaultTooltipUseCase(BuildContext context) {
             )
             .toInt(),
       ),
-      child: IconButton(onPressed: () {}, icon: const Icon(Icons.info_outline)),
+      waitDuration: Duration(
+        milliseconds: context.knobs.double
+            .slider(
+              label: 'waitDuration (ms)',
+              initialValue: 0,
+              min: 0,
+              max: 2000,
+            )
+            .toInt(),
+      ),
     ),
   );
 }

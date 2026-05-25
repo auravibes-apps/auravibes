@@ -17,18 +17,18 @@ class ModelsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraScreen(
+      child: AuraColumn(
+        children: [
+          _AddModelModalButton(workspaceId: workspaceId),
+          Expanded(child: ListModelConnectionsWidget(workspaceId: workspaceId)),
+        ],
+      ),
       appBar: AuraAppBar(
         title: const TextLocale(LocaleKeys.models_screens_title),
         leading: AuraIconButton(
           icon: Icons.arrow_back,
           onPressed: () => Navigator.of(context).pop(),
         ),
-      ),
-      child: AuraColumn(
-        children: [
-          _AddModelModalButton(workspaceId: workspaceId),
-          Expanded(child: ListModelConnectionsWidget(workspaceId: workspaceId)),
-        ],
       ),
     );
   }
@@ -42,7 +42,6 @@ class _AddModelModalButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return AuraPadding(
-      padding: const .horizontal(.md),
       child: AppContent(
         child: Row(
           children: [
@@ -87,6 +86,7 @@ class _AddModelModalButton extends ConsumerWidget {
           ],
         ),
       ),
+      padding: const .horizontal(.md),
     );
   }
 }

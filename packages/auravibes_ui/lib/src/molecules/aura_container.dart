@@ -68,40 +68,40 @@ class AuraContainer extends StatelessWidget {
 
     if (padding != null) {
       container = AuraPadding(
-        padding: padding!,
         child: child,
+        padding: padding!,
       );
     }
 
     container = Container(
-      width: width,
-      height: height,
       alignment: alignment,
       decoration: BoxDecoration(
         color:
             auraTheme.colors.getColorOrNull(backgroundColor) ??
             auraTheme.colors.surface,
+        border: border,
         borderRadius: borderRadius != null
             ? BorderRadius.circular(borderRadius!)
             : null,
-        border: border,
         boxShadow: _getBoxShadow(),
       ),
+      width: width,
+      height: height,
       child: container,
     );
 
     if (margin != null) {
       container = AuraPadding(
-        padding: margin!,
         child: container,
+        padding: margin!,
       );
     }
 
     if (semanticLabel != null) {
       container = Semantics(
-        label: semanticLabel,
-        container: true,
         child: container,
+        container: true,
+        label: semanticLabel,
       );
     }
 

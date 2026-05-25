@@ -11,12 +11,12 @@ void main() {
 
     final widget = AppGroupButtonSingleBase<String>(
       value: valueProvider,
-      onChanged: onChangedProvider,
-      labelLocaleKey: 'settings.label',
       items: const [
         AuraButtonGroupItem(value: 'x', child: Text('X')),
         AuraButtonGroupItem(value: 'y', child: Text('Y')),
       ],
+      onChanged: onChangedProvider,
+      labelLocaleKey: 'settings.label',
     );
 
     expect(widget.labelLocaleKey, 'settings.label');
@@ -31,9 +31,9 @@ void main() {
 
     final widget = AppGroupButtonSingleBase<String>(
       value: valueProvider,
+      items: const [],
       onChanged: onChangedProvider,
       labelLocaleKey: 'test',
-      items: const [],
     );
 
     expect(widget, isA<AppGroupButtonSingleBase<String>>());

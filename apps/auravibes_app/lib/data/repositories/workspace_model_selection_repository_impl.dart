@@ -83,28 +83,28 @@ class WorkspaceModelSelectionRepositoryImpl
       workspaceModelSelection: WorkspaceModelSelectionEntity(
         id: withProvider.model.id,
         modelId: withProvider.model.modelId,
-        modelConnectionId: withProvider.model.modelConnectionId,
         createdAt: withProvider.model.createdAt,
         updatedAt: withProvider.model.updatedAt,
+        modelConnectionId: withProvider.model.modelConnectionId,
         supportsReasoning: withProvider.apiModel?.supportsReasoning ?? false,
       ),
       modelConnection: ModelConnectionEntity(
         id: withProvider.modelConnection.id,
         name: withProvider.modelConnection.name,
         key: withProvider.modelConnection.keyValue,
+        modelId: withProvider.modelConnection.modelId,
         createdAt: withProvider.modelConnection.createdAt,
         updatedAt: withProvider.modelConnection.updatedAt,
         workspaceId: withProvider.modelConnection.workspaceId,
         url: withProvider.modelConnection.url,
-        modelId: withProvider.modelConnection.modelId,
         keySuffix: withProvider.modelConnection.keySuffix,
       ),
       modelsProvider: ApiModelProviderEntity(
         id: withProvider.modelProvider.id,
         name: withProvider.modelProvider.name,
         type: _mapToTypeTable(withProvider.modelProvider.type),
-        doc: withProvider.modelProvider.doc,
         url: withProvider.modelProvider.url,
+        doc: withProvider.modelProvider.doc,
       ),
     );
   }

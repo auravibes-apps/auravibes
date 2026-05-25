@@ -151,9 +151,9 @@ void main() {
 
       test('totalTokens takes precedence over sum', () {
         const metadata = MessageMetadataEntity(
-          totalTokens: 100,
           promptTokens: 30,
           completionTokens: 20,
+          totalTokens: 100,
         );
         expect(metadata.usedTokens, 100);
       });

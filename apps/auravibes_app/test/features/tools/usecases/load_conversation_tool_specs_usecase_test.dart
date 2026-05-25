@@ -150,9 +150,9 @@ void main() {
       final tools = [
         WorkspaceToolEntity(
           id: 'w1',
+          workspaceId: 'ws-1',
           toolId: 'tool1',
           isEnabled: true,
-          workspaceId: 'ws-1',
           permissionMode: ToolPermissionMode.alwaysAllow,
           createdAt: DateTime(2026),
           updatedAt: DateTime(2026),

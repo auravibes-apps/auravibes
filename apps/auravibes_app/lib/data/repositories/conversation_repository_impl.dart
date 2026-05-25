@@ -142,10 +142,10 @@ class ConversationRepositoryImpl implements ConversationRepository {
       id: conversationTable.id,
       title: conversationTable.title,
       workspaceId: conversationTable.workspaceId,
-      modelId: conversationTable.modelId,
       isPinned: conversationTable.isPinned,
       createdAt: conversationTable.createdAt,
       updatedAt: conversationTable.updatedAt,
+      modelId: conversationTable.modelId,
     );
   }
 
@@ -153,8 +153,8 @@ class ConversationRepositoryImpl implements ConversationRepository {
     ConversationToCreate conversation,
   ) {
     return ConversationsCompanion(
-      title: Value(conversation.title),
       workspaceId: Value(conversation.workspaceId),
+      title: Value(conversation.title),
       modelId: Value(conversation.modelId),
       isPinned: Value(conversation.isPinned ?? false),
     );
