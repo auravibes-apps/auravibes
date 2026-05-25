@@ -38,8 +38,8 @@ class AddMcpModal extends HookConsumerWidget {
       child: Container(
         width: MediaQuery.sizeOf(context).width * 0.9,
         constraints: BoxConstraints(
-          maxHeight: MediaQuery.sizeOf(context).height * 0.85,
           maxWidth: 450,
+          maxHeight: MediaQuery.sizeOf(context).height * 0.85,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -57,8 +57,6 @@ class AddMcpModal extends HookConsumerWidget {
                 child: Stack(
                   children: [
                     AuraColumn(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      spacing: AuraSpacing.md,
                       children: [
                         // Name field (required)
                         _NameInput(workspaceId: workspaceId),
@@ -91,6 +89,8 @@ class AddMcpModal extends HookConsumerWidget {
                           child: _BearerTokenField(workspaceId: workspaceId),
                         ),
                       ],
+                      spacing: AuraSpacing.md,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                     ),
                     _LoadingOverlay(workspaceId: workspaceId),
                   ],
@@ -124,13 +124,13 @@ class AddMcpModal extends HookConsumerWidget {
           ),
           const Expanded(
             child: AuraText(
-              style: AuraTextStyle.heading6,
               child: TextLocale(LocaleKeys.mcp_modal_title),
+              style: AuraTextStyle.heading6,
             ),
           ),
           AuraIconButton(
-            onPressed: () => Navigator.of(context).pop(),
             icon: Icons.close,
+            onPressed: () => Navigator.of(context).pop(),
           ),
         ],
       ),
@@ -184,16 +184,16 @@ class _ErrorBanner extends ConsumerWidget {
     }
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: context.auraTheme.spacing.md,
         vertical: context.auraTheme.spacing.sm,
+        horizontal: context.auraTheme.spacing.md,
       ),
       color: context.auraColors.error.withValues(alpha: 0.1),
       child: Row(
         children: [
           const AuraIcon(
             Icons.error_outline,
-            color: AuraColorVariant.error,
             size: AuraIconSize.small,
+            color: AuraColorVariant.error,
           ),
           SizedBox(width: context.auraTheme.spacing.sm),
           Expanded(
@@ -252,17 +252,17 @@ class _Footer extends HookConsumerWidget {
         children: [
           Expanded(
             child: AuraButton(
-              variant: AuraButtonVariant.outlined,
               onPressed: () => Navigator.of(context).pop(),
               child: const TextLocale(LocaleKeys.common_cancel),
+              variant: AuraButtonVariant.outlined,
             ),
           ),
           SizedBox(width: context.auraTheme.spacing.sm),
           Expanded(
             child: AuraButton(
               onPressed: onSave,
-              isLoading: isSubmitting,
               child: const TextLocale(LocaleKeys.common_save),
+              isLoading: isSubmitting,
             ),
           ),
         ],
@@ -312,14 +312,14 @@ class _Http2Toggle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppToggleBase(
+      labelLocaleKey: LocaleKeys.mcp_modal_fields_use_http2_label,
+      hintLocaleKey: LocaleKeys.mcp_modal_fields_use_http2_hint,
       value: mcpFormProvider(workspaceId).select(
         (value) => value.useHttp2,
       ),
       onChanged: mcpFormProvider(workspaceId).notifier.select(
         (notifier) => notifier.setUseHttp2,
       ),
-      hintLocaleKey: LocaleKeys.mcp_modal_fields_use_http2_hint,
-      labelLocaleKey: LocaleKeys.mcp_modal_fields_use_http2_label,
     );
   }
 }
@@ -340,20 +340,19 @@ class _AuthenticationSelector extends ConsumerWidget {
     );
 
     return AppGroupButtonSingleBase<McpAuthenticationTypeOptions>(
+      value: mcpFormProvider(workspaceId).select(
+        (value) => value.authenticationType,
+      ),
       items: availableTypes.map((type) {
         return AuraButtonGroupItem(
           value: type,
           child: TextLocale(_getAuthTypeLocaleKey(type)),
         );
       }).toList(),
-
-      labelLocaleKey: LocaleKeys.mcp_modal_fields_authentication_label,
       onChanged: mcpFormProvider(workspaceId).notifier.select(
         (value) => value.setAuthenticationType,
       ),
-      value: mcpFormProvider(workspaceId).select(
-        (value) => value.authenticationType,
-      ),
+      labelLocaleKey: LocaleKeys.mcp_modal_fields_authentication_label,
     );
   }
 
@@ -377,15 +376,14 @@ class _NameInput extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppInputBase(
+      labelLocaleKey: LocaleKeys.mcp_modal_fields_name_label,
+      placeholderLocaleKey: LocaleKeys.mcp_modal_fields_name_placeholder,
       value: mcpFormProvider(workspaceId).select(
         (value) => value.name,
       ),
       onChanged: mcpFormProvider(workspaceId).notifier.select(
         (value) => value.setName,
       ),
-
-      labelLocaleKey: LocaleKeys.mcp_modal_fields_name_label,
-      placeholderLocaleKey: LocaleKeys.mcp_modal_fields_name_placeholder,
     );
   }
 }
@@ -398,14 +396,14 @@ class _DescriptionInput extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppInputBase(
+      labelLocaleKey: LocaleKeys.mcp_modal_fields_description_label,
+      placeholderLocaleKey: LocaleKeys.mcp_modal_fields_description_placeholder,
       value: mcpFormProvider(workspaceId).select(
         (value) => value.description,
       ),
       onChanged: mcpFormProvider(workspaceId).notifier.select(
         (value) => value.setDescription,
       ),
-      labelLocaleKey: LocaleKeys.mcp_modal_fields_description_label,
-      placeholderLocaleKey: LocaleKeys.mcp_modal_fields_description_placeholder,
     );
   }
 }
@@ -418,14 +416,14 @@ class _UrlInput extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppInputBase(
+      labelLocaleKey: LocaleKeys.mcp_modal_fields_url_label,
+      placeholderLocaleKey: LocaleKeys.mcp_modal_fields_url_placeholder,
       value: mcpFormProvider(workspaceId).select(
         (value) => value.url,
       ),
       onChanged: mcpFormProvider(workspaceId).notifier.select(
         (value) => value.setUrl,
       ),
-      labelLocaleKey: LocaleKeys.mcp_modal_fields_url_label,
-      placeholderLocaleKey: LocaleKeys.mcp_modal_fields_url_placeholder,
       hintLocaleKey: LocaleKeys.mcp_modal_fields_url_hint,
     );
   }
@@ -439,15 +437,15 @@ class _BearerTokenField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppInputBase(
+      labelLocaleKey: LocaleKeys.mcp_modal_fields_bearer_token_label,
+      placeholderLocaleKey:
+          LocaleKeys.mcp_modal_fields_bearer_token_placeholder,
       value: mcpFormProvider(workspaceId).select(
         (value) => value.bearerToken,
       ),
       onChanged: mcpFormProvider(workspaceId).notifier.select(
         (value) => value.setBearerToken,
       ),
-      labelLocaleKey: LocaleKeys.mcp_modal_fields_bearer_token_label,
-      placeholderLocaleKey:
-          LocaleKeys.mcp_modal_fields_bearer_token_placeholder,
       hintLocaleKey: LocaleKeys.mcp_modal_fields_bearer_token_hint,
       obscureText: true,
     );

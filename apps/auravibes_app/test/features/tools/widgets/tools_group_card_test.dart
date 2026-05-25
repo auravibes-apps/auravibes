@@ -62,12 +62,6 @@ class _MockGroupedNotifier extends GroupedToolsNotifier {
 
 Widget _buildSubject(Widget child) {
   return EasyLocalization(
-    supportedLocales: const [Locale('en')],
-    path: 'assets/i18n',
-    fallbackLocale: const Locale('en'),
-    startLocale: const Locale('en'),
-    useFallbackTranslations: true,
-    useOnlyLangCode: true,
     child: TestProviderScope(
       overrides: [
         groupedToolsProvider(
@@ -81,6 +75,12 @@ Widget _buildSubject(Widget child) {
         ),
       ),
     ),
+    supportedLocales: const [Locale('en')],
+    path: 'assets/i18n',
+    fallbackLocale: const Locale('en'),
+    startLocale: const Locale('en'),
+    useOnlyLangCode: true,
+    useFallbackTranslations: true,
   );
 }
 
@@ -285,8 +285,8 @@ void main() {
 
   testWidgets('MCP group with error shows reconnect', (tester) async {
     final mcpGroup = _group(
-      name: 'MCP Server',
       id: 'mcp-g1',
+      name: 'MCP Server',
     );
     final groupWithTools = ToolsGroupWithTools(
       group: mcpGroup,
@@ -294,13 +294,13 @@ void main() {
       mcpConnectionState: McpConnectionState(
         server: McpServerEntity(
           id: 'srv-1',
+          workspaceId: _workspaceId,
           name: 'Test MCP',
           url: 'http://localhost:8080',
           transport: const McpTransportTypeSSE(),
           authenticationType: const McpAuthenticationType.none(),
           createdAt: DateTime(2026),
           updatedAt: DateTime(2026),
-          workspaceId: _workspaceId,
         ),
         status: McpConnectionStatus.error,
         errorMessage: 'Connection failed',
@@ -347,20 +347,20 @@ void main() {
   });
 
   testWidgets('MCP group with disconnected shows reconnect', (tester) async {
-    final mcpGroup = _group(name: 'MCP Disc', id: 'mcp-g2');
+    final mcpGroup = _group(id: 'mcp-g2', name: 'MCP Disc');
     final groupWithTools = ToolsGroupWithTools(
       group: mcpGroup,
       tools: [_tool()],
       mcpConnectionState: McpConnectionState(
         server: McpServerEntity(
           id: 'srv-2',
+          workspaceId: _workspaceId,
           name: 'Test MCP',
           url: 'http://localhost:8080',
           transport: const McpTransportTypeSSE(),
           authenticationType: const McpAuthenticationType.none(),
           createdAt: DateTime(2026),
           updatedAt: DateTime(2026),
-          workspaceId: _workspaceId,
         ),
         status: McpConnectionStatus.disconnected,
       ),
@@ -382,20 +382,20 @@ void main() {
   testWidgets('MCP group without error or disconnected has no reconnect', (
     tester,
   ) async {
-    final mcpGroup = _group(name: 'MCP OK', id: 'mcp-g3');
+    final mcpGroup = _group(id: 'mcp-g3', name: 'MCP OK');
     final groupWithTools = ToolsGroupWithTools(
       group: mcpGroup,
       tools: [_tool()],
       mcpConnectionState: McpConnectionState(
         server: McpServerEntity(
           id: 'srv-3',
+          workspaceId: _workspaceId,
           name: 'MCP OK',
           url: 'http://localhost:8080',
           transport: const McpTransportTypeSSE(),
           authenticationType: const McpAuthenticationType.none(),
           createdAt: DateTime(2026),
           updatedAt: DateTime(2026),
-          workspaceId: _workspaceId,
         ),
         status: McpConnectionStatus.connected,
       ),
@@ -436,20 +436,20 @@ void main() {
   });
 
   testWidgets('MCP group with connecting status renders', (tester) async {
-    final mcpGroup = _group(name: 'MCP Connecting', id: 'mcp-g4');
+    final mcpGroup = _group(id: 'mcp-g4', name: 'MCP Connecting');
     final groupWithTools = ToolsGroupWithTools(
       group: mcpGroup,
       tools: [_tool()],
       mcpConnectionState: McpConnectionState(
         server: McpServerEntity(
           id: 'srv-4',
+          workspaceId: _workspaceId,
           name: 'MCP Conn',
           url: 'http://localhost:8080',
           transport: const McpTransportTypeSSE(),
           authenticationType: const McpAuthenticationType.none(),
           createdAt: DateTime(2026),
           updatedAt: DateTime(2026),
-          workspaceId: _workspaceId,
         ),
         status: McpConnectionStatus.connecting,
       ),
@@ -471,20 +471,20 @@ void main() {
   testWidgets('MCP group expanded shows tools without delete button', (
     tester,
   ) async {
-    final mcpGroup = _group(name: 'MCP Tools', id: 'mcp-g5');
+    final mcpGroup = _group(id: 'mcp-g5', name: 'MCP Tools');
     final groupWithTools = ToolsGroupWithTools(
       group: mcpGroup,
       tools: [_tool()],
       mcpConnectionState: McpConnectionState(
         server: McpServerEntity(
           id: 'srv-5',
+          workspaceId: _workspaceId,
           name: 'MCP',
           url: 'http://localhost:8080',
           transport: const McpTransportTypeSSE(),
           authenticationType: const McpAuthenticationType.none(),
           createdAt: DateTime(2026),
           updatedAt: DateTime(2026),
-          workspaceId: _workspaceId,
         ),
         status: McpConnectionStatus.connected,
       ),
@@ -576,8 +576,8 @@ void main() {
 
   testWidgets('MCP error group shows reconnect button', (tester) async {
     final mcpGroup = _group(
-      name: 'MCP Err',
       id: 'mcp-err',
+      name: 'MCP Err',
       mcpServerId: 'srv-err',
     );
     final groupWithTools = ToolsGroupWithTools(
@@ -586,13 +586,13 @@ void main() {
       mcpConnectionState: McpConnectionState(
         server: McpServerEntity(
           id: 'srv-err',
+          workspaceId: _workspaceId,
           name: 'MCP',
           url: 'http://localhost:8080',
           transport: const McpTransportTypeSSE(),
           authenticationType: const McpAuthenticationType.none(),
           createdAt: DateTime(2026),
           updatedAt: DateTime(2026),
-          workspaceId: _workspaceId,
         ),
         status: McpConnectionStatus.error,
         errorMessage: 'Connection failed',
@@ -620,8 +620,8 @@ void main() {
 
   testWidgets('MCP group shows delete button', (tester) async {
     final mcpGroup = _group(
-      name: 'MCP Del',
       id: 'mcp-del',
+      name: 'MCP Del',
       mcpServerId: 'srv-del',
     );
     final groupWithTools = ToolsGroupWithTools(
@@ -630,13 +630,13 @@ void main() {
       mcpConnectionState: McpConnectionState(
         server: McpServerEntity(
           id: 'srv-del',
+          workspaceId: _workspaceId,
           name: 'MCP',
           url: 'http://localhost:8080',
           transport: const McpTransportTypeSSE(),
           authenticationType: const McpAuthenticationType.none(),
           createdAt: DateTime(2026),
           updatedAt: DateTime(2026),
-          workspaceId: _workspaceId,
         ),
         status: McpConnectionStatus.connected,
       ),
@@ -657,8 +657,8 @@ void main() {
 
   testWidgets('MCP disconnected group shows reconnect button', (tester) async {
     final mcpGroup = _group(
-      name: 'MCP Disconn',
       id: 'mcp-disc',
+      name: 'MCP Disconn',
       mcpServerId: 'srv-disc',
     );
     final groupWithTools = ToolsGroupWithTools(
@@ -667,13 +667,13 @@ void main() {
       mcpConnectionState: McpConnectionState(
         server: McpServerEntity(
           id: 'srv-disc',
+          workspaceId: _workspaceId,
           name: 'MCP',
           url: 'http://localhost:8080',
           transport: const McpTransportTypeSSE(),
           authenticationType: const McpAuthenticationType.none(),
           createdAt: DateTime(2026),
           updatedAt: DateTime(2026),
-          workspaceId: _workspaceId,
         ),
         status: McpConnectionStatus.disconnected,
       ),

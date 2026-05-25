@@ -48,9 +48,9 @@ class ConversationToolsDao extends DatabaseAccessor<AppDatabase>
       ),
       onConflict: DoUpdate(
         (old) => ConversationToolsCompanion(
+          updatedAt: Value(DateTime.now()),
           isEnabled: Value(isEnabled),
           permissions: Value(permission),
-          updatedAt: Value(DateTime.now()),
         ),
       ),
     );
@@ -74,8 +74,8 @@ class ConversationToolsDao extends DatabaseAccessor<AppDatabase>
           ))
           .write(
             ConversationToolsCompanion(
-              isEnabled: Value(isEnabled),
               updatedAt: Value(DateTime.now()),
+              isEnabled: Value(isEnabled),
             ),
           );
       return (await getConversationTool(conversationId, toolId))!;
@@ -107,8 +107,8 @@ class ConversationToolsDao extends DatabaseAccessor<AppDatabase>
           ))
           .write(
             ConversationToolsCompanion(
-              permissions: Value(permission),
               updatedAt: Value(DateTime.now()),
+              permissions: Value(permission),
             ),
           );
       return (await getConversationTool(conversationId, toolId))!;

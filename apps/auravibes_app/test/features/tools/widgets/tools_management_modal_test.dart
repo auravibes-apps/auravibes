@@ -51,6 +51,10 @@ void main() {
       await tester.runAsync(() async {
         await tester.pumpWidget(
           testableApp(
+            child: Theme(
+              data: ThemeData(extensions: [AuraTheme.light]),
+              child: const ToolsManagementModal(workspaceId: 'ws-1'),
+            ),
             overrides: [
               conversationToolsProvider(
                 workspaceId: 'ws-1',
@@ -59,10 +63,6 @@ void main() {
                 workspaceId: 'ws-1',
               ).overrideWith(_MockGroupedConversationToolsNotifier.new),
             ],
-            child: Theme(
-              data: ThemeData(extensions: [AuraTheme.light]),
-              child: const ToolsManagementModal(workspaceId: 'ws-1'),
-            ),
           ),
         );
       });

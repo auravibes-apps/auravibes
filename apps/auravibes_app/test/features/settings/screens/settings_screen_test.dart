@@ -63,11 +63,11 @@ void main() {
       await tester.runAsync(() async {
         await tester.pumpWidget(
           testableApp(
-            overrides: [themeProvider.overrideWith(_MockThemeNotifier.new)],
             child: Theme(
               data: ThemeData(extensions: [AuraTheme.light]),
               child: const SettingsScreen(workspaceId: 'test-ws'),
             ),
+            overrides: [themeProvider.overrideWith(_MockThemeNotifier.new)],
           ),
         );
       });
@@ -81,11 +81,11 @@ void main() {
       await tester.runAsync(() async {
         await tester.pumpWidget(
           testableApp(
-            overrides: [themeProvider.overrideWith(_MockThemeNotifier.new)],
             child: Theme(
               data: ThemeData(extensions: [AuraTheme.light]),
               child: const SettingsScreen(workspaceId: 'test-ws'),
             ),
+            overrides: [themeProvider.overrideWith(_MockThemeNotifier.new)],
           ),
         );
       });

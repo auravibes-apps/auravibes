@@ -52,24 +52,24 @@ class AuraConfirmDialog extends StatelessWidget {
       message: message,
       actions: [
         AuraButton(
-          variant: AuraButtonVariant.text,
           onPressed: () {
             Navigator.of(context).pop(false);
             onCancel?.call();
           },
           child: cancelLabel,
+          variant: AuraButtonVariant.text,
         ),
         const SizedBox(width: 8),
         AuraButton(
-          variant: AuraButtonVariant.text,
           onPressed: () {
             Navigator.of(context).pop(true);
             onConfirm?.call();
           },
+          child: confirmLabel,
+          variant: AuraButtonVariant.text,
           colorVariant: isDestructive
               ? AuraColorVariant.error
               : colorVariant ?? AuraColorVariant.primary,
-          child: confirmLabel,
         ),
       ],
     );
@@ -109,12 +109,12 @@ class AuraAlertDialog extends StatelessWidget {
       message: message,
       actions: [
         AuraButton(
-          variant: AuraButtonVariant.text,
           onPressed: () {
             Navigator.of(context).pop();
           },
-          colorVariant: colorVariant,
           child: dismissLabel,
+          variant: AuraButtonVariant.text,
+          colorVariant: colorVariant,
         ),
       ],
     );
@@ -141,13 +141,13 @@ class _AuraDialogShell extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 24),
-          constraints: const BoxConstraints(maxWidth: 400),
           decoration: BoxDecoration(
             color: auraColors.surface,
             borderRadius: BorderRadius.circular(auraTheme.borderRadius.lg),
             boxShadow: const [DesignShadows.lg],
           ),
+          constraints: const BoxConstraints(maxWidth: 400),
+          margin: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -156,14 +156,14 @@ class _AuraDialogShell extends StatelessWidget {
               Padding(
                 padding: EdgeInsets.only(
                   left: auraTheme.spacing.md,
-                  right: auraTheme.spacing.md,
                   top: auraTheme.spacing.lg,
+                  right: auraTheme.spacing.md,
                 ),
                 child: DefaultTextStyle(
                   style: TextStyle(
+                    color: auraColors.onSurface,
                     fontSize: auraTheme.typography.sizes.lg,
                     fontWeight: auraTheme.typography.weights.semibold,
-                    color: auraColors.onSurface,
                   ),
                   child: title,
                 ),
@@ -172,14 +172,14 @@ class _AuraDialogShell extends StatelessWidget {
               Flexible(
                 child: SingleChildScrollView(
                   padding: EdgeInsets.symmetric(
-                    horizontal: auraTheme.spacing.md,
                     vertical: auraTheme.spacing.sm,
+                    horizontal: auraTheme.spacing.md,
                   ),
                   child: DefaultTextStyle(
                     style: TextStyle(
+                      color: auraColors.onSurfaceVariant,
                       fontSize: auraTheme.typography.sizes.base,
                       fontWeight: auraTheme.typography.weights.regular,
-                      color: auraColors.onSurfaceVariant,
                       height: auraTheme.typography.lineHeights.base,
                     ),
                     child: message,
@@ -216,9 +216,6 @@ Future<bool?> showAuraConfirmDialog({
 }) {
   return showGeneralDialog<bool>(
     context: context,
-    barrierDismissible: barrierDismissible,
-    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-    barrierColor: Colors.black54,
     pageBuilder: (context, animation, secondaryAnimation) {
       return AuraConfirmDialog(
         title: title,
@@ -229,6 +226,9 @@ Future<bool?> showAuraConfirmDialog({
         colorVariant: colorVariant,
       );
     },
+    barrierDismissible: barrierDismissible,
+    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+    barrierColor: Colors.black54,
     transitionBuilder: (context, animation, secondaryAnimation, child) {
       return FadeTransition(
         opacity: animation,
@@ -272,9 +272,6 @@ Future<void> showAuraAlertDialog({
 }) async {
   await showGeneralDialog<void>(
     context: context,
-    barrierDismissible: barrierDismissible,
-    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-    barrierColor: Colors.black54,
     pageBuilder: (context, animation, secondaryAnimation) {
       return AuraAlertDialog(
         title: title,
@@ -283,6 +280,9 @@ Future<void> showAuraAlertDialog({
         colorVariant: colorVariant,
       );
     },
+    barrierDismissible: barrierDismissible,
+    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+    barrierColor: Colors.black54,
     transitionBuilder: (context, animation, secondaryAnimation, child) {
       return FadeTransition(
         opacity: animation,

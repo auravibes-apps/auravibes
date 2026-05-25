@@ -154,8 +154,8 @@ void main() {
     test('returns true when all fields are valid', () {
       const model = AddModelProviderModel(
         name: 'My Provider',
-        key: 'sk-1234567890',
         modelId: 'openai',
+        key: 'sk-1234567890',
       );
       expect(model.isValid(), isTrue);
     });
@@ -163,8 +163,8 @@ void main() {
     test('returns false when name is invalid', () {
       const model = AddModelProviderModel(
         name: 'A',
-        key: 'sk-1234567890',
         modelId: 'openai',
+        key: 'sk-1234567890',
       );
       expect(model.isValid(), isFalse);
     });
@@ -172,8 +172,8 @@ void main() {
     test('returns false when key is invalid', () {
       const model = AddModelProviderModel(
         name: 'My Provider',
-        key: 'abc',
         modelId: 'openai',
+        key: 'abc',
       );
       expect(model.isValid(), isFalse);
     });
@@ -189,8 +189,8 @@ void main() {
     test('returns false when URL is invalid', () {
       const model = AddModelProviderModel(
         name: 'My Provider',
-        key: 'sk-1234567890',
         modelId: 'openai',
+        key: 'sk-1234567890',
         url: 'invalid-url',
       );
       expect(model.isValid(), isFalse);

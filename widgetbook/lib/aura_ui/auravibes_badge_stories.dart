@@ -6,6 +6,7 @@ import 'package:widgetbook_annotation/widgetbook_annotation.dart' as widgetbook;
 @widgetbook.UseCase(name: 'Text Badge', type: AuraBadge)
 Widget textBadgeUseCase(BuildContext context) {
   return AuraBadge.text(
+    child: Text(context.knobs.string(label: 'text', initialValue: 'Badge')),
     variant: context.knobs.object.dropdown(
       label: 'variant',
       options: AuraBadgeVariant.values,
@@ -14,7 +15,6 @@ Widget textBadgeUseCase(BuildContext context) {
       label: 'size',
       options: AuraBadgeSize.values,
     ),
-    child: Text(context.knobs.string(label: 'text', initialValue: 'Badge')),
   );
 }
 
@@ -46,14 +46,6 @@ Widget dotBadgeUseCase(BuildContext context) {
 @widgetbook.UseCase(name: 'Custom Content Badge', type: AuraBadge)
 Widget customContentBadgeUseCase(BuildContext context) {
   return AuraBadge(
-    variant: context.knobs.object.dropdown(
-      label: 'variant',
-      options: AuraBadgeVariant.values,
-    ),
-    size: context.knobs.object.dropdown(
-      label: 'size',
-      options: AuraBadgeSize.values,
-    ),
     child: const Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -61,6 +53,14 @@ Widget customContentBadgeUseCase(BuildContext context) {
         SizedBox(width: 4),
         Text('Premium', style: TextStyle(color: Colors.white, fontSize: 12)),
       ],
+    ),
+    variant: context.knobs.object.dropdown(
+      label: 'variant',
+      options: AuraBadgeVariant.values,
+    ),
+    size: context.knobs.object.dropdown(
+      label: 'size',
+      options: AuraBadgeSize.values,
     ),
   );
 }

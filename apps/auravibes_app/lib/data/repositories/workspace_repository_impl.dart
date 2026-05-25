@@ -159,9 +159,9 @@ class WorkspaceRepositoryImpl implements WorkspaceRepository {
       id: workspacesTable.id,
       name: workspacesTable.name,
       type: workspacesTable.type,
-      url: workspacesTable.url,
       createdAt: workspacesTable.createdAt,
       updatedAt: workspacesTable.updatedAt,
+      url: workspacesTable.url,
     );
   }
 

@@ -41,18 +41,18 @@ void main() {
           name: 'OpenAI Key',
           key: 'encrypted-key',
           modelId: 'gpt-4',
-          workspaceId: 'ws-1',
           createdAt: DateTime(2026),
           updatedAt: DateTime(2026),
+          workspaceId: 'ws-1',
         ),
         ModelConnectionEntity(
           id: 'conn-2',
           name: 'Anthropic Key',
           key: 'encrypted-key-2',
           modelId: 'claude-3',
-          workspaceId: 'ws-2',
           createdAt: DateTime(2026),
           updatedAt: DateTime(2026),
+          workspaceId: 'ws-2',
         ),
       ];
       final container = ProviderContainer(

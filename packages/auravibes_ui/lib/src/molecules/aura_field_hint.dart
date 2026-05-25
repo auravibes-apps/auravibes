@@ -47,12 +47,12 @@ class AuraFieldHint extends StatelessWidget {
         : (style ?? AuraTextStyle.caption);
 
     return AuraText(
+      child: Semantics(
+        child: displayText,
+        label: semanticLabel,
+      ),
       style: textStyle,
       color: color,
-      child: Semantics(
-        label: semanticLabel,
-        child: displayText,
-      ),
     );
   }
 }

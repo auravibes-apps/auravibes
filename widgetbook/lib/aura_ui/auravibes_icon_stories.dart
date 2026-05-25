@@ -26,10 +26,6 @@ Widget iconButtonBasicUseCase(BuildContext context) {
       ).showSnackBar(const SnackBar(content: Text('Icon button pressed!')));
     },
     disabled: context.knobs.boolean(label: 'Disabled', initialValue: false),
-    tooltip: context.knobs.string(
-      label: 'Tooltip',
-      initialValue: 'Add to favorites',
-    ),
     size: context.knobs.object.dropdown(
       label: 'size',
       options: AuraIconSize.values,
@@ -39,6 +35,10 @@ Widget iconButtonBasicUseCase(BuildContext context) {
       label: 'variant',
       options: AuraIconButtonVariant.values,
       labelBuilder: (value) => value.name,
+    ),
+    tooltip: context.knobs.string(
+      label: 'Tooltip',
+      initialValue: 'Add to favorites',
     ),
   );
 }

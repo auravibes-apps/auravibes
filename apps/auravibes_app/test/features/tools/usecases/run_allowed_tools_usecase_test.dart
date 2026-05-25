@@ -101,12 +101,12 @@ void main() {
 
     test('passes raw argument maps to MCP tools', () async {
       final tool = ToolToCall(
-        id: 'tool-1',
         tool: ResolvedTool.mcp(
           tableId: 'server-1',
           toolIdentifier: 'sum',
           mcpServerId: 'server-1',
         ),
+        id: 'tool-1',
         argumentsRaw: '{"a": 1, "b": 2}',
       );
 
@@ -205,12 +205,12 @@ void main() {
       'returns waitForToolApproval when filtering leaves pending tools',
       () async {
         final tool = ToolToCall(
-          id: 'tool-1',
           tool: ResolvedTool.builtIn(
             tableId: 'calc',
             toolIdentifier: 'calculator',
             tooltype: UserToolType.calculator,
           ),
+          id: 'tool-1',
           argumentsRaw: '{"input": "1+1"}',
         );
 
@@ -259,12 +259,12 @@ void main() {
       'and returns final decision',
       () async {
         final tool = ToolToCall(
-          id: 'tool-1',
           tool: ResolvedTool.builtIn(
             tableId: 'calc',
             toolIdentifier: 'calculator',
             tooltype: UserToolType.calculator,
           ),
+          id: 'tool-1',
           argumentsRaw: '{"input": "1+1"}',
         );
 
@@ -343,21 +343,21 @@ void main() {
       'executes multiple granted tools and collects all results',
       () async {
         final tool1 = ToolToCall(
-          id: 'tool-1',
           tool: ResolvedTool.builtIn(
             tableId: 'calc',
             toolIdentifier: 'calculator',
             tooltype: UserToolType.calculator,
           ),
+          id: 'tool-1',
           argumentsRaw: '{"input": "1+1"}',
         );
         final tool2 = ToolToCall(
-          id: 'tool-2',
           tool: ResolvedTool.builtIn(
             tableId: 'calc',
             toolIdentifier: 'calculator',
             tooltype: UserToolType.calculator,
           ),
+          id: 'tool-2',
           argumentsRaw: '{"input": "2+2"}',
         );
 
@@ -465,21 +465,21 @@ void main() {
       'one tool failure does not block other tools from completing',
       () async {
         final goodTool = ToolToCall(
-          id: 'tool-good',
           tool: ResolvedTool.builtIn(
             tableId: 'calc',
             toolIdentifier: 'calculator',
             tooltype: UserToolType.calculator,
           ),
+          id: 'tool-good',
           argumentsRaw: '{"input": "1+1"}',
         );
         final badTool = ToolToCall(
-          id: 'tool-bad',
           tool: ResolvedTool.builtIn(
             tableId: 'calc',
             toolIdentifier: 'calculator',
             tooltype: UserToolType.calculator,
           ),
+          id: 'tool-bad',
           argumentsRaw: '{}',
         );
 
@@ -591,30 +591,30 @@ void main() {
       'correctly partitions tools with mixed permissions',
       () async {
         final grantedTool = ToolToCall(
-          id: 'tool-granted',
           tool: ResolvedTool.builtIn(
             tableId: 'calc',
             toolIdentifier: 'calculator',
             tooltype: UserToolType.calculator,
           ),
+          id: 'tool-granted',
           argumentsRaw: '{"input": "1+1"}',
         );
         final pendingTool = ToolToCall(
-          id: 'tool-pending',
           tool: ResolvedTool.builtIn(
             tableId: 'other',
             toolIdentifier: 'other_tool',
             tooltype: UserToolType.calculator,
           ),
+          id: 'tool-pending',
           argumentsRaw: '{"input": "test"}',
         );
         final disabledTool = ToolToCall(
-          id: 'tool-disabled',
           tool: ResolvedTool.builtIn(
             tableId: 'disabled',
             toolIdentifier: 'disabled_tool',
             tooltype: UserToolType.calculator,
           ),
+          id: 'tool-disabled',
           argumentsRaw: '{"input": "test"}',
         );
 
@@ -748,21 +748,21 @@ void main() {
       'returns waitForToolApproval when all tools need confirmation',
       () async {
         final tool1 = ToolToCall(
-          id: 'tool-1',
           tool: ResolvedTool.builtIn(
             tableId: 'tool-a',
             toolIdentifier: 'tool_a',
             tooltype: UserToolType.calculator,
           ),
+          id: 'tool-1',
           argumentsRaw: '{"input": "1+1"}',
         );
         final tool2 = ToolToCall(
-          id: 'tool-2',
           tool: ResolvedTool.builtIn(
             tableId: 'tool-b',
             toolIdentifier: 'tool_b',
             tooltype: UserToolType.calculator,
           ),
+          id: 'tool-2',
           argumentsRaw: '{"input": "2+2"}',
         );
 
@@ -864,11 +864,11 @@ void main() {
       'needsConfirmation (not notConfigured)',
       () async {
         final nativeTool = ToolToCall(
-          id: 'native-tool-1',
           tool: ResolvedTool.native(
             tableId: 'ws-tool-url-id',
             nativeToolType: NativeToolType.url,
           ),
+          id: 'native-tool-1',
           argumentsRaw: '{"input": "https://example.com"}',
         );
 
@@ -925,11 +925,11 @@ void main() {
       'granted and executes',
       () async {
         final nativeTool = ToolToCall(
-          id: 'native-tool-1',
           tool: ResolvedTool.native(
             tableId: 'ws-tool-url-id',
             nativeToolType: NativeToolType.url,
           ),
+          id: 'native-tool-1',
           argumentsRaw: '{"input": "https://example.com"}',
         );
 
@@ -1017,11 +1017,11 @@ void main() {
       'status to message metadata',
       () async {
         final nativeTool = ToolToCall(
-          id: 'native-tool-1',
           tool: ResolvedTool.native(
             tableId: 'ws-tool-url-id',
             nativeToolType: NativeToolType.url,
           ),
+          id: 'native-tool-1',
           argumentsRaw: '{"input": "https://example.com"}',
         );
 
@@ -1108,11 +1108,11 @@ void main() {
       'descriptive message in responseRaw',
       () async {
         final nativeTool = ToolToCall(
-          id: 'native-tool-1',
           tool: ResolvedTool.native(
             tableId: 'ws-tool-url-id',
             nativeToolType: NativeToolType.url,
           ),
+          id: 'native-tool-1',
           argumentsRaw: '{"input": "https://example.com"}',
         );
 
@@ -1194,11 +1194,11 @@ void main() {
       'T015: disabledInWorkspace error includes tool name in responseRaw',
       () async {
         final nativeTool = ToolToCall(
-          id: 'native-tool-1',
           tool: ResolvedTool.native(
             tableId: 'ws-tool-url-id',
             nativeToolType: NativeToolType.url,
           ),
+          id: 'native-tool-1',
           argumentsRaw: '{"input": "https://example.com"}',
         );
 
@@ -1319,12 +1319,12 @@ void main() {
       'marks previously failed tool calls with executionError',
       () async {
         final tool = ToolToCall(
-          id: 'tool-1',
           tool: ResolvedTool.builtIn(
             tableId: 'calc',
             toolIdentifier: 'calculator',
             tooltype: UserToolType.calculator,
           ),
+          id: 'tool-1',
           argumentsRaw: '{"input": "1+1"}',
         );
 
@@ -1419,12 +1419,12 @@ void main() {
       'returns done when cancellation is requested before processing',
       () async {
         final tool = ToolToCall(
-          id: 'tool-1',
           tool: ResolvedTool.builtIn(
             tableId: 'calc',
             toolIdentifier: 'calculator',
             tooltype: UserToolType.calculator,
           ),
+          id: 'tool-1',
           argumentsRaw: '{"input": "1+1"}',
         );
 
@@ -1483,12 +1483,12 @@ void main() {
       'handles disabledInConversation permission result',
       () async {
         final tool = ToolToCall(
-          id: 'tool-1',
           tool: ResolvedTool.builtIn(
             tableId: 'calc',
             toolIdentifier: 'calculator',
             tooltype: UserToolType.calculator,
           ),
+          id: 'tool-1',
           argumentsRaw: '{"input": "1+1"}',
         );
 
@@ -1570,12 +1570,12 @@ void main() {
       'skips tool when message not found for update',
       () async {
         final tool = ToolToCall(
-          id: 'tool-1',
           tool: ResolvedTool.builtIn(
             tableId: 'calc',
             toolIdentifier: 'calculator',
             tooltype: UserToolType.calculator,
           ),
+          id: 'tool-1',
           argumentsRaw: '{"input": "1+1"}',
         );
 

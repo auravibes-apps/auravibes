@@ -40,11 +40,11 @@ void main() {
     test('returns stored overrides with fallbacks for null columns', () async {
       final row = WorkspaceCompactionSettingsTable(
         id: 'row-1',
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026, 1, 2),
         workspaceId: 'ws-1',
         autoCompactEnabled: false,
         usagePercentageThreshold: 50,
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026, 1, 2),
       );
       when(() => mockDao.getByWorkspaceId('ws-1')).thenAnswer(
         (_) async => row,
@@ -80,12 +80,12 @@ void main() {
     test('upserts and returns resolved settings', () async {
       final row = WorkspaceCompactionSettingsTable(
         id: 'row-2',
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026, 1, 2),
         workspaceId: 'ws-1',
         autoCompactEnabled: false,
         usagePercentageThreshold: 90,
         remainingTokenThreshold: 5000,
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026, 1, 2),
       );
       when(
         () => mockDao.upsert('ws-1', any()),

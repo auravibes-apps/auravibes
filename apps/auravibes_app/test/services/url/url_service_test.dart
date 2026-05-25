@@ -68,9 +68,9 @@ void main() {
           throw DioException(
             requestOptions: RequestOptions(path: options.path),
             response: Response(
+              data: 'Server Error',
               requestOptions: RequestOptions(),
               statusCode: 500,
-              data: 'Server Error',
             ),
             type: DioExceptionType.badResponse,
           );
@@ -93,9 +93,9 @@ void main() {
           throw DioException(
             requestOptions: RequestOptions(path: options.path),
             response: Response(
+              data: ResponseBody.fromString('Not Found', 404),
               requestOptions: RequestOptions(),
               statusCode: 404,
-              data: ResponseBody.fromString('Not Found', 404),
             ),
             type: DioExceptionType.badResponse,
           );
@@ -119,9 +119,9 @@ void main() {
           throw DioException(
             requestOptions: RequestOptions(path: options.path),
             response: Response(
+              data: 'Bad Request'.codeUnits,
               requestOptions: RequestOptions(),
               statusCode: 400,
-              data: 'Bad Request'.codeUnits,
             ),
             type: DioExceptionType.badResponse,
           );
@@ -146,9 +146,9 @@ void main() {
           throw DioException(
             requestOptions: RequestOptions(path: options.path),
             response: Response(
+              data: data,
               requestOptions: RequestOptions(),
               statusCode: 500,
-              data: data,
             ),
             type: DioExceptionType.badResponse,
           );
@@ -173,15 +173,15 @@ void main() {
             throw DioException(
               requestOptions: RequestOptions(path: options.path),
               response: Response(
-                requestOptions: RequestOptions(),
-                statusCode: 502,
                 data: ResponseBody(
                   Stream<Uint8List>.error(StateError('stream failed')),
                   502,
                 ),
+                requestOptions: RequestOptions(),
+                statusCode: 502,
               ),
-              message: 'Bad gateway',
               type: DioExceptionType.badResponse,
+              message: 'Bad gateway',
             );
           },
         );
@@ -204,9 +204,9 @@ void main() {
           throw DioException(
             requestOptions: RequestOptions(path: options.path),
             response: Response(
+              data: largeBody,
               requestOptions: RequestOptions(),
               statusCode: 500,
-              data: largeBody,
             ),
             type: DioExceptionType.badResponse,
           );
@@ -230,8 +230,8 @@ void main() {
           onFetch: (options, _, _) async {
             throw DioException(
               requestOptions: RequestOptions(path: options.path),
-              message: 'Connection refused',
               type: DioExceptionType.connectionError,
+              message: 'Connection refused',
             );
           },
         );
@@ -252,8 +252,8 @@ void main() {
         onFetch: (options, _, _) async {
           throw DioException(
             requestOptions: RequestOptions(),
-            message: 'Connection refused',
             type: DioExceptionType.connectionError,
+            message: 'Connection refused',
           );
         },
       );

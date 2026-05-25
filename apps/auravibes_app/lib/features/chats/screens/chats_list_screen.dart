@@ -16,13 +16,9 @@ class ChatsListScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return AuraScreen(
-      appBar: const AuraAppBarWithDrawer(
-        title: TextLocale(LocaleKeys.chats_screens_chats_list_title),
-      ),
       child: AuraColumn(
         children: [
           AuraPadding(
-            padding: const .horizontal(.md),
             child: AppContent(
               child: Row(
                 children: [
@@ -39,10 +35,14 @@ class ChatsListScreen extends ConsumerWidget {
                 ],
               ),
             ),
+            padding: const .horizontal(.md),
           ),
 
           Expanded(child: ChatListWidget(workspaceId: workspaceId)),
         ],
+      ),
+      appBar: const AuraAppBarWithDrawer(
+        title: TextLocale(LocaleKeys.chats_screens_chats_list_title),
       ),
     );
   }

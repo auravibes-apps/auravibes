@@ -68,8 +68,8 @@ class WorkspaceSwitcher extends _$WorkspaceSwitcher {
       if (ref.mounted) {
         state = WorkspaceSwitchState(
           status: SwitchStatus.error,
-          errorLocalizationKey: LocaleKeys.workspace_management_switch_error,
           targetWorkspaceId: workspaceId,
+          errorLocalizationKey: LocaleKeys.workspace_management_switch_error,
         );
       }
     }

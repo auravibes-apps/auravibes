@@ -49,8 +49,8 @@ class WorkspaceToolsDao extends DatabaseAccessor<AppDatabase>
           ))
           .write(
             ToolsCompanion(
-              isEnabled: Value(isEnabled),
               updatedAt: Value(DateTime.now()),
+              isEnabled: Value(isEnabled),
             ),
           );
       // Return updated tool
@@ -78,8 +78,8 @@ class WorkspaceToolsDao extends DatabaseAccessor<AppDatabase>
   }) async {
     await (update(tools)..where((tbl) => tbl.id.equals(id))).write(
       ToolsCompanion(
-        isEnabled: Value(isEnabled),
         updatedAt: Value(DateTime.now()),
+        isEnabled: Value(isEnabled),
       ),
     );
     return (select(tools)..where((tbl) => tbl.id.equals(id))).getSingle();
@@ -98,8 +98,8 @@ class WorkspaceToolsDao extends DatabaseAccessor<AppDatabase>
           ))
           .writeReturning(
             ToolsCompanion(
-              config: Value(config),
               updatedAt: Value(DateTime.now()),
+              config: Value(config),
             ),
           );
 
@@ -238,8 +238,8 @@ class WorkspaceToolsDao extends DatabaseAccessor<AppDatabase>
   }) async {
     await (update(tools)..where((tbl) => tbl.id.equals(id))).write(
       ToolsCompanion(
-        permissions: Value(permission),
         updatedAt: Value(DateTime.now()),
+        permissions: Value(permission),
       ),
     );
     return (select(

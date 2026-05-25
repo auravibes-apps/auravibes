@@ -79,8 +79,8 @@ void main() {
       final patched = await database.conversationDao.patchConversation(
         created.id,
         ConversationsCompanion(
-          title: const Value('Updated'),
           updatedAt: Value(DateTime.now()),
+          title: const Value('Updated'),
         ),
       );
       expect(patched, isTrue);

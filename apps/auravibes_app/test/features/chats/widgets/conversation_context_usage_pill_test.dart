@@ -14,12 +14,6 @@ import 'package:riverpod_annotation/experimental/scope.dart';
 void main() {
   Widget buildSubject({required ContextUsageData data}) {
     return EasyLocalization(
-      supportedLocales: const [Locale('en')],
-      path: 'assets/i18n',
-      fallbackLocale: const Locale('en'),
-      startLocale: const Locale('en'),
-      useFallbackTranslations: true,
-      useOnlyLangCode: true,
       child: ProviderScope(
         overrides: [
           contextUsageProvider.overrideWithValue(data),
@@ -33,6 +27,12 @@ void main() {
           ),
         ),
       ),
+      supportedLocales: const [Locale('en')],
+      path: 'assets/i18n',
+      fallbackLocale: const Locale('en'),
+      startLocale: const Locale('en'),
+      useOnlyLangCode: true,
+      useFallbackTranslations: true,
     );
   }
 

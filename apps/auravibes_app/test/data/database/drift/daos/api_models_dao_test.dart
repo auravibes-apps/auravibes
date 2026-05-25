@@ -44,8 +44,8 @@ void main() {
       await seedProvider(database, id: 'openai', name: 'OpenAI');
       final inserted = await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
-          id: 'gpt-4',
           modelProvider: 'openai',
+          id: 'gpt-4',
           name: 'GPT-4',
           limitContext: 128000,
           limitOutput: 4096,
@@ -60,8 +60,8 @@ void main() {
       await seedProvider(database, id: 'openai', name: 'OpenAI');
       await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
-          id: 'gpt-4',
           modelProvider: 'openai',
+          id: 'gpt-4',
           name: 'GPT-4',
           limitContext: 128000,
           limitOutput: 4096,
@@ -69,8 +69,8 @@ void main() {
       );
       final updated = await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
-          id: 'gpt-4',
           modelProvider: 'openai',
+          id: 'gpt-4',
           name: 'GPT-4 Turbo',
           limitContext: 128000,
           limitOutput: 4096,
@@ -83,8 +83,8 @@ void main() {
       await seedProvider(database, id: 'openai', name: 'OpenAI');
       await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
-          id: 'gpt-4',
           modelProvider: 'openai',
+          id: 'gpt-4',
           name: 'GPT-4',
           limitContext: 128000,
           limitOutput: 4096,
@@ -111,8 +111,8 @@ void main() {
       await seedProvider(database, id: 'anthropic', name: 'Anthropic');
       await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
-          id: 'gpt-4',
           modelProvider: 'openai',
+          id: 'gpt-4',
           name: 'GPT-4',
           limitContext: 128000,
           limitOutput: 4096,
@@ -120,8 +120,8 @@ void main() {
       );
       await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
-          id: 'claude-3',
           modelProvider: 'anthropic',
+          id: 'claude-3',
           name: 'Claude 3',
           limitContext: 200000,
           limitOutput: 4096,
@@ -138,8 +138,8 @@ void main() {
       await seedProvider(database, id: 'openai', name: 'OpenAI');
       await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
-          id: 'gpt-4',
           modelProvider: 'openai',
+          id: 'gpt-4',
           name: 'GPT-4',
           limitContext: 128000,
           limitOutput: 4096,
@@ -158,8 +158,8 @@ void main() {
       await seedProvider(database, id: 'openai', name: 'OpenAI');
       await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
-          id: 'gpt-4',
           modelProvider: 'openai',
+          id: 'gpt-4',
           name: 'GPT-4',
           limitContext: 128000,
           limitOutput: 4096,
@@ -167,8 +167,8 @@ void main() {
       );
       await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
-          id: 'gpt-3.5',
           modelProvider: 'openai',
+          id: 'gpt-3.5',
           name: 'GPT-3.5',
           limitContext: 16000,
           limitOutput: 4096,
@@ -184,8 +184,8 @@ void main() {
       await seedProvider(database, id: 'openai', name: 'OpenAI');
       await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
-          id: 'gpt-4',
           modelProvider: 'openai',
+          id: 'gpt-4',
           name: 'GPT-4',
           limitContext: 128000,
           limitOutput: 4096,
@@ -199,8 +199,8 @@ void main() {
       await seedProvider(database, id: 'openai', name: 'OpenAI');
       await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
-          id: 'gpt-4',
           modelProvider: 'openai',
+          id: 'gpt-4',
           name: 'GPT-4 Turbo',
           limitContext: 128000,
           limitOutput: 4096,
@@ -208,8 +208,8 @@ void main() {
       );
       await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
-          id: 'gpt-3.5',
           modelProvider: 'openai',
+          id: 'gpt-3.5',
           name: 'GPT-3.5',
           limitContext: 16000,
           limitOutput: 4096,
@@ -225,8 +225,8 @@ void main() {
       await seedProvider(database, id: 'openai', name: 'OpenAI');
       await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
-          id: 'gpt-4',
           modelProvider: 'openai',
+          id: 'gpt-4',
           name: 'GPT-4',
           limitContext: 128000,
           limitOutput: 4096,
@@ -240,8 +240,8 @@ void main() {
       await seedProvider(database, id: 'anthropic', name: 'Anthropic');
       await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
-          id: 'gpt-4',
           modelProvider: 'openai',
+          id: 'gpt-4',
           name: 'GPT-4',
           limitContext: 128000,
           limitOutput: 4096,
@@ -261,15 +261,15 @@ void main() {
       await seedProvider(database, id: 'openai', name: 'OpenAI');
       final results = await database.apiModelsDao.batchInsertModels([
         ApiModelsCompanion.insert(
-          id: 'gpt-4',
           modelProvider: 'openai',
+          id: 'gpt-4',
           name: 'GPT-4',
           limitContext: 128000,
           limitOutput: 4096,
         ),
         ApiModelsCompanion.insert(
-          id: 'gpt-3.5',
           modelProvider: 'openai',
+          id: 'gpt-3.5',
           name: 'GPT-3.5',
           limitContext: 16000,
           limitOutput: 4096,
@@ -282,15 +282,15 @@ void main() {
       await seedProvider(database, id: 'openai', name: 'OpenAI');
       final results = await database.apiModelsDao.batchUpsertModels([
         ApiModelsCompanion.insert(
-          id: 'gpt-4',
           modelProvider: 'openai',
+          id: 'gpt-4',
           name: 'GPT-4',
           limitContext: 128000,
           limitOutput: 4096,
         ),
         ApiModelsCompanion.insert(
-          id: 'gpt-3.5',
           modelProvider: 'openai',
+          id: 'gpt-3.5',
           name: 'GPT-3.5',
           limitContext: 16000,
           limitOutput: 4096,
@@ -303,22 +303,22 @@ void main() {
       await seedProvider(database, id: 'openai', name: 'OpenAI');
       await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
-          id: 'gpt-4',
           modelProvider: 'openai',
+          id: 'gpt-4',
           name: 'GPT-4',
+          costInput: const Value(0.03),
           limitContext: 128000,
           limitOutput: 4096,
-          costInput: const Value(0.03),
         ),
       );
       await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
-          id: 'gpt-3.5',
           modelProvider: 'openai',
+          id: 'gpt-3.5',
           name: 'GPT-3.5',
+          costInput: const Value(0.001),
           limitContext: 16000,
           limitOutput: 4096,
-          costInput: const Value(0.001),
         ),
       );
       final results = await database.apiModelsDao.getModelsByCostRange(
@@ -333,8 +333,8 @@ void main() {
       await seedProvider(database, id: 'openai', name: 'OpenAI');
       await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
-          id: 'gpt-4',
           modelProvider: 'openai',
+          id: 'gpt-4',
           name: 'GPT-4',
           limitContext: 128000,
           limitOutput: 4096,
@@ -342,8 +342,8 @@ void main() {
       );
       await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
-          id: 'gpt-3.5',
           modelProvider: 'openai',
+          id: 'gpt-3.5',
           name: 'GPT-3.5',
           limitContext: 16000,
           limitOutput: 4096,
@@ -360,22 +360,22 @@ void main() {
       await seedProvider(database, id: 'openai', name: 'OpenAI');
       await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
-          id: 'gpt-4',
           modelProvider: 'openai',
+          id: 'gpt-4',
           name: 'GPT-4',
+          openWeights: const Value(false),
           limitContext: 128000,
           limitOutput: 4096,
-          openWeights: const Value(false),
         ),
       );
       await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
-          id: 'gpt-oss',
           modelProvider: 'openai',
+          id: 'gpt-oss',
           name: 'GPT-OSS',
+          openWeights: const Value(true),
           limitContext: 32000,
           limitOutput: 4096,
-          openWeights: const Value(true),
         ),
       );
       final results = await database.apiModelsDao.getOpenWeightsModels();
@@ -387,22 +387,22 @@ void main() {
       await seedProvider(database, id: 'openai', name: 'OpenAI');
       await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
-          id: 'gpt-4',
           modelProvider: 'openai',
+          id: 'gpt-4',
           name: 'GPT-4',
+          costInput: const Value(0.03),
           limitContext: 128000,
           limitOutput: 4096,
-          costInput: const Value(0.03),
         ),
       );
       await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
-          id: 'gpt-3.5',
           modelProvider: 'openai',
+          id: 'gpt-3.5',
           name: 'GPT-3.5',
+          costInput: const Value(0.001),
           limitContext: 16000,
           limitOutput: 4096,
-          costInput: const Value(0.001),
         ),
       );
       final results = await database.apiModelsDao.getModelsByCostEfficiency();
@@ -414,8 +414,8 @@ void main() {
       await seedProvider(database, id: 'openai', name: 'OpenAI');
       await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
-          id: 'gpt-4',
           modelProvider: 'openai',
+          id: 'gpt-4',
           name: 'GPT-4',
           limitContext: 128000,
           limitOutput: 4096,

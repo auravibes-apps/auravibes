@@ -124,12 +124,6 @@ void main() {
     }) {
       final useRepo = repo ?? repository;
       return EasyLocalization(
-        supportedLocales: const [Locale('en')],
-        path: 'assets/i18n',
-        fallbackLocale: const Locale('en'),
-        startLocale: const Locale('en'),
-        useFallbackTranslations: true,
-        useOnlyLangCode: true,
         child: Builder(
           builder: (context) {
             final overrides = [
@@ -154,14 +148,20 @@ void main() {
             return ProviderScope(
               overrides: overrides.cast(),
               child: MaterialApp(
-                locale: context.locale,
-                supportedLocales: context.supportedLocales,
-                localizationsDelegates: context.localizationDelegates,
                 home: WorkspaceManagementScreen(workspaceId: workspaceId),
+                locale: context.locale,
+                localizationsDelegates: context.localizationDelegates,
+                supportedLocales: context.supportedLocales,
               ),
             );
           },
         ),
+        supportedLocales: const [Locale('en')],
+        path: 'assets/i18n',
+        fallbackLocale: const Locale('en'),
+        startLocale: const Locale('en'),
+        useOnlyLangCode: true,
+        useFallbackTranslations: true,
       );
     }
 

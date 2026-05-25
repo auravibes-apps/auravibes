@@ -23,14 +23,14 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData.light().copyWith(
-            extensions: [AuraTheme.light],
-          ),
           home: const Scaffold(
             body: AuraIcon(
               Icons.star,
               color: customColor,
             ),
+          ),
+          theme: ThemeData.light().copyWith(
+            extensions: [AuraTheme.light],
           ),
         ),
       );
@@ -227,15 +227,15 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData.light().copyWith(
-            extensions: [AuraTheme.light],
-          ),
           home: Scaffold(
             body: AuraIconButton(
               icon: Icons.star,
               onPressed: () {},
               backgroundColor: customBackgroundColor,
             ),
+          ),
+          theme: ThemeData.light().copyWith(
+            extensions: [AuraTheme.light],
           ),
         ),
       );

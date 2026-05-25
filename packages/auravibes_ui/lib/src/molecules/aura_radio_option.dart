@@ -144,15 +144,11 @@ class AuraRadio<T> extends StatelessWidget {
     final effectiveColor = _getActiveColor(context);
 
     return Semantics(
-      checked: isSelected,
-      inMutuallyExclusiveGroup: true,
-      enabled: !isDisabled,
       child: MouseRegion(
         cursor: isDisabled
             ? SystemMouseCursors.forbidden
             : SystemMouseCursors.click,
         child: GestureDetector(
-          onTap: isDisabled ? null : () => onChanged?.call(value),
           child: Opacity(
             opacity: isDisabled ? 0.6 : 1.0,
             child: SizedBox(
@@ -167,8 +163,12 @@ class AuraRadio<T> extends StatelessWidget {
               ),
             ),
           ),
+          onTap: isDisabled ? null : () => onChanged?.call(value),
         ),
       ),
+      enabled: !isDisabled,
+      checked: isSelected,
+      inMutuallyExclusiveGroup: true,
     );
   }
 }

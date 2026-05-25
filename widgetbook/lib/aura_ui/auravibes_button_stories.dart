@@ -7,6 +7,12 @@ import 'package:widgetbook_annotation/widgetbook_annotation.dart' as widgetbook;
 Widget primaryButtonUseCase(BuildContext context) {
   return AuraButton(
     onPressed: () {},
+    child: Text(
+      context.knobs.string(
+        label: 'button content',
+        initialValue: 'Primary Button',
+      ),
+    ),
     variant: context.knobs.object.dropdown(
       label: 'variant',
       options: AuraButtonVariant.values,
@@ -19,17 +25,11 @@ Widget primaryButtonUseCase(BuildContext context) {
       initialOption: AuraButtonSize.medium,
       labelBuilder: (value) => value.name,
     ),
-    disabled: context.knobs.boolean(label: 'disabled', initialValue: false),
+    isLoading: context.knobs.boolean(label: 'isLoading', initialValue: false),
     isFullWidth: context.knobs.boolean(
       label: 'isFullWidth',
       initialValue: false,
     ),
-    isLoading: context.knobs.boolean(label: 'isLoading', initialValue: false),
-    child: Text(
-      context.knobs.string(
-        label: 'button content',
-        initialValue: 'Primary Button',
-      ),
-    ),
+    disabled: context.knobs.boolean(label: 'disabled', initialValue: false),
   );
 }

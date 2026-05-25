@@ -66,8 +66,8 @@ class GroupedConversationToolsNotifier
       result.add(
         ConversationToolsGroupWithTools(
           group: null,
-          defaultGroupType: DefaultToolGroupType.builtIn,
           tools: builtInTools,
+          defaultGroupType: DefaultToolGroupType.builtIn,
         ),
       );
     }
@@ -76,8 +76,8 @@ class GroupedConversationToolsNotifier
       result.add(
         ConversationToolsGroupWithTools(
           group: null,
-          defaultGroupType: DefaultToolGroupType.native,
           tools: nativeTools,
+          defaultGroupType: DefaultToolGroupType.native,
         ),
       );
     }

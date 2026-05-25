@@ -341,6 +341,57 @@ jobs:
             echo "token_available=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: 🔧 Setup FVM
+        if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
+        uses: kuhnroyal/flutter-fvm-config-action/config@c378498f1d1962d33039c3989411093ef8a17b2c # v3
+        id: fvm-config-action
+
+      - name: 🔍 Detect Flutter channel
+        if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
+        id: channel-detect
+        run: |
+          # fvm-config-action may output a pre-release version string
+          # (for example 3.44.0-0.3.pre) but still report stable channel.
+          # For .pre/.dev/-beta builds force beta; otherwise keep action output.
+          version="${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}"
+          if echo "$version" | grep -qE '\.pre$|\.dev\.|-beta\.'; then
+            echo "channel=beta" >> "$GITHUB_OUTPUT"
+          else
+            echo "channel=${{ steps.fvm-config-action.outputs.FLUTTER_CHANNEL }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 🐦 Setup Flutter
+        if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          flutter-version: ${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}
+          channel: ${{ steps.channel-detect.outputs.channel }}
+          cache: true
+          cache-key: "flutter-:os:-:channel:-:version:-:arch:" # optional, change this to force refresh cache
+          cache-path: "${{ runner.tool_cache }}/flutter/:channel:-:version:-:arch:" # optional, change this to specify the cache path
+          pub-cache-key: "flutter-pub-:os:-:channel:-:version:-:arch:-:hash:" # optional, change this to force refresh cache of dart pub get dependencies
+          # pub-cache-path: "${{ runner.tool_cache }}/flutter/:channel:-:version:-:arch:" # optional, change this to specify the cache path
+
+      - name: 🔗 Create FVM symlink for CI
+        if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
+        run: |
+          mkdir -p .fvm
+          ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
+
+      - name: 📦 Bootstrap workspace dependencies
+        if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
+        uses: bluefireteam/melos-action@62e2570ad84b9f7c84a1d324f2077a30bf3f877d
+        with:
+          run-bootstrap: true
+
+      - name: 🔎 Verify package config exists
+        if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
+        run: |
+          if [ ! -f .dart_tool/package_config.json ]; then
+            echo "::error::Missing .dart_tool/package_config.json. Sonar Dart import resolution will fail without bootstrap."
+            exit 1
+          fi
+
       - name: 📥 Download Coverage
         if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8

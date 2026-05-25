@@ -783,9 +783,9 @@ final _conversation = ConversationEntity(
   title: 'Conversation 1',
   workspaceId: 'workspace-1',
   isPinned: false,
-  modelId: 'model-1',
   createdAt: DateTime(2025),
   updatedAt: DateTime(2025),
+  modelId: 'model-1',
 );
 
 final _userMessage = MessageEntity(
@@ -823,9 +823,9 @@ final _model = WorkspaceModelSelectionWithConnectionEntity(
     name: 'Main credential',
     key: 'secret',
     modelId: 'model-1',
-    workspaceId: 'workspace-1',
     createdAt: DateTime(2025),
     updatedAt: DateTime(2025),
+    workspaceId: 'workspace-1',
   ),
   modelsProvider: const ApiModelProviderEntity(
     id: 'provider-1',

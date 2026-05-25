@@ -9,8 +9,8 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: AuraTile(
-              onTap: () {},
               child: const Text('Test Tile'),
+              onTap: () {},
             ),
           ),
         ),
@@ -25,8 +25,8 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: AuraTile(
-              onTap: () {},
               child: const Text('Test Tile'),
+              onTap: () {},
             ),
           ),
         ),
@@ -41,9 +41,9 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: AuraTile(
+              child: const Text('Test Tile'),
               onTap: () {},
               isLoading: true,
-              child: const Text('Test Tile'),
             ),
           ),
         ),
@@ -58,10 +58,10 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: AuraTile(
+              child: const Text('Test Tile'),
               onTap: () {},
               leading: const Icon(Icons.star),
               trailing: const Icon(Icons.arrow_forward),
-              child: const Text('Test Tile'),
             ),
           ),
         ),
@@ -79,9 +79,9 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: AuraTile(
+              child: const Text('Test Tile'),
               onTap: () => wasTapped = true,
               enabled: false,
-              child: const Text('Test Tile'),
             ),
           ),
         ),
@@ -100,8 +100,8 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: AuraTile(
-              onTap: () => wasTapped = true,
               child: const Text('Test Tile'),
+              onTap: () => wasTapped = true,
             ),
           ),
         ),
@@ -120,9 +120,9 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: AuraTile(
+              child: const Text('Test Tile'),
               onTap: () => wasTapped = true,
               isLoading: true,
-              child: const Text('Test Tile'),
             ),
           ),
         ),
@@ -141,9 +141,9 @@ void main() {
             MaterialApp(
               home: Scaffold(
                 body: AuraTile(
+                  child: const Text('Test Tile'),
                   onTap: () {},
                   variant: variant,
-                  child: const Text('Test Tile'),
                 ),
               ),
             ),
@@ -162,9 +162,9 @@ void main() {
             MaterialApp(
               home: Scaffold(
                 body: AuraTile(
+                  child: const Text('Test Tile'),
                   onTap: () {},
                   size: size,
-                  child: const Text('Test Tile'),
                 ),
               ),
             ),

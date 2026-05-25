@@ -66,8 +66,8 @@ class _ToolCallResponsePreviewState extends State<ToolCallResponsePreview> {
     final textSpan = TextSpan(text: widget.content, style: textStyle);
     final textPainter = TextPainter(
       text: textSpan,
-      maxLines: ToolCallResponsePreview.maxPreviewLines,
       textDirection: TextDirection.ltr,
+      maxLines: ToolCallResponsePreview.maxPreviewLines,
     )..layout(maxWidth: renderObject.constraints.maxWidth);
 
     final exceedsMaxLines = textPainter.didExceedMaxLines;
@@ -95,13 +95,13 @@ class _ToolCallResponsePreviewState extends State<ToolCallResponsePreview> {
         Text(
           widget.content,
           key: _textKey,
-          maxLines: ToolCallResponsePreview.maxPreviewLines,
-          overflow: TextOverflow.ellipsis,
           style: TextStyle(
             color: context.auraColors.onSurface.withValues(alpha: 0.8),
             fontSize: 13,
             height: 1.4,
           ),
+          overflow: TextOverflow.ellipsis,
+          maxLines: ToolCallResponsePreview.maxPreviewLines,
         ),
 
         // Show more button (only if content exceeds max lines)
@@ -109,12 +109,8 @@ class _ToolCallResponsePreviewState extends State<ToolCallResponsePreview> {
           Padding(
             padding: EdgeInsets.only(top: context.auraTheme.spacing.xs),
             child: AuraButton(
-              variant: AuraButtonVariant.ghost,
-              size: AuraButtonSize.small,
               onPressed: _showFullContent,
               child: const AuraRow(
-                mainAxisSize: MainAxisSize.min,
-                spacing: AuraSpacing.xs,
                 children: [
                   TextLocale(LocaleKeys.common_show_more),
                   AuraIcon(
@@ -123,7 +119,11 @@ class _ToolCallResponsePreviewState extends State<ToolCallResponsePreview> {
                     color: AuraColorVariant.primary,
                   ),
                 ],
+                spacing: AuraSpacing.xs,
+                mainAxisSize: MainAxisSize.min,
               ),
+              variant: AuraButtonVariant.ghost,
+              size: AuraButtonSize.small,
             ),
           ),
       ],
