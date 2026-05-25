@@ -83,13 +83,13 @@ class SidebarConversationsWidget extends ConsumerWidget {
             horizontal: context.auraTheme.spacing.sm,
           ),
           child: AuraText(
-            style: AuraTextStyle.bodySmall,
-            color: AuraColorVariant.error,
             child: TextLocale(
               LocaleKeys
                   .home_screen_conversation_states_error_loading_conversations,
               args: [error.toString()],
             ),
+            style: AuraTextStyle.bodySmall,
+            color: AuraColorVariant.error,
           ),
         ),
       ),
@@ -99,15 +99,15 @@ class SidebarConversationsWidget extends ConsumerWidget {
   Widget _buildSectionHeader(BuildContext context) {
     return Padding(
       padding: EdgeInsets.symmetric(
-        horizontal: context.auraTheme.spacing.sm,
         vertical: context.auraTheme.spacing.xs,
+        horizontal: context.auraTheme.spacing.sm,
       ),
       child: const AuraText(
-        style: AuraTextStyle.caption,
-        color: AuraColorVariant.onSurfaceVariant,
         child: TextLocale(
           LocaleKeys.sidebar_recent_chats,
         ),
+        style: AuraTextStyle.caption,
+        color: AuraColorVariant.onSurfaceVariant,
       ),
     );
   }
@@ -115,16 +115,16 @@ class SidebarConversationsWidget extends ConsumerWidget {
   Widget _buildEmptyState(BuildContext context) {
     return Padding(
       padding: EdgeInsets.symmetric(
-        horizontal: context.auraTheme.spacing.sm,
         vertical: context.auraTheme.spacing.md,
+        horizontal: context.auraTheme.spacing.sm,
       ),
       child: const AuraText(
-        style: AuraTextStyle.bodySmall,
-        color: AuraColorVariant.onSurfaceVariant,
-        textAlign: TextAlign.center,
         child: TextLocale(
           LocaleKeys.sidebar_no_recent_chats,
         ),
+        style: AuraTextStyle.bodySmall,
+        textAlign: TextAlign.center,
+        color: AuraColorVariant.onSurfaceVariant,
       ),
     );
   }
@@ -133,18 +133,18 @@ class SidebarConversationsWidget extends ConsumerWidget {
     return Padding(
       padding: EdgeInsets.only(
         left: context.auraTheme.spacing.sm,
-        right: context.auraTheme.spacing.sm,
         top: context.auraTheme.spacing.xs,
+        right: context.auraTheme.spacing.sm,
         bottom: context.auraTheme.spacing.md,
       ),
       child: AuraButton(
-        variant: AuraButtonVariant.ghost,
-        size: AuraButtonSize.small,
-        isFullWidth: true,
         onPressed: () => ChatsRoute(workspaceId: workspaceId).go(context),
         child: const TextLocale(
           LocaleKeys.sidebar_view_all_chats,
         ),
+        variant: AuraButtonVariant.ghost,
+        size: AuraButtonSize.small,
+        isFullWidth: true,
       ),
     );
   }
@@ -219,18 +219,28 @@ class _SidebarConversationTileState
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.symmetric(
-        horizontal: context.auraTheme.spacing.sm,
         vertical: context.auraTheme.spacing.xs,
+        horizontal: context.auraTheme.spacing.sm,
       ),
       child: AuraTile(
-        variant: widget.isActive
-            ? AuraTileVariant.selected
-            : AuraTileVariant.ghost,
-        size: AuraTileSize.small,
+        child: AuraText(
+          child: Text(
+            ref.watch(streamingTitleProvider(widget.chat.id)) ??
+                widget.chat.title,
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+          ),
+          style: AuraTextStyle.bodySmall,
+          color: widget.isActive ? AuraColorVariant.primary : null,
+        ),
         onTap: () => ConversationRoute(
           workspaceId: widget.workspaceId,
           chatId: widget.chat.id,
         ).go(context),
+        variant: widget.isActive
+            ? AuraTileVariant.selected
+            : AuraTileVariant.ghost,
+        size: AuraTileSize.small,
         leading: AuraIcon(
           Icons.chat_bubble_outline,
           size: AuraIconSize.small,
@@ -239,32 +249,22 @@ class _SidebarConversationTileState
               : AuraColorVariant.onSurfaceVariant,
         ),
         trailing: AuraPopupMenu(
-          controller: _menuController,
-          items: [
-            AuraPopupMenuItem(
-              variant: AuraTileVariant.error,
-              title: const TextLocale(LocaleKeys.common_delete),
-              leading: const AuraIcon(Icons.delete_outline),
-              onTap: () => _handleDelete(context),
-            ),
-          ],
           child: AuraIconButton(
             icon: Icons.more_vert,
+            onPressed: _menuController.toggle,
             size: AuraIconSize.small,
             tooltip: LocaleKeys.chats_screens_chat_conversation_options_tooltip
                 .tr(),
-            onPressed: _menuController.toggle,
           ),
-        ),
-        child: AuraText(
-          style: AuraTextStyle.bodySmall,
-          color: widget.isActive ? AuraColorVariant.primary : null,
-          child: Text(
-            ref.watch(streamingTitleProvider(widget.chat.id)) ??
-                widget.chat.title,
-            overflow: TextOverflow.ellipsis,
-            maxLines: 1,
-          ),
+          items: [
+            AuraPopupMenuItem(
+              title: const TextLocale(LocaleKeys.common_delete),
+              onTap: () => _handleDelete(context),
+              leading: const AuraIcon(Icons.delete_outline),
+              variant: AuraTileVariant.error,
+            ),
+          ],
+          controller: _menuController,
         ),
       ),
     );
@@ -278,13 +278,19 @@ class _CompactingRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
       padding: EdgeInsets.symmetric(
-        horizontal: context.auraTheme.spacing.sm,
         vertical: context.auraTheme.spacing.xs,
+        horizontal: context.auraTheme.spacing.sm,
       ),
       child: const AuraTile(
+        child: AuraText(
+          child: TextLocale(
+            LocaleKeys.compaction_compacting_row_label,
+          ),
+          style: AuraTextStyle.bodySmall,
+          color: AuraColorVariant.onSurfaceVariant,
+        ),
         variant: AuraTileVariant.ghost,
         size: AuraTileSize.small,
-        enabled: false,
         leading: Padding(
           padding: EdgeInsets.all(4),
           child: SizedBox(
@@ -293,13 +299,7 @@ class _CompactingRow extends ConsumerWidget {
             child: AuraSpinner(),
           ),
         ),
-        child: AuraText(
-          style: AuraTextStyle.bodySmall,
-          color: AuraColorVariant.onSurfaceVariant,
-          child: TextLocale(
-            LocaleKeys.compaction_compacting_row_label,
-          ),
-        ),
+        enabled: false,
       ),
     );
   }

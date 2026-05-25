@@ -48,8 +48,8 @@ class SelectorField<T> extends Field<T> {
     required this.selectors,
     super.initialValue,
   }) : super(
-         defaultValue: initialValue ?? selectors.firstOrNull!.value,
          type: FieldType.objectDropdown,
+         defaultValue: initialValue ?? selectors.firstOrNull!.value,
          codec: FieldCodec(
            toParam: (value) =>
                selectors
@@ -76,7 +76,6 @@ class SelectorField<T> extends Field<T> {
   @override
   Widget toWidget(BuildContext context, String group, T? value) {
     return DropdownMenu<T>(
-      expandedInsets: EdgeInsets.zero,
       trailingIcon: const Icon(Icons.keyboard_arrow_down_rounded),
       selectedTrailingIcon: const Icon(Icons.keyboard_arrow_up_rounded),
       initialSelection: value,
@@ -85,6 +84,7 @@ class SelectorField<T> extends Field<T> {
           updateField(context, group, value);
         }
       },
+      expandedInsets: EdgeInsets.zero,
       dropdownMenuEntries: selectors
           .map(
             (value) =>
@@ -110,8 +110,8 @@ extension SelectorKnobBuilder on KnobsBuilder {
   }) => onKnobAdded(
     SelectorKnob(
       label: label,
-      selectors: selectors,
       initialValue: initialValue,
+      selectors: selectors,
     ),
   )!;
 
@@ -122,8 +122,8 @@ extension SelectorKnobBuilder on KnobsBuilder {
   }) => onKnobAdded(
     SelectorKnob.nullable(
       label: label,
-      selectors: selectors,
       initialValue: initialValue,
+      selectors: selectors,
     ),
   );
 }

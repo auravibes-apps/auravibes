@@ -10,10 +10,10 @@ void main() {
     final onChangedProvider = Provider<void Function(bool)?>((ref) => null);
 
     final widget = AppToggleBase(
-      value: valueProvider,
-      onChanged: onChangedProvider,
       labelLocaleKey: 'toggle.label',
       hintLocaleKey: 'toggle.hint',
+      value: valueProvider,
+      onChanged: onChangedProvider,
     );
 
     expect(widget.labelLocaleKey, 'toggle.label');
@@ -25,10 +25,10 @@ void main() {
     final onChangedProvider = Provider<void Function(bool)?>((ref) => null);
 
     final widget = AppToggleBase(
-      value: valueProvider,
-      onChanged: onChangedProvider,
       labelLocaleKey: 'test',
       hintLocaleKey: 'test',
+      value: valueProvider,
+      onChanged: onChangedProvider,
     );
 
     expect(widget, isA<AppToggleBase>());

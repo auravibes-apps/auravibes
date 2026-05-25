@@ -50,11 +50,10 @@ class AddToolModal extends HookConsumerWidget {
       child: Container(
         width: MediaQuery.sizeOf(context).width * 0.9,
         constraints: BoxConstraints(
-          maxHeight: MediaQuery.sizeOf(context).height * 0.7,
           maxWidth: 400,
+          maxHeight: MediaQuery.sizeOf(context).height * 0.7,
         ),
         child: AuraColumn(
-          mainAxisSize: MainAxisSize.min,
           children: [
             // Header with close button
             Container(
@@ -69,16 +68,16 @@ class AddToolModal extends HookConsumerWidget {
               child: Row(
                 children: [
                   const AuraText(
-                    style: AuraTextStyle.heading6,
                     child: TextLocale(LocaleKeys.tools_screen_add_tool_title),
+                    style: AuraTextStyle.heading6,
                   ),
                   const Spacer(),
                   IconButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    icon: const AuraIcon(Icons.close),
                     style: IconButton.styleFrom(
                       foregroundColor: context.auraColors.onSurfaceVariant,
                     ),
+                    icon: const AuraIcon(Icons.close),
                   ),
                 ],
               ),
@@ -119,6 +118,7 @@ class AddToolModal extends HookConsumerWidget {
             // Bottom padding
             SizedBox(height: context.auraTheme.spacing.md),
           ],
+          mainAxisSize: MainAxisSize.min,
         ),
       ),
     );
@@ -151,8 +151,6 @@ class _AvailableToolsList extends StatelessWidget {
         padding: EdgeInsets.all(context.auraTheme.spacing.lg),
         child: Center(
           child: AuraColumn(
-            mainAxisSize: MainAxisSize.min,
-            spacing: AuraSpacing.sm,
             children: [
               AuraIcon(
                 tools.isEmpty ? Icons.check_circle_outline : Icons.search_off,
@@ -160,28 +158,27 @@ class _AvailableToolsList extends StatelessWidget {
                 color: AuraColorVariant.onSurfaceVariant,
               ),
               AuraText(
-                color: AuraColorVariant.onSurfaceVariant,
-                textAlign: TextAlign.center,
                 child: TextLocale(
                   tools.isEmpty
                       ? LocaleKeys.tools_screen_all_tools_added
                       : LocaleKeys.tools_screen_no_tools_found,
                 ),
+                textAlign: TextAlign.center,
+                color: AuraColorVariant.onSurfaceVariant,
               ),
             ],
+            spacing: AuraSpacing.sm,
+            mainAxisSize: MainAxisSize.min,
           ),
         ),
       );
     }
 
     return ListView.separated(
+      shrinkWrap: true,
       padding: EdgeInsets.symmetric(
         horizontal: context.auraTheme.spacing.md,
       ),
-      shrinkWrap: true,
-      itemCount: filteredTools.length,
-      separatorBuilder: (context, index) =>
-          SizedBox(height: context.auraTheme.spacing.sm),
       itemBuilder: (context, index) {
         final toolType = filteredTools[index];
         return _AvailableToolTile(
@@ -189,6 +186,9 @@ class _AvailableToolsList extends StatelessWidget {
           workspaceId: workspaceId,
         );
       },
+      separatorBuilder: (context, index) =>
+          SizedBox(height: context.auraTheme.spacing.sm),
+      itemCount: filteredTools.length,
     );
   }
 }
@@ -202,7 +202,22 @@ class _AvailableToolTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return AuraTile(
-      variant: AuraTileVariant.surface,
+      child: AuraColumn(
+        children: [
+          AuraText(child: toolType.getNameWidget()),
+          AuraText(
+            child: DefaultTextStyle.merge(
+              overflow: TextOverflow.ellipsis,
+              maxLines: 2,
+              child: toolType.getDescriptionWidget(),
+            ),
+            style: AuraTextStyle.bodySmall,
+            color: AuraColorVariant.onSurfaceVariant,
+          ),
+        ],
+        spacing: AuraSpacing.xs,
+        crossAxisAlignment: CrossAxisAlignment.start,
+      ),
       onTap: () async {
         await ref
             .read(workspaceToolsProvider(workspaceId).notifier)
@@ -211,38 +226,21 @@ class _AvailableToolTile extends ConsumerWidget {
           Navigator.of(context).pop();
         }
       },
+      variant: AuraTileVariant.surface,
       leading: Container(
-        width: 40,
-        height: 40,
         decoration: BoxDecoration(
           color: context.auraColors.primary.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(
             context.auraTheme.borderRadius.md,
           ),
         ),
+        width: 40,
+        height: 40,
         child: toolType.getIconWidget(),
       ),
       trailing: const AuraIcon(
         Icons.add_circle_outline,
         color: AuraColorVariant.primary,
-      ),
-      child: AuraColumn(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        spacing: AuraSpacing.xs,
-        children: [
-          AuraText(
-            child: toolType.getNameWidget(),
-          ),
-          AuraText(
-            style: AuraTextStyle.bodySmall,
-            color: AuraColorVariant.onSurfaceVariant,
-            child: DefaultTextStyle.merge(
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              child: toolType.getDescriptionWidget(),
-            ),
-          ),
-        ],
       ),
     );
   }

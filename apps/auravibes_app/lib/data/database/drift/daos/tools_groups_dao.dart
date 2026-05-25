@@ -60,8 +60,8 @@ class ToolsGroupsDao extends DatabaseAccessor<AppDatabase>
       (update(toolsGroups)..where((t) => t.id.equals(id)))
           .write(
             ToolsGroupsCompanion(
-              isEnabled: Value(isEnabled),
               updatedAt: Value(DateTime.now()),
+              isEnabled: Value(isEnabled),
             ),
           )
           .then((count) => count > 0);

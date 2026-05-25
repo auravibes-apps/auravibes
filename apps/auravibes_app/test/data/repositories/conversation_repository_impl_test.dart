@@ -42,12 +42,12 @@ void main() {
     }) {
       return ConversationsTable(
         id: id,
-        title: title,
-        workspaceId: workspaceId,
-        modelId: modelId,
-        isPinned: isPinned,
         createdAt: now,
         updatedAt: now,
+        workspaceId: workspaceId,
+        title: title,
+        modelId: modelId,
+        isPinned: isPinned,
       );
     }
 
@@ -158,11 +158,11 @@ void main() {
         );
         final createdRow = ConversationsTable(
           id: 'new-conv',
-          title: 'New Chat',
-          workspaceId: 'ws-1',
-          isPinned: true,
           createdAt: now,
           updatedAt: now,
+          workspaceId: 'ws-1',
+          title: 'New Chat',
+          isPinned: true,
         );
 
         when(
@@ -220,11 +220,11 @@ void main() {
       test('patches and returns updated conversation', () async {
         final updatedRow = ConversationsTable(
           id: 'conv-1',
-          title: 'Updated Title',
-          workspaceId: 'ws-1',
-          isPinned: true,
           createdAt: now,
           updatedAt: now,
+          workspaceId: 'ws-1',
+          title: 'Updated Title',
+          isPinned: true,
         );
 
         when(

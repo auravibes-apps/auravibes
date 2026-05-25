@@ -31,12 +31,6 @@ const _wsId = 'ws1';
 
 Widget _buildSubject() {
   return EasyLocalization(
-    supportedLocales: const [Locale('en')],
-    path: 'assets/i18n',
-    fallbackLocale: const Locale('en'),
-    startLocale: const Locale('en'),
-    useFallbackTranslations: true,
-    useOnlyLangCode: true,
     child: TestProviderScope(
       overrides: [
         mcpConnectionProvider.overrideWith(_FakeMcpConnectionNotifier.new),
@@ -47,18 +41,24 @@ Widget _buildSubject() {
         child: Builder(
           builder: (context) {
             return MaterialApp(
-              locale: context.locale,
-              supportedLocales: context.supportedLocales,
-              localizationsDelegates: context.localizationDelegates,
               home: Theme(
                 data: ThemeData(extensions: [AuraTheme.light]),
                 child: const Scaffold(body: SizedBox.shrink()),
               ),
+              locale: context.locale,
+              localizationsDelegates: context.localizationDelegates,
+              supportedLocales: context.supportedLocales,
             );
           },
         ),
       ),
     ),
+    supportedLocales: const [Locale('en')],
+    path: 'assets/i18n',
+    fallbackLocale: const Locale('en'),
+    startLocale: const Locale('en'),
+    useOnlyLangCode: true,
+    useFallbackTranslations: true,
   );
 }
 
@@ -157,12 +157,6 @@ void main() {
       await _pumpAndInit(
         tester,
         EasyLocalization(
-          supportedLocales: const [Locale('en')],
-          path: 'assets/i18n',
-          fallbackLocale: const Locale('en'),
-          startLocale: const Locale('en'),
-          useFallbackTranslations: true,
-          useOnlyLangCode: true,
           child: TestProviderScope(
             overrides: [
               mcpConnectionProvider.overrideWith(
@@ -175,18 +169,24 @@ void main() {
               child: Builder(
                 builder: (context) {
                   return MaterialApp(
-                    locale: context.locale,
-                    supportedLocales: context.supportedLocales,
-                    localizationsDelegates: context.localizationDelegates,
                     home: Theme(
                       data: ThemeData(extensions: [AuraTheme.light]),
                       child: const Scaffold(body: SizedBox.shrink()),
                     ),
+                    locale: context.locale,
+                    localizationsDelegates: context.localizationDelegates,
+                    supportedLocales: context.supportedLocales,
                   );
                 },
               ),
             ),
           ),
+          supportedLocales: const [Locale('en')],
+          path: 'assets/i18n',
+          fallbackLocale: const Locale('en'),
+          startLocale: const Locale('en'),
+          useOnlyLangCode: true,
+          useFallbackTranslations: true,
         ),
       );
       await _showDialog(tester);

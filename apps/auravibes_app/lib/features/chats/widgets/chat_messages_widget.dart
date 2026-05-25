@@ -48,12 +48,9 @@ class ChatMessagesWidget extends HookConsumerWidget {
     final itemCount = isCompacting ? data.length + 1 : data.length;
 
     return ListView.builder(
-      scrollCacheExtent: const ScrollCacheExtent.pixels(500),
+      reverse: true,
       controller: controller,
       padding: const EdgeInsets.all(16),
-      reverse: true,
-      addAutomaticKeepAlives: false,
-      itemCount: itemCount,
       itemBuilder: (context, index) {
         if (isCompacting && index == 0) {
           return const _CompactingIndicator();
@@ -68,6 +65,9 @@ class ChatMessagesWidget extends HookConsumerWidget {
           isLastMessage: isLastMessage,
         );
       },
+      itemCount: itemCount,
+      addAutomaticKeepAlives: false,
+      scrollCacheExtent: const ScrollCacheExtent.pixels(500),
     );
   }
 }
@@ -107,15 +107,15 @@ class _ChatMessageRow extends HookConsumerWidget {
 
     if (isCompactionSummary) {
       return _CompactedMessageWidget(
-        key: ValueKey(message.id),
         message: message,
+        key: ValueKey(message.id),
       );
     }
 
     if (isErrorSystemMessage) {
       return _ErrorMessageWidget(
-        key: ValueKey(message.id),
         content: message.content,
+        key: ValueKey(message.id),
       );
     }
 
@@ -128,10 +128,7 @@ class _ChatMessageRow extends HookConsumerWidget {
     final status = _mapMessageStatus(message.status, isStreaming);
 
     return AnimatedSize(
-      duration: const Duration(microseconds: 200),
-      alignment: Alignment.topLeft,
       child: AuraColumn(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (showTextBubble)
             _MessageTextContent(
@@ -143,12 +140,15 @@ class _ChatMessageRow extends HookConsumerWidget {
             ),
           for (final toolCall in visibleToolCalls)
             _ToolCallWidget(
-              key: ValueKey('tool_${toolCall.id}'),
               toolCall: toolCall,
               messageId: message.id,
+              key: ValueKey('tool_${toolCall.id}'),
             ),
         ],
+        crossAxisAlignment: CrossAxisAlignment.start,
       ),
+      alignment: Alignment.topLeft,
+      duration: const Duration(microseconds: 200),
     );
   }
 
@@ -204,11 +204,11 @@ class _MessageTextContent extends StatelessWidget {
   Widget build(BuildContext context) {
     if (message.isUser) {
       return AuraMessageBubble(
-        key: ValueKey(message.id),
         content: message.content,
         isUser: true,
-        timestamp: message.createdAt,
+        key: ValueKey(message.id),
         status: status,
+        timestamp: message.createdAt,
       );
     }
 
@@ -218,9 +218,9 @@ class _MessageTextContent extends StatelessWidget {
         if (hasThinking) _ReasoningSummary(content: thinking!),
         if (hasContent)
           _AiMessageContent(
-            key: ValueKey(message.id),
             content: message.content,
             timestamp: message.createdAt,
+            key: ValueKey(message.id),
             status: status,
           ),
       ],
@@ -238,10 +238,6 @@ class _ReasoningSummary extends StatelessWidget {
     final auraColors = context.auraColors;
 
     return AuraContainer(
-      backgroundColor: AuraColorVariant.surfaceVariant,
-      borderRadius: 10,
-      margin: .small,
-      padding: .medium,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -259,8 +255,8 @@ class _ReasoningSummary extends StatelessWidget {
                 style: TextStyle(
                   color: auraColors.onSurfaceVariant,
                   fontSize: DesignTypography.fontSizeSm,
-                  fontFamily: DesignTypography.bodyFontFamily,
                   fontWeight: FontWeight.w600,
+                  fontFamily: DesignTypography.bodyFontFamily,
                 ),
               ),
             ],
@@ -271,12 +267,16 @@ class _ReasoningSummary extends StatelessWidget {
             style: TextStyle(
               color: auraColors.onSurfaceVariant,
               fontSize: DesignTypography.fontSizeSm,
-              fontFamily: DesignTypography.bodyFontFamily,
               height: DesignTypography.lineHeightBase,
+              fontFamily: DesignTypography.bodyFontFamily,
             ),
           ),
         ],
       ),
+      padding: .medium,
+      margin: .small,
+      backgroundColor: AuraColorVariant.surfaceVariant,
+      borderRadius: 10,
     );
   }
 }
@@ -305,8 +305,8 @@ class _AiMessageContent extends StatelessWidget {
           style: TextStyle(
             color: auraColors.onSurface,
             fontSize: DesignTypography.fontSizeBase,
-            fontFamily: DesignTypography.bodyFontFamily,
             height: DesignTypography.lineHeightBase,
+            fontFamily: DesignTypography.bodyFontFamily,
           ),
         ),
         SizedBox(height: context.auraTheme.spacing.xs),
@@ -352,10 +352,6 @@ class _ToolCallWidget extends ConsumerWidget {
     final decodedResponse = tryDecodeToolMetadata(toolCall.responseRaw);
 
     return AuraContainer(
-      backgroundColor: AuraColorVariant.surfaceVariant,
-      borderRadius: 10,
-      margin: .small,
-      padding: .medium,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -392,6 +388,10 @@ class _ToolCallWidget extends ConsumerWidget {
             ),
         ],
       ),
+      padding: .medium,
+      margin: .small,
+      backgroundColor: AuraColorVariant.surfaceVariant,
+      borderRadius: 10,
     );
   }
 
@@ -457,12 +457,7 @@ class _CompactedMessageWidget extends StatelessWidget {
     };
 
     return GestureDetector(
-      onTap: () => _showCompactionDetails(context, message),
       child: AuraContainer(
-        backgroundColor: AuraColorVariant.surfaceVariant,
-        borderRadius: 10,
-        margin: .small,
-        padding: .medium,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -477,9 +472,9 @@ class _CompactedMessageWidget extends StatelessWidget {
                 Text(
                   originLabel,
                   style: TextStyle(
-                    fontWeight: FontWeight.bold,
                     color: auraColors.onSurfaceVariant,
                     fontSize: DesignTypography.fontSizeSm,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
                 const Spacer(),
@@ -493,16 +488,21 @@ class _CompactedMessageWidget extends StatelessWidget {
             SizedBox(height: context.auraTheme.spacing.xs),
             Text(
               message.content,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: auraColors.onSurfaceVariant,
                 fontSize: DesignTypography.fontSizeSm,
               ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 3,
             ),
           ],
         ),
+        padding: .medium,
+        margin: .small,
+        backgroundColor: AuraColorVariant.surfaceVariant,
+        borderRadius: 10,
       ),
+      onTap: () => _showCompactionDetails(context, message),
     );
   }
 }
@@ -517,10 +517,6 @@ class _ErrorMessageWidget extends StatelessWidget {
     final auraColors = context.auraColors;
 
     return AuraContainer(
-      backgroundColor: AuraColorVariant.error,
-      borderRadius: 10,
-      margin: .small,
-      padding: .medium,
       child: Row(
         children: [
           Icon(
@@ -534,6 +530,10 @@ class _ErrorMessageWidget extends StatelessWidget {
           ),
         ],
       ),
+      padding: .medium,
+      margin: .small,
+      backgroundColor: AuraColorVariant.error,
+      borderRadius: 10,
     );
   }
 }
@@ -561,8 +561,8 @@ class _ToolCallStatusIndicator extends StatelessWidget {
           SizedBox(width: context.auraTheme.spacing.xs),
           DefaultTextStyle(
             style: TextStyle(
-              fontSize: 12,
               color: color,
+              fontSize: 12,
             ),
             child: statusText,
           ),
@@ -580,10 +580,6 @@ class _CompactingIndicator extends StatelessWidget {
     final auraColors = context.auraColors;
 
     return AuraContainer(
-      backgroundColor: AuraColorVariant.surfaceVariant,
-      borderRadius: 10,
-      margin: .small,
-      padding: .medium,
       child: Row(
         children: [
           const Padding(
@@ -604,6 +600,10 @@ class _CompactingIndicator extends StatelessWidget {
           ),
         ],
       ),
+      padding: .medium,
+      margin: .small,
+      backgroundColor: AuraColorVariant.surfaceVariant,
+      borderRadius: 10,
     );
   }
 }

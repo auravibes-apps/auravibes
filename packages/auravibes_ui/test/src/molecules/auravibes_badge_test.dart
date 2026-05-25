@@ -44,8 +44,8 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraBadge(
-              variant: AuraBadgeVariant.secondary,
               child: Text('Secondary'),
+              variant: AuraBadgeVariant.secondary,
             ),
           ),
         ),
@@ -61,8 +61,8 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraBadge(
-              variant: AuraBadgeVariant.outlined,
               child: Text('Outlined'),
+              variant: AuraBadgeVariant.outlined,
             ),
           ),
         ),
@@ -79,8 +79,8 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraBadge(
-              variant: AuraBadgeVariant.soft,
               child: Text('Soft'),
+              variant: AuraBadgeVariant.soft,
             ),
           ),
         ),
@@ -96,8 +96,8 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraBadge(
-              size: AuraBadgeSize.small,
               child: Text('Small'),
+              size: AuraBadgeSize.small,
             ),
           ),
         ),
@@ -107,8 +107,8 @@ void main() {
       expect(
         container.padding,
         const EdgeInsets.symmetric(
-          horizontal: DesignSpacing.xs,
           vertical: 2,
+          horizontal: DesignSpacing.xs,
         ),
       );
     });
@@ -128,8 +128,8 @@ void main() {
       expect(
         container.padding,
         const EdgeInsets.symmetric(
-          horizontal: DesignSpacing.sm,
           vertical: DesignSpacing.xs,
+          horizontal: DesignSpacing.sm,
         ),
       );
     });
@@ -141,8 +141,8 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraBadge(
-              semanticLabel: semanticLabel,
               child: Text('Status'),
+              semanticLabel: semanticLabel,
             ),
           ),
         ),
@@ -300,8 +300,8 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraPositionedBadge(
-              badge: AuraBadge.dot(),
               child: Icon(Icons.notifications),
+              badge: AuraBadge.dot(),
             ),
           ),
         ),
@@ -324,8 +324,8 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraPositionedBadge(
-              badge: AuraBadge.dot(),
               child: Icon(Icons.notifications),
+              badge: AuraBadge.dot(),
             ),
           ),
         ),
@@ -343,9 +343,9 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraPositionedBadge(
+              child: Icon(Icons.notifications),
               badge: AuraBadge.dot(),
               position: AuraBadgePosition.topLeft,
-              child: Icon(Icons.notifications),
             ),
           ),
         ),
@@ -363,9 +363,9 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraPositionedBadge(
+              child: Icon(Icons.notifications),
               badge: AuraBadge.dot(),
               position: AuraBadgePosition.bottomRight,
-              child: Icon(Icons.notifications),
             ),
           ),
         ),
@@ -383,9 +383,9 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraPositionedBadge(
+              child: Icon(Icons.notifications),
               badge: AuraBadge.dot(),
               position: AuraBadgePosition.bottomLeft,
-              child: Icon(Icons.notifications),
             ),
           ),
         ),
@@ -405,9 +405,9 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraPositionedBadge(
+              child: Icon(Icons.notifications),
               badge: AuraBadge.dot(),
               offset: customOffset,
-              child: Icon(Icons.notifications),
             ),
           ),
         ),

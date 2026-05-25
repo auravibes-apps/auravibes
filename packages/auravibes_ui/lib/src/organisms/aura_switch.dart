@@ -59,55 +59,55 @@ class AuraSwitch extends StatelessWidget {
     final loadingColorVariant = _getLoadingColorVariant();
 
     return GestureDetector(
-      onTap: isInteractive ? () => onChanged!(!value) : null,
       child: MouseRegion(
         cursor: isInteractive
             ? SystemMouseCursors.click
             : SystemMouseCursors.basic,
         child: AnimatedContainer(
-          duration: auraTheme.animation.normal,
-          width: trackWidth,
-          height: trackHeight,
+          padding: EdgeInsets.all(thumbPadding),
           decoration: BoxDecoration(
             color: trackColor,
             borderRadius: BorderRadius.circular(trackHeight / 2),
           ),
-          padding: EdgeInsets.all(thumbPadding),
+          width: trackWidth,
+          height: trackHeight,
           child: Stack(
             children: [
               AnimatedPositioned(
-                duration: auraTheme.animation.normal,
-                curve: Curves.easeInOut,
-                left: thumbOffset,
-                top: 0,
-                bottom: 0,
                 child: AnimatedContainer(
-                  duration: auraTheme.animation.normal,
-                  width: thumbSize,
-                  height: thumbSize,
                   decoration: BoxDecoration(
                     color: thumbColor,
-                    shape: BoxShape.circle,
                     boxShadow: disabled ? null : [DesignShadows.sm],
+                    shape: BoxShape.circle,
                   ),
+                  width: thumbSize,
+                  height: thumbSize,
                   child: isLoading
                       ? Center(
                           child: SizedBox(
                             width: thumbSize * 0.6,
                             height: thumbSize * 0.6,
                             child: AuraLoadingCircle(
-                              size: thumbSize * 0.6,
                               colorVariant: loadingColorVariant,
+                              size: thumbSize * 0.6,
                             ),
                           ),
                         )
                       : null,
+                  duration: auraTheme.animation.normal,
                 ),
+                left: thumbOffset,
+                top: 0,
+                bottom: 0,
+                curve: Curves.easeInOut,
+                duration: auraTheme.animation.normal,
               ),
             ],
           ),
+          duration: auraTheme.animation.normal,
         ),
       ),
+      onTap: isInteractive ? () => onChanged!(!value) : null,
     );
   }
 

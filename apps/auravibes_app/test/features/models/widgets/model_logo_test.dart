@@ -85,19 +85,19 @@ Widget _customBuilder(BuildContext context, String url) {
 }
 
 Widget _easyLocalizationWrapper({required Widget child}) => EasyLocalization(
+  child: Builder(
+    builder: (context) => MaterialApp(
+      home: Scaffold(body: child),
+      locale: context.locale,
+      localizationsDelegates: context.localizationDelegates,
+      supportedLocales: context.supportedLocales,
+    ),
+  ),
   supportedLocales: const [Locale('en')],
   path: 'assets/i18n',
   fallbackLocale: const Locale('en'),
   startLocale: const Locale('en'),
-  useFallbackTranslations: true,
   useOnlyLangCode: true,
+  useFallbackTranslations: true,
   saveLocale: false,
-  child: Builder(
-    builder: (context) => MaterialApp(
-      locale: context.locale,
-      supportedLocales: context.supportedLocales,
-      localizationsDelegates: context.localizationDelegates,
-      home: Scaffold(body: child),
-    ),
-  ),
 );

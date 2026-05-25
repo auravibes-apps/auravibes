@@ -40,8 +40,8 @@ class ToolsManagementModal extends ConsumerWidget {
       child: Container(
         width: MediaQuery.sizeOf(context).width * 0.9,
         constraints: BoxConstraints(
-          maxHeight: MediaQuery.sizeOf(context).height * 0.7,
           maxWidth: 500,
+          maxHeight: MediaQuery.sizeOf(context).height * 0.7,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -59,16 +59,16 @@ class ToolsManagementModal extends ConsumerWidget {
               child: Row(
                 children: [
                   const AuraText(
-                    style: AuraTextStyle.heading6,
                     child: Text('Manage Tools'),
+                    style: AuraTextStyle.heading6,
                   ),
                   const Spacer(),
                   IconButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    icon: const AuraIcon(Icons.close),
                     style: IconButton.styleFrom(
                       foregroundColor: context.auraColors.onSurfaceVariant,
                     ),
+                    icon: const AuraIcon(Icons.close),
                   ),
                 ],
               ),
@@ -80,13 +80,13 @@ class ToolsManagementModal extends ConsumerWidget {
                 AsyncLoading() => const Center(child: AuraSpinner()),
                 AsyncData(:final value) => _GroupedToolsList(
                   groups: value,
-                  conversationId: conversationId,
                   workspaceId: workspaceId,
+                  conversationId: conversationId,
                 ),
                 AsyncError(:final error) => Center(
                   child: AuraText(
-                    color: AuraColorVariant.error,
                     child: Text('Error loading tools: $error'),
+                    color: AuraColorVariant.error,
                   ),
                 ),
               },
@@ -120,8 +120,6 @@ class _GroupedToolsList extends StatelessWidget {
         padding: EdgeInsets.all(DesignSpacing.lg),
         child: Center(
           child: AuraColumn(
-            mainAxisSize: MainAxisSize.min,
-            spacing: AuraSpacing.md,
             children: [
               Opacity(
                 opacity: 0.5,
@@ -132,18 +130,20 @@ class _GroupedToolsList extends StatelessWidget {
                 ),
               ),
               AuraText(
-                style: AuraTextStyle.heading6,
-                color: AuraColorVariant.onSurfaceVariant,
-                textAlign: TextAlign.center,
                 child: TextLocale(LocaleKeys.tools_screen_no_tools_added),
+                style: AuraTextStyle.heading6,
+                textAlign: TextAlign.center,
+                color: AuraColorVariant.onSurfaceVariant,
               ),
               AuraText(
-                style: AuraTextStyle.bodySmall,
-                color: AuraColorVariant.onSurfaceVariant,
-                textAlign: TextAlign.center,
                 child: TextLocale(LocaleKeys.tools_screen_add_tools_hint),
+                style: AuraTextStyle.bodySmall,
+                textAlign: TextAlign.center,
+                color: AuraColorVariant.onSurfaceVariant,
               ),
             ],
+            spacing: AuraSpacing.md,
+            mainAxisSize: MainAxisSize.min,
           ),
         ),
       );
@@ -152,7 +152,6 @@ class _GroupedToolsList extends StatelessWidget {
     return ListView.builder(
       shrinkWrap: true,
       padding: const EdgeInsets.all(DesignSpacing.md),
-      itemCount: groups.length,
       itemBuilder: (context, index) {
         final group = groups[index];
 
@@ -162,6 +161,7 @@ class _GroupedToolsList extends StatelessWidget {
           conversationId: conversationId,
         );
       },
+      itemCount: groups.length,
     );
   }
 }

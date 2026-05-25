@@ -34,13 +34,13 @@ class ToolsWorkspaceListWidget extends ConsumerWidget {
         padding: EdgeInsets.symmetric(
           vertical: context.auraTheme.spacing.sm,
         ),
-        itemCount: groups.length,
         itemBuilder: (context, index) {
           return ToolsGroupCard(
             groupWithTools: groups[index],
             workspaceId: workspaceId,
           );
         },
+        itemCount: groups.length,
       ),
       AsyncError(:final error, :final stackTrace) => AppErrorWidget(
         error: error,
@@ -58,8 +58,6 @@ class _EmptyToolsState extends StatelessWidget {
       child: Padding(
         padding: EdgeInsets.all(context.auraTheme.spacing.xl),
         child: const AuraColumn(
-          mainAxisSize: MainAxisSize.min,
-          spacing: AuraSpacing.md,
           children: [
             Opacity(
               opacity: 0.5,
@@ -70,18 +68,20 @@ class _EmptyToolsState extends StatelessWidget {
               ),
             ),
             AuraText(
-              style: AuraTextStyle.heading6,
-              color: AuraColorVariant.onSurfaceVariant,
-              textAlign: TextAlign.center,
               child: TextLocale(LocaleKeys.tools_screen_no_tools_added),
+              style: AuraTextStyle.heading6,
+              textAlign: TextAlign.center,
+              color: AuraColorVariant.onSurfaceVariant,
             ),
             AuraText(
-              style: AuraTextStyle.bodySmall,
-              color: AuraColorVariant.onSurfaceVariant,
-              textAlign: TextAlign.center,
               child: TextLocale(LocaleKeys.tools_screen_add_tools_hint),
+              style: AuraTextStyle.bodySmall,
+              textAlign: TextAlign.center,
+              color: AuraColorVariant.onSurfaceVariant,
             ),
           ],
+          spacing: AuraSpacing.md,
+          mainAxisSize: MainAxisSize.min,
         ),
       ),
     );

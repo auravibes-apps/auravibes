@@ -33,18 +33,18 @@ class AppToggleBase extends ConsumerWidget {
       children: [
         Expanded(
           child: AuraColumn(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            spacing: AuraSpacing.none,
             children: [
               AuraText(
                 child: TextLocale(labelLocaleKey),
               ),
               AuraText(
+                child: TextLocale(hintLocaleKey),
                 style: AuraTextStyle.bodySmall,
                 color: AuraColorVariant.onSurfaceVariant,
-                child: TextLocale(hintLocaleKey),
               ),
             ],
+            spacing: AuraSpacing.none,
+            crossAxisAlignment: CrossAxisAlignment.start,
           ),
         ),
         AuraSwitch(

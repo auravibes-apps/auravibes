@@ -196,8 +196,8 @@ void main() {
     test('isValid returns true for complete valid model', () {
       const model = AddModelProviderModel(
         name: 'Test',
-        key: 'sk-12345',
         modelId: 'openai',
+        key: 'sk-12345',
       );
       expect(model.isValid(), isTrue);
     });

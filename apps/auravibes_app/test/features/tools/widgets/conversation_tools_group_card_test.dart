@@ -87,12 +87,6 @@ class _MockGroupedConversationToolsNotifier
 
 Widget _buildSubject(Widget child) {
   return EasyLocalization(
-    supportedLocales: const [Locale('en')],
-    path: 'assets/i18n',
-    fallbackLocale: const Locale('en'),
-    startLocale: const Locale('en'),
-    useFallbackTranslations: true,
-    useOnlyLangCode: true,
     child: TestProviderScope(
       overrides: [
         conversationToolsProvider(
@@ -113,6 +107,12 @@ Widget _buildSubject(Widget child) {
         ),
       ),
     ),
+    supportedLocales: const [Locale('en')],
+    path: 'assets/i18n',
+    fallbackLocale: const Locale('en'),
+    startLocale: const Locale('en'),
+    useOnlyLangCode: true,
+    useFallbackTranslations: true,
   );
 }
 
@@ -315,6 +315,7 @@ void main() {
     );
     final groupWithTools = ConversationToolsGroupWithTools(
       group: mcpGroup,
+      tools: [],
       mcpConnectionState: McpConnectionState(
         server: McpServerEntity(
           id: 'mcp-1',
@@ -329,7 +330,6 @@ void main() {
         status: McpConnectionStatus.error,
         errorMessage: 'Connection failed',
       ),
-      tools: [],
     );
 
     await tester.pumpWidget(
@@ -353,6 +353,7 @@ void main() {
     );
     final groupWithTools = ConversationToolsGroupWithTools(
       group: mcpGroup,
+      tools: [_toolState()],
       mcpConnectionState: McpConnectionState(
         server: McpServerEntity(
           id: 'mcp-2',
@@ -366,7 +367,6 @@ void main() {
         ),
         status: McpConnectionStatus.disconnected,
       ),
-      tools: [_toolState()],
     );
 
     await tester.pumpWidget(
@@ -390,6 +390,7 @@ void main() {
     );
     final groupWithTools = ConversationToolsGroupWithTools(
       group: mcpGroup,
+      tools: [_toolState()],
       mcpConnectionState: McpConnectionState(
         server: McpServerEntity(
           id: 'mcp-3',
@@ -403,7 +404,6 @@ void main() {
         ),
         status: McpConnectionStatus.connected,
       ),
-      tools: [_toolState()],
     );
 
     await tester.pumpWidget(
@@ -422,8 +422,8 @@ void main() {
   testWidgets('default group renders without toggle', (tester) async {
     const groupWithTools = ConversationToolsGroupWithTools(
       group: null,
-      defaultGroupType: DefaultToolGroupType.builtIn,
       tools: [],
+      defaultGroupType: DefaultToolGroupType.builtIn,
     );
 
     await tester.pumpWidget(
@@ -447,6 +447,7 @@ void main() {
     );
     final groupWithTools = ConversationToolsGroupWithTools(
       group: mcpGroup,
+      tools: [_toolState()],
       mcpConnectionState: McpConnectionState(
         server: McpServerEntity(
           id: 'mcp-4',
@@ -460,7 +461,6 @@ void main() {
         ),
         status: McpConnectionStatus.connecting,
       ),
-      tools: [_toolState()],
     );
 
     await tester.pumpWidget(

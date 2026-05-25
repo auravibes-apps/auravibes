@@ -14,10 +14,10 @@ Future<void> _pumpFieldLabel(
     MaterialApp(
       home: Scaffold(
         body: AuraFieldLabel(
+          child: child,
           isRequired: isRequired,
           style: style,
           semanticLabel: semanticLabel,
-          child: child,
         ),
       ),
     ),
@@ -38,8 +38,8 @@ void main() {
     ) async {
       await _pumpFieldLabel(
         tester,
-        isRequired: true,
         child: const Text('Required Field'),
+        isRequired: true,
       );
 
       expect(find.text('Required Field'), findsOneWidget);
@@ -58,8 +58,8 @@ void main() {
     testWidgets('applies semantic label', (tester) async {
       await _pumpFieldLabel(
         tester,
-        semanticLabel: 'Username field',
         child: const Text('Username'),
+        semanticLabel: 'Username field',
       );
 
       final semanticsFinder = find.descendant(
@@ -74,8 +74,8 @@ void main() {
     testWidgets('applies custom style', (tester) async {
       await _pumpFieldLabel(
         tester,
-        style: AuraTextStyle.heading1,
         child: const Text('Styled Label'),
+        style: AuraTextStyle.heading1,
       );
 
       expect(find.text('Styled Label'), findsOneWidget);

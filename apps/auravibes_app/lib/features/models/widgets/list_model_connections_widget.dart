@@ -27,10 +27,8 @@ class ListModelConnectionsWidget extends ConsumerWidget {
         }
 
         return ListView.separated(
-          padding: const EdgeInsets.all(16),
-          itemCount: workspaceModelSelections.length,
           shrinkWrap: true,
-          // separatorBuilder: (context, index) => const SizedBox(height: 12),
+          padding: const EdgeInsets.all(16),
           itemBuilder: (context, index) {
             final workspaceModelSelection = workspaceModelSelections[index];
             return _ModelConnectionCard(
@@ -41,6 +39,7 @@ class ListModelConnectionsWidget extends ConsumerWidget {
           separatorBuilder: (context, index) {
             return SizedBox(height: context.auraTheme.spacing.md);
           },
+          itemCount: workspaceModelSelections.length,
         );
       }(),
       AsyncLoading() => const Center(child: AuraSpinner()),
@@ -60,7 +59,6 @@ class ListModelConnectionsWidget extends ConsumerWidget {
       child: Padding(
         padding: EdgeInsets.all(32),
         child: AuraColumn(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             AuraIcon(
               Icons.model_training_outlined,
@@ -68,19 +66,20 @@ class ListModelConnectionsWidget extends ConsumerWidget {
               color: AuraColorVariant.onSurfaceVariant,
             ),
             AuraText(
-              style: AuraTextStyle.heading3,
               child: TextLocale(
                 LocaleKeys.models_screens_list_empty_title,
               ),
+              style: AuraTextStyle.heading3,
             ),
             AuraText(
-              color: AuraColorVariant.onSurfaceVariant,
-              textAlign: TextAlign.center,
               child: TextLocale(
                 LocaleKeys.models_screens_list_empty_subtitle,
               ),
+              textAlign: TextAlign.center,
+              color: AuraColorVariant.onSurfaceVariant,
             ),
           ],
+          mainAxisAlignment: MainAxisAlignment.center,
         ),
       ),
     );
@@ -113,58 +112,56 @@ class _ModelConnectionCard extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     AuraText(
-                      style: AuraTextStyle.heading6,
                       child: Text(workspaceModelSelection.name),
+                      style: AuraTextStyle.heading6,
                     ),
                     const SizedBox(height: 4),
                     AuraText(
-                      style: AuraTextStyle.bodySmall,
-
                       child: Text(_getModelTypeDisplay()),
+                      style: AuraTextStyle.bodySmall,
                     ),
                   ],
                 ),
               ),
               AuraPopupMenu(
-                controller: menuController,
-                items: [
-                  AuraPopupMenuItem(
-                    title: const TextLocale(LocaleKeys.common_delete),
-                    leading: const AuraIcon(Icons.delete),
-                    onTap: () =>
-                        _confirmDelete(context, ref, workspaceModelSelection),
-                    variant: .error,
-                  ),
-                ],
                 child: AuraIconButton(
                   icon: Icons.more_vert,
                   onPressed: menuController.toggle,
                 ),
+                items: [
+                  AuraPopupMenuItem(
+                    title: const TextLocale(LocaleKeys.common_delete),
+                    onTap: () =>
+                        _confirmDelete(context, ref, workspaceModelSelection),
+                    leading: const AuraIcon(Icons.delete),
+                    variant: .error,
+                  ),
+                ],
+                controller: menuController,
               ),
             ],
           ),
           if (workspaceModelSelection.url != null) ...[
             const SizedBox(height: 12),
             AuraText(
-              style: AuraTextStyle.bodySmall,
-
               child: Text(
                 LocaleKeys.models_screens_list_url_label.tr(
                   args: [workspaceModelSelection.url!],
                   context: context,
                 ),
               ),
+              style: AuraTextStyle.bodySmall,
             ),
           ],
           const SizedBox(height: 12),
           AuraText(
-            style: AuraTextStyle.bodySmall,
             child: Text(
               LocaleKeys.models_screens_list_api_key_label.tr(
                 args: [_obscureApiKey(workspaceModelSelection.keySuffix)],
                 context: context,
               ),
             ),
+            style: AuraTextStyle.bodySmall,
           ),
         ],
       ),
@@ -174,15 +171,13 @@ class _ModelConnectionCard extends ConsumerWidget {
   Widget _buildModelTypeIcon(BuildContext context) {
     return SvgPicture.network(
       'https://models.dev/logos/${workspaceModelSelection.modelId}.svg',
-      placeholderBuilder: (context) =>
-          const CircularProgressIndicator(), // Optional: show a loading
-      // indicator
+      width: 30,
+      height: 30,
+      placeholderBuilder: (context) => const CircularProgressIndicator(),
       colorFilter: ColorFilter.mode(
         context.auraColors.onBackground,
         BlendMode.srcIn,
-      ),
-      height: 30, // Optional: specify height
-      width: 30, // Optional: specify width
+      ), // Optional: specify width
     );
   }
 

@@ -20,10 +20,10 @@ class _FakeModelConnectionRepository implements ModelConnectionRepository {
       name: toCreate.name,
       key: toCreate.key,
       modelId: toCreate.modelId,
-      workspaceId: toCreate.workspaceId,
-      url: toCreate.url,
       createdAt: DateTime(2026),
       updatedAt: DateTime(2026),
+      workspaceId: toCreate.workspaceId,
+      url: toCreate.url,
     );
     return created!;
   }

@@ -36,31 +36,31 @@ class AuraFieldLabel extends StatelessWidget {
       children: [
         Flexible(
           child: AuraText(
-            style: style ?? AuraTextStyle.bodySmall,
-            color: AuraColorVariant.onSurface,
             child: Semantics(
-              label: semanticLabel,
               child: DefaultTextStyle.merge(
                 style: const TextStyle(
                   fontWeight: DesignTypography.fontWeightMedium,
                 ),
                 child: child,
               ),
+              label: semanticLabel,
             ),
+            style: style ?? AuraTextStyle.bodySmall,
+            color: AuraColorVariant.onSurface,
           ),
         ),
         if (isRequired) ...[
           const SizedBox(width: DesignSpacing.xs),
           AuraText(
-            style: style ?? AuraTextStyle.bodySmall,
-            color: AuraColorVariant.error,
             child: const Text(
               '*',
-              semanticsLabel: 'required',
               style: TextStyle(
                 fontWeight: DesignTypography.fontWeightMedium,
               ),
+              semanticsLabel: 'required',
             ),
+            style: style ?? AuraTextStyle.bodySmall,
+            color: AuraColorVariant.error,
           ),
         ],
       ],

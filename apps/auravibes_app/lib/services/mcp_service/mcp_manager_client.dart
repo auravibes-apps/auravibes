@@ -109,13 +109,13 @@ class McpManagerService {
     final oAuthConfig = _getOauthConfig(authType);
     return mcp.SseAuthClientTransport.create(
       serverUrl: server.url,
-      bearerToken: bearerToken,
       oauthToken: _getOauthToken(authType),
       oauthClient: oAuthConfig != null
           ? mcp.HttpOAuthClient(
               config: oAuthConfig,
             )
           : null,
+      bearerToken: bearerToken,
     );
   }
 
@@ -145,9 +145,9 @@ class McpManagerService {
 
     final transport = await mcp.StreamableHttpClientTransport.create(
       baseUrl: server.url,
-      useHttp2: transportType.useHttp2,
-      headers: headers,
       oauthConfig: oauthConfig,
+      headers: headers,
+      useHttp2: transportType.useHttp2,
     );
     final authToken = _getOauthToken(authType);
 
@@ -172,10 +172,10 @@ class McpManagerService {
     if (authType is McpAuthenticationTypeOAuth) {
       return mcp.OAuthToken(
         accessToken: authType.token.accessToken,
-        refreshToken: authType.token.refreshToken,
         expiresIn: authType.token.expiresIn,
-        issuedAt: authType.token.issuedAt,
+        refreshToken: authType.token.refreshToken,
         scopes: authType.token.scopes,
+        issuedAt: authType.token.issuedAt,
       );
     }
     return null;
@@ -190,9 +190,9 @@ class McpManagerService {
         toolName: tool.name,
         description: tool.description,
         inputSchema: tool.inputSchema,
-        metadata: tool.metadata,
-        supportsCancellation: tool.supportsCancellation,
         supportsProgress: tool.supportsProgress,
+        supportsCancellation: tool.supportsCancellation,
+        metadata: tool.metadata,
       );
     }).toList();
   }

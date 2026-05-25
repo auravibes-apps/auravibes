@@ -43,10 +43,10 @@ class BuildMcpServerToCreateUseCase {
     final token = await _authenticator.authenticate(discover);
     return serverInfo.copyWith(
       authenticationType: McpAuthenticationTypeOAuth(
+        token: token.toEntity(),
         clientId: discover.clientId ?? 'app-client-id',
         authorizationEndpoint: discover.authorizationUrl,
         tokenEndpoint: discover.tokenUrl,
-        token: token.toEntity(),
       ),
     );
   }

@@ -66,8 +66,8 @@ void main() {
     test('summary includes duration when present', () {
       final result = ModelSyncResult(
         isSuccess: true,
-        modelsAdded: 1,
         duration: const Duration(seconds: 5),
+        modelsAdded: 1,
       );
 
       expect(result.summary, contains('in 5s'));
@@ -90,9 +90,9 @@ void main() {
     test('withTiming preserves unchanged values', () {
       final result = ModelSyncResult(
         isSuccess: true,
+        duration: const Duration(seconds: 10),
         providersAdded: 3,
         modelsAdded: 5,
-        duration: const Duration(seconds: 10),
       );
 
       final copy = result.withTiming(fullSync: true);
@@ -107,8 +107,8 @@ void main() {
     test('withTiming overrides specified values', () {
       final result = ModelSyncResult(
         isSuccess: true,
-        providersAdded: 3,
         duration: const Duration(seconds: 10),
+        providersAdded: 3,
       );
 
       final copy = result.withTiming(
