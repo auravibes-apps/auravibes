@@ -13,7 +13,7 @@
 		331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C807B294A618700263BE5 /* RunnerTests.swift */; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
-		78A318202AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage in Frameworks */ = {isa = PBXBuildFile; productRef = 78A3181F2AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage */; };
+		78A318202AECB46A00862997 = {isa = PBXBuildFile; productRef = 78A3181F2AECB46A00862997; };
 		7C480B272C75032E240821BE /* prodProfile.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = BFB3D1C403FD673A690B7004 /* prodProfile.xcconfig */; };
 		8E4478538CA687AAA7D7E83A /* prodRelease.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 3D26C30D90A08E0A7E71EEFC /* prodRelease.xcconfig */; };
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
@@ -27,11 +27,11 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		331C8085294A63A400263BE5 /* PBXContainerItemProxy */ = {
+		331C8085294A63A400263BE5 = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 97C146E61CF9000F007C117D /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 97C146ED1CF9000F007C117D;
+			remoteGlobalIDString = 97C146ED1CF9000F007C117D /* Runner */;
 			remoteInfo = Runner;
 		};
 /* End PBXContainerItemProxy section */
@@ -83,7 +83,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				78A318202AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage in Frameworks */,
+				78A318202AECB46A00862997,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -175,7 +175,7 @@
 			buildRules = (
 			);
 			dependencies = (
-				331C8086294A63A400263BE5 /* PBXTargetDependency */,
+				331C8086294A63A400263BE5,
 			);
 			name = RunnerTests;
 			productName = RunnerTests;
@@ -199,7 +199,7 @@
 			);
 			name = Runner;
 			packageProductDependencies = (
-				78A3181F2AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage */,
+				78A3181F2AECB46A00862997,
 			);
 			productName = Runner;
 			productReference = 97C146EE1CF9000F007C117D /* Runner.app */;
@@ -217,7 +217,7 @@
 				TargetAttributes = {
 					331C8080294A63A400263BE5 = {
 						CreatedOnToolsVersion = 14.0;
-						TestTargetID = 97C146ED1CF9000F007C117D;
+						TestTargetID = 97C146ED1CF9000F007C117D /* Runner */;
 					};
 					97C146ED1CF9000F007C117D = {
 						CreatedOnToolsVersion = 7.3.1;
@@ -235,7 +235,7 @@
 			);
 			mainGroup = 97C146E51CF9000F007C117D;
 			packageReferences = (
-				781AD8BC2B33823900A9FFBB /* XCLocalSwiftPackageReference "FlutterGeneratedPluginSwiftPackage" */,
+				781AD8BC2B33823900A9FFBB,
 			);
 			productRefGroup = 97C146EF1CF9000F007C117D /* Products */;
 			projectDirPath = "";
@@ -332,10 +332,10 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		331C8086294A63A400263BE5 /* PBXTargetDependency */ = {
+		331C8086294A63A400263BE5 = {
 			isa = PBXTargetDependency;
 			target = 97C146ED1CF9000F007C117D /* Runner */;
-			targetProxy = 331C8085294A63A400263BE5 /* PBXContainerItemProxy */;
+			targetProxy = 331C8085294A63A400263BE5;
 		};
 /* End PBXTargetDependency section */
 
@@ -370,6 +370,14 @@
 			};
 			name = "Profile-dev";
 		};
+		0B309218398DE8160AE172EF /* Profile-dev */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 9938E2BEC764930C2C3F3B18 /* devProfile.xcconfig */;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = "Profile-dev";
+		};
 		0B3E52B02C8E242D7ACFBF4B /* Profile-beta */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 8A52AA35C33F9A2DC54F57D4 /* betaProfile.xcconfig */;
@@ -380,6 +388,22 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = "Profile-beta";
+		};
+		0D2016BCE821CD57358D9B8D /* Profile-prod */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = BFB3D1C403FD673A690B7004 /* prodProfile.xcconfig */;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = "Profile-prod";
+		};
+		1664338DAF12F43E6947F619 /* Release-beta */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 1AA6809148550A6BB1126B7A /* betaRelease.xcconfig */;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = "Release-beta";
 		};
 		249021D3217E4FDB00AE95B9 /* Profile */ = {
 			isa = XCBuildConfiguration;
@@ -674,6 +698,14 @@
 				PRODUCT_NAME = RunnerTests;
 			};
 			name = "Release-dev";
+		};
+		70645869CDFBAD685590539B /* Release-prod */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 3D26C30D90A08E0A7E71EEFC /* prodRelease.xcconfig */;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = "Release-prod";
 		};
 		7D0005645461AF54FEA0E7CB /* Debug-dev */ = {
 			isa = XCBuildConfiguration;
@@ -991,6 +1023,22 @@
 			};
 			name = "Profile-dev";
 		};
+		A58BDD0245441AA4D9BB1E97 /* Release-dev */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = B69012E9C942229312C44EAC /* devRelease.xcconfig */;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = "Release-dev";
+		};
+		B3842352166B949993669D63 /* Debug-dev */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 9EF787720B764A38A957B97D /* devDebug.xcconfig */;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = "Debug-dev";
+		};
 		C0B358B1C303BA86A5102FC7 /* Profile-beta */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 8A52AA35C33F9A2DC54F57D4 /* betaProfile.xcconfig */;
@@ -1143,6 +1191,22 @@
 				VALIDATE_PRODUCT = YES;
 			};
 			name = "Release-dev";
+		};
+		D78FCFE6F1D3885B8E553572 /* Debug-beta */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 773A85F27528B4492EF51101 /* betaDebug.xcconfig */;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = "Debug-beta";
+		};
+		E23120F0C7CACEAB38CE4519 /* Debug-prod */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = CBFC884AC3D51FDA4914851E /* prodDebug.xcconfig */;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = "Debug-prod";
 		};
 		E5623A924E617FD43295A1A3 /* Release-beta */ = {
 			isa = XCBuildConfiguration;
@@ -1307,6 +1371,14 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = "Debug-prod";
+		};
+		F65AF86DE318F8AD828E8AE3 /* Profile-beta */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 8A52AA35C33F9A2DC54F57D4 /* betaProfile.xcconfig */;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = "Profile-beta";
 		};
 		F967D61BC9A033F2C78809A2 /* Debug-beta */ = {
 			isa = XCBuildConfiguration;
@@ -1511,6 +1583,15 @@
 				C3A50C600EA5EE38699A07CA /* Debug-beta */,
 				0B3E52B02C8E242D7ACFBF4B /* Profile-beta */,
 				E5623A924E617FD43295A1A3 /* Release-beta */,
+				E23120F0C7CACEAB38CE4519 /* Debug-prod */,
+				0D2016BCE821CD57358D9B8D /* Profile-prod */,
+				70645869CDFBAD685590539B /* Release-prod */,
+				B3842352166B949993669D63 /* Debug-dev */,
+				0B309218398DE8160AE172EF /* Profile-dev */,
+				A58BDD0245441AA4D9BB1E97 /* Release-dev */,
+				D78FCFE6F1D3885B8E553572 /* Debug-beta */,
+				F65AF86DE318F8AD828E8AE3 /* Profile-beta */,
+				1664338DAF12F43E6947F619 /* Release-beta */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -1518,14 +1599,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		781AD8BC2B33823900A9FFBB /* XCLocalSwiftPackageReference "FlutterGeneratedPluginSwiftPackage" */ = {
+		781AD8BC2B33823900A9FFBB = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage;
 		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		78A3181F2AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage */ = {
+		78A3181F2AECB46A00862997 = {
 			isa = XCSwiftPackageProductDependency;
 			productName = FlutterGeneratedPluginSwiftPackage;
 		};

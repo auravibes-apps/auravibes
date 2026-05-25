@@ -22,4 +22,6 @@ android.apply {
             resValue(type = "string", name = "app_name", value = "AuraVibes Beta")
         }
     }
+
+    buildFeatures.resValues = true
 }
