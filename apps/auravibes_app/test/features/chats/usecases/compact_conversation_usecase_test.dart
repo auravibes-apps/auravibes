@@ -591,9 +591,9 @@ ConversationEntity _makeConversation({String? modelId = 'model-1'}) {
     title: 'Test',
     workspaceId: 'ws-1',
     isPinned: false,
-    modelId: modelId,
     createdAt: DateTime(2026),
     updatedAt: DateTime(2026),
+    modelId: modelId,
   );
 }
 
@@ -602,18 +602,18 @@ WorkspaceModelSelectionWithConnectionEntity _makeModelSelection() {
     workspaceModelSelection: WorkspaceModelSelectionEntity(
       id: 'model-1',
       modelId: 'gpt-4',
-      modelConnectionId: 'conn-1',
       createdAt: DateTime(2026),
       updatedAt: DateTime(2026),
+      modelConnectionId: 'conn-1',
     ),
     modelConnection: ModelConnectionEntity(
       id: 'conn-1',
       name: 'OpenAI',
       key: 'encrypted-key',
       modelId: 'gpt-4',
-      workspaceId: 'ws-1',
       createdAt: DateTime(2026),
       updatedAt: DateTime(2026),
+      workspaceId: 'ws-1',
     ),
     modelsProvider: const ApiModelProviderEntity(
       id: 'openai',

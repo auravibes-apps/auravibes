@@ -18,26 +18,17 @@ MessageEntity _makeMessage({
     messageType: MessageType.system,
     isUser: false,
     status: MessageStatus.sent,
-    metadata: metadata,
     createdAt: DateTime(2026),
     updatedAt: DateTime(2026),
+    metadata: metadata,
   );
 }
 
 Widget buildSubject(MessageEntity message) {
   return EasyLocalization(
-    supportedLocales: const [Locale('en')],
-    path: 'assets/i18n',
-    fallbackLocale: const Locale('en'),
-    startLocale: const Locale('en'),
-    useFallbackTranslations: true,
-    useOnlyLangCode: true,
     child: Builder(
       builder: (context) {
         return MaterialApp(
-          locale: context.locale,
-          supportedLocales: context.supportedLocales,
-          localizationsDelegates: context.localizationDelegates,
           home: Theme(
             data: ThemeData(extensions: [AuraTheme.light]),
             child: Scaffold(
@@ -46,9 +37,18 @@ Widget buildSubject(MessageEntity message) {
               ),
             ),
           ),
+          locale: context.locale,
+          localizationsDelegates: context.localizationDelegates,
+          supportedLocales: context.supportedLocales,
         );
       },
     ),
+    supportedLocales: const [Locale('en')],
+    path: 'assets/i18n',
+    fallbackLocale: const Locale('en'),
+    startLocale: const Locale('en'),
+    useOnlyLangCode: true,
+    useFallbackTranslations: true,
   );
 }
 

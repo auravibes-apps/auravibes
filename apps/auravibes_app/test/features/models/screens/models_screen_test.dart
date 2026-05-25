@@ -15,12 +15,6 @@ import '../../../helpers/test_provider_scope.dart';
 void main() {
   Widget buildSubject() {
     return EasyLocalization(
-      supportedLocales: const [Locale('en')],
-      path: 'assets/i18n',
-      fallbackLocale: const Locale('en'),
-      startLocale: const Locale('en'),
-      useFallbackTranslations: true,
-      useOnlyLangCode: true,
       child: TestProviderScope(
         overrides: [
           listWorkspaceModelConnectionsProvider.overrideWith(
@@ -30,19 +24,25 @@ void main() {
         child: Builder(
           builder: (context) {
             return MaterialApp(
-              locale: context.locale,
-              supportedLocales: context.supportedLocales,
-              localizationsDelegates: context.localizationDelegates,
               home: Theme(
                 data: ThemeData(extensions: [AuraTheme.light]),
                 child: const Scaffold(
                   body: ModelsScreen(workspaceId: 'ws-1'),
                 ),
               ),
+              locale: context.locale,
+              localizationsDelegates: context.localizationDelegates,
+              supportedLocales: context.supportedLocales,
             );
           },
         ),
       ),
+      supportedLocales: const [Locale('en')],
+      path: 'assets/i18n',
+      fallbackLocale: const Locale('en'),
+      startLocale: const Locale('en'),
+      useOnlyLangCode: true,
+      useFallbackTranslations: true,
     );
   }
 

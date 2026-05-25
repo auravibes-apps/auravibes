@@ -39,15 +39,10 @@ class ToolItemRow extends HookConsumerWidget {
         vertical: context.auraTheme.spacing.xs,
       ),
       child: AuraColumn(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Main row: icon, name, toggle, expand chevron
           AuraRow(
             children: [
-              // Tool icon
               Container(
-                width: 36,
-                height: 36,
                 decoration: BoxDecoration(
                   color: isEnabled
                       ? context.auraColors.primary.withValues(alpha: 0.1)
@@ -56,72 +51,61 @@ class ToolItemRow extends HookConsumerWidget {
                     context.auraTheme.borderRadius.sm,
                   ),
                 ),
+                width: 36,
+                height: 36,
                 child: Center(
                   child: AuraText(
+                    child: tool.getIconWidget(),
                     color: isEnabled
                         ? AuraColorVariant.primary
                         : AuraColorVariant.onSurfaceVariant,
-                    child: tool.getIconWidget(),
                   ),
                 ),
               ),
               SizedBox(width: context.auraTheme.spacing.sm),
-
-              // Tool name and description
               Expanded(
                 child: AuraColumn(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: AuraSpacing.xs,
                   children: [
+                    AuraText(child: tool.getNameWidget()),
                     AuraText(
-                      child: tool.getNameWidget(),
-                    ),
-                    AuraText(
-                      style: AuraTextStyle.bodySmall,
-                      color: AuraColorVariant.onSurfaceVariant,
                       child: DefaultTextStyle.merge(
-                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
                         child: tool.getDescriptionWidget(),
                       ),
+                      style: AuraTextStyle.bodySmall,
+                      color: AuraColorVariant.onSurfaceVariant,
                     ),
                   ],
+                  spacing: AuraSpacing.xs,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                 ),
               ),
-
-              // Enable toggle
               AuraSwitch(
                 value: isEnabled,
                 onChanged: (value) {
                   ref
                       .read(workspaceToolsProvider(workspaceId).notifier)
-                      .setToolEnabled(
-                        tool.id,
-                        isEnabled: value,
-                      );
+                      .setToolEnabled(tool.id, isEnabled: value);
                 },
                 size: AuraSwitchSize.sm,
               ),
-
-              // Expand/collapse for options
               IconButton(
+                padding: EdgeInsets.zero,
                 onPressed: () => isExpanded.value = !isExpanded.value,
+                constraints: const BoxConstraints(),
                 icon: AnimatedRotation(
-                  turns: isExpanded.value ? 0.5 : 0,
-                  duration: const Duration(milliseconds: 200),
                   child: const AuraIcon(
                     Icons.keyboard_arrow_down,
                     size: AuraIconSize.small,
                     color: AuraColorVariant.onSurfaceVariant,
                   ),
+                  turns: isExpanded.value ? 0.5 : 0,
+                  duration: const Duration(milliseconds: 200),
                 ),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
               ),
             ],
           ),
-
-          // Expanded options
           if (isExpanded.value)
             Padding(
               padding: EdgeInsets.only(
@@ -137,6 +121,7 @@ class ToolItemRow extends HookConsumerWidget {
               ),
             ),
         ],
+        crossAxisAlignment: CrossAxisAlignment.start,
       ),
     );
   }
@@ -163,17 +148,13 @@ class _ToolOptions extends HookConsumerWidget {
     final workspaceTool = tool;
 
     return AuraColumn(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: AuraSpacing.sm,
       children: [
-        // Permission selector - only when enabled
         if (isEnabled)
           AuraRow(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const AuraText(
-                style: AuraTextStyle.bodySmall,
                 child: TextLocale(LocaleKeys.tools_screen_permission_label),
+                style: AuraTextStyle.bodySmall,
               ),
               AuraButtonGroup<ToolPermissionMode>.single(
                 items: const [
@@ -202,9 +183,8 @@ class _ToolOptions extends HookConsumerWidget {
                 size: AuraButtonGroupSize.sm,
               ),
             ],
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
           ),
-
-        // Delete button - only for built-in tools that can be removed
         if (showDeleteButton && !workspaceTool.isNative)
           Align(
             alignment: Alignment.centerRight,
@@ -216,15 +196,17 @@ class _ToolOptions extends HookConsumerWidget {
                 color: AuraColorVariant.error,
               ),
               label: AuraText(
-                style: AuraTextStyle.bodySmall,
                 child: Text(
                   'Remove',
                   style: TextStyle(color: context.auraColors.error),
                 ),
+                style: AuraTextStyle.bodySmall,
               ),
             ),
           ),
       ],
+      spacing: AuraSpacing.sm,
+      crossAxisAlignment: CrossAxisAlignment.start,
     );
   }
 

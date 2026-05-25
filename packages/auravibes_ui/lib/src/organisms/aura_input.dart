@@ -160,16 +160,6 @@ class _AuraInputState extends State<AuraInput> {
     final fieldState = _convertToFieldState(widget.state);
 
     return AuraFieldWrapper(
-      label: widget.label,
-      hint: widget.hint,
-      error: widget.error,
-      isRequired: widget.isRequired,
-
-      state: fieldState,
-      isEnabled: widget.enabled,
-      isReadOnly: widget.readOnly,
-      isFocused: _isFocused,
-      semanticLabel: widget.semanticLabel,
       child: Padding(
         padding: _getPadding(),
         child: Column(
@@ -185,27 +175,27 @@ class _AuraInputState extends State<AuraInput> {
                     controller: widget.controller,
                     initialValue: widget.initialValue,
                     focusNode: _focusNode,
-                    keyboardType: widget.keyboardType,
-                    textInputAction: widget.textInputAction,
-                    obscureText: widget.obscureText,
-                    enabled: widget.enabled,
-                    readOnly: widget.readOnly,
-                    autofocus: widget.autofocus,
-                    maxLines: widget.maxLines,
-                    maxLength: widget.maxLength,
-                    inputFormatters: widget.inputFormatters,
-                    onChanged: widget.onChanged,
-                    onFieldSubmitted: widget.onSubmitted,
-                    onTap: widget.onTap,
-                    style: _getTextStyle(auraColors),
                     decoration: InputDecoration(
                       hint: widget.placeholder,
                       hintStyle: _getHintStyle(auraColors),
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.zero,
-                      semanticCounterText: widget.semanticLabel,
                       isDense: false,
+                      contentPadding: EdgeInsets.zero,
+                      border: InputBorder.none,
+                      semanticCounterText: widget.semanticLabel,
                     ),
+                    keyboardType: widget.keyboardType,
+                    textInputAction: widget.textInputAction,
+                    style: _getTextStyle(auraColors),
+                    autofocus: widget.autofocus,
+                    readOnly: widget.readOnly,
+                    obscureText: widget.obscureText,
+                    maxLines: widget.maxLines,
+                    maxLength: widget.maxLength,
+                    onChanged: widget.onChanged,
+                    onTap: widget.onTap,
+                    onFieldSubmitted: widget.onSubmitted,
+                    inputFormatters: widget.inputFormatters,
+                    enabled: widget.enabled,
                   ),
                 ),
                 if (widget.suffixIcon != null) ...[
@@ -218,6 +208,15 @@ class _AuraInputState extends State<AuraInput> {
           ],
         ),
       ),
+      label: widget.label,
+      hint: widget.hint,
+      error: widget.error,
+      isRequired: widget.isRequired,
+      state: fieldState,
+      isEnabled: widget.enabled,
+      isReadOnly: widget.readOnly,
+      isFocused: _isFocused,
+      semanticLabel: widget.semanticLabel,
     );
   }
 
@@ -246,11 +245,11 @@ class _AuraInputState extends State<AuraInput> {
     };
 
     return TextStyle(
-      fontFamily: DesignTypography.bodyFontFamily,
+      color: widget.enabled ? colors.onSurface : colors.onSurfaceVariant,
       fontSize: fontSize,
       fontWeight: DesignTypography.fontWeightRegular,
       height: DesignTypography.lineHeightBase,
-      color: widget.enabled ? colors.onSurface : colors.onSurfaceVariant,
+      fontFamily: DesignTypography.bodyFontFamily,
     );
   }
 
@@ -262,11 +261,11 @@ class _AuraInputState extends State<AuraInput> {
     };
 
     return TextStyle(
-      fontFamily: DesignTypography.bodyFontFamily,
+      color: colors.onSurfaceVariant.withValues(alpha: 0.7),
       fontSize: fontSize,
       fontWeight: DesignTypography.fontWeightRegular,
       height: DesignTypography.lineHeightBase,
-      color: colors.onSurfaceVariant.withValues(alpha: 0.7),
+      fontFamily: DesignTypography.bodyFontFamily,
     );
   }
 }

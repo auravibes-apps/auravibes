@@ -123,20 +123,20 @@ void main() {
       bool centerDivider = true,
     }) {
       return MaterialApp(
-        theme: ThemeData(extensions: [AuraTheme.light]),
         home: ResponsiveSlidingDrawer(
-          controller: controller,
+          drawer: const Text('Drawer'),
+          body: const Text('Body'),
           isDarkMode: isDarkMode,
+          controller: controller,
           animationDuration: animationDuration,
+          onAnimationComplete: onAnimationComplete,
           onFinishedOpening: onFinishedOpening,
           onFinishedClosing: onFinishedClosing,
-          onAnimationComplete: onAnimationComplete,
           onStartedOpening: onStartedOpening,
           onStartedClosing: onStartedClosing,
           centerDivider: centerDivider,
-          drawer: const Text('Drawer'),
-          body: const Text('Body'),
         ),
+        theme: ThemeData(extensions: [AuraTheme.light]),
       );
     }
 

@@ -69,20 +69,20 @@ void main() {
         final withConnection = WorkspaceModelSelectionWithConnection(
           model: WorkspaceModelSelectionTable(
             id: 'sel-1',
-            modelId: 'openai',
-            modelConnectionId: 'conn-1',
             createdAt: now,
             updatedAt: now,
+            modelId: 'openai',
+            modelConnectionId: 'conn-1',
           ),
           modelConnection: ModelConnectionTable(
             id: 'conn-1',
+            createdAt: now,
+            updatedAt: now,
             name: 'My Connection',
             modelId: 'openai',
             keyValue: 'encrypted-key',
             keySuffix: 'abc123',
             workspaceId: 'ws-1',
-            createdAt: now,
-            updatedAt: now,
           ),
           modelProvider: const ApiModelProvidersTable(
             id: 'openai',
@@ -131,19 +131,19 @@ void main() {
         final withConnection = WorkspaceModelSelectionWithConnection(
           model: WorkspaceModelSelectionTable(
             id: 'sel-1',
-            modelId: 'openai',
-            modelConnectionId: 'conn-1',
             createdAt: now,
             updatedAt: now,
+            modelId: 'openai',
+            modelConnectionId: 'conn-1',
           ),
           modelConnection: ModelConnectionTable(
             id: 'conn-1',
+            createdAt: now,
+            updatedAt: now,
             name: 'My Connection',
             modelId: 'openai',
             keyValue: 'key',
             workspaceId: 'ws-1',
-            createdAt: now,
-            updatedAt: now,
           ),
           modelProvider: const ApiModelProvidersTable(
             id: 'openai',
@@ -180,19 +180,19 @@ void main() {
         final withConnection = WorkspaceModelSelectionWithConnection(
           model: WorkspaceModelSelectionTable(
             id: 'sel-1',
-            modelId: 'test',
-            modelConnectionId: 'conn-1',
             createdAt: now,
             updatedAt: now,
+            modelId: 'test',
+            modelConnectionId: 'conn-1',
           ),
           modelConnection: ModelConnectionTable(
             id: 'conn-1',
+            createdAt: now,
+            updatedAt: now,
             name: 'Conn',
             modelId: 'test',
             keyValue: 'key',
             workspaceId: 'ws-1',
-            createdAt: now,
-            updatedAt: now,
           ),
           modelProvider: const ApiModelProvidersTable(
             id: 'test',
@@ -213,19 +213,19 @@ void main() {
         final withConnection = WorkspaceModelSelectionWithConnection(
           model: WorkspaceModelSelectionTable(
             id: 'sel-1',
-            modelId: 'anthropic',
-            modelConnectionId: 'conn-1',
             createdAt: now,
             updatedAt: now,
+            modelId: 'anthropic',
+            modelConnectionId: 'conn-1',
           ),
           modelConnection: ModelConnectionTable(
             id: 'conn-1',
+            createdAt: now,
+            updatedAt: now,
             name: 'Conn',
             modelId: 'anthropic',
             keyValue: 'key',
             workspaceId: 'ws-1',
-            createdAt: now,
-            updatedAt: now,
           ),
           modelProvider: const ApiModelProvidersTable(
             id: 'anthropic',

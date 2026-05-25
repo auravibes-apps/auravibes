@@ -146,8 +146,8 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraInput(
-              obscureText: true,
               initialValue: 'password',
+              obscureText: true,
             ),
           ),
         ),

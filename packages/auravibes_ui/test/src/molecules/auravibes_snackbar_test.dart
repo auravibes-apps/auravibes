@@ -21,9 +21,6 @@ void main() {
     testWidgets('displays snackbar with custom implementation', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
           home: Scaffold(
             body: Builder(
               builder: (context) {
@@ -38,6 +35,9 @@ void main() {
                 );
               },
             ),
+          ),
+          theme: ThemeData(
+            extensions: [AuraTheme.light],
           ),
         ),
       );
@@ -55,9 +55,6 @@ void main() {
     testWidgets('displays snackbar with success variant', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
           home: Scaffold(
             body: Builder(
               builder: (context) {
@@ -74,6 +71,9 @@ void main() {
               },
             ),
           ),
+          theme: ThemeData(
+            extensions: [AuraTheme.light],
+          ),
         ),
       );
 
@@ -88,9 +88,6 @@ void main() {
     testWidgets('displays snackbar with error variant', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
           home: Scaffold(
             body: Builder(
               builder: (context) {
@@ -107,6 +104,9 @@ void main() {
               },
             ),
           ),
+          theme: ThemeData(
+            extensions: [AuraTheme.light],
+          ),
         ),
       );
 
@@ -120,9 +120,6 @@ void main() {
     testWidgets('displays snackbar with warning variant', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
           home: Scaffold(
             body: Builder(
               builder: (context) {
@@ -139,6 +136,9 @@ void main() {
               },
             ),
           ),
+          theme: ThemeData(
+            extensions: [AuraTheme.light],
+          ),
         ),
       );
 
@@ -152,9 +152,6 @@ void main() {
     testWidgets('displays snackbar with info variant', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
           home: Scaffold(
             body: Builder(
               builder: (context) {
@@ -170,6 +167,9 @@ void main() {
                 );
               },
             ),
+          ),
+          theme: ThemeData(
+            extensions: [AuraTheme.light],
           ),
         ),
       );
@@ -189,9 +189,6 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
           home: Scaffold(
             body: Builder(
               builder: (context) {
@@ -208,6 +205,9 @@ void main() {
                 );
               },
             ),
+          ),
+          theme: ThemeData(
+            extensions: [AuraTheme.light],
           ),
         ),
       );
@@ -229,9 +229,6 @@ void main() {
     testWidgets('animates in with slide and fade', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
           home: Scaffold(
             body: Builder(
               builder: (context) {
@@ -246,6 +243,9 @@ void main() {
                 );
               },
             ),
+          ),
+          theme: ThemeData(
+            extensions: [AuraTheme.light],
           ),
         ),
       );
@@ -265,9 +265,6 @@ void main() {
     testWidgets('uses Aura colors correctly', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
           home: Scaffold(
             body: Builder(
               builder: (context) {
@@ -284,6 +281,9 @@ void main() {
               },
             ),
           ),
+          theme: ThemeData(
+            extensions: [AuraTheme.light],
+          ),
         ),
       );
 
@@ -298,9 +298,6 @@ void main() {
     testWidgets('positions at bottom of screen with padding', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
           home: Scaffold(
             body: Builder(
               builder: (context) {
@@ -315,6 +312,9 @@ void main() {
                 );
               },
             ),
+          ),
+          theme: ThemeData(
+            extensions: [AuraTheme.light],
           ),
         ),
       );

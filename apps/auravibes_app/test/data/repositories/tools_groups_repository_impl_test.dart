@@ -40,13 +40,13 @@ void main() {
     }) {
       return ToolsGroupsTable(
         id: id,
+        createdAt: now,
+        updatedAt: now,
         workspaceId: workspaceId,
+        mcpServerId: mcpServerId,
         name: name,
         isEnabled: isEnabled,
         permissions: permissions,
-        createdAt: now,
-        updatedAt: now,
-        mcpServerId: mcpServerId,
       );
     }
 

@@ -281,8 +281,8 @@ void main() {
       final conversations = [
         ConversationEntity(
           id: 'conv-1',
-          workspaceId: 'workspace-1',
           title: 'Test Chat',
+          workspaceId: 'workspace-1',
           isPinned: false,
           createdAt: DateTime(2025),
           updatedAt: DateTime(2025),
@@ -295,12 +295,6 @@ void main() {
       await tester.runAsync(() async {
         await tester.pumpWidget(
           EasyLocalization(
-            supportedLocales: const [Locale('en')],
-            path: 'assets/i18n',
-            fallbackLocale: const Locale('en'),
-            startLocale: const Locale('en'),
-            useFallbackTranslations: true,
-            useOnlyLangCode: true,
             child: Builder(
               builder: (context) {
                 return Portal(
@@ -322,9 +316,6 @@ void main() {
                       routerPathSegmentsProvider.overrideWithValue(const []),
                     ],
                     child: MaterialApp(
-                      locale: context.locale,
-                      supportedLocales: context.supportedLocales,
-                      localizationsDelegates: context.localizationDelegates,
                       home: Theme(
                         data: ThemeData(extensions: [AuraTheme.light]),
                         child: const Material(
@@ -337,11 +328,20 @@ void main() {
                           ),
                         ),
                       ),
+                      locale: context.locale,
+                      localizationsDelegates: context.localizationDelegates,
+                      supportedLocales: context.supportedLocales,
                     ),
                   ),
                 );
               },
             ),
+            supportedLocales: const [Locale('en')],
+            path: 'assets/i18n',
+            fallbackLocale: const Locale('en'),
+            startLocale: const Locale('en'),
+            useOnlyLangCode: true,
+            useFallbackTranslations: true,
           ),
         );
       });

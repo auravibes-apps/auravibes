@@ -165,8 +165,8 @@ class OAuthAuthenticate {
           'client_id': oAuthResult.clientId!,
       },
       options: Options(
-        contentType: Headers.formUrlEncodedContentType,
         responseType: ResponseType.json,
+        contentType: Headers.formUrlEncodedContentType,
       ),
     );
 

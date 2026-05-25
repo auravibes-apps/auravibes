@@ -73,44 +73,27 @@ class _AuraFieldWrapperState extends State<AuraFieldWrapper> {
     final auraColors = context.auraColors;
 
     return Semantics(
-      label: widget.semanticLabel,
-
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (widget.label != null)
-            AuraFieldLabel(
-              isRequired: widget.isRequired,
-              child: widget.label!,
-            ),
+            AuraFieldLabel(child: widget.label!, isRequired: widget.isRequired),
           if (widget.label != null) const SizedBox(height: DesignSpacing.xs),
           _buildFieldContainer(auraColors),
           if (widget.hint != null || widget.error != null)
-            const SizedBox(
-              height: DesignSpacing.xs,
-            ),
+            const SizedBox(height: DesignSpacing.xs),
           if (widget.hint != null || widget.error != null)
-            AuraFieldHint(
-              text: widget.hint,
-              error: widget.error,
-            ),
+            AuraFieldHint(text: widget.hint, error: widget.error),
         ],
       ),
+      label: widget.semanticLabel,
     );
   }
 
   Widget _buildFieldContainer(AuraColorScheme auraColors) {
     return AuraPressable(
-      color: auraColors.primary,
-      onPressed: widget.isEnabled ? widget.onTap : null,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(DesignBorderRadius.xl),
-        color: _getBackgroundColor(auraColors),
-        // color: auraColors.primary,
-      ),
       child: AnimatedContainer(
-        duration: DesignDuration.normal,
         decoration: BoxDecoration(
           // color: _getBackgroundColor(auraColors),
           border: Border.all(
@@ -120,7 +103,15 @@ class _AuraFieldWrapperState extends State<AuraFieldWrapper> {
           boxShadow: _getBoxShadow(auraColors),
         ),
         child: widget.child,
+        duration: DesignDuration.normal,
       ),
+      color: auraColors.primary,
+      decoration: BoxDecoration(
+        color: _getBackgroundColor(auraColors),
+        borderRadius: BorderRadius.circular(DesignBorderRadius.xl),
+        // color: auraColors.primary,
+      ),
+      onPressed: widget.isEnabled ? widget.onTap : null,
     );
   }
 

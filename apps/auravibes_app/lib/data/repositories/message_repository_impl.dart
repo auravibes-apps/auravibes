@@ -220,9 +220,9 @@ class MessageRepositoryImpl implements MessageRepository {
       messageType: MessageType.fromString(messageTable.messageType.value),
       isUser: messageTable.isUser,
       status: _messageTableStatusToEntityStatus(messageTable.status),
-      metadata: MessageMetadataEntity.fromJsonString(messageTable.metadata),
       createdAt: messageTable.createdAt,
       updatedAt: messageTable.updatedAt,
+      metadata: MessageMetadataEntity.fromJsonString(messageTable.metadata),
     );
   }
 

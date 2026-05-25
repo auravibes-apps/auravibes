@@ -28,9 +28,6 @@ class ToolAdapter {
     return Tool(
       name: spec.name,
       description: spec.description,
-      inputSchema: Schema.fromMap(
-        spec.inputJsonSchema.cast<String, Object?>(),
-      ),
       onCall: (args) {
         if (args is! Map<String, dynamic>) {
           throw ArgumentError(
@@ -39,6 +36,9 @@ class ToolAdapter {
         }
         return onCall(spec.name, Map<String, dynamic>.from(args));
       },
+      inputSchema: Schema.fromMap(
+        spec.inputJsonSchema.cast<String, Object?>(),
+      ),
     );
   }
 }

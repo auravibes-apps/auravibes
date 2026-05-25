@@ -73,6 +73,10 @@ void main() {
       await tester.runAsync(() async {
         await tester.pumpWidget(
           testableApp(
+            child: Theme(
+              data: ThemeData(extensions: [AuraTheme.light]),
+              child: const NewChatScreen(workspaceId: 'test-ws'),
+            ),
             overrides: [
               newChatProvider('test-ws').overrideWithValue(
                 const NewChatState(),
@@ -81,10 +85,6 @@ void main() {
                 (ref, workspaceId) => Stream.value({}),
               ),
             ],
-            child: Theme(
-              data: ThemeData(extensions: [AuraTheme.light]),
-              child: const NewChatScreen(workspaceId: 'test-ws'),
-            ),
           ),
         );
       });

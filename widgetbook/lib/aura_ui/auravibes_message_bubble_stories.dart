@@ -16,16 +16,16 @@ Widget userTextMessageUseCase(BuildContext context) {
       options: AuraMessageDeliveryStatus.values,
       labelBuilder: (value) => value.name,
     ),
-    contentType: context.knobs.object.dropdown(
-      label: 'Content Type',
-      options: AuraMessageContentType.values,
-      labelBuilder: (value) => value.name,
-    ),
     timestamp: context.knobs.dateTimeOrNull(
       label: 'Show Timestamp',
       initialValue: DateTime.now().subtract(const Duration(minutes: 2)),
       start: DateTime(2023, 1, 1),
       end: DateTime.now(),
+    ),
+    contentType: context.knobs.object.dropdown(
+      label: 'Content Type',
+      options: AuraMessageContentType.values,
+      labelBuilder: (value) => value.name,
     ),
   );
 }

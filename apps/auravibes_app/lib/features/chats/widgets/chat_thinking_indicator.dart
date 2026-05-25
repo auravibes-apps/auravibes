@@ -19,10 +19,10 @@ class ChatThinkingIndicator extends StatelessWidget {
           SizedBox(width: context.auraTheme.spacing.sm),
           Flexible(
             child: AuraText(
-              style: AuraTextStyle.bodySmall,
               child: Text(
                 LocaleKeys.chats_screens_chat_conversation_thinking_status.tr(),
               ),
+              style: AuraTextStyle.bodySmall,
             ),
           ),
         ],

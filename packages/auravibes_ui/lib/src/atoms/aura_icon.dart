@@ -38,12 +38,12 @@ class AuraIcon extends StatelessWidget {
     final iconSize = _getIconSize();
 
     return Semantics(
-      label: semanticLabel,
       child: Icon(
         icon,
         size: iconSize,
         color: iconColor,
       ),
+      label: semanticLabel,
     );
   }
 
@@ -121,34 +121,32 @@ class AuraIconButton extends StatelessWidget {
       width: buttonSize,
       height: buttonSize,
       child: IconButton(
-        onPressed: disabled ? null : onPressed,
-        icon: AuraIcon(
-          icon,
-          size: size,
-          color: color,
-          semanticLabel: semanticLabel,
-        ),
         iconSize: iconSize,
         padding: EdgeInsets.zero,
+        onPressed: disabled ? null : onPressed,
         constraints: BoxConstraints(
           minWidth: buttonSize,
           minHeight: buttonSize,
         ),
         style: IconButton.styleFrom(
+          foregroundColor:
+              auraColors.getColorOrNull(color) ?? _getIconColor(auraColors),
           backgroundColor:
               auraColors.getColorOrNull(backgroundColor) ??
               _getBackgroundColor(auraColors),
-          foregroundColor:
-              auraColors.getColorOrNull(color) ?? _getIconColor(auraColors),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(_getBorderRadius()),
-            side: variant == AuraIconButtonVariant.outlined
-                ? BorderSide(
-                    color: auraColors.outline,
-                  )
-                : BorderSide.none,
-          ),
           elevation: variant == AuraIconButtonVariant.elevated ? 2 : 0,
+          shape: RoundedRectangleBorder(
+            side: variant == AuraIconButtonVariant.outlined
+                ? BorderSide(color: auraColors.outline)
+                : BorderSide.none,
+            borderRadius: BorderRadius.circular(_getBorderRadius()),
+          ),
+        ),
+        icon: AuraIcon(
+          icon,
+          size: size,
+          color: color,
+          semanticLabel: semanticLabel,
         ),
       ),
     );

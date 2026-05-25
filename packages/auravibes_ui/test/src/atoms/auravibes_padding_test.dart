@@ -112,12 +112,12 @@ void main() {
     testWidgets('renders child with default padding', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(extensions: [AuraTheme.light]),
           home: const Scaffold(
             body: AuraPadding(
               child: Text('Padded'),
             ),
           ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -128,13 +128,13 @@ void main() {
     testWidgets('renders child with custom padding', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(extensions: [AuraTheme.light]),
           home: const Scaffold(
             body: AuraPadding(
-              padding: AuraEdgeInsetsGeometry.large,
               child: Text('Large Padded'),
+              padding: AuraEdgeInsetsGeometry.large,
             ),
           ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -152,13 +152,13 @@ void main() {
     ) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(extensions: [AuraTheme.light]),
           home: const Scaffold(
             body: AuraPadding(
-              padding: AuraEdgeInsetsGeometry.medium,
               child: SizedBox(width: 100, height: 100),
+              padding: AuraEdgeInsetsGeometry.medium,
             ),
           ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 

@@ -12,11 +12,11 @@ void main() {
     final widget = AppDropdownBase<String>(
       value: valueProvider,
       onChanged: onChangedProvider,
-      labelLocaleKey: 'models.label',
       options: const [
         AuraDropdownOption(value: 'a', child: Text('A')),
         AuraDropdownOption(value: 'b', child: Text('B')),
       ],
+      labelLocaleKey: 'models.label',
     );
 
     expect(widget.labelLocaleKey, 'models.label');
@@ -32,8 +32,8 @@ void main() {
     final widget = AppDropdownBase<String>(
       value: valueProvider,
       onChanged: onChangedProvider,
-      labelLocaleKey: 'test',
       options: const [],
+      labelLocaleKey: 'test',
     );
 
     expect(widget, isA<AppDropdownBase<String>>());

@@ -256,13 +256,13 @@ void main() {
     testWidgets('auraTheme returns theme from context', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(extensions: [AuraTheme.light]),
           home: Builder(
             builder: (context) {
               expect(context.auraTheme, AuraTheme.light);
               return const SizedBox();
             },
           ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
     });
@@ -270,13 +270,13 @@ void main() {
     testWidgets('auraColors returns colors from context', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(extensions: [AuraTheme.light]),
           home: Builder(
             builder: (context) {
               expect(context.auraColors, AuraTheme.light.colors);
               return const SizedBox();
             },
           ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
     });

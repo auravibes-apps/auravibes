@@ -241,8 +241,8 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
       McpConnectionState(
         server: savedServer,
         status: McpConnectionStatus.connected,
-        tools: mcpTools,
         client: client,
+        tools: mcpTools,
       ),
     ]);
 

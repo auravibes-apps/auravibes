@@ -31,9 +31,9 @@ class AuraColumn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: crossAxisAlignment,
-      mainAxisSize: mainAxisSize,
       mainAxisAlignment: mainAxisAlignment,
+      mainAxisSize: mainAxisSize,
+      crossAxisAlignment: crossAxisAlignment,
       spacing: context.auraTheme.fromSpacing(spacing),
       children: children,
     );
@@ -70,9 +70,9 @@ class AuraRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      crossAxisAlignment: crossAxisAlignment,
-      mainAxisSize: mainAxisSize,
       mainAxisAlignment: mainAxisAlignment,
+      mainAxisSize: mainAxisSize,
+      crossAxisAlignment: crossAxisAlignment,
       spacing: context.auraTheme.fromSpacing(spacing),
       children: children,
     );

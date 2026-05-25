@@ -116,8 +116,8 @@ void main() {
       await database.toolsGroupsDao.insertToolsGroup(
         ToolsGroupsCompanion.insert(
           workspaceId: workspaceId,
-          name: 'Linked Group',
           mcpServerId: Value(server.id),
+          name: 'Linked Group',
           permissions: PermissionAccess.ask,
         ),
       );

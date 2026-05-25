@@ -8,12 +8,12 @@ void main() {
   testWidgets('renders app bar with menu icon', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
-        theme: ThemeData(extensions: [AuraTheme.light]),
         home: const Scaffold(
           appBar: AuraAppBarWithDrawer(
             title: Text('Test AppBar'),
           ),
         ),
+        theme: ThemeData(extensions: [AuraTheme.light]),
       ),
     );
 
@@ -24,12 +24,12 @@ void main() {
   testWidgets('renders with title', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
-        theme: ThemeData(extensions: [AuraTheme.light]),
         home: const Scaffold(
           appBar: AuraAppBarWithDrawer(
             title: Text('Test Title'),
           ),
         ),
+        theme: ThemeData(extensions: [AuraTheme.light]),
       ),
     );
 
@@ -39,7 +39,6 @@ void main() {
   testWidgets('renders with actions', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
-        theme: ThemeData(extensions: [AuraTheme.light]),
         home: const Scaffold(
           appBar: AuraAppBarWithDrawer(
             title: Text('Test AppBar'),
@@ -48,6 +47,7 @@ void main() {
             ],
           ),
         ),
+        theme: ThemeData(extensions: [AuraTheme.light]),
       ),
     );
 
@@ -82,7 +82,6 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        theme: ThemeData(extensions: [AuraTheme.light]),
         home: ResponsiveSlidingDrawerProvider(
           controller: controller,
           child: const Scaffold(
@@ -91,6 +90,7 @@ void main() {
             ),
           ),
         ),
+        theme: ThemeData(extensions: [AuraTheme.light]),
       ),
     );
 

@@ -33,12 +33,12 @@ class WidgetbookApp extends StatelessWidget {
           LinuxViewports.desktop,
         ]),
         ThemeAddon(
-          themeBuilder: (context, theme, child) =>
-              Theme(data: theme, child: child),
           themes: [
             WidgetbookTheme(name: 'Aura Light', data: _createLightTheme()),
             WidgetbookTheme(name: 'Aura Dark', data: _createDarkTheme()),
           ],
+          themeBuilder: (context, theme, child) =>
+              Theme(data: theme, child: child),
         ),
         BuilderAddon(
           name: 'portal',
@@ -63,6 +63,7 @@ class WidgetbookApp extends StatelessWidget {
   ThemeData _createLightTheme() {
     final auraColors = AuraTheme.light.colors;
     return ThemeData(
+      extensions: [AuraTheme.light],
       useMaterial3: true,
       colorScheme: ColorScheme(
         brightness: Brightness.light,
@@ -70,10 +71,10 @@ class WidgetbookApp extends StatelessWidget {
         onPrimary: auraColors.onPrimary,
         secondary: auraColors.secondary,
         onSecondary: auraColors.onSecondary,
-        surface: auraColors.surface,
-        onSurface: auraColors.onSurface,
         error: auraColors.error,
         onError: auraColors.onError,
+        surface: auraColors.surface,
+        onSurface: auraColors.onSurface,
         outline: auraColors.outline,
       ),
       textTheme: GoogleFonts.interTextTheme(),
@@ -84,13 +85,13 @@ class WidgetbookApp extends StatelessWidget {
           ),
         ),
       ),
-      extensions: [AuraTheme.light],
     );
   }
 
   ThemeData _createDarkTheme() {
     final auraColors = AuraTheme.dark.colors;
     return ThemeData(
+      extensions: [AuraTheme.dark],
       useMaterial3: true,
       colorScheme: ColorScheme(
         brightness: Brightness.dark,
@@ -98,10 +99,10 @@ class WidgetbookApp extends StatelessWidget {
         onPrimary: auraColors.onPrimary,
         secondary: auraColors.secondary,
         onSecondary: auraColors.onSecondary,
-        surface: auraColors.surface,
-        onSurface: auraColors.onSurface,
         error: auraColors.error,
         onError: auraColors.onError,
+        surface: auraColors.surface,
+        onSurface: auraColors.onSurface,
         outline: auraColors.outline,
       ),
       textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
@@ -112,7 +113,6 @@ class WidgetbookApp extends StatelessWidget {
           ),
         ),
       ),
-      extensions: [AuraTheme.dark],
     );
   }
 }

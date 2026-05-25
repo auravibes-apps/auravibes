@@ -110,8 +110,8 @@ class ApiModelRepositoryImpl implements ApiModelRepository {
       id: providerTable.id,
       name: providerTable.name,
       type: _mapToTypeTable(providerTable.type),
-      doc: providerTable.doc,
       url: providerTable.url,
+      doc: providerTable.doc,
     );
   }
 
@@ -121,9 +121,9 @@ class ApiModelRepositoryImpl implements ApiModelRepository {
     return ApiModelProvidersCompanion(
       id: .new(entity.id),
       name: .new(entity.name),
-      doc: .new(entity.doc),
-      url: .new(entity.url),
       type: .absentIfNull(_mapTableToType(entity.type)),
+      url: .new(entity.url),
+      doc: .new(entity.doc),
     );
   }
 
@@ -146,17 +146,16 @@ class ApiModelRepositoryImpl implements ApiModelRepository {
   /// Maps a database table record to a domain entity.
   ApiModelEntity _mapToModelEntity(ApiModelsTable modelTable) {
     return ApiModelEntity(
+      modelProvider: modelTable.modelProvider,
       id: modelTable.id,
       name: modelTable.name,
-      costCacheRead: modelTable.costCacheRead,
-      costInput: modelTable.costInput,
-      costOutput: modelTable.costOutput,
       limitContext: modelTable.limitContext,
       limitOutput: modelTable.limitOutput,
       modalitiesInput: modelTable.modalitiesInput ?? [],
       modalitiesOuput: modelTable.modalitiesOuput ?? [],
-      modelProvider: modelTable.modelProvider,
-
+      costInput: modelTable.costInput,
+      costCacheRead: modelTable.costCacheRead,
+      costOutput: modelTable.costOutput,
       openWeights: modelTable.openWeights,
       supportsReasoning: modelTable.supportsReasoning,
     );
@@ -165,18 +164,18 @@ class ApiModelRepositoryImpl implements ApiModelRepository {
   ApiModelsCompanion? _mapEntityToCompanion(ApiModelEntity? entity) {
     if (entity == null) return null;
     return ApiModelsCompanion(
+      modelProvider: .new(entity.modelProvider),
       id: .new(entity.id),
       name: .new(entity.name),
-      costCacheRead: .new(entity.costCacheRead),
-      costInput: .new(entity.costInput),
-      costOutput: .new(entity.costOutput),
-      limitContext: .new(entity.limitContext),
-      limitOutput: .new(entity.limitOutput),
       modalitiesInput: .new(entity.modalitiesInput),
       modalitiesOuput: .new(entity.modalitiesOuput),
-      modelProvider: .new(entity.modelProvider),
       openWeights: .new(entity.openWeights),
       supportsReasoning: .new(entity.supportsReasoning),
+      costInput: .new(entity.costInput),
+      costOutput: .new(entity.costOutput),
+      costCacheRead: .new(entity.costCacheRead),
+      limitContext: .new(entity.limitContext),
+      limitOutput: .new(entity.limitOutput),
     );
   }
 }

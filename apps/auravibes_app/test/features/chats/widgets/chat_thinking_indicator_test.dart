@@ -7,18 +7,18 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   Widget buildSubject(Widget child) {
     return EasyLocalization(
-      supportedLocales: const [Locale('en')],
-      path: 'assets/i18n',
-      fallbackLocale: const Locale('en'),
-      startLocale: const Locale('en'),
-      useFallbackTranslations: true,
-      useOnlyLangCode: true,
       child: MaterialApp(
         home: Theme(
           data: ThemeData(extensions: [AuraTheme.light]),
           child: Material(child: child),
         ),
       ),
+      supportedLocales: const [Locale('en')],
+      path: 'assets/i18n',
+      fallbackLocale: const Locale('en'),
+      startLocale: const Locale('en'),
+      useOnlyLangCode: true,
+      useFallbackTranslations: true,
     );
   }
 

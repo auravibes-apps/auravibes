@@ -34,8 +34,8 @@ void main() {
           mcpConnectionProvider.overrideWithValue(const []),
         ],
         child: MaterialApp(
-          theme: ThemeData(extensions: [AuraTheme.light]),
           home: const Scaffold(body: McpConnectingIndicator()),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       ),
     );
@@ -61,8 +61,8 @@ void main() {
           ]),
         ],
         child: MaterialApp(
-          theme: ThemeData(extensions: [AuraTheme.light]),
           home: const Scaffold(body: McpConnectingIndicator()),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       ),
     );

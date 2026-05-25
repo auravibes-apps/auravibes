@@ -28,6 +28,10 @@ void main() {
       await tester.runAsync(() async {
         await tester.pumpWidget(
           testableApp(
+            child: Theme(
+              data: ThemeData(extensions: [AuraTheme.light]),
+              child: const ChatsListScreen(workspaceId: 'test-ws'),
+            ),
             overrides: [
               conversationsStreamProvider.overrideWith(
                 (ref, ({String workspaceId, int? limit}) args) =>
@@ -38,10 +42,6 @@ void main() {
               ),
               streamingTitleProvider.overrideWith((ref, id) => null),
             ],
-            child: Theme(
-              data: ThemeData(extensions: [AuraTheme.light]),
-              child: const ChatsListScreen(workspaceId: 'test-ws'),
-            ),
           ),
         );
       });

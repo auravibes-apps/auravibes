@@ -30,12 +30,12 @@ class ChatListWidget extends ConsumerWidget {
 
         return ListView.separated(
           padding: const EdgeInsets.all(16),
-          separatorBuilder: (context, index) => const SizedBox(height: 10),
-          itemCount: chats.length,
           itemBuilder: (context, index) {
             final chat = chats[index];
             return _ChatTile(chat: chat, workspaceId: workspaceId);
           },
+          separatorBuilder: (context, index) => const SizedBox(height: 10),
+          itemCount: chats.length,
         );
       }(),
       AsyncLoading() => const Center(child: AuraSpinner()),
@@ -146,12 +146,6 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
     final title =
         ref.watch(streamingTitleProvider(widget.chat.id)) ?? widget.chat.title;
     return AuraCard(
-      onTap: () {
-        ConversationRoute(
-          workspaceId: widget.workspaceId,
-          chatId: widget.chat.id,
-        ).go(context);
-      },
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -171,23 +165,20 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
                     ],
                     Expanded(
                       child: AuraText(
+                        child: Text(title, overflow: TextOverflow.ellipsis),
                         style: AuraTextStyle.heading6,
-                        child: Text(
-                          title,
-                          overflow: TextOverflow.ellipsis,
-                        ),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 4),
                 AuraText(
-                  style: AuraTextStyle.bodySmall,
-                  color: AuraColorVariant.onSurfaceVariant,
                   child: Text(
                     formatRelativeTime(widget.chat.updatedAt),
                     overflow: TextOverflow.ellipsis,
                   ),
+                  style: AuraTextStyle.bodySmall,
+                  color: AuraColorVariant.onSurfaceVariant,
                 ),
               ],
             ),
@@ -195,32 +186,38 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
           if (modelDisplayName != null) ...[
             const SizedBox(width: 8),
             AuraBadge.text(
-              variant: AuraBadgeVariant.info,
               child: Text(modelDisplayName),
+              variant: AuraBadgeVariant.info,
             ),
           ],
           const SizedBox(width: 8),
           AuraPopupMenu(
-            controller: _menuController,
-            items: [
-              AuraPopupMenuItem(
-                variant: AuraTileVariant.error,
-                title: const TextLocale(LocaleKeys.common_delete),
-                leading: const AuraIcon(Icons.delete_outline),
-                onTap: () => _handleDelete(context),
-              ),
-            ],
             child: AuraIconButton(
               icon: Icons.more_vert,
+              onPressed: _menuController.toggle,
               size: AuraIconSize.small,
               tooltip: LocaleKeys
                   .chats_screens_chat_conversation_options_tooltip
                   .tr(),
-              onPressed: _menuController.toggle,
             ),
+            items: [
+              AuraPopupMenuItem(
+                title: const TextLocale(LocaleKeys.common_delete),
+                onTap: () => _handleDelete(context),
+                leading: const AuraIcon(Icons.delete_outline),
+                variant: AuraTileVariant.error,
+              ),
+            ],
+            controller: _menuController,
           ),
         ],
       ),
+      onTap: () {
+        ConversationRoute(
+          workspaceId: widget.workspaceId,
+          chatId: widget.chat.id,
+        ).go(context);
+      },
     );
   }
 }
