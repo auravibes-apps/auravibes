@@ -144,8 +144,8 @@ void main() {
       );
 
       // Use widget type finder to avoid matching title text
-      final confirmButtons = findAuraButtonByLabel('Confirm');
-      await tester.tap(confirmButtons);
+      final confirmButton = findAuraButtonByLabel('Confirm');
+      await tester.tap(confirmButton);
       await tester.pump();
 
       expect(confirmCalled, isTrue);
@@ -248,8 +248,8 @@ void main() {
       expect(find.byType(AuraConfirmDialog), findsOneWidget);
 
       // Use widget type finder to avoid matching title
-      final confirmButtons = findAuraButtonByLabel('Confirm');
-      await tester.tap(confirmButtons);
+      final confirmButton = findAuraButtonByLabel('Confirm');
+      await tester.tap(confirmButton);
       await tester.pumpAndSettle();
 
       // Dialog should be dismissed
@@ -324,6 +324,43 @@ void main() {
       await tester.pumpAndSettle();
 
       // Dialog should be dismissed
+      expect(find.byType(AuraAlertDialog), findsNothing);
+    });
+
+    testWidgets('does not dismiss when tapping outside dialog', (tester) async {
+      await tester.pumpWidget(
+        wrapWithAuraTheme(
+          Builder(
+            builder: (context) => TextButton(
+              onPressed: () async {
+                await showAuraAlertDialog(
+                  context: context,
+                  title: const Text('Alert'),
+                  message: const Text('This is an alert.'),
+                  barrierDismissible: false,
+                );
+              },
+              child: const Text('Open'),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AuraAlertDialog), findsOneWidget);
+
+      // Tap outside the dialog (modal barrier area).
+      await tester.tapAt(const Offset(1, 1));
+      await tester.pumpAndSettle();
+
+      // Alert dialog should still be visible (non-barrier-dismissible).
+      expect(find.byType(AuraAlertDialog), findsOneWidget);
+
+      // Close explicitly
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
       expect(find.byType(AuraAlertDialog), findsNothing);
     });
   });
@@ -445,11 +482,53 @@ void main() {
       await tester.pumpAndSettle();
 
       // Tap outside the dialog (barrier)
-      await tester.tap(find.byType(ModalBarrier).last);
+      await tester.tapAt(const Offset(1, 1));
       await tester.pumpAndSettle();
 
       // Dialog should be dismissed and result should be null
       expect(result, isNull);
     });
+
+    testWidgets(
+      'showAuraConfirmDialog does not dismiss when barrierDismissible is false',
+      (tester) async {
+        bool? result;
+
+        await tester.pumpWidget(
+          wrapWithAuraTheme(
+            Builder(
+              builder: (context) => TextButton(
+                onPressed: () async {
+                  result = await showAuraConfirmDialog(
+                    context: context,
+                    title: const Text('Title'),
+                    message: const Text('Message'),
+                    barrierDismissible: false,
+                  );
+                },
+                child: const Text('Open'),
+              ),
+            ),
+          ),
+        );
+
+        await tester.tap(find.text('Open'));
+        await tester.pumpAndSettle();
+
+        // Tap outside the dialog (barrier)
+        await tester.tapAt(const Offset(1, 1));
+        await tester.pumpAndSettle();
+
+        // Dialog should remain visible and unresolved
+        expect(find.text('Title'), findsOneWidget);
+        expect(find.text('Message'), findsOneWidget);
+        expect(result, isNull);
+
+        // Close explicitly
+        await tester.tap(find.text('Cancel'));
+        await tester.pumpAndSettle();
+        expect(result, isFalse);
+      },
+    );
   });
 }
