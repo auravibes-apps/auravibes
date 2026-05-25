@@ -194,24 +194,31 @@ jobs:
           - id: ui
             package: packages/auravibes_ui
             targets: test
+            source_prefix: packages/auravibes_ui
           - id: app-core-data-domain
             package: apps/auravibes_app
             targets: test/core test/data test/domain test/flavors_test.dart
+            source_prefix: apps/auravibes_app
           - id: app-features-chats
             package: apps/auravibes_app
             targets: test/features/chats
+            source_prefix: apps/auravibes_app
           - id: app-features-tools
             package: apps/auravibes_app
             targets: test/features/tools
+            source_prefix: apps/auravibes_app
           - id: app-features-other
             package: apps/auravibes_app
             targets: test/features/models test/features/settings test/features/workspaces
+            source_prefix: apps/auravibes_app
           - id: app-services-routing
             package: apps/auravibes_app
             targets: test/notifiers test/providers test/router test/services test/utils
+            source_prefix: apps/auravibes_app
           - id: app-presentation-widgets
             package: apps/auravibes_app
             targets: test/presentation test/widgets
+            source_prefix: apps/auravibes_app
 
     steps:
       - name: 📚 Git Checkout
@@ -260,6 +267,13 @@ jobs:
         working-directory: ${{ matrix.package }}
         run: flutter test ${{ matrix.targets }} --coverage --concurrency=2 --timeout=30s --reporter=compact --no-pub
 
+      - name: 🧭 Normalize LCOV source paths for Sonar
+        working-directory: ${{ matrix.package }}
+        env:
+          SOURCE_PREFIX: ${{ matrix.source_prefix }}
+        run: |
+          ruby -i -pe 'sub(%r{^SF:lib/}, "SF:#{ENV.fetch("SOURCE_PREFIX")}/lib/")' coverage/lcov.info
+
       - name: 📤 Upload Coverage
         uses: actions/upload-artifact@v7
         with:
@@ -278,6 +292,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           persist-credentials: false
+          fetch-depth: 0
 
       - name: 🔐 Check Sonar token availability
         id: check-sonar-token
