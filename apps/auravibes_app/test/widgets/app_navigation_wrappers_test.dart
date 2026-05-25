@@ -69,7 +69,7 @@ void main() {
       expect(result, 1);
     });
 
-    testWidgets('returns -1 for specific chat route', (tester) async {
+    testWidgets('returns 0 for specific chat route', (tester) async {
       int? capturedShellIndex;
 
       final router = GoRouter(
