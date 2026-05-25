@@ -10,9 +10,6 @@ void main() {
     testWidgets('renders all options', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
           home: Scaffold(
             body: AuraRadioGroup<String>(
               value: null,
@@ -23,6 +20,9 @@ void main() {
                 AuraRadioOption(value: 'option3', label: Text('Option 3')),
               ],
             ),
+          ),
+          theme: ThemeData(
+            extensions: [AuraTheme.light],
           ),
         ),
       );
@@ -36,15 +36,15 @@ void main() {
     testWidgets('renders nothing when options is empty', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
           home: Scaffold(
             body: AuraRadioGroup<String>(
               value: null,
               onChanged: (_) {},
               options: const [],
             ),
+          ),
+          theme: ThemeData(
+            extensions: [AuraTheme.light],
           ),
         ),
       );
@@ -55,9 +55,6 @@ void main() {
     testWidgets('shows correct selection', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
           home: Scaffold(
             body: AuraRadioGroup<String>(
               value: 'option2',
@@ -67,6 +64,9 @@ void main() {
                 AuraRadioOption(value: 'option2', label: Text('Option 2')),
               ],
             ),
+          ),
+          theme: ThemeData(
+            extensions: [AuraTheme.light],
           ),
         ),
       );
@@ -88,9 +88,6 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
           home: Scaffold(
             body: AuraRadioGroup<String>(
               value: null,
@@ -99,6 +96,9 @@ void main() {
                 AuraRadioOption(value: 'option1', label: Text('Option 1')),
               ],
             ),
+          ),
+          theme: ThemeData(
+            extensions: [AuraTheme.light],
           ),
         ),
       );
@@ -112,9 +112,6 @@ void main() {
     testWidgets('renders with label', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
           home: Scaffold(
             body: AuraRadioGroup<String>(
               value: null,
@@ -125,6 +122,9 @@ void main() {
               label: const Text('Select an option'),
             ),
           ),
+          theme: ThemeData(
+            extensions: [AuraTheme.light],
+          ),
         ),
       );
 
@@ -134,9 +134,6 @@ void main() {
     testWidgets('renders options with subtitles', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
           home: Scaffold(
             body: AuraRadioGroup<String>(
               value: null,
@@ -150,6 +147,9 @@ void main() {
               ],
             ),
           ),
+          theme: ThemeData(
+            extensions: [AuraTheme.light],
+          ),
         ),
       );
 
@@ -160,22 +160,22 @@ void main() {
     testWidgets('renders horizontal layout', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
           home: Scaffold(
             body: SizedBox(
               width: 800,
               child: AuraRadioGroup<String>(
                 value: null,
                 onChanged: (_) {},
-                direction: Axis.horizontal,
                 options: const [
                   AuraRadioOption(value: 'option1', label: Text('Option 1')),
                   AuraRadioOption(value: 'option2', label: Text('Option 2')),
                 ],
+                direction: Axis.horizontal,
               ),
             ),
+          ),
+          theme: ThemeData(
+            extensions: [AuraTheme.light],
           ),
         ),
       );
@@ -186,18 +186,18 @@ void main() {
     testWidgets('applies colorVariant to all radios', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
           home: Scaffold(
             body: AuraRadioGroup<String>(
               value: null,
               onChanged: (_) {},
-              colorVariant: AuraColorVariant.secondary,
               options: const [
                 AuraRadioOption(value: 'option1', label: Text('Option 1')),
               ],
+              colorVariant: AuraColorVariant.secondary,
             ),
+          ),
+          theme: ThemeData(
+            extensions: [AuraTheme.light],
           ),
         ),
       );
@@ -213,9 +213,6 @@ void main() {
     testWidgets('does NOT use Material RadioListTile', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
           home: Scaffold(
             body: AuraRadioListTile<String>(
               value: 'option1',
@@ -223,6 +220,9 @@ void main() {
               onChanged: (_) {},
               title: const Text('Option 1'),
             ),
+          ),
+          theme: ThemeData(
+            extensions: [AuraTheme.light],
           ),
         ),
       );
@@ -236,9 +236,6 @@ void main() {
     testWidgets('renders with title', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
           home: Scaffold(
             body: AuraRadioListTile<String>(
               value: 'option1',
@@ -246,6 +243,9 @@ void main() {
               onChanged: (_) {},
               title: const Text('Option 1'),
             ),
+          ),
+          theme: ThemeData(
+            extensions: [AuraTheme.light],
           ),
         ),
       );
@@ -257,9 +257,6 @@ void main() {
     testWidgets('renders with subtitle', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
           home: Scaffold(
             body: AuraRadioListTile<String>(
               value: 'option1',
@@ -268,6 +265,9 @@ void main() {
               title: const Text('Option 1'),
               subtitle: const Text('Subtitle text'),
             ),
+          ),
+          theme: ThemeData(
+            extensions: [AuraTheme.light],
           ),
         ),
       );
@@ -281,9 +281,6 @@ void main() {
     ) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
           home: Scaffold(
             body: AuraRadioListTile<String>(
               value: 'option1',
@@ -291,6 +288,9 @@ void main() {
               onChanged: (_) {},
               title: const Text('Option 1'),
             ),
+          ),
+          theme: ThemeData(
+            extensions: [AuraTheme.light],
           ),
         ),
       );
@@ -306,9 +306,6 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
           home: Scaffold(
             body: AuraRadioListTile<String>(
               value: 'option1',
@@ -316,6 +313,9 @@ void main() {
               onChanged: (value) => selectedValue = value,
               title: const Text('Option 1'),
             ),
+          ),
+          theme: ThemeData(
+            extensions: [AuraTheme.light],
           ),
         ),
       );
@@ -330,9 +330,6 @@ void main() {
     testWidgets('is disabled when disabled is true', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
           home: Scaffold(
             body: AuraRadioListTile<String>(
               value: 'option1',
@@ -341,6 +338,9 @@ void main() {
               title: const Text('Option 1'),
               disabled: true,
             ),
+          ),
+          theme: ThemeData(
+            extensions: [AuraTheme.light],
           ),
         ),
       );
@@ -354,9 +354,6 @@ void main() {
     testWidgets('applies colorVariant', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
           home: Scaffold(
             body: AuraRadioListTile<String>(
               value: 'option1',
@@ -365,6 +362,9 @@ void main() {
               title: const Text('Option 1'),
               colorVariant: AuraColorVariant.secondary,
             ),
+          ),
+          theme: ThemeData(
+            extensions: [AuraTheme.light],
           ),
         ),
       );

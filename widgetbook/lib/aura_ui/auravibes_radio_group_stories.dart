@@ -83,9 +83,9 @@ class _RadioGroupDemoState extends State<_RadioGroupDemo> {
                       ),
                     )
                     .toList(),
+          label: widget.showLabel ? const Text('Select Theme') : null,
           direction: widget.direction,
           colorVariant: widget.colorVariant,
-          label: widget.showLabel ? const Text('Select Theme') : null,
         ),
       ),
     );

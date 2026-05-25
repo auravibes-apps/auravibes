@@ -49,16 +49,16 @@ void main() {
     }) {
       return ToolsTable(
         id: id,
-        workspaceId: workspaceId,
-        toolId: toolId,
-        isEnabled: isEnabled,
-        permissions: permissions,
-        config: config,
-        description: description,
-        inputSchema: inputSchema,
-        workspaceToolsGroupId: workspaceToolsGroupId,
         createdAt: now,
         updatedAt: now,
+        workspaceId: workspaceId,
+        workspaceToolsGroupId: workspaceToolsGroupId,
+        toolId: toolId,
+        description: description,
+        config: config,
+        inputSchema: inputSchema,
+        isEnabled: isEnabled,
+        permissions: permissions,
       );
     }
 
@@ -278,10 +278,10 @@ void main() {
         when(mockWorkspaceDao.getWorkspaceById('ws-1')).thenAnswer(
           (_) async => WorkspacesTable(
             id: 'ws-1',
-            name: 'Test',
-            type: WorkspaceType.local,
             createdAt: now,
             updatedAt: now,
+            name: 'Test',
+            type: WorkspaceType.local,
           ),
         );
 
@@ -313,10 +313,10 @@ void main() {
         when(mockWorkspaceDao.getWorkspaceById('ws-1')).thenAnswer(
           (_) async => WorkspacesTable(
             id: 'ws-1',
-            name: 'Test',
-            type: WorkspaceType.local,
             createdAt: now,
             updatedAt: now,
+            name: 'Test',
+            type: WorkspaceType.local,
           ),
         );
 

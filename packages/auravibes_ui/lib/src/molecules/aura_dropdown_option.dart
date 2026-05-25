@@ -52,12 +52,10 @@ class AuraDropdownOption<T> extends StatelessWidget {
     final auraColors = context.auraColors;
 
     Widget result = AuraPressable(
-      color: Colors.blue,
-      onPressed: isEnabled ? onTap : null,
       child: Container(
         padding: const EdgeInsets.symmetric(
-          horizontal: DesignSpacing.md,
           vertical: DesignSpacing.sm,
+          horizontal: DesignSpacing.md,
         ),
         decoration: BoxDecoration(
           color: _getBackgroundColor(auraColors),
@@ -78,19 +76,21 @@ class AuraDropdownOption<T> extends StatelessWidget {
               const SizedBox(width: DesignSpacing.sm),
               const AuraIcon(
                 Icons.check,
-                color: AuraColorVariant.primary,
                 size: AuraIconSize.small,
+                color: AuraColorVariant.primary,
               ),
             ],
           ],
         ),
       ),
+      color: Colors.blue,
+      onPressed: isEnabled ? onTap : null,
     );
 
     if (semanticLabel != null) {
       result = Semantics(
-        label: semanticLabel,
         child: result,
+        label: semanticLabel,
       );
     }
 

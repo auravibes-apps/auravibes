@@ -16,12 +16,6 @@ void main() {
 
   Widget _buildScreen({required String workspaceId}) {
     return EasyLocalization(
-      supportedLocales: const [Locale('en')],
-      path: 'assets/i18n',
-      fallbackLocale: const Locale('en'),
-      startLocale: const Locale('en'),
-      useFallbackTranslations: true,
-      useOnlyLangCode: true,
       child: Builder(
         builder: (context) {
           return ProviderScope(
@@ -29,14 +23,20 @@ void main() {
               routerProvider.overrideWithValue(_FakeGoRouter()),
             ],
             child: MaterialApp(
-              locale: context.locale,
-              supportedLocales: context.supportedLocales,
-              localizationsDelegates: context.localizationDelegates,
               home: MoreScreen(workspaceId: workspaceId),
+              locale: context.locale,
+              localizationsDelegates: context.localizationDelegates,
+              supportedLocales: context.supportedLocales,
             ),
           );
         },
       ),
+      supportedLocales: const [Locale('en')],
+      path: 'assets/i18n',
+      fallbackLocale: const Locale('en'),
+      startLocale: const Locale('en'),
+      useOnlyLangCode: true,
+      useFallbackTranslations: true,
     );
   }
 

@@ -6,6 +6,19 @@ import 'package:widgetbook_annotation/widgetbook_annotation.dart' as widgetbook;
 @widgetbook.UseCase(name: 'Aura Screen', type: AuraScreen)
 Widget defaultAuraScreenUseCase(BuildContext context) {
   return AuraScreen(
+    child: const Center(
+      child: AuraPadding(
+        child: AuraCard(
+          child: SizedBox(
+            width: 300,
+            height: 300,
+            child: AuraText(child: Text('Hello, Aura Screen!')),
+          ),
+          style: .glass,
+        ),
+        padding: .large,
+      ),
+    ),
     appBar: AppBar(
       title: const Text('Aura Screen'),
       backgroundColor: context.auraColors.primary,
@@ -14,19 +27,6 @@ Widget defaultAuraScreenUseCase(BuildContext context) {
       label: 'variant',
       options: AuraScreenVariation.values,
       labelBuilder: (value) => value.name,
-    ),
-    child: const Center(
-      child: AuraPadding(
-        padding: .large,
-        child: AuraCard(
-          style: .glass,
-          child: SizedBox(
-            height: 300,
-            width: 300,
-            child: AuraText(child: Text('Hello, Aura Screen!')),
-          ),
-        ),
-      ),
     ),
   );
 }

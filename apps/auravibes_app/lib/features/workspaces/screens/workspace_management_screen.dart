@@ -29,13 +29,6 @@ class WorkspaceManagementScreen extends HookConsumerWidget {
     final modeState = ref.watch(workspaceManagementModeProvider);
 
     return AuraScreen(
-      appBar: AuraAppBar(
-        title: const TextLocale(LocaleKeys.workspace_management_title),
-        leading: AuraIconButton(
-          icon: Icons.arrow_back,
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
       child: switch (workspacesAsync) {
         AsyncData(:final value) => _buildBody(context, ref, value, modeState),
         AsyncLoading(:final value?) => _buildBody(
@@ -51,6 +44,13 @@ class WorkspaceManagementScreen extends HookConsumerWidget {
           ),
         ),
       },
+      appBar: AuraAppBar(
+        title: const TextLocale(LocaleKeys.workspace_management_title),
+        leading: AuraIconButton(
+          icon: Icons.arrow_back,
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
     );
   }
 
@@ -72,7 +72,6 @@ class WorkspaceManagementScreen extends HookConsumerWidget {
         : _WorkspaceList(
             workspaces: workspaces,
             activeWorkspaceId: workspaceId,
-            editingWorkspace: modeState.editingWorkspace,
             onEdit: (workspace) => ref
                 .read(workspaceManagementModeProvider.notifier)
                 .setMode(
@@ -87,6 +86,7 @@ class WorkspaceManagementScreen extends HookConsumerWidget {
             onCancelEdit: () => ref
                 .read(workspaceManagementModeProvider.notifier)
                 .clearEditing(),
+            editingWorkspace: modeState.editingWorkspace,
           );
   }
 
@@ -246,7 +246,6 @@ class _WorkspaceList extends StatelessWidget {
     }
 
     return ListView.builder(
-      itemCount: workspaces.length + 1,
       itemBuilder: (context, index) {
         if (index == workspaces.length) {
           return Padding(
@@ -260,21 +259,22 @@ class _WorkspaceList extends StatelessWidget {
 
         if (isEditing) {
           return _EditWorkspaceTile(
-            key: ValueKey(workspace.id),
             workspace: workspace,
             onSave: (name) => onSaveEdit(workspace.id, name),
             onCancel: onCancelEdit,
+            key: ValueKey(workspace.id),
           );
         }
 
         return _WorkspaceListTile(
-          key: ValueKey(workspace.id),
           workspace: workspace,
           isActive: workspace.id == activeWorkspaceId,
           onEdit: () => onEdit(workspace),
           onDelete: () => onDelete(workspace.id),
+          key: ValueKey(workspace.id),
         );
       },
+      itemCount: workspaces.length + 1,
     );
   }
 }
@@ -397,8 +397,8 @@ class _CreateWorkspaceFormState extends State<_CreateWorkspaceForm> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const AuraText(
-            style: AuraTextStyle.heading6,
             child: TextLocale(LocaleKeys.workspace_management_create_title),
+            style: AuraTextStyle.heading6,
           ),
           const SizedBox(height: 16),
           TextField(
@@ -408,8 +408,8 @@ class _CreateWorkspaceFormState extends State<_CreateWorkspaceForm> {
               helperText: LocaleKeys.workspace_management_name_placeholder.tr(),
               errorText: _errorText,
             ),
-            autofocus: true,
             textInputAction: TextInputAction.done,
+            autofocus: true,
             onSubmitted: (_) => _submit(),
           ),
           const SizedBox(height: 16),
@@ -417,9 +417,9 @@ class _CreateWorkspaceFormState extends State<_CreateWorkspaceForm> {
             children: [
               Expanded(
                 child: AuraButton(
-                  variant: AuraButtonVariant.outlined,
                   onPressed: widget.onCancel,
                   child: const TextLocale(LocaleKeys.common_cancel),
+                  variant: AuraButtonVariant.outlined,
                 ),
               ),
               const SizedBox(width: 8),
@@ -473,7 +473,7 @@ class _EditWorkspaceTileState extends State<_EditWorkspaceTile> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       child: Row(
         children: [
           Expanded(
@@ -483,8 +483,8 @@ class _EditWorkspaceTileState extends State<_EditWorkspaceTile> {
                 helperText: LocaleKeys.workspace_management_name_placeholder
                     .tr(),
               ),
-              autofocus: true,
               textInputAction: TextInputAction.done,
+              autofocus: true,
               onSubmitted: (value) => widget.onSave(value.trim()),
             ),
           ),

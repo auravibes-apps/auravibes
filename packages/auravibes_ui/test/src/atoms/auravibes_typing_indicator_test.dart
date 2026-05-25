@@ -127,11 +127,11 @@ void main() {
     testWidgets('uses default color when none provided', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData.light().copyWith(
-            extensions: [AuraTheme.light],
-          ),
           home: const Scaffold(
             body: AuraTypingIndicator(),
+          ),
+          theme: ThemeData.light().copyWith(
+            extensions: [AuraTheme.light],
           ),
         ),
       );

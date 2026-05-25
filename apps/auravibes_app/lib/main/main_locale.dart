@@ -14,13 +14,13 @@ class MainLocale extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return EasyLocalization(
+      child: child,
       supportedLocales: supportedLocales,
       path: 'assets/i18n',
       fallbackLocale: supportedLocales.firstOrNull,
+      useOnlyLangCode: true,
       useFallbackTranslations: true,
       useFallbackTranslationsForEmptyResources: true,
-      useOnlyLangCode: true,
-      child: child,
     );
   }
 

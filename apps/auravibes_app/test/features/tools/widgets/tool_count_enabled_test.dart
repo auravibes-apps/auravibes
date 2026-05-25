@@ -60,12 +60,6 @@ void main() {
   testWidgets('shows loading spinner while loading', (tester) async {
     await tester.pumpWidget(
       EasyLocalization(
-        supportedLocales: const [Locale('en')],
-        path: 'assets/i18n',
-        fallbackLocale: const Locale('en'),
-        startLocale: const Locale('en'),
-        useFallbackTranslations: true,
-        useOnlyLangCode: true,
         child: TestProviderScope(
           overrides: [
             workspaceToolsProvider(
@@ -81,6 +75,12 @@ void main() {
             ),
           ),
         ),
+        supportedLocales: const [Locale('en')],
+        path: 'assets/i18n',
+        fallbackLocale: const Locale('en'),
+        startLocale: const Locale('en'),
+        useOnlyLangCode: true,
+        useFallbackTranslations: true,
       ),
     );
     await tester.pump();
@@ -99,12 +99,6 @@ void main() {
 
     await tester.pumpWidget(
       EasyLocalization(
-        supportedLocales: const [Locale('en')],
-        path: 'assets/i18n',
-        fallbackLocale: const Locale('en'),
-        startLocale: const Locale('en'),
-        useFallbackTranslations: true,
-        useOnlyLangCode: true,
         child: Builder(
           builder: (context) {
             return TestProviderScope(
@@ -114,19 +108,25 @@ void main() {
                 ),
               ],
               child: MaterialApp(
-                locale: context.locale,
-                supportedLocales: context.supportedLocales,
-                localizationsDelegates: context.localizationDelegates,
                 home: Theme(
                   data: ThemeData(extensions: [AuraTheme.light]),
                   child: const Scaffold(
                     body: ToolCountEnabledWidget(workspaceId: workspaceId),
                   ),
                 ),
+                locale: context.locale,
+                localizationsDelegates: context.localizationDelegates,
+                supportedLocales: context.supportedLocales,
               ),
             );
           },
         ),
+        supportedLocales: const [Locale('en')],
+        path: 'assets/i18n',
+        fallbackLocale: const Locale('en'),
+        startLocale: const Locale('en'),
+        useOnlyLangCode: true,
+        useFallbackTranslations: true,
       ),
     );
     await tester.pump();

@@ -53,11 +53,11 @@ abstract class McpFormState with _$McpFormState {
   McpServerFormToCreate toCreateEntity() {
     return McpServerFormToCreate(
       name: name.trim(),
-      description: description.trim().isEmpty ? null : description.trim(),
       url: url.trim(),
       transport: _tranport(),
       authenticationType: authenticationType,
       bearerToken: bearerToken.trim().isEmpty ? null : bearerToken.trim(),
+      description: description.trim().isEmpty ? null : description.trim(),
     );
   }
 

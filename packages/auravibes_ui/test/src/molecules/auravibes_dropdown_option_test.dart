@@ -159,8 +159,8 @@ void main() {
           home: Scaffold(
             body: AuraDropdownOption<String>(
               value: 'opt1',
-              isSelected: true,
               trailing: Icon(Icons.star),
+              isSelected: true,
             ),
           ),
         ),

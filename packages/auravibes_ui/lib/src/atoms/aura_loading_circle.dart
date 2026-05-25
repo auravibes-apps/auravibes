@@ -75,7 +75,7 @@ class _AuraLoadingCircleState extends State<AuraLoadingCircle>
 
     _controller =
         widget.controller ??
-        AnimationController(vsync: this, duration: widget.duration);
+        AnimationController(duration: widget.duration, vsync: this);
 
     unawaited(_controller.repeat());
   }
@@ -95,7 +95,6 @@ class _AuraLoadingCircleState extends State<AuraLoadingCircle>
 
     return Center(
       child: SizedBox.fromSize(
-        size: Size.square(widget.size),
         child: Stack(
           children: List.generate(itemCount, (i) {
             final position = widget.size * 0.5;
@@ -107,13 +106,13 @@ class _AuraLoadingCircleState extends State<AuraLoadingCircle>
                 child: Align(
                   child: FadeTransition(
                     opacity: _DelayTween(
+                      delay: i / itemCount,
                       begin: 0,
                       end: 1,
-                      delay: i / itemCount,
                     ).animate(_controller),
                     child: SizedBox.fromSize(
-                      size: Size.square(itemSize),
                       child: _itemBuilder(i),
+                      size: Size.square(itemSize),
                     ),
                   ),
                 ),
@@ -121,6 +120,7 @@ class _AuraLoadingCircleState extends State<AuraLoadingCircle>
             );
           }),
         ),
+        size: Size.square(widget.size),
       ),
     );
   }

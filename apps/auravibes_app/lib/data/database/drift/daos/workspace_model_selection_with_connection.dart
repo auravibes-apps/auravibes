@@ -98,8 +98,8 @@ class WorkspaceModelSelectionsDao extends DatabaseAccessor<AppDatabase>
 
   WorkspaceModelSelectionWithConnection _mapJoin(TypedResult row) =>
       WorkspaceModelSelectionWithConnection(
-        modelConnection: row.readTable(modelConnections),
         model: row.readTable(workspaceModelSelections),
+        modelConnection: row.readTable(modelConnections),
         modelProvider: row.readTable(apiModelProviders),
         apiModel: row.readTableOrNull(apiModels),
       );

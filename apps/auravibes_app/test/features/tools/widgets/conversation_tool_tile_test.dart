@@ -38,14 +38,6 @@ Widget _buildSubject({
   String? conversationId,
 }) {
   return testableApp(
-    overrides: [
-      conversationToolsProvider(
-        workspaceId: _workspaceId,
-        conversationId: conversationId,
-      ).overrideWith(
-        () => _MockConversationToolsNotifier([toolState]),
-      ),
-    ],
     child: Theme(
       data: ThemeData(extensions: [AuraTheme.light]),
       child: Material(
@@ -58,6 +50,14 @@ Widget _buildSubject({
         ),
       ),
     ),
+    overrides: [
+      conversationToolsProvider(
+        workspaceId: _workspaceId,
+        conversationId: conversationId,
+      ).overrideWith(
+        () => _MockConversationToolsNotifier([toolState]),
+      ),
+    ],
   );
 }
 

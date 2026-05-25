@@ -9,13 +9,13 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          home: const AuraScreen(
+            child: Text(childText),
+          ),
           theme: ThemeData(
             extensions: [
               AuraTheme.light,
             ],
-          ),
-          home: const AuraScreen(
-            child: Text(childText),
           ),
         ),
       );
@@ -28,14 +28,14 @@ void main() {
     ) async {
       await tester.pumpWidget(
         MaterialApp(
+          home: const AuraScreen(
+            child: SizedBox(),
+            variant: AuraScreenVariation.standard,
+          ),
           theme: ThemeData(
             extensions: [
               AuraTheme.light,
             ],
-          ),
-          home: const AuraScreen(
-            variant: AuraScreenVariation.standard,
-            child: SizedBox(),
           ),
         ),
       );
@@ -50,13 +50,13 @@ void main() {
     ) async {
       await tester.pumpWidget(
         MaterialApp(
+          home: const AuraScreen(
+            child: SizedBox(),
+          ),
           theme: ThemeData(
             extensions: [
               AuraTheme.light,
             ],
-          ),
-          home: const AuraScreen(
-            child: SizedBox(),
           ),
         ),
       );
@@ -71,16 +71,16 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          home: const AuraScreen(
+            child: SizedBox(),
+            appBar: AuraAppBar(
+              title: Text(titleText),
+            ),
+          ),
           theme: ThemeData(
             extensions: [
               AuraTheme.light,
             ],
-          ),
-          home: const AuraScreen(
-            appBar: AuraAppBar(
-              title: Text(titleText),
-            ),
-            child: SizedBox(),
           ),
         ),
       );
@@ -95,14 +95,14 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          home: const AuraScreen(
+            child: SizedBox(),
+            padding: padding,
+          ),
           theme: ThemeData(
             extensions: [
               AuraTheme.light,
             ],
-          ),
-          home: const AuraScreen(
-            padding: padding,
-            child: SizedBox(),
           ),
         ),
       );
@@ -113,13 +113,13 @@ void main() {
     testWidgets('uses aurora variant by default', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          home: const AuraScreen(
+            child: SizedBox(),
+          ),
           theme: ThemeData(
             extensions: [
               AuraTheme.light,
             ],
-          ),
-          home: const AuraScreen(
-            child: SizedBox(),
           ),
         ),
       );
@@ -133,17 +133,17 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(
-            extensions: [
-              AuraTheme.light,
-            ],
-          ),
           home: const AuraScreen(
+            child: SizedBox(),
             appBar: AuraAppBar(
               title: Text(titleText),
               leading: Text('Leading'),
             ),
-            child: SizedBox(),
+          ),
+          theme: ThemeData(
+            extensions: [
+              AuraTheme.light,
+            ],
           ),
         ),
       );
@@ -161,17 +161,17 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(
-            extensions: [
-              AuraTheme.light,
-            ],
-          ),
           home: const AuraScreen(
+            child: SizedBox(),
             appBar: AuraAppBar(
               title: Text(screenTitleText),
               leading: Text(customLeadingText),
             ),
-            child: SizedBox(),
+          ),
+          theme: ThemeData(
+            extensions: [
+              AuraTheme.light,
+            ],
           ),
         ),
       );

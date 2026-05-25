@@ -72,8 +72,8 @@ class LinearSrgbColor extends ValueColor {
   /// Converts to sRGB color space.
   RgbColor toRgb() => RgbColor(
     red: _fn(red).fit(0, 1).toDouble(),
-    blue: _fn(blue).fit(0, 1).toDouble(),
     green: _fn(green).fit(0, 1).toDouble(),
+    blue: _fn(blue).fit(0, 1).toDouble(),
     alpha: alpha,
   );
 
@@ -140,8 +140,8 @@ class RgbColor {
   /// Converts to linear RGB color space.
   LinearSrgbColor toLrgb() => LinearSrgbColor(
     red: _rgbToLinear(red),
-    blue: _rgbToLinear(blue),
     green: _rgbToLinear(green),
+    blue: _rgbToLinear(blue),
     alpha: alpha,
   );
 
@@ -185,9 +185,9 @@ class OklabColor extends ValueColor {
     final hue = (math.atan2(b, a) * 180) / math.pi;
 
     return OKLCHColor(
+      hue: hue >= 0 ? hue : hue + 360,
       lightness: lightness,
       chroma: math.sqrt(math.pow(a, 2) + math.pow(b, 2)),
-      hue: hue >= 0 ? hue : hue + 360,
       alpha: alpha,
     );
   }
@@ -352,9 +352,9 @@ class OKLCHColor {
     double? hue,
     double? alpha,
   }) => OKLCHColor(
+    hue: hue ?? this.hue,
     lightness: lightness ?? this.lightness,
     chroma: chroma ?? this.chroma,
-    hue: hue ?? this.hue,
     alpha: alpha ?? this.alpha,
   );
 

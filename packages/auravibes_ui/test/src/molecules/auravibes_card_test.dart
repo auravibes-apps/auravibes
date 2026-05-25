@@ -29,8 +29,8 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: AuraCard(
-              onTap: () => wasTapped = true,
               child: const Text('Tappable Card'),
+              onTap: () => wasTapped = true,
             ),
           ),
         ),
@@ -63,8 +63,8 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraCard(
-              semanticLabel: semanticLabel,
               child: Text('Content'),
+              semanticLabel: semanticLabel,
             ),
           ),
         ),
@@ -85,8 +85,8 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraCard(
-              style: AuraCardStyle.border,
               child: Text('Border Card'),
+              style: AuraCardStyle.border,
             ),
           ),
         ),
@@ -101,8 +101,8 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraCard(
-              style: AuraCardStyle.glass,
               child: Text('Glass Card'),
+              style: AuraCardStyle.glass,
             ),
           ),
         ),
@@ -136,8 +136,8 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraCard(
-              padding: AuraEdgeInsetsGeometry.small,
               child: Text('Small Padded Card'),
+              padding: AuraEdgeInsetsGeometry.small,
             ),
           ),
         ),

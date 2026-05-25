@@ -43,12 +43,11 @@ class AppInputBase extends HookConsumerWidget {
     );
     return AuraInput(
       controller: controller,
-      onChanged: ref.watch(onChanged),
-      label: TextLocale(
-        labelLocaleKey,
-      ),
       placeholder: TextLocale(
         placeholderLocaleKey,
+      ),
+      label: TextLocale(
+        labelLocaleKey,
       ),
       hint: hintLocaleKey != null
           ? TextLocale(
@@ -56,6 +55,7 @@ class AppInputBase extends HookConsumerWidget {
             )
           : null,
       obscureText: obscureText,
+      onChanged: ref.watch(onChanged),
     );
   }
 }

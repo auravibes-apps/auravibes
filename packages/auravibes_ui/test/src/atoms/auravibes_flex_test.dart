@@ -31,8 +31,8 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraColumn(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [SizedBox.shrink()],
+              crossAxisAlignment: CrossAxisAlignment.start,
             ),
           ),
         ),
@@ -47,8 +47,8 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraColumn(
-              mainAxisAlignment: MainAxisAlignment.end,
               children: [SizedBox.shrink()],
+              mainAxisAlignment: MainAxisAlignment.end,
             ),
           ),
         ),
@@ -63,8 +63,8 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraColumn(
-              mainAxisSize: MainAxisSize.min,
               children: [SizedBox.shrink()],
+              mainAxisSize: MainAxisSize.min,
             ),
           ),
         ),
@@ -102,8 +102,8 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraRow(
-              crossAxisAlignment: CrossAxisAlignment.end,
               children: [SizedBox.shrink()],
+              crossAxisAlignment: CrossAxisAlignment.end,
             ),
           ),
         ),
@@ -118,8 +118,8 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraRow(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [SizedBox.shrink()],
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
             ),
           ),
         ),
@@ -134,8 +134,8 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: AuraRow(
-              mainAxisSize: MainAxisSize.min,
               children: [SizedBox.shrink()],
+              mainAxisSize: MainAxisSize.min,
             ),
           ),
         ),

@@ -56,14 +56,14 @@ abstract class ApiModelEntity with _$ApiModelEntity {
       modelProvider: modelProvider,
       id: json.get('id'),
       name: json.get('name'),
-      openWeights: json.get('open_weights'),
-      costInput: cost?.get<num?>('input')?.toDouble(),
-      costOutput: cost?.get<num?>('output')?.toDouble(),
-      costCacheRead: cost?.get<num?>('cache_read')?.toDouble(),
       limitContext: limit.get('context'),
       limitOutput: limit.get('output'),
       modalitiesInput: (modalities.get<List<dynamic>?>('input') ?? []).cast(),
       modalitiesOuput: (modalities.get<List<dynamic>?>('output') ?? []).cast(),
+      costInput: cost?.get<num?>('input')?.toDouble(),
+      costCacheRead: cost?.get<num?>('cache_read')?.toDouble(),
+      costOutput: cost?.get<num?>('output')?.toDouble(),
+      openWeights: json.get('open_weights'),
       supportsReasoning: json.get<bool?>('reasoning') ?? false,
     );
   }

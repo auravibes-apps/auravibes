@@ -80,7 +80,7 @@ class AuraSelectableText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
-    final baseStyle = _getTextStyle(auraColors);
+    final baseStyle = auraResolveTextStyle(style: style, colors: auraColors);
     // Only override color when colorVariant is provided
     final textStyle = colorVariant != null
         ? baseStyle.copyWith(color: auraColors.getColorOrNull(colorVariant))
@@ -90,129 +90,18 @@ class AuraSelectableText extends StatelessWidget {
       data,
       style: textStyle,
       textAlign: textAlign,
+      showCursor: showCursor,
+      autofocus: autofocus,
+      minLines: minLines,
       maxLines: maxLines,
-      onTap: onTap,
       cursorWidth: cursorWidth,
       cursorHeight: cursorHeight,
       cursorRadius: cursorRadius,
       cursorColor: cursorColorVariant != null
           ? auraColors.getColorOrNull(cursorColorVariant)
           : auraColors.primary,
+      onTap: onTap,
       onSelectionChanged: onSelectionChanged,
-      showCursor: showCursor,
-      autofocus: autofocus,
-      minLines: minLines,
     );
-  }
-
-  /// Gets the text style based on the [AuraTextStyle] enum.
-  TextStyle _getTextStyle(AuraColorScheme colors) {
-    const fontFamily = DesignTypography.bodyFontFamily;
-
-    return switch (style) {
-      AuraTextStyle.heading1 => TextStyle(
-        fontFamily: fontFamily,
-        fontSize: DesignTypography.fontSize5Xl,
-        fontWeight: DesignTypography.fontWeightBold,
-        height: DesignTypography.lineHeight5Xl,
-        letterSpacing: DesignTypography.letterSpacingTight,
-        color: colors.onBackground,
-      ),
-      AuraTextStyle.heading2 => TextStyle(
-        fontFamily: fontFamily,
-        fontSize: DesignTypography.fontSize4Xl,
-        fontWeight: DesignTypography.fontWeightBold,
-        height: DesignTypography.lineHeight4Xl,
-        letterSpacing: DesignTypography.letterSpacingTight,
-        color: colors.onBackground,
-      ),
-      AuraTextStyle.heading3 => TextStyle(
-        fontFamily: fontFamily,
-        fontSize: DesignTypography.fontSize3Xl,
-        fontWeight: DesignTypography.fontWeightSemibold,
-        height: DesignTypography.lineHeight3Xl,
-        letterSpacing: DesignTypography.letterSpacingTight,
-        color: colors.onBackground,
-      ),
-      AuraTextStyle.heading4 => TextStyle(
-        fontFamily: fontFamily,
-        fontSize: DesignTypography.fontSize2Xl,
-        fontWeight: DesignTypography.fontWeightSemibold,
-        height: DesignTypography.lineHeight2Xl,
-        letterSpacing: DesignTypography.letterSpacingNormal,
-        color: colors.onBackground,
-      ),
-      AuraTextStyle.heading5 => TextStyle(
-        fontFamily: fontFamily,
-        fontSize: DesignTypography.fontSizeXl,
-        fontWeight: DesignTypography.fontWeightSemibold,
-        height: DesignTypography.lineHeightXl,
-        letterSpacing: DesignTypography.letterSpacingNormal,
-        color: colors.onBackground,
-      ),
-      AuraTextStyle.heading6 => TextStyle(
-        fontFamily: fontFamily,
-        fontSize: DesignTypography.fontSizeLg,
-        fontWeight: DesignTypography.fontWeightSemibold,
-        height: DesignTypography.lineHeightLg,
-        letterSpacing: DesignTypography.letterSpacingNormal,
-        color: colors.onBackground,
-      ),
-      AuraTextStyle.bodyLarge => TextStyle(
-        fontFamily: fontFamily,
-        fontSize: DesignTypography.fontSizeLg,
-        fontWeight: DesignTypography.fontWeightRegular,
-        height: DesignTypography.lineHeightLg,
-        letterSpacing: DesignTypography.letterSpacingNormal,
-        color: colors.onSurface,
-      ),
-      AuraTextStyle.body => TextStyle(
-        fontFamily: fontFamily,
-        fontSize: DesignTypography.fontSizeBase,
-        fontWeight: DesignTypography.fontWeightRegular,
-        height: DesignTypography.lineHeightBase,
-        letterSpacing: DesignTypography.letterSpacingNormal,
-        color: colors.onSurface,
-      ),
-      AuraTextStyle.bodySmall => TextStyle(
-        fontFamily: fontFamily,
-        fontSize: DesignTypography.fontSizeSm,
-        fontWeight: DesignTypography.fontWeightRegular,
-        height: DesignTypography.lineHeightSm,
-        letterSpacing: DesignTypography.letterSpacingNormal,
-        color: colors.onSurfaceVariant,
-      ),
-      AuraTextStyle.caption => TextStyle(
-        fontFamily: fontFamily,
-        fontSize: DesignTypography.fontSizeXs,
-        fontWeight: DesignTypography.fontWeightRegular,
-        height: DesignTypography.lineHeightXs,
-        letterSpacing: DesignTypography.letterSpacingWide,
-        color: colors.onSurfaceVariant,
-      ),
-      AuraTextStyle.overline => TextStyle(
-        fontFamily: fontFamily,
-        fontSize: DesignTypography.fontSizeXs,
-        fontWeight: DesignTypography.fontWeightMedium,
-        height: DesignTypography.lineHeightXs,
-        letterSpacing: DesignTypography.letterSpacingWide,
-        color: colors.onSurfaceVariant,
-      ),
-      AuraTextStyle.button => const TextStyle(
-        fontFamily: fontFamily,
-        fontSize: DesignTypography.fontSizeBase,
-        fontWeight: DesignTypography.fontWeightMedium,
-        height: DesignTypography.lineHeightBase,
-        letterSpacing: DesignTypography.letterSpacingWide,
-      ),
-      AuraTextStyle.code => TextStyle(
-        fontFamily: DesignTypography.monoFontFamily,
-        fontSize: DesignTypography.fontSizeSm,
-        fontWeight: DesignTypography.fontWeightRegular,
-        height: DesignTypography.lineHeightSm,
-        letterSpacing: DesignTypography.letterSpacingNormal,
-        color: colors.onSurface,
-      ),
-    };
   }
 }

@@ -11,12 +11,12 @@ Widget basicSpinnerUseCase(BuildContext context) {
       options: AuraSpinnerSize.values,
       labelBuilder: (value) => value.name,
     ),
+    color: context.knobs.color(label: 'color', initialValue: Colors.blue),
     strokeWidth: context.knobs.double.slider(
       label: 'strokeWidth',
       initialValue: 4,
       min: 1,
       max: 10,
     ),
-    color: context.knobs.color(label: 'color', initialValue: Colors.blue),
   );
 }

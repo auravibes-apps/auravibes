@@ -35,8 +35,8 @@ void main() {
           home: Scaffold(
             body: AuraButton(
               onPressed: () {},
-              variant: AuraButtonVariant.ghost,
               child: const Text('Ghost'),
+              variant: AuraButtonVariant.ghost,
             ),
           ),
         ),
@@ -57,8 +57,8 @@ void main() {
           home: Scaffold(
             body: AuraButton(
               onPressed: () {},
-              isLoading: true,
               child: const Text('Loading'),
+              isLoading: true,
             ),
           ),
         ),
@@ -76,8 +76,8 @@ void main() {
           home: Scaffold(
             body: AuraButton(
               onPressed: () => wasPressed = true,
-              isLoading: true,
               child: const Text('Loading'),
+              isLoading: true,
             ),
           ),
         ),
@@ -93,8 +93,8 @@ void main() {
           home: Scaffold(
             body: AuraButton(
               onPressed: () {},
-              isFullWidth: true,
               child: const Text('Full Width'),
+              isFullWidth: true,
             ),
           ),
         ),
@@ -118,8 +118,8 @@ void main() {
           home: Scaffold(
             body: AuraButton(
               onPressed: () {},
-              size: AuraButtonSize.large,
               child: const Text('Large Button'),
+              size: AuraButtonSize.large,
             ),
           ),
         ),

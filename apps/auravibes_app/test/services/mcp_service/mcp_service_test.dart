@@ -284,8 +284,8 @@ void main() {
       final token = OAuthTokenEntity(
         accessToken: 'abc',
         issuedAt: DateTime(2020),
-        expiresIn: 60,
         refreshToken: 'refresh-abc',
+        expiresIn: 60,
       );
       expect(token.needsOAuthTokenRefresh, isTrue);
     });
@@ -296,8 +296,8 @@ void main() {
         final token = OAuthTokenEntity(
           accessToken: 'abc',
           issuedAt: DateTime.now(),
-          expiresIn: 3600,
           refreshToken: 'refresh-abc',
+          expiresIn: 3600,
         );
         expect(token.needsOAuthTokenRefresh, isFalse);
       },

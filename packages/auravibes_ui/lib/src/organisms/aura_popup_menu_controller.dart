@@ -109,16 +109,32 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
   @override
   Widget build(BuildContext context) {
     return FocusScope(
-      onKey: (node, event) {
-        if (event.logicalKey == LogicalKeyboardKey.escape && _visible) {
-          close();
-          return KeyEventResult.handled;
-        }
-        return KeyEventResult.ignored;
-      },
       child: Focus(
+        child: PortalTarget(
+          visible: _visible,
+          anchor: const Aligned(
+            follower: .topCenter,
+            target: .bottomCenter,
+            portal: .bottomCenter,
+            shiftToWithinBound: .new(x: true, y: true),
+          ),
+          portalFollower: SizedBox(
+            width: 200,
+            child: AuraCard(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: .start,
+                children: widget.items
+                    .map((e) => Builder(builder: e.build))
+                    .toList(),
+              ),
+              padding: .none,
+            ),
+          ),
+          fit: .passthrough,
+          child: widget.child,
+        ),
         focusNode: _focusNode,
-        descendantsAreFocusable: true,
         onFocusChange: (hasFocus) {
           if (hasFocus && !_visible) {
             setState(() {
@@ -130,34 +146,15 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
             });
           }
         },
-        child: PortalTarget(
-          visible: _visible,
-          anchor: const Aligned(
-            follower: .topCenter,
-            target: .bottomCenter,
-            portal: .bottomCenter,
-            shiftToWithinBound: .new(
-              x: true,
-              y: true,
-            ),
-          ),
-          fit: .passthrough,
-          portalFollower: SizedBox(
-            width: 200,
-            child: AuraCard(
-              padding: .none,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: .start,
-                children: widget.items
-                    .map((e) => Builder(builder: e.build))
-                    .toList(),
-              ),
-            ),
-          ),
-          child: widget.child,
-        ),
+        descendantsAreFocusable: true,
       ),
+      onKey: (node, event) {
+        if (event.logicalKey == LogicalKeyboardKey.escape && _visible) {
+          close();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
     );
   }
 }
@@ -228,14 +225,14 @@ class AuraPopupMenuItem extends AuraPopupMenuEntry {
   @override
   Widget build(BuildContext context) {
     return AuraTile(
+      child: title,
       onTap: () {
         onTap?.call();
         context.findAncestorStateOfType<_AuraPopupMenuState>()?.close();
       },
+      variant: variant,
       leading: leading,
       trailing: trailing,
-      variant: variant,
-      child: title,
     );
   }
 }

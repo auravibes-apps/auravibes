@@ -202,8 +202,8 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
     super.initState();
     _isOpen = false; // initially closed
     _controller = AnimationController(
-      vsync: this,
       duration: widget.animationDuration,
+      vsync: this,
     );
     _controller.addListener(() => setState(() {}));
     widget.controller._state = this;
@@ -443,14 +443,14 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
         return Transform.translate(
           offset: Offset(dx, 0),
           child: GestureDetector(
-            onHorizontalDragStart: enableGestures ? _handleDragStart : null,
-            onHorizontalDragUpdate: enableGestures ? _handleDragUpdate : null,
-            onHorizontalDragEnd: enableGestures ? _handleDragEnd : null,
             child: SizedBox(
               width: drawerWidth,
               height: MediaQuery.sizeOf(context).height,
               child: widget.drawer,
             ),
+            onHorizontalDragStart: enableGestures ? _handleDragStart : null,
+            onHorizontalDragUpdate: enableGestures ? _handleDragUpdate : null,
+            onHorizontalDragEnd: enableGestures ? _handleDragEnd : null,
           ),
         );
       },
@@ -464,10 +464,10 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
       bottom: 0,
       width: widget.desktopDragAreaWidth,
       child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
         onHorizontalDragStart: _handleDragStart,
         onHorizontalDragUpdate: _handleDragUpdate,
         onHorizontalDragEnd: _handleDragEnd,
+        behavior: HitTestBehavior.opaque,
       ),
     );
   }
@@ -485,22 +485,22 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
         onExit: (_) => setState(() => _isHoveringDivider = false),
         cursor: SystemMouseCursors.resizeColumn,
         child: AnimatedOpacity(
-          duration: const Duration(milliseconds: 200),
-          opacity: (_isHoveringDivider || _resizeOvershoot != 0.0) ? 1.0 : 0.0,
           child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
+            child: Center(
+              child: Container(
+                color: const Color.fromARGB(255, 103, 103, 103),
+                width: 4,
+                height: double.infinity,
+              ),
+            ),
             onPanStart: (_) => _setResizing(true),
             onPanUpdate: _handleDividerPanUpdate,
             onPanEnd: (_) => _setResizing(false),
             onPanCancel: () => _setResizing(false),
-            child: Center(
-              child: Container(
-                width: 4,
-                height: double.infinity,
-                color: const Color.fromARGB(255, 103, 103, 103),
-              ),
-            ),
+            behavior: HitTestBehavior.opaque,
           ),
+          opacity: (_isHoveringDivider || _resizeOvershoot != 0.0) ? 1.0 : 0.0,
+          duration: const Duration(milliseconds: 200),
         ),
       ),
     );
@@ -545,11 +545,11 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
         return Transform.translate(
           offset: Offset(dx, 0),
           child: GestureDetector(
+            child: widget.body,
             onTap: () => _closeIfFullyOpen(drawerFullyOpen),
             onHorizontalDragStart: enableGestures ? _handleDragStart : null,
             onHorizontalDragUpdate: enableGestures ? _handleDragUpdate : null,
             onHorizontalDragEnd: enableGestures ? _handleDragEnd : null,
-            child: widget.body,
           ),
         );
       },
@@ -570,16 +570,16 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
           child: IgnorePointer(
             ignoring: _controller.value == 0,
             child: GestureDetector(
-              onTap: () => _closeIfFullyOpen(drawerFullyOpen),
-              onHorizontalDragStart: enableGestures ? _handleDragStart : null,
-              onHorizontalDragUpdate: enableGestures ? _handleDragUpdate : null,
-              onHorizontalDragEnd: enableGestures ? _handleDragEnd : null,
               child: Stack(
                 children: [
                   _buildScrimColor(),
                   _buildScrimGradient(),
                 ],
               ),
+              onTap: () => _closeIfFullyOpen(drawerFullyOpen),
+              onHorizontalDragStart: enableGestures ? _handleDragStart : null,
+              onHorizontalDragUpdate: enableGestures ? _handleDragUpdate : null,
+              onHorizontalDragEnd: enableGestures ? _handleDragEnd : null,
             ),
           ),
         );

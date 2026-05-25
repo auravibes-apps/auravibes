@@ -22,13 +22,13 @@ class AuraAppBarWithDrawer extends StatelessWidget
       actions: actions,
       bottom: bottom,
       leading: IconButton(
-        icon: const Icon(Icons.menu),
         onPressed: () {
           final controller = ResponsiveSlidingDrawerProvider.maybeOf(context);
           if (controller != null) {
             controller.toggle();
           }
         },
+        icon: const Icon(Icons.menu),
       ),
     );
   }

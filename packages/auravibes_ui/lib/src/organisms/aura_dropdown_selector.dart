@@ -125,8 +125,8 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
     if (widget.value == null) {
       if (widget.placeholder != null) {
         return AuraText(
-          color: AuraColorVariant.onSurfaceVariant,
           child: widget.placeholder!,
+          color: AuraColorVariant.onSurfaceVariant,
         );
       }
       return const Text('');
@@ -149,22 +149,7 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
     final state = hasError ? AuraFieldState.error : AuraFieldState.normal;
 
     return FocusScope(
-      onKey: (node, event) {
-        // Handle ESC key to close dropdown
-        if (event.logicalKey == LogicalKeyboardKey.escape && _isDropdownOpen) {
-          _unfocus();
-          return KeyEventResult.handled;
-        }
-        return KeyEventResult.ignored;
-      },
       child: Focus(
-        focusNode: _focusNode,
-        descendantsAreFocusable: true,
-        onFocusChange: (hasFocus) {
-          setState(() {
-            _isDropdownOpen = hasFocus;
-          });
-        },
         child: PortalTarget(
           visible: _isDropdownOpen,
           anchor: const Aligned(
@@ -173,7 +158,6 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
             widthFactor: 1,
           ),
           portalFollower: TapRegion(
-            groupId: this,
             child: _DropdownMenu<T>(
               options: widget.options,
               selectedValue: widget.value,
@@ -187,16 +171,29 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
               footer: widget.footer,
               optionBuilder: widget.optionBuilder,
             ),
+            groupId: this,
           ),
           child: TapRegion(
-            groupId: this,
-            onTapOutside: (_) {
-              // Close dropdown when tapping outside (like TextField)
-              if (_isDropdownOpen) {
-                _unfocus();
-              }
-            },
             child: AuraFieldWrapper(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  vertical: DesignSpacing.sm,
+                  horizontal: DesignSpacing.md,
+                ),
+                child: Row(
+                  children: [
+                    Expanded(child: AuraText(child: _getDisplayText())),
+                    const SizedBox(width: DesignSpacing.sm),
+                    AuraIcon(
+                      _isDropdownOpen
+                          ? Icons.keyboard_arrow_up
+                          : Icons.keyboard_arrow_down,
+                      size: AuraIconSize.small,
+                      color: AuraColorVariant.onSurfaceVariant,
+                    ),
+                  ],
+                ),
+              ),
               label: widget.label,
               hint: widget.hint,
               error: widget.error,
@@ -206,33 +203,30 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
               isFocused: _isDropdownOpen,
               onTap: _toggleDropdown,
               semanticLabel: widget.semanticLabel,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: DesignSpacing.sm,
-                  horizontal: DesignSpacing.md,
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: AuraText(
-                        child: _getDisplayText(),
-                      ),
-                    ),
-                    const SizedBox(width: DesignSpacing.sm),
-                    AuraIcon(
-                      _isDropdownOpen
-                          ? Icons.keyboard_arrow_up
-                          : Icons.keyboard_arrow_down,
-                      color: AuraColorVariant.onSurfaceVariant,
-                      size: AuraIconSize.small,
-                    ),
-                  ],
-                ),
-              ),
             ),
+            onTapOutside: (_) {
+              if (_isDropdownOpen) {
+                _unfocus();
+              }
+            },
+            groupId: this,
           ),
         ),
+        focusNode: _focusNode,
+        onFocusChange: (hasFocus) {
+          setState(() {
+            _isDropdownOpen = hasFocus;
+          });
+        },
+        descendantsAreFocusable: true,
       ),
+      onKey: (node, event) {
+        if (event.logicalKey == LogicalKeyboardKey.escape && _isDropdownOpen) {
+          _unfocus();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
     );
   }
 }
@@ -265,44 +259,27 @@ class _DropdownMenuState<T> extends State<_DropdownMenu<T>> {
     final auraColors = context.auraColors;
 
     return Container(
-      constraints: const BoxConstraints(maxHeight: 300),
       decoration: BoxDecoration(
+        color: auraColors.surface,
         border: Border.fromBorderSide(BorderSide(color: auraColors.outline)),
         borderRadius: BorderRadius.circular(DesignBorderRadius.md),
-        color: auraColors.surface,
       ),
-      clipBehavior: Clip.hardEdge,
+      constraints: const BoxConstraints(maxHeight: 300),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (widget.header != null) widget.header!,
           Expanded(
-            // constraints: const BoxConstraints(maxHeight: 300),
             child: ListView.builder(
-              itemCount: widget.options.length,
               itemBuilder: (context, index) {
                 final option = widget.options[index];
-
                 final isSelected = option.value == widget.selectedValue;
                 return widget.optionBuilder?.call(context, option) ??
                     AuraPressable(
-                      onPressed: () {
-                        widget.onOptionSelected(option.value);
-                      },
-                      color: context.auraColors.primary,
-
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? auraColors.primary.withValues(alpha: 0.08)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(
-                          DesignBorderRadius.sm,
-                        ),
-                      ),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: DesignSpacing.md,
                           vertical: DesignSpacing.sm,
+                          horizontal: DesignSpacing.md,
                         ),
                         child: Row(
                           children: [
@@ -331,21 +308,34 @@ class _DropdownMenuState<T> extends State<_DropdownMenu<T>> {
                               const SizedBox(width: DesignSpacing.sm),
                               const AuraIcon(
                                 Icons.check,
-                                color: AuraColorVariant.primary,
                                 size: AuraIconSize.small,
+                                color: AuraColorVariant.primary,
                               ),
                             ],
                           ],
                         ),
                       ),
+                      color: context.auraColors.primary,
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? auraColors.primary.withValues(alpha: 0.08)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(
+                          DesignBorderRadius.sm,
+                        ),
+                      ),
+                      onPressed: () {
+                        widget.onOptionSelected(option.value);
+                      },
                     );
               },
+              itemCount: widget.options.length,
             ),
           ),
-
           if (widget.footer != null) widget.footer!,
         ],
       ),
+      clipBehavior: Clip.hardEdge,
     );
   }
 }

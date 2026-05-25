@@ -57,7 +57,7 @@ analyzer:
     always_declare_return_types: warning
     unused_import: error
     require_trailing_commas: info
-    sort_child_properties_last: warning
+    sort_child_properties_last: ignore
     no_leading_underscores_for_local_identifiers: info
     use_string_in_part_of_directives: ignore
 
@@ -73,7 +73,7 @@ linter:
     camel_case_types: true
     always_declare_return_types: true
     require_trailing_commas: true
-    sort_child_properties_last: true
+    sort_child_properties_last: false
     library_private_types_in_public_api: false
     no_leading_underscores_for_local_identifiers: false
     depend_on_referenced_packages: false
@@ -133,7 +133,6 @@ dart_code_linter:
 
     # Disabled: enabling the full DCL preset on the existing codebase surfaces
     # thousands of style-only changes across production, tests, and widgetbook.
-    - arguments-ordering: false
     - avoid-dynamic: false
     - avoid-global-state: false
     - avoid-ignoring-return-values: false

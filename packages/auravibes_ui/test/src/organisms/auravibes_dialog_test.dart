@@ -8,11 +8,11 @@ import 'package:flutter_test/flutter_test.dart';
 /// Test helper to create a widget with Aura theme
 Widget wrapWithAuraTheme(Widget child) {
   return MaterialApp(
-    theme: ThemeData(
-      extensions: [AuraTheme.light],
-    ),
     home: Scaffold(
       body: child,
+    ),
+    theme: ThemeData(
+      extensions: [AuraTheme.light],
     ),
   );
 }

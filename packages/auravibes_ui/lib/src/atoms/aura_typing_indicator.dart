@@ -90,14 +90,14 @@ class _AuraTypingIndicatorState extends State<AuraTypingIndicator>
             return Opacity(
               opacity: _dotAnimations[index].value,
               child: Container(
+                decoration: BoxDecoration(
+                  color: dotColor,
+                  shape: BoxShape.circle,
+                ),
                 width: _getDotSize(),
                 height: _getDotSize(),
                 margin: EdgeInsets.symmetric(
                   horizontal: _getDotSpacing() / 2,
-                ),
-                decoration: BoxDecoration(
-                  color: dotColor,
-                  shape: BoxShape.circle,
                 ),
               ),
             );
@@ -108,8 +108,8 @@ class _AuraTypingIndicatorState extends State<AuraTypingIndicator>
 
     if (!widget.showContainer) {
       return Semantics(
-        label: 'AI is typing',
         child: content,
+        label: 'AI is typing',
       );
     }
 
@@ -117,11 +117,6 @@ class _AuraTypingIndicatorState extends State<AuraTypingIndicator>
       alignment: Alignment.centerLeft,
       child: Container(
         padding: _getContainerPadding(),
-        margin: const EdgeInsets.only(
-          left: DesignSpacing.md,
-          right: DesignSpacing.xl,
-          bottom: DesignSpacing.sm,
-        ),
         decoration: BoxDecoration(
           color: auraColors.surfaceVariant,
           borderRadius: BorderRadius.circular(DesignBorderRadius.lg).copyWith(
@@ -129,9 +124,14 @@ class _AuraTypingIndicatorState extends State<AuraTypingIndicator>
           ),
           boxShadow: const [DesignShadows.sm],
         ),
+        margin: const EdgeInsets.only(
+          left: DesignSpacing.md,
+          right: DesignSpacing.xl,
+          bottom: DesignSpacing.sm,
+        ),
         child: Semantics(
-          label: 'AI is typing',
           child: content,
+          label: 'AI is typing',
         ),
       ),
     );
@@ -156,16 +156,16 @@ class _AuraTypingIndicatorState extends State<AuraTypingIndicator>
   EdgeInsets _getContainerPadding() {
     return switch (widget.size) {
       AuraTypingIndicatorSize.small => const EdgeInsets.symmetric(
-        horizontal: DesignSpacing.sm,
         vertical: DesignSpacing.xs,
+        horizontal: DesignSpacing.sm,
       ),
       AuraTypingIndicatorSize.medium => const EdgeInsets.symmetric(
-        horizontal: DesignSpacing.md,
         vertical: DesignSpacing.sm,
+        horizontal: DesignSpacing.md,
       ),
       AuraTypingIndicatorSize.large => const EdgeInsets.symmetric(
-        horizontal: DesignSpacing.lg,
         vertical: DesignSpacing.md,
+        horizontal: DesignSpacing.lg,
       ),
     };
   }

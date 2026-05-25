@@ -22,20 +22,20 @@ class AppDropdownBase<T> extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return AuraColumn(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: AuraSpacing.xs,
       children: [
         AuraText(
+          child: TextLocale(labelLocaleKey),
           style: AuraTextStyle.bodySmall,
           color: AuraColorVariant.onSurfaceVariant,
-          child: TextLocale(labelLocaleKey),
         ),
         AuraDropdownSelector<T>(
+          options: options,
           value: ref.watch(value),
           onChanged: ref.watch(onChanged),
-          options: options,
         ),
       ],
+      spacing: AuraSpacing.xs,
+      crossAxisAlignment: CrossAxisAlignment.start,
     );
   }
 }

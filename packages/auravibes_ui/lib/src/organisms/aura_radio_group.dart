@@ -106,10 +106,6 @@ class AuraRadioGroup<T> extends StatelessWidget {
       children: [
         for (int i = 0; i < options.length; i++) ...[
           GestureDetector(
-            onTap: onChanged == null
-                ? null
-                : () => onChanged!(options[i].value),
-            behavior: HitTestBehavior.opaque,
             child: Row(
               children: [
                 radios[i],
@@ -117,6 +113,10 @@ class AuraRadioGroup<T> extends StatelessWidget {
                 Flexible(child: options[i].label),
               ],
             ),
+            onTap: onChanged == null
+                ? null
+                : () => onChanged!(options[i].value),
+            behavior: HitTestBehavior.opaque,
           ),
           if (options[i].subtitle != null)
             Padding(
@@ -141,10 +141,6 @@ class AuraRadioGroup<T> extends StatelessWidget {
       children: [
         for (int i = 0; i < options.length; i++)
           GestureDetector(
-            onTap: onChanged == null
-                ? null
-                : () => onChanged!(options[i].value),
-            behavior: HitTestBehavior.opaque,
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -153,6 +149,10 @@ class AuraRadioGroup<T> extends StatelessWidget {
                 Flexible(child: options[i].label),
               ],
             ),
+            onTap: onChanged == null
+                ? null
+                : () => onChanged!(options[i].value),
+            behavior: HitTestBehavior.opaque,
           ),
       ],
     );
@@ -231,13 +231,11 @@ class AuraRadioListTile<T> extends StatelessWidget {
           ? SystemMouseCursors.forbidden
           : SystemMouseCursors.click,
       child: GestureDetector(
-        onTap: isDisabled ? null : () => onChanged?.call(value),
         child: Opacity(
           opacity: isDisabled ? 0.6 : 1.0,
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Radio button on the left
               AuraRadio<T>(
                 value: value,
                 groupValue: groupValue,
@@ -246,11 +244,10 @@ class AuraRadioListTile<T> extends StatelessWidget {
                 disabled: isDisabled,
               ),
               const SizedBox(width: 12),
-              // Title and subtitle in expanded column on the right
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     DefaultTextStyle(
                       style:
@@ -266,8 +263,8 @@ class AuraRadioListTile<T> extends StatelessWidget {
                               color: context.auraColors.onSurfaceVariant,
                             ) ??
                             TextStyle(
-                              fontSize: 14,
                               color: context.auraColors.onSurfaceVariant,
+                              fontSize: 14,
                             ),
                         child: subtitle!,
                       ),
@@ -278,6 +275,7 @@ class AuraRadioListTile<T> extends StatelessWidget {
             ],
           ),
         ),
+        onTap: isDisabled ? null : () => onChanged?.call(value),
       ),
     );
   }

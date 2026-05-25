@@ -6,16 +6,10 @@ import 'package:widgetbook_annotation/widgetbook_annotation.dart' as widgetbook;
 @widgetbook.UseCase(name: 'AuraTile', type: AuraTile)
 Widget primaryTileUseCase(BuildContext context) {
   return AuraTile(
-    enabled: context.knobs.boolean(label: 'Enabled', initialValue: true),
-    isLoading: context.knobs.boolean(label: 'Is Loading', initialValue: false),
-    leading:
-        context.knobs.boolean(label: 'Show Leading Icon', initialValue: false)
-        ? const Icon(Icons.info)
-        : null,
-    trailing:
-        context.knobs.boolean(label: 'Show Trailing Icon', initialValue: false)
-        ? const Icon(Icons.chevron_right)
-        : null,
+    child: Text(
+      context.knobs.string(label: 'Child Text', initialValue: 'This is a tile'),
+    ),
+    onTap: () {},
     variant: context.knobs.object.dropdown(
       label: 'Variant',
       options: AuraTileVariant.values,
@@ -26,10 +20,15 @@ Widget primaryTileUseCase(BuildContext context) {
       options: AuraTileSize.values,
       labelBuilder: (value) => value.name,
     ),
-
-    onTap: () {},
-    child: Text(
-      context.knobs.string(label: 'Child Text', initialValue: 'This is a tile'),
-    ),
+    isLoading: context.knobs.boolean(label: 'Is Loading', initialValue: false),
+    leading:
+        context.knobs.boolean(label: 'Show Leading Icon', initialValue: false)
+        ? const Icon(Icons.info)
+        : null,
+    trailing:
+        context.knobs.boolean(label: 'Show Trailing Icon', initialValue: false)
+        ? const Icon(Icons.chevron_right)
+        : null,
+    enabled: context.knobs.boolean(label: 'Enabled', initialValue: true),
   );
 }

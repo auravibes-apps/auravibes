@@ -31,8 +31,8 @@ class AppVisibilityBase extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Visibility(
-      visible: ref.watch(visible),
       child: child,
+      visible: ref.watch(visible),
     );
   }
 }

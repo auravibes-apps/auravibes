@@ -50,10 +50,10 @@ void main() {
       usecase = RunAgentIterationUsecase(
         continueAgentUsecase: continueAgentUsecase,
         runAllowedToolsUsecase: runAllowedToolsUsecase,
-        conversationRepository: conversationRepository,
-        messageRepository: messageRepository,
         maybeAutoCompactConversationUsecase:
             maybeAutoCompactConversationUsecase,
+        conversationRepository: conversationRepository,
+        messageRepository: messageRepository,
         sendQueueRuntime: container.read(conversationSendQueueRuntimeProvider),
         agentCancellationRuntime: agentCancellationRuntime,
       );

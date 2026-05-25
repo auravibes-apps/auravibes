@@ -98,6 +98,7 @@ class AuraSidebarWrapper extends HookConsumerWidget {
     );
 
     return AppWithResponsiveDrawer(
+      child: navigationShell,
       navigationItems: _navigationItems,
       onNavigationTap: (index) {
         if (workspaceId.isEmpty) {
@@ -111,7 +112,6 @@ class AuraSidebarWrapper extends HookConsumerWidget {
       },
       selectedIndex: selectedIndex,
       workspaceId: workspaceId,
-      child: navigationShell,
     );
   }
 
@@ -182,16 +182,15 @@ class _AppWithResponsiveDrawerState extends State<AppWithResponsiveDrawer> {
   @override
   Widget build(BuildContext context) {
     return ResponsiveSlidingDrawer(
-      controller: _controller,
       drawer: Material(
         child: AuraSidebar(
           navigationItems: widget.navigationItems,
           onNavigationTap: widget.onNavigationTap,
+          selectedIndex: widget.selectedIndex,
           header: _WorkspaceDropdownHeader(workspaceId: widget.workspaceId),
           middleSection: SidebarConversationsWidget(
             workspaceId: widget.workspaceId,
           ),
-          selectedIndex: widget.selectedIndex,
         ),
       ),
       body: ResponsiveSlidingDrawerProvider(
@@ -199,6 +198,7 @@ class _AppWithResponsiveDrawerState extends State<AppWithResponsiveDrawer> {
         child: widget.child,
       ),
       isDarkMode: Theme.of(context).brightness == Brightness.dark,
+      controller: _controller,
     );
   }
 }
@@ -242,10 +242,10 @@ class _WorkspaceDropdownHeader extends ConsumerWidget {
         );
       case AsyncLoading():
         dropdownWidget = const AuraContainer(
-          height: 48,
           child: Center(
             child: TextLocale(LocaleKeys.workspace_management_loading),
           ),
+          height: 48,
         );
       case AsyncError(:final error):
         debugPrint('Workspace dropdown stream error: $error');
@@ -257,8 +257,8 @@ class _WorkspaceDropdownHeader extends ConsumerWidget {
     return SafeArea(
       bottom: false,
       child: AuraPadding(
-        padding: .small,
         child: dropdownWidget,
+        padding: .small,
       ),
     );
   }
