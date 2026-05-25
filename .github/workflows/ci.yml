@@ -75,7 +75,7 @@ jobs:
           mkdir -p .fvm
           ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
 
-      - uses: bluefireteam/melos-action@main
+      - uses: bluefireteam/melos-action@62e2570ad84b9f7c84a1d324f2077a30bf3f877d
         with:
           run-bootstrap: true
 
@@ -156,7 +156,7 @@ jobs:
           mkdir -p .fvm
           ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
 
-      - uses: bluefireteam/melos-action@main
+      - uses: bluefireteam/melos-action@62e2570ad84b9f7c84a1d324f2077a30bf3f877d
         with:
           run-bootstrap: true
 
@@ -259,7 +259,7 @@ jobs:
           mkdir -p .fvm
           ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
 
-      - uses: bluefireteam/melos-action@main
+      - uses: bluefireteam/melos-action@62e2570ad84b9f7c84a1d324f2077a30bf3f877d
         with:
           run-bootstrap: true
 
