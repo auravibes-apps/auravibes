@@ -486,6 +486,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Dialog should be dismissed and result should be null
+      expect(find.byType(AuraConfirmDialog), findsNothing);
       expect(result, isNull);
     });
 
