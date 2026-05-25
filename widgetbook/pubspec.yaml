@@ -11,6 +11,7 @@ dependencies:
   flutter:
     sdk: flutter
   google_fonts: ^8.1.0
+  hooks_riverpod: 3.3.2-dev.2
   widgetbook: ^3.23.0
   widgetbook_annotation: ^3.10.0
 

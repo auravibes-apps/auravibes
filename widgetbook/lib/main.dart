@@ -1,12 +1,13 @@
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:widgetbook/widgetbook.dart';
 import 'package:widgetbook_annotation/widgetbook_annotation.dart' as widgetbook;
 import 'package:widgetbook_workspace/main.directories.g.dart';
 
 void main() {
-  runApp(const WidgetbookApp());
+  runApp(const ProviderScope(child: WidgetbookApp()));
 }
 
 @widgetbook.App()
