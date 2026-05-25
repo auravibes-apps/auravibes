@@ -114,6 +114,16 @@ void main() {
       expect(model.validateUrl(), isNull);
     });
 
+    test('returns null for IPv6 loopback HTTP URL', () {
+      const model = AddModelProviderModel(url: 'http://[::1]:8080');
+      expect(model.validateUrl(), isNull);
+    });
+
+    test('returns null for localhost subdomain HTTP URL', () {
+      const model = AddModelProviderModel(url: 'http://foo.localhost:8080');
+      expect(model.validateUrl(), isNull);
+    });
+
     test('returns null for valid HTTPS URL', () {
       const model = AddModelProviderModel(url: 'https://api.example.com');
       expect(model.validateUrl(), isNull);
