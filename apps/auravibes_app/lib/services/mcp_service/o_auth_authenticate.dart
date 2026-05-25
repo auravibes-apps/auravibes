@@ -74,17 +74,12 @@ class OAuthAuthenticate {
     final codeVerifier = _generateRandomString(128);
     final codeChallenge = generateCodeChallenge(codeVerifier);
     final stateParam = _generateRandomString(32);
-    final clientId = oAuthResult.clientId;
-
-    final uri = Uri.parse(oAuthResult.authorizationUrl).replace(
-      queryParameters: {
-        'response_type': 'code',
-        'redirect_uri': '$callbackUrlScheme:/',
-        'state': stateParam,
-        'code_challenge': codeChallenge,
-        'code_challenge_method': 'S256',
-        if (clientId != null && clientId.isNotEmpty) 'client_id': clientId,
-      },
+    final redirectUrl = '$callbackUrlScheme:/';
+    final uri = buildAuthorizationUri(
+      oAuthResult: oAuthResult,
+      redirectUrl: redirectUrl,
+      stateParam: stateParam,
+      codeChallenge: codeChallenge,
     );
 
     final result = await FlutterWebAuth2.authenticate(
@@ -101,7 +96,29 @@ class OAuthAuthenticate {
       code: code,
       oAuthResult: oAuthResult,
       codeVerifier: codeVerifier,
-      redirectUrl: '$callbackUrlScheme:/',
+      redirectUrl: redirectUrl,
+    );
+  }
+
+  static Uri buildAuthorizationUri({
+    required OAuthDiscoveryResult oAuthResult,
+    required String redirectUrl,
+    required String stateParam,
+    required String codeChallenge,
+  }) {
+    final clientId = oAuthResult.clientId;
+    final scope = oAuthResult.scope;
+
+    return Uri.parse(oAuthResult.authorizationUrl).replace(
+      queryParameters: {
+        'response_type': 'code',
+        'redirect_uri': redirectUrl,
+        'state': stateParam,
+        'code_challenge': codeChallenge,
+        'code_challenge_method': 'S256',
+        if (clientId != null && clientId.isNotEmpty) 'client_id': clientId,
+        if (scope != null && scope.isNotEmpty) 'scope': scope,
+      },
     );
   }
 
