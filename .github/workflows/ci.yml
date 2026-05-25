@@ -20,12 +20,13 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  build:
+  generated-artifacts:
+    name: Generated Artifacts
     runs-on: ubuntu-latest
 
     steps:
       - name: 📚 Git Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
 
@@ -43,7 +44,7 @@ jobs:
           fi
 
       - name: 🔧 Setup FVM
-        uses: kuhnroyal/flutter-fvm-config-action/config@v3
+        uses: kuhnroyal/flutter-fvm-config-action/config@c378498f1d1962d33039c3989411093ef8a17b2c # v3
         id: fvm-config-action
 
       - name: 🔍 Detect Flutter channel
@@ -60,7 +61,7 @@ jobs:
           fi
 
       - name: 🐦 Setup Flutter
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           flutter-version: ${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}
           channel: ${{ steps.channel-detect.outputs.channel }}
@@ -74,7 +75,7 @@ jobs:
           mkdir -p .fvm
           ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
 
-      - uses: bluefireteam/melos-action@main
+      - uses: bluefireteam/melos-action@62e2570ad84b9f7c84a1d324f2077a30bf3f877d
         with:
           run-bootstrap: true
 
@@ -99,6 +100,66 @@ jobs:
             git diff --exit-code
           fi
 
+  static-analysis:
+    name: Static Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📚 Git Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - name: 🔧 Check FVM artifact drift
+        run: |
+          flutter_version="$(ruby -rjson -e 'puts JSON.parse(File.read(".fvmrc")).fetch("flutter")')"
+          vscode_sdk_path="$(ruby -rjson -e 'puts JSON.parse(File.read(".vscode/settings.json")).fetch("dart.flutterSdkPath")')"
+          expected_path=".fvm/versions/${flutter_version}"
+
+          if [ "$vscode_sdk_path" != "$expected_path" ]; then
+            echo "::error::.vscode/settings.json is out of sync with .fvmrc. Run 'fvm use' and commit tracked changes."
+            echo "Expected dart.flutterSdkPath: ${expected_path}"
+            echo "Actual dart.flutterSdkPath: ${vscode_sdk_path}"
+            exit 1
+          fi
+
+      - name: 🔧 Setup FVM
+        uses: kuhnroyal/flutter-fvm-config-action/config@c378498f1d1962d33039c3989411093ef8a17b2c # v3
+        id: fvm-config-action
+
+      - name: 🔍 Detect Flutter channel
+        id: channel-detect
+        run: |
+          # fvm-config-action may output a pre-release version string
+          # (for example 3.44.0-0.3.pre) but still report stable channel.
+          # For .pre/.dev/-beta builds force beta; otherwise keep action output.
+          version="${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}"
+          if echo "$version" | grep -qE '\.pre$|\.dev\.|-beta\.'; then
+            echo "channel=beta" >> "$GITHUB_OUTPUT"
+          else
+            echo "channel=${{ steps.fvm-config-action.outputs.FLUTTER_CHANNEL }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 🐦 Setup Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          flutter-version: ${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}
+          channel: ${{ steps.channel-detect.outputs.channel }}
+          cache: true
+          cache-key: "flutter-:os:-:channel:-:version:-:arch:" # optional, change this to force refresh cache
+          cache-path: "${{ runner.tool_cache }}/flutter/:channel:-:version:-:arch:" # optional, change this to specify the cache path
+          pub-cache-key: "flutter-pub-:os:-:channel:-:version:-:arch:-:hash:" # optional, change this to force refresh cache of dart pub get dependencies
+          # pub-cache-path: "${{ runner.tool_cache }}/flutter/:channel:-:version:-:arch:" # optional, change this to specify the cache path
+
+      - name: 🔗 Create FVM symlink for CI
+        run: |
+          mkdir -p .fvm
+          ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
+
+      - uses: bluefireteam/melos-action@62e2570ad84b9f7c84a1d324f2077a30bf3f877d
+        with:
+          run-bootstrap: true
+
       - name: ✨ Check Formatting
         run: melos run format:check
 
@@ -117,8 +178,157 @@ jobs:
       - name: 🧹 Check unnecessary nullable parameters
         run: melos run unnecessary:nullable --no-select
 
-      - name: 🧪 Run Tests
-        run: melos run test:ci
+      - name: 📦 Dependency Validation
+        run: dart run dependency_validator
+
+      - name: 📝 Import Sorting
+        run: dart run import_sorter:main --exit-if-changed
+
+  tests-coverage:
+    name: Coverage Tests (${{ matrix.id }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: ui
+            package: packages/auravibes_ui
+            targets: test
+            source_prefix: packages/auravibes_ui
+          - id: app-core-data-domain
+            package: apps/auravibes_app
+            targets: test/core test/data test/domain test/flavors_test.dart
+            source_prefix: apps/auravibes_app
+          - id: app-features-chats
+            package: apps/auravibes_app
+            targets: test/features/chats
+            source_prefix: apps/auravibes_app
+          - id: app-features-tools
+            package: apps/auravibes_app
+            targets: test/features/tools
+            source_prefix: apps/auravibes_app
+          - id: app-features-other
+            package: apps/auravibes_app
+            targets: test/features/models test/features/settings test/features/workspaces
+            source_prefix: apps/auravibes_app
+          - id: app-services-routing
+            package: apps/auravibes_app
+            targets: test/notifiers test/providers test/router test/services test/utils
+            source_prefix: apps/auravibes_app
+          - id: app-presentation-widgets
+            package: apps/auravibes_app
+            targets: test/presentation test/widgets
+            source_prefix: apps/auravibes_app
+
+    steps:
+      - name: 📚 Git Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - name: 🔧 Setup FVM
+        uses: kuhnroyal/flutter-fvm-config-action/config@c378498f1d1962d33039c3989411093ef8a17b2c # v3
+        id: fvm-config-action
+
+      - name: 🔍 Detect Flutter channel
+        id: channel-detect
+        run: |
+          # fvm-config-action may output a pre-release version string
+          # (for example 3.44.0-0.3.pre) but still report stable channel.
+          # For .pre/.dev/-beta builds force beta; otherwise keep action output.
+          version="${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}"
+          if echo "$version" | grep -qE '\.pre$|\.dev\.|-beta\.'; then
+            echo "channel=beta" >> "$GITHUB_OUTPUT"
+          else
+            echo "channel=${{ steps.fvm-config-action.outputs.FLUTTER_CHANNEL }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 🐦 Setup Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          flutter-version: ${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}
+          channel: ${{ steps.channel-detect.outputs.channel }}
+          cache: true
+          cache-key: "flutter-:os:-:channel:-:version:-:arch:" # optional, change this to force refresh cache
+          cache-path: "${{ runner.tool_cache }}/flutter/:channel:-:version:-:arch:" # optional, change this to specify the cache path
+          pub-cache-key: "flutter-pub-:os:-:channel:-:version:-:arch:-:hash:" # optional, change this to force refresh cache of dart pub get dependencies
+          # pub-cache-path: "${{ runner.tool_cache }}/flutter/:channel:-:version:-:arch:" # optional, change this to specify the cache path
+
+      - name: 🔗 Create FVM symlink for CI
+        run: |
+          mkdir -p .fvm
+          ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
+
+      - uses: bluefireteam/melos-action@62e2570ad84b9f7c84a1d324f2077a30bf3f877d
+        with:
+          run-bootstrap: true
+
+      - name: 🧪 Run Coverage Tests
+        working-directory: ${{ matrix.package }}
+        run: flutter test ${{ matrix.targets }} --coverage --concurrency=2 --timeout=30s --reporter=compact --no-pub
+
+      - name: 🧭 Normalize LCOV source paths for Sonar
+        working-directory: ${{ matrix.package }}
+        env:
+          SOURCE_PREFIX: ${{ matrix.source_prefix }}
+        run: |
+          ruby <<'RUBY'
+          input = 'coverage/lcov.info'
+          prefix = ENV.fetch('SOURCE_PREFIX')
+
+          records = []
+          current = []
+
+          File.foreach(input, chomp: true) do |line|
+            current << line
+            next unless line == 'end_of_record'
+
+            records << current
+            current = []
+          end
+
+          records << current unless current.empty?
+
+          filtered = records.filter_map do |record|
+            sf_index = record.index { |line| line.start_with?('SF:') }
+            next if sf_index.nil?
+
+            path = record[sf_index].delete_prefix('SF:')
+            path = path.sub(%r{\Alib/}, "#{prefix}/lib/")
+
+            excluded = path.end_with?('.g.dart') ||
+              path.end_with?('.freezed.dart') ||
+              path.end_with?('.mocks.dart') ||
+              path.end_with?('/drift_worker.js')
+            next if excluded
+
+            record[sf_index] = "SF:#{path}"
+            record
+          end
+
+          output = filtered.map { |record| record.join("\n") }.join("\n")
+          File.write(input, "#{output}\n")
+          RUBY
+
+      - name: 📤 Upload Coverage
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: coverage-${{ matrix.id }}
+          path: ${{ matrix.package }}/coverage/lcov.info
+          if-no-files-found: error
+          retention-days: 7
+
+  sonar:
+    name: SonarCloud
+    runs-on: ubuntu-latest
+    needs: tests-coverage
+
+    steps:
+      - name: 📚 Git Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+          fetch-depth: 0
 
       - name: 🔐 Check Sonar token availability
         id: check-sonar-token
@@ -131,14 +341,38 @@ jobs:
             echo "token_available=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: 📥 Download Coverage
+        if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          pattern: coverage-*
+          path: coverage-artifacts
+
       - name: ☁️ SonarCloud Scan
         if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
         uses: SonarSource/sonarqube-scan-action@7006c4492b2e0ee0f816d36501671557c97f5995
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: -Dsonar.dart.lcov.reportPaths=coverage-artifacts/**/lcov.info
 
-      - name: 📦 Dependency Validation
-        run: dart run dependency_validator
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    needs:
+      - generated-artifacts
+      - static-analysis
+      - tests-coverage
+      - sonar
+    if: ${{ always() }}
 
-      - name: 📝 Import Sorting
-        run: dart run import_sorter:main --exit-if-changed
+    steps:
+      - name: ✅ Verify required CI jobs
+        run: |
+          if [ "${{ needs.generated-artifacts.result }}" != "success" ] || \
+             [ "${{ needs.static-analysis.result }}" != "success" ] || \
+             [ "${{ needs.tests-coverage.result }}" != "success" ] || \
+             [ "${{ needs.sonar.result }}" != "success" ]; then
+            echo "::error::One or more required CI jobs failed."
+            exit 1
+          fi
