@@ -1,8 +1,7 @@
 import 'package:auravibes_app/features/tools/models/conversation_tools_group_with_tools.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_conversation_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/widgets/conversation_tools_group_card.dart';
-import 'package:auravibes_app/i18n/locale_keys.dart';
-import 'package:auravibes_app/widgets/text_locale.dart';
+import 'package:auravibes_app/features/tools/widgets/tools_empty_state.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -116,37 +115,7 @@ class _GroupedToolsList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (groups.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.all(DesignSpacing.lg),
-        child: Center(
-          child: AuraColumn(
-            children: [
-              Opacity(
-                opacity: 0.5,
-                child: AuraIcon(
-                  Icons.build_circle_outlined,
-                  size: AuraIconSize.extraLarge,
-                  color: AuraColorVariant.onSurfaceVariant,
-                ),
-              ),
-              AuraText(
-                child: TextLocale(LocaleKeys.tools_screen_no_tools_added),
-                style: AuraTextStyle.heading6,
-                textAlign: TextAlign.center,
-                color: AuraColorVariant.onSurfaceVariant,
-              ),
-              AuraText(
-                child: TextLocale(LocaleKeys.tools_screen_add_tools_hint),
-                style: AuraTextStyle.bodySmall,
-                textAlign: TextAlign.center,
-                color: AuraColorVariant.onSurfaceVariant,
-              ),
-            ],
-            spacing: AuraSpacing.md,
-            mainAxisSize: MainAxisSize.min,
-          ),
-        ),
-      );
+      return const ToolsEmptyState();
     }
 
     return ListView.builder(
