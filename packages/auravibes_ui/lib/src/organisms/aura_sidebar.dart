@@ -98,10 +98,9 @@ class AuraSidebar extends StatelessWidget {
     bool footer = false,
   }) {
     return Column(
-      children: navigationItems.where((item) => item.footer == footer).map((
-        item,
-      ) {
-        final currentIndex = navigationItems.indexOf(item);
+      children: List.generate(navigationItems.length, (currentIndex) {
+        final item = navigationItems[currentIndex];
+        if (item.footer != footer) return null;
         return AuraPadding(
           child: _AuraSidebarItem(
             label: isExpanded ? item.label : const SizedBox.shrink(),
@@ -114,7 +113,7 @@ class AuraSidebar extends StatelessWidget {
             vertical: .xs,
           ),
         );
-      }).toList(),
+      }).whereType<Widget>().toList(),
     );
   }
 
