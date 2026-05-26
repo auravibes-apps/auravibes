@@ -24,11 +24,11 @@ import 'package:auravibes_app/features/chats/usecases/select_prompt_messages_use
     as _i18;
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart'
     as _i16;
+import 'package:auravibes_app/services/chatbot_service/chat_result.dart' as _i9;
 import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart'
     as _i7;
 import 'package:auravibes_app/services/encryption_service.dart' as _i3;
 import 'package:auravibes_app/services/monitoring_service.dart' as _i17;
-import 'package:dartantic_ai/dartantic_ai.dart' as _i9;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i12;
 

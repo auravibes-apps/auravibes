@@ -1,50 +1,137 @@
 import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/repositories/model_connection_repository.dart';
+import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:auravibes_app/services/chatbot_service/provider_factory.dart';
-import 'package:auravibes_app/services/chatbot_service/tool_adapter.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
-import 'package:dartantic_ai/dartantic_ai.dart';
+import 'package:genkit/genkit.dart' hide FinishReason;
 import 'package:rxdart/rxdart.dart';
+import 'package:schemantic/schemantic.dart';
 
 class ChatbotService {
   ChatbotService({
     required this.modelConnectionRepository,
     required this.encryptionService,
     ProviderFactory? providerFactory,
-    ToolAdapter? toolAdapter,
-  }) : _providerFactory = providerFactory ?? const ProviderFactory(),
-       _toolAdapter = toolAdapter ?? const ToolAdapter();
+  }) : _providerFactory =
+           providerFactory ??
+           ProviderFactory(encryptionService: encryptionService);
 
   ModelConnectionRepository modelConnectionRepository;
   EncryptionService encryptionService;
   final ProviderFactory _providerFactory;
-  final ToolAdapter _toolAdapter;
 
   Stream<ChatResult<ChatMessage>> sendMessage(
     WorkspaceModelSelectionWithConnectionEntity chatProvider,
     List<ChatMessage> history, {
     List<ToolSpec>? tools,
   }) async* {
-    // Tools are passed to ChatModel for definition-only purposes.
-    // ChatModel.sendStream() never auto-executes tools; the app's
-    // RunAgentIterationUsecase manages execution via the approval pipeline.
-    // If onCall is ever invoked (e.g. future API change), fail loudly.
-    final dartanticTools = tools != null
-        ? _toolAdapter(
-            tools,
-            onCall: (toolName, args) async {
-              throw StateError(
-                'Tool "$toolName" execution should go through the approval '
-                'pipeline, not through dartantic onCall',
-              );
-            },
-          )
-        : null;
+    final ai = await _providerFactory.createGenkit(chatProvider);
+    final model = _providerFactory.getModelReference(chatProvider);
 
-    final chatModel = await _getChatModel(chatProvider, tools: dartanticTools);
+    final genkitTools = tools?.map((spec) {
+      return ai.defineTool(
+        name: spec.name,
+        description: spec.description,
+        inputSchema: SchemanticType.from<Map<String, dynamic>>(
+          jsonSchema: spec.inputJsonSchema.cast<String, Object?>(),
+          parse: (v) => v as Map<String, dynamic>,
+        ),
+        fn: (input, context) async {
+          throw StateError(
+            'Tool "${spec.name}" execution should go through the approval '
+            'pipeline, not through Genkit fn',
+          );
+        },
+      );
+    }).toList();
 
-    yield* chatModel.sendStream(history);
+    final genkitHistory = history.map((msg) {
+      return Message(
+        role: switch (msg.role) {
+          ChatMessageRole.system => Role.system,
+          ChatMessageRole.user => Role.user,
+          ChatMessageRole.model => Role.model,
+          ChatMessageRole.tool => Role.tool,
+        },
+        content: msg.parts.isEmpty ? [TextPart(text: msg.content)] : msg.parts,
+      );
+    }).toList();
+
+    final responseStream = ai.generateStream<dynamic, dynamic>(
+      model: model,
+      messages: genkitHistory,
+      tools: genkitTools,
+      returnToolRequests: true,
+    );
+
+    await for (final chunk in responseStream) {
+      final text = chunk.text;
+
+      String? thinking;
+      try {
+        for (final part in chunk.content) {
+          if (part is ReasoningPart) {
+            final t = part.reasoning;
+            if (t.isNotEmpty) {
+              thinking = (thinking ?? '') + t;
+            }
+          }
+        }
+      } on Exception catch (_) {}
+
+      yield ChatResult<ChatMessage>(
+        output: ChatMessage(
+          role: ChatMessageRole.model,
+          content: text,
+          parts: chunk.content,
+        ),
+        thinking: thinking,
+      );
+    }
+
+    final finalResponse = await responseStream.onResult;
+    final modelMetadata =
+        finalResponse.candidates?.firstOrNull?.message.metadata
+            ?.cast<String, Object?>() ??
+        const <String, Object?>{};
+
+    final genkitReason = finalResponse.candidates?.firstOrNull?.finishReason;
+    final hasToolRequests = finalResponse.toolRequests.isNotEmpty;
+    final FinishReason finishReason;
+    if (hasToolRequests) {
+      finishReason = FinishReason.toolCalls;
+    } else if (genkitReason != null) {
+      if (genkitReason.value == 'stop') {
+        finishReason = FinishReason.stop;
+      } else if (genkitReason.value == 'length') {
+        finishReason = FinishReason.length;
+      } else if (genkitReason.value == 'interrupted') {
+        finishReason = FinishReason.toolCalls;
+      } else {
+        finishReason = FinishReason.other;
+      }
+    } else {
+      finishReason = FinishReason.unspecified;
+    }
+
+    final toolCallParts = finalResponse.toolRequests
+        .map((req) => ToolRequestPart(toolRequest: req))
+        .toList();
+
+    yield ChatResult<ChatMessage>(
+      output: ChatMessage(
+        role: ChatMessageRole.model,
+        parts: toolCallParts,
+      ),
+      finishReason: finishReason,
+      usage: LanguageModelUsage(
+        promptTokens: finalResponse.usage?.inputTokens?.toInt(),
+        responseTokens: finalResponse.usage?.outputTokens?.toInt(),
+        totalTokens: finalResponse.usage?.totalTokens?.toInt(),
+      ),
+      metadata: modelMetadata,
+    );
   }
 
   Future<String> generateTitle(
@@ -58,7 +145,8 @@ class ChatbotService {
     WorkspaceModelSelectionWithConnectionEntity chatProvider,
     String firstMessage,
   ) async* {
-    final agent = await _getAgent(chatProvider);
+    final ai = await _providerFactory.createGenkit(chatProvider);
+    final model = _providerFactory.getModelReference(chatProvider);
 
     final prompt =
         'Generate a short, concise title (max 5 words) for a conversation '
@@ -67,13 +155,19 @@ class ChatbotService {
         'Respond with only the title, no quotes or extra text.';
 
     try {
-      final result = agent.sendStream(
-        prompt,
-        history: [ChatMessage.system('You generate conversation titles.')],
+      final responseStream = ai.generateStream<dynamic, dynamic>(
+        model: model,
+        prompt: prompt,
+        messages: [
+          Message(
+            role: Role.system,
+            content: [TextPart(text: 'You generate conversation titles.')],
+          ),
+        ],
       );
 
-      yield* result
-          .map((event) => event.output.trim())
+      yield* responseStream
+          .map((event) => event.text)
           .scan((accumulated, value, index) => accumulated + value, '')
           .map((title) {
             var processedTitle = title.trim();
@@ -119,28 +213,5 @@ class ChatbotService {
         .take(4)
         .join(' ');
     return words.length > 30 ? '${words.substring(0, 27)}...' : words;
-  }
-
-  Future<ChatModel> _getChatModel(
-    WorkspaceModelSelectionWithConnectionEntity chatProvider, {
-    List<Tool>? tools,
-  }) async {
-    final encrypted = chatProvider.modelConnection.key;
-    final apiKey = await encryptionService.decrypt(encrypted);
-
-    return _providerFactory(
-      chatProvider,
-      apiKey: apiKey,
-      tools: tools,
-    );
-  }
-
-  Future<Agent> _getAgent(
-    WorkspaceModelSelectionWithConnectionEntity chatProvider,
-  ) async {
-    final encrypted = chatProvider.modelConnection.key;
-    final apiKey = await encryptionService.decrypt(encrypted);
-
-    return _providerFactory.createAgent(chatProvider, apiKey: apiKey);
   }
 }

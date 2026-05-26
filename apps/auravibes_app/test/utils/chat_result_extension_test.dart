@@ -1,9 +1,8 @@
-import 'package:auravibes_app/utils/chat_result_concat.dart';
-import 'package:dartantic_ai/dartantic_ai.dart';
+import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('ChatResultConcat', () {
+  group('ChatResult Concat', () {
     test('appends streaming thinking deltas', () {
       final first = ChatResult<ChatMessage>(
         output: ChatMessage.model('Hello'),
@@ -16,17 +15,17 @@ void main() {
 
       final result = first.concat(second);
 
-      expect(result.output.text, 'Helloworld');
+      expect(result.entityText, 'Helloworld');
       expect(result.thinking, 'First second');
     });
 
     test('separates streaming thinking deltas without whitespace', () {
-      final first = ChatResult<ChatMessage>(
-        output: ChatMessage.model(''),
+      const first = ChatResult<ChatMessage>(
+        output: ChatMessage(role: ChatMessageRole.model),
         thinking: 'First',
       );
-      final second = ChatResult<ChatMessage>(
-        output: ChatMessage.model(''),
+      const second = ChatResult<ChatMessage>(
+        output: ChatMessage(role: ChatMessageRole.model),
         thinking: 'second',
       );
 
@@ -48,8 +47,8 @@ void main() {
 
       final result = first.concat(second);
 
-      expect(result.output.text, 'Hello world');
-      expect(result.output.metadata, {
+      expect(result.entityText, 'Hello world');
+      expect(result.entityModelMetadata, {
         '_anthropic_thinking_signature': 'signature',
       });
     });
@@ -64,42 +63,6 @@ void main() {
 
       expect(result.entityThinking, 'Reasoned summary');
       expect(result.entityMetadata?.thinking, 'Reasoned summary');
-    });
-
-    test('persists thinking metadata from ThinkingPart chunks', () {
-      final result = ChatResult<ChatMessage>(
-        output: ChatMessage.model(
-          '',
-          parts: const [ThinkingPart('OpenAI reasoning ')],
-        ),
-        messages: [
-          ChatMessage.model(
-            '',
-            parts: const [ThinkingPart('summary')],
-          ),
-        ],
-      );
-
-      expect(result.entityThinking, 'OpenAI reasoning summary');
-      expect(result.entityMetadata?.thinking, 'OpenAI reasoning summary');
-    });
-
-    test('separates ThinkingPart chunks without whitespace', () {
-      final result = ChatResult<ChatMessage>(
-        output: ChatMessage.model(
-          '',
-          parts: const [ThinkingPart('First')],
-        ),
-        messages: [
-          ChatMessage.model(
-            '',
-            parts: const [ThinkingPart('second')],
-          ),
-        ],
-      );
-
-      expect(result.entityThinking, 'First second');
-      expect(result.entityMetadata?.thinking, 'First second');
     });
 
     test('persists model metadata for provider continuation', () {

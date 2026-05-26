@@ -13,11 +13,11 @@ import 'package:auravibes_app/domain/repositories/conversation_repository.dart'
     as _i5;
 import 'package:auravibes_app/domain/repositories/model_connection_repository.dart'
     as _i3;
+import 'package:auravibes_app/services/chatbot_service/chat_result.dart' as _i8;
 import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart'
     as _i7;
 import 'package:auravibes_app/services/encryption_service.dart' as _i4;
 import 'package:auravibes_app/services/monitoring_service.dart' as _i12;
-import 'package:dartantic_ai/dartantic_ai.dart' as _i8;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i11;
 

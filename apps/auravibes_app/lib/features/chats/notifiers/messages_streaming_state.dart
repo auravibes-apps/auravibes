@@ -1,4 +1,4 @@
-import 'package:dartantic_ai/dartantic_ai.dart';
+import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:rxdart/rxdart.dart';

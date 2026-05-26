@@ -18,7 +18,7 @@ import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
-import 'package:dartantic_ai/dartantic_ai.dart' hide Provider;
+import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:riverpod_annotation/experimental/scope.dart';

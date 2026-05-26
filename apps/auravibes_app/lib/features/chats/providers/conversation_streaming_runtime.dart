@@ -1,7 +1,7 @@
 import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_notifier.dart';
 import 'package:auravibes_app/features/chats/notifiers/messages_streaming_state.dart';
 import 'package:auravibes_app/features/chats/notifiers/titles_streams_notifier.dart';
-import 'package:dartantic_ai/dartantic_ai.dart' hide Provider;
+import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:rxdart/rxdart.dart';
 

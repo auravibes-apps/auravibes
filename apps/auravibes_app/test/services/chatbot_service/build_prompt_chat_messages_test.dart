@@ -2,8 +2,8 @@ import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/services/chatbot_service/build_prompt_chat_messages.dart';
-import 'package:dartantic_ai/dartantic_ai.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:genkit/genkit.dart';
 
 void main() {
   group('BuildPromptChatMessages', () {
@@ -59,7 +59,7 @@ void main() {
       );
 
       final resultMessage = result[2];
-      expect(resultMessage.role.name, 'user');
+      expect(resultMessage.role.name, 'tool');
       expect(resultMessage.toolResults, hasLength(1));
       expect(resultMessage.toolResults.single.callId, 'tool-1');
     });
@@ -103,7 +103,7 @@ void main() {
       expect(result.firstOrNull?.toolCalls, hasLength(2));
 
       final resultMessage = result.last;
-      expect(resultMessage.role.name, 'user');
+      expect(resultMessage.role.name, 'tool');
       expect(resultMessage.toolResults, hasLength(2));
       expect(resultMessage.toolResults.map((part) => part.callId), [
         'tool-1',
@@ -142,7 +142,7 @@ void main() {
         expect(result, hasLength(2));
         final resultMessage = result[1];
         expect(resultMessage.toolResults, hasLength(1));
-        expect(resultMessage.role.name, 'user');
+        expect(resultMessage.role.name, 'tool');
         expect(
           resultMessage.toolResults.single.result,
           ToolCallResultStatus.toolNotFound.toResponseString(),
@@ -194,7 +194,7 @@ void main() {
       expect(result, hasLength(1));
       expect(result.single.text, 'Final answer');
       expect(
-        result.single.parts.whereType<ThinkingPart>().single.text,
+        result.single.parts.whereType<ReasoningPart>().single.reasoning,
         'Reasoning summary',
       );
     });

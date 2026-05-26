@@ -13,8 +13,8 @@ import 'package:auravibes_app/domain/repositories/workspace_model_selection_repo
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:auravibes_app/features/chats/usecases/compact_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/select_compaction_range_usecase.dart';
+import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
-import 'package:dartantic_ai/dartantic_ai.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
@@ -574,7 +574,7 @@ void main() {
           toolCallMessage?.toolCalls.firstOrNull?.toolName,
           'weather_lookup',
         );
-        expect(toolResultMessage?.role, ChatMessageRole.user);
+        expect(toolResultMessage?.role, ChatMessageRole.tool);
         expect(toolResultMessage?.toolResults, hasLength(1));
         expect(
           toolResultMessage?.toolResults.firstOrNull?.result,
