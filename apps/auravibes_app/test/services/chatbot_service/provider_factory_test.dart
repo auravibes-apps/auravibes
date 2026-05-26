@@ -83,6 +83,17 @@ void main() {
       expect(ref.name, 'anthropic/claude-sonnet-4-0');
     });
 
+    test('resolves anthropic provider URL with anthropic namespace', () {
+      final config = makeConfig(
+        type: ModelProvidersType.anthropic,
+        modelId: 'claude-sonnet-4-0',
+        providerUrl: 'https://api.anthropic.com/v1',
+      );
+      final ref = factory.getModelReference(config);
+
+      expect(ref.name, 'anthropic/claude-sonnet-4-0');
+    });
+
     test(
       'resolves model reference to openai for anthropic with custom baseUrl',
       () {

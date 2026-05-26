@@ -77,5 +77,16 @@ void main() {
         '_anthropic_thinking_signature': 'signature',
       });
     });
+
+    test('persists final result metadata for provider continuation', () {
+      const result = ChatResult<ChatMessage>(
+        output: ChatMessage(role: ChatMessageRole.model),
+        metadata: {'_anthropic_thinking_signature': 'signature'},
+      );
+
+      expect(result.entityMetadata?.modelMetadata, {
+        '_anthropic_thinking_signature': 'signature',
+      });
+    });
   });
 }

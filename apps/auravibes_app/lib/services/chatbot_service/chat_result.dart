@@ -214,6 +214,7 @@ extension ChatResultEntities on ChatResult<ChatMessage> {
 
   Map<String, Object?> get entityModelMetadata {
     return <String, Object?>{
+      ...metadata,
       ...output.metadata,
       for (final message in messages)
         if (message is ChatMessage) ...message.metadata,

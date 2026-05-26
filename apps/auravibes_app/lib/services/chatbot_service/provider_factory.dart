@@ -18,12 +18,13 @@ class ProviderFactory {
     final encrypted = config.modelConnection.key;
     final apiKey = await encryptionService.decrypt(encrypted);
     final type = config.modelsProvider.type;
-    final baseUrl = config.modelConnection.url ?? config.modelsProvider.url;
+    final connectionUrl = config.modelConnection.url;
+    final baseUrl = connectionUrl ?? config.modelsProvider.url;
 
     return Genkit(
       plugins: [
-        if (type == ModelProvidersType.anthropic && baseUrl == null)
-          anthropic(apiKey: apiKey)
+        if (type == ModelProvidersType.anthropic && connectionUrl == null)
+          anthropic(apiKey: apiKey, baseUrl: baseUrl)
         else
           openAI(
             apiKey: apiKey,
@@ -38,9 +39,10 @@ class ProviderFactory {
   ) {
     final type = config.modelsProvider.type;
     final modelId = config.workspaceModelSelection.modelId;
-    final baseUrl = config.modelConnection.url ?? config.modelsProvider.url;
+    final connectionUrl = config.modelConnection.url;
 
-    final provider = (type == ModelProvidersType.anthropic && baseUrl == null)
+    final provider =
+        (type == ModelProvidersType.anthropic && connectionUrl == null)
         ? 'anthropic'
         : 'openai';
 
