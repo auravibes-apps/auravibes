@@ -21,8 +21,8 @@ class _FakeConversationRepository implements ConversationRepository {
       _byWorkspaceController.add(conversations);
 
   Future<void> dispose() async {
-    await _byIdController.close();
-    await _byWorkspaceController.close();
+    final _ = await _byIdController.close();
+    final _ = await _byWorkspaceController.close();
   }
 
   @override
@@ -91,7 +91,7 @@ void main() {
       );
 
       final completer = Completer<void>();
-      container.listen(
+      final _ = container.listen(
         conversationByIdStreamProvider(conversationId: 'c1'),
         (_, next) {
           if (next.hasValue && !completer.isCompleted) {
@@ -142,7 +142,7 @@ void main() {
       ];
 
       final completer = Completer<void>();
-      container.listen(
+      final _ = container.listen(
         conversationsStreamProvider(workspaceId: 'ws1'),
         (_, next) {
           if (next.hasValue && !completer.isCompleted) {

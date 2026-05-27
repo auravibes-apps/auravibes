@@ -415,7 +415,7 @@ void main() {
 
         // Tap to toggle
         await tester.tap(find.byType(AuraSwitch));
-        await tester.pumpAndSettle();
+        final _ = await tester.pumpAndSettle();
 
         // Get final position
         final animatedPositionedAfter = tester.widget<AnimatedPositioned>(

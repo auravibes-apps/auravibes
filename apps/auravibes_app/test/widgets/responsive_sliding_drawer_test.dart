@@ -99,7 +99,7 @@ void main() {
         MaterialApp(
           home: Builder(
             builder: (context) {
-              ResponsiveSlidingDrawerProvider.of(context);
+              final _ = ResponsiveSlidingDrawerProvider.of(context);
               return const SizedBox.shrink();
             },
           ),
@@ -167,7 +167,7 @@ void main() {
       );
 
       controller.open();
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(find.text('Drawer'), findsOneWidget);
     });
@@ -183,10 +183,10 @@ void main() {
       );
 
       controller.open();
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       controller.close();
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(find.text('Drawer'), findsOneWidget);
       expect(find.text('Body'), findsOneWidget);
@@ -203,10 +203,10 @@ void main() {
       );
 
       controller.toggle();
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       controller.toggle();
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(find.text('Drawer'), findsOneWidget);
     });
@@ -224,7 +224,7 @@ void main() {
       );
 
       controller.open();
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(opened, isTrue);
     });
@@ -242,10 +242,10 @@ void main() {
       );
 
       controller.open();
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       controller.close();
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(closed, isTrue);
     });
@@ -265,7 +265,7 @@ void main() {
       );
 
       controller.open();
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(lastIsOpen, isTrue);
     });
@@ -287,10 +287,10 @@ void main() {
       );
 
       controller.open();
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       controller.close();
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(lastIsOpen, isFalse);
     });
@@ -308,7 +308,7 @@ void main() {
       );
 
       controller.open();
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(started, isTrue);
     });
@@ -324,10 +324,10 @@ void main() {
       );
 
       controller.open();
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       controller.closeIfMobile();
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(controller.isDesktop, isTrue);
     });
@@ -385,10 +385,10 @@ void main() {
       );
 
       controller.open();
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       controller.closeIfMobile();
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(find.text('Drawer'), findsOneWidget);
     });
@@ -408,10 +408,10 @@ void main() {
       );
 
       controller.open();
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       controller.close();
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(started, isTrue);
     });
@@ -431,11 +431,11 @@ void main() {
       );
 
       controller.open();
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
       expect(openedCount, 1);
 
       controller.open();
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
       expect(openedCount, 2);
     });
 
@@ -454,7 +454,7 @@ void main() {
       );
 
       controller.close();
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
       expect(closedCount, 1);
     });
 
@@ -477,7 +477,7 @@ void main() {
       );
 
       controller.open();
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(find.text('Drawer'), findsOneWidget);
     });
@@ -502,10 +502,10 @@ void main() {
       );
 
       controller.toggle();
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       controller.toggle();
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(find.text('Drawer'), findsOneWidget);
     });
@@ -525,7 +525,7 @@ void main() {
       );
 
       controller.open();
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(started, isTrue);
     });
@@ -545,9 +545,9 @@ void main() {
       );
 
       controller.open();
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
       controller.close();
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(startedClosing, isTrue);
     });
@@ -570,10 +570,10 @@ void main() {
       );
 
       controller.open();
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       await tester.tap(find.text('Body'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(find.text('Drawer'), findsOneWidget);
     });
@@ -592,7 +592,7 @@ void main() {
       );
 
       controller.open();
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(find.text('Drawer'), findsOneWidget);
     });
@@ -608,7 +608,7 @@ void main() {
       );
 
       controller.open();
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       final mouseRegion = find.byType(MouseRegion);
       expect(mouseRegion, findsWidgets);
@@ -616,7 +616,7 @@ void main() {
       final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
       await gesture.addPointer();
       await gesture.moveTo(tester.getCenter(mouseRegion.first));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(find.text('Drawer'), findsOneWidget);
     });
@@ -632,7 +632,7 @@ void main() {
       );
 
       controller.close();
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(find.text('Drawer'), findsOneWidget);
     });

@@ -123,7 +123,7 @@ void main() {
       }
 
       final lookup = McpToolSpecLookup(call: trackingCallback);
-      lookup.call(mcpServerId: 'server-abc', toolName: 'tool-xyz');
+      final _ = lookup.call(mcpServerId: 'server-abc', toolName: 'tool-xyz');
       expect(capturedServerId, 'server-abc');
       expect(capturedToolName, 'tool-xyz');
     });

@@ -34,7 +34,7 @@ class WorkspaceCompactionSettingsDao extends DatabaseAccessor<AppDatabase>
   ) async {
     final existing = await getByWorkspaceId(workspaceId);
     if (existing != null) {
-      await (update(
+      final _ = await (update(
         workspaceCompactionSettings,
       )..where((t) => t.id.equals(existing.id))).write(companion);
       return (await getByWorkspaceId(workspaceId))!;
@@ -45,7 +45,7 @@ class WorkspaceCompactionSettingsDao extends DatabaseAccessor<AppDatabase>
   }
 
   Future<void> deleteByWorkspaceId(String workspaceId) async {
-    await (delete(
+    final _ = await (delete(
       workspaceCompactionSettings,
     )..where((t) => t.workspaceId.equals(workspaceId))).go();
   }

@@ -33,7 +33,7 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
 
   /// Add a new built-in tool to the workspace
   Future<void> addTool(UserToolType toolType) async {
-    await _repository.setWorkspaceToolEnabled(
+    final _ = await _repository.setWorkspaceToolEnabled(
       _workspaceId,
       toolType.value,
       isEnabled: true,

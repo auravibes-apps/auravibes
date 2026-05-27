@@ -58,7 +58,7 @@ void main() {
 
     test('upsertModel updates on conflict', () async {
       await seedProvider(database, id: 'openai', name: 'OpenAI');
-      await database.apiModelsDao.upsertModel(
+      final _ = await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
           modelProvider: 'openai',
           id: 'gpt-4',
@@ -81,7 +81,7 @@ void main() {
 
     test('getModelByProviderAndModelId returns model', () async {
       await seedProvider(database, id: 'openai', name: 'OpenAI');
-      await database.apiModelsDao.upsertModel(
+      final _ = await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
           modelProvider: 'openai',
           id: 'gpt-4',
@@ -109,7 +109,7 @@ void main() {
     test('getModelsByProvider returns filtered models', () async {
       await seedProvider(database, id: 'openai', name: 'OpenAI');
       await seedProvider(database, id: 'anthropic', name: 'Anthropic');
-      await database.apiModelsDao.upsertModel(
+      final _ = await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
           modelProvider: 'openai',
           id: 'gpt-4',
@@ -118,7 +118,7 @@ void main() {
           limitOutput: 4096,
         ),
       );
-      await database.apiModelsDao.upsertModel(
+      final _ = await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
           modelProvider: 'anthropic',
           id: 'claude-3',
@@ -136,7 +136,7 @@ void main() {
 
     test('deleteModel removes model and returns true', () async {
       await seedProvider(database, id: 'openai', name: 'OpenAI');
-      await database.apiModelsDao.upsertModel(
+      final _ = await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
           modelProvider: 'openai',
           id: 'gpt-4',
@@ -156,7 +156,7 @@ void main() {
 
     test('deleteModelsByProvider removes all models for provider', () async {
       await seedProvider(database, id: 'openai', name: 'OpenAI');
-      await database.apiModelsDao.upsertModel(
+      final _ = await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
           modelProvider: 'openai',
           id: 'gpt-4',
@@ -165,7 +165,7 @@ void main() {
           limitOutput: 4096,
         ),
       );
-      await database.apiModelsDao.upsertModel(
+      final _ = await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
           modelProvider: 'openai',
           id: 'gpt-3.5',
@@ -182,7 +182,7 @@ void main() {
 
     test('modelExists returns correct values', () async {
       await seedProvider(database, id: 'openai', name: 'OpenAI');
-      await database.apiModelsDao.upsertModel(
+      final _ = await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
           modelProvider: 'openai',
           id: 'gpt-4',
@@ -197,7 +197,7 @@ void main() {
 
     test('searchModelsByName returns matching models', () async {
       await seedProvider(database, id: 'openai', name: 'OpenAI');
-      await database.apiModelsDao.upsertModel(
+      final _ = await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
           modelProvider: 'openai',
           id: 'gpt-4',
@@ -206,7 +206,7 @@ void main() {
           limitOutput: 4096,
         ),
       );
-      await database.apiModelsDao.upsertModel(
+      final _ = await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
           modelProvider: 'openai',
           id: 'gpt-3.5',
@@ -223,7 +223,7 @@ void main() {
     test('getModelCount returns correct count', () async {
       expect(await database.apiModelsDao.getModelCount(), equals(0));
       await seedProvider(database, id: 'openai', name: 'OpenAI');
-      await database.apiModelsDao.upsertModel(
+      final _ = await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
           modelProvider: 'openai',
           id: 'gpt-4',
@@ -238,7 +238,7 @@ void main() {
     test('getModelCountByProvider returns correct count', () async {
       await seedProvider(database, id: 'openai', name: 'OpenAI');
       await seedProvider(database, id: 'anthropic', name: 'Anthropic');
-      await database.apiModelsDao.upsertModel(
+      final _ = await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
           modelProvider: 'openai',
           id: 'gpt-4',
@@ -301,7 +301,7 @@ void main() {
 
     test('getModelsByCostRange filters by cost', () async {
       await seedProvider(database, id: 'openai', name: 'OpenAI');
-      await database.apiModelsDao.upsertModel(
+      final _ = await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
           modelProvider: 'openai',
           id: 'gpt-4',
@@ -311,7 +311,7 @@ void main() {
           limitOutput: 4096,
         ),
       );
-      await database.apiModelsDao.upsertModel(
+      final _ = await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
           modelProvider: 'openai',
           id: 'gpt-3.5',
@@ -331,7 +331,7 @@ void main() {
 
     test('getModelsByMinContextLimit filters by context', () async {
       await seedProvider(database, id: 'openai', name: 'OpenAI');
-      await database.apiModelsDao.upsertModel(
+      final _ = await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
           modelProvider: 'openai',
           id: 'gpt-4',
@@ -340,7 +340,7 @@ void main() {
           limitOutput: 4096,
         ),
       );
-      await database.apiModelsDao.upsertModel(
+      final _ = await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
           modelProvider: 'openai',
           id: 'gpt-3.5',
@@ -358,7 +358,7 @@ void main() {
 
     test('getOpenWeightsModels returns only open weights', () async {
       await seedProvider(database, id: 'openai', name: 'OpenAI');
-      await database.apiModelsDao.upsertModel(
+      final _ = await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
           modelProvider: 'openai',
           id: 'gpt-4',
@@ -368,7 +368,7 @@ void main() {
           limitOutput: 4096,
         ),
       );
-      await database.apiModelsDao.upsertModel(
+      final _ = await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
           modelProvider: 'openai',
           id: 'gpt-oss',
@@ -385,7 +385,7 @@ void main() {
 
     test('getModelsByCostEfficiency sorts by cost ascending', () async {
       await seedProvider(database, id: 'openai', name: 'OpenAI');
-      await database.apiModelsDao.upsertModel(
+      final _ = await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
           modelProvider: 'openai',
           id: 'gpt-4',
@@ -395,7 +395,7 @@ void main() {
           limitOutput: 4096,
         ),
       );
-      await database.apiModelsDao.upsertModel(
+      final _ = await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
           modelProvider: 'openai',
           id: 'gpt-3.5',
@@ -412,7 +412,7 @@ void main() {
 
     test('deleteAllModels removes all models', () async {
       await seedProvider(database, id: 'openai', name: 'OpenAI');
-      await database.apiModelsDao.upsertModel(
+      final _ = await database.apiModelsDao.upsertModel(
         ApiModelsCompanion.insert(
           modelProvider: 'openai',
           id: 'gpt-4',

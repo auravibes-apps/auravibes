@@ -55,7 +55,7 @@ void main() {
       );
 
       await requestStarted.future.timeout(const Duration(seconds: 1));
-      await operation.cancel();
+      final _ = await operation.cancel();
 
       expect(operation.isCanceled, isTrue);
       expect(observedCancelToken, isNotNull);
@@ -324,7 +324,7 @@ void main() {
       final dio = Dio()..httpClientAdapter = adapter;
       final service = UrlService(dio: dio);
 
-      await service
+      final _ = await service
           .execute(
             const UrlRequest(
               url: 'https://example.com',
@@ -427,7 +427,7 @@ void main() {
         final dio = Dio()..httpClientAdapter = adapter;
         final service = UrlService(dio: dio);
 
-        await service
+        final _ = await service
             .execute(
               const UrlRequest(
                 url: 'https://example.com',
@@ -452,7 +452,7 @@ void main() {
         final dio = Dio()..httpClientAdapter = adapter;
         final service = UrlService(dio: dio);
 
-        await service
+        final _ = await service
             .execute(
               const UrlRequest(
                 url: 'https://example.com',
@@ -477,7 +477,7 @@ void main() {
         final dio = Dio()..httpClientAdapter = adapter;
         final service = UrlService(dio: dio);
 
-        await service
+        final _ = await service
             .execute(
               const UrlRequest(
                 url: 'https://example.com',
@@ -500,7 +500,7 @@ void main() {
         final dio = Dio()..httpClientAdapter = adapter;
         final service = UrlService(dio: dio);
 
-        await service
+        final _ = await service
             .execute(
               const UrlRequest(url: 'https://example.com'),
             )
@@ -521,7 +521,7 @@ void main() {
         final dio = Dio()..httpClientAdapter = adapter;
         final service = UrlService(dio: dio);
 
-        await service
+        final _ = await service
             .execute(
               const UrlRequest(
                 url: 'https://example.com',
@@ -544,7 +544,7 @@ void main() {
         final dio = Dio()..httpClientAdapter = adapter;
         final service = UrlService(dio: dio);
 
-        await service
+        final _ = await service
             .execute(
               const UrlRequest(url: 'https://example.com'),
             )
@@ -564,7 +564,7 @@ void main() {
         final dio = Dio()..httpClientAdapter = adapter;
         final service = UrlService(dio: dio);
 
-        await service
+        final _ = await service
             .execute(
               const UrlRequest(
                 url: 'https://example.com',

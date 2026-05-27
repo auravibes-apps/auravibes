@@ -91,7 +91,7 @@ class AuraSidebarWrapper extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // useListenable keeps GoRouter.of(context).routeInformationProvider updates
     // active for _calculateSelectedIndex.
-    useListenable(GoRouter.of(context).routeInformationProvider);
+    final _ = useListenable(GoRouter.of(context).routeInformationProvider);
     final selectedIndex = _calculateSelectedIndex(
       context,
       navigationShell.currentIndex,

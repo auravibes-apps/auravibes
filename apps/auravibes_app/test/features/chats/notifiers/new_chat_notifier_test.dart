@@ -168,7 +168,7 @@ void main() {
       sendContainer.read(newChatProvider('ws-1').notifier).setModelId('m1');
 
       try {
-        await sendContainer
+        final _ = await sendContainer
             .read(newChatProvider('ws-1').notifier)
             .startConversation('hello');
       } on Object catch (_) {}

@@ -75,7 +75,7 @@ void main() {
         final ws2 = await database.workspaceDao.insertWorkspace(
           WorkspacesCompanion.insert(name: 'WS2', type: WorkspaceType.local),
         );
-        await database.modelConnectionsDao.insertModelConnection(
+        final _ = await database.modelConnectionsDao.insertModelConnection(
           ModelConnectionsCompanion.insert(
             name: 'C1',
             modelId: 'gpt-4',
@@ -83,7 +83,7 @@ void main() {
             workspaceId: workspaceId,
           ),
         );
-        await database.modelConnectionsDao.insertModelConnection(
+        final _ = await database.modelConnectionsDao.insertModelConnection(
           ModelConnectionsCompanion.insert(
             name: 'C2',
             modelId: 'gpt-4',
@@ -106,7 +106,7 @@ void main() {
         final ws2 = await database.workspaceDao.insertWorkspace(
           WorkspacesCompanion.insert(name: 'WS2', type: WorkspaceType.local),
         );
-        await database.modelConnectionsDao.insertModelConnection(
+        final _ = await database.modelConnectionsDao.insertModelConnection(
           ModelConnectionsCompanion.insert(
             name: 'C1',
             modelId: 'gpt-4',
@@ -114,7 +114,7 @@ void main() {
             workspaceId: workspaceId,
           ),
         );
-        await database.modelConnectionsDao.insertModelConnection(
+        final _ = await database.modelConnectionsDao.insertModelConnection(
           ModelConnectionsCompanion.insert(
             name: 'C2',
             modelId: 'gpt-4',

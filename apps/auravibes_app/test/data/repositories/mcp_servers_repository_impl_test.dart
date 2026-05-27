@@ -152,7 +152,7 @@ void main() {
         );
 
         expect(result.id, 'mcp-1');
-        verifyNever(mockWorkspaceToolsDao.insertToolsBatch(any));
+        final _ = verifyNever(mockWorkspaceToolsDao.insertToolsBatch(any));
       });
 
       test('throws McpServersException on dao failure', () async {
@@ -296,8 +296,10 @@ void main() {
           ],
         );
 
-        verifyNever(mockWorkspaceToolsDao.insertToolsBatch(any));
-        verifyNever(mockWorkspaceToolsDao.deleteWorkspaceToolById(any));
+        final _ = verifyNever(mockWorkspaceToolsDao.insertToolsBatch(any));
+        final _ = verifyNever(
+          mockWorkspaceToolsDao.deleteWorkspaceToolById(any),
+        );
       });
     });
 

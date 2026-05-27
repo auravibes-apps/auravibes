@@ -55,14 +55,14 @@ void main() {
       final workspaceDao = database.workspaceDao;
 
       // Insert test workspaces
-      await workspaceDao.insertWorkspace(
+      final _ = await workspaceDao.insertWorkspace(
         WorkspacesCompanion.insert(
           name: 'Workspace 1',
           type: WorkspaceType.local,
         ),
       );
 
-      await workspaceDao.insertWorkspace(
+      final _ = await workspaceDao.insertWorkspace(
         WorkspacesCompanion.insert(
           name: 'Workspace 2',
           type: WorkspaceType.remote,
@@ -130,14 +130,14 @@ void main() {
       final workspaceDao = database.workspaceDao;
 
       // Insert test workspaces
-      await workspaceDao.insertWorkspace(
+      final _ = await workspaceDao.insertWorkspace(
         WorkspacesCompanion.insert(
           name: 'Development Workspace',
           type: WorkspaceType.local,
         ),
       );
 
-      await workspaceDao.insertWorkspace(
+      final _ = await workspaceDao.insertWorkspace(
         WorkspacesCompanion.insert(
           name: 'Production Workspace',
           type: WorkspaceType.remote,
@@ -156,21 +156,21 @@ void main() {
       final workspaceDao = database.workspaceDao;
 
       // Insert test workspaces
-      await workspaceDao.insertWorkspace(
+      final _ = await workspaceDao.insertWorkspace(
         WorkspacesCompanion.insert(
           name: 'Local Workspace 1',
           type: WorkspaceType.local,
         ),
       );
 
-      await workspaceDao.insertWorkspace(
+      final _ = await workspaceDao.insertWorkspace(
         WorkspacesCompanion.insert(
           name: 'Local Workspace 2',
           type: WorkspaceType.local,
         ),
       );
 
-      await workspaceDao.insertWorkspace(
+      final _ = await workspaceDao.insertWorkspace(
         WorkspacesCompanion.insert(
           name: 'Remote Workspace 1',
           type: WorkspaceType.remote,

@@ -38,11 +38,11 @@ ModelSyncService modelSyncService(Ref ref) {
   final timer = Timer.periodic(
     const Duration(hours: 5),
     (timer) {
-      service.performFullSync();
+      final _ = service.performFullSync();
     },
   );
 
-  ref.onDispose(timer.cancel);
+  final _ = ref.onDispose(timer.cancel);
   return service;
 }
 

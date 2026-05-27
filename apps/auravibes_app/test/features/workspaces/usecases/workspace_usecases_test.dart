@@ -209,7 +209,7 @@ void main() {
 
     setUp(() async {
       repository = _FakeRepository();
-      await repository.createWorkspace(
+      final _ = await repository.createWorkspace(
         const WorkspaceToCreate(name: 'Original', type: WorkspaceType.local),
       );
       usecase = EditWorkspaceUseCase(
@@ -261,10 +261,10 @@ void main() {
     });
 
     test('deletes workspace successfully', () async {
-      await repository.createWorkspace(
+      final _ = await repository.createWorkspace(
         const WorkspaceToCreate(name: 'WS1', type: WorkspaceType.local),
       );
-      await repository.createWorkspace(
+      final _ = await repository.createWorkspace(
         const WorkspaceToCreate(name: 'WS2', type: WorkspaceType.local),
       );
 
@@ -279,7 +279,7 @@ void main() {
     });
 
     test('throws when deleting last remaining workspace', () async {
-      await repository.createWorkspace(
+      final _ = await repository.createWorkspace(
         const WorkspaceToCreate(name: 'Only', type: WorkspaceType.local),
       );
 
@@ -294,10 +294,10 @@ void main() {
     });
 
     test('throws when deleting active workspace', () async {
-      await repository.createWorkspace(
+      final _ = await repository.createWorkspace(
         const WorkspaceToCreate(name: 'WS1', type: WorkspaceType.local),
       );
-      await repository.createWorkspace(
+      final _ = await repository.createWorkspace(
         const WorkspaceToCreate(name: 'WS2', type: WorkspaceType.local),
       );
 
@@ -312,7 +312,7 @@ void main() {
     });
 
     test('last workspace guard takes priority over active guard', () async {
-      await repository.createWorkspace(
+      final _ = await repository.createWorkspace(
         const WorkspaceToCreate(name: 'Only', type: WorkspaceType.local),
       );
 

@@ -128,7 +128,7 @@ void main() {
 
     await usecase(conversationId: 'conv-1');
 
-    verifyNever(
+    final _ = verifyNever(
       () => mockCompact(
         conversationId: 'conv-1',
         trigger: CompactionTrigger.auto,
@@ -143,7 +143,9 @@ void main() {
 
     await usecase(conversationId: 'conv-1');
 
-    verifyNever(() => mockModelRepo.getWorkspaceModelSelectionById(any()));
+    final _ = verifyNever(
+      () => mockModelRepo.getWorkspaceModelSelectionById(any()),
+    );
   });
 
   test('exits early when model selection not found', () async {
@@ -156,7 +158,7 @@ void main() {
 
     await usecase(conversationId: 'conv-1');
 
-    verifyNever(
+    final _ = verifyNever(
       () => mockApiModelRepo.getModelByProviderAndModelId(any(), any()),
     );
   });
@@ -239,7 +241,7 @@ void main() {
 
     await usecase(conversationId: 'conv-1');
 
-    verifyNever(
+    final _ = verifyNever(
       () => mockCompact(
         conversationId: 'conv-1',
         trigger: CompactionTrigger.auto,

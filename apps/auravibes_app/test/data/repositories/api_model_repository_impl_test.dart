@@ -203,7 +203,7 @@ void main() {
       test('filters null entities from input', () async {
         when(mockModelsDao.batchUpsertModels(any)).thenAnswer((_) async => []);
 
-        await repository.batchUpsertModels([
+        final _ = await repository.batchUpsertModels([
           const ApiModelEntity(
             modelProvider: 'openai',
             id: 'gpt-4',

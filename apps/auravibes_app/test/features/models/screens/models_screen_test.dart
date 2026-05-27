@@ -119,6 +119,6 @@ void main() {
     final backButton = find.byIcon(Icons.arrow_back);
     expect(backButton, findsOneWidget);
     await tester.tap(backButton);
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
   });
 }

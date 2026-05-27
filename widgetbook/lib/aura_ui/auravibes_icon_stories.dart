@@ -21,7 +21,7 @@ Widget iconButtonBasicUseCase(BuildContext context) {
   return AuraIconButton(
     icon: context.knobs.iconData(),
     onPressed: () {
-      ScaffoldMessenger.of(
+      final _ = ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Icon button pressed!')));
     },

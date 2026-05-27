@@ -218,7 +218,7 @@ void main() {
       );
 
       controller.addError(Exception('load failed'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(
         find.text(LocaleKeys.workspace_management_unexpected_error.tr()),

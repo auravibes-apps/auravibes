@@ -125,7 +125,7 @@ void main() {
 
       // Tap on the GestureDetector
       await tester.tap(find.byType(GestureDetector));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(selectedValue, 'option1');
     });
@@ -148,7 +148,7 @@ void main() {
 
       // Tap should not trigger onChanged when disabled
       await tester.tap(find.byType(GestureDetector));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(selectedValue, isNull);
     });
@@ -170,7 +170,7 @@ void main() {
 
       // Tap should not trigger onChanged when onChanged is null
       await tester.tap(find.byType(GestureDetector));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(selectedValue, isNull);
     });

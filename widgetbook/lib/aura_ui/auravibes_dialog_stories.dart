@@ -44,7 +44,7 @@ class _ConfirmDialogDemo extends StatelessWidget {
               colorVariant: colorVariant,
             );
             if (context.mounted) {
-              ScaffoldMessenger.of(
+              final _ = ScaffoldMessenger.of(
                 context,
               ).showSnackBar(SnackBar(content: Text('Result: $result')));
             }

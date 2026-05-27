@@ -27,7 +27,7 @@ class SendMessageUsecase {
       conversationId: conversationId,
     );
     if (busyState.isBusy) {
-      sendQueueRuntime.enqueue(
+      final _ = sendQueueRuntime.enqueue(
         conversationId: conversationId,
         content: content,
       );
@@ -53,7 +53,7 @@ class SendMessageUsecase {
         status: .sending,
       ),
     );
-    await runAgentIterationUsecase(
+    final _ = await runAgentIterationUsecase(
       conversationId: conversationId,
       context: AgentIterationContext(
         origin: AgentIterationOrigin.userMessage,

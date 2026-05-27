@@ -95,7 +95,7 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('My MCP Group'), findsOneWidget);
   });
@@ -116,7 +116,7 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.byType(AuraSwitch), findsOneWidget);
   });
@@ -136,7 +136,7 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.byType(AuraSwitch), findsNothing);
   });
@@ -156,7 +156,7 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(
       find.widgetWithIcon(IconButton, Icons.keyboard_arrow_down),
@@ -227,7 +227,7 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.byType(AuraBadge), findsOneWidget);
   });
@@ -262,7 +262,7 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.byType(AuraBadge), findsOneWidget);
   });
@@ -298,7 +298,7 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.byType(AuraBadge), findsOneWidget);
   });
@@ -328,7 +328,7 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.byIcon(Icons.extension), findsOneWidget);
   });
@@ -348,7 +348,7 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.byIcon(Icons.build_circle_outlined), findsOneWidget);
   });
@@ -372,7 +372,7 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.byType(AuraText), findsWidgets);
   });

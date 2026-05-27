@@ -71,7 +71,7 @@ Future<void> _pumpSubject(
       _buildSubject(toolState: toolState, conversationId: conversationId),
     );
   });
-  await tester.pumpAndSettle();
+  final _ = await tester.pumpAndSettle();
 }
 
 void main() {

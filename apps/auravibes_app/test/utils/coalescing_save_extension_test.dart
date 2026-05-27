@@ -117,7 +117,7 @@ void main() {
         },
       );
 
-      controller.close();
+      final _ = controller.close();
 
       final results = await output.toList();
       expect(results, isEmpty);
@@ -169,7 +169,7 @@ void main() {
       var emitIndex = 0;
       final controller = StreamController<int>();
 
-      controller.stream
+      final _ = controller.stream
           .coalescingSave(
             store: (state) async {
               storeTimestamps.add(state);

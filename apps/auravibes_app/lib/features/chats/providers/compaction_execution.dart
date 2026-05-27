@@ -11,7 +11,7 @@ class CompactionExecution extends _$CompactionExecution {
 
   @override
   Map<String, CompactionExecutionState> build() {
-    ref.onDispose(() {
+    final _ = ref.onDispose(() {
       for (final timer in _cleanupTimers.values) {
         timer.cancel();
       }
@@ -54,7 +54,7 @@ class CompactionExecution extends _$CompactionExecution {
           if (entry.key != conversationId) entry.key: entry.value,
       };
     }
-    _cleanupTimers.remove(conversationId);
+    final _ = _cleanupTimers.remove(conversationId);
   }
 
   void markFailure(String conversationId) {
@@ -83,7 +83,7 @@ class CompactionExecution extends _$CompactionExecution {
           if (entry.key != conversationId) entry.key: entry.value,
       };
     }
-    _cleanupTimers.remove(conversationId);
+    final _ = _cleanupTimers.remove(conversationId);
   }
 
   bool isCompacting(String conversationId) {

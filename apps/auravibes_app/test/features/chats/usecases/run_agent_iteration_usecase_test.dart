@@ -114,7 +114,7 @@ void main() {
       );
 
       expect(result, AgentIterationDecision.done);
-      verifyNever(
+      final _ = verifyNever(
         runAllowedToolsUsecase.call(
           conversationId: anyNamed('conversationId'),
           workspaceId: anyNamed('workspaceId'),
@@ -138,7 +138,7 @@ void main() {
         ),
       );
 
-      await usecase.call(
+      final _ = await usecase.call(
         conversationId: 'conversation-1',
         context: const AgentIterationContext(
           origin: AgentIterationOrigin.userMessage,
@@ -179,7 +179,7 @@ void main() {
                 ackMessageIds: ['user-1'],
               ),
             );
-            container
+            final _ = container
                 .read(conversationSendQueueProvider.notifier)
                 .enqueue(
                   conversationId: 'conversation-1',
@@ -316,7 +316,7 @@ void main() {
             workspaceId: 'workspace-1',
           ),
         ).thenAnswer((_) async {
-          container
+          final _ = container
               .read(conversationSendQueueProvider.notifier)
               .enqueue(
                 conversationId: 'conversation-1',
@@ -354,7 +354,7 @@ void main() {
     test(
       'marks queued drafts sent when stopped after dequeue',
       () async {
-        container
+        final _ = container
             .read(conversationSendQueueProvider.notifier)
             .enqueue(
               conversationId: 'conversation-1',
@@ -395,7 +395,7 @@ void main() {
         );
 
         expect(result, AgentIterationDecision.done);
-        verifyNever(
+        final _ = verifyNever(
           continueAgentUsecase.call(
             conversationId: anyNamed('conversationId'),
             context: anyNamed('context'),
@@ -456,7 +456,7 @@ void main() {
     test(
       'includes queued drafts in the same iteration context',
       () async {
-        container
+        final _ = container
             .read(conversationSendQueueProvider.notifier)
             .enqueue(
               conversationId: 'conversation-1',
@@ -545,7 +545,7 @@ void main() {
             workspaceId: 'workspace-1',
           ),
         ).thenAnswer((_) async {
-          container
+          final _ = container
               .read(conversationSendQueueProvider.notifier)
               .enqueue(
                 conversationId: 'conversation-1',
@@ -577,13 +577,13 @@ void main() {
     test(
       'drains multiple queued drafts in one iteration before returning done',
       () async {
-        container
+        final _ = container
             .read(conversationSendQueueProvider.notifier)
             .enqueue(
               conversationId: 'conversation-1',
               content: 'Queued follow-up 1',
             );
-        container
+        final _ = container
             .read(conversationSendQueueProvider.notifier)
             .enqueue(
               conversationId: 'conversation-1',
@@ -666,7 +666,7 @@ void main() {
             ),
           );
 
-          await usecase.call(
+          final _ = await usecase.call(
             conversationId: 'conversation-1',
             context: const AgentIterationContext(
               origin: AgentIterationOrigin.userMessage,
@@ -674,7 +674,7 @@ void main() {
             ),
           );
 
-          verifyInOrder([
+          final _ = verifyInOrder([
             maybeAutoCompactConversationUsecase.call(
               conversationId: 'conversation-1',
             ),
@@ -717,7 +717,7 @@ void main() {
             (_) async => AgentIterationDecision.continueIteration,
           );
 
-          await usecase.call(
+          final _ = await usecase.call(
             conversationId: 'conversation-1',
             context: const AgentIterationContext(
               origin: AgentIterationOrigin.userMessage,
@@ -752,7 +752,7 @@ void main() {
             ),
             throwsA(isA<Exception>()),
           );
-          verifyNever(
+          final _ = verifyNever(
             continueAgentUsecase.call(
               conversationId: anyNamed('conversationId'),
               context: anyNamed('context'),
@@ -764,7 +764,7 @@ void main() {
       test(
         'runs compaction after queued drafts drain but before AI call',
         () async {
-          container
+          final _ = container
               .read(conversationSendQueueProvider.notifier)
               .enqueue(
                 conversationId: 'conversation-1',
@@ -783,7 +783,7 @@ void main() {
             ),
           );
 
-          await usecase.call(
+          final _ = await usecase.call(
             conversationId: 'conversation-1',
             context: const AgentIterationContext(
               origin: AgentIterationOrigin.userMessage,
@@ -791,7 +791,7 @@ void main() {
             ),
           );
 
-          verifyInOrder([
+          final _ = verifyInOrder([
             messageRepository.createMessage(any),
             maybeAutoCompactConversationUsecase.call(
               conversationId: 'conversation-1',
@@ -807,7 +807,7 @@ void main() {
       test(
         'skips compaction and AI call when cancelled after drain',
         () async {
-          container
+          final _ = container
               .read(conversationSendQueueProvider.notifier)
               .enqueue(
                 conversationId: 'conversation-1',
@@ -839,7 +839,7 @@ void main() {
             ),
           );
 
-          await usecase.call(
+          final _ = await usecase.call(
             conversationId: 'conversation-1',
             context: const AgentIterationContext(
               origin: AgentIterationOrigin.userMessage,
@@ -847,12 +847,12 @@ void main() {
             ),
           );
 
-          verifyNever(
+          final _ = verifyNever(
             maybeAutoCompactConversationUsecase.call(
               conversationId: 'conversation-1',
             ),
           );
-          verifyNever(
+          final _ = verifyNever(
             continueAgentUsecase.call(
               conversationId: 'conversation-1',
               context: anyNamed('context'),

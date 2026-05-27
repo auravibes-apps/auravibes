@@ -39,7 +39,7 @@ class ConversationToolTile extends HookConsumerWidget {
 
     final onToggle = useCallback(
       () async {
-        await toolsNotifier.toggleTool(toolId);
+        final _ = await toolsNotifier.toggleTool(toolId);
       },
       [toolsNotifier, toolId],
     );
@@ -48,7 +48,7 @@ class ConversationToolTile extends HookConsumerWidget {
         useCallback<Future<void> Function(ToolPermissionMode?)>(
           (mode) async {
             if (mode == null) return;
-            await toolsNotifier.setToolPermission(
+            final _ = await toolsNotifier.setToolPermission(
               toolId,
               permissionMode: mode,
             );

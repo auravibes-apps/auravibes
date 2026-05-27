@@ -30,7 +30,7 @@ class SkipToolCallUsecase {
       );
     }).toList();
 
-    await _messageRepository.patchMessage(
+    final _ = await _messageRepository.patchMessage(
       messageId,
       MessagePatch(
         metadata: metadata.copyWith(toolCalls: updatedToolCalls),

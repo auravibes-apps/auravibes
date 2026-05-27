@@ -167,12 +167,12 @@ class _CompactionSettingsSectionState
     );
 
     try {
-      await ref.read(saveWorkspaceCompactionSettingsUsecaseProvider)(
+      final _ = await ref.read(saveWorkspaceCompactionSettingsUsecaseProvider)(
         workspaceId: widget.workspaceId,
         settings: settings,
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        final _ = ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: TextLocale(LocaleKeys.compaction_settings_save_success),
           ),
@@ -183,7 +183,7 @@ class _CompactionSettingsSectionState
       setState(() => _validationError = e.localeKey.tr());
     } on Exception {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        final _ = ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: TextLocale(LocaleKeys.compaction_settings_save_error),
           ),
@@ -194,12 +194,12 @@ class _CompactionSettingsSectionState
 
   Future<void> _resetDefaults() async {
     try {
-      await ref.read(resetWorkspaceCompactionSettingsUsecaseProvider)(
+      final _ = await ref.read(resetWorkspaceCompactionSettingsUsecaseProvider)(
         workspaceId: widget.workspaceId,
       );
     } on Exception {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        final _ = ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: TextLocale(LocaleKeys.compaction_settings_reset_error),
           ),
@@ -216,7 +216,7 @@ class _CompactionSettingsSectionState
       _validationError = null;
     });
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      final _ = ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: TextLocale(LocaleKeys.compaction_settings_reset_success),
         ),

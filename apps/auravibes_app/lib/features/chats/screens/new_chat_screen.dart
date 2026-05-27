@@ -42,7 +42,7 @@ class NewChatScreen extends ConsumerWidget {
         }
       } on Exception catch (e) {
         if (context.mounted) {
-          showAuraSnackBar(
+          final _ = showAuraSnackBar(
             context: context,
             content: Text('Error: $e'),
             variant: AuraSnackBarVariant.error,

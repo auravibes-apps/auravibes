@@ -234,7 +234,7 @@ void main() {
       expect(find.text('Read File'), findsOneWidget);
 
       await tester.tap(find.byIcon(Icons.chevron_right));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(find.text('Search'), findsOneWidget);
     });
@@ -259,12 +259,12 @@ void main() {
       );
 
       await tester.tap(find.byIcon(Icons.chevron_right));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(find.text('Search'), findsOneWidget);
 
       await tester.tap(find.byIcon(Icons.chevron_left));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(find.text('Read File'), findsOneWidget);
     });

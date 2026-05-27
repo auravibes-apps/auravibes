@@ -474,7 +474,7 @@ class _RecordingConversationRepository implements ConversationRepository {
   }
 
   Future<void> close() async {
-    await Future.wait(
+    final _ = await Future.wait(
       _controllers
           .where((controller) => !controller.isClosed)
           .map((controller) => controller.close()),

@@ -35,7 +35,7 @@ class ResumeConversationIfReadyUsecase {
     );
     if (decision != AgentIterationDecision.continueIteration) return;
 
-    await _runAgentIterationUsecase.call(
+    final _ = await _runAgentIterationUsecase.call(
       conversationId: conversation.id,
       context: const AgentIterationContext(
         origin: AgentIterationOrigin.toolResume,

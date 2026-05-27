@@ -126,7 +126,7 @@ void main() {
         useFallbackTranslations: true,
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.byType(ToolsGroupCard), findsNWidgets(2));
   });
@@ -147,7 +147,7 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.byType(AppErrorWidget), findsOneWidget);
   });

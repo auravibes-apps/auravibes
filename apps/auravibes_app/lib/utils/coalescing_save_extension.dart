@@ -86,7 +86,7 @@ extension CoalescingSaveExtension<T> on Stream<T> {
       onError: controller.addError,
       onDone: () async {
         await saver.complete();
-        await controller.close();
+        final _ = await controller.close();
       },
       cancelOnError: false,
     );

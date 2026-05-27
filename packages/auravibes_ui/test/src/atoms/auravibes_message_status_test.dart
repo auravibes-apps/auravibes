@@ -221,7 +221,7 @@ void main() {
       expect(widget.showAnimation, true);
 
       // Wait for animation to complete to avoid hanging
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
     });
 
     testWidgets('hides animation when disabled', (tester) async {
@@ -320,7 +320,7 @@ void main() {
       expect(find.byIcon(Icons.done), findsOneWidget);
 
       // Wait for animation to complete
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
     });
 
     testWidgets('applies correct padding for different sizes', (tester) async {

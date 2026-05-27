@@ -17,7 +17,7 @@ QueryExecutor _testConnection() {
 }
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
   group('sharedPreferencesProvider', () {
     test('returns SharedPreferences instance', () async {
@@ -45,7 +45,7 @@ void main() {
       addTearDown(container.dispose);
 
       final prefs = await container.read(sharedPreferencesProvider.future);
-      await prefs.setString('test_key', 'test_value');
+      final _ = await prefs.setString('test_key', 'test_value');
       expect(prefs.getString('test_key'), 'test_value');
     });
 
@@ -54,7 +54,7 @@ void main() {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      await container.read(sharedPreferencesProvider.future);
+      final _ = await container.read(sharedPreferencesProvider.future);
       final syncValue = container.read(sharedPreferencesProvider);
       expect(syncValue, isA<AsyncData<SharedPreferences>>());
     });

@@ -150,7 +150,7 @@ void main() {
         ]),
       );
       await _showDialog(tester);
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(find.byType(AppErrorWidget), findsOneWidget);
     });

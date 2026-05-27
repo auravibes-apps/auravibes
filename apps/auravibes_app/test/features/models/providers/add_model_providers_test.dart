@@ -155,7 +155,7 @@ void main() {
         addModelProviderStateProvider('ws1').notifier,
       );
 
-      await container2.read(apiModelProvidersProvider.future);
+      final _ = await container2.read(apiModelProvidersProvider.future);
       notifier.setModel('openai');
 
       final state = container2.read(addModelProviderStateProvider('ws1'));
@@ -178,7 +178,7 @@ void main() {
         addModelProviderStateProvider('ws1').notifier,
       );
 
-      await container2.read(apiModelProvidersProvider.future);
+      final _ = await container2.read(apiModelProvidersProvider.future);
       notifier.setModel('nonexistent');
 
       final state = container2.read(addModelProviderStateProvider('ws1'));
@@ -222,7 +222,7 @@ void main() {
         addModelProviderStateProvider('ws1').notifier,
       );
 
-      await container2.read(apiModelProvidersProvider.future);
+      final _ = await container2.read(apiModelProvidersProvider.future);
       notifier
         ..setKey('sk-valid-key-12345')
         ..setModel('gpt-4');
@@ -256,7 +256,7 @@ void main() {
         addModelProviderStateProvider('ws1').notifier,
       );
 
-      await container2.read(apiModelProvidersProvider.future);
+      final _ = await container2.read(apiModelProvidersProvider.future);
       notifier
         ..setKey('sk-valid-key-12345')
         ..setModel('gpt-4');

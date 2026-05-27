@@ -90,7 +90,7 @@ class UrlService {
     }
 
     if (error.type == DioExceptionType.cancel) {
-      completer.operation.cancel();
+      final _ = completer.operation.cancel();
       return;
     }
 

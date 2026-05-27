@@ -40,6 +40,6 @@ class ThemeNotifier extends _$ThemeNotifier {
   Future<void> setTheme(AppTheme theme) async {
     state = .data(theme);
     final prefs = await ref.read(sharedPreferencesProvider.future);
-    await prefs.setInt(_themeKey, theme.index);
+    final _ = await prefs.setInt(_themeKey, theme.index);
   }
 }

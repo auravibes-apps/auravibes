@@ -67,17 +67,18 @@ class ConversationToolsDao extends DatabaseAccessor<AppDatabase>
 
     if (existing != null) {
       // Update existing
-      await (update(conversationTools)..where(
-            (tbl) =>
-                tbl.conversationId.equals(conversationId) &
-                tbl.toolId.equals(toolId),
-          ))
-          .write(
-            ConversationToolsCompanion(
-              updatedAt: Value(DateTime.now()),
-              isEnabled: Value(isEnabled),
-            ),
-          );
+      final _ =
+          await (update(conversationTools)..where(
+                (tbl) =>
+                    tbl.conversationId.equals(conversationId) &
+                    tbl.toolId.equals(toolId),
+              ))
+              .write(
+                ConversationToolsCompanion(
+                  updatedAt: Value(DateTime.now()),
+                  isEnabled: Value(isEnabled),
+                ),
+              );
       return (await getConversationTool(conversationId, toolId))!;
     } else {
       // Insert new
@@ -100,17 +101,18 @@ class ConversationToolsDao extends DatabaseAccessor<AppDatabase>
     final existing = await getConversationTool(conversationId, toolId);
 
     if (existing != null) {
-      await (update(conversationTools)..where(
-            (tbl) =>
-                tbl.conversationId.equals(conversationId) &
-                tbl.toolId.equals(toolId),
-          ))
-          .write(
-            ConversationToolsCompanion(
-              updatedAt: Value(DateTime.now()),
-              permissions: Value(permission),
-            ),
-          );
+      final _ =
+          await (update(conversationTools)..where(
+                (tbl) =>
+                    tbl.conversationId.equals(conversationId) &
+                    tbl.toolId.equals(toolId),
+              ))
+              .write(
+                ConversationToolsCompanion(
+                  updatedAt: Value(DateTime.now()),
+                  permissions: Value(permission),
+                ),
+              );
       return (await getConversationTool(conversationId, toolId))!;
     } else {
       return into(conversationTools).insertReturning(
@@ -171,7 +173,7 @@ class ConversationToolsDao extends DatabaseAccessor<AppDatabase>
     final sourceTools = await getConversationTools(sourceConversationId);
 
     for (final tool in sourceTools) {
-      await upsertConversationTool(
+      final _ = await upsertConversationTool(
         targetConversationId,
         tool.toolId,
         isEnabled: tool.isEnabled,
@@ -212,7 +214,7 @@ class ConversationToolsDao extends DatabaseAccessor<AppDatabase>
     final tool = await getConversationTool(conversationId, toolId);
     final isCurrentlyEnabled = tool?.isEnabled ?? true;
 
-    await setConversationToolEnabled(
+    final _ = await setConversationToolEnabled(
       conversationId,
       toolId,
       isEnabled: !isCurrentlyEnabled,

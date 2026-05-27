@@ -254,7 +254,7 @@ class ContinueAgentUsecase {
       ..persistenceFuture = streamingController.stream
           .coalescingSave(
             store: (chunk) async {
-              await messageRepository.patchMessage(
+              final _ = await messageRepository.patchMessage(
                 state.firstMessage!.id,
                 .new(
                   content: chunk.entityText,
@@ -455,7 +455,7 @@ class ContinueAgentUsecase {
   }
 
   Future<void> _closePersistence(_ContinueAgentRunState state) async {
-    await state.streamingController?.close();
+    final _ = await state.streamingController?.close();
     await state.persistenceFuture;
     state
       ..streamingController = null
@@ -491,7 +491,7 @@ class ContinueAgentUsecase {
   Future<void> _cleanupContinuation(_ContinueAgentRunState state) async {
     state.stage = 'cleanup';
     await state.responseSubscription?.cancel();
-    await state.streamingController?.close();
+    final _ = await state.streamingController?.close();
     await state.persistenceFuture;
     conversationStreamingRuntime.remove(state.conversationId);
     if (state.firstMessage != null && !state.streamingRuntimeRemoved) {
@@ -515,7 +515,7 @@ class ContinueAgentUsecase {
     }
 
     for (final pendingUserMessageId in pendingUserMessageIds) {
-      await messageRepository.patchMessage(
+      final _ = await messageRepository.patchMessage(
         pendingUserMessageId,
         const MessagePatch(status: MessageStatus.sent),
       );
@@ -529,7 +529,7 @@ class ContinueAgentUsecase {
   ) async {
     if (message == null) return;
 
-    await messageRepository.patchMessage(
+    final _ = await messageRepository.patchMessage(
       message.id,
       MessagePatch(
         content: result?.entityText,
@@ -543,7 +543,7 @@ class ContinueAgentUsecase {
     MessageEntity message,
     ChatResult<ChatMessage> result,
   ) async {
-    await messageRepository.patchMessage(
+    final _ = await messageRepository.patchMessage(
       message.id,
       .new(metadata: result.entityMetadata, status: .sent),
     );
@@ -557,7 +557,7 @@ class ContinueAgentUsecase {
 
     try {
       for (final pendingUserMessageId in pendingUserMessageIds) {
-        await messageRepository.patchMessage(
+        final _ = await messageRepository.patchMessage(
           pendingUserMessageId,
           const MessagePatch(status: MessageStatus.error),
         );
@@ -573,7 +573,7 @@ class ContinueAgentUsecase {
 
   Future<void> _markAssistantErrored(MessageEntity message) async {
     try {
-      await messageRepository.patchMessage(
+      final _ = await messageRepository.patchMessage(
         message.id,
         const .new(status: .error),
       );

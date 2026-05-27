@@ -73,7 +73,7 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
     String toolId, {
     required bool isEnabled,
   }) async {
-    await _dao.setConversationToolEnabled(
+    final _ = await _dao.setConversationToolEnabled(
       conversationId,
       toolId,
       isEnabled: isEnabled,
@@ -95,7 +95,7 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
     String toolId, {
     required ToolPermissionMode permissionMode,
   }) async {
-    await _dao.setConversationToolPermission(
+    final _ = await _dao.setConversationToolPermission(
       conversationId,
       toolId,
       permission: _mapPermissionMode(permissionMode),

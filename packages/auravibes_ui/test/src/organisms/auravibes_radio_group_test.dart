@@ -104,7 +104,7 @@ void main() {
       );
 
       await tester.tap(find.byType(AuraRadio<String>));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(selectedValue, 'option1');
     });
@@ -322,7 +322,7 @@ void main() {
 
       // Tap on the AuraRadio widget inside the AuraRadioListTile
       await tester.tap(find.byType(AuraRadio<String>));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(selectedValue, 'option1');
     });

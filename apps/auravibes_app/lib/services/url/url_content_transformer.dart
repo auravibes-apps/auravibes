@@ -231,7 +231,7 @@ class UrlContentTransformer {
   void _stripUnwantedElements(dom.Document document) {
     for (final tag in _stripTags) {
       for (final element in document.querySelectorAll(tag)) {
-        element.remove();
+        final _ = element.remove();
       }
     }
   }

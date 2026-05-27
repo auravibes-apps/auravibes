@@ -381,7 +381,7 @@ void main() {
         () => mockRepository.getMessagesByConversation('conv-1'),
       ).thenAnswer((_) async => []);
 
-      await usecase(
+      final _ = await usecase(
         conversationId: 'conv-1',
         workspaceId: 'workspace-1',
         selectedModelId: 'model-1',

@@ -24,7 +24,7 @@ class WorkspaceSwitcher extends _$WorkspaceSwitcher {
 
   @override
   WorkspaceSwitchState build() {
-    ref.onDispose(() => _debounceTimer?.cancel());
+    final _ = ref.onDispose(() => _debounceTimer?.cancel());
     return const WorkspaceSwitchState();
   }
 

@@ -52,7 +52,7 @@ void main() {
 
     test('updates from repository stream without one-shot refetches', () async {
       final secondEmission = Completer<void>();
-      container.listen(
+      final _ = container.listen(
         chatMessagesProvider,
         (_, next) {
           if (next.value?.length == 2 && !secondEmission.isCompleted) {

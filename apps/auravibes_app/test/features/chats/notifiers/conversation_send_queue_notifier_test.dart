@@ -1,6 +1,3 @@
-// ignore_for_file: cascade_invocations
-// Required: enqueue() returns ConversationQueuedDraft, not the notifier,
-// so cascading is not possible when calling multiple notifier methods.
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
@@ -60,7 +57,7 @@ void main() {
     test('remove with unknown draftId is no-op', () {
       final notifier = container.read(conversationSendQueueProvider.notifier);
 
-      notifier.enqueue(conversationId: 'conv-1', content: 'First');
+      final _ = notifier.enqueue(conversationId: 'conv-1', content: 'First');
       notifier.remove(conversationId: 'conv-1', draftId: 'nonexistent');
 
       final state = container.read(conversationSendQueueProvider);
@@ -98,9 +95,12 @@ void main() {
     test('clear removes all drafts for a conversation', () {
       final notifier = container.read(conversationSendQueueProvider.notifier);
 
-      notifier.enqueue(conversationId: 'conv-1', content: 'First');
-      notifier.enqueue(conversationId: 'conv-1', content: 'Second');
-      notifier.enqueue(conversationId: 'conv-2', content: 'Other conv');
+      final _ = notifier.enqueue(conversationId: 'conv-1', content: 'First');
+      final _ = notifier.enqueue(conversationId: 'conv-1', content: 'Second');
+      final _ = notifier.enqueue(
+        conversationId: 'conv-2',
+        content: 'Other conv',
+      );
       notifier.clear('conv-1');
 
       final state = container.read(conversationSendQueueProvider);
@@ -111,7 +111,7 @@ void main() {
     test('clear with unknown conversationId is no-op', () {
       final notifier = container.read(conversationSendQueueProvider.notifier);
 
-      notifier.enqueue(conversationId: 'conv-1', content: 'First');
+      final _ = notifier.enqueue(conversationId: 'conv-1', content: 'First');
       notifier.clear('unknown');
 
       final state = container.read(conversationSendQueueProvider);

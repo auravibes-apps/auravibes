@@ -7,7 +7,7 @@ class AgentCancellationRuntime {
   final _entries = <String, _AgentCancellationEntry>{};
 
   void start(String conversationId) {
-    _entries.putIfAbsent(
+    final _ = _entries.putIfAbsent(
       conversationId,
       _AgentCancellationEntry.new,
     );

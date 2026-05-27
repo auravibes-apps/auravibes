@@ -490,7 +490,7 @@ void main() {
         final notifier = container.read(mcpConnectionProvider.notifier);
 
         try {
-          await notifier.callTool(
+          final _ = await notifier.callTool(
             mcpServerId: 'missing',
             toolIdentifier: 'sum',
             arguments: const {},
@@ -514,7 +514,7 @@ void main() {
           ];
 
         try {
-          await notifier.callTool(
+          final _ = await notifier.callTool(
             mcpServerId: 'server-1',
             toolIdentifier: 'sum',
             arguments: const {},

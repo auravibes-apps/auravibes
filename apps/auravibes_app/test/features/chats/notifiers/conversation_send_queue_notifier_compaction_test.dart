@@ -52,7 +52,7 @@ void main() {
         conversationId: 'conv-2',
         content: 'Conv2 First',
       );
-      notifier.enqueue(
+      final _ = notifier.enqueue(
         conversationId: 'conv-1',
         content: 'Conv1 Second',
       );
@@ -78,7 +78,7 @@ void main() {
         expect(notifier.peek('compacting-conv')?.id, compactingConvMsg.id);
         expect(notifier.peek('other-conv')?.id, otherConvMsg.id);
 
-        notifier.dequeue('compacting-conv');
+        final _ = notifier.dequeue('compacting-conv');
         expect(notifier.peek('compacting-conv'), isNull);
         expect(notifier.peek('other-conv')?.id, otherConvMsg.id);
       },

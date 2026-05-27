@@ -222,7 +222,7 @@ Future<void> _stopConversation(BuildContext context, WidgetRef ref) async {
     );
     if (!context.mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
+    final _ = ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
           LocaleKeys.chats_screens_chat_conversation_stop_error.tr(),
@@ -259,7 +259,7 @@ Future<void> _sendMessage(
     );
     if (!context.mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
+    final _ = ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
           LocaleKeys.chats_screens_chat_conversation_send_error.tr(),
@@ -280,13 +280,13 @@ Future<void> _manualCompact(
   if (!context.mounted) return;
 
   if (result.success) {
-    ScaffoldMessenger.of(context).showSnackBar(
+    final _ = ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(LocaleKeys.compaction_manual_success.tr()),
       ),
     );
   } else if (result.error != null) {
-    ScaffoldMessenger.of(context).showSnackBar(
+    final _ = ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(LocaleKeys.compaction_manual_failure.tr()),
       ),

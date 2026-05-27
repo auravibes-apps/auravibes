@@ -227,7 +227,7 @@ class _ToolOptions extends HookConsumerWidget {
     );
 
     if (confirmed ?? false) {
-      await ref
+      final _ = await ref
           .read(workspaceToolsProvider(workspaceId).notifier)
           .removeToolById(workspaceTool.id);
     }

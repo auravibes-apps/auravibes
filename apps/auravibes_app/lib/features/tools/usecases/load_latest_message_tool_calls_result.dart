@@ -152,7 +152,7 @@ class LoadLatestMessageToolCallsUsecase {
       if (status != ToolCallResultStatus.success &&
           status != ToolCallResultStatus.skippedByUser &&
           status != ToolCallResultStatus.stoppedByUser) {
-        failedNames.add(toolName);
+        final _ = failedNames.add(toolName);
       }
     });
     return failedNames;

@@ -116,7 +116,7 @@ void main() {
     });
 
     test('calls generateTitle with correct args', () async {
-      await usecase.call(
+      final _ = await usecase.call(
         workspaceId: 'ws-1',
         firstMessage: 'Hello',
         workspaceModelSelectionId: 'model-sel-1',
@@ -132,7 +132,7 @@ void main() {
     });
 
     test('calls sendMessage with correct args', () async {
-      await usecase.call(
+      final _ = await usecase.call(
         workspaceId: 'ws-1',
         firstMessage: 'Hello',
         workspaceModelSelectionId: 'model-sel-1',
@@ -174,7 +174,7 @@ void main() {
     });
 
     test('creates conversation with correct workspaceId and modelId', () async {
-      await usecase.call(
+      final _ = await usecase.call(
         workspaceId: 'ws-1',
         firstMessage: 'Hello',
         workspaceModelSelectionId: 'model-sel-1',
@@ -187,7 +187,7 @@ void main() {
     });
 
     test('retrieves model selection with correct ID', () async {
-      await usecase.call(
+      final _ = await usecase.call(
         workspaceId: 'ws-1',
         firstMessage: 'Hello',
         workspaceModelSelectionId: 'model-sel-1',
@@ -206,7 +206,7 @@ void main() {
       ).thenAnswer((_) async => null);
 
       try {
-        await usecase.call(
+        final _ = await usecase.call(
           workspaceId: 'ws-1',
           firstMessage: 'Hello',
           workspaceModelSelectionId: 'missing',

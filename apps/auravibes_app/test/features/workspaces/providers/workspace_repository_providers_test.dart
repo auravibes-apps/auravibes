@@ -88,7 +88,7 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
 }
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
   late AppDatabase testDatabase;
   late ProviderContainer container;
@@ -123,7 +123,7 @@ void main() {
       addTearDown(testContainer.dispose);
 
       // Keep provider alive during async test
-      testContainer.listen(allWorkspacesProvider, (_, _) {});
+      final _ = testContainer.listen(allWorkspacesProvider, (_, _) {});
 
       final result = await testContainer.read(allWorkspacesProvider.future);
       expect(result, isEmpty);
@@ -139,7 +139,7 @@ void main() {
       addTearDown(testContainer.dispose);
 
       // Keep provider alive during async test
-      testContainer.listen(allWorkspacesProvider, (_, _) {});
+      final _ = testContainer.listen(allWorkspacesProvider, (_, _) {});
 
       final first = await testContainer.read(allWorkspacesProvider.future);
       final second = await testContainer.read(allWorkspacesProvider.future);

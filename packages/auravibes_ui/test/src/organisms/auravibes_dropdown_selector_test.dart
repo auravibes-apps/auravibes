@@ -137,7 +137,7 @@ void main() {
       await tester.pump();
       expect(find.text('Option 1'), findsOneWidget);
 
-      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      final _ = await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       await tester.pump();
 
       expect(find.text('Option 1'), findsNothing);
@@ -255,7 +255,7 @@ void main() {
       await tester.pump();
       expect(find.text('Option 1'), findsOneWidget);
 
-      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      final _ = await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       await tester.pump();
 
       expect(find.text('Option 1'), findsNothing);

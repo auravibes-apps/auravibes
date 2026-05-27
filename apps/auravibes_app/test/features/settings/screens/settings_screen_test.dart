@@ -71,7 +71,7 @@ void main() {
           ),
         );
       });
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
       expect(find.byType(SettingsScreen), findsOneWidget);
       expect(find.byType(AuraScreen), findsOneWidget);
       expect(find.byType(AuraAppBarWithDrawer), findsOneWidget);
@@ -89,14 +89,14 @@ void main() {
           ),
         );
       });
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       final themeTiles = find.descendant(
         of: find.byType(SettingsScreen),
         matching: find.byType(AuraTile),
       );
       await tester.tap(themeTiles.first);
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(find.byType(AuraRadioGroup<AppTheme>), findsOneWidget);
     });

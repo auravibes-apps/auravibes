@@ -148,7 +148,7 @@ class McpServersRepositoryImpl implements McpServersRepository {
 
       // 6. Remove old tools
       for (final tool in toolsToRemove) {
-        await _workspaceToolsDao.deleteWorkspaceToolById(tool.id);
+        final _ = await _workspaceToolsDao.deleteWorkspaceToolById(tool.id);
       }
 
       // Note: Existing tools are NOT modified - user customizations preserved

@@ -184,9 +184,9 @@ class AuraButtonGroup<T> extends StatelessWidget {
       case _ButtonGroupMode.multi:
         final currentSet = Set<T>.from(selectedValues ?? {});
         if (currentSet.contains(item.value)) {
-          currentSet.remove(item.value);
+          final _ = currentSet.remove(item.value);
         } else {
-          currentSet.add(item.value);
+          final _ = currentSet.add(item.value);
         }
         onMultiChanged?.call(currentSet);
       case _ButtonGroupMode.action:

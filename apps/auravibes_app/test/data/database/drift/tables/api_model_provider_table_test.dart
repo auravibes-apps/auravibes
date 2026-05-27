@@ -150,7 +150,7 @@ void main() {
     });
 
     test('can insert provider with nullable fields null', () async {
-      await db
+      final _ = await db
           .into(db.apiModelProviders)
           .insert(
             ApiModelProvidersCompanion.insert(
@@ -169,7 +169,7 @@ void main() {
     });
 
     test('can insert provider with all fields', () async {
-      await db
+      final _ = await db
           .into(db.apiModelProviders)
           .insert(
             ApiModelProvidersCompanion.insert(
@@ -191,7 +191,7 @@ void main() {
     });
 
     test('can insert multiple providers', () async {
-      await db
+      final _ = await db
           .into(db.apiModelProviders)
           .insert(
             ApiModelProvidersCompanion.insert(
@@ -199,7 +199,7 @@ void main() {
               name: 'Provider 1',
             ),
           );
-      await db
+      final _ = await db
           .into(db.apiModelProviders)
           .insert(
             ApiModelProvidersCompanion.insert(

@@ -18,7 +18,7 @@ class ManualCompactConversationUsecase {
 
   Future<ManualCompactionResult> call(String conversationId) async {
     try {
-      await compactConversationUsecase(
+      final _ = await compactConversationUsecase(
         conversationId: conversationId,
         trigger: CompactionTrigger.manual,
       );

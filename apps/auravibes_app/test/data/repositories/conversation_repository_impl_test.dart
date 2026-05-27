@@ -82,7 +82,9 @@ void main() {
           mockDao.watchConversationsByWorkspace('ws-1', limit: 5),
         ).thenAnswer((_) => controller.stream);
 
-        await repository.watchConversationsByWorkspace('ws-1', limit: 5).first;
+        final _ = await repository
+            .watchConversationsByWorkspace('ws-1', limit: 5)
+            .first;
 
         verify(
           mockDao.watchConversationsByWorkspace('ws-1', limit: 5),
@@ -212,7 +214,7 @@ void main() {
           repository.createConversation(toCreate),
           throwsA(isA<ConversationValidationException>()),
         );
-        verifyNever(mockDao.insertConversation(any));
+        final _ = verifyNever(mockDao.insertConversation(any));
       });
     });
 
@@ -319,7 +321,7 @@ void main() {
         final result = await repository.deleteConversation('nonexistent');
 
         expect(result, false);
-        verifyNever(mockDao.deleteConversation(any));
+        final _ = verifyNever(mockDao.deleteConversation(any));
       });
     });
   });

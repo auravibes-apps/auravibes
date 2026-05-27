@@ -61,10 +61,12 @@ class McpServersDao extends DatabaseAccessor<AppDatabase>
 
       // delete tools
       for (final tool in toolsToDelete) {
-        await (delete(tools)..where((t) => t.id.equals(tool.id))).go();
+        final _ = await (delete(
+          tools,
+        )..where((t) => t.id.equals(tool.id))).go();
       }
       // delete tool groups
-      await (delete(
+      final _ = await (delete(
         toolsGroups,
       )..where((tg) => tg.id.equals(toolGroup.id))).go();
       // delete server
@@ -83,7 +85,7 @@ class McpServersDao extends DatabaseAccessor<AppDatabase>
     String id, {
     required bool isEnabled,
   }) async {
-    await (update(mcpServers)..where((t) => t.id.equals(id))).write(
+    final _ = await (update(mcpServers)..where((t) => t.id.equals(id))).write(
       McpServersCompanion(isEnabled: Value(isEnabled)),
     );
     return getMcpServerById(id);

@@ -58,7 +58,7 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
   Future<bool> deleteWorkspace(String id) async {
     final index = _workspaces.indexWhere((w) => w.id == id);
     if (index == -1) return false;
-    _workspaces.removeAt(index);
+    final _ = _workspaces.removeAt(index);
     return true;
   }
 
@@ -95,7 +95,7 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
 }
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
   group('WorkspaceManagementMode', () {
     late ProviderContainer container;
@@ -286,7 +286,7 @@ void main() {
     });
 
     test('deletes workspace when multiple exist and not active', () async {
-      await repository.createWorkspace(
+      final _ = await repository.createWorkspace(
         const WorkspaceToCreate(name: 'A', type: WorkspaceType.local),
       );
       final toDelete = await repository.createWorkspace(
@@ -318,7 +318,7 @@ void main() {
     });
 
     test('throws when deleting active workspace', () async {
-      await repository.createWorkspace(
+      final _ = await repository.createWorkspace(
         const WorkspaceToCreate(name: 'A', type: WorkspaceType.local),
       );
       final active = await repository.createWorkspace(

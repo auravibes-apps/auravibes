@@ -64,7 +64,7 @@ void main() {
       addTearDown(router.dispose);
 
       await tester.pumpWidget(MaterialApp.router(routerConfig: router));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(result, 1);
     });
@@ -114,7 +114,7 @@ void main() {
       addTearDown(router.dispose);
 
       await tester.pumpWidget(MaterialApp.router(routerConfig: router));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(capturedShellIndex, 0);
     });
@@ -237,7 +237,7 @@ void main() {
 
       expect(capturedWorkspaceId, 'ws-test');
 
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
       expect(find.text('workspaceId: ws-test'), findsOneWidget);
     },
   );
@@ -289,7 +289,7 @@ void main() {
 
       expect(capturedWorkspaceId, 'ws-redirect-test');
 
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
       expect(find.text('workspaceId: ws-redirect-test'), findsOneWidget);
     },
   );
@@ -343,7 +343,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp.router(routerConfig: router),
       );
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(capturedShellIndex, 0);
       expect(find.text('Chat screen'), findsOneWidget);
@@ -395,7 +395,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp.router(routerConfig: router),
       );
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(capturedShellIndex, 1);
       expect(find.text('Tools screen'), findsOneWidget);
@@ -456,7 +456,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp.router(routerConfig: router),
       );
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(capturedShellIndex, 2);
       expect(find.text('Settings screen'), findsOneWidget);
@@ -666,7 +666,7 @@ class _FakeConversationRepository implements ConversationRepository {
         List<StreamController<List<ConversationEntity>>>.of(_controllers);
     _controllers.clear();
     _pendingRemoval.clear();
-    await Future.wait(
+    final _ = await Future.wait(
       controllersSnapshot.where((c) => !c.isClosed).map((c) => c.close()),
     );
   }

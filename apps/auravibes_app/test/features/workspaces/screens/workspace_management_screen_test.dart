@@ -69,7 +69,7 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
   Future<bool> deleteWorkspace(String id) async {
     final index = _workspaces.indexWhere((w) => w.id == id);
     if (index == -1) return false;
-    _workspaces.removeAt(index);
+    final _ = _workspaces.removeAt(index);
     _emit();
     return true;
   }
@@ -105,7 +105,7 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
 }
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
   group('WorkspaceManagementScreen', () {
     late _FakeWorkspaceRepository repository;
@@ -193,7 +193,7 @@ void main() {
         tester,
         _buildScreen(workspaceId: 'ws-1', error: 'test error'),
       );
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(
         find.text('Failed to load workspaces. Please try again.'),
@@ -202,15 +202,15 @@ void main() {
     });
 
     testWidgets('renders workspace list after loading', (tester) async {
-      await repository.createWorkspace(
+      final _ = await repository.createWorkspace(
         const WorkspaceToCreate(name: 'Workspace A', type: WorkspaceType.local),
       );
-      await repository.createWorkspace(
+      final _ = await repository.createWorkspace(
         const WorkspaceToCreate(name: 'Workspace B', type: WorkspaceType.local),
       );
 
       await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(find.text('Workspace A'), findsOneWidget);
       expect(find.text('Workspace B'), findsOneWidget);
@@ -219,33 +219,33 @@ void main() {
     testWidgets('shows create form when create button tapped', (
       tester,
     ) async {
-      await repository.createWorkspace(
+      final _ = await repository.createWorkspace(
         const WorkspaceToCreate(name: 'Workspace A', type: WorkspaceType.local),
       );
 
       await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       await tester.tap(find.byIcon(Icons.add));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(find.byType(TextField), findsOneWidget);
     });
 
     testWidgets('shows validation error for short name', (tester) async {
-      await repository.createWorkspace(
+      final _ = await repository.createWorkspace(
         const WorkspaceToCreate(name: 'Workspace A', type: WorkspaceType.local),
       );
 
       await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       await tester.tap(find.byIcon(Icons.add));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       await tester.enterText(find.byType(TextField), 'AB');
       await tester.testTextInput.receiveAction(TextInputAction.done);
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(
         find.text('Workspace name must be at least 3 characters'),
@@ -255,14 +255,14 @@ void main() {
 
     testWidgets('shows validation error for long name', (tester) async {
       await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       await tester.tap(find.text('Create Workspace'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       await tester.enterText(find.byType(TextField), 'A' * 21);
       await tester.testTextInput.receiveAction(TextInputAction.done);
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(
         find.text('Workspace name must be at most 20 characters'),
@@ -271,15 +271,15 @@ void main() {
     });
 
     testWidgets('tapping edit shows edit form', (tester) async {
-      await repository.createWorkspace(
+      final _ = await repository.createWorkspace(
         const WorkspaceToCreate(name: 'Workspace A', type: WorkspaceType.local),
       );
 
       await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       await tester.tap(find.byIcon(Icons.edit));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(find.byIcon(Icons.check), findsOneWidget);
       expect(find.byIcon(Icons.close), findsOneWidget);
@@ -288,74 +288,74 @@ void main() {
     testWidgets('tapping check saves workspace and exits edit', (
       tester,
     ) async {
-      await repository.createWorkspace(
+      final _ = await repository.createWorkspace(
         const WorkspaceToCreate(name: 'Workspace A', type: WorkspaceType.local),
       );
 
       await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       await tester.tap(find.byIcon(Icons.edit));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       await tester.enterText(find.byType(TextField).last, 'New Name');
       await tester.tap(find.byIcon(Icons.check));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(find.text('New Name'), findsOneWidget);
       expect(find.byIcon(Icons.check), findsNothing);
     });
 
     testWidgets('tapping close cancels edit and exits edit', (tester) async {
-      await repository.createWorkspace(
+      final _ = await repository.createWorkspace(
         const WorkspaceToCreate(name: 'Workspace A', type: WorkspaceType.local),
       );
 
       await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       await tester.tap(find.byIcon(Icons.edit));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       await tester.enterText(find.byType(TextField).last, 'New Name');
       await tester.tap(find.byIcon(Icons.close));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(find.text('Workspace A'), findsOneWidget);
       expect(find.byIcon(Icons.close), findsNothing);
     });
 
     testWidgets('submitting edit via keyboard saves', (tester) async {
-      await repository.createWorkspace(
+      final _ = await repository.createWorkspace(
         const WorkspaceToCreate(name: 'Workspace A', type: WorkspaceType.local),
       );
 
       await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       await tester.tap(find.byIcon(Icons.edit));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       await tester.enterText(find.byType(TextField).last, 'Keyboard Name');
       await tester.testTextInput.receiveAction(TextInputAction.done);
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(find.text('Keyboard Name'), findsOneWidget);
     });
 
     testWidgets('delete confirmation dialog shown', (tester) async {
-      await repository.createWorkspace(
+      final _ = await repository.createWorkspace(
         const WorkspaceToCreate(name: 'Workspace A', type: WorkspaceType.local),
       );
-      await repository.createWorkspace(
+      final _ = await repository.createWorkspace(
         const WorkspaceToCreate(name: 'Workspace B', type: WorkspaceType.local),
       );
 
       await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-2'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       await tester.tap(find.byIcon(Icons.delete).first);
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(find.byType(AlertDialog), findsOneWidget);
       expect(find.text('Cancel'), findsOneWidget);
@@ -363,61 +363,61 @@ void main() {
     });
 
     testWidgets('cancel delete keeps workspace', (tester) async {
-      await repository.createWorkspace(
+      final _ = await repository.createWorkspace(
         const WorkspaceToCreate(name: 'Workspace A', type: WorkspaceType.local),
       );
-      await repository.createWorkspace(
+      final _ = await repository.createWorkspace(
         const WorkspaceToCreate(name: 'Workspace B', type: WorkspaceType.local),
       );
 
       await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-2'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       await tester.tap(find.byIcon(Icons.delete).first);
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       await tester.tap(find.text('Cancel'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(find.text('Workspace A'), findsOneWidget);
     });
 
     testWidgets('back button is present', (tester) async {
       await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(find.byIcon(Icons.arrow_back), findsOneWidget);
     });
 
     testWidgets('cancel create form returns to list', (tester) async {
       await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       await tester.tap(find.text('Create Workspace'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       await tester.tap(find.text('Cancel'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(find.text('Create Workspace'), findsOneWidget);
     });
 
     testWidgets('confirm delete removes workspace', (tester) async {
-      await repository.createWorkspace(
+      final _ = await repository.createWorkspace(
         const WorkspaceToCreate(name: 'KeepMe', type: WorkspaceType.local),
       );
-      await repository.createWorkspace(
+      final _ = await repository.createWorkspace(
         const WorkspaceToCreate(name: 'ToDelete', type: WorkspaceType.local),
       );
 
       await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       await tester.tap(find.byIcon(Icons.delete).last);
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       await tester.tap(find.text('Delete'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(find.text('ToDelete'), findsNothing);
       expect(find.text('KeepMe'), findsOneWidget);
@@ -425,24 +425,24 @@ void main() {
 
     testWidgets('tapping back button does not crash', (tester) async {
       await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       await tester.tap(find.byIcon(Icons.arrow_back));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
     });
 
     testWidgets('creates workspace with valid name through form', (
       tester,
     ) async {
       await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       await tester.tap(find.text('Create Workspace'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       await tester.enterText(find.byType(TextField), 'New Workspace');
       await tester.testTextInput.receiveAction(TextInputAction.done);
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(find.text('New Workspace'), findsOneWidget);
     });

@@ -191,7 +191,7 @@ void main() {
       );
 
       expect(result, AgentIterationDecision.done);
-      verifyNever(
+      final _ = verifyNever(
         resolveToolApprovalDecision(
           conversationId: anyNamed('conversationId'),
           workspaceId: anyNamed('workspaceId'),
@@ -248,7 +248,7 @@ void main() {
         );
 
         expect(result, AgentIterationDecision.waitForToolApproval);
-        verifyNever(
+        final _ = verifyNever(
           messageRepository.patchMessage(any, any),
         );
       },
@@ -814,7 +814,7 @@ void main() {
         );
 
         expect(result, AgentIterationDecision.waitForToolApproval);
-        verifyNever(
+        final _ = verifyNever(
           messageRepository.patchMessage(any, any),
         );
       },
@@ -914,7 +914,7 @@ void main() {
             resolvedTool: nativeTool.tool,
           ),
         ).called(1);
-        verifyNever(
+        final _ = verifyNever(
           messageRepository.patchMessage(any, any),
         );
       },
@@ -1172,7 +1172,7 @@ void main() {
           getAgentIterationDecisionUsecase.call(messageId: 'message-1'),
         ).thenAnswer((_) async => AgentIterationDecision.done);
 
-        await usecase.call(
+        final _ = await usecase.call(
           conversationId: 'conversation-1',
           workspaceId: 'workspace-1',
         );
@@ -1259,7 +1259,7 @@ void main() {
           getAgentIterationDecisionUsecase.call(messageId: 'message-1'),
         ).thenAnswer((_) async => AgentIterationDecision.done);
 
-        await usecase.call(
+        final _ = await usecase.call(
           conversationId: 'conversation-1',
           workspaceId: 'workspace-1',
         );
@@ -1619,7 +1619,7 @@ void main() {
         );
 
         expect(result, AgentIterationDecision.continueIteration);
-        verifyNever(
+        final _ = verifyNever(
           messageRepository.patchMessage(any, any),
         );
       },

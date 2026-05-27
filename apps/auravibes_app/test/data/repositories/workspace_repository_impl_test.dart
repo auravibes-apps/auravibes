@@ -56,8 +56,8 @@ void main() {
       );
 
       // Act
-      await repository.createWorkspace(workspace1);
-      await repository.createWorkspace(workspace2);
+      final _ = await repository.createWorkspace(workspace1);
+      final _ = await repository.createWorkspace(workspace2);
       final result = await repository.getAllWorkspaces();
 
       // Assert
@@ -170,8 +170,8 @@ void main() {
         url: 'https://example.com',
       );
 
-      await repository.createWorkspace(workspace1);
-      await repository.createWorkspace(workspace2);
+      final _ = await repository.createWorkspace(workspace1);
+      final _ = await repository.createWorkspace(workspace2);
 
       // Act
       final result = await repository.searchWorkspacesByName('Development');

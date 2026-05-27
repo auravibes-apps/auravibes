@@ -122,7 +122,7 @@ class AppDatabase extends _$AppDatabase {
     ).getSingle().then((result) => result.read<int>('count'));
 
     if (workspaceCount == 0) {
-      await into(workspaces).insert(
+      final _ = await into(workspaces).insert(
         WorkspacesCompanion.insert(
           name: 'Default Workspace',
           type: WorkspaceType.local,

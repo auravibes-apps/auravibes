@@ -44,7 +44,7 @@ listModelsGroupedByProvider(Ref ref, {required String workspaceId}) {
     fireImmediately: true,
   );
 
-  ref.onDispose(() {
+  final _ = ref.onDispose(() {
     subscription.close();
     unawaited(controller.close());
   });

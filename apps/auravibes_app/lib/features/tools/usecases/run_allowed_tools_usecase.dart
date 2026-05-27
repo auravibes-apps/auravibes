@@ -240,7 +240,7 @@ class RunAllowedToolsUsecase {
     }).toList();
     if (!didUpdate) return;
 
-    await messageRepository.patchMessage(
+    final _ = await messageRepository.patchMessage(
       messageId,
       MessagePatch(
         metadata: metadata.copyWith(toolCalls: updatedToolCalls),
@@ -268,7 +268,7 @@ class RunAllowedToolsUsecase {
       );
     }).toList();
 
-    await messageRepository.patchMessage(
+    final _ = await messageRepository.patchMessage(
       messageId,
       MessagePatch(
         metadata: metadata.copyWith(toolCalls: updatedToolCalls),

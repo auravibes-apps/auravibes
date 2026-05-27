@@ -45,7 +45,7 @@ void main() {
           ),
         );
       });
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
       expect(find.byType(ChatsListScreen), findsOneWidget);
       expect(find.byType(AuraScreen), findsOneWidget);
     });

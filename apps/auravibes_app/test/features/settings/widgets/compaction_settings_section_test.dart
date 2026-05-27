@@ -39,7 +39,7 @@ void main() {
   });
 
   tearDown(() {
-    settingsController.close();
+    final _ = settingsController.close();
   });
 
   Widget buildSubject() {

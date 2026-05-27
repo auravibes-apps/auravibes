@@ -104,7 +104,7 @@ void main() {
     });
 
     test('getWorkspaceToolByToolId returns tool', () async {
-      await seedTool();
+      final _ = await seedTool();
       final found = await database.workspaceToolsDao.getWorkspaceToolByToolId(
         workspaceId,
         'web_search',
@@ -124,7 +124,7 @@ void main() {
     });
 
     test('setWorkspaceToolEnabled updates existing', () async {
-      await seedTool(toolId: 'existing');
+      final _ = await seedTool(toolId: 'existing');
       final result = await database.workspaceToolsDao.setWorkspaceToolEnabled(
         workspaceId,
         'existing',
@@ -144,7 +144,7 @@ void main() {
     });
 
     test('patchWorkspaceToolConfig updates config', () async {
-      await seedTool(toolId: 'cfg_tool');
+      final _ = await seedTool(toolId: 'cfg_tool');
       final results = await database.workspaceToolsDao.patchWorkspaceToolConfig(
         workspaceId,
         'cfg_tool',
@@ -154,7 +154,7 @@ void main() {
     });
 
     test('deleteWorkspaceToolByToolId deletes by toolId', () async {
-      await seedTool(toolId: 'del_me');
+      final _ = await seedTool(toolId: 'del_me');
       final deleted = await database.workspaceToolsDao
           .deleteWorkspaceToolByToolId(
             workspaceId,
@@ -190,8 +190,8 @@ void main() {
     });
 
     test('getEnabledWorkspaceTools returns only enabled', () async {
-      await seedTool(toolId: 'on', isEnabled: true);
-      await seedTool(toolId: 'off');
+      final _ = await seedTool(toolId: 'on', isEnabled: true);
+      final _ = await seedTool(toolId: 'off');
       final enabled = await database.workspaceToolsDao.getEnabledWorkspaceTools(
         workspaceId,
       );
@@ -254,7 +254,7 @@ void main() {
     });
 
     test('getWorkspaceToolConfigByToolId returns config', () async {
-      await seedTool(toolId: 'cfg2', config: 'abc');
+      final _ = await seedTool(toolId: 'cfg2', config: 'abc');
       final config = await database.workspaceToolsDao
           .getWorkspaceToolConfigByToolId(
             workspaceId,
@@ -264,7 +264,7 @@ void main() {
     });
 
     test('isWorkspaceToolEnabledByToolId returns correct state', () async {
-      await seedTool(toolId: 'chk2', isEnabled: true);
+      final _ = await seedTool(toolId: 'chk2', isEnabled: true);
       expect(
         await database.workspaceToolsDao.isWorkspaceToolEnabledByToolId(
           workspaceId,
@@ -286,8 +286,8 @@ void main() {
         await database.workspaceToolsDao.getWorkspaceToolsCount(workspaceId),
         equals(0),
       );
-      await seedTool(toolId: 'a');
-      await seedTool(toolId: 'b');
+      final _ = await seedTool(toolId: 'a');
+      final _ = await seedTool(toolId: 'b');
       expect(
         await database.workspaceToolsDao.getWorkspaceToolsCount(workspaceId),
         equals(2),
@@ -295,8 +295,8 @@ void main() {
     });
 
     test('getEnabledWorkspaceToolsCount returns correct count', () async {
-      await seedTool(toolId: 'a', isEnabled: true);
-      await seedTool(toolId: 'b');
+      final _ = await seedTool(toolId: 'a', isEnabled: true);
+      final _ = await seedTool(toolId: 'b');
       expect(
         await database.workspaceToolsDao.getEnabledWorkspaceToolsCount(
           workspaceId,

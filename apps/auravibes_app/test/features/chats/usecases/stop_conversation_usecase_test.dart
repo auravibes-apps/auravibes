@@ -47,7 +47,7 @@ void main() {
     test(
       'requests cancellation, clears queue, and stops pending tools',
       () async {
-        container
+        final _ = container
             .read(conversationSendQueueProvider.notifier)
             .enqueue(
               conversationId: 'conversation-1',

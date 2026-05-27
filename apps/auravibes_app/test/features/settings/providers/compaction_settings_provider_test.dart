@@ -232,10 +232,11 @@ void main() {
         (_) async => newSettings.copyWith(updatedAt: DateTime(2026)),
       );
 
-      await container.read(saveWorkspaceCompactionSettingsUsecaseProvider)(
-        workspaceId: testWorkspaceId,
-        settings: newSettings,
-      );
+      final _ =
+          await container.read(saveWorkspaceCompactionSettingsUsecaseProvider)(
+            workspaceId: testWorkspaceId,
+            settings: newSettings,
+          );
 
       verify(
         () => mockRepository.saveOverrides(testWorkspaceId, newSettings),
@@ -296,10 +297,11 @@ void main() {
         () => mockRepository.saveOverrides(testWorkspaceId, valid),
       ).thenAnswer((_) async => valid.copyWith(updatedAt: DateTime(2026)));
 
-      await container.read(saveWorkspaceCompactionSettingsUsecaseProvider)(
-        workspaceId: testWorkspaceId,
-        settings: valid,
-      );
+      final _ =
+          await container.read(saveWorkspaceCompactionSettingsUsecaseProvider)(
+            workspaceId: testWorkspaceId,
+            settings: valid,
+          );
     });
 
     test('accepts valid settings at boundary 100', () async {
@@ -311,10 +313,11 @@ void main() {
         () => mockRepository.saveOverrides(testWorkspaceId, valid),
       ).thenAnswer((_) async => valid.copyWith(updatedAt: DateTime(2026)));
 
-      await container.read(saveWorkspaceCompactionSettingsUsecaseProvider)(
-        workspaceId: testWorkspaceId,
-        settings: valid,
-      );
+      final _ =
+          await container.read(saveWorkspaceCompactionSettingsUsecaseProvider)(
+            workspaceId: testWorkspaceId,
+            settings: valid,
+          );
     });
   });
 
@@ -340,9 +343,10 @@ void main() {
         () => mockRepository.resetOverrides(testWorkspaceId),
       ).thenAnswer((_) async => CompactionSettings.defaults);
 
-      await container.read(resetWorkspaceCompactionSettingsUsecaseProvider)(
-        workspaceId: testWorkspaceId,
-      );
+      final _ =
+          await container.read(resetWorkspaceCompactionSettingsUsecaseProvider)(
+            workspaceId: testWorkspaceId,
+          );
 
       verify(() => mockRepository.resetOverrides(testWorkspaceId)).called(1);
     });

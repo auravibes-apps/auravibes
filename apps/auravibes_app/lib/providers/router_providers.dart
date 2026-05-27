@@ -80,7 +80,7 @@ final routerInformationProvider = Provider<GoRouteInformationProvider>(
 
 final routerPathSegmentsProvider = Provider<List<String>>(
   (ref) {
-    ref.watch(routerProvider);
+    final _ = ref.watch(routerProvider);
     final routeInformationProvider = ref.watch(routerInformationProvider);
     return routeInformationProvider.value.uri.pathSegments;
   },
@@ -88,7 +88,7 @@ final routerPathSegmentsProvider = Provider<List<String>>(
 
 final currentRouteWorkspaceIdProvider = Provider<String?>(
   (ref) {
-    ref.watch(routerProvider);
+    final _ = ref.watch(routerProvider);
     final routeInformationProvider = ref.watch(routerInformationProvider);
     return matchWorkspaceId(routeInformationProvider.value.uri);
   },

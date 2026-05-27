@@ -20,7 +20,7 @@ class _FakeGoRouter implements GoRouter {
 }
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
   group('WorkspaceSwitcher', () {
     late _FakeGoRouter fakeRouter;
@@ -34,7 +34,7 @@ void main() {
         ],
       );
       // Keep provider alive during async timer-based tests.
-      container.listen(workspaceSwitcherProvider, (_, _) {});
+      final _ = container.listen(workspaceSwitcherProvider, (_, _) {});
     });
 
     tearDown(() => container.dispose());
@@ -65,7 +65,7 @@ void main() {
       final notifier = container.read(workspaceSwitcherProvider.notifier);
       final states = <WorkspaceSwitchState>[];
 
-      container.listen(
+      final _ = container.listen(
         workspaceSwitcherProvider,
         (previous, next) => states.add(next),
         fireImmediately: true,

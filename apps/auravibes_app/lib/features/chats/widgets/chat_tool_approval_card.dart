@@ -425,7 +425,7 @@ class _ConfirmationButtons extends ConsumerWidget {
     } on Exception catch (error) {
       debugPrint('Tool approval action failed: $error');
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      final _ = ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('$errorMessage $error')),
       );
     }

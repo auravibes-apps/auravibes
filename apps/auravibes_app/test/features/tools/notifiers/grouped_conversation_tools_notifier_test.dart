@@ -172,7 +172,7 @@ void main() {
             workspaceId: 'workspace-1',
           ).notifier,
         );
-        await container.read(
+        final _ = await container.read(
           groupedConversationToolsProvider(
             workspaceId: 'workspace-1',
           ).future,
@@ -197,7 +197,7 @@ void main() {
             conversationId: 'conv-1',
           ).notifier,
         );
-        await container.read(
+        final _ = await container.read(
           groupedConversationToolsProvider(
             workspaceId: 'workspace-1',
             conversationId: 'conv-1',

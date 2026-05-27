@@ -151,7 +151,7 @@ class GroupedConversationToolsNotifier
 
     // Toggle each tool in the group
     for (final toolState in group.tools) {
-      await conversationNotifier.setToolEnabled(
+      final _ = await conversationNotifier.setToolEnabled(
         toolState.tool.id,
         isEnabled: enabled,
       );

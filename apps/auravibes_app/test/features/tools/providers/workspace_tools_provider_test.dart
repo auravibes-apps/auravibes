@@ -223,12 +223,12 @@ void main() {
     test('setToolEnabled updates tool in state', () async {
       repository.tools = [_tool(id: 't1')];
 
-      container.listen(
+      final _ = container.listen(
         workspaceToolsProvider('ws1'),
         (_, _) {},
         fireImmediately: true,
       );
-      await container.read(workspaceToolsProvider('ws1').future);
+      final _ = await container.read(workspaceToolsProvider('ws1').future);
 
       await container
           .read(workspaceToolsProvider('ws1').notifier)
@@ -243,12 +243,12 @@ void main() {
     test('removeToolById removes tool from state', () async {
       repository.tools = [_tool(id: 't1'), _tool(id: 't2')];
 
-      container.listen(
+      final _ = container.listen(
         workspaceToolsProvider('ws1'),
         (_, _) {},
         fireImmediately: true,
       );
-      await container.read(workspaceToolsProvider('ws1').future);
+      final _ = await container.read(workspaceToolsProvider('ws1').future);
 
       final success = await container
           .read(workspaceToolsProvider('ws1').notifier)
@@ -261,12 +261,12 @@ void main() {
     test('setToolPermissionMode updates permission', () async {
       repository.tools = [_tool(id: 't1')];
 
-      container.listen(
+      final _ = container.listen(
         workspaceToolsProvider('ws1'),
         (_, _) {},
         fireImmediately: true,
       );
-      await container.read(workspaceToolsProvider('ws1').future);
+      final _ = await container.read(workspaceToolsProvider('ws1').future);
 
       await container
           .read(workspaceToolsProvider('ws1').notifier)
@@ -284,12 +284,12 @@ void main() {
     test('addTool enables tool and invalidates self', () async {
       repository.tools = [_tool(id: 't1', isEnabled: false)];
 
-      container.listen(
+      final _ = container.listen(
         workspaceToolsProvider('ws1'),
         (_, _) {},
         fireImmediately: true,
       );
-      await container.read(workspaceToolsProvider('ws1').future);
+      final _ = await container.read(workspaceToolsProvider('ws1').future);
 
       await container
           .read(workspaceToolsProvider('ws1').notifier)
@@ -301,12 +301,12 @@ void main() {
     test('updateToolConfig patches config and replaces tool', () async {
       repository.tools = [_tool(id: 't1')];
 
-      container.listen(
+      final _ = container.listen(
         workspaceToolsProvider('ws1'),
         (_, _) {},
         fireImmediately: true,
       );
-      await container.read(workspaceToolsProvider('ws1').future);
+      final _ = await container.read(workspaceToolsProvider('ws1').future);
 
       await container
           .read(workspaceToolsProvider('ws1').notifier)
@@ -327,12 +327,12 @@ void main() {
       );
       addTearDown(failContainer.dispose);
 
-      failContainer.listen(
+      final _ = failContainer.listen(
         workspaceToolsProvider('ws1'),
         (_, _) {},
         fireImmediately: true,
       );
-      await failContainer.read(workspaceToolsProvider('ws1').future);
+      final _ = await failContainer.read(workspaceToolsProvider('ws1').future);
 
       final success = await failContainer
           .read(workspaceToolsProvider('ws1').notifier)
@@ -369,7 +369,7 @@ void main() {
       );
       addTearDown(container2.dispose);
 
-      await container2.read(workspaceToolsProvider('ws1').future);
+      final _ = await container2.read(workspaceToolsProvider('ws1').future);
       final result = container2.read(workspaceToolRowProvider('ws1'));
       expect(result, isNotNull);
       expect(result!.id, 't1');

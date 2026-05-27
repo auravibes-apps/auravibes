@@ -185,7 +185,7 @@ void main() {
         fireImmediately: true,
       );
 
-      await completer.future;
+      final _ = await completer.future;
 
       final notifier = container.read(
         conversationChatProvider('ws-1').notifier,
@@ -227,7 +227,7 @@ void main() {
         fireImmediately: true,
       );
 
-      await completer.future;
+      final _ = await completer.future;
 
       final notifier = container.read(
         conversationChatProvider('ws-1').notifier,
@@ -262,7 +262,7 @@ void main() {
         fireImmediately: true,
       );
 
-      await completer.future;
+      final _ = await completer.future;
 
       final notifier = container.read(
         conversationChatProvider('ws-other').notifier,

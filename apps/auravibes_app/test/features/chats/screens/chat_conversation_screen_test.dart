@@ -135,7 +135,7 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.byType(AppErrorWidget), findsOneWidget);
   });

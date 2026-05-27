@@ -121,7 +121,7 @@ void main() {
     });
 
     test('getMessagesByConversation returns ordered messages', () async {
-      await database.messageDao.insertMessage(
+      final _ = await database.messageDao.insertMessage(
         MessagesCompanion.insert(
           conversationId: conversationId,
           content: 'First',
@@ -130,7 +130,7 @@ void main() {
           status: MessageTableStatus.sent,
         ),
       );
-      await database.messageDao.insertMessage(
+      final _ = await database.messageDao.insertMessage(
         MessagesCompanion.insert(
           conversationId: conversationId,
           content: 'Second',
@@ -149,7 +149,7 @@ void main() {
 
     test('getMessagesByConversationPaginated paginates correctly', () async {
       for (var i = 0; i < 5; i++) {
-        await database.messageDao.insertMessage(
+        final _ = await database.messageDao.insertMessage(
           MessagesCompanion.insert(
             conversationId: conversationId,
             content: 'Msg $i',
@@ -168,7 +168,7 @@ void main() {
     });
 
     test('getMessagesByType filters by type', () async {
-      await database.messageDao.insertMessage(
+      final _ = await database.messageDao.insertMessage(
         MessagesCompanion.insert(
           conversationId: conversationId,
           content: 'Text msg',
@@ -177,7 +177,7 @@ void main() {
           status: MessageTableStatus.sent,
         ),
       );
-      await database.messageDao.insertMessage(
+      final _ = await database.messageDao.insertMessage(
         MessagesCompanion.insert(
           conversationId: conversationId,
           content: 'System msg',
@@ -195,7 +195,7 @@ void main() {
     });
 
     test('getUserMessages returns only user messages', () async {
-      await database.messageDao.insertMessage(
+      final _ = await database.messageDao.insertMessage(
         MessagesCompanion.insert(
           conversationId: conversationId,
           content: 'User',
@@ -204,7 +204,7 @@ void main() {
           status: MessageTableStatus.sent,
         ),
       );
-      await database.messageDao.insertMessage(
+      final _ = await database.messageDao.insertMessage(
         MessagesCompanion.insert(
           conversationId: conversationId,
           content: 'AI',
@@ -221,7 +221,7 @@ void main() {
     });
 
     test('getSystemMessages returns only non-user messages', () async {
-      await database.messageDao.insertMessage(
+      final _ = await database.messageDao.insertMessage(
         MessagesCompanion.insert(
           conversationId: conversationId,
           content: 'User',
@@ -230,7 +230,7 @@ void main() {
           status: MessageTableStatus.sent,
         ),
       );
-      await database.messageDao.insertMessage(
+      final _ = await database.messageDao.insertMessage(
         MessagesCompanion.insert(
           conversationId: conversationId,
           content: 'AI',
@@ -251,7 +251,7 @@ void main() {
         await database.messageDao.getMessageCountByConversation(conversationId),
         equals(0),
       );
-      await database.messageDao.insertMessage(
+      final _ = await database.messageDao.insertMessage(
         MessagesCompanion.insert(
           conversationId: conversationId,
           content: 'Msg',
@@ -281,7 +281,7 @@ void main() {
     });
 
     test('getMessagesByStatus filters by status', () async {
-      await database.messageDao.insertMessage(
+      final _ = await database.messageDao.insertMessage(
         MessagesCompanion.insert(
           conversationId: conversationId,
           content: 'Sent',
@@ -290,7 +290,7 @@ void main() {
           status: MessageTableStatus.sent,
         ),
       );
-      await database.messageDao.insertMessage(
+      final _ = await database.messageDao.insertMessage(
         MessagesCompanion.insert(
           conversationId: conversationId,
           content: 'Error',

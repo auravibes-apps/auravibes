@@ -45,7 +45,7 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
       expect(find.byKey(key), findsOneWidget);
     });
 
@@ -70,7 +70,7 @@ void main() {
             ),
           ),
         );
-        await tester.pumpAndSettle();
+        final _ = await tester.pumpAndSettle();
 
         expect(find.byType(ModelLogo), findsOneWidget);
         expect(find.byType(SvgPicture), findsOneWidget);

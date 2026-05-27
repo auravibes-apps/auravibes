@@ -221,7 +221,7 @@ void main() {
       ).thenThrow(Exception('API error'));
 
       try {
-        await usecase(
+        final _ = await usecase(
           conversationId: 'conv-1',
           trigger: CompactionTrigger.manual,
         );
@@ -229,7 +229,7 @@ void main() {
         // expected
       }
 
-      verifyNever(() => mockMessageRepo.createMessage(any()));
+      final _ = verifyNever(() => mockMessageRepo.createMessage(any()));
     });
 
     test('manual failure leaves state unchanged', () async {
@@ -294,7 +294,9 @@ void main() {
       );
 
       verify(() => mockMessageRepo.createMessage(any())).called(1);
-      verifyNever(() => mockConversationRepo.patchConversation(any(), any()));
+      final _ = verifyNever(
+        () => mockConversationRepo.patchConversation(any(), any()),
+      );
       expect(result.status, CompactionExecutionStatus.success);
     });
   });
@@ -443,7 +445,7 @@ void main() {
       ).thenThrow(Exception('API error'));
 
       try {
-        await usecase(
+        final _ = await usecase(
           conversationId: 'conv-1',
           trigger: CompactionTrigger.auto,
         );
@@ -486,7 +488,7 @@ void main() {
         ),
       );
 
-      await usecase(
+      final _ = await usecase(
         conversationId: 'conv-1',
         trigger: CompactionTrigger.manual,
       );
@@ -538,7 +540,7 @@ void main() {
           ),
         );
 
-        await usecase(
+        final _ = await usecase(
           conversationId: 'conv-1',
           trigger: CompactionTrigger.manual,
         );

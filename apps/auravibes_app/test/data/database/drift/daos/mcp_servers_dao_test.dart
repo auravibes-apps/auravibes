@@ -74,10 +74,10 @@ void main() {
     });
 
     test('getMcpServersForWorkspace returns servers for workspace', () async {
-      await database.mcpServersDao.insertMcpServer(
+      final _ = await database.mcpServersDao.insertMcpServer(
         _testServer(workspaceId: workspaceId, name: 'Server 1'),
       );
-      await database.mcpServersDao.insertMcpServer(
+      final _ = await database.mcpServersDao.insertMcpServer(
         _testServer(workspaceId: workspaceId, name: 'Server 2'),
       );
       final servers = await database.mcpServersDao.getMcpServersForWorkspace(
@@ -89,7 +89,7 @@ void main() {
     test(
       'getMcpServersForWorkspace returns empty for other workspace',
       () async {
-        await database.mcpServersDao.insertMcpServer(
+        final _ = await database.mcpServersDao.insertMcpServer(
           _testServer(workspaceId: workspaceId),
         );
         final servers = await database.mcpServersDao.getMcpServersForWorkspace(
@@ -100,10 +100,10 @@ void main() {
     );
 
     test('getEnabledMcpServersForWorkspace returns only enabled', () async {
-      await database.mcpServersDao.insertMcpServer(
+      final _ = await database.mcpServersDao.insertMcpServer(
         _testServer(workspaceId: workspaceId, name: 'Enabled'),
       );
-      await database.mcpServersDao.insertMcpServer(
+      final _ = await database.mcpServersDao.insertMcpServer(
         _testServer(
           workspaceId: workspaceId,
           name: 'Disabled',

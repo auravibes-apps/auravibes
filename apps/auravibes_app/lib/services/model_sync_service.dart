@@ -102,7 +102,7 @@ class ModelSyncService {
 
       // Sync providers (clear and replace for full sync)
       if (fullSync) {
-        await repository.deleteAllData();
+        final _ = await repository.deleteAllData();
         providersRemoved = localProviders.length;
       }
 

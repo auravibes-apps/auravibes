@@ -49,7 +49,7 @@ class StopConversationUsecase {
     }).toList();
     if (!didUpdate) return;
 
-    await _messageRepository.patchMessage(
+    final _ = await _messageRepository.patchMessage(
       latestAssistantMessage.id,
       MessagePatch(
         metadata: metadata.copyWith(toolCalls: updatedToolCalls),

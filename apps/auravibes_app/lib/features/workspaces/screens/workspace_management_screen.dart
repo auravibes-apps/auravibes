@@ -95,7 +95,7 @@ class WorkspaceManagementScreen extends HookConsumerWidget {
     WidgetRef ref,
     String name,
   ) async {
-    await createWorkspaceMutation.run(ref, (transaction) async {
+    final _ = await createWorkspaceMutation.run(ref, (transaction) async {
       final usecase = ref.read(createWorkspaceUseCaseProvider);
       return usecase.call(name: name);
     });
@@ -119,7 +119,7 @@ class WorkspaceManagementScreen extends HookConsumerWidget {
     String id,
     String name,
   ) async {
-    await editWorkspaceMutation.run(ref, (transaction) async {
+    final _ = await editWorkspaceMutation.run(ref, (transaction) async {
       final usecase = ref.read(editWorkspaceUseCaseProvider);
       return usecase.call(id: id, name: name);
     });
@@ -198,7 +198,7 @@ class WorkspaceManagementScreen extends HookConsumerWidget {
       debugPrint('Workspace management unexpected error: $error');
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
+    final _ = ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
   }

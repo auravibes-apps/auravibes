@@ -81,7 +81,7 @@ void main() {
     });
 
     test('getByWorkspaceId returns settings after upsert', () async {
-      await database.workspaceCompactionSettingsDao.upsert(
+      final _ = await database.workspaceCompactionSettingsDao.upsert(
         workspaceId,
         const WorkspaceCompactionSettingsCompanion(
           usagePercentageThreshold: Value(60),
@@ -112,14 +112,14 @@ void main() {
         }
       });
 
-      await database.workspaceCompactionSettingsDao.upsert(
+      final _ = await database.workspaceCompactionSettingsDao.upsert(
         workspaceId,
         const WorkspaceCompactionSettingsCompanion(
           usagePercentageThreshold: Value(40),
         ),
       );
 
-      await completer.future.timeout(
+      final _ = await completer.future.timeout(
         const Duration(seconds: 5),
         onTimeout: () => fail('Stream did not emit updated value'),
       );
@@ -128,7 +128,7 @@ void main() {
     });
 
     test('watchByWorkspaceId emits row when settings exist', () async {
-      await database.workspaceCompactionSettingsDao.upsert(
+      final _ = await database.workspaceCompactionSettingsDao.upsert(
         workspaceId,
         const WorkspaceCompactionSettingsCompanion(
           usagePercentageThreshold: Value(70),
@@ -153,7 +153,7 @@ void main() {
     });
 
     test('deleteByWorkspaceId removes settings', () async {
-      await database.workspaceCompactionSettingsDao.upsert(
+      final _ = await database.workspaceCompactionSettingsDao.upsert(
         workspaceId,
         const WorkspaceCompactionSettingsCompanion(
           usagePercentageThreshold: Value(80),

@@ -59,7 +59,7 @@ void main() {
     });
 
     test('upsertConversationTool updates on conflict', () async {
-      await database.conversationToolsDao.upsertConversationTool(
+      final _ = await database.conversationToolsDao.upsertConversationTool(
         conversationId,
         toolId,
         isEnabled: true,
@@ -77,7 +77,7 @@ void main() {
     });
 
     test('getConversationTool returns tool', () async {
-      await database.conversationToolsDao.upsertConversationTool(
+      final _ = await database.conversationToolsDao.upsertConversationTool(
         conversationId,
         toolId,
         isEnabled: true,
@@ -99,7 +99,7 @@ void main() {
     });
 
     test('getConversationTools returns all tools for conversation', () async {
-      await database.conversationToolsDao.upsertConversationTool(
+      final _ = await database.conversationToolsDao.upsertConversationTool(
         conversationId,
         toolId,
         isEnabled: true,
@@ -122,7 +122,7 @@ void main() {
     });
 
     test('setConversationToolEnabled updates when exists', () async {
-      await database.conversationToolsDao.upsertConversationTool(
+      final _ = await database.conversationToolsDao.upsertConversationTool(
         conversationId,
         toolId,
         isEnabled: true,
@@ -148,7 +148,7 @@ void main() {
     });
 
     test('setConversationToolPermission updates when exists', () async {
-      await database.conversationToolsDao.upsertConversationTool(
+      final _ = await database.conversationToolsDao.upsertConversationTool(
         conversationId,
         toolId,
         isEnabled: true,
@@ -164,7 +164,7 @@ void main() {
     });
 
     test('deleteConversationTool removes tool', () async {
-      await database.conversationToolsDao.upsertConversationTool(
+      final _ = await database.conversationToolsDao.upsertConversationTool(
         conversationId,
         toolId,
         isEnabled: true,
@@ -204,7 +204,7 @@ void main() {
     });
 
     test('isConversationToolEnabled returns false when disabled', () async {
-      await database.conversationToolsDao.upsertConversationTool(
+      final _ = await database.conversationToolsDao.upsertConversationTool(
         conversationId,
         toolId,
         isEnabled: false,
@@ -225,7 +225,7 @@ void main() {
         ),
         equals(0),
       );
-      await database.conversationToolsDao.upsertConversationTool(
+      final _ = await database.conversationToolsDao.upsertConversationTool(
         conversationId,
         toolId,
         isEnabled: true,
@@ -240,7 +240,7 @@ void main() {
     });
 
     test('removeToolsForConversation removes all', () async {
-      await database.conversationToolsDao.upsertConversationTool(
+      final _ = await database.conversationToolsDao.upsertConversationTool(
         conversationId,
         toolId,
         isEnabled: true,
@@ -265,7 +265,7 @@ void main() {
           title: 'Conv2',
         ),
       );
-      await database.conversationToolsDao.upsertConversationTool(
+      final _ = await database.conversationToolsDao.upsertConversationTool(
         conversationId,
         toolId,
         isEnabled: false,
@@ -285,13 +285,13 @@ void main() {
     });
 
     test('toggleConversationTool toggles state', () async {
-      await database.conversationToolsDao.upsertConversationTool(
+      final _ = await database.conversationToolsDao.upsertConversationTool(
         conversationId,
         toolId,
         isEnabled: true,
         permission: PermissionAccess.ask,
       );
-      await database.conversationToolsDao.toggleConversationTool(
+      final _ = await database.conversationToolsDao.toggleConversationTool(
         conversationId,
         toolId,
       );
@@ -310,7 +310,7 @@ void main() {
         ),
         isFalse,
       );
-      await database.conversationToolsDao.upsertConversationTool(
+      final _ = await database.conversationToolsDao.upsertConversationTool(
         conversationId,
         toolId,
         isEnabled: false,
@@ -326,7 +326,7 @@ void main() {
     });
 
     test('getDisabledConversationTools returns only disabled', () async {
-      await database.conversationToolsDao.upsertConversationTool(
+      final _ = await database.conversationToolsDao.upsertConversationTool(
         conversationId,
         toolId,
         isEnabled: false,
@@ -340,7 +340,7 @@ void main() {
     });
 
     test('getDisabledConversationToolsCount returns count', () async {
-      await database.conversationToolsDao.upsertConversationTool(
+      final _ = await database.conversationToolsDao.upsertConversationTool(
         conversationId,
         toolId,
         isEnabled: false,
@@ -382,7 +382,7 @@ void main() {
     });
 
     test('enableConversationTool deletes override', () async {
-      await database.conversationToolsDao.upsertConversationTool(
+      final _ = await database.conversationToolsDao.upsertConversationTool(
         conversationId,
         toolId,
         isEnabled: false,
@@ -397,7 +397,7 @@ void main() {
     });
 
     test('removeDisabledToolsForConversation removes all', () async {
-      await database.conversationToolsDao.upsertConversationTool(
+      final _ = await database.conversationToolsDao.upsertConversationTool(
         conversationId,
         toolId,
         isEnabled: false,

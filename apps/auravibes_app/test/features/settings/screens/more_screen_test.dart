@@ -12,7 +12,7 @@ class _FakeGoRouter implements GoRouter {
 }
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
   Widget _buildScreen({required String workspaceId}) {
     return EasyLocalization(
@@ -42,7 +42,7 @@ void main() {
 
   testWidgets('renders title, tiles, and icons', (tester) async {
     await tester.pumpWidget(_buildScreen(workspaceId: 'ws-1'));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('More'), findsOneWidget);
     expect(find.text('Workspaces'), findsOneWidget);

@@ -209,7 +209,7 @@ class _SidebarConversationTileState
     );
 
     if (confirmed ?? false) {
-      await ref
+      final _ = await ref
           .read(conversationRepositoryProvider)
           .deleteConversation(widget.chat.id);
     }

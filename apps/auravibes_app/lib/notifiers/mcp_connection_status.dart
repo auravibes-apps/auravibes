@@ -270,7 +270,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
 
     // Delete from database (cascades to tools group and tools)
     final repository = ref.read(mcpServersRepositoryProvider);
-    await repository.deleteMcpServer(serverId);
+    final _ = await repository.deleteMcpServer(serverId);
   }
 
   /// Reconnect to a specific MCP server.

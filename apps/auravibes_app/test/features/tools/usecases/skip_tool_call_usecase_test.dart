@@ -86,10 +86,10 @@ void main() {
 
       await usecase.call(toolCallId: toolCallId, messageId: messageId);
 
-      verifyNever(
+      final _ = verifyNever(
         messageRepository.patchMessage(any, any),
       );
-      verifyNever(
+      final _ = verifyNever(
         resumeConversationIfReadyUsecase.call(messageId: anyNamed('messageId')),
       );
     });

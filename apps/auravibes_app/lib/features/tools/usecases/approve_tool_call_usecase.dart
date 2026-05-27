@@ -66,11 +66,12 @@ class ApproveToolCallUsecase {
     if (level == ToolGrantLevel.conversation) {
       final permissionTableId = await _resolvePermissionTableId(resolvedTool);
       if (permissionTableId != null) {
-        await _conversationToolsRepository.setConversationToolPermission(
-          message.conversationId,
-          permissionTableId,
-          permissionMode: ToolPermissionMode.alwaysAllow,
-        );
+        final _ = await _conversationToolsRepository
+            .setConversationToolPermission(
+              message.conversationId,
+              permissionTableId,
+              permissionMode: ToolPermissionMode.alwaysAllow,
+            );
       }
     }
 
@@ -146,7 +147,7 @@ class ApproveToolCallUsecase {
       );
     }).toList();
 
-    await _messageRepository.patchMessage(
+    final _ = await _messageRepository.patchMessage(
       message.id,
       MessagePatch(
         metadata: metadata.copyWith(toolCalls: updatedToolCalls),

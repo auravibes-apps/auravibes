@@ -38,7 +38,7 @@ class DeleteWorkspaceUseCase {
       throw const WorkspaceDeleteActiveException();
     }
 
-    await _repository.deleteWorkspace(id);
+    final _ = await _repository.deleteWorkspace(id);
   }
 }
 

@@ -193,7 +193,7 @@ class CompactConversationUsecase {
       ),
     );
 
-    await messageRepository.patchMessage(
+    final _ = await messageRepository.patchMessage(
       created.id,
       const MessagePatch(status: MessageStatus.sent),
     );
@@ -212,7 +212,7 @@ class CompactConversationUsecase {
       ),
     );
 
-    await messageRepository.patchMessage(
+    final _ = await messageRepository.patchMessage(
       created.id,
       const MessagePatch(status: MessageStatus.error),
     );

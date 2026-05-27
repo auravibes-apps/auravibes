@@ -15,7 +15,7 @@ Future<void> main() async {
   F.appFlavor = Flavor.values.firstWhere(
     (element) => element.name == appFlavor,
   );
-  WidgetsFlutterBinding.ensureInitialized();
+  final _ = WidgetsFlutterBinding.ensureInitialized();
   AppLogging.configure(enabled: F.appFlavor != Flavor.prod);
   await MainLocale.ensureInitialized();
 
@@ -31,7 +31,7 @@ Future<void> main() async {
 
   // Load defaults after the database connection is established
   await appDatabase.initializeWithDefaults();
-  container.read(modelSyncServiceProvider);
+  final _ = container.read(modelSyncServiceProvider);
 
   runApp(
     UncontrolledProviderScope(

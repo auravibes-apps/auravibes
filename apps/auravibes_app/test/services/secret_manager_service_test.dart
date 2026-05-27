@@ -27,10 +27,10 @@ void main() {
         mockStorage.write(key: anyNamed('key'), value: anyNamed('value')),
       ).thenAnswer((_) async {});
 
-      await manager.getOrCreateSecretKey();
+      final _ = await manager.getOrCreateSecretKey();
       manager.clearCache();
 
-      verifyNever(mockStorage.delete(key: anyNamed('key')));
+      final _ = verifyNever(mockStorage.delete(key: anyNamed('key')));
     });
 
     test('deleteKey removes from storage and clears cache', () async {
@@ -69,7 +69,7 @@ void main() {
 
       expect(bytes, hasLength(32));
       verify(mockStorage.read(key: 'app_encryption_secret_key')).called(1);
-      verifyNever(
+      final _ = verifyNever(
         mockStorage.write(
           key: anyNamed('key'),
           value: anyNamed('value'),

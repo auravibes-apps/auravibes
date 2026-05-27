@@ -264,7 +264,9 @@ void main() {
         );
       final tool = UrlTool(urlService: UrlService(dio: dio));
 
-      await tool.runner('{"url": "https://1.1.1.1", "method": "POST"}').value;
+      final _ = await tool
+          .runner('{"url": "https://1.1.1.1", "method": "POST"}')
+          .value;
 
       expect(sentMethod, 'POST');
     });
@@ -281,7 +283,9 @@ void main() {
         );
       final tool = UrlTool(urlService: UrlService(dio: dio));
 
-      await tool.runner('{"url": "https://1.1.1.1", "method": "PUT"}').value;
+      final _ = await tool
+          .runner('{"url": "https://1.1.1.1", "method": "PUT"}')
+          .value;
 
       expect(sentMethod, 'PUT');
     });
@@ -298,7 +302,9 @@ void main() {
         );
       final tool = UrlTool(urlService: UrlService(dio: dio));
 
-      await tool.runner('{"url": "https://1.1.1.1", "method": "DELETE"}').value;
+      final _ = await tool
+          .runner('{"url": "https://1.1.1.1", "method": "DELETE"}')
+          .value;
 
       expect(sentMethod, 'DELETE');
     });

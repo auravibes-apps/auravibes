@@ -88,7 +88,7 @@ void main() {
           ),
         );
       });
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
       expect(find.byType(NewChatScreen), findsOneWidget);
       expect(find.byType(AuraScreen), findsOneWidget);
       expect(find.byType(ChatInputWidget), findsOneWidget);

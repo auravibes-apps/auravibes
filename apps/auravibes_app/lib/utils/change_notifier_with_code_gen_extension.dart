@@ -4,8 +4,8 @@ import 'package:riverpod/riverpod.dart';
 extension ChangeNotifierWithCodeGenExtension on Ref {
   T listenAndDisposeChangeNotifier<T extends ChangeNotifier>(T notifier) {
     notifier.addListener(notifyListeners);
-    onDispose(() => notifier.removeListener(notifyListeners));
-    onDispose(notifier.dispose);
+    final _ = onDispose(() => notifier.removeListener(notifyListeners));
+    final _ = onDispose(notifier.dispose);
     return notifier;
   }
 }

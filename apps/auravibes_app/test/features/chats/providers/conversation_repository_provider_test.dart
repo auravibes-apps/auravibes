@@ -19,7 +19,7 @@ QueryExecutor _testConnection() {
 }
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
   late AppDatabase testDatabase;
   late ProviderContainer container;

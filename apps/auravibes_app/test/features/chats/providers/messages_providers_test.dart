@@ -193,7 +193,11 @@ void main() {
     });
 
     test('returns empty list when no messages', () async {
-      container.listen(chatMessagesProvider, (_, _) {}, fireImmediately: true);
+      final _ = container.listen(
+        chatMessagesProvider,
+        (_, _) {},
+        fireImmediately: true,
+      );
       repository.emit([]);
       await Future<void>.delayed(Duration.zero);
 
@@ -201,7 +205,11 @@ void main() {
     });
 
     test('returns message ids from messages', () async {
-      container.listen(chatMessagesProvider, (_, _) {}, fireImmediately: true);
+      final _ = container.listen(
+        chatMessagesProvider,
+        (_, _) {},
+        fireImmediately: true,
+      );
       repository.emit([
         _message(id: 'm1', content: 'hi', isUser: true),
         _message(id: 'm2', content: 'hello', isUser: false),
@@ -232,7 +240,11 @@ void main() {
     });
 
     test('returns false when message is not streaming', () async {
-      container.listen(chatMessagesProvider, (_, _) {}, fireImmediately: true);
+      final _ = container.listen(
+        chatMessagesProvider,
+        (_, _) {},
+        fireImmediately: true,
+      );
       repository.emit([_message(id: 'm1', content: 'hi', isUser: true)]);
       await Future<void>.delayed(Duration.zero);
 
@@ -292,7 +304,11 @@ void main() {
     });
 
     test('returns 0 when no messages', () async {
-      container.listen(chatMessagesProvider, (_, _) {}, fireImmediately: true);
+      final _ = container.listen(
+        chatMessagesProvider,
+        (_, _) {},
+        fireImmediately: true,
+      );
       repository.emit([]);
       await Future<void>.delayed(Duration.zero);
 
@@ -300,7 +316,11 @@ void main() {
     });
 
     test('returns 0 when only user messages exist', () async {
-      container.listen(chatMessagesProvider, (_, _) {}, fireImmediately: true);
+      final _ = container.listen(
+        chatMessagesProvider,
+        (_, _) {},
+        fireImmediately: true,
+      );
       repository.emit([_message(id: 'm1', content: 'hi', isUser: true)]);
       await Future<void>.delayed(Duration.zero);
 
@@ -308,7 +328,11 @@ void main() {
     });
 
     test('returns metadata tokens from latest assistant message', () async {
-      container.listen(chatMessagesProvider, (_, _) {}, fireImmediately: true);
+      final _ = container.listen(
+        chatMessagesProvider,
+        (_, _) {},
+        fireImmediately: true,
+      );
       repository.emit([
         _message(id: 'm1', content: 'hi', isUser: true),
         _message(

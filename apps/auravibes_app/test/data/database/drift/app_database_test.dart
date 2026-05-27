@@ -110,7 +110,7 @@ void main() {
 
     test('migration onCreate creates all tables', () async {
       final strategy = database.migration;
-      await database.customSelect('SELECT 1').getSingle();
+      final _ = await database.customSelect('SELECT 1').getSingle();
       expect(strategy, isNotNull);
     });
 
@@ -137,7 +137,7 @@ void main() {
     });
 
     test('can insert workspace and query back', () async {
-      await database
+      final _ = await database
           .into(database.workspaces)
           .insert(
             WorkspacesCompanion.insert(
@@ -153,7 +153,7 @@ void main() {
     });
 
     test('can insert multiple workspaces', () async {
-      await database
+      final _ = await database
           .into(database.workspaces)
           .insert(
             WorkspacesCompanion.insert(
@@ -161,7 +161,7 @@ void main() {
               type: WorkspaceType.local,
             ),
           );
-      await database
+      final _ = await database
           .into(database.workspaces)
           .insert(
             WorkspacesCompanion.insert(
@@ -177,7 +177,7 @@ void main() {
     test(
       'initializeWithDefaults after manual insert does not add another',
       () async {
-        await database
+        final _ = await database
             .into(database.workspaces)
             .insert(
               WorkspacesCompanion.insert(
@@ -195,7 +195,7 @@ void main() {
     );
 
     test('getDatabaseStats with multiple workspaces', () async {
-      await database
+      final _ = await database
           .into(database.workspaces)
           .insert(
             WorkspacesCompanion.insert(
@@ -203,7 +203,7 @@ void main() {
               type: WorkspaceType.local,
             ),
           );
-      await database
+      final _ = await database
           .into(database.workspaces)
           .insert(
             WorkspacesCompanion.insert(

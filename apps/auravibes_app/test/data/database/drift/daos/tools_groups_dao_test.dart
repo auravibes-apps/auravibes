@@ -66,14 +66,14 @@ void main() {
     });
 
     test('getToolsGroupsForWorkspace returns groups for workspace', () async {
-      await database.toolsGroupsDao.insertToolsGroup(
+      final _ = await database.toolsGroupsDao.insertToolsGroup(
         ToolsGroupsCompanion.insert(
           workspaceId: workspaceId,
           name: 'G1',
           permissions: PermissionAccess.ask,
         ),
       );
-      await database.toolsGroupsDao.insertToolsGroup(
+      final _ = await database.toolsGroupsDao.insertToolsGroup(
         ToolsGroupsCompanion.insert(
           workspaceId: workspaceId,
           name: 'G2',
@@ -89,7 +89,7 @@ void main() {
     test(
       'getToolsGroupsForWorkspace returns empty for other workspace',
       () async {
-        await database.toolsGroupsDao.insertToolsGroup(
+        final _ = await database.toolsGroupsDao.insertToolsGroup(
           ToolsGroupsCompanion.insert(
             workspaceId: workspaceId,
             name: 'G1',
@@ -113,7 +113,7 @@ void main() {
           authenticationType: const McpAuthenticationType.none(),
         ),
       );
-      await database.toolsGroupsDao.insertToolsGroup(
+      final _ = await database.toolsGroupsDao.insertToolsGroup(
         ToolsGroupsCompanion.insert(
           workspaceId: workspaceId,
           mcpServerId: Value(server.id),

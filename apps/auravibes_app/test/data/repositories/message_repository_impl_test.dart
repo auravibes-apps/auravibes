@@ -216,7 +216,7 @@ void main() {
     test('getMessageCountByConversation returns correct count', () async {
       expect(await repository.getMessageCountByConversation('conv-1'), 0);
 
-      await repository.createMessage(
+      final _ = await repository.createMessage(
         const MessageToCreate(
           conversationId: 'conv-1',
           content: 'msg1',
@@ -225,7 +225,7 @@ void main() {
           status: MessageStatus.sending,
         ),
       );
-      await repository.createMessage(
+      final _ = await repository.createMessage(
         const MessageToCreate(
           conversationId: 'conv-1',
           content: 'msg2',
@@ -268,7 +268,7 @@ void main() {
 
     test('getMessagesByConversationPaginated limits results', () async {
       for (var i = 0; i < 5; i++) {
-        await repository.createMessage(
+        final _ = await repository.createMessage(
           const MessageToCreate(
             conversationId: 'conv-1',
             content: 'msg0',
@@ -288,7 +288,7 @@ void main() {
     });
 
     test('getMessagesByType filters correctly', () async {
-      await repository.createMessage(
+      final _ = await repository.createMessage(
         const MessageToCreate(
           conversationId: 'conv-1',
           content: 'text msg',
@@ -312,7 +312,7 @@ void main() {
     });
 
     test('getMessagesByStatus filters correctly', () async {
-      await repository.createMessage(
+      final _ = await repository.createMessage(
         const MessageToCreate(
           conversationId: 'conv-1',
           content: 'sent msg',
@@ -364,7 +364,7 @@ void main() {
     });
 
     test('getUserMessages returns only user messages', () async {
-      await repository.createMessage(
+      final _ = await repository.createMessage(
         const MessageToCreate(
           conversationId: 'conv-1',
           content: 'user msg',
@@ -373,7 +373,7 @@ void main() {
           status: MessageStatus.sending,
         ),
       );
-      await repository.createMessage(
+      final _ = await repository.createMessage(
         const MessageToCreate(
           conversationId: 'conv-1',
           content: 'ai msg',
@@ -389,7 +389,7 @@ void main() {
     });
 
     test('getSystemMessages returns only non-user messages', () async {
-      await repository.createMessage(
+      final _ = await repository.createMessage(
         const MessageToCreate(
           conversationId: 'conv-1',
           content: 'user msg',
@@ -398,7 +398,7 @@ void main() {
           status: MessageStatus.sending,
         ),
       );
-      await repository.createMessage(
+      final _ = await repository.createMessage(
         const MessageToCreate(
           conversationId: 'conv-1',
           content: 'ai msg',
@@ -450,7 +450,7 @@ void main() {
     });
 
     test('getLatestCompactionSummary returns null when no summaries', () async {
-      await repository.createMessage(
+      final _ = await repository.createMessage(
         const MessageToCreate(
           conversationId: 'conv-1',
           content: 'regular msg',
@@ -467,7 +467,7 @@ void main() {
     test(
       'getLatestCompactionSummary returns latest compaction summary',
       () async {
-        await repository.createMessage(
+        final _ = await repository.createMessage(
           const MessageToCreate(
             conversationId: 'conv-1',
             content: 'user msg',
@@ -496,7 +496,7 @@ void main() {
             metadata: jsonEncode(compactionMetadata),
           ),
         );
-        await repository.patchMessage(
+        final _ = await repository.patchMessage(
           created.id,
           const MessagePatch(status: MessageStatus.sent),
         );
@@ -514,7 +514,7 @@ void main() {
     test(
       'getLatestCompactionSummary skips non-summary system messages',
       () async {
-        await repository.createMessage(
+        final _ = await repository.createMessage(
           const MessageToCreate(
             conversationId: 'conv-1',
             content: 'system note',

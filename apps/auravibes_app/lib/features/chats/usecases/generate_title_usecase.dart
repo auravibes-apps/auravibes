@@ -42,16 +42,16 @@ class GenerateTitleUsecase {
       titlesStreamingRuntime.removeTitle(conversationId);
     }).share();
 
-    sharedStream
+    final _ = sharedStream
         .doOnDone(() => titlesStreamingRuntime.removeTitle(conversationId))
         .listen((title) {
           titlesStreamingRuntime.updateTitle(conversationId, title);
         });
 
-    sharedStream
+    final _ = sharedStream
         .coalescingSave(
           store: (t) async {
-            await conversationRepo.patchConversation(
+            final _ = await conversationRepo.patchConversation(
               conversationId,
               .new(
                 title: t,

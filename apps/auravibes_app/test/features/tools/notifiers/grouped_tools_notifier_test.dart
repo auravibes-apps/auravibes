@@ -134,7 +134,9 @@ void main() {
       final notifier = container.read(
         groupedToolsProvider('workspace-1').notifier,
       );
-      await container.read(groupedToolsProvider('workspace-1').future);
+      final _ = await container.read(
+        groupedToolsProvider('workspace-1').future,
+      );
 
       await notifier.setMcpGroupEnabled('unknown', isEnabled: false);
 
@@ -158,7 +160,9 @@ void main() {
         final notifier = container.read(
           groupedToolsProvider('workspace-1').notifier,
         );
-        await container.read(groupedToolsProvider('workspace-1').future);
+        final _ = await container.read(
+          groupedToolsProvider('workspace-1').future,
+        );
 
         await notifier.setMcpGroupEnabled('group-1', isEnabled: false);
 
@@ -180,7 +184,9 @@ void main() {
       final notifier = container.read(
         groupedToolsProvider('workspace-1').notifier,
       );
-      await container.read(groupedToolsProvider('workspace-1').future);
+      final _ = await container.read(
+        groupedToolsProvider('workspace-1').future,
+      );
 
       await notifier.deleteMcpGroup('group-1');
     });
@@ -191,7 +197,9 @@ void main() {
       final notifier = container.read(
         groupedToolsProvider('workspace-1').notifier,
       );
-      await container.read(groupedToolsProvider('workspace-1').future);
+      final _ = await container.read(
+        groupedToolsProvider('workspace-1').future,
+      );
 
       await notifier.deleteMcpGroup('unknown');
     });

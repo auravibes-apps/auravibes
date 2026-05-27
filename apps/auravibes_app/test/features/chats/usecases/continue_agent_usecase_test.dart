@@ -219,7 +219,7 @@ void main() {
           ]),
         );
 
-        await usecase.call(
+        final _ = await usecase.call(
           conversationId: 'conversation-1',
           context: const AgentIterationContext(
             origin: AgentIterationOrigin.userMessage,
@@ -260,7 +260,7 @@ void main() {
           ]),
         );
 
-        await usecase.call(
+        final _ = await usecase.call(
           conversationId: 'conversation-1',
           context: const AgentIterationContext(
             origin: AgentIterationOrigin.userMessage,
@@ -312,17 +312,17 @@ void main() {
         agentCancellationRuntime.requestStop('conversation-1');
 
         final result = await future;
-        await controller.close();
+        final _ = await controller.close();
 
         expect(result.hasToolCalls, isFalse);
-        verifyNever(messageRepository.createMessage(any));
+        final _ = verifyNever(messageRepository.createMessage(any));
         verify(
           messageRepository.patchMessage(
             'user-1',
             const MessagePatch(status: MessageStatus.sent),
           ),
         ).called(1);
-        verifyNever(
+        final _ = verifyNever(
           messageRepository.patchMessage(
             'assistant-1',
             const MessagePatch(status: MessageStatus.error),
@@ -358,7 +358,7 @@ void main() {
         agentCancellationRuntime.requestStop('conversation-1');
 
         final result = await future;
-        await controller.close();
+        final _ = await controller.close();
 
         expect(result.messageId, 'assistant-1');
         expect(result.hasToolCalls, isFalse);
@@ -414,7 +414,7 @@ void main() {
         agentCancellationRuntime.requestStop('conversation-1');
 
         final result = await future;
-        await controller.close();
+        final _ = await controller.close();
 
         expect(result.hasToolCalls, isFalse);
         final patches = verify(
@@ -469,7 +469,7 @@ void main() {
 
         createCompleter.complete(_unfinishedAssistantMessage);
         final result = await future;
-        await controller.close();
+        final _ = await controller.close();
 
         expect(result.messageId, 'assistant-1');
         final patches = verify(
@@ -622,11 +622,11 @@ void main() {
         );
 
         try {
-          await usecase.call(conversationId: 'conversation-1');
+          final _ = await usecase.call(conversationId: 'conversation-1');
           fail('Should have thrown');
           // ignore: avoid_catching_errors
         } on StateError {
-          verifyNever(
+          final _ = verifyNever(
             messageRepository.patchMessage(any, any),
           );
         }
@@ -758,10 +758,10 @@ void main() {
         ]),
       );
 
-      await usecase.call(conversationId: 'conversation-1');
+      final _ = await usecase.call(conversationId: 'conversation-1');
 
       verify(selectPromptMessagesUsecase.call('conversation-1')).called(1);
-      verifyNever(
+      final _ = verifyNever(
         messageRepository.getMessagesByConversation('conversation-1'),
       );
     });

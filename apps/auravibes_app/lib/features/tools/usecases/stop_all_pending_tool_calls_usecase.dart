@@ -27,7 +27,7 @@ class StopAllPendingToolCallsUsecase {
     }).toList();
     if (!didUpdate) return;
 
-    await _messageRepository.patchMessage(
+    final _ = await _messageRepository.patchMessage(
       messageId,
       MessagePatch(
         metadata: metadata.copyWith(toolCalls: updatedToolCalls),

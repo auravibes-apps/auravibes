@@ -198,7 +198,7 @@ class RunAgentIterationUsecase {
     final ackMessageIds = context?.ackMessageIds ?? const <String>[];
     if (ackMessageIds.isEmpty) return;
 
-    await Future.wait(
+    final _ = await Future.wait(
       ackMessageIds.map(
         (messageId) => messageRepository.patchMessage(
           messageId,

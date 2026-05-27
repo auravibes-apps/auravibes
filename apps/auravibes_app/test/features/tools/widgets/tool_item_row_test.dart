@@ -81,7 +81,7 @@ void main() {
         ToolItemRow(tool: tool, workspaceId: _workspaceId),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('custom_tool'), findsOneWidget);
     expect(find.byType(AuraSwitch), findsOneWidget);
@@ -95,7 +95,7 @@ void main() {
         ToolItemRow(tool: tool, workspaceId: _workspaceId),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.byType(IconButton), findsWidgets);
   });
@@ -110,7 +110,7 @@ void main() {
         ToolItemRow(tool: tool, workspaceId: _workspaceId),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('custom_tool'), findsOneWidget);
     expect(find.byType(AuraSwitch), findsOneWidget);
@@ -124,10 +124,10 @@ void main() {
         ToolItemRow(tool: tool, workspaceId: _workspaceId),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     await tester.tap(find.byType(IconButton).last);
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.byIcon(Icons.delete_outline), findsOneWidget);
   });
@@ -140,7 +140,7 @@ void main() {
         ToolItemRow(tool: tool, workspaceId: _workspaceId),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.byType(AuraButtonGroup<ToolPermissionMode>), findsNothing);
   });
@@ -159,10 +159,10 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     await tester.tap(find.byType(IconButton).last);
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.byIcon(Icons.delete_outline), findsNothing);
   });
@@ -180,10 +180,10 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     await tester.tap(find.byType(IconButton).last);
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.byIcon(Icons.delete_outline), findsOneWidget);
   });
@@ -196,7 +196,7 @@ void main() {
         ToolItemRow(tool: tool, workspaceId: _workspaceId),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     final container = tester.widget<Container>(
       find.ancestor(
@@ -215,10 +215,10 @@ void main() {
         ToolItemRow(tool: tool, workspaceId: _workspaceId),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     await tester.tap(find.byType(IconButton).last);
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.byType(AuraButtonGroup<ToolPermissionMode>), findsNothing);
   });

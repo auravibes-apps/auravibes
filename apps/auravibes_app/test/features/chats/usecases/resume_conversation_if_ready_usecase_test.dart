@@ -73,8 +73,8 @@ void main() {
 
       await usecase.call(messageId: messageId);
 
-      verifyNever(conversationRepository.getConversationById(any));
-      verifyNever(
+      final _ = verifyNever(conversationRepository.getConversationById(any));
+      final _ = verifyNever(
         runAllowedToolsUsecase.call(
           conversationId: anyNamed('conversationId'),
           workspaceId: anyNamed('workspaceId'),
@@ -92,7 +92,7 @@ void main() {
 
       await usecase.call(messageId: messageId);
 
-      verifyNever(
+      final _ = verifyNever(
         runAllowedToolsUsecase.call(
           conversationId: anyNamed('conversationId'),
           workspaceId: anyNamed('workspaceId'),
@@ -116,7 +116,7 @@ void main() {
 
       await usecase.call(messageId: messageId);
 
-      verifyNever(
+      final _ = verifyNever(
         runAgentIterationUsecase.call(
           conversationId: anyNamed('conversationId'),
           context: anyNamed('context'),

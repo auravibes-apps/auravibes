@@ -58,7 +58,7 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
           continue;
         }
 
-        await _dao.setWorkspaceToolEnabled(
+        final _ = await _dao.setWorkspaceToolEnabled(
           workspaceId,
           nativeType.value,
           isEnabled: true,

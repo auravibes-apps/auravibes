@@ -146,10 +146,10 @@ void main() {
       final ws = await database.workspaceDao.insertWorkspace(
         WorkspacesCompanion.insert(name: 'WS', type: WorkspaceType.local),
       );
-      await database.conversationDao.insertConversation(
+      final _ = await database.conversationDao.insertConversation(
         ConversationsCompanion.insert(workspaceId: ws.id, title: 'A'),
       );
-      await database.conversationDao.insertConversation(
+      final _ = await database.conversationDao.insertConversation(
         ConversationsCompanion.insert(workspaceId: ws.id, title: 'B'),
       );
       final emitted = await database.conversationDao
@@ -162,10 +162,10 @@ void main() {
       final ws = await database.workspaceDao.insertWorkspace(
         WorkspacesCompanion.insert(name: 'WS', type: WorkspaceType.local),
       );
-      await database.conversationDao.insertConversation(
+      final _ = await database.conversationDao.insertConversation(
         ConversationsCompanion.insert(workspaceId: ws.id, title: 'A'),
       );
-      await database.conversationDao.insertConversation(
+      final _ = await database.conversationDao.insertConversation(
         ConversationsCompanion.insert(workspaceId: ws.id, title: 'B'),
       );
       final emitted = await database.conversationDao

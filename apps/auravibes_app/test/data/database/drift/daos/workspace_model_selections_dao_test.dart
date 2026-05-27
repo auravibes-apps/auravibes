@@ -36,7 +36,7 @@ void main() {
     });
 
     test('insertWorkspaceModelSelections inserts records', () async {
-      await database.apiModelProvidersDao.upsertProvider(
+      final _ = await database.apiModelProvidersDao.upsertProvider(
         ApiModelProvidersCompanion.insert(id: 'openai', name: 'OpenAI'),
       );
       final conn = await database.modelConnectionsDao.insertModelConnection(
@@ -63,7 +63,7 @@ void main() {
     });
 
     test('watchAllWorkspaceModelSelectionsByWorkspace emits inserts', () async {
-      await database.apiModelProvidersDao.upsertProvider(
+      final _ = await database.apiModelProvidersDao.upsertProvider(
         ApiModelProvidersCompanion.insert(id: 'openai', name: 'OpenAI'),
       );
       final conn = await database.modelConnectionsDao.insertModelConnection(
@@ -110,7 +110,7 @@ void main() {
     );
 
     test('getWorkspaceModelSelectionById returns selection', () async {
-      await database.apiModelProvidersDao.upsertProvider(
+      final _ = await database.apiModelProvidersDao.upsertProvider(
         ApiModelProvidersCompanion.insert(id: 'openai', name: 'OpenAI'),
       );
       final conn = await database.modelConnectionsDao.insertModelConnection(

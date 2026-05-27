@@ -119,7 +119,7 @@ void main() {
           workspaceId: 'workspace-1',
         ).notifier,
       );
-      await container.read(
+      final _ = await container.read(
         conversationToolsProvider(
           workspaceId: 'workspace-1',
         ).future,
@@ -156,7 +156,7 @@ void main() {
           workspaceId: 'workspace-1',
         ).notifier,
       );
-      await container.read(
+      final _ = await container.read(
         conversationToolsProvider(
           workspaceId: 'workspace-1',
         ).future,
@@ -174,7 +174,7 @@ void main() {
           workspaceId: 'workspace-1',
         ).notifier,
       );
-      await container.read(
+      final _ = await container.read(
         conversationToolsProvider(
           workspaceId: 'workspace-1',
         ).future,
@@ -195,7 +195,7 @@ void main() {
           workspaceId: 'workspace-1',
         ).notifier,
       );
-      await container.read(
+      final _ = await container.read(
         conversationToolsProvider(
           workspaceId: 'workspace-1',
         ).future,
@@ -220,7 +220,7 @@ void main() {
             conversationId: 'conv-1',
           ).notifier,
         );
-        await container.read(
+        final _ = await container.read(
           conversationToolsProvider(
             workspaceId: 'workspace-1',
             conversationId: 'conv-1',
@@ -256,7 +256,7 @@ void main() {
           conversationId: 'conv-1',
         ).notifier,
       );
-      await container.read(
+      final _ = await container.read(
         conversationToolsProvider(
           workspaceId: 'workspace-1',
           conversationId: 'conv-1',
@@ -283,7 +283,7 @@ void main() {
           workspaceId: 'workspace-1',
         ).notifier,
       );
-      await container.read(
+      final _ = await container.read(
         conversationToolsProvider(
           workspaceId: 'workspace-1',
         ).future,
@@ -304,7 +304,7 @@ void main() {
           conversationId: 'conv-1',
         ).notifier,
       );
-      await container.read(
+      final _ = await container.read(
         conversationToolsProvider(
           workspaceId: 'workspace-1',
           conversationId: 'conv-1',
@@ -339,7 +339,7 @@ void main() {
           conversationId: 'conv-1',
         ).notifier,
       );
-      await container.read(
+      final _ = await container.read(
         conversationToolsProvider(
           workspaceId: 'workspace-1',
           conversationId: 'conv-1',
@@ -362,7 +362,7 @@ void main() {
             conversationId: 'conv-1',
           ).notifier,
         );
-        await container.read(
+        final _ = await container.read(
           conversationToolsProvider(
             workspaceId: 'workspace-1',
             conversationId: 'conv-1',
@@ -395,7 +395,7 @@ void main() {
           conversationId: 'conv-1',
         ).notifier,
       );
-      await container.read(
+      final _ = await container.read(
         conversationToolsProvider(
           workspaceId: 'workspace-1',
           conversationId: 'conv-1',
@@ -492,7 +492,7 @@ void main() {
           workspaceId: 'ws-1',
         ).notifier,
       );
-      await container.read(
+      final _ = await container.read(
         contextAwareToolsProvider(
           conversationId: 'conv-1',
           workspaceId: 'ws-1',
@@ -520,7 +520,7 @@ void main() {
           workspaceId: 'ws-1',
         ).notifier,
       );
-      await container.read(
+      final _ = await container.read(
         contextAwareToolsProvider(
           conversationId: 'conv-1',
           workspaceId: 'ws-1',
@@ -605,7 +605,7 @@ void main() {
           workspaceId: 'ws-1',
         ).notifier,
       );
-      await container.read(
+      final _ = await container.read(
         contextAwareToolEntitiesProvider(
           conversationId: 'conv-1',
           workspaceId: 'ws-1',

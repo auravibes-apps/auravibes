@@ -41,18 +41,19 @@ class WorkspaceToolsDao extends DatabaseAccessor<AppDatabase>
 
     if (existing != null) {
       // Update existing tool
-      await (update(tools)..where(
-            (tbl) =>
-                tbl.workspaceId.equals(workspaceId) &
-                tbl.toolId.equals(toolId) &
-                tbl.workspaceToolsGroupId.isNull(),
-          ))
-          .write(
-            ToolsCompanion(
-              updatedAt: Value(DateTime.now()),
-              isEnabled: Value(isEnabled),
-            ),
-          );
+      final _ =
+          await (update(tools)..where(
+                (tbl) =>
+                    tbl.workspaceId.equals(workspaceId) &
+                    tbl.toolId.equals(toolId) &
+                    tbl.workspaceToolsGroupId.isNull(),
+              ))
+              .write(
+                ToolsCompanion(
+                  updatedAt: Value(DateTime.now()),
+                  isEnabled: Value(isEnabled),
+                ),
+              );
       // Return updated tool
       return (await getWorkspaceToolByToolId(workspaceId, toolId))!;
     } else {
@@ -76,7 +77,7 @@ class WorkspaceToolsDao extends DatabaseAccessor<AppDatabase>
     String id, {
     required bool isEnabled,
   }) async {
-    await (update(tools)..where((tbl) => tbl.id.equals(id))).write(
+    final _ = await (update(tools)..where((tbl) => tbl.id.equals(id))).write(
       ToolsCompanion(
         updatedAt: Value(DateTime.now()),
         isEnabled: Value(isEnabled),
@@ -236,7 +237,7 @@ class WorkspaceToolsDao extends DatabaseAccessor<AppDatabase>
     String id, {
     required PermissionAccess permission,
   }) async {
-    await (update(tools)..where((tbl) => tbl.id.equals(id))).write(
+    final _ = await (update(tools)..where((tbl) => tbl.id.equals(id))).write(
       ToolsCompanion(
         updatedAt: Value(DateTime.now()),
         permissions: Value(permission),

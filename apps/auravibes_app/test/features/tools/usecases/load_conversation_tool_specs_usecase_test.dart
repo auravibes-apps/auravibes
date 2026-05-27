@@ -103,7 +103,7 @@ void main() {
         buildCombinedToolSpecsUseCase: _FakeBuildCombinedToolSpecsUseCase([]),
       );
 
-      await usecase(
+      final _ = await usecase(
         conversationId: 'conv-abc',
         workspaceId: 'ws-xyz',
       );
@@ -172,7 +172,7 @@ void main() {
         buildCombinedToolSpecsUseCase: buildUseCase,
       );
 
-      await usecase(conversationId: 'conv-1', workspaceId: 'ws-1');
+      final _ = await usecase(conversationId: 'conv-1', workspaceId: 'ws-1');
 
       expect(capturedTools, isNotNull);
       expect(capturedTools!.length, 1);

@@ -227,7 +227,7 @@ class _Footer extends HookConsumerWidget {
         final success = await notifier.submit();
 
         if (success && context.mounted) {
-          showAuraSnackBar(
+          final _ = showAuraSnackBar(
             context: context,
             content: const Text(
               'MCP Server configuration saved (TODO: implement)',

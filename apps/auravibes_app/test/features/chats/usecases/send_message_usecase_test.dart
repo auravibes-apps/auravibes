@@ -118,8 +118,8 @@ void main() {
           content: 'Queued hello',
         );
 
-        verifyNever(messageRepository.createMessage(any));
-        verifyNever(
+        final _ = verifyNever(messageRepository.createMessage(any));
+        final _ = verifyNever(
           runAgentIterationUsecase.call(
             conversationId: anyNamed('conversationId'),
             context: anyNamed('context'),

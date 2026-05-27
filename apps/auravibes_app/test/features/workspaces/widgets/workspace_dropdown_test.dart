@@ -38,7 +38,7 @@ void main() {
       await tester.runAsync(() async {
         await tester.pumpWidget(_buildTestableWidget(child));
         await tester.idle();
-        await tester.pumpAndSettle();
+        final _ = await tester.pumpAndSettle();
       });
     }
 

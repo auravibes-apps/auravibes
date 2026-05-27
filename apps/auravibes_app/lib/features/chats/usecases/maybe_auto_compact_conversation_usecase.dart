@@ -55,7 +55,7 @@ class MaybeAutoCompactConversationUsecase {
 
     if (!decision.shouldCompact) return;
 
-    await compactConversationUsecase(
+    final _ = await compactConversationUsecase(
       conversationId: conversationId,
       trigger: CompactionTrigger.auto,
     );

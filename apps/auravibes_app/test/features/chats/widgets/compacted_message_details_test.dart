@@ -70,7 +70,7 @@ void main() {
     );
 
     await tester.pumpWidget(buildSubject(message));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('Compaction summary content'), findsOneWidget);
     expect(find.text('from-1 → to-1'), findsOneWidget);
