@@ -1,5 +1,7 @@
 // ignore_for_file: avoid-top-level-members-in-tests
 // Required: Test files keep shared fixtures and helpers top-level.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
 
 // ignore_for_file: avoid-returning-widgets
 // Required: Widget tests use helpers that build widgets under test.

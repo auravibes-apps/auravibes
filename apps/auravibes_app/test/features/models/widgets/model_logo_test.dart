@@ -1,5 +1,7 @@
 // ignore_for_file: avoid-returning-widgets
 // Required: Widget tests use helpers that build widgets under test.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: avoid-unused-parameters
 // Required: Test fakes keep interface-compatible parameter names.
 import 'package:auravibes_app/features/models/widgets/model_logo.dart';

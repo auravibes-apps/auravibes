@@ -1,3 +1,5 @@
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/workspaces/models/management_mode.dart';

@@ -1,6 +1,8 @@
 // ignore_for_file: cascade_invocations
 // ignore_for_file: no-empty-block
 // Required: Tests use intentional no-op callbacks and fake hooks.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dart';
 import 'package:flutter_test/flutter_test.dart';

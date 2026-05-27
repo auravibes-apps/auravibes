@@ -1,5 +1,7 @@
 // ignore_for_file: avoid-late-keyword
 // Required: Test fixtures are assigned in setUp.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: no-empty-block
 // Required: Tests use intentional no-op callbacks and fake hooks.
 // ignore_for_file: missing-test-assertion

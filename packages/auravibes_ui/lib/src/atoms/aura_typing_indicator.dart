@@ -1,5 +1,7 @@
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: no-equal-arguments
+// Required: UI geometry uses repeated values for symmetric layout.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 import 'dart:async';

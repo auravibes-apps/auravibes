@@ -1,5 +1,7 @@
 // ignore_for_file: avoid-substring
 // Required: Tests assert existing code-unit substring behavior.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: avoid-redundant-async
 // Required: Test callbacks intentionally preserve async-compatible signatures.
 // ignore_for_file: member-ordering

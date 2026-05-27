@@ -1,3 +1,5 @@
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/features/tools/widgets/user_tool_type_widgets.dart';
 import 'package:auravibes_app/services/tools/native_tool_type.dart';

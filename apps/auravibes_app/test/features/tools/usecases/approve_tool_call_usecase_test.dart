@@ -1,5 +1,7 @@
 // ignore_for_file: avoid-redundant-async
 // Required: Test callbacks intentionally preserve async-compatible signatures.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: no-empty-block
 // Required: Tests use intentional no-op callbacks and fake hooks.
 // ignore_for_file: missing-test-assertion

@@ -1,5 +1,7 @@
 // ignore_for_file: avoid-substring
 // Required: Existing parsing uses code-unit substring offsets.
+// ignore_for_file: no-equal-arguments
+// Required: Existing argument values intentionally repeat.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering

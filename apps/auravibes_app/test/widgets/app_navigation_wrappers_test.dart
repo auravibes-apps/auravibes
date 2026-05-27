@@ -1,5 +1,7 @@
 // ignore_for_file: scoped_providers_should_specify_dependencies
 // Required: widget tests override scoped providers directly.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: no-empty-block
 // Required: Tests use intentional no-op callbacks and fake hooks.
 // ignore_for_file: format-comment

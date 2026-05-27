@@ -1,3 +1,5 @@
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_queued_messages_indicator.dart';

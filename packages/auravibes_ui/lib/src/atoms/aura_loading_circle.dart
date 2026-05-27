@@ -1,5 +1,7 @@
 // ignore_for_file: avoid-returning-widgets
 // Required: Existing helper builders return widgets.
+// ignore_for_file: no-equal-arguments
+// Required: UI geometry uses repeated values for symmetric layout.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: avoid-non-null-assertion

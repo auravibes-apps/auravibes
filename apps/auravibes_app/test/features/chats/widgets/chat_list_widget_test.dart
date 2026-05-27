@@ -1,5 +1,7 @@
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';

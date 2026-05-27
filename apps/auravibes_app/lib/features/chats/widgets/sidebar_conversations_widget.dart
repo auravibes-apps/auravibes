@@ -1,5 +1,7 @@
 // ignore_for_file: avoid-returning-widgets
 // Required: Existing helper builders return widgets.
+// ignore_for_file: no-equal-arguments
+// Required: Existing argument values intentionally repeat.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return

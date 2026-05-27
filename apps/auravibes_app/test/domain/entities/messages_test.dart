@@ -1,5 +1,7 @@
 // ignore_for_file: avoid-non-null-assertion
 // Required: Tests inspect nullable values after arranging expected state.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
