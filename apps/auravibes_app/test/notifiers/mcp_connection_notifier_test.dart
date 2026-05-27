@@ -6,8 +6,10 @@ import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 import 'package:auravibes_app/domain/repositories/mcp_servers_repository.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
+import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_manager_client.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:logging/logging.dart';
 import 'package:riverpod/riverpod.dart';
 
 final _server = McpServerEntity(
@@ -635,11 +637,47 @@ void main() {
       final state = container.read(mcpConnectionProvider);
       expect(state, isEmpty);
     });
+
+    test('logs and skips workspace load failures', () async {
+      final records = <LogRecord>[];
+      final subscription = Logger.root.onRecord.listen(records.add);
+      addTearDown(subscription.cancel);
+      final previousLevel = Logger.root.level;
+      Logger.root.level = Level.ALL;
+      addTearDown(() {
+        Logger.root.level = previousLevel;
+      });
+
+      mcpServersRepository.enabledServersError = Exception('db offline');
+      final testContainer = ProviderContainer(
+        overrides: [
+          currentRouteWorkspaceIdProvider.overrideWithValue('workspace-1'),
+          mcpServersRepositoryProvider.overrideWithValue(mcpServersRepository),
+          mcpManagerServiceProvider.overrideWithValue(mcpManagerService),
+        ],
+      );
+      addTearDown(testContainer.dispose);
+
+      expect(testContainer.read(mcpConnectionProvider), isEmpty);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(testContainer.read(mcpConnectionProvider), isEmpty);
+      expect(
+        records.any(
+          (record) =>
+              record.loggerName == 'McpConnectionNotifier' &&
+              record.level == Level.WARNING &&
+              record.message.contains('Failed to load MCP servers from database'),
+        ),
+        isTrue,
+      );
+    });
   });
 }
 
 class _FakeMcpServersRepository implements McpServersRepository {
   List<String> deletedIds = [];
+  Exception? enabledServersError;
   McpServerEntity? serverById;
 
   @override
@@ -660,7 +698,13 @@ class _FakeMcpServersRepository implements McpServersRepository {
   @override
   Future<List<McpServerEntity>> getEnabledMcpServersForWorkspace(
     String workspaceId,
-  ) async => const [];
+  ) async {
+    if (enabledServersError case final error?) {
+      throw error;
+    }
+
+    return const [];
+  }
 
   @override
   Future<McpServerEntity?> getMcpServerById(String serverId) async =>
