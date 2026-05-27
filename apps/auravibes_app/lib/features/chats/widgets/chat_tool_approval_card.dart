@@ -348,7 +348,6 @@ class _ConfirmationButtons extends ConsumerWidget {
 
   Future<void> _onAllowOnce(WidgetRef ref, BuildContext context) async {
     await _runAction(
-      ref,
       context,
       errorMessage: 'Failed to approve tool call.',
       action: () {
@@ -368,7 +367,6 @@ class _ConfirmationButtons extends ConsumerWidget {
     BuildContext context,
   ) async {
     await _runAction(
-      ref,
       context,
       errorMessage: 'Failed to approve tool call for this conversation.',
       action: () {
@@ -385,7 +383,6 @@ class _ConfirmationButtons extends ConsumerWidget {
 
   Future<void> _onSkip(WidgetRef ref, BuildContext context) async {
     await _runAction(
-      ref,
       context,
       errorMessage: 'Failed to skip tool call.',
       action: () {
@@ -401,7 +398,6 @@ class _ConfirmationButtons extends ConsumerWidget {
 
   Future<void> _onStopAll(WidgetRef ref, BuildContext context) async {
     await _runAction(
-      ref,
       context,
       errorMessage: 'Failed to stop pending tool calls.',
       action: () {
@@ -415,7 +411,6 @@ class _ConfirmationButtons extends ConsumerWidget {
   }
 
   Future<void> _runAction(
-    WidgetRef ref,
     BuildContext context, {
     required String errorMessage,
     required Future<void> Function() action,

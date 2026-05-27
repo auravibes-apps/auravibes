@@ -20,7 +20,7 @@ ApiModelRepository apiModelRepository(Ref ref) {
 
 /// Provider for the model API service
 @riverpod
-ModelApiService modelApiService(Ref ref) {
+ModelApiService modelApiService(Ref _) {
   return ModelApiService();
 }
 
@@ -37,7 +37,7 @@ ModelSyncService modelSyncService(Ref ref) {
 
   final timer = Timer.periodic(
     const Duration(hours: 5),
-    (timer) {
+    (_) {
       final _ = service.performFullSync();
     },
   );

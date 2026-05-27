@@ -2,6 +2,8 @@
 // Required: Test callbacks intentionally preserve async-compatible signatures.
 // ignore_for_file: avoid-non-null-assertion
 // Required: Tests inspect nullable values after arranging expected state.
+// ignore_for_file: avoid-unused-parameters
+// Required: Test fakes keep interface-compatible parameter names.
 
 // ignore_for_file: avoid-late-keyword
 // Required: Test fixtures are assigned in setUp.

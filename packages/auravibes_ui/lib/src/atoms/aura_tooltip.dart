@@ -94,7 +94,7 @@ class _AuraTooltipState extends State<AuraTooltip> {
     );
   }
 
-  void _handlePointerEnter(PointerEnterEvent event) {
+  void _handlePointerEnter(PointerEnterEvent _) {
     _cancelTimers();
     if (widget.waitDuration > Duration.zero) {
       _showTimer = Timer(widget.waitDuration, _showTooltip);
@@ -103,7 +103,7 @@ class _AuraTooltipState extends State<AuraTooltip> {
     }
   }
 
-  void _handlePointerExit(PointerExitEvent event) {
+  void _handlePointerExit(PointerExitEvent _) {
     _cancelTimers();
     _removeOverlay();
   }

@@ -16,7 +16,7 @@ WorkspaceToolsRepository workspaceToolsRepository(Ref ref) {
 }
 
 @Riverpod(dependencies: [])
-int workspaceToolIndexNotifier(Ref ref) =>
+int workspaceToolIndexNotifier(Ref _) =>
     throw Exception('implement workspaceToolIndexNotifier');
 
 @riverpod

@@ -28,7 +28,7 @@ class ListModelConnectionsWidget extends ConsumerWidget {
     return switch (workspaceModelSelectionsAsync) {
       AsyncData(value: final workspaceModelSelections) => () {
         if (workspaceModelSelections.isEmpty) {
-          return _buildEmptyState(context);
+          return _buildEmptyState();
         }
 
         return ListView.separated(
@@ -59,7 +59,7 @@ class ListModelConnectionsWidget extends ConsumerWidget {
     };
   }
 
-  Widget _buildEmptyState(BuildContext context) {
+  Widget _buildEmptyState() {
     return const Center(
       child: Padding(
         padding: EdgeInsets.all(32),

@@ -246,7 +246,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
     }
   }
 
-  void _handleDragStart(DragStartDetails details) {
+  void _handleDragStart(DragStartDetails _) {
     _dragStartedWhenOpen = _isOpen;
     _dragDirection = null;
     _hasStartedDragCallback = false;

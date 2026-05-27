@@ -161,7 +161,7 @@ class UrlContentTransformer {
     if (bodyElement == null) {
       final text = document.text?.trim() ?? '';
       final escaped = _escapeMarkdownText(text);
-      final truncatedOutput = _truncateIfNeeded(escaped, originalLength);
+      final truncatedOutput = _truncateIfNeeded(escaped);
       return TransformedUrlContent(
         body: truncatedOutput.text,
         format: .markdown,
@@ -188,7 +188,7 @@ class UrlContentTransformer {
 
     markdown = _collapseBlankLines(markdown);
 
-    final truncatedOutput = _truncateIfNeeded(markdown, originalLength);
+    final truncatedOutput = _truncateIfNeeded(markdown);
 
     return TransformedUrlContent(
       body: truncatedOutput.text,
@@ -218,7 +218,7 @@ class UrlContentTransformer {
         .replaceAll(RegExp(r'\n{3,}'), '\n\n')
         .trim();
 
-    final truncatedOutput = _truncateIfNeeded(cleaned, originalLength);
+    final truncatedOutput = _truncateIfNeeded(cleaned);
 
     return TransformedUrlContent(
       body: truncatedOutput.text,
@@ -646,7 +646,7 @@ class UrlContentTransformer {
       );
     }
 
-    final truncatedOutput = _truncateIfNeeded(body, originalLength);
+    final truncatedOutput = _truncateIfNeeded(body);
 
     return TransformedUrlContent(
       body: truncatedOutput.text,
@@ -658,10 +658,7 @@ class UrlContentTransformer {
     );
   }
 
-  ({String text, bool truncated}) _truncateIfNeeded(
-    String body,
-    int originalLength,
-  ) {
+  ({String text, bool truncated}) _truncateIfNeeded(String body) {
     if (body.length <= maxOutputLength) {
       return (text: body, truncated: false);
     }

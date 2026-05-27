@@ -636,6 +636,6 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
 }
 
 @Riverpod(keepAlive: true)
-McpManagerService mcpManagerService(Ref ref) {
+McpManagerService mcpManagerService(Ref _) {
   return McpManagerService();
 }

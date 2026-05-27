@@ -190,7 +190,7 @@ CompactionExecutionState? conversationCompactionExecutionState(Ref ref) {
 /// Returns a list of MCP server IDs that are being waited on for connection,
 /// or an empty list if not waiting.
 @riverpod
-List<String> pendingMcpConnections(Ref ref) {
+List<String> pendingMcpConnections(Ref _) {
   // The current streaming state only exposes the last `ChatResult`, and it no
   // longer carries pending MCP server IDs. Until that runtime state is modeled
   // explicitly again, there is no reliable source for this indicator.

@@ -1,7 +1,6 @@
 // ignore_for_file: avoid-non-null-assertion
 // Required: Existing nullable API contracts still use explicit assertions.
 
-import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/repositories/api_model_repository.dart';
 import 'package:auravibes_app/services/model_api_service.dart';
@@ -52,12 +51,10 @@ class ModelSyncService {
 
       final apiResponse = await apiService.fetchAllModels();
       final localProviders = await repository.getAllProviders();
-      final localModels = await repository.getAllModels();
 
       final result = await _performSyncOperation(
         apiResponse: apiResponse,
         localProviders: localProviders,
-        localModels: localModels,
         fullSync: true,
       );
 
@@ -82,7 +79,6 @@ class ModelSyncService {
   Future<ModelSyncResult> _performSyncOperation({
     required ModelApiResponse apiResponse,
     required List<ApiModelProviderEntity> localProviders,
-    required List<ApiModelEntity> localModels,
     required bool fullSync,
   }) async {
     var providersAdded = 0;

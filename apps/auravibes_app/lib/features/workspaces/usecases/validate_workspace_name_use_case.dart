@@ -30,6 +30,6 @@ class ValidateWorkspaceNameUseCase {
 
 /// Provides a [ValidateWorkspaceNameUseCase] instance.
 @riverpod
-ValidateWorkspaceNameUseCase validateWorkspaceNameUseCase(Ref ref) {
+ValidateWorkspaceNameUseCase validateWorkspaceNameUseCase(Ref _) {
   return const ValidateWorkspaceNameUseCase();
 }

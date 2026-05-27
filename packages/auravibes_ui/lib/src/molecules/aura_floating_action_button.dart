@@ -72,7 +72,7 @@ class AuraFloatingActionButton extends StatelessWidget {
     Widget fab = FloatingActionButton(
       child: isExtended
           ? _buildExtendedContent(auraColors)
-          : _buildRegularContent(auraColors),
+          : _buildRegularContent(),
       foregroundColor:
           auraColors.getColorOrNull(foregroundColor) ?? auraColors.onPrimary,
       backgroundColor:
@@ -93,7 +93,7 @@ class AuraFloatingActionButton extends StatelessWidget {
         width: _getFABSize(),
         height: _getFABSize(),
         child: FloatingActionButton(
-          child: _buildRegularContent(auraColors),
+          child: _buildRegularContent(),
           foregroundColor:
               auraColors.getColorOrNull(foregroundColor) ??
               auraColors.onPrimary,
@@ -161,7 +161,7 @@ class AuraFloatingActionButton extends StatelessWidget {
     return fab;
   }
 
-  Widget _buildRegularContent(AuraColorScheme auraColors) {
+  Widget _buildRegularContent() {
     return AuraIcon(
       icon,
       size: _getIconSize(),

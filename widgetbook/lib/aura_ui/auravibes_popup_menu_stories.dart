@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:widgetbook_annotation/widgetbook_annotation.dart' as widgetbook;
 
 @widgetbook.UseCase(name: 'Basic Popup Menu', type: AuraPopupMenu)
-Widget basicContextMenuUseCase(BuildContext context) {
+Widget basicContextMenuUseCase(BuildContext _) {
   final controller = AuraPopupMenuController();
 
   return AuraPopupMenu(

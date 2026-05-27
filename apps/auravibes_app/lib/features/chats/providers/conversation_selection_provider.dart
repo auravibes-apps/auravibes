@@ -4,5 +4,5 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'conversation_selection_provider.g.dart';
 
 @Riverpod(dependencies: [])
-String conversationSelected(Ref ref) =>
+String conversationSelected(Ref _) =>
     throw const NoConversationSelectedException();

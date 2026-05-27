@@ -69,13 +69,13 @@ class AuraSidebar extends StatelessWidget {
       child: Column(
         children: [
           if (header != null)
-            _buildHeaderSection(context)
+            _buildHeaderSection()
           else
             SizedBox(height: context.auraTheme.spacing.lg),
           Expanded(
             child: ListView(
               children: [
-                _buildNavigationItems(context),
+                _buildNavigationItems(),
                 ?middleSection,
               ],
             ),
@@ -83,7 +83,7 @@ class AuraSidebar extends StatelessWidget {
           SafeArea(
             top: false,
             right: false,
-            child: _buildNavigationItems(context, footer: true),
+            child: _buildNavigationItems(footer: true),
           ),
 
           if (footer != null) _buildFooterSection(context),
@@ -92,12 +92,11 @@ class AuraSidebar extends StatelessWidget {
     );
   }
 
-  Widget _buildHeaderSection(BuildContext context) {
+  Widget _buildHeaderSection() {
     return header!;
   }
 
-  Widget _buildNavigationItems(
-    BuildContext context, {
+  Widget _buildNavigationItems({
     bool footer = false,
   }) {
     return Column(

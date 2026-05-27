@@ -27,7 +27,7 @@ class ChatListWidget extends ConsumerWidget {
     return switch (chatListAsync) {
       AsyncData(value: final chats) => () {
         if (chats.isEmpty) {
-          return _buildEmptyState(context);
+          return _buildEmptyState();
         }
 
         return ListView.separated(
@@ -49,7 +49,7 @@ class ChatListWidget extends ConsumerWidget {
     };
   }
 
-  Widget _buildEmptyState(BuildContext context) {
+  Widget _buildEmptyState() {
     return const Center(
       child: Padding(
         padding: EdgeInsets.all(32),

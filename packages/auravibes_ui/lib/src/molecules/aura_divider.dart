@@ -81,7 +81,7 @@ class AuraDivider extends StatelessWidget {
     final dividerThickness = thickness ?? DesignBorderWidth.thin;
 
     if (label != null) {
-      return _buildLabeledDivider(dividerColor, dividerThickness, auraTheme);
+      return _buildLabeledDivider(dividerColor, dividerThickness);
     }
 
     if (orientation == AuraDividerOrientation.vertical) {
@@ -126,7 +126,6 @@ class AuraDivider extends StatelessWidget {
   Widget _buildLabeledDivider(
     Color dividerColor,
     double dividerThickness,
-    AuraTheme auraTheme,
   ) {
     return Container(
       height: height ?? DesignSpacing.xl,
