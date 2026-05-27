@@ -409,7 +409,9 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
-          args: -Dsonar.dart.lcov.reportPaths=coverage-artifacts/**/lcov.info
+          args: >
+            -Dsonar.dart.lcov.reportPaths=coverage-artifacts/**/lcov.info
+            -Dsonar.scanner.skipJreProvisioning=true
 
   build:
     name: build

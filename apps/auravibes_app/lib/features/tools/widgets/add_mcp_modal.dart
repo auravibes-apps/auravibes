@@ -8,6 +8,7 @@ import 'package:auravibes_app/widgets/app_toggle_base.dart';
 import 'package:auravibes_app/widgets/app_visibility_base.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -229,9 +230,7 @@ class _Footer extends HookConsumerWidget {
         if (success && context.mounted) {
           showAuraSnackBar(
             context: context,
-            content: const Text(
-              'MCP Server configuration saved (TODO: implement)',
-            ),
+            content: Text(LocaleKeys.mcp_modal_save_success.tr()),
             variant: AuraSnackBarVariant.success,
           );
           Navigator.of(context).pop();
