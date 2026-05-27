@@ -12,7 +12,7 @@ dev_dependencies:
   dart_code_linter: ^4.0.4
   dependency_validator: ^5.0.4
   import_sorter: ^4.6.0
-  melos: ^7.7.0
+  melos: ^7.8.0
   riverpod_lint: 3.1.4-dev.3
   very_good_analysis: ^10.2.0
 
