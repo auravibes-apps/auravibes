@@ -34,7 +34,7 @@ ConversationToolsRepository conversationToolsRepository(Ref ref) {
 /// Returns a list of all workspace tools with their conversation-level states.
 @riverpod
 class ConversationToolsNotifier extends _$ConversationToolsNotifier {
-  late final ConversationToolsRepository _repository = ref.read(
+  ConversationToolsRepository get _repository => ref.read(
     conversationToolsRepositoryProvider,
   );
 
@@ -175,15 +175,15 @@ class ConversationToolsNotifier extends _$ConversationToolsNotifier {
 /// (conversation -> workspace -> app defaults)
 @riverpod
 class ContextAwareToolsNotifier extends _$ContextAwareToolsNotifier {
-  late ConversationToolsRepository _repository;
+  ConversationToolsRepository get _repository => ref.read(
+    conversationToolsRepositoryProvider,
+  );
 
   @override
   Future<List<String>> build({
     required String conversationId,
     required String workspaceId,
   }) async {
-    _repository = ref.read(conversationToolsRepositoryProvider);
-
     return _getContextAwareTools();
   }
 
@@ -213,15 +213,15 @@ class ContextAwareToolsNotifier extends _$ContextAwareToolsNotifier {
 @riverpod
 class ContextAwareToolEntitiesNotifier
     extends _$ContextAwareToolEntitiesNotifier {
-  late ConversationToolsRepository _repository;
+  ConversationToolsRepository get _repository => ref.read(
+    conversationToolsRepositoryProvider,
+  );
 
   @override
   Future<List<WorkspaceToolEntity>> build({
     required String conversationId,
     required String workspaceId,
   }) async {
-    _repository = ref.read(conversationToolsRepositoryProvider);
-
     return _getContextAwareToolEntities();
   }
 

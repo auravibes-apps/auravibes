@@ -8,11 +8,10 @@ import 'package:auravibes_app/services/tools/tool_service.dart';
 
 /// Implementation of the WorkspaceToolsRepository
 class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
-  WorkspaceToolsRepositoryImpl(this._database) {
-    _dao = _database.workspaceToolsDao;
-  }
+  WorkspaceToolsRepositoryImpl(this._database)
+    : _dao = _database.workspaceToolsDao;
   final AppDatabase _database;
-  late WorkspaceToolsDao _dao;
+  final WorkspaceToolsDao _dao;
 
   @override
   Future<List<WorkspaceToolEntity>> getWorkspaceTools(

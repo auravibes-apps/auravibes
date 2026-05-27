@@ -1,6 +1,8 @@
 // coverage:ignore-file
 // Required: Drift table DSL is unreachable at runtime
 // (see api_models.dart).
+// ignore_for_file: avoid-late-keyword
+// Required: Drift table column DSL needs lazy column declarations.
 import 'package:drift/drift.dart';
 import 'package:uuid/v7.dart';
 

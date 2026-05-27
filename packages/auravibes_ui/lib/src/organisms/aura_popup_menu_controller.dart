@@ -59,7 +59,7 @@ class AuraPopupMenu extends StatefulWidget {
 }
 
 class _AuraPopupMenuState extends State<AuraPopupMenu> {
-  late FocusNode _focusNode;
+  FocusNode _focusNode = throw StateError('_focusNode is not initialized');
   bool _visible = false;
 
   @override

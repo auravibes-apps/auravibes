@@ -149,9 +149,9 @@ class AppWithResponsiveDrawer extends StatefulWidget {
 }
 
 class _AppWithResponsiveDrawerState extends State<AppWithResponsiveDrawer> {
-  late final ResponsiveSlidingDrawerController _controller =
+  final ResponsiveSlidingDrawerController _controller =
       ResponsiveSlidingDrawerController();
-  late final GoRouter _router;
+  GoRouter _router = throw StateError('_router is not initialized');
   Uri? _previousRoute;
 
   @override

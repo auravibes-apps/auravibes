@@ -21,8 +21,10 @@ int workspaceToolIndexNotifier(Ref ref) =>
 
 @riverpod
 class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
-  late WorkspaceToolsRepository _repository;
-  late String _workspaceId;
+  WorkspaceToolsRepository _repository = throw StateError(
+    '_repository is not initialized',
+  );
+  String _workspaceId = '';
 
   @override
   Future<List<WorkspaceToolEntity>> build(String workspaceId) async {

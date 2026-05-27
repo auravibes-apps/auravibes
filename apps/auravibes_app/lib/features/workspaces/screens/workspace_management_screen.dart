@@ -456,7 +456,9 @@ class _EditWorkspaceTile extends StatefulWidget {
 }
 
 class _EditWorkspaceTileState extends State<_EditWorkspaceTile> {
-  late final TextEditingController _controller;
+  TextEditingController _controller = throw StateError(
+    '_controller is not initialized',
+  );
 
   @override
   void initState() {

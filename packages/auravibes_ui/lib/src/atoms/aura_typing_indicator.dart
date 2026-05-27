@@ -36,8 +36,10 @@ class AuraTypingIndicator extends StatefulWidget {
 
 class _AuraTypingIndicatorState extends State<AuraTypingIndicator>
     with TickerProviderStateMixin {
-  late AnimationController _animationController;
-  late List<Animation<double>> _dotAnimations;
+  AnimationController _animationController = throw StateError(
+    '_animationController is not initialized',
+  );
+  List<Animation<double>> _dotAnimations = const [];
 
   @override
   void initState() {

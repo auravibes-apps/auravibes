@@ -1,3 +1,6 @@
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+
 import 'dart:async';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';

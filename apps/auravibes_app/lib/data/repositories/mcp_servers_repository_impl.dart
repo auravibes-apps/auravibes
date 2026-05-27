@@ -16,16 +16,15 @@ import 'package:drift/drift.dart';
 /// Implementation of the McpServersRepository
 class McpServersRepositoryImpl implements McpServersRepository {
   /// Creates a new [McpServersRepositoryImpl] instance.
-  McpServersRepositoryImpl(this._database) {
-    _mcpServersDao = _database.mcpServersDao;
-    _toolsGroupsDao = _database.toolsGroupsDao;
-    _workspaceToolsDao = _database.workspaceToolsDao;
-  }
+  McpServersRepositoryImpl(this._database)
+    : _mcpServersDao = _database.mcpServersDao,
+      _toolsGroupsDao = _database.toolsGroupsDao,
+      _workspaceToolsDao = _database.workspaceToolsDao;
 
   final AppDatabase _database;
-  late McpServersDao _mcpServersDao;
-  late ToolsGroupsDao _toolsGroupsDao;
-  late WorkspaceToolsDao _workspaceToolsDao;
+  final McpServersDao _mcpServersDao;
+  final ToolsGroupsDao _toolsGroupsDao;
+  final WorkspaceToolsDao _workspaceToolsDao;
 
   @override
   Future<McpServerEntity> addMcpServerWithTools({

@@ -5,7 +5,12 @@ enum Flavor {
 }
 
 class F {
-  static late final Flavor appFlavor;
+  static Flavor? _appFlavor;
+
+  static Flavor get appFlavor =>
+      _appFlavor ?? (throw StateError('appFlavor is not initialized'));
+
+  static set appFlavor(Flavor value) => _appFlavor = value;
 
   static String get name => appFlavor.name;
 

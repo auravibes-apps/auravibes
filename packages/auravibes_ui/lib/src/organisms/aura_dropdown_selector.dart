@@ -81,7 +81,7 @@ class AuraDropdownSelector<T> extends StatefulWidget {
 }
 
 class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
-  late FocusNode _focusNode;
+  FocusNode _focusNode = throw StateError('_focusNode is not initialized');
   bool _isDropdownOpen = false;
 
   @override

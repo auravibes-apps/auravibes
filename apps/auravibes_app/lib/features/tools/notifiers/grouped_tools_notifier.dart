@@ -27,7 +27,7 @@ ToolsGroupsRepository toolsGroupsRepository(Ref ref) {
 /// - Sorts groups: Default first, then MCP errors, then by creation date
 @riverpod
 class GroupedToolsNotifier extends _$GroupedToolsNotifier {
-  late String _workspaceId;
+  String _workspaceId = '';
 
   @override
   Future<List<ToolsGroupWithTools>> build(String workspaceId) async {

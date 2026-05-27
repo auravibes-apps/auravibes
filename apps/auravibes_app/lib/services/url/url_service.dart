@@ -145,8 +145,14 @@ class UrlService {
 
     final buffer = StringBuffer();
     var receivedChars = 0;
-    late final StreamSubscription<List<int>> subscription;
+    StreamSubscription<List<int>>? subscription;
     final completer = Completer<String>();
+
+    Future<void> cancelSubscription() async {
+      final currentSubscription = subscription;
+      if (currentSubscription == null) return;
+      await currentSubscription.cancel();
+    }
 
     subscription = responseBody.stream.listen(
       (chunk) {
@@ -158,7 +164,7 @@ class UrlService {
         if (remainingChars <= 0) {
           buffer.write(_truncatedSuffix);
           completer.complete(buffer.toString());
-          unawaited(subscription.cancel());
+          unawaited(cancelSubscription());
           return;
         }
 
@@ -174,7 +180,7 @@ class UrlService {
           ..write(_truncatedSuffix);
         receivedChars += remainingChars;
         completer.complete(buffer.toString());
-        unawaited(subscription.cancel());
+        unawaited(cancelSubscription());
       },
       onError: (Object error, StackTrace stackTrace) {
         if (!completer.isCompleted) {

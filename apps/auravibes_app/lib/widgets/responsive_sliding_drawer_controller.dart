@@ -182,7 +182,9 @@ class ResponsiveSlidingDrawer extends StatefulWidget {
 
 class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
     with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
+  AnimationController _controller = throw StateError(
+    '_controller is not initialized',
+  );
   double? _desktopDrawerWidth;
   double _resizeOvershoot = 0;
   bool _isHoveringDivider = false;

@@ -1,3 +1,6 @@
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+
 // ignore_for_file: cascade_invocations
 // Required: test expectations use chaining on matchers
 // (e.g. find.text().findsOneWidget) which triggers cascade_invocations lint.

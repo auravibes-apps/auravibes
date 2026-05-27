@@ -1,3 +1,6 @@
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+
 // Required: test expectations use chaining on matchers which triggers
 // cascade_invocations lint. Not applicable in test assertions.
 

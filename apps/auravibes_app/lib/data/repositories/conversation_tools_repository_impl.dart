@@ -13,12 +13,10 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
   ConversationToolsRepositoryImpl(
     this._database,
     this._workspaceToolsRepository,
-  ) {
-    _dao = _database.conversationToolsDao;
-  }
+  ) : _dao = _database.conversationToolsDao;
   final AppDatabase _database;
   final WorkspaceToolsRepository _workspaceToolsRepository;
-  late ConversationToolsDao _dao;
+  final ConversationToolsDao _dao;
 
   @override
   Future<List<ConversationToolEntity>> getConversationTools(

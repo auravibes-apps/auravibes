@@ -13,7 +13,7 @@ final _log = Logger('add_model_providers');
 
 @riverpod
 class AddModelProviderState extends _$AddModelProviderState {
-  late String _workspaceId;
+  String _workspaceId = '';
 
   @override
   AddModelProviderModel build(String workspaceId) {

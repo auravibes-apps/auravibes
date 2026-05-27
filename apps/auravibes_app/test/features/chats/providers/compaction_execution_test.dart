@@ -1,3 +1,6 @@
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+
 // ignore_for_file: cascade_invocations
 // Required: Test readability — sequential notifier calls are clearer
 // than cascades for readability in test method call chains.

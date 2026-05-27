@@ -1,3 +1,6 @@
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+
 // ignore_for_file: cascade_invocations
 // Required: Test readability
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';

@@ -165,7 +165,9 @@ class McpToolIdComponents {
 /// See [McpToolIdComponents] for parsing composite IDs.
 @Riverpod(keepAlive: true)
 class McpConnectionNotifier extends _$McpConnectionNotifier {
-  late final McpManagerService _mcpManagerService;
+  McpManagerService get _mcpManagerService => ref.read(
+    mcpManagerServiceProvider,
+  );
   var _isDisposed = false;
   var _lastKnownState = const <McpConnectionState>[];
 
@@ -173,7 +175,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
   List<McpConnectionState> build() {
     _isDisposed = false;
     _lastKnownState = const [];
-    _mcpManagerService = ref.watch(mcpManagerServiceProvider);
+    final _ = ref.watch(mcpManagerServiceProvider);
     ref
       ..onDispose(_onDispose)
       ..listen<String?>(currentRouteWorkspaceIdProvider, (previous, next) {

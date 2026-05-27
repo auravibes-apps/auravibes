@@ -80,7 +80,7 @@ abstract class McpFormState with _$McpFormState {
 /// Notifier for managing MCP form state
 @riverpod
 class McpFormNotifier extends _$McpFormNotifier {
-  late String _workspaceId;
+  String _workspaceId = '';
 
   @override
   McpFormState build(String workspaceId) {

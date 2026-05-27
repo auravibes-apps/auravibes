@@ -39,8 +39,8 @@ class _AuraMessageStatusState extends State<AuraMessageStatus>
     with TickerProviderStateMixin {
   AnimationController? _rotationController;
   AnimationController? _scaleController;
-  late Animation<double> _rotationAnimation;
-  late Animation<double> _scaleAnimation;
+  Animation<double>? _rotationAnimation;
+  Animation<double>? _scaleAnimation;
 
   @override
   void initState() {
@@ -57,10 +57,11 @@ class _AuraMessageStatusState extends State<AuraMessageStatus>
         vsync: this,
       );
 
-      _rotationAnimation = Tween<double>(
+      final rotationAnimation = Tween<double>(
         begin: 0,
         end: 1,
       ).animate(_rotationController!);
+      _rotationAnimation = rotationAnimation;
 
       unawaited(_rotationController!.repeat());
     } else {
@@ -69,7 +70,7 @@ class _AuraMessageStatusState extends State<AuraMessageStatus>
         vsync: this,
       );
 
-      _scaleAnimation =
+      final scaleAnimation =
           Tween<double>(
             begin: 0,
             end: 1,
@@ -79,6 +80,7 @@ class _AuraMessageStatusState extends State<AuraMessageStatus>
               curve: Curves.elasticOut,
             ),
           );
+      _scaleAnimation = scaleAnimation;
 
       unawaited(_scaleController!.forward());
     }
@@ -100,6 +102,8 @@ class _AuraMessageStatusState extends State<AuraMessageStatus>
     _scaleController?.dispose();
     _rotationController = null;
     _scaleController = null;
+    _rotationAnimation = null;
+    _scaleAnimation = null;
   }
 
   @override
@@ -122,26 +126,29 @@ class _AuraMessageStatusState extends State<AuraMessageStatus>
     );
 
     if (widget.showAnimation) {
+      final rotationAnimation = _rotationAnimation;
+      final scaleAnimation = _scaleAnimation;
       if (widget.status == AuraMessageDeliveryStatus.sending &&
-          _rotationController != null) {
+          _rotationController != null &&
+          rotationAnimation != null) {
         // Rotating animation for sending status
         statusIcon = AnimatedBuilder(
-          animation: _rotationAnimation,
+          animation: rotationAnimation,
           builder: (context, child) {
             return Transform.rotate(
-              angle: _rotationAnimation.value * 2 * 3.14159,
+              angle: rotationAnimation.value * 2 * 3.14159,
               child: child,
             );
           },
           child: statusIcon,
         );
-      } else if (_scaleController != null) {
+      } else if (_scaleController != null && scaleAnimation != null) {
         // Scale animation for other statuses
         statusIcon = AnimatedBuilder(
-          animation: _scaleAnimation,
+          animation: scaleAnimation,
           builder: (context, child) {
             return Transform.scale(
-              scale: _scaleAnimation.value,
+              scale: scaleAnimation.value,
               child: child,
             );
           },

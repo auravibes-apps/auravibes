@@ -79,7 +79,7 @@ extension CoalescingSaveExtension<T> on Stream<T> {
       onSaved: controller.add,
     );
 
-    late final StreamSubscription<T> subscription;
+    StreamSubscription<T>? subscription;
 
     subscription = shareReplay().listen(
       saver.push,
@@ -91,7 +91,7 @@ extension CoalescingSaveExtension<T> on Stream<T> {
       cancelOnError: false,
     );
 
-    controller.onCancel = subscription.cancel;
+    controller.onCancel = () => subscription?.cancel();
 
     return controller.stream;
   }

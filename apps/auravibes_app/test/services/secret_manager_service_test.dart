@@ -1,3 +1,6 @@
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+
 import 'dart:convert';
 
 import 'package:auravibes_app/services/secret_key_manager.dart';

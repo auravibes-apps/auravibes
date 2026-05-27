@@ -76,7 +76,7 @@ AuraSnackBarController showAuraSnackBar({
   }
 
   // Track overlay entry for removal
-  late final OverlayEntry entry;
+  OverlayEntry? entry;
 
   // Guard flag to prevent double-removal
   var isDismissing = false;
@@ -85,7 +85,7 @@ AuraSnackBarController showAuraSnackBar({
   void dismissWithCleanup() {
     if (isDismissing) return;
     isDismissing = true;
-    entry.remove();
+    entry?.remove();
   }
 
   // Create the snackbar widget with internal state management
@@ -137,9 +137,15 @@ class _AuraSnackBarOverlayEntry extends StatefulWidget {
 
 class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _animationController;
-  late final Animation<Offset> _slideAnimation;
-  late final Animation<double> _fadeAnimation;
+  AnimationController _animationController = throw StateError(
+    '_animationController is not initialized',
+  );
+  Animation<Offset> _slideAnimation = throw StateError(
+    '_slideAnimation is not initialized',
+  );
+  Animation<double> _fadeAnimation = throw StateError(
+    '_fadeAnimation is not initialized',
+  );
   Timer? _dismissTimer;
   bool _isDismissed = false;
   bool _isDisposed = false;

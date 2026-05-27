@@ -22,9 +22,13 @@ class CompactionSettingsSection extends ConsumerStatefulWidget {
 
 class _CompactionSettingsSectionState
     extends ConsumerState<CompactionSettingsSection> {
-  late TextEditingController _usageController;
-  late TextEditingController _remainingController;
-  late bool _autoEnabled;
+  TextEditingController _usageController = throw StateError(
+    '_usageController is not initialized',
+  );
+  TextEditingController _remainingController = throw StateError(
+    '_remainingController is not initialized',
+  );
+  bool _autoEnabled = false;
   String? _validationError;
 
   @override

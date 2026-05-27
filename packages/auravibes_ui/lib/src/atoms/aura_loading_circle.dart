@@ -67,7 +67,9 @@ class AuraLoadingCircle extends StatefulWidget {
 
 class _AuraLoadingCircleState extends State<AuraLoadingCircle>
     with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
+  AnimationController _controller = throw StateError(
+    '_controller is not initialized',
+  );
 
   @override
   void initState() {

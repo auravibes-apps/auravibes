@@ -128,7 +128,7 @@ class AuraInput extends StatefulWidget {
 }
 
 class _AuraInputState extends State<AuraInput> {
-  late FocusNode _focusNode;
+  FocusNode _focusNode = throw StateError('_focusNode is not initialized');
   bool _isFocused = false;
 
   @override

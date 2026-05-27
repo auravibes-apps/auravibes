@@ -1,3 +1,6 @@
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
