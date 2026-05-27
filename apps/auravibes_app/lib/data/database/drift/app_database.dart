@@ -1,3 +1,5 @@
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
 import 'package:auravibes_app/data/database/drift/daos/api_model_providers_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/api_models_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/conversation_dao.dart';

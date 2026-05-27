@@ -1,5 +1,7 @@
 // ignore_for_file: avoid-non-null-assertion
 // Required: Tests inspect nullable values after arranging expected state.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
 
 // ignore_for_file: provider_dependencies
 // Required: provider unit tests read scoped providers directly.

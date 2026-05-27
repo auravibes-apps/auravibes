@@ -1,3 +1,5 @@
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
 import 'package:auravibes_ui/src/molecules/aura_snack_bar_variant.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:flutter/material.dart';

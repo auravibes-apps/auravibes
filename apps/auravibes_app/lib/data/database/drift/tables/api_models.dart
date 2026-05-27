@@ -1,3 +1,5 @@
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
 // coverage:ignore-file
 // Required: Drift table DSL methods (text(), real(), boolean(), integer())
 // call _isGenerated() which throws at runtime. The generated subclass

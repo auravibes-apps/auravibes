@@ -1,5 +1,7 @@
 // ignore_for_file: provider_dependencies
 // Required: widget tests override scoped providers directly.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
 
 import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
 import 'package:auravibes_app/features/chats/widgets/conversation_context_usage_pill.dart';

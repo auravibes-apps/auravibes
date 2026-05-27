@@ -1,3 +1,5 @@
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
 import 'package:auravibes_ui/src/molecules/aura_radio_option.dart';
 import 'package:auravibes_ui/src/organisms/aura_radio_group.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';

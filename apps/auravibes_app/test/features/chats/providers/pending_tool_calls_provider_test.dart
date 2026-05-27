@@ -1,5 +1,7 @@
 // ignore_for_file: avoid-late-keyword
 // Required: Test fixtures are assigned in setUp.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
 
 // ignore_for_file: provider_dependencies
 // Required: provider unit tests read scoped providers directly.

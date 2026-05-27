@@ -1,5 +1,7 @@
 // ignore_for_file: scoped_providers_should_specify_dependencies
 // Required: widget tests override scoped providers directly.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
 
 import 'package:auravibes_app/features/models/providers/workspace_model_connections_providers.dart';
 import 'package:auravibes_app/features/models/screens/models_screen.dart';

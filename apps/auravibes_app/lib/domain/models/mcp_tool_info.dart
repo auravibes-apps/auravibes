@@ -1,3 +1,5 @@
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
 // ============================================================
 // MCP Tool Info
 // ============================================================

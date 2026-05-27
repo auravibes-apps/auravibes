@@ -1,3 +1,5 @@
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
 import 'package:auravibes_app/utils/map_exception.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 

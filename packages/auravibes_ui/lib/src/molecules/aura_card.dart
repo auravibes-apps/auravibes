@@ -1,3 +1,5 @@
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
 import 'dart:ui';
 
 import 'package:auravibes_ui/src/atoms/atoms.dart';

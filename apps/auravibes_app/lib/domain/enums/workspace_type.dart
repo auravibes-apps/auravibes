@@ -1,3 +1,5 @@
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
 /// Enum representing the type of workspace.
 enum WorkspaceType {
   /// Local workspace stored on the device

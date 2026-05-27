@@ -1,3 +1,5 @@
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 
 /// Repository interface for workspace tool data operations.

@@ -1,5 +1,7 @@
 // ignore_for_file: avoid-redundant-async
 // Required: Test callbacks intentionally preserve async-compatible signatures.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
 import 'dart:async';
 
 import 'package:auravibes_app/utils/coalescing_save_extension.dart';

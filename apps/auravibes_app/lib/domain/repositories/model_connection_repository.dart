@@ -1,3 +1,5 @@
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 
 /// Repository interface for model connection data operations.

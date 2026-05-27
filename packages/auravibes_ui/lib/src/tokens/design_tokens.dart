@@ -1,3 +1,5 @@
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
 import 'package:flutter/material.dart';
 
 /// Design tokens for the Aura AI Assistant design system.

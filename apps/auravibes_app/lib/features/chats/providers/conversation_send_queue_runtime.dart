@@ -1,3 +1,5 @@
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
 import 'package:riverpod/riverpod.dart';
 

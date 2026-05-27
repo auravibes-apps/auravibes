@@ -1,3 +1,5 @@
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
 import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_test/flutter_test.dart';

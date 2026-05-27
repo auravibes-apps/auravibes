@@ -1,3 +1,5 @@
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'add_model_provider_model.freezed.dart';

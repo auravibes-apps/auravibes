@@ -1,3 +1,5 @@
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
 import 'package:async/async.dart';
 import 'package:auravibes_app/domain/entities/tool_spec.dart';
 

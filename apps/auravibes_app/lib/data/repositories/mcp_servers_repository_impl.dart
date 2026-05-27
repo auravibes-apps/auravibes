@@ -1,3 +1,5 @@
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
 import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';

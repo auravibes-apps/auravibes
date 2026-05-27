@@ -1,5 +1,7 @@
 // ignore_for_file: provider_dependencies
 // Required: widget tests override scoped providers directly.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
 
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';

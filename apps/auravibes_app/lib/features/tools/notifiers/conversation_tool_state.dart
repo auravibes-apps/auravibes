@@ -1,5 +1,7 @@
 // ignore_for_file: avoid-non-null-assertion
 // Required: Existing nullable API contracts still use explicit assertions.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
 
 import 'package:auravibes_app/data/repositories/conversation_tools_repository_impl.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
