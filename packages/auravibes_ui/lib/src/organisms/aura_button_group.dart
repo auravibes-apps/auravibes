@@ -158,19 +158,16 @@ class AuraButtonGroup<T> extends StatelessWidget {
       children.add(child);
     }
 
-    Widget content;
-    if (orientation == Axis.horizontal) {
-      content = Row(
-        mainAxisSize: MainAxisSize.min,
-        children: children,
-      );
-    } else {
-      content = Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: children,
-      );
-    }
+    final content = orientation == Axis.horizontal
+        ? Row(
+            mainAxisSize: MainAxisSize.min,
+            children: children,
+          )
+        : Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: children,
+          );
 
     // Wrap entire group in ClipRRect for rounded corners
     return ClipRRect(

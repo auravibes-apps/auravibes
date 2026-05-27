@@ -201,23 +201,20 @@ class AuraTile extends StatelessWidget {
       AuraTileSize.large => typography.weights.semibold,
     };
 
-    Color textColor;
-    if (!enabled) {
-      textColor = colors.onSurfaceVariant;
-    } else {
-      textColor = switch (variant) {
-        AuraTileVariant.primary => colors.onPrimary,
-        AuraTileVariant.secondary => colors.onSecondary,
-        AuraTileVariant.surface => colors.onSurface,
-        AuraTileVariant.outlined => colors.onSurface,
-        AuraTileVariant.ghost => colors.primary,
-        AuraTileVariant.selected => colors.primary,
-        AuraTileVariant.success => colors.onSuccess,
-        AuraTileVariant.warning => colors.onWarning,
-        AuraTileVariant.error => colors.onError,
-        AuraTileVariant.info => colors.onInfo,
-      };
-    }
+    final textColor = !enabled
+        ? colors.onSurfaceVariant
+        : switch (variant) {
+            AuraTileVariant.primary => colors.onPrimary,
+            AuraTileVariant.secondary => colors.onSecondary,
+            AuraTileVariant.surface => colors.onSurface,
+            AuraTileVariant.outlined => colors.onSurface,
+            AuraTileVariant.ghost => colors.primary,
+            AuraTileVariant.selected => colors.primary,
+            AuraTileVariant.success => colors.onSuccess,
+            AuraTileVariant.warning => colors.onWarning,
+            AuraTileVariant.error => colors.onError,
+            AuraTileVariant.info => colors.onInfo,
+          };
 
     return TextStyle(
       color: textColor,
