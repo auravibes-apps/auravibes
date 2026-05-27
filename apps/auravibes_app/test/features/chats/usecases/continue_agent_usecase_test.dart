@@ -287,6 +287,46 @@ void main() {
       expect(toolCalls.single, containsPair('name', 'calculator'));
     });
 
+    test('skips empty chunks with non-encodable metadata', () async {
+      when(
+        chatbotService.sendMessage(
+          _model,
+          any,
+          tools: const [],
+        ),
+      ).thenAnswer(
+        (_) => Stream.fromIterable([
+          ChatResult<ChatMessage>(
+            output: ChatMessage.model(
+              '',
+              metadata: {'bad': Object()},
+            ),
+            usage: const LanguageModelUsage(),
+          ),
+          ChatResult<ChatMessage>(
+            output: ChatMessage.model('Done'),
+            finishReason: FinishReason.stop,
+            usage: const LanguageModelUsage(),
+          ),
+        ]),
+      );
+
+      final result = await usecase.call(conversationId: 'conversation-1');
+
+      expect(result.messageId, 'assistant-1');
+      expect(startedSubscriptionMessageIds, ['assistant-1']);
+      expect(updatedResults, hasLength(1));
+      expect(updatedResults.single.entityText, 'Done');
+
+      final created =
+          verify(
+                messageRepository.createMessage(captureAny),
+              ).captured.single
+              as MessageToCreate;
+      expect(created.content, 'Done');
+      expect(created.metadata, isNull);
+    });
+
     test(
       'marks the pending user message as sent on first model chunk',
       () async {

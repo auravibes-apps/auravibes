@@ -497,6 +497,44 @@ void main() {
       );
     });
 
+    test(
+      'createMessage rejects empty assistant content with invalid metadata',
+      () async {
+        expect(
+          () => repository.createMessage(
+            const MessageToCreate(
+              conversationId: 'conv-1',
+              content: '',
+              messageType: MessageType.text,
+              isUser: false,
+              status: MessageStatus.unfinished,
+              metadata: 'not json',
+            ),
+          ),
+          throwsA(isA<MessageValidationException>()),
+        );
+      },
+    );
+
+    test(
+      'createMessage rejects empty assistant content with blank metadata',
+      () async {
+        expect(
+          () => repository.createMessage(
+            const MessageToCreate(
+              conversationId: 'conv-1',
+              content: '',
+              messageType: MessageType.text,
+              isUser: false,
+              status: MessageStatus.unfinished,
+              metadata: '   ',
+            ),
+          ),
+          throwsA(isA<MessageValidationException>()),
+        );
+      },
+    );
+
     test('getLatestCompactionSummary returns null when no summaries', () async {
       await repository.createMessage(
         const MessageToCreate(

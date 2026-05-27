@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
@@ -23,6 +22,7 @@ import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
 import 'package:auravibes_app/services/monitoring_service.dart';
 import 'package:auravibes_app/utils/coalescing_save_extension.dart';
+import 'package:auravibes_app/utils/encode.dart';
 import 'package:logging/logging.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:rxdart/rxdart.dart';
@@ -355,7 +355,7 @@ class ContinueAgentUsecase {
     state.hasAcknowledgedPendingUsers = hasAcknowledgedPendingUsers;
 
     if (currentResult.entityText.isEmpty &&
-        currentResult.entityMetadata == null) {
+        !_hasEncodableMetadata(currentResult)) {
       return;
     }
 
@@ -374,6 +374,9 @@ class ContinueAgentUsecase {
 
     state.stage = 'create_assistant_message';
     final metadata = currentResult.entityMetadata;
+    final metadataJson = metadata == null
+        ? null
+        : safeJsonEncode(metadata.toJson());
     final firstMessage = await messageRepository.createMessage(
       .new(
         conversationId: state.conversationId,
@@ -381,7 +384,7 @@ class ContinueAgentUsecase {
         messageType: .text,
         isUser: false,
         status: .unfinished,
-        metadata: metadata == null ? null : jsonEncode(metadata.toJson()),
+        metadata: metadataJson,
       ),
     );
     state.firstMessage = firstMessage;
@@ -592,6 +595,13 @@ class ContinueAgentUsecase {
         stackTrace: cleanupStackTrace,
       );
     }
+  }
+
+  bool _hasEncodableMetadata(ChatResult<ChatMessage> result) {
+    final metadata = result.entityMetadata;
+    if (metadata == null) return false;
+
+    return safeJsonEncode(metadata.toJson()) != null;
   }
 
   MessageMetadataEntity? _markPendingToolsStopped(
