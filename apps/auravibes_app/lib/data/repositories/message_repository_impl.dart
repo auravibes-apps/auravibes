@@ -257,10 +257,10 @@ class MessageRepositoryImpl implements MessageRepository {
   /// [message] The message to validate.
   /// Returns a string describing the validation error.
   String _getValidationErrorToCreate(MessageToCreate message) {
-    if (message.content.isEmpty) return 'Message content cannot be empty';
     if (message.conversationId.isEmpty) {
       return 'Conversation ID cannot be empty';
     }
+    if (message.content.isEmpty) return 'Message content cannot be empty';
     return 'Unknown validation error';
   }
 
