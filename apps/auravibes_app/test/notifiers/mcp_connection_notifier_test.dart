@@ -648,7 +648,8 @@ void main() {
         Logger.root.level = previousLevel;
       });
 
-      mcpServersRepository.enabledServersError = Exception('db offline');
+      final expectedError = Exception('db offline');
+      mcpServersRepository.enabledServersError = expectedError;
       final testContainer = ProviderContainer(
         overrides: [
           currentRouteWorkspaceIdProvider.overrideWithValue('workspace-1'),
@@ -662,15 +663,14 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       expect(testContainer.read(mcpConnectionProvider), isEmpty);
-      expect(
-        records.any(
-          (record) =>
-              record.loggerName == 'McpConnectionNotifier' &&
-              record.level == Level.WARNING &&
-              record.message.contains('Failed to load MCP servers from database'),
-        ),
-        isTrue,
+      final record = records.firstWhere(
+        (record) =>
+            record.loggerName == 'McpConnectionNotifier' &&
+            record.level == Level.WARNING &&
+            record.message == 'Failed to load MCP servers from database',
       );
+      expect(record.error, same(expectedError));
+      expect(record.stackTrace, isNotNull);
     });
   });
 }
