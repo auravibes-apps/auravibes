@@ -10,6 +10,8 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-moving-to-variable
+// Required: Existing code repeats lookups where extraction adds noise.
 
 import 'dart:convert';
 import 'dart:io';

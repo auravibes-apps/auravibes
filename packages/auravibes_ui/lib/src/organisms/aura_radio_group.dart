@@ -10,6 +10,8 @@
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-moving-to-variable
+// Required: UI components repeat theme and layout lookups intentionally.
 
 import 'package:auravibes_ui/src/molecules/aura_radio_option.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';

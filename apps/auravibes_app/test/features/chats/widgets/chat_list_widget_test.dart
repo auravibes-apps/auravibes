@@ -4,6 +4,8 @@
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-moving-to-variable
+// Required: Tests repeat finders and fixture lookups for clarity.
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';

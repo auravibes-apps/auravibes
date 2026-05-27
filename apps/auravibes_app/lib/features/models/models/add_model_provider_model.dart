@@ -4,6 +4,8 @@
 // Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-moving-to-variable
+// Required: Existing code repeats lookups where extraction adds noise.
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'add_model_provider_model.freezed.dart';

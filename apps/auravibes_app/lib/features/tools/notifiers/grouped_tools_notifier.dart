@@ -4,6 +4,8 @@
 // Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-moving-to-variable
+// Required: Existing code repeats lookups where extraction adds noise.
 
 import 'package:auravibes_app/data/repositories/tools_groups_repository_impl.dart';
 import 'package:auravibes_app/domain/models/mcp_connection_view_status.dart';

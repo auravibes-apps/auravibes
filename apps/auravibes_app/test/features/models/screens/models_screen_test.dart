@@ -6,6 +6,8 @@
 // Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-moving-to-variable
+// Required: Tests repeat finders and fixture lookups for clarity.
 
 import 'package:auravibes_app/features/models/providers/workspace_model_connections_providers.dart';
 import 'package:auravibes_app/features/models/screens/models_screen.dart';

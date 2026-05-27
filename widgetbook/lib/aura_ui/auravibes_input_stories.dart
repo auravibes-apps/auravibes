@@ -2,6 +2,8 @@
 // Required: Widgetbook stories use fixed example sizes.
 // ignore_for_file: avoid-returning-widgets
 // Required: Widgetbook stories use helper functions that return widgets.
+// ignore_for_file: prefer-moving-to-variable
+// Required: Existing code repeats lookups where extraction adds noise.
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:widgetbook/widgetbook.dart';

@@ -2,6 +2,8 @@
 // Required: Existing thresholds and limits use numeric values.
 // ignore_for_file: avoid-non-null-assertion
 // Required: Existing nullable API contracts still use explicit assertions.
+// ignore_for_file: prefer-moving-to-variable
+// Required: Existing code repeats lookups where extraction adds noise.
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';

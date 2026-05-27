@@ -6,6 +6,8 @@
 // Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: prefer-extracting-callbacks
 // Required: UI callbacks stay local to their widgets.
+// ignore_for_file: prefer-moving-to-variable
+// Required: Existing code repeats lookups where extraction adds noise.
 import 'package:auravibes_app/features/models/providers/add_model_provider_state.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_connections_providers.dart';
 import 'package:auravibes_app/features/models/widgets/add_model_provider_widget.dart';

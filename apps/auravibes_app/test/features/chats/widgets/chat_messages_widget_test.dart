@@ -4,6 +4,8 @@
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: prefer-moving-to-variable
+// Required: Tests repeat finders and fixture lookups for clarity.
 
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';

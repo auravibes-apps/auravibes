@@ -10,6 +10,8 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-extracting-callbacks
 // Required: UI callbacks stay local to their widgets.
+// ignore_for_file: prefer-moving-to-variable
+// Required: Existing code repeats lookups where extraction adds noise.
 import 'dart:async';
 
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
