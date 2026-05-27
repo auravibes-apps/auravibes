@@ -1,3 +1,5 @@
+// ignore_for_file: no-magic-number
+// Required: Existing thresholds and limits use numeric values.
 import 'dart:async';
 
 import 'package:auravibes_app/features/chats/notifiers/new_chat_state.dart';

@@ -1,3 +1,5 @@
+// ignore_for_file: no-magic-number
+// Required: Widgetbook stories use fixed example sizes.
 // ignore_for_file: avoid-returning-widgets
 // Required: Widgetbook stories use helper functions that return widgets.
 import 'package:auravibes_ui/ui.dart';

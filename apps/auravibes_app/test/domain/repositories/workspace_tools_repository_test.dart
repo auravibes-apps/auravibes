@@ -1,3 +1,5 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: cascade_invocations
 // ignore_for_file: no-empty-block
 // Required: Tests use intentional no-op callbacks and fake hooks.

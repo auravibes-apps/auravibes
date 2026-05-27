@@ -1,3 +1,5 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: no-empty-block

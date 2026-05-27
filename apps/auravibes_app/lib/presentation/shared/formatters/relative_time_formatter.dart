@@ -1,3 +1,5 @@
+// ignore_for_file: no-magic-number
+// Required: Existing thresholds and limits use numeric values.
 String formatRelativeTime(DateTime date, {DateTime? now}) {
   final current = now ?? DateTime.now();
   final difference = current.difference(date);

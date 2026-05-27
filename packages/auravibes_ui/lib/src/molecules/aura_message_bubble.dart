@@ -1,3 +1,5 @@
+// ignore_for_file: no-magic-number
+// Required: UI tokens and layout use fixed design values.
 // ignore_for_file: avoid-returning-widgets
 // Required: Existing helper builders return widgets.
 // ignore_for_file: avoid-non-null-assertion

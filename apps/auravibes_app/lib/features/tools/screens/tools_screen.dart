@@ -1,3 +1,5 @@
+// ignore_for_file: no-magic-number
+// Required: Existing thresholds and limits use numeric values.
 // ignore_for_file: no-equal-arguments
 // Required: Existing argument values intentionally repeat.
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';

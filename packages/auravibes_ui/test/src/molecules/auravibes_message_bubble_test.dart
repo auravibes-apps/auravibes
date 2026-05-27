@@ -1,3 +1,5 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: avoid-non-null-assertion
 // Required: Tests inspect nullable values after arranging expected state.
 // ignore_for_file: no-empty-block

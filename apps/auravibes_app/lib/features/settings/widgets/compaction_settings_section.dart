@@ -1,3 +1,5 @@
+// ignore_for_file: no-magic-number
+// Required: Existing thresholds and limits use numeric values.
 // ignore_for_file: avoid-non-null-assertion
 // Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: member-ordering

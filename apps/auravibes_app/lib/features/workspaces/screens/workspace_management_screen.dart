@@ -1,3 +1,5 @@
+// ignore_for_file: no-magic-number
+// Required: Existing thresholds and limits use numeric values.
 // ignore_for_file: avoid-returning-widgets
 // Required: Existing helper builders return widgets.
 // ignore_for_file: member-ordering

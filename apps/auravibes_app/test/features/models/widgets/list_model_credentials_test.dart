@@ -1,3 +1,5 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: no-equal-arguments

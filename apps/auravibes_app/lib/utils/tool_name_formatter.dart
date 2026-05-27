@@ -1,3 +1,5 @@
+// ignore_for_file: no-magic-number
+// Required: Existing thresholds and limits use numeric values.
 // ignore_for_file: avoid-substring
 // Required: Existing parsing uses code-unit substring offsets.
 // ignore_for_file: no-equal-arguments

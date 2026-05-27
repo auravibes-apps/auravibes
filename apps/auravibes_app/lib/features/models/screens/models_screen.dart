@@ -1,3 +1,5 @@
+// ignore_for_file: no-magic-number
+// Required: Existing thresholds and limits use numeric values.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
 import 'package:auravibes_app/features/models/providers/add_model_provider_state.dart';

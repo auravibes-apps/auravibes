@@ -1,3 +1,5 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: avoid-substring
 // Required: Tests assert existing code-unit substring behavior.
 // ignore_for_file: no-equal-arguments
