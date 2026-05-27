@@ -22,6 +22,7 @@ import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
 import 'package:auravibes_app/services/monitoring_service.dart';
 import 'package:auravibes_app/utils/coalescing_save_extension.dart';
+import 'package:auravibes_app/utils/encode.dart';
 import 'package:logging/logging.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:rxdart/rxdart.dart';
@@ -257,7 +258,7 @@ class ContinueAgentUsecase {
               await messageRepository.patchMessage(
                 state.firstMessage!.id,
                 .new(
-                  content: chunk.entityText,
+                  content: chunk.entityText.isEmpty ? null : chunk.entityText,
                   metadata: chunk.entityMetadata,
                   status: .unfinished,
                 ),
@@ -353,6 +354,11 @@ class ContinueAgentUsecase {
     );
     state.hasAcknowledgedPendingUsers = hasAcknowledgedPendingUsers;
 
+    if (currentResult.entityText.isEmpty &&
+        !_hasEncodableMetadata(currentResult)) {
+      return;
+    }
+
     await _ensureAssistantMessage(state, currentResult);
     final currentMessage = state.firstMessage!;
 
@@ -367,13 +373,18 @@ class ContinueAgentUsecase {
     if (state.firstMessage != null) return;
 
     state.stage = 'create_assistant_message';
+    final metadata = currentResult.entityMetadata;
+    final metadataJson = metadata == null
+        ? null
+        : safeJsonEncode(metadata.toJson());
     final firstMessage = await messageRepository.createMessage(
       .new(
         conversationId: state.conversationId,
-        content: currentResult.output.text,
+        content: currentResult.entityText,
         messageType: .text,
         isUser: false,
         status: .unfinished,
+        metadata: metadataJson,
       ),
     );
     state.firstMessage = firstMessage;
@@ -532,7 +543,7 @@ class ContinueAgentUsecase {
     await messageRepository.patchMessage(
       message.id,
       MessagePatch(
-        content: result?.entityText,
+        content: result?.entityText.isEmpty ?? true ? null : result?.entityText,
         metadata: _markPendingToolsStopped(result?.entityMetadata),
         status: MessageStatus.sent,
       ),
@@ -584,6 +595,13 @@ class ContinueAgentUsecase {
         stackTrace: cleanupStackTrace,
       );
     }
+  }
+
+  bool _hasEncodableMetadata(ChatResult<ChatMessage> result) {
+    final metadata = result.entityMetadata;
+    if (metadata == null) return false;
+
+    return safeJsonEncode(metadata.toJson()) != null;
   }
 
   MessageMetadataEntity? _markPendingToolsStopped(

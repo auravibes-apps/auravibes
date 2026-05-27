@@ -449,6 +449,92 @@ void main() {
       expect(found.metadata!.promptTokens, 10);
     });
 
+    test(
+      'createMessage allows empty assistant content with metadata',
+      () async {
+        const metadata = MessageMetadataEntity(
+          toolCalls: [
+            MessageToolCallEntity(
+              id: 'tool-1',
+              name: 'calculator',
+              argumentsRaw: '{"input":"2+2"}',
+            ),
+          ],
+        );
+
+        final created = await repository.createMessage(
+          MessageToCreate(
+            conversationId: 'conv-1',
+            content: '',
+            messageType: MessageType.text,
+            isUser: false,
+            status: MessageStatus.unfinished,
+            metadata: jsonEncode(metadata.toJson()),
+          ),
+        );
+
+        final found = await repository.getMessageById(created.id);
+        expect(found, isNotNull);
+        expect(found!.content, isEmpty);
+        expect(found.metadata?.toolCalls, hasLength(1));
+        expect(found.metadata?.toolCalls.single.id, 'tool-1');
+      },
+    );
+
+    test('createMessage rejects empty user content with metadata', () async {
+      expect(
+        () => repository.createMessage(
+          const MessageToCreate(
+            conversationId: 'conv-1',
+            content: '',
+            messageType: MessageType.text,
+            isUser: true,
+            status: MessageStatus.sending,
+            metadata: '{"promptTokens":10}',
+          ),
+        ),
+        throwsA(isA<MessageValidationException>()),
+      );
+    });
+
+    test(
+      'createMessage rejects empty assistant content with invalid metadata',
+      () async {
+        expect(
+          () => repository.createMessage(
+            const MessageToCreate(
+              conversationId: 'conv-1',
+              content: '',
+              messageType: MessageType.text,
+              isUser: false,
+              status: MessageStatus.unfinished,
+              metadata: 'not json',
+            ),
+          ),
+          throwsA(isA<MessageValidationException>()),
+        );
+      },
+    );
+
+    test(
+      'createMessage rejects empty assistant content with blank metadata',
+      () async {
+        expect(
+          () => repository.createMessage(
+            const MessageToCreate(
+              conversationId: 'conv-1',
+              content: '',
+              messageType: MessageType.text,
+              isUser: false,
+              status: MessageStatus.unfinished,
+              metadata: '   ',
+            ),
+          ),
+          throwsA(isA<MessageValidationException>()),
+        );
+      },
+    );
+
     test('getLatestCompactionSummary returns null when no summaries', () async {
       await repository.createMessage(
         const MessageToCreate(

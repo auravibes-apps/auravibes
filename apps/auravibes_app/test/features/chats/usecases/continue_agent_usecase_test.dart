@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
@@ -199,6 +200,132 @@ void main() {
         expect(streamingUpdate.metadata?.usedTokens, 22);
       },
     );
+
+    test('ignores empty chunks until text is available', () async {
+      when(
+        chatbotService.sendMessage(
+          _model,
+          any,
+          tools: const [],
+        ),
+      ).thenAnswer(
+        (_) => Stream.fromIterable([
+          ChatResult<ChatMessage>(
+            output: ChatMessage.model(''),
+            usage: const LanguageModelUsage(),
+          ),
+          ChatResult<ChatMessage>(
+            output: ChatMessage.model('Done'),
+            finishReason: FinishReason.stop,
+            usage: const LanguageModelUsage(),
+          ),
+        ]),
+      );
+
+      final result = await usecase.call(conversationId: 'conversation-1');
+
+      expect(result.messageId, 'assistant-1');
+      expect(result.hasToolCalls, isFalse);
+      expect(startedSubscriptionMessageIds, ['assistant-1']);
+      expect(updatedResults, hasLength(1));
+      expect(updatedResults.single.entityText, 'Done');
+
+      final created =
+          verify(
+                messageRepository.createMessage(captureAny),
+              ).captured.single
+              as MessageToCreate;
+      expect(created.content, 'Done');
+      expect(created.metadata, isNull);
+    });
+
+    test('persists metadata-only tool call as assistant message', () async {
+      when(
+        chatbotService.sendMessage(
+          _model,
+          any,
+          tools: const [],
+        ),
+      ).thenAnswer(
+        (_) => Stream.fromIterable([
+          ChatResult<ChatMessage>(
+            output: ChatMessage.model(
+              '',
+              parts: [
+                ToolRequestPart(
+                  toolRequest: ToolRequest(
+                    ref: 'tool-1',
+                    name: 'calculator',
+                    input: const {'input': '2+2'},
+                  ),
+                ),
+              ],
+            ),
+            finishReason: FinishReason.toolCalls,
+            usage: const LanguageModelUsage(),
+          ),
+        ]),
+      );
+
+      final result = await usecase.call(conversationId: 'conversation-1');
+
+      expect(result.messageId, 'assistant-1');
+      expect(result.hasToolCalls, isTrue);
+
+      final created =
+          verify(
+                messageRepository.createMessage(captureAny),
+              ).captured.single
+              as MessageToCreate;
+      expect(created.content, isEmpty);
+      expect(created.metadata, isNotNull);
+
+      final metadata = jsonDecode(created.metadata!) as Map<String, dynamic>;
+      final toolCalls = metadata['toolCalls'] as List<dynamic>;
+      expect(toolCalls, hasLength(1));
+      expect(toolCalls.single, containsPair('id', 'tool-1'));
+      expect(toolCalls.single, containsPair('name', 'calculator'));
+    });
+
+    test('skips empty chunks with non-encodable metadata', () async {
+      when(
+        chatbotService.sendMessage(
+          _model,
+          any,
+          tools: const [],
+        ),
+      ).thenAnswer(
+        (_) => Stream.fromIterable([
+          ChatResult<ChatMessage>(
+            output: ChatMessage.model(
+              '',
+              metadata: {'bad': Object()},
+            ),
+            usage: const LanguageModelUsage(),
+          ),
+          ChatResult<ChatMessage>(
+            output: ChatMessage.model('Done'),
+            finishReason: FinishReason.stop,
+            usage: const LanguageModelUsage(),
+          ),
+        ]),
+      );
+
+      final result = await usecase.call(conversationId: 'conversation-1');
+
+      expect(result.messageId, 'assistant-1');
+      expect(startedSubscriptionMessageIds, ['assistant-1']);
+      expect(updatedResults, hasLength(1));
+      expect(updatedResults.single.entityText, 'Done');
+
+      final created =
+          verify(
+                messageRepository.createMessage(captureAny),
+              ).captured.single
+              as MessageToCreate;
+      expect(created.content, 'Done');
+      expect(created.metadata, isNull);
+    });
 
     test(
       'marks the pending user message as sent on first model chunk',
