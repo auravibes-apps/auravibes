@@ -1,3 +1,6 @@
+// ignore_for_file: no-object-declaration
+// Required: Framework error callbacks expose Object errors.
+
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 

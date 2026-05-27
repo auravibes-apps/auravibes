@@ -4,6 +4,8 @@
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: no-object-declaration
+// Required: Genkit tool payloads expose raw Object values.
 
 import 'dart:convert';
 

@@ -6,6 +6,8 @@
 // Required: Tests use intentional no-op callbacks and fake hooks.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: no-object-declaration
+// Required: Test fakes override noSuchMethod with Object return values.
 
 // ignore_for_file: cascade_invocations
 
