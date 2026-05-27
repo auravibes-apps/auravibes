@@ -11,9 +11,6 @@
 // ignore_for_file: prefer-static-class
 // Required: Tests keep fixture helpers and fakes top-level.
 
-// ignore_for_file: avoid-non-null-assertion
-// Required: Tests inspect nullable values after arranging expected state.
-
 // ignore_for_file: avoid-late-keyword
 // Required: Test fixtures are assigned in setUp.
 
@@ -59,7 +56,7 @@ void main() {
             final t = await database.workspaceToolsDao.getWorkspaceTools(ws.id);
             return t.firstOrNull;
           });
-      toolId = tool!.id;
+      toolId = (tool ?? fail('Expected tool to be non-null')).id;
     });
 
     tearDown(() async {
@@ -280,7 +277,9 @@ void main() {
       final ws = await database.workspaceDao.getAllWorkspaces();
       final conv2 = await database.conversationDao.insertConversation(
         ConversationsCompanion.insert(
-          workspaceId: ws.firstOrNull!.id,
+          workspaceId:
+              (ws.firstOrNull ?? fail('Expected ws.firstOrNull to be non-null'))
+                  .id,
           title: 'Conv2',
         ),
       );
@@ -299,7 +298,10 @@ void main() {
         toolId,
       );
       expect(copied, isNotNull);
-      expect(copied!.isEnabled, isFalse);
+      expect(
+        (copied ?? fail('Expected copied to be non-null')).isEnabled,
+        isFalse,
+      );
       expect(copied.permissions, equals(PermissionAccess.granted));
     });
 
@@ -318,7 +320,7 @@ void main() {
         conversationId,
         toolId,
       );
-      expect(tool!.isEnabled, isFalse);
+      expect((tool ?? fail('Expected tool to be non-null')).isEnabled, isFalse);
     });
 
     test('isConversationToolDisabled returns opposite of enabled', () async {
@@ -378,13 +380,17 @@ void main() {
       final tool2 = await database.workspaceToolsDao
           .insertToolsBatch([
             ToolsCompanion.insert(
-              workspaceId: ws.firstOrNull!.id,
+              workspaceId:
+                  (ws.firstOrNull ??
+                          fail('Expected ws.firstOrNull to be non-null'))
+                      .id,
               toolId: 'tool2',
             ),
           ])
           .then((_) async {
             final t = await database.workspaceToolsDao.getWorkspaceTools(
-              ws.firstOrNull!.id,
+              (ws.firstOrNull ?? fail('Expected ws.firstOrNull to be non-null'))
+                  .id,
             );
             return t.firstWhere((e) => e.toolId == 'tool2');
           });

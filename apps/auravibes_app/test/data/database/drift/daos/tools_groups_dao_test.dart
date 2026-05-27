@@ -7,9 +7,6 @@
 // ignore_for_file: prefer-static-class
 // Required: Tests keep fixture helpers and fakes top-level.
 
-// ignore_for_file: avoid-non-null-assertion
-// Required: Tests inspect nullable values after arranging expected state.
-
 // ignore_for_file: avoid-late-keyword
 // Required: Test fixtures are assigned in setUp.
 
@@ -72,7 +69,10 @@ void main() {
       );
       final found = await database.toolsGroupsDao.getToolsGroupById(created.id);
       expect(found, isNotNull);
-      expect(found!.name, equals('Group'));
+      expect(
+        (found ?? fail('Expected found to be non-null')).name,
+        equals('Group'),
+      );
     });
 
     test('getToolsGroupById returns null for nonexistent', () async {
@@ -140,7 +140,10 @@ void main() {
         server.id,
       );
       expect(found, isNotNull);
-      expect(found!.name, equals('Linked Group'));
+      expect(
+        (found ?? fail('Expected found to be non-null')).name,
+        equals('Linked Group'),
+      );
     });
 
     test('getToolsGroupByMcpServerId returns null when not found', () async {
@@ -189,7 +192,10 @@ void main() {
       );
       expect(updated, isTrue);
       final found = await database.toolsGroupsDao.getToolsGroupById(created.id);
-      expect(found!.isEnabled, isFalse);
+      expect(
+        (found ?? fail('Expected found to be non-null')).isEnabled,
+        isFalse,
+      );
     });
   });
 }

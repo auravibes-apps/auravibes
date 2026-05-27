@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Tests inspect nullable values after arranging expected state.
 
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/molecules/aura_badge.dart';
@@ -40,7 +38,10 @@ void main() {
       );
 
       final container = tester.widget<Container>(find.byType(Container));
-      final decoration = container.decoration! as BoxDecoration;
+      final decoration =
+          (container.decoration ??
+                  fail('Expected container.decoration to be non-null'))
+              as BoxDecoration;
       expect(decoration.color, DesignColors.primaryBase);
     });
 
@@ -57,7 +58,10 @@ void main() {
       );
 
       final container = tester.widget<Container>(find.byType(Container));
-      final decoration = container.decoration! as BoxDecoration;
+      final decoration =
+          (container.decoration ??
+                  fail('Expected container.decoration to be non-null'))
+              as BoxDecoration;
       expect(decoration.color, DesignColors.secondaryBase);
     });
 
@@ -74,7 +78,10 @@ void main() {
       );
 
       final container = tester.widget<Container>(find.byType(Container));
-      final decoration = container.decoration! as BoxDecoration;
+      final decoration =
+          (container.decoration ??
+                  fail('Expected container.decoration to be non-null'))
+              as BoxDecoration;
       expect(decoration.color, Colors.transparent);
       expect(decoration.border, isNotNull);
     });
@@ -92,7 +99,10 @@ void main() {
       );
 
       final container = tester.widget<Container>(find.byType(Container));
-      final decoration = container.decoration! as BoxDecoration;
+      final decoration =
+          (container.decoration ??
+                  fail('Expected container.decoration to be non-null'))
+              as BoxDecoration;
       expect(decoration.color, DesignColors.primaryBase.withValues(alpha: 0.1));
     });
 

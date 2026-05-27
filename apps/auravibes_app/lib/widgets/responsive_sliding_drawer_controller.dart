@@ -4,8 +4,6 @@
 // Required: Existing helper builders return widgets.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -52,7 +50,10 @@ class ResponsiveSlidingDrawerProvider extends InheritedWidget {
       provider != null,
       'No ResponsiveSlidingDrawerProvider found in context',
     );
-    return provider!.controller;
+    if (provider == null) {
+      throw FlutterError('No ResponsiveSlidingDrawerProvider found in context');
+    }
+    return provider.controller;
   }
 
   static ResponsiveSlidingDrawerController? maybeOf(BuildContext context) {
@@ -220,6 +221,14 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
 
   bool get isDesktop => MediaQuery.sizeOf(context).width >= 600;
 
+  double get _requiredDesktopDrawerWidth {
+    final width = _desktopDrawerWidth;
+    if (width == null) {
+      throw StateError('Desktop drawer width is not initialized');
+    }
+    return width;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -247,7 +256,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
     if (isDesktop) {
       final screenWidth = MediaQuery.sizeOf(context).width;
       _desktopDrawerWidth ??= widget.desktopOpenRatio * screenWidth;
-      _desktopDrawerWidth = _desktopDrawerWidth!.clamp(
+      _desktopDrawerWidth = _requiredDesktopDrawerWidth.clamp(
         widget.desktopMinDrawerWidth,
         widget.desktopMaxDrawerWidth,
       );
@@ -270,15 +279,17 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
 
   void _handleDragUpdate(DragUpdateDetails details) {
     if (_isResizing) return;
+    final primaryDelta = details.primaryDelta;
+    if (primaryDelta == null) return;
 
     if (_dragDirection == null) {
-      if (_dragStartedWhenOpen == false && details.primaryDelta! > 0) {
+      if (_dragStartedWhenOpen == false && primaryDelta > 0) {
         _dragDirection = _DrawerDragDirection.opening;
         if (!_hasStartedDragCallback) {
           widget.onStartedOpening?.call();
           _hasStartedDragCallback = true;
         }
-      } else if ((_dragStartedWhenOpen ?? false) && details.primaryDelta! < 0) {
+      } else if ((_dragStartedWhenOpen ?? false) && primaryDelta < 0) {
         _dragDirection = _DrawerDragDirection.closing;
         if (!_hasStartedDragCallback) {
           widget.onStartedClosing?.call();
@@ -289,7 +300,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
       }
     }
     final effectiveWidth = _currentDrawerWidth;
-    final delta = details.primaryDelta! / effectiveWidth;
+    final delta = primaryDelta / effectiveWidth;
     _controller.value += delta;
   }
 
@@ -372,7 +383,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
     }
 
     if (_resizeOvershoot == 0.0) {
-      _desktopDrawerWidth = (_desktopDrawerWidth! + delta).clamp(
+      _desktopDrawerWidth = (_requiredDesktopDrawerWidth + delta).clamp(
         widget.desktopMinDrawerWidth,
         widget.desktopMaxDrawerWidth,
       );
@@ -383,11 +394,13 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
   }
 
   bool _isResizeBeyondMax(double delta) {
-    return _desktopDrawerWidth! >= widget.desktopMaxDrawerWidth && delta > 0;
+    return _requiredDesktopDrawerWidth >= widget.desktopMaxDrawerWidth &&
+        delta > 0;
   }
 
   bool _isResizeBeyondMin(double delta) {
-    return _desktopDrawerWidth! <= widget.desktopMinDrawerWidth && delta < 0;
+    return _requiredDesktopDrawerWidth <= widget.desktopMinDrawerWidth &&
+        delta < 0;
   }
 
   void _applyOvershootRecovery(double delta) {
@@ -407,14 +420,15 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
     final remaining = delta.abs() - _resizeOvershoot.abs();
     _resizeOvershoot = 0.0;
     _desktopDrawerWidth =
-        (_desktopDrawerWidth! + (delta > 0 ? remaining : -remaining)).clamp(
-          widget.desktopMinDrawerWidth,
-          widget.desktopMaxDrawerWidth,
-        );
+        (_requiredDesktopDrawerWidth + (delta > 0 ? remaining : -remaining))
+            .clamp(
+              widget.desktopMinDrawerWidth,
+              widget.desktopMaxDrawerWidth,
+            );
   }
 
   void _clampDesktopDrawerWidth() {
-    _desktopDrawerWidth = _desktopDrawerWidth!.clamp(
+    _desktopDrawerWidth = _requiredDesktopDrawerWidth.clamp(
       widget.desktopMinDrawerWidth,
       widget.desktopMaxDrawerWidth,
     );

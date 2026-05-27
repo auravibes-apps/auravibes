@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-non-null-assertion
-// Required: Tests inspect nullable values after arranging expected state.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: format-comment
@@ -88,7 +86,9 @@ void main() {
           fireImmediately: true,
         );
 
-        final result = (await completer.future).value!;
+        final result =
+            (await completer.future).value ??
+            fail('Expected conversation result');
         sub.close();
         expect(result, isA<ConversationFound>());
         expect((result as ConversationFound).conversation.id, 'conv-1');
@@ -120,7 +120,9 @@ void main() {
           fireImmediately: true,
         );
 
-        final result = (await completer.future).value!;
+        final result =
+            (await completer.future).value ??
+            fail('Expected conversation result');
         sub.close();
         expect(result, isA<ConversationWorkspaceMismatch>());
       },
@@ -149,7 +151,9 @@ void main() {
         fireImmediately: true,
       );
 
-      final result = (await completer.future).value!;
+      final result =
+          (await completer.future).value ??
+          fail('Expected conversation result');
       sub.close();
       expect(result, isA<ConversationNotFound>());
     });
@@ -211,7 +215,9 @@ void main() {
       final state = container.read(conversationChatProvider('ws-1')).value;
       expect(state, isA<ConversationFound>());
       expect(
-        (state! as ConversationFound).conversation.modelId,
+        ((state ?? fail('Expected state to be non-null')) as ConversationFound)
+            .conversation
+            .modelId,
         'model-1',
       );
 
@@ -300,7 +306,8 @@ class _FakeConversationRepository implements ConversationRepository {
     String id,
     ConversationPatch patch,
   ) async {
-    if (onPatch != null) return onPatch!(id, patch);
+    final patchHandler = onPatch;
+    if (patchHandler != null) return patchHandler(id, patch);
     throw UnimplementedError();
   }
 

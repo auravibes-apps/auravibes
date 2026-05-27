@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: prefer-correct-identifier-length
@@ -63,7 +61,9 @@ class MyApp extends ConsumerWidget {
     return Portal(
       child: MaterialApp.router(
         routerConfig: routerConfig,
-        builder: (context, child) => AuraText(child: child!),
+        builder: (context, child) => AuraText(
+          child: child ?? const SizedBox.shrink(),
+        ),
         title: F.title,
         theme: ThemeData(
           extensions: [

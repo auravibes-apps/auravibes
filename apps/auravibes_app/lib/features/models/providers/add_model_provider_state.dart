@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-static-class
@@ -64,15 +62,22 @@ class AddModelProviderState extends _$AddModelProviderState {
       return null;
     }
 
+    final name = state.name;
+    final key = state.key;
+    final modelId = state.modelId;
+    if (name == null || key == null || modelId == null) {
+      return null;
+    }
+
     try {
       final repo = ref.read(modelConnectionRepositoryProvider);
 
       return await repo.createModelConnection(
         ModelConnectionToCreate(
-          name: state.name!,
-          key: state.key!,
+          name: name,
+          key: key,
           workspaceId: _workspaceId,
-          modelId: state.modelId!,
+          modelId: modelId,
           url: state.url,
         ),
       );

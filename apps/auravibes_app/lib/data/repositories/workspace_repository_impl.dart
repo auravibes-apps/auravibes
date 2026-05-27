@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
@@ -214,8 +212,9 @@ class WorkspaceRepositoryImpl implements WorkspaceRepository {
     if (workspace.type == WorkspaceType.local && workspace.url != null) {
       return 'Local workspace cannot have a URL';
     }
+    final url = workspace.url;
     if (workspace.type == WorkspaceType.remote &&
-        (workspace.url == null || workspace.url!.isEmpty)) {
+        (url == null || url.isEmpty)) {
       return 'Remote workspace must have a URL';
     }
     return 'Unknown validation error';

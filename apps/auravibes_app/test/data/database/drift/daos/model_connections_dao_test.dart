@@ -7,9 +7,6 @@
 // ignore_for_file: prefer-static-class
 // Required: Tests keep fixture helpers and fakes top-level.
 
-// ignore_for_file: avoid-non-null-assertion
-// Required: Tests inspect nullable values after arranging expected state.
-
 // ignore_for_file: avoid-late-keyword
 // Required: Test fixtures are assigned in setUp.
 
@@ -74,7 +71,10 @@ void main() {
         created.id,
       );
       expect(found, isNotNull);
-      expect(found!.name, equals('Conn'));
+      expect(
+        (found ?? fail('Expected found to be non-null')).name,
+        equals('Conn'),
+      );
     });
 
     test('getModelConnectionById returns null for nonexistent', () async {

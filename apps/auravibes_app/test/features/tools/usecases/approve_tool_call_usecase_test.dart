@@ -8,8 +8,6 @@
 // Required: Tests use intentional no-op callbacks and fake hooks.
 // ignore_for_file: missing-test-assertion
 // Required: Tests verify usecase behavior through repository side effects.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Tests inspect nullable values after arranging expected state.
 // ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 
@@ -170,9 +168,11 @@ void main() {
             ],
           ),
         );
-        final resolvedTool = ToolResolverService().resolveTool(
-          'mcp_server-1_calc_sum',
-        )!;
+        final resolvedTool =
+            ToolResolverService().resolveTool(
+              'mcp_server-1_calc_sum',
+            ) ??
+            fail('Expected tool to resolve');
 
         when(messageRepository.getMessageById(messageId)).thenAnswer(
           (_) async => mcpMessage,
@@ -203,9 +203,11 @@ void main() {
     test(
       'persists conversation allow and stores successful response',
       () async {
-        final resolvedTool = ToolResolverService().resolveTool(
-          'built_in_calc_calculator',
-        )!;
+        final resolvedTool =
+            ToolResolverService().resolveTool(
+              'built_in_calc_calculator',
+            ) ??
+            fail('Expected tool to resolve');
 
         when(
           toolResolverService.resolveTool('built_in_calc_calculator'),
@@ -261,9 +263,11 @@ void main() {
             ],
           ),
         );
-        final resolvedTool = ToolResolverService().resolveTool(
-          'built_in_calc_calculator',
-        )!;
+        final resolvedTool =
+            ToolResolverService().resolveTool(
+              'built_in_calc_calculator',
+            ) ??
+            fail('Expected tool to resolve');
 
         when(messageRepository.getMessageById(messageId)).thenAnswer(
           (_) async => badMessage,
@@ -304,9 +308,11 @@ void main() {
             ],
           ),
         );
-        final resolvedTool = ToolResolverService().resolveTool(
-          'mcp_server-1_calc_sum',
-        )!;
+        final resolvedTool =
+            ToolResolverService().resolveTool(
+              'mcp_server-1_calc_sum',
+            ) ??
+            fail('Expected tool to resolve');
         final group = ToolsGroupEntity(
           id: 'group-1',
           workspaceId: 'workspace-1',

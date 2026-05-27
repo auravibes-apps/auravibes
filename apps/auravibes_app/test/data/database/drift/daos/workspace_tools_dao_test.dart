@@ -13,8 +13,6 @@
 
 // ignore_for_file: avoid-redundant-async
 // Required: Test callbacks intentionally preserve async-compatible signatures.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Tests inspect nullable values after arranging expected state.
 
 // ignore_for_file: avoid-late-keyword
 // Required: Test fixtures are assigned in setUp.
@@ -78,7 +76,7 @@ void main() {
               toolId,
             ),
           )
-          .then((t) => t!);
+          .then((tool) => tool ?? fail('Expected workspace tool'));
     }
 
     test('getWorkspaceTools returns empty when no tools', () async {
@@ -112,7 +110,10 @@ void main() {
         created.id,
       );
       expect(found, isNotNull);
-      expect(found!.toolId, equals('my_tool'));
+      expect(
+        (found ?? fail('Expected found to be non-null')).toolId,
+        equals('my_tool'),
+      );
     });
 
     test('getWorkspaceTool returns null for wrong workspace', () async {
@@ -131,7 +132,10 @@ void main() {
         'web_search',
       );
       expect(found, isNotNull);
-      expect(found!.toolId, equals('web_search'));
+      expect(
+        (found ?? fail('Expected found to be non-null')).toolId,
+        equals('web_search'),
+      );
     });
 
     test('setWorkspaceToolEnabled inserts new when not exists', () async {
@@ -241,7 +245,10 @@ void main() {
         toolName: 'mcp_tool',
       );
       expect(found, isNotNull);
-      expect(found!.toolId, equals('mcp_tool'));
+      expect(
+        (found ?? fail('Expected found to be non-null')).toolId,
+        equals('mcp_tool'),
+      );
     });
 
     test('isWorkspaceToolEnabled returns correct state', () async {

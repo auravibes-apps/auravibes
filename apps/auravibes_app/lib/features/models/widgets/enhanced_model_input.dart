@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
@@ -40,6 +38,8 @@ class EnhancedModelInput extends HookConsumerWidget {
 
     // Get field-specific values
     final fieldData = _getFieldData(fieldType, state);
+    final hint = fieldData.hint;
+    final error = fieldData.error;
 
     final controller = useTextEditingController(text: fieldData.value ?? '');
 
@@ -47,12 +47,10 @@ class EnhancedModelInput extends HookConsumerWidget {
       controller: controller,
       placeholder: TextLocale(fieldData.placeholder),
       label: TextLocale(fieldData.label),
-      hint: fieldData.hint != null ? TextLocale(fieldData.hint!) : null,
-      error: fieldData.error != null ? Text(fieldData.error!) : null,
+      hint: hint != null ? TextLocale(hint) : null,
+      error: error != null ? Text(error) : null,
       isRequired: _isRequired(fieldType),
-      state: fieldData.error != null
-          ? AuraInputState.error
-          : AuraInputState.normal,
+      state: error != null ? AuraInputState.error : AuraInputState.normal,
       keyboardType: fieldData.keyboardType,
       textInputAction: _getTextInputAction(fieldType),
       autofocus: fieldType == ModelInputFieldType.name && focusNode == null,

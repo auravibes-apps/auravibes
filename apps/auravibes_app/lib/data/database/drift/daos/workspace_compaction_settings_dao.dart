@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
@@ -44,7 +42,11 @@ class WorkspaceCompactionSettingsDao extends DatabaseAccessor<AppDatabase>
       final _ = await (update(
         workspaceCompactionSettings,
       )..where((t) => t.id.equals(existing.id))).write(companion);
-      return (await getByWorkspaceId(workspaceId))!;
+      final updated = await getByWorkspaceId(workspaceId);
+      if (updated == null) {
+        throw StateError('Updated compaction settings were not found');
+      }
+      return updated;
     }
     return into(workspaceCompactionSettings).insertReturning(
       companion.copyWith(workspaceId: Value(workspaceId)),

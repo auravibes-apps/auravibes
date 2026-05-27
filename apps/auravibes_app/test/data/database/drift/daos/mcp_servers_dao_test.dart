@@ -7,9 +7,6 @@
 // ignore_for_file: prefer-static-class
 // Required: Tests keep fixture helpers and fakes top-level.
 
-// ignore_for_file: avoid-non-null-assertion
-// Required: Tests inspect nullable values after arranging expected state.
-
 // ignore_for_file: avoid-late-keyword
 // Required: Test fixtures are assigned in setUp.
 
@@ -80,7 +77,10 @@ void main() {
       );
       final found = await database.mcpServersDao.getMcpServerById(created.id);
       expect(found, isNotNull);
-      expect(found!.name, equals('Test MCP'));
+      expect(
+        (found ?? fail('Expected found to be non-null')).name,
+        equals('Test MCP'),
+      );
     });
 
     test('getMcpServerById returns null for nonexistent', () async {
@@ -174,7 +174,10 @@ void main() {
         isEnabled: false,
       );
       expect(toggled, isNotNull);
-      expect(toggled!.isEnabled, isFalse);
+      expect(
+        (toggled ?? fail('Expected toggled to be non-null')).isEnabled,
+        isFalse,
+      );
     });
   });
 }

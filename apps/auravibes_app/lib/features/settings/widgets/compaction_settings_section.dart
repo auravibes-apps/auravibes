@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -103,11 +101,11 @@ class _CompactionSettingsSectionState
               ),
             ),
           ),
-          if (_validationError != null)
+          if (_validationError case final validationError?)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Text(
-                _validationError!,
+                validationError,
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.error,
                   fontSize: 12,

@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
@@ -229,7 +227,8 @@ class ModelSyncResult {
     }
 
     final changeStr = changes.join(', ');
-    final durationStr = duration != null ? ' in ${duration!.inSeconds}s' : '';
+    final duration = this.duration;
+    final durationStr = duration != null ? ' in ${duration.inSeconds}s' : '';
     return 'Synchronized $changeStr$durationStr';
   }
 

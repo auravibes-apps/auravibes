@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-non-null-assertion
-// Required: Tests inspect nullable values after arranging expected state.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: missing-test-assertion
@@ -170,7 +168,12 @@ void main() {
         final result = await repository.getWorkspaceModelSelectionById('sel-1');
 
         expect(result, isNotNull);
-        expect(result!.workspaceModelSelection.id, 'sel-1');
+        expect(
+          (result ?? fail('Expected result to be non-null'))
+              .workspaceModelSelection
+              .id,
+          'sel-1',
+        );
         expect(result.modelConnection.id, 'conn-1');
       });
 
@@ -218,7 +221,12 @@ void main() {
 
         final result = await repository.getWorkspaceModelSelectionById('sel-1');
 
-        expect(result!.modelsProvider.type, isNull);
+        expect(
+          (result ?? fail('Expected result to be non-null'))
+              .modelsProvider
+              .type,
+          isNull,
+        );
       });
 
       test('maps anthropic type correctly', () async {
@@ -252,7 +260,12 @@ void main() {
 
         final result = await repository.getWorkspaceModelSelectionById('sel-1');
 
-        expect(result!.modelsProvider.type, ModelProvidersType.anthropic);
+        expect(
+          (result ?? fail('Expected result to be non-null'))
+              .modelsProvider
+              .type,
+          ModelProvidersType.anthropic,
+        );
       });
     });
   });

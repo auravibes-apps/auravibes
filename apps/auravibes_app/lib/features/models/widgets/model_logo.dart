@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: newline-before-return
@@ -34,8 +32,9 @@ class ModelLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final url = 'https://models.dev/logos/$modelId.svg';
+    final svgBuilder = this.svgBuilder;
     if (svgBuilder != null) {
-      return svgBuilder!(context, url);
+      return svgBuilder(context, url);
     }
     return SvgPicture.network(
       url,

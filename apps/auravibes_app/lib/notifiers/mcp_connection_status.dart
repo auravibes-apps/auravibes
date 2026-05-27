@@ -2,8 +2,6 @@
 // Required: Existing parsing uses code-unit substring offsets.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -453,8 +451,13 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
       );
     }
 
+    final client = connection.client;
+    if (client == null) {
+      throw Exception('MCP server not connected: $mcpServerId');
+    }
+
     return _mcpManagerService.callToolString(
-      connection.client!,
+      client,
       toolIdentifier: toolIdentifier,
       arguments: arguments,
     );

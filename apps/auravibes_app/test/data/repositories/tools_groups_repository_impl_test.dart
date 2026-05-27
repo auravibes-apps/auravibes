@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Tests inspect nullable values after arranging expected state.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: member-ordering
@@ -97,7 +95,7 @@ void main() {
       final result = await repository.getToolsGroupById('g1');
 
       expect(result, isNotNull);
-      expect(result!.id, 'g1');
+      expect((result ?? fail('Expected result to be non-null')).id, 'g1');
       expect(result.workspaceId, 'ws-1');
       expect(result.isEnabled, true);
       expect(result.permissions, PermissionAccess.ask);
@@ -122,7 +120,7 @@ void main() {
       final result = await repository.getToolsGroupByMcpServerId('mcp-1');
 
       expect(result, isNotNull);
-      expect(result!.id, 'g1');
+      expect((result ?? fail('Expected result to be non-null')).id, 'g1');
       expect(result.mcpServerId, 'mcp-1');
     });
 
@@ -188,7 +186,10 @@ void main() {
 
       final result = await repository.getToolsGroupById('g1');
 
-      expect(result!.mcpServerId, 'mcp-1');
+      expect(
+        (result ?? fail('Expected result to be non-null')).mcpServerId,
+        'mcp-1',
+      );
     });
 
     test('maps null mcpServerId correctly', () async {
@@ -197,7 +198,10 @@ void main() {
 
       final result = await repository.getToolsGroupById('g1');
 
-      expect(result!.mcpServerId, isNull);
+      expect(
+        (result ?? fail('Expected result to be non-null')).mcpServerId,
+        isNull,
+      );
     });
   });
 }

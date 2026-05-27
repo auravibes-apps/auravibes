@@ -6,8 +6,6 @@
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: no-empty-block
 // Required: Tests use intentional no-op callbacks and fake hooks.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Tests inspect nullable values after arranging expected state.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: prefer-correct-identifier-length
@@ -193,7 +191,7 @@ void main() {
 
       final found = await repository.getMessageById(created.id);
       expect(found, isNotNull);
-      expect(found!.content, 'test');
+      expect((found ?? fail('Expected found to be non-null')).content, 'test');
     });
 
     test('messageExists returns false for non-existent', () async {
@@ -465,8 +463,15 @@ void main() {
 
       final found = await repository.getMessageById(created.id);
       expect(found, isNotNull);
-      expect(found!.metadata, isNotNull);
-      expect(found.metadata!.promptTokens, 10);
+      expect(
+        (found ?? fail('Expected found to be non-null')).metadata,
+        isNotNull,
+      );
+      expect(
+        (found.metadata ?? fail('Expected found.metadata to be non-null'))
+            .promptTokens,
+        10,
+      );
     });
 
     test('getLatestCompactionSummary returns null when no summaries', () async {
@@ -523,11 +528,22 @@ void main() {
 
         final summary = await repository.getLatestCompactionSummary('conv-1');
         expect(summary, isNotNull);
-        expect(summary!.content, 'Compaction summary content');
+        expect(
+          (summary ?? fail('Expected summary to be non-null')).content,
+          'Compaction summary content',
+        );
         expect(summary.messageType, MessageType.system);
         expect(summary.metadata, isNotNull);
-        expect(summary.metadata!.isCompactionSummary, isTrue);
-        expect(summary.metadata!.compactionKind, CompactionKind.auto);
+        expect(
+          (summary.metadata ?? fail('Expected summary.metadata to be non-null'))
+              .isCompactionSummary,
+          isTrue,
+        );
+        expect(
+          (summary.metadata ?? fail('Expected summary.metadata to be non-null'))
+              .compactionKind,
+          CompactionKind.auto,
+        );
       },
     );
 

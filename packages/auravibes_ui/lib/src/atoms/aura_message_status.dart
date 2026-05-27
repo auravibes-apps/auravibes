@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: UI tokens and layout use fixed design values.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
@@ -61,23 +59,25 @@ class _AuraMessageStatusState extends State<AuraMessageStatus>
     if (!widget.showAnimation) return;
 
     if (widget.status == AuraMessageDeliveryStatus.sending) {
-      _rotationController = AnimationController(
+      final rotationController = AnimationController(
         duration: const Duration(milliseconds: 1000),
         vsync: this,
       );
+      _rotationController = rotationController;
 
       final rotationAnimation = Tween<double>(
         begin: 0,
         end: 1,
-      ).animate(_rotationController!);
+      ).animate(rotationController);
       _rotationAnimation = rotationAnimation;
 
-      unawaited(_rotationController!.repeat());
+      unawaited(rotationController.repeat());
     } else {
-      _scaleController = AnimationController(
+      final scaleController = AnimationController(
         duration: DesignDuration.normal,
         vsync: this,
       );
+      _scaleController = scaleController;
 
       final scaleAnimation =
           Tween<double>(
@@ -85,13 +85,13 @@ class _AuraMessageStatusState extends State<AuraMessageStatus>
             end: 1,
           ).animate(
             CurvedAnimation(
-              parent: _scaleController!,
+              parent: scaleController,
               curve: Curves.elasticOut,
             ),
           );
       _scaleAnimation = scaleAnimation;
 
-      unawaited(_scaleController!.forward());
+      unawaited(scaleController.forward());
     }
   }
 

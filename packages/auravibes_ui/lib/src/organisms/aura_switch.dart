@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: UI tokens and layout use fixed design values.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: no-equal-arguments
 // Required: UI geometry uses repeated values for symmetric layout.
 // ignore_for_file: member-ordering
@@ -60,6 +58,7 @@ class AuraSwitch extends StatelessWidget {
     final auraColors = context.auraColors;
     final auraTheme = context.auraTheme;
 
+    final onChanged = this.onChanged;
     final isInteractive = !disabled && !isLoading && onChanged != null;
 
     final trackWidth = _getTrackWidth();
@@ -122,7 +121,7 @@ class AuraSwitch extends StatelessWidget {
           duration: auraTheme.animation.normal,
         ),
       ),
-      onTap: isInteractive ? () => onChanged!(!value) : null,
+      onTap: isInteractive ? () => onChanged(!value) : null,
     );
   }
 

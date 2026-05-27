@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: no-equal-arguments
 // Required: Existing argument values intentionally repeat.
 // ignore_for_file: format-comment
@@ -155,8 +153,8 @@ class ConversationToolsNotifier extends _$ConversationToolsNotifier {
       return false;
     }
     final success = await persist(convId);
-    if (success && state.value != null) {
-      final currentList = state.value!;
+    final currentList = state.value;
+    if (success && currentList != null) {
       final index = currentList.indexWhere(
         (t) => t.tool.id == toolId,
       );

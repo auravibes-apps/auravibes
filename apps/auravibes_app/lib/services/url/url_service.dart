@@ -4,8 +4,6 @@
 // Required: Existing parsing uses code-unit substring offsets.
 // ignore_for_file: no-equal-arguments
 // Required: Existing argument values intentionally repeat.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -40,11 +38,12 @@ class UrlService {
     );
     final stopwatch = Stopwatch()..start();
     final effectiveHeaders = _buildEffectiveHeaders(request);
+    final rawBody = request.body;
     final requestBody =
-        request.body == null ||
+        rawBody == null ||
             _hasHeader(request.headers, Headers.contentTypeHeader)
-        ? request.body
-        : Stream<List<int>>.value(utf8.encode(request.body!));
+        ? rawBody
+        : Stream<List<int>>.value(utf8.encode(rawBody));
 
     _dio
         .request<ResponseBody>(

@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-non-null-assertion
-// Required: Tests inspect nullable values after arranging expected state.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: missing-test-assertion
@@ -366,7 +364,7 @@ void main() {
         final result = await repository.getMcpServerById('mcp-1');
 
         expect(result, isNotNull);
-        expect(result!.id, 'mcp-1');
+        expect((result ?? fail('Expected result to be non-null')).id, 'mcp-1');
       });
 
       test('returns null when not found', () async {

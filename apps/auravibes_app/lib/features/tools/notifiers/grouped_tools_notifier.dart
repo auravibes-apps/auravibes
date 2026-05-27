@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: newline-before-return
@@ -109,15 +107,16 @@ class GroupedToolsNotifier extends _$GroupedToolsNotifier {
       return;
     }
 
-    if (group.isMcpGroup && group.mcpServerId != null) {
+    final mcpServerId = group.mcpServerId;
+    if (group.isMcpGroup && mcpServerId != null) {
       if (!isEnabled) {
         ref
             .read(mcpConnectionProvider.notifier)
-            .disconnectMcpServer(group.mcpServerId!);
+            .disconnectMcpServer(mcpServerId);
       } else {
         await ref
             .read(mcpConnectionProvider.notifier)
-            .reconnectMcpServer(group.mcpServerId!);
+            .reconnectMcpServer(mcpServerId);
       }
     }
 
@@ -138,13 +137,12 @@ class GroupedToolsNotifier extends _$GroupedToolsNotifier {
     if (group == null || group.workspaceId != _workspaceId) {
       return;
     }
-    if (!group.isMcpGroup || group.mcpServerId == null) {
+    final mcpServerId = group.mcpServerId;
+    if (!group.isMcpGroup || mcpServerId == null) {
       return;
     }
 
-    await ref
-        .read(mcpConnectionProvider.notifier)
-        .deleteMcpServer(group.mcpServerId!);
+    await ref.read(mcpConnectionProvider.notifier).deleteMcpServer(mcpServerId);
 
     ref
       ..invalidateSelf()

@@ -1,7 +1,5 @@
 // ignore_for_file: prefer-async-await
 // Required: Existing Future chains preserve callback flow.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: newline-before-return
@@ -66,7 +64,11 @@ class WorkspaceToolsDao extends DatabaseAccessor<AppDatabase>
                 ),
               );
       // Return updated tool
-      return (await getWorkspaceToolByToolId(workspaceId, toolId))!;
+      final updated = await getWorkspaceToolByToolId(workspaceId, toolId);
+      if (updated == null) {
+        throw StateError('Updated workspace tool was not found');
+      }
+      return updated;
     } else {
       // Insert new tool
       return into(tools).insertReturning(

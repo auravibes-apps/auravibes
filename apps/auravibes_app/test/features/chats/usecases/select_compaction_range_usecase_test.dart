@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-non-null-assertion
-// Required: Tests inspect nullable values after arranging expected state.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
 
@@ -63,7 +61,10 @@ void main() {
 
       final range = usecase(messages);
       expect(range, isNotNull);
-      expect(range!.fromMessageId, 'msg-1');
+      expect(
+        (range ?? fail('Expected range to be non-null')).fromMessageId,
+        'msg-1',
+      );
       expect(range.keptTailMessageIds, isNotEmpty);
     });
 
@@ -79,7 +80,10 @@ void main() {
 
       final range = usecase(messages);
       expect(range, isNotNull);
-      expect(range!.messageIds, isNot(contains('msg-1')));
+      expect(
+        (range ?? fail('Expected range to be non-null')).messageIds,
+        isNot(contains('msg-1')),
+      );
     });
 
     test('excludes sending messages from compactable range', () {
@@ -94,7 +98,10 @@ void main() {
 
       final range = usecase(messages);
       expect(range, isNotNull);
-      expect(range!.messageIds, isNot(contains('msg-1')));
+      expect(
+        (range ?? fail('Expected range to be non-null')).messageIds,
+        isNot(contains('msg-1')),
+      );
     });
 
     test('excludes existing compaction summaries', () {
@@ -114,7 +121,10 @@ void main() {
 
       final range = usecase(messages);
       expect(range, isNotNull);
-      expect(range!.messageIds, isNot(contains('msg-4')));
+      expect(
+        (range ?? fail('Expected range to be non-null')).messageIds,
+        isNot(contains('msg-4')),
+      );
     });
 
     test('keeps safe tail starting at latest user message', () {
@@ -127,7 +137,10 @@ void main() {
 
       final range = usecase(messages);
       expect(range, isNotNull);
-      expect(range!.keptTailMessageIds, contains('msg-3'));
+      expect(
+        (range ?? fail('Expected range to be non-null')).keptTailMessageIds,
+        contains('msg-3'),
+      );
       expect(range.keptTailMessageIds, contains('msg-4'));
     });
 
@@ -140,7 +153,10 @@ void main() {
 
       final range = usecase(messages);
       expect(range, isNotNull);
-      expect(range!.keptTailMessageIds, contains('msg-3'));
+      expect(
+        (range ?? fail('Expected range to be non-null')).keptTailMessageIds,
+        contains('msg-3'),
+      );
       expect(range.keptTailMessageIds, isNot(contains('msg-2')));
     });
 
@@ -231,7 +247,10 @@ void main() {
 
       final range = usecase(messages);
       expect(range, isNotNull);
-      expect(range!.keptTailMessageIds, contains('msg-3'));
+      expect(
+        (range ?? fail('Expected range to be non-null')).keptTailMessageIds,
+        contains('msg-3'),
+      );
       expect(range.keptTailMessageIds, isNot(contains('msg-2')));
     });
   });

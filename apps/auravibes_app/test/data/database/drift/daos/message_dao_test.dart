@@ -7,9 +7,6 @@
 // ignore_for_file: prefer-static-class
 // Required: Tests keep fixture helpers and fakes top-level.
 
-// ignore_for_file: avoid-non-null-assertion
-// Required: Tests inspect nullable values after arranging expected state.
-
 // ignore_for_file: avoid-late-keyword
 // Required: Test fixtures are assigned in setUp.
 
@@ -78,7 +75,10 @@ void main() {
       );
       final found = await database.messageDao.getMessageById(created.id);
       expect(found, isNotNull);
-      expect(found!.content, equals('Hi'));
+      expect(
+        (found ?? fail('Expected found to be non-null')).content,
+        equals('Hi'),
+      );
     });
 
     test('getMessageById returns null for nonexistent', () async {
@@ -104,7 +104,10 @@ void main() {
         ),
       );
       expect(patched, isNotNull);
-      expect(patched!.content, equals('Updated'));
+      expect(
+        (patched ?? fail('Expected patched to be non-null')).content,
+        equals('Updated'),
+      );
     });
 
     test('patchMessage returns null for nonexistent', () async {

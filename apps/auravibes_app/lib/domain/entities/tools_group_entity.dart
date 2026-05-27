@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
@@ -46,7 +44,7 @@ abstract class ToolsGroupEntity with _$ToolsGroupEntity {
   const ToolsGroupEntity._();
 
   /// Returns true if this group is linked to an MCP server
-  bool get isMcpGroup => mcpServerId != null && mcpServerId!.isNotEmpty;
+  bool get isMcpGroup => mcpServerId?.isNotEmpty ?? false;
 }
 
 /// Entity for creating/updating tools group settings

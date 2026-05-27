@@ -4,8 +4,6 @@
 // Required: Test callbacks intentionally preserve async-compatible signatures.
 // ignore_for_file: no-empty-block
 // Required: Tests use intentional no-op callbacks and fake hooks.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Tests inspect nullable values after arranging expected state.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -261,7 +259,9 @@ void main() {
 
         expect(result, contains('Status: 201'));
         expect(
-          sentHeaders!.keys.map((key) => key.toLowerCase()),
+          (sentHeaders ?? fail('Expected sentHeaders to be non-null')).keys.map(
+            (key) => key.toLowerCase(),
+          ),
           isNot(contains('content-type')),
         );
       },

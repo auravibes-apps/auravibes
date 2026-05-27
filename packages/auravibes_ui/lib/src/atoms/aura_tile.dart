@@ -4,8 +4,6 @@
 // Required: Existing helper builders return widgets.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -92,6 +90,9 @@ class AuraTile extends StatelessWidget {
   }
 
   Widget _buildContent(AuraColorScheme colors, AuraTheme theme) {
+    final leading = this.leading;
+    final trailing = this.trailing;
+
     if (isLoading) {
       return Center(
         child: SizedBox(
@@ -108,10 +109,9 @@ class AuraTile extends StatelessWidget {
     }
 
     // Check if child is effectively empty (like SizedBox.shrink())
+    final tileChild = child;
     final isChildEmpty =
-        child is SizedBox &&
-        (child as SizedBox).width == 0 &&
-        (child as SizedBox).height == 0;
+        tileChild is SizedBox && tileChild.width == 0 && tileChild.height == 0;
 
     if (isChildEmpty && leading != null && trailing == null) {
       // Icon-only case: center the leading icon
@@ -121,7 +121,7 @@ class AuraTile extends StatelessWidget {
     return Row(
       children: [
         if (leading != null) ...[
-          leading!,
+          leading,
           SizedBox(width: theme.spacing.sm),
         ],
         Flexible(
@@ -133,7 +133,7 @@ class AuraTile extends StatelessWidget {
         ),
         if (trailing != null) ...[
           SizedBox(width: theme.spacing.sm),
-          trailing!,
+          trailing,
         ],
       ],
     );

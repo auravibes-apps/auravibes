@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -87,13 +85,13 @@ class BuildCombinedToolSpecsUseCase {
   }
 
   Future<ToolSpec?> _buildMcpToolSpec(WorkspaceToolEntity workspaceTool) async {
-    if (!workspaceTool.belongsToGroup ||
-        workspaceTool.workspaceToolsGroupId == null) {
+    final workspaceToolsGroupId = workspaceTool.workspaceToolsGroupId;
+    if (!workspaceTool.belongsToGroup || workspaceToolsGroupId == null) {
       return null;
     }
 
     final toolGroup = await _getToolsGroupById(
-      workspaceTool.workspaceToolsGroupId!,
+      workspaceToolsGroupId,
     );
     final mcpServerId = toolGroup?.mcpServerId;
     if (mcpServerId == null) return null;

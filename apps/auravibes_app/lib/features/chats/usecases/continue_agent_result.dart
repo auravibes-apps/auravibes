@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -214,11 +212,11 @@ class ContinueAgentUsecase {
         return _completeCancelledRun(state);
       }
 
-      if (state.accumulatedResult == null || state.firstMessage == null) {
+      final completedMessage = state.firstMessage;
+      final completedResult = state.accumulatedResult;
+      if (completedMessage == null || completedResult == null) {
         throw StateError('Agent stream completed without any result');
       }
-      final completedMessage = state.firstMessage!;
-      final completedResult = state.accumulatedResult!;
 
       state.stage = 'close_persistence_stream';
       await _closePersistence(state);
@@ -251,9 +249,15 @@ class ContinueAgentUsecase {
       await _cleanupContinuation(state);
     }
 
+    final firstMessage = state.firstMessage;
+    final accumulatedResult = state.accumulatedResult;
+    if (firstMessage == null || accumulatedResult == null) {
+      throw StateError('Agent run completed without persisted result');
+    }
+
     return ContinueAgentResult(
-      messageId: state.firstMessage!.id,
-      hasToolCalls: state.accumulatedResult!.entityTools.isNotEmpty,
+      messageId: firstMessage.id,
+      hasToolCalls: accumulatedResult.entityTools.isNotEmpty,
     );
   }
 
@@ -265,8 +269,13 @@ class ContinueAgentUsecase {
       ..persistenceFuture = streamingController.stream
           .coalescingSave(
             store: (chunk) async {
+              final firstMessage = state.firstMessage;
+              if (firstMessage == null) {
+                throw StateError('Assistant message is not initialized');
+              }
+
               final _ = await messageRepository.patchMessage(
-                state.firstMessage!.id,
+                firstMessage.id,
                 .new(
                   content: chunk.entityText,
                   metadata: chunk.entityMetadata,
@@ -287,7 +296,7 @@ class ContinueAgentUsecase {
       await state.activeChunkProcessing;
       _completeResponse(state);
     });
-    state.responseSubscription = responseStream.listen(
+    final subscription = responseStream.listen(
       null,
       onError: (Object error, StackTrace stackTrace) {
         state.stage = 'response_stream_error';
@@ -303,7 +312,8 @@ class ContinueAgentUsecase {
       },
       cancelOnError: true,
     );
-    state.responseSubscription!.onData((chunk) {
+    state.responseSubscription = subscription;
+    subscription.onData((chunk) {
       state.responseSubscription?.pause();
       state.activeChunkProcessing = _processResponseChunk(state, chunk);
     });
@@ -365,9 +375,13 @@ class ContinueAgentUsecase {
     state.hasAcknowledgedPendingUsers = hasAcknowledgedPendingUsers;
 
     await _ensureAssistantMessage(state, currentResult);
-    final currentMessage = state.firstMessage!;
+    final currentMessage = state.firstMessage;
+    final streamingController = state.streamingController;
+    if (currentMessage == null || streamingController == null) {
+      throw StateError('Assistant stream is not initialized');
+    }
 
-    state.streamingController!.add(currentResult);
+    streamingController.add(currentResult);
     messagesStreamingRuntime.updateResult(currentResult, currentMessage.id);
   }
 
@@ -491,9 +505,10 @@ class ContinueAgentUsecase {
       alreadyAcknowledged: state.hasAcknowledgedPendingUsers,
     );
 
-    if (state.firstMessage != null) {
+    final firstMessage = state.firstMessage;
+    if (firstMessage != null) {
       await _closePersistence(state);
-      await _markAssistantErrored(state.firstMessage!);
+      await _markAssistantErrored(firstMessage);
     }
 
     Error.throwWithStackTrace(error, stackTrace);
@@ -505,8 +520,9 @@ class ContinueAgentUsecase {
     final _ = await state.streamingController?.close();
     await state.persistenceFuture;
     conversationStreamingRuntime.remove(state.conversationId);
-    if (state.firstMessage != null && !state.streamingRuntimeRemoved) {
-      await messagesStreamingRuntime.remove(state.firstMessage!.id);
+    final firstMessage = state.firstMessage;
+    if (firstMessage != null && !state.streamingRuntimeRemoved) {
+      await messagesStreamingRuntime.remove(firstMessage.id);
     }
     state.subs.dispose();
     _logger.info(

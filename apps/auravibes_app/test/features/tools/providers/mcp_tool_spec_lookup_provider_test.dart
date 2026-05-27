@@ -1,7 +1,3 @@
-// ignore_for_file: avoid-non-null-assertion
-// Required: Tests inspect nullable values after arranging expected state.
-// ignore_for_file: avoid-unused-parameters
-// Required: Test fakes keep interface-compatible parameter names.
 // ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
@@ -35,7 +31,10 @@ void main() {
         overrides: [
           mcpToolSpecLookupProvider.overrideWithValue(
             McpToolSpecLookup(
-              call: ({required mcpServerId, required toolName}) => null,
+              call: ({required mcpServerId, required toolName}) {
+                final _ = (mcpServerId: mcpServerId, toolName: toolName);
+                return null;
+              },
             ),
           ),
         ],
@@ -51,7 +50,10 @@ void main() {
         overrides: [
           mcpToolSpecLookupProvider.overrideWithValue(
             McpToolSpecLookup(
-              call: ({required mcpServerId, required toolName}) => null,
+              call: ({required mcpServerId, required toolName}) {
+                final _ = (mcpServerId: mcpServerId, toolName: toolName);
+                return null;
+              },
             ),
           ),
         ],
@@ -76,7 +78,10 @@ void main() {
       final lookup = container.read(mcpToolSpecLookupProvider);
       final result = lookup.call(mcpServerId: 'srv-1', toolName: 'my-tool');
       expect(result, isNotNull);
-      expect(result!.name, 'my-tool');
+      expect(
+        (result ?? fail('Expected result to be non-null')).name,
+        'my-tool',
+      );
     });
 
     test('call returns null for non-matching server', () {
@@ -99,6 +104,7 @@ void main() {
         required String mcpServerId,
         required String toolName,
       }) {
+        final _ = (mcpServerId: mcpServerId, toolName: toolName);
         return const ToolSpec(
           name: 'x',
           description: 'd',
@@ -110,7 +116,7 @@ void main() {
       expect(lookup.call, isA<Function>());
       final result = lookup.call(mcpServerId: 's', toolName: 't');
       expect(result, isNotNull);
-      expect(result!.name, 'x');
+      expect((result ?? fail('Expected result to be non-null')).name, 'x');
     });
 
     test('McpToolSpecLookup is const constructible', () {

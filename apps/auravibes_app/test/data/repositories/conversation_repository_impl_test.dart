@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Tests inspect nullable values after arranging expected state.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: missing-test-assertion
@@ -121,7 +119,7 @@ void main() {
         final result = await repository.watchConversationById('conv-1').first;
 
         expect(result, isNotNull);
-        expect(result!.id, 'conv-1');
+        expect((result ?? fail('Expected result to be non-null')).id, 'conv-1');
       });
 
       test('maps null stream value to null', () async {
@@ -150,7 +148,7 @@ void main() {
         final result = await repository.getConversationById('conv-1');
 
         expect(result, isNotNull);
-        expect(result!.id, 'conv-1');
+        expect((result ?? fail('Expected result to be non-null')).id, 'conv-1');
         expect(result.title, 'Test Conversation');
         expect(result.workspaceId, 'ws-1');
         expect(result.isPinned, false);

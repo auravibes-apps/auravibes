@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
@@ -175,8 +173,8 @@ class OAuthAuthenticate {
         'code': code,
         'redirect_uri': redirectUrl,
         'code_verifier': codeVerifier,
-        if (oAuthResult.clientId != null && oAuthResult.clientId!.isNotEmpty)
-          'client_id': oAuthResult.clientId!,
+        if (oAuthResult.clientId case final clientId? when clientId.isNotEmpty)
+          'client_id': clientId,
       },
       options: Options(
         responseType: ResponseType.json,

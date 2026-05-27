@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
@@ -31,7 +29,8 @@ class SecretKeyManager {
 
   /// Loads existing key or generates a new one
   Future<SecretKey> getOrCreateSecretKey() async {
-    if (_cachedKey != null) return _cachedKey!;
+    final cachedKey = _cachedKey;
+    if (cachedKey != null) return cachedKey;
 
     final existingKey = await _loadKey();
     if (existingKey != null) {

@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: prefer-single-widget-per-file
@@ -57,6 +55,8 @@ class ToolsGroupHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final group = groupWithTools.group;
+
     return AuraRow(
       children: [
         // Group icon
@@ -71,7 +71,8 @@ class ToolsGroupHeader extends StatelessWidget {
               AuraText(
                 child: Text(
                   groupWithTools.localizedDisplayNameKey?.tr() ??
-                      groupWithTools.group!.name,
+                      group?.name ??
+                      '',
                   overflow: TextOverflow.ellipsis,
                 ),
                 style: AuraTextStyle.heading6,

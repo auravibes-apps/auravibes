@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: prefer-extracting-callbacks
@@ -54,6 +52,7 @@ class ChatInputWidget extends HookConsumerWidget {
     );
 
     final compact = onCompact;
+    final stop = onStop;
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -99,7 +98,7 @@ class ChatInputWidget extends HookConsumerWidget {
                 ),
               ),
 
-            if (isBusy && onStop != null)
+            if (isBusy && stop != null)
               Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: Tooltip(
@@ -107,7 +106,7 @@ class ChatInputWidget extends HookConsumerWidget {
                       .chats_screens_chat_conversation_stop_generation
                       .tr(),
                   child: AuraButton(
-                    onPressed: onStop!,
+                    onPressed: stop,
                     child: const AuraIcon(Icons.stop_rounded),
                     variant: AuraButtonVariant.outlined,
                     colorVariant: AuraColorVariant.error,

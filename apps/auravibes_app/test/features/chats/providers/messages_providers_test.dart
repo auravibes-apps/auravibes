@@ -10,8 +10,6 @@
 // Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-first
-// Required: Test covers indexed assignment, which has no first setter.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 // ignore_for_file: prefer-static-class
@@ -186,9 +184,8 @@ void main() {
     });
 
     test('setting index throws', () {
-      final list = MessageIdList(const ['a']);
-      // ignore: prefer-first-or-null, prefer-first - Required to test index assignment.
-      expect(() => list[0] = 'b', throwsUnsupportedError);
+      final list = MessageIdList(const ['a', 'b']);
+      expect(() => list[1] = 'c', throwsUnsupportedError);
     });
   });
 

@@ -2,8 +2,6 @@
 // Required: UI tokens and layout use fixed design values.
 // ignore_for_file: avoid-returning-widgets
 // Required: Existing helper builders return widgets.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -61,6 +59,8 @@ class AuraDropdownOption<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
+    final leading = this.leading;
+    final trailing = this.trailing;
 
     Widget result = AuraPressable(
       child: Container(
@@ -74,7 +74,7 @@ class AuraDropdownOption<T> extends StatelessWidget {
         child: Row(
           children: [
             if (leading != null) ...[
-              leading!,
+              leading,
               const SizedBox(width: DesignSpacing.sm),
             ],
             Expanded(
@@ -82,7 +82,7 @@ class AuraDropdownOption<T> extends StatelessWidget {
             ),
             if (trailing != null) ...[
               const SizedBox(width: DesignSpacing.sm),
-              trailing!,
+              trailing,
             ] else if (isSelected) ...[
               const SizedBox(width: DesignSpacing.sm),
               const AuraIcon(

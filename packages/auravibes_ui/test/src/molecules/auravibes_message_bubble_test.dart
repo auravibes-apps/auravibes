@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Tests inspect nullable values after arranging expected state.
 // ignore_for_file: no-empty-block
 // Required: Tests use intentional no-op callbacks and fake hooks.
 // ignore_for_file: format-comment
@@ -55,11 +53,19 @@ void main() {
         (container) =>
             container.decoration != null &&
             container.decoration is BoxDecoration &&
-            (container.decoration! as BoxDecoration).color ==
+            ((container.decoration ??
+                            fail(
+                              'Expected container.decoration to be non-null',
+                            ))
+                        as BoxDecoration)
+                    .color ==
                 DesignColors.primaryBase,
       );
 
-      final decoration = messageContainer.decoration! as BoxDecoration;
+      final decoration =
+          (messageContainer.decoration ??
+                  fail('Expected messageContainer.decoration to be non-null'))
+              as BoxDecoration;
       expect(decoration.color, DesignColors.primaryBase);
     });
 
@@ -199,10 +205,15 @@ void main() {
       final constrainedContainer = containers.firstWhere(
         (container) =>
             container.constraints != null &&
-            container.constraints!.maxWidth == customMaxWidth,
+            (container.constraints ??
+                        fail('Expected container.constraints to be non-null'))
+                    .maxWidth ==
+                customMaxWidth,
       );
 
-      final constraints = constrainedContainer.constraints!;
+      final constraints =
+          constrainedContainer.constraints ??
+          fail('Expected constrained container constraints');
       expect(constraints.maxWidth, customMaxWidth);
     });
 

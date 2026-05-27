@@ -6,8 +6,6 @@
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Tests inspect nullable values after arranging expected state.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 
@@ -376,7 +374,7 @@ void main() {
 
       final tool = await repository.getConversationTool('conv-1', 'tool-1');
       expect(tool, isNotNull);
-      expect(tool!.toolId, 'tool-1');
+      expect((tool ?? fail('Expected tool to be non-null')).toolId, 'tool-1');
       expect(tool.isEnabled, isTrue);
       expect(tool.permissionMode, ToolPermissionMode.alwaysAsk);
     });
@@ -503,7 +501,7 @@ void main() {
       expect(result, isTrue);
 
       final tool = await repository.getConversationTool('conv-1', 'tool-1');
-      expect(tool!.isEnabled, isFalse);
+      expect((tool ?? fail('Expected tool to be non-null')).isEnabled, isFalse);
     });
   });
 

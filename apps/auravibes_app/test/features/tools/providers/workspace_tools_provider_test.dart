@@ -8,8 +8,6 @@
 // Required: Tests use intentional no-op callbacks and fake hooks.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Tests inspect nullable values after arranging expected state.
 // ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
@@ -394,7 +392,7 @@ void main() {
       final _ = await container2.read(workspaceToolsProvider('ws1').future);
       final result = container2.read(workspaceToolRowProvider('ws1'));
       expect(result, isNotNull);
-      expect(result!.id, 't1');
+      expect((result ?? fail('Expected result to be non-null')).id, 't1');
     });
   });
 

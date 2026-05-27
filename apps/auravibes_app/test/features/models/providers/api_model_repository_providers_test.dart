@@ -1,7 +1,5 @@
 // ignore_for_file: avoid-redundant-async
 // Required: Test callbacks intentionally preserve async-compatible signatures.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Tests inspect nullable values after arranging expected state.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 
@@ -194,7 +192,7 @@ void main() {
         ).future,
       );
       expect(result, isNotNull);
-      expect(result!.id, 'gpt-4');
+      expect((result ?? fail('Expected result to be non-null')).id, 'gpt-4');
     });
 
     test('returns null when no match', () async {

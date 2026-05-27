@@ -4,8 +4,6 @@
 // Required: Existing helper builders return widgets.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -139,10 +137,12 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
   void _unfocus() => _focusNode.unfocus();
 
   Widget _getDisplayText() {
-    if (widget.value == null) {
-      if (widget.placeholder != null) {
+    final value = widget.value;
+    if (value == null) {
+      final placeholder = widget.placeholder;
+      if (placeholder != null) {
         return AuraText(
-          child: widget.placeholder!,
+          child: placeholder,
           color: AuraColorVariant.onSurfaceVariant,
         );
       }
@@ -150,9 +150,9 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
     }
 
     final selectedOption = widget.options.firstWhere(
-      (option) => option.value == widget.value,
+      (option) => option.value == value,
       orElse: () => AuraDropdownOption<T>(
-        value: widget.value as T,
+        value: value,
         child: const Text(''),
       ),
     );
@@ -274,6 +274,8 @@ class _DropdownMenuState<T> extends State<_DropdownMenu<T>> {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
+    final header = widget.header;
+    final footer = widget.footer;
 
     return Container(
       decoration: BoxDecoration(
@@ -287,12 +289,16 @@ class _DropdownMenuState<T> extends State<_DropdownMenu<T>> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (widget.header != null) widget.header!,
+          ?header,
           Expanded(
             child: ListView.builder(
               itemBuilder: (context, index) {
                 final option = widget.options[index];
                 final isSelected = option.value == widget.selectedValue;
+                final leading = option.leading;
+                final trailing = option.trailing;
+                final child = option.child ?? const Text('');
+
                 return widget.optionBuilder?.call(context, option) ??
                     AuraPressable(
                       child: Padding(
@@ -302,8 +308,8 @@ class _DropdownMenuState<T> extends State<_DropdownMenu<T>> {
                         ),
                         child: Row(
                           children: [
-                            if (option.leading != null) ...[
-                              option.leading!,
+                            if (leading != null) ...[
+                              leading,
                               const SizedBox(width: DesignSpacing.sm),
                             ],
                             Expanded(
@@ -316,13 +322,13 @@ class _DropdownMenuState<T> extends State<_DropdownMenu<T>> {
                                             alpha: 0.6,
                                           ),
                                   ),
-                                  child: option.child!,
+                                  child: child,
                                 ),
                               ),
                             ),
-                            if (option.trailing != null) ...[
+                            if (trailing != null) ...[
                               const SizedBox(width: DesignSpacing.sm),
-                              option.trailing!,
+                              trailing,
                             ] else if (isSelected) ...[
                               const SizedBox(width: DesignSpacing.sm),
                               const AuraIcon(
@@ -351,7 +357,7 @@ class _DropdownMenuState<T> extends State<_DropdownMenu<T>> {
               itemCount: widget.options.length,
             ),
           ),
-          if (widget.footer != null) widget.footer!,
+          ?footer,
         ],
       ),
       clipBehavior: Clip.hardEdge,

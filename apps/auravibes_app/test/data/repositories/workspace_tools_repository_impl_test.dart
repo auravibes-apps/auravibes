@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Tests inspect nullable values after arranging expected state.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: member-ordering
@@ -116,7 +114,10 @@ void main() {
         final result = await repository.getWorkspaceTool('ws-1', 'calculator');
 
         expect(result, isNotNull);
-        expect(result!.toolId, 'calculator');
+        expect(
+          (result ?? fail('Expected result to be non-null')).toolId,
+          'calculator',
+        );
       });
 
       test('returns null when not found', () async {
@@ -463,7 +464,10 @@ void main() {
         );
 
         expect(result, isNotNull);
-        expect(result!.toolId, 'my_tool');
+        expect(
+          (result ?? fail('Expected result to be non-null')).toolId,
+          'my_tool',
+        );
       });
 
       test('returns null when not found', () async {
@@ -494,7 +498,10 @@ void main() {
 
           final result = await repository.getWorkspaceTool('ws-1', 'tool');
 
-          expect(result!.permissionMode, ToolPermissionMode.alwaysAsk);
+          expect(
+            (result ?? fail('Expected result to be non-null')).permissionMode,
+            ToolPermissionMode.alwaysAsk,
+          );
         },
       );
 
@@ -508,7 +515,10 @@ void main() {
 
           final result = await repository.getWorkspaceTool('ws-1', 'tool');
 
-          expect(result!.permissionMode, ToolPermissionMode.alwaysAllow);
+          expect(
+            (result ?? fail('Expected result to be non-null')).permissionMode,
+            ToolPermissionMode.alwaysAllow,
+          );
         },
       );
     });

@@ -2,8 +2,6 @@
 // Required: Overlay teardown uses callback-based animation flow.
 // ignore_for_file: no-magic-number
 // Required: UI tokens and layout use fixed design values.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
@@ -240,6 +238,8 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
 
   @override
   Widget build(BuildContext context) {
+    final actionLabel = widget.actionLabel;
+
     return Positioned(
       left: 16,
       right: 16,
@@ -283,7 +283,7 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
                         ),
                       ),
                       // Action button
-                      if (widget.actionLabel != null) ...[
+                      if (actionLabel != null) ...[
                         const SizedBox(width: 8),
                         GestureDetector(
                           child: Padding(
@@ -292,7 +292,7 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
                               horizontal: 8,
                             ),
                             child: Text(
-                              widget.actionLabel!,
+                              actionLabel,
                               style: TextStyle(
                                 color: widget.foregroundColor,
                                 fontSize: 14,

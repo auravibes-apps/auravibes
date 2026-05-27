@@ -9,8 +9,6 @@
 
 // ignore_for_file: avoid-redundant-async
 // Required: Test callbacks intentionally preserve async-compatible signatures.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Tests inspect nullable values after arranging expected state.
 
 // ignore_for_file: avoid-late-keyword
 // Required: Test fixtures are assigned in setUp.
@@ -73,7 +71,10 @@ void main() {
         created.id,
       );
       expect(found, isNotNull);
-      expect(found!.title, equals('Test'));
+      expect(
+        (found ?? fail('Expected found to be non-null')).title,
+        equals('Test'),
+      );
     });
 
     test('getConversationById returns null for nonexistent', () async {
@@ -104,7 +105,10 @@ void main() {
       final found = await database.conversationDao.getConversationById(
         created.id,
       );
-      expect(found!.title, equals('Updated'));
+      expect(
+        (found ?? fail('Expected found to be non-null')).title,
+        equals('Updated'),
+      );
     });
 
     test('patchConversation returns false for nonexistent', () async {
@@ -156,7 +160,10 @@ void main() {
           .watchConversationById(created.id)
           .first;
       expect(emitted, isNotNull);
-      expect(emitted!.title, equals('Watched'));
+      expect(
+        (emitted ?? fail('Expected emitted to be non-null')).title,
+        equals('Watched'),
+      );
     });
 
     test('watchConversationsByWorkspace emits list', () async {

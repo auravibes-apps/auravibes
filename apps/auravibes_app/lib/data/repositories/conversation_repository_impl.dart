@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -122,7 +120,8 @@ class ConversationRepositoryImpl implements ConversationRepository {
   ) {
     if (conversation.title.isEmpty) return _conversationTitleEmpty;
     if (conversation.workspaceId.isEmpty) return _workspaceIdEmpty;
-    if (conversation.modelId != null && conversation.modelId!.isEmpty) {
+    final modelId = conversation.modelId;
+    if (modelId != null && modelId.isEmpty) {
       return _modelIdEmpty;
     }
     return _unknownValidationError;
@@ -137,10 +136,13 @@ class ConversationRepositoryImpl implements ConversationRepository {
   }
 
   String _conversationPatchValidationMessage(ConversationPatch conversation) {
-    if (conversation.title != null && conversation.title!.isEmpty) {
+    final title = conversation.title;
+    if (title != null && title.isEmpty) {
       return _conversationTitleEmpty;
     }
-    if (conversation.modelId != null && conversation.modelId!.isEmpty) {
+
+    final modelId = conversation.modelId;
+    if (modelId != null && modelId.isEmpty) {
       return _modelIdEmpty;
     }
     return _unknownValidationError;

@@ -6,8 +6,6 @@
 // Required: UI geometry uses repeated values for symmetric layout.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -144,14 +142,19 @@ class _AuraLoadingCircleState extends State<AuraLoadingCircle>
     );
   }
 
-  Widget _itemBuilder(int index) => widget.itemBuilder != null
-      ? widget.itemBuilder!(context, index)
-      : DecoratedBox(
-          decoration: BoxDecoration(
-            color:
-                context.auraColors.getColorOrNull(widget.colorVariant) ??
-                context.auraColors.primary,
-            shape: BoxShape.circle,
-          ),
-        );
+  Widget _itemBuilder(int index) {
+    final itemBuilder = widget.itemBuilder;
+    if (itemBuilder != null) {
+      return itemBuilder(context, index);
+    }
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color:
+            context.auraColors.getColorOrNull(widget.colorVariant) ??
+            context.auraColors.primary,
+        shape: BoxShape.circle,
+      ),
+    );
+  }
 }

@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: prefer-moving-to-variable
@@ -228,7 +226,8 @@ class _MessageTextContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (hasThinking) _ReasoningSummary(content: thinking!),
+        if (thinking case final thinking? when hasThinking)
+          _ReasoningSummary(content: thinking),
         if (hasContent)
           _AiMessageContent(
             content: message.content,
@@ -385,11 +384,11 @@ class _ToolCallWidget extends ConsumerWidget {
               ],
             ),
           ),
-          if (toolCall.isResolved)
+          if (toolCall.resultStatus case final resultStatus?)
             _ToolCallStatusIndicator(
-              statusText: TextLocale(toolCall.resultStatus!.localeKey),
-              icon: _getStatusIcon(toolCall.resultStatus!),
-              color: _getStatusColor(context, toolCall.resultStatus!),
+              statusText: TextLocale(resultStatus.localeKey),
+              icon: _getStatusIcon(resultStatus),
+              color: _getStatusColor(context, resultStatus),
             ),
           if (decodedResponse != null)
             Padding(

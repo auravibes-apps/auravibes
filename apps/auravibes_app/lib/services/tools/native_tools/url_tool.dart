@@ -2,8 +2,6 @@
 // Required: Existing thresholds and limits use numeric values.
 // ignore_for_file: avoid-substring
 // Required: Existing parsing uses code-unit substring offsets.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -82,9 +80,10 @@ final class UrlTool extends NativeToolEntity<String, String> {
       }
 
       final service = _urlService ?? UrlService();
-      responseOperation = service.execute(request);
+      final operation = service.execute(request);
+      responseOperation = operation;
 
-      final response = await responseOperation!.valueOrCancellation();
+      final response = await operation.valueOrCancellation();
       if (response == null || completer.isCanceled) {
         return;
       }

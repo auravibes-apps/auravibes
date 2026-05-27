@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
@@ -67,8 +65,8 @@ abstract class ApiModelProviderEntity with _$ApiModelProviderEntity {
   }
 
   /// Returns true if the provider has a URL
-  bool get hasUrl => url != null && url!.isNotEmpty;
+  bool get hasUrl => url?.isNotEmpty ?? false;
 
   /// Returns true if the provider has documentation
-  bool get hasDocumentation => doc != null && doc!.isNotEmpty;
+  bool get hasDocumentation => doc?.isNotEmpty ?? false;
 }

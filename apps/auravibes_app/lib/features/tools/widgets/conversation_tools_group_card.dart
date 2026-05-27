@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
@@ -115,7 +113,8 @@ class ConversationToolsGroupCard extends HookConsumerWidget {
   }
 
   Future<void> _handleReconnect(WidgetRef ref) async {
-    if (groupWithTools.mcpServerId == null) return;
+    final mcpServerId = groupWithTools.mcpServerId;
+    if (mcpServerId == null) return;
 
     await ref
         .read(
@@ -124,7 +123,7 @@ class ConversationToolsGroupCard extends HookConsumerWidget {
             conversationId: conversationId,
           ).notifier,
         )
-        .reconnectMcp(groupWithTools.mcpServerId!);
+        .reconnectMcp(mcpServerId);
   }
 
   void _showErrorDetails(BuildContext context) {

@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-non-null-assertion
-// Required: Tests inspect nullable values after arranging expected state.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: no-empty-block
@@ -123,10 +121,15 @@ void main() {
           .widget<AuraDropdownSelector<WorkspaceDropdownItem>>(
             find.byType(AuraDropdownSelector<WorkspaceDropdownItem>),
           );
-      dropdown.onChanged!(workspaces[1]);
+      final onChanged = dropdown.onChanged;
+      if (onChanged == null) {
+        fail('Expected workspace dropdown onChanged callback');
+      }
+
+      onChanged(workspaces[1]);
 
       expect(selected, isNotNull);
-      expect(selected!.id, 'ws-2');
+      expect((selected ?? fail('Expected selected to be non-null')).id, 'ws-2');
     });
 
     testWidgets('is disabled when isLoading is true', (tester) async {

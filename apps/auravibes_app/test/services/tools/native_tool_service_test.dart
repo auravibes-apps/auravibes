@@ -1,6 +1,3 @@
-// ignore_for_file: avoid-non-null-assertion
-// Required: Tests inspect nullable values after arranging expected state.
-
 import 'package:auravibes_app/services/tools/native_tool_service.dart';
 import 'package:auravibes_app/services/tools/native_tool_type.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,7 +13,10 @@ void main() {
     test('getTool returns tool for url type', () {
       final tool = NativeToolService.getTool(NativeToolType.url);
       expect(tool, isNotNull);
-      expect(tool!.type, NativeToolType.url);
+      expect(
+        (tool ?? fail('Expected tool to be non-null')).type,
+        NativeToolType.url,
+      );
     });
 
     test('hasTypeString returns true for url', () {

@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Tests inspect nullable values after arranging expected state.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: member-ordering
@@ -190,8 +188,16 @@ void main() {
       final _ = await usecase(conversationId: 'conv-1', workspaceId: 'ws-1');
 
       expect(capturedTools, isNotNull);
-      expect(capturedTools!.length, 1);
-      expect(capturedTools!.first.toolId, 'tool1');
+      expect(
+        (capturedTools ?? fail('Expected capturedTools to be non-null')).length,
+        1,
+      );
+      expect(
+        (capturedTools ?? fail('Expected capturedTools to be non-null'))
+            .first
+            .toolId,
+        'tool1',
+      );
     });
   });
 }

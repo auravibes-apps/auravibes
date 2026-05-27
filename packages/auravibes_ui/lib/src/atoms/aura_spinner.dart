@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: UI tokens and layout use fixed design values.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: no-equal-arguments
 // Required: UI geometry uses repeated values for symmetric layout.
 // ignore_for_file: member-ordering
@@ -206,11 +204,14 @@ class AuraLoadingOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final child = this.child;
+
     if (!isLoading) {
       return child ?? const SizedBox.shrink();
     }
 
     final auraColors = context.auraColors;
+    final message = this.message;
     final overlay = ColoredBox(
       color: backgroundColor ?? auraColors.scrim,
       child: Center(
@@ -225,7 +226,7 @@ class AuraLoadingOverlay extends StatelessWidget {
           ),
           child: message != null
               ? AuraSpinnerWithLabel(
-                  label: message!,
+                  label: message,
                   size: spinnerSize,
                   color: spinnerColor,
                   spacing: DesignSpacing.md,
@@ -241,7 +242,7 @@ class AuraLoadingOverlay extends StatelessWidget {
     if (child != null) {
       return Stack(
         children: [
-          child!,
+          child,
           if (isLoading) overlay,
         ],
       );

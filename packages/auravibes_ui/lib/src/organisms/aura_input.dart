@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: UI tokens and layout use fixed design values.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 
@@ -165,6 +163,9 @@ class _AuraInputState extends State<AuraInput> {
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
     final fieldState = _convertToFieldState(widget.state);
+    final prefixIcon = widget.prefixIcon;
+    final suffixIcon = widget.suffixIcon;
+    final footer = widget.footer;
 
     return AuraFieldWrapper(
       child: Padding(
@@ -173,8 +174,8 @@ class _AuraInputState extends State<AuraInput> {
           children: [
             Row(
               children: [
-                if (widget.prefixIcon != null) ...[
-                  widget.prefixIcon!,
+                if (prefixIcon != null) ...[
+                  prefixIcon,
                   const SizedBox(width: DesignSpacing.sm),
                 ],
                 Expanded(
@@ -205,13 +206,13 @@ class _AuraInputState extends State<AuraInput> {
                     enabled: widget.enabled,
                   ),
                 ),
-                if (widget.suffixIcon != null) ...[
+                if (suffixIcon != null) ...[
                   const SizedBox(width: DesignSpacing.sm),
-                  widget.suffixIcon!,
+                  suffixIcon,
                 ],
               ],
             ),
-            if (widget.footer != null) widget.footer!,
+            ?footer,
           ],
         ),
       ),

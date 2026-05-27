@@ -1,6 +1,3 @@
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
-
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/services/tools/native_tool_type.dart';
@@ -86,8 +83,9 @@ extension WorkspaceToolEntityWidgets on WorkspaceToolEntity {
   }
 
   Widget getDescriptionWidget() {
-    if (hasDescription) {
-      return Text(description!);
+    final description = this.description;
+    if (description != null && description.isNotEmpty) {
+      return Text(description);
     }
     final type = buildInType;
     final native = nativeType;

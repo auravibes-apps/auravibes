@@ -5,9 +5,6 @@
 // ignore_for_file: prefer-static-class
 // Required: Tests keep fixture helpers and fakes top-level.
 
-// ignore_for_file: avoid-non-null-assertion
-// Required: Tests inspect nullable values after arranging expected state.
-
 // ignore_for_file: avoid-late-keyword
 // Required: Test fixtures are assigned in setUp.
 
@@ -147,9 +144,16 @@ void main() {
             workspaceIds: [workspaceId],
           );
       final found = await database.workspaceModelSelectionsDao
-          .getWorkspaceModelSelectionById(all.firstOrNull!.model.id);
+          .getWorkspaceModelSelectionById(
+            (all.firstOrNull ?? fail('Expected all.firstOrNull to be non-null'))
+                .model
+                .id,
+          );
       expect(found, isNotNull);
-      expect(found!.model.modelId, equals('openai'));
+      expect(
+        (found ?? fail('Expected found to be non-null')).model.modelId,
+        equals('openai'),
+      );
     });
 
     test(

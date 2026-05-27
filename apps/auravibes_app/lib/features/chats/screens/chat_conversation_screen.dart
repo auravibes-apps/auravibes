@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
@@ -94,7 +92,8 @@ class _ChatConversationScreen extends HookConsumerWidget {
     if (conversationAsync.hasError && !conversationAsync.hasValue) {
       return AuraScreen(
         child: AppErrorWidget(
-          error: conversationAsync.error!,
+          error:
+              conversationAsync.error ?? StateError('Conversation load failed'),
           stackTrace: conversationAsync.stackTrace ?? StackTrace.empty,
         ),
       );

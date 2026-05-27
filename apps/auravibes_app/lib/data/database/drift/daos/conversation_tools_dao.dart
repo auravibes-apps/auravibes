@@ -1,7 +1,5 @@
 // ignore_for_file: prefer-async-await
 // Required: Existing Future chains preserve callback flow.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: newline-before-return
@@ -90,7 +88,11 @@ class ConversationToolsDao extends DatabaseAccessor<AppDatabase>
                   isEnabled: Value(isEnabled),
                 ),
               );
-      return (await getConversationTool(conversationId, toolId))!;
+      final updated = await getConversationTool(conversationId, toolId);
+      if (updated == null) {
+        throw StateError('Updated conversation tool was not found');
+      }
+      return updated;
     } else {
       // Insert new
       return into(conversationTools).insertReturning(
@@ -124,7 +126,11 @@ class ConversationToolsDao extends DatabaseAccessor<AppDatabase>
                   permissions: Value(permission),
                 ),
               );
-      return (await getConversationTool(conversationId, toolId))!;
+      final updated = await getConversationTool(conversationId, toolId);
+      if (updated == null) {
+        throw StateError('Updated conversation tool was not found');
+      }
+      return updated;
     } else {
       return into(conversationTools).insertReturning(
         ConversationToolsCompanion(

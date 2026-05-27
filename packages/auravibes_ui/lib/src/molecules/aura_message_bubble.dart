@@ -2,8 +2,6 @@
 // Required: UI tokens and layout use fixed design values.
 // ignore_for_file: avoid-returning-widgets
 // Required: Existing helper builders return widgets.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 
@@ -58,6 +56,7 @@ class AuraMessageBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
+    final timestamp = this.timestamp;
 
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
@@ -85,7 +84,7 @@ class AuraMessageBubble extends StatelessWidget {
                     _buildContent(auraColors),
                     if (timestamp != null) ...[
                       const SizedBox(height: DesignSpacing.xs),
-                      _buildTimestamp(auraColors),
+                      _buildTimestamp(auraColors, timestamp),
                     ],
                   ],
                 ),
@@ -203,13 +202,13 @@ class AuraMessageBubble extends StatelessWidget {
     };
   }
 
-  Widget _buildTimestamp(AuraColorScheme auraColors) {
+  Widget _buildTimestamp(AuraColorScheme auraColors, DateTime timestamp) {
     final textColor = isUser
         ? auraColors.onPrimary.withValues(alpha: 0.7)
         : auraColors.onSurfaceVariant;
 
     return Text(
-      _formatTimestamp(timestamp!),
+      _formatTimestamp(timestamp),
       style: TextStyle(
         color: textColor,
         fontSize: DesignTypography.fontSizeXs,

@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
@@ -274,7 +272,8 @@ class MessageRepositoryImpl implements MessageRepository {
   }
 
   String? _getValidationErrorPatch(MessagePatch message) {
-    if (message.content != null && message.content!.trim().isEmpty) {
+    final content = message.content;
+    if (content != null && content.trim().isEmpty) {
       return 'Message content cannot be empty';
     }
     if (message.content == null &&

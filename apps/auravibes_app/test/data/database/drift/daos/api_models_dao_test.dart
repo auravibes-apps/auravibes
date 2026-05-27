@@ -9,8 +9,6 @@
 
 // ignore_for_file: avoid-redundant-async
 // Required: Test callbacks intentionally preserve async-compatible signatures.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Tests inspect nullable values after arranging expected state.
 
 // ignore_for_file: avoid-late-keyword
 // Required: Test fixtures are assigned in setUp.
@@ -112,7 +110,10 @@ void main() {
         'gpt-4',
       );
       expect(model, isNotNull);
-      expect(model!.name, equals('GPT-4'));
+      expect(
+        (model ?? fail('Expected model to be non-null')).name,
+        equals('GPT-4'),
+      );
     });
 
     test('getModelByProviderAndModelId returns null when not found', () async {

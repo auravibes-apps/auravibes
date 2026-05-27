@@ -11,8 +11,6 @@
 
 // ignore_for_file: avoid-redundant-async
 // Required: Test callbacks intentionally preserve async-compatible signatures.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Tests inspect nullable values after arranging expected state.
 
 // ignore_for_file: avoid-late-keyword
 // Required: Test fixtures are assigned in setUp.
@@ -122,7 +120,10 @@ void main() {
 
       // Verify the update
       final retrieved = await workspaceDao.getWorkspaceById(idCreated.id);
-      expect(retrieved!.name, equals('Updated Name'));
+      expect(
+        (retrieved ?? fail('Expected retrieved to be non-null')).name,
+        equals('Updated Name'),
+      );
     });
 
     test('should delete workspace', () async {

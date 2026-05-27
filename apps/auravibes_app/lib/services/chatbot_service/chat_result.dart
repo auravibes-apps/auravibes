@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -138,6 +136,12 @@ abstract class LanguageModelUsage with _$LanguageModelUsage {
 extension ChatResultConcat on ChatResult<ChatMessage> {
   ChatResult<ChatMessage> concat(ChatResult<ChatMessage> delta) {
     final outputMetadata = {...output.metadata, ...delta.output.metadata};
+    final currentUsage = usage;
+    final deltaUsage = delta.usage;
+    final combinedUsage = currentUsage != null && deltaUsage != null
+        ? currentUsage.concat(deltaUsage)
+        : deltaUsage ?? currentUsage;
+
     return ChatResult<ChatMessage>(
       output: output
           .copyWith(metadata: outputMetadata)
@@ -145,9 +149,7 @@ extension ChatResultConcat on ChatResult<ChatMessage> {
       finishReason: delta.finishReason != FinishReason.unspecified
           ? delta.finishReason
           : finishReason,
-      usage: usage != null && delta.usage != null
-          ? usage!.concat(delta.usage!)
-          : delta.usage ?? usage,
+      usage: combinedUsage,
       metadata: {...metadata, ...delta.metadata},
       messages: [...messages, ...delta.messages],
       thinking: _concatThinking(thinking, delta.thinking),
@@ -171,9 +173,10 @@ extension ChatResultEntities on ChatResult<ChatMessage> {
           (tc) => MessageToolCallEntity(
             id: tc.callId,
             name: tc.toolName,
-            argumentsRaw: tc.argumentsRaw is String
-                ? tc.argumentsRaw! as String
-                : jsonEncode(tc.argumentsRaw),
+            argumentsRaw: switch (tc.argumentsRaw) {
+              final String raw => raw,
+              final raw => jsonEncode(raw),
+            },
           ),
         )
         .toList();

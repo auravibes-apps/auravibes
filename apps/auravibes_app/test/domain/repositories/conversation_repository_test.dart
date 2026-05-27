@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-non-null-assertion
-// Required: Tests inspect nullable values after arranging expected state.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: newline-before-return
@@ -133,7 +131,7 @@ void main() {
       final result = await repo.watchConversationById('c-1').first;
 
       expect(result, isNotNull);
-      expect(result!.id, 'c-1');
+      expect((result ?? fail('Expected result to be non-null')).id, 'c-1');
     });
 
     test('getConversationById returns null when not found', () async {

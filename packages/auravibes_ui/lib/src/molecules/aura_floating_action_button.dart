@@ -6,8 +6,6 @@
 // Required: UI geometry uses repeated values for symmetric layout.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: prefer-moving-to-variable
@@ -78,10 +76,11 @@ class AuraFloatingActionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
     final isExtended = size == AuraFABSize.extended;
+    final text = this.text;
 
     Widget fab = FloatingActionButton(
-      child: isExtended
-          ? _buildExtendedContent(auraColors)
+      child: isExtended && text != null
+          ? _buildExtendedContent(auraColors, text)
           : _buildRegularContent(),
       foregroundColor:
           auraColors.getColorOrNull(foregroundColor) ?? auraColors.onPrimary,
@@ -121,7 +120,7 @@ class AuraFloatingActionButton extends StatelessWidget {
       );
     }
 
-    if (isExtended) {
+    if (isExtended && text != null) {
       fab = FloatingActionButton.extended(
         foregroundColor:
             auraColors.getColorOrNull(foregroundColor) ?? auraColors.onPrimary,
@@ -141,7 +140,7 @@ class AuraFloatingActionButton extends StatelessWidget {
         ),
         label: AuraText(
           child: Text(
-            text!,
+            text,
             style: TextStyle(
               color:
                   auraColors.getColorOrNull(foregroundColor) ??
@@ -179,7 +178,7 @@ class AuraFloatingActionButton extends StatelessWidget {
     );
   }
 
-  Widget _buildExtendedContent(AuraColorScheme auraColors) {
+  Widget _buildExtendedContent(AuraColorScheme auraColors, String text) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -190,7 +189,7 @@ class AuraFloatingActionButton extends StatelessWidget {
         const SizedBox(width: DesignSpacing.sm),
         AuraText(
           child: Text(
-            text!,
+            text,
             style: TextStyle(
               color:
                   auraColors.getColorOrNull(foregroundColor) ??

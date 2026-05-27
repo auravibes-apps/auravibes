@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: prefer-correct-identifier-length
@@ -67,6 +65,7 @@ class WorkspaceDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final errorLocalizationKey = this.errorLocalizationKey;
     final activeWorkspace = workspaces
         .where((w) => w.id == activeWorkspaceId)
         .firstOrNull;
@@ -92,7 +91,7 @@ class WorkspaceDropdown extends StatelessWidget {
         LocaleKeys.workspace_management_dropdown_placeholder.tr(),
       ),
       error: errorLocalizationKey != null
-          ? Text(errorLocalizationKey!.tr())
+          ? Text(errorLocalizationKey.tr())
           : null,
       semanticLabel: LocaleKeys.workspace_management_title.tr(),
     );

@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
@@ -98,13 +96,12 @@ class ModelApiService {
   ModelApiResponse _parseDioResponse(
     Response<Map<String, dynamic>> response,
   ) {
-    if (response.statusCode != 200 || response.data == null) {
+    final jsonData = response.data;
+    if (response.statusCode != 200 || jsonData == null) {
       throw Exception(
         'API request failed with status ${response.statusCode}',
       );
     }
-
-    final jsonData = response.data!;
 
     // Parse providers
     final providersData = jsonData;

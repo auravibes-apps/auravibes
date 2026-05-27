@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
@@ -73,9 +71,10 @@ abstract class ConversationToCreate with _$ConversationToCreate {
 
   /// Returns true if the conversation is in a valid state
   bool get isValid {
+    final modelId = this.modelId;
     return hasValidTitle &&
         workspaceId.isNotEmpty &&
-        (modelId == null || modelId!.isNotEmpty);
+        (modelId == null || modelId.isNotEmpty);
   }
 }
 
@@ -94,8 +93,12 @@ abstract class ConversationPatch with _$ConversationPatch {
   const ConversationPatch._();
 
   bool get isValid {
-    if (title != null && title!.isEmpty) return false;
-    if (modelId != null && modelId!.isEmpty) return false;
+    final title = this.title;
+    if (title != null && title.isEmpty) return false;
+
+    final modelId = this.modelId;
+    if (modelId != null && modelId.isEmpty) return false;
+
     return title != null || modelId != null || isPinned != null;
   }
 }

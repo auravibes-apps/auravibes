@@ -4,8 +4,6 @@
 // Required: Existing helper builders return widgets.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: prefer-correct-identifier-length
@@ -100,11 +98,12 @@ class AuraRadioGroup<T> extends StatelessWidget {
         ? _buildVerticalOptions(radios, spacing)
         : _buildHorizontalOptions(radios, spacing);
 
+    final label = this.label;
     if (label != null) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          label!,
+          label,
           SizedBox(height: spacing.sm),
           optionsWidget,
         ],
@@ -118,6 +117,8 @@ class AuraRadioGroup<T> extends StatelessWidget {
     List<AuraRadio<T>> radios,
     AuraSpacingTheme spacing,
   ) {
+    final onChanged = this.onChanged;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -130,9 +131,7 @@ class AuraRadioGroup<T> extends StatelessWidget {
                 Flexible(child: options[i].label),
               ],
             ),
-            onTap: onChanged == null
-                ? null
-                : () => onChanged!(options[i].value),
+            onTap: onChanged == null ? null : () => onChanged(options[i].value),
             behavior: HitTestBehavior.opaque,
           ),
           if (options[i].subtitle != null)
@@ -152,6 +151,8 @@ class AuraRadioGroup<T> extends StatelessWidget {
     List<AuraRadio<T>> radios,
     AuraSpacingTheme spacing,
   ) {
+    final onChanged = this.onChanged;
+
     return Wrap(
       spacing: spacing.md,
       runSpacing: spacing.sm,
@@ -166,9 +167,7 @@ class AuraRadioGroup<T> extends StatelessWidget {
                 Flexible(child: options[i].label),
               ],
             ),
-            onTap: onChanged == null
-                ? null
-                : () => onChanged!(options[i].value),
+            onTap: onChanged == null ? null : () => onChanged(options[i].value),
             behavior: HitTestBehavior.opaque,
           ),
       ],
@@ -242,6 +241,7 @@ class AuraRadioListTile<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDisabled = disabled || onChanged == null;
+    final subtitle = this.subtitle;
 
     return MouseRegion(
       cursor: isDisabled
@@ -283,7 +283,7 @@ class AuraRadioListTile<T> extends StatelessWidget {
                               color: context.auraColors.onSurfaceVariant,
                               fontSize: 14,
                             ),
-                        child: subtitle!,
+                        child: subtitle,
                       ),
                     ],
                   ],

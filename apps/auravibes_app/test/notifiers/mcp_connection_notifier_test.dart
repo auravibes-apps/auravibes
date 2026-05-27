@@ -4,8 +4,6 @@
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: no-empty-block
 // Required: Tests use intentional no-op callbacks and fake hooks.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Tests inspect nullable values after arranging expected state.
 // ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
@@ -76,7 +74,10 @@ void main() {
           'mcp_abc123_myserver_read_file',
         );
         expect(result, isNotNull);
-        expect(result!.mcpServerId, 'abc123');
+        expect(
+          (result ?? fail('Expected result to be non-null')).mcpServerId,
+          'abc123',
+        );
         expect(result.slugName, 'myserver');
         expect(result.toolIdentifier, 'read_file');
       });
@@ -128,7 +129,10 @@ void main() {
           'mcp_abc_myserver_read_file_name',
         );
         expect(result, isNotNull);
-        expect(result!.mcpServerId, 'abc');
+        expect(
+          (result ?? fail('Expected result to be non-null')).mcpServerId,
+          'abc',
+        );
         expect(result.slugName, 'myserver');
         expect(result.toolIdentifier, 'read_file_name');
       });
@@ -225,7 +229,10 @@ void main() {
         ];
       final conn = notifier.getConnection('server-1');
       expect(conn, isNotNull);
-      expect(conn!.server.id, 'server-1');
+      expect(
+        (conn ?? fail('Expected conn to be non-null')).server.id,
+        'server-1',
+      );
     });
 
     test('getMcpConnectionTimeout returns 10 seconds', () {

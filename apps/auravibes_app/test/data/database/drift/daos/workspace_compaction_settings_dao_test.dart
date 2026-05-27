@@ -9,9 +9,6 @@
 // ignore_for_file: prefer-static-class
 // Required: Tests keep fixture helpers and fakes top-level.
 
-// ignore_for_file: avoid-non-null-assertion
-// Required: Tests inspect nullable values after arranging expected state.
-
 // ignore_for_file: avoid-late-keyword
 // Required: Test fixtures are assigned in setUp.
 
@@ -108,7 +105,11 @@ void main() {
       final result = await database.workspaceCompactionSettingsDao
           .getByWorkspaceId(workspaceId);
       expect(result, isNotNull);
-      expect(result!.usagePercentageThreshold, 60);
+      expect(
+        (result ?? fail('Expected result to be non-null'))
+            .usagePercentageThreshold,
+        60,
+      );
     });
 
     test('watchByWorkspaceId emits null initially then updates', () async {
@@ -164,7 +165,10 @@ void main() {
       final row = await completer.future.timeout(const Duration(seconds: 5));
 
       expect(row, isNotNull);
-      expect(row!.usagePercentageThreshold, 70);
+      expect(
+        (row ?? fail('Expected row to be non-null')).usagePercentageThreshold,
+        70,
+      );
 
       await sub.cancel();
     });

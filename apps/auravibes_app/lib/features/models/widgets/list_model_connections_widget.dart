@@ -4,8 +4,6 @@
 // Required: Existing helper builders return widgets.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -113,6 +111,7 @@ class _ModelConnectionCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final menuController = AuraPopupMenuController();
+    final url = workspaceModelSelection.url;
 
     return AuraCard(
       child: Column(
@@ -156,12 +155,12 @@ class _ModelConnectionCard extends ConsumerWidget {
               ),
             ],
           ),
-          if (workspaceModelSelection.url != null) ...[
+          if (url != null) ...[
             const SizedBox(height: 12),
             AuraText(
               child: Text(
                 LocaleKeys.models_screens_list_url_label.tr(
-                  args: [workspaceModelSelection.url!],
+                  args: [url],
                   context: context,
                 ),
               ),

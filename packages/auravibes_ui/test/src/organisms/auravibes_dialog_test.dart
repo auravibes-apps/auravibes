@@ -9,8 +9,8 @@
 
 // ignore_for_file: avoid-returning-widgets
 // Required: Widget tests use helpers that build widgets under test.
-// ignore_for_file: avoid-passing-async-when-sync-expected
-// Required: Dialog tests await callback futures to capture returned results.
+
+import 'dart:async';
 
 import 'package:auravibes_ui/src/molecules/aura_button.dart';
 import 'package:auravibes_ui/src/organisms/aura_confirm_dialog.dart';
@@ -46,6 +46,10 @@ Finder findAuraButtonByColorVariant(AuraColorVariant variant) {
   return find.byWidgetPredicate(
     (widget) => widget is AuraButton && widget.colorVariant == variant,
   );
+}
+
+VoidCallback runDialogAction(Future<void> Function() action) {
+  return () => unawaited(action());
 }
 
 void main() {
@@ -242,13 +246,13 @@ void main() {
         wrapWithAuraTheme(
           Builder(
             builder: (context) => TextButton(
-              onPressed: () async {
+              onPressed: runDialogAction(() async {
                 dialogResult = await showAuraConfirmDialog(
                   context: context,
                   title: const Text('Dialog Title'),
                   message: const Text('Are you sure?'),
                 );
-              },
+              }),
               child: const Text('Open'),
             ),
           ),
@@ -280,13 +284,13 @@ void main() {
         wrapWithAuraTheme(
           Builder(
             builder: (context) => TextButton(
-              onPressed: () async {
+              onPressed: runDialogAction(() async {
                 dialogResult = await showAuraConfirmDialog(
                   context: context,
                   title: const Text('Dialog Title'),
                   message: const Text('Are you sure?'),
                 );
-              },
+              }),
               child: const Text('Open'),
             ),
           ),
@@ -315,13 +319,13 @@ void main() {
         wrapWithAuraTheme(
           Builder(
             builder: (context) => TextButton(
-              onPressed: () async {
+              onPressed: runDialogAction(() async {
                 await showAuraAlertDialog(
                   context: context,
                   title: const Text('Alert'),
                   message: const Text('This is an alert.'),
                 );
-              },
+              }),
               child: const Text('Open'),
             ),
           ),
@@ -346,14 +350,14 @@ void main() {
         wrapWithAuraTheme(
           Builder(
             builder: (context) => TextButton(
-              onPressed: () async {
+              onPressed: runDialogAction(() async {
                 await showAuraAlertDialog(
                   context: context,
                   title: const Text('Alert'),
                   message: const Text('This is an alert.'),
                   barrierDismissible: false,
                 );
-              },
+              }),
               child: const Text('Open'),
             ),
           ),
@@ -387,13 +391,13 @@ void main() {
         wrapWithAuraTheme(
           Builder(
             builder: (context) => TextButton(
-              onPressed: () async {
+              onPressed: runDialogAction(() async {
                 final _ = await showAuraConfirmDialog(
                   context: context,
                   title: const Text('Title'),
                   message: const Text('Message'),
                 );
-              },
+              }),
               child: const Text('Open'),
             ),
           ),
@@ -415,13 +419,13 @@ void main() {
         wrapWithAuraTheme(
           Builder(
             builder: (context) => TextButton(
-              onPressed: () async {
+              onPressed: runDialogAction(() async {
                 await showAuraAlertDialog(
                   context: context,
                   title: const Text('Alert'),
                   message: const Text('Message'),
                 );
-              },
+              }),
               child: const Text('Open'),
             ),
           ),
@@ -447,13 +451,13 @@ void main() {
         wrapWithAuraTheme(
           Builder(
             builder: (context) => TextButton(
-              onPressed: () async {
+              onPressed: runDialogAction(() async {
                 result = await showAuraConfirmDialog(
                   context: context,
                   title: const Text('Title'),
                   message: const Text('Message'),
                 );
-              },
+              }),
               child: const Text('Open'),
             ),
           ),
@@ -479,13 +483,13 @@ void main() {
         wrapWithAuraTheme(
           Builder(
             builder: (context) => TextButton(
-              onPressed: () async {
+              onPressed: runDialogAction(() async {
                 result = await showAuraConfirmDialog(
                   context: context,
                   title: const Text('Title'),
                   message: const Text('Message'),
                 );
-              },
+              }),
               child: const Text('Open'),
             ),
           ),
@@ -513,14 +517,14 @@ void main() {
           wrapWithAuraTheme(
             Builder(
               builder: (context) => TextButton(
-                onPressed: () async {
+                onPressed: runDialogAction(() async {
                   result = await showAuraConfirmDialog(
                     context: context,
                     title: const Text('Title'),
                     message: const Text('Message'),
                     barrierDismissible: false,
                   );
-                },
+                }),
                 child: const Text('Open'),
               ),
             ),

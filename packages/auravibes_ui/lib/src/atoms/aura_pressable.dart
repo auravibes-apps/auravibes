@@ -2,11 +2,10 @@
 // Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: prefer-extracting-callbacks
-// Required: Component callbacks stay colocated with UI state.
 import 'dart:async';
 
 import 'package:auravibes_ui/ui.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 
 /// Pessable implementation of auravibes
@@ -78,6 +77,17 @@ class AuraPressableState extends State<AuraPressable> {
     setState(() => _hovering = false);
   }
 
+  void _handlePointerEnter(PointerEnterEvent _) => _onHover();
+
+  void _handlePointerExit(PointerExitEvent _) => _onExitHover();
+
+  void _handleTapDown(TapDownDetails _) => _onPressed();
+
+  void _handleTapUp(TapUpDetails _) {
+    _timer?.cancel();
+    _timer = Timer(context.auraTheme.animation.normal, _onExitPressed);
+  }
+
   @override
   Widget build(BuildContext context) {
     final auraTheme = context.auraTheme;
@@ -107,8 +117,8 @@ class AuraPressableState extends State<AuraPressable> {
           child: AnimatedContainer(
             color: selectedColor.withValues(alpha: alpha),
             child: MouseRegion(
-              onEnter: (details) => _onHover(),
-              onExit: (details) => _onExitHover(),
+              onEnter: _handlePointerEnter,
+              onExit: _handlePointerExit,
               cursor: canChangeColor
                   ? SystemMouseCursors.click
                   : MouseCursor.defer,
@@ -122,11 +132,8 @@ class AuraPressableState extends State<AuraPressable> {
         ),
         padding: widget.padding ?? .none,
       ),
-      onTapDown: (_) => _onPressed(),
-      onTapUp: (_) {
-        _timer?.cancel();
-        _timer = Timer(auraTheme.animation.normal, _onExitPressed);
-      },
+      onTapDown: _handleTapDown,
+      onTapUp: _handleTapUp,
       onTap: widget.onPressed,
       onTapCancel: _onExitPressed,
       onLongPress: widget.onLongPress,

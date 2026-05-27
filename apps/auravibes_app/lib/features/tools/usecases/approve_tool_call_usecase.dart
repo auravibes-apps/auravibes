@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -167,12 +165,13 @@ class ApproveToolCallUsecase {
   }
 
   Future<String?> _resolvePermissionTableId(ResolvedTool resolvedTool) async {
-    if (resolvedTool.mcpServerId == null) {
+    final mcpServerId = resolvedTool.mcpServerId;
+    if (mcpServerId == null) {
       return resolvedTool.tableId;
     }
 
     final toolGroup = await _toolsGroupsRepository.getToolsGroupByMcpServerId(
-      resolvedTool.mcpServerId!,
+      mcpServerId,
     );
     if (toolGroup == null) return null;
 

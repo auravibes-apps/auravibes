@@ -4,8 +4,6 @@
 // Required: Existing helper builders return widgets.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -84,15 +82,16 @@ class _AuraFieldWrapperState extends State<AuraFieldWrapper> {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
+    final label = widget.label;
 
     return Semantics(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (widget.label != null)
-            AuraFieldLabel(child: widget.label!, isRequired: widget.isRequired),
-          if (widget.label != null) const SizedBox(height: DesignSpacing.xs),
+          if (label != null)
+            AuraFieldLabel(child: label, isRequired: widget.isRequired),
+          if (label != null) const SizedBox(height: DesignSpacing.xs),
           _buildFieldContainer(auraColors),
           if (widget.hint != null || widget.error != null)
             const SizedBox(height: DesignSpacing.xs),

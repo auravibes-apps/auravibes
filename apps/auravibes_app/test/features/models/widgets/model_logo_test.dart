@@ -4,8 +4,6 @@
 // Required: Widget tests use helpers that build widgets under test.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: avoid-unused-parameters
-// Required: Test fakes keep interface-compatible parameter names.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 // ignore_for_file: prefer-static-class
@@ -31,7 +29,7 @@ void main() {
     });
 
     test('constructor accepts custom values', () {
-      Widget builder(BuildContext context, String url) => Container();
+      Widget builder(BuildContext _, String _) => Container();
       final client = http.Client();
       final logo = ModelLogo(
         modelId: 'anthropic',
@@ -92,7 +90,7 @@ void main() {
   });
 }
 
-Widget _customBuilder(BuildContext context, String url) {
+Widget _customBuilder(BuildContext _, String _) {
   return const SizedBox(key: Key('custom-builder'));
 }
 

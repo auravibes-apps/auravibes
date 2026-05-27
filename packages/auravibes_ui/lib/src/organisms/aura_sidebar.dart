@@ -4,8 +4,6 @@
 // Required: Existing helper builders return widgets.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -61,6 +59,9 @@ class AuraSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final header = this.header;
+    final footer = this.footer;
+
     return Container(
       decoration: BoxDecoration(
         color: context.auraColors.surface,
@@ -81,7 +82,7 @@ class AuraSidebar extends StatelessWidget {
       child: Column(
         children: [
           if (header != null)
-            _buildHeaderSection()
+            _buildHeaderSection(header)
           else
             SizedBox(height: context.auraTheme.spacing.lg),
           Expanded(
@@ -98,14 +99,14 @@ class AuraSidebar extends StatelessWidget {
             child: _buildNavigationItems(footer: true),
           ),
 
-          if (footer != null) _buildFooterSection(context),
+          if (footer != null) _buildFooterSection(context, footer),
         ],
       ),
     );
   }
 
-  Widget _buildHeaderSection() {
-    return header!;
+  Widget _buildHeaderSection(Widget header) {
+    return header;
   }
 
   Widget _buildNavigationItems({
@@ -131,7 +132,7 @@ class AuraSidebar extends StatelessWidget {
     );
   }
 
-  Widget _buildFooterSection(BuildContext context) {
+  Widget _buildFooterSection(BuildContext context, Widget footer) {
     return Padding(
       padding: EdgeInsets.all(context.auraTheme.spacing.sm),
       child: footer,

@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Tests inspect nullable values after arranging expected state.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: prefer-correct-identifier-length
@@ -51,7 +49,10 @@ void main() {
       expect(createResult.name, 'Test Workspace');
       expect(createResult.type, WorkspaceType.local);
 
-      expect(getResult!.id, createResult.id);
+      expect(
+        (getResult ?? fail('Expected getResult to be non-null')).id,
+        createResult.id,
+      );
       expect(getResult.name, 'Test Workspace');
     });
 

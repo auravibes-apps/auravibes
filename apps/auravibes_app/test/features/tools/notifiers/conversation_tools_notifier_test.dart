@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Tests inspect nullable values after arranging expected state.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: newline-before-return
@@ -253,9 +251,11 @@ void main() {
             conversationId: 'conv-1',
           ),
         );
-        final tool2State = state.value!.singleWhere(
-          (t) => t.tool.id == 'tool-2',
-        );
+        final tool2State =
+            (state.value ?? fail('Expected state.value to be non-null'))
+                .singleWhere(
+                  (t) => t.tool.id == 'tool-2',
+                );
         expect(tool2State.isEnabled, isTrue);
       },
     );
@@ -286,7 +286,12 @@ void main() {
           conversationId: 'conv-1',
         ),
       );
-      expect(state.value!.first.isEnabled, isFalse);
+      expect(
+        (state.value ?? fail('Expected state.value to be non-null'))
+            .first
+            .isEnabled,
+        isFalse,
+      );
     });
 
     test('getToolStates returns loaded tools', () async {
@@ -338,7 +343,9 @@ void main() {
         ),
       );
       expect(
-        state.value!.first.permissionMode,
+        (state.value ?? fail('Expected state.value to be non-null'))
+            .first
+            .permissionMode,
         ToolPermissionMode.alwaysAsk,
       );
     });
@@ -395,7 +402,10 @@ void main() {
             conversationId: 'conv-1',
           ),
         );
-        expect(state.value!.length, 1);
+        expect(
+          (state.value ?? fail('Expected state.value to be non-null')).length,
+          1,
+        );
       },
     );
 

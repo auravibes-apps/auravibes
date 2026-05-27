@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: UI tokens and layout use fixed design values.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -133,7 +131,7 @@ class _AuraTooltipState extends State<AuraTooltip> {
 
     final overlay = Overlay.of(context);
 
-    _overlayEntry = OverlayEntry(
+    final overlayEntry = OverlayEntry(
       builder: (context) {
         return Positioned.fill(
           child: IgnorePointer(
@@ -182,8 +180,9 @@ class _AuraTooltipState extends State<AuraTooltip> {
         );
       },
     );
+    _overlayEntry = overlayEntry;
 
-    overlay.insert(_overlayEntry!);
+    overlay.insert(overlayEntry);
 
     if (widget.showDuration > Duration.zero) {
       _hideTimer = Timer(widget.showDuration, _removeOverlay);
