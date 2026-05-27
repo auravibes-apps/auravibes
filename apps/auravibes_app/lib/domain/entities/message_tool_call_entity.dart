@@ -4,6 +4,8 @@
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-static-class
+// Required: Existing helpers remain top-level for local feature use.
 import 'dart:convert';
 
 import 'package:auravibes_app/domain/enums/message_type.dart';

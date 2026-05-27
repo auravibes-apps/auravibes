@@ -2,6 +2,8 @@
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-static-class
+// Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';

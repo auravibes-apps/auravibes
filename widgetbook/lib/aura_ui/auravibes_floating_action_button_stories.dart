@@ -2,6 +2,8 @@
 // Required: Widgetbook stories use helper functions that return widgets.
 // ignore_for_file: no-empty-block
 // Required: Widgetbook stories use intentional no-op callbacks.
+// ignore_for_file: prefer-static-class
+// Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:widgetbook/widgetbook.dart';

@@ -1,3 +1,5 @@
+// ignore_for_file: prefer-static-class
+// Required: Existing helpers remain top-level for local feature use.
 String generateBuiltInCompositeId({
   required String tableId,
   required String toolIdentifier,

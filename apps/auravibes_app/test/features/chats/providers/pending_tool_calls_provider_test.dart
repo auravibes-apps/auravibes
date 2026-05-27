@@ -12,6 +12,8 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: no-object-declaration
 // Required: Test fakes override noSuchMethod with Object return values.
+// ignore_for_file: prefer-static-class
+// Required: Tests keep fixture helpers and fakes top-level.
 
 // ignore_for_file: provider_dependencies
 // Required: provider unit tests read scoped providers directly.

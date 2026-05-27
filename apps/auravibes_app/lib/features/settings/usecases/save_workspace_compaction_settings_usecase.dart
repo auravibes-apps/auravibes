@@ -4,6 +4,8 @@
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-static-class
+// Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/domain/repositories/workspace_compaction_settings_repository.dart';

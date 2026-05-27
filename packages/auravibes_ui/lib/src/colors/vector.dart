@@ -4,6 +4,8 @@
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-static-class
+// Required: UI package exposes top-level helpers and constants.
 import 'dart:math';
 
 /// Represents a 3D vector for color space transformations.

@@ -12,6 +12,8 @@
 // Required: Existing short identifiers follow callback and pattern APIs.
 // ignore_for_file: prefer-moving-to-variable
 // Required: Existing code repeats lookups where extraction adds noise.
+// ignore_for_file: prefer-static-class
+// Required: Existing helpers remain top-level for local feature use.
 
 import 'dart:convert';
 import 'dart:io';

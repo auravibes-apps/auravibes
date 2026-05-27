@@ -14,6 +14,8 @@
 // Required: Test covers indexed assignment, which has no first setter.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-static-class
+// Required: Tests keep fixture helpers and fakes top-level.
 
 // ignore_for_file: provider_dependencies
 // Required: provider unit tests read scoped providers directly.

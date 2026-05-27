@@ -10,6 +10,8 @@
 // Required: Existing code repeats lookups where extraction adds noise.
 // ignore_for_file: prefer-single-widget-per-file
 // Required: Feature widgets keep closely related private widgets together.
+// ignore_for_file: prefer-static-class
+// Required: Existing helpers remain top-level for local feature use.
 
 import 'dart:async';
 

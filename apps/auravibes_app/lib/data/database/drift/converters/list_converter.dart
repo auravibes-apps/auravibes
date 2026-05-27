@@ -1,3 +1,5 @@
+// ignore_for_file: prefer-static-class
+// Required: Existing helpers remain top-level for local feature use.
 import 'package:drift/drift.dart';
 
 final JsonTypeConverter2<List<String>, String, Object?> stringListConverter =

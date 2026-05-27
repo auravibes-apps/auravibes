@@ -2,6 +2,8 @@
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-static-class
+// Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_notifier.dart';
 import 'package:auravibes_app/features/chats/notifiers/messages_streaming_state.dart';
 import 'package:auravibes_app/features/chats/notifiers/titles_streams_notifier.dart';

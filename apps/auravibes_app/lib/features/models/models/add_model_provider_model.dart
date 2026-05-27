@@ -6,6 +6,8 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-moving-to-variable
 // Required: Existing code repeats lookups where extraction adds noise.
+// ignore_for_file: prefer-static-class
+// Required: Existing helpers remain top-level for local feature use.
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'add_model_provider_model.freezed.dart';

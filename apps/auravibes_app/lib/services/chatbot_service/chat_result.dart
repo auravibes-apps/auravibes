@@ -8,6 +8,8 @@
 // Required: Genkit tool payloads expose raw Object values.
 // ignore_for_file: prefer-moving-to-variable
 // Required: Existing code repeats lookups where extraction adds noise.
+// ignore_for_file: prefer-static-class
+// Required: Existing helpers remain top-level for local feature use.
 
 import 'dart:convert';
 
