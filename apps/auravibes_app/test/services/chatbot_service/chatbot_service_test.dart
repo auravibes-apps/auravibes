@@ -45,7 +45,6 @@ void main() {
     test('streams chunks and final metadata from Genkit', () async {
       genkit.ModelRequest? capturedRequest;
       final providerFactory = _FakeProviderFactory(
-        onRequest: (request) => capturedRequest = request,
         chunks: [
           genkit.ModelResponseChunk(
             role: genkit.Role.model,
@@ -76,6 +75,7 @@ void main() {
             totalTokens: 20,
           ),
         ),
+        onRequest: (request) => capturedRequest = request,
       );
       final service = _createService(providerFactory: providerFactory);
 
@@ -135,6 +135,50 @@ void main() {
       ]);
       expect(capturedRequest?.messages[2].text, 'model part');
     });
+
+    test(
+      'passes thinking config for reasoning-capable anthropic chats',
+      () async {
+        genkit.ModelRequest? capturedRequest;
+        final providerFactory = _FakeProviderFactory(
+          onRequest: (request) => capturedRequest = request,
+        );
+        final service = _createService(providerFactory: providerFactory);
+
+        await service.sendMessage(
+          _makeConfig(
+            type: ModelProvidersType.anthropic,
+            supportsReasoning: true,
+          ),
+          [ChatMessage.user('hello')],
+        ).toList();
+
+        expect(capturedRequest?.config, {
+          'thinking': {'type': 'enabled', 'budgetTokens': 1024},
+        });
+      },
+    );
+
+    test(
+      'does not infer thinking config from anthropic model ids',
+      () async {
+        genkit.ModelRequest? capturedRequest;
+        final providerFactory = _FakeProviderFactory(
+          onRequest: (request) => capturedRequest = request,
+        );
+        final service = _createService(providerFactory: providerFactory);
+
+        await service.sendMessage(
+          _makeConfig(
+            type: ModelProvidersType.anthropic,
+            modelId: 'claude-sonnet-4-5',
+          ),
+          [ChatMessage.user('hello')],
+        ).toList();
+
+        expect(capturedRequest?.config, isNull);
+      },
+    );
 
     test('maps non-tool finish reasons from Genkit final response', () async {
       final service = _createService(
@@ -397,28 +441,33 @@ ChatbotService _createService({ProviderFactory? providerFactory}) {
   );
 }
 
-WorkspaceModelSelectionWithConnectionEntity _makeConfig() {
+WorkspaceModelSelectionWithConnectionEntity _makeConfig({
+  ModelProvidersType type = ModelProvidersType.openai,
+  String modelId = 'model',
+  bool supportsReasoning = false,
+}) {
   return WorkspaceModelSelectionWithConnectionEntity(
     workspaceModelSelection: WorkspaceModelSelectionEntity(
       id: 'selection-1',
-      modelId: 'model',
+      modelId: modelId,
       createdAt: DateTime(2025),
       updatedAt: DateTime(2025),
       modelConnectionId: 'connection-1',
+      supportsReasoning: supportsReasoning,
     ),
     modelConnection: ModelConnectionEntity(
       id: 'connection-1',
       name: 'Test Connection',
       key: 'encrypted-key',
-      modelId: 'model',
+      modelId: modelId,
       createdAt: DateTime(2025),
       updatedAt: DateTime(2025),
       workspaceId: 'workspace-1',
     ),
-    modelsProvider: const ApiModelProviderEntity(
+    modelsProvider: ApiModelProviderEntity(
       id: 'provider-1',
       name: 'Test Provider',
-      type: ModelProvidersType.openai,
+      type: type,
     ),
   );
 }
@@ -448,19 +497,17 @@ class _FakeProviderFactory extends ProviderFactory {
   Future<genkit.Genkit> createGenkit(
     WorkspaceModelSelectionWithConnectionEntity config,
   ) async {
-    final ai = genkit.Genkit(isDevEnv: false)
-      ..defineModel(
-        name: 'test/model',
-        fn: (input, context) async {
-          onRequest?.call(input);
-          if (throwsOnGenerate) {
-            throw Exception('failed');
-          }
-          chunks.forEach(context.sendChunk);
-          return response;
-        },
-      );
-    return ai;
+    return genkit.Genkit(isDevEnv: false)..defineModel(
+      name: 'test/model',
+      fn: (input, context) async {
+        onRequest?.call(input);
+        if (throwsOnGenerate) {
+          throw Exception('failed');
+        }
+        chunks.forEach(context.sendChunk);
+        return response;
+      },
+    );
   }
 
   @override
