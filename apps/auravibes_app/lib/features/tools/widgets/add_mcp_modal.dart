@@ -1,3 +1,5 @@
+// ignore_for_file: avoid-returning-widgets
+// Required: Existing helper builders return widgets.
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';

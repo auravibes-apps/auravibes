@@ -1,3 +1,5 @@
+// ignore_for_file: avoid-returning-widgets
+// Required: Widget tests use helpers that build widgets under test.
 // ignore_for_file: avoid-passing-async-when-sync-expected
 // Required: Dialog tests await callback futures to capture returned results.
 

@@ -1,3 +1,5 @@
+// ignore_for_file: avoid-returning-widgets
+// Required: Widgetbook stories use helper functions that return widgets.
 import 'dart:async';
 
 import 'package:auravibes_ui/ui.dart';

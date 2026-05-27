@@ -1,3 +1,5 @@
+// ignore_for_file: avoid-returning-widgets
+// Required: Existing helper builders return widgets.
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
