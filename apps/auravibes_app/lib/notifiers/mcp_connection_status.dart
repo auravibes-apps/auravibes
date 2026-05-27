@@ -482,8 +482,12 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
           ),
         );
       }
-    } on Exception catch (e) {
-      _logger.warning('Failed to load MCP servers from database: $e');
+    } on Exception catch (e, stackTrace) {
+      _logger.warning(
+        'Failed to load MCP servers from database',
+        e,
+        stackTrace,
+      );
     }
   }
   // ============================================================
@@ -621,8 +625,12 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
         mcpServerId: server.id,
         currentTools: tools,
       );
-    } on Exception catch (e) {
-      _logger.warning('Failed to sync MCP tools to database: $e');
+    } on Exception catch (e, stackTrace) {
+      _logger.warning(
+        'Failed to sync MCP tools to database',
+        e,
+        stackTrace,
+      );
     }
   }
 }
