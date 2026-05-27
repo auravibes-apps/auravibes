@@ -1,4 +1,5 @@
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:genkit/genkit.dart';
 
@@ -16,10 +17,18 @@ class BuildPromptChatMessages {
       return [ChatMessage.user(message.content)];
     }
 
-    if (message.metadata?.isCompactionSummary == true) {
+    if (message.messageType == MessageType.system) {
+      if (message.metadata?.isCompactionSummary != true) {
+        return const [];
+      }
+
       final normalized = message.content.trim();
       if (normalized.isEmpty) return const [];
       return [ChatMessage.system(normalized)];
+    }
+
+    if (message.metadata?.isCompactionSummary == true) {
+      return const [];
     }
 
     final toolCalls =
