@@ -128,7 +128,9 @@ class AuraMessageBubble extends StatelessWidget {
       border: status == AuraMessageDeliveryStatus.error
           ? Border.fromBorderSide(BorderSide(color: auraColors.error))
           : null,
-      borderRadius: BorderRadius.circular(DesignBorderRadius.xl),
+      borderRadius: const BorderRadius.all(
+        Radius.circular(DesignBorderRadius.xl),
+      ),
       boxShadow: [
         if (status != AuraMessageDeliveryStatus.error) DesignShadows.sm,
       ],
@@ -150,7 +152,9 @@ class AuraMessageBubble extends StatelessWidget {
         ),
       ),
       AuraMessageContentType.image => ClipRRect(
-        borderRadius: BorderRadius.circular(DesignBorderRadius.md),
+        borderRadius: const BorderRadius.all(
+          Radius.circular(DesignBorderRadius.md),
+        ),
         child: Image.network(
           content,
           errorBuilder: (context, error, stackTrace) => Container(

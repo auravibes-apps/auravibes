@@ -228,7 +228,9 @@ class _ErrorBanner extends ConsumerWidget {
         border: Border.all(
           color: context.auraColors.error,
         ),
-        borderRadius: BorderRadius.circular(DesignBorderRadius.md),
+        borderRadius: const BorderRadius.all(
+          Radius.circular(DesignBorderRadius.md),
+        ),
       ),
       child: Row(
         children: [

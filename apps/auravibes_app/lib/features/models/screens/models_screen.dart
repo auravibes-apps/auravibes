@@ -58,9 +58,9 @@ class _AddModelModalButton extends ConsumerWidget {
                   showDialog<void>(
                     context: context,
                     builder: (ctx) => Dialog(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(
-                          DesignBorderRadius.xl,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.all(
+                          Radius.circular(DesignBorderRadius.xl),
                         ),
                       ),
                       child: Container(

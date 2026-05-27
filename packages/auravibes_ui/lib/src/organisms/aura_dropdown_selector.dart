@@ -275,7 +275,9 @@ class _DropdownMenuState<T> extends State<_DropdownMenu<T>> {
       decoration: BoxDecoration(
         color: auraColors.surface,
         border: Border.fromBorderSide(BorderSide(color: auraColors.outline)),
-        borderRadius: BorderRadius.circular(DesignBorderRadius.md),
+        borderRadius: const BorderRadius.all(
+          Radius.circular(DesignBorderRadius.md),
+        ),
       ),
       constraints: const BoxConstraints(maxHeight: 300),
       child: Column(
@@ -333,8 +335,8 @@ class _DropdownMenuState<T> extends State<_DropdownMenu<T>> {
                         color: isSelected
                             ? auraColors.primary.withValues(alpha: 0.08)
                             : Colors.transparent,
-                        borderRadius: BorderRadius.circular(
-                          DesignBorderRadius.sm,
+                        borderRadius: const BorderRadius.all(
+                          Radius.circular(DesignBorderRadius.sm),
                         ),
                       ),
                       onPressed: () {

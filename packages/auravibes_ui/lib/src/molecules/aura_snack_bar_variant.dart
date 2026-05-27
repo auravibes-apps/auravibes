@@ -249,7 +249,7 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
             child: Container(
               decoration: BoxDecoration(
                 color: widget.backgroundColor,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: const BorderRadius.all(Radius.circular(12)),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.15),

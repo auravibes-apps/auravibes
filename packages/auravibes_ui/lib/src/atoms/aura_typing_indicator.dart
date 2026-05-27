@@ -129,9 +129,9 @@ class _AuraTypingIndicatorState extends State<AuraTypingIndicator>
         padding: _getContainerPadding(),
         decoration: BoxDecoration(
           color: auraColors.surfaceVariant,
-          borderRadius: BorderRadius.circular(DesignBorderRadius.lg).copyWith(
-            bottomLeft: const Radius.circular(DesignBorderRadius.sm),
-          ),
+          borderRadius: const BorderRadius.all(
+            Radius.circular(DesignBorderRadius.lg),
+          ).copyWith(bottomLeft: const Radius.circular(DesignBorderRadius.sm)),
           boxShadow: const [DesignShadows.sm],
         ),
         margin: const EdgeInsets.only(

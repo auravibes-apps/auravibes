@@ -156,7 +156,7 @@ class _AuraTooltipState extends State<AuraTooltip> {
                     ),
                     decoration: BoxDecoration(
                       color: backgroundColor,
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: const BorderRadius.all(Radius.circular(8)),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withValues(alpha: 0.15),

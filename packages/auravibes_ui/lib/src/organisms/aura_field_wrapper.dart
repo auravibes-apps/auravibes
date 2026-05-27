@@ -112,7 +112,9 @@ class _AuraFieldWrapperState extends State<AuraFieldWrapper> {
           border: Border.all(
             color: _getBorderColor(auraColors),
           ),
-          borderRadius: BorderRadius.circular(DesignBorderRadius.xl),
+          borderRadius: const BorderRadius.all(
+            Radius.circular(DesignBorderRadius.xl),
+          ),
           boxShadow: _getBoxShadow(auraColors),
         ),
         child: widget.child,
@@ -121,7 +123,9 @@ class _AuraFieldWrapperState extends State<AuraFieldWrapper> {
       color: auraColors.primary,
       decoration: BoxDecoration(
         color: _getBackgroundColor(auraColors),
-        borderRadius: BorderRadius.circular(DesignBorderRadius.xl),
+        borderRadius: const BorderRadius.all(
+          Radius.circular(DesignBorderRadius.xl),
+        ),
         // color: auraColors.primary,
       ),
       onPressed: widget.isEnabled ? widget.onTap : null,

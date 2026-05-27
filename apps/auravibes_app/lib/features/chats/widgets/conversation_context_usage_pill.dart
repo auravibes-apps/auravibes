@@ -35,8 +35,8 @@ class ConversationContextUsagePill extends ConsumerWidget {
                 SizedBox(
                   width: 26,
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(
-                      DesignBorderRadius.full,
+                    borderRadius: const BorderRadius.all(
+                      Radius.circular(DesignBorderRadius.full),
                     ),
                     child: LinearProgressIndicator(
                       value: data.progress.clamp(0.0, 1.0),

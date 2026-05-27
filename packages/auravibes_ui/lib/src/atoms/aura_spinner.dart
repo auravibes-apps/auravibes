@@ -216,7 +216,9 @@ class AuraLoadingOverlay extends StatelessWidget {
           padding: const EdgeInsets.all(DesignSpacing.xl),
           decoration: BoxDecoration(
             color: auraColors.surface,
-            borderRadius: BorderRadius.circular(DesignBorderRadius.lg),
+            borderRadius: const BorderRadius.all(
+              Radius.circular(DesignBorderRadius.lg),
+            ),
             boxShadow: const [DesignShadows.lg],
           ),
           child: message != null

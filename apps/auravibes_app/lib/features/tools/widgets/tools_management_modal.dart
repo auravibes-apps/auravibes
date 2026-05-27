@@ -37,8 +37,10 @@ class ToolsManagementModal extends ConsumerWidget {
     );
 
     return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(DesignBorderRadius.xl),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(
+          Radius.circular(DesignBorderRadius.xl),
+        ),
       ),
       child: Container(
         width: MediaQuery.sizeOf(context).width * 0.9,

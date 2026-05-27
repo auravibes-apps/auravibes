@@ -147,7 +147,9 @@ class _ToolIcon extends StatelessWidget {
         color: isEnabled && isWorkspaceEnabled
             ? context.auraColors.primary.withValues(alpha: 0.1)
             : context.auraColors.surfaceVariant,
-        borderRadius: BorderRadius.circular(DesignBorderRadius.md),
+        borderRadius: const BorderRadius.all(
+          Radius.circular(DesignBorderRadius.md),
+        ),
       ),
       width: 40,
       height: 40,
