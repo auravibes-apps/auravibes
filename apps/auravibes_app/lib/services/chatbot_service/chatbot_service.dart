@@ -28,34 +28,8 @@ class ChatbotService {
     final ai = await _providerFactory.createGenkit(chatProvider);
     final model = _providerFactory.getModelReference(chatProvider);
 
-    final genkitTools = tools?.map((spec) {
-      return ai.defineTool(
-        name: spec.name,
-        description: spec.description,
-        inputSchema: SchemanticType.from<Map<String, dynamic>>(
-          jsonSchema: spec.inputJsonSchema.cast<String, Object?>(),
-          parse: (v) => v as Map<String, dynamic>,
-        ),
-        fn: (input, context) async {
-          throw StateError(
-            'Tool "${spec.name}" execution should go through the approval '
-            'pipeline, not through Genkit fn',
-          );
-        },
-      );
-    }).toList();
-
-    final genkitHistory = history.map((msg) {
-      return Message(
-        role: switch (msg.role) {
-          ChatMessageRole.system => Role.system,
-          ChatMessageRole.user => Role.user,
-          ChatMessageRole.model => Role.model,
-          ChatMessageRole.tool => Role.tool,
-        },
-        content: msg.parts.isEmpty ? [TextPart(text: msg.content)] : msg.parts,
-      );
-    }).toList();
+    final genkitTools = _defineGenkitTools(ai, tools);
+    final genkitHistory = history.map(_toGenkitMessage).toList();
 
     final responseStream = ai.generateStream<dynamic, dynamic>(
       model: model,
@@ -67,70 +41,17 @@ class ChatbotService {
     await for (final chunk in responseStream) {
       final text = chunk.text;
 
-      String? thinking;
-      try {
-        for (final part in chunk.content) {
-          if (part is ReasoningPart) {
-            final t = part.reasoning;
-            if (t.isNotEmpty) {
-              thinking = (thinking ?? '') + t;
-            }
-          }
-        }
-      } on Exception catch (_) {}
-
       yield ChatResult<ChatMessage>(
         output: ChatMessage(
           role: ChatMessageRole.model,
           content: text,
           parts: chunk.content,
         ),
-        thinking: thinking,
+        thinking: _extractThinking(chunk),
       );
     }
 
-    final finalResponse = await responseStream.onResult;
-    final modelMetadata =
-        finalResponse.candidates?.firstOrNull?.message.metadata
-            ?.cast<String, Object?>() ??
-        const <String, Object?>{};
-
-    final genkitReason = finalResponse.candidates?.firstOrNull?.finishReason;
-    final hasToolRequests = finalResponse.toolRequests.isNotEmpty;
-    final FinishReason finishReason;
-    if (hasToolRequests) {
-      finishReason = FinishReason.toolCalls;
-    } else if (genkitReason != null) {
-      if (genkitReason.value == 'stop') {
-        finishReason = FinishReason.stop;
-      } else if (genkitReason.value == 'length') {
-        finishReason = FinishReason.length;
-      } else if (genkitReason.value == 'interrupted') {
-        finishReason = FinishReason.toolCalls;
-      } else {
-        finishReason = FinishReason.other;
-      }
-    } else {
-      finishReason = FinishReason.unspecified;
-    }
-
-    final toolCallParts = finalResponse.toolRequests
-        .map((req) => ToolRequestPart(toolRequest: req))
-        .toList();
-
-    yield ChatResult<ChatMessage>(
-      output: ChatMessage(
-        role: ChatMessageRole.model,
-        parts: toolCallParts,
-      ),
-      finishReason: finishReason,
-      usage: LanguageModelUsage(
-        promptTokens: finalResponse.usage?.inputTokens?.toInt(),
-        responseTokens: finalResponse.usage?.outputTokens?.toInt(),
-        totalTokens: finalResponse.usage?.totalTokens?.toInt(),
-      ),
-      metadata: modelMetadata,
-    );
+    yield _finalChatResult(await responseStream.onResult);
   }
 
   Future<String> generateTitle(
@@ -168,35 +89,7 @@ class ChatbotService {
       final accumulatedTitle = StringBuffer();
       await for (final event in responseStream) {
         accumulatedTitle.write(event.text);
-        var processedTitle = accumulatedTitle.toString().trim();
-        if (processedTitle.startsWith('"') && processedTitle.endsWith('"')) {
-          processedTitle = processedTitle.substring(
-            1,
-            processedTitle.length - 1,
-          );
-        }
-        if (processedTitle.length > 1 &&
-            processedTitle.codeUnitAt(0) == 39 &&
-            processedTitle.codeUnitAt(processedTitle.length - 1) == 39) {
-          processedTitle = processedTitle.substring(
-            1,
-            processedTitle.length - 1,
-          );
-        }
-        if (processedTitle.startsWith('Title:')) {
-          processedTitle = processedTitle.substring(6).trim();
-        }
-        if (processedTitle.startsWith('Conversation:')) {
-          processedTitle = processedTitle.substring(13).trim();
-        }
-
-        if (processedTitle.isEmpty) {
-          yield generateFallbackTitle(firstMessage);
-        } else if (processedTitle.length > 50) {
-          yield '${processedTitle.substring(0, 47)}...';
-        } else {
-          yield processedTitle;
-        }
+        yield _processGeneratedTitle(accumulatedTitle.toString(), firstMessage);
       }
     } on Exception catch (_) {
       yield generateFallbackTitle(firstMessage);
@@ -210,5 +103,127 @@ class ChatbotService {
         .take(4)
         .join(' ');
     return words.length > 30 ? '${words.substring(0, 27)}...' : words;
+  }
+
+  List<Tool<Map<String, dynamic>, dynamic>>? _defineGenkitTools(
+    Genkit ai,
+    List<ToolSpec>? tools,
+  ) {
+    return tools?.map((spec) {
+      return ai.defineTool<Map<String, dynamic>, dynamic>(
+        name: spec.name,
+        description: spec.description,
+        inputSchema: SchemanticType.from<Map<String, dynamic>>(
+          jsonSchema: spec.inputJsonSchema.cast<String, Object?>(),
+          parse: (v) => v as Map<String, dynamic>,
+        ),
+        fn: (input, context) async {
+          throw StateError(
+            'Tool "${spec.name}" execution should go through the approval '
+            'pipeline, not through Genkit fn',
+          );
+        },
+      );
+    }).toList();
+  }
+
+  Message _toGenkitMessage(ChatMessage message) {
+    return Message(
+      role: switch (message.role) {
+        ChatMessageRole.system => Role.system,
+        ChatMessageRole.user => Role.user,
+        ChatMessageRole.model => Role.model,
+        ChatMessageRole.tool => Role.tool,
+      },
+      content: message.parts.isEmpty
+          ? [TextPart(text: message.content)]
+          : message.parts,
+    );
+  }
+
+  String? _extractThinking(GenerateResponseChunk<dynamic> chunk) {
+    try {
+      final thinking = StringBuffer();
+      for (final part in chunk.content) {
+        if (part is ReasoningPart && part.reasoning.isNotEmpty) {
+          thinking.write(part.reasoning);
+        }
+      }
+      return thinking.isEmpty ? null : thinking.toString();
+    } on Exception catch (_) {
+      return null;
+    }
+  }
+
+  ChatResult<ChatMessage> _finalChatResult(
+    GenerateResponseHelper<dynamic> finalResponse,
+  ) {
+    final toolCallParts = finalResponse.toolRequests
+        .map((req) => ToolRequestPart(toolRequest: req))
+        .toList();
+
+    return ChatResult<ChatMessage>(
+      output: ChatMessage(
+        role: ChatMessageRole.model,
+        parts: toolCallParts,
+      ),
+      finishReason: _finishReasonFor(
+        hasToolRequests: finalResponse.toolRequests.isNotEmpty,
+        genkitReasonValue:
+            finalResponse.candidates?.firstOrNull?.finishReason.value,
+      ),
+      usage: LanguageModelUsage(
+        promptTokens: finalResponse.usage?.inputTokens?.toInt(),
+        responseTokens: finalResponse.usage?.outputTokens?.toInt(),
+        totalTokens: finalResponse.usage?.totalTokens?.toInt(),
+      ),
+      metadata:
+          finalResponse.candidates?.firstOrNull?.message.metadata
+              ?.cast<String, Object?>() ??
+          const <String, Object?>{},
+    );
+  }
+
+  FinishReason _finishReasonFor({
+    required bool hasToolRequests,
+    required String? genkitReasonValue,
+  }) {
+    if (hasToolRequests) {
+      return FinishReason.toolCalls;
+    }
+
+    return switch (genkitReasonValue) {
+      null => FinishReason.unspecified,
+      'stop' => FinishReason.stop,
+      'length' => FinishReason.length,
+      'interrupted' => FinishReason.toolCalls,
+      _ => FinishReason.other,
+    };
+  }
+
+  String _processGeneratedTitle(String title, String firstMessage) {
+    var processedTitle = title.trim();
+    if (processedTitle.startsWith('"') && processedTitle.endsWith('"')) {
+      processedTitle = processedTitle.substring(1, processedTitle.length - 1);
+    }
+    if (processedTitle.length > 1 &&
+        processedTitle.codeUnitAt(0) == 39 &&
+        processedTitle.codeUnitAt(processedTitle.length - 1) == 39) {
+      processedTitle = processedTitle.substring(1, processedTitle.length - 1);
+    }
+    if (processedTitle.startsWith('Title:')) {
+      processedTitle = processedTitle.substring(6).trim();
+    }
+    if (processedTitle.startsWith('Conversation:')) {
+      processedTitle = processedTitle.substring(13).trim();
+    }
+
+    if (processedTitle.isEmpty) {
+      return generateFallbackTitle(firstMessage);
+    }
+    if (processedTitle.length > 50) {
+      return '${processedTitle.substring(0, 47)}...';
+    }
+    return processedTitle;
   }
 }
