@@ -1,3 +1,5 @@
+// ignore_for_file: avoid-redundant-async
+// Required: Test callbacks intentionally preserve async-compatible signatures.
 // ignore_for_file: avoid-non-null-assertion
 // Required: Tests inspect nullable values after arranging expected state.
 

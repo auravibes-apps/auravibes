@@ -1,3 +1,5 @@
+// ignore_for_file: avoid-redundant-async
+// Required: Test callbacks intentionally preserve async-compatible signatures.
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';

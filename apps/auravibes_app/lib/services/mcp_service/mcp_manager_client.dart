@@ -93,7 +93,7 @@ class McpManagerService {
 
   Future<mcp.ClientTransport> _createSseTransportConfig(
     McpServerToCreate server,
-  ) async {
+  ) {
     final authType = server.authenticationType;
 
     if (authType is McpAuthenticationTypeNone) {

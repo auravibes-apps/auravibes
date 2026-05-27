@@ -23,7 +23,7 @@ class CreateWorkspaceUseCase {
   ///
   /// Validates the name length (3–20 chars) before persisting.
   /// Returns the created [WorkspaceEntity].
-  Future<WorkspaceEntity> call({required String name}) async {
+  Future<WorkspaceEntity> call({required String name}) {
     final trimmed = name.trim();
     _validateName.call(name: trimmed);
 

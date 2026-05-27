@@ -145,7 +145,7 @@ bool isMessageStreaming(Ref ref, String messageId) {
     chatMessages,
   ],
 )
-Future<ConversationBusyState> conversationBusyState(Ref ref) async {
+Future<ConversationBusyState> conversationBusyState(Ref ref) {
   final conversationId = ref.watch(conversationSelectedProvider);
   ref
     ..watch(

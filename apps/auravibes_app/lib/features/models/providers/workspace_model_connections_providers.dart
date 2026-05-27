@@ -8,7 +8,7 @@ part 'workspace_model_connections_providers.g.dart';
 Future<List<ModelConnectionEntity>> listWorkspaceModelConnections(
   Ref ref, {
   required String workspaceId,
-}) async {
+}) {
   final modelConnectionRepository = ref.watch(
     modelConnectionRepositoryProvider,
   );

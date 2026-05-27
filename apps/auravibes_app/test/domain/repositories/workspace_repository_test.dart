@@ -1,3 +1,5 @@
+// ignore_for_file: avoid-redundant-async
+// Required: Test callbacks intentionally preserve async-compatible signatures.
 // ignore_for_file: cascade_invocations
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';

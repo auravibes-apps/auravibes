@@ -54,7 +54,7 @@ class ChatbotService {
   Future<String> generateTitle(
     WorkspaceModelSelectionWithConnectionEntity chatProvider,
     String firstMessage,
-  ) async {
+  ) {
     return streamTitle(chatProvider, firstMessage).last;
   }
 

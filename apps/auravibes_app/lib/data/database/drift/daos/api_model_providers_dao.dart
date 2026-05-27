@@ -148,7 +148,7 @@ class ApiModelProvidersDao extends DatabaseAccessor<AppDatabase>
   /// Deletes all providers from the database.
   ///
   /// Returns the number of deleted providers.
-  Future<int> deleteAllProviders() async {
+  Future<int> deleteAllProviders() {
     return delete(apiModelProviders).go();
   }
 }

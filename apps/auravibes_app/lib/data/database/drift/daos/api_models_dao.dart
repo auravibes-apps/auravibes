@@ -77,7 +77,7 @@ class ApiModelsDao extends DatabaseAccessor<AppDatabase>
   ///
   /// Deletes all models with the given [providerId].
   /// Returns the number of deleted models.
-  Future<int> deleteModelsByProvider(String providerId) async {
+  Future<int> deleteModelsByProvider(String providerId) {
     return (delete(
       apiModels,
     )..where((t) => t.modelProvider.equals(providerId))).go();
@@ -166,7 +166,7 @@ class ApiModelsDao extends DatabaseAccessor<AppDatabase>
   /// Deletes all models from the database.
   ///
   /// Returns the number of deleted models.
-  Future<int> deleteAllModels() async {
+  Future<int> deleteAllModels() {
     return delete(apiModels).go();
   }
 

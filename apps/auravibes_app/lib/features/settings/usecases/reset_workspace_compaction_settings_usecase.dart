@@ -8,7 +8,7 @@ class ResetWorkspaceCompactionSettingsUsecase {
 
   final WorkspaceCompactionSettingsRepository repository;
 
-  Future<CompactionSettings> call({required String workspaceId}) async {
+  Future<CompactionSettings> call({required String workspaceId}) {
     return repository.resetOverrides(workspaceId);
   }
 }

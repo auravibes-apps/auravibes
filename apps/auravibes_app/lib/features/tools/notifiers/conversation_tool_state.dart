@@ -106,7 +106,7 @@ class ConversationToolsNotifier extends _$ConversationToolsNotifier {
   Future<bool> setToolEnabled(
     String toolId, {
     required bool isEnabled,
-  }) async {
+  }) {
     return _updateConversationTool(
       toolId: toolId,
       persist: (convId) => _repository.setConversationToolEnabled(
@@ -121,7 +121,7 @@ class ConversationToolsNotifier extends _$ConversationToolsNotifier {
   Future<bool> setToolPermission(
     String toolId, {
     required ToolPermissionMode permissionMode,
-  }) async {
+  }) {
     return _updateConversationTool(
       toolId: toolId,
       persist: (convId) => _repository.setConversationToolPermission(
@@ -190,7 +190,7 @@ class ContextAwareToolsNotifier extends _$ContextAwareToolsNotifier {
     return _getContextAwareTools();
   }
 
-  Future<List<String>> _getContextAwareTools() async {
+  Future<List<String>> _getContextAwareTools() {
     return _repository.getAvailableToolsForConversation(
       conversationId,
       workspaceId,
@@ -228,7 +228,7 @@ class ContextAwareToolEntitiesNotifier
     return _getContextAwareToolEntities();
   }
 
-  Future<List<WorkspaceToolEntity>> _getContextAwareToolEntities() async {
+  Future<List<WorkspaceToolEntity>> _getContextAwareToolEntities() {
     return _repository.getAvailableToolEntitiesForConversation(
       conversationId,
       workspaceId,

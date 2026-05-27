@@ -56,7 +56,7 @@ class OAuthAuthenticate {
     return base64Url.encode(digest.bytes).replaceAll('=', '');
   }
 
-  Future<OAuthDiscoveryResult?> discover(String url) async {
+  Future<OAuthDiscoveryResult?> discover(String url) {
     return OAuthDiscoveryService.discoverOAuth(
       OAuthConnector(
         clientName: clientName,

@@ -14,7 +14,7 @@ class SaveWorkspaceCompactionSettingsUsecase {
     required String workspaceId,
     required CompactionSettings settings,
     int? contextLimit,
-  }) async {
+  }) {
     _validate(settings, contextLimit: contextLimit);
     return repository.saveOverrides(workspaceId, settings);
   }

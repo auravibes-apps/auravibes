@@ -609,7 +609,7 @@ class ContinueAgentUsecase {
 
   Future<List<MessageEntity>> _selectPromptMessages(
     String conversationId,
-  ) async {
+  ) {
     return selectPromptMessagesUsecase(conversationId);
   }
 }

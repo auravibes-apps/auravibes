@@ -1,3 +1,5 @@
+// ignore_for_file: avoid-redundant-async
+// Required: Test callbacks intentionally preserve async-compatible signatures.
 import 'dart:async';
 
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';

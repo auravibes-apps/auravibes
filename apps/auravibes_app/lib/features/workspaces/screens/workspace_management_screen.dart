@@ -95,7 +95,7 @@ class WorkspaceManagementScreen extends HookConsumerWidget {
     WidgetRef ref,
     String name,
   ) async {
-    final _ = await createWorkspaceMutation.run(ref, (transaction) async {
+    final _ = await createWorkspaceMutation.run(ref, (transaction) {
       final usecase = ref.read(createWorkspaceUseCaseProvider);
       return usecase.call(name: name);
     });
@@ -119,7 +119,7 @@ class WorkspaceManagementScreen extends HookConsumerWidget {
     String id,
     String name,
   ) async {
-    final _ = await editWorkspaceMutation.run(ref, (transaction) async {
+    final _ = await editWorkspaceMutation.run(ref, (transaction) {
       final usecase = ref.read(editWorkspaceUseCaseProvider);
       return usecase.call(id: id, name: name);
     });
@@ -171,7 +171,7 @@ class WorkspaceManagementScreen extends HookConsumerWidget {
     );
 
     if (confirmed == true && context.mounted) {
-      await deleteWorkspaceMutation.run(ref, (transaction) async {
+      await deleteWorkspaceMutation.run(ref, (transaction) {
         final usecase = ref.read(deleteWorkspaceUseCaseProvider);
         return usecase.call(
           id: id,

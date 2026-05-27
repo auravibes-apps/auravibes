@@ -25,7 +25,7 @@ class EditWorkspaceUseCase {
   Future<WorkspaceEntity> call({
     required String id,
     required String name,
-  }) async {
+  }) {
     final trimmed = name.trim();
     _validateName.call(name: trimmed);
 

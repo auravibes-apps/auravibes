@@ -10,7 +10,7 @@ Future<WorkspaceModelSelectionWithConnectionEntity?>
 workspaceModelSelectionById(
   Ref ref,
   String workspaceModelSelectionId,
-) async {
+) {
   return ref
       .watch(workspaceModelSelectionRepositoryProvider)
       .getWorkspaceModelSelectionById(workspaceModelSelectionId);

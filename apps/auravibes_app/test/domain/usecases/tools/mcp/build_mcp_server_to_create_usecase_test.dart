@@ -1,3 +1,5 @@
+// ignore_for_file: avoid-redundant-async
+// Required: Test callbacks intentionally preserve async-compatible signatures.
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/usecases/tools/mcp/build_mcp_server_to_create_use_case.dart';
 import 'package:auravibes_app/services/mcp_service/o_auth_authenticate.dart';
