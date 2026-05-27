@@ -172,6 +172,25 @@ void main() {
       expect(result.single.text, '<compaction summary content>');
     });
 
+    test('skips non-summary system messages', () {
+      final messages = [
+        MessageEntity(
+          id: 'system-error-1',
+          conversationId: 'conversation-1',
+          content: 'compaction.errors.auto_blocked',
+          messageType: MessageType.system,
+          isUser: false,
+          status: MessageStatus.error,
+          createdAt: DateTime(2025),
+          updatedAt: DateTime(2025),
+        ),
+      ];
+
+      final result = usecase.call(messages);
+
+      expect(result, isEmpty);
+    });
+
     test('maps assistant thinking metadata to thinking part', () {
       final messages = [
         MessageEntity(
