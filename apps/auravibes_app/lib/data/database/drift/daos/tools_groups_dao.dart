@@ -1,3 +1,5 @@
+// ignore_for_file: prefer-async-await
+// Required: Existing Future chains preserve callback flow.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools_groups.dart';
 import 'package:drift/drift.dart';

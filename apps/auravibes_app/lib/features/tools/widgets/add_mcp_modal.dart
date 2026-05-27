@@ -1,3 +1,5 @@
+// ignore_for_file: prefer-async-await
+// Required: Existing Future chains preserve callback flow.
 // ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
 // ignore_for_file: avoid-returning-widgets

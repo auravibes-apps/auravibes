@@ -1,3 +1,5 @@
+// ignore_for_file: prefer-async-await
+// Required: Existing Future chains preserve callback flow.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering

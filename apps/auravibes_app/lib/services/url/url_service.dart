@@ -1,3 +1,5 @@
+// ignore_for_file: prefer-async-await
+// Required: Existing Future chains preserve callback flow.
 // ignore_for_file: avoid-substring
 // Required: Existing parsing uses code-unit substring offsets.
 // ignore_for_file: no-equal-arguments
