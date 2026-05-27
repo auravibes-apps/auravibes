@@ -5,7 +5,6 @@ import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:auravibes_app/services/chatbot_service/provider_factory.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:genkit/genkit.dart' hide FinishReason;
-import 'package:rxdart/rxdart.dart';
 import 'package:schemantic/schemantic.dart';
 
 class ChatbotService {
@@ -166,41 +165,39 @@ class ChatbotService {
         ],
       );
 
-      yield* responseStream
-          .map((event) => event.text)
-          .scan((accumulated, value, index) => accumulated + value, '')
-          .map((title) {
-            var processedTitle = title.trim();
-            if (processedTitle.startsWith('"') &&
-                processedTitle.endsWith('"')) {
-              processedTitle = processedTitle.substring(
-                1,
-                processedTitle.length - 1,
-              );
-            }
-            if (processedTitle.length > 1 &&
-                processedTitle.codeUnitAt(0) == 39 &&
-                processedTitle.codeUnitAt(processedTitle.length - 1) == 39) {
-              processedTitle = processedTitle.substring(
-                1,
-                processedTitle.length - 1,
-              );
-            }
-            if (processedTitle.startsWith('Title:')) {
-              processedTitle = processedTitle.substring(6).trim();
-            }
-            if (processedTitle.startsWith('Conversation:')) {
-              processedTitle = processedTitle.substring(13).trim();
-            }
+      final accumulatedTitle = StringBuffer();
+      await for (final event in responseStream) {
+        accumulatedTitle.write(event.text);
+        var processedTitle = accumulatedTitle.toString().trim();
+        if (processedTitle.startsWith('"') && processedTitle.endsWith('"')) {
+          processedTitle = processedTitle.substring(
+            1,
+            processedTitle.length - 1,
+          );
+        }
+        if (processedTitle.length > 1 &&
+            processedTitle.codeUnitAt(0) == 39 &&
+            processedTitle.codeUnitAt(processedTitle.length - 1) == 39) {
+          processedTitle = processedTitle.substring(
+            1,
+            processedTitle.length - 1,
+          );
+        }
+        if (processedTitle.startsWith('Title:')) {
+          processedTitle = processedTitle.substring(6).trim();
+        }
+        if (processedTitle.startsWith('Conversation:')) {
+          processedTitle = processedTitle.substring(13).trim();
+        }
 
-            if (processedTitle.isEmpty) {
-              return generateFallbackTitle(firstMessage);
-            } else if (processedTitle.length > 50) {
-              return '${processedTitle.substring(0, 47)}...';
-            }
-
-            return processedTitle;
-          });
+        if (processedTitle.isEmpty) {
+          yield generateFallbackTitle(firstMessage);
+        } else if (processedTitle.length > 50) {
+          yield '${processedTitle.substring(0, 47)}...';
+        } else {
+          yield processedTitle;
+        }
+      }
     } on Exception catch (_) {
       yield generateFallbackTitle(firstMessage);
     }
