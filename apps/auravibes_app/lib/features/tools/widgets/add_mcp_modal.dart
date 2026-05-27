@@ -229,9 +229,7 @@ class _Footer extends HookConsumerWidget {
         if (success && context.mounted) {
           showAuraSnackBar(
             context: context,
-            content: const Text(
-              'MCP Server configuration saved (TODO: implement)',
-            ),
+            content: Text(LocaleKeys.mcp_modal_save_success.tr()),
             variant: AuraSnackBarVariant.success,
           );
           Navigator.of(context).pop();
