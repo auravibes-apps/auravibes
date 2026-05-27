@@ -1,5 +1,6 @@
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
-import 'package:dartantic_ai/dartantic_ai.dart';
+import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
+import 'package:genkit/genkit.dart';
 
 class BuildPromptChatMessages {
   const BuildPromptChatMessages();
@@ -26,23 +27,28 @@ class BuildPromptChatMessages {
     final thinking = message.metadata?.thinking?.trim();
 
     final parts = <Part>[
-      if (thinking != null && thinking.isNotEmpty) ThinkingPart(thinking),
-      if (message.content.isNotEmpty) TextPart(message.content),
+      if (thinking != null && thinking.isNotEmpty)
+        ReasoningPart(reasoning: thinking),
+      if (message.content.isNotEmpty) TextPart(text: message.content),
       for (final toolCall in toolCalls)
-        ToolPart.call(
-          callId: toolCall.id,
-          toolName: toolCall.name,
-          arguments: toolCall.arguments,
+        ToolRequestPart(
+          toolRequest: ToolRequest(
+            ref: toolCall.id,
+            name: toolCall.name,
+            input: toolCall.arguments,
+          ),
         ),
     ];
 
     final resultParts = [
       for (final toolCall in toolCalls)
         if (toolCall.isResolved)
-          ToolPart.result(
-            callId: toolCall.id,
-            toolName: toolCall.name,
-            result: toolCall.getResponseForAI(),
+          ToolResponsePart(
+            toolResponse: ToolResponse(
+              ref: toolCall.id,
+              name: toolCall.name,
+              output: toolCall.getResponseForAI(),
+            ),
           ),
     ];
 
@@ -53,7 +59,8 @@ class BuildPromptChatMessages {
           parts: parts,
           metadata: message.metadata?.modelMetadata ?? const {},
         ),
-      if (resultParts.isNotEmpty) ChatMessage.user('', parts: resultParts),
+      if (resultParts.isNotEmpty)
+        ChatMessage(role: ChatMessageRole.tool, parts: resultParts),
     ];
   }
 }

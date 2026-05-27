@@ -16,10 +16,11 @@ import 'package:auravibes_app/features/chats/usecases/agent_iteration_context.da
 import 'package:auravibes_app/features/chats/usecases/continue_agent_result.dart';
 import 'package:auravibes_app/features/chats/usecases/select_prompt_messages_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
+import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
 import 'package:auravibes_app/services/monitoring_service.dart';
-import 'package:dartantic_ai/dartantic_ai.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:genkit/genkit.dart' hide FinishReason;
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:riverpod/riverpod.dart';
@@ -150,11 +151,13 @@ void main() {
             ChatResult<ChatMessage>(
               output: ChatMessage.model(
                 '',
-                parts: const [
-                  ToolPart.call(
-                    callId: 'tool-1',
-                    toolName: 'calculator',
-                    arguments: {'input': '2+2'},
+                parts: [
+                  ToolRequestPart(
+                    toolRequest: ToolRequest(
+                      ref: 'tool-1',
+                      name: 'calculator',
+                      input: const {'input': '2+2'},
+                    ),
                   ),
                 ],
               ),
@@ -390,11 +393,13 @@ void main() {
           ChatResult<ChatMessage>(
             output: ChatMessage.model(
               '',
-              parts: const [
-                ToolPart.call(
-                  callId: 'tool-1',
-                  toolName: 'calculator',
-                  arguments: {'input': '2+2'},
+              parts: [
+                ToolRequestPart(
+                  toolRequest: ToolRequest(
+                    ref: 'tool-1',
+                    name: 'calculator',
+                    input: const {'input': '2+2'},
+                  ),
                 ),
               ],
             ),
