@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
@@ -257,7 +258,7 @@ class ContinueAgentUsecase {
               await messageRepository.patchMessage(
                 state.firstMessage!.id,
                 .new(
-                  content: chunk.entityText,
+                  content: chunk.entityText.isEmpty ? null : chunk.entityText,
                   metadata: chunk.entityMetadata,
                   status: .unfinished,
                 ),
@@ -353,6 +354,11 @@ class ContinueAgentUsecase {
     );
     state.hasAcknowledgedPendingUsers = hasAcknowledgedPendingUsers;
 
+    if (currentResult.entityText.isEmpty &&
+        currentResult.entityMetadata == null) {
+      return;
+    }
+
     await _ensureAssistantMessage(state, currentResult);
     final currentMessage = state.firstMessage!;
 
@@ -367,13 +373,15 @@ class ContinueAgentUsecase {
     if (state.firstMessage != null) return;
 
     state.stage = 'create_assistant_message';
+    final metadata = currentResult.entityMetadata;
     final firstMessage = await messageRepository.createMessage(
       .new(
         conversationId: state.conversationId,
-        content: currentResult.output.text,
+        content: currentResult.entityText,
         messageType: .text,
         isUser: false,
         status: .unfinished,
+        metadata: metadata == null ? null : jsonEncode(metadata.toJson()),
       ),
     );
     state.firstMessage = firstMessage;
@@ -532,7 +540,7 @@ class ContinueAgentUsecase {
     await messageRepository.patchMessage(
       message.id,
       MessagePatch(
-        content: result?.entityText,
+        content: result?.entityText.isEmpty ?? true ? null : result?.entityText,
         metadata: _markPendingToolsStopped(result?.entityMetadata),
         status: MessageStatus.sent,
       ),
