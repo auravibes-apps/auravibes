@@ -1,3 +1,6 @@
+// ignore_for_file: avoid-top-level-members-in-tests
+// Required: Test files keep shared fixtures and helpers top-level.
+
 import 'dart:convert';
 import 'dart:typed_data';
 

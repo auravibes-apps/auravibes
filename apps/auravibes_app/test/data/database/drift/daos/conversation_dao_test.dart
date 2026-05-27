@@ -1,3 +1,6 @@
+// ignore_for_file: avoid-top-level-members-in-tests
+// Required: Test files keep shared fixtures and helpers top-level.
+
 // ignore_for_file: avoid-redundant-async
 // Required: Test callbacks intentionally preserve async-compatible signatures.
 // ignore_for_file: avoid-non-null-assertion
