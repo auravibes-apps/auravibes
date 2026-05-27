@@ -5,14 +5,13 @@ import 'package:drift/drift.dart';
 
 export 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 
-JsonTypeConverter2<McpTransportType, String, Object?> transportTypeConverter =
-    TypeConverter.json2(
-      fromJson: (json) =>
-          McpTransportType.fromJson(json! as Map<String, dynamic>),
-      toJson: (column) => column.toJson(),
-    );
+final JsonTypeConverter2<McpTransportType, String, Object?>
+transportTypeConverter = TypeConverter.json2(
+  fromJson: (json) => McpTransportType.fromJson(json! as Map<String, dynamic>),
+  toJson: (column) => column.toJson(),
+);
 
-JsonTypeConverter2<McpAuthenticationType, String, Object?>
+final JsonTypeConverter2<McpAuthenticationType, String, Object?>
 authenticationTypeConverter = TypeConverter.json2(
   fromJson: (json) =>
       McpAuthenticationType.fromJson(json! as Map<String, dynamic>),

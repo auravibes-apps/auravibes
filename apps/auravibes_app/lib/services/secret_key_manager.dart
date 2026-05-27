@@ -62,7 +62,7 @@ class SecretKeyManager {
   }
 }
 
-Provider<SecretKeyManager> secretKeyManagerProvider =
+final Provider<SecretKeyManager> secretKeyManagerProvider =
     Provider<SecretKeyManager>((ref) {
       return SecretKeyManager();
     });

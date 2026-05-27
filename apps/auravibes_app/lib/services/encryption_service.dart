@@ -72,7 +72,7 @@ class EncryptionService {
   }
 }
 
-Provider<EncryptionService> encryptionServiceProvider =
+final Provider<EncryptionService> encryptionServiceProvider =
     Provider<EncryptionService>((ref) {
       final keyManager = ref.read(secretKeyManagerProvider);
       return EncryptionService(keyManager);
