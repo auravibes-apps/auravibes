@@ -70,7 +70,7 @@ class McpTransportTypeStreamableHttp extends McpTransportType {
 
 @freezed
 abstract class OAuthTokenModel with _$OAuthTokenModel {
-  // ignore: invalid_annotation_target
+  // ignore: invalid_annotation_target - Required for Freezed JSON annotation.
   @JsonSerializable(fieldRename: .snake)
   const factory OAuthTokenModel({
     required String accessToken,

@@ -36,7 +36,7 @@ class OAuthAuthenticate {
   static Random _createSecureRandom() {
     try {
       return Random.secure();
-      // ignore: avoid_catching_errors
+      // ignore: avoid_catching_errors - Required to handle unsupported secure RNG.
     } on UnsupportedError catch (_, stackTrace) {
       Error.throwWithStackTrace(
         StateError(

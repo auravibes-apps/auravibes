@@ -44,7 +44,7 @@ Widget _buildSubject() {
     child: TestProviderScope(
       overrides: [
         mcpConnectionProvider.overrideWith(_FakeMcpConnectionNotifier.new),
-        // ignore: deprecated_member_use
+        // ignore: deprecated_member_use - Required to override generated provider.
         mcpFormProvider.overrideWith(_FakeMcpFormNotifier.new),
       ],
       child: Portal(
@@ -172,7 +172,7 @@ void main() {
               mcpConnectionProvider.overrideWith(
                 _FakeMcpConnectionNotifier.new,
               ),
-              // ignore: deprecated_member_use
+              // ignore: deprecated_member_use - Required to override generated provider.
               mcpFormProvider.overrideWith(_SubmittingMcpFormNotifier.new),
             ],
             child: Portal(

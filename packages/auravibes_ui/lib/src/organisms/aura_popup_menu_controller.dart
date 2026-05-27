@@ -171,7 +171,7 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
 ///
 /// This abstract class defines the interface for all menu items,
 /// including regular items, dividers, and custom builders.
-// ignore: one_member_abstracts
+// ignore: one_member_abstracts - Required as extension point for menu entries.
 abstract class AuraPopupMenuEntry {
   /// Creates a new menu entry.
   const AuraPopupMenuEntry();

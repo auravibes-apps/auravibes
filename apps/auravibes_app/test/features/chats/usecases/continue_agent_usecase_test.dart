@@ -641,7 +641,7 @@ void main() {
         try {
           final _ = await usecase.call(conversationId: 'conversation-1');
           fail('Should have thrown');
-          // ignore: avoid_catching_errors
+          // ignore: avoid_catching_errors - Required to assert propagated StateError.
         } on StateError {
           final _ = verifyNever(
             messageRepository.patchMessage(any, any),

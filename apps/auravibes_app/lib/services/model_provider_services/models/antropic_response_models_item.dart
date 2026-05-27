@@ -5,7 +5,7 @@ part 'antropic_response_models_item.g.dart';
 
 @freezed
 abstract class AntropicResponseModelsItem with _$AntropicResponseModelsItem {
-  // ignore: invalid_annotation_target
+  // ignore: invalid_annotation_target - Required for Freezed JSON annotation.
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory AntropicResponseModelsItem({
     required String displayName,
@@ -21,7 +21,7 @@ abstract class AntropicResponseModelsItem with _$AntropicResponseModelsItem {
 @Freezed(toJson: false)
 abstract class AntropicResponseModelsErrorMessage
     with _$AntropicResponseModelsErrorMessage {
-  // ignore: invalid_annotation_target
+  // ignore: invalid_annotation_target - Required for Freezed JSON annotation.
   @JsonSerializable(fieldRename: FieldRename.snake, createToJson: false)
   const factory AntropicResponseModelsErrorMessage({
     required String message,
@@ -35,7 +35,7 @@ abstract class AntropicResponseModelsErrorMessage
 
 @Freezed(toJson: false)
 abstract class AntropicResponseModels with _$AntropicResponseModels {
-  // ignore: invalid_annotation_target
+  // ignore: invalid_annotation_target - Required for Freezed JSON annotation.
   @JsonSerializable(fieldRename: FieldRename.snake, createToJson: false)
   const factory AntropicResponseModels.data({
     required List<AntropicResponseModelsItem> data,
@@ -44,7 +44,7 @@ abstract class AntropicResponseModels with _$AntropicResponseModels {
     required String lastId,
   }) = AntropicResponseModelsData;
 
-  // ignore: invalid_annotation_target
+  // ignore: invalid_annotation_target - Required for Freezed JSON annotation.
   @JsonSerializable(fieldRename: FieldRename.snake, createToJson: false)
   const factory AntropicResponseModels.error({
     required AntropicResponseModelsErrorMessage error,
