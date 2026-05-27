@@ -48,7 +48,7 @@ final class SharedPreferencesProvider
   }
 }
 
-String _$sharedPreferencesHash() => r'ad13470fe866595ad0f58a3e26f11048d94ef22e';
+String _$sharedPreferencesHash() => r'c04a46388f6720849321758ee989e2cb00a91441';
 
 @ProviderFor(appDatabase)
 final appDatabaseProvider = AppDatabaseProvider._();
@@ -89,4 +89,4 @@ final class AppDatabaseProvider
   }
 }
 
-String _$appDatabaseHash() => r'3131cb79975c9b14bd7ded105339594011847b06';
+String _$appDatabaseHash() => r'3b8e524937a0a84580aa3c293a02793b021234b9';

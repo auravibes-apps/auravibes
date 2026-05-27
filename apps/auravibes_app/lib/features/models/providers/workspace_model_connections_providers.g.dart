@@ -69,7 +69,7 @@ final class ListWorkspaceModelConnectionsProvider
 }
 
 String _$listWorkspaceModelConnectionsHash() =>
-    r'9c68396823b2c52997fa39c67ba99a12b56c3b3e';
+    r'ab275522e286fbe960a4553eae616d7cbb92215f';
 
 final class ListWorkspaceModelConnectionsFamily extends $Family
     with

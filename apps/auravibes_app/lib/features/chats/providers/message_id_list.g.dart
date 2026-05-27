@@ -397,7 +397,7 @@ final class ConversationBusyStateProvider
 }
 
 String _$conversationBusyStateHash() =>
-    r'8143fd429918c4de2ca489ac18e5adbe3775537d';
+    r'ebf96587eb9df53d27aa664eed6c3497195a93c1';
 
 @ProviderFor(conversationQueuedDrafts)
 final conversationQueuedDraftsProvider = ConversationQueuedDraftsProvider._();
@@ -562,7 +562,7 @@ final class PendingMcpConnectionsProvider
 }
 
 String _$pendingMcpConnectionsHash() =>
-    r'dbaf55ab4c11b2f28685b5b2ad8a4dd040eed340';
+    r'038e4875079a75087bc6653526176de5b8b68e0a';
 
 @ProviderFor(conversationUsedTokens)
 final conversationUsedTokensProvider = ConversationUsedTokensProvider._();
