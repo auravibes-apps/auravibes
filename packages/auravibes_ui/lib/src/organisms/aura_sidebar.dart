@@ -68,13 +68,11 @@ class AuraSidebar extends StatelessWidget {
           else
             SizedBox(height: context.auraTheme.spacing.lg),
           Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  _buildNavigationItems(context),
-                  ?middleSection,
-                ],
-              ),
+            child: ListView(
+              children: [
+                _buildNavigationItems(context),
+                ?middleSection,
+              ],
             ),
           ),
           SafeArea(

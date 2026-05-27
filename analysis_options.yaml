@@ -165,4 +165,3 @@ dart_code_linter:
     - prefer-moving-to-variable: false
     - prefer-single-widget-per-file: false
     - prefer-static-class: false
-    - prefer-using-list-view: false
