@@ -61,18 +61,18 @@ class ChatListWidget extends ConsumerWidget {
             ),
             SizedBox(height: 16),
             AuraText(
-              style: AuraTextStyle.heading3,
               child: TextLocale(
                 LocaleKeys.home_screen_conversation_states_no_chats_yet,
               ),
+              style: AuraTextStyle.heading3,
             ),
             SizedBox(height: 8),
             AuraText(
-              textAlign: TextAlign.center,
               child: TextLocale(
                 LocaleKeys
                     .home_screen_conversation_states_start_first_conversation,
               ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
