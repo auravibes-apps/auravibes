@@ -25,7 +25,7 @@ void main() {
   group('MessagesStreamingRuntime', () {
     test('holds function references', () {
       void startSub(CompositeSubscription _, String _) {}
-      void updateResult(dynamic _, String _) {}
+      void updateResult(Object? _, String _) {}
       Future<void> remove(String _) async {}
 
       final runtime = MessagesStreamingRuntime(

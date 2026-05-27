@@ -69,7 +69,7 @@ class SelectorField<T> extends Field<T> {
   final List<KnobSelector<T>> selectors;
 
   /// The default label builder that converts the value to a string.
-  static String defaultLabelBuilder(dynamic value) {
+  static String defaultLabelBuilder(Object? value) {
     return value.toString();
   }
 

@@ -28,7 +28,7 @@ class ChatbotService {
     final genkitTools = _defineGenkitTools(ai, tools);
     final genkitHistory = history.map(_toGenkitMessage).toList();
 
-    final responseStream = ai.generateStream<dynamic, dynamic>(
+    final responseStream = ai.generateStream<Object?, Object?>(
       model: model,
       messages: genkitHistory,
       tools: genkitTools,
@@ -72,7 +72,7 @@ class ChatbotService {
         'Respond with only the title, no quotes or extra text.';
 
     try {
-      final responseStream = ai.generateStream<dynamic, dynamic>(
+      final responseStream = ai.generateStream<Object?, Object?>(
         model: model,
         prompt: prompt,
         messages: [
@@ -103,17 +103,17 @@ class ChatbotService {
     return words.length > 30 ? '${words.substring(0, 27)}...' : words;
   }
 
-  List<Tool<Map<String, dynamic>, dynamic>>? _defineGenkitTools(
+  List<Tool<Map<String, Object?>, Object?>>? _defineGenkitTools(
     Genkit ai,
     List<ToolSpec>? tools,
   ) {
     return tools?.map((spec) {
-      return ai.defineTool<Map<String, dynamic>, dynamic>(
+      return ai.defineTool<Map<String, Object?>, Object?>(
         name: spec.name,
         description: spec.description,
-        inputSchema: SchemanticType.from<Map<String, dynamic>>(
+        inputSchema: SchemanticType.from<Map<String, Object?>>(
           jsonSchema: spec.inputJsonSchema.cast<String, Object?>(),
-          parse: (v) => v as Map<String, dynamic>,
+          parse: (v) => v as Map<String, Object?>,
         ),
         fn: (input, context) async {
           throw StateError(
@@ -139,7 +139,7 @@ class ChatbotService {
     );
   }
 
-  String? _extractThinking(GenerateResponseChunk<dynamic> chunk) {
+  String? _extractThinking(GenerateResponseChunk<Object?> chunk) {
     final thinking = StringBuffer();
     for (final part in chunk.content) {
       if (part is ReasoningPart && part.reasoning.isNotEmpty) {
@@ -150,7 +150,7 @@ class ChatbotService {
   }
 
   ChatResult<ChatMessage> _finalChatResult(
-    GenerateResponseHelper<dynamic> finalResponse,
+    GenerateResponseHelper<Object?> finalResponse,
   ) {
     final toolCallParts = finalResponse.toolRequests
         .map((req) => ToolRequestPart(toolRequest: req))

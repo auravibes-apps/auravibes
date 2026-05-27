@@ -16,7 +16,7 @@ class _FakeGoRouter implements GoRouter {
   }
 
   @override
-  dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError();
+  Object? noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
 void main() {

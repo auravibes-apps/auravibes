@@ -16,7 +16,7 @@ class _FakeConversationToolsRepository extends ConversationToolsRepository {
   ) async => _tools;
 
   @override
-  dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError();
+  Object? noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
 class _FakeBuildCombinedToolSpecsUseCase extends BuildCombinedToolSpecsUseCase {
@@ -44,7 +44,7 @@ class _CapturingRepo extends ConversationToolsRepository {
   ) async => onGetTools(conversationId, workspaceId);
 
   @override
-  dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError();
+  Object? noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
 void main() {

@@ -35,7 +35,7 @@ class ProviderFactory {
     );
   }
 
-  ModelRef<dynamic> getModelReference(
+  ModelRef<Object?> getModelReference(
     WorkspaceModelSelectionWithConnectionEntity config,
   ) {
     final type = config.modelsProvider.type;
@@ -46,7 +46,7 @@ class ProviderFactory {
         ? 'anthropic'
         : 'openai';
 
-    return modelRef<dynamic>('$provider/$modelId');
+    return modelRef<Object?>('$provider/$modelId');
   }
 
   bool _shouldUseAnthropic(ModelProvidersType? type, String? connectionUrl) {

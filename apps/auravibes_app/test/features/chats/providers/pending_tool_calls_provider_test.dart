@@ -72,17 +72,17 @@ class _FakeResolveToolApprovalDecisionUsecase
 
 class _NoOpConversationToolsRepository implements ConversationToolsRepository {
   @override
-  dynamic noSuchMethod(Invocation invocation) => null;
+  Object? noSuchMethod(Invocation invocation) => null;
 }
 
 class _NoOpToolsGroupsRepository implements ToolsGroupsRepository {
   @override
-  dynamic noSuchMethod(Invocation invocation) => null;
+  Object? noSuchMethod(Invocation invocation) => null;
 }
 
 class _NoOpWorkspaceToolsRepository implements WorkspaceToolsRepository {
   @override
-  dynamic noSuchMethod(Invocation invocation) => null;
+  Object? noSuchMethod(Invocation invocation) => null;
 }
 
 @Dependencies([pendingToolCalls])

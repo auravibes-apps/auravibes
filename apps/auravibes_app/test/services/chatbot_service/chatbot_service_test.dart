@@ -462,10 +462,10 @@ class _FakeProviderFactory extends ProviderFactory {
   }
 
   @override
-  genkit.ModelRef<dynamic> getModelReference(
+  genkit.ModelRef<Object?> getModelReference(
     WorkspaceModelSelectionWithConnectionEntity config,
   ) {
-    return genkit.modelRef<dynamic>('test/model');
+    return genkit.modelRef<Object?>('test/model');
   }
 }
 

@@ -25,14 +25,14 @@ class ChatMessageToolCall {
   final ToolRequest request;
   String get callId => request.ref ?? '';
   String get toolName => request.name;
-  dynamic get argumentsRaw => request.input;
+  Object? get argumentsRaw => request.input;
 }
 
 class ChatMessageToolResult {
   ChatMessageToolResult(this.response);
   final ToolResponse response;
   String get callId => response.ref ?? '';
-  dynamic get result => response.output;
+  Object? get result => response.output;
 }
 
 @freezed
@@ -159,7 +159,7 @@ extension ChatResultEntities on ChatResult<ChatMessage> {
             id: tc.callId,
             name: tc.toolName,
             argumentsRaw: tc.argumentsRaw is String
-                ? tc.argumentsRaw as String
+                ? tc.argumentsRaw! as String
                 : jsonEncode(tc.argumentsRaw),
           ),
         )

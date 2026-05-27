@@ -5,7 +5,7 @@ const JsonEncoder _toolMetadataEncoder = JsonEncoder.withIndent('  ');
 String? tryDecodeToolMetadata(Object? metadata) {
   if (metadata == null) return null;
 
-  dynamic decoded;
+  Object? decoded;
   try {
     decoded = metadata is String ? jsonDecode(metadata) : metadata;
   } on Exception catch (_) {

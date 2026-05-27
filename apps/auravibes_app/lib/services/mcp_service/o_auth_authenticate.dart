@@ -154,7 +154,7 @@ class OAuthAuthenticate {
     required String codeVerifier,
     required String redirectUrl,
   }) async {
-    final response = await _dio.post<dynamic>(
+    final response = await _dio.post<Object?>(
       oAuthResult.tokenUrl,
       data: {
         'grant_type': 'authorization_code',

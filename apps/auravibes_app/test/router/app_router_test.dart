@@ -417,5 +417,5 @@ void main() {
 
 class _FakeBuildContext implements BuildContext {
   @override
-  dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError();
+  Object? noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }

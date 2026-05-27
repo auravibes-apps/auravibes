@@ -318,19 +318,19 @@ final class UrlTool extends NativeToolEntity<String, String> {
     );
   }
 
-  Map<String, dynamic> _parseInput(String input) {
+  Map<String, Object?> _parseInput(String input) {
     final trimmedInput = input.trim();
     if (trimmedInput.startsWith('{')) {
       final decoded = const JsonDecoder().convert(trimmedInput);
       if (decoded is! Map) {
         throw const FormatException('Tool input JSON must be an object.');
       }
-      return Map<String, dynamic>.from(decoded);
+      return Map<String, Object?>.from(decoded);
     }
     return {'url': trimmedInput};
   }
 
-  UrlRequestMethod _parseMethod(dynamic method) {
+  UrlRequestMethod _parseMethod(Object? method) {
     if (method == null) return .get;
     if (method is! String) {
       throw FormatException('HTTP method must be a string: $method');
@@ -344,7 +344,7 @@ final class UrlTool extends NativeToolEntity<String, String> {
     );
   }
 
-  Map<String, String>? _parseHeaders(dynamic headers) {
+  Map<String, String>? _parseHeaders(Object? headers) {
     if (headers == null) return null;
     if (headers is! Map) {
       throw const FormatException('Headers must be a JSON object.');
