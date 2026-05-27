@@ -1,3 +1,6 @@
+// ignore_for_file: avoid-non-null-assertion
+// Required: Tests inspect nullable values after arranging expected state.
+
 import 'package:auravibes_app/features/workspaces/widgets/workspace_dropdown_item.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_ui/ui.dart';

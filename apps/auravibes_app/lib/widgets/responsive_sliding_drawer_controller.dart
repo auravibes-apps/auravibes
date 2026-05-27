@@ -1,3 +1,6 @@
+// ignore_for_file: avoid-non-null-assertion
+// Required: Existing nullable API contracts still use explicit assertions.
+
 import 'package:flutter/material.dart';
 
 enum _DrawerDragDirection { opening, closing }

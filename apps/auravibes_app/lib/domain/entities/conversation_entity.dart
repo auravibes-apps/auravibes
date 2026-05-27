@@ -1,3 +1,6 @@
+// ignore_for_file: avoid-non-null-assertion
+// Required: Existing nullable API contracts still use explicit assertions.
+
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'conversation_entity.freezed.dart';

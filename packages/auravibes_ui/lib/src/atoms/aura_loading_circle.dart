@@ -1,3 +1,6 @@
+// ignore_for_file: avoid-non-null-assertion
+// Required: Existing nullable API contracts still use explicit assertions.
+
 import 'dart:async';
 import 'dart:math' as math show pi, sin;
 

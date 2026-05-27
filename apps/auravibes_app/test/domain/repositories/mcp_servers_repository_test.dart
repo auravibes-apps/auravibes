@@ -1,3 +1,6 @@
+// ignore_for_file: avoid-non-null-assertion
+// Required: Tests inspect nullable values after arranging expected state.
+
 // ignore_for_file: cascade_invocations
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';

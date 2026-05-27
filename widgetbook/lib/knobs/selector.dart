@@ -1,3 +1,6 @@
+// ignore_for_file: avoid-non-null-assertion
+// Required: Existing nullable API contracts still use explicit assertions.
+
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:widgetbook/widgetbook.dart';

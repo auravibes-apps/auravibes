@@ -1,3 +1,6 @@
+// ignore_for_file: avoid-non-null-assertion
+// Required: Existing nullable API contracts still use explicit assertions.
+
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';

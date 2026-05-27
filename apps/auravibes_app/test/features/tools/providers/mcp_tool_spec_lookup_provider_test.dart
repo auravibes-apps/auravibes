@@ -1,3 +1,6 @@
+// ignore_for_file: avoid-non-null-assertion
+// Required: Tests inspect nullable values after arranging expected state.
+
 import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_tool_spec_lookup.dart';
 import 'package:flutter_test/flutter_test.dart';

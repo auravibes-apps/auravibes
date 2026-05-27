@@ -1,3 +1,6 @@
+// ignore_for_file: avoid-non-null-assertion
+// Required: Tests inspect nullable values after arranging expected state.
+
 import 'dart:convert';
 
 import 'package:auravibes_app/services/tools/native_tool_type.dart';

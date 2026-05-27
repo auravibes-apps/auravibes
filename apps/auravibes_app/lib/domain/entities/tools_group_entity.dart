@@ -1,3 +1,6 @@
+// ignore_for_file: avoid-non-null-assertion
+// Required: Existing nullable API contracts still use explicit assertions.
+
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 

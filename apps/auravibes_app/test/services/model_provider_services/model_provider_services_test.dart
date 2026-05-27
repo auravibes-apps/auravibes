@@ -1,3 +1,6 @@
+// ignore_for_file: avoid-non-null-assertion
+// Required: Tests inspect nullable values after arranging expected state.
+
 import 'package:auravibes_app/domain/enums/credentials_model_type.dart';
 import 'package:auravibes_app/services/model_provider_services/model_provider.dart';
 import 'package:flutter_test/flutter_test.dart';

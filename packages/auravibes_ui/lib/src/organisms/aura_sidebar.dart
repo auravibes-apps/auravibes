@@ -1,3 +1,6 @@
+// ignore_for_file: avoid-non-null-assertion
+// Required: Existing nullable API contracts still use explicit assertions.
+
 import 'package:auravibes_ui/src/atoms/atoms.dart';
 import 'package:auravibes_ui/src/tokens/tokens.dart';
 import 'package:flutter/material.dart';

@@ -1,3 +1,6 @@
+// ignore_for_file: avoid-non-null-assertion
+// Required: Existing nullable API contracts still use explicit assertions.
+
 import 'package:auravibes_ui/src/atoms/aura_edge_insets_geometry.dart'
     show AuraEdgeInsetsGeometry, AuraPadding;
 import 'package:auravibes_ui/src/tokens/aura_theme.dart'
