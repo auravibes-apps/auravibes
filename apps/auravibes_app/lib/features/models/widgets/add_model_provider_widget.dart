@@ -331,7 +331,7 @@ class _SelectModelProvider extends HookConsumerWidget {
 
     if (models == null) {
       return AuraButton(
-        onPressed: () {},
+        onPressed: () => ref.invalidate(apiModelProvidersProvider),
         child: const AuraText(child: Text('reload')),
       );
     }

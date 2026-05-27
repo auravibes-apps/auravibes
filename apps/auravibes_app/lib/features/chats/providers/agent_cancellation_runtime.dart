@@ -76,10 +76,11 @@ class _AgentCancellationEntry {
       try {
         final result = cleanup();
         if (result is Future<void>) {
-          unawaited(result.catchError((Object _) {}));
+          unawaited(result.catchError((Object _) => null));
         }
       } on Object {
         // Swallow so subsequent cleanups still run.
+        continue;
       }
     }
   }
@@ -91,10 +92,11 @@ class _AgentCancellationEntry {
     try {
       final result = cleanup();
       if (result is Future<void>) {
-        unawaited(result.catchError((Object _) {}));
+        unawaited(result.catchError((Object _) => null));
       }
     } on Object {
       // Swallow so registration continues.
+      return;
     }
   }
 }

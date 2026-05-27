@@ -293,8 +293,7 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
                             ),
                           ),
                           onTap: () {
-                            // Use provided callback or default no-op
-                            (widget.onAction ?? () {})();
+                            widget.onAction?.call();
                             dismiss();
                           },
                         ),

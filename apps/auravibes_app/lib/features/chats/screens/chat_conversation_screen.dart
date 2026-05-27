@@ -166,7 +166,7 @@ class _ChatConversationScreen extends HookConsumerWidget {
                     .setModel(modelId),
               );
             },
-            onProviderChanged: (_) {},
+            onProviderChanged: (_) => Object(),
             workspaceModelSelectionId: conversation.modelId,
           ),
           const Expanded(child: _ChatList()),

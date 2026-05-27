@@ -134,6 +134,7 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
     // This method is no longer needed since we use disabled tools approach.
     // Copying workspace tools to conversation is handled by the conversation
     // tools repository.
+    return;
   }
 
   @override

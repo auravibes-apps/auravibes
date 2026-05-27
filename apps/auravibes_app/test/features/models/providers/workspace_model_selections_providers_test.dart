@@ -1,5 +1,7 @@
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: no-empty-block
+// Required: Tests use intentional no-op callbacks and fake hooks.
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
