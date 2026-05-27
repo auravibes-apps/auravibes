@@ -2,6 +2,8 @@
 // Required: Existing thresholds and limits use numeric values.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: prefer-single-widget-per-file
+// Required: Feature widgets keep closely related private widgets together.
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';

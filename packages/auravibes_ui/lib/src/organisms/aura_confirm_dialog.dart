@@ -10,6 +10,8 @@
 // Required: Component callbacks stay colocated with UI state.
 // ignore_for_file: prefer-moving-to-variable
 // Required: UI components repeat theme and layout lookups intentionally.
+// ignore_for_file: prefer-single-widget-per-file
+// Required: UI components keep related private widgets together.
 import 'package:auravibes_ui/src/molecules/aura_button.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';

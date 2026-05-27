@@ -6,6 +6,8 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-moving-to-variable
 // Required: UI components repeat theme and layout lookups intentionally.
+// ignore_for_file: prefer-single-widget-per-file
+// Required: UI components keep related private widgets together.
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
