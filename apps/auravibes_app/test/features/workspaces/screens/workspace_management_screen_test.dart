@@ -1,5 +1,7 @@
 // ignore_for_file: avoid-late-keyword
 // Required: Test fixtures are assigned in setUp.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
 
 import 'dart:async';
 

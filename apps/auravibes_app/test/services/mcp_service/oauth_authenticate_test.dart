@@ -1,5 +1,7 @@
 // ignore_for_file: avoid-top-level-members-in-tests
 // Required: Test files keep shared fixtures and helpers top-level.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
 
 import 'dart:convert';
 import 'dart:typed_data';

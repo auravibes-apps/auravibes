@@ -1,3 +1,5 @@
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
 sealed class MapException implements Exception {}
 
 class NoKeyMapException implements MapException {

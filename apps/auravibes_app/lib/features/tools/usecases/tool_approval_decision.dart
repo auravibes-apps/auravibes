@@ -1,3 +1,5 @@
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
 import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
 import 'package:auravibes_app/domain/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/domain/repositories/tools_groups_repository.dart';

@@ -1,3 +1,5 @@
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';

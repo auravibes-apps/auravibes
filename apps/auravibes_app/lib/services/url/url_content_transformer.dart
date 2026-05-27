@@ -1,6 +1,8 @@
 // ignore_for_file: avoid-substring
 // Required: Existing parsing uses code-unit substring offsets.
 // ignore_for_file: cascade_invocations
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
 // StringBuffer.write returns void, making cascades meaningless.
 // The _processTable method's for-loop bodies separate consecutive
 // buffer calls where cascading across control flow is misleading.

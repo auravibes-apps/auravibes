@@ -2,6 +2,8 @@
 // Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
 
 import 'package:auravibes_app/data/repositories/conversation_tools_repository_impl.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';

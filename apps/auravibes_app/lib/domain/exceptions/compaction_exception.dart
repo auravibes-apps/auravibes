@@ -1,3 +1,5 @@
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
 import 'package:auravibes_app/i18n/locale_keys.dart';
 
 abstract class CompactionException implements Exception {

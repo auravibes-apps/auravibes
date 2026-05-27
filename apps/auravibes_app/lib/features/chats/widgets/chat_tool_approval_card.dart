@@ -1,3 +1,5 @@
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
 import 'dart:math' as math;
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';

@@ -2,6 +2,8 @@
 // Required: Test callbacks intentionally preserve async-compatible signatures.
 // ignore_for_file: avoid-non-null-assertion
 // Required: Tests inspect nullable values after arranging expected state.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
 
 import 'dart:convert';
 

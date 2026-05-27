@@ -1,3 +1,5 @@
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
 import 'dart:math';
 
 /// Represents a 3D vector for color space transformations.
