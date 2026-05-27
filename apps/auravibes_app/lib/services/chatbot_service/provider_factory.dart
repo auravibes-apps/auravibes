@@ -49,6 +49,25 @@ class ProviderFactory {
     return modelRef<dynamic>('$provider/$modelId');
   }
 
+  Map<String, dynamic>? getGenerationConfig(
+    WorkspaceModelSelectionWithConnectionEntity config,
+  ) {
+    if (!_shouldUseAnthropic(
+      config.modelsProvider.type,
+      config.modelConnection.url,
+    )) {
+      return null;
+    }
+
+    if (!config.workspaceModelSelection.supportsReasoning) {
+      return null;
+    }
+
+    return const {
+      'thinking': {'type': 'enabled', 'budgetTokens': 1024},
+    };
+  }
+
   bool _shouldUseAnthropic(ModelProvidersType? type, String? connectionUrl) {
     return type == ModelProvidersType.anthropic && connectionUrl == null;
   }

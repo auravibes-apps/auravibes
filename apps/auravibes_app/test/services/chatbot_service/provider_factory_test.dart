@@ -107,6 +107,33 @@ void main() {
         expect(ref.name, 'openai/claude-sonnet-4-0');
       },
     );
+
+    test('enables thinking config for reasoning-capable anthropic models', () {
+      final config = makeConfig(
+        type: ModelProvidersType.anthropic,
+        supportsReasoning: true,
+      );
+
+      expect(factory.getGenerationConfig(config), {
+        'thinking': {'type': 'enabled', 'budgetTokens': 1024},
+      });
+    });
+
+    test('does not enable thinking for non-reasoning anthropic models', () {
+      final config = makeConfig(type: ModelProvidersType.anthropic);
+
+      expect(factory.getGenerationConfig(config), isNull);
+    });
+
+    test('does not enable thinking for anthropic custom baseUrl', () {
+      final config = makeConfig(
+        type: ModelProvidersType.anthropic,
+        supportsReasoning: true,
+        connectionUrl: 'https://custom-proxy.example.com/v1',
+      );
+
+      expect(factory.getGenerationConfig(config), isNull);
+    });
   });
 }
 
