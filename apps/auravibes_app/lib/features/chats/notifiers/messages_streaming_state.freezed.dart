@@ -49,7 +49,7 @@ $Res call({
 });
 
 
-
+$ChatResultCopyWith<ChatMessage, $Res>? get lastResult;
 
 }
 /// @nodoc
@@ -69,7 +69,19 @@ as CompositeSubscription,lastResult: freezed == lastResult ? _self.lastResult : 
 as ChatResult<ChatMessage>?,
   ));
 }
+/// Create a copy of MessagesStreamingState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$ChatResultCopyWith<ChatMessage, $Res>? get lastResult {
+    if (_self.lastResult == null) {
+    return null;
+  }
 
+  return $ChatResultCopyWith<ChatMessage, $Res>(_self.lastResult!, (value) {
+    return _then(_self.copyWith(lastResult: value));
+  });
+}
 }
 
 
@@ -247,7 +259,7 @@ $Res call({
 });
 
 
-
+@override $ChatResultCopyWith<ChatMessage, $Res>? get lastResult;
 
 }
 /// @nodoc
@@ -268,7 +280,19 @@ as ChatResult<ChatMessage>?,
   ));
 }
 
+/// Create a copy of MessagesStreamingState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$ChatResultCopyWith<ChatMessage, $Res>? get lastResult {
+    if (_self.lastResult == null) {
+    return null;
+  }
 
+  return $ChatResultCopyWith<ChatMessage, $Res>(_self.lastResult!, (value) {
+    return _then(_self.copyWith(lastResult: value));
+  });
+}
 }
 
 // dart format on

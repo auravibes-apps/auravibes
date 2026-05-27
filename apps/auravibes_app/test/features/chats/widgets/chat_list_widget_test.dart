@@ -6,6 +6,7 @@ import 'package:auravibes_app/features/chats/providers/conversation_providers.da
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_list_widget.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -219,7 +220,10 @@ void main() {
       controller.addError(Exception('load failed'));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('Error loading chats'), findsOneWidget);
+      expect(
+        find.text(LocaleKeys.workspace_management_unexpected_error.tr()),
+        findsOneWidget,
+      );
     });
 
     testWidgets('shows model badge when model is set', (tester) async {
@@ -321,7 +325,10 @@ void main() {
         ),
       );
 
-      expect(find.textContaining('No Chats'), findsOneWidget);
+      expect(
+        find.text(LocaleKeys.home_screen_conversation_states_no_chats_yet.tr()),
+        findsOneWidget,
+      );
     });
   });
 }

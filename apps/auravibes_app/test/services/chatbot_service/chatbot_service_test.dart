@@ -1,44 +1,190 @@
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
-import 'package:auravibes_app/domain/repositories/model_connection_repository.dart';
+import 'package:auravibes_app/domain/entities/model_providers_type.dart';
+import 'package:auravibes_app/domain/entities/tool_spec.dart';
+import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
+import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
+import 'package:auravibes_app/services/chatbot_service/provider_factory.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/secret_key_manager.dart';
+import 'package:collection/collection.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:genkit/genkit.dart' as genkit;
 
 void main() {
   group('ChatbotService', () {
     test('can be constructed with required dependencies', () {
       expect(
         () => ChatbotService(
-          modelConnectionRepository: _FakeModelConnectionRepository(),
           encryptionService: _FakeEncryptionService(),
         ),
         returnsNormally,
       );
     });
 
-    test('exposes injected dependencies', () {
-      final repo = _FakeModelConnectionRepository();
+    test('exposes injected encryption dependency', () {
       final encryption = _FakeEncryptionService();
 
       final service = ChatbotService(
-        modelConnectionRepository: repo,
         encryptionService: encryption,
       );
 
-      expect(service.modelConnectionRepository, same(repo));
       expect(service.encryptionService, same(encryption));
     });
 
-    test('accepts optional providerFactory and toolAdapter', () {
+    test('accepts optional providerFactory', () {
       expect(
         () => ChatbotService(
-          modelConnectionRepository: _FakeModelConnectionRepository(),
           encryptionService: _FakeEncryptionService(),
         ),
         returnsNormally,
       );
+    });
+
+    test('streams chunks and final metadata from Genkit', () async {
+      genkit.ModelRequest? capturedRequest;
+      final providerFactory = _FakeProviderFactory(
+        onRequest: (request) => capturedRequest = request,
+        chunks: [
+          genkit.ModelResponseChunk(
+            role: genkit.Role.model,
+            content: [
+              genkit.TextPart(text: 'Hello'),
+              genkit.ReasoningPart(reasoning: 'Thought'),
+            ],
+          ),
+        ],
+        response: genkit.ModelResponse(
+          message: genkit.Message(
+            role: genkit.Role.model,
+            content: [
+              genkit.ToolRequestPart(
+                toolRequest: genkit.ToolRequest(
+                  ref: 'tool-1',
+                  name: 'lookup_weather',
+                  input: const {'city': 'Medellin'},
+                ),
+              ),
+            ],
+            metadata: const {'continuation': 'signature'},
+          ),
+          finishReason: genkit.FinishReason.stop,
+          usage: genkit.GenerationUsage(
+            inputTokens: 12,
+            outputTokens: 8,
+            totalTokens: 20,
+          ),
+        ),
+      );
+      final service = _createService(providerFactory: providerFactory);
+
+      final results = await service
+          .sendMessage(
+            _makeConfig(),
+            [
+              ChatMessage.system('system prompt'),
+              ChatMessage.user('hello'),
+              ChatMessage.model(
+                'ignored',
+                parts: [genkit.TextPart(text: 'model part')],
+              ),
+              ChatMessage(
+                role: ChatMessageRole.tool,
+                parts: [
+                  genkit.ToolResponsePart(
+                    toolResponse: genkit.ToolResponse(
+                      ref: 'tool-0',
+                      name: 'lookup_weather',
+                      output: 'sunny',
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            tools: const [
+              ToolSpec(
+                name: 'lookup_weather',
+                description: 'Looks up weather',
+                inputJsonSchema: {
+                  'type': 'object',
+                  'properties': {
+                    'city': {'type': 'string'},
+                  },
+                },
+              ),
+            ],
+          )
+          .toList();
+
+      expect(results, hasLength(2));
+      expect(results.firstOrNull?.output.text, 'Hello');
+      expect(results.last.finishReason, FinishReason.toolCalls);
+      expect(results.last.entityTools.single.id, 'tool-1');
+      expect(results.last.entityPromptTokens, 12);
+      expect(results.last.entityCompletionTokens, 8);
+      expect(results.last.entityTotalTokens, 20);
+      expect(results.last.entityModelMetadata, {'continuation': 'signature'});
+
+      expect(capturedRequest?.tools?.single.name, 'lookup_weather');
+      expect(capturedRequest?.messages.map((message) => message.role.value), [
+        'system',
+        'user',
+        'model',
+        'tool',
+      ]);
+      expect(capturedRequest?.messages[2].text, 'model part');
+    });
+
+    test('maps non-tool finish reasons from Genkit final response', () async {
+      final service = _createService(
+        providerFactory: _FakeProviderFactory(
+          response: _modelResponse(genkit.FinishReason.length),
+        ),
+      );
+
+      final results = await service.sendMessage(_makeConfig(), []).toList();
+
+      expect(results.single.finishReason, FinishReason.length);
+    });
+
+    test('maps interrupted finish reason distinctly', () async {
+      final service = _createService(
+        providerFactory: _FakeProviderFactory(
+          response: _modelResponse(genkit.FinishReason.interrupted),
+        ),
+      );
+
+      final results = await service.sendMessage(_makeConfig(), []).toList();
+
+      expect(results.single.finishReason, FinishReason.interrupted);
+    });
+
+    test('maps unknown finish reason to other', () async {
+      final service = _createService(
+        providerFactory: _FakeProviderFactory(
+          response: _modelResponse(genkit.FinishReason.blocked),
+        ),
+      );
+
+      final results = await service.sendMessage(_makeConfig(), []).toList();
+
+      expect(results.single.finishReason, FinishReason.other);
+    });
+
+    test('maps custom finish reason to other', () async {
+      final service = _createService(
+        providerFactory: _FakeProviderFactory(
+          response: genkit.ModelResponse(
+            message: genkit.Message(role: genkit.Role.model, content: const []),
+            finishReason: genkit.FinishReason(''),
+          ),
+        ),
+      );
+
+      final results = await service.sendMessage(_makeConfig(), []).toList();
+
+      expect(results.single.finishReason, FinishReason.other);
     });
   });
 
@@ -111,7 +257,7 @@ void main() {
 
     test('handles tab and newline separated words', () {
       final title = ChatbotService.generateFallbackTitle(
-        'word1 word2 word3 word4 word5',
+        'word1\tword2\nword3\tword4 word5',
       );
       expect(title, 'word1 word2 word3 word4');
     });
@@ -125,6 +271,38 @@ void main() {
   });
 
   group('ChatbotService.streamTitle processing', () {
+    test('streams processed title from Genkit chunks', () async {
+      final service = _createService(
+        providerFactory: _FakeProviderFactory(
+          chunks: [
+            genkit.ModelResponseChunk(
+              content: [genkit.TextPart(text: 'Title: Deep')],
+            ),
+            genkit.ModelResponseChunk(
+              content: [genkit.TextPart(text: ' Focus')],
+            ),
+          ],
+          response: _modelResponse(genkit.FinishReason.stop),
+        ),
+      );
+
+      final titles = await service.streamTitle(_makeConfig(), 'hello').toList();
+
+      expect(titles.last, 'Deep Focus');
+    });
+
+    test('falls back when title generation throws', () async {
+      final service = _createService(
+        providerFactory: _FakeProviderFactory(throwsOnGenerate: true),
+      );
+
+      final titles = await service
+          .streamTitle(_makeConfig(), 'hello world from failure')
+          .toList();
+
+      expect(titles, ['hello world from failure']);
+    });
+
     test('strips double quotes from title', () async {
       final stripped = _stripQuotes('"My Title"');
       expect(stripped, 'My Title');
@@ -212,22 +390,84 @@ String _processTitle(String title) {
   return processed;
 }
 
-class _FakeModelConnectionRepository extends ModelConnectionRepository {
+ChatbotService _createService({ProviderFactory? providerFactory}) {
+  return ChatbotService(
+    encryptionService: _FakeEncryptionService(),
+    providerFactory: providerFactory,
+  );
+}
+
+WorkspaceModelSelectionWithConnectionEntity _makeConfig() {
+  return WorkspaceModelSelectionWithConnectionEntity(
+    workspaceModelSelection: WorkspaceModelSelectionEntity(
+      id: 'selection-1',
+      modelId: 'model',
+      createdAt: DateTime(2025),
+      updatedAt: DateTime(2025),
+      modelConnectionId: 'connection-1',
+    ),
+    modelConnection: ModelConnectionEntity(
+      id: 'connection-1',
+      name: 'Test Connection',
+      key: 'encrypted-key',
+      modelId: 'model',
+      createdAt: DateTime(2025),
+      updatedAt: DateTime(2025),
+      workspaceId: 'workspace-1',
+    ),
+    modelsProvider: const ApiModelProviderEntity(
+      id: 'provider-1',
+      name: 'Test Provider',
+      type: ModelProvidersType.openai,
+    ),
+  );
+}
+
+genkit.ModelResponse _modelResponse(genkit.FinishReason finishReason) {
+  return genkit.ModelResponse(
+    message: genkit.Message(role: genkit.Role.model, content: const []),
+    finishReason: finishReason,
+  );
+}
+
+class _FakeProviderFactory extends ProviderFactory {
+  _FakeProviderFactory({
+    this.chunks = const [],
+    genkit.ModelResponse? response,
+    this.onRequest,
+    this.throwsOnGenerate = false,
+  }) : response = response ?? _modelResponse(genkit.FinishReason.stop),
+       super(encryptionService: _FakeEncryptionService());
+
+  final List<genkit.ModelResponseChunk> chunks;
+  final genkit.ModelResponse response;
+  final void Function(genkit.ModelRequest request)? onRequest;
+  final bool throwsOnGenerate;
+
   @override
-  Future<ModelConnectionEntity> createModelConnection(
-    ModelConnectionToCreate _,
+  Future<genkit.Genkit> createGenkit(
+    WorkspaceModelSelectionWithConnectionEntity config,
   ) async {
-    throw UnimplementedError();
+    final ai = genkit.Genkit(isDevEnv: false)
+      ..defineModel(
+        name: 'test/model',
+        fn: (input, context) async {
+          onRequest?.call(input);
+          if (throwsOnGenerate) {
+            throw Exception('failed');
+          }
+          chunks.forEach(context.sendChunk);
+          return response;
+        },
+      );
+    return ai;
   }
 
   @override
-  Future<void> deleteModelConnection(String _) async {}
-
-  @override
-  Future<List<ModelConnectionEntity>> getModelConnections(
-    ModelConnectionFilter _,
-  ) async {
-    return [];
+  genkit.ModelRef<dynamic> getModelReference(
+    WorkspaceModelSelectionWithConnectionEntity config,
+  ) {
+    return genkit.modelRef<dynamic>('test/model');
   }
 }
 

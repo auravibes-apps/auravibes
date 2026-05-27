@@ -166,12 +166,6 @@ jobs:
       - name: 🛠️ Generate Code
         run: melos run generate --no-select
 
-      - name: 🔧 Setup CocoaPods
-        run: |
-          cd ${{ env.FLUTTER_WORKING_DIRECTORY }}/ios
-          rm -rf Pods Podfile.lock
-          pod install --repo-update
-
       - name: 🏗️ Build iOS (No Codesign)
         run: flutter build ios --debug --no-codesign
         working-directory: ${{ env.FLUTTER_WORKING_DIRECTORY }}

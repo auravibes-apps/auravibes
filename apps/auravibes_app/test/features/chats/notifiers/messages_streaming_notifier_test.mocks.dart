@@ -3,11 +3,8 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:dartantic_interface/src/chat/chat_message.dart' as _i3;
-import 'package:dartantic_interface/src/chat/chat_result.dart' as _i2;
-import 'package:dartantic_interface/src/model/model.dart' as _i5;
+import 'package:auravibes_app/services/chatbot_service/chat_result.dart' as _i2;
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:mockito/src/dummies.dart' as _i4;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -24,55 +21,42 @@ import 'package:mockito/src/dummies.dart' as _i4;
 // ignore_for_file: subtype_of_sealed_class
 // ignore_for_file: invalid_use_of_internal_member
 
+class _FakeChatMessage_0 extends _i1.SmartFake implements _i2.ChatMessage {
+  _FakeChatMessage_0(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
+class _Fake$ChatResultCopyWith_1<T, $Res> extends _i1.SmartFake
+    implements _i2.$ChatResultCopyWith<T, $Res> {
+  _Fake$ChatResultCopyWith_1(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
 /// A class which mocks [ChatResult].
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockChatResult extends _i1.Mock
-    implements _i2.ChatResult<_i3.ChatMessage> {
+    implements _i2.ChatResult<_i2.ChatMessage> {
   @override
-  List<_i3.ChatMessage> get messages =>
-      (super.noSuchMethod(
-            Invocation.getter(#messages),
-            returnValue: <_i3.ChatMessage>[],
-            returnValueForMissingStub: <_i3.ChatMessage>[],
-          )
-          as List<_i3.ChatMessage>);
-
-  @override
-  String get id =>
-      (super.noSuchMethod(
-            Invocation.getter(#id),
-            returnValue: _i4.dummyValue<String>(this, Invocation.getter(#id)),
-            returnValueForMissingStub: _i4.dummyValue<String>(
-              this,
-              Invocation.getter(#id),
-            ),
-          )
-          as String);
-
-  @override
-  _i3.ChatMessage get output =>
+  _i2.ChatMessage get output =>
       (super.noSuchMethod(
             Invocation.getter(#output),
-            returnValue: _i4.dummyValue<_i3.ChatMessage>(
-              this,
-              Invocation.getter(#output),
-            ),
-            returnValueForMissingStub: _i4.dummyValue<_i3.ChatMessage>(
+            returnValue: _FakeChatMessage_0(this, Invocation.getter(#output)),
+            returnValueForMissingStub: _FakeChatMessage_0(
               this,
               Invocation.getter(#output),
             ),
           )
-          as _i3.ChatMessage);
+          as _i2.ChatMessage);
 
   @override
-  _i5.FinishReason get finishReason =>
+  _i2.FinishReason get finishReason =>
       (super.noSuchMethod(
             Invocation.getter(#finishReason),
-            returnValue: _i5.FinishReason.stop,
-            returnValueForMissingStub: _i5.FinishReason.stop,
+            returnValue: _i2.FinishReason.stop,
+            returnValueForMissingStub: _i2.FinishReason.stop,
           )
-          as _i5.FinishReason);
+          as _i2.FinishReason);
 
   @override
   Map<String, dynamic> get metadata =>
@@ -82,4 +66,34 @@ class MockChatResult extends _i1.Mock
             returnValueForMissingStub: <String, dynamic>{},
           )
           as Map<String, dynamic>);
+
+  @override
+  List<_i2.ChatMessage> get messages =>
+      (super.noSuchMethod(
+            Invocation.getter(#messages),
+            returnValue: <_i2.ChatMessage>[],
+            returnValueForMissingStub: <_i2.ChatMessage>[],
+          )
+          as List<_i2.ChatMessage>);
+
+  @override
+  _i2.$ChatResultCopyWith<_i2.ChatMessage, _i2.ChatResult<_i2.ChatMessage>>
+  get copyWith =>
+      (super.noSuchMethod(
+            Invocation.getter(#copyWith),
+            returnValue:
+                _Fake$ChatResultCopyWith_1<
+                  _i2.ChatMessage,
+                  _i2.ChatResult<_i2.ChatMessage>
+                >(this, Invocation.getter(#copyWith)),
+            returnValueForMissingStub:
+                _Fake$ChatResultCopyWith_1<
+                  _i2.ChatMessage,
+                  _i2.ChatResult<_i2.ChatMessage>
+                >(this, Invocation.getter(#copyWith)),
+          )
+          as _i2.$ChatResultCopyWith<
+            _i2.ChatMessage,
+            _i2.ChatResult<_i2.ChatMessage>
+          >);
 }

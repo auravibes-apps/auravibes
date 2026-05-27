@@ -18,11 +18,10 @@ import 'package:auravibes_app/features/models/providers/model_connection_reposit
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
 import 'package:auravibes_app/providers/chatbot_service_provider.dart';
 import 'package:auravibes_app/services/chatbot_service/build_prompt_chat_messages.dart';
+import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
 import 'package:auravibes_app/services/monitoring_service.dart';
-import 'package:auravibes_app/utils/chat_result_concat.dart';
 import 'package:auravibes_app/utils/coalescing_save_extension.dart';
-import 'package:dartantic_ai/dartantic_ai.dart' hide Provider;
 import 'package:logging/logging.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:rxdart/rxdart.dart';

@@ -1,6 +1,4 @@
-import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
-import 'package:auravibes_app/services/chatbot_service/tool_adapter.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -43,67 +41,6 @@ void main() {
     test('handles Unicode characters', () {
       final title = ChatbotService.generateFallbackTitle('こんにちは 世界 テスト');
       expect(title, isNotEmpty);
-    });
-  });
-
-  group('ToolAdapter', () {
-    test('converts tool specs to dartantic Tools', () {
-      const adapter = ToolAdapter();
-      final specs = [
-        const ToolSpec(
-          name: 'test_tool',
-          description: 'A test tool',
-          inputJsonSchema: {
-            'type': 'object',
-            'properties': {
-              'query': {'type': 'string'},
-            },
-          },
-        ),
-      ];
-
-      final tools = adapter(
-        specs,
-        onCall: (toolName, args) async => {'result': 'ok'},
-      );
-
-      expect(tools.length, 1);
-      expect(tools.firstOrNull?.name, 'test_tool');
-      expect(tools.firstOrNull?.description, 'A test tool');
-    });
-
-    test('handles empty tool specs list', () {
-      const adapter = ToolAdapter();
-      final tools = adapter(
-        [],
-        onCall: (toolName, args) async => {},
-      );
-      expect(tools, isEmpty);
-    });
-
-    test('converts multiple tool specs', () {
-      const adapter = ToolAdapter();
-      final specs = [
-        const ToolSpec(
-          name: 'tool_a',
-          description: 'Tool A',
-          inputJsonSchema: {'type': 'object'},
-        ),
-        const ToolSpec(
-          name: 'tool_b',
-          description: 'Tool B',
-          inputJsonSchema: {'type': 'object'},
-        ),
-      ];
-
-      final tools = adapter(
-        specs,
-        onCall: (toolName, args) async => {},
-      );
-
-      expect(tools.length, 2);
-      expect(tools.firstOrNull?.name, 'tool_a');
-      expect(tools[1].name, 'tool_b');
     });
   });
 }

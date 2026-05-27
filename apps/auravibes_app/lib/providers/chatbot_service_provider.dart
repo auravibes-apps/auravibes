@@ -1,4 +1,3 @@
-import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
 import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -12,7 +11,6 @@ ChatbotService chatbotService(
   Ref ref,
 ) {
   return ChatbotService(
-    modelConnectionRepository: ref.watch(modelConnectionRepositoryProvider),
     encryptionService: ref.watch(encryptionServiceProvider),
   );
 }
