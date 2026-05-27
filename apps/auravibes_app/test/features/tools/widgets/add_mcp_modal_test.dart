@@ -27,6 +27,14 @@ class _SubmittingMcpFormNotifier extends McpFormNotifier {
       const McpFormState(isSubmitting: true);
 }
 
+class _SuccessfulMcpFormNotifier extends McpFormNotifier {
+  @override
+  McpFormState build(String workspaceId) => const McpFormState();
+
+  @override
+  Future<bool> submit() async => true;
+}
+
 const _wsId = 'ws1';
 
 Widget _buildSubject() {
@@ -192,6 +200,52 @@ void main() {
       await _showDialog(tester);
 
       expect(find.byType(AuraLoadingOverlay), findsOneWidget);
+    });
+
+    testWidgets('save shows success message and closes dialog', (tester) async {
+      await _pumpAndInit(
+        tester,
+        EasyLocalization(
+          child: TestProviderScope(
+            overrides: [
+              mcpConnectionProvider.overrideWith(
+                _FakeMcpConnectionNotifier.new,
+              ),
+              // ignore: deprecated_member_use
+              mcpFormProvider.overrideWith(_SuccessfulMcpFormNotifier.new),
+            ],
+            child: Portal(
+              child: Builder(
+                builder: (context) {
+                  return MaterialApp(
+                    home: Theme(
+                      data: ThemeData(extensions: [AuraTheme.light]),
+                      child: const Scaffold(body: SizedBox.shrink()),
+                    ),
+                    locale: context.locale,
+                    localizationsDelegates: context.localizationDelegates,
+                    supportedLocales: context.supportedLocales,
+                  );
+                },
+              ),
+            ),
+          ),
+          supportedLocales: const [Locale('en')],
+          path: 'assets/i18n',
+          fallbackLocale: const Locale('en'),
+          startLocale: const Locale('en'),
+          useOnlyLangCode: true,
+          useFallbackTranslations: true,
+        ),
+      );
+      await _showDialog(tester);
+
+      await tester.tap(find.byType(AuraButton).last);
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text('MCP server configuration saved'), findsOneWidget);
+      expect(find.byType(AddMcpModal), findsNothing);
     });
   });
 }

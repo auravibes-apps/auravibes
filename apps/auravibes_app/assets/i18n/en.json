@@ -307,7 +307,8 @@
         "placeholder": "Enter your bearer token",
         "hint": "This token will be stored securely"
       }
-    }
+    },
+    "save_success": "MCP server configuration saved"
   },
   "compaction": {
     "settings": {
