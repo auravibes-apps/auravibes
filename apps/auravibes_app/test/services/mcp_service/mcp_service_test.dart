@@ -66,7 +66,7 @@ void main() {
         transport: McpTransportTypeSSE(),
         authenticationType: McpAuthenticationType.none(),
       );
-      expect(server.slugServerName, 'my_cool_server_');
+      expect(server.slugServerName, 'my-cool-server');
     });
 
     test('slugServerName handles already clean name', () {
@@ -86,7 +86,7 @@ void main() {
         transport: McpTransportTypeSSE(),
         authenticationType: McpAuthenticationType.none(),
       );
-      expect(server.slugServerName, 'test_server_1');
+      expect(server.slugServerName, 'test-server-1');
     });
 
     test('slugServerName handles consecutive special characters', () {
@@ -96,7 +96,7 @@ void main() {
         transport: McpTransportTypeSSE(),
         authenticationType: McpAuthenticationType.none(),
       );
-      expect(server.slugServerName, 'a_b_c');
+      expect(server.slugServerName, 'a-b-c');
     });
 
     test('slugServerName handles unicode characters', () {
@@ -106,7 +106,7 @@ void main() {
         transport: McpTransportTypeSSE(),
         authenticationType: McpAuthenticationType.none(),
       );
-      expect(server.slugServerName, 'serveur_fran_ais');
+      expect(server.slugServerName, 'serveur-fran-ais');
     });
   });
 
@@ -398,7 +398,7 @@ void main() {
 
       expect(
         tool.finalToolName(server),
-        'mcp_srv-1_my_server_read_file',
+        'mcp_srv-1_my-server_read_file',
       );
     });
 
