@@ -4,6 +4,8 @@
 // Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: prefer-extracting-callbacks
+// Required: UI callbacks stay local to their widgets.
 
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';

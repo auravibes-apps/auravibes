@@ -2,6 +2,8 @@
 // Required: Existing thresholds and limits use numeric values.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-extracting-callbacks
+// Required: UI callbacks stay local to their widgets.
 import 'dart:async';
 
 import 'package:auravibes_app/features/chats/notifiers/new_chat_state.dart';

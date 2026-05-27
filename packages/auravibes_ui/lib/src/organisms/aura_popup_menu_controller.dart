@@ -6,6 +6,8 @@
 // Required: UI geometry uses repeated values for symmetric layout.
 // ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-extracting-callbacks
+// Required: Component callbacks stay colocated with UI state.
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

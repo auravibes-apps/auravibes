@@ -6,6 +6,8 @@
 // Required: UI geometry uses repeated values for symmetric layout.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: prefer-extracting-callbacks
+// Required: Component callbacks stay colocated with UI state.
 import 'dart:async';
 
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';

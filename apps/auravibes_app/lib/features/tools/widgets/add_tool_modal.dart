@@ -8,6 +8,8 @@
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-extracting-callbacks
+// Required: UI callbacks stay local to their widgets.
 import 'dart:async';
 
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';

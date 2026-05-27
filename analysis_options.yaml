@@ -133,7 +133,6 @@ dart_code_linter:
 
     # Disabled: enabling the full DCL preset on the existing codebase surfaces
     # thousands of style-only changes across production, tests, and widgetbook.
-    - prefer-extracting-callbacks: false
     - prefer-moving-to-variable: false
     - prefer-single-widget-per-file: false
     - prefer-static-class: false
