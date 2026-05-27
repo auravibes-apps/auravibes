@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.dart';
 import 'package:auravibes_app/features/tools/widgets/user_tool_type_widgets.dart';
@@ -38,23 +40,24 @@ class ConversationToolTile extends HookConsumerWidget {
     final toolId = toolState.tool.id;
 
     final onToggle = useCallback(
-      () async {
-        final _ = await toolsNotifier.toggleTool(toolId);
+      () {
+        unawaited(toolsNotifier.toggleTool(toolId));
       },
       [toolsNotifier, toolId],
     );
 
-    final onPermissionChanged =
-        useCallback<Future<void> Function(ToolPermissionMode?)>(
-          (mode) async {
-            if (mode == null) return;
-            final _ = await toolsNotifier.setToolPermission(
-              toolId,
-              permissionMode: mode,
-            );
-          },
-          [toolsNotifier, toolId],
+    final onPermissionChanged = useCallback<void Function(ToolPermissionMode?)>(
+      (mode) {
+        if (mode == null) return;
+        unawaited(
+          toolsNotifier.setToolPermission(
+            toolId,
+            permissionMode: mode,
+          ),
         );
+      },
+      [toolsNotifier, toolId],
+    );
 
     final isEnabled = toolState.isEnabled;
     final isWorkspaceEnabled = toolState.isWorkspaceEnabled;

@@ -35,8 +35,8 @@ class WorkspaceSwitcher extends _$WorkspaceSwitcher {
   void switchToWorkspace(String workspaceId) {
     _debounceTimer?.cancel();
 
-    _debounceTimer = Timer(const Duration(milliseconds: 300), () async {
-      await _performSwitch(workspaceId);
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      unawaited(_performSwitch(workspaceId));
     });
   }
 

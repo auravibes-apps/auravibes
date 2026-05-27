@@ -84,9 +84,13 @@ extension CoalescingSaveExtension<T> on Stream<T> {
     subscription = shareReplay().listen(
       saver.push,
       onError: controller.addError,
-      onDone: () async {
-        await saver.complete();
-        final _ = await controller.close();
+      onDone: () {
+        unawaited(
+          (() async {
+            await saver.complete();
+            final _ = await controller.close();
+          })(),
+        );
       },
       cancelOnError: false,
     );

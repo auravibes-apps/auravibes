@@ -110,7 +110,7 @@ class _ChatConversationScreen extends HookConsumerWidget {
     final conversation = conversationResult.conversation;
 
     final onToolsPress = useCallback(
-      () async {
+      () {
         _showToolsModal(
           context: context,
           workspaceId: workspaceId,
@@ -121,22 +121,22 @@ class _ChatConversationScreen extends HookConsumerWidget {
     );
 
     final onStop = useCallback(
-      () async {
-        await _stopConversation(context, ref);
+      () {
+        unawaited(_stopConversation(context, ref));
       },
       [ref],
     );
 
-    final onSendMessage = useCallback<Future<void> Function(String)>(
-      (message) async {
-        await _sendMessage(context, ref, message);
+    final onSendMessage = useCallback<void Function(String)>(
+      (message) {
+        unawaited(_sendMessage(context, ref, message));
       },
       [ref],
     );
 
     final onCompact = useCallback(
-      () async {
-        await _manualCompact(context, ref, conversation.id);
+      () {
+        unawaited(_manualCompact(context, ref, conversation.id));
       },
       [ref, conversation.id],
     );
@@ -157,9 +157,13 @@ class _ChatConversationScreen extends HookConsumerWidget {
           const ConversationContextUsagePill(),
           SelectWorkspaceModelSelectionWidget(
             workspaceId: workspaceId,
-            selectWorkspaceModelSelectionId: ref
-                .watch(conversationChatProvider(workspaceId).notifier)
-                .setModel,
+            selectWorkspaceModelSelectionId: (modelId) {
+              unawaited(
+                ref
+                    .read(conversationChatProvider(workspaceId).notifier)
+                    .setModel(modelId),
+              );
+            },
             onProviderChanged: (_) {},
             workspaceModelSelectionId: conversation.modelId,
           ),

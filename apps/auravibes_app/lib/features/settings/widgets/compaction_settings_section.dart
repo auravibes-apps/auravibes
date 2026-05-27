@@ -1,6 +1,8 @@
 // ignore_for_file: avoid-non-null-assertion
 // Required: Existing nullable API contracts still use explicit assertions.
 
+import 'dart:async';
+
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/features/settings/providers/compaction_settings_provider.dart';
@@ -129,7 +131,7 @@ class _CompactionSettingsSectionState
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               AuraButton(
-                onPressed: _resetDefaults,
+                onPressed: () => unawaited(_resetDefaults()),
                 child: const TextLocale(
                   LocaleKeys.compaction_settings_reset_defaults,
                 ),
@@ -138,7 +140,7 @@ class _CompactionSettingsSectionState
               ),
               const SizedBox(width: 8),
               AuraButton(
-                onPressed: _save,
+                onPressed: () => unawaited(_save()),
                 child: const TextLocale(
                   LocaleKeys.settings_screen_actions_save,
                 ),

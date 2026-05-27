@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:widgetbook/widgetbook.dart';
@@ -33,21 +35,24 @@ class _ConfirmDialogDemo extends StatelessWidget {
     return Scaffold(
       body: Center(
         child: ElevatedButton(
-          onPressed: () async {
-            final result = await showAuraConfirmDialog(
-              context: context,
-              title: const Text('Delete Item'),
-              message: const Text(
-                'Are you sure you want to delete this item? This action cannot be undone.',
-              ),
-              isDestructive: isDestructive,
-              colorVariant: colorVariant,
+          onPressed: () {
+            unawaited(
+              showAuraConfirmDialog(
+                context: context,
+                title: const Text('Delete Item'),
+                message: const Text(
+                  'Are you sure you want to delete this item? This action cannot be undone.',
+                ),
+                isDestructive: isDestructive,
+                colorVariant: colorVariant,
+              ).then((result) {
+                if (context.mounted) {
+                  final _ = ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('Result: $result')));
+                }
+              }),
             );
-            if (context.mounted) {
-              final _ = ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(SnackBar(content: Text('Result: $result')));
-            }
           },
           child: const Text('Show Confirm Dialog'),
         ),
@@ -78,14 +83,16 @@ class _AlertDialogDemo extends StatelessWidget {
     return Scaffold(
       body: Center(
         child: ElevatedButton(
-          onPressed: () async {
-            await showAuraAlertDialog(
-              context: context,
-              title: const Text('Update Available'),
-              message: const Text(
-                'A new version of the app is available. Please update to the latest version.',
+          onPressed: () {
+            unawaited(
+              showAuraAlertDialog(
+                context: context,
+                title: const Text('Update Available'),
+                message: const Text(
+                  'A new version of the app is available. Please update to the latest version.',
+                ),
+                colorVariant: colorVariant,
               ),
-              colorVariant: colorVariant,
             );
           },
           child: const Text('Show Alert Dialog'),

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_form_state.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -222,20 +224,23 @@ class _Footer extends HookConsumerWidget {
     );
 
     final onSave = useCallback(
-      () async {
-        final notifier = ref.read(mcpFormProvider(workspaceId).notifier);
-        final success = await notifier.submit();
-
-        if (success && context.mounted) {
-          final _ = showAuraSnackBar(
-            context: context,
-            content: const Text(
-              'MCP Server configuration saved (TODO: implement)',
-            ),
-            variant: AuraSnackBarVariant.success,
-          );
-          Navigator.of(context).pop();
-        }
+      () {
+        unawaited(
+          ref.read(mcpFormProvider(workspaceId).notifier).submit().then((
+            success,
+          ) {
+            if (success && context.mounted) {
+              final _ = showAuraSnackBar(
+                context: context,
+                content: const Text(
+                  'MCP Server configuration saved (TODO: implement)',
+                ),
+                variant: AuraSnackBarVariant.success,
+              );
+              Navigator.of(context).pop();
+            }
+          }),
+        );
       },
       [ref, context, workspaceId],
     );

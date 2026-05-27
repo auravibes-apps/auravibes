@@ -1,3 +1,6 @@
+// ignore_for_file: avoid-passing-async-when-sync-expected
+// Required: Dialog tests await callback futures to capture returned results.
+
 import 'package:auravibes_ui/src/molecules/aura_button.dart';
 import 'package:auravibes_ui/src/organisms/aura_confirm_dialog.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';

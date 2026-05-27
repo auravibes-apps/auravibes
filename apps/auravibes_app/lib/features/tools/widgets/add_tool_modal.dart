@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/widgets/user_tool_type_widgets.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -218,13 +220,17 @@ class _AvailableToolTile extends ConsumerWidget {
         spacing: AuraSpacing.xs,
         crossAxisAlignment: CrossAxisAlignment.start,
       ),
-      onTap: () async {
-        await ref
-            .read(workspaceToolsProvider(workspaceId).notifier)
-            .addTool(toolType);
-        if (context.mounted) {
-          Navigator.of(context).pop();
-        }
+      onTap: () {
+        unawaited(
+          ref
+              .read(workspaceToolsProvider(workspaceId).notifier)
+              .addTool(toolType)
+              .then((_) {
+                if (context.mounted) {
+                  Navigator.of(context).pop();
+                }
+              }),
+        );
       },
       variant: AuraTileVariant.surface,
       leading: Container(
