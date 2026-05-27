@@ -197,11 +197,15 @@ extension ChatResultEntities on ChatResult<ChatMessage> {
     final chunks = <String>[
       if (thinking case final value? when resultThinking) value,
       if (!resultThinking)
-        for (final part in output.parts.whereType<ReasoningPart>())
-          if (part.reasoning.trim().isNotEmpty) part.reasoning,
+        for (final part in output.parts)
+          if (part.reasoning case final reasoning?
+              when reasoning.trim().isNotEmpty)
+            reasoning,
       for (final message in messages)
-        for (final part in message.parts.whereType<ReasoningPart>())
-          if (part.reasoning.trim().isNotEmpty) part.reasoning,
+        for (final part in message.parts)
+          if (part.reasoning case final reasoning?
+              when reasoning.trim().isNotEmpty)
+            reasoning,
     ];
 
     if (chunks.isEmpty) return null;

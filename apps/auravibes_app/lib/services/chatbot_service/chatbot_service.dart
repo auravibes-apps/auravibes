@@ -36,12 +36,14 @@ class ChatbotService {
   }) async* {
     final ai = await _providerFactory.createGenkit(chatProvider);
     final model = _providerFactory.getModelReference(chatProvider);
+    final config = _providerFactory.getGenerationConfig(chatProvider);
 
     final genkitTools = _defineGenkitTools(ai, tools);
     final genkitHistory = history.map(_toGenkitMessage).toList();
 
     final responseStream = ai.generateStream<Object?, Object?>(
       model: model,
+      config: config,
       messages: genkitHistory,
       tools: genkitTools,
       returnToolRequests: true,
@@ -154,8 +156,9 @@ class ChatbotService {
   String? _extractThinking(GenerateResponseChunk<Object?> chunk) {
     final thinking = StringBuffer();
     for (final part in chunk.content) {
-      if (part is ReasoningPart && part.reasoning.isNotEmpty) {
-        thinking.write(part.reasoning);
+      final reasoning = part.reasoning;
+      if (reasoning != null && reasoning.isNotEmpty) {
+        thinking.write(reasoning);
       }
     }
     return thinking.isEmpty ? null : thinking.toString();

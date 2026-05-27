@@ -8,7 +8,7 @@ String? safeJsonEncode(Object? object) {
   if (object == null) return null;
   try {
     return jsonEncode(object);
-  } on Exception catch (_) {}
+  } on Object catch (_) {}
   return null;
 }
 

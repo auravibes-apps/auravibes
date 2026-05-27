@@ -375,6 +375,7 @@ abstract class LocaleKeys {
       'mcp_modal.fields.bearer_token.hint';
   static const mcp_modal_fields_bearer_token = 'mcp_modal.fields.bearer_token';
   static const mcp_modal_fields = 'mcp_modal.fields';
+  static const mcp_modal_save_success = 'mcp_modal.save_success';
   static const mcp_modal = 'mcp_modal';
   static const workspace_management_title = 'workspace_management.title';
   static const workspace_management_create_button =

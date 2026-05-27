@@ -27,10 +27,13 @@ import 'package:auravibes_app/services/mcp_service/mcp_manager_client.dart';
 import 'package:auravibes_app/services/mcp_service/o_auth_authenticate.dart';
 import 'package:collection/collection.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:logging/logging.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'mcp_connection_status.freezed.dart';
 part 'mcp_connection_status.g.dart';
+
+final _logger = Logger('McpConnectionNotifier');
 
 // ============================================================
 // MCP Connection Status
@@ -501,10 +504,12 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
           ),
         );
       }
-    } on Exception catch (e) {
-      // Log error but don't crash - MCP loading is not critical
-      // ignore: avoid_print
-      print('Failed to load MCP servers from database: $e');
+    } on Exception catch (e, stackTrace) {
+      _logger.warning(
+        'Failed to load MCP servers from database',
+        e,
+        stackTrace,
+      );
     }
   }
   // ============================================================
@@ -642,10 +647,12 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
         mcpServerId: server.id,
         currentTools: tools,
       );
-    } on Exception catch (e) {
-      // Log error but don't fail the connection
-      // ignore: avoid_print
-      print('Failed to sync MCP tools to database: $e');
+    } on Exception catch (e, stackTrace) {
+      _logger.warning(
+        'Failed to sync MCP tools to database',
+        e,
+        stackTrace,
+      );
     }
   }
 }
