@@ -348,13 +348,14 @@ final class UrlTool extends NativeToolEntity<String, String> {
     if (method is! String) {
       throw FormatException('HTTP method must be a string: $method');
     }
-    final normalized = method.trim().toUpperCase();
-    return UrlRequestMethod.values.firstWhere(
-      (m) => m.value == normalized,
-      orElse: () => throw FormatException(
-        'Unsupported HTTP method: $method',
-      ),
-    );
+    final normalized = method.trim().toLowerCase();
+    if (!UrlRequestMethod.values
+        .map((entry) => entry.name)
+        .contains(normalized)) {
+      throw FormatException('Unsupported HTTP method: $method');
+    }
+
+    return UrlRequestMethod.values.byName(normalized);
   }
 
   Map<String, String>? _parseHeaders(Object? headers) {

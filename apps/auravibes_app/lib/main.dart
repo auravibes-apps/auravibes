@@ -19,9 +19,12 @@ import 'package:flutter/services.dart'
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 Future<void> main() async {
-  F.appFlavor = Flavor.values.firstWhere(
-    (element) => element.name == appFlavor,
-  );
+  const flavorName = appFlavor;
+  if (flavorName == null) {
+    throw StateError('appFlavor is not initialized');
+  }
+
+  F.appFlavor = Flavor.values.byName(flavorName);
   final _ = WidgetsFlutterBinding.ensureInitialized();
   AppLogging.configure(enabled: F.appFlavor != Flavor.prod);
   await MainLocale.ensureInitialized();
