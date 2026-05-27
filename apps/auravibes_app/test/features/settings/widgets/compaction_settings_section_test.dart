@@ -1,5 +1,7 @@
 // ignore_for_file: avoid-top-level-members-in-tests
 // Required: Test files keep shared fixtures and helpers top-level.
+// ignore_for_file: missing-test-assertion
+// Required: Widget tests verify side effects through mocked dependencies.
 
 // ignore_for_file: avoid-late-keyword
 // Required: Test fixtures are assigned in setUp.

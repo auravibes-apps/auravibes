@@ -1,5 +1,7 @@
 // ignore_for_file: avoid-top-level-members-in-tests
 // Required: Test files keep shared fixtures and helpers top-level.
+// ignore_for_file: missing-test-assertion
+// Required: Tests verify usecase behavior through repository side effects.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
 

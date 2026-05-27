@@ -1,5 +1,7 @@
 // ignore_for_file: avoid-redundant-async
 // Required: Test callbacks intentionally preserve async-compatible signatures.
+// ignore_for_file: missing-test-assertion
+// Required: Tests verify service behavior by absence of thrown errors.
 // ignore_for_file: avoid-late-keyword
 // Required: Test fixtures are assigned in setUp.
 
