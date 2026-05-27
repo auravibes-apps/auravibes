@@ -111,12 +111,15 @@ class CompactConversationUsecase {
       String summaryText;
       try {
         summaryText = await _generateSummary(foundModel, chatHistory);
-      } on Exception catch (e) {
+      } on Exception catch (e, stackTrace) {
         if (trigger == CompactionTrigger.auto) {
           await _persistRequiredFailureMessage(conversationId: conversationId);
         }
 
-        throw CompactionFailedException(cause: e);
+        Error.throwWithStackTrace(
+          CompactionFailedException(cause: e),
+          stackTrace,
+        );
       }
 
       await _persistCompactionSummary(

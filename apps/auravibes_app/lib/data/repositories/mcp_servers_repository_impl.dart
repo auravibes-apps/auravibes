@@ -76,10 +76,13 @@ class McpServersRepositoryImpl implements McpServersRepository {
 
         return _tableToEntity(mcpServer);
       });
-    } on Exception catch (e) {
-      throw McpServersException(
-        'Failed to add MCP server with tools: $e',
-        e,
+    } on Exception catch (e, stackTrace) {
+      Error.throwWithStackTrace(
+        McpServersException(
+          'Failed to add MCP server with tools: $e',
+          e,
+        ),
+        stackTrace,
       );
     }
   }
@@ -89,10 +92,13 @@ class McpServersRepositoryImpl implements McpServersRepository {
     try {
       // The cascade delete will handle ToolsGroup and Tools
       return await _mcpServersDao.deleteMcpServer(serverId);
-    } on Exception catch (e) {
-      throw McpServersException(
-        'Failed to delete MCP server: $e',
-        e,
+    } on Exception catch (e, stackTrace) {
+      Error.throwWithStackTrace(
+        McpServersException(
+          'Failed to delete MCP server: $e',
+          e,
+        ),
+        stackTrace,
       );
     }
   }
@@ -153,10 +159,13 @@ class McpServersRepositoryImpl implements McpServersRepository {
       // Note: Existing tools are NOT modified - user customizations preserved
     } on McpServerNotFoundException {
       rethrow;
-    } on Exception catch (e) {
-      throw McpServersException(
-        'Failed to sync MCP tools: $e',
-        e,
+    } on Exception catch (e, stackTrace) {
+      Error.throwWithStackTrace(
+        McpServersException(
+          'Failed to sync MCP tools: $e',
+          e,
+        ),
+        stackTrace,
       );
     }
   }
@@ -170,10 +179,13 @@ class McpServersRepositoryImpl implements McpServersRepository {
         workspaceId,
       );
       return results.map(_tableToEntity).toList();
-    } on Exception catch (e) {
-      throw McpServersException(
-        'Failed to get MCP servers for workspace: $e',
-        e,
+    } on Exception catch (e, stackTrace) {
+      Error.throwWithStackTrace(
+        McpServersException(
+          'Failed to get MCP servers for workspace: $e',
+          e,
+        ),
+        stackTrace,
       );
     }
   }
@@ -187,10 +199,13 @@ class McpServersRepositoryImpl implements McpServersRepository {
         workspaceId,
       );
       return results.map(_tableToEntity).toList();
-    } on Exception catch (e) {
-      throw McpServersException(
-        'Failed to get enabled MCP servers for workspace: $e',
-        e,
+    } on Exception catch (e, stackTrace) {
+      Error.throwWithStackTrace(
+        McpServersException(
+          'Failed to get enabled MCP servers for workspace: $e',
+          e,
+        ),
+        stackTrace,
       );
     }
   }
@@ -201,10 +216,13 @@ class McpServersRepositoryImpl implements McpServersRepository {
       final result = await _mcpServersDao.getMcpServerById(serverId);
       if (result == null) return null;
       return _tableToEntity(result);
-    } on Exception catch (e) {
-      throw McpServersException(
-        'Failed to get MCP server by ID: $e',
-        e,
+    } on Exception catch (e, stackTrace) {
+      Error.throwWithStackTrace(
+        McpServersException(
+          'Failed to get MCP server by ID: $e',
+          e,
+        ),
+        stackTrace,
       );
     }
   }

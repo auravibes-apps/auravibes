@@ -29,10 +29,13 @@ class OAuthAuthenticate {
     try {
       return Random.secure();
       // ignore: avoid_catching_errors
-    } on UnsupportedError {
-      throw StateError(
-        'Secure randomness is required to generate OAuth PKCE and state '
-        'values, but Random.secure() is not supported on this platform.',
+    } on UnsupportedError catch (_, stackTrace) {
+      Error.throwWithStackTrace(
+        StateError(
+          'Secure randomness is required to generate OAuth PKCE and state '
+          'values, but Random.secure() is not supported on this platform.',
+        ),
+        stackTrace,
       );
     }
   }

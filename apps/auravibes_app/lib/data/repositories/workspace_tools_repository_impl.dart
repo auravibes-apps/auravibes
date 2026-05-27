@@ -175,10 +175,13 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
       return await _dao
           .patchWorkspaceToolConfig(workspaceId, toolType, config)
           .then((value) => value.map(_tableToEntity).toList());
-    } catch (e) {
-      throw WorkspaceToolsException(
-        'Failed to patch workspace tool config: $e',
-        e is Exception ? e : null,
+    } catch (e, stackTrace) {
+      Error.throwWithStackTrace(
+        WorkspaceToolsException(
+          'Failed to patch workspace tool config: $e',
+          e is Exception ? e : null,
+        ),
+        stackTrace,
       );
     }
   }
