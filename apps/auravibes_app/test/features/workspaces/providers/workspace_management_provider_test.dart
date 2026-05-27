@@ -4,6 +4,8 @@
 // Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: avoid-late-keyword
 // Required: Test fixtures are assigned in setUp.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
 
 // ignore_for_file: cascade_invocations
 // Required: test expectations use chaining on matchers

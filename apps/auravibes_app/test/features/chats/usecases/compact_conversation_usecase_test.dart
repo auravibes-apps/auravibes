@@ -4,6 +4,8 @@
 // Required: Tests verify usecase behavior through repository side effects.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
 
 // ignore_for_file: avoid-redundant-async
 // Required: Test callbacks intentionally preserve async-compatible signatures.

@@ -1,5 +1,7 @@
 // ignore_for_file: avoid-non-null-assertion
 // Required: Tests inspect nullable values after arranging expected state.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
 
 import 'dart:convert';
 

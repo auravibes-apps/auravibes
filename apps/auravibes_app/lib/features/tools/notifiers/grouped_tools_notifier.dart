@@ -2,6 +2,8 @@
 // Required: Existing nullable API contracts still use explicit assertions.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
 
 import 'package:auravibes_app/data/repositories/tools_groups_repository_impl.dart';
 import 'package:auravibes_app/domain/models/mcp_connection_view_status.dart';

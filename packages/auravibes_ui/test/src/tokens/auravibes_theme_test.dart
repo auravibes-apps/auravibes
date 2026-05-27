@@ -1,3 +1,5 @@
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';

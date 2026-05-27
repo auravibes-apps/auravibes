@@ -1,5 +1,7 @@
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/services/tools/user_tool_type.dart';
 import 'package:auravibes_app/services/tools/user_tools/calculator_tool.dart';
 import 'package:collection/collection.dart';

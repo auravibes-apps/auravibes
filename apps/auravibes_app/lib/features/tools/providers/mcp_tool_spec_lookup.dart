@@ -2,6 +2,8 @@
 // Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:riverpod/riverpod.dart';

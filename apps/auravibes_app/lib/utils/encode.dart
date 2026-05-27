@@ -1,3 +1,5 @@
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
 import 'dart:convert';
 
 String? safeJsonEncode(Object? object) {

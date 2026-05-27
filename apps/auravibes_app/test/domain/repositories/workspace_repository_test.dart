@@ -1,6 +1,8 @@
 // ignore_for_file: avoid-redundant-async
 // Required: Test callbacks intentionally preserve async-compatible signatures.
 // ignore_for_file: cascade_invocations
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/domain/repositories/workspace_repository.dart';

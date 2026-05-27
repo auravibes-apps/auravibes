@@ -1,5 +1,7 @@
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
 import 'package:collection/collection.dart';
 import 'package:drift/drift.dart';
 

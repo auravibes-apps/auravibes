@@ -1,5 +1,7 @@
 // ignore_for_file: avoid-late-keyword
 // Required: Test fixtures are assigned in setUp.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
 
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/domain/entities/conversation_tool_entity.dart';

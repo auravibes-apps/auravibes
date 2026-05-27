@@ -1,3 +1,5 @@
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/conversations.dart';
 import 'package:drift/drift.dart';

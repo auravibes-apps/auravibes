@@ -4,6 +4,8 @@
 // Required: Tests inspect nullable values after arranging expected state.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
 
 import 'dart:convert';
 

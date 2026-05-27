@@ -133,7 +133,6 @@ dart_code_linter:
 
     # Disabled: enabling the full DCL preset on the existing codebase surfaces
     # thousands of style-only changes across production, tests, and widgetbook.
-    - newline-before-return: false
     - no-empty-block: false
     - no-equal-arguments: false
     - no-magic-number: false

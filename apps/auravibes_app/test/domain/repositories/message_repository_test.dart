@@ -1,4 +1,6 @@
 // ignore_for_file: cascade_invocations
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/repositories/message_repository.dart';

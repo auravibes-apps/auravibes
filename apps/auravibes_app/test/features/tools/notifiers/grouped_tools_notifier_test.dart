@@ -2,6 +2,8 @@
 // Required: Test fixtures are assigned in setUp.
 // ignore_for_file: missing-test-assertion
 // Required: Tests verify notifier behavior through repository side effects.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
 
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';

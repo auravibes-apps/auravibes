@@ -1,5 +1,7 @@
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';

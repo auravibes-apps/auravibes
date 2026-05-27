@@ -1,5 +1,7 @@
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/services/mcp_service/o_auth_authenticate.dart';
 

@@ -1,3 +1,5 @@
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';

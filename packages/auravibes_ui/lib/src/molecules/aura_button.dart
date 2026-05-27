@@ -2,6 +2,8 @@
 // Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_ui/src/atoms/aura_edge_insets_geometry.dart';
 import 'package:auravibes_ui/src/atoms/aura_loading_circle.dart';
 import 'package:auravibes_ui/src/atoms/aura_pressable.dart';

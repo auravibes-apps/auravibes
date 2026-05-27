@@ -1,3 +1,5 @@
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:easy_localization/easy_localization.dart';
 

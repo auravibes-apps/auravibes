@@ -1,5 +1,7 @@
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';

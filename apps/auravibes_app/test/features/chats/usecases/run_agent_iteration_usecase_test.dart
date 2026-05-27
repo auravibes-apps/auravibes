@@ -2,6 +2,8 @@
 // Required: Test fixtures are assigned in setUp.
 // ignore_for_file: missing-test-assertion
 // Required: Tests verify orchestration through repository side effects.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
 
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';

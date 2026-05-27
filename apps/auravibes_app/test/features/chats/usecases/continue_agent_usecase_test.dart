@@ -4,6 +4,8 @@
 // Required: Tests verify orchestration through repository side effects.
 // ignore_for_file: avoid-late-keyword
 // Required: Test fixtures are assigned in setUp.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
 
 import 'dart:async';
 

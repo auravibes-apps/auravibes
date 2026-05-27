@@ -1,5 +1,7 @@
 // ignore_for_file: avoid-non-null-assertion
 // Required: Existing nullable API contracts still use explicit assertions.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
 
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/features/models/models/add_model_provider_model.dart';

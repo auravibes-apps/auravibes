@@ -1,3 +1,5 @@
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/utils/change_notifier_with_code_gen_extension.dart';
