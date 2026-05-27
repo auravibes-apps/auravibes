@@ -2,6 +2,8 @@
 // Required: Stories use Future chains from sync callbacks.
 // ignore_for_file: avoid-returning-widgets
 // Required: Widgetbook stories use helper functions that return widgets.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
 import 'dart:async';
 
 import 'package:auravibes_ui/ui.dart';

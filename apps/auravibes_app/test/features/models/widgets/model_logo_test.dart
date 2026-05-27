@@ -6,6 +6,8 @@
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: avoid-unused-parameters
 // Required: Test fakes keep interface-compatible parameter names.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
 import 'package:auravibes_app/features/models/widgets/model_logo.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';

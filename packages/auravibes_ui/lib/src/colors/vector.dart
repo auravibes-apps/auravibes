@@ -2,6 +2,8 @@
 // Required: UI tokens and layout use fixed design values.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
 import 'dart:math';
 
 /// Represents a 3D vector for color space transformations.

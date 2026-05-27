@@ -8,6 +8,8 @@
 // Required: Tests verify service behavior by absence of thrown errors.
 // ignore_for_file: avoid-late-keyword
 // Required: Test fixtures are assigned in setUp.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
 
 import 'dart:convert';
 

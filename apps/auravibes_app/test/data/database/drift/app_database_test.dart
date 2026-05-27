@@ -4,6 +4,8 @@
 // Required: Test files keep shared fixtures and helpers top-level.
 // ignore_for_file: missing-test-assertion
 // Required: Database tests verify operations by absence of thrown errors.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
 
 // ignore_for_file: avoid-late-keyword
 // Required: Test fixtures are assigned in setUp.

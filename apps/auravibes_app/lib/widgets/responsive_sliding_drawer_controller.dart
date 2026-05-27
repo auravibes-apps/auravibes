@@ -12,6 +12,8 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: no-empty-block
 // Required: Animation listener uses empty setState to rebuild.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
 
 import 'package:flutter/material.dart';
 

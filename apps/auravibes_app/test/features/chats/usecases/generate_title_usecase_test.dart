@@ -6,6 +6,8 @@
 // Required: Tests use intentional no-op callbacks and fake hooks.
 // ignore_for_file: missing-test-assertion
 // Required: Tests verify usecase behavior through repository side effects.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
 
 import 'dart:async';
 

@@ -4,6 +4,8 @@
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: no-object-declaration
 // Required: Test fakes override noSuchMethod with Object return values.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
 import 'package:auravibes_app/features/settings/screens/more_screen.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:easy_localization/easy_localization.dart';

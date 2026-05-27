@@ -10,6 +10,8 @@
 // Required: Test fixtures are assigned in setUp.
 // ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
 
 // Required: test expectations use chaining on matchers which triggers
 // cascade_invocations lint. Not applicable in test assertions.

@@ -2,6 +2,8 @@
 // Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: avoid-late-keyword
 // Required: Test fixtures are assigned in setUp.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
 
 import 'package:auravibes_app/features/settings/notifiers/app_theme.dart';
 import 'package:flutter/material.dart';
