@@ -6,6 +6,8 @@
 // Required: Tests verify async provider side effects through state changes.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-correct-type-name
+// Required: Test doubles mirror repository contract names.
 
 // ignore_for_file: avoid-redundant-async
 // Required: Test callbacks intentionally preserve async-compatible signatures.
