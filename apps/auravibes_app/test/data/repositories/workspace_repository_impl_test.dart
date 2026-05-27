@@ -208,5 +208,23 @@ void main() {
         throwsA(isA<WorkspaceValidationException>()),
       );
     });
+
+    test('should reject remote workspace without URL', () async {
+      const invalidWorkspace = WorkspaceToCreate(
+        name: 'Remote Workspace',
+        type: WorkspaceType.remote,
+      );
+
+      await expectLater(
+        repository.createWorkspace(invalidWorkspace),
+        throwsA(
+          isA<WorkspaceValidationException>().having(
+            (error) => error.message,
+            'message',
+            'Remote workspace must have a URL',
+          ),
+        ),
+      );
+    });
   });
 }

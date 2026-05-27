@@ -8,6 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
+import '../../../helpers/test_app.dart';
+
 void main() {
   group('ModelInputFieldType', () {
     test('has name, key, url values', () {
@@ -92,6 +94,24 @@ void main() {
         fieldType: ModelInputFieldType.name,
       );
       expect(widget.workspaceId, 'ws-1');
+    });
+
+    testWidgets('renders validation error and hint', (tester) async {
+      await tester.pumpWidget(
+        testableApp(
+          child: const Scaffold(
+            body: EnhancedModelInput(
+              workspaceId: 'ws-1',
+              fieldType: ModelInputFieldType.name,
+            ),
+          ),
+        ),
+      );
+      final pumpCount = await tester.pumpAndSettle();
+      expect(pumpCount, isNonNegative);
+
+      expect(find.text('Name is required'), findsOneWidget);
+      expect(find.byType(TextFormField), findsOneWidget);
     });
   });
 
