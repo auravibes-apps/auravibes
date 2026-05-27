@@ -31,21 +31,29 @@ int workspaceToolIndexNotifier(Ref _) =>
 
 @riverpod
 class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
-  WorkspaceToolsRepository _repository = throw StateError(
-    '_repository is not initialized',
-  );
+  WorkspaceToolsRepository? _repository;
   String _workspaceId = '';
+
+  WorkspaceToolsRepository get _requiredRepository {
+    final repository = _repository;
+    if (repository == null) {
+      throw StateError('_repository is not initialized');
+    }
+
+    return repository;
+  }
 
   @override
   Future<List<WorkspaceToolEntity>> build(String workspaceId) async {
-    _repository = ref.watch(workspaceToolsRepositoryProvider);
+    final repository = ref.watch(workspaceToolsRepositoryProvider);
+    _repository = repository;
     _workspaceId = workspaceId;
-    return _repository.getWorkspaceTools(workspaceId);
+    return repository.getWorkspaceTools(workspaceId);
   }
 
   /// Add a new built-in tool to the workspace
   Future<void> addTool(UserToolType toolType) async {
-    final _ = await _repository.setWorkspaceToolEnabled(
+    final _ = await _requiredRepository.setWorkspaceToolEnabled(
       _workspaceId,
       toolType.value,
       isEnabled: true,
@@ -79,7 +87,7 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
     String id, {
     required bool isEnabled,
   }) async {
-    final newTool = await _repository.setToolEnabledById(
+    final newTool = await _requiredRepository.setToolEnabledById(
       id,
       isEnabled: isEnabled,
     );
@@ -88,7 +96,7 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
 
   /// Update workspace tool configuration
   Future<void> updateToolConfig(String toolId, String? config) async {
-    final success = await _repository.patchWorkspaceToolConfig(
+    final success = await _requiredRepository.patchWorkspaceToolConfig(
       _workspaceId,
       toolId,
       config,
@@ -98,7 +106,7 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
 
   /// Remove a workspace tool by its database ID
   Future<bool> removeToolById(String id) async {
-    final success = await _repository.removeWorkspaceToolById(id);
+    final success = await _requiredRepository.removeWorkspaceToolById(id);
     if (success) {
       _removeToolsByIds([id]);
     }
@@ -110,7 +118,7 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
     String id, {
     required ToolPermissionMode permissionMode,
   }) async {
-    final newTool = await _repository.setToolPermissionMode(
+    final newTool = await _requiredRepository.setToolPermissionMode(
       id,
       permissionMode: permissionMode,
     );

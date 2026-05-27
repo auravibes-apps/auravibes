@@ -48,18 +48,17 @@ class AuraTypingIndicator extends StatefulWidget {
 
 class _AuraTypingIndicatorState extends State<AuraTypingIndicator>
     with TickerProviderStateMixin {
-  AnimationController _animationController = throw StateError(
-    '_animationController is not initialized',
-  );
+  AnimationController? _animationController;
   List<Animation<double>> _dotAnimations = const [];
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
+    final animationController = AnimationController(
       duration: widget.animationDuration,
       vsync: this,
     );
+    _animationController = animationController;
 
     // Create staggered animations for each dot
     _dotAnimations = List.generate(3, (index) {
@@ -71,7 +70,7 @@ class _AuraTypingIndicatorState extends State<AuraTypingIndicator>
         end: 1,
       ).animate(
         CurvedAnimation(
-          parent: _animationController,
+          parent: animationController,
           curve: Interval(
             begin,
             end,
@@ -81,12 +80,12 @@ class _AuraTypingIndicatorState extends State<AuraTypingIndicator>
       );
     });
 
-    unawaited(_animationController.repeat());
+    unawaited(animationController.repeat());
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
+    _animationController?.dispose();
     super.dispose();
   }
 

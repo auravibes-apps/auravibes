@@ -69,8 +69,16 @@ class AuraPopupMenu extends StatefulWidget {
 }
 
 class _AuraPopupMenuState extends State<AuraPopupMenu> {
-  FocusNode _focusNode = throw StateError('_focusNode is not initialized');
+  FocusNode? _focusNode;
   bool _visible = false;
+
+  FocusNode get _requiredFocusNode {
+    final focusNode = _focusNode;
+    if (focusNode == null) {
+      throw StateError('_focusNode is not initialized');
+    }
+    return focusNode;
+  }
 
   @override
   void initState() {
@@ -89,7 +97,7 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
   void dispose() {
     widget.controller._state = null;
     if (widget.focusNode == null) {
-      _focusNode.dispose();
+      _focusNode?.dispose();
     }
     super.dispose();
   }
@@ -98,18 +106,18 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
     setState(() {
       _visible = true;
     });
-    FocusScope.of(context).requestFocus(_focusNode);
+    FocusScope.of(context).requestFocus(_requiredFocusNode);
   }
 
   void close() {
     setState(() {
       _visible = false;
     });
-    _focusNode.unfocus();
+    _requiredFocusNode.unfocus();
   }
 
   void toggle() {
-    if (_focusNode.hasFocus) {
+    if (_requiredFocusNode.hasFocus) {
       close();
     } else {
       open();
@@ -144,7 +152,7 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
           fit: .passthrough,
           child: widget.child,
         ),
-        focusNode: _focusNode,
+        focusNode: _requiredFocusNode,
         onFocusChange: (hasFocus) {
           if (hasFocus && !_visible) {
             setState(() {

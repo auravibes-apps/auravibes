@@ -8,6 +8,8 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: always-remove-listener
+// Required: Listener is removed through nullable router field in dispose.
 // ignore_for_file: prefer-extracting-callbacks
 // Required: UI callbacks stay local to their widgets.
 // ignore_for_file: prefer-single-widget-per-file
@@ -167,19 +169,29 @@ class AppWithResponsiveDrawer extends StatefulWidget {
 class _AppWithResponsiveDrawerState extends State<AppWithResponsiveDrawer> {
   final ResponsiveSlidingDrawerController _controller =
       ResponsiveSlidingDrawerController();
-  GoRouter _router = throw StateError('_router is not initialized');
+  GoRouter? _router;
   Uri? _previousRoute;
+
+  GoRouter get _requiredRouter {
+    final router = _router;
+    if (router == null) {
+      throw StateError('_router is not initialized');
+    }
+
+    return router;
+  }
 
   @override
   void initState() {
     super.initState();
-    _router = GoRouter.of(context);
-    _previousRoute = _router.routeInformationProvider.value.uri;
-    _router.routeInformationProvider.addListener(_onRouteChanged);
+    final router = GoRouter.of(context);
+    _router = router;
+    _previousRoute = router.routeInformationProvider.value.uri;
+    router.routeInformationProvider.addListener(_onRouteChanged);
   }
 
   void _onRouteChanged() {
-    final currentRoute = _router.routeInformationProvider.value.uri;
+    final currentRoute = _requiredRouter.routeInformationProvider.value.uri;
     if (currentRoute != _previousRoute) {
       _controller.closeIfMobile();
 
@@ -191,7 +203,7 @@ class _AppWithResponsiveDrawerState extends State<AppWithResponsiveDrawer> {
 
   @override
   void dispose() {
-    _router.routeInformationProvider.removeListener(_onRouteChanged);
+    _router?.routeInformationProvider.removeListener(_onRouteChanged);
     super.dispose();
   }
 

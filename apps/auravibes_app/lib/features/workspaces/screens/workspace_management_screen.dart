@@ -468,9 +468,16 @@ class _EditWorkspaceTile extends StatefulWidget {
 }
 
 class _EditWorkspaceTileState extends State<_EditWorkspaceTile> {
-  TextEditingController _controller = throw StateError(
-    '_controller is not initialized',
-  );
+  TextEditingController? _controller;
+
+  TextEditingController get _requiredController {
+    final controller = _controller;
+    if (controller == null) {
+      throw StateError('_controller is not initialized');
+    }
+
+    return controller;
+  }
 
   @override
   void initState() {
@@ -480,7 +487,7 @@ class _EditWorkspaceTileState extends State<_EditWorkspaceTile> {
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller?.dispose();
     super.dispose();
   }
 
@@ -492,7 +499,7 @@ class _EditWorkspaceTileState extends State<_EditWorkspaceTile> {
         children: [
           Expanded(
             child: TextField(
-              controller: _controller,
+              controller: _requiredController,
               decoration: InputDecoration(
                 helperText: LocaleKeys.workspace_management_name_placeholder
                     .tr(),
@@ -504,7 +511,7 @@ class _EditWorkspaceTileState extends State<_EditWorkspaceTile> {
           ),
           AuraIconButton(
             icon: Icons.check,
-            onPressed: () => widget.onSave(_controller.text.trim()),
+            onPressed: () => widget.onSave(_requiredController.text.trim()),
             tooltip: LocaleKeys.common_save.tr(),
           ),
           AuraIconButton(

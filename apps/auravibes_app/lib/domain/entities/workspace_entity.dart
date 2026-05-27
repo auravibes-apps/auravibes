@@ -88,16 +88,17 @@ abstract class WorkspacePatch with _$WorkspacePatch {
   const WorkspacePatch._();
 
   String? validationErrorFor(WorkspaceEntity current) {
-    if (type == null) {
+    final name = this.name;
+    final url = this.url;
+
+    if (name == null && type == null && url == null) {
       return 'At least one field must be provided';
     }
 
-    final name = this.name;
     if (name != null && name.isEmpty) {
       return 'Workspace name cannot be empty';
     }
 
-    final url = this.url;
     if (url != null && url.isEmpty) {
       return 'Workspace URL cannot be empty';
     }

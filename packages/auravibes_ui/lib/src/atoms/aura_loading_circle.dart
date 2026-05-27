@@ -82,25 +82,32 @@ class AuraLoadingCircle extends StatefulWidget {
 
 class _AuraLoadingCircleState extends State<AuraLoadingCircle>
     with SingleTickerProviderStateMixin {
-  AnimationController _controller = throw StateError(
-    '_controller is not initialized',
-  );
+  AnimationController? _controller;
+
+  AnimationController get _requiredController {
+    final controller = _controller;
+    if (controller == null) {
+      throw StateError('_controller is not initialized');
+    }
+    return controller;
+  }
 
   @override
   void initState() {
     super.initState();
 
-    _controller =
+    final controller =
         widget.controller ??
         AnimationController(duration: widget.duration, vsync: this);
+    _controller = controller;
 
-    unawaited(_controller.repeat());
+    unawaited(controller.repeat());
   }
 
   @override
   void dispose() {
     if (widget.controller == null) {
-      _controller.dispose();
+      _controller?.dispose();
     }
     super.dispose();
   }
@@ -126,7 +133,7 @@ class _AuraLoadingCircleState extends State<AuraLoadingCircle>
                       delay: i / itemCount,
                       begin: 0,
                       end: 1,
-                    ).animate(_controller),
+                    ).animate(_requiredController),
                     child: SizedBox.fromSize(
                       child: _itemBuilder(i),
                       size: Size.square(itemSize),

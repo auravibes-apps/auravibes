@@ -6,6 +6,8 @@
 // Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: always-remove-listener
+// Required: Listener is removed through nullable focus node field in dispose.
 // ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-extracting-callbacks
@@ -96,22 +98,36 @@ class AuraDropdownSelector<T> extends StatefulWidget {
 }
 
 class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
-  FocusNode _focusNode = throw StateError('_focusNode is not initialized');
+  FocusNode? _focusNode;
   bool _isDropdownOpen = false;
+
+  FocusNode get _requiredFocusNode {
+    final focusNode = _focusNode;
+    if (focusNode == null) {
+      throw StateError('_focusNode is not initialized');
+    }
+    return focusNode;
+  }
 
   @override
   void initState() {
     super.initState();
-    _focusNode = widget.focusNode ?? FocusNode();
+    final focusNode = widget.focusNode ?? FocusNode();
+    _focusNode = focusNode;
     // Listen for focus changes
-    _focusNode.addListener(_onFocusChange);
+    focusNode.addListener(
+      _onFocusChange,
+    ); // ignore: always-remove-listener - Removed in dispose via field.
   }
 
   @override
   void dispose() {
-    _focusNode.removeListener(_onFocusChange);
-    if (widget.focusNode == null) {
-      _focusNode.dispose();
+    final focusNode = _focusNode;
+    if (focusNode != null) {
+      focusNode.removeListener(_onFocusChange);
+      if (widget.focusNode == null) {
+        focusNode.dispose();
+      }
     }
     // Ensure overlay is removed before widget is disposed
     super.dispose();
@@ -119,7 +135,7 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
 
   void _onFocusChange() {
     // Close dropdown when losing focus
-    if (!_focusNode.hasFocus && _isDropdownOpen) {
+    if (!_requiredFocusNode.hasFocus && _isDropdownOpen) {
       setState(() {
         _isDropdownOpen = false;
       });
@@ -127,14 +143,14 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
   }
 
   void _toggleDropdown() {
-    if (_focusNode.hasFocus) {
+    if (_requiredFocusNode.hasFocus) {
       _unfocus();
     } else {
-      FocusScope.of(context).requestFocus(_focusNode);
+      FocusScope.of(context).requestFocus(_requiredFocusNode);
     }
   }
 
-  void _unfocus() => _focusNode.unfocus();
+  void _unfocus() => _requiredFocusNode.unfocus();
 
   Widget _getDisplayText() {
     final value = widget.value;

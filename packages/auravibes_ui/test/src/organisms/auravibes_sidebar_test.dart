@@ -177,7 +177,7 @@ void main() {
       expect(find.text('Logout'), findsOneWidget);
       expect(
         find.descendant(
-          of: find.byType(SingleChildScrollView),
+          of: find.byType(ListView),
           matching: find.text('Home'),
         ),
         findsOneWidget,

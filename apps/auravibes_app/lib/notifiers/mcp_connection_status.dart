@@ -183,17 +183,24 @@ class McpToolIdComponents {
 /// See [McpToolIdComponents] for parsing composite IDs.
 @Riverpod(keepAlive: true)
 class McpConnectionNotifier extends _$McpConnectionNotifier {
-  McpManagerService get _mcpManagerService => ref.read(
-    mcpManagerServiceProvider,
-  );
+  McpManagerService? _mcpManagerService;
   var _isDisposed = false;
   var _lastKnownState = const <McpConnectionState>[];
+
+  McpManagerService get _requiredMcpManagerService {
+    final mcpManagerService = _mcpManagerService;
+    if (mcpManagerService == null) {
+      throw StateError('_mcpManagerService is not initialized');
+    }
+
+    return mcpManagerService;
+  }
 
   @override
   List<McpConnectionState> build() {
     _isDisposed = false;
     _lastKnownState = const [];
-    final _ = ref.watch(mcpManagerServiceProvider);
+    _mcpManagerService = ref.watch(mcpManagerServiceProvider);
     ref
       ..onDispose(_onDispose)
       ..listen<String?>(currentRouteWorkspaceIdProvider, (previous, next) {
@@ -236,9 +243,9 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
           serverToCreate,
         );
 
-    final client = await _mcpManagerService.connectMcp(serverInfo);
+    final client = await _requiredMcpManagerService.connectMcp(serverInfo);
 
-    final mcpTools = await _mcpManagerService.getTools(client);
+    final mcpTools = await _requiredMcpManagerService.getTools(client);
 
     final repository = ref.read(mcpServersRepositoryProvider);
     final savedServer = await repository.addMcpServerWithTools(
@@ -252,7 +259,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
     );
 
     if (_isDisposed) {
-      _mcpManagerService.disconnect(client);
+      _requiredMcpManagerService.disconnect(client);
       return;
     }
 
@@ -282,7 +289,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
     final connection = state.firstWhereOrNull((c) => c.server.id == serverId);
 
     if (connection != null) {
-      _mcpManagerService.disconnect(connection.client);
+      _requiredMcpManagerService.disconnect(connection.client);
     }
 
     // Remove from state
@@ -301,7 +308,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
   Future<void> reconnectMcpServer(String serverId) async {
     final connection = state.where((c) => c.server.id == serverId).firstOrNull;
     if (connection != null) {
-      _mcpManagerService.disconnect(connection.client);
+      _requiredMcpManagerService.disconnect(connection.client);
       await _connectToMcp(connection.server);
       return;
     }
@@ -321,7 +328,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
     if (index == -1) return;
 
     final connection = state[index];
-    _mcpManagerService.disconnect(connection.client);
+    _requiredMcpManagerService.disconnect(connection.client);
 
     _setState([
       ...state.sublist(0, index),
@@ -459,7 +466,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
       throw Exception('MCP server not connected: $mcpServerId');
     }
 
-    return _mcpManagerService.callToolString(
+    return _requiredMcpManagerService.callToolString(
       client,
       toolIdentifier: toolIdentifier,
       arguments: arguments,
@@ -549,9 +556,11 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
 
     McpManagerClient? connectedClient;
     try {
-      connectedClient = await _mcpManagerService.connectMcp(server);
+      connectedClient = await _requiredMcpManagerService.connectMcp(server);
 
-      final mcpTools = await _mcpManagerService.getTools(connectedClient);
+      final mcpTools = await _requiredMcpManagerService.getTools(
+        connectedClient,
+      );
       if (_isDisposed) {
         return;
       }
@@ -583,7 +592,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
       );
     } finally {
       if (connectedClient != null) {
-        _mcpManagerService.disconnect(connectedClient);
+        _requiredMcpManagerService.disconnect(connectedClient);
       }
     }
   }
@@ -617,7 +626,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
   /// Dispose all active connections.
   void _disposeAllConnections() {
     for (final connection in _lastKnownState) {
-      _mcpManagerService.disconnect(connection.client);
+      _requiredMcpManagerService.disconnect(connection.client);
     }
   }
 

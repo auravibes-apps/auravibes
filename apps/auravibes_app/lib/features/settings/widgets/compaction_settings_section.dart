@@ -33,14 +33,26 @@ class CompactionSettingsSection extends ConsumerStatefulWidget {
 
 class _CompactionSettingsSectionState
     extends ConsumerState<CompactionSettingsSection> {
-  TextEditingController _usageController = throw StateError(
-    '_usageController is not initialized',
-  );
-  TextEditingController _remainingController = throw StateError(
-    '_remainingController is not initialized',
-  );
+  TextEditingController? _usageController;
+  TextEditingController? _remainingController;
   bool _autoEnabled = false;
   String? _validationError;
+
+  TextEditingController get _requiredUsageController {
+    final controller = _usageController;
+    if (controller == null) {
+      throw StateError('_usageController is not initialized');
+    }
+    return controller;
+  }
+
+  TextEditingController get _requiredRemainingController {
+    final controller = _remainingController;
+    if (controller == null) {
+      throw StateError('_remainingController is not initialized');
+    }
+    return controller;
+  }
 
   @override
   void initState() {
@@ -60,8 +72,8 @@ class _CompactionSettingsSectionState
 
   @override
   void dispose() {
-    _usageController.dispose();
-    _remainingController.dispose();
+    _usageController?.dispose();
+    _remainingController?.dispose();
     super.dispose();
   }
 
@@ -70,8 +82,8 @@ class _CompactionSettingsSectionState
     ref.listen(compactionSettingsProvider(widget.workspaceId), (_, next) {
       final settings = next.asData?.value;
       if (settings == null) return;
-      _usageController.text = '${settings.usagePercentageThreshold}';
-      _remainingController.text = '${settings.remainingTokenThreshold}';
+      _requiredUsageController.text = '${settings.usagePercentageThreshold}';
+      _requiredRemainingController.text = '${settings.remainingTokenThreshold}';
       setState(() => _autoEnabled = settings.autoCompactionEnabled);
     });
 
@@ -113,7 +125,7 @@ class _CompactionSettingsSectionState
               ),
             ),
           TextField(
-            controller: _usageController,
+            controller: _requiredUsageController,
             decoration: InputDecoration(
               labelText: LocaleKeys.compaction_settings_usage_threshold.tr(),
               hintText: LocaleKeys.compaction_settings_usage_threshold_hint
@@ -123,7 +135,7 @@ class _CompactionSettingsSectionState
             keyboardType: TextInputType.number,
           ),
           TextField(
-            controller: _remainingController,
+            controller: _requiredRemainingController,
             decoration: InputDecoration(
               labelText: LocaleKeys.compaction_settings_remaining_threshold
                   .tr(),
@@ -163,8 +175,8 @@ class _CompactionSettingsSectionState
   Future<void> _save() async {
     setState(() => _validationError = null);
 
-    final usage = int.tryParse(_usageController.text);
-    final remaining = int.tryParse(_remainingController.text);
+    final usage = int.tryParse(_requiredUsageController.text);
+    final remaining = int.tryParse(_requiredRemainingController.text);
 
     if (usage == null || remaining == null) {
       setState(() {
@@ -226,8 +238,8 @@ class _CompactionSettingsSectionState
     if (!mounted) return;
     setState(() {
       _autoEnabled = defaults.autoCompactionEnabled;
-      _usageController.text = '${defaults.usagePercentageThreshold}';
-      _remainingController.text = '${defaults.remainingTokenThreshold}';
+      _requiredUsageController.text = '${defaults.usagePercentageThreshold}';
+      _requiredRemainingController.text = '${defaults.remainingTokenThreshold}';
       _validationError = null;
     });
     if (mounted) {

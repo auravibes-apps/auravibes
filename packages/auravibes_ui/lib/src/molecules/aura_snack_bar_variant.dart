@@ -150,15 +150,9 @@ class _AuraSnackBarOverlayEntry extends StatefulWidget {
 
 class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
     with SingleTickerProviderStateMixin {
-  AnimationController _animationController = throw StateError(
-    '_animationController is not initialized',
-  );
-  Animation<Offset> _slideAnimation = throw StateError(
-    '_slideAnimation is not initialized',
-  );
-  Animation<double> _fadeAnimation = throw StateError(
-    '_fadeAnimation is not initialized',
-  );
+  AnimationController? _animationController;
+  Animation<Offset>? _slideAnimation;
+  Animation<double>? _fadeAnimation;
   Timer? _dismissTimer;
   bool _isDismissed = false;
   bool _isDisposed = false;
@@ -168,10 +162,11 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
     super.initState();
 
     // Initialize animation controller
-    _animationController = AnimationController(
+    final animationController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
+    _animationController = animationController;
 
     // Set up slide animation (slide up from bottom)
     _slideAnimation =
@@ -180,7 +175,7 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
           end: Offset.zero,
         ).animate(
           CurvedAnimation(
-            parent: _animationController,
+            parent: animationController,
             curve: Curves.easeOutCubic,
           ),
         );
@@ -192,13 +187,13 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
           end: 1,
         ).animate(
           CurvedAnimation(
-            parent: _animationController,
+            parent: animationController,
             curve: Curves.easeOut,
           ),
         );
 
     // Start entry animation
-    unawaited(_animationController.forward());
+    unawaited(animationController.forward());
 
     // Set up auto-dismiss timer
     _dismissTimer = Timer(widget.duration, dismiss);
@@ -208,7 +203,7 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
   void dispose() {
     _isDisposed = true;
     _dismissTimer?.cancel();
-    _animationController.dispose();
+    _animationController?.dispose();
     super.dispose();
   }
 
@@ -217,8 +212,14 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
     if (_isDismissed || _isDisposed) return;
     _isDismissed = true;
     _dismissTimer?.cancel();
+    final animationController = _animationController;
+    if (animationController == null) {
+      widget.dismissCallback();
+
+      return;
+    }
     unawaited(
-      _animationController
+      animationController
           .reverse()
           .orCancel
           .then((_) {
@@ -239,15 +240,21 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
   @override
   Widget build(BuildContext context) {
     final actionLabel = widget.actionLabel;
+    final slideAnimation = _slideAnimation;
+    final fadeAnimation = _fadeAnimation;
+
+    if (slideAnimation == null || fadeAnimation == null) {
+      return const SizedBox.shrink();
+    }
 
     return Positioned(
       left: 16,
       right: 16,
       bottom: MediaQuery.paddingOf(context).bottom + 16,
       child: SlideTransition(
-        position: _slideAnimation,
+        position: slideAnimation,
         child: FadeTransition(
-          opacity: _fadeAnimation,
+          opacity: fadeAnimation,
           child: Material(
             color: Colors.transparent,
             child: Container(
