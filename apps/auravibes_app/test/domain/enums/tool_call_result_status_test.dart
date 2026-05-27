@@ -157,7 +157,7 @@ void main() {
         );
       });
 
-      test('round-trip fromJson → toJson is identity', () {
+      test('round-trip fromJson -> toJson is identity', () {
         for (final status in ToolCallResultStatus.values) {
           final json = converter.toJson(status);
           expect(converter.fromJson(json), status);

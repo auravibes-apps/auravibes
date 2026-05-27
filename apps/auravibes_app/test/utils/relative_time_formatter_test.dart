@@ -22,12 +22,12 @@ void main() {
   group('boundary conditions', () {
     final now = DateTime(2026, 4, 5, 12);
 
-    test('0 seconds ago → just now', () {
+    test('0 seconds ago -> just now', () {
       final result = formatter.format(now, now: now, translate: mockTranslate);
       expect(result, LocaleKeys.home_screen_date_formatting_just_now);
     });
 
-    test('59 seconds ago → just now', () {
+    test('59 seconds ago -> just now', () {
       final timestamp = now.subtract(const Duration(seconds: 59));
       final result = formatter.format(
         timestamp,
@@ -37,7 +37,7 @@ void main() {
       expect(result, LocaleKeys.home_screen_date_formatting_just_now);
     });
 
-    test('60 seconds ago → minutes ago with value 1', () {
+    test('60 seconds ago -> minutes ago with value 1', () {
       final timestamp = now.subtract(const Duration(seconds: 60));
       final result = formatter.format(
         timestamp,
@@ -50,7 +50,7 @@ void main() {
       );
     });
 
-    test('59 minutes ago → minutes ago with value 59', () {
+    test('59 minutes ago -> minutes ago with value 59', () {
       final timestamp = now.subtract(const Duration(minutes: 59));
       final result = formatter.format(
         timestamp,
@@ -63,7 +63,7 @@ void main() {
       );
     });
 
-    test('60 minutes ago → hours ago with value 1', () {
+    test('60 minutes ago -> hours ago with value 1', () {
       final timestamp = now.subtract(const Duration(minutes: 60));
       final result = formatter.format(
         timestamp,
@@ -76,7 +76,7 @@ void main() {
       );
     });
 
-    test('23 hours ago → hours ago with value 23', () {
+    test('23 hours ago -> hours ago with value 23', () {
       final timestamp = now.subtract(const Duration(hours: 23));
       final result = formatter.format(
         timestamp,
@@ -89,7 +89,7 @@ void main() {
       );
     });
 
-    test('24 hours ago → days ago with value 1', () {
+    test('24 hours ago -> days ago with value 1', () {
       final timestamp = now.subtract(const Duration(hours: 24));
       final result = formatter.format(
         timestamp,
@@ -102,7 +102,7 @@ void main() {
       );
     });
 
-    test('future timestamp → just now', () {
+    test('future timestamp -> just now', () {
       final timestamp = now.add(const Duration(hours: 2));
       final result = formatter.format(
         timestamp,
@@ -112,7 +112,7 @@ void main() {
       expect(result, LocaleKeys.home_screen_date_formatting_just_now);
     });
 
-    test('far future timestamp → just now', () {
+    test('far future timestamp -> just now', () {
       final timestamp = now.add(const Duration(days: 365));
       final result = formatter.format(
         timestamp,

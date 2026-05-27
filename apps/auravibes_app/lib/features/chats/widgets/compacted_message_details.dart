@@ -43,7 +43,7 @@ class CompactedMessageDetails extends StatelessWidget {
             _DetailRow(
               label: LocaleKeys.compaction_compacted_details_range.tr(),
               value:
-                  '${metadata!.compactedFromMessageId} → '
+                  '${metadata!.compactedFromMessageId} -> '
                   '${metadata.compactedThroughMessageId}',
             ),
           _DetailRow(

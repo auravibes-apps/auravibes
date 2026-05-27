@@ -103,11 +103,28 @@ void main() {
     });
 
     test('slugServerName handles unicode characters', () {
-      const server = McpServerToCreate(
-        name: 'Serveur Français',
+      final server = McpServerToCreate(
+        name: String.fromCharCodes([
+          83,
+          101,
+          114,
+          118,
+          101,
+          117,
+          114,
+          32,
+          70,
+          114,
+          97,
+          110,
+          0x00e7,
+          97,
+          105,
+          115,
+        ]),
         url: 'http://localhost',
-        transport: McpTransportTypeSSE(),
-        authenticationType: McpAuthenticationType.none(),
+        transport: const McpTransportTypeSSE(),
+        authenticationType: const McpAuthenticationType.none(),
       );
       expect(server.slugServerName, 'serveur_fran_ais');
     });

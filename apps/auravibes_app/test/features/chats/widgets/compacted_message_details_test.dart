@@ -73,7 +73,7 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     expect(find.text('Compaction summary content'), findsOneWidget);
-    expect(find.text('from-1 → to-1'), findsOneWidget);
+    expect(find.text('from-1 -> to-1'), findsOneWidget);
     expect(find.text('2'), findsOneWidget);
   });
 }

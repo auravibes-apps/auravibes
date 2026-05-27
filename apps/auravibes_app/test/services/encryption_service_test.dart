@@ -68,7 +68,20 @@ void main() {
     });
 
     test('encrypt handles unicode', () async {
-      const plaintext = '你好世界 🌍 مرحبا';
+      final plaintext = String.fromCharCodes([
+        0x4f60,
+        0x597d,
+        0x4e16,
+        0x754c,
+        32,
+        0x1f30d,
+        32,
+        0x0645,
+        0x0631,
+        0x062d,
+        0x0628,
+        0x0627,
+      ]);
       final encrypted = await service.encrypt(plaintext);
       final decrypted = await service.decrypt(encrypted);
       expect(decrypted, plaintext);
