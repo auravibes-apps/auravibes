@@ -4,9 +4,11 @@ import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.d
 import 'package:auravibes_app/services/chatbot_service/provider_factory.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/secret_key_manager.dart';
+import 'package:auravibes_genkit_openai_compat/auravibes_genkit_openai_compat.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genkit/genkit.dart';
+import 'package:genkit_anthropic/genkit_anthropic.dart';
 
 void main() {
   group('ProviderFactory', () {
@@ -19,6 +21,8 @@ void main() {
       String modelId = 'gpt-4o',
       String? connectionUrl,
       String? providerUrl,
+      String providerId = 'p1',
+      String providerName = 'TestProvider',
       bool supportsReasoning = false,
     }) {
       return WorkspaceModelSelectionWithConnectionEntity(
@@ -41,8 +45,8 @@ void main() {
           url: connectionUrl,
         ),
         modelsProvider: ApiModelProviderEntity(
-          id: 'p1',
-          name: 'TestProvider',
+          id: providerId,
+          name: providerName,
           type: type,
           url: providerUrl,
         ),
@@ -83,6 +87,16 @@ void main() {
       expect(ref.name, 'anthropic/claude-sonnet-4-0');
     });
 
+    test('uses typed anthropic model reference for anthropic provider', () {
+      final config = makeConfig(
+        type: ModelProvidersType.anthropic,
+        modelId: 'claude-sonnet-4-0',
+      );
+      final ref = factory.getModelReference(config);
+
+      expect(ref.customOptions, same(AnthropicOptions.$schema));
+    });
+
     test('resolves anthropic provider URL with anthropic namespace', () {
       final config = makeConfig(
         type: ModelProvidersType.anthropic,
@@ -108,13 +122,74 @@ void main() {
       },
     );
 
+    test(
+      'resolves OpenAI-compatible reasoning model to custom namespace',
+      () {
+        final config = makeConfig(
+          type: ModelProvidersType.openai,
+          modelId: 'glm-4.5',
+          providerUrl: 'https://openai-compatible.example.com/v1',
+          supportsReasoning: true,
+        );
+        final ref = factory.getModelReference(config);
+
+        expect(ref.name, 'openai_reasoning/glm-4.5');
+      },
+    );
+
     test('enables thinking config for reasoning-capable anthropic models', () {
       final config = makeConfig(
         type: ModelProvidersType.anthropic,
         supportsReasoning: true,
       );
 
-      expect(factory.getGenerationConfig(config), {
+      expect(_generationConfigJson(factory.getGenerationConfig(config)), {
+        'thinking': {'type': 'enabled', 'budgetTokens': 1024},
+      });
+    });
+
+    test('does not infer anthropic reasoning from known model ids', () {
+      final config = makeConfig(
+        type: ModelProvidersType.anthropic,
+        modelId: 'claude-sonnet-4-5',
+      );
+
+      expect(factory.getGenerationConfig(config), isNull);
+    });
+
+    test(
+      'uses adaptive thinking for anthropic models that support it',
+      () {
+        for (final modelId in [
+          'claude-mythos-preview',
+          'claude-opus-4-7',
+          'claude-opus-4-6',
+          'claude-sonnet-4-6',
+        ]) {
+          final config = makeConfig(
+            type: ModelProvidersType.anthropic,
+            modelId: modelId,
+            supportsReasoning: true,
+          );
+
+          expect(
+            _generationConfigJson(factory.getGenerationConfig(config)),
+            {
+              'thinking': {'type': 'adaptive'},
+            },
+          );
+        }
+      },
+    );
+
+    test('uses manual thinking for older anthropic reasoning models', () {
+      final config = makeConfig(
+        type: ModelProvidersType.anthropic,
+        modelId: 'claude-sonnet-4-5',
+        supportsReasoning: true,
+      );
+
+      expect(_generationConfigJson(factory.getGenerationConfig(config)), {
         'thinking': {'type': 'enabled', 'budgetTokens': 1024},
       });
     });
@@ -134,7 +209,45 @@ void main() {
 
       expect(factory.getGenerationConfig(config), isNull);
     });
+
+    test('enables thinking config for OpenAI-compatible reasoning models', () {
+      final config = makeConfig(
+        type: ModelProvidersType.openai,
+        modelId: 'glm-4.5',
+        providerUrl: 'https://openai-compatible.example.com/v1',
+        supportsReasoning: true,
+      );
+
+      expect(_generationConfigJson(factory.getGenerationConfig(config)), {
+        'reasoning': {'type': 'enabled'},
+      });
+    });
+
+    test(
+      'falls back to OpenAI namespace when reasoning model has no base URL',
+      () {
+        final config = makeConfig(
+          type: ModelProvidersType.openai,
+          modelId: 'glm-4.5',
+          supportsReasoning: true,
+        );
+        final ref = factory.getModelReference(config);
+
+        expect(ref.name, 'openai/glm-4.5');
+        expect(factory.getGenerationConfig(config), isNull);
+      },
+    );
   });
+}
+
+Map<String, dynamic>? _generationConfigJson(Object? config) {
+  return switch (config) {
+    AnthropicOptions() => config.toJson(),
+    OpenAICompatReasoningOptions() => config.toJson(),
+    Map<String, dynamic>() => config,
+    null => null,
+    _ => throw StateError('Unexpected generation config: $config'),
+  };
 }
 
 class _FakeEncryptionService extends EncryptionService {

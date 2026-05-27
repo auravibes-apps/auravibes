@@ -144,8 +144,9 @@ class ChatbotService {
   String? _extractThinking(GenerateResponseChunk<dynamic> chunk) {
     final thinking = StringBuffer();
     for (final part in chunk.content) {
-      if (part is ReasoningPart && part.reasoning.isNotEmpty) {
-        thinking.write(part.reasoning);
+      final reasoning = part.reasoning;
+      if (reasoning != null && reasoning.isNotEmpty) {
+        thinking.write(reasoning);
       }
     }
     return thinking.isEmpty ? null : thinking.toString();
