@@ -1,23 +1,21 @@
 import 'dart:convert';
+
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:genkit/genkit.dart';
 
-class ChatResult<T> {
-  const ChatResult({
-    required this.output,
-    this.finishReason = FinishReason.unspecified,
-    this.usage,
-    this.metadata = const {},
-    this.messages = const [],
-    this.thinking,
-  });
+part 'chat_result.freezed.dart';
 
-  final T output;
-  final FinishReason finishReason;
-  final LanguageModelUsage? usage;
-  final Map<String, dynamic> metadata;
-  final List<dynamic> messages;
-  final String? thinking;
+@freezed
+abstract class ChatResult<T> with _$ChatResult<T> {
+  const factory ChatResult({
+    required T output,
+    @Default(FinishReason.unspecified) FinishReason finishReason,
+    LanguageModelUsage? usage,
+    @Default(<String, dynamic>{}) Map<String, dynamic> metadata,
+    @Default([]) List<T> messages,
+    String? thinking,
+  }) = _ChatResult<T>;
 }
 
 enum ChatMessageRole { system, user, model, tool }
@@ -37,13 +35,16 @@ class ChatMessageToolResult {
   dynamic get result => response.output;
 }
 
-class ChatMessage {
-  const ChatMessage({
-    required this.role,
-    this.content = '',
-    this.parts = const [],
-    this.metadata = const {},
-  });
+@freezed
+abstract class ChatMessage with _$ChatMessage {
+  const factory ChatMessage({
+    required ChatMessageRole role,
+    @Default('') String content,
+    @Default(<Part>[]) List<Part> parts,
+    @Default(<String, dynamic>{}) Map<String, dynamic> metadata,
+  }) = _ChatMessage;
+
+  const ChatMessage._();
 
   factory ChatMessage.user(String content, {List<Part> parts = const []}) =>
       ChatMessage(role: ChatMessageRole.user, content: content, parts: parts);
@@ -62,11 +63,6 @@ class ChatMessage {
     metadata: metadata,
   );
 
-  final ChatMessageRole role;
-  final String content;
-  final List<Part> parts;
-  final Map<String, dynamic> metadata;
-
   List<ChatMessageToolCall> get toolCalls => parts
       .whereType<ToolRequestPart>()
       .map((p) => ChatMessageToolCall(p.toolRequest))
@@ -78,23 +74,6 @@ class ChatMessage {
   String get text => content.isNotEmpty
       ? content
       : parts.whereType<TextPart>().map((p) => p.text).join();
-
-  // Required: allow copyWith to be called without passing metadata parameter
-  // ignore: unnecessary-nullable
-  ChatMessage copyWith({
-    ChatMessageRole? role,
-    String? content,
-    List<Part>? parts,
-    // ignore: unnecessary-nullable
-    Map<String, dynamic>? metadata,
-  }) {
-    return ChatMessage(
-      role: role ?? this.role,
-      content: content ?? this.content,
-      parts: parts ?? this.parts,
-      metadata: metadata ?? this.metadata,
-    );
-  }
 
   ChatMessage concatenate(ChatMessage delta) {
     final newContent = content + delta.content;
@@ -113,21 +92,21 @@ enum FinishReason {
   stop,
   length,
   toolCalls,
+  interrupted,
   contentFilter,
   other,
   unspecified,
 }
 
-class LanguageModelUsage {
-  const LanguageModelUsage({
-    this.promptTokens,
-    this.responseTokens,
-    this.totalTokens,
-  });
+@freezed
+abstract class LanguageModelUsage with _$LanguageModelUsage {
+  const factory LanguageModelUsage({
+    int? promptTokens,
+    int? responseTokens,
+    int? totalTokens,
+  }) = _LanguageModelUsage;
 
-  final int? promptTokens;
-  final int? responseTokens;
-  final int? totalTokens;
+  const LanguageModelUsage._();
 
   LanguageModelUsage concat(LanguageModelUsage other) {
     return LanguageModelUsage(
@@ -198,14 +177,15 @@ extension ChatResultEntities on ChatResult<ChatMessage> {
   String get entityText => output.text;
 
   String? get entityThinking {
+    final resultThinking = thinking?.trim().isNotEmpty ?? false;
     final chunks = <String>[
-      if (thinking case final value? when value.trim().isNotEmpty) value,
-      for (final part in output.parts.whereType<ReasoningPart>())
-        if (part.reasoning.trim().isNotEmpty) part.reasoning,
+      if (thinking case final value? when resultThinking) value,
+      if (!resultThinking)
+        for (final part in output.parts.whereType<ReasoningPart>())
+          if (part.reasoning.trim().isNotEmpty) part.reasoning,
       for (final message in messages)
-        if (message is ChatMessage)
-          for (final part in message.parts.whereType<ReasoningPart>())
-            if (part.reasoning.trim().isNotEmpty) part.reasoning,
+        for (final part in message.parts.whereType<ReasoningPart>())
+          if (part.reasoning.trim().isNotEmpty) part.reasoning,
     ];
 
     if (chunks.isEmpty) return null;
@@ -216,8 +196,7 @@ extension ChatResultEntities on ChatResult<ChatMessage> {
     return <String, Object?>{
       ...metadata,
       ...output.metadata,
-      for (final message in messages)
-        if (message is ChatMessage) ...message.metadata,
+      for (final message in messages) ...message.metadata,
     }..removeWhere((_, value) => value == null);
   }
 

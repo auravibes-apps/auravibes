@@ -1,4 +1,5 @@
 import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genkit/genkit.dart';
 
@@ -99,8 +100,8 @@ void main() {
       );
 
       expect(res.entityTools.length, 1);
-      expect(res.entityTools.first.id, 'call-1');
-      expect(res.entityTools.first.name, 'getWeather');
+      expect(res.entityTools.firstOrNull?.id, 'call-1');
+      expect(res.entityTools.firstOrNull?.name, 'getWeather');
     });
   });
 }

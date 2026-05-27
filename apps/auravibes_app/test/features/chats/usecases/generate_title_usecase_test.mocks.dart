@@ -3,23 +3,21 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i6;
+import 'dart:async' as _i5;
 
 import 'package:auravibes_app/domain/entities/conversation_entity.dart' as _i2;
-import 'package:auravibes_app/domain/entities/tool_spec.dart' as _i10;
+import 'package:auravibes_app/domain/entities/tool_spec.dart' as _i9;
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart'
-    as _i9;
+    as _i8;
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart'
-    as _i5;
-import 'package:auravibes_app/domain/repositories/model_connection_repository.dart'
-    as _i3;
-import 'package:auravibes_app/services/chatbot_service/chat_result.dart' as _i8;
+    as _i4;
+import 'package:auravibes_app/services/chatbot_service/chat_result.dart' as _i7;
 import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart'
-    as _i7;
-import 'package:auravibes_app/services/encryption_service.dart' as _i4;
-import 'package:auravibes_app/services/monitoring_service.dart' as _i12;
+    as _i6;
+import 'package:auravibes_app/services/encryption_service.dart' as _i3;
+import 'package:auravibes_app/services/monitoring_service.dart' as _i11;
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:mockito/src/dummies.dart' as _i11;
+import 'package:mockito/src/dummies.dart' as _i10;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -42,15 +40,9 @@ class _FakeConversationEntity_0 extends _i1.SmartFake
     : super(parent, parentInvocation);
 }
 
-class _FakeModelConnectionRepository_1 extends _i1.SmartFake
-    implements _i3.ModelConnectionRepository {
-  _FakeModelConnectionRepository_1(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
-}
-
-class _FakeEncryptionService_2 extends _i1.SmartFake
-    implements _i4.EncryptionService {
-  _FakeEncryptionService_2(Object parent, Invocation parentInvocation)
+class _FakeEncryptionService_1 extends _i1.SmartFake
+    implements _i3.EncryptionService {
+  _FakeEncryptionService_1(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
@@ -58,13 +50,13 @@ class _FakeEncryptionService_2 extends _i1.SmartFake
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockConversationRepository extends _i1.Mock
-    implements _i5.ConversationRepository {
+    implements _i4.ConversationRepository {
   MockConversationRepository() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i6.Stream<List<_i2.ConversationEntity>> watchConversationsByWorkspace(
+  _i5.Stream<List<_i2.ConversationEntity>> watchConversationsByWorkspace(
     String? workspaceId, {
     int? limit,
   }) =>
@@ -74,114 +66,96 @@ class MockConversationRepository extends _i1.Mock
               [workspaceId],
               {#limit: limit},
             ),
-            returnValue: _i6.Stream<List<_i2.ConversationEntity>>.empty(),
+            returnValue: _i5.Stream<List<_i2.ConversationEntity>>.empty(),
           )
-          as _i6.Stream<List<_i2.ConversationEntity>>);
+          as _i5.Stream<List<_i2.ConversationEntity>>);
 
   @override
-  _i6.Stream<_i2.ConversationEntity?> watchConversationById(String? id) =>
+  _i5.Stream<_i2.ConversationEntity?> watchConversationById(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#watchConversationById, [id]),
-            returnValue: _i6.Stream<_i2.ConversationEntity?>.empty(),
+            returnValue: _i5.Stream<_i2.ConversationEntity?>.empty(),
           )
-          as _i6.Stream<_i2.ConversationEntity?>);
+          as _i5.Stream<_i2.ConversationEntity?>);
 
   @override
-  _i6.Future<_i2.ConversationEntity?> getConversationById(String? id) =>
+  _i5.Future<_i2.ConversationEntity?> getConversationById(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#getConversationById, [id]),
-            returnValue: _i6.Future<_i2.ConversationEntity?>.value(),
+            returnValue: _i5.Future<_i2.ConversationEntity?>.value(),
           )
-          as _i6.Future<_i2.ConversationEntity?>);
+          as _i5.Future<_i2.ConversationEntity?>);
 
   @override
-  _i6.Future<_i2.ConversationEntity> createConversation(
+  _i5.Future<_i2.ConversationEntity> createConversation(
     _i2.ConversationToCreate? conversation,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#createConversation, [conversation]),
-            returnValue: _i6.Future<_i2.ConversationEntity>.value(
+            returnValue: _i5.Future<_i2.ConversationEntity>.value(
               _FakeConversationEntity_0(
                 this,
                 Invocation.method(#createConversation, [conversation]),
               ),
             ),
           )
-          as _i6.Future<_i2.ConversationEntity>);
+          as _i5.Future<_i2.ConversationEntity>);
 
   @override
-  _i6.Future<_i2.ConversationEntity> patchConversation(
+  _i5.Future<_i2.ConversationEntity> patchConversation(
     String? id,
     _i2.ConversationPatch? conversation,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#patchConversation, [id, conversation]),
-            returnValue: _i6.Future<_i2.ConversationEntity>.value(
+            returnValue: _i5.Future<_i2.ConversationEntity>.value(
               _FakeConversationEntity_0(
                 this,
                 Invocation.method(#patchConversation, [id, conversation]),
               ),
             ),
           )
-          as _i6.Future<_i2.ConversationEntity>);
+          as _i5.Future<_i2.ConversationEntity>);
 
   @override
-  _i6.Future<bool> deleteConversation(String? id) =>
+  _i5.Future<bool> deleteConversation(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#deleteConversation, [id]),
-            returnValue: _i6.Future<bool>.value(false),
+            returnValue: _i5.Future<bool>.value(false),
           )
-          as _i6.Future<bool>);
+          as _i5.Future<bool>);
 }
 
 /// A class which mocks [ChatbotService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockChatbotService extends _i1.Mock implements _i7.ChatbotService {
+class MockChatbotService extends _i1.Mock implements _i6.ChatbotService {
   MockChatbotService() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i3.ModelConnectionRepository get modelConnectionRepository =>
-      (super.noSuchMethod(
-            Invocation.getter(#modelConnectionRepository),
-            returnValue: _FakeModelConnectionRepository_1(
-              this,
-              Invocation.getter(#modelConnectionRepository),
-            ),
-          )
-          as _i3.ModelConnectionRepository);
-
-  @override
-  _i4.EncryptionService get encryptionService =>
+  _i3.EncryptionService get encryptionService =>
       (super.noSuchMethod(
             Invocation.getter(#encryptionService),
-            returnValue: _FakeEncryptionService_2(
+            returnValue: _FakeEncryptionService_1(
               this,
               Invocation.getter(#encryptionService),
             ),
           )
-          as _i4.EncryptionService);
+          as _i3.EncryptionService);
 
   @override
-  set modelConnectionRepository(_i3.ModelConnectionRepository? value) =>
-      super.noSuchMethod(
-        Invocation.setter(#modelConnectionRepository, value),
-        returnValueForMissingStub: null,
-      );
-
-  @override
-  set encryptionService(_i4.EncryptionService? value) => super.noSuchMethod(
+  set encryptionService(_i3.EncryptionService? value) => super.noSuchMethod(
     Invocation.setter(#encryptionService, value),
     returnValueForMissingStub: null,
   );
 
   @override
-  _i6.Stream<_i8.ChatResult<_i8.ChatMessage>> sendMessage(
-    _i9.WorkspaceModelSelectionWithConnectionEntity? chatProvider,
-    List<_i8.ChatMessage>? history, {
-    List<_i10.ToolSpec>? tools,
+  _i5.Stream<_i7.ChatResult<_i7.ChatMessage>> sendMessage(
+    _i8.WorkspaceModelSelectionWithConnectionEntity? chatProvider,
+    List<_i7.ChatMessage>? history, {
+    List<_i9.ToolSpec>? tools,
   }) =>
       (super.noSuchMethod(
             Invocation.method(
@@ -189,42 +163,42 @@ class MockChatbotService extends _i1.Mock implements _i7.ChatbotService {
               [chatProvider, history],
               {#tools: tools},
             ),
-            returnValue: _i6.Stream<_i8.ChatResult<_i8.ChatMessage>>.empty(),
+            returnValue: _i5.Stream<_i7.ChatResult<_i7.ChatMessage>>.empty(),
           )
-          as _i6.Stream<_i8.ChatResult<_i8.ChatMessage>>);
+          as _i5.Stream<_i7.ChatResult<_i7.ChatMessage>>);
 
   @override
-  _i6.Future<String> generateTitle(
-    _i9.WorkspaceModelSelectionWithConnectionEntity? chatProvider,
+  _i5.Future<String> generateTitle(
+    _i8.WorkspaceModelSelectionWithConnectionEntity? chatProvider,
     String? firstMessage,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#generateTitle, [chatProvider, firstMessage]),
-            returnValue: _i6.Future<String>.value(
-              _i11.dummyValue<String>(
+            returnValue: _i5.Future<String>.value(
+              _i10.dummyValue<String>(
                 this,
                 Invocation.method(#generateTitle, [chatProvider, firstMessage]),
               ),
             ),
           )
-          as _i6.Future<String>);
+          as _i5.Future<String>);
 
   @override
-  _i6.Stream<String> streamTitle(
-    _i9.WorkspaceModelSelectionWithConnectionEntity? chatProvider,
+  _i5.Stream<String> streamTitle(
+    _i8.WorkspaceModelSelectionWithConnectionEntity? chatProvider,
     String? firstMessage,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#streamTitle, [chatProvider, firstMessage]),
-            returnValue: _i6.Stream<String>.empty(),
+            returnValue: _i5.Stream<String>.empty(),
           )
-          as _i6.Stream<String>);
+          as _i5.Stream<String>);
 }
 
 /// A class which mocks [MonitoringService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockMonitoringService extends _i1.Mock implements _i12.MonitoringService {
+class MockMonitoringService extends _i1.Mock implements _i11.MonitoringService {
   MockMonitoringService() {
     _i1.throwOnMissingStub(this);
   }

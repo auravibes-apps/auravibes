@@ -26,6 +26,12 @@ class _FakeChatMessage_0 extends _i1.SmartFake implements _i2.ChatMessage {
     : super(parent, parentInvocation);
 }
 
+class _Fake$ChatResultCopyWith_1<T, $Res> extends _i1.SmartFake
+    implements _i2.$ChatResultCopyWith<T, $Res> {
+  _Fake$ChatResultCopyWith_1(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
 /// A class which mocks [ChatResult].
 ///
 /// See the documentation for Mockito's code generation for more information.
@@ -62,11 +68,32 @@ class MockChatResult extends _i1.Mock
           as Map<String, dynamic>);
 
   @override
-  List<dynamic> get messages =>
+  List<_i2.ChatMessage> get messages =>
       (super.noSuchMethod(
             Invocation.getter(#messages),
-            returnValue: <dynamic>[],
-            returnValueForMissingStub: <dynamic>[],
+            returnValue: <_i2.ChatMessage>[],
+            returnValueForMissingStub: <_i2.ChatMessage>[],
           )
-          as List<dynamic>);
+          as List<_i2.ChatMessage>);
+
+  @override
+  _i2.$ChatResultCopyWith<_i2.ChatMessage, _i2.ChatResult<_i2.ChatMessage>>
+  get copyWith =>
+      (super.noSuchMethod(
+            Invocation.getter(#copyWith),
+            returnValue:
+                _Fake$ChatResultCopyWith_1<
+                  _i2.ChatMessage,
+                  _i2.ChatResult<_i2.ChatMessage>
+                >(this, Invocation.getter(#copyWith)),
+            returnValueForMissingStub:
+                _Fake$ChatResultCopyWith_1<
+                  _i2.ChatMessage,
+                  _i2.ChatResult<_i2.ChatMessage>
+                >(this, Invocation.getter(#copyWith)),
+          )
+          as _i2.$ChatResultCopyWith<
+            _i2.ChatMessage,
+            _i2.ChatResult<_i2.ChatMessage>
+          >);
 }

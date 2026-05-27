@@ -1,5 +1,6 @@
 import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:genkit/genkit.dart';
 
 void main() {
   group('ChatResult Concat', () {
@@ -63,6 +64,18 @@ void main() {
 
       expect(result.entityThinking, 'Reasoned summary');
       expect(result.entityMetadata?.thinking, 'Reasoned summary');
+    });
+
+    test('does not duplicate output reasoning when result thinking exists', () {
+      final result = ChatResult<ChatMessage>(
+        output: ChatMessage.model(
+          'Answer',
+          parts: [ReasoningPart(reasoning: 'Reasoned summary')],
+        ),
+        thinking: 'Reasoned summary',
+      );
+
+      expect(result.entityThinking, 'Reasoned summary');
     });
 
     test('persists model metadata for provider continuation', () {

@@ -1,6 +1,5 @@
 import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
-import 'package:auravibes_app/domain/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:auravibes_app/services/chatbot_service/provider_factory.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
@@ -9,14 +8,12 @@ import 'package:schemantic/schemantic.dart';
 
 class ChatbotService {
   ChatbotService({
-    required this.modelConnectionRepository,
     required this.encryptionService,
     ProviderFactory? providerFactory,
   }) : _providerFactory =
            providerFactory ??
            ProviderFactory(encryptionService: encryptionService);
 
-  ModelConnectionRepository modelConnectionRepository;
   EncryptionService encryptionService;
   final ProviderFactory _providerFactory;
 
@@ -98,7 +95,8 @@ class ChatbotService {
 
   static String generateFallbackTitle(String message) {
     final words = message
-        .split(' ')
+        .trim()
+        .split(RegExp(r'\s+'))
         .where((word) => word.isNotEmpty)
         .take(4)
         .join(' ');
@@ -142,17 +140,13 @@ class ChatbotService {
   }
 
   String? _extractThinking(GenerateResponseChunk<dynamic> chunk) {
-    try {
-      final thinking = StringBuffer();
-      for (final part in chunk.content) {
-        if (part is ReasoningPart && part.reasoning.isNotEmpty) {
-          thinking.write(part.reasoning);
-        }
+    final thinking = StringBuffer();
+    for (final part in chunk.content) {
+      if (part is ReasoningPart && part.reasoning.isNotEmpty) {
+        thinking.write(part.reasoning);
       }
-      return thinking.isEmpty ? null : thinking.toString();
-    } on Exception catch (_) {
-      return null;
     }
+    return thinking.isEmpty ? null : thinking.toString();
   }
 
   ChatResult<ChatMessage> _finalChatResult(
@@ -196,7 +190,7 @@ class ChatbotService {
       null => FinishReason.unspecified,
       'stop' => FinishReason.stop,
       'length' => FinishReason.length,
-      'interrupted' => FinishReason.toolCalls,
+      'interrupted' => FinishReason.interrupted,
       _ => FinishReason.other,
     };
   }

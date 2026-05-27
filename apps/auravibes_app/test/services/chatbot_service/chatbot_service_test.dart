@@ -2,12 +2,12 @@ import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
-import 'package:auravibes_app/domain/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
 import 'package:auravibes_app/services/chatbot_service/provider_factory.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/secret_key_manager.dart';
+import 'package:collection/collection.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genkit/genkit.dart' as genkit;
@@ -17,30 +17,25 @@ void main() {
     test('can be constructed with required dependencies', () {
       expect(
         () => ChatbotService(
-          modelConnectionRepository: _FakeModelConnectionRepository(),
           encryptionService: _FakeEncryptionService(),
         ),
         returnsNormally,
       );
     });
 
-    test('exposes injected dependencies', () {
-      final repo = _FakeModelConnectionRepository();
+    test('exposes injected encryption dependency', () {
       final encryption = _FakeEncryptionService();
 
       final service = ChatbotService(
-        modelConnectionRepository: repo,
         encryptionService: encryption,
       );
 
-      expect(service.modelConnectionRepository, same(repo));
       expect(service.encryptionService, same(encryption));
     });
 
-    test('accepts optional providerFactory and toolAdapter', () {
+    test('accepts optional providerFactory', () {
       expect(
         () => ChatbotService(
-          modelConnectionRepository: _FakeModelConnectionRepository(),
           encryptionService: _FakeEncryptionService(),
         ),
         returnsNormally,
@@ -123,7 +118,7 @@ void main() {
           .toList();
 
       expect(results, hasLength(2));
-      expect(results.first.output.text, 'Hello');
+      expect(results.firstOrNull?.output.text, 'Hello');
       expect(results.last.finishReason, FinishReason.toolCalls);
       expect(results.last.entityTools.single.id, 'tool-1');
       expect(results.last.entityPromptTokens, 12);
@@ -153,7 +148,7 @@ void main() {
       expect(results.single.finishReason, FinishReason.length);
     });
 
-    test('maps interrupted finish reason to tool calls', () async {
+    test('maps interrupted finish reason distinctly', () async {
       final service = _createService(
         providerFactory: _FakeProviderFactory(
           response: _modelResponse(genkit.FinishReason.interrupted),
@@ -162,7 +157,7 @@ void main() {
 
       final results = await service.sendMessage(_makeConfig(), []).toList();
 
-      expect(results.single.finishReason, FinishReason.toolCalls);
+      expect(results.single.finishReason, FinishReason.interrupted);
     });
 
     test('maps unknown finish reason to other', () async {
@@ -262,7 +257,7 @@ void main() {
 
     test('handles tab and newline separated words', () {
       final title = ChatbotService.generateFallbackTitle(
-        'word1 word2 word3 word4 word5',
+        'word1\tword2\nword3\tword4 word5',
       );
       expect(title, 'word1 word2 word3 word4');
     });
@@ -397,7 +392,6 @@ String _processTitle(String title) {
 
 ChatbotService _createService({ProviderFactory? providerFactory}) {
   return ChatbotService(
-    modelConnectionRepository: _FakeModelConnectionRepository(),
     encryptionService: _FakeEncryptionService(),
     providerFactory: providerFactory,
   );
@@ -474,25 +468,6 @@ class _FakeProviderFactory extends ProviderFactory {
     WorkspaceModelSelectionWithConnectionEntity config,
   ) {
     return genkit.modelRef<dynamic>('test/model');
-  }
-}
-
-class _FakeModelConnectionRepository extends ModelConnectionRepository {
-  @override
-  Future<ModelConnectionEntity> createModelConnection(
-    ModelConnectionToCreate _,
-  ) async {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<void> deleteModelConnection(String _) async {}
-
-  @override
-  Future<List<ModelConnectionEntity>> getModelConnections(
-    ModelConnectionFilter _,
-  ) async {
-    return [];
   }
 }
 

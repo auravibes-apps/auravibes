@@ -20,10 +20,11 @@ class ProviderFactory {
     final type = config.modelsProvider.type;
     final connectionUrl = config.modelConnection.url;
     final baseUrl = connectionUrl ?? config.modelsProvider.url;
+    final shouldUseAnthropic = _shouldUseAnthropic(type, connectionUrl);
 
     return Genkit(
       plugins: [
-        if (type == ModelProvidersType.anthropic && connectionUrl == null)
+        if (shouldUseAnthropic)
           anthropic(apiKey: apiKey, baseUrl: baseUrl)
         else
           openAI(
@@ -41,11 +42,14 @@ class ProviderFactory {
     final modelId = config.workspaceModelSelection.modelId;
     final connectionUrl = config.modelConnection.url;
 
-    final provider =
-        (type == ModelProvidersType.anthropic && connectionUrl == null)
+    final provider = _shouldUseAnthropic(type, connectionUrl)
         ? 'anthropic'
         : 'openai';
 
     return modelRef<dynamic>('$provider/$modelId');
+  }
+
+  bool _shouldUseAnthropic(ModelProvidersType? type, String? connectionUrl) {
+    return type == ModelProvidersType.anthropic && connectionUrl == null;
   }
 }
