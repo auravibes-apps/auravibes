@@ -672,12 +672,53 @@ void main() {
       expect(record.error, same(expectedError));
       expect(record.stackTrace, isNotNull);
     });
+
+    test('logs tool sync failures without failing connection', () async {
+      final records = <LogRecord>[];
+      final subscription = Logger.root.onRecord.listen(records.add);
+      addTearDown(subscription.cancel);
+      final previousLevel = Logger.root.level;
+      Logger.root.level = Level.ALL;
+      addTearDown(() {
+        Logger.root.level = previousLevel;
+      });
+
+      final expectedError = Exception('sync failed');
+      mcpServersRepository
+        ..serverById = _server
+        ..syncToolsError = expectedError;
+      final testContainer = ProviderContainer(
+        overrides: [
+          mcpServersRepositoryProvider.overrideWithValue(mcpServersRepository),
+          mcpManagerServiceProvider.overrideWithValue(
+            _SuccessfulMcpManagerService(),
+          ),
+        ],
+      );
+      addTearDown(testContainer.dispose);
+
+      final notifier = testContainer.read(mcpConnectionProvider.notifier);
+      await notifier.reconnectMcpServer('server-1');
+
+      final state = testContainer.read(mcpConnectionProvider);
+      expect(state, hasLength(1));
+      expect(state.firstOrNull?.status, McpConnectionStatus.connected);
+      final record = records.firstWhere(
+        (record) =>
+            record.loggerName == 'McpConnectionNotifier' &&
+            record.level == Level.WARNING &&
+            record.message == 'Failed to sync MCP tools to database',
+      );
+      expect(record.error, same(expectedError));
+      expect(record.stackTrace, isNotNull);
+    });
   });
 }
 
 class _FakeMcpServersRepository implements McpServersRepository {
   List<String> deletedIds = [];
   Exception? enabledServersError;
+  Exception? syncToolsError;
   McpServerEntity? serverById;
 
   @override
@@ -721,7 +762,11 @@ class _FakeMcpServersRepository implements McpServersRepository {
   Future<void> syncMcpTools({
     required String mcpServerId,
     required List<McpToolInfo> currentTools,
-  }) async {}
+  }) async {
+    if (syncToolsError case final error?) {
+      throw error;
+    }
+  }
 }
 
 class _FailingMcpManagerService extends McpManagerService {
@@ -729,4 +774,24 @@ class _FailingMcpManagerService extends McpManagerService {
   Future<McpManagerClient> connectMcp(McpServerToCreate serverInfo) async {
     throw Exception('Connection refused');
   }
+}
+
+class _SuccessfulMcpManagerService extends McpManagerService {
+  @override
+  Future<McpManagerClient> connectMcp(McpServerToCreate serverInfo) async {
+    return _FakeMcpManagerClient();
+  }
+
+  @override
+  Future<void> disconnect(McpManagerClient? client) async {}
+
+  @override
+  Future<List<McpToolInfo>> getTools(McpManagerClient client) async {
+    return const [_toolInfo];
+  }
+}
+
+class _FakeMcpManagerClient implements McpManagerClient {
+  @override
+  Stream<OAuthTokenEntity>? get onTokenUpdate => null;
 }
