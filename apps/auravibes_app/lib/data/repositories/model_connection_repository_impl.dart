@@ -1,3 +1,5 @@
+// ignore_for_file: avoid-substring
+// Required: Existing parsing uses code-unit substring offsets.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';

@@ -1,3 +1,5 @@
+// ignore_for_file: avoid-substring
+// Required: Existing parsing uses code-unit substring offsets.
 import 'package:auravibes_app/utils/string_extensions.dart';
 
 /// Parses a tool's composite ID and provides display-friendly formatting.

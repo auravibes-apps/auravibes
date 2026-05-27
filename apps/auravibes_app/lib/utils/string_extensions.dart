@@ -1,3 +1,5 @@
+// ignore_for_file: avoid-substring
+// Required: Existing parsing uses code-unit substring offsets.
 /// Extension methods for String manipulation.
 extension StringExtensions on String {
   /// Converts an identifier (snake_case, camelCase, kebab-case, or mixed)

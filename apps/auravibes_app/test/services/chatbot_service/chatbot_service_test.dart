@@ -1,3 +1,5 @@
+// ignore_for_file: avoid-substring
+// Required: Tests assert existing code-unit substring behavior.
 // ignore_for_file: avoid-redundant-async
 // Required: Test callbacks intentionally preserve async-compatible signatures.
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';

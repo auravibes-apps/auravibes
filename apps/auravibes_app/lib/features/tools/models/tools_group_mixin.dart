@@ -1,3 +1,5 @@
+// ignore_for_file: avoid-substring
+// Required: Existing parsing uses code-unit substring offsets.
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 import 'package:auravibes_app/domain/models/mcp_connection_view_status.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';

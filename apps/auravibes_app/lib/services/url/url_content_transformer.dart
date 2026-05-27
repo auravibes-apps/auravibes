@@ -1,3 +1,5 @@
+// ignore_for_file: avoid-substring
+// Required: Existing parsing uses code-unit substring offsets.
 // ignore_for_file: cascade_invocations
 // StringBuffer.write returns void, making cascades meaningless.
 // The _processTable method's for-loop bodies separate consecutive

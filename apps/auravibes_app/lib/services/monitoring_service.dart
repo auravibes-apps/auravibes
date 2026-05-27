@@ -1,3 +1,5 @@
+// ignore_for_file: avoid-substring
+// Required: Existing parsing uses code-unit substring offsets.
 import 'package:flutter/foundation.dart';
 import 'package:riverpod/riverpod.dart';
 
