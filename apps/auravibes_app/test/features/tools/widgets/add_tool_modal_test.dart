@@ -152,6 +152,18 @@ void main() {
       expect(find.byIcon(Icons.check_circle_outline), findsOneWidget);
     });
 
+    testWidgets('shows search empty state when query has no matches', (
+      tester,
+    ) async {
+      await _pumpAndInit(tester, _buildSubject(_dataOverride()));
+      await _showDialog(tester);
+
+      await tester.enterText(find.byType(AuraInput), 'not-found');
+      await tester.pump();
+
+      expect(find.byIcon(Icons.search_off), findsOneWidget);
+    });
+
     testWidgets('shows error widget when error', (tester) async {
       await _pumpAndInit(
         tester,

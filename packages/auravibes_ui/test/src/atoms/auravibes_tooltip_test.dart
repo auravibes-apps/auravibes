@@ -1,6 +1,7 @@
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
 import 'package:auravibes_ui/src/atoms/aura_tooltip.dart';
+import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -123,6 +124,25 @@ void main() {
       await tester.pump();
 
       expect(find.text('Above'), findsOneWidget);
+    });
+
+    testWidgets('renders primary color variant tooltip', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AuraTooltip(
+              message: 'Primary',
+              child: Text('Target'),
+              colorVariant: AuraColorVariant.primary,
+            ),
+          ),
+        ),
+      );
+
+      await tester.longPress(find.text('Target'));
+      await tester.pump();
+
+      expect(find.text('Primary'), findsOneWidget);
     });
   });
 }

@@ -17,12 +17,7 @@ import 'package:flutter/services.dart'
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 Future<void> main() async {
-  const flavorName = appFlavor;
-  if (flavorName == null) {
-    throw StateError('appFlavor is not initialized');
-  }
-
-  F.appFlavor = Flavor.values.byName(flavorName);
+  F.appFlavor = AppFlavorResolver.resolve(appFlavor);
   final _ = WidgetsFlutterBinding.ensureInitialized();
   AppLogging.configure(enabled: F.appFlavor != Flavor.prod);
   await MainLocale.ensureInitialized();
@@ -47,6 +42,18 @@ Future<void> main() async {
       child: const MainLocale(child: MyApp()),
     ),
   );
+}
+
+class AppFlavorResolver {
+  AppFlavorResolver._();
+
+  static Flavor resolve(String? flavorName) {
+    if (flavorName == null) {
+      throw StateError('appFlavor is not initialized');
+    }
+
+    return Flavor.values.byName(flavorName);
+  }
 }
 
 class MyApp extends ConsumerWidget {
