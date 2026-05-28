@@ -1,3 +1,13 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: avoid-returning-widgets
+// Required: Widget tests use helpers that build widgets under test.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-static-class
+// Required: Tests keep fixture helpers and fakes top-level.
 import 'package:auravibes_app/features/models/widgets/model_logo.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -19,7 +29,7 @@ void main() {
     });
 
     test('constructor accepts custom values', () {
-      Widget builder(BuildContext context, String url) => Container();
+      Widget builder(BuildContext _, String _) => Container();
       final client = http.Client();
       final logo = ModelLogo(
         modelId: 'anthropic',
@@ -45,7 +55,7 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
       expect(find.byKey(key), findsOneWidget);
     });
 
@@ -70,7 +80,7 @@ void main() {
             ),
           ),
         );
-        await tester.pumpAndSettle();
+        final _ = await tester.pumpAndSettle();
 
         expect(find.byType(ModelLogo), findsOneWidget);
         expect(find.byType(SvgPicture), findsOneWidget);
@@ -80,7 +90,7 @@ void main() {
   });
 }
 
-Widget _customBuilder(BuildContext context, String url) {
+Widget _customBuilder(BuildContext _, String _) {
   return const SizedBox(key: Key('custom-builder'));
 }
 

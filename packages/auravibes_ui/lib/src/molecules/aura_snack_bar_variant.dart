@@ -1,3 +1,16 @@
+// ignore_for_file: prefer-async-await
+// Required: Overlay teardown uses callback-based animation flow.
+// ignore_for_file: no-magic-number
+// Required: UI tokens and layout use fixed design values.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: prefer-extracting-callbacks
+// Required: Component callbacks stay colocated with UI state.
+// ignore_for_file: prefer-static-class
+// Required: UI package exposes top-level helpers and constants.
+
 import 'dart:async';
 
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
@@ -76,7 +89,7 @@ AuraSnackBarController showAuraSnackBar({
   }
 
   // Track overlay entry for removal
-  late final OverlayEntry entry;
+  OverlayEntry? entry;
 
   // Guard flag to prevent double-removal
   var isDismissing = false;
@@ -85,7 +98,7 @@ AuraSnackBarController showAuraSnackBar({
   void dismissWithCleanup() {
     if (isDismissing) return;
     isDismissing = true;
-    entry.remove();
+    entry?.remove();
   }
 
   // Create the snackbar widget with internal state management
@@ -137,9 +150,9 @@ class _AuraSnackBarOverlayEntry extends StatefulWidget {
 
 class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _animationController;
-  late final Animation<Offset> _slideAnimation;
-  late final Animation<double> _fadeAnimation;
+  AnimationController? _animationController;
+  Animation<Offset>? _slideAnimation;
+  Animation<double>? _fadeAnimation;
   Timer? _dismissTimer;
   bool _isDismissed = false;
   bool _isDisposed = false;
@@ -149,10 +162,11 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
     super.initState();
 
     // Initialize animation controller
-    _animationController = AnimationController(
+    final animationController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
+    _animationController = animationController;
 
     // Set up slide animation (slide up from bottom)
     _slideAnimation =
@@ -161,7 +175,7 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
           end: Offset.zero,
         ).animate(
           CurvedAnimation(
-            parent: _animationController,
+            parent: animationController,
             curve: Curves.easeOutCubic,
           ),
         );
@@ -173,13 +187,13 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
           end: 1,
         ).animate(
           CurvedAnimation(
-            parent: _animationController,
+            parent: animationController,
             curve: Curves.easeOut,
           ),
         );
 
     // Start entry animation
-    unawaited(_animationController.forward());
+    unawaited(animationController.forward());
 
     // Set up auto-dismiss timer
     _dismissTimer = Timer(widget.duration, dismiss);
@@ -189,7 +203,7 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
   void dispose() {
     _isDisposed = true;
     _dismissTimer?.cancel();
-    _animationController.dispose();
+    _animationController?.dispose();
     super.dispose();
   }
 
@@ -198,8 +212,14 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
     if (_isDismissed || _isDisposed) return;
     _isDismissed = true;
     _dismissTimer?.cancel();
+    final animationController = _animationController;
+    if (animationController == null) {
+      widget.dismissCallback();
+
+      return;
+    }
     unawaited(
-      _animationController
+      animationController
           .reverse()
           .orCancel
           .then((_) {
@@ -219,20 +239,28 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
 
   @override
   Widget build(BuildContext context) {
+    final actionLabel = widget.actionLabel;
+    final slideAnimation = _slideAnimation;
+    final fadeAnimation = _fadeAnimation;
+
+    if (slideAnimation == null || fadeAnimation == null) {
+      return const SizedBox.shrink();
+    }
+
     return Positioned(
       left: 16,
       right: 16,
       bottom: MediaQuery.paddingOf(context).bottom + 16,
       child: SlideTransition(
-        position: _slideAnimation,
+        position: slideAnimation,
         child: FadeTransition(
-          opacity: _fadeAnimation,
+          opacity: fadeAnimation,
           child: Material(
             color: Colors.transparent,
             child: Container(
               decoration: BoxDecoration(
                 color: widget.backgroundColor,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: const BorderRadius.all(Radius.circular(12)),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.15),
@@ -262,7 +290,7 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
                         ),
                       ),
                       // Action button
-                      if (widget.actionLabel != null) ...[
+                      if (actionLabel != null) ...[
                         const SizedBox(width: 8),
                         GestureDetector(
                           child: Padding(
@@ -271,7 +299,7 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
                               horizontal: 8,
                             ),
                             child: Text(
-                              widget.actionLabel!,
+                              actionLabel,
                               style: TextStyle(
                                 color: widget.foregroundColor,
                                 fontSize: 14,
@@ -280,8 +308,7 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
                             ),
                           ),
                           onTap: () {
-                            // Use provided callback or default no-op
-                            (widget.onAction ?? () {})();
+                            widget.onAction?.call();
                             dismiss();
                           },
                         ),

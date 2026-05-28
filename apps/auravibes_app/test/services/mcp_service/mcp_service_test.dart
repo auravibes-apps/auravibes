@@ -1,3 +1,10 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
+
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_manager_client.dart';
@@ -100,11 +107,28 @@ void main() {
     });
 
     test('slugServerName handles unicode characters', () {
-      const server = McpServerToCreate(
-        name: 'Serveur Français',
+      final server = McpServerToCreate(
+        name: String.fromCharCodes([
+          83,
+          101,
+          114,
+          118,
+          101,
+          117,
+          114,
+          32,
+          70,
+          114,
+          97,
+          110,
+          0x00e7,
+          97,
+          105,
+          115,
+        ]),
         url: 'http://localhost',
-        transport: McpTransportTypeSSE(),
-        authenticationType: McpAuthenticationType.none(),
+        transport: const McpTransportTypeSSE(),
+        authenticationType: const McpAuthenticationType.none(),
       );
       expect(server.slugServerName, 'serveur-fran-ais');
     });

@@ -1,3 +1,5 @@
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
 // Organism components - groups of molecules joined together.
 //
 // Organisms are groups of molecules joined together to form a relatively

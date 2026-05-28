@@ -1,3 +1,9 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-static-class
+// Required: Tests keep fixture helpers and fakes top-level.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
@@ -17,7 +23,7 @@ QueryExecutor _testConnection() {
 }
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
   group('sharedPreferencesProvider', () {
     test('returns SharedPreferences instance', () async {
@@ -45,7 +51,7 @@ void main() {
       addTearDown(container.dispose);
 
       final prefs = await container.read(sharedPreferencesProvider.future);
-      await prefs.setString('test_key', 'test_value');
+      final _ = await prefs.setString('test_key', 'test_value');
       expect(prefs.getString('test_key'), 'test_value');
     });
 
@@ -54,7 +60,7 @@ void main() {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      await container.read(sharedPreferencesProvider.future);
+      final _ = await container.read(sharedPreferencesProvider.future);
       final syncValue = container.read(sharedPreferencesProvider);
       expect(syncValue, isA<AsyncData<SharedPreferences>>());
     });

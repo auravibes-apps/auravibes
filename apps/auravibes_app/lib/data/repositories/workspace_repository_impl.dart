@@ -1,3 +1,10 @@
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
@@ -205,8 +212,9 @@ class WorkspaceRepositoryImpl implements WorkspaceRepository {
     if (workspace.type == WorkspaceType.local && workspace.url != null) {
       return 'Local workspace cannot have a URL';
     }
+    final url = workspace.url;
     if (workspace.type == WorkspaceType.remote &&
-        (workspace.url == null || workspace.url!.isEmpty)) {
+        (url == null || url.isEmpty)) {
       return 'Remote workspace must have a URL';
     }
     return 'Unknown validation error';

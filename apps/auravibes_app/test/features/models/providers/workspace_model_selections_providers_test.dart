@@ -1,3 +1,11 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
+// ignore_for_file: no-empty-block
+// Required: Tests use intentional no-op callbacks and fake hooks.
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';

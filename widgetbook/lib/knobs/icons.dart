@@ -1,3 +1,5 @@
+// ignore_for_file: prefer-static-class
+// Required: Existing helpers remain top-level for local feature use.
 import 'package:flutter/material.dart';
 import 'package:widgetbook/widgetbook.dart';
 import 'package:widgetbook_workspace/knobs/selector.dart';

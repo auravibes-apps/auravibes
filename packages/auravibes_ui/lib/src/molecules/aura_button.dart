@@ -1,3 +1,13 @@
+// ignore_for_file: no-magic-number
+// Required: UI tokens and layout use fixed design values.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-moving-to-variable
+// Required: UI components repeat theme and layout lookups intentionally.
 import 'package:auravibes_ui/src/atoms/aura_edge_insets_geometry.dart';
 import 'package:auravibes_ui/src/atoms/aura_loading_circle.dart';
 import 'package:auravibes_ui/src/atoms/aura_pressable.dart';

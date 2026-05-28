@@ -1,3 +1,5 @@
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:flutter_test/flutter_test.dart';

@@ -1,0 +1,15 @@
+name: auravibes_genkit_openai_compat
+description: OpenAI-compatible Genkit provider with reasoning support.
+version: 0.0.1
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.12.0
+
+dependencies:
+  genkit: ^0.13.2
+  http: ^1.6.0
+
+dev_dependencies:
+  test: ^1.28.0

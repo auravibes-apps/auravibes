@@ -1,3 +1,17 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
+// ignore_for_file: missing-test-assertion
+// Required: Repository tests verify side effects through database state.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+
 // ignore_for_file: cascade_invocations
 import 'dart:async';
 
@@ -82,7 +96,9 @@ void main() {
           mockDao.watchConversationsByWorkspace('ws-1', limit: 5),
         ).thenAnswer((_) => controller.stream);
 
-        await repository.watchConversationsByWorkspace('ws-1', limit: 5).first;
+        final _ = await repository
+            .watchConversationsByWorkspace('ws-1', limit: 5)
+            .first;
 
         verify(
           mockDao.watchConversationsByWorkspace('ws-1', limit: 5),
@@ -103,7 +119,7 @@ void main() {
         final result = await repository.watchConversationById('conv-1').first;
 
         expect(result, isNotNull);
-        expect(result!.id, 'conv-1');
+        expect((result ?? fail('Expected result to be non-null')).id, 'conv-1');
       });
 
       test('maps null stream value to null', () async {
@@ -132,7 +148,7 @@ void main() {
         final result = await repository.getConversationById('conv-1');
 
         expect(result, isNotNull);
-        expect(result!.id, 'conv-1');
+        expect((result ?? fail('Expected result to be non-null')).id, 'conv-1');
         expect(result.title, 'Test Conversation');
         expect(result.workspaceId, 'ws-1');
         expect(result.isPinned, false);
@@ -212,7 +228,7 @@ void main() {
           repository.createConversation(toCreate),
           throwsA(isA<ConversationValidationException>()),
         );
-        verifyNever(mockDao.insertConversation(any));
+        final _ = verifyNever(mockDao.insertConversation(any));
       });
     });
 
@@ -319,7 +335,7 @@ void main() {
         final result = await repository.deleteConversation('nonexistent');
 
         expect(result, false);
-        verifyNever(mockDao.deleteConversation(any));
+        final _ = verifyNever(mockDao.deleteConversation(any));
       });
     });
   });

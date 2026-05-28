@@ -1,3 +1,10 @@
+// ignore_for_file: no-magic-number
+// Required: Existing thresholds and limits use numeric values.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: prefer-single-widget-per-file
+// Required: Feature widgets keep closely related private widgets together.
+
 import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
@@ -48,6 +55,8 @@ class ToolsGroupHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final group = groupWithTools.group;
+
     return AuraRow(
       children: [
         // Group icon
@@ -62,7 +71,8 @@ class ToolsGroupHeader extends StatelessWidget {
               AuraText(
                 child: Text(
                   groupWithTools.localizedDisplayNameKey?.tr() ??
-                      groupWithTools.group!.name,
+                      group?.name ??
+                      '',
                   overflow: TextOverflow.ellipsis,
                 ),
                 style: AuraTextStyle.heading6,

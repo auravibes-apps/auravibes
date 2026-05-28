@@ -1,3 +1,16 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: avoid-top-level-members-in-tests
+// Required: Test files keep shared fixtures and helpers top-level.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+
+// ignore_for_file: avoid-redundant-async
+// Required: Test callbacks intentionally preserve async-compatible signatures.
+
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+
 import 'dart:convert';
 
 import 'package:auravibes_app/services/encryption_service.dart';
@@ -65,7 +78,20 @@ void main() {
     });
 
     test('encrypt handles unicode', () async {
-      const plaintext = '你好世界 🌍 مرحبا';
+      final plaintext = String.fromCharCodes([
+        0x4f60,
+        0x597d,
+        0x4e16,
+        0x754c,
+        32,
+        0x1f30d,
+        32,
+        0x0645,
+        0x0631,
+        0x062d,
+        0x0628,
+        0x0627,
+      ]);
       final encrypted = await service.encrypt(plaintext);
       final decrypted = await service.decrypt(encrypted);
       expect(decrypted, plaintext);
@@ -117,7 +143,8 @@ void main() {
       final encrypted = await service.encryptNullable(plaintext);
       expect(encrypted, isNotNull);
       expect(encrypted, isNot(plaintext));
-      final decrypted = await service.decrypt(encrypted!);
+      final encryptedValue = encrypted ?? fail('Expected encrypted value');
+      final decrypted = await service.decrypt(encryptedValue);
       expect(decrypted, plaintext);
     });
 

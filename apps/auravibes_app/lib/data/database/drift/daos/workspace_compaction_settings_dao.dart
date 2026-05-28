@@ -1,3 +1,8 @@
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_compaction_settings.dart';
 import 'package:drift/drift.dart';
@@ -34,10 +39,14 @@ class WorkspaceCompactionSettingsDao extends DatabaseAccessor<AppDatabase>
   ) async {
     final existing = await getByWorkspaceId(workspaceId);
     if (existing != null) {
-      await (update(
+      final _ = await (update(
         workspaceCompactionSettings,
       )..where((t) => t.id.equals(existing.id))).write(companion);
-      return (await getByWorkspaceId(workspaceId))!;
+      final updated = await getByWorkspaceId(workspaceId);
+      if (updated == null) {
+        throw StateError('Updated compaction settings were not found');
+      }
+      return updated;
     }
     return into(workspaceCompactionSettings).insertReturning(
       companion.copyWith(workspaceId: Value(workspaceId)),
@@ -45,7 +54,7 @@ class WorkspaceCompactionSettingsDao extends DatabaseAccessor<AppDatabase>
   }
 
   Future<void> deleteByWorkspaceId(String workspaceId) async {
-    await (delete(
+    final _ = await (delete(
       workspaceCompactionSettings,
     )..where((t) => t.workspaceId.equals(workspaceId))).go();
   }

@@ -1,3 +1,17 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: avoid-redundant-async
+// Required: Test callbacks intentionally preserve async-compatible signatures.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/data/repositories/conversation_tools_repository_impl.dart';
@@ -181,7 +195,7 @@ void main() {
         );
 
         // Create a conversation tool that disables this tool
-        await database.conversationToolsDao.upsertConversationTool(
+        final _ = await database.conversationToolsDao.upsertConversationTool(
           testConversationId,
           'workspace-tool-id',
           isEnabled: false,
@@ -222,7 +236,7 @@ void main() {
         );
 
         // Create a conversation tool that requires confirmation
-        await database.conversationToolsDao.upsertConversationTool(
+        final _ = await database.conversationToolsDao.upsertConversationTool(
           testConversationId,
           'workspace-tool-id',
           isEnabled: true,
@@ -263,7 +277,7 @@ void main() {
         );
 
         // Create a conversation tool that grants permission
-        await database.conversationToolsDao.upsertConversationTool(
+        final _ = await database.conversationToolsDao.upsertConversationTool(
           testConversationId,
           'workspace-tool-id',
           isEnabled: true,
@@ -309,7 +323,7 @@ void main() {
     });
 
     test('returns mapped entities from database', () async {
-      await database.conversationToolsDao.upsertConversationTool(
+      final _ = await database.conversationToolsDao.upsertConversationTool(
         'conv-1',
         'tool-1',
         isEnabled: true,
@@ -351,7 +365,7 @@ void main() {
     });
 
     test('returns mapped entity when found', () async {
-      await database.conversationToolsDao.upsertConversationTool(
+      final _ = await database.conversationToolsDao.upsertConversationTool(
         'conv-1',
         'tool-1',
         isEnabled: true,
@@ -360,7 +374,7 @@ void main() {
 
       final tool = await repository.getConversationTool('conv-1', 'tool-1');
       expect(tool, isNotNull);
-      expect(tool!.toolId, 'tool-1');
+      expect((tool ?? fail('Expected tool to be non-null')).toolId, 'tool-1');
       expect(tool.isEnabled, isTrue);
       expect(tool.permissionMode, ToolPermissionMode.alwaysAsk);
     });
@@ -473,7 +487,7 @@ void main() {
     });
 
     test('toggles enabled to disabled', () async {
-      await database.conversationToolsDao.upsertConversationTool(
+      final _ = await database.conversationToolsDao.upsertConversationTool(
         'conv-1',
         'tool-1',
         isEnabled: true,
@@ -487,7 +501,7 @@ void main() {
       expect(result, isTrue);
 
       final tool = await repository.getConversationTool('conv-1', 'tool-1');
-      expect(tool!.isEnabled, isFalse);
+      expect((tool ?? fail('Expected tool to be non-null')).isEnabled, isFalse);
     });
   });
 
@@ -520,7 +534,7 @@ void main() {
     });
 
     test('returns true when tool is enabled', () async {
-      await database.conversationToolsDao.upsertConversationTool(
+      final _ = await database.conversationToolsDao.upsertConversationTool(
         'conv-1',
         'tool-1',
         isEnabled: true,
@@ -564,7 +578,7 @@ void main() {
     });
 
     test('returns true and removes existing tool', () async {
-      await database.conversationToolsDao.upsertConversationTool(
+      final _ = await database.conversationToolsDao.upsertConversationTool(
         'conv-1',
         'tool-1',
         isEnabled: true,
@@ -608,13 +622,13 @@ void main() {
     });
 
     test('returns correct count', () async {
-      await database.conversationToolsDao.upsertConversationTool(
+      final _ = await database.conversationToolsDao.upsertConversationTool(
         'conv-1',
         'tool-1',
         isEnabled: true,
         permission: PermissionAccess.ask,
       );
-      await database.conversationToolsDao.upsertConversationTool(
+      final _ = await database.conversationToolsDao.upsertConversationTool(
         'conv-1',
         'tool-2',
         isEnabled: false,
@@ -675,7 +689,7 @@ void main() {
     });
 
     test('copies tools from source to target conversation', () async {
-      await database.conversationToolsDao.upsertConversationTool(
+      final _ = await database.conversationToolsDao.upsertConversationTool(
         'conv-1',
         'tool-1',
         isEnabled: true,
@@ -749,7 +763,7 @@ void main() {
           mockWorkspaceToolsRepository.isWorkspaceToolEnabled('ws-1', 'tool-1'),
         ).thenAnswer((_) async => true);
 
-        await database.conversationToolsDao.upsertConversationTool(
+        final _ = await database.conversationToolsDao.upsertConversationTool(
           'conv-1',
           'tool-1',
           isEnabled: false,
@@ -812,7 +826,7 @@ void main() {
         ],
       );
 
-      await database.conversationToolsDao.upsertConversationTool(
+      final _ = await database.conversationToolsDao.upsertConversationTool(
         'conv-1',
         'tool-1',
         isEnabled: false,
@@ -898,7 +912,7 @@ void main() {
         mockWorkspaceToolsRepository.getEnabledWorkspaceTools('ws-1'),
       ).thenAnswer((_) async => [wsTool]);
 
-      await database.conversationToolsDao.upsertConversationTool(
+      final _ = await database.conversationToolsDao.upsertConversationTool(
         'conv-1',
         'tool-1',
         isEnabled: false,

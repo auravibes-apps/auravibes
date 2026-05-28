@@ -1,3 +1,10 @@
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
@@ -21,8 +28,8 @@ class _FakeConversationRepository implements ConversationRepository {
       _byWorkspaceController.add(conversations);
 
   Future<void> dispose() async {
-    await _byIdController.close();
-    await _byWorkspaceController.close();
+    final _ = await _byIdController.close();
+    final _ = await _byWorkspaceController.close();
   }
 
   @override
@@ -91,7 +98,7 @@ void main() {
       );
 
       final completer = Completer<void>();
-      container.listen(
+      final _ = container.listen(
         conversationByIdStreamProvider(conversationId: 'c1'),
         (_, next) {
           if (next.hasValue && !completer.isCompleted) {
@@ -142,7 +149,7 @@ void main() {
       ];
 
       final completer = Completer<void>();
-      container.listen(
+      final _ = container.listen(
         conversationsStreamProvider(workspaceId: 'ws1'),
         (_, next) {
           if (next.hasValue && !completer.isCompleted) {

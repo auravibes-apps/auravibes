@@ -1,3 +1,12 @@
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
+// ignore_for_file: missing-test-assertion
+// Required: Repository tests verify side effects through database state.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/api_model_providers_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/model_connections_dao.dart';

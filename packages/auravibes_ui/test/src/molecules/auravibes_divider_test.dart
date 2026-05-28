@@ -1,3 +1,7 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/molecules/aura_divider.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';

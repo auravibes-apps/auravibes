@@ -1,3 +1,5 @@
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'url_request_method.freezed.dart';

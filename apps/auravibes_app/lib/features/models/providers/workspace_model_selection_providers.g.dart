@@ -68,7 +68,7 @@ final class WorkspaceModelSelectionByIdProvider
 }
 
 String _$workspaceModelSelectionByIdHash() =>
-    r'74c353bbe50d08c3bd6bd9e1c7a60638e95d0219';
+    r'6e3bbfe68e367e23ef36977bb3277722f824d68e';
 
 final class WorkspaceModelSelectionByIdFamily extends $Family
     with

@@ -1,3 +1,10 @@
+// ignore_for_file: no-magic-number
+// Required: UI tokens and layout use fixed design values.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+
 import 'dart:async';
 
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
@@ -91,7 +98,7 @@ class _AuraTooltipState extends State<AuraTooltip> {
     );
   }
 
-  void _handlePointerEnter(PointerEnterEvent event) {
+  void _handlePointerEnter(PointerEnterEvent _) {
     _cancelTimers();
     if (widget.waitDuration > Duration.zero) {
       _showTimer = Timer(widget.waitDuration, _showTooltip);
@@ -100,7 +107,7 @@ class _AuraTooltipState extends State<AuraTooltip> {
     }
   }
 
-  void _handlePointerExit(PointerExitEvent event) {
+  void _handlePointerExit(PointerExitEvent _) {
     _cancelTimers();
     _removeOverlay();
   }
@@ -124,7 +131,7 @@ class _AuraTooltipState extends State<AuraTooltip> {
 
     final overlay = Overlay.of(context);
 
-    _overlayEntry = OverlayEntry(
+    final overlayEntry = OverlayEntry(
       builder: (context) {
         return Positioned.fill(
           child: IgnorePointer(
@@ -147,7 +154,7 @@ class _AuraTooltipState extends State<AuraTooltip> {
                     ),
                     decoration: BoxDecoration(
                       color: backgroundColor,
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: const BorderRadius.all(Radius.circular(8)),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withValues(alpha: 0.15),
@@ -173,8 +180,9 @@ class _AuraTooltipState extends State<AuraTooltip> {
         );
       },
     );
+    _overlayEntry = overlayEntry;
 
-    overlay.insert(_overlayEntry!);
+    overlay.insert(overlayEntry);
 
     if (widget.showDuration > Duration.zero) {
       _hideTimer = Timer(widget.showDuration, _removeOverlay);

@@ -1,3 +1,5 @@
+// ignore_for_file: prefer-correct-type-name
+// Required: Domain entity names describe model selection relationships.
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/enums/credentials_model_type.dart';

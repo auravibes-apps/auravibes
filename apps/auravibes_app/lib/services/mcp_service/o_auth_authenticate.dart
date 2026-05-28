@@ -1,3 +1,12 @@
+// ignore_for_file: no-magic-number
+// Required: Existing thresholds and limits use numeric values.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+
 import 'dart:convert';
 import 'dart:math';
 
@@ -25,11 +34,14 @@ class OAuthAuthenticate {
   static Random _createSecureRandom() {
     try {
       return Random.secure();
-      // ignore: avoid_catching_errors
-    } on UnsupportedError {
-      throw StateError(
-        'Secure randomness is required to generate OAuth PKCE and state '
-        'values, but Random.secure() is not supported on this platform.',
+      // ignore: avoid_catching_errors - Required to handle unsupported secure RNG.
+    } on UnsupportedError catch (_, stackTrace) {
+      Error.throwWithStackTrace(
+        StateError(
+          'Secure randomness is required to generate OAuth PKCE and state '
+          'values, but Random.secure() is not supported on this platform.',
+        ),
+        stackTrace,
       );
     }
   }
@@ -53,7 +65,7 @@ class OAuthAuthenticate {
     return base64Url.encode(digest.bytes).replaceAll('=', '');
   }
 
-  Future<OAuthDiscoveryResult?> discover(String url) async {
+  Future<OAuthDiscoveryResult?> discover(String url) {
     return OAuthDiscoveryService.discoverOAuth(
       OAuthConnector(
         clientName: clientName,
@@ -154,15 +166,15 @@ class OAuthAuthenticate {
     required String codeVerifier,
     required String redirectUrl,
   }) async {
-    final response = await _dio.post<dynamic>(
+    final response = await _dio.post<Object?>(
       oAuthResult.tokenUrl,
       data: {
         'grant_type': 'authorization_code',
         'code': code,
         'redirect_uri': redirectUrl,
         'code_verifier': codeVerifier,
-        if (oAuthResult.clientId != null && oAuthResult.clientId!.isNotEmpty)
-          'client_id': oAuthResult.clientId!,
+        if (oAuthResult.clientId case final clientId? when clientId.isNotEmpty)
+          'client_id': clientId,
       },
       options: Options(
         responseType: ResponseType.json,

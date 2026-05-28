@@ -132,7 +132,7 @@ final class GroupedToolsNotifierProvider
 }
 
 String _$groupedToolsNotifierHash() =>
-    r'56280680a0c488eb247e0a370ef4c1645872f9c2';
+    r'7d5e97c3537198b10c9b1f1f06fcaf6d9affaebc';
 
 /// Provider that groups tools by their workspaceToolsGroupId.
 ///

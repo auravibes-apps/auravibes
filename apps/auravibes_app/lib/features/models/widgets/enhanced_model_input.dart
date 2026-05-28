@@ -1,3 +1,10 @@
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: prefer-moving-to-variable
+// Required: Existing code repeats lookups where extraction adds noise.
+
 import 'package:auravibes_app/features/models/models/add_model_provider_model.dart';
 import 'package:auravibes_app/features/models/providers/add_model_provider_state.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -31,6 +38,8 @@ class EnhancedModelInput extends HookConsumerWidget {
 
     // Get field-specific values
     final fieldData = _getFieldData(fieldType, state);
+    final hint = fieldData.hint;
+    final error = fieldData.error;
 
     final controller = useTextEditingController(text: fieldData.value ?? '');
 
@@ -38,12 +47,10 @@ class EnhancedModelInput extends HookConsumerWidget {
       controller: controller,
       placeholder: TextLocale(fieldData.placeholder),
       label: TextLocale(fieldData.label),
-      hint: fieldData.hint != null ? TextLocale(fieldData.hint!) : null,
-      error: fieldData.error != null ? Text(fieldData.error!) : null,
+      hint: hint != null ? TextLocale(hint) : null,
+      error: error != null ? Text(error) : null,
       isRequired: _isRequired(fieldType),
-      state: fieldData.error != null
-          ? AuraInputState.error
-          : AuraInputState.normal,
+      state: error != null ? AuraInputState.error : AuraInputState.normal,
       keyboardType: fieldData.keyboardType,
       textInputAction: _getTextInputAction(fieldType),
       autofocus: fieldType == ModelInputFieldType.name && focusNode == null,

@@ -1,3 +1,9 @@
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: no-empty-block
+// Required: Tests use intentional no-op callbacks and fake hooks.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
 import 'package:auravibes_ui/src/molecules/aura_snack_bar_variant.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:flutter/material.dart';
@@ -26,7 +32,7 @@ void main() {
               builder: (context) {
                 return ElevatedButton(
                   onPressed: () {
-                    showAuraSnackBar(
+                    final _ = showAuraSnackBar(
                       context: context,
                       content: const Text('Test message'),
                     );
@@ -60,7 +66,7 @@ void main() {
               builder: (context) {
                 return ElevatedButton(
                   onPressed: () {
-                    showAuraSnackBar(
+                    final _ = showAuraSnackBar(
                       context: context,
                       content: const Text('Success!'),
                       variant: AuraSnackBarVariant.success,
@@ -93,7 +99,7 @@ void main() {
               builder: (context) {
                 return ElevatedButton(
                   onPressed: () {
-                    showAuraSnackBar(
+                    final _ = showAuraSnackBar(
                       context: context,
                       content: const Text('Error!'),
                       variant: AuraSnackBarVariant.error,
@@ -125,7 +131,7 @@ void main() {
               builder: (context) {
                 return ElevatedButton(
                   onPressed: () {
-                    showAuraSnackBar(
+                    final _ = showAuraSnackBar(
                       context: context,
                       content: const Text('Warning!'),
                       variant: AuraSnackBarVariant.warning,
@@ -157,7 +163,7 @@ void main() {
               builder: (context) {
                 return ElevatedButton(
                   onPressed: () {
-                    showAuraSnackBar(
+                    final _ = showAuraSnackBar(
                       context: context,
                       content: const Text('Info!'),
                       variant: AuraSnackBarVariant.info,
@@ -194,7 +200,7 @@ void main() {
               builder: (context) {
                 return ElevatedButton(
                   onPressed: () {
-                    showAuraSnackBar(
+                    final _ = showAuraSnackBar(
                       context: context,
                       content: const Text('With action'),
                       actionLabel: 'UNDO',
@@ -234,7 +240,7 @@ void main() {
               builder: (context) {
                 return ElevatedButton(
                   onPressed: () {
-                    showAuraSnackBar(
+                    final _ = showAuraSnackBar(
                       context: context,
                       content: const Text('Animated'),
                     );
@@ -255,7 +261,7 @@ void main() {
       // Pump a few frames to verify animation is running
       await tester.pump(const Duration(milliseconds: 50));
       await tester.pump(const Duration(milliseconds: 100));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       // Verify content is displayed after animation completes
       expect(find.text('Animated'), findsOneWidget);
@@ -270,7 +276,7 @@ void main() {
               builder: (context) {
                 return ElevatedButton(
                   onPressed: () {
-                    showAuraSnackBar(
+                    final _ = showAuraSnackBar(
                       context: context,
                       content: const Text('Colored snackbar'),
                       variant: AuraSnackBarVariant.error,
@@ -303,7 +309,7 @@ void main() {
               builder: (context) {
                 return ElevatedButton(
                   onPressed: () {
-                    showAuraSnackBar(
+                    final _ = showAuraSnackBar(
                       context: context,
                       content: const Text('Bottom position'),
                     );

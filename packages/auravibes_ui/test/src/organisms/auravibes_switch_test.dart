@@ -1,3 +1,11 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: no-empty-block
+// Required: Tests use intentional no-op callbacks and fake hooks.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
 import 'package:auravibes_ui/src/atoms/aura_loading_circle.dart';
 import 'package:auravibes_ui/src/organisms/aura_switch.dart';
 import 'package:flutter/material.dart';
@@ -415,7 +423,7 @@ void main() {
 
         // Tap to toggle
         await tester.tap(find.byType(AuraSwitch));
-        await tester.pumpAndSettle();
+        final _ = await tester.pumpAndSettle();
 
         // Get final position
         final animatedPositionedAfter = tester.widget<AnimatedPositioned>(

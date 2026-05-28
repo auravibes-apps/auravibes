@@ -1,3 +1,10 @@
+// ignore_for_file: no-magic-number
+// Required: UI tokens and layout use fixed design values.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+
 import 'dart:async';
 
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
@@ -39,8 +46,8 @@ class _AuraMessageStatusState extends State<AuraMessageStatus>
     with TickerProviderStateMixin {
   AnimationController? _rotationController;
   AnimationController? _scaleController;
-  late Animation<double> _rotationAnimation;
-  late Animation<double> _scaleAnimation;
+  Animation<double>? _rotationAnimation;
+  Animation<double>? _scaleAnimation;
 
   @override
   void initState() {
@@ -52,35 +59,39 @@ class _AuraMessageStatusState extends State<AuraMessageStatus>
     if (!widget.showAnimation) return;
 
     if (widget.status == AuraMessageDeliveryStatus.sending) {
-      _rotationController = AnimationController(
+      final rotationController = AnimationController(
         duration: const Duration(milliseconds: 1000),
         vsync: this,
       );
+      _rotationController = rotationController;
 
-      _rotationAnimation = Tween<double>(
+      final rotationAnimation = Tween<double>(
         begin: 0,
         end: 1,
-      ).animate(_rotationController!);
+      ).animate(rotationController);
+      _rotationAnimation = rotationAnimation;
 
-      unawaited(_rotationController!.repeat());
+      unawaited(rotationController.repeat());
     } else {
-      _scaleController = AnimationController(
+      final scaleController = AnimationController(
         duration: DesignDuration.normal,
         vsync: this,
       );
+      _scaleController = scaleController;
 
-      _scaleAnimation =
+      final scaleAnimation =
           Tween<double>(
             begin: 0,
             end: 1,
           ).animate(
             CurvedAnimation(
-              parent: _scaleController!,
+              parent: scaleController,
               curve: Curves.elasticOut,
             ),
           );
+      _scaleAnimation = scaleAnimation;
 
-      unawaited(_scaleController!.forward());
+      unawaited(scaleController.forward());
     }
   }
 
@@ -100,6 +111,8 @@ class _AuraMessageStatusState extends State<AuraMessageStatus>
     _scaleController?.dispose();
     _rotationController = null;
     _scaleController = null;
+    _rotationAnimation = null;
+    _scaleAnimation = null;
   }
 
   @override
@@ -122,26 +135,29 @@ class _AuraMessageStatusState extends State<AuraMessageStatus>
     );
 
     if (widget.showAnimation) {
+      final rotationAnimation = _rotationAnimation;
+      final scaleAnimation = _scaleAnimation;
       if (widget.status == AuraMessageDeliveryStatus.sending &&
-          _rotationController != null) {
+          _rotationController != null &&
+          rotationAnimation != null) {
         // Rotating animation for sending status
         statusIcon = AnimatedBuilder(
-          animation: _rotationAnimation,
+          animation: rotationAnimation,
           builder: (context, child) {
             return Transform.rotate(
-              angle: _rotationAnimation.value * 2 * 3.14159,
+              angle: rotationAnimation.value * 2 * 3.14159,
               child: child,
             );
           },
           child: statusIcon,
         );
-      } else if (_scaleController != null) {
+      } else if (_scaleController != null && scaleAnimation != null) {
         // Scale animation for other statuses
         statusIcon = AnimatedBuilder(
-          animation: _scaleAnimation,
+          animation: scaleAnimation,
           builder: (context, child) {
             return Transform.scale(
-              scale: _scaleAnimation.value,
+              scale: scaleAnimation.value,
               child: child,
             );
           },

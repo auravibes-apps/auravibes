@@ -1,3 +1,9 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
 import 'package:auravibes_ui/src/atoms/aura_message_status.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
@@ -221,7 +227,7 @@ void main() {
       expect(widget.showAnimation, true);
 
       // Wait for animation to complete to avoid hanging
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
     });
 
     testWidgets('hides animation when disabled', (tester) async {
@@ -320,7 +326,7 @@ void main() {
       expect(find.byIcon(Icons.done), findsOneWidget);
 
       // Wait for animation to complete
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
     });
 
     testWidgets('applies correct padding for different sizes', (tester) async {

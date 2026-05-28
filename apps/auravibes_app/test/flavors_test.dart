@@ -1,3 +1,7 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
 import 'package:auravibes_app/flavor.dart';
 import 'package:flutter_test/flutter_test.dart';
 

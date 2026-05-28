@@ -1,3 +1,12 @@
+// ignore_for_file: no-magic-number
+// Required: UI tokens and layout use fixed design values.
+// ignore_for_file: no-equal-arguments
+// Required: UI geometry uses repeated values for symmetric layout.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: prefer-single-widget-per-file
+// Required: UI components keep related private widgets together.
+
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
@@ -195,11 +204,14 @@ class AuraLoadingOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final child = this.child;
+
     if (!isLoading) {
       return child ?? const SizedBox.shrink();
     }
 
     final auraColors = context.auraColors;
+    final message = this.message;
     final overlay = ColoredBox(
       color: backgroundColor ?? auraColors.scrim,
       child: Center(
@@ -207,12 +219,14 @@ class AuraLoadingOverlay extends StatelessWidget {
           padding: const EdgeInsets.all(DesignSpacing.xl),
           decoration: BoxDecoration(
             color: auraColors.surface,
-            borderRadius: BorderRadius.circular(DesignBorderRadius.lg),
+            borderRadius: const BorderRadius.all(
+              Radius.circular(DesignBorderRadius.lg),
+            ),
             boxShadow: const [DesignShadows.lg],
           ),
           child: message != null
               ? AuraSpinnerWithLabel(
-                  label: message!,
+                  label: message,
                   size: spinnerSize,
                   color: spinnerColor,
                   spacing: DesignSpacing.md,
@@ -228,7 +242,7 @@ class AuraLoadingOverlay extends StatelessWidget {
     if (child != null) {
       return Stack(
         children: [
-          child!,
+          child,
           if (isLoading) overlay,
         ],
       );

@@ -1,3 +1,5 @@
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
@@ -21,7 +23,7 @@ class AppToggleBase extends ConsumerWidget {
   });
 
   final ProviderListenable<bool> value;
-  // ignore: avoid_positional_boolean_parameters
+  // ignore: avoid_positional_boolean_parameters - Required by toggle callback shape.
   final ProviderListenable<void Function(bool)?> onChanged;
   final String labelLocaleKey;
   final String hintLocaleKey;

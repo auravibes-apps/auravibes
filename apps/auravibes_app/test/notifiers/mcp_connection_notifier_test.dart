@@ -1,3 +1,19 @@
+// ignore_for_file: avoid-redundant-async
+// Required: Test callbacks intentionally preserve async-compatible signatures.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
+// ignore_for_file: no-empty-block
+// Required: Tests use intentional no-op callbacks and fake hooks.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-static-class
+// Required: Tests keep fixture helpers and fakes top-level.
+
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+
 // ignore_for_file: cascade_invocations
 import 'dart:async';
 
@@ -60,7 +76,10 @@ void main() {
           'mcp_abc123_myserver_read_file',
         );
         expect(result, isNotNull);
-        expect(result!.mcpServerId, 'abc123');
+        expect(
+          (result ?? fail('Expected result to be non-null')).mcpServerId,
+          'abc123',
+        );
         expect(result.slugName, 'myserver');
         expect(result.toolIdentifier, 'read_file');
       });
@@ -112,7 +131,10 @@ void main() {
           'mcp_abc_myserver_read_file_name',
         );
         expect(result, isNotNull);
-        expect(result!.mcpServerId, 'abc');
+        expect(
+          (result ?? fail('Expected result to be non-null')).mcpServerId,
+          'abc',
+        );
         expect(result.slugName, 'myserver');
         expect(result.toolIdentifier, 'read_file_name');
       });
@@ -209,7 +231,10 @@ void main() {
         ];
       final conn = notifier.getConnection('server-1');
       expect(conn, isNotNull);
-      expect(conn!.server.id, 'server-1');
+      expect(
+        (conn ?? fail('Expected conn to be non-null')).server.id,
+        'server-1',
+      );
     });
 
     test('getMcpConnectionTimeout returns 10 seconds', () {
@@ -492,7 +517,7 @@ void main() {
         final notifier = container.read(mcpConnectionProvider.notifier);
 
         try {
-          await notifier.callTool(
+          final _ = await notifier.callTool(
             mcpServerId: 'missing',
             toolIdentifier: 'sum',
             arguments: const {},
@@ -516,7 +541,7 @@ void main() {
           ];
 
         try {
-          await notifier.callTool(
+          final _ = await notifier.callTool(
             mcpServerId: 'server-1',
             toolIdentifier: 'sum',
             arguments: const {},

@@ -1,3 +1,15 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+
 import 'package:auravibes_app/domain/entities/conversation_tool_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
@@ -119,7 +131,7 @@ void main() {
           workspaceId: 'workspace-1',
         ).notifier,
       );
-      await container.read(
+      final _ = await container.read(
         conversationToolsProvider(
           workspaceId: 'workspace-1',
         ).future,
@@ -156,7 +168,7 @@ void main() {
           workspaceId: 'workspace-1',
         ).notifier,
       );
-      await container.read(
+      final _ = await container.read(
         conversationToolsProvider(
           workspaceId: 'workspace-1',
         ).future,
@@ -174,7 +186,7 @@ void main() {
           workspaceId: 'workspace-1',
         ).notifier,
       );
-      await container.read(
+      final _ = await container.read(
         conversationToolsProvider(
           workspaceId: 'workspace-1',
         ).future,
@@ -195,7 +207,7 @@ void main() {
           workspaceId: 'workspace-1',
         ).notifier,
       );
-      await container.read(
+      final _ = await container.read(
         conversationToolsProvider(
           workspaceId: 'workspace-1',
         ).future,
@@ -220,7 +232,7 @@ void main() {
             conversationId: 'conv-1',
           ).notifier,
         );
-        await container.read(
+        final _ = await container.read(
           conversationToolsProvider(
             workspaceId: 'workspace-1',
             conversationId: 'conv-1',
@@ -239,9 +251,11 @@ void main() {
             conversationId: 'conv-1',
           ),
         );
-        final tool2State = state.value!.singleWhere(
-          (t) => t.tool.id == 'tool-2',
-        );
+        final tool2State =
+            (state.value ?? fail('Expected state.value to be non-null'))
+                .singleWhere(
+                  (t) => t.tool.id == 'tool-2',
+                );
         expect(tool2State.isEnabled, isTrue);
       },
     );
@@ -256,7 +270,7 @@ void main() {
           conversationId: 'conv-1',
         ).notifier,
       );
-      await container.read(
+      final _ = await container.read(
         conversationToolsProvider(
           workspaceId: 'workspace-1',
           conversationId: 'conv-1',
@@ -272,7 +286,12 @@ void main() {
           conversationId: 'conv-1',
         ),
       );
-      expect(state.value!.first.isEnabled, isFalse);
+      expect(
+        (state.value ?? fail('Expected state.value to be non-null'))
+            .first
+            .isEnabled,
+        isFalse,
+      );
     });
 
     test('getToolStates returns loaded tools', () async {
@@ -283,7 +302,7 @@ void main() {
           workspaceId: 'workspace-1',
         ).notifier,
       );
-      await container.read(
+      final _ = await container.read(
         conversationToolsProvider(
           workspaceId: 'workspace-1',
         ).future,
@@ -304,7 +323,7 @@ void main() {
           conversationId: 'conv-1',
         ).notifier,
       );
-      await container.read(
+      final _ = await container.read(
         conversationToolsProvider(
           workspaceId: 'workspace-1',
           conversationId: 'conv-1',
@@ -324,7 +343,9 @@ void main() {
         ),
       );
       expect(
-        state.value!.first.permissionMode,
+        (state.value ?? fail('Expected state.value to be non-null'))
+            .first
+            .permissionMode,
         ToolPermissionMode.alwaysAsk,
       );
     });
@@ -339,7 +360,7 @@ void main() {
           conversationId: 'conv-1',
         ).notifier,
       );
-      await container.read(
+      final _ = await container.read(
         conversationToolsProvider(
           workspaceId: 'workspace-1',
           conversationId: 'conv-1',
@@ -362,7 +383,7 @@ void main() {
             conversationId: 'conv-1',
           ).notifier,
         );
-        await container.read(
+        final _ = await container.read(
           conversationToolsProvider(
             workspaceId: 'workspace-1',
             conversationId: 'conv-1',
@@ -381,7 +402,10 @@ void main() {
             conversationId: 'conv-1',
           ),
         );
-        expect(state.value!.length, 1);
+        expect(
+          (state.value ?? fail('Expected state.value to be non-null')).length,
+          1,
+        );
       },
     );
 
@@ -395,7 +419,7 @@ void main() {
           conversationId: 'conv-1',
         ).notifier,
       );
-      await container.read(
+      final _ = await container.read(
         conversationToolsProvider(
           workspaceId: 'workspace-1',
           conversationId: 'conv-1',
@@ -492,7 +516,7 @@ void main() {
           workspaceId: 'ws-1',
         ).notifier,
       );
-      await container.read(
+      final _ = await container.read(
         contextAwareToolsProvider(
           conversationId: 'conv-1',
           workspaceId: 'ws-1',
@@ -520,7 +544,7 @@ void main() {
           workspaceId: 'ws-1',
         ).notifier,
       );
-      await container.read(
+      final _ = await container.read(
         contextAwareToolsProvider(
           conversationId: 'conv-1',
           workspaceId: 'ws-1',
@@ -605,7 +629,7 @@ void main() {
           workspaceId: 'ws-1',
         ).notifier,
       );
-      await container.read(
+      final _ = await container.read(
         contextAwareToolEntitiesProvider(
           conversationId: 'conv-1',
           workspaceId: 'ws-1',

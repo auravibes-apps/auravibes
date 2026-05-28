@@ -78,6 +78,20 @@ void main() {
       expect(result.entityThinking, 'Reasoned summary');
     });
 
+    test('persists normalized Genkit reasoning parts', () {
+      final result = ChatResult<ChatMessage>(
+        output: ChatMessage.model(
+          'Answer',
+          parts: [
+            Part.fromJson({'reasoning': 'Reasoned summary'}),
+          ],
+        ),
+      );
+
+      expect(result.entityThinking, 'Reasoned summary');
+      expect(result.entityMetadata?.thinking, 'Reasoned summary');
+    });
+
     test('persists model metadata for provider continuation', () {
       final result = ChatResult<ChatMessage>(
         output: ChatMessage.model(

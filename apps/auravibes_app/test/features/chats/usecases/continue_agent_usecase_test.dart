@@ -1,3 +1,24 @@
+// ignore_for_file: prefer-async-await
+// Required: Tests use Future chains to assert async side effects.
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: avoid-redundant-async
+// Required: Test callbacks intentionally preserve async-compatible signatures.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
+// ignore_for_file: no-empty-block
+// Required: Tests use intentional no-op callbacks and fake hooks.
+// ignore_for_file: missing-test-assertion
+// Required: Tests verify orchestration through repository side effects.
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-static-class
+// Required: Tests keep fixture helpers and fakes top-level.
+
 import 'dart:async';
 import 'dart:convert';
 
@@ -280,7 +301,12 @@ void main() {
       expect(created.content, isEmpty);
       expect(created.metadata, isNotNull);
 
-      final metadata = jsonDecode(created.metadata!) as Map<String, dynamic>;
+      final rawMetadata = created.metadata;
+      final metadata =
+          jsonDecode(
+                rawMetadata ?? fail('Expected tool call metadata'),
+              )
+              as Map<String, dynamic>;
       final toolCalls = metadata['toolCalls'] as List<dynamic>;
       expect(toolCalls, hasLength(1));
       expect(toolCalls.single, containsPair('id', 'tool-1'));
@@ -346,7 +372,7 @@ void main() {
           ]),
         );
 
-        await usecase.call(
+        final _ = await usecase.call(
           conversationId: 'conversation-1',
           context: const AgentIterationContext(
             origin: AgentIterationOrigin.userMessage,
@@ -387,7 +413,7 @@ void main() {
           ]),
         );
 
-        await usecase.call(
+        final _ = await usecase.call(
           conversationId: 'conversation-1',
           context: const AgentIterationContext(
             origin: AgentIterationOrigin.userMessage,
@@ -439,17 +465,17 @@ void main() {
         agentCancellationRuntime.requestStop('conversation-1');
 
         final result = await future;
-        await controller.close();
+        final _ = await controller.close();
 
         expect(result.hasToolCalls, isFalse);
-        verifyNever(messageRepository.createMessage(any));
+        final _ = verifyNever(messageRepository.createMessage(any));
         verify(
           messageRepository.patchMessage(
             'user-1',
             const MessagePatch(status: MessageStatus.sent),
           ),
         ).called(1);
-        verifyNever(
+        final _ = verifyNever(
           messageRepository.patchMessage(
             'assistant-1',
             const MessagePatch(status: MessageStatus.error),
@@ -485,7 +511,7 @@ void main() {
         agentCancellationRuntime.requestStop('conversation-1');
 
         final result = await future;
-        await controller.close();
+        final _ = await controller.close();
 
         expect(result.messageId, 'assistant-1');
         expect(result.hasToolCalls, isFalse);
@@ -541,7 +567,7 @@ void main() {
         agentCancellationRuntime.requestStop('conversation-1');
 
         final result = await future;
-        await controller.close();
+        final _ = await controller.close();
 
         expect(result.hasToolCalls, isFalse);
         final patches = verify(
@@ -596,7 +622,7 @@ void main() {
 
         createCompleter.complete(_unfinishedAssistantMessage);
         final result = await future;
-        await controller.close();
+        final _ = await controller.close();
 
         expect(result.messageId, 'assistant-1');
         final patches = verify(
@@ -749,11 +775,11 @@ void main() {
         );
 
         try {
-          await usecase.call(conversationId: 'conversation-1');
+          final _ = await usecase.call(conversationId: 'conversation-1');
           fail('Should have thrown');
-          // ignore: avoid_catching_errors
+          // ignore: avoid_catching_errors - Required to assert propagated StateError.
         } on StateError {
-          verifyNever(
+          final _ = verifyNever(
             messageRepository.patchMessage(any, any),
           );
         }
@@ -885,10 +911,10 @@ void main() {
         ]),
       );
 
-      await usecase.call(conversationId: 'conversation-1');
+      final _ = await usecase.call(conversationId: 'conversation-1');
 
       verify(selectPromptMessagesUsecase.call('conversation-1')).called(1);
-      verifyNever(
+      final _ = verifyNever(
         messageRepository.getMessagesByConversation('conversation-1'),
       );
     });

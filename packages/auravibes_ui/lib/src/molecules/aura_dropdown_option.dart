@@ -1,3 +1,12 @@
+// ignore_for_file: no-magic-number
+// Required: UI tokens and layout use fixed design values.
+// ignore_for_file: avoid-returning-widgets
+// Required: Existing helper builders return widgets.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+
 import 'package:auravibes_ui/src/atoms/aura_icon.dart';
 import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
@@ -50,6 +59,8 @@ class AuraDropdownOption<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
+    final leading = this.leading;
+    final trailing = this.trailing;
 
     Widget result = AuraPressable(
       child: Container(
@@ -63,7 +74,7 @@ class AuraDropdownOption<T> extends StatelessWidget {
         child: Row(
           children: [
             if (leading != null) ...[
-              leading!,
+              leading,
               const SizedBox(width: DesignSpacing.sm),
             ],
             Expanded(
@@ -71,7 +82,7 @@ class AuraDropdownOption<T> extends StatelessWidget {
             ),
             if (trailing != null) ...[
               const SizedBox(width: DesignSpacing.sm),
-              trailing!,
+              trailing,
             ] else if (isSelected) ...[
               const SizedBox(width: DesignSpacing.sm),
               const AuraIcon(

@@ -1,8 +1,14 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: no-empty-block
+// Required: Tests use intentional no-op callbacks and fake hooks.
 import 'package:auravibes_app/features/models/models/add_model_provider_model.dart';
 import 'package:auravibes_app/features/models/widgets/enhanced_model_input.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+
+import '../../../helpers/test_app.dart';
 
 void main() {
   group('ModelInputFieldType', () {
@@ -88,6 +94,24 @@ void main() {
         fieldType: ModelInputFieldType.name,
       );
       expect(widget.workspaceId, 'ws-1');
+    });
+
+    testWidgets('renders validation error and hint', (tester) async {
+      await tester.pumpWidget(
+        testableApp(
+          child: const Scaffold(
+            body: EnhancedModelInput(
+              workspaceId: 'ws-1',
+              fieldType: ModelInputFieldType.name,
+            ),
+          ),
+        ),
+      );
+      final pumpCount = await tester.pumpAndSettle();
+      expect(pumpCount, isNonNegative);
+
+      expect(find.text('Name is required'), findsOneWidget);
+      expect(find.byType(TextFormField), findsOneWidget);
     });
   });
 

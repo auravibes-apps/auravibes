@@ -49,4 +49,4 @@ final class ConversationSelectedProvider
 }
 
 String _$conversationSelectedHash() =>
-    r'a3f466f5adb9dd87edf059c218679e4bda562bd6';
+    r'e52be827ac7da9f70e167189f57de1d611f388ea';

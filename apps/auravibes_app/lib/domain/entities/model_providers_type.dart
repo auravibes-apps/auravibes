@@ -1,3 +1,10 @@
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+
 import 'package:auravibes_app/utils/map_exception.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -58,8 +65,8 @@ abstract class ApiModelProviderEntity with _$ApiModelProviderEntity {
   }
 
   /// Returns true if the provider has a URL
-  bool get hasUrl => url != null && url!.isNotEmpty;
+  bool get hasUrl => url?.isNotEmpty ?? false;
 
   /// Returns true if the provider has documentation
-  bool get hasDocumentation => doc != null && doc!.isNotEmpty;
+  bool get hasDocumentation => doc?.isNotEmpty ?? false;
 }

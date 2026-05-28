@@ -1,3 +1,7 @@
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: prefer-static-class
+// Required: Existing helpers remain top-level for local feature use.
 import 'dart:async';
 
 import 'package:easy_localization/easy_localization.dart';

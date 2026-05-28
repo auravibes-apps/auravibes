@@ -1,3 +1,18 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: avoid-top-level-members-in-tests
+// Required: Test files keep shared fixtures and helpers top-level.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-static-class
+// Required: Tests keep fixture helpers and fakes top-level.
+
+// ignore_for_file: avoid-redundant-async
+// Required: Test callbacks intentionally preserve async-compatible signatures.
+
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
@@ -44,7 +59,7 @@ void main() {
     });
 
     test('upsertProvider updates existing provider on conflict', () async {
-      await database.apiModelProvidersDao.upsertProvider(
+      final _ = await database.apiModelProvidersDao.upsertProvider(
         ApiModelProvidersCompanion.insert(id: 'openai', name: 'OpenAI'),
       );
       final updated = await database.apiModelProvidersDao.upsertProvider(
@@ -54,14 +69,17 @@ void main() {
     });
 
     test('getProviderById returns provider when exists', () async {
-      await database.apiModelProvidersDao.upsertProvider(
+      final _ = await database.apiModelProvidersDao.upsertProvider(
         ApiModelProvidersCompanion.insert(id: 'openai', name: 'OpenAI'),
       );
       final provider = await database.apiModelProvidersDao.getProviderById(
         'openai',
       );
       expect(provider, isNotNull);
-      expect(provider!.name, equals('OpenAI'));
+      expect(
+        (provider ?? fail('Expected provider to be non-null')).name,
+        equals('OpenAI'),
+      );
     });
 
     test('getProviderById returns null when not exists', () async {
@@ -72,10 +90,10 @@ void main() {
     });
 
     test('getProvidersByType returns filtered providers', () async {
-      await database.apiModelProvidersDao.upsertProvider(
+      final _ = await database.apiModelProvidersDao.upsertProvider(
         ApiModelProvidersCompanion.insert(id: 'openai', name: 'OpenAI'),
       );
-      await database.apiModelProvidersDao.upsertProvider(
+      final _ = await database.apiModelProvidersDao.upsertProvider(
         ApiModelProvidersCompanion.insert(id: 'anthropic', name: 'Anthropic'),
       );
       final providers = await database.apiModelProvidersDao.getProvidersByType(
@@ -85,7 +103,7 @@ void main() {
     });
 
     test('deleteProvider removes provider and returns true', () async {
-      await database.apiModelProvidersDao.upsertProvider(
+      final _ = await database.apiModelProvidersDao.upsertProvider(
         ApiModelProvidersCompanion.insert(id: 'openai', name: 'OpenAI'),
       );
       final deleted = await database.apiModelProvidersDao.deleteProvider(
@@ -106,7 +124,7 @@ void main() {
     });
 
     test('providerExists returns true when provider exists', () async {
-      await database.apiModelProvidersDao.upsertProvider(
+      final _ = await database.apiModelProvidersDao.upsertProvider(
         ApiModelProvidersCompanion.insert(id: 'openai', name: 'OpenAI'),
       );
       final exists = await database.apiModelProvidersDao.providerExists(
@@ -123,10 +141,10 @@ void main() {
     });
 
     test('searchProvidersByName returns matching providers', () async {
-      await database.apiModelProvidersDao.upsertProvider(
+      final _ = await database.apiModelProvidersDao.upsertProvider(
         ApiModelProvidersCompanion.insert(id: 'openai', name: 'OpenAI'),
       );
-      await database.apiModelProvidersDao.upsertProvider(
+      final _ = await database.apiModelProvidersDao.upsertProvider(
         ApiModelProvidersCompanion.insert(id: 'anthropic', name: 'Anthropic'),
       );
       final results = await database.apiModelProvidersDao.searchProvidersByName(
@@ -138,20 +156,20 @@ void main() {
 
     test('getProviderCount returns correct count', () async {
       expect(await database.apiModelProvidersDao.getProviderCount(), equals(0));
-      await database.apiModelProvidersDao.upsertProvider(
+      final _ = await database.apiModelProvidersDao.upsertProvider(
         ApiModelProvidersCompanion.insert(id: 'openai', name: 'OpenAI'),
       );
       expect(await database.apiModelProvidersDao.getProviderCount(), equals(1));
     });
 
     test('getAllProviders sorts popular providers first', () async {
-      await database.apiModelProvidersDao.upsertProvider(
+      final _ = await database.apiModelProvidersDao.upsertProvider(
         ApiModelProvidersCompanion.insert(id: 'deepseek', name: 'DeepSeek'),
       );
-      await database.apiModelProvidersDao.upsertProvider(
+      final _ = await database.apiModelProvidersDao.upsertProvider(
         ApiModelProvidersCompanion.insert(id: 'openai', name: 'OpenAI'),
       );
-      await database.apiModelProvidersDao.upsertProvider(
+      final _ = await database.apiModelProvidersDao.upsertProvider(
         ApiModelProvidersCompanion.insert(id: 'zzz', name: 'ZZZ Provider'),
       );
       final providers = await database.apiModelProvidersDao.getAllProviders();
@@ -170,10 +188,10 @@ void main() {
     });
 
     test('deleteAllProviders removes all providers', () async {
-      await database.apiModelProvidersDao.upsertProvider(
+      final _ = await database.apiModelProvidersDao.upsertProvider(
         ApiModelProvidersCompanion.insert(id: 'openai', name: 'OpenAI'),
       );
-      await database.apiModelProvidersDao.upsertProvider(
+      final _ = await database.apiModelProvidersDao.upsertProvider(
         ApiModelProvidersCompanion.insert(id: 'anthropic', name: 'Anthropic'),
       );
       final deleted = await database.apiModelProvidersDao.deleteAllProviders();

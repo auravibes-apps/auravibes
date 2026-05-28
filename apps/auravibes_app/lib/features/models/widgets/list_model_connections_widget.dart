@@ -1,3 +1,16 @@
+// ignore_for_file: no-magic-number
+// Required: Existing thresholds and limits use numeric values.
+// ignore_for_file: avoid-returning-widgets
+// Required: Existing helper builders return widgets.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-single-widget-per-file
+// Required: Feature widgets keep closely related private widgets together.
+
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_connections_providers.dart';
@@ -23,7 +36,7 @@ class ListModelConnectionsWidget extends ConsumerWidget {
     return switch (workspaceModelSelectionsAsync) {
       AsyncData(value: final workspaceModelSelections) => () {
         if (workspaceModelSelections.isEmpty) {
-          return _buildEmptyState(context);
+          return _buildEmptyState();
         }
 
         return ListView.separated(
@@ -54,7 +67,7 @@ class ListModelConnectionsWidget extends ConsumerWidget {
     };
   }
 
-  Widget _buildEmptyState(BuildContext context) {
+  Widget _buildEmptyState() {
     return const Center(
       child: Padding(
         padding: EdgeInsets.all(32),
@@ -98,6 +111,7 @@ class _ModelConnectionCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final menuController = AuraPopupMenuController();
+    final url = workspaceModelSelection.url;
 
     return AuraCard(
       child: Column(
@@ -141,12 +155,12 @@ class _ModelConnectionCard extends ConsumerWidget {
               ),
             ],
           ),
-          if (workspaceModelSelection.url != null) ...[
+          if (url != null) ...[
             const SizedBox(height: 12),
             AuraText(
               child: Text(
                 LocaleKeys.models_screens_list_url_label.tr(
-                  args: [workspaceModelSelection.url!],
+                  args: [url],
                   context: context,
                 ),
               ),

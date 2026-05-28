@@ -1,3 +1,5 @@
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/screens/chats_list_screen.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
@@ -45,7 +47,7 @@ void main() {
           ),
         );
       });
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
       expect(find.byType(ChatsListScreen), findsOneWidget);
       expect(find.byType(AuraScreen), findsOneWidget);
     });

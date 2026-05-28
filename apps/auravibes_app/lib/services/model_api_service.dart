@@ -1,3 +1,12 @@
+// ignore_for_file: no-magic-number
+// Required: Existing thresholds and limits use numeric values.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:dio/dio.dart';
@@ -87,13 +96,12 @@ class ModelApiService {
   ModelApiResponse _parseDioResponse(
     Response<Map<String, dynamic>> response,
   ) {
-    if (response.statusCode != 200 || response.data == null) {
+    final jsonData = response.data;
+    if (response.statusCode != 200 || jsonData == null) {
       throw Exception(
         'API request failed with status ${response.statusCode}',
       );
     }
-
-    final jsonData = response.data!;
 
     // Parse providers
     final providersData = jsonData;

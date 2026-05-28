@@ -1,3 +1,9 @@
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 import 'package:mcp_client/mcp_client.dart' as mcp;
@@ -93,7 +99,7 @@ class McpManagerService {
 
   Future<mcp.ClientTransport> _createSseTransportConfig(
     McpServerToCreate server,
-  ) async {
+  ) {
     final authType = server.authenticationType;
 
     if (authType is McpAuthenticationTypeNone) {

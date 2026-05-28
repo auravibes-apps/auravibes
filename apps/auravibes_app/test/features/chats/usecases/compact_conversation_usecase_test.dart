@@ -1,3 +1,25 @@
+// ignore_for_file: avoid-top-level-members-in-tests
+// Required: Test files keep shared fixtures and helpers top-level.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
+// ignore_for_file: missing-test-assertion
+// Required: Tests verify usecase behavior through repository side effects.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-correct-type-name
+// Required: Test doubles mirror domain contract names.
+// ignore_for_file: prefer-static-class
+// Required: Tests keep fixture helpers and fakes top-level.
+
+// ignore_for_file: avoid-redundant-async
+// Required: Test callbacks intentionally preserve async-compatible signatures.
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
@@ -221,7 +243,7 @@ void main() {
       ).thenThrow(Exception('API error'));
 
       try {
-        await usecase(
+        final _ = await usecase(
           conversationId: 'conv-1',
           trigger: CompactionTrigger.manual,
         );
@@ -229,7 +251,7 @@ void main() {
         // expected
       }
 
-      verifyNever(() => mockMessageRepo.createMessage(any()));
+      final _ = verifyNever(() => mockMessageRepo.createMessage(any()));
     });
 
     test('manual failure leaves state unchanged', () async {
@@ -294,7 +316,9 @@ void main() {
       );
 
       verify(() => mockMessageRepo.createMessage(any())).called(1);
-      verifyNever(() => mockConversationRepo.patchConversation(any(), any()));
+      final _ = verifyNever(
+        () => mockConversationRepo.patchConversation(any(), any()),
+      );
       expect(result.status, CompactionExecutionStatus.success);
     });
   });
@@ -443,7 +467,7 @@ void main() {
       ).thenThrow(Exception('API error'));
 
       try {
-        await usecase(
+        final _ = await usecase(
           conversationId: 'conv-1',
           trigger: CompactionTrigger.auto,
         );
@@ -486,7 +510,7 @@ void main() {
         ),
       );
 
-      await usecase(
+      final _ = await usecase(
         conversationId: 'conv-1',
         trigger: CompactionTrigger.manual,
       );
@@ -538,7 +562,7 @@ void main() {
           ),
         );
 
-        await usecase(
+        final _ = await usecase(
           conversationId: 'conv-1',
           trigger: CompactionTrigger.manual,
         );

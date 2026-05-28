@@ -1,3 +1,20 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: avoid-top-level-members-in-tests
+// Required: Test files keep shared fixtures and helpers top-level.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-static-class
+// Required: Tests keep fixture helpers and fakes top-level.
+
+// ignore_for_file: avoid-redundant-async
+// Required: Test callbacks intentionally preserve async-compatible signatures.
+
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
@@ -55,14 +72,14 @@ void main() {
       final workspaceDao = database.workspaceDao;
 
       // Insert test workspaces
-      await workspaceDao.insertWorkspace(
+      final _ = await workspaceDao.insertWorkspace(
         WorkspacesCompanion.insert(
           name: 'Workspace 1',
           type: WorkspaceType.local,
         ),
       );
 
-      await workspaceDao.insertWorkspace(
+      final _ = await workspaceDao.insertWorkspace(
         WorkspacesCompanion.insert(
           name: 'Workspace 2',
           type: WorkspaceType.remote,
@@ -103,7 +120,10 @@ void main() {
 
       // Verify the update
       final retrieved = await workspaceDao.getWorkspaceById(idCreated.id);
-      expect(retrieved!.name, equals('Updated Name'));
+      expect(
+        (retrieved ?? fail('Expected retrieved to be non-null')).name,
+        equals('Updated Name'),
+      );
     });
 
     test('should delete workspace', () async {
@@ -130,14 +150,14 @@ void main() {
       final workspaceDao = database.workspaceDao;
 
       // Insert test workspaces
-      await workspaceDao.insertWorkspace(
+      final _ = await workspaceDao.insertWorkspace(
         WorkspacesCompanion.insert(
           name: 'Development Workspace',
           type: WorkspaceType.local,
         ),
       );
 
-      await workspaceDao.insertWorkspace(
+      final _ = await workspaceDao.insertWorkspace(
         WorkspacesCompanion.insert(
           name: 'Production Workspace',
           type: WorkspaceType.remote,
@@ -156,21 +176,21 @@ void main() {
       final workspaceDao = database.workspaceDao;
 
       // Insert test workspaces
-      await workspaceDao.insertWorkspace(
+      final _ = await workspaceDao.insertWorkspace(
         WorkspacesCompanion.insert(
           name: 'Local Workspace 1',
           type: WorkspaceType.local,
         ),
       );
 
-      await workspaceDao.insertWorkspace(
+      final _ = await workspaceDao.insertWorkspace(
         WorkspacesCompanion.insert(
           name: 'Local Workspace 2',
           type: WorkspaceType.local,
         ),
       );
 
-      await workspaceDao.insertWorkspace(
+      final _ = await workspaceDao.insertWorkspace(
         WorkspacesCompanion.insert(
           name: 'Remote Workspace 1',
           type: WorkspaceType.remote,

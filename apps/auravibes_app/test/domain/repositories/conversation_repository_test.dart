@@ -1,3 +1,10 @@
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+
 // ignore_for_file: cascade_invocations
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
@@ -124,7 +131,7 @@ void main() {
       final result = await repo.watchConversationById('c-1').first;
 
       expect(result, isNotNull);
-      expect(result!.id, 'c-1');
+      expect((result ?? fail('Expected result to be non-null')).id, 'c-1');
     });
 
     test('getConversationById returns null when not found', () async {

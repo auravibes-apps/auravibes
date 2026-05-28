@@ -1,3 +1,16 @@
+// ignore_for_file: avoid-redundant-async
+// Required: Test callbacks intentionally preserve async-compatible signatures.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
+// ignore_for_file: no-empty-block
+// Required: Tests use intentional no-op callbacks and fake hooks.
+// ignore_for_file: missing-test-assertion
+// Required: Tests verify usecase behavior through repository side effects.
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
@@ -86,10 +99,10 @@ void main() {
 
       await usecase.call(toolCallId: toolCallId, messageId: messageId);
 
-      verifyNever(
+      final _ = verifyNever(
         messageRepository.patchMessage(any, any),
       );
-      verifyNever(
+      final _ = verifyNever(
         resumeConversationIfReadyUsecase.call(messageId: anyNamed('messageId')),
       );
     });

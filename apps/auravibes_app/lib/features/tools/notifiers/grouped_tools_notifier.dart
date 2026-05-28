@@ -1,3 +1,12 @@
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-moving-to-variable
+// Required: Existing code repeats lookups where extraction adds noise.
+// ignore_for_file: prefer-static-class
+// Required: Existing helpers remain top-level for local feature use.
+
 import 'package:auravibes_app/data/repositories/tools_groups_repository_impl.dart';
 import 'package:auravibes_app/domain/models/mcp_connection_view_status.dart';
 import 'package:auravibes_app/domain/repositories/tools_groups_repository.dart';
@@ -27,7 +36,7 @@ ToolsGroupsRepository toolsGroupsRepository(Ref ref) {
 /// - Sorts groups: Default first, then MCP errors, then by creation date
 @riverpod
 class GroupedToolsNotifier extends _$GroupedToolsNotifier {
-  late String _workspaceId;
+  String _workspaceId = '';
 
   @override
   Future<List<ToolsGroupWithTools>> build(String workspaceId) async {
@@ -98,15 +107,16 @@ class GroupedToolsNotifier extends _$GroupedToolsNotifier {
       return;
     }
 
-    if (group.isMcpGroup && group.mcpServerId != null) {
+    final mcpServerId = group.mcpServerId;
+    if (group.isMcpGroup && mcpServerId != null) {
       if (!isEnabled) {
         ref
             .read(mcpConnectionProvider.notifier)
-            .disconnectMcpServer(group.mcpServerId!);
+            .disconnectMcpServer(mcpServerId);
       } else {
         await ref
             .read(mcpConnectionProvider.notifier)
-            .reconnectMcpServer(group.mcpServerId!);
+            .reconnectMcpServer(mcpServerId);
       }
     }
 
@@ -127,13 +137,12 @@ class GroupedToolsNotifier extends _$GroupedToolsNotifier {
     if (group == null || group.workspaceId != _workspaceId) {
       return;
     }
-    if (!group.isMcpGroup || group.mcpServerId == null) {
+    final mcpServerId = group.mcpServerId;
+    if (!group.isMcpGroup || mcpServerId == null) {
       return;
     }
 
-    await ref
-        .read(mcpConnectionProvider.notifier)
-        .deleteMcpServer(group.mcpServerId!);
+    await ref.read(mcpConnectionProvider.notifier).deleteMcpServer(mcpServerId);
 
     ref
       ..invalidateSelf()

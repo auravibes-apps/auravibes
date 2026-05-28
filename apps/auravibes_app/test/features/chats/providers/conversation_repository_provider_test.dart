@@ -1,3 +1,10 @@
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-static-class
+// Required: Tests keep fixture helpers and fakes top-level.
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
@@ -19,7 +26,7 @@ QueryExecutor _testConnection() {
 }
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
   late AppDatabase testDatabase;
   late ProviderContainer container;

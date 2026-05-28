@@ -1,3 +1,17 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: avoid-top-level-members-in-tests
+// Required: Test files keep shared fixtures and helpers top-level.
+// ignore_for_file: missing-test-assertion
+// Required: Database tests verify operations by absence of thrown errors.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-static-class
+// Required: Tests keep fixture helpers and fakes top-level.
+
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
@@ -110,7 +124,7 @@ void main() {
 
     test('migration onCreate creates all tables', () async {
       final strategy = database.migration;
-      await database.customSelect('SELECT 1').getSingle();
+      final _ = await database.customSelect('SELECT 1').getSingle();
       expect(strategy, isNotNull);
     });
 
@@ -137,7 +151,7 @@ void main() {
     });
 
     test('can insert workspace and query back', () async {
-      await database
+      final _ = await database
           .into(database.workspaces)
           .insert(
             WorkspacesCompanion.insert(
@@ -153,7 +167,7 @@ void main() {
     });
 
     test('can insert multiple workspaces', () async {
-      await database
+      final _ = await database
           .into(database.workspaces)
           .insert(
             WorkspacesCompanion.insert(
@@ -161,7 +175,7 @@ void main() {
               type: WorkspaceType.local,
             ),
           );
-      await database
+      final _ = await database
           .into(database.workspaces)
           .insert(
             WorkspacesCompanion.insert(
@@ -177,7 +191,7 @@ void main() {
     test(
       'initializeWithDefaults after manual insert does not add another',
       () async {
-        await database
+        final _ = await database
             .into(database.workspaces)
             .insert(
               WorkspacesCompanion.insert(
@@ -195,7 +209,7 @@ void main() {
     );
 
     test('getDatabaseStats with multiple workspaces', () async {
-      await database
+      final _ = await database
           .into(database.workspaces)
           .insert(
             WorkspacesCompanion.insert(
@@ -203,7 +217,7 @@ void main() {
               type: WorkspaceType.local,
             ),
           );
-      await database
+      final _ = await database
           .into(database.workspaces)
           .insert(
             WorkspacesCompanion.insert(

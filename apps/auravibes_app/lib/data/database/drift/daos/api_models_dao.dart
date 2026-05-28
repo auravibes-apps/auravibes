@@ -1,3 +1,11 @@
+// ignore_for_file: prefer-async-await
+// Required: Existing Future chains preserve callback flow.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-static-class
+// Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/api_models.dart';
 import 'package:drift/drift.dart';
@@ -77,7 +85,7 @@ class ApiModelsDao extends DatabaseAccessor<AppDatabase>
   ///
   /// Deletes all models with the given [providerId].
   /// Returns the number of deleted models.
-  Future<int> deleteModelsByProvider(String providerId) async {
+  Future<int> deleteModelsByProvider(String providerId) {
     return (delete(
       apiModels,
     )..where((t) => t.modelProvider.equals(providerId))).go();
@@ -166,7 +174,7 @@ class ApiModelsDao extends DatabaseAccessor<AppDatabase>
   /// Deletes all models from the database.
   ///
   /// Returns the number of deleted models.
-  Future<int> deleteAllModels() async {
+  Future<int> deleteAllModels() {
     return delete(apiModels).go();
   }
 

@@ -1,3 +1,9 @@
+// ignore_for_file: no-magic-number
+// Required: Existing thresholds and limits use numeric values.
+// ignore_for_file: prefer-moving-to-variable
+// Required: Existing code repeats lookups where extraction adds noise.
+// ignore_for_file: prefer-static-class
+// Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -33,8 +39,8 @@ class ConversationContextUsagePill extends ConsumerWidget {
                 SizedBox(
                   width: 26,
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(
-                      DesignBorderRadius.full,
+                    borderRadius: const BorderRadius.all(
+                      Radius.circular(DesignBorderRadius.full),
                     ),
                     child: LinearProgressIndicator(
                       value: data.progress.clamp(0.0, 1.0),

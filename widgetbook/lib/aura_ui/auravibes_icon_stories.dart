@@ -1,3 +1,11 @@
+// ignore_for_file: avoid-returning-widgets
+// Required: Widgetbook stories use helper functions that return widgets.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-moving-to-variable
+// Required: Existing code repeats lookups where extraction adds noise.
+// ignore_for_file: prefer-static-class
+// Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:widgetbook/widgetbook.dart';
@@ -21,7 +29,7 @@ Widget iconButtonBasicUseCase(BuildContext context) {
   return AuraIconButton(
     icon: context.knobs.iconData(),
     onPressed: () {
-      ScaffoldMessenger.of(
+      final _ = ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Icon button pressed!')));
     },

@@ -1,3 +1,8 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+
 import 'dart:convert';
 
 import 'package:auravibes_app/services/mcp_service/o_auth_discovery_result.dart';
@@ -88,7 +93,7 @@ void main() {
           final result = await OAuthDiscoveryService.discoverOAuth(registrer);
           expect(result, isNotNull);
           expect(
-            result!.authorizationUrl,
+            (result ?? fail('Expected result to be non-null')).authorizationUrl,
             'https://auth.example.com/authorize',
           );
           expect(result.tokenUrl, 'https://auth.example.com/token');
@@ -124,7 +129,10 @@ void main() {
         () async {
           final result = await OAuthDiscoveryService.discoverOAuth(registrer);
           expect(result, isNotNull);
-          expect(result!.scope, 'read write');
+          expect(
+            (result ?? fail('Expected result to be non-null')).scope,
+            'read write',
+          );
           expect(result.clientId, isNull);
         },
         () {
@@ -160,7 +168,7 @@ void main() {
           final result = await OAuthDiscoveryService.discoverOAuth(registrer);
           expect(result, isNotNull);
           expect(
-            result!.authorizationUrl,
+            (result ?? fail('Expected result to be non-null')).authorizationUrl,
             'https://auth.example.com/authorize',
           );
         },
@@ -193,7 +201,7 @@ void main() {
           final result = await OAuthDiscoveryService.discoverOAuth(registrer);
           expect(result, isNotNull);
           expect(
-            result!.authorizationUrl,
+            (result ?? fail('Expected result to be non-null')).authorizationUrl,
             'https://auth.example.com/authorize',
           );
           expect(result.tokenUrl, 'https://auth.example.com/token');
@@ -226,7 +234,10 @@ void main() {
         () async {
           final result = await OAuthDiscoveryService.discoverOAuth(registrer);
           expect(result, isNotNull);
-          expect(result!.clientId, 'dynamic-client-123');
+          expect(
+            (result ?? fail('Expected result to be non-null')).clientId,
+            'dynamic-client-123',
+          );
         },
         () {
           return MockClient((request) async {
@@ -297,7 +308,10 @@ void main() {
         () async {
           final result = await OAuthDiscoveryService.discoverOAuth(registrer);
           expect(result, isNotNull);
-          expect(result!.authorizationUrl, 'https://auth.example.com/auth');
+          expect(
+            (result ?? fail('Expected result to be non-null')).authorizationUrl,
+            'https://auth.example.com/auth',
+          );
           expect(result.tokenUrl, 'https://auth.example.com/token');
         },
         () {
@@ -333,7 +347,10 @@ void main() {
           () async {
             final result = await OAuthDiscoveryService.discoverOAuth(registrer);
             expect(result, isNotNull);
-            expect(result!.clientId, isNull);
+            expect(
+              (result ?? fail('Expected result to be non-null')).clientId,
+              isNull,
+            );
           },
           () {
             return MockClient((request) async {

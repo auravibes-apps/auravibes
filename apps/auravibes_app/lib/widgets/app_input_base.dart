@@ -1,3 +1,6 @@
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
@@ -41,6 +44,7 @@ class AppInputBase extends HookConsumerWidget {
     final controller = useTextEditingController(
       text: ref.watch(value),
     );
+    final hintLocaleKey = this.hintLocaleKey;
     return AuraInput(
       controller: controller,
       placeholder: TextLocale(
@@ -51,7 +55,7 @@ class AppInputBase extends HookConsumerWidget {
       ),
       hint: hintLocaleKey != null
           ? TextLocale(
-              hintLocaleKey!,
+              hintLocaleKey,
             )
           : null,
       obscureText: obscureText,

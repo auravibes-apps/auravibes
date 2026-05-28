@@ -1,3 +1,13 @@
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
+// ignore_for_file: missing-test-assertion
+// Required: Repository tests verify side effects through database state.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_model_selection_with_connection.dart';
 import 'package:auravibes_app/data/database/drift/tables/model_providers_table_type.dart';
@@ -158,7 +168,12 @@ void main() {
         final result = await repository.getWorkspaceModelSelectionById('sel-1');
 
         expect(result, isNotNull);
-        expect(result!.workspaceModelSelection.id, 'sel-1');
+        expect(
+          (result ?? fail('Expected result to be non-null'))
+              .workspaceModelSelection
+              .id,
+          'sel-1',
+        );
         expect(result.modelConnection.id, 'conn-1');
       });
 
@@ -206,7 +221,12 @@ void main() {
 
         final result = await repository.getWorkspaceModelSelectionById('sel-1');
 
-        expect(result!.modelsProvider.type, isNull);
+        expect(
+          (result ?? fail('Expected result to be non-null'))
+              .modelsProvider
+              .type,
+          isNull,
+        );
       });
 
       test('maps anthropic type correctly', () async {
@@ -240,7 +260,12 @@ void main() {
 
         final result = await repository.getWorkspaceModelSelectionById('sel-1');
 
-        expect(result!.modelsProvider.type, ModelProvidersType.anthropic);
+        expect(
+          (result ?? fail('Expected result to be non-null'))
+              .modelsProvider
+              .type,
+          ModelProvidersType.anthropic,
+        );
       });
     });
   });

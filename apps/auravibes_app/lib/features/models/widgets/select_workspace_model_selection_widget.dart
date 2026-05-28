@@ -1,3 +1,15 @@
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: no-equal-arguments
+// Required: Existing argument values intentionally repeat.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-extracting-callbacks
+// Required: UI callbacks stay local to their widgets.
+// ignore_for_file: prefer-single-widget-per-file
+// Required: Feature widgets keep closely related private widgets together.
+// ignore_for_file: prefer-static-class
+// Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';

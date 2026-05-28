@@ -1,3 +1,18 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: avoid-redundant-async
+// Required: Test callbacks intentionally preserve async-compatible signatures.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+
 // Required: test expectations use chaining on matchers which triggers
 // cascade_invocations lint. Not applicable in test assertions.
 
@@ -209,7 +224,7 @@ void main() {
 
     setUp(() async {
       repository = _FakeRepository();
-      await repository.createWorkspace(
+      final _ = await repository.createWorkspace(
         const WorkspaceToCreate(name: 'Original', type: WorkspaceType.local),
       );
       usecase = EditWorkspaceUseCase(
@@ -261,10 +276,10 @@ void main() {
     });
 
     test('deletes workspace successfully', () async {
-      await repository.createWorkspace(
+      final _ = await repository.createWorkspace(
         const WorkspaceToCreate(name: 'WS1', type: WorkspaceType.local),
       );
-      await repository.createWorkspace(
+      final _ = await repository.createWorkspace(
         const WorkspaceToCreate(name: 'WS2', type: WorkspaceType.local),
       );
 
@@ -279,7 +294,7 @@ void main() {
     });
 
     test('throws when deleting last remaining workspace', () async {
-      await repository.createWorkspace(
+      final _ = await repository.createWorkspace(
         const WorkspaceToCreate(name: 'Only', type: WorkspaceType.local),
       );
 
@@ -294,10 +309,10 @@ void main() {
     });
 
     test('throws when deleting active workspace', () async {
-      await repository.createWorkspace(
+      final _ = await repository.createWorkspace(
         const WorkspaceToCreate(name: 'WS1', type: WorkspaceType.local),
       );
-      await repository.createWorkspace(
+      final _ = await repository.createWorkspace(
         const WorkspaceToCreate(name: 'WS2', type: WorkspaceType.local),
       );
 
@@ -312,7 +327,7 @@ void main() {
     });
 
     test('last workspace guard takes priority over active guard', () async {
-      await repository.createWorkspace(
+      final _ = await repository.createWorkspace(
         const WorkspaceToCreate(name: 'Only', type: WorkspaceType.local),
       );
 

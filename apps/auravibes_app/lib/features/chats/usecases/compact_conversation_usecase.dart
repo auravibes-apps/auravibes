@@ -1,3 +1,11 @@
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-static-class
+// Required: Existing helpers remain top-level for local feature use.
 import 'dart:convert';
 
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
@@ -111,12 +119,15 @@ class CompactConversationUsecase {
       String summaryText;
       try {
         summaryText = await _generateSummary(foundModel, chatHistory);
-      } on Exception catch (e) {
+      } on Exception catch (e, stackTrace) {
         if (trigger == CompactionTrigger.auto) {
           await _persistRequiredFailureMessage(conversationId: conversationId);
         }
 
-        throw CompactionFailedException(cause: e);
+        Error.throwWithStackTrace(
+          CompactionFailedException(cause: e),
+          stackTrace,
+        );
       }
 
       await _persistCompactionSummary(
@@ -193,7 +204,7 @@ class CompactConversationUsecase {
       ),
     );
 
-    await messageRepository.patchMessage(
+    final _ = await messageRepository.patchMessage(
       created.id,
       const MessagePatch(status: MessageStatus.sent),
     );
@@ -212,7 +223,7 @@ class CompactConversationUsecase {
       ),
     );
 
-    await messageRepository.patchMessage(
+    final _ = await messageRepository.patchMessage(
       created.id,
       const MessagePatch(status: MessageStatus.error),
     );

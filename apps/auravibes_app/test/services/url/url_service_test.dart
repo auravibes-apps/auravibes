@@ -1,3 +1,16 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: avoid-redundant-async
+// Required: Test callbacks intentionally preserve async-compatible signatures.
+// ignore_for_file: no-empty-block
+// Required: Tests use intentional no-op callbacks and fake hooks.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+
 import 'dart:async';
 import 'dart:typed_data';
 
@@ -55,11 +68,16 @@ void main() {
       );
 
       await requestStarted.future.timeout(const Duration(seconds: 1));
-      await operation.cancel();
+      final _ = await operation.cancel();
 
       expect(operation.isCanceled, isTrue);
       expect(observedCancelToken, isNotNull);
-      expect(observedCancelToken!.isCancelled, isTrue);
+      expect(
+        (observedCancelToken ??
+                fail('Expected observedCancelToken to be non-null'))
+            .isCancelled,
+        isTrue,
+      );
     });
 
     test('handles DioException with response data', () async {
@@ -313,7 +331,10 @@ void main() {
             isNot(contains(Headers.contentTypeHeader)),
           );
 
-          final chunks = await requestStream!.toList();
+          final chunks =
+              await (requestStream ??
+                      fail('Expected requestStream to be non-null'))
+                  .toList();
           streamedBody = String.fromCharCodes(
             chunks.expand((chunk) => chunk),
           );
@@ -324,7 +345,7 @@ void main() {
       final dio = Dio()..httpClientAdapter = adapter;
       final service = UrlService(dio: dio);
 
-      await service
+      final _ = await service
           .execute(
             const UrlRequest(
               url: 'https://example.com',
@@ -427,7 +448,7 @@ void main() {
         final dio = Dio()..httpClientAdapter = adapter;
         final service = UrlService(dio: dio);
 
-        await service
+        final _ = await service
             .execute(
               const UrlRequest(
                 url: 'https://example.com',
@@ -452,7 +473,7 @@ void main() {
         final dio = Dio()..httpClientAdapter = adapter;
         final service = UrlService(dio: dio);
 
-        await service
+        final _ = await service
             .execute(
               const UrlRequest(
                 url: 'https://example.com',
@@ -477,7 +498,7 @@ void main() {
         final dio = Dio()..httpClientAdapter = adapter;
         final service = UrlService(dio: dio);
 
-        await service
+        final _ = await service
             .execute(
               const UrlRequest(
                 url: 'https://example.com',
@@ -500,7 +521,7 @@ void main() {
         final dio = Dio()..httpClientAdapter = adapter;
         final service = UrlService(dio: dio);
 
-        await service
+        final _ = await service
             .execute(
               const UrlRequest(url: 'https://example.com'),
             )
@@ -521,7 +542,7 @@ void main() {
         final dio = Dio()..httpClientAdapter = adapter;
         final service = UrlService(dio: dio);
 
-        await service
+        final _ = await service
             .execute(
               const UrlRequest(
                 url: 'https://example.com',
@@ -544,7 +565,7 @@ void main() {
         final dio = Dio()..httpClientAdapter = adapter;
         final service = UrlService(dio: dio);
 
-        await service
+        final _ = await service
             .execute(
               const UrlRequest(url: 'https://example.com'),
             )
@@ -564,7 +585,7 @@ void main() {
         final dio = Dio()..httpClientAdapter = adapter;
         final service = UrlService(dio: dio);
 
-        await service
+        final _ = await service
             .execute(
               const UrlRequest(
                 url: 'https://example.com',

@@ -1,3 +1,10 @@
+// ignore_for_file: no-magic-number
+// Required: UI tokens and layout use fixed design values.
+// ignore_for_file: avoid-returning-widgets
+// Required: Existing helper builders return widgets.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+
 import 'package:auravibes_ui/src/atoms/aura_message_status.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
@@ -49,6 +56,7 @@ class AuraMessageBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
+    final timestamp = this.timestamp;
 
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
@@ -76,7 +84,7 @@ class AuraMessageBubble extends StatelessWidget {
                     _buildContent(auraColors),
                     if (timestamp != null) ...[
                       const SizedBox(height: DesignSpacing.xs),
-                      _buildTimestamp(auraColors),
+                      _buildTimestamp(auraColors, timestamp),
                     ],
                   ],
                 ),
@@ -119,7 +127,9 @@ class AuraMessageBubble extends StatelessWidget {
       border: status == AuraMessageDeliveryStatus.error
           ? Border.fromBorderSide(BorderSide(color: auraColors.error))
           : null,
-      borderRadius: BorderRadius.circular(DesignBorderRadius.xl),
+      borderRadius: const BorderRadius.all(
+        Radius.circular(DesignBorderRadius.xl),
+      ),
       boxShadow: [
         if (status != AuraMessageDeliveryStatus.error) DesignShadows.sm,
       ],
@@ -141,7 +151,9 @@ class AuraMessageBubble extends StatelessWidget {
         ),
       ),
       AuraMessageContentType.image => ClipRRect(
-        borderRadius: BorderRadius.circular(DesignBorderRadius.md),
+        borderRadius: const BorderRadius.all(
+          Radius.circular(DesignBorderRadius.md),
+        ),
         child: Image.network(
           content,
           errorBuilder: (context, error, stackTrace) => Container(
@@ -190,13 +202,13 @@ class AuraMessageBubble extends StatelessWidget {
     };
   }
 
-  Widget _buildTimestamp(AuraColorScheme auraColors) {
+  Widget _buildTimestamp(AuraColorScheme auraColors, DateTime timestamp) {
     final textColor = isUser
         ? auraColors.onPrimary.withValues(alpha: 0.7)
         : auraColors.onSurfaceVariant;
 
     return Text(
-      _formatTimestamp(timestamp!),
+      _formatTimestamp(timestamp),
       style: TextStyle(
         color: textColor,
         fontSize: DesignTypography.fontSizeXs,

@@ -133,36 +133,3 @@ dart_code_linter:
 
     # Disabled: enabling the full DCL preset on the existing codebase surfaces
     # thousands of style-only changes across production, tests, and widgetbook.
-    - avoid-dynamic: false
-    - avoid-global-state: false
-    - avoid-ignoring-return-values: false
-    - avoid-late-keyword: false
-    - avoid-non-ascii-symbols: false
-    - avoid-non-null-assertion: false
-    - avoid-passing-async-when-sync-expected: false
-    - avoid-redundant-async: false
-    - avoid-returning-widgets: false
-    - avoid-substring: false
-    - avoid-throw-in-catch-block: false
-    - avoid-top-level-members-in-tests: false
-    - avoid-unused-parameters: false
-    - format-comment: false
-    - member-ordering: false
-    - missing-test-assertion: false
-    - newline-before-return: false
-    - no-empty-block: false
-    - no-equal-arguments: false
-    - no-magic-number: false
-    - no-object-declaration: false
-    - prefer-async-await: false
-    - prefer-commenting-analyzer-ignores: false
-    - prefer-conditional-expressions: false
-    - prefer-const-border-radius: false
-    - prefer-correct-identifier-length: false
-    - prefer-correct-type-name: false
-    - prefer-enums-by-name: false
-    - prefer-extracting-callbacks: false
-    - prefer-moving-to-variable: false
-    - prefer-single-widget-per-file: false
-    - prefer-static-class: false
-    - prefer-using-list-view: false

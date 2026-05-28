@@ -1,3 +1,5 @@
+// ignore_for_file: prefer-static-class
+// Required: Tests keep fixture helpers and fakes top-level.
 import 'package:auravibes_ui/src/atoms/aura_field_label.dart';
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:flutter/material.dart';

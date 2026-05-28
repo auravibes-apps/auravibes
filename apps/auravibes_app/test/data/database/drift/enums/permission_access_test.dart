@@ -1,3 +1,5 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:flutter_test/flutter_test.dart';
 

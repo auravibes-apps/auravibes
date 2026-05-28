@@ -1,3 +1,9 @@
+// ignore_for_file: avoid-redundant-async
+// Required: Test callbacks intentionally preserve async-compatible signatures.
+// ignore_for_file: no-empty-block
+// Required: Tests use intentional no-op callbacks and fake hooks.
+// ignore_for_file: missing-test-assertion
+// Required: Tests verify stream behavior through runtime side effects.
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
@@ -25,7 +31,7 @@ void main() {
   group('MessagesStreamingRuntime', () {
     test('holds function references', () {
       void startSub(CompositeSubscription _, String _) {}
-      void updateResult(dynamic _, String _) {}
+      void updateResult(Object? _, String _) {}
       Future<void> remove(String _) async {}
 
       final runtime = MessagesStreamingRuntime(

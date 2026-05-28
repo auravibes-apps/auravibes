@@ -1,3 +1,13 @@
+// ignore_for_file: prefer-async-await
+// Required: Existing Future chains preserve callback flow.
+// ignore_for_file: no-magic-number
+// Required: Existing thresholds and limits use numeric values.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
 import 'package:auravibes_app/data/database/drift/daos/api_model_providers_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/api_models_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/conversation_dao.dart';
@@ -122,7 +132,7 @@ class AppDatabase extends _$AppDatabase {
     ).getSingle().then((result) => result.read<int>('count'));
 
     if (workspaceCount == 0) {
-      await into(workspaces).insert(
+      final _ = await into(workspaces).insert(
         WorkspacesCompanion.insert(
           name: 'Default Workspace',
           type: WorkspaceType.local,

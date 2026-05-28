@@ -1,3 +1,11 @@
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-static-class
+// Required: Existing helpers remain top-level for local feature use.
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -72,7 +80,7 @@ class EncryptionService {
   }
 }
 
-Provider<EncryptionService> encryptionServiceProvider =
+final Provider<EncryptionService> encryptionServiceProvider =
     Provider<EncryptionService>((ref) {
       final keyManager = ref.read(secretKeyManagerProvider);
       return EncryptionService(keyManager);

@@ -59,7 +59,7 @@ final class AddModelProviderStateProvider
 }
 
 String _$addModelProviderStateHash() =>
-    r'f34932196b8a693c41c4e345adb0f84d730e173b';
+    r'83d141015f21ea0e7f814bb0f7809ca5f44ae2b7';
 
 final class AddModelProviderStateFamily extends $Family
     with

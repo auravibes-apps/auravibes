@@ -1,3 +1,10 @@
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -58,8 +65,9 @@ abstract class WorkspaceToCreate with _$WorkspaceToCreate {
 
   /// Returns true if the workspace has a valid URL (for remote workspaces)
   bool get hasValidUrl {
+    final url = this.url;
     if (isLocal && url == null) return true;
-    return !isLocal && url != null && url!.isNotEmpty;
+    return !isLocal && url != null && url.isNotEmpty;
   }
 
   /// Returns true if the workspace is in a valid state
@@ -80,15 +88,18 @@ abstract class WorkspacePatch with _$WorkspacePatch {
   const WorkspacePatch._();
 
   String? validationErrorFor(WorkspaceEntity current) {
+    final name = this.name;
+    final url = this.url;
+
     if (name == null && type == null && url == null) {
       return 'At least one field must be provided';
     }
 
-    if (name != null && name!.isEmpty) {
+    if (name != null && name.isEmpty) {
       return 'Workspace name cannot be empty';
     }
 
-    if (url != null && url!.isEmpty) {
+    if (url != null && url.isEmpty) {
       return 'Workspace URL cannot be empty';
     }
 

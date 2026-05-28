@@ -7,9 +7,10 @@ enum PermissionAccess {
   final String value;
 
   static PermissionAccess fromString(String value) {
-    return PermissionAccess.values.firstWhere(
-      (e) => e.name == value,
-      orElse: () => PermissionAccess.ask,
-    );
+    if (!PermissionAccess.values.map((access) => access.name).contains(value)) {
+      return PermissionAccess.ask;
+    }
+
+    return PermissionAccess.values.byName(value);
   }
 }
