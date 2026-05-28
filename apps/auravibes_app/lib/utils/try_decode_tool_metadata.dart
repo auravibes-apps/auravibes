@@ -1,3 +1,5 @@
+// ignore_for_file: prefer-static-class
+// Required: Existing helpers remain top-level for local feature use.
 import 'dart:convert';
 
 const JsonEncoder _toolMetadataEncoder = JsonEncoder.withIndent('  ');
@@ -5,7 +7,7 @@ const JsonEncoder _toolMetadataEncoder = JsonEncoder.withIndent('  ');
 String? tryDecodeToolMetadata(Object? metadata) {
   if (metadata == null) return null;
 
-  dynamic decoded;
+  Object? decoded;
   try {
     decoded = metadata is String ? jsonDecode(metadata) : metadata;
   } on Exception catch (_) {

@@ -1,3 +1,17 @@
+// ignore_for_file: avoid-top-level-members-in-tests
+// Required: Test files keep shared fixtures and helpers top-level.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-static-class
+// Required: Tests keep fixture helpers and fakes top-level.
+
+// ignore_for_file: avoid-returning-widgets
+// Required: Widget tests use helpers that build widgets under test.
+
+import 'dart:async';
+
 import 'package:auravibes_ui/src/molecules/aura_button.dart';
 import 'package:auravibes_ui/src/organisms/aura_confirm_dialog.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
@@ -32,6 +46,10 @@ Finder findAuraButtonByColorVariant(AuraColorVariant variant) {
   return find.byWidgetPredicate(
     (widget) => widget is AuraButton && widget.colorVariant == variant,
   );
+}
+
+VoidCallback runDialogAction(Future<void> Function() action) {
+  return () => unawaited(action());
 }
 
 void main() {
@@ -228,13 +246,13 @@ void main() {
         wrapWithAuraTheme(
           Builder(
             builder: (context) => TextButton(
-              onPressed: () async {
+              onPressed: runDialogAction(() async {
                 dialogResult = await showAuraConfirmDialog(
                   context: context,
                   title: const Text('Dialog Title'),
                   message: const Text('Are you sure?'),
                 );
-              },
+              }),
               child: const Text('Open'),
             ),
           ),
@@ -242,7 +260,7 @@ void main() {
       );
 
       await tester.tap(find.text('Open'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       // Dialog should be visible (custom Container dialog)
       expect(find.byType(AuraConfirmDialog), findsOneWidget);
@@ -250,7 +268,7 @@ void main() {
       // Use widget type finder to avoid matching title
       final confirmButton = findAuraButtonByLabel('Confirm');
       await tester.tap(confirmButton);
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       // Dialog should be dismissed
       expect(find.byType(AuraConfirmDialog), findsNothing);
@@ -266,13 +284,13 @@ void main() {
         wrapWithAuraTheme(
           Builder(
             builder: (context) => TextButton(
-              onPressed: () async {
+              onPressed: runDialogAction(() async {
                 dialogResult = await showAuraConfirmDialog(
                   context: context,
                   title: const Text('Dialog Title'),
                   message: const Text('Are you sure?'),
                 );
-              },
+              }),
               child: const Text('Open'),
             ),
           ),
@@ -280,14 +298,14 @@ void main() {
       );
 
       await tester.tap(find.text('Open'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       // Dialog should be visible
       expect(find.byType(AuraConfirmDialog), findsOneWidget);
 
       // Tap cancel
       await tester.tap(find.text('Cancel'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       // Dialog should be dismissed
       expect(find.byType(AuraConfirmDialog), findsNothing);
@@ -301,13 +319,13 @@ void main() {
         wrapWithAuraTheme(
           Builder(
             builder: (context) => TextButton(
-              onPressed: () async {
+              onPressed: runDialogAction(() async {
                 await showAuraAlertDialog(
                   context: context,
                   title: const Text('Alert'),
                   message: const Text('This is an alert.'),
                 );
-              },
+              }),
               child: const Text('Open'),
             ),
           ),
@@ -315,13 +333,13 @@ void main() {
       );
 
       await tester.tap(find.text('Open'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(find.byType(AuraAlertDialog), findsOneWidget);
 
       // Tap dismiss
       await tester.tap(find.text('OK'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       // Dialog should be dismissed
       expect(find.byType(AuraAlertDialog), findsNothing);
@@ -332,14 +350,14 @@ void main() {
         wrapWithAuraTheme(
           Builder(
             builder: (context) => TextButton(
-              onPressed: () async {
+              onPressed: runDialogAction(() async {
                 await showAuraAlertDialog(
                   context: context,
                   title: const Text('Alert'),
                   message: const Text('This is an alert.'),
                   barrierDismissible: false,
                 );
-              },
+              }),
               child: const Text('Open'),
             ),
           ),
@@ -347,20 +365,20 @@ void main() {
       );
 
       await tester.tap(find.text('Open'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(find.byType(AuraAlertDialog), findsOneWidget);
 
       // Tap outside the dialog (modal barrier area).
       await tester.tapAt(const Offset(1, 1));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       // Alert dialog should still be visible (non-barrier-dismissible).
       expect(find.byType(AuraAlertDialog), findsOneWidget);
 
       // Close explicitly
       await tester.tap(find.text('OK'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
       expect(find.byType(AuraAlertDialog), findsNothing);
     });
   });
@@ -373,13 +391,13 @@ void main() {
         wrapWithAuraTheme(
           Builder(
             builder: (context) => TextButton(
-              onPressed: () async {
-                await showAuraConfirmDialog(
+              onPressed: runDialogAction(() async {
+                final _ = await showAuraConfirmDialog(
                   context: context,
                   title: const Text('Title'),
                   message: const Text('Message'),
                 );
-              },
+              }),
               child: const Text('Open'),
             ),
           ),
@@ -387,7 +405,7 @@ void main() {
       );
 
       await tester.tap(find.text('Open'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       // The dialog should NOT use Material's AlertDialog
       expect(find.byType(AlertDialog), findsNothing);
@@ -401,13 +419,13 @@ void main() {
         wrapWithAuraTheme(
           Builder(
             builder: (context) => TextButton(
-              onPressed: () async {
+              onPressed: runDialogAction(() async {
                 await showAuraAlertDialog(
                   context: context,
                   title: const Text('Alert'),
                   message: const Text('Message'),
                 );
-              },
+              }),
               child: const Text('Open'),
             ),
           ),
@@ -415,7 +433,7 @@ void main() {
       );
 
       await tester.tap(find.text('Open'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       // The dialog should NOT use Material's AlertDialog
       expect(find.byType(AlertDialog), findsNothing);
@@ -433,13 +451,13 @@ void main() {
         wrapWithAuraTheme(
           Builder(
             builder: (context) => TextButton(
-              onPressed: () async {
+              onPressed: runDialogAction(() async {
                 result = await showAuraConfirmDialog(
                   context: context,
                   title: const Text('Title'),
                   message: const Text('Message'),
                 );
-              },
+              }),
               child: const Text('Open'),
             ),
           ),
@@ -447,11 +465,11 @@ void main() {
       );
 
       await tester.tap(find.text('Open'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       // Tap cancel button
       await tester.tap(find.text('Cancel'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(result, isFalse);
     });
@@ -465,13 +483,13 @@ void main() {
         wrapWithAuraTheme(
           Builder(
             builder: (context) => TextButton(
-              onPressed: () async {
+              onPressed: runDialogAction(() async {
                 result = await showAuraConfirmDialog(
                   context: context,
                   title: const Text('Title'),
                   message: const Text('Message'),
                 );
-              },
+              }),
               child: const Text('Open'),
             ),
           ),
@@ -479,11 +497,11 @@ void main() {
       );
 
       await tester.tap(find.text('Open'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       // Tap outside the dialog (barrier)
       await tester.tapAt(const Offset(1, 1));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       // Dialog should be dismissed and result should be null
       expect(find.byType(AuraConfirmDialog), findsNothing);
@@ -499,14 +517,14 @@ void main() {
           wrapWithAuraTheme(
             Builder(
               builder: (context) => TextButton(
-                onPressed: () async {
+                onPressed: runDialogAction(() async {
                   result = await showAuraConfirmDialog(
                     context: context,
                     title: const Text('Title'),
                     message: const Text('Message'),
                     barrierDismissible: false,
                   );
-                },
+                }),
                 child: const Text('Open'),
               ),
             ),
@@ -514,11 +532,11 @@ void main() {
         );
 
         await tester.tap(find.text('Open'));
-        await tester.pumpAndSettle();
+        final _ = await tester.pumpAndSettle();
 
         // Tap outside the dialog (barrier)
         await tester.tapAt(const Offset(1, 1));
-        await tester.pumpAndSettle();
+        final _ = await tester.pumpAndSettle();
 
         // Dialog should remain visible and unresolved
         expect(find.text('Title'), findsOneWidget);
@@ -527,7 +545,7 @@ void main() {
 
         // Close explicitly
         await tester.tap(find.text('Cancel'));
-        await tester.pumpAndSettle();
+        final _ = await tester.pumpAndSettle();
         expect(result, isFalse);
       },
     );

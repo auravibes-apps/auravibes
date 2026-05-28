@@ -1,5 +1,18 @@
+// ignore_for_file: avoid-returning-widgets
+// Required: Widget tests use helpers that build widgets under test.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
+// ignore_for_file: avoid-redundant-async
+// Required: Test callbacks intentionally preserve async-compatible signatures.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-moving-to-variable
+// Required: Tests repeat finders and fixture lookups for clarity.
+// ignore_for_file: prefer-static-class
+// Required: Tests keep fixture helpers and fakes top-level.
 import 'dart:async';
 
+import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/widgets/add_tool_modal.dart';
 import 'package:auravibes_app/services/tools/user_tool_type.dart';
@@ -67,6 +80,20 @@ List<Object> _dataOverride([
       (ref, arg) async => tools,
     ),
   ];
+}
+
+class _RecordingWorkspaceToolsNotifier extends WorkspaceToolsNotifier {
+  UserToolType? _addedTool;
+
+  @override
+  Future<List<WorkspaceToolEntity>> build(String workspaceId) async => const [];
+
+  @override
+  Future<void> addTool(UserToolType toolType) async {
+    _addedTool = toolType;
+  }
+
+  bool hasAdded(UserToolType toolType) => _addedTool == toolType;
 }
 
 void main() {
@@ -140,6 +167,38 @@ void main() {
       expect(find.byIcon(Icons.check_circle_outline), findsOneWidget);
     });
 
+    testWidgets('shows search empty state when query has no matches', (
+      tester,
+    ) async {
+      await _pumpAndInit(tester, _buildSubject(_dataOverride()));
+      await _showDialog(tester);
+
+      await tester.enterText(find.byType(AuraInput), 'not-found');
+      await tester.pump();
+
+      expect(find.byIcon(Icons.search_off), findsOneWidget);
+    });
+
+    testWidgets('adds selected tool and closes dialog', (tester) async {
+      final notifier = _RecordingWorkspaceToolsNotifier();
+
+      await _pumpAndInit(
+        tester,
+        _buildSubject([
+          ..._dataOverride(),
+          workspaceToolsProvider(_wsId).overrideWith(() => notifier),
+        ]),
+      );
+      await _showDialog(tester);
+
+      await tester.tap(find.byType(AuraTile));
+      await tester.pump();
+      await tester.pump();
+
+      expect(notifier.hasAdded(UserToolType.calculator), isTrue);
+      expect(find.byType(AddToolModal), findsNothing);
+    });
+
     testWidgets('shows error widget when error', (tester) async {
       await _pumpAndInit(
         tester,
@@ -150,7 +209,7 @@ void main() {
         ]),
       );
       await _showDialog(tester);
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(find.byType(AppErrorWidget), findsOneWidget);
     });

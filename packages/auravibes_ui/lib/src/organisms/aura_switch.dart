@@ -1,3 +1,16 @@
+// ignore_for_file: no-magic-number
+// Required: UI tokens and layout use fixed design values.
+// ignore_for_file: no-equal-arguments
+// Required: UI geometry uses repeated values for symmetric layout.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-moving-to-variable
+// Required: UI components repeat theme and layout lookups intentionally.
+
 import 'package:auravibes_ui/src/atoms/aura_loading_circle.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
@@ -45,6 +58,7 @@ class AuraSwitch extends StatelessWidget {
     final auraColors = context.auraColors;
     final auraTheme = context.auraTheme;
 
+    final onChanged = this.onChanged;
     final isInteractive = !disabled && !isLoading && onChanged != null;
 
     final trackWidth = _getTrackWidth();
@@ -107,7 +121,7 @@ class AuraSwitch extends StatelessWidget {
           duration: auraTheme.animation.normal,
         ),
       ),
-      onTap: isInteractive ? () => onChanged!(!value) : null,
+      onTap: isInteractive ? () => onChanged(!value) : null,
     );
   }
 

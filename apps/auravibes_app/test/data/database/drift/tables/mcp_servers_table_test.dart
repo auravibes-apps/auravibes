@@ -1,3 +1,15 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: avoid-redundant-async
+// Required: Test callbacks intentionally preserve async-compatible signatures.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-static-class
+// Required: Tests keep fixture helpers and fakes top-level.
+
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/mcp_servers.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
@@ -34,14 +46,18 @@ void main() {
       test('converts SSE to JSON', () {
         const transport = McpTransportTypeSSE();
         final json =
-            transportTypeConverter.toJson(transport)! as Map<String, dynamic>;
+            (transportTypeConverter.toJson(transport) ??
+                    fail('Expected converter JSON'))
+                as Map<String, dynamic>;
         expect(json['type'], 'sse');
       });
 
       test('converts StreamableHttp to JSON', () {
         const transport = McpTransportTypeStreamableHttp(useHttp2: true);
         final json =
-            transportTypeConverter.toJson(transport)! as Map<String, dynamic>;
+            (transportTypeConverter.toJson(transport) ??
+                    fail('Expected converter JSON'))
+                as Map<String, dynamic>;
         expect(json['type'], 'streamableHttp');
         expect(json['useHttp2'], isTrue);
       });
@@ -98,7 +114,9 @@ void main() {
       test('StreamableHttp with useHttp2 false', () {
         const transport = McpTransportTypeStreamableHttp();
         final json =
-            transportTypeConverter.toJson(transport)! as Map<String, dynamic>;
+            (transportTypeConverter.toJson(transport) ??
+                    fail('Expected converter JSON'))
+                as Map<String, dynamic>;
         expect(json['type'], 'streamableHttp');
         expect(json['useHttp2'], isFalse);
 
@@ -132,7 +150,9 @@ void main() {
           tokenEndpoint: 'https://t.co',
         );
         final json =
-            authenticationTypeConverter.toJson(auth)! as Map<String, dynamic>;
+            (authenticationTypeConverter.toJson(auth) ??
+                    fail('Expected converter JSON'))
+                as Map<String, dynamic>;
         expect(json['runtimeType'], 'oauth');
         expect(json['clientId'], 'cid');
       });
@@ -171,7 +191,9 @@ void main() {
           tokenEndpoint: 'https://t.co',
         );
         final json =
-            authenticationTypeConverter.toJson(auth)! as Map<String, dynamic>;
+            (authenticationTypeConverter.toJson(auth) ??
+                    fail('Expected converter JSON'))
+                as Map<String, dynamic>;
         expect(json['runtimeType'], 'oauth');
         expect(json['clientId'], 'cid');
       });
@@ -187,7 +209,8 @@ void main() {
           tokenEndpoint: 'https://auth.rt/token',
         );
         final json =
-            authenticationTypeConverter.toJson(original)!
+            (authenticationTypeConverter.toJson(original) ??
+                    fail('Expected converter JSON'))
                 as Map<String, dynamic>;
         expect(json['runtimeType'], 'oauth');
         expect(json['clientId'], 'cid-rt');

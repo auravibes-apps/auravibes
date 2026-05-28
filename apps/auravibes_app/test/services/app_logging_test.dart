@@ -1,3 +1,13 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: no-empty-block
+// Required: Tests use intentional no-op callbacks and fake hooks.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+
 import 'dart:ui';
 
 import 'package:auravibes_app/services/app_log_buffer.dart';
@@ -78,7 +88,12 @@ void main() {
       };
       AppLogging.configure(enabled: true);
 
-      FlutterError.onError!(
+      final flutterErrorHandler = FlutterError.onError;
+      if (flutterErrorHandler == null) {
+        fail('Expected Flutter error handler');
+      }
+
+      flutterErrorHandler(
         FlutterErrorDetails(
           exception: Exception('boom'),
           stack: StackTrace.current,
@@ -96,7 +111,12 @@ void main() {
     test('logs platform errors and keeps them unhandled', () async {
       AppLogging.configure(enabled: true);
 
-      final handled = PlatformDispatcher.instance.onError!(
+      final platformErrorHandler = PlatformDispatcher.instance.onError;
+      if (platformErrorHandler == null) {
+        fail('Expected platform error handler');
+      }
+
+      final handled = platformErrorHandler(
         Exception('platform boom'),
         StackTrace.current,
       );

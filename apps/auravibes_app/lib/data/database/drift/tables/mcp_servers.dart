@@ -1,3 +1,8 @@
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: prefer-static-class
+// Required: Existing helpers remain top-level for local feature use.
+
 import 'package:auravibes_app/data/database/drift/tables/table_mixin.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspaces.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
@@ -5,19 +10,33 @@ import 'package:drift/drift.dart';
 
 export 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 
-JsonTypeConverter2<McpTransportType, String, Object?> transportTypeConverter =
-    TypeConverter.json2(
-      fromJson: (json) =>
-          McpTransportType.fromJson(json! as Map<String, dynamic>),
-      toJson: (column) => column.toJson(),
-    );
-
-JsonTypeConverter2<McpAuthenticationType, String, Object?>
-authenticationTypeConverter = TypeConverter.json2(
-  fromJson: (json) =>
-      McpAuthenticationType.fromJson(json! as Map<String, dynamic>),
+final JsonTypeConverter2<McpTransportType, String, Object?>
+transportTypeConverter = TypeConverter.json2(
+  fromJson: _transportTypeFromJson,
   toJson: (column) => column.toJson(),
 );
+
+final JsonTypeConverter2<McpAuthenticationType, String, Object?>
+authenticationTypeConverter = TypeConverter.json2(
+  fromJson: _authenticationTypeFromJson,
+  toJson: (column) => column.toJson(),
+);
+
+McpTransportType _transportTypeFromJson(Object? json) {
+  if (json is! Map<Object?, Object?>) {
+    throw const FormatException('Invalid MCP transport type JSON.');
+  }
+
+  return McpTransportType.fromJson(Map<String, dynamic>.from(json));
+}
+
+McpAuthenticationType _authenticationTypeFromJson(Object? json) {
+  if (json is! Map<Object?, Object?>) {
+    throw const FormatException('Invalid MCP authentication type JSON.');
+  }
+
+  return McpAuthenticationType.fromJson(Map<String, dynamic>.from(json));
+}
 
 /// Database table for storing MCP (Model Context Protocol) server
 /// configurations.

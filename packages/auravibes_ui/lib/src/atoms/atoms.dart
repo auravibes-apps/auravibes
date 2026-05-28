@@ -1,3 +1,5 @@
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
 /// Atomic components - the smallest building blocks of the design system.
 ///
 /// Atoms are the basic building blocks of matter. Applied to web interfaces,

@@ -1,3 +1,18 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: avoid-top-level-members-in-tests
+// Required: Test files keep shared fixtures and helpers top-level.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-static-class
+// Required: Tests keep fixture helpers and fakes top-level.
+
+// ignore_for_file: avoid-redundant-async
+// Required: Test callbacks intentionally preserve async-compatible signatures.
+
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
@@ -56,7 +71,10 @@ void main() {
         created.id,
       );
       expect(found, isNotNull);
-      expect(found!.title, equals('Test'));
+      expect(
+        (found ?? fail('Expected found to be non-null')).title,
+        equals('Test'),
+      );
     });
 
     test('getConversationById returns null for nonexistent', () async {
@@ -87,7 +105,10 @@ void main() {
       final found = await database.conversationDao.getConversationById(
         created.id,
       );
-      expect(found!.title, equals('Updated'));
+      expect(
+        (found ?? fail('Expected found to be non-null')).title,
+        equals('Updated'),
+      );
     });
 
     test('patchConversation returns false for nonexistent', () async {
@@ -139,17 +160,20 @@ void main() {
           .watchConversationById(created.id)
           .first;
       expect(emitted, isNotNull);
-      expect(emitted!.title, equals('Watched'));
+      expect(
+        (emitted ?? fail('Expected emitted to be non-null')).title,
+        equals('Watched'),
+      );
     });
 
     test('watchConversationsByWorkspace emits list', () async {
       final ws = await database.workspaceDao.insertWorkspace(
         WorkspacesCompanion.insert(name: 'WS', type: WorkspaceType.local),
       );
-      await database.conversationDao.insertConversation(
+      final _ = await database.conversationDao.insertConversation(
         ConversationsCompanion.insert(workspaceId: ws.id, title: 'A'),
       );
-      await database.conversationDao.insertConversation(
+      final _ = await database.conversationDao.insertConversation(
         ConversationsCompanion.insert(workspaceId: ws.id, title: 'B'),
       );
       final emitted = await database.conversationDao
@@ -162,10 +186,10 @@ void main() {
       final ws = await database.workspaceDao.insertWorkspace(
         WorkspacesCompanion.insert(name: 'WS', type: WorkspaceType.local),
       );
-      await database.conversationDao.insertConversation(
+      final _ = await database.conversationDao.insertConversation(
         ConversationsCompanion.insert(workspaceId: ws.id, title: 'A'),
       );
-      await database.conversationDao.insertConversation(
+      final _ = await database.conversationDao.insertConversation(
         ConversationsCompanion.insert(workspaceId: ws.id, title: 'B'),
       );
       final emitted = await database.conversationDao

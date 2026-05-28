@@ -1,3 +1,13 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository_impl.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
@@ -39,7 +49,10 @@ void main() {
       expect(createResult.name, 'Test Workspace');
       expect(createResult.type, WorkspaceType.local);
 
-      expect(getResult!.id, createResult.id);
+      expect(
+        (getResult ?? fail('Expected getResult to be non-null')).id,
+        createResult.id,
+      );
       expect(getResult.name, 'Test Workspace');
     });
 
@@ -56,8 +69,8 @@ void main() {
       );
 
       // Act
-      await repository.createWorkspace(workspace1);
-      await repository.createWorkspace(workspace2);
+      final _ = await repository.createWorkspace(workspace1);
+      final _ = await repository.createWorkspace(workspace2);
       final result = await repository.getAllWorkspaces();
 
       // Assert
@@ -170,8 +183,8 @@ void main() {
         url: 'https://example.com',
       );
 
-      await repository.createWorkspace(workspace1);
-      await repository.createWorkspace(workspace2);
+      final _ = await repository.createWorkspace(workspace1);
+      final _ = await repository.createWorkspace(workspace2);
 
       // Act
       final result = await repository.searchWorkspacesByName('Development');
@@ -193,6 +206,24 @@ void main() {
       await expectLater(
         repository.createWorkspace(invalidWorkspace),
         throwsA(isA<WorkspaceValidationException>()),
+      );
+    });
+
+    test('should reject remote workspace without URL', () async {
+      const invalidWorkspace = WorkspaceToCreate(
+        name: 'Remote Workspace',
+        type: WorkspaceType.remote,
+      );
+
+      await expectLater(
+        repository.createWorkspace(invalidWorkspace),
+        throwsA(
+          isA<WorkspaceValidationException>().having(
+            (error) => error.message,
+            'message',
+            'Remote workspace must have a URL',
+          ),
+        ),
       );
     });
   });

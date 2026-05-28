@@ -1,3 +1,15 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: avoid-redundant-async
+// Required: Test callbacks intentionally preserve async-compatible signatures.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-static-class
+// Required: Tests keep fixture helpers and fakes top-level.
+
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/services/model_api_service.dart';
@@ -550,7 +562,12 @@ void main() {
 
         final status = await service.getApiStatus();
         expect(status.responseTime, isNotNull);
-        expect(status.responseTime!.inMilliseconds, greaterThanOrEqualTo(0));
+        expect(
+          (status.responseTime ??
+                  fail('Expected status.responseTime to be non-null'))
+              .inMilliseconds,
+          greaterThanOrEqualTo(0),
+        );
 
         dio.close();
       });

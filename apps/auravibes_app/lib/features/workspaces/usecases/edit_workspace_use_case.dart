@@ -1,3 +1,7 @@
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/repositories/workspace_repository.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
@@ -25,7 +29,7 @@ class EditWorkspaceUseCase {
   Future<WorkspaceEntity> call({
     required String id,
     required String name,
-  }) async {
+  }) {
     final trimmed = name.trim();
     _validateName.call(name: trimmed);
 

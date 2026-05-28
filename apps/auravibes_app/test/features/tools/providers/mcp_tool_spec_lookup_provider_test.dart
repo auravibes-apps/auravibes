@@ -1,3 +1,10 @@
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-static-class
+// Required: Tests keep fixture helpers and fakes top-level.
+
 import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_tool_spec_lookup.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -24,7 +31,10 @@ void main() {
         overrides: [
           mcpToolSpecLookupProvider.overrideWithValue(
             McpToolSpecLookup(
-              call: ({required mcpServerId, required toolName}) => null,
+              call: ({required mcpServerId, required toolName}) {
+                final _ = (mcpServerId: mcpServerId, toolName: toolName);
+                return null;
+              },
             ),
           ),
         ],
@@ -40,7 +50,10 @@ void main() {
         overrides: [
           mcpToolSpecLookupProvider.overrideWithValue(
             McpToolSpecLookup(
-              call: ({required mcpServerId, required toolName}) => null,
+              call: ({required mcpServerId, required toolName}) {
+                final _ = (mcpServerId: mcpServerId, toolName: toolName);
+                return null;
+              },
             ),
           ),
         ],
@@ -65,7 +78,10 @@ void main() {
       final lookup = container.read(mcpToolSpecLookupProvider);
       final result = lookup.call(mcpServerId: 'srv-1', toolName: 'my-tool');
       expect(result, isNotNull);
-      expect(result!.name, 'my-tool');
+      expect(
+        (result ?? fail('Expected result to be non-null')).name,
+        'my-tool',
+      );
     });
 
     test('call returns null for non-matching server', () {
@@ -88,6 +104,7 @@ void main() {
         required String mcpServerId,
         required String toolName,
       }) {
+        final _ = (mcpServerId: mcpServerId, toolName: toolName);
         return const ToolSpec(
           name: 'x',
           description: 'd',
@@ -99,7 +116,7 @@ void main() {
       expect(lookup.call, isA<Function>());
       final result = lookup.call(mcpServerId: 's', toolName: 't');
       expect(result, isNotNull);
-      expect(result!.name, 'x');
+      expect((result ?? fail('Expected result to be non-null')).name, 'x');
     });
 
     test('McpToolSpecLookup is const constructible', () {
@@ -123,7 +140,7 @@ void main() {
       }
 
       final lookup = McpToolSpecLookup(call: trackingCallback);
-      lookup.call(mcpServerId: 'server-abc', toolName: 'tool-xyz');
+      final _ = lookup.call(mcpServerId: 'server-abc', toolName: 'tool-xyz');
       expect(capturedServerId, 'server-abc');
       expect(capturedToolName, 'tool-xyz');
     });

@@ -1,3 +1,17 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: avoid-top-level-members-in-tests
+// Required: Test files keep shared fixtures and helpers top-level.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-static-class
+// Required: Tests keep fixture helpers and fakes top-level.
+
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+
 import 'dart:async';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
@@ -81,7 +95,7 @@ void main() {
     });
 
     test('getByWorkspaceId returns settings after upsert', () async {
-      await database.workspaceCompactionSettingsDao.upsert(
+      final _ = await database.workspaceCompactionSettingsDao.upsert(
         workspaceId,
         const WorkspaceCompactionSettingsCompanion(
           usagePercentageThreshold: Value(60),
@@ -91,7 +105,11 @@ void main() {
       final result = await database.workspaceCompactionSettingsDao
           .getByWorkspaceId(workspaceId);
       expect(result, isNotNull);
-      expect(result!.usagePercentageThreshold, 60);
+      expect(
+        (result ?? fail('Expected result to be non-null'))
+            .usagePercentageThreshold,
+        60,
+      );
     });
 
     test('watchByWorkspaceId emits null initially then updates', () async {
@@ -112,14 +130,14 @@ void main() {
         }
       });
 
-      await database.workspaceCompactionSettingsDao.upsert(
+      final _ = await database.workspaceCompactionSettingsDao.upsert(
         workspaceId,
         const WorkspaceCompactionSettingsCompanion(
           usagePercentageThreshold: Value(40),
         ),
       );
 
-      await completer.future.timeout(
+      final _ = await completer.future.timeout(
         const Duration(seconds: 5),
         onTimeout: () => fail('Stream did not emit updated value'),
       );
@@ -128,7 +146,7 @@ void main() {
     });
 
     test('watchByWorkspaceId emits row when settings exist', () async {
-      await database.workspaceCompactionSettingsDao.upsert(
+      final _ = await database.workspaceCompactionSettingsDao.upsert(
         workspaceId,
         const WorkspaceCompactionSettingsCompanion(
           usagePercentageThreshold: Value(70),
@@ -147,13 +165,16 @@ void main() {
       final row = await completer.future.timeout(const Duration(seconds: 5));
 
       expect(row, isNotNull);
-      expect(row!.usagePercentageThreshold, 70);
+      expect(
+        (row ?? fail('Expected row to be non-null')).usagePercentageThreshold,
+        70,
+      );
 
       await sub.cancel();
     });
 
     test('deleteByWorkspaceId removes settings', () async {
-      await database.workspaceCompactionSettingsDao.upsert(
+      final _ = await database.workspaceCompactionSettingsDao.upsert(
         workspaceId,
         const WorkspaceCompactionSettingsCompanion(
           usagePercentageThreshold: Value(80),

@@ -1,3 +1,14 @@
+// ignore_for_file: no-magic-number
+// Required: Existing thresholds and limits use numeric values.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: prefer-moving-to-variable
+// Required: Existing code repeats lookups where extraction adds noise.
+// ignore_for_file: prefer-single-widget-per-file
+// Required: Feature widgets keep closely related private widgets together.
+// ignore_for_file: prefer-static-class
+// Required: Existing helpers remain top-level for local feature use.
+
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
@@ -215,7 +226,8 @@ class _MessageTextContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (hasThinking) _ReasoningSummary(content: thinking!),
+        if (thinking case final thinking? when hasThinking)
+          _ReasoningSummary(content: thinking),
         if (hasContent)
           _AiMessageContent(
             content: message.content,
@@ -372,11 +384,11 @@ class _ToolCallWidget extends ConsumerWidget {
               ],
             ),
           ),
-          if (toolCall.isResolved)
+          if (toolCall.resultStatus case final resultStatus?)
             _ToolCallStatusIndicator(
-              statusText: TextLocale(toolCall.resultStatus!.localeKey),
-              icon: _getStatusIcon(toolCall.resultStatus!),
-              color: _getStatusColor(context, toolCall.resultStatus!),
+              statusText: TextLocale(resultStatus.localeKey),
+              icon: _getStatusIcon(resultStatus),
+              color: _getStatusColor(context, resultStatus),
             ),
           if (decodedResponse != null)
             Padding(

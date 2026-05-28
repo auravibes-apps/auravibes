@@ -124,20 +124,6 @@ fvm dart run build_runner build --delete-conflicting-outputs --build-filter="lib
 - Use caret syntax for minimum version: `sdk: ^3.11.0`
 - This allows any compatible version within the major version range
 
-## Analyzer Ignore Directives
-
-### When to Use `// ignore:` vs `// ignore_for_file:`
-
-**Prefer line-level ignores** (`// ignore: rule_name`) when:
-
-- Only specific lines trigger the warning
-- The warning is localized to a known pattern
-
-**Use file-level ignores** (`// ignore_for_file: rule_name`) only when:
-
-- Multiple lines throughout the file trigger the same warning
-- The ignore is justified by project architecture
-
 ### Required Documentation for Ignores
 
 All ignore directives **must** have a comment explaining the justification:
@@ -198,21 +184,3 @@ These rules are non-negotiable for all new code and refactors:
 ## Active Technologies
 
 - **Current baseline (workspace-wide):** Dart 3.11+ with Flutter 3.41.9 via FVM, Flutter, Riverpod (hooks_riverpod/Riverpod 3 + code generation), Freezed, Drift, auravibes_ui.
-- **Spec-specific additions/notes:**
-  - (008-avoid-approval-flash) Existing Drift `messages` metadata JSON and tool permission tables; no schema changes planned.
-  - (001-two-step-model-selector) Existing Drift database; no schema changes needed.
-  - (001-ui-library-widgets) Uses `flutter_portal` and `gpt_markdown` with existing Riverpod setup.
-  - (003-token-usage-context) Uses `dartantic_ai` (`ChatResult<ChatMessage>` / `LanguageModelUsage`) and existing Drift `messages` metadata JSON (no schema migration planned).
-
-## Recent Changes
-
-- 001-two-step-model-selector: Added Dart 3.x (FVM pinned to 3.41.4+) + Flutter, Riverpod (with code generation), Freezed, auravibes_ui
-- 001-ui-library-widgets: Added Dart 3.11+ (Flutter 3.41.4+ via FVM) + Flutter SDK, flutter_portal, gpt_markdown, riverpod (existing)
-
-<!-- SPECKIT START -->
-
-For additional context about technologies to be used, project structure,
-shell commands, and other important information, read the current plan
-at `specs/011-agent-compaction-settings/plan.md`
-
-<!-- SPECKIT END -->

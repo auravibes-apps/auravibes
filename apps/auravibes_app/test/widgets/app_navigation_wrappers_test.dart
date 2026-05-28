@@ -1,5 +1,19 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: scoped_providers_should_specify_dependencies
 // Required: widget tests override scoped providers directly.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
+// ignore_for_file: no-empty-block
+// Required: Tests use intentional no-op callbacks and fake hooks.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
 
 import 'dart:async';
 
@@ -64,7 +78,7 @@ void main() {
       addTearDown(router.dispose);
 
       await tester.pumpWidget(MaterialApp.router(routerConfig: router));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(result, 1);
     });
@@ -114,7 +128,7 @@ void main() {
       addTearDown(router.dispose);
 
       await tester.pumpWidget(MaterialApp.router(routerConfig: router));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(capturedShellIndex, 0);
     });
@@ -237,7 +251,7 @@ void main() {
 
       expect(capturedWorkspaceId, 'ws-test');
 
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
       expect(find.text('workspaceId: ws-test'), findsOneWidget);
     },
   );
@@ -289,7 +303,7 @@ void main() {
 
       expect(capturedWorkspaceId, 'ws-redirect-test');
 
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
       expect(find.text('workspaceId: ws-redirect-test'), findsOneWidget);
     },
   );
@@ -343,7 +357,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp.router(routerConfig: router),
       );
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(capturedShellIndex, 0);
       expect(find.text('Chat screen'), findsOneWidget);
@@ -395,7 +409,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp.router(routerConfig: router),
       );
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(capturedShellIndex, 1);
       expect(find.text('Tools screen'), findsOneWidget);
@@ -456,7 +470,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp.router(routerConfig: router),
       );
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(capturedShellIndex, 2);
       expect(find.text('Settings screen'), findsOneWidget);
@@ -666,7 +680,7 @@ class _FakeConversationRepository implements ConversationRepository {
         List<StreamController<List<ConversationEntity>>>.of(_controllers);
     _controllers.clear();
     _pendingRemoval.clear();
-    await Future.wait(
+    final _ = await Future.wait(
       controllersSnapshot.where((c) => !c.isClosed).map((c) => c.close()),
     );
   }

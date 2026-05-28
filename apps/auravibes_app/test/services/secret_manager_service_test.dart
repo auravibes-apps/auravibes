@@ -1,3 +1,16 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: avoid-redundant-async
+// Required: Test callbacks intentionally preserve async-compatible signatures.
+// ignore_for_file: no-empty-block
+// Required: Tests use intentional no-op callbacks and fake hooks.
+// ignore_for_file: missing-test-assertion
+// Required: Tests verify service behavior by absence of thrown errors.
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+
 import 'dart:convert';
 
 import 'package:auravibes_app/services/secret_key_manager.dart';
@@ -27,10 +40,10 @@ void main() {
         mockStorage.write(key: anyNamed('key'), value: anyNamed('value')),
       ).thenAnswer((_) async {});
 
-      await manager.getOrCreateSecretKey();
+      final _ = await manager.getOrCreateSecretKey();
       manager.clearCache();
 
-      verifyNever(mockStorage.delete(key: anyNamed('key')));
+      final _ = verifyNever(mockStorage.delete(key: anyNamed('key')));
     });
 
     test('deleteKey removes from storage and clears cache', () async {
@@ -69,7 +82,7 @@ void main() {
 
       expect(bytes, hasLength(32));
       verify(mockStorage.read(key: 'app_encryption_secret_key')).called(1);
-      verifyNever(
+      final _ = verifyNever(
         mockStorage.write(
           key: anyNamed('key'),
           value: anyNamed('value'),

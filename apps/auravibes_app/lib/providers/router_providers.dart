@@ -1,3 +1,11 @@
+// ignore_for_file: no-magic-number
+// Required: Existing thresholds and limits use numeric values.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-static-class
+// Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/utils/change_notifier_with_code_gen_extension.dart';
@@ -80,7 +88,7 @@ final routerInformationProvider = Provider<GoRouteInformationProvider>(
 
 final routerPathSegmentsProvider = Provider<List<String>>(
   (ref) {
-    ref.watch(routerProvider);
+    final _ = ref.watch(routerProvider);
     final routeInformationProvider = ref.watch(routerInformationProvider);
     return routeInformationProvider.value.uri.pathSegments;
   },
@@ -88,7 +96,7 @@ final routerPathSegmentsProvider = Provider<List<String>>(
 
 final currentRouteWorkspaceIdProvider = Provider<String?>(
   (ref) {
-    ref.watch(routerProvider);
+    final _ = ref.watch(routerProvider);
     final routeInformationProvider = ref.watch(routerInformationProvider);
     return matchWorkspaceId(routeInformationProvider.value.uri);
   },

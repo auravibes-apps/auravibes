@@ -1,3 +1,15 @@
+// ignore_for_file: avoid-redundant-async
+// Required: Test callbacks intentionally preserve async-compatible signatures.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+
 // ignore_for_file: cascade_invocations
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
@@ -25,26 +37,28 @@ class _FakeModelConnectionRepository implements ModelConnectionRepository {
       workspaceId: toCreate.workspaceId,
       url: toCreate.url,
     );
-    return created!;
+    return created ?? fail('Expected created model connection');
   }
 
   @override
   Future<List<ModelConnectionEntity>> getModelConnections(
     ModelConnectionFilter filter,
-  ) async => const [];
+  ) async {
+    final _ = filter;
+    return const [];
+  }
 
-  Future<ModelConnectionEntity?> getModelConnectionById(String id) async =>
-      null;
+  Future<ModelConnectionEntity?> getModelConnectionById(String _) async => null;
 
   Future<ModelConnectionEntity> updateModelConnection(
-    String id,
-    ModelConnectionToCreate update,
+    String _,
+    ModelConnectionToCreate _,
   ) {
     throw UnimplementedError();
   }
 
   @override
-  Future<bool> deleteModelConnection(String id) {
+  Future<bool> deleteModelConnection(String _) {
     throw UnimplementedError();
   }
 }
@@ -59,7 +73,7 @@ void main() {
           modelConnectionRepositoryProvider.overrideWithValue(
             _FakeModelConnectionRepository(),
           ),
-          apiModelProvidersProvider.overrideWith((ref) async => []),
+          apiModelProvidersProvider.overrideWith((_) async => []),
         ],
       );
     });
@@ -116,7 +130,7 @@ void main() {
       final container2 = ProviderContainer(
         overrides: [
           modelConnectionRepositoryProvider.overrideWithValue(repo),
-          apiModelProvidersProvider.overrideWith((ref) async => []),
+          apiModelProvidersProvider.overrideWith((_) async => []),
         ],
       );
       addTearDown(container2.dispose);
@@ -146,7 +160,7 @@ void main() {
           modelConnectionRepositoryProvider.overrideWithValue(
             _FakeModelConnectionRepository(),
           ),
-          apiModelProvidersProvider.overrideWith((ref) async => providers),
+          apiModelProvidersProvider.overrideWith((_) async => providers),
         ],
       );
       addTearDown(container2.dispose);
@@ -155,7 +169,7 @@ void main() {
         addModelProviderStateProvider('ws1').notifier,
       );
 
-      await container2.read(apiModelProvidersProvider.future);
+      final _ = await container2.read(apiModelProvidersProvider.future);
       notifier.setModel('openai');
 
       final state = container2.read(addModelProviderStateProvider('ws1'));
@@ -169,7 +183,7 @@ void main() {
           modelConnectionRepositoryProvider.overrideWithValue(
             _FakeModelConnectionRepository(),
           ),
-          apiModelProvidersProvider.overrideWith((ref) async => []),
+          apiModelProvidersProvider.overrideWith((_) async => []),
         ],
       );
       addTearDown(container2.dispose);
@@ -178,7 +192,7 @@ void main() {
         addModelProviderStateProvider('ws1').notifier,
       );
 
-      await container2.read(apiModelProvidersProvider.future);
+      final _ = await container2.read(apiModelProvidersProvider.future);
       notifier.setModel('nonexistent');
 
       final state = container2.read(addModelProviderStateProvider('ws1'));
@@ -222,14 +236,17 @@ void main() {
         addModelProviderStateProvider('ws1').notifier,
       );
 
-      await container2.read(apiModelProvidersProvider.future);
+      final _ = await container2.read(apiModelProvidersProvider.future);
       notifier
         ..setKey('sk-valid-key-12345')
         ..setModel('gpt-4');
 
       final result = await notifier.addModelProvider();
       expect(result, isNotNull);
-      expect(result!.modelId, 'gpt-4');
+      expect(
+        (result ?? fail('Expected result to be non-null')).modelId,
+        'gpt-4',
+      );
       expect(result.workspaceId, 'ws1');
     });
 
@@ -256,7 +273,7 @@ void main() {
         addModelProviderStateProvider('ws1').notifier,
       );
 
-      await container2.read(apiModelProvidersProvider.future);
+      final _ = await container2.read(apiModelProvidersProvider.future);
       notifier
         ..setKey('sk-valid-key-12345')
         ..setModel('gpt-4');
@@ -298,20 +315,22 @@ class _ThrowingModelConnectionRepository implements ModelConnectionRepository {
   @override
   Future<List<ModelConnectionEntity>> getModelConnections(
     ModelConnectionFilter filter,
-  ) async => const [];
+  ) async {
+    final _ = filter;
+    return const [];
+  }
 
-  Future<ModelConnectionEntity?> getModelConnectionById(String id) async =>
-      null;
+  Future<ModelConnectionEntity?> getModelConnectionById(String _) async => null;
 
   Future<ModelConnectionEntity> updateModelConnection(
-    String id,
-    ModelConnectionToCreate update,
+    String _,
+    ModelConnectionToCreate _,
   ) {
     throw UnimplementedError();
   }
 
   @override
-  Future<bool> deleteModelConnection(String id) {
+  Future<bool> deleteModelConnection(String _) {
     throw UnimplementedError();
   }
 }

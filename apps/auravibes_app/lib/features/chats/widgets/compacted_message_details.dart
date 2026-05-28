@@ -1,3 +1,10 @@
+// ignore_for_file: no-magic-number
+// Required: Existing thresholds and limits use numeric values.
+// ignore_for_file: prefer-moving-to-variable
+// Required: Existing code repeats lookups where extraction adds noise.
+// ignore_for_file: prefer-single-widget-per-file
+// Required: Feature widgets keep closely related private widgets together.
+
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/utils/relative_time_formatter.dart';
@@ -38,21 +45,23 @@ class CompactedMessageDetails extends StatelessWidget {
             label: LocaleKeys.compaction_compacted_details_origin.tr(),
             value: originLabel,
           ),
-          if (metadata?.compactedFromMessageId != null &&
-              metadata?.compactedThroughMessageId != null)
+          if (metadata case final metadata?
+              when metadata.compactedFromMessageId != null &&
+                  metadata.compactedThroughMessageId != null)
             _DetailRow(
               label: LocaleKeys.compaction_compacted_details_range.tr(),
               value:
-                  '${metadata!.compactedFromMessageId} → '
+                  '${metadata.compactedFromMessageId} -> '
                   '${metadata.compactedThroughMessageId}',
             ),
           _DetailRow(
             label: LocaleKeys.compaction_compacted_details_created.tr(),
-            value: metadata?.compactionCreatedAt != null
-                ? const RelativeTimeFormatter().format(
-                    metadata!.compactionCreatedAt!,
-                  )
-                : '',
+            value: switch (metadata?.compactionCreatedAt) {
+              final createdAt? => const RelativeTimeFormatter().format(
+                createdAt,
+              ),
+              _ => '',
+            },
           ),
           _DetailRow(
             label: LocaleKeys.compaction_compacted_details_messages.tr(),

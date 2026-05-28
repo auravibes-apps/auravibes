@@ -1,3 +1,19 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: avoid-top-level-members-in-tests
+// Required: Test files keep shared fixtures and helpers top-level.
+// ignore_for_file: missing-test-assertion
+// Required: Tests verify async provider side effects through state changes.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-correct-type-name
+// Required: Test doubles mirror repository contract names.
+
+// ignore_for_file: avoid-redundant-async
+// Required: Test callbacks intentionally preserve async-compatible signatures.
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/domain/repositories/workspace_compaction_settings_repository.dart';
@@ -232,10 +248,11 @@ void main() {
         (_) async => newSettings.copyWith(updatedAt: DateTime(2026)),
       );
 
-      await container.read(saveWorkspaceCompactionSettingsUsecaseProvider)(
-        workspaceId: testWorkspaceId,
-        settings: newSettings,
-      );
+      final _ =
+          await container.read(saveWorkspaceCompactionSettingsUsecaseProvider)(
+            workspaceId: testWorkspaceId,
+            settings: newSettings,
+          );
 
       verify(
         () => mockRepository.saveOverrides(testWorkspaceId, newSettings),
@@ -296,10 +313,11 @@ void main() {
         () => mockRepository.saveOverrides(testWorkspaceId, valid),
       ).thenAnswer((_) async => valid.copyWith(updatedAt: DateTime(2026)));
 
-      await container.read(saveWorkspaceCompactionSettingsUsecaseProvider)(
-        workspaceId: testWorkspaceId,
-        settings: valid,
-      );
+      final _ =
+          await container.read(saveWorkspaceCompactionSettingsUsecaseProvider)(
+            workspaceId: testWorkspaceId,
+            settings: valid,
+          );
     });
 
     test('accepts valid settings at boundary 100', () async {
@@ -311,10 +329,11 @@ void main() {
         () => mockRepository.saveOverrides(testWorkspaceId, valid),
       ).thenAnswer((_) async => valid.copyWith(updatedAt: DateTime(2026)));
 
-      await container.read(saveWorkspaceCompactionSettingsUsecaseProvider)(
-        workspaceId: testWorkspaceId,
-        settings: valid,
-      );
+      final _ =
+          await container.read(saveWorkspaceCompactionSettingsUsecaseProvider)(
+            workspaceId: testWorkspaceId,
+            settings: valid,
+          );
     });
   });
 
@@ -340,9 +359,10 @@ void main() {
         () => mockRepository.resetOverrides(testWorkspaceId),
       ).thenAnswer((_) async => CompactionSettings.defaults);
 
-      await container.read(resetWorkspaceCompactionSettingsUsecaseProvider)(
-        workspaceId: testWorkspaceId,
-      );
+      final _ =
+          await container.read(resetWorkspaceCompactionSettingsUsecaseProvider)(
+            workspaceId: testWorkspaceId,
+          );
 
       verify(() => mockRepository.resetOverrides(testWorkspaceId)).called(1);
     });

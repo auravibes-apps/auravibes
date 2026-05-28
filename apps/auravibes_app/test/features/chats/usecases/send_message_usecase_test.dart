@@ -1,3 +1,12 @@
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
+// ignore_for_file: missing-test-assertion
+// Required: Tests verify usecase behavior through queue side effects.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
@@ -118,8 +127,8 @@ void main() {
           content: 'Queued hello',
         );
 
-        verifyNever(messageRepository.createMessage(any));
-        verifyNever(
+        final _ = verifyNever(messageRepository.createMessage(any));
+        final _ = verifyNever(
           runAgentIterationUsecase.call(
             conversationId: anyNamed('conversationId'),
             context: anyNamed('context'),

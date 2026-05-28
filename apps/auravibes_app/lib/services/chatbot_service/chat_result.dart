@@ -1,3 +1,14 @@
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: no-object-declaration
+// Required: Genkit tool payloads expose raw Object values.
+// ignore_for_file: prefer-moving-to-variable
+// Required: Existing code repeats lookups where extraction adds noise.
+// ignore_for_file: prefer-static-class
+// Required: Existing helpers remain top-level for local feature use.
+
 import 'dart:convert';
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
@@ -25,14 +36,14 @@ class ChatMessageToolCall {
   final ToolRequest request;
   String get callId => request.ref ?? '';
   String get toolName => request.name;
-  dynamic get argumentsRaw => request.input;
+  Object? get argumentsRaw => request.input;
 }
 
 class ChatMessageToolResult {
   ChatMessageToolResult(this.response);
   final ToolResponse response;
   String get callId => response.ref ?? '';
-  dynamic get result => response.output;
+  Object? get result => response.output;
 }
 
 @freezed
@@ -125,6 +136,12 @@ abstract class LanguageModelUsage with _$LanguageModelUsage {
 extension ChatResultConcat on ChatResult<ChatMessage> {
   ChatResult<ChatMessage> concat(ChatResult<ChatMessage> delta) {
     final outputMetadata = {...output.metadata, ...delta.output.metadata};
+    final currentUsage = usage;
+    final deltaUsage = delta.usage;
+    final combinedUsage = currentUsage != null && deltaUsage != null
+        ? currentUsage.concat(deltaUsage)
+        : deltaUsage ?? currentUsage;
+
     return ChatResult<ChatMessage>(
       output: output
           .copyWith(metadata: outputMetadata)
@@ -132,9 +149,7 @@ extension ChatResultConcat on ChatResult<ChatMessage> {
       finishReason: delta.finishReason != FinishReason.unspecified
           ? delta.finishReason
           : finishReason,
-      usage: usage != null && delta.usage != null
-          ? usage!.concat(delta.usage!)
-          : delta.usage ?? usage,
+      usage: combinedUsage,
       metadata: {...metadata, ...delta.metadata},
       messages: [...messages, ...delta.messages],
       thinking: _concatThinking(thinking, delta.thinking),
@@ -158,9 +173,10 @@ extension ChatResultEntities on ChatResult<ChatMessage> {
           (tc) => MessageToolCallEntity(
             id: tc.callId,
             name: tc.toolName,
-            argumentsRaw: tc.argumentsRaw is String
-                ? tc.argumentsRaw as String
-                : jsonEncode(tc.argumentsRaw),
+            argumentsRaw: switch (tc.argumentsRaw) {
+              final String raw => raw,
+              final raw => jsonEncode(raw),
+            },
           ),
         )
         .toList();
@@ -181,11 +197,15 @@ extension ChatResultEntities on ChatResult<ChatMessage> {
     final chunks = <String>[
       if (thinking case final value? when resultThinking) value,
       if (!resultThinking)
-        for (final part in output.parts.whereType<ReasoningPart>())
-          if (part.reasoning.trim().isNotEmpty) part.reasoning,
+        for (final part in output.parts)
+          if (part.reasoning case final reasoning?
+              when reasoning.trim().isNotEmpty)
+            reasoning,
       for (final message in messages)
-        for (final part in message.parts.whereType<ReasoningPart>())
-          if (part.reasoning.trim().isNotEmpty) part.reasoning,
+        for (final part in message.parts)
+          if (part.reasoning case final reasoning?
+              when reasoning.trim().isNotEmpty)
+            reasoning,
     ];
 
     if (chunks.isEmpty) return null;

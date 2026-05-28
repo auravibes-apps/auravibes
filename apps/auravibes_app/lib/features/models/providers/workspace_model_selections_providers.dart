@@ -1,3 +1,9 @@
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-static-class
+// Required: Existing helpers remain top-level for local feature use.
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
@@ -44,7 +50,7 @@ listModelsGroupedByProvider(Ref ref, {required String workspaceId}) {
     fireImmediately: true,
   );
 
-  ref.onDispose(() {
+  final _ = ref.onDispose(() {
     subscription.close();
     unawaited(controller.close());
   });

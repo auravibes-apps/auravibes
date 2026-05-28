@@ -1,3 +1,14 @@
+// ignore_for_file: no-magic-number
+// Required: Existing thresholds and limits use numeric values.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+
+import 'dart:async';
+
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/features/settings/providers/compaction_settings_provider.dart';
@@ -22,10 +33,26 @@ class CompactionSettingsSection extends ConsumerStatefulWidget {
 
 class _CompactionSettingsSectionState
     extends ConsumerState<CompactionSettingsSection> {
-  late TextEditingController _usageController;
-  late TextEditingController _remainingController;
-  late bool _autoEnabled;
+  TextEditingController? _usageController;
+  TextEditingController? _remainingController;
+  bool _autoEnabled = false;
   String? _validationError;
+
+  TextEditingController get _requiredUsageController {
+    final controller = _usageController;
+    if (controller == null) {
+      throw StateError('_usageController is not initialized');
+    }
+    return controller;
+  }
+
+  TextEditingController get _requiredRemainingController {
+    final controller = _remainingController;
+    if (controller == null) {
+      throw StateError('_remainingController is not initialized');
+    }
+    return controller;
+  }
 
   @override
   void initState() {
@@ -45,8 +72,8 @@ class _CompactionSettingsSectionState
 
   @override
   void dispose() {
-    _usageController.dispose();
-    _remainingController.dispose();
+    _usageController?.dispose();
+    _remainingController?.dispose();
     super.dispose();
   }
 
@@ -55,8 +82,8 @@ class _CompactionSettingsSectionState
     ref.listen(compactionSettingsProvider(widget.workspaceId), (_, next) {
       final settings = next.asData?.value;
       if (settings == null) return;
-      _usageController.text = '${settings.usagePercentageThreshold}';
-      _remainingController.text = '${settings.remainingTokenThreshold}';
+      _requiredUsageController.text = '${settings.usagePercentageThreshold}';
+      _requiredRemainingController.text = '${settings.remainingTokenThreshold}';
       setState(() => _autoEnabled = settings.autoCompactionEnabled);
     });
 
@@ -86,11 +113,11 @@ class _CompactionSettingsSectionState
               ),
             ),
           ),
-          if (_validationError != null)
+          if (_validationError case final validationError?)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Text(
-                _validationError!,
+                validationError,
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.error,
                   fontSize: 12,
@@ -98,7 +125,7 @@ class _CompactionSettingsSectionState
               ),
             ),
           TextField(
-            controller: _usageController,
+            controller: _requiredUsageController,
             decoration: InputDecoration(
               labelText: LocaleKeys.compaction_settings_usage_threshold.tr(),
               hintText: LocaleKeys.compaction_settings_usage_threshold_hint
@@ -108,7 +135,7 @@ class _CompactionSettingsSectionState
             keyboardType: TextInputType.number,
           ),
           TextField(
-            controller: _remainingController,
+            controller: _requiredRemainingController,
             decoration: InputDecoration(
               labelText: LocaleKeys.compaction_settings_remaining_threshold
                   .tr(),
@@ -122,7 +149,7 @@ class _CompactionSettingsSectionState
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               AuraButton(
-                onPressed: _resetDefaults,
+                onPressed: () => unawaited(_resetDefaults()),
                 child: const TextLocale(
                   LocaleKeys.compaction_settings_reset_defaults,
                 ),
@@ -131,7 +158,7 @@ class _CompactionSettingsSectionState
               ),
               const SizedBox(width: 8),
               AuraButton(
-                onPressed: _save,
+                onPressed: () => unawaited(_save()),
                 child: const TextLocale(
                   LocaleKeys.settings_screen_actions_save,
                 ),
@@ -148,8 +175,8 @@ class _CompactionSettingsSectionState
   Future<void> _save() async {
     setState(() => _validationError = null);
 
-    final usage = int.tryParse(_usageController.text);
-    final remaining = int.tryParse(_remainingController.text);
+    final usage = int.tryParse(_requiredUsageController.text);
+    final remaining = int.tryParse(_requiredRemainingController.text);
 
     if (usage == null || remaining == null) {
       setState(() {
@@ -167,12 +194,12 @@ class _CompactionSettingsSectionState
     );
 
     try {
-      await ref.read(saveWorkspaceCompactionSettingsUsecaseProvider)(
+      final _ = await ref.read(saveWorkspaceCompactionSettingsUsecaseProvider)(
         workspaceId: widget.workspaceId,
         settings: settings,
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        final _ = ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: TextLocale(LocaleKeys.compaction_settings_save_success),
           ),
@@ -183,7 +210,7 @@ class _CompactionSettingsSectionState
       setState(() => _validationError = e.localeKey.tr());
     } on Exception {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        final _ = ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: TextLocale(LocaleKeys.compaction_settings_save_error),
           ),
@@ -194,12 +221,12 @@ class _CompactionSettingsSectionState
 
   Future<void> _resetDefaults() async {
     try {
-      await ref.read(resetWorkspaceCompactionSettingsUsecaseProvider)(
+      final _ = await ref.read(resetWorkspaceCompactionSettingsUsecaseProvider)(
         workspaceId: widget.workspaceId,
       );
     } on Exception {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        final _ = ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: TextLocale(LocaleKeys.compaction_settings_reset_error),
           ),
@@ -211,12 +238,12 @@ class _CompactionSettingsSectionState
     if (!mounted) return;
     setState(() {
       _autoEnabled = defaults.autoCompactionEnabled;
-      _usageController.text = '${defaults.usagePercentageThreshold}';
-      _remainingController.text = '${defaults.remainingTokenThreshold}';
+      _requiredUsageController.text = '${defaults.usagePercentageThreshold}';
+      _requiredRemainingController.text = '${defaults.remainingTokenThreshold}';
       _validationError = null;
     });
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      final _ = ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: TextLocale(LocaleKeys.compaction_settings_reset_success),
         ),

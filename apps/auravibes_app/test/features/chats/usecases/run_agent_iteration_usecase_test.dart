@@ -1,3 +1,16 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
+// ignore_for_file: missing-test-assertion
+// Required: Tests verify orchestration through repository side effects.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
@@ -114,7 +127,7 @@ void main() {
       );
 
       expect(result, AgentIterationDecision.done);
-      verifyNever(
+      final _ = verifyNever(
         runAllowedToolsUsecase.call(
           conversationId: anyNamed('conversationId'),
           workspaceId: anyNamed('workspaceId'),
@@ -138,7 +151,7 @@ void main() {
         ),
       );
 
-      await usecase.call(
+      final _ = await usecase.call(
         conversationId: 'conversation-1',
         context: const AgentIterationContext(
           origin: AgentIterationOrigin.userMessage,
@@ -179,7 +192,7 @@ void main() {
                 ackMessageIds: ['user-1'],
               ),
             );
-            container
+            final _ = container
                 .read(conversationSendQueueProvider.notifier)
                 .enqueue(
                   conversationId: 'conversation-1',
@@ -316,7 +329,7 @@ void main() {
             workspaceId: 'workspace-1',
           ),
         ).thenAnswer((_) async {
-          container
+          final _ = container
               .read(conversationSendQueueProvider.notifier)
               .enqueue(
                 conversationId: 'conversation-1',
@@ -354,7 +367,7 @@ void main() {
     test(
       'marks queued drafts sent when stopped after dequeue',
       () async {
-        container
+        final _ = container
             .read(conversationSendQueueProvider.notifier)
             .enqueue(
               conversationId: 'conversation-1',
@@ -395,7 +408,7 @@ void main() {
         );
 
         expect(result, AgentIterationDecision.done);
-        verifyNever(
+        final _ = verifyNever(
           continueAgentUsecase.call(
             conversationId: anyNamed('conversationId'),
             context: anyNamed('context'),
@@ -456,7 +469,7 @@ void main() {
     test(
       'includes queued drafts in the same iteration context',
       () async {
-        container
+        final _ = container
             .read(conversationSendQueueProvider.notifier)
             .enqueue(
               conversationId: 'conversation-1',
@@ -545,7 +558,7 @@ void main() {
             workspaceId: 'workspace-1',
           ),
         ).thenAnswer((_) async {
-          container
+          final _ = container
               .read(conversationSendQueueProvider.notifier)
               .enqueue(
                 conversationId: 'conversation-1',
@@ -577,13 +590,13 @@ void main() {
     test(
       'drains multiple queued drafts in one iteration before returning done',
       () async {
-        container
+        final _ = container
             .read(conversationSendQueueProvider.notifier)
             .enqueue(
               conversationId: 'conversation-1',
               content: 'Queued follow-up 1',
             );
-        container
+        final _ = container
             .read(conversationSendQueueProvider.notifier)
             .enqueue(
               conversationId: 'conversation-1',
@@ -666,7 +679,7 @@ void main() {
             ),
           );
 
-          await usecase.call(
+          final _ = await usecase.call(
             conversationId: 'conversation-1',
             context: const AgentIterationContext(
               origin: AgentIterationOrigin.userMessage,
@@ -674,7 +687,7 @@ void main() {
             ),
           );
 
-          verifyInOrder([
+          final _ = verifyInOrder([
             maybeAutoCompactConversationUsecase.call(
               conversationId: 'conversation-1',
             ),
@@ -717,7 +730,7 @@ void main() {
             (_) async => AgentIterationDecision.continueIteration,
           );
 
-          await usecase.call(
+          final _ = await usecase.call(
             conversationId: 'conversation-1',
             context: const AgentIterationContext(
               origin: AgentIterationOrigin.userMessage,
@@ -752,7 +765,7 @@ void main() {
             ),
             throwsA(isA<Exception>()),
           );
-          verifyNever(
+          final _ = verifyNever(
             continueAgentUsecase.call(
               conversationId: anyNamed('conversationId'),
               context: anyNamed('context'),
@@ -764,7 +777,7 @@ void main() {
       test(
         'runs compaction after queued drafts drain but before AI call',
         () async {
-          container
+          final _ = container
               .read(conversationSendQueueProvider.notifier)
               .enqueue(
                 conversationId: 'conversation-1',
@@ -783,7 +796,7 @@ void main() {
             ),
           );
 
-          await usecase.call(
+          final _ = await usecase.call(
             conversationId: 'conversation-1',
             context: const AgentIterationContext(
               origin: AgentIterationOrigin.userMessage,
@@ -791,7 +804,7 @@ void main() {
             ),
           );
 
-          verifyInOrder([
+          final _ = verifyInOrder([
             messageRepository.createMessage(any),
             maybeAutoCompactConversationUsecase.call(
               conversationId: 'conversation-1',
@@ -807,7 +820,7 @@ void main() {
       test(
         'skips compaction and AI call when cancelled after drain',
         () async {
-          container
+          final _ = container
               .read(conversationSendQueueProvider.notifier)
               .enqueue(
                 conversationId: 'conversation-1',
@@ -839,7 +852,7 @@ void main() {
             ),
           );
 
-          await usecase.call(
+          final _ = await usecase.call(
             conversationId: 'conversation-1',
             context: const AgentIterationContext(
               origin: AgentIterationOrigin.userMessage,
@@ -847,12 +860,12 @@ void main() {
             ),
           );
 
-          verifyNever(
+          final _ = verifyNever(
             maybeAutoCompactConversationUsecase.call(
               conversationId: 'conversation-1',
             ),
           );
-          verifyNever(
+          final _ = verifyNever(
             continueAgentUsecase.call(
               conversationId: 'conversation-1',
               context: anyNamed('context'),

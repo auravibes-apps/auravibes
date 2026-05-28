@@ -1,3 +1,13 @@
+// ignore_for_file: no-magic-number
+// Required: UI tokens and layout use fixed design values.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: no-equal-arguments
+// Required: UI geometry uses repeated values for symmetric layout.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-extracting-callbacks
+// Required: Component callbacks stay colocated with UI state.
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -59,8 +69,16 @@ class AuraPopupMenu extends StatefulWidget {
 }
 
 class _AuraPopupMenuState extends State<AuraPopupMenu> {
-  late FocusNode _focusNode;
+  FocusNode? _focusNode;
   bool _visible = false;
+
+  FocusNode get _requiredFocusNode {
+    final focusNode = _focusNode;
+    if (focusNode == null) {
+      throw StateError('_focusNode is not initialized');
+    }
+    return focusNode;
+  }
 
   @override
   void initState() {
@@ -79,7 +97,7 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
   void dispose() {
     widget.controller._state = null;
     if (widget.focusNode == null) {
-      _focusNode.dispose();
+      _focusNode?.dispose();
     }
     super.dispose();
   }
@@ -88,18 +106,18 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
     setState(() {
       _visible = true;
     });
-    FocusScope.of(context).requestFocus(_focusNode);
+    FocusScope.of(context).requestFocus(_requiredFocusNode);
   }
 
   void close() {
     setState(() {
       _visible = false;
     });
-    _focusNode.unfocus();
+    _requiredFocusNode.unfocus();
   }
 
   void toggle() {
-    if (_focusNode.hasFocus) {
+    if (_requiredFocusNode.hasFocus) {
       close();
     } else {
       open();
@@ -134,7 +152,7 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
           fit: .passthrough,
           child: widget.child,
         ),
-        focusNode: _focusNode,
+        focusNode: _requiredFocusNode,
         onFocusChange: (hasFocus) {
           if (hasFocus && !_visible) {
             setState(() {
@@ -163,7 +181,7 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
 ///
 /// This abstract class defines the interface for all menu items,
 /// including regular items, dividers, and custom builders.
-// ignore: one_member_abstracts
+// ignore: one_member_abstracts - Required as extension point for menu entries.
 abstract class AuraPopupMenuEntry {
   /// Creates a new menu entry.
   const AuraPopupMenuEntry();

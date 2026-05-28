@@ -1,3 +1,9 @@
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
+
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
@@ -55,7 +61,10 @@ void main() {
 
       final range = usecase(messages);
       expect(range, isNotNull);
-      expect(range!.fromMessageId, 'msg-1');
+      expect(
+        (range ?? fail('Expected range to be non-null')).fromMessageId,
+        'msg-1',
+      );
       expect(range.keptTailMessageIds, isNotEmpty);
     });
 
@@ -71,7 +80,10 @@ void main() {
 
       final range = usecase(messages);
       expect(range, isNotNull);
-      expect(range!.messageIds, isNot(contains('msg-1')));
+      expect(
+        (range ?? fail('Expected range to be non-null')).messageIds,
+        isNot(contains('msg-1')),
+      );
     });
 
     test('excludes sending messages from compactable range', () {
@@ -86,7 +98,10 @@ void main() {
 
       final range = usecase(messages);
       expect(range, isNotNull);
-      expect(range!.messageIds, isNot(contains('msg-1')));
+      expect(
+        (range ?? fail('Expected range to be non-null')).messageIds,
+        isNot(contains('msg-1')),
+      );
     });
 
     test('excludes existing compaction summaries', () {
@@ -106,7 +121,10 @@ void main() {
 
       final range = usecase(messages);
       expect(range, isNotNull);
-      expect(range!.messageIds, isNot(contains('msg-4')));
+      expect(
+        (range ?? fail('Expected range to be non-null')).messageIds,
+        isNot(contains('msg-4')),
+      );
     });
 
     test('keeps safe tail starting at latest user message', () {
@@ -119,7 +137,10 @@ void main() {
 
       final range = usecase(messages);
       expect(range, isNotNull);
-      expect(range!.keptTailMessageIds, contains('msg-3'));
+      expect(
+        (range ?? fail('Expected range to be non-null')).keptTailMessageIds,
+        contains('msg-3'),
+      );
       expect(range.keptTailMessageIds, contains('msg-4'));
     });
 
@@ -132,7 +153,10 @@ void main() {
 
       final range = usecase(messages);
       expect(range, isNotNull);
-      expect(range!.keptTailMessageIds, contains('msg-3'));
+      expect(
+        (range ?? fail('Expected range to be non-null')).keptTailMessageIds,
+        contains('msg-3'),
+      );
       expect(range.keptTailMessageIds, isNot(contains('msg-2')));
     });
 
@@ -223,7 +247,10 @@ void main() {
 
       final range = usecase(messages);
       expect(range, isNotNull);
-      expect(range!.keptTailMessageIds, contains('msg-3'));
+      expect(
+        (range ?? fail('Expected range to be non-null')).keptTailMessageIds,
+        contains('msg-3'),
+      );
       expect(range.keptTailMessageIds, isNot(contains('msg-2')));
     });
   });

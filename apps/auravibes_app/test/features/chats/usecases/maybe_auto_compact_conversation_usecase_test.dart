@@ -1,3 +1,19 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: avoid-top-level-members-in-tests
+// Required: Test files keep shared fixtures and helpers top-level.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
+// ignore_for_file: missing-test-assertion
+// Required: Tests verify usecase behavior through repository side effects.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-static-class
+// Required: Tests keep fixture helpers and fakes top-level.
+
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
@@ -128,7 +144,7 @@ void main() {
 
     await usecase(conversationId: 'conv-1');
 
-    verifyNever(
+    final _ = verifyNever(
       () => mockCompact(
         conversationId: 'conv-1',
         trigger: CompactionTrigger.auto,
@@ -143,7 +159,9 @@ void main() {
 
     await usecase(conversationId: 'conv-1');
 
-    verifyNever(() => mockModelRepo.getWorkspaceModelSelectionById(any()));
+    final _ = verifyNever(
+      () => mockModelRepo.getWorkspaceModelSelectionById(any()),
+    );
   });
 
   test('exits early when model selection not found', () async {
@@ -156,7 +174,7 @@ void main() {
 
     await usecase(conversationId: 'conv-1');
 
-    verifyNever(
+    final _ = verifyNever(
       () => mockApiModelRepo.getModelByProviderAndModelId(any(), any()),
     );
   });
@@ -239,7 +257,7 @@ void main() {
 
     await usecase(conversationId: 'conv-1');
 
-    verifyNever(
+    final _ = verifyNever(
       () => mockCompact(
         conversationId: 'conv-1',
         trigger: CompactionTrigger.auto,

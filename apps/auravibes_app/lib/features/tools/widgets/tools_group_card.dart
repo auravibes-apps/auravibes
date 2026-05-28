@@ -1,3 +1,14 @@
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: prefer-moving-to-variable
+// Required: Existing code repeats lookups where extraction adds noise.
+// ignore_for_file: prefer-single-widget-per-file
+// Required: Feature widgets keep closely related private widgets together.
+// ignore_for_file: prefer-static-class
+// Required: Existing helpers remain top-level for local feature use.
+
 import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/widgets/tool_item_row.dart';
@@ -80,26 +91,31 @@ class ToolsGroupCard extends HookConsumerWidget {
   }
 
   void _handleToggleEnabled(WidgetRef ref, bool enabled) {
-    if (groupWithTools.group == null) return;
+    final group = groupWithTools.group;
+    if (group == null) return;
 
     ref
         .read(groupedToolsProvider(workspaceId).notifier)
         .setMcpGroupEnabled(
-          groupWithTools.group!.id,
+          group.id,
           isEnabled: enabled,
         );
   }
 
   Future<void> _handleReconnect(WidgetRef ref) async {
-    if (groupWithTools.mcpServerId == null) return;
+    final mcpServerId = groupWithTools.mcpServerId;
+    if (mcpServerId == null) return;
 
     await ref
         .read(groupedToolsProvider(workspaceId).notifier)
-        .reconnectMcp(groupWithTools.mcpServerId!);
+        .reconnectMcp(
+          mcpServerId,
+        );
   }
 
   Future<void> _handleDelete(BuildContext context, WidgetRef ref) async {
-    if (groupWithTools.group == null) return;
+    final group = groupWithTools.group;
+    if (group == null) return;
 
     final confirmed = await showAuraConfirmDialog(
       context: context,
@@ -115,7 +131,9 @@ class ToolsGroupCard extends HookConsumerWidget {
     if (confirmed ?? false) {
       await ref
           .read(groupedToolsProvider(workspaceId).notifier)
-          .deleteMcpGroup(groupWithTools.group!.id);
+          .deleteMcpGroup(
+            group.id,
+          );
     }
   }
 

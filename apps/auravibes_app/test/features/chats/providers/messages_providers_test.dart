@@ -1,3 +1,20 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
+// ignore_for_file: no-empty-block
+// Required: Tests use intentional no-op callbacks and fake hooks.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-static-class
+// Required: Tests keep fixture helpers and fakes top-level.
+
 // ignore_for_file: provider_dependencies
 // Required: provider unit tests read scoped providers directly.
 
@@ -167,9 +184,8 @@ void main() {
     });
 
     test('setting index throws', () {
-      final list = MessageIdList(const ['a']);
-      // ignore: prefer-first-or-null, prefer-first
-      expect(() => list[0] = 'b', throwsUnsupportedError);
+      final list = MessageIdList(const ['a', 'b']);
+      expect(() => list[1] = 'c', throwsUnsupportedError);
     });
   });
 
@@ -193,7 +209,11 @@ void main() {
     });
 
     test('returns empty list when no messages', () async {
-      container.listen(chatMessagesProvider, (_, _) {}, fireImmediately: true);
+      final _ = container.listen(
+        chatMessagesProvider,
+        (_, _) {},
+        fireImmediately: true,
+      );
       repository.emit([]);
       await Future<void>.delayed(Duration.zero);
 
@@ -201,7 +221,11 @@ void main() {
     });
 
     test('returns message ids from messages', () async {
-      container.listen(chatMessagesProvider, (_, _) {}, fireImmediately: true);
+      final _ = container.listen(
+        chatMessagesProvider,
+        (_, _) {},
+        fireImmediately: true,
+      );
       repository.emit([
         _message(id: 'm1', content: 'hi', isUser: true),
         _message(id: 'm2', content: 'hello', isUser: false),
@@ -232,7 +256,11 @@ void main() {
     });
 
     test('returns false when message is not streaming', () async {
-      container.listen(chatMessagesProvider, (_, _) {}, fireImmediately: true);
+      final _ = container.listen(
+        chatMessagesProvider,
+        (_, _) {},
+        fireImmediately: true,
+      );
       repository.emit([_message(id: 'm1', content: 'hi', isUser: true)]);
       await Future<void>.delayed(Duration.zero);
 
@@ -292,7 +320,11 @@ void main() {
     });
 
     test('returns 0 when no messages', () async {
-      container.listen(chatMessagesProvider, (_, _) {}, fireImmediately: true);
+      final _ = container.listen(
+        chatMessagesProvider,
+        (_, _) {},
+        fireImmediately: true,
+      );
       repository.emit([]);
       await Future<void>.delayed(Duration.zero);
 
@@ -300,7 +332,11 @@ void main() {
     });
 
     test('returns 0 when only user messages exist', () async {
-      container.listen(chatMessagesProvider, (_, _) {}, fireImmediately: true);
+      final _ = container.listen(
+        chatMessagesProvider,
+        (_, _) {},
+        fireImmediately: true,
+      );
       repository.emit([_message(id: 'm1', content: 'hi', isUser: true)]);
       await Future<void>.delayed(Duration.zero);
 
@@ -308,7 +344,11 @@ void main() {
     });
 
     test('returns metadata tokens from latest assistant message', () async {
-      container.listen(chatMessagesProvider, (_, _) {}, fireImmediately: true);
+      final _ = container.listen(
+        chatMessagesProvider,
+        (_, _) {},
+        fireImmediately: true,
+      );
       repository.emit([
         _message(id: 'm1', content: 'hi', isUser: true),
         _message(

@@ -1,5 +1,17 @@
+// ignore_for_file: avoid-returning-widgets
+// Required: Widget tests use helpers that build widgets under test.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: scoped_providers_should_specify_dependencies
 // Required: widget tests override scoped providers directly.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-static-class
+// Required: Tests keep fixture helpers and fakes top-level.
 
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
@@ -81,7 +93,7 @@ void main() {
         ToolItemRow(tool: tool, workspaceId: _workspaceId),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('custom_tool'), findsOneWidget);
     expect(find.byType(AuraSwitch), findsOneWidget);
@@ -95,7 +107,7 @@ void main() {
         ToolItemRow(tool: tool, workspaceId: _workspaceId),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.byType(IconButton), findsWidgets);
   });
@@ -110,7 +122,7 @@ void main() {
         ToolItemRow(tool: tool, workspaceId: _workspaceId),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('custom_tool'), findsOneWidget);
     expect(find.byType(AuraSwitch), findsOneWidget);
@@ -124,10 +136,10 @@ void main() {
         ToolItemRow(tool: tool, workspaceId: _workspaceId),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     await tester.tap(find.byType(IconButton).last);
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.byIcon(Icons.delete_outline), findsOneWidget);
   });
@@ -140,7 +152,7 @@ void main() {
         ToolItemRow(tool: tool, workspaceId: _workspaceId),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.byType(AuraButtonGroup<ToolPermissionMode>), findsNothing);
   });
@@ -159,10 +171,10 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     await tester.tap(find.byType(IconButton).last);
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.byIcon(Icons.delete_outline), findsNothing);
   });
@@ -180,10 +192,10 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     await tester.tap(find.byType(IconButton).last);
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.byIcon(Icons.delete_outline), findsOneWidget);
   });
@@ -196,7 +208,7 @@ void main() {
         ToolItemRow(tool: tool, workspaceId: _workspaceId),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     final container = tester.widget<Container>(
       find.ancestor(
@@ -215,10 +227,10 @@ void main() {
         ToolItemRow(tool: tool, workspaceId: _workspaceId),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     await tester.tap(find.byType(IconButton).last);
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.byType(AuraButtonGroup<ToolPermissionMode>), findsNothing);
   });

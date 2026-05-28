@@ -12,6 +12,7 @@ environment:
 
 dependencies:
   async: ^2.13.0
+  auravibes_genkit_openai_compat: ^0.0.1
   auravibes_ui: ^0.0.2
   collection: ^1.19.1
 

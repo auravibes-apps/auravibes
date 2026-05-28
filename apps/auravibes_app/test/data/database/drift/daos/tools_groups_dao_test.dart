@@ -1,3 +1,15 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: avoid-top-level-members-in-tests
+// Required: Test files keep shared fixtures and helpers top-level.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-static-class
+// Required: Tests keep fixture helpers and fakes top-level.
+
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools_groups.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
@@ -57,7 +69,10 @@ void main() {
       );
       final found = await database.toolsGroupsDao.getToolsGroupById(created.id);
       expect(found, isNotNull);
-      expect(found!.name, equals('Group'));
+      expect(
+        (found ?? fail('Expected found to be non-null')).name,
+        equals('Group'),
+      );
     });
 
     test('getToolsGroupById returns null for nonexistent', () async {
@@ -66,14 +81,14 @@ void main() {
     });
 
     test('getToolsGroupsForWorkspace returns groups for workspace', () async {
-      await database.toolsGroupsDao.insertToolsGroup(
+      final _ = await database.toolsGroupsDao.insertToolsGroup(
         ToolsGroupsCompanion.insert(
           workspaceId: workspaceId,
           name: 'G1',
           permissions: PermissionAccess.ask,
         ),
       );
-      await database.toolsGroupsDao.insertToolsGroup(
+      final _ = await database.toolsGroupsDao.insertToolsGroup(
         ToolsGroupsCompanion.insert(
           workspaceId: workspaceId,
           name: 'G2',
@@ -89,7 +104,7 @@ void main() {
     test(
       'getToolsGroupsForWorkspace returns empty for other workspace',
       () async {
-        await database.toolsGroupsDao.insertToolsGroup(
+        final _ = await database.toolsGroupsDao.insertToolsGroup(
           ToolsGroupsCompanion.insert(
             workspaceId: workspaceId,
             name: 'G1',
@@ -113,7 +128,7 @@ void main() {
           authenticationType: const McpAuthenticationType.none(),
         ),
       );
-      await database.toolsGroupsDao.insertToolsGroup(
+      final _ = await database.toolsGroupsDao.insertToolsGroup(
         ToolsGroupsCompanion.insert(
           workspaceId: workspaceId,
           mcpServerId: Value(server.id),
@@ -125,7 +140,10 @@ void main() {
         server.id,
       );
       expect(found, isNotNull);
-      expect(found!.name, equals('Linked Group'));
+      expect(
+        (found ?? fail('Expected found to be non-null')).name,
+        equals('Linked Group'),
+      );
     });
 
     test('getToolsGroupByMcpServerId returns null when not found', () async {
@@ -174,7 +192,10 @@ void main() {
       );
       expect(updated, isTrue);
       final found = await database.toolsGroupsDao.getToolsGroupById(created.id);
-      expect(found!.isEnabled, isFalse);
+      expect(
+        (found ?? fail('Expected found to be non-null')).isEnabled,
+        isFalse,
+      );
     });
   });
 }

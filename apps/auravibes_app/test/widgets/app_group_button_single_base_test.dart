@@ -1,3 +1,7 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: no-empty-block
+// Required: Tests use intentional no-op callbacks and fake hooks.
 import 'package:auravibes_app/widgets/app_group_button_single_base.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';

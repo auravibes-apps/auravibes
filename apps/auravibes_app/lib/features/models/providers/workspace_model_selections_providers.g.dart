@@ -169,7 +169,7 @@ final class ListModelsGroupedByProviderProvider
 }
 
 String _$listModelsGroupedByProviderHash() =>
-    r'da344a279e1c6d9116b82f612fa60bcc6cdb2a0d';
+    r'cb244814a31ca1aeb323f3f965073fb66447d0d0';
 
 /// Groups models by provider name for two-step model selection.
 /// Returns a map where keys are provider names and values are lists of models.

@@ -1,3 +1,8 @@
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+
 import 'package:auravibes_ui/src/atoms/aura_edge_insets_geometry.dart'
     show AuraEdgeInsetsGeometry, AuraPadding;
 import 'package:auravibes_ui/src/tokens/aura_theme.dart'
@@ -63,13 +68,16 @@ class AuraContainer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraTheme = context.auraTheme;
+    final padding = this.padding;
+    final margin = this.margin;
+    final borderRadius = this.borderRadius;
 
     var container = child;
 
     if (padding != null) {
       container = AuraPadding(
         child: child,
-        padding: padding!,
+        padding: padding,
       );
     }
 
@@ -81,7 +89,7 @@ class AuraContainer extends StatelessWidget {
             auraTheme.colors.surface,
         border: border,
         borderRadius: borderRadius != null
-            ? BorderRadius.circular(borderRadius!)
+            ? BorderRadius.circular(borderRadius)
             : null,
         boxShadow: _getBoxShadow(),
       ),
@@ -93,7 +101,7 @@ class AuraContainer extends StatelessWidget {
     if (margin != null) {
       container = AuraPadding(
         child: container,
-        padding: margin!,
+        padding: margin,
       );
     }
 

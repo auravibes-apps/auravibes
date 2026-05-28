@@ -1,3 +1,14 @@
+// ignore_for_file: avoid-redundant-async
+// Required: Test callbacks intentionally preserve async-compatible signatures.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
+// ignore_for_file: missing-test-assertion
+// Required: Tests verify usecase behavior through repository side effects.
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
@@ -116,7 +127,7 @@ void main() {
     });
 
     test('calls generateTitle with correct args', () async {
-      await usecase.call(
+      final _ = await usecase.call(
         workspaceId: 'ws-1',
         firstMessage: 'Hello',
         workspaceModelSelectionId: 'model-sel-1',
@@ -132,7 +143,7 @@ void main() {
     });
 
     test('calls sendMessage with correct args', () async {
-      await usecase.call(
+      final _ = await usecase.call(
         workspaceId: 'ws-1',
         firstMessage: 'Hello',
         workspaceModelSelectionId: 'model-sel-1',
@@ -174,7 +185,7 @@ void main() {
     });
 
     test('creates conversation with correct workspaceId and modelId', () async {
-      await usecase.call(
+      final _ = await usecase.call(
         workspaceId: 'ws-1',
         firstMessage: 'Hello',
         workspaceModelSelectionId: 'model-sel-1',
@@ -187,7 +198,7 @@ void main() {
     });
 
     test('retrieves model selection with correct ID', () async {
-      await usecase.call(
+      final _ = await usecase.call(
         workspaceId: 'ws-1',
         firstMessage: 'Hello',
         workspaceModelSelectionId: 'model-sel-1',
@@ -206,7 +217,7 @@ void main() {
       ).thenAnswer((_) async => null);
 
       try {
-        await usecase.call(
+        final _ = await usecase.call(
           workspaceId: 'ws-1',
           firstMessage: 'Hello',
           workspaceModelSelectionId: 'missing',

@@ -1,3 +1,5 @@
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
 /// Aura AI Assistant UI package with atomic design system components.
 ///
 /// This library provides a comprehensive set of UI components organized

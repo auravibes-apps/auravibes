@@ -1,3 +1,14 @@
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+// ignore_for_file: no-empty-block
+// Required: Tests use intentional no-op callbacks and fake hooks.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-static-class
+// Required: Tests keep fixture helpers and fakes top-level.
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
@@ -88,7 +99,7 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
 }
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
   late AppDatabase testDatabase;
   late ProviderContainer container;
@@ -123,7 +134,7 @@ void main() {
       addTearDown(testContainer.dispose);
 
       // Keep provider alive during async test
-      testContainer.listen(allWorkspacesProvider, (_, _) {});
+      final _ = testContainer.listen(allWorkspacesProvider, (_, _) {});
 
       final result = await testContainer.read(allWorkspacesProvider.future);
       expect(result, isEmpty);
@@ -139,7 +150,7 @@ void main() {
       addTearDown(testContainer.dispose);
 
       // Keep provider alive during async test
-      testContainer.listen(allWorkspacesProvider, (_, _) {});
+      final _ = testContainer.listen(allWorkspacesProvider, (_, _) {});
 
       final first = await testContainer.read(allWorkspacesProvider.future);
       final second = await testContainer.read(allWorkspacesProvider.future);

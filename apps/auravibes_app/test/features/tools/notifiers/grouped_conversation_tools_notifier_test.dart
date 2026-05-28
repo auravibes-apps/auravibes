@@ -1,3 +1,14 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/domain/entities/conversation_tool_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
@@ -172,7 +183,7 @@ void main() {
             workspaceId: 'workspace-1',
           ).notifier,
         );
-        await container.read(
+        final _ = await container.read(
           groupedConversationToolsProvider(
             workspaceId: 'workspace-1',
           ).future,
@@ -197,7 +208,7 @@ void main() {
             conversationId: 'conv-1',
           ).notifier,
         );
-        await container.read(
+        final _ = await container.read(
           groupedConversationToolsProvider(
             workspaceId: 'workspace-1',
             conversationId: 'conv-1',

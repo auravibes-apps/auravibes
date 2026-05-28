@@ -1,3 +1,7 @@
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-static-class
+// Required: Existing helpers remain top-level for local feature use.
 import 'dart:async';
 
 import 'package:async/async.dart';
@@ -7,7 +11,7 @@ class AgentCancellationRuntime {
   final _entries = <String, _AgentCancellationEntry>{};
 
   void start(String conversationId) {
-    _entries.putIfAbsent(
+    final _ = _entries.putIfAbsent(
       conversationId,
       _AgentCancellationEntry.new,
     );
@@ -76,10 +80,11 @@ class _AgentCancellationEntry {
       try {
         final result = cleanup();
         if (result is Future<void>) {
-          unawaited(result.catchError((Object _) {}));
+          unawaited(result.catchError((Object _) => null));
         }
       } on Object {
         // Swallow so subsequent cleanups still run.
+        continue;
       }
     }
   }
@@ -91,10 +96,11 @@ class _AgentCancellationEntry {
     try {
       final result = cleanup();
       if (result is Future<void>) {
-        unawaited(result.catchError((Object _) {}));
+        unawaited(result.catchError((Object _) => null));
       }
     } on Object {
       // Swallow so registration continues.
+      return;
     }
   }
 }

@@ -1,3 +1,11 @@
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-moving-to-variable
+// Required: Existing code repeats lookups where extraction adds noise.
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
@@ -80,7 +88,7 @@ abstract class McpFormState with _$McpFormState {
 /// Notifier for managing MCP form state
 @riverpod
 class McpFormNotifier extends _$McpFormNotifier {
-  late String _workspaceId;
+  String _workspaceId = '';
 
   @override
   McpFormState build(String workspaceId) {

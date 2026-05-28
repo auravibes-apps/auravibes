@@ -1,3 +1,8 @@
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/settings/notifiers/app_theme.dart';
 import 'package:auravibes_app/flavor.dart';
@@ -12,10 +17,8 @@ import 'package:flutter/services.dart'
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 Future<void> main() async {
-  F.appFlavor = Flavor.values.firstWhere(
-    (element) => element.name == appFlavor,
-  );
-  WidgetsFlutterBinding.ensureInitialized();
+  F.appFlavor = AppFlavorResolver.resolve(appFlavor);
+  final _ = WidgetsFlutterBinding.ensureInitialized();
   AppLogging.configure(enabled: F.appFlavor != Flavor.prod);
   await MainLocale.ensureInitialized();
 
@@ -31,7 +34,7 @@ Future<void> main() async {
 
   // Load defaults after the database connection is established
   await appDatabase.initializeWithDefaults();
-  container.read(modelSyncServiceProvider);
+  final _ = container.read(modelSyncServiceProvider);
 
   runApp(
     UncontrolledProviderScope(
@@ -39,6 +42,18 @@ Future<void> main() async {
       child: const MainLocale(child: MyApp()),
     ),
   );
+}
+
+class AppFlavorResolver {
+  AppFlavorResolver._();
+
+  static Flavor resolve(String? flavorName) {
+    if (flavorName == null) {
+      throw StateError('appFlavor is not initialized');
+    }
+
+    return Flavor.values.byName(flavorName);
+  }
 }
 
 class MyApp extends ConsumerWidget {
@@ -53,7 +68,9 @@ class MyApp extends ConsumerWidget {
     return Portal(
       child: MaterialApp.router(
         routerConfig: routerConfig,
-        builder: (context, child) => AuraText(child: child!),
+        builder: (context, child) => AuraText(
+          child: child ?? const SizedBox.shrink(),
+        ),
         title: F.title,
         theme: ThemeData(
           extensions: [

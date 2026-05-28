@@ -1,3 +1,7 @@
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: prefer-correct-type-name
+// Required: Flavor helper keeps generated naming convention.
 enum Flavor {
   prod,
   dev,
@@ -5,7 +9,12 @@ enum Flavor {
 }
 
 class F {
-  static late final Flavor appFlavor;
+  static Flavor? _appFlavor;
+
+  static Flavor get appFlavor =>
+      _appFlavor ?? (throw StateError('appFlavor is not initialized'));
+
+  static set appFlavor(Flavor value) => _appFlavor = value;
 
   static String get name => appFlavor.name;
 

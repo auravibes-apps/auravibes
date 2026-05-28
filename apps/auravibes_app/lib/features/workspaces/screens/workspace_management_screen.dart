@@ -1,3 +1,15 @@
+// ignore_for_file: no-magic-number
+// Required: Existing thresholds and limits use numeric values.
+// ignore_for_file: avoid-returning-widgets
+// Required: Existing helper builders return widgets.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-single-widget-per-file
+// Required: Feature widgets keep closely related private widgets together.
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/repositories/workspace_repository.dart';
 import 'package:auravibes_app/features/workspaces/models/management_mode.dart';
@@ -95,7 +107,7 @@ class WorkspaceManagementScreen extends HookConsumerWidget {
     WidgetRef ref,
     String name,
   ) async {
-    await createWorkspaceMutation.run(ref, (transaction) async {
+    final _ = await createWorkspaceMutation.run(ref, (transaction) {
       final usecase = ref.read(createWorkspaceUseCaseProvider);
       return usecase.call(name: name);
     });
@@ -119,7 +131,7 @@ class WorkspaceManagementScreen extends HookConsumerWidget {
     String id,
     String name,
   ) async {
-    await editWorkspaceMutation.run(ref, (transaction) async {
+    final _ = await editWorkspaceMutation.run(ref, (transaction) {
       final usecase = ref.read(editWorkspaceUseCaseProvider);
       return usecase.call(id: id, name: name);
     });
@@ -171,7 +183,7 @@ class WorkspaceManagementScreen extends HookConsumerWidget {
     );
 
     if (confirmed == true && context.mounted) {
-      await deleteWorkspaceMutation.run(ref, (transaction) async {
+      await deleteWorkspaceMutation.run(ref, (transaction) {
         final usecase = ref.read(deleteWorkspaceUseCaseProvider);
         return usecase.call(
           id: id,
@@ -198,7 +210,7 @@ class WorkspaceManagementScreen extends HookConsumerWidget {
       debugPrint('Workspace management unexpected error: $error');
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
+    final _ = ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
   }
@@ -456,7 +468,16 @@ class _EditWorkspaceTile extends StatefulWidget {
 }
 
 class _EditWorkspaceTileState extends State<_EditWorkspaceTile> {
-  late final TextEditingController _controller;
+  TextEditingController? _controller;
+
+  TextEditingController get _requiredController {
+    final controller = _controller;
+    if (controller == null) {
+      throw StateError('_controller is not initialized');
+    }
+
+    return controller;
+  }
 
   @override
   void initState() {
@@ -466,7 +487,7 @@ class _EditWorkspaceTileState extends State<_EditWorkspaceTile> {
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller?.dispose();
     super.dispose();
   }
 
@@ -478,7 +499,7 @@ class _EditWorkspaceTileState extends State<_EditWorkspaceTile> {
         children: [
           Expanded(
             child: TextField(
-              controller: _controller,
+              controller: _requiredController,
               decoration: InputDecoration(
                 helperText: LocaleKeys.workspace_management_name_placeholder
                     .tr(),
@@ -490,7 +511,7 @@ class _EditWorkspaceTileState extends State<_EditWorkspaceTile> {
           ),
           AuraIconButton(
             icon: Icons.check,
-            onPressed: () => widget.onSave(_controller.text.trim()),
+            onPressed: () => widget.onSave(_requiredController.text.trim()),
             tooltip: LocaleKeys.common_save.tr(),
           ),
           AuraIconButton(

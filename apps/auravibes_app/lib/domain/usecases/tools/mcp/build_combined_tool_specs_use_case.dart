@@ -1,3 +1,8 @@
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
@@ -80,13 +85,13 @@ class BuildCombinedToolSpecsUseCase {
   }
 
   Future<ToolSpec?> _buildMcpToolSpec(WorkspaceToolEntity workspaceTool) async {
-    if (!workspaceTool.belongsToGroup ||
-        workspaceTool.workspaceToolsGroupId == null) {
+    final workspaceToolsGroupId = workspaceTool.workspaceToolsGroupId;
+    if (!workspaceTool.belongsToGroup || workspaceToolsGroupId == null) {
       return null;
     }
 
     final toolGroup = await _getToolsGroupById(
-      workspaceTool.workspaceToolsGroupId!,
+      workspaceToolsGroupId,
     );
     final mcpServerId = toolGroup?.mcpServerId;
     if (mcpServerId == null) return null;

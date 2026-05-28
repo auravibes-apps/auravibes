@@ -1,3 +1,14 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
@@ -191,7 +202,7 @@ void main() {
       );
 
       expect(result, AgentIterationDecision.done);
-      verifyNever(
+      final _ = verifyNever(
         resolveToolApprovalDecision(
           conversationId: anyNamed('conversationId'),
           workspaceId: anyNamed('workspaceId'),
@@ -248,7 +259,7 @@ void main() {
         );
 
         expect(result, AgentIterationDecision.waitForToolApproval);
-        verifyNever(
+        final _ = verifyNever(
           messageRepository.patchMessage(any, any),
         );
       },
@@ -814,7 +825,7 @@ void main() {
         );
 
         expect(result, AgentIterationDecision.waitForToolApproval);
-        verifyNever(
+        final _ = verifyNever(
           messageRepository.patchMessage(any, any),
         );
       },
@@ -914,7 +925,7 @@ void main() {
             resolvedTool: nativeTool.tool,
           ),
         ).called(1);
-        verifyNever(
+        final _ = verifyNever(
           messageRepository.patchMessage(any, any),
         );
       },
@@ -1172,7 +1183,7 @@ void main() {
           getAgentIterationDecisionUsecase.call(messageId: 'message-1'),
         ).thenAnswer((_) async => AgentIterationDecision.done);
 
-        await usecase.call(
+        final _ = await usecase.call(
           conversationId: 'conversation-1',
           workspaceId: 'workspace-1',
         );
@@ -1259,7 +1270,7 @@ void main() {
           getAgentIterationDecisionUsecase.call(messageId: 'message-1'),
         ).thenAnswer((_) async => AgentIterationDecision.done);
 
-        await usecase.call(
+        final _ = await usecase.call(
           conversationId: 'conversation-1',
           workspaceId: 'workspace-1',
         );
@@ -1619,7 +1630,7 @@ void main() {
         );
 
         expect(result, AgentIterationDecision.continueIteration);
-        verifyNever(
+        final _ = verifyNever(
           messageRepository.patchMessage(any, any),
         );
       },

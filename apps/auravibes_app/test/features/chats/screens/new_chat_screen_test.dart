@@ -1,3 +1,5 @@
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
 import 'package:auravibes_app/features/chats/notifiers/new_chat_state.dart';
 import 'package:auravibes_app/features/chats/screens/new_chat_screen.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
@@ -88,10 +90,37 @@ void main() {
           ),
         );
       });
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
       expect(find.byType(NewChatScreen), findsOneWidget);
       expect(find.byType(AuraScreen), findsOneWidget);
       expect(find.byType(ChatInputWidget), findsOneWidget);
+    });
+
+    testWidgets('shows loading overlay while conversation starts', (
+      tester,
+    ) async {
+      await tester.runAsync(() async {
+        await tester.pumpWidget(
+          testableApp(
+            child: Theme(
+              data: ThemeData(extensions: [AuraTheme.light]),
+              child: const NewChatScreen(workspaceId: 'test-ws'),
+            ),
+            overrides: [
+              newChatProvider('test-ws').overrideWithValue(
+                const NewChatState(isLoading: true),
+              ),
+              listModelsGroupedByProviderProvider.overrideWith(
+                (ref, workspaceId) => Stream.value({}),
+              ),
+            ],
+          ),
+        );
+      });
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
     });
   });
 }

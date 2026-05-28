@@ -1,3 +1,13 @@
+// ignore_for_file: avoid-top-level-members-in-tests
+// Required: Test files keep shared fixtures and helpers top-level.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-static-class
+// Required: Tests keep fixture helpers and fakes top-level.
+
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+
 import 'dart:async';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
@@ -36,7 +46,7 @@ void main() {
     });
 
     test('insertWorkspaceModelSelections inserts records', () async {
-      await database.apiModelProvidersDao.upsertProvider(
+      final _ = await database.apiModelProvidersDao.upsertProvider(
         ApiModelProvidersCompanion.insert(id: 'openai', name: 'OpenAI'),
       );
       final conn = await database.modelConnectionsDao.insertModelConnection(
@@ -63,7 +73,7 @@ void main() {
     });
 
     test('watchAllWorkspaceModelSelectionsByWorkspace emits inserts', () async {
-      await database.apiModelProvidersDao.upsertProvider(
+      final _ = await database.apiModelProvidersDao.upsertProvider(
         ApiModelProvidersCompanion.insert(id: 'openai', name: 'OpenAI'),
       );
       final conn = await database.modelConnectionsDao.insertModelConnection(
@@ -110,7 +120,7 @@ void main() {
     );
 
     test('getWorkspaceModelSelectionById returns selection', () async {
-      await database.apiModelProvidersDao.upsertProvider(
+      final _ = await database.apiModelProvidersDao.upsertProvider(
         ApiModelProvidersCompanion.insert(id: 'openai', name: 'OpenAI'),
       );
       final conn = await database.modelConnectionsDao.insertModelConnection(
@@ -134,9 +144,16 @@ void main() {
             workspaceIds: [workspaceId],
           );
       final found = await database.workspaceModelSelectionsDao
-          .getWorkspaceModelSelectionById(all.firstOrNull!.model.id);
+          .getWorkspaceModelSelectionById(
+            (all.firstOrNull ?? fail('Expected all.firstOrNull to be non-null'))
+                .model
+                .id,
+          );
       expect(found, isNotNull);
-      expect(found!.model.modelId, equals('openai'));
+      expect(
+        (found ?? fail('Expected found to be non-null')).model.modelId,
+        equals('openai'),
+      );
     });
 
     test(

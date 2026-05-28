@@ -1,3 +1,11 @@
+// ignore_for_file: no-magic-number
+// Required: Existing thresholds and limits use numeric values.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: prefer-single-widget-per-file
+// Required: Feature widgets keep closely related private widgets together.
+import 'dart:async';
+
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.dart';
 import 'package:auravibes_app/features/tools/widgets/user_tool_type_widgets.dart';
@@ -38,23 +46,24 @@ class ConversationToolTile extends HookConsumerWidget {
     final toolId = toolState.tool.id;
 
     final onToggle = useCallback(
-      () async {
-        await toolsNotifier.toggleTool(toolId);
+      () {
+        unawaited(toolsNotifier.toggleTool(toolId));
       },
       [toolsNotifier, toolId],
     );
 
-    final onPermissionChanged =
-        useCallback<Future<void> Function(ToolPermissionMode?)>(
-          (mode) async {
-            if (mode == null) return;
-            await toolsNotifier.setToolPermission(
-              toolId,
-              permissionMode: mode,
-            );
-          },
-          [toolsNotifier, toolId],
+    final onPermissionChanged = useCallback<void Function(ToolPermissionMode?)>(
+      (mode) {
+        if (mode == null) return;
+        unawaited(
+          toolsNotifier.setToolPermission(
+            toolId,
+            permissionMode: mode,
+          ),
         );
+      },
+      [toolsNotifier, toolId],
+    );
 
     final isEnabled = toolState.isEnabled;
     final isWorkspaceEnabled = toolState.isWorkspaceEnabled;
@@ -140,7 +149,9 @@ class _ToolIcon extends StatelessWidget {
         color: isEnabled && isWorkspaceEnabled
             ? context.auraColors.primary.withValues(alpha: 0.1)
             : context.auraColors.surfaceVariant,
-        borderRadius: BorderRadius.circular(DesignBorderRadius.md),
+        borderRadius: const BorderRadius.all(
+          Radius.circular(DesignBorderRadius.md),
+        ),
       ),
       width: 40,
       height: 40,

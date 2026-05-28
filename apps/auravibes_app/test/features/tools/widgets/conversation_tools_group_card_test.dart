@@ -1,5 +1,19 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: avoid-returning-widgets
+// Required: Widget tests use helpers that build widgets under test.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: scoped_providers_should_specify_dependencies
 // Required: widget tests override scoped providers directly.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-static-class
+// Required: Tests keep fixture helpers and fakes top-level.
 
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
@@ -131,7 +145,7 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.byType(ConversationGroupHeader), findsOneWidget);
   });
@@ -153,7 +167,7 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.byType(ConversationToolTile), findsNothing);
   });
@@ -172,7 +186,7 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('My Tools'), findsOneWidget);
   });
@@ -194,10 +208,10 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     await tester.tap(find.byType(IconButton).last);
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.byType(ConversationToolTile), findsNWidgets(2));
   });
@@ -216,12 +230,12 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.byType(AuraDivider), findsNothing);
 
     await tester.tap(find.byType(IconButton).last);
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.byType(AuraDivider), findsOneWidget);
   });
@@ -240,7 +254,7 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.byType(AuraCard), findsOneWidget);
   });
@@ -260,7 +274,7 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.byType(ConversationGroupHeader), findsOneWidget);
   });
@@ -280,7 +294,7 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.byType(ConversationToolTile), findsOneWidget);
   });
@@ -302,7 +316,7 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.byType(AuraDivider), findsOneWidget);
     expect(find.byType(ConversationToolTile), findsNothing);
@@ -340,7 +354,7 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.byType(ConversationGroupHeader), findsOneWidget);
   });
@@ -377,7 +391,7 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.byType(ConversationGroupHeader), findsOneWidget);
   });
@@ -414,7 +428,7 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.byType(ConversationGroupHeader), findsOneWidget);
   });
@@ -434,7 +448,7 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.byType(ConversationGroupHeader), findsOneWidget);
   });
@@ -490,14 +504,14 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     await tester.tap(find.byType(IconButton).first);
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     expect(find.byType(ConversationToolTile), findsOneWidget);
 
     await tester.tap(find.byType(IconButton).first);
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     expect(find.byType(ConversationToolTile), findsNothing);
   });
 
@@ -521,7 +535,7 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.byType(ConversationToolTile), findsNWidgets(3));
   });
@@ -543,7 +557,7 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('tools_screen.no_tools_in_group'), findsOneWidget);
   });
@@ -564,12 +578,12 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     final switchFinder = find.byType(AuraSwitch);
     if (switchFinder.evaluate().isNotEmpty) {
       await tester.tap(switchFinder.first);
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
     }
 
     expect(find.byType(AuraCard), findsOneWidget);
@@ -610,12 +624,12 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     final refreshFinder = find.byIcon(Icons.refresh);
     if (refreshFinder.evaluate().isNotEmpty) {
       await tester.tap(refreshFinder.first);
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
     }
 
     expect(find.byType(ConversationGroupHeader), findsOneWidget);
@@ -655,12 +669,12 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     final refreshFinder = find.byIcon(Icons.refresh);
     if (refreshFinder.evaluate().isNotEmpty) {
       await tester.tap(refreshFinder.first);
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
     }
 
     expect(find.byType(ConversationGroupHeader), findsOneWidget);
@@ -680,7 +694,7 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.byIcon(Icons.refresh), findsNothing);
   });

@@ -1,3 +1,22 @@
+// ignore_for_file: prefer-async-await
+// Required: Tests use Future chains to assert async side effects.
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: avoid-top-level-members-in-tests
+// Required: Test files keep shared fixtures and helpers top-level.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-static-class
+// Required: Tests keep fixture helpers and fakes top-level.
+
+// ignore_for_file: avoid-redundant-async
+// Required: Test callbacks intentionally preserve async-compatible signatures.
+
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools_groups.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
@@ -57,7 +76,7 @@ void main() {
               toolId,
             ),
           )
-          .then((t) => t!);
+          .then((tool) => tool ?? fail('Expected workspace tool'));
     }
 
     test('getWorkspaceTools returns empty when no tools', () async {
@@ -91,7 +110,10 @@ void main() {
         created.id,
       );
       expect(found, isNotNull);
-      expect(found!.toolId, equals('my_tool'));
+      expect(
+        (found ?? fail('Expected found to be non-null')).toolId,
+        equals('my_tool'),
+      );
     });
 
     test('getWorkspaceTool returns null for wrong workspace', () async {
@@ -104,13 +126,16 @@ void main() {
     });
 
     test('getWorkspaceToolByToolId returns tool', () async {
-      await seedTool();
+      final _ = await seedTool();
       final found = await database.workspaceToolsDao.getWorkspaceToolByToolId(
         workspaceId,
         'web_search',
       );
       expect(found, isNotNull);
-      expect(found!.toolId, equals('web_search'));
+      expect(
+        (found ?? fail('Expected found to be non-null')).toolId,
+        equals('web_search'),
+      );
     });
 
     test('setWorkspaceToolEnabled inserts new when not exists', () async {
@@ -124,7 +149,7 @@ void main() {
     });
 
     test('setWorkspaceToolEnabled updates existing', () async {
-      await seedTool(toolId: 'existing');
+      final _ = await seedTool(toolId: 'existing');
       final result = await database.workspaceToolsDao.setWorkspaceToolEnabled(
         workspaceId,
         'existing',
@@ -144,7 +169,7 @@ void main() {
     });
 
     test('patchWorkspaceToolConfig updates config', () async {
-      await seedTool(toolId: 'cfg_tool');
+      final _ = await seedTool(toolId: 'cfg_tool');
       final results = await database.workspaceToolsDao.patchWorkspaceToolConfig(
         workspaceId,
         'cfg_tool',
@@ -154,7 +179,7 @@ void main() {
     });
 
     test('deleteWorkspaceToolByToolId deletes by toolId', () async {
-      await seedTool(toolId: 'del_me');
+      final _ = await seedTool(toolId: 'del_me');
       final deleted = await database.workspaceToolsDao
           .deleteWorkspaceToolByToolId(
             workspaceId,
@@ -190,8 +215,8 @@ void main() {
     });
 
     test('getEnabledWorkspaceTools returns only enabled', () async {
-      await seedTool(toolId: 'on', isEnabled: true);
-      await seedTool(toolId: 'off');
+      final _ = await seedTool(toolId: 'on', isEnabled: true);
+      final _ = await seedTool(toolId: 'off');
       final enabled = await database.workspaceToolsDao.getEnabledWorkspaceTools(
         workspaceId,
       );
@@ -220,7 +245,10 @@ void main() {
         toolName: 'mcp_tool',
       );
       expect(found, isNotNull);
-      expect(found!.toolId, equals('mcp_tool'));
+      expect(
+        (found ?? fail('Expected found to be non-null')).toolId,
+        equals('mcp_tool'),
+      );
     });
 
     test('isWorkspaceToolEnabled returns correct state', () async {
@@ -254,7 +282,7 @@ void main() {
     });
 
     test('getWorkspaceToolConfigByToolId returns config', () async {
-      await seedTool(toolId: 'cfg2', config: 'abc');
+      final _ = await seedTool(toolId: 'cfg2', config: 'abc');
       final config = await database.workspaceToolsDao
           .getWorkspaceToolConfigByToolId(
             workspaceId,
@@ -264,7 +292,7 @@ void main() {
     });
 
     test('isWorkspaceToolEnabledByToolId returns correct state', () async {
-      await seedTool(toolId: 'chk2', isEnabled: true);
+      final _ = await seedTool(toolId: 'chk2', isEnabled: true);
       expect(
         await database.workspaceToolsDao.isWorkspaceToolEnabledByToolId(
           workspaceId,
@@ -286,8 +314,8 @@ void main() {
         await database.workspaceToolsDao.getWorkspaceToolsCount(workspaceId),
         equals(0),
       );
-      await seedTool(toolId: 'a');
-      await seedTool(toolId: 'b');
+      final _ = await seedTool(toolId: 'a');
+      final _ = await seedTool(toolId: 'b');
       expect(
         await database.workspaceToolsDao.getWorkspaceToolsCount(workspaceId),
         equals(2),
@@ -295,8 +323,8 @@ void main() {
     });
 
     test('getEnabledWorkspaceToolsCount returns correct count', () async {
-      await seedTool(toolId: 'a', isEnabled: true);
-      await seedTool(toolId: 'b');
+      final _ = await seedTool(toolId: 'a', isEnabled: true);
+      final _ = await seedTool(toolId: 'b');
       expect(
         await database.workspaceToolsDao.getEnabledWorkspaceToolsCount(
           workspaceId,

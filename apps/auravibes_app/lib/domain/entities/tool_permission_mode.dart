@@ -1,3 +1,8 @@
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+
 import 'package:auravibes_app/services/tools/native_tool_type.dart';
 import 'package:auravibes_app/services/tools/user_tool_type.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
@@ -57,20 +62,19 @@ abstract class WorkspaceToolEntity with _$WorkspaceToolEntity {
   const WorkspaceToolEntity._();
 
   /// Returns true if the tool has custom configuration
-  bool get hasConfig => config != null && config!.isNotEmpty;
+  bool get hasConfig => config?.isNotEmpty ?? false;
 
   /// Returns true if the tool is currently enabled
   bool get isAvailable => isEnabled;
 
   /// Returns true if this tool belongs to a group
-  bool get belongsToGroup =>
-      workspaceToolsGroupId != null && workspaceToolsGroupId!.isNotEmpty;
+  bool get belongsToGroup => workspaceToolsGroupId?.isNotEmpty ?? false;
 
   /// Returns true if this tool has a description
-  bool get hasDescription => description != null && description!.isNotEmpty;
+  bool get hasDescription => description?.isNotEmpty ?? false;
 
   /// Returns true if this tool has an input schema (MCP tool)
-  bool get hasInputSchema => inputSchema != null && inputSchema!.isNotEmpty;
+  bool get hasInputSchema => inputSchema?.isNotEmpty ?? false;
 
   UserToolType? get buildInType {
     return UserToolType.fromValue(toolId);

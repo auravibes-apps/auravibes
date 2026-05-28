@@ -1,3 +1,16 @@
+// ignore_for_file: no-magic-number
+// Required: UI tokens and layout use fixed design values.
+// ignore_for_file: avoid-returning-widgets
+// Required: Existing helper builders return widgets.
+// ignore_for_file: no-equal-arguments
+// Required: UI geometry uses repeated values for symmetric layout.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: prefer-moving-to-variable
+// Required: UI components repeat theme and layout lookups intentionally.
+
 import 'package:auravibes_ui/src/atoms/aura_icon.dart';
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
@@ -63,11 +76,12 @@ class AuraFloatingActionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
     final isExtended = size == AuraFABSize.extended;
+    final text = this.text;
 
     Widget fab = FloatingActionButton(
-      child: isExtended
-          ? _buildExtendedContent(auraColors)
-          : _buildRegularContent(auraColors),
+      child: isExtended && text != null
+          ? _buildExtendedContent(auraColors, text)
+          : _buildRegularContent(),
       foregroundColor:
           auraColors.getColorOrNull(foregroundColor) ?? auraColors.onPrimary,
       backgroundColor:
@@ -88,7 +102,7 @@ class AuraFloatingActionButton extends StatelessWidget {
         width: _getFABSize(),
         height: _getFABSize(),
         child: FloatingActionButton(
-          child: _buildRegularContent(auraColors),
+          child: _buildRegularContent(),
           foregroundColor:
               auraColors.getColorOrNull(foregroundColor) ??
               auraColors.onPrimary,
@@ -106,7 +120,7 @@ class AuraFloatingActionButton extends StatelessWidget {
       );
     }
 
-    if (isExtended) {
+    if (isExtended && text != null) {
       fab = FloatingActionButton.extended(
         foregroundColor:
             auraColors.getColorOrNull(foregroundColor) ?? auraColors.onPrimary,
@@ -126,7 +140,7 @@ class AuraFloatingActionButton extends StatelessWidget {
         ),
         label: AuraText(
           child: Text(
-            text!,
+            text,
             style: TextStyle(
               color:
                   auraColors.getColorOrNull(foregroundColor) ??
@@ -156,7 +170,7 @@ class AuraFloatingActionButton extends StatelessWidget {
     return fab;
   }
 
-  Widget _buildRegularContent(AuraColorScheme auraColors) {
+  Widget _buildRegularContent() {
     return AuraIcon(
       icon,
       size: _getIconSize(),
@@ -164,7 +178,7 @@ class AuraFloatingActionButton extends StatelessWidget {
     );
   }
 
-  Widget _buildExtendedContent(AuraColorScheme auraColors) {
+  Widget _buildExtendedContent(AuraColorScheme auraColors, String text) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -175,7 +189,7 @@ class AuraFloatingActionButton extends StatelessWidget {
         const SizedBox(width: DesignSpacing.sm),
         AuraText(
           child: Text(
-            text!,
+            text,
             style: TextStyle(
               color:
                   auraColors.getColorOrNull(foregroundColor) ??

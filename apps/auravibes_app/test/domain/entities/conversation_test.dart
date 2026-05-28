@@ -1,3 +1,5 @@
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:flutter_test/flutter_test.dart';
 

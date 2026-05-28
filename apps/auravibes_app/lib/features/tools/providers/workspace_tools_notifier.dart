@@ -1,3 +1,13 @@
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-static-class
+// Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/data/repositories/workspace_tools_repository_impl.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dart';
@@ -16,24 +26,34 @@ WorkspaceToolsRepository workspaceToolsRepository(Ref ref) {
 }
 
 @Riverpod(dependencies: [])
-int workspaceToolIndexNotifier(Ref ref) =>
+int workspaceToolIndexNotifier(Ref _) =>
     throw Exception('implement workspaceToolIndexNotifier');
 
 @riverpod
 class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
-  late WorkspaceToolsRepository _repository;
-  late String _workspaceId;
+  WorkspaceToolsRepository? _repository;
+  String _workspaceId = '';
+
+  WorkspaceToolsRepository get _requiredRepository {
+    final repository = _repository;
+    if (repository == null) {
+      throw StateError('_repository is not initialized');
+    }
+
+    return repository;
+  }
 
   @override
   Future<List<WorkspaceToolEntity>> build(String workspaceId) async {
-    _repository = ref.watch(workspaceToolsRepositoryProvider);
+    final repository = ref.watch(workspaceToolsRepositoryProvider);
+    _repository = repository;
     _workspaceId = workspaceId;
-    return _repository.getWorkspaceTools(workspaceId);
+    return repository.getWorkspaceTools(workspaceId);
   }
 
   /// Add a new built-in tool to the workspace
   Future<void> addTool(UserToolType toolType) async {
-    await _repository.setWorkspaceToolEnabled(
+    final _ = await _requiredRepository.setWorkspaceToolEnabled(
       _workspaceId,
       toolType.value,
       isEnabled: true,
@@ -67,7 +87,7 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
     String id, {
     required bool isEnabled,
   }) async {
-    final newTool = await _repository.setToolEnabledById(
+    final newTool = await _requiredRepository.setToolEnabledById(
       id,
       isEnabled: isEnabled,
     );
@@ -76,7 +96,7 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
 
   /// Update workspace tool configuration
   Future<void> updateToolConfig(String toolId, String? config) async {
-    final success = await _repository.patchWorkspaceToolConfig(
+    final success = await _requiredRepository.patchWorkspaceToolConfig(
       _workspaceId,
       toolId,
       config,
@@ -86,7 +106,7 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
 
   /// Remove a workspace tool by its database ID
   Future<bool> removeToolById(String id) async {
-    final success = await _repository.removeWorkspaceToolById(id);
+    final success = await _requiredRepository.removeWorkspaceToolById(id);
     if (success) {
       _removeToolsByIds([id]);
     }
@@ -98,7 +118,7 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
     String id, {
     required ToolPermissionMode permissionMode,
   }) async {
-    final newTool = await _repository.setToolPermissionMode(
+    final newTool = await _requiredRepository.setToolPermissionMode(
       id,
       permissionMode: permissionMode,
     );

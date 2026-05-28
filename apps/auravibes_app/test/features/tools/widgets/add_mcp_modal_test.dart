@@ -1,5 +1,19 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: avoid-returning-widgets
+// Required: Widget tests use helpers that build widgets under test.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: avoid-redundant-async
+// Required: Test callbacks intentionally preserve async-compatible signatures.
 // ignore_for_file: scoped_providers_should_specify_dependencies
 // Required: widget tests override scoped providers directly.
+// ignore_for_file: prefer-moving-to-variable
+// Required: Tests repeat finders and fixture lookups for clarity.
+// ignore_for_file: prefer-static-class
+// Required: Tests keep fixture helpers and fakes top-level.
 
 import 'package:auravibes_app/features/tools/providers/mcp_form_state.dart';
 import 'package:auravibes_app/features/tools/widgets/add_mcp_modal.dart';
@@ -42,7 +56,7 @@ Widget _buildSubject() {
     child: TestProviderScope(
       overrides: [
         mcpConnectionProvider.overrideWith(_FakeMcpConnectionNotifier.new),
-        // ignore: deprecated_member_use
+        // ignore: deprecated_member_use - Required to override generated provider.
         mcpFormProvider.overrideWith(_FakeMcpFormNotifier.new),
       ],
       child: Portal(
@@ -170,7 +184,7 @@ void main() {
               mcpConnectionProvider.overrideWith(
                 _FakeMcpConnectionNotifier.new,
               ),
-              // ignore: deprecated_member_use
+              // ignore: deprecated_member_use - Required to override generated provider.
               mcpFormProvider.overrideWith(_SubmittingMcpFormNotifier.new),
             ],
             child: Portal(
@@ -211,7 +225,7 @@ void main() {
               mcpConnectionProvider.overrideWith(
                 _FakeMcpConnectionNotifier.new,
               ),
-              // ignore: deprecated_member_use
+              // ignore: deprecated_member_use - Required to override generated provider in widget test.
               mcpFormProvider.overrideWith(_SuccessfulMcpFormNotifier.new),
             ],
             child: Portal(

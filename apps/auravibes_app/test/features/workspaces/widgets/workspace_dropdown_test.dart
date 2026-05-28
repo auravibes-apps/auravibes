@@ -1,3 +1,10 @@
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
+// ignore_for_file: no-empty-block
+// Required: Tests use intentional no-op callbacks and fake hooks.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+
 import 'package:auravibes_app/features/workspaces/widgets/workspace_dropdown_item.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -38,7 +45,7 @@ void main() {
       await tester.runAsync(() async {
         await tester.pumpWidget(_buildTestableWidget(child));
         await tester.idle();
-        await tester.pumpAndSettle();
+        final _ = await tester.pumpAndSettle();
       });
     }
 
@@ -114,10 +121,15 @@ void main() {
           .widget<AuraDropdownSelector<WorkspaceDropdownItem>>(
             find.byType(AuraDropdownSelector<WorkspaceDropdownItem>),
           );
-      dropdown.onChanged!(workspaces[1]);
+      final onChanged = dropdown.onChanged;
+      if (onChanged == null) {
+        fail('Expected workspace dropdown onChanged callback');
+      }
+
+      onChanged(workspaces[1]);
 
       expect(selected, isNotNull);
-      expect(selected!.id, 'ws-2');
+      expect((selected ?? fail('Expected selected to be non-null')).id, 'ws-2');
     });
 
     testWidgets('is disabled when isLoading is true', (tester) async {

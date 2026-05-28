@@ -1,3 +1,13 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/api_model_providers_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/api_models_dao.dart';
@@ -125,7 +135,7 @@ void main() {
         );
 
         expect(result, isNotNull);
-        expect(result!.id, 'gpt-4');
+        expect((result ?? fail('Expected result to be non-null')).id, 'gpt-4');
       });
 
       test('returns null when not found', () async {
@@ -203,7 +213,7 @@ void main() {
       test('filters null entities from input', () async {
         when(mockModelsDao.batchUpsertModels(any)).thenAnswer((_) async => []);
 
-        await repository.batchUpsertModels([
+        final _ = await repository.batchUpsertModels([
           const ApiModelEntity(
             modelProvider: 'openai',
             id: 'gpt-4',

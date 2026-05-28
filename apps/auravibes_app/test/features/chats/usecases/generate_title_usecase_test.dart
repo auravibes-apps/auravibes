@@ -1,3 +1,14 @@
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
+// ignore_for_file: no-empty-block
+// Required: Tests use intentional no-op callbacks and fake hooks.
+// ignore_for_file: missing-test-assertion
+// Required: Tests verify usecase behavior through repository side effects.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
@@ -102,7 +113,7 @@ void main() {
         chatbotService.streamTitle(modelSelection, 'Hello'),
       ).called(1);
 
-      await controller.close();
+      final _ = await controller.close();
     });
 
     test(
@@ -132,7 +143,7 @@ void main() {
           workspaceModelSelection: modelSelection,
         );
 
-        await controller.close();
+        final _ = await controller.close();
         await Future<void>.delayed(const Duration(milliseconds: 100));
 
         expect(removedIds, contains('conv-1'));
@@ -167,7 +178,7 @@ void main() {
       controller.add('Title 1');
       await Future<void>.delayed(const Duration(milliseconds: 10));
       controller.add('Title 2');
-      await controller.close();
+      final _ = await controller.close();
       await Future<void>.delayed(const Duration(milliseconds: 100));
 
       expect(updatedTitles, containsAll(['Title 1', 'Title 2']));
@@ -187,7 +198,7 @@ void main() {
 
       controller.add('New Title');
       await Future<void>.delayed(const Duration(milliseconds: 100));
-      await controller.close();
+      final _ = await controller.close();
       await Future<void>.delayed(const Duration(milliseconds: 100));
 
       verify(conversationRepo.patchConversation(any, any)).called(1);
@@ -208,7 +219,7 @@ void main() {
       controller.add('Title A');
       await Future<void>.delayed(const Duration(milliseconds: 10));
       controller.add('Title B');
-      await controller.close();
+      final _ = await controller.close();
       await Future<void>.delayed(const Duration(milliseconds: 200));
 
       verify(
@@ -229,7 +240,7 @@ void main() {
       );
 
       verify(chatbotService.streamTitle(modelSelection, '')).called(1);
-      await controller.close();
+      final _ = await controller.close();
     });
 
     test('tracks error via monitoringService when stream fails', () async {
@@ -246,10 +257,10 @@ void main() {
 
       controller.add('Partial');
       await Future<void>.delayed(const Duration(milliseconds: 10));
-      await controller.close();
+      final _ = await controller.close();
       await Future<void>.delayed(const Duration(milliseconds: 100));
 
-      verifyNever(
+      final _ = verifyNever(
         monitoringService.trackError(
           any,
           error: anyNamed('error'),
@@ -282,7 +293,7 @@ void main() {
         workspaceModelSelection: modelSelection,
       );
 
-      await controller.close();
+      final _ = await controller.close();
       await Future<void>.delayed(const Duration(milliseconds: 100));
 
       expect(removedIds, contains('conv-done'));
@@ -302,7 +313,7 @@ void main() {
 
       controller.add('Final Title');
       await Future<void>.delayed(const Duration(milliseconds: 50));
-      await controller.close();
+      final _ = await controller.close();
       await Future<void>.delayed(const Duration(milliseconds: 200));
 
       verify(

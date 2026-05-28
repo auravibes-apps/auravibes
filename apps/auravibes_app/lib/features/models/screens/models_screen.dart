@@ -1,3 +1,15 @@
+// ignore_for_file: prefer-async-await
+// Required: Existing Future chains preserve callback flow.
+// ignore_for_file: no-magic-number
+// Required: Existing thresholds and limits use numeric values.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: prefer-extracting-callbacks
+// Required: UI callbacks stay local to their widgets.
+// ignore_for_file: prefer-moving-to-variable
+// Required: Existing code repeats lookups where extraction adds noise.
+// ignore_for_file: prefer-single-widget-per-file
+// Required: Feature widgets keep closely related private widgets together.
 import 'package:auravibes_app/features/models/providers/add_model_provider_state.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_connections_providers.dart';
 import 'package:auravibes_app/features/models/widgets/add_model_provider_widget.dart';
@@ -52,9 +64,9 @@ class _AddModelModalButton extends ConsumerWidget {
                   showDialog<void>(
                     context: context,
                     builder: (ctx) => Dialog(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(
-                          DesignBorderRadius.xl,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.all(
+                          Radius.circular(DesignBorderRadius.xl),
                         ),
                       ),
                       child: Container(
