@@ -178,7 +178,7 @@ class _ChatConversationScreen extends HookConsumerWidget {
             onProviderChanged: (_) => Object(),
             workspaceModelSelectionId: conversation.modelId,
           ),
-          const Expanded(child: _ChatList()),
+          Expanded(child: _ChatList(pendingToolCalls: pendingCalls)),
           const McpConnectingIndicator(),
           if (busyState?.isStreaming == true) const ChatThinkingIndicator(),
           if (queuedDrafts.isNotEmpty)
@@ -315,31 +315,25 @@ Future<void> _manualCompact(
 @Dependencies([
   chatMessageIds,
   chatMessages,
-  conversationBusyState,
   conversationCompactionExecutionState,
   messageConversationById,
 ])
 class _ChatList extends ConsumerWidget {
-  const _ChatList();
+  const _ChatList({required this.pendingToolCalls});
+
+  final List<PendingToolCall> pendingToolCalls;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isLoading = ref.watch(
-      chatMessagesProvider.select(
-        (value) => value.isLoading && value.value == null,
-      ),
-    );
+    final chatMessages = ref.watch(chatMessagesProvider);
+    final isLoading = chatMessages.isLoading && chatMessages.value == null;
 
     if (isLoading) {
       return const Center(child: AuraSpinner());
     }
 
     final messages = ref.watch(chatMessageIdsProvider);
-    final asyncError = ref.watch(
-      chatMessagesProvider.select(
-        (value) => value.asError,
-      ),
-    );
+    final asyncError = chatMessages.asError;
     if (asyncError != null) {
       return AppErrorWidget(
         error: asyncError.error,
@@ -347,6 +341,9 @@ class _ChatList extends ConsumerWidget {
       );
     }
 
-    return ChatMessagesWidget(messages: messages);
+    return ChatMessagesWidget(
+      messages: messages,
+      pendingToolCalls: pendingToolCalls,
+    );
   }
 }
