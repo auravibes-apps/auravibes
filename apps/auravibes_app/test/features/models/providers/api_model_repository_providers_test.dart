@@ -1,3 +1,8 @@
+// ignore_for_file: avoid-redundant-async
+// Required: Test callbacks intentionally preserve async-compatible signatures.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/api_model_repository_impl.dart';
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
@@ -187,7 +192,7 @@ void main() {
         ).future,
       );
       expect(result, isNotNull);
-      expect(result!.id, 'gpt-4');
+      expect((result ?? fail('Expected result to be non-null')).id, 'gpt-4');
     });
 
     test('returns null when no match', () async {

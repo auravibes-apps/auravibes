@@ -1,3 +1,5 @@
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
 // coverage:ignore-file
 // Required: Drift table DSL is unreachable at runtime
 // (see api_models.dart).

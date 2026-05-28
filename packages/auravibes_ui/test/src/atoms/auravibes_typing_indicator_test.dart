@@ -1,3 +1,8 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+
 import 'package:auravibes_ui/src/atoms/aura_typing_indicator.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
@@ -110,16 +115,21 @@ void main() {
       final dotContainers = tester
           .widgetList<Container>(find.byType(Container))
           .where(
-            (container) =>
-                container.decoration is BoxDecoration &&
-                (container.decoration! as BoxDecoration).shape ==
-                    BoxShape.circle,
+            (container) {
+              final decoration = container.decoration;
+
+              return decoration is BoxDecoration &&
+                  decoration.shape == BoxShape.circle;
+            },
           )
           .toList();
 
       expect(dotContainers.length, 3);
       for (final container in dotContainers) {
-        final decoration = container.decoration! as BoxDecoration;
+        final decoration =
+            (container.decoration ??
+                    fail('Expected container.decoration to be non-null'))
+                as BoxDecoration;
         expect(decoration.color, customColor);
       }
     });
@@ -141,16 +151,21 @@ void main() {
       final dotContainers = tester
           .widgetList<Container>(find.byType(Container))
           .where(
-            (container) =>
-                container.decoration is BoxDecoration &&
-                (container.decoration! as BoxDecoration).shape ==
-                    BoxShape.circle,
+            (container) {
+              final decoration = container.decoration;
+
+              return decoration is BoxDecoration &&
+                  decoration.shape == BoxShape.circle;
+            },
           )
           .toList();
 
       expect(dotContainers.length, 3);
       for (final container in dotContainers) {
-        final decoration = container.decoration! as BoxDecoration;
+        final decoration =
+            (container.decoration ??
+                    fail('Expected container.decoration to be non-null'))
+                as BoxDecoration;
         // In light theme, onSurfaceVariant is neutral700
         expect(decoration.color, DesignColors.neutral700);
       }

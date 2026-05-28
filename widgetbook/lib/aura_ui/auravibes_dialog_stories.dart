@@ -1,3 +1,17 @@
+// ignore_for_file: prefer-async-await
+// Required: Stories use Future chains from sync callbacks.
+// ignore_for_file: avoid-returning-widgets
+// Required: Widgetbook stories use helper functions that return widgets.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-extracting-callbacks
+// Required: Stories keep callbacks inline for readability.
+// ignore_for_file: prefer-single-widget-per-file
+// Required: Widgetbook stories group related story widgets.
+// ignore_for_file: prefer-static-class
+// Required: Existing helpers remain top-level for local feature use.
+import 'dart:async';
+
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:widgetbook/widgetbook.dart';
@@ -33,21 +47,24 @@ class _ConfirmDialogDemo extends StatelessWidget {
     return Scaffold(
       body: Center(
         child: ElevatedButton(
-          onPressed: () async {
-            final result = await showAuraConfirmDialog(
-              context: context,
-              title: const Text('Delete Item'),
-              message: const Text(
-                'Are you sure you want to delete this item? This action cannot be undone.',
-              ),
-              isDestructive: isDestructive,
-              colorVariant: colorVariant,
+          onPressed: () {
+            unawaited(
+              showAuraConfirmDialog(
+                context: context,
+                title: const Text('Delete Item'),
+                message: const Text(
+                  'Are you sure you want to delete this item? This action cannot be undone.',
+                ),
+                isDestructive: isDestructive,
+                colorVariant: colorVariant,
+              ).then((result) {
+                if (context.mounted) {
+                  final _ = ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('Result: $result')));
+                }
+              }),
             );
-            if (context.mounted) {
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(SnackBar(content: Text('Result: $result')));
-            }
           },
           child: const Text('Show Confirm Dialog'),
         ),
@@ -78,14 +95,16 @@ class _AlertDialogDemo extends StatelessWidget {
     return Scaffold(
       body: Center(
         child: ElevatedButton(
-          onPressed: () async {
-            await showAuraAlertDialog(
-              context: context,
-              title: const Text('Update Available'),
-              message: const Text(
-                'A new version of the app is available. Please update to the latest version.',
+          onPressed: () {
+            unawaited(
+              showAuraAlertDialog(
+                context: context,
+                title: const Text('Update Available'),
+                message: const Text(
+                  'A new version of the app is available. Please update to the latest version.',
+                ),
+                colorVariant: colorVariant,
               ),
-              colorVariant: colorVariant,
             );
           },
           child: const Text('Show Alert Dialog'),

@@ -1,3 +1,11 @@
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-static-class
+// Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
@@ -240,7 +248,7 @@ class RunAllowedToolsUsecase {
     }).toList();
     if (!didUpdate) return;
 
-    await messageRepository.patchMessage(
+    final _ = await messageRepository.patchMessage(
       messageId,
       MessagePatch(
         metadata: metadata.copyWith(toolCalls: updatedToolCalls),
@@ -268,7 +276,7 @@ class RunAllowedToolsUsecase {
       );
     }).toList();
 
-    await messageRepository.patchMessage(
+    final _ = await messageRepository.patchMessage(
       messageId,
       MessagePatch(
         metadata: metadata.copyWith(toolCalls: updatedToolCalls),

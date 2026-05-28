@@ -1,3 +1,15 @@
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
+// ignore_for_file: missing-test-assertion
+// Required: Repository tests verify side effects through database state.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/mcp_servers_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/tools_groups_dao.dart';
@@ -152,7 +164,7 @@ void main() {
         );
 
         expect(result.id, 'mcp-1');
-        verifyNever(mockWorkspaceToolsDao.insertToolsBatch(any));
+        final _ = verifyNever(mockWorkspaceToolsDao.insertToolsBatch(any));
       });
 
       test('throws McpServersException on dao failure', () async {
@@ -296,8 +308,10 @@ void main() {
           ],
         );
 
-        verifyNever(mockWorkspaceToolsDao.insertToolsBatch(any));
-        verifyNever(mockWorkspaceToolsDao.deleteWorkspaceToolById(any));
+        final _ = verifyNever(mockWorkspaceToolsDao.insertToolsBatch(any));
+        final _ = verifyNever(
+          mockWorkspaceToolsDao.deleteWorkspaceToolById(any),
+        );
       });
     });
 
@@ -350,7 +364,7 @@ void main() {
         final result = await repository.getMcpServerById('mcp-1');
 
         expect(result, isNotNull);
-        expect(result!.id, 'mcp-1');
+        expect((result ?? fail('Expected result to be non-null')).id, 'mcp-1');
       });
 
       test('returns null when not found', () async {

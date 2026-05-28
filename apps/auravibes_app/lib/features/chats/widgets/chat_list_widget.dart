@@ -1,3 +1,15 @@
+// ignore_for_file: avoid-returning-widgets
+// Required: Existing helper builders return widgets.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-extracting-callbacks
+// Required: UI callbacks stay local to their widgets.
+// ignore_for_file: prefer-single-widget-per-file
+// Required: Feature widgets keep closely related private widgets together.
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
@@ -25,7 +37,7 @@ class ChatListWidget extends ConsumerWidget {
     return switch (chatListAsync) {
       AsyncData(value: final chats) => () {
         if (chats.isEmpty) {
-          return _buildEmptyState(context);
+          return _buildEmptyState();
         }
 
         return ListView.separated(
@@ -47,7 +59,7 @@ class ChatListWidget extends ConsumerWidget {
     };
   }
 
-  Widget _buildEmptyState(BuildContext context) {
+  Widget _buildEmptyState() {
     return const Center(
       child: Padding(
         padding: EdgeInsets.all(32),
@@ -127,7 +139,7 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
     );
 
     if (confirmed ?? false) {
-      await ref
+      final _ = await ref
           .read(conversationRepositoryProvider)
           .deleteConversation(widget.chat.id);
     }

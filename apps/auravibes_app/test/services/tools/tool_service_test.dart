@@ -70,7 +70,10 @@ void main() {
       test('returns tool by type', () {
         final tool = ToolService.getTool(UserToolType.calculator);
         expect(tool, isNotNull);
-        expect(tool!.type, UserToolType.calculator);
+        expect(
+          (tool ?? fail('Expected tool to be non-null')).type,
+          UserToolType.calculator,
+        );
       });
 
       test('returns null for unknown type', () {

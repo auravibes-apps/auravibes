@@ -97,7 +97,7 @@ final class WorkspaceToolIndexNotifierProvider
 }
 
 String _$workspaceToolIndexNotifierHash() =>
-    r'd73774534b1ad72a1f843ffde7301d9a87ae9b97';
+    r'3b576a17fc24c68fad98ebf210ecdc27c96598f9';
 
 @ProviderFor(WorkspaceToolsNotifier)
 final workspaceToolsProvider = WorkspaceToolsNotifierFamily._();
@@ -146,7 +146,7 @@ final class WorkspaceToolsNotifierProvider
 }
 
 String _$workspaceToolsNotifierHash() =>
-    r'd2b996bf9ef85a627d04b2a7aa94408470292edb';
+    r'e43ab96c073efa219c2312bed7ceb3d753f34b59';
 
 final class WorkspaceToolsNotifierFamily extends $Family
     with

@@ -1,3 +1,14 @@
+// ignore_for_file: no-magic-number
+// Required: UI tokens and layout use fixed design values.
+// ignore_for_file: avoid-returning-widgets
+// Required: Existing helper builders return widgets.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+
 import 'package:auravibes_ui/src/atoms/aura_field_label.dart';
 import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
 import 'package:auravibes_ui/src/molecules/aura_field_hint.dart';
@@ -71,15 +82,16 @@ class _AuraFieldWrapperState extends State<AuraFieldWrapper> {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
+    final label = widget.label;
 
     return Semantics(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (widget.label != null)
-            AuraFieldLabel(child: widget.label!, isRequired: widget.isRequired),
-          if (widget.label != null) const SizedBox(height: DesignSpacing.xs),
+          if (label != null)
+            AuraFieldLabel(child: label, isRequired: widget.isRequired),
+          if (label != null) const SizedBox(height: DesignSpacing.xs),
           _buildFieldContainer(auraColors),
           if (widget.hint != null || widget.error != null)
             const SizedBox(height: DesignSpacing.xs),
@@ -99,7 +111,9 @@ class _AuraFieldWrapperState extends State<AuraFieldWrapper> {
           border: Border.all(
             color: _getBorderColor(auraColors),
           ),
-          borderRadius: BorderRadius.circular(DesignBorderRadius.xl),
+          borderRadius: const BorderRadius.all(
+            Radius.circular(DesignBorderRadius.xl),
+          ),
           boxShadow: _getBoxShadow(auraColors),
         ),
         child: widget.child,
@@ -108,7 +122,9 @@ class _AuraFieldWrapperState extends State<AuraFieldWrapper> {
       color: auraColors.primary,
       decoration: BoxDecoration(
         color: _getBackgroundColor(auraColors),
-        borderRadius: BorderRadius.circular(DesignBorderRadius.xl),
+        borderRadius: const BorderRadius.all(
+          Radius.circular(DesignBorderRadius.xl),
+        ),
         // color: auraColors.primary,
       ),
       onPressed: widget.isEnabled ? widget.onTap : null,

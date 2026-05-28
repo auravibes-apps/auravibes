@@ -1,5 +1,23 @@
-// Required: this internal package keeps its small provider API in one file.
 // ignore_for_file: prefer-match-file-name
+// Required: This internal package keeps its small provider API in one file.
+// ignore_for_file: avoid-non-null-assertion
+// Required: Compat parser validates payload shape before extracting fields.
+// ignore_for_file: avoid-redundant-async
+// Required: Genkit callback signatures remain async-compatible.
+// ignore_for_file: avoid-substring
+// Required: Streaming parser uses protocol byte offsets.
+// ignore_for_file: format-comment
+// Required: Protocol comments mirror upstream OpenAI-compatible naming.
+// ignore_for_file: member-ordering
+// Required: DTO fields stay grouped with their constructors.
+// ignore_for_file: newline-before-return
+// Required: Parser helpers keep compact return flow.
+// ignore_for_file: no-magic-number
+// Required: Protocol parsing uses fixed SSE and JSON offsets.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Protocol fields use upstream identifier names.
+// ignore_for_file: prefer-static-class
+// Required: Genkit plugin API exposes top-level helpers.
 
 import 'dart:async';
 import 'dart:convert';

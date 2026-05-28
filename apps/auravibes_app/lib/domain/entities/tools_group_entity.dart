@@ -1,3 +1,8 @@
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -39,7 +44,7 @@ abstract class ToolsGroupEntity with _$ToolsGroupEntity {
   const ToolsGroupEntity._();
 
   /// Returns true if this group is linked to an MCP server
-  bool get isMcpGroup => mcpServerId != null && mcpServerId!.isNotEmpty;
+  bool get isMcpGroup => mcpServerId?.isNotEmpty ?? false;
 }
 
 /// Entity for creating/updating tools group settings

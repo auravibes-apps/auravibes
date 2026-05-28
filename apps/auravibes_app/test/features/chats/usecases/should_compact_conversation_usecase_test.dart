@@ -1,3 +1,21 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: avoid-top-level-members-in-tests
+// Required: Test files keep shared fixtures and helpers top-level.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
+// ignore_for_file: missing-test-assertion
+// Required: Tests cover guard clauses that return without assertions.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-correct-type-name
+// Required: Test doubles mirror repository contract names.
+
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
@@ -381,7 +399,7 @@ void main() {
         () => mockRepository.getMessagesByConversation('conv-1'),
       ).thenAnswer((_) async => []);
 
-      await usecase(
+      final _ = await usecase(
         conversationId: 'conv-1',
         workspaceId: 'workspace-1',
         selectedModelId: 'model-1',

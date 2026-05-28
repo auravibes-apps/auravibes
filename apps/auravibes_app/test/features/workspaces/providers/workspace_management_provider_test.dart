@@ -1,3 +1,18 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: avoid-redundant-async
+// Required: Test callbacks intentionally preserve async-compatible signatures.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+
 // ignore_for_file: cascade_invocations
 // Required: test expectations use chaining on matchers
 // (e.g. find.text().findsOneWidget) which triggers cascade_invocations lint.
@@ -58,7 +73,7 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
   Future<bool> deleteWorkspace(String id) async {
     final index = _workspaces.indexWhere((w) => w.id == id);
     if (index == -1) return false;
-    _workspaces.removeAt(index);
+    final _ = _workspaces.removeAt(index);
     return true;
   }
 
@@ -95,7 +110,7 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
 }
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
   group('WorkspaceManagementMode', () {
     late ProviderContainer container;
@@ -286,7 +301,7 @@ void main() {
     });
 
     test('deletes workspace when multiple exist and not active', () async {
-      await repository.createWorkspace(
+      final _ = await repository.createWorkspace(
         const WorkspaceToCreate(name: 'A', type: WorkspaceType.local),
       );
       final toDelete = await repository.createWorkspace(
@@ -318,7 +333,7 @@ void main() {
     });
 
     test('throws when deleting active workspace', () async {
-      await repository.createWorkspace(
+      final _ = await repository.createWorkspace(
         const WorkspaceToCreate(name: 'A', type: WorkspaceType.local),
       );
       final active = await repository.createWorkspace(

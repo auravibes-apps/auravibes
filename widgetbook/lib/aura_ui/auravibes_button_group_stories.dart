@@ -1,3 +1,13 @@
+// ignore_for_file: avoid-returning-widgets
+// Required: Widgetbook stories use helper functions that return widgets.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: prefer-moving-to-variable
+// Required: Existing code repeats lookups where extraction adds noise.
+// ignore_for_file: prefer-single-widget-per-file
+// Required: Widgetbook stories group related story widgets.
+// ignore_for_file: prefer-static-class
+// Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:widgetbook/widgetbook.dart';

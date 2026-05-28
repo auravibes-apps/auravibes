@@ -1,3 +1,16 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: avoid-redundant-async
+// Required: Test callbacks intentionally preserve async-compatible signatures.
+// ignore_for_file: no-empty-block
+// Required: Tests use intentional no-op callbacks and fake hooks.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+
 import 'dart:convert';
 
 import 'package:auravibes_app/services/tools/native_tool_type.dart';
@@ -246,7 +259,9 @@ void main() {
 
         expect(result, contains('Status: 201'));
         expect(
-          sentHeaders!.keys.map((key) => key.toLowerCase()),
+          (sentHeaders ?? fail('Expected sentHeaders to be non-null')).keys.map(
+            (key) => key.toLowerCase(),
+          ),
           isNot(contains('content-type')),
         );
       },
@@ -264,7 +279,9 @@ void main() {
         );
       final tool = UrlTool(urlService: UrlService(dio: dio));
 
-      await tool.runner('{"url": "https://1.1.1.1", "method": "POST"}').value;
+      final _ = await tool
+          .runner('{"url": "https://1.1.1.1", "method": "POST"}')
+          .value;
 
       expect(sentMethod, 'POST');
     });
@@ -281,7 +298,9 @@ void main() {
         );
       final tool = UrlTool(urlService: UrlService(dio: dio));
 
-      await tool.runner('{"url": "https://1.1.1.1", "method": "PUT"}').value;
+      final _ = await tool
+          .runner('{"url": "https://1.1.1.1", "method": "PUT"}')
+          .value;
 
       expect(sentMethod, 'PUT');
     });
@@ -298,7 +317,9 @@ void main() {
         );
       final tool = UrlTool(urlService: UrlService(dio: dio));
 
-      await tool.runner('{"url": "https://1.1.1.1", "method": "DELETE"}').value;
+      final _ = await tool
+          .runner('{"url": "https://1.1.1.1", "method": "DELETE"}')
+          .value;
 
       expect(sentMethod, 'DELETE');
     });

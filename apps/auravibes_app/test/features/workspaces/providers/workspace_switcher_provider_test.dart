@@ -1,3 +1,16 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+// ignore_for_file: no-empty-block
+// Required: Tests use intentional no-op callbacks and fake hooks.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: no-object-declaration
+// Required: Test fakes override noSuchMethod with Object return values.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+
 // ignore_for_file: cascade_invocations
 
 import 'package:auravibes_app/features/workspaces/models/switch_status.dart';
@@ -16,11 +29,11 @@ class _FakeGoRouter implements GoRouter {
   }
 
   @override
-  dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError();
+  Object? noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
   group('WorkspaceSwitcher', () {
     late _FakeGoRouter fakeRouter;
@@ -34,7 +47,7 @@ void main() {
         ],
       );
       // Keep provider alive during async timer-based tests.
-      container.listen(workspaceSwitcherProvider, (_, _) {});
+      final _ = container.listen(workspaceSwitcherProvider, (_, _) {});
     });
 
     tearDown(() => container.dispose());
@@ -65,7 +78,7 @@ void main() {
       final notifier = container.read(workspaceSwitcherProvider.notifier);
       final states = <WorkspaceSwitchState>[];
 
-      container.listen(
+      final _ = container.listen(
         workspaceSwitcherProvider,
         (previous, next) => states.add(next),
         fireImmediately: true,

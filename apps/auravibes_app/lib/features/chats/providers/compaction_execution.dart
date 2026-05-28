@@ -1,3 +1,9 @@
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
@@ -11,7 +17,7 @@ class CompactionExecution extends _$CompactionExecution {
 
   @override
   Map<String, CompactionExecutionState> build() {
-    ref.onDispose(() {
+    final _ = ref.onDispose(() {
       for (final timer in _cleanupTimers.values) {
         timer.cancel();
       }
@@ -54,7 +60,7 @@ class CompactionExecution extends _$CompactionExecution {
           if (entry.key != conversationId) entry.key: entry.value,
       };
     }
-    _cleanupTimers.remove(conversationId);
+    final _ = _cleanupTimers.remove(conversationId);
   }
 
   void markFailure(String conversationId) {
@@ -83,7 +89,7 @@ class CompactionExecution extends _$CompactionExecution {
           if (entry.key != conversationId) entry.key: entry.value,
       };
     }
-    _cleanupTimers.remove(conversationId);
+    final _ = _cleanupTimers.remove(conversationId);
   }
 
   bool isCompacting(String conversationId) {

@@ -1,3 +1,9 @@
+// ignore_for_file: no-magic-number
+// Required: UI tokens and layout use fixed design values.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
 import 'dart:ui';
 
 import 'package:auravibes_ui/src/atoms/atoms.dart';
@@ -84,53 +90,56 @@ class AuraCard extends StatelessWidget {
       padding: padding,
     );
 
-    Widget card;
-
-    if (isGlass) {
-      // Glass style implementation based on best practices
-      // Reference: https://medium.com/@rohitsurage/build-beautiful-glassmorphism-ui-in-flutter-a-beginner-to-advanced-guide-023594a473b3
-      card = ClipRRect(
-        borderRadius: BorderRadius.circular(DesignBorderRadius.xl),
-        // clipBehavior: Clip.hardEdge,
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-          child: AuraPressable(
-            child: cardContent,
-            color: auraColors.onBackground,
-            decoration: BoxDecoration(
-              // Use a subtle gradient for better glass effect than flat color
-              // color: auraColors.inverseSurface.withValues(alpha: 0.3),
-              border: Border.all(
-                color: auraColors.background.withValues(alpha: 0.05),
-                width: 1.5,
-              ),
-              borderRadius: BorderRadius.circular(DesignBorderRadius.xl),
-              gradient: LinearGradient(
-                begin: .topLeft,
-                end: .bottomCenter,
-                colors: [
-                  auraColors.onBackground.withValues(alpha: 0.07),
-                  auraColors.onBackground.withValues(alpha: 0.03),
-                ],
+    // Glass style implementation based on best practices
+    // Reference: https://medium.com/@rohitsurage/build-beautiful-glassmorphism-ui-in-flutter-a-beginner-to-advanced-guide-023594a473b3
+    var card = isGlass
+        ? ClipRRect(
+            borderRadius: const BorderRadius.all(
+              Radius.circular(DesignBorderRadius.xl),
+            ),
+            // clipBehavior: Clip.hardEdge,
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+              child: AuraPressable(
+                child: cardContent,
+                color: auraColors.onBackground,
+                decoration: BoxDecoration(
+                  // Use a subtle gradient for better glass effect than a
+                  // flat color.
+                  // color: auraColors.inverseSurface.withValues(alpha: 0.3),
+                  border: Border.all(
+                    color: auraColors.background.withValues(alpha: 0.05),
+                    width: 1.5,
+                  ),
+                  borderRadius: const BorderRadius.all(
+                    Radius.circular(DesignBorderRadius.xl),
+                  ),
+                  gradient: LinearGradient(
+                    begin: .topLeft,
+                    end: .bottomCenter,
+                    colors: [
+                      auraColors.onBackground.withValues(alpha: 0.07),
+                      auraColors.onBackground.withValues(alpha: 0.03),
+                    ],
+                  ),
+                ),
+                onPressed: onTap,
               ),
             ),
+          )
+        : AuraPressable(
+            child: cardContent,
+            color: auraColors.primary,
+            decoration: BoxDecoration(
+              color: backgroundColor,
+              border: border,
+              borderRadius: const BorderRadius.all(
+                Radius.circular(DesignBorderRadius.xl),
+              ),
+              boxShadow: shadows,
+            ),
             onPressed: onTap,
-          ),
-        ),
-      );
-    } else {
-      card = AuraPressable(
-        child: cardContent,
-        color: auraColors.primary,
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          border: border,
-          borderRadius: BorderRadius.circular(DesignBorderRadius.xl),
-          boxShadow: shadows,
-        ),
-        onPressed: onTap,
-      );
-    }
+          );
 
     if (semanticLabel != null) {
       card = Semantics(

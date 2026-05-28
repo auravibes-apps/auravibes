@@ -1,3 +1,12 @@
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
+// ignore_for_file: missing-test-assertion
+// Required: Tests cover guard clauses that return without assertions.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
@@ -73,8 +82,8 @@ void main() {
 
       await usecase.call(messageId: messageId);
 
-      verifyNever(conversationRepository.getConversationById(any));
-      verifyNever(
+      final _ = verifyNever(conversationRepository.getConversationById(any));
+      final _ = verifyNever(
         runAllowedToolsUsecase.call(
           conversationId: anyNamed('conversationId'),
           workspaceId: anyNamed('workspaceId'),
@@ -92,7 +101,7 @@ void main() {
 
       await usecase.call(messageId: messageId);
 
-      verifyNever(
+      final _ = verifyNever(
         runAllowedToolsUsecase.call(
           conversationId: anyNamed('conversationId'),
           workspaceId: anyNamed('workspaceId'),
@@ -116,7 +125,7 @@ void main() {
 
       await usecase.call(messageId: messageId);
 
-      verifyNever(
+      final _ = verifyNever(
         runAgentIterationUsecase.call(
           conversationId: anyNamed('conversationId'),
           context: anyNamed('context'),

@@ -1,3 +1,5 @@
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
 // Molecular components - groups of atoms bonded together.
 //
 // Molecules are groups of atoms bonded together and are the smallest

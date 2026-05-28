@@ -1,3 +1,20 @@
+// ignore_for_file: avoid-dynamic
+// Required: Tests inspect raw Genkit protocol payloads.
+// ignore_for_file: avoid-ignoring-return-values
+// Required: Tests execute streams for side effects.
+// ignore_for_file: avoid-non-null-assertion
+// Required: Tests assert decoded nullable protocol fields.
+// ignore_for_file: newline-before-return
+// Required: Tests keep compact return flow.
+// ignore_for_file: no-magic-number
+// Required: Tests use protocol numeric fixtures.
+// ignore_for_file: member-ordering
+// Required: Test fakes keep related fields near constructors.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Tests mirror Genkit `ai` naming convention.
+// ignore_for_file: prefer-static-class
+// Required: Tests keep helper functions and fakes top-level.
+
 import 'dart:convert';
 
 import 'package:auravibes_genkit_openai_compat/auravibes_genkit_openai_compat.dart';

@@ -28,7 +28,7 @@ class ModelConnectionsDao extends DatabaseAccessor<AppDatabase>
 
   Future<ModelConnectionTable> insertModelConnection(
     ModelConnectionsCompanion modelConnection,
-  ) async {
+  ) {
     return into(modelConnections).insertReturning(modelConnection);
   }
 

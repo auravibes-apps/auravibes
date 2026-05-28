@@ -1,3 +1,17 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: avoid-substring
+// Required: Tests assert existing code-unit substring behavior.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
+// ignore_for_file: avoid-redundant-async
+// Required: Test callbacks intentionally preserve async-compatible signatures.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-static-class
+// Required: Tests keep fixture helpers and fakes top-level.
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/tool_spec.dart';
@@ -145,13 +159,14 @@ void main() {
         );
         final service = _createService(providerFactory: providerFactory);
 
-        await service.sendMessage(
+        final chunks = await service.sendMessage(
           _makeConfig(
             type: ModelProvidersType.anthropic,
             supportsReasoning: true,
           ),
           [ChatMessage.user('hello')],
         ).toList();
+        expect(chunks, isNotEmpty);
 
         expect(capturedRequest?.config, {
           'thinking': {'type': 'enabled', 'budgetTokens': 1024},
@@ -168,13 +183,14 @@ void main() {
         );
         final service = _createService(providerFactory: providerFactory);
 
-        await service.sendMessage(
+        final chunks = await service.sendMessage(
           _makeConfig(
             type: ModelProvidersType.anthropic,
             modelId: 'claude-sonnet-4-5',
           ),
           [ChatMessage.user('hello')],
         ).toList();
+        expect(chunks, isNotEmpty);
 
         expect(capturedRequest?.config, isNull);
       },
@@ -511,10 +527,10 @@ class _FakeProviderFactory extends ProviderFactory {
   }
 
   @override
-  genkit.ModelRef<dynamic> getModelReference(
+  genkit.ModelRef<Object?> getModelReference(
     WorkspaceModelSelectionWithConnectionEntity config,
   ) {
-    return genkit.modelRef<dynamic>('test/model');
+    return genkit.modelRef<Object?>('test/model');
   }
 }
 

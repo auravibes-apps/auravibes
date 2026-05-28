@@ -1,3 +1,23 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: avoid-redundant-async
+// Required: Test callbacks intentionally preserve async-compatible signatures.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
+// ignore_for_file: no-empty-block
+// Required: Tests use intentional no-op callbacks and fake hooks.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-static-class
+// Required: Tests keep fixture helpers and fakes top-level.
+
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+
 // ignore_for_file: provider_dependencies
 // Required: provider unit tests read scoped providers directly.
 
@@ -223,12 +243,12 @@ void main() {
     test('setToolEnabled updates tool in state', () async {
       repository.tools = [_tool(id: 't1')];
 
-      container.listen(
+      final _ = container.listen(
         workspaceToolsProvider('ws1'),
         (_, _) {},
         fireImmediately: true,
       );
-      await container.read(workspaceToolsProvider('ws1').future);
+      final _ = await container.read(workspaceToolsProvider('ws1').future);
 
       await container
           .read(workspaceToolsProvider('ws1').notifier)
@@ -243,12 +263,12 @@ void main() {
     test('removeToolById removes tool from state', () async {
       repository.tools = [_tool(id: 't1'), _tool(id: 't2')];
 
-      container.listen(
+      final _ = container.listen(
         workspaceToolsProvider('ws1'),
         (_, _) {},
         fireImmediately: true,
       );
-      await container.read(workspaceToolsProvider('ws1').future);
+      final _ = await container.read(workspaceToolsProvider('ws1').future);
 
       final success = await container
           .read(workspaceToolsProvider('ws1').notifier)
@@ -261,12 +281,12 @@ void main() {
     test('setToolPermissionMode updates permission', () async {
       repository.tools = [_tool(id: 't1')];
 
-      container.listen(
+      final _ = container.listen(
         workspaceToolsProvider('ws1'),
         (_, _) {},
         fireImmediately: true,
       );
-      await container.read(workspaceToolsProvider('ws1').future);
+      final _ = await container.read(workspaceToolsProvider('ws1').future);
 
       await container
           .read(workspaceToolsProvider('ws1').notifier)
@@ -284,12 +304,12 @@ void main() {
     test('addTool enables tool and invalidates self', () async {
       repository.tools = [_tool(id: 't1', isEnabled: false)];
 
-      container.listen(
+      final _ = container.listen(
         workspaceToolsProvider('ws1'),
         (_, _) {},
         fireImmediately: true,
       );
-      await container.read(workspaceToolsProvider('ws1').future);
+      final _ = await container.read(workspaceToolsProvider('ws1').future);
 
       await container
           .read(workspaceToolsProvider('ws1').notifier)
@@ -301,12 +321,12 @@ void main() {
     test('updateToolConfig patches config and replaces tool', () async {
       repository.tools = [_tool(id: 't1')];
 
-      container.listen(
+      final _ = container.listen(
         workspaceToolsProvider('ws1'),
         (_, _) {},
         fireImmediately: true,
       );
-      await container.read(workspaceToolsProvider('ws1').future);
+      final _ = await container.read(workspaceToolsProvider('ws1').future);
 
       await container
           .read(workspaceToolsProvider('ws1').notifier)
@@ -327,12 +347,12 @@ void main() {
       );
       addTearDown(failContainer.dispose);
 
-      failContainer.listen(
+      final _ = failContainer.listen(
         workspaceToolsProvider('ws1'),
         (_, _) {},
         fireImmediately: true,
       );
-      await failContainer.read(workspaceToolsProvider('ws1').future);
+      final _ = await failContainer.read(workspaceToolsProvider('ws1').future);
 
       final success = await failContainer
           .read(workspaceToolsProvider('ws1').notifier)
@@ -369,10 +389,10 @@ void main() {
       );
       addTearDown(container2.dispose);
 
-      await container2.read(workspaceToolsProvider('ws1').future);
+      final _ = await container2.read(workspaceToolsProvider('ws1').future);
       final result = container2.read(workspaceToolRowProvider('ws1'));
       expect(result, isNotNull);
-      expect(result!.id, 't1');
+      expect((result ?? fail('Expected result to be non-null')).id, 't1');
     });
   });
 

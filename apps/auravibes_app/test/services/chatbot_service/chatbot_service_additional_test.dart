@@ -1,3 +1,5 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
 import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -39,7 +41,22 @@ void main() {
     });
 
     test('handles Unicode characters', () {
-      final title = ChatbotService.generateFallbackTitle('こんにちは 世界 テスト');
+      final title = ChatbotService.generateFallbackTitle(
+        String.fromCharCodes([
+          0x3053,
+          0x3093,
+          0x306b,
+          0x3061,
+          0x306f,
+          32,
+          0x4e16,
+          0x754c,
+          32,
+          0x30c6,
+          0x30b9,
+          0x30c8,
+        ]),
+      );
       expect(title, isNotEmpty);
     });
   });

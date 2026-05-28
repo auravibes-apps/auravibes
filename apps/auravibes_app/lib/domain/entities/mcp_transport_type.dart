@@ -1,3 +1,10 @@
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+
 import 'package:auravibes_app/utils/map_exception.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -61,7 +68,7 @@ class McpTransportTypeStreamableHttp extends McpTransportType {
 
 @freezed
 abstract class OAuthTokenModel with _$OAuthTokenModel {
-  // ignore: invalid_annotation_target
+  // ignore: invalid_annotation_target - Required for Freezed JSON annotation.
   @JsonSerializable(fieldRename: .snake)
   const factory OAuthTokenModel({
     required String accessToken,
@@ -105,8 +112,10 @@ abstract class OAuthTokenEntity with _$OAuthTokenEntity {
 
   /// Returns true if the stored OAuth token is expired or unavailable.
   bool get isOAuthTokenExpired {
+    final expiresIn = this.expiresIn;
     if (expiresIn == null) return true;
-    final expiresAt = issuedAt.add(Duration(seconds: expiresIn!));
+
+    final expiresAt = issuedAt.add(Duration(seconds: expiresIn));
     // Consider expired if within 5 minutes of expiry (buffer for refresh)
     return DateTime.now().isAfter(
       expiresAt.subtract(const Duration(minutes: 5)),
@@ -121,12 +130,12 @@ abstract class OAuthTokenEntity with _$OAuthTokenEntity {
   Future<OAuthTokenEntity> copyCryptor(
     Future<String> Function(String) encryptor,
   ) async {
+    final refreshToken = this.refreshToken;
+
     return OAuthTokenEntity(
       accessToken: await encryptor(accessToken),
       issuedAt: issuedAt,
-      refreshToken: refreshToken != null
-          ? await encryptor(refreshToken!)
-          : null,
+      refreshToken: refreshToken != null ? await encryptor(refreshToken) : null,
       expiresIn: expiresIn,
       tokenType: tokenType,
       scopes: scopes,
@@ -280,7 +289,7 @@ abstract class McpServerFormToCreate with _$McpServerFormToCreate {
         // OAuth requires no additional fields here
         return true;
       case McpAuthenticationTypeOptions.bearerToken:
-        return bearerToken != null && bearerToken!.isNotEmpty;
+        return bearerToken?.isNotEmpty ?? false;
     }
   }
 
@@ -301,7 +310,8 @@ abstract class McpServerFormToCreate with _$McpServerFormToCreate {
         // No additional fields to validate here
         break;
       case McpAuthenticationTypeOptions.bearerToken:
-        if (bearerToken == null || bearerToken!.isEmpty) {
+        final bearerToken = this.bearerToken;
+        if (bearerToken == null || bearerToken.isEmpty) {
           errors.add(
             'Bearer token is required for Bearer Token authentication.',
           );

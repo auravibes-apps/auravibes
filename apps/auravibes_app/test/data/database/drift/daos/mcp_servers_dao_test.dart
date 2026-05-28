@@ -1,3 +1,15 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: avoid-top-level-members-in-tests
+// Required: Test files keep shared fixtures and helpers top-level.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-static-class
+// Required: Tests keep fixture helpers and fakes top-level.
+
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools_groups.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
@@ -65,7 +77,10 @@ void main() {
       );
       final found = await database.mcpServersDao.getMcpServerById(created.id);
       expect(found, isNotNull);
-      expect(found!.name, equals('Test MCP'));
+      expect(
+        (found ?? fail('Expected found to be non-null')).name,
+        equals('Test MCP'),
+      );
     });
 
     test('getMcpServerById returns null for nonexistent', () async {
@@ -74,10 +89,10 @@ void main() {
     });
 
     test('getMcpServersForWorkspace returns servers for workspace', () async {
-      await database.mcpServersDao.insertMcpServer(
+      final _ = await database.mcpServersDao.insertMcpServer(
         _testServer(workspaceId: workspaceId, name: 'Server 1'),
       );
-      await database.mcpServersDao.insertMcpServer(
+      final _ = await database.mcpServersDao.insertMcpServer(
         _testServer(workspaceId: workspaceId, name: 'Server 2'),
       );
       final servers = await database.mcpServersDao.getMcpServersForWorkspace(
@@ -89,7 +104,7 @@ void main() {
     test(
       'getMcpServersForWorkspace returns empty for other workspace',
       () async {
-        await database.mcpServersDao.insertMcpServer(
+        final _ = await database.mcpServersDao.insertMcpServer(
           _testServer(workspaceId: workspaceId),
         );
         final servers = await database.mcpServersDao.getMcpServersForWorkspace(
@@ -100,10 +115,10 @@ void main() {
     );
 
     test('getEnabledMcpServersForWorkspace returns only enabled', () async {
-      await database.mcpServersDao.insertMcpServer(
+      final _ = await database.mcpServersDao.insertMcpServer(
         _testServer(workspaceId: workspaceId, name: 'Enabled'),
       );
-      await database.mcpServersDao.insertMcpServer(
+      final _ = await database.mcpServersDao.insertMcpServer(
         _testServer(
           workspaceId: workspaceId,
           name: 'Disabled',
@@ -159,7 +174,10 @@ void main() {
         isEnabled: false,
       );
       expect(toggled, isNotNull);
-      expect(toggled!.isEnabled, isFalse);
+      expect(
+        (toggled ?? fail('Expected toggled to be non-null')).isEnabled,
+        isFalse,
+      );
     });
   });
 }

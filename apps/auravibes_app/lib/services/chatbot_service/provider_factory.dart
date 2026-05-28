@@ -1,3 +1,7 @@
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: no-object-declaration
+// Required: Genkit provider configs use package-specific option objects.
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
@@ -48,7 +52,7 @@ class ProviderFactory {
     );
   }
 
-  ModelRef<dynamic> getModelReference(
+  ModelRef<Object?> getModelReference(
     WorkspaceModelSelectionWithConnectionEntity config,
   ) {
     final type = config.modelsProvider.type;
@@ -81,6 +85,7 @@ class ProviderFactory {
           reasoning: const OpenAICompatReasoningConfig(),
         );
       }
+
       return null;
     }
 
@@ -94,7 +99,7 @@ class ProviderFactory {
     return AnthropicOptions(
       thinking: ThinkingConfig(
         type: usesAdaptiveThinking ? 'adaptive' : 'enabled',
-        budgetTokens: usesAdaptiveThinking ? null : 1024,
+        budgetTokens: usesAdaptiveThinking ? null : _thinkingBudgetTokens,
       ),
     );
   }
@@ -108,6 +113,7 @@ class ProviderFactory {
   ) {
     if (config.modelsProvider.type != ModelProvidersType.openai) return false;
     if (!config.workspaceModelSelection.supportsReasoning) return false;
+
     return config.modelConnection.url != null ||
         config.modelsProvider.url != null;
   }
@@ -120,4 +126,5 @@ class ProviderFactory {
   }
 
   static const _openAIReasoningNamespace = 'openai_reasoning';
+  static const _thinkingBudgetTokens = 1024;
 }

@@ -1,3 +1,10 @@
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-static-class
+// Required: Existing helpers remain top-level for local feature use.
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
@@ -113,7 +120,8 @@ class ConversationRepositoryImpl implements ConversationRepository {
   ) {
     if (conversation.title.isEmpty) return _conversationTitleEmpty;
     if (conversation.workspaceId.isEmpty) return _workspaceIdEmpty;
-    if (conversation.modelId != null && conversation.modelId!.isEmpty) {
+    final modelId = conversation.modelId;
+    if (modelId != null && modelId.isEmpty) {
       return _modelIdEmpty;
     }
     return _unknownValidationError;
@@ -128,10 +136,13 @@ class ConversationRepositoryImpl implements ConversationRepository {
   }
 
   String _conversationPatchValidationMessage(ConversationPatch conversation) {
-    if (conversation.title != null && conversation.title!.isEmpty) {
+    final title = conversation.title;
+    if (title != null && title.isEmpty) {
       return _conversationTitleEmpty;
     }
-    if (conversation.modelId != null && conversation.modelId!.isEmpty) {
+
+    final modelId = conversation.modelId;
+    if (modelId != null && modelId.isEmpty) {
       return _modelIdEmpty;
     }
     return _unknownValidationError;

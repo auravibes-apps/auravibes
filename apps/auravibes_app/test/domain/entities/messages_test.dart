@@ -1,3 +1,8 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
+
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
@@ -102,7 +107,10 @@ void main() {
         '{"promptTokens": 10, "completionTokens": 5, "totalTokens": 15}',
       );
       expect(metadata, isNotNull);
-      expect(metadata!.promptTokens, 10);
+      expect(
+        (metadata ?? fail('Expected metadata to be non-null')).promptTokens,
+        10,
+      );
       expect(metadata.completionTokens, 5);
       expect(metadata.totalTokens, 15);
     });
@@ -116,7 +124,10 @@ void main() {
       const json = '{"promptTokens": 10, "toolCalls": []}';
       final metadata = MessageMetadataEntity.fromJsonString(json);
       expect(metadata, isNotNull);
-      expect(metadata!.promptTokens, 10);
+      expect(
+        (metadata ?? fail('Expected metadata to be non-null')).promptTokens,
+        10,
+      );
       expect(metadata.toolCalls, isEmpty);
     });
 
@@ -184,7 +195,11 @@ void main() {
           }
         ''');
         expect(metadata, isNotNull);
-        expect(metadata!.isCompactionSummary, isTrue);
+        expect(
+          (metadata ?? fail('Expected metadata to be non-null'))
+              .isCompactionSummary,
+          isTrue,
+        );
         expect(metadata.compactionKind, CompactionKind.auto);
         expect(metadata.compactedFromMessageId, 'msg-1');
         expect(metadata.compactedThroughMessageId, 'msg-5');
@@ -197,7 +212,11 @@ void main() {
           {"promptTokens": 10, "completionTokens": 5, "totalTokens": 15}
         ''');
         expect(metadata, isNotNull);
-        expect(metadata!.isCompactionSummary, isFalse);
+        expect(
+          (metadata ?? fail('Expected metadata to be non-null'))
+              .isCompactionSummary,
+          isFalse,
+        );
         expect(metadata.compactionKind, isNull);
         expect(metadata.compactedMessageIds, isEmpty);
       });

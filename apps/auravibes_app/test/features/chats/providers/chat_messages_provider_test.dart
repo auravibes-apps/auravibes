@@ -1,3 +1,22 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
+// ignore_for_file: no-empty-block
+// Required: Tests use intentional no-op callbacks and fake hooks.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-static-class
+// Required: Tests keep fixture helpers and fakes top-level.
+
 // ignore_for_file: provider_dependencies
 // Required: provider unit tests read scoped providers directly.
 
@@ -52,7 +71,7 @@ void main() {
 
     test('updates from repository stream without one-shot refetches', () async {
       final secondEmission = Completer<void>();
-      container.listen(
+      final _ = container.listen(
         chatMessagesProvider,
         (_, next) {
           if (next.value?.length == 2 && !secondEmission.isCompleted) {

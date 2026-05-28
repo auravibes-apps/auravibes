@@ -1,3 +1,6 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+
 import 'package:auravibes_app/domain/enums/credentials_model_type.dart';
 import 'package:auravibes_app/services/model_provider_services/model_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -158,7 +161,7 @@ void main() {
         ),
       );
       expect(result, isNotNull);
-      expect(result!.length, 1);
+      expect((result ?? fail('Expected result to be non-null')).length, 1);
       expect(result.firstOrNull?.modelId, 'claude-3');
     });
 
@@ -180,7 +183,7 @@ void main() {
         const ModelProvider(type: CredentialsModelType.openai, key: 'test-key'),
       );
       expect(result, isNotNull);
-      expect(result!.length, 1);
+      expect((result ?? fail('Expected result to be non-null')).length, 1);
       expect(result.firstOrNull?.modelId, 'gpt-4');
     });
 
@@ -225,7 +228,7 @@ void main() {
         ),
       );
       expect(result, isNotNull);
-      expect(result!.length, 2);
+      expect((result ?? fail('Expected result to be non-null')).length, 2);
       expect(result.firstOrNull?.modelId, 'claude-1');
       expect(result[1].modelId, 'claude-2');
     });

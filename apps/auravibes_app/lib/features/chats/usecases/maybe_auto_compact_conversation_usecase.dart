@@ -1,3 +1,11 @@
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-moving-to-variable
+// Required: Existing code repeats lookups where extraction adds noise.
+// ignore_for_file: prefer-static-class
+// Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/repositories/api_model_repository.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
@@ -55,7 +63,7 @@ class MaybeAutoCompactConversationUsecase {
 
     if (!decision.shouldCompact) return;
 
-    await compactConversationUsecase(
+    final _ = await compactConversationUsecase(
       conversationId: conversationId,
       trigger: CompactionTrigger.auto,
     );

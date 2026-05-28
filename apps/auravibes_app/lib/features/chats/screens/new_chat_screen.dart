@@ -1,3 +1,11 @@
+// ignore_for_file: no-magic-number
+// Required: Existing thresholds and limits use numeric values.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-extracting-callbacks
+// Required: UI callbacks stay local to their widgets.
+import 'dart:async';
+
 import 'package:auravibes_app/features/chats/notifiers/new_chat_state.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/models/widgets/select_workspace_model_selection_widget.dart';
@@ -19,36 +27,43 @@ class NewChatScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(newChatProvider(workspaceId));
 
-    Future<void> onToolsPress() async {
+    void onToolsPress() {
       if (workspaceId.isNotEmpty && context.mounted) {
-        showDialog<void>(
-          context: context,
-          builder: (context) => ToolsManagementModal(workspaceId: workspaceId),
+        unawaited(
+          showDialog<void>(
+            context: context,
+            builder: (context) =>
+                ToolsManagementModal(workspaceId: workspaceId),
+          ),
         );
       }
     }
 
-    Future<void> handleSendMessage(String message) async {
-      try {
-        final conversation = await ref
-            .read(newChatProvider(workspaceId).notifier)
-            .startConversation(message);
+    void handleSendMessage(String message) {
+      unawaited(
+        (() async {
+          try {
+            final conversation = await ref
+                .read(newChatProvider(workspaceId).notifier)
+                .startConversation(message);
 
-        if (context.mounted) {
-          ConversationRoute(
-            workspaceId: workspaceId,
-            chatId: conversation.id,
-          ).replace(context);
-        }
-      } on Exception catch (e) {
-        if (context.mounted) {
-          showAuraSnackBar(
-            context: context,
-            content: Text('Error: $e'),
-            variant: AuraSnackBarVariant.error,
-          );
-        }
-      }
+            if (context.mounted) {
+              ConversationRoute(
+                workspaceId: workspaceId,
+                chatId: conversation.id,
+              ).replace(context);
+            }
+          } on Exception catch (e) {
+            if (context.mounted) {
+              final _ = showAuraSnackBar(
+                context: context,
+                content: Text('Error: $e'),
+                variant: AuraSnackBarVariant.error,
+              );
+            }
+          }
+        })(),
+      );
     }
 
     return AuraScreen(

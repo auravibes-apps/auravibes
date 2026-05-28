@@ -1,3 +1,14 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: avoid-top-level-members-in-tests
+// Required: Test files keep shared fixtures and helpers top-level.
+// ignore_for_file: no-empty-block
+// Required: Tests use intentional no-op callbacks and fake hooks.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -190,6 +201,23 @@ void main() {
           codeChallenge: 'challenge-123',
         );
 
+        expect(uri.queryParameters.containsKey('scope'), isFalse);
+      });
+
+      test('omits empty optional client and scope values', () {
+        final uri = OAuthAuthenticate.buildAuthorizationUri(
+          oAuthResult: const OAuthDiscoveryResult(
+            authorizationUrl: 'https://example.com/oauth/authorize',
+            tokenUrl: 'https://example.com/oauth/token',
+            clientId: '',
+            scope: '',
+          ),
+          redirectUrl: 'auravibes:/',
+          stateParam: 'state-123',
+          codeChallenge: 'challenge-123',
+        );
+
+        expect(uri.queryParameters.containsKey('client_id'), isFalse);
         expect(uri.queryParameters.containsKey('scope'), isFalse);
       });
     });
@@ -522,6 +550,47 @@ void main() {
         expect(result.refreshToken, 'refresh-token');
         expect(result.expiresIn, 3600);
         expect(result.scope, 'profile email');
+      });
+
+      test('omits client id when discovery did not provide one', () async {
+        final adapter = FakeHttpClientAdapter(
+          fetchCallback: (options, _, _) async {
+            final data = options.data;
+            final body = data is FormData
+                ? {for (final field in data.fields) field.key: field.value}
+                : Map<String, dynamic>.from(data as Map);
+
+            expect(body.containsKey('client_id'), isFalse);
+
+            return ResponseBody.fromString(
+              '{"access_token":"token-123","token_type":"Bearer"}',
+              200,
+              headers: {
+                Headers.contentTypeHeader: ['application/json'],
+              },
+            );
+          },
+        );
+        final dio = Dio()..httpClientAdapter = adapter;
+        final auth = OAuthAuthenticate(
+          callbackUrlScheme: 'auravibes',
+          clientName: 'AuraVibes',
+          dio: dio,
+        );
+
+        final token = await auth.exchangeCodeForToken(
+          code: 'auth-code',
+          oAuthResult: const OAuthDiscoveryResult(
+            authorizationUrl: 'https://example.com/authorize',
+            tokenUrl: 'https://example.com/token',
+            clientId: null,
+            scope: null,
+          ),
+          codeVerifier: 'verifier',
+          redirectUrl: 'auravibes:/',
+        );
+
+        expect(token.accessToken, 'token-123');
       });
     });
   });

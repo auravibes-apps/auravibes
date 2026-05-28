@@ -41,7 +41,7 @@ melos:
       description: Fail when unused Dart files are detected
 
     dcl:analyze:
-      run: dart run dart_code_linter:metrics analyze apps/auravibes_app/lib apps/auravibes_app/test packages/auravibes_genkit_openai_compat/lib packages/auravibes_genkit_openai_compat/test packages/auravibes_ui/lib packages/auravibes_ui/test widgetbook/lib --fatal-warnings
+      run: dart run dart_code_linter:metrics analyze apps/auravibes_app/lib apps/auravibes_app/test packages/auravibes_genkit_openai_compat/lib packages/auravibes_genkit_openai_compat/test packages/auravibes_ui/lib packages/auravibes_ui/test widgetbook/lib --set-exit-on-violation-level=noted
       description: Run Dart Code Linter rules
 
     unused:code:

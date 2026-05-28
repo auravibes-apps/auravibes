@@ -1,3 +1,16 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: no-object-declaration
+// Required: Test fakes override noSuchMethod with Object return values.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/domain/repositories/conversation_tools_repository.dart';
@@ -16,7 +29,7 @@ class _FakeConversationToolsRepository extends ConversationToolsRepository {
   ) async => _tools;
 
   @override
-  dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError();
+  Object? noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
 class _FakeBuildCombinedToolSpecsUseCase extends BuildCombinedToolSpecsUseCase {
@@ -44,7 +57,7 @@ class _CapturingRepo extends ConversationToolsRepository {
   ) async => onGetTools(conversationId, workspaceId);
 
   @override
-  dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError();
+  Object? noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
 void main() {
@@ -103,7 +116,7 @@ void main() {
         buildCombinedToolSpecsUseCase: _FakeBuildCombinedToolSpecsUseCase([]),
       );
 
-      await usecase(
+      final _ = await usecase(
         conversationId: 'conv-abc',
         workspaceId: 'ws-xyz',
       );
@@ -172,11 +185,19 @@ void main() {
         buildCombinedToolSpecsUseCase: buildUseCase,
       );
 
-      await usecase(conversationId: 'conv-1', workspaceId: 'ws-1');
+      final _ = await usecase(conversationId: 'conv-1', workspaceId: 'ws-1');
 
       expect(capturedTools, isNotNull);
-      expect(capturedTools!.length, 1);
-      expect(capturedTools!.first.toolId, 'tool1');
+      expect(
+        (capturedTools ?? fail('Expected capturedTools to be non-null')).length,
+        1,
+      );
+      expect(
+        (capturedTools ?? fail('Expected capturedTools to be non-null'))
+            .first
+            .toolId,
+        'tool1',
+      );
     });
   });
 }

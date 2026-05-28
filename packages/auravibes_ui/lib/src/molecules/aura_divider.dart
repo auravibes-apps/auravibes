@@ -1,3 +1,8 @@
+// ignore_for_file: avoid-returning-widgets
+// Required: Existing helper builders return widgets.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
@@ -75,8 +80,9 @@ class AuraDivider extends StatelessWidget {
         auraTheme.colors.getColorOrNull(color) ?? auraTheme.colors.outline;
     final dividerThickness = thickness ?? DesignBorderWidth.thin;
 
+    final label = this.label;
     if (label != null) {
-      return _buildLabeledDivider(dividerColor, dividerThickness, auraTheme);
+      return _buildLabeledDivider(dividerColor, dividerThickness, label);
     }
 
     if (orientation == AuraDividerOrientation.vertical) {
@@ -121,7 +127,7 @@ class AuraDivider extends StatelessWidget {
   Widget _buildLabeledDivider(
     Color dividerColor,
     double dividerThickness,
-    AuraTheme auraTheme,
+    Widget label,
   ) {
     return Container(
       height: height ?? DesignSpacing.xl,
@@ -142,7 +148,7 @@ class AuraDivider extends StatelessWidget {
               horizontal: DesignSpacing.md,
             ),
             child: AuraText(
-              child: label!,
+              child: label,
               style: AuraTextStyle.caption,
               color: AuraColorVariant.onSurfaceVariant,
             ),

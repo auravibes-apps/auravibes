@@ -1,3 +1,9 @@
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -23,7 +29,7 @@ class WidgetbookApp extends StatelessWidget {
       addons: [
         InspectorAddon(enabled: true),
         TextScaleAddon(),
-        SemanticsAddon(), // ignore: experimental_member_use
+        SemanticsAddon(), // ignore: experimental_member_use - Required for Widgetbook addon.
         ViewportAddon([
           Viewports.none,
           IosViewports.iPhone13,

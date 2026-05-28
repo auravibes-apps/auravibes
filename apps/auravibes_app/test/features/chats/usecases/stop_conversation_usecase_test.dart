@@ -1,3 +1,10 @@
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
@@ -47,7 +54,7 @@ void main() {
     test(
       'requests cancellation, clears queue, and stops pending tools',
       () async {
-        container
+        final _ = container
             .read(conversationSendQueueProvider.notifier)
             .enqueue(
               conversationId: 'conversation-1',

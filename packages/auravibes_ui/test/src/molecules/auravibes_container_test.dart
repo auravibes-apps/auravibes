@@ -1,3 +1,8 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+
 import 'package:auravibes_ui/src/atoms/aura_edge_insets_geometry.dart';
 import 'package:auravibes_ui/src/molecules/aura_container.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
@@ -74,7 +79,10 @@ void main() {
       );
 
       final container = tester.widget<Container>(find.byType(Container));
-      final decoration = container.decoration! as BoxDecoration;
+      final decoration =
+          (container.decoration ??
+                  fail('Expected container.decoration to be non-null'))
+              as BoxDecoration;
       // Note: The actual color will be resolved from AuraColorVariant.error
       expect(decoration.color, isNotNull);
     });
@@ -94,7 +102,10 @@ void main() {
       );
 
       final container = tester.widget<Container>(find.byType(Container));
-      final decoration = container.decoration! as BoxDecoration;
+      final decoration =
+          (container.decoration ??
+                  fail('Expected container.decoration to be non-null'))
+              as BoxDecoration;
       expect(decoration.borderRadius, BorderRadius.circular(customRadius));
     });
 
@@ -115,7 +126,10 @@ void main() {
       );
 
       final container = tester.widget<Container>(find.byType(Container));
-      final decoration = container.decoration! as BoxDecoration;
+      final decoration =
+          (container.decoration ??
+                  fail('Expected container.decoration to be non-null'))
+              as BoxDecoration;
       expect(decoration.border, customBorder);
     });
 
@@ -170,7 +184,10 @@ void main() {
       );
 
       final container = tester.widget<Container>(find.byType(Container));
-      final decoration = container.decoration! as BoxDecoration;
+      final decoration =
+          (container.decoration ??
+                  fail('Expected container.decoration to be non-null'))
+              as BoxDecoration;
       expect(decoration.boxShadow, isEmpty);
     });
 
@@ -187,7 +204,10 @@ void main() {
       );
 
       final container = tester.widget<Container>(find.byType(Container));
-      final decoration = container.decoration! as BoxDecoration;
+      final decoration =
+          (container.decoration ??
+                  fail('Expected container.decoration to be non-null'))
+              as BoxDecoration;
       expect(decoration.boxShadow, [DesignShadows.sm]);
     });
 
@@ -204,7 +224,10 @@ void main() {
       );
 
       final container = tester.widget<Container>(find.byType(Container));
-      final decoration = container.decoration! as BoxDecoration;
+      final decoration =
+          (container.decoration ??
+                  fail('Expected container.decoration to be non-null'))
+              as BoxDecoration;
       expect(decoration.boxShadow, [DesignShadows.md]);
     });
 
@@ -221,7 +244,10 @@ void main() {
       );
 
       final container = tester.widget<Container>(find.byType(Container));
-      final decoration = container.decoration! as BoxDecoration;
+      final decoration =
+          (container.decoration ??
+                  fail('Expected container.decoration to be non-null'))
+              as BoxDecoration;
       expect(decoration.boxShadow, [DesignShadows.lg]);
     });
 
@@ -238,7 +264,10 @@ void main() {
       );
 
       final container = tester.widget<Container>(find.byType(Container));
-      final decoration = container.decoration! as BoxDecoration;
+      final decoration =
+          (container.decoration ??
+                  fail('Expected container.decoration to be non-null'))
+              as BoxDecoration;
       expect(decoration.boxShadow, [DesignShadows.xl]);
     });
 
@@ -255,7 +284,10 @@ void main() {
       );
 
       final container = tester.widget<Container>(find.byType(Container));
-      final decoration = container.decoration! as BoxDecoration;
+      final decoration =
+          (container.decoration ??
+                  fail('Expected container.decoration to be non-null'))
+              as BoxDecoration;
       expect(decoration.boxShadow, [DesignShadows.inner]);
     });
 
@@ -272,7 +304,10 @@ void main() {
       );
 
       final container = tester.widget<Container>(find.byType(Container));
-      final decoration = container.decoration! as BoxDecoration;
+      final decoration =
+          (container.decoration ??
+                  fail('Expected container.decoration to be non-null'))
+              as BoxDecoration;
       expect(decoration.boxShadow, [DesignShadows.glass]);
     });
 

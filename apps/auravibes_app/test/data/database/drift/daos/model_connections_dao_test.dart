@@ -1,3 +1,15 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: avoid-top-level-members-in-tests
+// Required: Test files keep shared fixtures and helpers top-level.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-static-class
+// Required: Tests keep fixture helpers and fakes top-level.
+
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
@@ -59,7 +71,10 @@ void main() {
         created.id,
       );
       expect(found, isNotNull);
-      expect(found!.name, equals('Conn'));
+      expect(
+        (found ?? fail('Expected found to be non-null')).name,
+        equals('Conn'),
+      );
     });
 
     test('getModelConnectionById returns null for nonexistent', () async {
@@ -75,7 +90,7 @@ void main() {
         final ws2 = await database.workspaceDao.insertWorkspace(
           WorkspacesCompanion.insert(name: 'WS2', type: WorkspaceType.local),
         );
-        await database.modelConnectionsDao.insertModelConnection(
+        final _ = await database.modelConnectionsDao.insertModelConnection(
           ModelConnectionsCompanion.insert(
             name: 'C1',
             modelId: 'gpt-4',
@@ -83,7 +98,7 @@ void main() {
             workspaceId: workspaceId,
           ),
         );
-        await database.modelConnectionsDao.insertModelConnection(
+        final _ = await database.modelConnectionsDao.insertModelConnection(
           ModelConnectionsCompanion.insert(
             name: 'C2',
             modelId: 'gpt-4',
@@ -106,7 +121,7 @@ void main() {
         final ws2 = await database.workspaceDao.insertWorkspace(
           WorkspacesCompanion.insert(name: 'WS2', type: WorkspaceType.local),
         );
-        await database.modelConnectionsDao.insertModelConnection(
+        final _ = await database.modelConnectionsDao.insertModelConnection(
           ModelConnectionsCompanion.insert(
             name: 'C1',
             modelId: 'gpt-4',
@@ -114,7 +129,7 @@ void main() {
             workspaceId: workspaceId,
           ),
         );
-        await database.modelConnectionsDao.insertModelConnection(
+        final _ = await database.modelConnectionsDao.insertModelConnection(
           ModelConnectionsCompanion.insert(
             name: 'C2',
             modelId: 'gpt-4',

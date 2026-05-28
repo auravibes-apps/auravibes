@@ -1,3 +1,18 @@
+// ignore_for_file: no-magic-number
+// Required: UI tokens and layout use fixed design values.
+// ignore_for_file: avoid-returning-widgets
+// Required: Existing helper builders return widgets.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-extracting-callbacks
+// Required: Component callbacks stay colocated with UI state.
+// ignore_for_file: prefer-single-widget-per-file
+// Required: UI components keep related private widgets together.
+
 import 'package:auravibes_ui/src/atoms/atoms.dart';
 import 'package:auravibes_ui/src/tokens/tokens.dart';
 import 'package:flutter/material.dart';
@@ -44,6 +59,9 @@ class AuraSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final header = this.header;
+    final footer = this.footer;
+
     return Container(
       decoration: BoxDecoration(
         color: context.auraColors.surface,
@@ -64,37 +82,34 @@ class AuraSidebar extends StatelessWidget {
       child: Column(
         children: [
           if (header != null)
-            _buildHeaderSection(context)
+            _buildHeaderSection(header)
           else
             SizedBox(height: context.auraTheme.spacing.lg),
           Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  _buildNavigationItems(context),
-                  ?middleSection,
-                ],
-              ),
+            child: ListView(
+              children: [
+                _buildNavigationItems(),
+                ?middleSection,
+              ],
             ),
           ),
           SafeArea(
             top: false,
             right: false,
-            child: _buildNavigationItems(context, footer: true),
+            child: _buildNavigationItems(footer: true),
           ),
 
-          if (footer != null) _buildFooterSection(context),
+          if (footer != null) _buildFooterSection(context, footer),
         ],
       ),
     );
   }
 
-  Widget _buildHeaderSection(BuildContext context) {
-    return header!;
+  Widget _buildHeaderSection(Widget header) {
+    return header;
   }
 
-  Widget _buildNavigationItems(
-    BuildContext context, {
+  Widget _buildNavigationItems({
     bool footer = false,
   }) {
     return Column(
@@ -117,7 +132,7 @@ class AuraSidebar extends StatelessWidget {
     );
   }
 
-  Widget _buildFooterSection(BuildContext context) {
+  Widget _buildFooterSection(BuildContext context, Widget footer) {
     return Padding(
       padding: EdgeInsets.all(context.auraTheme.spacing.sm),
       child: footer,

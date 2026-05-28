@@ -1,3 +1,9 @@
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-static-class
+// Required: Existing helpers remain top-level for local feature use.
 import 'dart:collection';
 
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
@@ -145,7 +151,7 @@ bool isMessageStreaming(Ref ref, String messageId) {
     chatMessages,
   ],
 )
-Future<ConversationBusyState> conversationBusyState(Ref ref) async {
+Future<ConversationBusyState> conversationBusyState(Ref ref) {
   final conversationId = ref.watch(conversationSelectedProvider);
   ref
     ..watch(
@@ -190,7 +196,7 @@ CompactionExecutionState? conversationCompactionExecutionState(Ref ref) {
 /// Returns a list of MCP server IDs that are being waited on for connection,
 /// or an empty list if not waiting.
 @riverpod
-List<String> pendingMcpConnections(Ref ref) {
+List<String> pendingMcpConnections(Ref _) {
   // The current streaming state only exposes the last `ChatResult`, and it no
   // longer carries pending MCP server IDs. Until that runtime state is modeled
   // explicitly again, there is no reliable source for this indicator.

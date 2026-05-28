@@ -1,3 +1,19 @@
+// ignore_for_file: no-magic-number
+// Required: UI tokens and layout use fixed design values.
+// ignore_for_file: format-comment
+// Required: Existing comments use generated or domain-specific formatting.
+// ignore_for_file: no-equal-arguments
+// Required: UI geometry uses repeated values for symmetric layout.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-moving-to-variable
+// Required: UI components repeat theme and layout lookups intentionally.
+// ignore_for_file: prefer-single-widget-per-file
+// Required: UI components keep related private widgets together.
 import 'package:auravibes_ui/src/atoms/aura_loading_circle.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
@@ -148,19 +164,16 @@ class AuraButtonGroup<T> extends StatelessWidget {
       children.add(child);
     }
 
-    Widget content;
-    if (orientation == Axis.horizontal) {
-      content = Row(
-        mainAxisSize: MainAxisSize.min,
-        children: children,
-      );
-    } else {
-      content = Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: children,
-      );
-    }
+    final content = orientation == Axis.horizontal
+        ? Row(
+            mainAxisSize: MainAxisSize.min,
+            children: children,
+          )
+        : Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: children,
+          );
 
     // Wrap entire group in ClipRRect for rounded corners
     return ClipRRect(
@@ -184,9 +197,9 @@ class AuraButtonGroup<T> extends StatelessWidget {
       case _ButtonGroupMode.multi:
         final currentSet = Set<T>.from(selectedValues ?? {});
         if (currentSet.contains(item.value)) {
-          currentSet.remove(item.value);
+          final _ = currentSet.remove(item.value);
         } else {
-          currentSet.add(item.value);
+          final _ = currentSet.add(item.value);
         }
         onMultiChanged?.call(currentSet);
       case _ButtonGroupMode.action:

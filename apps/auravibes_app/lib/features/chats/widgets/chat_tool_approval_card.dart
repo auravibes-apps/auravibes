@@ -1,3 +1,17 @@
+// ignore_for_file: no-magic-number
+// Required: Existing thresholds and limits use numeric values.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: no-equal-arguments
+// Required: Existing argument values intentionally repeat.
+// ignore_for_file: newline-before-return
+// Required: Existing test and UI helpers keep compact return flow.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-moving-to-variable
+// Required: Existing code repeats lookups where extraction adds noise.
+// ignore_for_file: prefer-single-widget-per-file
+// Required: Feature widgets keep closely related private widgets together.
 import 'dart:math' as math;
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
@@ -348,7 +362,6 @@ class _ConfirmationButtons extends ConsumerWidget {
 
   Future<void> _onAllowOnce(WidgetRef ref, BuildContext context) async {
     await _runAction(
-      ref,
       context,
       errorMessage: 'Failed to approve tool call.',
       action: () {
@@ -368,7 +381,6 @@ class _ConfirmationButtons extends ConsumerWidget {
     BuildContext context,
   ) async {
     await _runAction(
-      ref,
       context,
       errorMessage: 'Failed to approve tool call for this conversation.',
       action: () {
@@ -385,7 +397,6 @@ class _ConfirmationButtons extends ConsumerWidget {
 
   Future<void> _onSkip(WidgetRef ref, BuildContext context) async {
     await _runAction(
-      ref,
       context,
       errorMessage: 'Failed to skip tool call.',
       action: () {
@@ -401,7 +412,6 @@ class _ConfirmationButtons extends ConsumerWidget {
 
   Future<void> _onStopAll(WidgetRef ref, BuildContext context) async {
     await _runAction(
-      ref,
       context,
       errorMessage: 'Failed to stop pending tool calls.',
       action: () {
@@ -415,7 +425,6 @@ class _ConfirmationButtons extends ConsumerWidget {
   }
 
   Future<void> _runAction(
-    WidgetRef ref,
     BuildContext context, {
     required String errorMessage,
     required Future<void> Function() action,
@@ -425,7 +434,7 @@ class _ConfirmationButtons extends ConsumerWidget {
     } on Exception catch (error) {
       debugPrint('Tool approval action failed: $error');
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      final _ = ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('$errorMessage $error')),
       );
     }

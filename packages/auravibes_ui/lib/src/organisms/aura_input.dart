@@ -1,3 +1,10 @@
+// ignore_for_file: no-magic-number
+// Required: UI tokens and layout use fixed design values.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: always-remove-listener
+// Required: Listener is removed through nullable focus node field in dispose.
+
 import 'package:auravibes_ui/src/organisms/aura_field_wrapper.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
@@ -128,29 +135,43 @@ class AuraInput extends StatefulWidget {
 }
 
 class _AuraInputState extends State<AuraInput> {
-  late FocusNode _focusNode;
+  FocusNode? _focusNode;
   bool _isFocused = false;
+
+  FocusNode get _requiredFocusNode {
+    final focusNode = _focusNode;
+    if (focusNode == null) {
+      throw StateError('_focusNode is not initialized');
+    }
+
+    return focusNode;
+  }
 
   @override
   void initState() {
     super.initState();
-    _focusNode = widget.focusNode ?? FocusNode();
-    _focusNode.addListener(_onFocusChange);
+    final focusNode = widget.focusNode ?? FocusNode();
+    _focusNode = focusNode;
+    focusNode.addListener(
+      _onFocusChange,
+    ); // ignore: always-remove-listener - Removed in dispose via field.
   }
 
   @override
   void dispose() {
-    if (widget.focusNode == null) {
-      _focusNode.dispose();
-    } else {
-      _focusNode.removeListener(_onFocusChange);
+    final focusNode = _focusNode;
+    if (focusNode != null) {
+      focusNode.removeListener(_onFocusChange);
+      if (widget.focusNode == null) {
+        focusNode.dispose();
+      }
     }
     super.dispose();
   }
 
   void _onFocusChange() {
     setState(() {
-      _isFocused = _focusNode.hasFocus;
+      _isFocused = _requiredFocusNode.hasFocus;
     });
   }
 
@@ -158,6 +179,9 @@ class _AuraInputState extends State<AuraInput> {
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
     final fieldState = _convertToFieldState(widget.state);
+    final prefixIcon = widget.prefixIcon;
+    final suffixIcon = widget.suffixIcon;
+    final footer = widget.footer;
 
     return AuraFieldWrapper(
       child: Padding(
@@ -166,15 +190,15 @@ class _AuraInputState extends State<AuraInput> {
           children: [
             Row(
               children: [
-                if (widget.prefixIcon != null) ...[
-                  widget.prefixIcon!,
+                if (prefixIcon != null) ...[
+                  prefixIcon,
                   const SizedBox(width: DesignSpacing.sm),
                 ],
                 Expanded(
                   child: TextFormField(
                     controller: widget.controller,
                     initialValue: widget.initialValue,
-                    focusNode: _focusNode,
+                    focusNode: _requiredFocusNode,
                     decoration: InputDecoration(
                       hint: widget.placeholder,
                       hintStyle: _getHintStyle(auraColors),
@@ -198,13 +222,13 @@ class _AuraInputState extends State<AuraInput> {
                     enabled: widget.enabled,
                   ),
                 ),
-                if (widget.suffixIcon != null) ...[
+                if (suffixIcon != null) ...[
                   const SizedBox(width: DesignSpacing.sm),
-                  widget.suffixIcon!,
+                  suffixIcon,
                 ],
               ],
             ),
-            if (widget.footer != null) widget.footer!,
+            ?footer,
           ],
         ),
       ),

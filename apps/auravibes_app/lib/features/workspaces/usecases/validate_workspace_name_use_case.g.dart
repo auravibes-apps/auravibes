@@ -60,4 +60,4 @@ final class ValidateWorkspaceNameUseCaseProvider
 }
 
 String _$validateWorkspaceNameUseCaseHash() =>
-    r'6652bcd7822a7e97a1216be67faed8b9778bb983';
+    r'212f3f47ae0a3ece0d18843a04dfb61aaf49a7bd';

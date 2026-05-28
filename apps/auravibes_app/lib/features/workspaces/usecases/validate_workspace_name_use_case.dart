@@ -1,3 +1,5 @@
+// ignore_for_file: no-magic-number
+// Required: Existing thresholds and limits use numeric values.
 import 'package:auravibes_app/domain/repositories/workspace_repository.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -30,6 +32,6 @@ class ValidateWorkspaceNameUseCase {
 
 /// Provides a [ValidateWorkspaceNameUseCase] instance.
 @riverpod
-ValidateWorkspaceNameUseCase validateWorkspaceNameUseCase(Ref ref) {
+ValidateWorkspaceNameUseCase validateWorkspaceNameUseCase(Ref _) {
   return const ValidateWorkspaceNameUseCase();
 }

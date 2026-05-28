@@ -1,3 +1,21 @@
+// ignore_for_file: no-magic-number
+// Required: Tests use numeric fixtures and dimensions.
+// ignore_for_file: avoid-redundant-async
+// Required: Test callbacks intentionally preserve async-compatible signatures.
+// ignore_for_file: no-equal-arguments
+// Required: Tests use repeated fixture values to assert equality semantics.
+// ignore_for_file: no-empty-block
+// Required: Tests use intentional no-op callbacks and fake hooks.
+// ignore_for_file: member-ordering
+// Required: Existing declaration order groups related UI and model members.
+// ignore_for_file: prefer-correct-identifier-length
+// Required: Existing short identifiers follow callback and pattern APIs.
+// ignore_for_file: prefer-static-class
+// Required: Tests keep fixture helpers and fakes top-level.
+
+// ignore_for_file: avoid-late-keyword
+// Required: Test fixtures are assigned in setUp.
+
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
@@ -173,7 +191,7 @@ void main() {
 
       final found = await repository.getMessageById(created.id);
       expect(found, isNotNull);
-      expect(found!.content, 'test');
+      expect((found ?? fail('Expected found to be non-null')).content, 'test');
     });
 
     test('messageExists returns false for non-existent', () async {
@@ -216,7 +234,7 @@ void main() {
     test('getMessageCountByConversation returns correct count', () async {
       expect(await repository.getMessageCountByConversation('conv-1'), 0);
 
-      await repository.createMessage(
+      final _ = await repository.createMessage(
         const MessageToCreate(
           conversationId: 'conv-1',
           content: 'msg1',
@@ -225,7 +243,7 @@ void main() {
           status: MessageStatus.sending,
         ),
       );
-      await repository.createMessage(
+      final _ = await repository.createMessage(
         const MessageToCreate(
           conversationId: 'conv-1',
           content: 'msg2',
@@ -268,7 +286,7 @@ void main() {
 
     test('getMessagesByConversationPaginated limits results', () async {
       for (var i = 0; i < 5; i++) {
-        await repository.createMessage(
+        final _ = await repository.createMessage(
           const MessageToCreate(
             conversationId: 'conv-1',
             content: 'msg0',
@@ -288,7 +306,7 @@ void main() {
     });
 
     test('getMessagesByType filters correctly', () async {
-      await repository.createMessage(
+      final _ = await repository.createMessage(
         const MessageToCreate(
           conversationId: 'conv-1',
           content: 'text msg',
@@ -312,7 +330,7 @@ void main() {
     });
 
     test('getMessagesByStatus filters correctly', () async {
-      await repository.createMessage(
+      final _ = await repository.createMessage(
         const MessageToCreate(
           conversationId: 'conv-1',
           content: 'sent msg',
@@ -364,7 +382,7 @@ void main() {
     });
 
     test('getUserMessages returns only user messages', () async {
-      await repository.createMessage(
+      final _ = await repository.createMessage(
         const MessageToCreate(
           conversationId: 'conv-1',
           content: 'user msg',
@@ -373,7 +391,7 @@ void main() {
           status: MessageStatus.sending,
         ),
       );
-      await repository.createMessage(
+      final _ = await repository.createMessage(
         const MessageToCreate(
           conversationId: 'conv-1',
           content: 'ai msg',
@@ -389,7 +407,7 @@ void main() {
     });
 
     test('getSystemMessages returns only non-user messages', () async {
-      await repository.createMessage(
+      final _ = await repository.createMessage(
         const MessageToCreate(
           conversationId: 'conv-1',
           content: 'user msg',
@@ -398,7 +416,7 @@ void main() {
           status: MessageStatus.sending,
         ),
       );
-      await repository.createMessage(
+      final _ = await repository.createMessage(
         const MessageToCreate(
           conversationId: 'conv-1',
           content: 'ai msg',
@@ -445,8 +463,15 @@ void main() {
 
       final found = await repository.getMessageById(created.id);
       expect(found, isNotNull);
-      expect(found!.metadata, isNotNull);
-      expect(found.metadata!.promptTokens, 10);
+      expect(
+        (found ?? fail('Expected found to be non-null')).metadata,
+        isNotNull,
+      );
+      expect(
+        (found.metadata ?? fail('Expected found.metadata to be non-null'))
+            .promptTokens,
+        10,
+      );
     });
 
     test(
@@ -475,9 +500,10 @@ void main() {
 
         final found = await repository.getMessageById(created.id);
         expect(found, isNotNull);
-        expect(found!.content, isEmpty);
-        expect(found.metadata?.toolCalls, hasLength(1));
-        expect(found.metadata?.toolCalls.single.id, 'tool-1');
+        final foundMessage = found ?? fail('Expected created message');
+        expect(foundMessage.content, isEmpty);
+        expect(foundMessage.metadata?.toolCalls, hasLength(1));
+        expect(foundMessage.metadata?.toolCalls.single.id, 'tool-1');
       },
     );
 
@@ -536,7 +562,7 @@ void main() {
     );
 
     test('getLatestCompactionSummary returns null when no summaries', () async {
-      await repository.createMessage(
+      final _ = await repository.createMessage(
         const MessageToCreate(
           conversationId: 'conv-1',
           content: 'regular msg',
@@ -553,7 +579,7 @@ void main() {
     test(
       'getLatestCompactionSummary returns latest compaction summary',
       () async {
-        await repository.createMessage(
+        final _ = await repository.createMessage(
           const MessageToCreate(
             conversationId: 'conv-1',
             content: 'user msg',
@@ -582,25 +608,36 @@ void main() {
             metadata: jsonEncode(compactionMetadata),
           ),
         );
-        await repository.patchMessage(
+        final _ = await repository.patchMessage(
           created.id,
           const MessagePatch(status: MessageStatus.sent),
         );
 
         final summary = await repository.getLatestCompactionSummary('conv-1');
         expect(summary, isNotNull);
-        expect(summary!.content, 'Compaction summary content');
+        expect(
+          (summary ?? fail('Expected summary to be non-null')).content,
+          'Compaction summary content',
+        );
         expect(summary.messageType, MessageType.system);
         expect(summary.metadata, isNotNull);
-        expect(summary.metadata!.isCompactionSummary, isTrue);
-        expect(summary.metadata!.compactionKind, CompactionKind.auto);
+        expect(
+          (summary.metadata ?? fail('Expected summary.metadata to be non-null'))
+              .isCompactionSummary,
+          isTrue,
+        );
+        expect(
+          (summary.metadata ?? fail('Expected summary.metadata to be non-null'))
+              .compactionKind,
+          CompactionKind.auto,
+        );
       },
     );
 
     test(
       'getLatestCompactionSummary skips non-summary system messages',
       () async {
-        await repository.createMessage(
+        final _ = await repository.createMessage(
           const MessageToCreate(
             conversationId: 'conv-1',
             content: 'system note',

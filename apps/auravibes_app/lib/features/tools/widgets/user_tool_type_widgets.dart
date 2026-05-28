@@ -83,8 +83,9 @@ extension WorkspaceToolEntityWidgets on WorkspaceToolEntity {
   }
 
   Widget getDescriptionWidget() {
-    if (hasDescription) {
-      return Text(description!);
+    final description = this.description;
+    if (description != null && description.isNotEmpty) {
+      return Text(description);
     }
     final type = buildInType;
     final native = nativeType;
