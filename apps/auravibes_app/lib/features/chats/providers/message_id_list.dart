@@ -48,9 +48,7 @@ Future<List<MessageEntity>> chatMessages(Ref ref) {
 
 @Riverpod(dependencies: [chatMessages])
 List<String> chatMessageIds(Ref ref) {
-  final messages = ref.watch(
-    chatMessagesProvider.select((value) => value.value),
-  );
+  final messages = ref.watch(chatMessagesProvider).value;
   if (messages == null || messages.isEmpty) return MessageIdList.empty;
   return MessageIdList(messages.map((m) => m.id));
 }
@@ -88,11 +86,10 @@ MessageEntity? messageConversationById(
   Ref ref,
   String messageId,
 ) {
-  final messageEntity = ref.watch(
-    chatMessagesProvider.select(
-      (value) => value.value?.firstWhereOrNull((c) => c.id == messageId),
-    ),
-  );
+  final messageEntity = ref
+      .watch(chatMessagesProvider)
+      .value
+      ?.firstWhereOrNull((c) => c.id == messageId);
 
   if (messageEntity == null) return null;
 
@@ -215,9 +212,7 @@ class PendingToolCall {
 
 @Riverpod(dependencies: [chatMessages])
 int conversationUsedTokens(Ref ref) {
-  final messages = ref.watch(
-    chatMessagesProvider.select((value) => value.value),
-  );
+  final messages = ref.watch(chatMessagesProvider).value;
   if (messages == null || messages.isEmpty) return 0;
 
   final latestAssistantMessage = messages.lastWhereOrNull(
@@ -261,9 +256,7 @@ Future<int?> conversationContextLimit(Ref ref) async {
 )
 Future<List<PendingToolCall>> pendingToolCalls(Ref ref) async {
   final conversationId = ref.watch(conversationSelectedProvider);
-  final messages = ref.watch(
-    chatMessagesProvider.select((value) => value.value),
-  );
+  final messages = ref.watch(chatMessagesProvider).value;
   if (messages == null || messages.isEmpty) return const [];
 
   final latestAssistantMessage = messages.lastWhereOrNull(
