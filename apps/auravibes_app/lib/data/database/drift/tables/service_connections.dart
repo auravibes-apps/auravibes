@@ -7,26 +7,6 @@ import 'package:auravibes_app/data/database/drift/tables/table_mixin.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspaces.dart';
 import 'package:drift/drift.dart';
 
-enum ServiceConnectionKindTable {
-  modelProvider('model_provider'),
-  mcpServer('mcp_server'),
-  gmail('gmail'),
-  customHttp('custom_http');
-
-  const ServiceConnectionKindTable(this.value);
-  final String value;
-}
-
-enum ServiceAuthenticationTypeTable {
-  none('none'),
-  apiKey('api_key'),
-  bearerToken('bearer_token'),
-  oauth2('oauth2');
-
-  const ServiceAuthenticationTypeTable(this.value);
-  final String value;
-}
-
 @DataClassName('ServiceConnectionTable')
 class ServiceConnections extends Table with TableMixin {
   /// Human-readable name of the external service connection.
@@ -59,4 +39,24 @@ class ServiceConnections extends Table with TableMixin {
   )();
 
   BoolColumn get isEnabled => boolean().withDefault(const Constant(true))();
+}
+
+enum ServiceConnectionKindTable {
+  modelProvider('model_provider'),
+  mcpServer('mcp_server'),
+  gmail('gmail'),
+  customHttp('custom_http');
+
+  const ServiceConnectionKindTable(this.value);
+  final String value;
+}
+
+enum ServiceAuthenticationTypeTable {
+  none('none'),
+  apiKey('api_key'),
+  bearerToken('bearer_token'),
+  oauth2('oauth2');
+
+  const ServiceAuthenticationTypeTable(this.value);
+  final String value;
 }

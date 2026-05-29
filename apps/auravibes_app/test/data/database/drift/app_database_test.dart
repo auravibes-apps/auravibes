@@ -73,7 +73,10 @@ void _createVersionThreeSchema(sqlite.Database database) {
       )
     ''')
     ..execute(
-      "INSERT INTO workspaces (id, name, type) VALUES ('ws-1', 'WS', 'local')",
+      '''
+      INSERT INTO workspaces (id, name, type)
+      VALUES ('ws-1', 'WS', 'local')
+      ''',
     )
     ..execute('''
       INSERT INTO api_model_providers (id, name)
@@ -225,9 +228,10 @@ void main() {
         final connections = await migratedDatabase
             .select(migratedDatabase.serviceConnections)
             .get();
+        final connection = connections.firstOrNull;
         expect(connections, hasLength(1));
-        expect(connections.first.serviceId, 'openai');
-        expect(connections.first.encryptedAuthValue, 'encrypted-key');
+        expect(connection?.serviceId, 'openai');
+        expect(connection?.encryptedAuthValue, 'encrypted-key');
 
         final foreignKeys = await migratedDatabase
             .customSelect('PRAGMA foreign_key_list(workspace_model_selections)')
@@ -238,15 +242,16 @@ void main() {
         expect(foreignKeyTables, contains('service_connections'));
         expect(foreignKeyTables, isNot(contains('model_connections')));
 
-        final oldTables = await migratedDatabase
-            .customSelect(
-              "SELECT name FROM sqlite_master WHERE name = 'model_connections'",
-            )
-            .get();
+        final oldTables = await migratedDatabase.customSelect(
+          '''
+              SELECT name FROM sqlite_master
+              WHERE name = 'model_connections'
+              ''',
+        ).get();
         expect(oldTables, isEmpty);
 
         const newConnectionId = 'conn-2';
-        await migratedDatabase
+        final insertedConnectionId = await migratedDatabase
             .into(migratedDatabase.serviceConnections)
             .insert(
               ServiceConnectionsCompanion.insert(
@@ -259,7 +264,9 @@ void main() {
                 workspaceId: 'ws-1',
               ),
             );
-        await migratedDatabase
+        expect(insertedConnectionId, isA<int>());
+
+        final insertedSelectionId = await migratedDatabase
             .into(migratedDatabase.workspaceModelSelections)
             .insert(
               WorkspaceModelSelectionsCompanion.insert(
@@ -267,6 +274,7 @@ void main() {
                 modelConnectionId: newConnectionId,
               ),
             );
+        expect(insertedSelectionId, isA<int>());
       },
     );
 
