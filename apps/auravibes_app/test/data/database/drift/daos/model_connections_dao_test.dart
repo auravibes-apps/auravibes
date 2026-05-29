@@ -11,6 +11,7 @@
 // Required: Test fixtures are assigned in setUp.
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
@@ -47,10 +48,12 @@ void main() {
 
     test('insertModelConnection creates and returns connection', () async {
       final conn = await database.modelConnectionsDao.insertModelConnection(
-        ModelConnectionsCompanion.insert(
+        ServiceConnectionsCompanion.insert(
           name: 'My Connection',
-          modelId: 'gpt-4',
-          keyValue: 'secret-key',
+          serviceId: 'gpt-4',
+          kind: ServiceConnectionKindTable.modelProvider,
+          authenticationType: ServiceAuthenticationTypeTable.apiKey,
+          encryptedAuthValue: const Value('secret-key'),
           workspaceId: workspaceId,
         ),
       );
@@ -60,10 +63,12 @@ void main() {
 
     test('getModelConnectionById returns connection', () async {
       final created = await database.modelConnectionsDao.insertModelConnection(
-        ModelConnectionsCompanion.insert(
+        ServiceConnectionsCompanion.insert(
           name: 'Conn',
-          modelId: 'gpt-4',
-          keyValue: 'key',
+          serviceId: 'gpt-4',
+          kind: ServiceConnectionKindTable.modelProvider,
+          authenticationType: ServiceAuthenticationTypeTable.apiKey,
+          encryptedAuthValue: const Value('key'),
           workspaceId: workspaceId,
         ),
       );
@@ -85,24 +90,51 @@ void main() {
     });
 
     test(
+      'getModelConnectionById ignores non-model service connections',
+      () async {
+        final created = await database
+            .into(database.serviceConnections)
+            .insertReturning(
+              ServiceConnectionsCompanion.insert(
+                name: 'Custom API',
+                serviceId: 'custom-api',
+                kind: ServiceConnectionKindTable.customHttp,
+                authenticationType: ServiceAuthenticationTypeTable.bearerToken,
+                encryptedAuthValue: const Value('token'),
+                workspaceId: workspaceId,
+              ),
+            );
+
+        final found = await database.modelConnectionsDao.getModelConnectionById(
+          created.id,
+        );
+        expect(found, isNull);
+      },
+    );
+
+    test(
       'getAllModelConnectionsByWorkspace filters by workspace IDs',
       () async {
         final ws2 = await database.workspaceDao.insertWorkspace(
           WorkspacesCompanion.insert(name: 'WS2', type: WorkspaceType.local),
         );
         final _ = await database.modelConnectionsDao.insertModelConnection(
-          ModelConnectionsCompanion.insert(
+          ServiceConnectionsCompanion.insert(
             name: 'C1',
-            modelId: 'gpt-4',
-            keyValue: 'k1',
+            serviceId: 'gpt-4',
+            kind: ServiceConnectionKindTable.modelProvider,
+            authenticationType: ServiceAuthenticationTypeTable.apiKey,
+            encryptedAuthValue: const Value('k1'),
             workspaceId: workspaceId,
           ),
         );
         final _ = await database.modelConnectionsDao.insertModelConnection(
-          ModelConnectionsCompanion.insert(
+          ServiceConnectionsCompanion.insert(
             name: 'C2',
-            modelId: 'gpt-4',
-            keyValue: 'k2',
+            serviceId: 'gpt-4',
+            kind: ServiceConnectionKindTable.modelProvider,
+            authenticationType: ServiceAuthenticationTypeTable.apiKey,
+            encryptedAuthValue: const Value('k2'),
             workspaceId: ws2.id,
           ),
         );
@@ -122,18 +154,22 @@ void main() {
           WorkspacesCompanion.insert(name: 'WS2', type: WorkspaceType.local),
         );
         final _ = await database.modelConnectionsDao.insertModelConnection(
-          ModelConnectionsCompanion.insert(
+          ServiceConnectionsCompanion.insert(
             name: 'C1',
-            modelId: 'gpt-4',
-            keyValue: 'k1',
+            serviceId: 'gpt-4',
+            kind: ServiceConnectionKindTable.modelProvider,
+            authenticationType: ServiceAuthenticationTypeTable.apiKey,
+            encryptedAuthValue: const Value('k1'),
             workspaceId: workspaceId,
           ),
         );
         final _ = await database.modelConnectionsDao.insertModelConnection(
-          ModelConnectionsCompanion.insert(
+          ServiceConnectionsCompanion.insert(
             name: 'C2',
-            modelId: 'gpt-4',
-            keyValue: 'k2',
+            serviceId: 'gpt-4',
+            kind: ServiceConnectionKindTable.modelProvider,
+            authenticationType: ServiceAuthenticationTypeTable.apiKey,
+            encryptedAuthValue: const Value('k2'),
             workspaceId: ws2.id,
           ),
         );
@@ -147,10 +183,12 @@ void main() {
 
     test('deleteModelConnection removes connection', () async {
       final created = await database.modelConnectionsDao.insertModelConnection(
-        ModelConnectionsCompanion.insert(
+        ServiceConnectionsCompanion.insert(
           name: 'C',
-          modelId: 'gpt-4',
-          keyValue: 'k',
+          serviceId: 'gpt-4',
+          kind: ServiceConnectionKindTable.modelProvider,
+          authenticationType: ServiceAuthenticationTypeTable.apiKey,
+          encryptedAuthValue: const Value('k'),
           workspaceId: workspaceId,
         ),
       );
@@ -160,5 +198,30 @@ void main() {
         isNull,
       );
     });
+
+    test(
+      'deleteModelConnection ignores non-model service connections',
+      () async {
+        final created = await database
+            .into(database.serviceConnections)
+            .insertReturning(
+              ServiceConnectionsCompanion.insert(
+                name: 'Custom API',
+                serviceId: 'custom-api',
+                kind: ServiceConnectionKindTable.customHttp,
+                authenticationType: ServiceAuthenticationTypeTable.bearerToken,
+                encryptedAuthValue: const Value('token'),
+                workspaceId: workspaceId,
+              ),
+            );
+
+        await database.modelConnectionsDao.deleteModelConnection(created.id);
+
+        final remaining = await (database.select(
+          database.serviceConnections,
+        )..where((t) => t.id.equals(created.id))).getSingleOrNull();
+        expect(remaining, isNotNull);
+      },
+    );
   });
 }

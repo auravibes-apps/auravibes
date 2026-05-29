@@ -11,6 +11,7 @@
 import 'dart:async';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
@@ -50,10 +51,12 @@ void main() {
         ApiModelProvidersCompanion.insert(id: 'openai', name: 'OpenAI'),
       );
       final conn = await database.modelConnectionsDao.insertModelConnection(
-        ModelConnectionsCompanion.insert(
+        ServiceConnectionsCompanion.insert(
           name: 'Conn',
-          modelId: 'openai',
-          keyValue: 'key',
+          serviceId: 'openai',
+          kind: ServiceConnectionKindTable.modelProvider,
+          authenticationType: ServiceAuthenticationTypeTable.apiKey,
+          encryptedAuthValue: const Value('key'),
           workspaceId: workspaceId,
         ),
       );
@@ -77,10 +80,12 @@ void main() {
         ApiModelProvidersCompanion.insert(id: 'openai', name: 'OpenAI'),
       );
       final conn = await database.modelConnectionsDao.insertModelConnection(
-        ModelConnectionsCompanion.insert(
+        ServiceConnectionsCompanion.insert(
           name: 'Conn',
-          modelId: 'openai',
-          keyValue: 'key',
+          serviceId: 'openai',
+          kind: ServiceConnectionKindTable.modelProvider,
+          authenticationType: ServiceAuthenticationTypeTable.apiKey,
+          encryptedAuthValue: const Value('key'),
           workspaceId: workspaceId,
         ),
       );
@@ -124,10 +129,12 @@ void main() {
         ApiModelProvidersCompanion.insert(id: 'openai', name: 'OpenAI'),
       );
       final conn = await database.modelConnectionsDao.insertModelConnection(
-        ModelConnectionsCompanion.insert(
+        ServiceConnectionsCompanion.insert(
           name: 'Conn',
-          modelId: 'openai',
-          keyValue: 'key',
+          serviceId: 'openai',
+          kind: ServiceConnectionKindTable.modelProvider,
+          authenticationType: ServiceAuthenticationTypeTable.apiKey,
+          encryptedAuthValue: const Value('key'),
           workspaceId: workspaceId,
         ),
       );

@@ -7,9 +7,8 @@ mixin _$MessageDaoMixin on DatabaseAccessor<AppDatabase> {
   $WorkspacesTable get workspaces => attachedDatabase.workspaces;
   $ApiModelProvidersTable get apiModelProviders =>
       attachedDatabase.apiModelProviders;
-  $ApiModelsTable get apiModels => attachedDatabase.apiModels;
-  $ModelConnectionsTable get modelConnections =>
-      attachedDatabase.modelConnections;
+  $ServiceConnectionsTable get serviceConnections =>
+      attachedDatabase.serviceConnections;
   $WorkspaceModelSelectionsTable get workspaceModelSelections =>
       attachedDatabase.workspaceModelSelections;
   $ConversationsTable get conversations => attachedDatabase.conversations;
@@ -27,12 +26,10 @@ class MessageDaoManager {
         _db.attachedDatabase,
         _db.apiModelProviders,
       );
-  $$ApiModelsTableTableManager get apiModels =>
-      $$ApiModelsTableTableManager(_db.attachedDatabase, _db.apiModels);
-  $$ModelConnectionsTableTableManager get modelConnections =>
-      $$ModelConnectionsTableTableManager(
+  $$ServiceConnectionsTableTableManager get serviceConnections =>
+      $$ServiceConnectionsTableTableManager(
         _db.attachedDatabase,
-        _db.modelConnections,
+        _db.serviceConnections,
       );
   $$WorkspaceModelSelectionsTableTableManager get workspaceModelSelections =>
       $$WorkspaceModelSelectionsTableTableManager(

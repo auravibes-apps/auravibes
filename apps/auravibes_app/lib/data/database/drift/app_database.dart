@@ -25,8 +25,8 @@ import 'package:auravibes_app/data/database/drift/tables/conversation_tools.dart
 import 'package:auravibes_app/data/database/drift/tables/conversations.dart';
 import 'package:auravibes_app/data/database/drift/tables/mcp_servers.dart';
 import 'package:auravibes_app/data/database/drift/tables/messages.dart';
-import 'package:auravibes_app/data/database/drift/tables/model_connections.dart';
 import 'package:auravibes_app/data/database/drift/tables/model_providers_table_type.dart';
+import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools_groups.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_compaction_settings.dart';
@@ -46,7 +46,7 @@ part 'app_database.g.dart';
 @DriftDatabase(
   tables: [
     Workspaces,
-    ModelConnections,
+    ServiceConnections,
     WorkspaceModelSelections,
     ApiModelProviders,
     ApiModels,
@@ -86,7 +86,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// Database schema version.
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   /// Migration logic for database schema upgrades.
   @override
@@ -101,6 +101,45 @@ class AppDatabase extends _$AppDatabase {
         }
         if (from < 3) {
           await m.addColumn(apiModels, apiModels.supportsReasoning);
+        }
+        if (from < 4) {
+          await m.createTable(serviceConnections);
+          await customStatement(
+            '''
+            INSERT INTO service_connections (
+              id,
+              created_at,
+              updated_at,
+              name,
+              service_id,
+              kind,
+              authentication_type,
+              url,
+              encrypted_auth_value,
+              key_suffix,
+              metadata_json,
+              workspace_id,
+              is_enabled
+            )
+            SELECT
+              id,
+              created_at,
+              updated_at,
+              name,
+              model_id,
+              'modelProvider',
+              'apiKey',
+              url,
+              key_value,
+              key_suffix,
+              NULL,
+              workspace_id,
+              1
+            FROM model_connections
+            ''',
+          );
+          await m.alterTable(TableMigration(workspaceModelSelections));
+          await m.deleteTable('model_connections');
         }
       },
     );
