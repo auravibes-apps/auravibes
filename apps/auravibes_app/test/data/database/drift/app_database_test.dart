@@ -13,10 +13,12 @@
 // Required: Test fixtures are assigned in setUp.
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sqlite3/sqlite3.dart' as sqlite;
 
 QueryExecutor createTestConnection() {
   return DatabaseConnection.delayed(
@@ -26,6 +28,82 @@ QueryExecutor createTestConnection() {
       );
     }),
   );
+}
+
+void _createVersionThreeSchema(sqlite.Database database) {
+  database
+    ..execute('''
+      CREATE TABLE workspaces (
+        id TEXT NOT NULL PRIMARY KEY,
+        created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+        updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
+        name TEXT NOT NULL,
+        type TEXT NOT NULL
+      )
+    ''')
+    ..execute('''
+      CREATE TABLE model_connections (
+        id TEXT NOT NULL PRIMARY KEY,
+        created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+        updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
+        name TEXT NOT NULL,
+        model_id TEXT NOT NULL,
+        url TEXT,
+        key_value TEXT NOT NULL,
+        key_suffix TEXT,
+        workspace_id TEXT NOT NULL REFERENCES workspaces (id) ON DELETE CASCADE
+      )
+    ''')
+    ..execute('''
+      CREATE TABLE api_model_providers (
+        id TEXT NOT NULL PRIMARY KEY,
+        name TEXT NOT NULL,
+        type TEXT,
+        url TEXT
+      )
+    ''')
+    ..execute('''
+      CREATE TABLE workspace_model_selections (
+        id TEXT NOT NULL PRIMARY KEY,
+        created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+        updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
+        model_id TEXT NOT NULL,
+        model_connection_id TEXT NOT NULL
+          REFERENCES model_connections (id) ON DELETE CASCADE
+      )
+    ''')
+    ..execute(
+      "INSERT INTO workspaces (id, name, type) VALUES ('ws-1', 'WS', 'local')",
+    )
+    ..execute('''
+      INSERT INTO api_model_providers (id, name)
+      VALUES ('openai', 'OpenAI'), ('anthropic', 'Anthropic')
+    ''')
+    ..execute('''
+      INSERT INTO model_connections (
+        id,
+        name,
+        model_id,
+        key_value,
+        key_suffix,
+        workspace_id
+      ) VALUES (
+        'conn-1',
+        'OpenAI',
+        'openai',
+        'encrypted-key',
+        'key',
+        'ws-1'
+      )
+    ''')
+    ..execute('''
+      INSERT INTO workspace_model_selections (
+        id,
+        model_id,
+        model_connection_id
+      ) VALUES ('selection-1', 'gpt-4', 'conn-1')
+    ''')
+    ..execute('PRAGMA user_version = 3');
 }
 
 void main() {
@@ -41,7 +119,7 @@ void main() {
     });
 
     test('has correct schema version', () {
-      expect(database.schemaVersion, 3);
+      expect(database.schemaVersion, 4);
     });
 
     test('creates successfully with in-memory connection', () {
@@ -128,9 +206,69 @@ void main() {
       expect(strategy, isNotNull);
     });
 
-    test('schemaVersion is 3', () {
-      expect(database.schemaVersion, 3);
+    test('schemaVersion is 4', () {
+      expect(database.schemaVersion, 4);
     });
+
+    test(
+      'migration from v3 copies model connections and updates selection FK',
+      () async {
+        await database.close();
+        final rawDatabase = sqlite.sqlite3.openInMemory();
+        _createVersionThreeSchema(rawDatabase);
+
+        final migratedDatabase = AppDatabase(
+          connection: NativeDatabase.opened(rawDatabase),
+        );
+        database = migratedDatabase;
+
+        final connections = await migratedDatabase
+            .select(migratedDatabase.serviceConnections)
+            .get();
+        expect(connections, hasLength(1));
+        expect(connections.first.serviceId, 'openai');
+        expect(connections.first.encryptedAuthValue, 'encrypted-key');
+
+        final foreignKeys = await migratedDatabase
+            .customSelect('PRAGMA foreign_key_list(workspace_model_selections)')
+            .get();
+        final foreignKeyTables = foreignKeys
+            .map((row) => row.read<String>('table'))
+            .toList();
+        expect(foreignKeyTables, contains('service_connections'));
+        expect(foreignKeyTables, isNot(contains('model_connections')));
+
+        final oldTables = await migratedDatabase
+            .customSelect(
+              "SELECT name FROM sqlite_master WHERE name = 'model_connections'",
+            )
+            .get();
+        expect(oldTables, isEmpty);
+
+        const newConnectionId = 'conn-2';
+        await migratedDatabase
+            .into(migratedDatabase.serviceConnections)
+            .insert(
+              ServiceConnectionsCompanion.insert(
+                id: const Value(newConnectionId),
+                name: 'New Connection',
+                serviceId: 'anthropic',
+                kind: ServiceConnectionKindTable.modelProvider,
+                authenticationType: ServiceAuthenticationTypeTable.apiKey,
+                encryptedAuthValue: const Value('new-key'),
+                workspaceId: 'ws-1',
+              ),
+            );
+        await migratedDatabase
+            .into(migratedDatabase.workspaceModelSelections)
+            .insert(
+              WorkspaceModelSelectionsCompanion.insert(
+                modelId: 'anthropic',
+                modelConnectionId: newConnectionId,
+              ),
+            );
+      },
+    );
 
     test('getDatabaseStats returns valid types', () async {
       final stats = await database.getDatabaseStats();

@@ -7,6 +7,7 @@
 // ignore_for_file: prefer-moving-to-variable
 // Required: Existing code repeats lookups where extraction adds noise.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/repositories/model_connection_repository.dart';
@@ -107,29 +108,31 @@ class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
     return modelConnections.map(_modelProviderTableToEntity).toList();
   }
 
-  ModelConnectionsCompanion _modelProviderToCreateToCompanion(
+  ServiceConnectionsCompanion _modelProviderToCreateToCompanion(
     ModelConnectionToCreate modelConnection,
     String encryptedApiKey,
     String keySuffix,
   ) {
-    return ModelConnectionsCompanion(
+    return ServiceConnectionsCompanion(
       name: .new(modelConnection.name),
-      modelId: .new(modelConnection.modelId),
+      serviceId: .new(modelConnection.modelId),
+      kind: const Value(ServiceConnectionKindTable.modelProvider),
+      authenticationType: const Value(ServiceAuthenticationTypeTable.apiKey),
       url: .absentIfNull(modelConnection.url),
-      keyValue: .new(encryptedApiKey),
+      encryptedAuthValue: .new(encryptedApiKey),
       keySuffix: .new(keySuffix),
       workspaceId: .new(modelConnection.workspaceId),
     );
   }
 
   ModelConnectionEntity _modelProviderTableToEntity(
-    ModelConnectionTable modelConnection,
+    ServiceConnectionTable modelConnection,
   ) {
     return ModelConnectionEntity(
       id: modelConnection.id,
       name: modelConnection.name,
-      key: modelConnection.keyValue,
-      modelId: modelConnection.modelId,
+      key: modelConnection.encryptedAuthValue ?? '',
+      modelId: modelConnection.serviceId,
       createdAt: modelConnection.createdAt,
       updatedAt: modelConnection.updatedAt,
       workspaceId: modelConnection.workspaceId,

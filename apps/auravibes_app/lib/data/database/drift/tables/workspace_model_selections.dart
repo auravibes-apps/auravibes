@@ -3,8 +3,8 @@
 // coverage:ignore-file
 // Required: Drift table DSL is unreachable at runtime
 // (see api_models.dart).
-import 'package:auravibes_app/data/database/drift/tables/model_connections.dart';
 import 'package:auravibes_app/data/database/drift/tables/model_providers_table_type.dart';
+import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/data/database/drift/tables/table_mixin.dart';
 import 'package:drift/drift.dart';
 
@@ -15,7 +15,7 @@ class WorkspaceModelSelections extends Table with TableMixin {
   TextColumn get modelId => text().references(ApiModelProviders, #id)();
 
   TextColumn get modelConnectionId => text().references(
-    ModelConnections,
+    ServiceConnections,
     #id,
     onDelete: KeyAction.cascade,
   )();

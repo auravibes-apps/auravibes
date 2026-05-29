@@ -95,8 +95,8 @@ class WorkspaceModelSelectionRepositoryImpl
       modelConnection: ModelConnectionEntity(
         id: withProvider.modelConnection.id,
         name: withProvider.modelConnection.name,
-        key: withProvider.modelConnection.keyValue,
-        modelId: withProvider.modelConnection.modelId,
+        key: withProvider.modelConnection.encryptedAuthValue ?? '',
+        modelId: withProvider.modelConnection.serviceId,
         createdAt: withProvider.modelConnection.createdAt,
         updatedAt: withProvider.modelConnection.updatedAt,
         workspaceId: withProvider.modelConnection.workspaceId,

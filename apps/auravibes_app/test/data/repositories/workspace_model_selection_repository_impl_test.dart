@@ -11,6 +11,7 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_model_selection_with_connection.dart';
 import 'package:auravibes_app/data/database/drift/tables/model_providers_table_type.dart';
+import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/data/repositories/workspace_model_selection_repository_impl.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
@@ -84,15 +85,18 @@ void main() {
             modelId: 'openai',
             modelConnectionId: 'conn-1',
           ),
-          modelConnection: ModelConnectionTable(
+          modelConnection: ServiceConnectionTable(
             id: 'conn-1',
             createdAt: now,
             updatedAt: now,
             name: 'My Connection',
-            modelId: 'openai',
-            keyValue: 'encrypted-key',
+            serviceId: 'openai',
+            kind: ServiceConnectionKindTable.modelProvider,
+            authenticationType: ServiceAuthenticationTypeTable.apiKey,
+            encryptedAuthValue: 'encrypted-key',
             keySuffix: 'abc123',
             workspaceId: 'ws-1',
+            isEnabled: true,
           ),
           modelProvider: const ApiModelProvidersTable(
             id: 'openai',
@@ -146,14 +150,17 @@ void main() {
             modelId: 'openai',
             modelConnectionId: 'conn-1',
           ),
-          modelConnection: ModelConnectionTable(
+          modelConnection: ServiceConnectionTable(
             id: 'conn-1',
             createdAt: now,
             updatedAt: now,
             name: 'My Connection',
-            modelId: 'openai',
-            keyValue: 'key',
+            serviceId: 'openai',
+            kind: ServiceConnectionKindTable.modelProvider,
+            authenticationType: ServiceAuthenticationTypeTable.apiKey,
+            encryptedAuthValue: 'key',
             workspaceId: 'ws-1',
+            isEnabled: true,
           ),
           modelProvider: const ApiModelProvidersTable(
             id: 'openai',
@@ -200,14 +207,17 @@ void main() {
             modelId: 'test',
             modelConnectionId: 'conn-1',
           ),
-          modelConnection: ModelConnectionTable(
+          modelConnection: ServiceConnectionTable(
             id: 'conn-1',
             createdAt: now,
             updatedAt: now,
             name: 'Conn',
-            modelId: 'test',
-            keyValue: 'key',
+            serviceId: 'test',
+            kind: ServiceConnectionKindTable.modelProvider,
+            authenticationType: ServiceAuthenticationTypeTable.apiKey,
+            encryptedAuthValue: 'key',
             workspaceId: 'ws-1',
+            isEnabled: true,
           ),
           modelProvider: const ApiModelProvidersTable(
             id: 'test',
@@ -238,14 +248,17 @@ void main() {
             modelId: 'anthropic',
             modelConnectionId: 'conn-1',
           ),
-          modelConnection: ModelConnectionTable(
+          modelConnection: ServiceConnectionTable(
             id: 'conn-1',
             createdAt: now,
             updatedAt: now,
             name: 'Conn',
-            modelId: 'anthropic',
-            keyValue: 'key',
+            serviceId: 'anthropic',
+            kind: ServiceConnectionKindTable.modelProvider,
+            authenticationType: ServiceAuthenticationTypeTable.apiKey,
+            encryptedAuthValue: 'key',
             workspaceId: 'ws-1',
+            isEnabled: true,
           ),
           modelProvider: const ApiModelProvidersTable(
             id: 'anthropic',
