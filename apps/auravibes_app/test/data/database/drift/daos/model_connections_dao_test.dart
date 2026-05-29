@@ -90,6 +90,29 @@ void main() {
     });
 
     test(
+      'getModelConnectionById ignores non-model service connections',
+      () async {
+        final created = await database
+            .into(database.serviceConnections)
+            .insertReturning(
+              ServiceConnectionsCompanion.insert(
+                name: 'Custom API',
+                serviceId: 'custom-api',
+                kind: ServiceConnectionKindTable.customHttp,
+                authenticationType: ServiceAuthenticationTypeTable.bearerToken,
+                encryptedAuthValue: const Value('token'),
+                workspaceId: workspaceId,
+              ),
+            );
+
+        final found = await database.modelConnectionsDao.getModelConnectionById(
+          created.id,
+        );
+        expect(found, isNull);
+      },
+    );
+
+    test(
       'getAllModelConnectionsByWorkspace filters by workspace IDs',
       () async {
         final ws2 = await database.workspaceDao.insertWorkspace(
@@ -175,5 +198,30 @@ void main() {
         isNull,
       );
     });
+
+    test(
+      'deleteModelConnection ignores non-model service connections',
+      () async {
+        final created = await database
+            .into(database.serviceConnections)
+            .insertReturning(
+              ServiceConnectionsCompanion.insert(
+                name: 'Custom API',
+                serviceId: 'custom-api',
+                kind: ServiceConnectionKindTable.customHttp,
+                authenticationType: ServiceAuthenticationTypeTable.bearerToken,
+                encryptedAuthValue: const Value('token'),
+                workspaceId: workspaceId,
+              ),
+            );
+
+        await database.modelConnectionsDao.deleteModelConnection(created.id);
+
+        final remaining = await (database.select(
+          database.serviceConnections,
+        )..where((t) => t.id.equals(created.id))).getSingleOrNull();
+        expect(remaining, isNotNull);
+      },
+    );
   });
 }

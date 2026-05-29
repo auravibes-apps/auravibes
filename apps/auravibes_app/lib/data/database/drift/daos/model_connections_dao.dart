@@ -26,8 +26,13 @@ class ModelConnectionsDao extends DatabaseAccessor<AppDatabase>
 
   Future<ServiceConnectionTable?> getModelConnectionById(String id) {
     return (select(
-      serviceConnections,
-    )..where((t) => t.id.equals(id))).getSingleOrNull();
+          serviceConnections,
+        )..where(
+          (t) =>
+              t.id.equals(id) &
+              t.kind.equals(ServiceConnectionKindTable.modelProvider.name),
+        ))
+        .getSingleOrNull();
   }
 
   Future<ServiceConnectionTable> insertModelConnection(
@@ -37,6 +42,11 @@ class ModelConnectionsDao extends DatabaseAccessor<AppDatabase>
   }
 
   Future<void> deleteModelConnection(String id) {
-    return (delete(serviceConnections)..where((t) => t.id.equals(id))).go();
+    return (delete(serviceConnections)..where(
+          (t) =>
+              t.id.equals(id) &
+              t.kind.equals(ServiceConnectionKindTable.modelProvider.name),
+        ))
+        .go();
   }
 }
