@@ -36,7 +36,7 @@ dependencies:
   genkit: ^0.14.0
   genkit_anthropic: ^0.2.8
   genkit_openai: ^0.3.3
-  go_router: ^17.2.3
+  go_router: ^17.3.0
   hooks_riverpod: 3.3.2-dev.2
   html: ^0.15.6
   http: ^1.6.0
