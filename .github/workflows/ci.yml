@@ -75,7 +75,7 @@ jobs:
           mkdir -p .fvm
           ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
 
-      - uses: bluefireteam/melos-action@ef13f68118735113cb48b82cd5ba876da9c3f17c
+      - uses: bluefireteam/melos-action@2982f8e4fc92440a219490009d6d05195cb1a6a5
         with:
           run-bootstrap: true
 
@@ -156,7 +156,7 @@ jobs:
           mkdir -p .fvm
           ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
 
-      - uses: bluefireteam/melos-action@ef13f68118735113cb48b82cd5ba876da9c3f17c
+      - uses: bluefireteam/melos-action@2982f8e4fc92440a219490009d6d05195cb1a6a5
         with:
           run-bootstrap: true
 
@@ -263,7 +263,7 @@ jobs:
           mkdir -p .fvm
           ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
 
-      - uses: bluefireteam/melos-action@ef13f68118735113cb48b82cd5ba876da9c3f17c
+      - uses: bluefireteam/melos-action@2982f8e4fc92440a219490009d6d05195cb1a6a5
         with:
           run-bootstrap: true
 
@@ -384,7 +384,7 @@ jobs:
 
       - name: 📦 Bootstrap workspace dependencies
         if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
-        uses: bluefireteam/melos-action@ef13f68118735113cb48b82cd5ba876da9c3f17c
+        uses: bluefireteam/melos-action@2982f8e4fc92440a219490009d6d05195cb1a6a5
         with:
           run-bootstrap: true
 
