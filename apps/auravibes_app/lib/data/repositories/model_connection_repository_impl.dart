@@ -148,11 +148,11 @@ class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
     final keyForValidation =
         key ?? await _encryptionService.decrypt(existingEncryptedKey!);
     final hasUrlUpdate = modelConnection.url != null;
-    final nextUrl = hasUrlUpdate
-        ? modelConnection.url!.trim().isEmpty
-              ? null
-              : modelConnection.url
-        : existing.url;
+    var nextUrl = existing.url;
+    if (hasUrlUpdate) {
+      final updatedUrl = modelConnection.url!.trim();
+      nextUrl = updatedUrl.isEmpty ? null : modelConnection.url;
+    }
     final models = await _modelProviderServices.getWorkspaceModelSelections(
       ModelProvider(
         type: .fromString(modelType.value),

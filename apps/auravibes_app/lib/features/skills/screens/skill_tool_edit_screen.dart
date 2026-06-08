@@ -80,27 +80,12 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
         skillDetailAsync.value?.credentialDefinitionId != null;
 
     return AuraScreen(
-      child: toolId == null
-          ? _buildForm(context, null, skillHasCredentialDefinition)
-          : switch (toolAsync!) {
-              AsyncData(:final value) =>
-                value == null
-                    ? const Center(
-                        child: TextLocale(LocaleKeys.skills_tool_not_found),
-                      )
-                    : _buildForm(context, value, skillHasCredentialDefinition),
-              AsyncLoading() when currentTool != null => _buildForm(
-                context,
-                currentTool,
-                skillHasCredentialDefinition,
-              ),
-              AsyncLoading() => const Center(
-                child: AuraSpinner(),
-              ),
-              AsyncError() => const Center(
-                child: TextLocale(LocaleKeys.skills_tool_load_error),
-              ),
-            },
+      child: _buildBody(
+        context,
+        toolAsync,
+        currentTool,
+        skillHasCredentialDefinition,
+      ),
       appBar: AuraAppBar(
         title: TextLocale(
           _isCreate
@@ -120,6 +105,50 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildBody(
+    BuildContext context,
+    AsyncValue<SkillTemplateToolEntity?>? toolAsync,
+    SkillTemplateToolEntity? currentTool,
+    bool skillHasCredentialDefinition,
+  ) {
+    if (toolAsync == null) {
+      return _buildForm(context, null, skillHasCredentialDefinition);
+    }
+
+    return switch (toolAsync) {
+      AsyncData(:final value) => _buildLoadedBody(
+        context,
+        value,
+        skillHasCredentialDefinition,
+      ),
+      AsyncLoading() when currentTool != null => _buildForm(
+        context,
+        currentTool,
+        skillHasCredentialDefinition,
+      ),
+      AsyncLoading() => const Center(
+        child: AuraSpinner(),
+      ),
+      AsyncError() => const Center(
+        child: TextLocale(LocaleKeys.skills_tool_load_error),
+      ),
+    };
+  }
+
+  Widget _buildLoadedBody(
+    BuildContext context,
+    SkillTemplateToolEntity? tool,
+    bool skillHasCredentialDefinition,
+  ) {
+    if (tool == null) {
+      return const Center(
+        child: TextLocale(LocaleKeys.skills_tool_not_found),
+      );
+    }
+
+    return _buildForm(context, tool, skillHasCredentialDefinition);
   }
 
   Widget _buildForm(

@@ -308,24 +308,14 @@ class _SkillCredentialEditForm extends StatelessWidget {
                 onChanged: (_) => onChanged(),
               ),
               for (final entry in attributes.entries)
-                entry.value.secret
-                    ? _SecretAttributeInput(
-                        name: entry.key,
-                        definition: entry.value,
-                        state: state.credential.secretAttributes[entry.key],
-                        controller: secretControllers[entry.key]!,
-                        clearedSecrets: clearedSecrets,
-                        onChanged: onChanged,
-                      )
-                    : AuraInput(
-                        controller: nonSecretControllers[entry.key],
-                        label: Text(entry.key),
-                        hint: entry.value.description.isEmpty
-                            ? null
-                            : Text(entry.value.description),
-                        isRequired: !entry.value.optional,
-                        onChanged: (_) => onChanged(),
-                      ),
+                _buildAttributeInput(
+                  entry,
+                  state,
+                  secretControllers,
+                  nonSecretControllers,
+                  clearedSecrets,
+                  onChanged,
+                ),
               Align(
                 alignment: Alignment.centerRight,
                 child: AuraButton(
@@ -339,6 +329,36 @@ class _SkillCredentialEditForm extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildAttributeInput(
+    MapEntry<String, SkillCredentialAttributeDefinition> entry,
+    _SkillCredentialEditState state,
+    Map<String, TextEditingController> secretControllers,
+    Map<String, TextEditingController> nonSecretControllers,
+    Set<String> clearedSecrets,
+    VoidCallback onChanged,
+  ) {
+    if (entry.value.secret) {
+      return _SecretAttributeInput(
+        name: entry.key,
+        definition: entry.value,
+        state: state.credential.secretAttributes[entry.key],
+        controller: secretControllers[entry.key]!,
+        clearedSecrets: clearedSecrets,
+        onChanged: onChanged,
+      );
+    }
+
+    final description = entry.value.description;
+    final hint = description.isEmpty ? null : Text(description);
+    return AuraInput(
+      controller: nonSecretControllers[entry.key],
+      label: Text(entry.key),
+      hint: hint,
+      isRequired: !entry.value.optional,
+      onChanged: (_) => onChanged(),
     );
   }
 }
@@ -363,10 +383,13 @@ class _SecretAttributeInput extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final keySuffix = state?.keySuffix;
-    final placeholder = state?.hasValue == true
-        ? '${LocaleKeys.skill_credentials_secret_saved.tr(context: context)}'
-              '${keySuffix == null ? '' : ' ****$keySuffix'}'
-        : null;
+    String? placeholder;
+    if (state?.hasValue == true) {
+      final suffix = keySuffix == null ? '' : ' ****$keySuffix';
+      placeholder =
+          '${LocaleKeys.skill_credentials_secret_saved.tr(context: context)}'
+          '$suffix';
+    }
 
     return AuraInput(
       controller: controller,

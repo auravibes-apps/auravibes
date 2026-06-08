@@ -68,32 +68,12 @@ class BuildSkillTemplateToolSpecsUsecase {
         if (!entry.value.optional) entry.key,
     ];
 
-    final credentialDefinitionId = skill.credentialDefinitionId;
-    final credentialProperties = <String, Object>{};
-    final requiredFields = [...requiredInputs];
-    if (credentialDefinitionId == null) {
-      if (tool.requiresCredential) return null;
-    } else {
-      final credentials = await _skillCredentialsRepository
-          .getCredentialsForDefinition(
-            workspaceId: workspaceId,
-            credentialDefinitionId: credentialDefinitionId,
-          );
-      if (credentials.isEmpty) {
-        if (tool.requiresCredential) return null;
-      } else {
-        credentialProperties['credentialId'] = {
-          'type': 'string',
-          'enum': [for (final credential in credentials) credential.id],
-          'description':
-              'Credential id to use for this skill tool. Use '
-              'list_skill_credentials to inspect available credential names.',
-        };
-      }
-      if (tool.requiresCredential) {
-        requiredFields.add('credentialId');
-      }
-    }
+    final credentialSchema = await _buildCredentialSchema(
+      workspaceId: workspaceId,
+      skill: skill,
+      tool: tool,
+    );
+    if (credentialSchema == null) return null;
 
     return ToolSpec(
       name: skillTemplateToolCompositeId(
@@ -107,13 +87,62 @@ class BuildSkillTemplateToolSpecsUsecase {
         'type': 'object',
         'properties': {
           ...inputProperties,
-          ...credentialProperties,
+          ...credentialSchema.properties,
         },
-        'required': requiredFields,
+        'required': [...requiredInputs, ...credentialSchema.requiredFields],
         'additionalProperties': false,
       },
     );
   }
+
+  Future<_CredentialSchema?> _buildCredentialSchema({
+    required String workspaceId,
+    required AvailableSkill skill,
+    required SkillTemplateToolEntity tool,
+  }) async {
+    final credentialDefinitionId = skill.credentialDefinitionId;
+    if (credentialDefinitionId == null) {
+      return tool.requiresCredential ? null : const _CredentialSchema.empty();
+    }
+
+    final credentials = await _skillCredentialsRepository
+        .getCredentialsForDefinition(
+          workspaceId: workspaceId,
+          credentialDefinitionId: credentialDefinitionId,
+        );
+    if (credentials.isEmpty) {
+      return tool.requiresCredential ? null : const _CredentialSchema.empty();
+    }
+
+    return _CredentialSchema(
+      properties: {
+        'credentialId': {
+          'type': 'string',
+          'enum': [for (final credential in credentials) credential.id],
+          'description':
+              'Credential id to use for this skill tool. Use '
+              'list_skill_credentials to inspect available credential names.',
+        },
+      },
+      requiredFields: tool.requiresCredential
+          ? const ['credentialId']
+          : const [],
+    );
+  }
+}
+
+class _CredentialSchema {
+  const _CredentialSchema({
+    required this.properties,
+    required this.requiredFields,
+  });
+
+  const _CredentialSchema.empty()
+    : properties = const {},
+      requiredFields = const [];
+
+  final Map<String, Object> properties;
+  final List<String> requiredFields;
 }
 
 final buildSkillTemplateToolSpecsUsecaseProvider =

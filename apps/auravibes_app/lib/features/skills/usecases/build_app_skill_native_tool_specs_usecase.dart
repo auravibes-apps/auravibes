@@ -23,6 +23,7 @@ const updateSkillCredentialDefinitionToolSlug =
     'update_skill_credential_definition';
 const deleteSkillCredentialDefinitionToolSlug =
     'delete_skill_credential_definition';
+const _currentWorkspaceSentence = 'current workspace.';
 
 class BuildAppSkillNativeToolSpecsUsecase {
   const BuildAppSkillNativeToolSpecsUsecase(this._listAvailableSkillsUsecase);
@@ -274,7 +275,7 @@ class BuildAppSkillNativeToolSpecsUsecase {
         name: 'skill__app__skills_manager__get_skill_credential_definition',
         description:
             'Get one reusable user credential definition by slug in the '
-            'current workspace.',
+            '$_currentWorkspaceSentence',
         inputJsonSchema: {
           'type': 'object',
           'properties': {
@@ -309,7 +310,7 @@ class BuildAppSkillNativeToolSpecsUsecase {
         name: 'skill__app__skills_manager__update_skill_credential_definition',
         description:
             'Update a reusable user credential definition by slug in the '
-            'current workspace.',
+            '$_currentWorkspaceSentence',
         inputJsonSchema: {
           'type': 'object',
           'properties': {
@@ -331,7 +332,7 @@ class BuildAppSkillNativeToolSpecsUsecase {
         name: 'skill__app__skills_manager__delete_skill_credential_definition',
         description:
             'Delete a reusable user credential definition by slug in the '
-            'current workspace.',
+            '$_currentWorkspaceSentence',
         inputJsonSchema: {
           'type': 'object',
           'properties': {

@@ -187,15 +187,13 @@ class ToolResolverService {
   ) {
     const userPrefix = 'skill__user__';
     const appPrefix = 'skill__app__';
-    final source = compositeId.startsWith(userPrefix)
-        ? 'user'
-        : compositeId.startsWith(appPrefix)
-        ? 'app'
-        : null;
-    if (source == null) return null;
+    final isUserTool = compositeId.startsWith(userPrefix);
+    final isAppTool = compositeId.startsWith(appPrefix);
+    if (!isUserTool && !isAppTool) return null;
 
+    final source = isUserTool ? 'user' : 'app';
     final withoutPrefix = compositeId.substring(
-      source == 'user' ? userPrefix.length : appPrefix.length,
+      isUserTool ? userPrefix.length : appPrefix.length,
     );
     final separatorIndex = withoutPrefix.indexOf('__');
     if (separatorIndex <= 0) return null;

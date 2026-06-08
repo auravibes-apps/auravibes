@@ -29,6 +29,9 @@ import 'package:auravibes_app/services/tools/tool_service.dart';
 import 'package:collection/collection.dart';
 import 'package:riverpod/riverpod.dart';
 
+const _conversationRepositoryNotConfigured =
+    'ConversationRepository is not configured.';
+
 typedef McpToolCaller =
     Future<String> Function({
       required String mcpServerId,
@@ -194,7 +197,7 @@ class RunResolvedToolUsecase {
 
     final repository = conversationRepository;
     if (repository == null) {
-      throw StateError('ConversationRepository is not configured.');
+      throw StateError(_conversationRepositoryNotConfigured);
     }
     final conversation = await repository.getConversationById(
       conversationId,
@@ -240,7 +243,7 @@ class RunResolvedToolUsecase {
     }
     final repository = conversationRepository;
     if (repository == null) {
-      throw StateError('ConversationRepository is not configured.');
+      throw StateError(_conversationRepositoryNotConfigured);
     }
     final conversation = await repository.getConversationById(
       conversationId,
@@ -293,7 +296,7 @@ class RunResolvedToolUsecase {
     }
     final repository = conversationRepository;
     if (repository == null) {
-      throw StateError('ConversationRepository is not configured.');
+      throw StateError(_conversationRepositoryNotConfigured);
     }
     final conversation = await repository.getConversationById(
       conversationId,
@@ -328,7 +331,7 @@ class RunResolvedToolUsecase {
     }
     final repository = conversationRepository;
     if (repository == null) {
-      throw StateError('ConversationRepository is not configured.');
+      throw StateError(_conversationRepositoryNotConfigured);
     }
     final conversation = await repository.getConversationById(
       conversationId,

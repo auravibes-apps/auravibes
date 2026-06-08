@@ -56,30 +56,7 @@ class _SkillCredentialDefinitionEditScreenState
     final currentDefinition = definitionAsync?.value;
 
     return AuraScreen(
-      child: definitionId == null
-          ? _buildForm(context, null)
-          : switch (definitionAsync!) {
-              AsyncData(:final value) =>
-                value == null
-                    ? const Center(
-                        child: TextLocale(
-                          LocaleKeys.skill_credentials_definitions_not_found,
-                        ),
-                      )
-                    : _buildForm(context, value),
-              AsyncLoading() when currentDefinition != null => _buildForm(
-                context,
-                currentDefinition,
-              ),
-              AsyncLoading() => const Center(
-                child: AuraSpinner(),
-              ),
-              AsyncError() => const Center(
-                child: TextLocale(
-                  LocaleKeys.skill_credentials_definitions_error,
-                ),
-              ),
-            },
+      child: _buildBody(context, definitionAsync, currentDefinition),
       appBar: AuraAppBar(
         title: TextLocale(
           _isCreate
@@ -109,6 +86,47 @@ class _SkillCredentialDefinitionEditScreenState
         ],
       ),
     );
+  }
+
+  Widget _buildBody(
+    BuildContext context,
+    AsyncValue<SkillCredentialDefinitionEntity?>? definitionAsync,
+    SkillCredentialDefinitionEntity? currentDefinition,
+  ) {
+    if (definitionAsync == null) {
+      return _buildForm(context, null);
+    }
+
+    return switch (definitionAsync) {
+      AsyncData(:final value) => _buildLoadedBody(context, value),
+      AsyncLoading() when currentDefinition != null => _buildForm(
+        context,
+        currentDefinition,
+      ),
+      AsyncLoading() => const Center(
+        child: AuraSpinner(),
+      ),
+      AsyncError() => const Center(
+        child: TextLocale(
+          LocaleKeys.skill_credentials_definitions_error,
+        ),
+      ),
+    };
+  }
+
+  Widget _buildLoadedBody(
+    BuildContext context,
+    SkillCredentialDefinitionEntity? definition,
+  ) {
+    if (definition == null) {
+      return const Center(
+        child: TextLocale(
+          LocaleKeys.skill_credentials_definitions_not_found,
+        ),
+      );
+    }
+
+    return _buildForm(context, definition);
   }
 
   Widget _buildForm(
