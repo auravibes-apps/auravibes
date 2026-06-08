@@ -57,6 +57,27 @@
       }
     }
   },
+  "service_connections": {
+    "title": "Conexiones de Servicio",
+    "create_title": "Nueva Conexión de Servicio",
+    "edit_title": "Editar Conexión de Servicio",
+    "add": "Agregar conexión",
+    "load_error": "No se pudieron cargar las conexiones de servicio",
+    "save_error": "No se pudo guardar la conexión de servicio",
+    "empty_title": "No hay conexiones de servicio",
+    "empty_subtitle": "Agrega un proveedor de modelo o credencial de habilidad para conectar este espacio de trabajo.",
+    "delete_credential_title": "Eliminar credencial de habilidad",
+    "delete_credential_confirm": "¿Eliminar la credencial \"{name}\"? Esta acción no se puede deshacer.",
+    "delete_credential_error": "No se pudo eliminar la credencial de habilidad",
+    "missing_credential_definition": "No se encontró la definición de credencial",
+    "type": {
+      "model_provider": "Proveedor de Modelo",
+      "skill_credential": "Credencial de Habilidad"
+    },
+    "create": {
+      "type_label": "Tipo de conexión"
+    }
+  },
   "chats_screens": {
     "chats_list": {
       "title": "Chats",
@@ -68,6 +89,7 @@
       "stop_generation": "Detener generación",
       "stop_error": "No se pudo detener la conversación. Inténtalo de nuevo.",
       "send_error": "No se pudo enviar el mensaje. Inténtalo de nuevo.",
+      "rate_limit_retry": "Se alcanzó el límite de uso. Reintentando en {seconds}s.",
       "waiting_for_tools": "Esperando a que las herramientas se conecten...",
       "waiting_for_tools_named": "Esperando a que {tools} se conecte...",
       "thinking_status": "Pensando... Los mensajes nuevos se encolarán.",
@@ -136,6 +158,148 @@
     "no_tools_in_group": "No hay herramientas disponibles",
     "disabled_in_workspace": "Desactivada en espacio de trabajo"
   },
+  "skills_screen": {
+    "title": "Habilidades del Espacio de Trabajo",
+    "detail_title": "Habilidad",
+    "create_title": "Nueva Habilidad",
+    "create": "Crear habilidad",
+    "save": "Guardar habilidad",
+    "delete": "Eliminar habilidad",
+    "duplicate": "Duplicar habilidad",
+    "delete_confirm": "¿Eliminar esta habilidad? También se eliminará su estado de carga en conversaciones y sus herramientas de plantilla.",
+    "save_error": "No se pudo guardar la habilidad",
+    "not_found": "Habilidad no encontrada",
+    "load_error": "Error al cargar habilidades",
+    "empty_title": "No hay habilidades disponibles",
+    "empty_subtitle": "Crea una habilidad para hacerla disponible en conversaciones",
+    "app_read_only": "Las habilidades de la app vienen integradas y solo se pueden activar o desactivar para este espacio de trabajo.",
+    "slug_label": "Slug",
+    "title_label": "Título",
+    "description_label": "Descripción",
+    "content_label": "Contenido",
+    "enabled_label": "Activada",
+    "credential_optional_label": "La credencial es opcional",
+    "credential_optional_hint": "Permite cargar esta habilidad aunque no se haya guardado una credencial.",
+    "source": {
+      "user": "Usuario",
+      "app": "App"
+    },
+    "kind": {
+      "template": "Plantilla",
+      "native": "Nativa"
+    }
+  },
+  "skills_selector": {
+    "title": "Habilidades de la conversación",
+    "error": "Error al cargar habilidades de la conversación",
+    "loaded_title": "Cargadas",
+    "loaded_empty": "No hay habilidades cargadas",
+    "available_title": "Disponibles",
+    "available_empty": "No hay habilidades disponibles"
+  },
+  "skills_tool": {
+    "section_title": "Herramientas de plantilla",
+    "empty": "No hay herramientas de plantilla",
+    "create_title": "Nueva herramienta de plantilla",
+    "edit_title": "Editar herramienta de plantilla",
+    "not_found": "Herramienta de plantilla no encontrada",
+    "load_error": "Error al cargar herramientas de plantilla",
+    "save_error": "No se pudo guardar la herramienta de plantilla",
+    "delete_title": "Eliminar herramienta de plantilla",
+    "delete_confirm": "¿Eliminar esta herramienta de plantilla?",
+    "description_label": "Descripción de la herramienta",
+    "description_hint": "Dile a la IA cuándo y cómo usar esta herramienta.",
+    "url_label": "URL",
+    "url_hint": "https://api.example.com/company/{{ input.company_id }}",
+    "method_label": "Método",
+    "query_section_title": "Parámetros de consulta",
+    "query_hint": "Agrega valores de URL uno por uno. Usa Liquid como {{ input.search }} o {{ credential.api_key }}.",
+    "query_key_label": "Clave",
+    "query_value_label": "Valor",
+    "add_query": "Agregar parámetro",
+    "body_format_label": "Formato del cuerpo",
+    "body_format_json": "JSON",
+    "body_format_text": "Texto",
+    "body_label": "Cuerpo de la solicitud",
+    "body_hint": "Plantilla Liquid opcional. Usa {{ input.name | json }} en cuerpos JSON y {% if input.name %} para campos opcionales.",
+    "inputs_section_title": "Entradas del agente IA",
+    "inputs_hint": "Define los campos que la IA debe recolectar antes de ejecutar esta herramienta.",
+    "input_name_label": "Nombre de entrada",
+    "input_type_label": "Tipo",
+    "input_description_label": "Descripción",
+    "input_description_hint": "Explica qué valor debe proveer la IA.",
+    "input_optional_label": "Opcional",
+    "requires_credential_label": "Requiere credencial",
+    "requires_credential_hint": "Requiere que el agente envíe un credentialId antes de ejecutar esta herramienta.",
+    "add_input": "Agregar entrada"
+  },
+  "skill_credentials_definitions": {
+    "title": "Definiciones de Credenciales de Habilidades",
+    "create_title": "Nueva Definición de Credencial",
+    "edit_title": "Editar Definición de Credencial",
+    "empty": "No hay definiciones de credenciales",
+    "error": "Error al cargar definiciones de credenciales",
+    "not_found": "Definición de credencial no encontrada",
+    "save": "Guardar",
+    "save_error": "No se pudo guardar la definición de credencial",
+    "delete_title": "Eliminar definición de credencial",
+    "delete_confirm": "¿Eliminar esta definición de credencial? Las habilidades que la usan ya no requerirán estas credenciales.",
+    "attributes_label": "Atributos",
+    "attribute_variable_label": "Variable",
+    "attribute_description_label": "Descripción",
+    "attribute_optional": "Opcional",
+    "attribute_secret": "Secreto",
+    "add_attribute": "Agregar atributo",
+    "delete_attribute": "Eliminar atributo",
+    "hint": "Define los campos de credenciales que las habilidades pueden usar, como api_key o user_id."
+  },
+  "skill_credentials": {
+    "add_title": "Agregar Credencial",
+    "definition_label": "Definición de Credencial",
+    "name_label": "Nombre",
+    "attributes_label": "JSON de Atributos de Credencial",
+    "save_error": "No se pudo guardar la credencial",
+    "load_error": "Error al cargar credenciales",
+    "secret_saved": "Secreto guardado",
+    "clear_secret": "Borrar secreto",
+    "no_definitions": "Crea primero una definición de credencial",
+    "none": "Sin definición de credencial",
+    "missing_hint": "Esta habilidad necesita una credencial antes de poder cargarse.",
+    "optional_missing_hint": "No hay credencial configurada. Esta habilidad todavía se puede cargar, pero las herramientas que requieren credenciales no estarán disponibles.",
+    "configured_count": {
+      "one": "{} credencial configurada",
+      "other": "{} credenciales configuradas"
+    }
+  },
+  "app_skills": {
+    "skills_manager": {
+      "title": "Administrador de Habilidades",
+      "description": "Crear y editar habilidades de usuario y herramientas de plantilla.",
+      "content": "Usa esta habilidad para crear, inspeccionar, editar y borrar habilidades de usuario, herramientas de plantilla y definiciones de credenciales.\nAl crear una habilidad, agrega las instrucciones de la habilidad, las definiciones de herramientas de plantilla necesarias y las definiciones de credenciales necesarias.\nMarca isCredentialOptional true solo cuando la habilidad pueda cargarse sin una credencial guardada.\nMarca requiresCredential true en cada herramienta que no pueda ejecutarse sin credentialId.\nLos agentes deben elegir credenciales explícitamente con list_skill_credentials y enviar credentialId; la app nunca escoge credenciales automáticamente.\nInspecciona las habilidades, herramientas de plantilla y definiciones de credenciales existentes del espacio de trabajo antes de crear registros nuevos.\nUsa plantillas Liquid para URL, query, headers y body: {{ input.name }}, {{ credential.apiKey }}, {% if input.location %} y {% for item in input.items %}.\nPara cuerpos JSON, usa bodyFormat json y {{ input.name | json }} o {{ credential.name | json }} para valores JSON dinámicos.\nUsa condicionales Liquid para campos opcionales o dependientes. No uses {input:name}, {credential:name} ni {{name}} en plantillas nuevas.\nDefine cada input de herramienta con type, description y optional cuando aplique.\nSolo crea habilidades de usuario desde intención explícita del usuario.",
+      "tools": {
+        "create_user_skill": {
+          "title": "Crear habilidad de usuario",
+          "description": "Crea una habilidad de plantilla propiedad del usuario."
+        },
+        "update_user_skill": {
+          "title": "Actualizar habilidad de usuario",
+          "description": "Actualiza una habilidad de usuario por slug."
+        },
+        "create_skill_template_tool": {
+          "title": "Crear herramienta de plantilla",
+          "description": "Crea una herramienta de plantilla URL para una habilidad de usuario."
+        },
+        "update_skill_template_tool": {
+          "title": "Actualizar herramienta de plantilla",
+          "description": "Actualiza una herramienta de plantilla URL por slug."
+        },
+        "create_skill_credential_definition": {
+          "title": "Crear definición de credencial",
+          "description": "Crea una definición reutilizable de credencial de usuario."
+        }
+      }
+    }
+  },
   "tool_confirmation": {
     "allow_once": "Permitir una vez",
     "allow_conversation": "Permitir en conversación",
@@ -161,6 +325,7 @@
     "cancel": "Cancelar",
     "remove": "Eliminar",
     "add": "Agregar",
+    "edit": "Editar",
     "save": "Guardar",
     "delete": "Borrar",
     "confirm": "Confirmar",
@@ -238,13 +403,21 @@
       "title": "Espacios de Trabajo",
       "subtitle": "Administra tus espacios de trabajo"
     },
-    "models": {
-      "title": "Proveedores de Modelos",
-      "subtitle": "Administra tus proveedores de IA"
+    "service_connections": {
+      "title": "Conexiones de Servicio",
+      "subtitle": "Administra proveedores de modelo y credenciales de habilidades"
+    },
+    "credential_definitions": {
+      "title": "Definiciones de Credenciales",
+      "subtitle": "Define campos de credenciales usados por habilidades"
     },
     "tools": {
       "title": "Herramientas",
       "subtitle": "Administra tus herramientas e integraciones"
+    },
+    "skills": {
+      "title": "Habilidades",
+      "subtitle": "Administra habilidades reutilizables del agente"
     }
   },
   "sidebar": {

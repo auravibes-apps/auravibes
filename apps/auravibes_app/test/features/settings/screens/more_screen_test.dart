@@ -54,11 +54,15 @@ void main() {
 
     expect(find.text('More'), findsOneWidget);
     expect(find.text('Workspaces'), findsOneWidget);
-    expect(find.text('Model Providers'), findsOneWidget);
+    expect(find.text('Service Connections'), findsOneWidget);
+    expect(find.text('Credential Definitions'), findsOneWidget);
     expect(find.text('Tools'), findsOneWidget);
+    expect(find.text('Skills'), findsOneWidget);
     expect(find.byIcon(Icons.workspaces_outlined), findsOneWidget);
-    expect(find.byIcon(Icons.memory_outlined), findsOneWidget);
+    expect(find.byIcon(Icons.hub_outlined), findsOneWidget);
+    expect(find.byIcon(Icons.key_outlined), findsOneWidget);
     expect(find.byIcon(Icons.build_circle_outlined), findsOneWidget);
-    expect(find.byIcon(Icons.chevron_right), findsAtLeast(3));
+    expect(find.byIcon(Icons.psychology_alt_outlined), findsOneWidget);
+    expect(find.byIcon(Icons.chevron_right), findsAtLeast(5));
   });
 }

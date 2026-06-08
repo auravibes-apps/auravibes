@@ -6,6 +6,7 @@
 // Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
+import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/native_tool_type.dart';
@@ -31,6 +32,18 @@ class _NativeToolIdComponents {
   final String toolIdentifier;
 }
 
+class _SkillTemplateToolIdComponents {
+  const _SkillTemplateToolIdComponents({
+    required this.source,
+    required this.skillSlug,
+    required this.toolSlug,
+  });
+
+  final String source;
+  final String skillSlug;
+  final String toolSlug;
+}
+
 class ToolResolverService {
   // ============================================================
   // Helper: Tool resolution
@@ -50,6 +63,29 @@ class ToolResolverService {
   /// failureStatus.
 
   ResolvedTool? resolveTool(String compositeToolName) {
+    if (compositeToolName == loadSkillToolName ||
+        compositeToolName == unloadSkillToolName ||
+        compositeToolName == listSkillCredentialsToolName) {
+      return ResolvedTool.skillControl(toolIdentifier: compositeToolName);
+    }
+
+    final skillTemplateTool = _parseSkillTemplateToolId(compositeToolName);
+    if (skillTemplateTool != null) {
+      if (skillTemplateTool.source == 'app') {
+        return ResolvedTool.skillNative(
+          tableId: skillTemplateTool.toolSlug,
+          skillSlug: skillTemplateTool.skillSlug,
+          toolIdentifier: skillTemplateTool.toolSlug,
+        );
+      }
+
+      return ResolvedTool.skillTemplate(
+        tableId: skillTemplateTool.toolSlug,
+        skillSlug: skillTemplateTool.skillSlug,
+        toolIdentifier: skillTemplateTool.toolSlug,
+      );
+    }
+
     final components = McpToolIdComponents.fromComposite(
       compositeToolName,
     );
@@ -143,6 +179,35 @@ class ToolResolverService {
     return _NativeToolIdComponents(
       tableId: tableId,
       toolIdentifier: toolIdentifier,
+    );
+  }
+
+  static _SkillTemplateToolIdComponents? _parseSkillTemplateToolId(
+    String compositeId,
+  ) {
+    const userPrefix = 'skill__user__';
+    const appPrefix = 'skill__app__';
+    final source = compositeId.startsWith(userPrefix)
+        ? 'user'
+        : compositeId.startsWith(appPrefix)
+        ? 'app'
+        : null;
+    if (source == null) return null;
+
+    final withoutPrefix = compositeId.substring(
+      source == 'user' ? userPrefix.length : appPrefix.length,
+    );
+    final separatorIndex = withoutPrefix.indexOf('__');
+    if (separatorIndex <= 0) return null;
+
+    final skillSlug = withoutPrefix.substring(0, separatorIndex);
+    final toolSlug = withoutPrefix.substring(separatorIndex + 2);
+    if (skillSlug.isEmpty || toolSlug.isEmpty) return null;
+
+    return _SkillTemplateToolIdComponents(
+      source: source,
+      skillSlug: skillSlug,
+      toolSlug: toolSlug,
     );
   }
 }

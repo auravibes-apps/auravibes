@@ -26,8 +26,35 @@ class _FakeModelConnectionRepository implements ModelConnectionRepository {
   }
 
   @override
+  Stream<List<ModelConnectionEntity>> watchModelConnections(
+    ModelConnectionFilter filter,
+  ) {
+    if (filter.workspaces.isEmpty) return Stream.value([]);
+    return Stream.value(
+      connections
+          .where((c) => filter.workspaces.contains(c.workspaceId))
+          .toList(),
+    );
+  }
+
+  @override
   Future<ModelConnectionEntity> createModelConnection(
     ModelConnectionToCreate modelConnection,
+  ) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<ModelConnectionForEdit?> getModelConnectionForEdit(
+    String modelConnectionId,
+  ) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<ModelConnectionEntity> updateModelConnection(
+    String modelConnectionId,
+    ModelConnectionToUpdate modelConnection,
   ) {
     throw UnimplementedError();
   }

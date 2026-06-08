@@ -23,6 +23,13 @@ class _StubModelConnectionRepository implements ModelConnectionRepository {
   }
 
   @override
+  Stream<List<ModelConnectionEntity>> watchModelConnections(
+    ModelConnectionFilter filter,
+  ) {
+    return Stream.value(connections);
+  }
+
+  @override
   Future<ModelConnectionEntity> createModelConnection(
     ModelConnectionToCreate modelConnection,
   ) async {
@@ -38,6 +45,33 @@ class _StubModelConnectionRepository implements ModelConnectionRepository {
     );
     created.add(entity);
     return entity;
+  }
+
+  @override
+  Future<ModelConnectionForEdit?> getModelConnectionForEdit(
+    String modelConnectionId,
+  ) async {
+    final connection = connections
+        .where((connection) => connection.id == modelConnectionId)
+        .firstOrNull;
+    if (connection == null) return null;
+    return ModelConnectionForEdit(
+      id: connection.id,
+      name: connection.name,
+      modelId: connection.modelId,
+      workspaceId: connection.workspaceId,
+      url: connection.url,
+      keySuffix: connection.keySuffix,
+      hasKey: connection.key.isNotEmpty,
+    );
+  }
+
+  @override
+  Future<ModelConnectionEntity> updateModelConnection(
+    String modelConnectionId,
+    ModelConnectionToUpdate modelConnection,
+  ) async {
+    throw UnimplementedError();
   }
 
   @override

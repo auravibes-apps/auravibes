@@ -19,6 +19,7 @@ import 'package:auravibes_app/domain/repositories/message_repository.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_send_queue_runtime.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_context.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_decision.dart';
 import 'package:auravibes_app/features/chats/usecases/continue_agent_result.dart';
@@ -49,6 +50,7 @@ void main() {
     maybeAutoCompactConversationUsecase;
     late ProviderContainer container;
     late AgentCancellationRuntime agentCancellationRuntime;
+    late ConversationRateLimitRetryRuntime rateLimitRetryRuntime;
     late RunAgentIterationUsecase usecase;
 
     setUp(() {
@@ -60,6 +62,9 @@ void main() {
           MockMaybeAutoCompactConversationUsecase();
       container = ProviderContainer();
       agentCancellationRuntime = AgentCancellationRuntime();
+      rateLimitRetryRuntime = container.read(
+        conversationRateLimitRetryRuntimeProvider,
+      );
       usecase = RunAgentIterationUsecase(
         continueAgentUsecase: continueAgentUsecase,
         runAllowedToolsUsecase: runAllowedToolsUsecase,
@@ -69,6 +74,8 @@ void main() {
         messageRepository: messageRepository,
         sendQueueRuntime: container.read(conversationSendQueueRuntimeProvider),
         agentCancellationRuntime: agentCancellationRuntime,
+        rateLimitRetryRuntime: rateLimitRetryRuntime,
+        rateLimitRetryDelay: Duration.zero,
       );
 
       when(
@@ -306,6 +313,113 @@ void main() {
         ).called(1);
       },
     );
+
+    test('waits and retries when the model hits a rate limit', () async {
+      var callCount = 0;
+      when(
+        continueAgentUsecase.call(
+          conversationId: 'conversation-1',
+          context: anyNamed('context'),
+        ),
+      ).thenAnswer((_) async {
+        callCount += 1;
+        if (callCount == 1) {
+          throw Exception('RateLimitException(429): RESOURCE_EXHAUSTED');
+        }
+
+        return const ContinueAgentResult(
+          messageId: 'assistant-2',
+          hasToolCalls: false,
+        );
+      });
+
+      final result = await usecase.call(
+        conversationId: 'conversation-1',
+        context: const AgentIterationContext(
+          origin: AgentIterationOrigin.userMessage,
+          ackMessageIds: ['user-1'],
+        ),
+      );
+
+      expect(result, AgentIterationDecision.done);
+      expect(callCount, 2);
+      expect(rateLimitRetryRuntime.retryAt('conversation-1'), isNull);
+      verify(
+        continueAgentUsecase.call(
+          conversationId: 'conversation-1',
+          context: anyNamed('context'),
+        ),
+      ).called(2);
+      final _ = verifyNever(
+        runAllowedToolsUsecase.call(
+          conversationId: anyNamed('conversationId'),
+          workspaceId: anyNamed('workspaceId'),
+        ),
+      );
+    });
+
+    test('uses known retry delay from rate-limit errors', () async {
+      final startTime = DateTime(2026);
+      var currentTime = startTime;
+      final delays = <Duration>[];
+      usecase = RunAgentIterationUsecase(
+        continueAgentUsecase: continueAgentUsecase,
+        runAllowedToolsUsecase: runAllowedToolsUsecase,
+        maybeAutoCompactConversationUsecase:
+            maybeAutoCompactConversationUsecase,
+        conversationRepository: conversationRepository,
+        messageRepository: messageRepository,
+        sendQueueRuntime: container.read(conversationSendQueueRuntimeProvider),
+        agentCancellationRuntime: agentCancellationRuntime,
+        rateLimitRetryRuntime: rateLimitRetryRuntime,
+        now: () => currentTime,
+        sleep: (delay) async {
+          delays.add(delay);
+          expect(
+            rateLimitRetryRuntime.retryAt('conversation-1'),
+            startTime.add(const Duration(seconds: 3)),
+          );
+          currentTime = currentTime.add(delay);
+        },
+      );
+
+      var callCount = 0;
+      when(
+        continueAgentUsecase.call(
+          conversationId: 'conversation-1',
+          context: anyNamed('context'),
+        ),
+      ).thenAnswer((_) async {
+        callCount += 1;
+        if (callCount == 1) {
+          throw Exception(
+            'RateLimitException(429): try again in 3 seconds',
+          );
+        }
+
+        return const ContinueAgentResult(
+          messageId: 'assistant-2',
+          hasToolCalls: false,
+        );
+      });
+
+      final result = await usecase.call(
+        conversationId: 'conversation-1',
+        context: const AgentIterationContext(
+          origin: AgentIterationOrigin.userMessage,
+          ackMessageIds: ['user-1'],
+        ),
+      );
+
+      expect(result, AgentIterationDecision.done);
+      expect(callCount, 2);
+      expect(delays, [
+        const Duration(seconds: 1),
+        const Duration(seconds: 1),
+        const Duration(seconds: 1),
+      ]);
+      expect(rateLimitRetryRuntime.retryAt('conversation-1'), isNull);
+    });
 
     test(
       'stops before the next loop iteration and clears queued drafts',

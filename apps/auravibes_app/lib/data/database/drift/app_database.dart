@@ -10,23 +10,34 @@
 // Required: Existing short identifiers follow callback and pattern APIs.
 import 'package:auravibes_app/data/database/drift/daos/api_model_providers_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/api_models_dao.dart';
+import 'package:auravibes_app/data/database/drift/daos/app_skill_workspace_settings_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/conversation_dao.dart';
+import 'package:auravibes_app/data/database/drift/daos/conversation_skills_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/conversation_tools_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/mcp_servers_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/message_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/model_connections_dao.dart';
+import 'package:auravibes_app/data/database/drift/daos/skill_credential_definitions_dao.dart';
+import 'package:auravibes_app/data/database/drift/daos/skill_credentials_dao.dart';
+import 'package:auravibes_app/data/database/drift/daos/skill_template_tools_dao.dart';
+import 'package:auravibes_app/data/database/drift/daos/skills_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/tools_groups_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_compaction_settings_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_model_selection_with_connection.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_tools_dao.dart';
 import 'package:auravibes_app/data/database/drift/tables/api_models.dart';
+import 'package:auravibes_app/data/database/drift/tables/app_skill_workspace_settings.dart';
+import 'package:auravibes_app/data/database/drift/tables/conversation_skills.dart';
 import 'package:auravibes_app/data/database/drift/tables/conversation_tools.dart';
 import 'package:auravibes_app/data/database/drift/tables/conversations.dart';
 import 'package:auravibes_app/data/database/drift/tables/mcp_servers.dart';
 import 'package:auravibes_app/data/database/drift/tables/messages.dart';
 import 'package:auravibes_app/data/database/drift/tables/model_providers_table_type.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
+import 'package:auravibes_app/data/database/drift/tables/skill_credential_definitions.dart';
+import 'package:auravibes_app/data/database/drift/tables/skill_template_tools.dart';
+import 'package:auravibes_app/data/database/drift/tables/skills.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools_groups.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_compaction_settings.dart';
@@ -57,6 +68,11 @@ part 'app_database.g.dart';
     ConversationTools,
     McpServers,
     WorkspaceCompactionSettings,
+    SkillCredentialDefinitions,
+    Skills,
+    SkillTemplateTools,
+    ConversationSkills,
+    AppSkillWorkspaceSettings,
   ],
   daos: [
     WorkspaceDao,
@@ -71,6 +87,12 @@ part 'app_database.g.dart';
     ConversationToolsDao,
     McpServersDao,
     WorkspaceCompactionSettingsDao,
+    SkillCredentialsDao,
+    SkillCredentialDefinitionsDao,
+    SkillsDao,
+    SkillTemplateToolsDao,
+    ConversationSkillsDao,
+    AppSkillWorkspaceSettingsDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -86,7 +108,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// Database schema version.
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 7;
 
   /// Migration logic for database schema upgrades.
   @override
@@ -140,6 +162,23 @@ class AppDatabase extends _$AppDatabase {
           );
           await m.alterTable(TableMigration(workspaceModelSelections));
           await m.deleteTable('model_connections');
+        }
+        if (from < 5) {
+          await m.createTable(skillCredentialDefinitions);
+          await m.createTable(skills);
+          await m.createTable(skillTemplateTools);
+          await m.createTable(conversationSkills);
+          await m.createTable(appSkillWorkspaceSettings);
+        }
+        if (from < 6) {
+          await m.addColumn(skillTemplateTools, skillTemplateTools.description);
+        }
+        if (from < 7) {
+          await m.addColumn(skills, skills.isCredentialOptional);
+          await m.addColumn(
+            skillTemplateTools,
+            skillTemplateTools.requiresCredential,
+          );
         }
       },
     );

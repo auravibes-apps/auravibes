@@ -24,6 +24,19 @@ class ModelConnectionsDao extends DatabaseAccessor<AppDatabase>
         .get();
   }
 
+  Stream<List<ServiceConnectionTable>> watchAllModelConnectionsByWorkspace({
+    required List<String> workspaceIds,
+  }) {
+    return (select(serviceConnections)
+          ..orderBy([(t) => OrderingTerm(expression: t.createdAt)])
+          ..where(
+            (u) =>
+                u.workspaceId.isIn(workspaceIds) &
+                u.kind.equals(ServiceConnectionKindTable.modelProvider.name),
+          ))
+        .watch();
+  }
+
   Future<ServiceConnectionTable?> getModelConnectionById(String id) {
     return (select(
           serviceConnections,
@@ -39,6 +52,19 @@ class ModelConnectionsDao extends DatabaseAccessor<AppDatabase>
     ServiceConnectionsCompanion modelConnection,
   ) {
     return into(serviceConnections).insertReturning(modelConnection);
+  }
+
+  Future<ServiceConnectionTable?> updateModelConnection(
+    String id,
+    ServiceConnectionsCompanion modelConnection,
+  ) {
+    return (update(serviceConnections)..where(
+          (t) =>
+              t.id.equals(id) &
+              t.kind.equals(ServiceConnectionKindTable.modelProvider.name),
+        ))
+        .writeReturning(modelConnection)
+        .then((rows) => rows.firstOrNull);
   }
 
   Future<void> deleteModelConnection(String id) {

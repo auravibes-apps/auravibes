@@ -29,6 +29,7 @@ void main() {
   Widget buildSubject({
     required List<String> messages,
     required List<Object> overrides,
+    Map<String, MessageEntity>? messageEntitiesById,
     String conversationId = 'conv-1',
     List<PendingToolCall> pendingToolCalls = const [],
   }) {
@@ -47,6 +48,7 @@ void main() {
                 child: Material(
                   child: ChatMessagesWidget(
                     messages: messages,
+                    messageEntitiesById: messageEntitiesById,
                     pendingToolCalls: pendingToolCalls,
                   ),
                 ),
@@ -140,6 +142,34 @@ void main() {
       );
 
       expect(find.text('Hello AI'), findsOneWidget);
+    });
+
+    testWidgets('uses provided message entities without provider lookup', (
+      tester,
+    ) async {
+      final message = _createMessage(content: 'Provided message');
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          messageEntitiesById: {'msg-1': message},
+          overrides: [
+            messageConversationByIdProvider.overrideWith(
+              (ref, id) => throw StateError('should not read message provider'),
+            ),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      expect(find.text('Provided message'), findsOneWidget);
     });
 
     testWidgets('renders AI message content', (tester) async {
