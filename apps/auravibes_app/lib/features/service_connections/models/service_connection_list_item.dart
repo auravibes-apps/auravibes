@@ -2,8 +2,6 @@ import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 
-enum ServiceConnectionListItemKind { modelProvider, skillCredential }
-
 class ServiceConnectionListItem {
   const ServiceConnectionListItem({
     required this.id,
@@ -52,3 +50,5 @@ class ServiceConnectionListItem {
   final String? keySuffix;
   final String? credentialDefinitionId;
 }
+
+enum ServiceConnectionListItemKind { modelProvider, skillCredential }

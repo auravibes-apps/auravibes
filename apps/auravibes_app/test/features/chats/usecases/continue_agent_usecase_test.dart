@@ -42,6 +42,7 @@ import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_spe
 import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
 import 'package:auravibes_app/services/monitoring_service.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genkit/genkit.dart' hide FinishReason;
 import 'package:mockito/annotations.dart';
@@ -273,10 +274,13 @@ void main() {
         ).thenAnswer((invocation) {
           final history =
               invocation.positionalArguments[1] as List<ChatMessage>;
-          expect(history.first.role, ChatMessageRole.user);
-          expect(history.first.metadata['kind'], skillContextMetadataKind);
-          expect(history.first.text, contains('<skill>'));
-          expect(history.first.toolResults, isEmpty);
+          expect(history.firstOrNull?.role, ChatMessageRole.user);
+          expect(
+            history.firstOrNull?.metadata['kind'],
+            skillContextMetadataKind,
+          );
+          expect(history.firstOrNull?.text, contains('<skill>'));
+          expect(history.firstOrNull?.toolResults, isEmpty);
           return Stream.fromIterable([
             ChatResult<ChatMessage>(
               output: ChatMessage.model('Done'),

@@ -4,6 +4,7 @@
 // Required: Modal keeps small private row widgets together.
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_provider.dart';
+import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_state.dart';
 import 'package:auravibes_app/features/skills/usecases/load_conversation_skill_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/unload_conversation_skill_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -38,11 +39,15 @@ class ConversationSkillSelectorModal extends ConsumerWidget {
             onLoad: (skill) => _load(ref, skill),
             onUnload: (skill) => _unload(ref, skill),
           ),
-          AsyncLoading(:final value, hasValue: true) => _SelectorContent(
-            state: value!,
-            onLoad: (skill) => _load(ref, skill),
-            onUnload: (skill) => _unload(ref, skill),
-          ),
+          AsyncLoading(
+            value: final ConversationSkillSelectorState value,
+            hasValue: true,
+          ) =>
+            _SelectorContent(
+              state: value,
+              onLoad: (skill) => _load(ref, skill),
+              onUnload: (skill) => _unload(ref, skill),
+            ),
           AsyncLoading() => const SizedBox(
             height: 120,
             child: Center(child: AuraSpinner()),

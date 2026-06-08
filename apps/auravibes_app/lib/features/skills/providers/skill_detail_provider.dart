@@ -1,6 +1,7 @@
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/skills/models/skill_detail.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
+import 'package:collection/collection.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'skill_detail_provider.g.dart';
@@ -21,7 +22,7 @@ Future<SkillDetail?> skillDetail(
   final appSkills = appSkillRegistry.getAll().where(
     (skill) => skill.identifier == skillId,
   );
-  final appSkill = appSkills.isEmpty ? null : appSkills.first;
+  final appSkill = appSkills.firstOrNull;
   if (appSkill == null) return null;
 
   final appSkillSettings = ref.watch(

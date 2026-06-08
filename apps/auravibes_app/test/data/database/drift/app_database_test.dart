@@ -122,7 +122,7 @@ void main() {
     });
 
     test('has correct schema version', () {
-      expect(database.schemaVersion, 5);
+      expect(database.schemaVersion, 7);
     });
 
     test('creates successfully with in-memory connection', () {
@@ -214,8 +214,8 @@ void main() {
       expect(strategy, isNotNull);
     });
 
-    test('schemaVersion is 5', () {
-      expect(database.schemaVersion, 5);
+    test('schemaVersion is 7', () {
+      expect(database.schemaVersion, 7);
     });
 
     test(

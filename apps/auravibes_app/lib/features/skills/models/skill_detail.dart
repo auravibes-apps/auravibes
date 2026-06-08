@@ -2,6 +2,8 @@ import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/services/skills/models/app_skill_tool_definition.dart';
 
 class SkillDetail {
+  // App skills may not have a persisted workspace row.
+  // ignore: unnecessary-nullable
   const SkillDetail({
     required this.id,
     required this.workspaceId,

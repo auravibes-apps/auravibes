@@ -58,6 +58,8 @@ abstract class SkillCredentialForEdit with _$SkillCredentialForEdit {
 
 @freezed
 abstract class SkillCredentialToUpdate with _$SkillCredentialToUpdate {
+  // Null means preserve the existing credential name.
+  // ignore: unnecessary-nullable
   const factory SkillCredentialToUpdate({
     String? name,
     @Default({}) Map<String, String> nonSecretAttributes,

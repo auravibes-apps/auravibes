@@ -6,8 +6,6 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'skill_template_tool_entity.freezed.dart';
 
-enum SkillTemplateToolType { url }
-
 @freezed
 abstract class SkillTemplateToolEntity with _$SkillTemplateToolEntity {
   const factory SkillTemplateToolEntity({
@@ -53,3 +51,5 @@ abstract class SkillTemplateToolToUpdate with _$SkillTemplateToolToUpdate {
   }) = _SkillTemplateToolToUpdate;
   const SkillTemplateToolToUpdate._();
 }
+
+enum SkillTemplateToolType { url }

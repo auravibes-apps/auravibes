@@ -26,6 +26,7 @@ import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/native_tool_service.dart';
 import 'package:auravibes_app/services/tools/tool_service.dart';
+import 'package:collection/collection.dart';
 import 'package:riverpod/riverpod.dart';
 
 typedef McpToolCaller =
@@ -43,6 +44,8 @@ typedef SkillsManagerToolSuccessHandler =
     });
 
 class RunResolvedToolUsecase {
+  // Null disables mutation side-effects for tests and non-skills callers.
+  // ignore: unnecessary-nullable
   const RunResolvedToolUsecase({
     required this.agentCancellationRuntime,
     required this.mcpToolCaller,
@@ -258,7 +261,7 @@ class RunResolvedToolUsecase {
     final matchingSkills = loadedSkills.where(
       (skill) => skill.slug == skillSlug,
     );
-    final skill = matchingSkills.isEmpty ? null : matchingSkills.first;
+    final skill = matchingSkills.firstOrNull;
     final credentialDefinitionId = skill?.credentialDefinitionId;
     if (skill == null || credentialDefinitionId == null) {
       throw StateError('Loaded skill with credentials not found: $skillSlug');

@@ -6,10 +6,6 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'skill_entity.freezed.dart';
 
-enum SkillSource { user, app }
-
-enum SkillKind { template, native }
-
 @freezed
 abstract class SkillEntity with _$SkillEntity {
   const factory SkillEntity({
@@ -57,3 +53,7 @@ abstract class SkillToUpdate with _$SkillToUpdate {
   }) = _SkillToUpdate;
   const SkillToUpdate._();
 }
+
+enum SkillSource { user, app }
+
+enum SkillKind { template, native }

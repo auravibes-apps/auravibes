@@ -351,10 +351,3 @@ final buildAppSkillNativeToolSpecsUsecaseProvider =
         ref.watch(listAvailableSkillsUsecaseProvider),
       );
     });
-
-String appSkillNativeToolCompositeId({
-  required String skillSlug,
-  required String toolSlug,
-}) {
-  return 'skill__app__${skillSlug}__$toolSlug';
-}

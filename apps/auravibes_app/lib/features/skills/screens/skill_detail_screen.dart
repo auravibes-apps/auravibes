@@ -683,9 +683,13 @@ class _SkillCredentialsHint extends ConsumerWidget {
       ),
     );
 
-    return switch ((definitionAsync, credentialsAsync)) {
-      (AsyncData(value: null), _) => const SizedBox.shrink(),
-      (AsyncData(), AsyncData(:final value)) =>
+    return switch ((
+      definition: definitionAsync,
+      credentials: credentialsAsync,
+    )) {
+      (definition: AsyncData(value: null), credentials: _) =>
+        const SizedBox.shrink(),
+      (definition: AsyncData(), credentials: AsyncData(:final value)) =>
         value.isEmpty
             ? Row(
                 children: [
@@ -743,10 +747,12 @@ class _SkillCredentialsHint extends ConsumerWidget {
                 ),
                 color: AuraColorVariant.onSurfaceVariant,
               ),
-      (AsyncLoading(), _) || (_, AsyncLoading()) => const AuraSpinner(
+      (definition: AsyncLoading(), credentials: _) ||
+      (definition: _, credentials: AsyncLoading()) => const AuraSpinner(
         size: AuraSpinnerSize.small,
       ),
-      (AsyncError(), _) || (_, AsyncError()) => const AuraText(
+      (definition: AsyncError(), credentials: _) ||
+      (definition: _, credentials: AsyncError()) => const AuraText(
         child: TextLocale(LocaleKeys.skill_credentials_load_error),
         color: AuraColorVariant.error,
       ),

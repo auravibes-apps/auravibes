@@ -44,6 +44,8 @@ abstract class ModelConnectionForEdit with _$ModelConnectionForEdit {
 
 @freezed
 abstract class ModelConnectionToUpdate with _$ModelConnectionToUpdate {
+  // Null means preserve the existing persisted value for that field.
+  // ignore: unnecessary-nullable
   const factory ModelConnectionToUpdate({
     String? name,
     String? key,

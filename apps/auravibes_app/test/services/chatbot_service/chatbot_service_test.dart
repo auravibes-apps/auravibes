@@ -200,7 +200,8 @@ void main() {
       ).toList();
 
       final skillContextResult =
-          capturedRequest?.messages[0].content.single.toJson()['toolResponse']
+          capturedRequest?.messages.firstOrNull?.content.single
+                  .toJson()['toolResponse']
               as Map<String, Object?>?;
       final replayedRequest =
           capturedRequest?.messages[1].content.single.toJson()['toolRequest']

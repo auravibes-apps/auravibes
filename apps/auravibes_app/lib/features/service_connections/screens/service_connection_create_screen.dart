@@ -19,21 +19,6 @@ import 'package:logging/logging.dart';
 
 final _logger = Logger('service_connection_create_screen');
 
-enum ServiceConnectionCreateType {
-  modelProvider,
-  skillCredential,
-}
-
-extension ServiceConnectionCreateTypeQuery on ServiceConnectionCreateType {
-  static ServiceConnectionCreateType? fromQueryValue(String? value) {
-    return switch (value) {
-      'modelProvider' => ServiceConnectionCreateType.modelProvider,
-      'skillCredential' => ServiceConnectionCreateType.skillCredential,
-      _ => null,
-    };
-  }
-}
-
 class ServiceConnectionCreateScreen extends ConsumerStatefulWidget {
   const ServiceConnectionCreateScreen({
     required this.workspaceId,
@@ -237,6 +222,21 @@ class _ServiceConnectionCreateScreenState
               'empty=${entry.value.isEmpty}',
         )
         .join('|');
+  }
+}
+
+enum ServiceConnectionCreateType {
+  modelProvider,
+  skillCredential,
+}
+
+extension ServiceConnectionCreateTypeQuery on ServiceConnectionCreateType {
+  static ServiceConnectionCreateType? fromQueryValue(String? value) {
+    return switch (value) {
+      'modelProvider' => ServiceConnectionCreateType.modelProvider,
+      'skillCredential' => ServiceConnectionCreateType.skillCredential,
+      _ => null,
+    };
   }
 }
 

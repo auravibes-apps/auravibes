@@ -170,10 +170,10 @@ class AppDatabase extends _$AppDatabase {
           await m.createTable(conversationSkills);
           await m.createTable(appSkillWorkspaceSettings);
         }
-        if (from < 6) {
+        if (from >= 5 && from < 6) {
           await m.addColumn(skillTemplateTools, skillTemplateTools.description);
         }
-        if (from < 7) {
+        if (from >= 5 && from < 7) {
           await m.addColumn(skills, skills.isCredentialOptional);
           await m.addColumn(
             skillTemplateTools,

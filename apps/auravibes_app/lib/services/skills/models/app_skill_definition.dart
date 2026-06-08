@@ -2,6 +2,8 @@ import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/services/skills/models/app_skill_tool_definition.dart';
 
 class AppSkillDefinition {
+  // Null means the app skill uses literal text instead of localization keys.
+  // ignore: unnecessary-nullable
   const AppSkillDefinition({
     required this.identifier,
     required this.slug,

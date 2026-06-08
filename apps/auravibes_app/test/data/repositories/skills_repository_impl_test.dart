@@ -56,6 +56,7 @@ import 'package:auravibes_app/services/secret_key_manager.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/url/url_service.dart';
+import 'package:collection/collection.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:dio/dio.dart';
 import 'package:drift/drift.dart';
@@ -837,8 +838,11 @@ void main() {
       expect(credentialEnum, contains(credential.id));
       expect(result, 'ok');
       expect(selectedCredentialResult, 'ok');
-      expect(requests.first.uri.queryParameters, isNot(contains('token')));
-      expect(requests.first.headers, isNot(contains('X-Token')));
+      expect(
+        requests.firstOrNull?.uri.queryParameters,
+        isNot(contains('token')),
+      );
+      expect(requests.firstOrNull?.headers, isNot(contains('X-Token')));
       expect(
         requests.last.uri.queryParameters,
         containsPair('token', 'secret-token'),

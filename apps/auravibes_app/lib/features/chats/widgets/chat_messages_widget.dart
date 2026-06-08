@@ -37,6 +37,8 @@ import 'package:riverpod_annotation/experimental/scope.dart';
   messageConversationById,
 ])
 class ChatMessagesWidget extends HookConsumerWidget {
+  // Null lets callers fall back to per-message provider reads.
+  // ignore: unnecessary-nullable
   const ChatMessagesWidget({
     required this.messages,
     this.messageEntitiesById,
