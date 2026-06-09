@@ -1,4 +1,3 @@
-// ignore_for_file: prefer-single-widget-per-file
 // Required: UI components keep related private widgets together.
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';

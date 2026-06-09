@@ -3,7 +3,6 @@
 
 // Required: Animation listener uses empty setState to rebuild.
 // Required: Existing code repeats lookups where extraction adds noise.
-// ignore_for_file: prefer-single-widget-per-file
 // Required: Feature widgets keep closely related private widgets together.
 
 import 'package:flutter/material.dart';

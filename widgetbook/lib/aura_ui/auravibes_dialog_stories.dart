@@ -1,5 +1,4 @@
 // Required: Stories keep callbacks inline for readability.
-// ignore_for_file: prefer-single-widget-per-file
 // Required: Widgetbook stories group related story widgets.
 // ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.

@@ -1,5 +1,4 @@
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: prefer-single-widget-per-file
 // Required: Feature widgets keep closely related private widgets together.
 
 import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';

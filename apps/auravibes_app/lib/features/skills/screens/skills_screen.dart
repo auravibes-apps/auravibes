@@ -1,6 +1,5 @@
 // Required: Existing UI spacing uses small numeric values.
 // Required: Local builders keep this small screen readable.
-// ignore_for_file: prefer-single-widget-per-file
 // Required: Feature widgets keep closely related private widgets together.
 import 'dart:async';
 

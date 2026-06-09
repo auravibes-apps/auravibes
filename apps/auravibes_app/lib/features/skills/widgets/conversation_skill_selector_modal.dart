@@ -1,5 +1,4 @@
 // Required: Existing UI spacing uses small numeric values.
-// ignore_for_file: prefer-single-widget-per-file
 // Required: Modal keeps small private row widgets together.
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_provider.dart';

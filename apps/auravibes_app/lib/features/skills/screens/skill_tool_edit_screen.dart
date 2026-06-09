@@ -1,5 +1,4 @@
 // Required: Existing UI spacing uses small numeric values.
-// ignore_for_file: prefer-single-widget-per-file
 // Required: Private form row widgets keep this screen self-contained.
 import 'dart:convert';
 
