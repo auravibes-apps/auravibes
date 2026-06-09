@@ -130,22 +130,22 @@ void main() {
     CreateSkillTemplateToolUsecase createTemplateToolUsecase() {
       return CreateSkillTemplateToolUsecase(
         toolsRepository,
+        validateSkillTemplateToolUsecase:
+            const ValidateSkillTemplateToolUsecase(),
         skillsRepository: skillsRepository,
         skillCredentialDefinitionsRepository:
             skillCredentialDefinitionsRepository,
-        validateSkillTemplateToolUsecase:
-            const ValidateSkillTemplateToolUsecase(),
       );
     }
 
     UpdateSkillTemplateToolUsecase updateTemplateToolUsecase() {
       return UpdateSkillTemplateToolUsecase(
         toolsRepository,
+        validateSkillTemplateToolUsecase:
+            const ValidateSkillTemplateToolUsecase(),
         skillsRepository: skillsRepository,
         skillCredentialDefinitionsRepository:
             skillCredentialDefinitionsRepository,
-        validateSkillTemplateToolUsecase:
-            const ValidateSkillTemplateToolUsecase(),
       );
     }
 
@@ -1005,15 +1005,15 @@ void main() {
       );
       final runUsecase = RunResolvedToolUsecase(
         agentCancellationRuntime: AgentCancellationRuntime(),
-        conversationRepository: conversationRepository,
-        listAvailableSkillsUsecase: listAvailableSkillsUsecase,
-        skillCredentialsRepository: skillCredentialsRepository,
         mcpToolCaller:
             ({
               required mcpServerId,
               required toolIdentifier,
               required arguments,
             }) async => '',
+        conversationRepository: conversationRepository,
+        listAvailableSkillsUsecase: listAvailableSkillsUsecase,
+        skillCredentialsRepository: skillCredentialsRepository,
       );
 
       final result =
@@ -2077,9 +2077,9 @@ Dio _dioWithBody(String body, {List<RequestOptions>? requests}) {
         requests?.add(options);
         handler.resolve(
           Response<ResponseBody>(
+            data: ResponseBody.fromString(body, 200),
             requestOptions: options,
             statusCode: 200,
-            data: ResponseBody.fromString(body, 200),
           ),
         );
       },

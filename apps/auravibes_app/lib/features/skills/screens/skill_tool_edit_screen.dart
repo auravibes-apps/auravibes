@@ -92,10 +92,6 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
               ? LocaleKeys.skills_tool_create_title
               : LocaleKeys.skills_tool_edit_title,
         ),
-        leading: AuraIconButton(
-          icon: Icons.arrow_back,
-          onPressed: () => Navigator.of(context).pop(),
-        ),
         actions: [
           AuraIconButton(
             icon: Icons.save_outlined,
@@ -103,6 +99,10 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
             tooltip: LocaleKeys.skills_screen_save.tr(context: context),
           ),
         ],
+        leading: AuraIconButton(
+          icon: Icons.arrow_back,
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
     );
   }
@@ -168,8 +168,6 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
       children: [
         AuraCard(
           child: AuraColumn(
-            spacing: AuraSpacing.lg,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (tool != null)
                 _ReadOnlyField(
@@ -184,26 +182,25 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
               ),
               AuraInput(
                 controller: _descriptionController,
-                minLines: 2,
-                maxLines: 4,
-                label: Text(
-                  LocaleKeys.skills_tool_description_label.tr(context: context),
-                ),
                 placeholder: Text(
                   LocaleKeys.skills_tool_description_hint.tr(context: context),
                 ),
+                label: Text(
+                  LocaleKeys.skills_tool_description_label.tr(context: context),
+                ),
+                minLines: 2,
+                maxLines: 4,
               ),
               AuraInput(
                 controller: _urlController,
-                label: Text(
-                  LocaleKeys.skills_tool_url_label.tr(context: context),
-                ),
                 placeholder: Text(
                   LocaleKeys.skills_tool_url_hint.tr(context: context),
                 ),
+                label: Text(
+                  LocaleKeys.skills_tool_url_label.tr(context: context),
+                ),
               ),
               AuraDropdownSelector<UrlRequestMethod>(
-                value: _method,
                 options: [
                   for (final method in UrlRequestMethod.values)
                     AuraDropdownOption(
@@ -211,6 +208,7 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
                       child: Text(method.value),
                     ),
                 ],
+                value: _method,
                 onChanged: (value) {
                   if (value != null) setState(() => _method = value);
                 },
@@ -227,7 +225,6 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
                 }),
               ),
               AuraDropdownSelector<SkillUrlTemplateBodyFormat>(
-                value: _bodyFormat,
                 options: [
                   AuraDropdownOption(
                     value: SkillUrlTemplateBodyFormat.json,
@@ -246,6 +243,7 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
                     ),
                   ),
                 ],
+                value: _bodyFormat,
                 onChanged: (value) {
                   if (value == null) return;
                   setState(() => _bodyFormat = value);
@@ -256,14 +254,14 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
               ),
               AuraInput(
                 controller: _bodyController,
-                minLines: 5,
-                maxLines: 12,
-                label: Text(
-                  LocaleKeys.skills_tool_body_label.tr(context: context),
-                ),
                 placeholder: Text(
                   LocaleKeys.skills_tool_body_hint.tr(context: context),
                 ),
+                label: Text(
+                  LocaleKeys.skills_tool_body_label.tr(context: context),
+                ),
+                minLines: 5,
+                maxLines: 12,
               ),
               _InputFieldsSection(
                 fields: _inputFields,
@@ -288,7 +286,6 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
                   ),
                 ),
               AuraRow(
-                spacing: AuraSpacing.md,
                 children: [
                   AuraSwitch(
                     value: _isEnabled,
@@ -302,16 +299,19 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
                     ),
                   ),
                 ],
+                spacing: AuraSpacing.md,
               ),
               Align(
                 alignment: Alignment.centerRight,
                 child: AuraButton(
                   onPressed: () => _save(context),
-                  disabled: _isSaving,
                   child: const TextLocale(LocaleKeys.skills_screen_save),
+                  disabled: _isSaving,
                 ),
               ),
             ],
+            spacing: AuraSpacing.lg,
+            crossAxisAlignment: CrossAxisAlignment.start,
           ),
         ),
       ],
@@ -410,8 +410,8 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
       if (!context.mounted) return;
       showAuraSnackBar(
         context: context,
-        variant: AuraSnackBarVariant.error,
         content: Text(LocaleKeys.skills_tool_save_error.tr(context: context)),
+        variant: AuraSnackBarVariant.error,
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -483,8 +483,6 @@ class _QueryFieldsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraColumn(
-      spacing: AuraSpacing.sm,
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const AuraText(
           child: TextLocale(LocaleKeys.skills_tool_query_section_title),
@@ -511,34 +509,36 @@ class _QueryFieldsSection extends StatelessWidget {
               Expanded(
                 child: AuraInput(
                   controller: field.valueController,
+                  placeholder: const Text('{input:search}'),
                   label: Text(
                     LocaleKeys.skills_tool_query_value_label.tr(
                       context: context,
                     ),
                   ),
-                  placeholder: const Text('{input:search}'),
                 ),
               ),
               AuraIconButton(
-                onPressed: () => onRemove(field),
                 icon: Icons.remove_circle_outline,
+                onPressed: () => onRemove(field),
                 tooltip: LocaleKeys.common_remove.tr(context: context),
               ),
             ],
           ),
         AuraButton(
           onPressed: onAdd,
-          variant: AuraButtonVariant.text,
           child: AuraRow(
-            spacing: AuraSpacing.xs,
-            mainAxisSize: MainAxisSize.min,
             children: [
               const AuraIcon(Icons.add),
               Text(LocaleKeys.skills_tool_add_query.tr(context: context)),
             ],
+            spacing: AuraSpacing.xs,
+            mainAxisSize: MainAxisSize.min,
           ),
+          variant: AuraButtonVariant.text,
         ),
       ],
+      spacing: AuraSpacing.sm,
+      crossAxisAlignment: CrossAxisAlignment.start,
     );
   }
 }
@@ -559,8 +559,6 @@ class _InputFieldsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraColumn(
-      spacing: AuraSpacing.sm,
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const AuraText(
           child: TextLocale(LocaleKeys.skills_tool_inputs_section_title),
@@ -572,21 +570,18 @@ class _InputFieldsSection extends StatelessWidget {
         ),
         for (final field in fields)
           AuraCard(
-            style: AuraCardStyle.border,
             child: AuraColumn(
-              spacing: AuraSpacing.sm,
               children: [
                 AuraInput(
                   controller: field.nameController,
+                  placeholder: const Text('company_id'),
                   label: Text(
                     LocaleKeys.skills_tool_input_name_label.tr(
                       context: context,
                     ),
                   ),
-                  placeholder: const Text('company_id'),
                 ),
                 AuraDropdownSelector<String>(
-                  value: field.type,
                   options: const [
                     AuraDropdownOption(value: 'string', child: Text('String')),
                     AuraDropdownOption(value: 'number', child: Text('Number')),
@@ -601,6 +596,7 @@ class _InputFieldsSection extends StatelessWidget {
                     AuraDropdownOption(value: 'object', child: Text('Object')),
                     AuraDropdownOption(value: 'array', child: Text('Array')),
                   ],
+                  value: field.type,
                   onChanged: (value) {
                     if (value == null) return;
                     field.type = value;
@@ -614,13 +610,13 @@ class _InputFieldsSection extends StatelessWidget {
                 ),
                 AuraInput(
                   controller: field.descriptionController,
-                  label: Text(
-                    LocaleKeys.skills_tool_input_description_label.tr(
+                  placeholder: Text(
+                    LocaleKeys.skills_tool_input_description_hint.tr(
                       context: context,
                     ),
                   ),
-                  placeholder: Text(
-                    LocaleKeys.skills_tool_input_description_hint.tr(
+                  label: Text(
+                    LocaleKeys.skills_tool_input_description_label.tr(
                       context: context,
                     ),
                   ),
@@ -639,33 +635,37 @@ class _InputFieldsSection extends StatelessWidget {
                   alignment: Alignment.centerRight,
                   child: AuraButton(
                     onPressed: () => onRemove(field),
-                    variant: AuraButtonVariant.text,
                     child: AuraRow(
-                      spacing: AuraSpacing.xs,
-                      mainAxisSize: MainAxisSize.min,
                       children: [
                         const AuraIcon(Icons.remove_circle_outline),
                         Text(LocaleKeys.common_remove.tr(context: context)),
                       ],
+                      spacing: AuraSpacing.xs,
+                      mainAxisSize: MainAxisSize.min,
                     ),
+                    variant: AuraButtonVariant.text,
                   ),
                 ),
               ],
+              spacing: AuraSpacing.sm,
             ),
+            style: AuraCardStyle.border,
           ),
         AuraButton(
           onPressed: onAdd,
-          variant: AuraButtonVariant.text,
           child: AuraRow(
-            spacing: AuraSpacing.xs,
-            mainAxisSize: MainAxisSize.min,
             children: [
               const AuraIcon(Icons.add),
               Text(LocaleKeys.skills_tool_add_input.tr(context: context)),
             ],
+            spacing: AuraSpacing.xs,
+            mainAxisSize: MainAxisSize.min,
           ),
+          variant: AuraButtonVariant.text,
         ),
       ],
+      spacing: AuraSpacing.sm,
+      crossAxisAlignment: CrossAxisAlignment.start,
     );
   }
 }
@@ -713,8 +713,6 @@ class _ReadOnlyField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraColumn(
-      spacing: AuraSpacing.xs,
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         AuraText(
           child: TextLocale(labelKey),
@@ -722,6 +720,8 @@ class _ReadOnlyField extends StatelessWidget {
         ),
         AuraSelectableText(value),
       ],
+      spacing: AuraSpacing.xs,
+      crossAxisAlignment: CrossAxisAlignment.start,
     );
   }
 }

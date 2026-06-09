@@ -33,22 +33,11 @@ class SkillCredentialDefinitionsScreen extends ConsumerWidget {
                 )
               : ListView.separated(
                   padding: const EdgeInsets.all(8),
-                  itemCount: value.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
                     final definition = value[index];
                     return AuraCard(
                       child: AuraTile(
-                        variant: AuraTileVariant.ghost,
-                        leading: const AuraIcon(Icons.key_outlined),
-                        trailing: const AuraIcon(Icons.chevron_right),
-                        onTap: () => context.push(
-                          '/workspaces/$workspaceId/more/'
-                          'skill-credential-definitions/${definition.id}',
-                        ),
                         child: AuraColumn(
-                          spacing: AuraSpacing.xs,
-                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             AuraText(child: Text(definition.title)),
                             AuraText(
@@ -56,19 +45,27 @@ class SkillCredentialDefinitionsScreen extends ConsumerWidget {
                               color: AuraColorVariant.onSurfaceVariant,
                             ),
                           ],
+                          spacing: AuraSpacing.xs,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                         ),
+                        onTap: () => context.push(
+                          '/workspaces/$workspaceId/more/'
+                          'skill-credential-definitions/${definition.id}',
+                        ),
+                        variant: AuraTileVariant.ghost,
+                        leading: const AuraIcon(Icons.key_outlined),
+                        trailing: const AuraIcon(Icons.chevron_right),
                       ),
                     );
                   },
+                  separatorBuilder: (_, _) => const SizedBox(height: 8),
+                  itemCount: value.length,
                 ),
         AsyncLoading(:final value, hasValue: true) => ListView(
           children: [
             for (final definition in value!)
               AuraTile(
-                variant: AuraTileVariant.ghost,
                 child: AuraColumn(
-                  spacing: AuraSpacing.xs,
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     AuraText(child: Text(definition.title)),
                     AuraText(
@@ -76,7 +73,10 @@ class SkillCredentialDefinitionsScreen extends ConsumerWidget {
                       color: AuraColorVariant.onSurfaceVariant,
                     ),
                   ],
+                  spacing: AuraSpacing.xs,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                 ),
+                variant: AuraTileVariant.ghost,
               ),
           ],
         ),
@@ -87,10 +87,6 @@ class SkillCredentialDefinitionsScreen extends ConsumerWidget {
       },
       appBar: AuraAppBar(
         title: const TextLocale(LocaleKeys.skill_credentials_definitions_title),
-        leading: AuraIconButton(
-          icon: Icons.arrow_back,
-          onPressed: () => Navigator.of(context).pop(),
-        ),
         actions: [
           AuraIconButton(
             icon: Icons.add,
@@ -99,6 +95,10 @@ class SkillCredentialDefinitionsScreen extends ConsumerWidget {
             ),
           ),
         ],
+        leading: AuraIconButton(
+          icon: Icons.arrow_back,
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
     );
   }

@@ -55,11 +55,11 @@ class ConversationSkillsRepositoryImpl implements ConversationSkillsRepository {
     return ConversationSkillEntity(
       id: table.id,
       conversationId: table.conversationId,
-      workspaceSkillId: table.workspaceSkillId,
-      appSkillIdentifier: table.appSkillIdentifier,
       isLoaded: table.isLoaded,
       createdAt: table.createdAt,
       updatedAt: table.updatedAt,
+      workspaceSkillId: table.workspaceSkillId,
+      appSkillIdentifier: table.appSkillIdentifier,
     );
   }
 }

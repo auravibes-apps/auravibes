@@ -80,8 +80,8 @@ class SkillCredentialsRepositoryImpl implements SkillCredentialsRepository {
             keySuffix: _keySuffix([secretAttributes[entry.key] ?? '']),
           ),
       },
-      keySuffix: row.keySuffix,
       isEnabled: row.isEnabled,
+      keySuffix: row.keySuffix,
     );
   }
 
@@ -105,7 +105,6 @@ class SkillCredentialsRepositoryImpl implements SkillCredentialsRepository {
     final keySuffix = _keySuffix(split.secret.values);
     final row = await _dao.createCredential(
       ServiceConnectionsCompanion(
-        workspaceId: Value(workspaceId),
         name: Value(credential.name),
         serviceId: Value(credential.credentialDefinitionId),
         kind: const Value(ServiceConnectionKindTable.skillCredential),
@@ -113,6 +112,7 @@ class SkillCredentialsRepositoryImpl implements SkillCredentialsRepository {
         encryptedAuthValue: Value(encryptedAttributes),
         keySuffix: Value(keySuffix),
         metadataJson: Value(_metadataJson(split.nonSecret)),
+        workspaceId: Value(workspaceId),
       ),
     );
     return _tableToEntity(row);
@@ -197,10 +197,10 @@ class SkillCredentialsRepositoryImpl implements SkillCredentialsRepository {
       credentialDefinitionId: table.serviceId,
       name: table.name,
       attributes: attributes,
-      keySuffix: table.keySuffix,
       isEnabled: table.isEnabled,
       createdAt: table.createdAt,
       updatedAt: table.updatedAt,
+      keySuffix: table.keySuffix,
     );
   }
 

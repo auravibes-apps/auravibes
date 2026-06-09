@@ -62,7 +62,6 @@ class SkillsScreen extends ConsumerWidget {
     if (skills.isEmpty) {
       return const Center(
         child: AuraColumn(
-          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.psychology_alt_outlined, size: 48),
             AuraText(
@@ -71,18 +70,17 @@ class SkillsScreen extends ConsumerWidget {
             ),
             AuraText(
               child: TextLocale(LocaleKeys.skills_screen_empty_subtitle),
-              color: AuraColorVariant.onSurfaceVariant,
               textAlign: TextAlign.center,
+              color: AuraColorVariant.onSurfaceVariant,
             ),
           ],
+          mainAxisSize: MainAxisSize.min,
         ),
       );
     }
 
     return ListView.separated(
       padding: const EdgeInsets.all(8),
-      itemCount: skills.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
         final skill = skills[index];
         return _SkillTile(
@@ -92,6 +90,8 @@ class SkillsScreen extends ConsumerWidget {
           onChanged: (value) => _setSkillEnabled(ref, skill, value),
         );
       },
+      separatorBuilder: (_, _) => const SizedBox(height: 8),
+      itemCount: skills.length,
     );
   }
 
@@ -152,8 +152,8 @@ class SkillsScreen extends ConsumerWidget {
       builder: (_) => AuraConfirmDialog(
         title: const TextLocale(LocaleKeys.skills_screen_delete),
         message: const TextLocale(LocaleKeys.skills_screen_delete_confirm),
-        cancelLabel: Text(LocaleKeys.common_cancel.tr(context: context)),
         confirmLabel: Text(LocaleKeys.common_delete.tr(context: context)),
+        cancelLabel: Text(LocaleKeys.common_cancel.tr(context: context)),
         isDestructive: true,
       ),
     );
@@ -181,35 +181,8 @@ class _SkillTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraCard(
-      onTap: onOpen,
       child: AuraTile(
-        onTap: onOpen,
-        variant: AuraTileVariant.ghost,
-        leading: AuraIcon(_icon),
-        trailing: AuraRow(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AuraSwitch(value: skill.isEnabled, onChanged: onChanged),
-            if (skill.source == SkillSource.user)
-              AuraPopupMenuButton(
-                tooltip: LocaleKeys.common_show_more.tr(context: context),
-                items: [
-                  AuraPopupMenuItem(
-                    title: Text(LocaleKeys.common_edit.tr(context: context)),
-                    onTap: onOpen,
-                  ),
-                  AuraPopupMenuItem(
-                    title: Text(LocaleKeys.common_delete.tr(context: context)),
-                    onTap: onDelete,
-                    variant: AuraTileVariant.error,
-                  ),
-                ],
-              ),
-          ],
-        ),
         child: AuraColumn(
-          spacing: AuraSpacing.xs,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             AuraText(
               child: skill.titleKey == null
@@ -236,8 +209,35 @@ class _SkillTile extends StatelessWidget {
               ],
             ),
           ],
+          spacing: AuraSpacing.xs,
+          crossAxisAlignment: CrossAxisAlignment.start,
+        ),
+        onTap: onOpen,
+        variant: AuraTileVariant.ghost,
+        leading: AuraIcon(_icon),
+        trailing: AuraRow(
+          children: [
+            AuraSwitch(value: skill.isEnabled, onChanged: onChanged),
+            if (skill.source == SkillSource.user)
+              AuraPopupMenuButton(
+                items: [
+                  AuraPopupMenuItem(
+                    title: Text(LocaleKeys.common_edit.tr(context: context)),
+                    onTap: onOpen,
+                  ),
+                  AuraPopupMenuItem(
+                    title: Text(LocaleKeys.common_delete.tr(context: context)),
+                    onTap: onDelete,
+                    variant: AuraTileVariant.error,
+                  ),
+                ],
+                tooltip: LocaleKeys.common_show_more.tr(context: context),
+              ),
+          ],
+          mainAxisSize: MainAxisSize.min,
         ),
       ),
+      onTap: onOpen,
     );
   }
 

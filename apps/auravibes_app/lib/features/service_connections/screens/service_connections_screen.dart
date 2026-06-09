@@ -25,24 +25,6 @@ class ServiceConnectionsScreen extends ConsumerWidget {
     final connectionsAsync = ref.watch(serviceConnectionsProvider(workspaceId));
 
     return AuraScreen(
-      appBar: AuraAppBar(
-        title: const TextLocale(LocaleKeys.service_connections_title),
-        leading: AuraIconButton(
-          icon: Icons.arrow_back,
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        actions: [
-          AuraIconButton(
-            icon: Icons.add,
-            onPressed: () async {
-              await context.push<bool>(
-                '/workspaces/$workspaceId/more/service-connections/new',
-              );
-            },
-            tooltip: LocaleKeys.service_connections_add.tr(context: context),
-          ),
-        ],
-      ),
       child: switch (connectionsAsync) {
         AsyncData(:final value) => _ConnectionsList(connections: value),
         AsyncLoading(:final value, hasValue: true) => _ConnectionsList(
@@ -56,6 +38,24 @@ class ServiceConnectionsScreen extends ConsumerWidget {
           ),
         ),
       },
+      appBar: AuraAppBar(
+        title: const TextLocale(LocaleKeys.service_connections_title),
+        actions: [
+          AuraIconButton(
+            icon: Icons.add,
+            onPressed: () async {
+              await context.push<bool>(
+                '/workspaces/$workspaceId/more/service-connections/new',
+              );
+            },
+            tooltip: LocaleKeys.service_connections_add.tr(context: context),
+          ),
+        ],
+        leading: AuraIconButton(
+          icon: Icons.arrow_back,
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
     );
   }
 }
@@ -70,7 +70,6 @@ class _ConnectionsList extends StatelessWidget {
     if (connections.isEmpty) {
       return const Center(
         child: AuraColumn(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             AuraIcon(
               Icons.hub_outlined,
@@ -87,6 +86,7 @@ class _ConnectionsList extends StatelessWidget {
               color: AuraColorVariant.onSurfaceVariant,
             ),
           ],
+          mainAxisAlignment: MainAxisAlignment.center,
         ),
       );
     }
@@ -112,6 +112,20 @@ class _ConnectionTile extends ConsumerWidget {
     final menuController = AuraPopupMenuController();
     return AuraCard(
       child: AuraTile(
+        child: AuraColumn(
+          children: [
+            AuraText(
+              child: Text(connection.name),
+              style: AuraTextStyle.heading6,
+            ),
+            AuraText(
+              child: Text(_subtitle(context)),
+              color: AuraColorVariant.onSurfaceVariant,
+            ),
+          ],
+          spacing: AuraSpacing.xs,
+          crossAxisAlignment: CrossAxisAlignment.start,
+        ),
         variant: AuraTileVariant.ghost,
         leading: AuraIcon(_icon),
         trailing: AuraPopupMenu(
@@ -138,20 +152,6 @@ class _ConnectionTile extends ConsumerWidget {
               ),
           ],
           controller: menuController,
-        ),
-        child: AuraColumn(
-          spacing: AuraSpacing.xs,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AuraText(
-              child: Text(connection.name),
-              style: AuraTextStyle.heading6,
-            ),
-            AuraText(
-              child: Text(_subtitle(context)),
-              color: AuraColorVariant.onSurfaceVariant,
-            ),
-          ],
         ),
       ),
     );
@@ -245,10 +245,10 @@ class _ConnectionTile extends ConsumerWidget {
       if (!context.mounted) return;
       showAuraSnackBar(
         context: context,
-        variant: AuraSnackBarVariant.error,
         content: const TextLocale(
           LocaleKeys.service_connections_delete_credential_error,
         ),
+        variant: AuraSnackBarVariant.error,
       );
     }
   }

@@ -106,11 +106,11 @@ class SkillsRepositoryImpl implements SkillsRepository {
       slug: table.slug,
       description: table.description,
       content: table.content,
-      credentialDefinitionId: table.credentialDefinitionId,
-      isCredentialOptional: table.isCredentialOptional,
       isEnabled: table.isEnabled,
+      isCredentialOptional: table.isCredentialOptional,
       createdAt: table.createdAt,
       updatedAt: table.updatedAt,
+      credentialDefinitionId: table.credentialDefinitionId,
     );
   }
 

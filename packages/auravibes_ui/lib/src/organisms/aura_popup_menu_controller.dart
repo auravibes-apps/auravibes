@@ -62,13 +62,13 @@ class _AuraPopupMenuButtonState extends State<AuraPopupMenuButton> {
   @override
   Widget build(BuildContext context) {
     return AuraPopupMenu(
-      controller: _controller,
-      items: widget.items,
       child: AuraIconButton(
         icon: widget.icon,
         onPressed: _controller.toggle,
         tooltip: widget.tooltip,
       ),
+      items: widget.items,
+      controller: _controller,
     );
   }
 }

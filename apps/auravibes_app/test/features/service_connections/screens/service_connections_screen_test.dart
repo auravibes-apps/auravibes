@@ -138,12 +138,6 @@ Future<void> _pumpScreen(
   return tester.pumpWidget(
     EasyLocalization(
       key: UniqueKey(),
-      supportedLocales: const [Locale('en')],
-      path: 'assets/i18n',
-      fallbackLocale: const Locale('en'),
-      startLocale: const Locale('en'),
-      useOnlyLangCode: true,
-      useFallbackTranslations: true,
       child: Builder(
         builder: (context) {
           return UncontrolledProviderScope(
@@ -157,6 +151,12 @@ Future<void> _pumpScreen(
           );
         },
       ),
+      supportedLocales: const [Locale('en')],
+      path: 'assets/i18n',
+      fallbackLocale: const Locale('en'),
+      startLocale: const Locale('en'),
+      useOnlyLangCode: true,
+      useFallbackTranslations: true,
     ),
   );
 }

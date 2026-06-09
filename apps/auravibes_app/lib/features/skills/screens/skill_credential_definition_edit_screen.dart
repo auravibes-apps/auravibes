@@ -63,10 +63,6 @@ class _SkillCredentialDefinitionEditScreenState
               ? LocaleKeys.skill_credentials_definitions_create_title
               : LocaleKeys.skill_credentials_definitions_edit_title,
         ),
-        leading: AuraIconButton(
-          icon: Icons.arrow_back,
-          onPressed: () => Navigator.of(context).pop(),
-        ),
         actions: [
           if (!_isCreate)
             AuraIconButton(
@@ -84,6 +80,10 @@ class _SkillCredentialDefinitionEditScreenState
             ),
           ),
         ],
+        leading: AuraIconButton(
+          icon: Icons.arrow_back,
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
     );
   }
@@ -160,8 +160,6 @@ class _SkillCredentialDefinitionEditScreenState
       children: [
         AuraCard(
           child: AuraColumn(
-            spacing: AuraSpacing.md,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const AuraText(
                 child: TextLocale(
@@ -177,8 +175,6 @@ class _SkillCredentialDefinitionEditScreenState
                 ),
               ),
               AuraColumn(
-                spacing: AuraSpacing.sm,
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const AuraText(
                     child: TextLocale(
@@ -188,11 +184,11 @@ class _SkillCredentialDefinitionEditScreenState
                   ),
                   for (final row in _attributeRows)
                     _AttributeRowEditor(
-                      key: ValueKey(row),
                       row: row,
                       canDelete: _attributeRows.length > 1,
                       onChanged: () => setState(() {}),
                       onDelete: () => _deleteAttributeRow(row),
+                      key: ValueKey(row),
                     ),
                   AuraButton(
                     onPressed: _addAttributeRow,
@@ -201,18 +197,22 @@ class _SkillCredentialDefinitionEditScreenState
                     ),
                   ),
                 ],
+                spacing: AuraSpacing.sm,
+                crossAxisAlignment: CrossAxisAlignment.start,
               ),
               Align(
                 alignment: Alignment.centerRight,
                 child: AuraButton(
                   onPressed: () => _save(context),
-                  disabled: _isSaving,
                   child: const TextLocale(
                     LocaleKeys.skill_credentials_definitions_save,
                   ),
+                  disabled: _isSaving,
                 ),
               ),
             ],
+            spacing: AuraSpacing.md,
+            crossAxisAlignment: CrossAxisAlignment.start,
           ),
         ),
       ],
@@ -254,12 +254,12 @@ class _SkillCredentialDefinitionEditScreenState
       if (!context.mounted) return;
       showAuraSnackBar(
         context: context,
-        variant: AuraSnackBarVariant.error,
         content: Text(
           LocaleKeys.skill_credentials_definitions_save_error.tr(
             context: context,
           ),
         ),
+        variant: AuraSnackBarVariant.error,
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -307,8 +307,8 @@ class _SkillCredentialDefinitionEditScreenState
         message: const TextLocale(
           LocaleKeys.skill_credentials_definitions_delete_confirm,
         ),
-        cancelLabel: Text(LocaleKeys.common_cancel.tr(context: context)),
         confirmLabel: Text(LocaleKeys.common_delete.tr(context: context)),
+        cancelLabel: Text(LocaleKeys.common_cancel.tr(context: context)),
         isDestructive: true,
       ),
     );
@@ -327,12 +327,12 @@ class _SkillCredentialDefinitionEditScreenState
       if (!context.mounted) return;
       showAuraSnackBar(
         context: context,
-        variant: AuraSnackBarVariant.error,
         content: Text(
           LocaleKeys.skill_credentials_definitions_save_error.tr(
             context: context,
           ),
         ),
+        variant: AuraSnackBarVariant.error,
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -391,8 +391,6 @@ class _AttributeRowEditor extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: AuraColumn(
-          spacing: AuraSpacing.sm,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -420,7 +418,6 @@ class _AttributeRowEditor extends StatelessWidget {
               onChanged: (_) => onChanged(),
             ),
             AuraRow(
-              spacing: AuraSpacing.md,
               children: [
                 AuraSwitch(
                   value: row.optional,
@@ -438,9 +435,9 @@ class _AttributeRowEditor extends StatelessWidget {
                   ),
                 ),
               ],
+              spacing: AuraSpacing.md,
             ),
             AuraRow(
-              spacing: AuraSpacing.md,
               children: [
                 AuraSwitch(
                   value: row.secret,
@@ -457,8 +454,11 @@ class _AttributeRowEditor extends StatelessWidget {
                   ),
                 ),
               ],
+              spacing: AuraSpacing.md,
             ),
           ],
+          spacing: AuraSpacing.sm,
+          crossAxisAlignment: CrossAxisAlignment.start,
         ),
       ),
     );

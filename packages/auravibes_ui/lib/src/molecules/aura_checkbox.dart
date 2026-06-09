@@ -182,14 +182,14 @@ class _CheckboxVisual extends StatelessWidget {
       ),
       width: 24,
       height: 24,
-      duration: context.auraTheme.animation.fast,
       child: value
           ? const AuraIcon(
               Icons.check,
-              color: AuraColorVariant.onPrimary,
               size: AuraIconSize.extraSmall,
+              color: AuraColorVariant.onPrimary,
             )
           : null,
+      duration: context.auraTheme.animation.fast,
     );
   }
 

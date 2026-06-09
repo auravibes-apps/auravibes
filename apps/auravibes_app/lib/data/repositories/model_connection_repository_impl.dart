@@ -107,9 +107,9 @@ class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
       name: modelConnection.name,
       modelId: modelConnection.serviceId,
       workspaceId: modelConnection.workspaceId,
+      hasKey: modelConnection.encryptedAuthValue?.isNotEmpty == true,
       url: modelConnection.url,
       keySuffix: modelConnection.keySuffix,
-      hasKey: modelConnection.encryptedAuthValue?.isNotEmpty == true,
     );
   }
 

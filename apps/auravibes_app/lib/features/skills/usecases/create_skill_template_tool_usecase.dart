@@ -66,12 +66,12 @@ final createSkillTemplateToolUsecaseProvider =
     Provider<CreateSkillTemplateToolUsecase>((ref) {
       return CreateSkillTemplateToolUsecase(
         ref.watch(skillTemplateToolsRepositoryProvider),
+        validateSkillTemplateToolUsecase: ref.watch(
+          validateSkillTemplateToolUsecaseProvider,
+        ),
         skillsRepository: ref.watch(skillsRepositoryProvider),
         skillCredentialDefinitionsRepository: ref.watch(
           skillCredentialDefinitionsRepositoryProvider,
-        ),
-        validateSkillTemplateToolUsecase: ref.watch(
-          validateSkillTemplateToolUsecaseProvider,
         ),
       );
     });

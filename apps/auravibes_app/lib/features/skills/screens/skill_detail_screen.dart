@@ -78,10 +78,6 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
               ? LocaleKeys.skills_screen_create_title
               : LocaleKeys.skills_screen_detail_title,
         ),
-        leading: AuraIconButton(
-          icon: Icons.arrow_back,
-          onPressed: () => Navigator.of(context).pop(),
-        ),
         actions: [
           if (!_isCreate && currentDetail?.isUserSkill == true) ...[
             AuraIconButton(
@@ -106,6 +102,10 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
               tooltip: LocaleKeys.skills_screen_save.tr(context: context),
             ),
         ],
+        leading: AuraIconButton(
+          icon: Icons.arrow_back,
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
     );
   }
@@ -164,8 +164,6 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
   ) {
     return AuraCard(
       child: AuraColumn(
-        spacing: AuraSpacing.md,
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ..._buildReadOnlyFields(detail, isReadOnly),
           _buildTitleInput(context, isReadOnly),
@@ -175,6 +173,8 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
           ..._buildCredentialFields(detail, isReadOnly),
           ..._buildSaveActions(context, isReadOnly),
         ],
+        spacing: AuraSpacing.md,
+        crossAxisAlignment: CrossAxisAlignment.start,
       ),
     );
   }
@@ -197,38 +197,37 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
   Widget _buildTitleInput(BuildContext context, bool isReadOnly) {
     return AuraInput(
       controller: _titleController,
-      enabled: !isReadOnly,
       label: Text(
         LocaleKeys.skills_screen_title_label.tr(context: context),
       ),
+      enabled: !isReadOnly,
     );
   }
 
   Widget _buildDescriptionInput(BuildContext context, bool isReadOnly) {
     return AuraInput(
       controller: _descriptionController,
-      enabled: !isReadOnly,
       label: Text(
         LocaleKeys.skills_screen_description_label.tr(context: context),
       ),
+      enabled: !isReadOnly,
     );
   }
 
   Widget _buildContentInput(BuildContext context, bool isReadOnly) {
     return AuraInput(
       controller: _contentController,
-      enabled: !isReadOnly,
-      minLines: 8,
-      maxLines: 16,
       label: Text(
         LocaleKeys.skills_screen_content_label.tr(context: context),
       ),
+      enabled: !isReadOnly,
+      minLines: 8,
+      maxLines: 16,
     );
   }
 
   Widget _buildEnabledToggle(bool isReadOnly) {
     return AuraRow(
-      spacing: AuraSpacing.md,
       children: [
         AuraSwitch(
           value: _isEnabled,
@@ -243,6 +242,7 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
           ),
         ),
       ],
+      spacing: AuraSpacing.md,
     );
   }
 
@@ -285,12 +285,12 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
           alignment: Alignment.centerRight,
           child: AuraButton(
             onPressed: () => _save(context),
-            disabled: _isSaving,
             child: TextLocale(
               _isCreate
                   ? LocaleKeys.skills_screen_create
                   : LocaleKeys.skills_screen_save,
             ),
+            disabled: _isSaving,
           ),
         ),
     ];
@@ -348,10 +348,10 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
       if (!context.mounted) return;
       showAuraSnackBar(
         context: context,
-        variant: AuraSnackBarVariant.error,
         content: Text(
           LocaleKeys.skills_screen_save_error.tr(context: context),
         ),
+        variant: AuraSnackBarVariant.error,
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -418,10 +418,10 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
       if (!context.mounted) return;
       showAuraSnackBar(
         context: context,
-        variant: AuraSnackBarVariant.error,
         content: Text(
           LocaleKeys.skills_screen_save_error.tr(context: context),
         ),
+        variant: AuraSnackBarVariant.error,
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -434,10 +434,10 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
       builder: (_) => AuraConfirmDialog(
         title: const TextLocale(LocaleKeys.skills_screen_delete),
         message: const TextLocale(LocaleKeys.skills_screen_delete_confirm),
-        cancelLabel: Text(LocaleKeys.common_cancel.tr(context: context)),
         confirmLabel: Text(
           LocaleKeys.skills_screen_delete.tr(context: context),
         ),
+        cancelLabel: Text(LocaleKeys.common_cancel.tr(context: context)),
         isDestructive: true,
       ),
     );
@@ -465,8 +465,6 @@ class _SkillToolsCard extends ConsumerWidget {
 
     return AuraCard(
       child: AuraColumn(
-        spacing: AuraSpacing.sm,
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
@@ -496,11 +494,21 @@ class _SkillToolsCard extends ConsumerWidget {
                       children: [
                         for (final tool in value)
                           AuraTile(
+                            child: AuraColumn(
+                              children: [
+                                AuraText(child: Text(tool.title)),
+                                AuraText(
+                                  child: Text(tool.slug),
+                                  color: AuraColorVariant.onSurfaceVariant,
+                                ),
+                              ],
+                              spacing: AuraSpacing.xs,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                            ),
                             onTap: () => _openTool(context, tool.id),
                             variant: AuraTileVariant.ghost,
                             leading: const AuraIcon(Icons.link_outlined),
                             trailing: AuraRow(
-                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 AuraIconButton(
                                   icon: Icons.copy_outlined,
@@ -516,17 +524,7 @@ class _SkillToolsCard extends ConsumerWidget {
                                 ),
                                 const AuraIcon(Icons.chevron_right),
                               ],
-                            ),
-                            child: AuraColumn(
-                              spacing: AuraSpacing.xs,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                AuraText(child: Text(tool.title)),
-                                AuraText(
-                                  child: Text(tool.slug),
-                                  color: AuraColorVariant.onSurfaceVariant,
-                                ),
-                              ],
+                              mainAxisSize: MainAxisSize.min,
                             ),
                           ),
                       ],
@@ -541,6 +539,8 @@ class _SkillToolsCard extends ConsumerWidget {
             ),
           },
         ],
+        spacing: AuraSpacing.sm,
+        crossAxisAlignment: CrossAxisAlignment.start,
       ),
     );
   }
@@ -591,8 +591,8 @@ class _SkillToolsCard extends ConsumerWidget {
       builder: (_) => AuraConfirmDialog(
         title: const TextLocale(LocaleKeys.skills_tool_delete_title),
         message: const TextLocale(LocaleKeys.skills_tool_delete_confirm),
-        cancelLabel: Text(LocaleKeys.common_cancel.tr(context: context)),
         confirmLabel: Text(LocaleKeys.common_delete.tr(context: context)),
+        cancelLabel: Text(LocaleKeys.common_cancel.tr(context: context)),
         isDestructive: true,
       ),
     );
@@ -612,8 +612,6 @@ class _AppSkillToolsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return AuraCard(
       child: AuraColumn(
-        spacing: AuraSpacing.sm,
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const AuraText(
             child: TextLocale(LocaleKeys.skills_tool_section_title),
@@ -621,11 +619,7 @@ class _AppSkillToolsCard extends StatelessWidget {
           ),
           for (final tool in tools)
             AuraTile(
-              variant: AuraTileVariant.ghost,
-              leading: const AuraIcon(Icons.code_outlined),
               child: AuraColumn(
-                spacing: AuraSpacing.xs,
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   AuraText(
                     child: tool.titleKey == null
@@ -642,9 +636,15 @@ class _AppSkillToolsCard extends StatelessWidget {
                     color: AuraColorVariant.onSurfaceVariant,
                   ),
                 ],
+                spacing: AuraSpacing.xs,
+                crossAxisAlignment: CrossAxisAlignment.start,
               ),
+              variant: AuraTileVariant.ghost,
+              leading: const AuraIcon(Icons.code_outlined),
             ),
         ],
+        spacing: AuraSpacing.sm,
+        crossAxisAlignment: CrossAxisAlignment.start,
       ),
     );
   }
@@ -703,11 +703,8 @@ class _CredentialDefinitionSelectContent extends StatelessWidget {
     final hasMissingDefinition = value != null && !hasSelectedDefinition;
 
     return AuraColumn(
-      spacing: AuraSpacing.xs,
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         AuraDropdownSelector<String>(
-          value: hasSelectedDefinition ? value : _noneValue,
           options: [
             AuraDropdownOption<String>(
               value: _noneValue,
@@ -721,6 +718,7 @@ class _CredentialDefinitionSelectContent extends StatelessWidget {
                 child: Text(definition.title),
               ),
           ],
+          value: hasSelectedDefinition ? value : _noneValue,
           onChanged: (value) {
             onChanged(value == _noneValue ? null : value);
           },
@@ -736,6 +734,8 @@ class _CredentialDefinitionSelectContent extends StatelessWidget {
             color: AuraColorVariant.error,
           ),
       ],
+      spacing: AuraSpacing.xs,
+      crossAxisAlignment: CrossAxisAlignment.start,
     );
   }
 }
@@ -823,10 +823,10 @@ class _SkillCredentialsHint extends ConsumerWidget {
         ),
         AuraButton(
           onPressed: () => _openCredentialCreate(context),
-          size: AuraButtonSize.small,
           child: const TextLocale(
             LocaleKeys.skill_credentials_add_title,
           ),
+          size: AuraButtonSize.small,
         ),
       ],
     );
@@ -881,8 +881,6 @@ class _ReadOnlyField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraColumn(
-      spacing: AuraSpacing.xs,
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         AuraText(
           child: TextLocale(labelKey),
@@ -890,6 +888,8 @@ class _ReadOnlyField extends StatelessWidget {
         ),
         AuraSelectableText(value),
       ],
+      spacing: AuraSpacing.xs,
+      crossAxisAlignment: CrossAxisAlignment.start,
     );
   }
 }

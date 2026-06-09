@@ -43,9 +43,9 @@ void main() {
                 container: value.container,
                 child: MaterialApp(
                   home: SkillDetailScreen(
-                    key: ValueKey('${value.workspaceId}:${value.skillId}'),
                     workspaceId: value.workspaceId,
                     skillId: value.skillId,
+                    key: ValueKey('${value.workspaceId}:${value.skillId}'),
                   ),
                   locale: context.locale,
                   localizationsDelegates: context.localizationDelegates,

@@ -39,9 +39,6 @@ Define each tool input accurately with type, description, and optional when appr
 Only create user skills from explicit user intent.
 ''',
       kind: SkillKind.native,
-      titleKey: LocaleKeys.app_skills_skills_manager_title,
-      descriptionKey: LocaleKeys.app_skills_skills_manager_description,
-      contentKey: LocaleKeys.app_skills_skills_manager_content,
       nativeTools: [
         AppSkillToolDefinition(
           slug: 'list_user_skills',
@@ -133,6 +130,9 @@ Only create user skills from explicit user intent.
           description: 'Delete a reusable user credential definition by slug.',
         ),
       ],
+      titleKey: LocaleKeys.app_skills_skills_manager_title,
+      descriptionKey: LocaleKeys.app_skills_skills_manager_description,
+      contentKey: LocaleKeys.app_skills_skills_manager_content,
     ),
   ];
 

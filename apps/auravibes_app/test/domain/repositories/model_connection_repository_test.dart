@@ -60,9 +60,9 @@ class _StubModelConnectionRepository implements ModelConnectionRepository {
       name: connection.name,
       modelId: connection.modelId,
       workspaceId: connection.workspaceId,
+      hasKey: connection.key.isNotEmpty,
       url: connection.url,
       keySuffix: connection.keySuffix,
-      hasKey: connection.key.isNotEmpty,
     );
   }
 

@@ -74,10 +74,10 @@ void main() {
     final skill = await skillsRepository.createSkill(
       workspace.id,
       const SkillToCreate(
+        kind: SkillKind.template,
         title: 'Write Summary',
         description: 'Summarize selected content.',
         content: 'Summarize selected content.',
-        kind: SkillKind.template,
       ),
     );
     final appSkillSettings = AppSkillWorkspaceSettingsRepositoryImpl(database);
@@ -97,7 +97,6 @@ void main() {
 
   GoRouter createRouter(String workspaceId) {
     return GoRouter(
-      initialLocation: '/',
       routes: [
         GoRoute(
           path: '/',
@@ -116,6 +115,7 @@ void main() {
           ),
         ),
       ],
+      initialLocation: '/',
     );
   }
 

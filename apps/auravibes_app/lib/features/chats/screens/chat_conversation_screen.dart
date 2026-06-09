@@ -258,8 +258,8 @@ class _RateLimitRetryIndicatorState extends State<_RateLimitRetryIndicator> {
 
     return Padding(
       padding: const EdgeInsets.symmetric(
-        horizontal: DesignSpacing.md,
         vertical: DesignSpacing.xs,
+        horizontal: DesignSpacing.md,
       ),
       child: Row(
         children: [
@@ -267,12 +267,12 @@ class _RateLimitRetryIndicatorState extends State<_RateLimitRetryIndicator> {
           SizedBox(width: context.auraTheme.spacing.sm),
           Flexible(
             child: AuraText(
-              style: AuraTextStyle.bodySmall,
               child: Text(
                 LocaleKeys.chats_screens_chat_conversation_rate_limit_retry.tr(
                   namedArgs: {'seconds': remainingSeconds.toString()},
                 ),
               ),
+              style: AuraTextStyle.bodySmall,
             ),
           ),
         ],

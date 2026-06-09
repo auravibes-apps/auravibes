@@ -103,8 +103,8 @@ class SkillTemplateToolsRepositoryImpl implements SkillTemplateToolsRepository {
       slug: table.slug,
       templateJson: table.templateJson,
       inputsJson: table.inputsJson,
-      requiresCredential: table.requiresCredential,
       isEnabled: table.isEnabled,
+      requiresCredential: table.requiresCredential,
       createdAt: table.createdAt,
       updatedAt: table.updatedAt,
     );

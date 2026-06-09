@@ -62,12 +62,6 @@ void main() {
     await tester.pumpWidget(
       EasyLocalization(
         key: UniqueKey(),
-        supportedLocales: const [Locale('en')],
-        path: 'assets/i18n',
-        fallbackLocale: const Locale('en'),
-        startLocale: const Locale('en'),
-        useOnlyLangCode: true,
-        useFallbackTranslations: true,
         child: Builder(
           builder: (context) {
             return UncontrolledProviderScope(
@@ -85,6 +79,12 @@ void main() {
             );
           },
         ),
+        supportedLocales: const [Locale('en')],
+        path: 'assets/i18n',
+        fallbackLocale: const Locale('en'),
+        startLocale: const Locale('en'),
+        useOnlyLangCode: true,
+        useFallbackTranslations: true,
       ),
     );
     await tester.pumpAndSettle();

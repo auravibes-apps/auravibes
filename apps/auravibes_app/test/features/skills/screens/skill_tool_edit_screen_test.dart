@@ -61,7 +61,6 @@ void main() {
       ),
     );
     final router = GoRouter(
-      initialLocation: '/workspaces/${workspace.id}/more/skills/${skill.id}',
       routes: [
         GoRoute(
           path: '/workspaces/:workspaceId/more/skills/:skillId',
@@ -75,6 +74,7 @@ void main() {
           ),
         ),
       ],
+      initialLocation: '/workspaces/${workspace.id}/more/skills/${skill.id}',
     );
     addTearDown(router.dispose);
 
