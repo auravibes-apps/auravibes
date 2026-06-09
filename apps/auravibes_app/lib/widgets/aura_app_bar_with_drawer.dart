@@ -1,4 +1,3 @@
-// ignore_for_file: prefer-extracting-callbacks
 // Required: UI callbacks stay local to their widgets.
 import 'package:auravibes_app/widgets/responsive_sliding_drawer_controller.dart';
 import 'package:auravibes_ui/ui.dart';

@@ -1,20 +1,5 @@
-// ignore_for_file: prefer-async-await
-// Required: Existing Future chains preserve callback flow.
-// ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: avoid-returning-widgets
-// Required: Existing helper builders return widgets.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
-// Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-moving-to-variable
 // Required: Existing code repeats lookups where extraction adds noise.
-// ignore_for_file: prefer-single-widget-per-file
 // Required: Feature widgets keep closely related private widgets together.
 import 'dart:async';
 
@@ -33,13 +18,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-/// Modal for adding new MCP (Model Context Protocol) servers to the workspace
+/// Modal for adding new MCP (Model Context Protocol) servers to the workspace.
 class AddMcpModal extends HookConsumerWidget {
   const AddMcpModal({required this.workspaceId, super.key});
 
   final String workspaceId;
 
-  /// Shows the add MCP modal as a dialog
+  /// Shows the add MCP modal as a dialog.
   static Future<void> show(
     BuildContext context, {
     required String workspaceId,
@@ -65,13 +50,13 @@ class AddMcpModal extends HookConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Header with close button
-            _buildHeader(context),
+            // Header with close button.
+            const _AddMcpModalHeader(),
 
-            // Error message
+            // Error message.
             _ErrorBanner(workspaceId: workspaceId),
 
-            // Scrollable form content
+            // Scrollable form content.
             Flexible(
               child: SingleChildScrollView(
                 padding: EdgeInsets.all(context.auraTheme.spacing.md),
@@ -79,19 +64,19 @@ class AddMcpModal extends HookConsumerWidget {
                   children: [
                     AuraColumn(
                       children: [
-                        // Name field (required)
+                        // Name field (required).
                         _NameInput(workspaceId: workspaceId),
 
-                        // Description field (optional)
+                        // Description field (optional).
                         _DescriptionInput(workspaceId: workspaceId),
 
-                        // URL field (required)
+                        // URL field (required).
                         _UrlInput(workspaceId: workspaceId),
 
-                        // Transport selector
+                        // Transport selector.
                         _TransportSelector(workspaceId: workspaceId),
 
-                        // HTTP/2 toggle (only for streamableHttp)
+                        // HTTP/2 toggle (only for streamableHttp).
                         AppVisibilityBase(
                           visible: mcpFormProvider(workspaceId).select(
                             (value) => value.showHttp2Toggle,
@@ -99,10 +84,10 @@ class AddMcpModal extends HookConsumerWidget {
                           child: _Http2Toggle(workspaceId: workspaceId),
                         ),
 
-                        // Authentication selector
+                        // Authentication selector.
                         _AuthenticationSelector(workspaceId: workspaceId),
 
-                        // Bearer token field
+                        // Bearer token field.
                         AppVisibilityBase(
                           visible: mcpFormProvider(workspaceId).select(
                             (value) => value.showBearerTokenField,
@@ -119,15 +104,20 @@ class AddMcpModal extends HookConsumerWidget {
               ),
             ),
 
-            // Footer with action buttons
+            // Footer with action buttons.
             _Footer(workspaceId: workspaceId),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildHeader(BuildContext context) {
+class _AddMcpModalHeader extends StatelessWidget {
+  const _AddMcpModalHeader();
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.all(context.auraTheme.spacing.md),
       decoration: BoxDecoration(
@@ -203,6 +193,7 @@ class _ErrorBanner extends ConsumerWidget {
     if (errorMessage == null) {
       return const SizedBox.shrink();
     }
+
     return Container(
       padding: EdgeInsets.symmetric(
         vertical: context.auraTheme.spacing.sm,
@@ -244,23 +235,11 @@ class _Footer extends HookConsumerWidget {
 
     final onSave = useCallback(
       () {
-        unawaited(
-          ref.read(mcpFormProvider(workspaceId).notifier).submit().then((
-            success,
-          ) {
-            if (success && context.mounted) {
-              final _ = showAuraSnackBar(
-                context: context,
-                content: Text(LocaleKeys.mcp_modal_save_success.tr()),
-                variant: AuraSnackBarVariant.success,
-              );
-              Navigator.of(context).pop();
-            }
-          }),
-        );
+        unawaited(_submit(context, ref, workspaceId));
       },
       [ref, context, workspaceId],
     );
+
     return Container(
       padding: EdgeInsets.all(context.auraTheme.spacing.md),
       decoration: BoxDecoration(
@@ -290,6 +269,24 @@ class _Footer extends HookConsumerWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _submit(
+    BuildContext context,
+    WidgetRef ref,
+    String workspaceId,
+  ) async {
+    final success = await ref
+        .read(mcpFormProvider(workspaceId).notifier)
+        .submit();
+    if (!success || !context.mounted) return;
+
+    final _ = showAuraSnackBar(
+      context: context,
+      content: Text(LocaleKeys.mcp_modal_save_success.tr()),
+      variant: AuraSnackBarVariant.success,
+    );
+    Navigator.of(context).pop();
   }
 }
 

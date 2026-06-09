@@ -1,4 +1,3 @@
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
@@ -26,6 +25,7 @@ class BuildPromptChatMessages {
 
       final normalized = message.content.trim();
       if (normalized.isEmpty) return const [];
+
       return [ChatMessage.system(normalized)];
     }
 

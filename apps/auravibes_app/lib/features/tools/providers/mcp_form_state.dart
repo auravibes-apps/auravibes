@@ -1,10 +1,4 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-moving-to-variable
 // Required: Existing code repeats lookups where extraction adds noise.
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
@@ -14,7 +8,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'mcp_form_state.freezed.dart';
 part 'mcp_form_state.g.dart';
 
-/// State for the MCP form
+/// State for the MCP form.
 @freezed
 abstract class McpFormState with _$McpFormState {
   const factory McpFormState({
@@ -33,14 +27,14 @@ abstract class McpFormState with _$McpFormState {
 
   const McpFormState._();
 
-  /// Get available authentication types based on current transport
+  /// Get available authentication types based on current transport.
   List<McpAuthenticationTypeOptions> get availableAuthTypes {
     switch (transport) {
       case .sse:
-        // SSE supports: none, oauth, bearer token
+        // SSE supports: none, oauth, bearer token.
         return McpAuthenticationTypeOptions.values;
       case .streamableHttp:
-        // Streamable HTTP supports: none, oauth (no bearer token)
+        // Streamable HTTP supports: none, oauth (no bearer token).
         return [
           McpAuthenticationTypeOptions.none,
           McpAuthenticationTypeOptions.oauth,
@@ -48,16 +42,16 @@ abstract class McpFormState with _$McpFormState {
     }
   }
 
-  /// Whether to show OAuth fields
+  /// Whether to show OAuth fields.
   bool get showOAuthFields => authenticationType == .oauth;
 
-  /// Whether to show bearer token field
+  /// Whether to show bearer token field.
   bool get showBearerTokenField => authenticationType == .bearerToken;
 
-  /// Whether to show HTTP/2 toggle
+  /// Whether to show HTTP/2 toggle.
   bool get showHttp2Toggle => transport == .streamableHttp;
 
-  /// Convert to McpServerToCreate for validation and saving
+  /// Convert to McpServerToCreate for validation and saving.
   McpServerFormToCreate toCreateEntity() {
     return McpServerFormToCreate(
       name: name.trim(),
@@ -78,14 +72,14 @@ abstract class McpFormState with _$McpFormState {
     }
   }
 
-  /// Check if the form is valid
+  /// Check if the form is valid.
   bool get isValid => toCreateEntity().isValid;
 
-  /// Get validation errors
+  /// Get validation errors.
   List<String> get validationErrors => toCreateEntity().validationErrors;
 }
 
-/// Notifier for managing MCP form state
+/// Notifier for managing MCP form state.
 @riverpod
 class McpFormNotifier extends _$McpFormNotifier {
   String _workspaceId = '';
@@ -93,35 +87,36 @@ class McpFormNotifier extends _$McpFormNotifier {
   @override
   McpFormState build(String workspaceId) {
     _workspaceId = workspaceId;
+
     return const McpFormState();
   }
 
-  /// Update the name field
+  /// Update the name field.
   void setName(String value) {
     state = state.copyWith(name: value);
   }
 
-  /// Update the description field
+  /// Update the description field.
   void setDescription(String value) {
     state = state.copyWith(description: value);
   }
 
-  /// Update the URL field
+  /// Update the URL field.
   void setUrl(String value) {
     state = state.copyWith(url: value);
   }
 
-  /// Update the transport type
+  /// Update the transport type.
   void setTransport(McpTransportTypeOptions? value) {
     if (value == null) return;
     var newState = state.copyWith(transport: value);
 
-    // Reset HTTP/2 when switching away from streamableHttp
+    // Reset HTTP/2 when switching away from streamableHttp.
     if (value != .streamableHttp) {
       newState = newState.copyWith(useHttp2: false);
     }
 
-    // Reset auth type if current selection is not available for new transport
+    // Reset auth type if current selection is not available for new transport.
     final availableTypes = newState.availableAuthTypes;
     if (!availableTypes.contains(newState.authenticationType)) {
       newState = newState.copyWith(
@@ -132,38 +127,38 @@ class McpFormNotifier extends _$McpFormNotifier {
     state = newState;
   }
 
-  /// Update the authentication type
+  /// Update the authentication type.
   void setAuthenticationType(McpAuthenticationTypeOptions value) {
     state = state.copyWith(authenticationType: value);
   }
 
-  /// Update the bearer token field
+  /// Update the bearer token field.
   void setBearerToken(String value) {
     state = state.copyWith(bearerToken: value);
   }
 
-  /// Update the HTTP/2 toggle
+  /// Update the HTTP/2 toggle.
   // ignore: avoid_positional_boolean_parameters - simple setter for toggling HTTP/2 flag
   void setUseHttp2(bool value) {
     state = state.copyWith(useHttp2: value);
   }
 
-  /// Set submitting state
+  /// Set submitting state.
   void setSubmitting({required bool value}) {
     state = state.copyWith(isSubmitting: value);
   }
 
-  /// Set error message
+  /// Set error message.
   void setError(String message) {
     state = state.copyWith(errorMessage: message);
   }
 
-  /// Clear the error message
+  /// Clear the error message.
   void clearError() {
     state = state.copyWith(errorMessage: null);
   }
 
-  /// Submit the form
+  /// Submit the form.
   ///
   /// Validates the form and submits to the MCP manager to:
   /// 1. Save the MCP server to the database (TODO)
@@ -172,6 +167,7 @@ class McpFormNotifier extends _$McpFormNotifier {
   Future<bool> submit() async {
     if (!state.isValid) {
       setError(state.validationErrors.join('\n'));
+
       return false;
     }
 
@@ -187,10 +183,12 @@ class McpFormNotifier extends _$McpFormNotifier {
           .addMcpServer(mcpToCreate, workspaceId: _workspaceId);
 
       setSubmitting(value: false);
+
       return true;
     } on Exception catch (e) {
       setError('Error: $e');
       setSubmitting(value: false);
+
       return false;
     }
   }

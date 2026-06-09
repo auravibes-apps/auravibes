@@ -1,15 +1,4 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: missing-test-assertion
-// Required: Tests verify orchestration through repository side effects.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
@@ -19,6 +8,7 @@ import 'package:auravibes_app/domain/repositories/message_repository.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_send_queue_runtime.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_context.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_decision.dart';
 import 'package:auravibes_app/features/chats/usecases/continue_agent_result.dart';
@@ -41,38 +31,13 @@ import 'run_agent_iteration_usecase_test.mocks.dart';
 ])
 void main() {
   group('RunAgentIterationUsecase', () {
-    late MockContinueAgentUsecase continueAgentUsecase;
-    late MockRunAllowedToolsUsecase runAllowedToolsUsecase;
-    late MockConversationRepository conversationRepository;
-    late MockMessageRepository messageRepository;
-    late MockMaybeAutoCompactConversationUsecase
-    maybeAutoCompactConversationUsecase;
-    late ProviderContainer container;
-    late AgentCancellationRuntime agentCancellationRuntime;
-    late RunAgentIterationUsecase usecase;
+    var fixture = _RunAgentIterationUsecaseFixture();
 
     setUp(() {
-      continueAgentUsecase = MockContinueAgentUsecase();
-      runAllowedToolsUsecase = MockRunAllowedToolsUsecase();
-      conversationRepository = MockConversationRepository();
-      messageRepository = MockMessageRepository();
-      maybeAutoCompactConversationUsecase =
-          MockMaybeAutoCompactConversationUsecase();
-      container = ProviderContainer();
-      agentCancellationRuntime = AgentCancellationRuntime();
-      usecase = RunAgentIterationUsecase(
-        continueAgentUsecase: continueAgentUsecase,
-        runAllowedToolsUsecase: runAllowedToolsUsecase,
-        maybeAutoCompactConversationUsecase:
-            maybeAutoCompactConversationUsecase,
-        conversationRepository: conversationRepository,
-        messageRepository: messageRepository,
-        sendQueueRuntime: container.read(conversationSendQueueRuntimeProvider),
-        agentCancellationRuntime: agentCancellationRuntime,
-      );
+      fixture = _RunAgentIterationUsecaseFixture();
 
       when(
-        conversationRepository.getConversationById('conversation-1'),
+        fixture.conversationRepository.getConversationById('conversation-1'),
       ).thenAnswer(
         (_) async => ConversationEntity(
           id: 'conversation-1',
@@ -84,7 +49,7 @@ void main() {
         ),
       );
 
-      when(messageRepository.createMessage(any)).thenAnswer(
+      when(fixture.messageRepository.createMessage(any)).thenAnswer(
         (_) async => MessageEntity(
           id: 'queued-user-1',
           conversationId: 'conversation-1',
@@ -99,12 +64,12 @@ void main() {
     });
 
     tearDown(() {
-      container.dispose();
+      fixture.container.dispose();
     });
 
     test('returns done when the agent response has no tool calls', () async {
       when(
-        continueAgentUsecase.call(
+        fixture.continueAgentUsecase.call(
           conversationId: 'conversation-1',
           context: const AgentIterationContext(
             origin: AgentIterationOrigin.userMessage,
@@ -118,7 +83,7 @@ void main() {
         ),
       );
 
-      final result = await usecase.call(
+      final result = await fixture.usecase.call(
         conversationId: 'conversation-1',
         context: const AgentIterationContext(
           origin: AgentIterationOrigin.userMessage,
@@ -128,7 +93,7 @@ void main() {
 
       expect(result, AgentIterationDecision.done);
       final _ = verifyNever(
-        runAllowedToolsUsecase.call(
+        fixture.runAllowedToolsUsecase.call(
           conversationId: anyNamed('conversationId'),
           workspaceId: anyNamed('workspaceId'),
         ),
@@ -137,7 +102,7 @@ void main() {
 
     test('forwards the iteration context to every continuation call', () async {
       when(
-        continueAgentUsecase.call(
+        fixture.continueAgentUsecase.call(
           conversationId: 'conversation-1',
           context: const AgentIterationContext(
             origin: AgentIterationOrigin.userMessage,
@@ -151,7 +116,7 @@ void main() {
         ),
       );
 
-      final _ = await usecase.call(
+      final _ = await fixture.usecase.call(
         conversationId: 'conversation-1',
         context: const AgentIterationContext(
           origin: AgentIterationOrigin.userMessage,
@@ -159,15 +124,18 @@ void main() {
         ),
       );
 
-      verify(
-        continueAgentUsecase.call(
-          conversationId: 'conversation-1',
-          context: const AgentIterationContext(
-            origin: AgentIterationOrigin.userMessage,
-            ackMessageIds: ['user-1'],
+      expect(
+        () => verify(
+          fixture.continueAgentUsecase.call(
+            conversationId: 'conversation-1',
+            context: const AgentIterationContext(
+              origin: AgentIterationOrigin.userMessage,
+              ackMessageIds: ['user-1'],
+            ),
           ),
-        ),
-      ).called(1);
+        ).called(1),
+        returnsNormally,
+      );
     });
 
     test(
@@ -175,7 +143,7 @@ void main() {
       () async {
         var callCount = 0;
         when(
-          continueAgentUsecase.call(
+          fixture.continueAgentUsecase.call(
             conversationId: 'conversation-1',
             context: anyNamed('context'),
           ),
@@ -192,7 +160,7 @@ void main() {
                 ackMessageIds: ['user-1'],
               ),
             );
-            final _ = container
+            final _ = fixture.container
                 .read(conversationSendQueueProvider.notifier)
                 .enqueue(
                   conversationId: 'conversation-1',
@@ -219,7 +187,7 @@ void main() {
           );
         });
 
-        final result = await usecase.call(
+        final result = await fixture.usecase.call(
           conversationId: 'conversation-1',
           context: const AgentIterationContext(
             origin: AgentIterationOrigin.userMessage,
@@ -229,9 +197,9 @@ void main() {
 
         expect(result, AgentIterationDecision.done);
         expect(callCount, 2);
-        verify(messageRepository.createMessage(any)).called(1);
+        verify(fixture.messageRepository.createMessage(any)).called(1);
         expect(
-          container
+          fixture.container
               .read(conversationSendQueueProvider.notifier)
               .peek('conversation-1'),
           isNull,
@@ -244,7 +212,7 @@ void main() {
       () async {
         var callCount = 0;
         when(
-          continueAgentUsecase.call(
+          fixture.continueAgentUsecase.call(
             conversationId: 'conversation-1',
             context: anyNamed('context'),
           ),
@@ -277,13 +245,13 @@ void main() {
           );
         });
         when(
-          runAllowedToolsUsecase.call(
+          fixture.runAllowedToolsUsecase.call(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
           ),
         ).thenAnswer((_) async => AgentIterationDecision.continueIteration);
 
-        final result = await usecase.call(
+        final result = await fixture.usecase.call(
           conversationId: 'conversation-1',
           context: const AgentIterationContext(
             origin: AgentIterationOrigin.userMessage,
@@ -293,13 +261,13 @@ void main() {
 
         expect(result, AgentIterationDecision.done);
         verify(
-          continueAgentUsecase.call(
+          fixture.continueAgentUsecase.call(
             conversationId: 'conversation-1',
             context: anyNamed('context'),
           ),
         ).called(2);
         verify(
-          runAllowedToolsUsecase.call(
+          fixture.runAllowedToolsUsecase.call(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
           ),
@@ -307,39 +275,152 @@ void main() {
       },
     );
 
+    test('waits and retries when the model hits a rate limit', () async {
+      var callCount = 0;
+      when(
+        fixture.continueAgentUsecase.call(
+          conversationId: 'conversation-1',
+          context: anyNamed('context'),
+        ),
+      ).thenAnswer((_) async {
+        callCount += 1;
+        if (callCount == 1) {
+          throw Exception('RateLimitException(429): RESOURCE_EXHAUSTED');
+        }
+
+        return const ContinueAgentResult(
+          messageId: 'assistant-2',
+          hasToolCalls: false,
+        );
+      });
+
+      final result = await fixture.usecase.call(
+        conversationId: 'conversation-1',
+        context: const AgentIterationContext(
+          origin: AgentIterationOrigin.userMessage,
+          ackMessageIds: ['user-1'],
+        ),
+      );
+
+      expect(result, AgentIterationDecision.done);
+      expect(callCount, 2);
+      expect(fixture.rateLimitRetryRuntime.retryAt('conversation-1'), isNull);
+      verify(
+        fixture.continueAgentUsecase.call(
+          conversationId: 'conversation-1',
+          context: anyNamed('context'),
+        ),
+      ).called(2);
+      final _ = verifyNever(
+        fixture.runAllowedToolsUsecase.call(
+          conversationId: anyNamed('conversationId'),
+          workspaceId: anyNamed('workspaceId'),
+        ),
+      );
+    });
+
+    test('uses known retry delay from rate-limit errors', () async {
+      final startTime = DateTime(2026);
+      var currentTime = startTime;
+      final delays = <Duration>[];
+      fixture.usecase = RunAgentIterationUsecase(
+        continueAgentUsecase: fixture.continueAgentUsecase,
+        runAllowedToolsUsecase: fixture.runAllowedToolsUsecase,
+        maybeAutoCompactConversationUsecase:
+            fixture.maybeAutoCompactConversationUsecase,
+        conversationRepository: fixture.conversationRepository,
+        messageRepository: fixture.messageRepository,
+        sendQueueRuntime: fixture.container.read(
+          conversationSendQueueRuntimeProvider,
+        ),
+        agentCancellationRuntime: fixture.agentCancellationRuntime,
+        rateLimitRetryRuntime: fixture.rateLimitRetryRuntime,
+        now: () => currentTime,
+        sleep: (delay) {
+          delays.add(delay);
+          expect(
+            fixture.rateLimitRetryRuntime.retryAt('conversation-1'),
+            startTime.add(const Duration(seconds: 3)),
+          );
+          currentTime = currentTime.add(delay);
+
+          return Future<void>.value();
+        },
+      );
+
+      var callCount = 0;
+      when(
+        fixture.continueAgentUsecase.call(
+          conversationId: 'conversation-1',
+          context: anyNamed('context'),
+        ),
+      ).thenAnswer((_) async {
+        callCount += 1;
+        if (callCount == 1) {
+          throw Exception(
+            'RateLimitException(429): try again in 3 seconds',
+          );
+        }
+
+        return const ContinueAgentResult(
+          messageId: 'assistant-2',
+          hasToolCalls: false,
+        );
+      });
+
+      final result = await fixture.usecase.call(
+        conversationId: 'conversation-1',
+        context: const AgentIterationContext(
+          origin: AgentIterationOrigin.userMessage,
+          ackMessageIds: ['user-1'],
+        ),
+      );
+
+      expect(result, AgentIterationDecision.done);
+      expect(callCount, 2);
+      expect(delays, [
+        const Duration(seconds: 1),
+        const Duration(seconds: 1),
+        const Duration(seconds: 1),
+      ]);
+      expect(fixture.rateLimitRetryRuntime.retryAt('conversation-1'), isNull);
+    });
+
     test(
       'stops before the next loop iteration and clears queued drafts',
       () async {
         var callCount = 0;
         when(
-          continueAgentUsecase.call(
+          fixture.continueAgentUsecase.call(
             conversationId: 'conversation-1',
             context: anyNamed('context'),
           ),
         ).thenAnswer((_) async {
           callCount += 1;
+
           return ContinueAgentResult(
             messageId: 'assistant-$callCount',
             hasToolCalls: true,
           );
         });
         when(
-          runAllowedToolsUsecase.call(
+          fixture.runAllowedToolsUsecase.call(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
           ),
         ).thenAnswer((_) async {
-          final _ = container
+          final _ = fixture.container
               .read(conversationSendQueueProvider.notifier)
               .enqueue(
                 conversationId: 'conversation-1',
                 content: 'Queued follow-up',
               );
-          agentCancellationRuntime.requestStop('conversation-1');
+          fixture.agentCancellationRuntime.requestStop('conversation-1');
+
           return AgentIterationDecision.continueIteration;
         });
 
-        final result = await usecase.call(
+        final result = await fixture.usecase.call(
           conversationId: 'conversation-1',
           context: const AgentIterationContext(
             origin: AgentIterationOrigin.userMessage,
@@ -350,13 +431,13 @@ void main() {
         expect(result, AgentIterationDecision.done);
         expect(callCount, 1);
         expect(
-          container
+          fixture.container
               .read(conversationSendQueueProvider.notifier)
               .peek('conversation-1'),
           isNull,
         );
         verify(
-          continueAgentUsecase.call(
+          fixture.continueAgentUsecase.call(
             conversationId: 'conversation-1',
             context: anyNamed('context'),
           ),
@@ -367,14 +448,17 @@ void main() {
     test(
       'marks queued drafts sent when stopped after dequeue',
       () async {
-        final _ = container
+        final _ = fixture.container
             .read(conversationSendQueueProvider.notifier)
             .enqueue(
               conversationId: 'conversation-1',
               content: 'Queued follow-up',
             );
-        when(messageRepository.createMessage(any)).thenAnswer((_) async {
-          agentCancellationRuntime.requestStop('conversation-1');
+        when(
+          fixture.messageRepository.createMessage(any),
+        ).thenAnswer((_) async {
+          fixture.agentCancellationRuntime.requestStop('conversation-1');
+
           return MessageEntity(
             id: 'queued-user-1',
             conversationId: 'conversation-1',
@@ -386,7 +470,7 @@ void main() {
             updatedAt: DateTime(2025),
           );
         });
-        when(messageRepository.patchMessage(any, any)).thenAnswer(
+        when(fixture.messageRepository.patchMessage(any, any)).thenAnswer(
           (_) async => MessageEntity(
             id: 'queued-user-1',
             conversationId: 'conversation-1',
@@ -399,7 +483,7 @@ void main() {
           ),
         );
 
-        final result = await usecase.call(
+        final result = await fixture.usecase.call(
           conversationId: 'conversation-1',
           context: const AgentIterationContext(
             origin: AgentIterationOrigin.userMessage,
@@ -409,13 +493,13 @@ void main() {
 
         expect(result, AgentIterationDecision.done);
         final _ = verifyNever(
-          continueAgentUsecase.call(
+          fixture.continueAgentUsecase.call(
             conversationId: anyNamed('conversationId'),
             context: anyNamed('context'),
           ),
         );
         final capturedPatches = verify(
-          messageRepository.patchMessage(captureAny, captureAny),
+          fixture.messageRepository.patchMessage(captureAny, captureAny),
         ).captured;
         expect(capturedPatches.whereType<String>(), [
           'user-1',
@@ -434,7 +518,7 @@ void main() {
       'returns the tool decision when execution must pause for approval',
       () async {
         when(
-          continueAgentUsecase.call(
+          fixture.continueAgentUsecase.call(
             conversationId: 'conversation-1',
             context: const AgentIterationContext(
               origin: AgentIterationOrigin.userMessage,
@@ -448,13 +532,13 @@ void main() {
           ),
         );
         when(
-          runAllowedToolsUsecase.call(
+          fixture.runAllowedToolsUsecase.call(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
           ),
         ).thenAnswer((_) async => AgentIterationDecision.waitForToolApproval);
 
-        final result = await usecase.call(
+        final result = await fixture.usecase.call(
           conversationId: 'conversation-1',
           context: const AgentIterationContext(
             origin: AgentIterationOrigin.userMessage,
@@ -469,7 +553,7 @@ void main() {
     test(
       'includes queued drafts in the same iteration context',
       () async {
-        final _ = container
+        final _ = fixture.container
             .read(conversationSendQueueProvider.notifier)
             .enqueue(
               conversationId: 'conversation-1',
@@ -477,7 +561,7 @@ void main() {
             );
 
         when(
-          continueAgentUsecase.call(
+          fixture.continueAgentUsecase.call(
             conversationId: 'conversation-1',
             context: const AgentIterationContext(
               origin: AgentIterationOrigin.userMessage,
@@ -491,7 +575,7 @@ void main() {
           ),
         );
 
-        final result = await usecase.call(
+        final result = await fixture.usecase.call(
           conversationId: 'conversation-1',
           context: const AgentIterationContext(
             origin: AgentIterationOrigin.userMessage,
@@ -500,9 +584,9 @@ void main() {
         );
 
         expect(result, AgentIterationDecision.done);
-        verify(messageRepository.createMessage(any)).called(1);
+        verify(fixture.messageRepository.createMessage(any)).called(1);
         verify(
-          continueAgentUsecase.call(
+          fixture.continueAgentUsecase.call(
             conversationId: 'conversation-1',
             context: const AgentIterationContext(
               origin: AgentIterationOrigin.userMessage,
@@ -511,7 +595,7 @@ void main() {
           ),
         ).called(1);
         expect(
-          container
+          fixture.container
               .read(conversationSendQueueProvider.notifier)
               .peek('conversation-1'),
           isNull,
@@ -524,7 +608,7 @@ void main() {
       () async {
         var callCount = 0;
         when(
-          continueAgentUsecase.call(
+          fixture.continueAgentUsecase.call(
             conversationId: 'conversation-1',
             context: anyNamed('context'),
           ),
@@ -553,21 +637,22 @@ void main() {
           );
         });
         when(
-          runAllowedToolsUsecase.call(
+          fixture.runAllowedToolsUsecase.call(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
           ),
         ).thenAnswer((_) async {
-          final _ = container
+          final _ = fixture.container
               .read(conversationSendQueueProvider.notifier)
               .enqueue(
                 conversationId: 'conversation-1',
                 content: 'Queued follow-up',
               );
+
           return AgentIterationDecision.continueIteration;
         });
 
-        final result = await usecase.call(
+        final result = await fixture.usecase.call(
           conversationId: 'conversation-1',
           context: const AgentIterationContext(
             origin: AgentIterationOrigin.userMessage,
@@ -576,10 +661,10 @@ void main() {
         );
 
         expect(result, AgentIterationDecision.done);
-        verify(messageRepository.createMessage(any)).called(1);
+        verify(fixture.messageRepository.createMessage(any)).called(1);
         expect(callCount, 2);
         expect(
-          container
+          fixture.container
               .read(conversationSendQueueProvider.notifier)
               .peek('conversation-1'),
           isNull,
@@ -590,13 +675,13 @@ void main() {
     test(
       'drains multiple queued drafts in one iteration before returning done',
       () async {
-        final _ = container
+        final _ = fixture.container
             .read(conversationSendQueueProvider.notifier)
             .enqueue(
               conversationId: 'conversation-1',
               content: 'Queued follow-up 1',
             );
-        final _ = container
+        final _ = fixture.container
             .read(conversationSendQueueProvider.notifier)
             .enqueue(
               conversationId: 'conversation-1',
@@ -605,7 +690,7 @@ void main() {
 
         var callCount = 0;
         when(
-          continueAgentUsecase.call(
+          fixture.continueAgentUsecase.call(
             conversationId: 'conversation-1',
             context: anyNamed('context'),
           ),
@@ -629,8 +714,11 @@ void main() {
         });
 
         var createdCount = 0;
-        when(messageRepository.createMessage(any)).thenAnswer((_) async {
+        when(
+          fixture.messageRepository.createMessage(any),
+        ).thenAnswer((_) async {
           createdCount += 1;
+
           return MessageEntity(
             id: 'queued-user-$createdCount',
             conversationId: 'conversation-1',
@@ -643,7 +731,7 @@ void main() {
           );
         });
 
-        final result = await usecase.call(
+        final result = await fixture.usecase.call(
           conversationId: 'conversation-1',
           context: const AgentIterationContext(
             origin: AgentIterationOrigin.userMessage,
@@ -653,9 +741,9 @@ void main() {
 
         expect(result, AgentIterationDecision.done);
         expect(callCount, 1);
-        verify(messageRepository.createMessage(any)).called(2);
+        verify(fixture.messageRepository.createMessage(any)).called(2);
         expect(
-          container
+          fixture.container
               .read(conversationSendQueueProvider.notifier)
               .peek('conversation-1'),
           isNull,
@@ -668,7 +756,7 @@ void main() {
         'triggers auto compaction before the first AI call',
         () async {
           when(
-            continueAgentUsecase.call(
+            fixture.continueAgentUsecase.call(
               conversationId: 'conversation-1',
               context: anyNamed('context'),
             ),
@@ -679,7 +767,7 @@ void main() {
             ),
           );
 
-          final _ = await usecase.call(
+          final _ = await fixture.usecase.call(
             conversationId: 'conversation-1',
             context: const AgentIterationContext(
               origin: AgentIterationOrigin.userMessage,
@@ -687,15 +775,18 @@ void main() {
             ),
           );
 
-          final _ = verifyInOrder([
-            maybeAutoCompactConversationUsecase.call(
-              conversationId: 'conversation-1',
-            ),
-            continueAgentUsecase.call(
-              conversationId: 'conversation-1',
-              context: anyNamed('context'),
-            ),
-          ]);
+          expect(
+            () => verifyInOrder([
+              fixture.maybeAutoCompactConversationUsecase.call(
+                conversationId: 'conversation-1',
+              ),
+              fixture.continueAgentUsecase.call(
+                conversationId: 'conversation-1',
+                context: anyNamed('context'),
+              ),
+            ]),
+            returnsNormally,
+          );
         },
       );
 
@@ -704,7 +795,7 @@ void main() {
         () async {
           var callCount = 0;
           when(
-            continueAgentUsecase.call(
+            fixture.continueAgentUsecase.call(
               conversationId: 'conversation-1',
               context: anyNamed('context'),
             ),
@@ -716,13 +807,14 @@ void main() {
                 hasToolCalls: true,
               );
             }
+
             return const ContinueAgentResult(
               messageId: 'assistant-2',
               hasToolCalls: false,
             );
           });
           when(
-            runAllowedToolsUsecase.call(
+            fixture.runAllowedToolsUsecase.call(
               conversationId: 'conversation-1',
               workspaceId: 'workspace-1',
             ),
@@ -730,7 +822,7 @@ void main() {
             (_) async => AgentIterationDecision.continueIteration,
           );
 
-          final _ = await usecase.call(
+          final _ = await fixture.usecase.call(
             conversationId: 'conversation-1',
             context: const AgentIterationContext(
               origin: AgentIterationOrigin.userMessage,
@@ -738,11 +830,14 @@ void main() {
             ),
           );
 
-          verify(
-            maybeAutoCompactConversationUsecase.call(
-              conversationId: 'conversation-1',
-            ),
-          ).called(2);
+          expect(
+            () => verify(
+              fixture.maybeAutoCompactConversationUsecase.call(
+                conversationId: 'conversation-1',
+              ),
+            ).called(2),
+            returnsNormally,
+          );
         },
       );
 
@@ -750,13 +845,13 @@ void main() {
         'propagates compaction failure to stop agent loop',
         () async {
           when(
-            maybeAutoCompactConversationUsecase.call(
+            fixture.maybeAutoCompactConversationUsecase.call(
               conversationId: 'conversation-1',
             ),
           ).thenThrow(Exception('compaction error'));
 
           await expectLater(
-            usecase.call(
+            fixture.usecase.call(
               conversationId: 'conversation-1',
               context: const AgentIterationContext(
                 origin: AgentIterationOrigin.userMessage,
@@ -765,11 +860,14 @@ void main() {
             ),
             throwsA(isA<Exception>()),
           );
-          final _ = verifyNever(
-            continueAgentUsecase.call(
-              conversationId: anyNamed('conversationId'),
-              context: anyNamed('context'),
+          expect(
+            () => verifyNever(
+              fixture.continueAgentUsecase.call(
+                conversationId: anyNamed('conversationId'),
+                context: anyNamed('context'),
+              ),
             ),
+            returnsNormally,
           );
         },
       );
@@ -777,7 +875,7 @@ void main() {
       test(
         'runs compaction after queued drafts drain but before AI call',
         () async {
-          final _ = container
+          final _ = fixture.container
               .read(conversationSendQueueProvider.notifier)
               .enqueue(
                 conversationId: 'conversation-1',
@@ -785,7 +883,7 @@ void main() {
               );
 
           when(
-            continueAgentUsecase.call(
+            fixture.continueAgentUsecase.call(
               conversationId: 'conversation-1',
               context: anyNamed('context'),
             ),
@@ -796,7 +894,7 @@ void main() {
             ),
           );
 
-          final _ = await usecase.call(
+          final _ = await fixture.usecase.call(
             conversationId: 'conversation-1',
             context: const AgentIterationContext(
               origin: AgentIterationOrigin.userMessage,
@@ -804,30 +902,36 @@ void main() {
             ),
           );
 
-          final _ = verifyInOrder([
-            messageRepository.createMessage(any),
-            maybeAutoCompactConversationUsecase.call(
-              conversationId: 'conversation-1',
-            ),
-            continueAgentUsecase.call(
-              conversationId: 'conversation-1',
-              context: anyNamed('context'),
-            ),
-          ]);
+          expect(
+            () => verifyInOrder([
+              fixture.messageRepository.createMessage(any),
+              fixture.maybeAutoCompactConversationUsecase.call(
+                conversationId: 'conversation-1',
+              ),
+              fixture.continueAgentUsecase.call(
+                conversationId: 'conversation-1',
+                context: anyNamed('context'),
+              ),
+            ]),
+            returnsNormally,
+          );
         },
       );
 
       test(
         'skips compaction and AI call when cancelled after drain',
         () async {
-          final _ = container
+          final _ = fixture.container
               .read(conversationSendQueueProvider.notifier)
               .enqueue(
                 conversationId: 'conversation-1',
                 content: 'Queued follow-up',
               );
-          when(messageRepository.createMessage(any)).thenAnswer((_) async {
-            agentCancellationRuntime.requestStop('conversation-1');
+          when(
+            fixture.messageRepository.createMessage(any),
+          ).thenAnswer((_) async {
+            fixture.agentCancellationRuntime.requestStop('conversation-1');
+
             return MessageEntity(
               id: 'queued-user-1',
               conversationId: 'conversation-1',
@@ -839,7 +943,7 @@ void main() {
               updatedAt: DateTime(2025),
             );
           });
-          when(messageRepository.patchMessage(any, any)).thenAnswer(
+          when(fixture.messageRepository.patchMessage(any, any)).thenAnswer(
             (_) async => MessageEntity(
               id: 'queued-user-1',
               conversationId: 'conversation-1',
@@ -852,7 +956,7 @@ void main() {
             ),
           );
 
-          final _ = await usecase.call(
+          final _ = await fixture.usecase.call(
             conversationId: 'conversation-1',
             context: const AgentIterationContext(
               origin: AgentIterationOrigin.userMessage,
@@ -861,18 +965,18 @@ void main() {
           );
 
           final _ = verifyNever(
-            maybeAutoCompactConversationUsecase.call(
+            fixture.maybeAutoCompactConversationUsecase.call(
               conversationId: 'conversation-1',
             ),
           );
           final _ = verifyNever(
-            continueAgentUsecase.call(
+            fixture.continueAgentUsecase.call(
               conversationId: 'conversation-1',
               context: anyNamed('context'),
             ),
           );
           final capturedPatches = verify(
-            messageRepository.patchMessage(captureAny, captureAny),
+            fixture.messageRepository.patchMessage(captureAny, captureAny),
           ).captured;
           expect(capturedPatches.whereType<String>(), [
             'user-1',
@@ -903,4 +1007,70 @@ void main() {
       expect(usecase, isA<RunAgentIterationUsecase>());
     });
   });
+}
+
+class _RunAgentIterationUsecaseFixture {
+  factory _RunAgentIterationUsecaseFixture() {
+    final continueAgentUsecase = MockContinueAgentUsecase();
+    final runAllowedToolsUsecase = MockRunAllowedToolsUsecase();
+    final conversationRepository = MockConversationRepository();
+    final messageRepository = MockMessageRepository();
+    final maybeAutoCompactConversationUsecase =
+        MockMaybeAutoCompactConversationUsecase();
+    final container = ProviderContainer();
+    final agentCancellationRuntime = AgentCancellationRuntime();
+    final rateLimitRetryRuntime = container.read(
+      conversationRateLimitRetryRuntimeProvider,
+    );
+
+    return _RunAgentIterationUsecaseFixture._(
+      continueAgentUsecase: continueAgentUsecase,
+      runAllowedToolsUsecase: runAllowedToolsUsecase,
+      conversationRepository: conversationRepository,
+      messageRepository: messageRepository,
+      maybeAutoCompactConversationUsecase: maybeAutoCompactConversationUsecase,
+      container: container,
+      agentCancellationRuntime: agentCancellationRuntime,
+      rateLimitRetryRuntime: rateLimitRetryRuntime,
+      usecase: RunAgentIterationUsecase(
+        continueAgentUsecase: continueAgentUsecase,
+        runAllowedToolsUsecase: runAllowedToolsUsecase,
+        maybeAutoCompactConversationUsecase:
+            maybeAutoCompactConversationUsecase,
+        conversationRepository: conversationRepository,
+        messageRepository: messageRepository,
+        sendQueueRuntime: container.read(conversationSendQueueRuntimeProvider),
+        agentCancellationRuntime: agentCancellationRuntime,
+        rateLimitRetryRuntime: rateLimitRetryRuntime,
+        rateLimitRetryDelay: Duration.zero,
+      ),
+    );
+  }
+
+  _RunAgentIterationUsecaseFixture._({
+    required this.continueAgentUsecase,
+    required this.runAllowedToolsUsecase,
+    required this.conversationRepository,
+    required this.messageRepository,
+    required this.maybeAutoCompactConversationUsecase,
+    required this.container,
+    required this.agentCancellationRuntime,
+    required this.rateLimitRetryRuntime,
+    required this.usecase,
+  });
+
+  final MockContinueAgentUsecase continueAgentUsecase;
+  final MockRunAllowedToolsUsecase runAllowedToolsUsecase;
+  final MockConversationRepository conversationRepository;
+  final MockMessageRepository messageRepository;
+  final MockMaybeAutoCompactConversationUsecase
+  maybeAutoCompactConversationUsecase;
+  final ProviderContainer container;
+  final AgentCancellationRuntime agentCancellationRuntime;
+  final ConversationRateLimitRetryRuntime rateLimitRetryRuntime;
+  RunAgentIterationUsecase usecase;
+
+  void dispose() {
+    container.dispose();
+  }
 }

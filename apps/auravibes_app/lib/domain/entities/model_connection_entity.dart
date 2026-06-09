@@ -30,6 +30,30 @@ abstract class ModelConnectionToCreate with _$ModelConnectionToCreate {
 }
 
 @freezed
+abstract class ModelConnectionForEdit with _$ModelConnectionForEdit {
+  const factory ModelConnectionForEdit({
+    required String id,
+    required String name,
+    required String modelId,
+    required String workspaceId,
+    required bool hasKey,
+    String? url,
+    String? keySuffix,
+  }) = _ModelConnectionForEdit;
+}
+
+@freezed
+abstract class ModelConnectionToUpdate with _$ModelConnectionToUpdate {
+  // Null means preserve the existing persisted value for that field.
+  // ignore: unnecessary-nullable
+  const factory ModelConnectionToUpdate({
+    String? name,
+    String? key,
+    String? url,
+  }) = _ModelConnectionToUpdate;
+}
+
+@freezed
 abstract class ModelConnectionFilter with _$ModelConnectionFilter {
   const factory ModelConnectionFilter({
     @Default([]) List<String> workspaces,

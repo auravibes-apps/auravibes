@@ -1,6 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: prefer-moving-to-variable
 // Required: Existing code repeats lookups where extraction adds noise.
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/chats/usecases/send_new_message_usecase.dart';
@@ -15,7 +12,7 @@ abstract class NewChatState with _$NewChatState {
   const factory NewChatState({
     String? modelId,
 
-    /// Stores the provider ID (or name-equivalent)
+    /// Stores the provider ID (or name-equivalent).
     /// - for display and filtering models
     String? providerId,
     @Default(false) bool isLoading,
@@ -36,7 +33,7 @@ class NewChatNotifier extends _$NewChatNotifier {
   void setProvider(String? providerId) {
     state = state.copyWith(
       providerId: providerId,
-      modelId: null, // Reset model when provider changes
+      modelId: null, // Reset model when provider changes.
     );
   }
 

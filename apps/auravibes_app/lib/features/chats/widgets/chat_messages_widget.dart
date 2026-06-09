@@ -1,24 +1,19 @@
-// ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: prefer-moving-to-variable
 // Required: Existing code repeats lookups where extraction adds noise.
-// ignore_for_file: prefer-single-widget-per-file
 // Required: Feature widgets keep closely related private widgets together.
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
+import 'package:auravibes_app/features/chats/notifiers/messages_streaming_state.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
-import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
 import 'package:auravibes_app/features/chats/widgets/compacted_message_details.dart';
 import 'package:auravibes_app/features/chats/widgets/tool_call_response_preview.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:auravibes_app/utils/relative_time_formatter.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
 import 'package:auravibes_app/utils/try_decode_tool_metadata.dart';
@@ -32,24 +27,27 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod_annotation/experimental/scope.dart';
 
 @Dependencies([
-  conversationBusyState,
   conversationCompactionExecutionState,
   messageConversationById,
 ])
 class ChatMessagesWidget extends HookConsumerWidget {
+  // Null lets callers fall back to per-message provider reads.
+  // ignore: unnecessary-nullable
   const ChatMessagesWidget({
     required this.messages,
+    this.messageEntitiesById,
+    this.pendingToolCalls = const [],
     super.key,
   });
 
   final List<String> messages;
+  final Map<String, MessageEntity>? messageEntitiesById;
+  final List<PendingToolCall> pendingToolCalls;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final data = useMemoized(() => messages.reversed.toList(), [messages]);
     final controller = useScrollController();
-    final lastMessageId = data.firstOrNull;
-
     final compactionState = ref.watch(
       conversationCompactionExecutionStateProvider,
     );
@@ -69,11 +67,11 @@ class ChatMessagesWidget extends HookConsumerWidget {
 
         final messageIndex = isCompacting ? index - 1 : index;
         final messageId = data[messageIndex];
-        final isLastMessage = messageId == lastMessageId;
 
         return _ChatMessageRow(
           messageId: messageId,
-          isLastMessage: isLastMessage,
+          baseMessage: messageEntitiesById?[messageId],
+          pendingToolCalls: pendingToolCalls,
         );
       },
       itemCount: itemCount,
@@ -84,31 +82,36 @@ class ChatMessagesWidget extends HookConsumerWidget {
 }
 
 @Dependencies([
-  conversationBusyState,
   messageConversationById,
 ])
 class _ChatMessageRow extends HookConsumerWidget {
   const _ChatMessageRow({
     required this.messageId,
-    required this.isLastMessage,
+    required this.baseMessage,
+    required this.pendingToolCalls,
   });
 
   final String messageId;
-  final bool isLastMessage;
+  final MessageEntity? baseMessage;
+  final List<PendingToolCall> pendingToolCalls;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final message = ref.watch(messageConversationByIdProvider(messageId));
+    final streamingResult = ref.watch(
+      messagesStreamingProvider.select((state) => state[messageId]?.lastResult),
+    );
+    final message = switch (baseMessage) {
+      final baseMessage? => _mergeStreamingResult(
+        baseMessage,
+        streamingResult,
+      ),
+      null => ref.watch(messageConversationByIdProvider(messageId)),
+    };
     if (message == null) {
       return const SizedBox.shrink();
     }
 
     final isStreaming = ref.watch(isMessageStreamingProvider(messageId));
-    final busyState = ref.watch(
-      conversationBusyStateProvider.select(
-        (value) => value.maybeWhen(data: (state) => state, orElse: () => null),
-      ),
-    );
 
     final isCompactionSummary = message.metadata?.isCompactionSummary == true;
     final isErrorSystemMessage =
@@ -130,7 +133,8 @@ class _ChatMessageRow extends HookConsumerWidget {
       );
     }
 
-    final visibleToolCalls = _visibleToolCalls(message, busyState);
+    final visibleToolCalls =
+        message.metadata?.toolCalls ?? const <MessageToolCallEntity>[];
     final hasVisibleToolCalls = visibleToolCalls.isNotEmpty;
     final hasContent = message.content.trim().isNotEmpty;
     final thinking = message.metadata?.thinking?.trim();
@@ -153,6 +157,11 @@ class _ChatMessageRow extends HookConsumerWidget {
             _ToolCallWidget(
               toolCall: toolCall,
               messageId: message.id,
+              isAwaitingApproval: pendingToolCalls.any(
+                (pending) =>
+                    pending.messageId == message.id &&
+                    pending.toolCall.id == toolCall.id,
+              ),
               key: ValueKey('tool_${toolCall.id}'),
             ),
         ],
@@ -163,21 +172,19 @@ class _ChatMessageRow extends HookConsumerWidget {
     );
   }
 
-  List<MessageToolCallEntity> _visibleToolCalls(
+  MessageEntity _mergeStreamingResult(
     MessageEntity message,
-    ConversationBusyState? busyState,
+    ChatResult<ChatMessage>? streamingResult,
   ) {
-    final allToolCalls =
-        message.metadata?.toolCalls ?? const <MessageToolCallEntity>[];
-    final hidePendingToolCalls =
-        !message.isUser &&
-        isLastMessage &&
-        (busyState?.hasPendingTools ?? false) &&
-        !(busyState?.isStreaming ?? false);
+    if (streamingResult == null) return message;
 
-    if (!hidePendingToolCalls) return allToolCalls;
-
-    return allToolCalls.where((toolCall) => toolCall.isResolved).toList();
+    return message.copyWith(
+      content: streamingResult.output.text,
+      metadata: mergeStreamingMessageMetadata(
+        message.metadata,
+        streamingResult.entityMetadata,
+      ),
+    );
   }
 
   AuraMessageDeliveryStatus _mapMessageStatus(
@@ -344,11 +351,13 @@ class _ToolCallWidget extends ConsumerWidget {
   const _ToolCallWidget({
     required this.toolCall,
     required this.messageId,
+    required this.isAwaitingApproval,
     super.key,
   });
 
   final MessageToolCallEntity toolCall;
   final String messageId;
+  final bool isAwaitingApproval;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -384,12 +393,11 @@ class _ToolCallWidget extends ConsumerWidget {
               ],
             ),
           ),
-          if (toolCall.resultStatus case final resultStatus?)
-            _ToolCallStatusIndicator(
-              statusText: TextLocale(resultStatus.localeKey),
-              icon: _getStatusIcon(resultStatus),
-              color: _getStatusColor(context, resultStatus),
-            ),
+          _ToolCallStatusIndicator(
+            statusText: TextLocale(_getStatusLocaleKey()),
+            icon: _getStatusIcon(),
+            color: _getStatusColor(context),
+          ),
           if (decodedResponse != null)
             Padding(
               padding: EdgeInsets.only(top: context.auraTheme.spacing.xs),
@@ -407,7 +415,21 @@ class _ToolCallWidget extends ConsumerWidget {
     );
   }
 
-  IconData _getStatusIcon(ToolCallResultStatus status) {
+  String _getStatusLocaleKey() {
+    final status = toolCall.resultStatus;
+    if (status != null) return status.localeKey;
+
+    return isAwaitingApproval
+        ? LocaleKeys.tool_call_status_pending
+        : LocaleKeys.tool_call_status_running;
+  }
+
+  IconData _getStatusIcon() {
+    final status = toolCall.resultStatus;
+    if (status == null) {
+      return isAwaitingApproval ? Icons.hourglass_empty : Icons.sync;
+    }
+
     return switch (status) {
       ToolCallResultStatus.success => Icons.check_circle_outline,
       ToolCallResultStatus.skippedByUser => Icons.skip_next,
@@ -420,7 +442,14 @@ class _ToolCallWidget extends ConsumerWidget {
     };
   }
 
-  Color _getStatusColor(BuildContext context, ToolCallResultStatus status) {
+  Color _getStatusColor(BuildContext context) {
+    final status = toolCall.resultStatus;
+    if (status == null) {
+      return isAwaitingApproval
+          ? context.auraColors.warning
+          : context.auraColors.primary;
+    }
+
     return switch (status) {
       ToolCallResultStatus.success => context.auraColors.success,
       ToolCallResultStatus.skippedByUser => context.auraColors.onSurfaceVariant,

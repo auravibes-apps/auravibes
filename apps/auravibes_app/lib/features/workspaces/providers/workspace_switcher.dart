@@ -1,10 +1,4 @@
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 import 'dart:async';
 
@@ -33,6 +27,7 @@ class WorkspaceSwitcher extends _$WorkspaceSwitcher {
   @override
   WorkspaceSwitchState build() {
     final _ = ref.onDispose(() => _debounceTimer?.cancel());
+
     return const WorkspaceSwitchState();
   }
 

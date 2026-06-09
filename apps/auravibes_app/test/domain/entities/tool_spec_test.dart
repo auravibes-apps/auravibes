@@ -1,5 +1,3 @@
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:flutter_test/flutter_test.dart';
 

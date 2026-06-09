@@ -1,10 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 
 import 'package:auravibes_app/domain/entities/conversation_tool_entity.dart';
@@ -19,9 +12,18 @@ import 'package:riverpod/riverpod.dart';
 
 void main() {
   group('ConversationToolsNotifier', () {
-    late _FakeConversationToolsRepository conversationToolsRepository;
-    late _FakeWorkspaceToolsRepository workspaceToolsRepository;
-    late ProviderContainer container;
+    var conversationToolsRepository = _FakeConversationToolsRepository();
+    var workspaceToolsRepository = _FakeWorkspaceToolsRepository();
+    var container = ProviderContainer(
+      overrides: [
+        conversationToolsRepositoryProvider.overrideWithValue(
+          conversationToolsRepository,
+        ),
+        workspaceToolsRepositoryProvider.overrideWithValue(
+          workspaceToolsRepository,
+        ),
+      ],
+    );
 
     setUp(() {
       conversationToolsRepository = _FakeConversationToolsRepository();
@@ -177,6 +179,7 @@ class _FakeConversationToolsRepository implements ConversationToolsRepository {
     String conversationId,
   ) async {
     lastConversationId = conversationId;
+
     return conversationTools;
   }
 

@@ -1,20 +1,8 @@
-// ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: avoid-returning-widgets
-// Required: Existing helper builders return widgets.
-// ignore_for_file: no-equal-arguments
 // Required: Existing argument values intentionally repeat.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-moving-to-variable
 // Required: Existing code repeats lookups where extraction adds noise.
-// ignore_for_file: prefer-single-widget-per-file
 // Required: Feature widgets keep closely related private widgets together.
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
@@ -37,6 +25,7 @@ final _currentChatIdProvider = Provider<String?>(
     final [firstSegment, _, thirdSegment, fourthSegment, ...] = pathSegments;
     if (firstSegment != 'workspaces') return null;
     if (thirdSegment != 'chats') return null;
+
     return fourthSegment;
   },
 );
@@ -68,12 +57,12 @@ class SidebarConversationsWidget extends ConsumerWidget {
     return switch (chatListAsync) {
       AsyncData(value: final chats) => () {
         if (chats.isEmpty) {
-          return _buildEmptyState(context);
+          return const _SidebarConversationsEmptyState();
         }
 
         return Column(
           children: [
-            _buildSectionHeader(context),
+            const _SidebarConversationsSectionHeader(),
             for (final chat in chats) ...[
               _SidebarConversationTile(
                 chat: chat,
@@ -82,7 +71,7 @@ class SidebarConversationsWidget extends ConsumerWidget {
               ),
               if (_isCompacting(ref, chat.id)) const _CompactingRow(),
             ],
-            _buildViewAllButton(context, workspaceId),
+            _SidebarConversationsViewAllButton(workspaceId: workspaceId),
           ],
         );
       }(),
@@ -114,7 +103,19 @@ class SidebarConversationsWidget extends ConsumerWidget {
     };
   }
 
-  Widget _buildSectionHeader(BuildContext context) {
+  bool _isCompacting(WidgetRef ref, String conversationId) {
+    final execution = ref.watch(compactionExecutionProvider);
+    final entry = execution[conversationId];
+
+    return entry != null && entry.status == CompactionExecutionStatus.running;
+  }
+}
+
+class _SidebarConversationsSectionHeader extends StatelessWidget {
+  const _SidebarConversationsSectionHeader();
+
+  @override
+  Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.symmetric(
         vertical: context.auraTheme.spacing.xs,
@@ -129,8 +130,13 @@ class SidebarConversationsWidget extends ConsumerWidget {
       ),
     );
   }
+}
 
-  Widget _buildEmptyState(BuildContext context) {
+class _SidebarConversationsEmptyState extends StatelessWidget {
+  const _SidebarConversationsEmptyState();
+
+  @override
+  Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.symmetric(
         vertical: context.auraTheme.spacing.md,
@@ -146,8 +152,15 @@ class SidebarConversationsWidget extends ConsumerWidget {
       ),
     );
   }
+}
 
-  Widget _buildViewAllButton(BuildContext context, String workspaceId) {
+class _SidebarConversationsViewAllButton extends StatelessWidget {
+  const _SidebarConversationsViewAllButton({required this.workspaceId});
+
+  final String workspaceId;
+
+  @override
+  Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(
         left: context.auraTheme.spacing.sm,
@@ -165,12 +178,6 @@ class SidebarConversationsWidget extends ConsumerWidget {
         isFullWidth: true,
       ),
     );
-  }
-
-  bool _isCompacting(WidgetRef ref, String conversationId) {
-    final execution = ref.watch(compactionExecutionProvider);
-    final entry = execution[conversationId];
-    return entry != null && entry.status == CompactionExecutionStatus.running;
   }
 }
 

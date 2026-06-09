@@ -1,14 +1,5 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: cascade_invocations
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/domain/repositories/workspace_repository.dart';
@@ -59,6 +50,7 @@ class _StubWorkspaceRepository implements WorkspaceRepository {
       url: workspace.url,
     );
     created.add(entity);
+
     return entity;
   }
 
@@ -76,6 +68,7 @@ class _StubWorkspaceRepository implements WorkspaceRepository {
       url: workspace.url,
     );
     patched.add(entity);
+
     return entity;
   }
 
@@ -107,6 +100,7 @@ class _StubWorkspaceRepository implements WorkspaceRepository {
         localizationKey: 'test.validation_failed',
       );
     }
+
     return true;
   }
 
@@ -216,7 +210,7 @@ void main() {
       );
     });
 
-    test('validateWorkspace throws for invalid name', () async {
+    test('validateWorkspace throws for invalid name', () {
       final repo = _StubWorkspaceRepository();
       repo.validateResult = false;
 

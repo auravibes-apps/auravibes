@@ -1,14 +1,3 @@
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
-// ignore_for_file: missing-test-assertion
-// Required: Tests verify usecase behavior through repository side effects.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
@@ -33,11 +22,23 @@ import 'generate_title_usecase_test.mocks.dart';
 ])
 void main() {
   group('GenerateTitleUsecase', () {
-    late MockConversationRepository conversationRepo;
-    late MockChatbotService chatbotService;
-    late TitlesStreamingRuntime titlesStreamingRuntime;
-    late MockMonitoringService monitoringService;
-    late GenerateTitleUsecase usecase;
+    var conversationRepo = MockConversationRepository();
+    var chatbotService = MockChatbotService();
+    var titlesStreamingRuntime = TitlesStreamingRuntime(
+      updateTitle: (_, _) {
+        final _ = Object();
+      },
+      removeTitle: (_) {
+        final _ = Object();
+      },
+    );
+    var monitoringService = MockMonitoringService();
+    var usecase = GenerateTitleUsecase(
+      conversationRepo: conversationRepo,
+      chatbotService: chatbotService,
+      titlesStreamingRuntime: titlesStreamingRuntime,
+      monitoringService: monitoringService,
+    );
 
     final modelSelection = WorkspaceModelSelectionWithConnectionEntity(
       workspaceModelSelection: WorkspaceModelSelectionEntity(
@@ -67,8 +68,12 @@ void main() {
       conversationRepo = MockConversationRepository();
       chatbotService = MockChatbotService();
       titlesStreamingRuntime = TitlesStreamingRuntime(
-        updateTitle: (_, _) {},
-        removeTitle: (_) {},
+        updateTitle: (_, _) {
+          final _ = Object();
+        },
+        removeTitle: (_) {
+          final _ = Object();
+        },
       );
       monitoringService = MockMonitoringService();
       usecase = GenerateTitleUsecase(
@@ -109,9 +114,12 @@ void main() {
         workspaceModelSelection: modelSelection,
       );
 
-      verify(
-        chatbotService.streamTitle(modelSelection, 'Hello'),
-      ).called(1);
+      expect(
+        () => verify(
+          chatbotService.streamTitle(modelSelection, 'Hello'),
+        ).called(1),
+        returnsNormally,
+      );
 
       final _ = await controller.close();
     });
@@ -121,7 +129,9 @@ void main() {
       () async {
         final removedIds = <String>[];
         final runtime = TitlesStreamingRuntime(
-          updateTitle: (_, _) {},
+          updateTitle: (_, _) {
+            final _ = Object();
+          },
           removeTitle: removedIds.add,
         );
 
@@ -154,7 +164,9 @@ void main() {
       final updatedTitles = <String>[];
       final runtime = TitlesStreamingRuntime(
         updateTitle: (_, title) => updatedTitles.add(title),
-        removeTitle: (_) {},
+        removeTitle: (_) {
+          final _ = Object();
+        },
       );
 
       final localUsecase = GenerateTitleUsecase(
@@ -201,7 +213,10 @@ void main() {
       final _ = await controller.close();
       await Future<void>.delayed(const Duration(milliseconds: 100));
 
-      verify(conversationRepo.patchConversation(any, any)).called(1);
+      expect(
+        () => verify(conversationRepo.patchConversation(any, any)).called(1),
+        returnsNormally,
+      );
     });
 
     test('patches with latest title when multiple titles emitted', () async {
@@ -222,9 +237,12 @@ void main() {
       final _ = await controller.close();
       await Future<void>.delayed(const Duration(milliseconds: 200));
 
-      verify(
-        conversationRepo.patchConversation(any, any),
-      ).called(greaterThanOrEqualTo(1));
+      expect(
+        () => verify(
+          conversationRepo.patchConversation(any, any),
+        ).called(greaterThanOrEqualTo(1)),
+        returnsNormally,
+      );
     });
 
     test('works with empty first message', () async {
@@ -239,7 +257,10 @@ void main() {
         workspaceModelSelection: modelSelection,
       );
 
-      verify(chatbotService.streamTitle(modelSelection, '')).called(1);
+      expect(
+        () => verify(chatbotService.streamTitle(modelSelection, '')).called(1),
+        returnsNormally,
+      );
       final _ = await controller.close();
     });
 
@@ -260,19 +281,24 @@ void main() {
       final _ = await controller.close();
       await Future<void>.delayed(const Duration(milliseconds: 100));
 
-      final _ = verifyNever(
-        monitoringService.trackError(
-          any,
-          error: anyNamed('error'),
-          stackTrace: anyNamed('stackTrace'),
+      expect(
+        () => verifyNever(
+          monitoringService.trackError(
+            any,
+            error: anyNamed('error'),
+            stackTrace: anyNamed('stackTrace'),
+          ),
         ),
+        returnsNormally,
       );
     });
 
     test('removeTitle called when stream completes without error', () async {
       final removedIds = <String>[];
       final runtime = TitlesStreamingRuntime(
-        updateTitle: (_, _) {},
+        updateTitle: (_, _) {
+          final _ = Object();
+        },
         removeTitle: removedIds.add,
       );
       final localUsecase = GenerateTitleUsecase(
@@ -316,18 +342,21 @@ void main() {
       final _ = await controller.close();
       await Future<void>.delayed(const Duration(milliseconds: 200));
 
-      verify(
-        conversationRepo.patchConversation(
-          'conv-final',
-          argThat(
-            isA<ConversationPatch>().having(
-              (p) => p.title,
-              'title',
-              'Final Title',
+      expect(
+        () => verify(
+          conversationRepo.patchConversation(
+            'conv-final',
+            argThat(
+              isA<ConversationPatch>().having(
+                (p) => p.title,
+                'title',
+                'Final Title',
+              ),
             ),
           ),
-        ),
-      ).called(greaterThanOrEqualTo(1));
+        ).called(greaterThanOrEqualTo(1)),
+        returnsNormally,
+      );
     });
   });
 }

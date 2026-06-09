@@ -1,10 +1,5 @@
 // ignore_for_file: provider_dependencies
 // Required: widget tests override scoped providers directly.
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: prefer-moving-to-variable
 // Required: Tests repeat finders and fixture lookups for clarity.
 
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
@@ -22,7 +17,6 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod_annotation/experimental/scope.dart';
 
 @Dependencies([
-  conversationBusyState,
   conversationCompactionExecutionState,
   messageConversationById,
 ])
@@ -30,12 +24,15 @@ void main() {
   Widget buildSubject({
     required List<String> messages,
     required List<Object> overrides,
+    Map<String, MessageEntity>? messageEntitiesById,
     String conversationId = 'conv-1',
+    List<PendingToolCall> pendingToolCalls = const [],
   }) {
     return EasyLocalization(
       child: ProviderScope(
         overrides: [
           conversationSelectedProvider.overrideWithValue(conversationId),
+          pendingToolCallsProvider.overrideWith((ref) => pendingToolCalls),
           ...overrides.cast(),
         ],
         child: Builder(
@@ -46,6 +43,8 @@ void main() {
                 child: Material(
                   child: ChatMessagesWidget(
                     messages: messages,
+                    messageEntitiesById: messageEntitiesById,
+                    pendingToolCalls: pendingToolCalls,
                   ),
                 ),
               ),
@@ -138,6 +137,34 @@ void main() {
       );
 
       expect(find.text('Hello AI'), findsOneWidget);
+    });
+
+    testWidgets('uses provided message entities without provider lookup', (
+      tester,
+    ) async {
+      final message = _createMessage(content: 'Provided message');
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          messageEntitiesById: {'msg-1': message},
+          overrides: [
+            messageConversationByIdProvider.overrideWith(
+              (ref, id) => throw StateError('should not read message provider'),
+            ),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      expect(find.text('Provided message'), findsOneWidget);
     });
 
     testWidgets('renders AI message content', (tester) async {
@@ -354,6 +381,79 @@ void main() {
       );
 
       expect(find.byIcon(Icons.warning_amber), findsOneWidget);
+    });
+
+    testWidgets('renders unresolved tool call awaiting approval', (
+      tester,
+    ) async {
+      const toolCall = MessageToolCallEntity(
+        id: 'tc-1',
+        name: 'built_in_1_calculator',
+        argumentsRaw: '{}',
+      );
+      final message = _createMessage(
+        content: '',
+        isUser: false,
+        metadata: const MessageMetadataEntity(toolCalls: [toolCall]),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          pendingToolCalls: const [
+            PendingToolCall(toolCall: toolCall, messageId: 'msg-1'),
+          ],
+          overrides: [
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: true,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      expect(find.text('Awaiting confirmation'), findsOneWidget);
+      expect(find.byIcon(Icons.hourglass_empty), findsOneWidget);
+      expect(find.byType(AuraMessageBubble), findsNothing);
+    });
+
+    testWidgets('renders unresolved running tool call', (tester) async {
+      const toolCall = MessageToolCallEntity(
+        id: 'tc-1',
+        name: 'built_in_1_calculator',
+        argumentsRaw: '{}',
+      );
+      final message = _createMessage(
+        content: '',
+        isUser: false,
+        metadata: const MessageMetadataEntity(toolCalls: [toolCall]),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          overrides: [
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: true,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      expect(find.text('Running...'), findsOneWidget);
+      expect(find.byIcon(Icons.sync), findsOneWidget);
+      expect(find.byType(AuraMessageBubble), findsNothing);
     });
 
     testWidgets('renders tool call with skipped status', (tester) async {

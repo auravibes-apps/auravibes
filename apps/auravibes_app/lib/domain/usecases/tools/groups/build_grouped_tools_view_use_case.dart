@@ -1,4 +1,3 @@
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
@@ -68,6 +67,7 @@ class BuildGroupedToolsViewUseCase {
 
       final aDate = a.group?.createdAt ?? DateTime(2099);
       final bDate = b.group?.createdAt ?? DateTime(2099);
+
       return bDate.compareTo(aDate);
     });
 

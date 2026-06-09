@@ -1,8 +1,6 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // coverage:ignore-file
-// Required: Drift table DSL is unreachable at runtime
-// (see api_models.dart).
+// Required: Drift table DSL is unreachable at runtime.
+// (See api_models.dart).
 import 'package:auravibes_app/data/database/drift/tables/table_mixin.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools_groups.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspaces.dart';
@@ -12,7 +10,7 @@ export 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 
 @DataClassName('ToolsTable')
 class Tools extends Table with TableMixin {
-  /// Reference to the workspace this tool belongs to
+  /// Reference to the workspace this tool belongs to.
   TextColumn get workspaceId => text().references(
     Workspaces,
     #id,
@@ -25,23 +23,23 @@ class Tools extends Table with TableMixin {
     onDelete: KeyAction.cascade,
   )();
 
-  /// Type of tool (e.g., 'web_search', 'calculator', etc.)
+  /// Type of tool (for example, 'web_search', 'calculator', etc).
   TextColumn get toolId => text()();
 
   TextColumn get customName => text().nullable()();
 
-  /// Optional description of the tool (from MCP or user-defined)
+  /// Optional description of the tool (from MCP or user-defined).
   TextColumn get description => text().nullable()();
 
   TextColumn get additionalPrompt => text().nullable()();
 
-  /// Tool configuration as JSON (optional)
+  /// Tool configuration as JSON (optional).
   TextColumn get config => text().nullable()();
 
-  /// JSON Schema for the tool's input parameters (for MCP tools)
+  /// JSON schema for the tool's input parameters (for MCP tools).
   TextColumn get inputSchema => text().nullable()();
 
-  /// Whether the tool is enabled for this workspace
+  /// Whether the tool is enabled for this workspace.
   BoolColumn get isEnabled => boolean().withDefault(const Constant(false))();
 
   TextColumn get permissions => textEnum<PermissionAccess>().withDefault(

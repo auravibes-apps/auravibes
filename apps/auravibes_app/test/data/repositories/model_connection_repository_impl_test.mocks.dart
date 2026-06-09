@@ -143,42 +143,42 @@ class _FakeGenerationContext_17 extends _i1.SmartFake
     : super(parent, parentInvocation);
 }
 
-class _Fake$ApiModelsTable_18 extends _i1.SmartFake
-    implements _i2.$ApiModelsTable {
-  _Fake$ApiModelsTable_18(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
-}
-
-class _Fake$WorkspacesTable_19 extends _i1.SmartFake
+class _Fake$WorkspacesTable_18 extends _i1.SmartFake
     implements _i2.$WorkspacesTable {
-  _Fake$WorkspacesTable_19(Object parent, Invocation parentInvocation)
+  _Fake$WorkspacesTable_18(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _Fake$ModelConnectionsTable_20 extends _i1.SmartFake
-    implements _i2.$ModelConnectionsTable {
-  _Fake$ModelConnectionsTable_20(Object parent, Invocation parentInvocation)
+class _Fake$ServiceConnectionsTable_19 extends _i1.SmartFake
+    implements _i2.$ServiceConnectionsTable {
+  _Fake$ServiceConnectionsTable_19(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeModelConnectionsDaoManager_21 extends _i1.SmartFake
+class _FakeModelConnectionsDaoManager_20 extends _i1.SmartFake
     implements _i7.ModelConnectionsDaoManager {
-  _FakeModelConnectionsDaoManager_21(Object parent, Invocation parentInvocation)
+  _FakeModelConnectionsDaoManager_20(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeModelConnectionTable_22 extends _i1.SmartFake
-    implements _i2.ModelConnectionTable {
-  _FakeModelConnectionTable_22(Object parent, Invocation parentInvocation)
+class _FakeServiceConnectionTable_21 extends _i1.SmartFake
+    implements _i2.ServiceConnectionTable {
+  _FakeServiceConnectionTable_21(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _Fake$WorkspaceModelSelectionsTable_23 extends _i1.SmartFake
+class _Fake$WorkspaceModelSelectionsTable_22 extends _i1.SmartFake
     implements _i2.$WorkspaceModelSelectionsTable {
-  _Fake$WorkspaceModelSelectionsTable_23(
+  _Fake$WorkspaceModelSelectionsTable_22(
     Object parent,
     Invocation parentInvocation,
   ) : super(parent, parentInvocation);
+}
+
+class _Fake$ApiModelsTable_23 extends _i1.SmartFake
+    implements _i2.$ApiModelsTable {
+  _Fake$ApiModelsTable_23(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
 }
 
 class _FakeWorkspaceModelSelectionsDaoManager_24 extends _i1.SmartFake
@@ -1127,44 +1127,14 @@ class MockModelConnectionsDao extends _i1.Mock
           as _i3.DatabaseConnectionUser);
 
   @override
-  _i2.$ApiModelProvidersTable get apiModelProviders =>
-      (super.noSuchMethod(
-            Invocation.getter(#apiModelProviders),
-            returnValue: _Fake$ApiModelProvidersTable_6(
-              this,
-              Invocation.getter(#apiModelProviders),
-            ),
-            returnValueForMissingStub: _Fake$ApiModelProvidersTable_6(
-              this,
-              Invocation.getter(#apiModelProviders),
-            ),
-          )
-          as _i2.$ApiModelProvidersTable);
-
-  @override
-  _i2.$ApiModelsTable get apiModels =>
-      (super.noSuchMethod(
-            Invocation.getter(#apiModels),
-            returnValue: _Fake$ApiModelsTable_18(
-              this,
-              Invocation.getter(#apiModels),
-            ),
-            returnValueForMissingStub: _Fake$ApiModelsTable_18(
-              this,
-              Invocation.getter(#apiModels),
-            ),
-          )
-          as _i2.$ApiModelsTable);
-
-  @override
   _i2.$WorkspacesTable get workspaces =>
       (super.noSuchMethod(
             Invocation.getter(#workspaces),
-            returnValue: _Fake$WorkspacesTable_19(
+            returnValue: _Fake$WorkspacesTable_18(
               this,
               Invocation.getter(#workspaces),
             ),
-            returnValueForMissingStub: _Fake$WorkspacesTable_19(
+            returnValueForMissingStub: _Fake$WorkspacesTable_18(
               this,
               Invocation.getter(#workspaces),
             ),
@@ -1172,29 +1142,29 @@ class MockModelConnectionsDao extends _i1.Mock
           as _i2.$WorkspacesTable);
 
   @override
-  _i2.$ModelConnectionsTable get modelConnections =>
+  _i2.$ServiceConnectionsTable get serviceConnections =>
       (super.noSuchMethod(
-            Invocation.getter(#modelConnections),
-            returnValue: _Fake$ModelConnectionsTable_20(
+            Invocation.getter(#serviceConnections),
+            returnValue: _Fake$ServiceConnectionsTable_19(
               this,
-              Invocation.getter(#modelConnections),
+              Invocation.getter(#serviceConnections),
             ),
-            returnValueForMissingStub: _Fake$ModelConnectionsTable_20(
+            returnValueForMissingStub: _Fake$ServiceConnectionsTable_19(
               this,
-              Invocation.getter(#modelConnections),
+              Invocation.getter(#serviceConnections),
             ),
           )
-          as _i2.$ModelConnectionsTable);
+          as _i2.$ServiceConnectionsTable);
 
   @override
   _i7.ModelConnectionsDaoManager get managers =>
       (super.noSuchMethod(
             Invocation.getter(#managers),
-            returnValue: _FakeModelConnectionsDaoManager_21(
+            returnValue: _FakeModelConnectionsDaoManager_20(
               this,
               Invocation.getter(#managers),
             ),
-            returnValueForMissingStub: _FakeModelConnectionsDaoManager_21(
+            returnValueForMissingStub: _FakeModelConnectionsDaoManager_20(
               this,
               Invocation.getter(#managers),
             ),
@@ -1202,48 +1172,60 @@ class MockModelConnectionsDao extends _i1.Mock
           as _i7.ModelConnectionsDaoManager);
 
   @override
-  _i6.Future<List<_i2.ModelConnectionTable>> getAllModelConnectionsByWorkspace({
-    required List<String>? workspaceIds,
-  }) =>
+  _i6.Future<List<_i2.ServiceConnectionTable>>
+  getAllModelConnectionsByWorkspace({required List<String>? workspaceIds}) =>
       (super.noSuchMethod(
             Invocation.method(#getAllModelConnectionsByWorkspace, [], {
               #workspaceIds: workspaceIds,
             }),
-            returnValue: _i6.Future<List<_i2.ModelConnectionTable>>.value(
-              <_i2.ModelConnectionTable>[],
+            returnValue: _i6.Future<List<_i2.ServiceConnectionTable>>.value(
+              <_i2.ServiceConnectionTable>[],
             ),
             returnValueForMissingStub:
-                _i6.Future<List<_i2.ModelConnectionTable>>.value(
-                  <_i2.ModelConnectionTable>[],
+                _i6.Future<List<_i2.ServiceConnectionTable>>.value(
+                  <_i2.ServiceConnectionTable>[],
                 ),
           )
-          as _i6.Future<List<_i2.ModelConnectionTable>>);
+          as _i6.Future<List<_i2.ServiceConnectionTable>>);
 
   @override
-  _i6.Future<_i2.ModelConnectionTable?> getModelConnectionById(String? id) =>
+  _i6.Stream<List<_i2.ServiceConnectionTable>>
+  watchAllModelConnectionsByWorkspace({required List<String>? workspaceIds}) =>
+      (super.noSuchMethod(
+            Invocation.method(#watchAllModelConnectionsByWorkspace, [], {
+              #workspaceIds: workspaceIds,
+            }),
+            returnValue: _i6.Stream<List<_i2.ServiceConnectionTable>>.empty(),
+            returnValueForMissingStub:
+                _i6.Stream<List<_i2.ServiceConnectionTable>>.empty(),
+          )
+          as _i6.Stream<List<_i2.ServiceConnectionTable>>);
+
+  @override
+  _i6.Future<_i2.ServiceConnectionTable?> getModelConnectionById(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#getModelConnectionById, [id]),
-            returnValue: _i6.Future<_i2.ModelConnectionTable?>.value(),
+            returnValue: _i6.Future<_i2.ServiceConnectionTable?>.value(),
             returnValueForMissingStub:
-                _i6.Future<_i2.ModelConnectionTable?>.value(),
+                _i6.Future<_i2.ServiceConnectionTable?>.value(),
           )
-          as _i6.Future<_i2.ModelConnectionTable?>);
+          as _i6.Future<_i2.ServiceConnectionTable?>);
 
   @override
-  _i6.Future<_i2.ModelConnectionTable> insertModelConnection(
-    _i2.ModelConnectionsCompanion? modelConnection,
+  _i6.Future<_i2.ServiceConnectionTable> insertModelConnection(
+    _i2.ServiceConnectionsCompanion? modelConnection,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#insertModelConnection, [modelConnection]),
-            returnValue: _i6.Future<_i2.ModelConnectionTable>.value(
-              _FakeModelConnectionTable_22(
+            returnValue: _i6.Future<_i2.ServiceConnectionTable>.value(
+              _FakeServiceConnectionTable_21(
                 this,
                 Invocation.method(#insertModelConnection, [modelConnection]),
               ),
             ),
             returnValueForMissingStub:
-                _i6.Future<_i2.ModelConnectionTable>.value(
-                  _FakeModelConnectionTable_22(
+                _i6.Future<_i2.ServiceConnectionTable>.value(
+                  _FakeServiceConnectionTable_21(
                     this,
                     Invocation.method(#insertModelConnection, [
                       modelConnection,
@@ -1251,7 +1233,20 @@ class MockModelConnectionsDao extends _i1.Mock
                   ),
                 ),
           )
-          as _i6.Future<_i2.ModelConnectionTable>);
+          as _i6.Future<_i2.ServiceConnectionTable>);
+
+  @override
+  _i6.Future<_i2.ServiceConnectionTable?> updateModelConnection(
+    String? id,
+    _i2.ServiceConnectionsCompanion? modelConnection,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#updateModelConnection, [id, modelConnection]),
+            returnValue: _i6.Future<_i2.ServiceConnectionTable?>.value(),
+            returnValueForMissingStub:
+                _i6.Future<_i2.ServiceConnectionTable?>.value(),
+          )
+          as _i6.Future<_i2.ServiceConnectionTable?>);
 
   @override
   _i6.Future<void> deleteModelConnection(String? id) =>
@@ -1945,29 +1940,14 @@ class MockWorkspaceModelSelectionsDao extends _i1.Mock
           as _i2.$ApiModelProvidersTable);
 
   @override
-  _i2.$ApiModelsTable get apiModels =>
-      (super.noSuchMethod(
-            Invocation.getter(#apiModels),
-            returnValue: _Fake$ApiModelsTable_18(
-              this,
-              Invocation.getter(#apiModels),
-            ),
-            returnValueForMissingStub: _Fake$ApiModelsTable_18(
-              this,
-              Invocation.getter(#apiModels),
-            ),
-          )
-          as _i2.$ApiModelsTable);
-
-  @override
   _i2.$WorkspacesTable get workspaces =>
       (super.noSuchMethod(
             Invocation.getter(#workspaces),
-            returnValue: _Fake$WorkspacesTable_19(
+            returnValue: _Fake$WorkspacesTable_18(
               this,
               Invocation.getter(#workspaces),
             ),
-            returnValueForMissingStub: _Fake$WorkspacesTable_19(
+            returnValueForMissingStub: _Fake$WorkspacesTable_18(
               this,
               Invocation.getter(#workspaces),
             ),
@@ -1975,34 +1955,49 @@ class MockWorkspaceModelSelectionsDao extends _i1.Mock
           as _i2.$WorkspacesTable);
 
   @override
-  _i2.$ModelConnectionsTable get modelConnections =>
+  _i2.$ServiceConnectionsTable get serviceConnections =>
       (super.noSuchMethod(
-            Invocation.getter(#modelConnections),
-            returnValue: _Fake$ModelConnectionsTable_20(
+            Invocation.getter(#serviceConnections),
+            returnValue: _Fake$ServiceConnectionsTable_19(
               this,
-              Invocation.getter(#modelConnections),
+              Invocation.getter(#serviceConnections),
             ),
-            returnValueForMissingStub: _Fake$ModelConnectionsTable_20(
+            returnValueForMissingStub: _Fake$ServiceConnectionsTable_19(
               this,
-              Invocation.getter(#modelConnections),
+              Invocation.getter(#serviceConnections),
             ),
           )
-          as _i2.$ModelConnectionsTable);
+          as _i2.$ServiceConnectionsTable);
 
   @override
   _i2.$WorkspaceModelSelectionsTable get workspaceModelSelections =>
       (super.noSuchMethod(
             Invocation.getter(#workspaceModelSelections),
-            returnValue: _Fake$WorkspaceModelSelectionsTable_23(
+            returnValue: _Fake$WorkspaceModelSelectionsTable_22(
               this,
               Invocation.getter(#workspaceModelSelections),
             ),
-            returnValueForMissingStub: _Fake$WorkspaceModelSelectionsTable_23(
+            returnValueForMissingStub: _Fake$WorkspaceModelSelectionsTable_22(
               this,
               Invocation.getter(#workspaceModelSelections),
             ),
           )
           as _i2.$WorkspaceModelSelectionsTable);
+
+  @override
+  _i2.$ApiModelsTable get apiModels =>
+      (super.noSuchMethod(
+            Invocation.getter(#apiModels),
+            returnValue: _Fake$ApiModelsTable_23(
+              this,
+              Invocation.getter(#apiModels),
+            ),
+            returnValueForMissingStub: _Fake$ApiModelsTable_23(
+              this,
+              Invocation.getter(#apiModels),
+            ),
+          )
+          as _i2.$ApiModelsTable);
 
   @override
   _i8.WorkspaceModelSelectionsDaoManager get managers =>

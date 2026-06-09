@@ -1,14 +1,4 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-static-class
-// Required: Tests keep fixture helpers and fakes top-level.
-
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
 
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
@@ -29,6 +19,7 @@ Dio _createDioWithResponse(Map<String, dynamic> data, {int statusCode = 200}) {
       ),
     ),
   );
+
   return dio;
 }
 
@@ -44,6 +35,7 @@ Dio _createDioWithNullData({int statusCode = 200}) {
       ),
     ),
   );
+
   return dio;
 }
 
@@ -60,6 +52,7 @@ Dio _createDioWithNon200({int statusCode = 500}) {
       ),
     ),
   );
+
   return dio;
 }
 
@@ -81,6 +74,7 @@ Dio _createDioWithHeadResponse({int statusCode = 200}) {
       },
     ),
   );
+
   return dio;
 }
 
@@ -97,13 +91,14 @@ Dio _createDioWithError() {
       ),
     ),
   );
+
   return dio;
 }
 
 void main() {
   group('ModelApiService', () {
-    late Dio dio;
-    late ModelApiService service;
+    var dio = Dio(BaseOptions(baseUrl: 'https://models.dev'));
+    var service = ModelApiService(dio: dio);
 
     setUp(() {
       dio = Dio(BaseOptions(baseUrl: 'https://models.dev'));
@@ -484,7 +479,7 @@ void main() {
         dio.close();
       });
 
-      test('throws on non-200 status code', () async {
+      test('throws on non-200 status code', () {
         final dio = _createDioWithNon200();
         final service = ModelApiService(dio: dio);
 
@@ -496,7 +491,7 @@ void main() {
         dio.close();
       });
 
-      test('throws on null data', () async {
+      test('throws on null data', () {
         final dio = _createDioWithNullData();
         final service = ModelApiService(dio: dio);
 
@@ -508,7 +503,7 @@ void main() {
         dio.close();
       });
 
-      test('throws on 404 status code', () async {
+      test('throws on 404 status code', () {
         final dio = _createDioWithNon200(statusCode: 404);
         final service = ModelApiService(dio: dio);
 

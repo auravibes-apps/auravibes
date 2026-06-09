@@ -1,21 +1,16 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: no-object-declaration
-// Required: Test fakes override noSuchMethod with Object return values.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/tool_spec.dart';
+import 'package:auravibes_app/domain/repositories/app_skill_workspace_settings_repository.dart';
+import 'package:auravibes_app/domain/repositories/conversation_skills_repository.dart';
 import 'package:auravibes_app/domain/repositories/conversation_tools_repository.dart';
+import 'package:auravibes_app/domain/repositories/skills_repository.dart';
 import 'package:auravibes_app/domain/usecases/tools/mcp/build_combined_tool_specs_use_case.dart';
+import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
+import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
+import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _FakeConversationToolsRepository extends ConversationToolsRepository {
@@ -29,7 +24,7 @@ class _FakeConversationToolsRepository extends ConversationToolsRepository {
   ) async => _tools;
 
   @override
-  Object? noSuchMethod(Invocation invocation) => throw UnimplementedError();
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
 class _FakeBuildCombinedToolSpecsUseCase extends BuildCombinedToolSpecsUseCase {
@@ -45,6 +40,43 @@ class _FakeBuildCombinedToolSpecsUseCase extends BuildCombinedToolSpecsUseCase {
       _result;
 }
 
+class _FakeBuildDynamicSkillToolSpecsUsecase
+    extends BuildDynamicSkillToolSpecsUsecase {
+  _FakeBuildDynamicSkillToolSpecsUsecase(this._result)
+    : super(
+        ListAvailableSkillsUsecase(
+          _NeverSkillsRepository(),
+          _NeverConversationSkillsRepository(),
+          _NeverAppSkillSettingsRepository(),
+          const AppSkillRegistry(),
+        ),
+      );
+
+  final List<ToolSpec> _result;
+
+  @override
+  Future<List<ToolSpec>> call({
+    required String conversationId,
+    required String workspaceId,
+  }) async => _result;
+}
+
+class _NeverSkillsRepository extends SkillsRepository {
+  @override
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
+}
+
+class _NeverConversationSkillsRepository extends ConversationSkillsRepository {
+  @override
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
+}
+
+class _NeverAppSkillSettingsRepository
+    extends AppSkillWorkspaceSettingsRepository {
+  @override
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
+}
+
 class _CapturingRepo extends ConversationToolsRepository {
   _CapturingRepo({required this.onGetTools});
 
@@ -57,7 +89,7 @@ class _CapturingRepo extends ConversationToolsRepository {
   ) async => onGetTools(conversationId, workspaceId);
 
   @override
-  Object? noSuchMethod(Invocation invocation) => throw UnimplementedError();
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
 void main() {
@@ -66,6 +98,8 @@ void main() {
       final usecase = LoadConversationToolSpecsUsecase(
         conversationToolsRepository: _FakeConversationToolsRepository([]),
         buildCombinedToolSpecsUseCase: _FakeBuildCombinedToolSpecsUseCase([]),
+        buildDynamicSkillToolSpecsUsecase:
+            _FakeBuildDynamicSkillToolSpecsUsecase([]),
       );
 
       final result = await usecase(
@@ -89,6 +123,8 @@ void main() {
         buildCombinedToolSpecsUseCase: _FakeBuildCombinedToolSpecsUseCase(
           specs,
         ),
+        buildDynamicSkillToolSpecsUsecase:
+            _FakeBuildDynamicSkillToolSpecsUsecase([]),
       );
 
       final result = await usecase(
@@ -107,6 +143,7 @@ void main() {
         onGetTools: (convId, wsId) async {
           capturedConvId = convId;
           capturedWsId = wsId;
+
           return <WorkspaceToolEntity>[];
         },
       );
@@ -114,6 +151,8 @@ void main() {
       final usecase = LoadConversationToolSpecsUsecase(
         conversationToolsRepository: repo,
         buildCombinedToolSpecsUseCase: _FakeBuildCombinedToolSpecsUseCase([]),
+        buildDynamicSkillToolSpecsUsecase:
+            _FakeBuildDynamicSkillToolSpecsUsecase([]),
       );
 
       final _ = await usecase(
@@ -137,6 +176,8 @@ void main() {
         buildCombinedToolSpecsUseCase: _FakeBuildCombinedToolSpecsUseCase(
           specs,
         ),
+        buildDynamicSkillToolSpecsUsecase:
+            _FakeBuildDynamicSkillToolSpecsUsecase([]),
       );
 
       final result = await usecase(
@@ -152,6 +193,8 @@ void main() {
       final usecase = LoadConversationToolSpecsUsecase(
         conversationToolsRepository: repo,
         buildCombinedToolSpecsUseCase: buildUseCase,
+        buildDynamicSkillToolSpecsUsecase:
+            _FakeBuildDynamicSkillToolSpecsUsecase([]),
       );
       expect(
         usecase,
@@ -176,6 +219,7 @@ void main() {
       final buildUseCase = _CapturingBuildCombined(
         onCall: (t) async {
           capturedTools = t;
+
           return [];
         },
       );
@@ -183,6 +227,8 @@ void main() {
       final usecase = LoadConversationToolSpecsUsecase(
         conversationToolsRepository: _FakeConversationToolsRepository(tools),
         buildCombinedToolSpecsUseCase: buildUseCase,
+        buildDynamicSkillToolSpecsUsecase:
+            _FakeBuildDynamicSkillToolSpecsUsecase([]),
       );
 
       final _ = await usecase(conversationId: 'conv-1', workspaceId: 'ws-1');
@@ -198,6 +244,38 @@ void main() {
             .toolId,
         'tool1',
       );
+    });
+
+    test('appends dynamic skill tool specs', () async {
+      final skillSpecs = [
+        const ToolSpec(
+          name: loadSkillToolName,
+          description: 'load skill',
+          inputJsonSchema: {},
+        ),
+        const ToolSpec(
+          name: unloadSkillToolName,
+          description: 'unload skill',
+          inputJsonSchema: {},
+        ),
+      ];
+
+      final usecase = LoadConversationToolSpecsUsecase(
+        conversationToolsRepository: _FakeConversationToolsRepository([]),
+        buildCombinedToolSpecsUseCase: _FakeBuildCombinedToolSpecsUseCase([]),
+        buildDynamicSkillToolSpecsUsecase:
+            _FakeBuildDynamicSkillToolSpecsUsecase(skillSpecs),
+      );
+
+      final result = await usecase(
+        conversationId: 'conv-1',
+        workspaceId: 'ws-1',
+      );
+
+      expect(result.map((spec) => spec.name), [
+        loadSkillToolName,
+        unloadSkillToolName,
+      ]);
     });
   });
 }

@@ -1,12 +1,4 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 import 'dart:convert';
 
@@ -34,6 +26,7 @@ class ModelProviderServices {
       );
 
       final modelsResponse = await client.models.list();
+
       return modelsResponse.data
           .map(
             (model) => WorkspaceModelSelectionToCreate(
@@ -45,7 +38,7 @@ class ModelProviderServices {
     }
 
     if (provider.type == CredentialsModelType.anthropic) {
-      // Models.values
+      // Models.values.
       final models = await _anthopicAllModels(provider);
 
       return models
@@ -57,6 +50,7 @@ class ModelProviderServices {
           )
           .toList();
     }
+
     return null;
   }
 }
@@ -81,6 +75,7 @@ Future<List<AntropicResponseModelsItem>> _anthopicAllModels(
       afterId = lastId;
     }
   }
+
   return foundModels;
 }
 

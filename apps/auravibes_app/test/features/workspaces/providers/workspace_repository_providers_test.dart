@@ -1,14 +1,3 @@
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-static-class
-// Required: Tests keep fixture helpers and fakes top-level.
-
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
@@ -101,24 +90,27 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
-  late AppDatabase testDatabase;
-  late ProviderContainer container;
+  AppDatabase? testDatabase;
+  ProviderContainer? container;
+  ProviderContainer readContainer() =>
+      container ?? fail('ProviderContainer not initialized');
 
   setUp(() {
-    testDatabase = AppDatabase(connection: _testConnection());
+    final database = AppDatabase(connection: _testConnection());
+    testDatabase = database;
     container = ProviderContainer(
-      overrides: [appDatabaseProvider.overrideWithValue(testDatabase)],
+      overrides: [appDatabaseProvider.overrideWithValue(database)],
     );
   });
 
   tearDown(() async {
-    container.dispose();
-    await testDatabase.close();
+    container?.dispose();
+    await testDatabase?.close();
   });
 
   group('workspaceRepositoryProvider', () {
     test('returns a WorkspaceRepository instance', () {
-      final repo = container.read(workspaceRepositoryProvider);
+      final repo = readContainer().read(workspaceRepositoryProvider);
       expect(repo, isA<WorkspaceRepository>());
     });
   });
@@ -133,8 +125,10 @@ void main() {
       );
       addTearDown(testContainer.dispose);
 
-      // Keep provider alive during async test
-      final _ = testContainer.listen(allWorkspacesProvider, (_, _) {});
+      // Keep provider alive during async test.
+      final _ = testContainer.listen(allWorkspacesProvider, (_, _) {
+        final _ = Object();
+      });
 
       final result = await testContainer.read(allWorkspacesProvider.future);
       expect(result, isEmpty);
@@ -149,8 +143,10 @@ void main() {
       );
       addTearDown(testContainer.dispose);
 
-      // Keep provider alive during async test
-      final _ = testContainer.listen(allWorkspacesProvider, (_, _) {});
+      // Keep provider alive during async test.
+      final _ = testContainer.listen(allWorkspacesProvider, (_, _) {
+        final _ = Object();
+      });
 
       final first = await testContainer.read(allWorkspacesProvider.future);
       final second = await testContainer.read(allWorkspacesProvider.future);

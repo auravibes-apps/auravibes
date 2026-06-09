@@ -1,9 +1,4 @@
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-static-class
-// Required: Tests keep fixture helpers and fakes top-level.
 
 import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_tool_spec_lookup.dart';
@@ -21,6 +16,7 @@ ToolSpec? _fakeGetToolSpec({
       inputJsonSchema: {},
     );
   }
+
   return null;
 }
 
@@ -33,6 +29,7 @@ void main() {
             McpToolSpecLookup(
               call: ({required mcpServerId, required toolName}) {
                 final _ = (mcpServerId: mcpServerId, toolName: toolName);
+
                 return null;
               },
             ),
@@ -52,6 +49,7 @@ void main() {
             McpToolSpecLookup(
               call: ({required mcpServerId, required toolName}) {
                 final _ = (mcpServerId: mcpServerId, toolName: toolName);
+
                 return null;
               },
             ),
@@ -105,6 +103,7 @@ void main() {
         required String toolName,
       }) {
         final _ = (mcpServerId: mcpServerId, toolName: toolName);
+
         return const ToolSpec(
           name: 'x',
           description: 'd',
@@ -136,6 +135,7 @@ void main() {
       }) {
         capturedServerId = mcpServerId;
         capturedToolName = toolName;
+
         return null;
       }
 

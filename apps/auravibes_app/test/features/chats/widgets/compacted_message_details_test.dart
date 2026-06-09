@@ -1,14 +1,3 @@
-// ignore_for_file: avoid-top-level-members-in-tests
-// Required: Test files keep shared fixtures and helpers top-level.
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-static-class
-// Required: Tests keep fixture helpers and fakes top-level.
-
-// ignore_for_file: avoid-returning-widgets
-// Required: Widget tests use helpers that build widgets under test.
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/features/chats/widgets/compacted_message_details.dart';
@@ -35,32 +24,39 @@ MessageEntity _makeMessage({
   );
 }
 
-Widget buildSubject(MessageEntity message) {
-  return EasyLocalization(
-    child: Builder(
-      builder: (context) {
-        return MaterialApp(
-          home: Theme(
-            data: ThemeData(extensions: [AuraTheme.light]),
-            child: Scaffold(
-              body: SingleChildScrollView(
-                child: CompactedMessageDetails(message: message),
+class _Subject extends StatelessWidget {
+  const _Subject({required this.message});
+
+  final MessageEntity message;
+
+  @override
+  Widget build(BuildContext context) {
+    return EasyLocalization(
+      child: Builder(
+        builder: (context) {
+          return MaterialApp(
+            home: Theme(
+              data: ThemeData(extensions: [AuraTheme.light]),
+              child: Scaffold(
+                body: SingleChildScrollView(
+                  child: CompactedMessageDetails(message: message),
+                ),
               ),
             ),
-          ),
-          locale: context.locale,
-          localizationsDelegates: context.localizationDelegates,
-          supportedLocales: context.supportedLocales,
-        );
-      },
-    ),
-    supportedLocales: const [Locale('en')],
-    path: 'assets/i18n',
-    fallbackLocale: const Locale('en'),
-    startLocale: const Locale('en'),
-    useOnlyLangCode: true,
-    useFallbackTranslations: true,
-  );
+            locale: context.locale,
+            localizationsDelegates: context.localizationDelegates,
+            supportedLocales: context.supportedLocales,
+          );
+        },
+      ),
+      supportedLocales: const [Locale('en')],
+      path: 'assets/i18n',
+      fallbackLocale: const Locale('en'),
+      startLocale: const Locale('en'),
+      useOnlyLangCode: true,
+      useFallbackTranslations: true,
+    );
+  }
 }
 
 void main() {
@@ -80,7 +76,7 @@ void main() {
       metadata: metadata,
     );
 
-    await tester.pumpWidget(buildSubject(message));
+    await tester.pumpWidget(_Subject(message: message));
     final _ = await tester.pumpAndSettle();
 
     expect(find.text('Compaction summary content'), findsOneWidget);

@@ -1,5 +1,3 @@
-// ignore_for_file: prefer-async-await
-// Required: Existing Future chains preserve callback flow.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools_groups.dart';
 import 'package:drift/drift.dart';
@@ -26,9 +24,13 @@ class ToolsGroupsDao extends DatabaseAccessor<AppDatabase>
   ///
   /// Tools belonging to this group will be cascade deleted via FK.
   /// Returns true if a row was deleted.
-  Future<bool> deleteToolsGroupById(String id) => (delete(
-    toolsGroups,
-  )..where((t) => t.id.equals(id))).go().then((count) => count > 0);
+  Future<bool> deleteToolsGroupById(String id) async {
+    final count = await (delete(
+      toolsGroups,
+    )..where((t) => t.id.equals(id))).go();
+
+    return count > 0;
+  }
 
   /// Get a tools group by its linked MCP server ID.
   ///
@@ -58,13 +60,18 @@ class ToolsGroupsDao extends DatabaseAccessor<AppDatabase>
   /// Update the enabled status of a tools group.
   ///
   /// Returns true if a row was updated.
-  Future<bool> setToolsGroupEnabled(String id, {required bool isEnabled}) =>
-      (update(toolsGroups)..where((t) => t.id.equals(id)))
-          .write(
-            ToolsGroupsCompanion(
-              updatedAt: Value(DateTime.now()),
-              isEnabled: Value(isEnabled),
-            ),
-          )
-          .then((count) => count > 0);
+  Future<bool> setToolsGroupEnabled(
+    String id, {
+    required bool isEnabled,
+  }) async {
+    final count = await (update(toolsGroups)..where((t) => t.id.equals(id)))
+        .write(
+          ToolsGroupsCompanion(
+            updatedAt: Value(DateTime.now()),
+            isEnabled: Value(isEnabled),
+          ),
+        );
+
+    return count > 0;
+  }
 }

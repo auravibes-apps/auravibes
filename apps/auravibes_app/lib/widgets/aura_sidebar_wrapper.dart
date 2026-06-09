@@ -1,20 +1,7 @@
-// ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: always-remove-listener
-// Required: Listener is removed through nullable router field in dispose.
-// ignore_for_file: prefer-extracting-callbacks
 // Required: UI callbacks stay local to their widgets.
-// ignore_for_file: prefer-single-widget-per-file
 // Required: Feature widgets keep closely related private widgets together.
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/features/chats/widgets/sidebar_conversations_widget.dart';
 import 'package:auravibes_app/features/workspaces/models/switch_status.dart';
@@ -42,10 +29,10 @@ import 'package:logging/logging.dart';
 /// from the auravibes_ui package.
 
 final List<AuraNavigationData> _navigationItems = [
-  // const AuraNavigationData(
-  //   icon: Icon(Icons.dashboard_outlined),
-  //   label: TextLocale(LocaleKeys.menu_home),
-  // ),
+  // Const AuraNavigationData(.
+  //   Icon: Icon(Icons.dashboard_outlined),.
+  //   Label: TextLocale(LocaleKeys.menu_home),.
+  // ),.
   const AuraNavigationData(
     icon: Icon(Icons.chat_outlined),
     label: TextLocale(LocaleKeys.menu_new_chat),
@@ -82,9 +69,9 @@ int _calculateSelectedIndex(BuildContext context, int shellIndex) {
   }
 
   return switch (shellIndex) {
-    0 => 0, // New Chat
-    1 => 1, // App Settings
-    2 => 2, // Settings (footer)
+    0 => 0, // New Chat.
+    1 => 1, // App Settings.
+    2 => 2, // Settings (footer).
     _ => -1,
   };
 }
@@ -107,8 +94,8 @@ class AuraSidebarWrapper extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // useListenable keeps GoRouter.of(context).routeInformationProvider updates
-    // active for _calculateSelectedIndex.
+    // UseListenable keeps GoRouter route information updates active for
+    // _calculateSelectedIndex.
     final _ = useListenable(GoRouter.of(context).routeInformationProvider);
     final selectedIndex = _calculateSelectedIndex(
       context,
@@ -123,6 +110,7 @@ class AuraSidebarWrapper extends HookConsumerWidget {
           _logger.fine(
             '[Navigation] onNavigationTap: workspaceId missing, ignoring tap',
           );
+
           return;
         }
 
@@ -184,10 +172,9 @@ class _AppWithResponsiveDrawerState extends State<AppWithResponsiveDrawer> {
   @override
   void initState() {
     super.initState();
-    final router = GoRouter.of(context);
-    _router = router;
-    _previousRoute = router.routeInformationProvider.value.uri;
-    router.routeInformationProvider.addListener(_onRouteChanged);
+    _router = GoRouter.of(context);
+    _previousRoute = _router?.routeInformationProvider.value.uri;
+    _router?.routeInformationProvider.addListener(_onRouteChanged);
   }
 
   void _onRouteChanged() {

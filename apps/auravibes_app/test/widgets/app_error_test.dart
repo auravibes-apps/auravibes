@@ -20,7 +20,7 @@ void main() {
     );
 
     expect(find.text('Error loading models: $error'), findsOneWidget);
-    expect(find.byType(AppErrorWidget), findsOneWidget);
+    expect(find.byType(AppErrorWidget<String>), findsOneWidget);
     expect(find.byType(AuraText), findsOneWidget);
   });
 

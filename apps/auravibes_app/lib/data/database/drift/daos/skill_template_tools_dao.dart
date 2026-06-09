@@ -1,0 +1,57 @@
+import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/database/drift/tables/skill_template_tools.dart';
+import 'package:drift/drift.dart';
+
+part 'skill_template_tools_dao.g.dart';
+
+@DriftAccessor(tables: [SkillTemplateTools])
+class SkillTemplateToolsDao extends DatabaseAccessor<AppDatabase>
+    with _$SkillTemplateToolsDaoMixin {
+  SkillTemplateToolsDao(super.attachedDatabase);
+
+  Future<List<SkillTemplateToolsTable>> getSkillTools(String skillId) =>
+      (select(skillTemplateTools)
+            ..where((tbl) => tbl.skillId.equals(skillId))
+            ..orderBy([(tbl) => OrderingTerm(expression: tbl.title)]))
+          .get();
+
+  Future<SkillTemplateToolsTable?> getToolById(String toolId) => (select(
+    skillTemplateTools,
+  )..where((tbl) => tbl.id.equals(toolId))).getSingleOrNull();
+
+  Future<SkillTemplateToolsTable?> getToolBySlug(
+    String skillId,
+    String slug,
+  ) =>
+      (select(skillTemplateTools)..where(
+            (tbl) => tbl.skillId.equals(skillId) & tbl.slug.equals(slug),
+          ))
+          .getSingleOrNull();
+
+  Future<SkillTemplateToolsTable> createTool(
+    SkillTemplateToolsCompanion tool,
+  ) => into(skillTemplateTools).insertReturning(tool);
+
+  Future<SkillTemplateToolsTable> updateTool(
+    String toolId,
+    SkillTemplateToolsCompanion tool,
+  ) async {
+    final _ = await (update(
+      skillTemplateTools,
+    )..where((tbl) => tbl.id.equals(toolId))).write(tool);
+    final updated = await getToolById(toolId);
+    if (updated == null) {
+      throw StateError('Updated skill template tool was not found');
+    }
+
+    return updated;
+  }
+
+  Future<bool> deleteTool(String toolId) async {
+    final count = await (delete(
+      skillTemplateTools,
+    )..where((tbl) => tbl.id.equals(toolId))).go();
+
+    return count > 0;
+  }
+}

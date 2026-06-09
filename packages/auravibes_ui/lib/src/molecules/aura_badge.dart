@@ -1,12 +1,4 @@
-// ignore_for_file: no-magic-number
-// Required: UI tokens and layout use fixed design values.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-moving-to-variable
-// Required: UI components repeat theme and layout lookups intentionally.
-// ignore_for_file: prefer-single-widget-per-file
 // Required: UI components keep related private widgets together.
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
@@ -282,6 +274,7 @@ class AuraPositionedBadge extends StatelessWidget {
 
   double? _getTop() {
     final baseOffset = offset?.dy ?? 0;
+
     return switch (position) {
       AuraBadgePosition.topLeft ||
       AuraBadgePosition.topRight => -8.0 + baseOffset,
@@ -291,6 +284,7 @@ class AuraPositionedBadge extends StatelessWidget {
 
   double? _getRight() {
     final baseOffset = offset?.dx ?? 0;
+
     return switch (position) {
       AuraBadgePosition.topRight ||
       AuraBadgePosition.bottomRight => -8.0 + baseOffset,
@@ -300,6 +294,7 @@ class AuraPositionedBadge extends StatelessWidget {
 
   double? _getBottom() {
     final baseOffset = offset?.dy ?? 0;
+
     return switch (position) {
       AuraBadgePosition.bottomLeft ||
       AuraBadgePosition.bottomRight => -8.0 + baseOffset,
@@ -309,6 +304,7 @@ class AuraPositionedBadge extends StatelessWidget {
 
   double? _getLeft() {
     final baseOffset = offset?.dx ?? 0;
+
     return switch (position) {
       AuraBadgePosition.topLeft ||
       AuraBadgePosition.bottomLeft => -8.0 + baseOffset,

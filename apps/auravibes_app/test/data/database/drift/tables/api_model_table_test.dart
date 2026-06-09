@@ -1,14 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-static-class
-// Required: Tests keep fixture helpers and fakes top-level.
-
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/api_models.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
@@ -25,6 +14,25 @@ QueryExecutor _testConnection() {
       );
     }),
   );
+}
+
+final class _DatabaseFixture {
+  _DatabaseFixture(this.createConnection);
+
+  final QueryExecutor Function() createConnection;
+  AppDatabase? _database;
+
+  AppDatabase get database =>
+      _database ?? fail('Database fixture not initialized');
+
+  void reset() {
+    _database = AppDatabase(connection: createConnection());
+  }
+
+  Future<void> close() async {
+    await _database?.close();
+    _database = null;
+  }
 }
 
 void main() {
@@ -50,19 +58,19 @@ void main() {
   });
 
   group('ApiModels schema', () {
-    late AppDatabase db;
-    late List<QueryRow> columns;
+    final fixture = _DatabaseFixture(_testConnection);
+    var columns = <QueryRow>[];
 
     setUp(() async {
-      db = AppDatabase(connection: _testConnection());
-      columns = await db
+      fixture.reset();
+      columns = await fixture.database
           .customSelect(
             'PRAGMA table_info(api_models)',
           )
           .get();
     });
 
-    tearDown(() async => db.close());
+    tearDown(fixture.close);
 
     test('has expected columns', () {
       final names = columns.map((r) => r.read<String>('name')).toSet();
@@ -152,16 +160,14 @@ void main() {
   });
 
   group('ApiModels column accessors', () {
-    late AppDatabase db;
+    final fixture = _DatabaseFixture(_testConnection);
 
-    setUp(() async {
-      db = AppDatabase(connection: _testConnection());
-    });
+    setUp(fixture.reset);
 
-    tearDown(() async => db.close());
+    tearDown(fixture.close);
 
     test('all column getters are accessible', () {
-      final table = db.apiModels;
+      final table = fixture.database.apiModels;
       expect(table.modelProvider, isNotNull);
       expect(table.id, isNotNull);
       expect(table.name, isNotNull);
@@ -177,14 +183,14 @@ void main() {
     });
 
     test('primaryKey contains id and modelProvider', () {
-      final table = db.apiModels;
+      final table = fixture.database.apiModels;
       expect(table.primaryKey.length, 2);
       expect(table.primaryKey, contains(table.id));
       expect(table.primaryKey, contains(table.modelProvider));
     });
 
     test('column names match expected snake_case', () {
-      final table = db.apiModels;
+      final table = fixture.database.apiModels;
       expect(table.modelProvider.name, 'model_provider');
       expect(table.id.name, 'id');
       expect(table.name.name, 'name');
@@ -200,20 +206,20 @@ void main() {
     });
 
     test(r'$columns returns all 12 columns', () {
-      final table = db.apiModels;
+      final table = fixture.database.apiModels;
       expect(table.$columns.length, 12);
     });
 
     test('table name is api_models', () {
-      expect(db.apiModels.actualTableName, 'api_models');
+      expect(fixture.database.apiModels.actualTableName, 'api_models');
     });
 
     test('aliasedName returns actualTableName without alias', () {
-      expect(db.apiModels.aliasedName, 'api_models');
+      expect(fixture.database.apiModels.aliasedName, 'api_models');
     });
 
     test('createAlias returns new table with alias', () {
-      final aliased = db.apiModels.createAlias('test_alias');
+      final aliased = fixture.database.apiModels.createAlias('test_alias');
       expect(aliased.aliasedName, 'test_alias');
     });
   });

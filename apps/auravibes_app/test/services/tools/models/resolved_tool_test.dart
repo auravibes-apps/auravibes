@@ -1,5 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/native_tool_type.dart';
 import 'package:auravibes_app/services/tools/user_tool_type.dart';
@@ -7,11 +5,14 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('ResolvedToolType', () {
-    test('enum has three values', () {
-      expect(ResolvedToolType.values.length, 3);
+    test('enum has expected values', () {
+      expect(ResolvedToolType.values.length, 6);
       expect(ResolvedToolType.values, contains(ResolvedToolType.builtIn));
       expect(ResolvedToolType.values, contains(ResolvedToolType.mcp));
       expect(ResolvedToolType.values, contains(ResolvedToolType.native));
+      expect(ResolvedToolType.values, contains(ResolvedToolType.skillControl));
+      expect(ResolvedToolType.values, contains(ResolvedToolType.skillNative));
+      expect(ResolvedToolType.values, contains(ResolvedToolType.skillTemplate));
     });
   });
 

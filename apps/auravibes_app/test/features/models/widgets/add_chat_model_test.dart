@@ -1,9 +1,4 @@
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-static-class
-// Required: Tests keep fixture helpers and fakes top-level.
 import 'package:auravibes_app/domain/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/features/models/widgets/add_model_provider_widget.dart';
 import 'package:flutter/material.dart';
@@ -143,5 +138,6 @@ String _mapErrorMessage(Object error) {
   ) when message.trim().isNotEmpty) {
     return message;
   }
+
   return _fallback;
 }

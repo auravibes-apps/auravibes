@@ -1,4 +1,3 @@
-// ignore_for_file: prefer-extracting-callbacks
 // Required: UI callbacks stay local to their widgets.
 import 'package:auravibes_app/features/chats/widgets/chat_list_widget.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';

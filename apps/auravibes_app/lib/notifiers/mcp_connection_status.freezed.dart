@@ -14,11 +14,11 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$McpConnectionState {
 
-/// The MCP server configuration
- McpServerEntity get server;/// Current connection status
- McpConnectionStatus get status;/// The connected MCP client instance (null if not connected)
- McpManagerClient? get client;/// Tools available from this MCP server
- List<McpToolInfo> get tools;/// Error message if connection failed
+/// The MCP server configuration.
+ McpServerEntity get server;/// Current connection status.
+ McpConnectionStatus get status;/// The connected MCP client instance (null if not connected).
+ McpManagerClient? get client;/// Tools available from this MCP server.
+ List<McpToolInfo> get tools;/// Error message if connection failed.
  String? get errorMessage;
 /// Create a copy of McpConnectionState
 /// with the given fields replaced by the non-null parameter values.
@@ -227,22 +227,22 @@ class _McpConnectionState extends McpConnectionState {
   const _McpConnectionState({required this.server, required this.status, this.client, final  List<McpToolInfo> tools = const [], this.errorMessage}): _tools = tools,super._();
   
 
-/// The MCP server configuration
+/// The MCP server configuration.
 @override final  McpServerEntity server;
-/// Current connection status
+/// Current connection status.
 @override final  McpConnectionStatus status;
-/// The connected MCP client instance (null if not connected)
+/// The connected MCP client instance (null if not connected).
 @override final  McpManagerClient? client;
-/// Tools available from this MCP server
+/// Tools available from this MCP server.
  final  List<McpToolInfo> _tools;
-/// Tools available from this MCP server
+/// Tools available from this MCP server.
 @override@JsonKey() List<McpToolInfo> get tools {
   if (_tools is EqualUnmodifiableListView) return _tools;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableListView(_tools);
 }
 
-/// Error message if connection failed
+/// Error message if connection failed.
 @override final  String? errorMessage;
 
 /// Create a copy of McpConnectionState

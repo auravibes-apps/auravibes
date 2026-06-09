@@ -1,4 +1,3 @@
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -40,6 +39,7 @@ enum UrlResponseFormat {
   static UrlResponseFormat fromString(String value) {
     final normalized = value.trim().toLowerCase();
     if (normalized.isEmpty) return .defaultFormat;
+
     return values.firstWhere(
       (f) => f.label == normalized,
       orElse: () => throw FormatException(

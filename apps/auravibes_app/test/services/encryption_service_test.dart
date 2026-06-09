@@ -1,16 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-top-level-members-in-tests
-// Required: Test files keep shared fixtures and helpers top-level.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
-
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-
 import 'dart:convert';
 
 import 'package:auravibes_app/services/encryption_service.dart';
@@ -29,7 +16,7 @@ class MockSecretKeyManager extends SecretKeyManager {
 
 void main() {
   group('EncryptionService', () {
-    late EncryptionService service;
+    var service = EncryptionService(MockSecretKeyManager());
 
     setUp(() {
       service = EncryptionService(MockSecretKeyManager());
@@ -57,7 +44,7 @@ void main() {
         final one = await service.encrypt('same');
         final two = await service.encrypt('same');
         expect(one, isNot(two));
-        // Both should decrypt to the same value
+        // Both should decrypt to the same value.
         expect(await service.decrypt(one), 'same');
         expect(await service.decrypt(two), 'same');
       },
@@ -119,7 +106,7 @@ void main() {
       );
     });
 
-    test('decrypt rejects malformed base64 payloads', () async {
+    test('decrypt rejects malformed base64 payloads', () {
       expect(
         service.decrypt('not-valid-base64%%%'),
         throwsA(isA<FormatException>()),
@@ -128,7 +115,7 @@ void main() {
   });
 
   group('EncryptionService nullable methods', () {
-    late EncryptionService service;
+    var service = EncryptionService(MockSecretKeyManager());
 
     setUp(() {
       service = EncryptionService(MockSecretKeyManager());

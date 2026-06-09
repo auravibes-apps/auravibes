@@ -1,13 +1,4 @@
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-static-class
-// Required: Tests keep fixture helpers and fakes top-level.
 
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
@@ -23,36 +14,18 @@ import 'package:riverpod/riverpod.dart';
 
 void main() {
   group('GroupedToolsNotifier', () {
-    late _FakeToolsGroupsRepository toolsGroupsRepository;
-    late _FakeWorkspaceToolsNotifier workspaceToolsNotifier;
-    late _FakeMcpConnectionNotifier mcpNotifier;
-    late ProviderContainer container;
+    final fixture = _GroupedToolsControllerFixture();
 
-    setUp(() {
-      toolsGroupsRepository = _FakeToolsGroupsRepository();
-      workspaceToolsNotifier = _FakeWorkspaceToolsNotifier(const []);
-      mcpNotifier = _FakeMcpConnectionNotifier();
+    setUp(fixture.setUp);
 
-      container = ProviderContainer(
-        overrides: [
-          toolsGroupsRepositoryProvider.overrideWithValue(
-            toolsGroupsRepository,
-          ),
-          workspaceToolsProvider(
-            _workspace.id,
-          ).overrideWith(() => workspaceToolsNotifier),
-          mcpConnectionProvider.overrideWith(() => mcpNotifier),
-        ],
-      );
-    });
-
-    tearDown(() {
-      container.dispose();
-    });
+    tearDown(fixture.dispose);
 
     test(
       'setMcpGroupEnabled disconnects even when controller state is loading',
       () async {
+        final toolsGroupsRepository = fixture.toolsGroupsRepository;
+        final container = fixture.container;
+        final mcpNotifier = fixture.mcpNotifier;
         toolsGroupsRepository.groupById['group-1'] = _mcpGroup;
 
         final notifier = container.read(
@@ -71,6 +44,9 @@ void main() {
       'deleteMcpGroup deletes by repository lookup when controller state is '
       'loading',
       () async {
+        final toolsGroupsRepository = fixture.toolsGroupsRepository;
+        final container = fixture.container;
+        final mcpNotifier = fixture.mcpNotifier;
         toolsGroupsRepository.groupById['group-1'] = _mcpGroup;
 
         final notifier = container.read(
@@ -86,6 +62,9 @@ void main() {
     test(
       'setMcpGroupEnabled ignores groups from another workspace',
       () async {
+        final toolsGroupsRepository = fixture.toolsGroupsRepository;
+        final container = fixture.container;
+        final mcpNotifier = fixture.mcpNotifier;
         toolsGroupsRepository.groupById['group-2'] = _mcpGroup.copyWith(
           id: 'group-2',
           workspaceId: 'workspace-2',
@@ -107,6 +86,9 @@ void main() {
     test(
       'setMcpGroupEnabled skips side effects when repository update fails',
       () async {
+        final toolsGroupsRepository = fixture.toolsGroupsRepository;
+        final container = fixture.container;
+        final mcpNotifier = fixture.mcpNotifier;
         toolsGroupsRepository.groupById['group-1'] = _mcpGroup;
         toolsGroupsRepository.setEnabledResult = false;
 
@@ -125,6 +107,9 @@ void main() {
     test(
       'setMcpGroupEnabled reconnects when enabled',
       () async {
+        final toolsGroupsRepository = fixture.toolsGroupsRepository;
+        final container = fixture.container;
+        final mcpNotifier = fixture.mcpNotifier;
         toolsGroupsRepository.groupById['group-1'] = _mcpGroup;
 
         final notifier = container.read(
@@ -143,6 +128,9 @@ void main() {
     test(
       'deleteMcpGroup skips non-MCP group',
       () async {
+        final toolsGroupsRepository = fixture.toolsGroupsRepository;
+        final container = fixture.container;
+        final mcpNotifier = fixture.mcpNotifier;
         final nonMcpGroup = _mcpGroup.copyWith(
           id: 'group-non-mcp',
           mcpServerId: null,
@@ -162,6 +150,8 @@ void main() {
     test(
       'reconnectMcp delegates to McpConnectionNotifier',
       () async {
+        final container = fixture.container;
+        final mcpNotifier = fixture.mcpNotifier;
         final notifier = container.read(
           groupedToolsProvider(_workspace.id).notifier,
         )..state = const AsyncLoading();
@@ -175,6 +165,9 @@ void main() {
     test(
       'deleteMcpGroup skips group with null mcpServerId',
       () async {
+        final toolsGroupsRepository = fixture.toolsGroupsRepository;
+        final container = fixture.container;
+        final mcpNotifier = fixture.mcpNotifier;
         final group = _mcpGroup.copyWith(
           id: 'group-empty-mcp',
           mcpServerId: '',
@@ -191,6 +184,49 @@ void main() {
       },
     );
   });
+}
+
+class _GroupedToolsControllerFixture {
+  _FakeToolsGroupsRepository? _toolsGroupsRepository;
+  _FakeMcpConnectionNotifier? _mcpNotifier;
+  ProviderContainer? _container;
+
+  _FakeToolsGroupsRepository get toolsGroupsRepository =>
+      _toolsGroupsRepository ??
+      fail('Expected toolsGroupsRepository to be initialized');
+
+  _FakeMcpConnectionNotifier get mcpNotifier =>
+      _mcpNotifier ?? fail('Expected mcpNotifier to be initialized');
+
+  ProviderContainer get container =>
+      _container ?? fail('Expected container to be initialized');
+
+  void setUp() {
+    final toolsGroupsRepository = _FakeToolsGroupsRepository();
+    final workspaceToolsNotifier = _FakeWorkspaceToolsNotifier(const []);
+    final mcpNotifier = _FakeMcpConnectionNotifier();
+
+    _toolsGroupsRepository = toolsGroupsRepository;
+    _mcpNotifier = mcpNotifier;
+    _container = ProviderContainer(
+      overrides: [
+        toolsGroupsRepositoryProvider.overrideWithValue(
+          toolsGroupsRepository,
+        ),
+        workspaceToolsProvider(
+          _workspace.id,
+        ).overrideWith(() => workspaceToolsNotifier),
+        mcpConnectionProvider.overrideWith(() => mcpNotifier),
+      ],
+    );
+  }
+
+  void dispose() {
+    _container?.dispose();
+    _container = null;
+    _mcpNotifier = null;
+    _toolsGroupsRepository = null;
+  }
 }
 
 final _workspace = WorkspaceEntity(
@@ -261,6 +297,7 @@ class _FakeToolsGroupsRepository implements ToolsGroupsRepository {
   }) async {
     lastSetGroupId = groupId;
     lastIsEnabled = isEnabled;
+
     return setEnabledResult;
   }
 

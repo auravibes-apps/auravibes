@@ -1,12 +1,3 @@
-// ignore_for_file: prefer-async-await
-// Required: Existing Future chains preserve callback flow.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: newline-before-return
-// Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools.dart';
 import 'package:drift/drift.dart';
@@ -18,7 +9,7 @@ class WorkspaceToolsDao extends DatabaseAccessor<AppDatabase>
     with _$WorkspaceToolsDaoMixin {
   WorkspaceToolsDao(super.attachedDatabase);
 
-  // Core operations
+  // Core operations.
   Future<ToolsTable?> getWorkspaceTool(
     String workspaceId,
     String id,
@@ -45,11 +36,11 @@ class WorkspaceToolsDao extends DatabaseAccessor<AppDatabase>
     String toolId, {
     required bool isEnabled,
   }) async {
-    // Check if tool already exists
+    // Check if tool already exists.
     final existing = await getWorkspaceToolByToolId(workspaceId, toolId);
 
     if (existing != null) {
-      // Update existing tool
+      // Update existing tool.
       final _ =
           await (update(tools)..where(
                 (tbl) =>
@@ -63,14 +54,15 @@ class WorkspaceToolsDao extends DatabaseAccessor<AppDatabase>
                   isEnabled: Value(isEnabled),
                 ),
               );
-      // Return updated tool
+      // Return updated tool.
       final updated = await getWorkspaceToolByToolId(workspaceId, toolId);
       if (updated == null) {
         throw StateError('Updated workspace tool was not found');
       }
+
       return updated;
     } else {
-      // Insert new tool
+      // Insert new tool.
       return into(tools).insertReturning(
         ToolsCompanion(
           workspaceId: Value(workspaceId),
@@ -96,6 +88,7 @@ class WorkspaceToolsDao extends DatabaseAccessor<AppDatabase>
         isEnabled: Value(isEnabled),
       ),
     );
+
     return (select(tools)..where((tbl) => tbl.id.equals(id))).getSingle();
   }
 
@@ -117,29 +110,42 @@ class WorkspaceToolsDao extends DatabaseAccessor<AppDatabase>
             ),
           );
 
-  Future<bool> deleteWorkspaceToolByToolId(String workspaceId, String toolId) =>
-      (delete(tools)..where(
-            (tbl) =>
-                tbl.workspaceId.equals(workspaceId) &
-                tbl.toolId.equals(toolId) &
-                tbl.workspaceToolsGroupId.isNull(),
-          ))
-          .go()
-          .then((count) => count > 0);
+  Future<bool> deleteWorkspaceToolByToolId(
+    String workspaceId,
+    String toolId,
+  ) async {
+    final count =
+        await (delete(tools)..where(
+              (tbl) =>
+                  tbl.workspaceId.equals(workspaceId) &
+                  tbl.toolId.equals(toolId) &
+                  tbl.workspaceToolsGroupId.isNull(),
+            ))
+            .go();
 
-  Future<bool> deleteWorkspaceTool(String workspaceId, String id) =>
-      (delete(tools)..where(
-            (tbl) => tbl.workspaceId.equals(workspaceId) & tbl.id.equals(id),
-          ))
-          .go()
-          .then((count) => count > 0);
+    return count > 0;
+  }
 
-  /// Delete a workspace tool by its unique table ID
-  Future<bool> deleteWorkspaceToolById(String id) => (delete(
-    tools,
-  )..where((tbl) => tbl.id.equals(id))).go().then((count) => count > 0);
+  Future<bool> deleteWorkspaceTool(String workspaceId, String id) async {
+    final count =
+        await (delete(tools)..where(
+              (tbl) => tbl.workspaceId.equals(workspaceId) & tbl.id.equals(id),
+            ))
+            .go();
 
-  // Query operations
+    return count > 0;
+  }
+
+  /// Delete a workspace tool by its unique table ID.
+  Future<bool> deleteWorkspaceToolById(String id) async {
+    final count = await (delete(
+      tools,
+    )..where((tbl) => tbl.id.equals(id))).go();
+
+    return count > 0;
+  }
+
+  // Query operations.
   Future<List<ToolsTable>> getWorkspaceTools(String workspaceId) =>
       (select(tools)
             ..where((tbl) => tbl.workspaceId.equals(workspaceId))
@@ -178,17 +184,20 @@ class WorkspaceToolsDao extends DatabaseAccessor<AppDatabase>
             ]))
           .getSingleOrNull();
 
-  Future<bool> isWorkspaceToolEnabled(String workspaceId, String id) =>
-      (selectOnly(tools)
-            ..addColumns([tools.id.count()])
-            ..where(
-              tools.workspaceId.equals(workspaceId) &
-                  tools.id.equals(id) &
-                  tools.isEnabled.equals(true),
-            ))
-          .map((row) => row.read(tools.id.count()) ?? 0)
-          .getSingle()
-          .then((result) => result > 0);
+  Future<bool> isWorkspaceToolEnabled(String workspaceId, String id) async {
+    final result =
+        await (selectOnly(tools)
+              ..addColumns([tools.id.count()])
+              ..where(
+                tools.workspaceId.equals(workspaceId) &
+                    tools.id.equals(id) &
+                    tools.isEnabled.equals(true),
+              ))
+            .map((row) => row.read(tools.id.count()) ?? 0)
+            .getSingle();
+
+    return result > 0;
+  }
 
   Future<String?> getWorkspaceToolConfig(String workspaceId, String id) =>
       (selectOnly(tools)
@@ -216,18 +225,21 @@ class WorkspaceToolsDao extends DatabaseAccessor<AppDatabase>
   Future<bool> isWorkspaceToolEnabledByToolId(
     String workspaceId,
     String toolId,
-  ) =>
-      (selectOnly(tools)
-            ..addColumns([tools.id.count()])
-            ..where(
-              tools.workspaceId.equals(workspaceId) &
-                  tools.toolId.equals(toolId) &
-                  tools.workspaceToolsGroupId.isNull() &
-                  tools.isEnabled.equals(true),
-            ))
-          .map((row) => row.read(tools.id.count()) ?? 0)
-          .getSingle()
-          .then((result) => result > 0);
+  ) async {
+    final result =
+        await (selectOnly(tools)
+              ..addColumns([tools.id.count()])
+              ..where(
+                tools.workspaceId.equals(workspaceId) &
+                    tools.toolId.equals(toolId) &
+                    tools.workspaceToolsGroupId.isNull() &
+                    tools.isEnabled.equals(true),
+              ))
+            .map((row) => row.read(tools.id.count()) ?? 0)
+            .getSingle();
+
+    return result > 0;
+  }
 
   Future<int> getWorkspaceToolsCount(String workspaceId) =>
       (selectOnly(tools)
@@ -256,14 +268,15 @@ class WorkspaceToolsDao extends DatabaseAccessor<AppDatabase>
         permissions: Value(permission),
       ),
     );
+
     return (select(
       tools,
     )..where((tbl) => tbl.id.equals(id))).getSingle();
   }
 
-  // ============================================================
-  // Batch Operations (for MCP tools)
-  // ============================================================
+  // ============================================================.
+  // Batch Operations (for MCP tools.)
+  // ============================================================.
 
   /// Insert multiple tools at once (batch insert).
   ///

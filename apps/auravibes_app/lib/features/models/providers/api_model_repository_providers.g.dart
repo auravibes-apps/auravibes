@@ -8,12 +8,12 @@ part of 'api_model_repository_providers.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Provider for the API model repository
+/// Provider for the API model repository.
 
 @ProviderFor(apiModelRepository)
 final apiModelRepositoryProvider = ApiModelRepositoryProvider._();
 
-/// Provider for the API model repository
+/// Provider for the API model repository.
 
 final class ApiModelRepositoryProvider
     extends
@@ -23,7 +23,7 @@ final class ApiModelRepositoryProvider
           ApiModelRepository
         >
     with $Provider<ApiModelRepository> {
-  /// Provider for the API model repository
+  /// Provider for the API model repository.
   ApiModelRepositoryProvider._()
     : super(
         from: null,
@@ -61,18 +61,18 @@ final class ApiModelRepositoryProvider
 String _$apiModelRepositoryHash() =>
     r'ce28c9a1ada0e032e779e224d152730e2fb9ad85';
 
-/// Provider for the model API service
+/// Provider for the model API service.
 
 @ProviderFor(modelApiService)
 final modelApiServiceProvider = ModelApiServiceProvider._();
 
-/// Provider for the model API service
+/// Provider for the model API service.
 
 final class ModelApiServiceProvider
     extends
         $FunctionalProvider<ModelApiService, ModelApiService, ModelApiService>
     with $Provider<ModelApiService> {
-  /// Provider for the model API service
+  /// Provider for the model API service.
   ModelApiServiceProvider._()
     : super(
         from: null,
@@ -108,12 +108,12 @@ final class ModelApiServiceProvider
 
 String _$modelApiServiceHash() => r'a248c4da513fe5e9d8379a5c922027e51f194b38';
 
-/// Provider for the model sync service
+/// Provider for the model sync service.
 
 @ProviderFor(modelSyncService)
 final modelSyncServiceProvider = ModelSyncServiceProvider._();
 
-/// Provider for the model sync service
+/// Provider for the model sync service.
 
 final class ModelSyncServiceProvider
     extends
@@ -123,7 +123,7 @@ final class ModelSyncServiceProvider
           ModelSyncService
         >
     with $Provider<ModelSyncService> {
-  /// Provider for the model sync service
+  /// Provider for the model sync service.
   ModelSyncServiceProvider._()
     : super(
         from: null,

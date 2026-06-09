@@ -1,16 +1,6 @@
-// ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: avoid-substring
-// Required: Existing parsing uses code-unit substring offsets.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-moving-to-variable
 // Required: Existing code repeats lookups where extraction adds noise.
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 
 import 'dart:convert';
@@ -183,19 +173,12 @@ final class UrlTool extends NativeToolEntity<String, String> {
   static const int _truncationNoteReserve = 55;
 
   List<String> _takeLines(String text, int limit) {
-    final lines = <String>[];
-    var start = 0;
-    for (var i = 0; i < text.length; i++) {
-      if (text[i] == '\n') {
-        lines.add(text.substring(start, i));
-        start = i + 1;
-        if (lines.length > limit) break;
-      }
+    final lines = text.split('\n');
+    if (lines.isNotEmpty && text.endsWith('\n')) {
+      final _ = lines.removeLast();
     }
-    if (start < text.length && lines.length <= limit) {
-      lines.add(text.substring(start));
-    }
-    return lines;
+
+    return lines.take(limit + 1).toList();
   }
 
   ({String body, bool truncated}) _truncateBody(
@@ -247,6 +230,7 @@ final class UrlTool extends NativeToolEntity<String, String> {
     if (end > 0 && bytes[end - 1] >= 0xC0) {
       end--;
     }
+
     return utf8.decode(bytes.sublist(0, end));
   }
 
@@ -265,6 +249,7 @@ final class UrlTool extends NativeToolEntity<String, String> {
     );
 
     final omitted = originalBytes - utf8.encode(output).length;
+
     return '$output\n... [truncated: $omitted bytes omitted]';
   }
 
@@ -341,8 +326,10 @@ final class UrlTool extends NativeToolEntity<String, String> {
       if (decoded is! Map) {
         throw const FormatException('Tool input JSON must be an object.');
       }
+
       return Map<String, Object?>.from(decoded);
     }
+
     return {'url': trimmedInput};
   }
 
@@ -366,6 +353,7 @@ final class UrlTool extends NativeToolEntity<String, String> {
     if (headers is! Map) {
       throw const FormatException('Headers must be a JSON object.');
     }
+
     return headers.entries.fold<Map<String, String>>({}, (result, entry) {
       final name = entry.key.toString();
       if (name.toLowerCase() == 'host') {
@@ -374,6 +362,7 @@ final class UrlTool extends NativeToolEntity<String, String> {
         );
       }
       result[name] = entry.value.toString();
+
       return result;
     });
   }
@@ -392,6 +381,7 @@ final class UrlTool extends NativeToolEntity<String, String> {
           _privateNetworkUrlError,
         );
       }
+
       return literalAddress.address;
     }
 
@@ -402,11 +392,13 @@ final class UrlTool extends NativeToolEntity<String, String> {
         _privateNetworkUrlError,
       );
     }
+
     return firstAddress.address;
   }
 
   bool _isBlockedHostLabel(String host) {
     final normalizedHost = host.toLowerCase();
+
     return normalizedHost == 'localhost' ||
         normalizedHost.endsWith('.localhost');
   }
@@ -441,6 +433,7 @@ final class UrlTool extends NativeToolEntity<String, String> {
     }
 
     final isUnspecified = raw.every((b) => b == 0);
+
     return isUnspecified ||
         raw.firstOrNull == 0xfc ||
         raw.firstOrNull == 0xfd ||
@@ -453,6 +446,7 @@ final class UrlTool extends NativeToolEntity<String, String> {
     if (firstByte == null) {
       return false;
     }
+
     return firstByte == 10 ||
         (firstByte == 172 && b[1] >= 16 && b[1] <= 31) ||
         (firstByte == 192 && b[1] == 168) ||

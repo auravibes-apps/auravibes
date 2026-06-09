@@ -1,4 +1,3 @@
-// ignore_for_file: prefer-single-widget-per-file
 // Required: Feature widgets keep closely related private widgets together.
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
@@ -9,7 +8,7 @@ import 'package:go_router/go_router.dart';
 
 /// A hub screen that groups all app management sections.
 ///
-/// Provides navigation tiles for workspaces, model providers, and tools.
+/// Provides navigation tiles for workspaces, service connections, and tools.
 class MoreScreen extends StatelessWidget {
   /// Creates a [MoreScreen].
   const MoreScreen({required this.workspaceId, super.key});
@@ -31,11 +30,19 @@ class MoreScreen extends StatelessWidget {
             ),
           ),
           _SectionTile(
-            icon: Icons.memory_outlined,
-            titleKey: LocaleKeys.more_screen_models_title,
-            subtitleKey: LocaleKeys.more_screen_models_subtitle,
+            icon: Icons.hub_outlined,
+            titleKey: LocaleKeys.more_screen_service_connections_title,
+            subtitleKey: LocaleKeys.more_screen_service_connections_subtitle,
             onTap: () => context.push(
-              '/workspaces/$workspaceId/more/models',
+              '/workspaces/$workspaceId/more/service-connections',
+            ),
+          ),
+          _SectionTile(
+            icon: Icons.key_outlined,
+            titleKey: LocaleKeys.more_screen_credential_definitions_title,
+            subtitleKey: LocaleKeys.more_screen_credential_definitions_subtitle,
+            onTap: () => context.push(
+              '/workspaces/$workspaceId/more/skill-credential-definitions',
             ),
           ),
           _SectionTile(
@@ -44,6 +51,14 @@ class MoreScreen extends StatelessWidget {
             subtitleKey: LocaleKeys.more_screen_tools_subtitle,
             onTap: () => context.push(
               '/workspaces/$workspaceId/more/tools',
+            ),
+          ),
+          _SectionTile(
+            icon: Icons.psychology_alt_outlined,
+            titleKey: LocaleKeys.more_screen_skills_title,
+            subtitleKey: LocaleKeys.more_screen_skills_subtitle,
+            onTap: () => context.push(
+              '/workspaces/$workspaceId/more/skills',
             ),
           ),
         ],

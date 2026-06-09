@@ -1,7 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 import 'package:auravibes_ui/src/atoms/aura_spinner.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
@@ -287,7 +283,7 @@ void main() {
       expect(
         find.byType(Container),
         findsOneWidget,
-      ); // Inner container only (overlay uses ColoredBox)
+      ); // Inner container only (overlay uses ColoredBox).
     });
 
     testWidgets('hides overlay when isLoading is false', (tester) async {
@@ -342,8 +338,8 @@ void main() {
       expect(find.byType(AuraSpinner), findsOneWidget);
       expect(find.byType(AuraLoadingOverlay), findsOneWidget);
 
-      // Verify the overlay Stack specifically
-      // (not the MaterialApp's internal stack)
+      // Verify the overlay Stack specifically.
+      // (Not the MaterialApp's internal stack).
       final loadingOverlay = tester.widget<AuraLoadingOverlay>(
         find.byType(AuraLoadingOverlay),
       );

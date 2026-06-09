@@ -1,11 +1,5 @@
-// ignore_for_file: avoid-substring
-// Required: Existing parsing uses code-unit substring offsets.
-// ignore_for_file: no-equal-arguments
 // Required: Existing argument values intentionally repeat.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
+import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/native_tool_type.dart';
@@ -31,10 +25,22 @@ class _NativeToolIdComponents {
   final String toolIdentifier;
 }
 
+class _SkillTemplateToolIdComponents {
+  const _SkillTemplateToolIdComponents({
+    required this.source,
+    required this.skillSlug,
+    required this.toolSlug,
+  });
+
+  final String source;
+  final String skillSlug;
+  final String toolSlug;
+}
+
 class ToolResolverService {
-  // ============================================================
-  // Helper: Tool resolution
-  // ============================================================
+  // ============================================================.
+  // Helper: Tool resolution.
+  // ============================================================.
 
   /// Resolves a composite tool name to its implementation.
   ///
@@ -50,12 +56,35 @@ class ToolResolverService {
   /// failureStatus.
 
   ResolvedTool? resolveTool(String compositeToolName) {
+    if (compositeToolName == loadSkillToolName ||
+        compositeToolName == unloadSkillToolName ||
+        compositeToolName == listSkillCredentialsToolName) {
+      return ResolvedTool.skillControl(toolIdentifier: compositeToolName);
+    }
+
+    final skillTemplateTool = _parseSkillTemplateToolId(compositeToolName);
+    if (skillTemplateTool != null) {
+      if (skillTemplateTool.source == 'app') {
+        return ResolvedTool.skillNative(
+          tableId: skillTemplateTool.toolSlug,
+          skillSlug: skillTemplateTool.skillSlug,
+          toolIdentifier: skillTemplateTool.toolSlug,
+        );
+      }
+
+      return ResolvedTool.skillTemplate(
+        tableId: skillTemplateTool.toolSlug,
+        skillSlug: skillTemplateTool.skillSlug,
+        toolIdentifier: skillTemplateTool.toolSlug,
+      );
+    }
+
     final components = McpToolIdComponents.fromComposite(
       compositeToolName,
     );
     if (components != null) {
       return ResolvedTool.mcp(
-        tableId: components.mcpServerId, // MCP server ID serves as table ID
+        tableId: components.mcpServerId, // MCP server ID serves as table ID.
         toolIdentifier: components.toolIdentifier,
         mcpServerId: components.mcpServerId,
       );
@@ -96,21 +125,12 @@ class ToolResolverService {
   /// Note: Tool names must match pattern ^[a-zA-Z0-9_-]{1,128}$
   /// so we use underscores as separators instead of colons.
   static _BuiltInToolIdComponents? _parseBuiltInToolId(String compositeId) {
-    if (!compositeId.startsWith('built_in_')) {
-      return null;
-    }
+    final match = RegExp(r'^built_in_([^_]+)_(.+)$').firstMatch(compositeId);
+    if (match == null) return null;
 
-    // Remove 'built_in_' prefix
-    final withoutPrefix = compositeId.substring(9);
-
-    // Parse format: <table_id>_<tool_identifier>
-    final firstUnderscoreIdx = withoutPrefix.indexOf('_');
-    if (firstUnderscoreIdx <= 0) {
-      return null;
-    }
-
-    final tableId = withoutPrefix.substring(0, firstUnderscoreIdx);
-    final toolIdentifier = withoutPrefix.substring(firstUnderscoreIdx + 1);
+    final tableId = match.group(1);
+    final toolIdentifier = match.group(2);
+    if (tableId == null || toolIdentifier == null) return null;
 
     if (tableId.isEmpty || toolIdentifier.isEmpty) {
       return null;
@@ -123,18 +143,12 @@ class ToolResolverService {
   }
 
   static _NativeToolIdComponents? _parseNativeToolId(String compositeId) {
-    if (!compositeId.startsWith('native_')) {
-      return null;
-    }
+    final match = RegExp(r'^native_([^_]+)_(.+)$').firstMatch(compositeId);
+    if (match == null) return null;
 
-    final withoutPrefix = compositeId.substring(7);
-    final firstUnderscoreIdx = withoutPrefix.indexOf('_');
-    if (firstUnderscoreIdx <= 0) {
-      return null;
-    }
-
-    final tableId = withoutPrefix.substring(0, firstUnderscoreIdx);
-    final toolIdentifier = withoutPrefix.substring(firstUnderscoreIdx + 1);
+    final tableId = match.group(1);
+    final toolIdentifier = match.group(2);
+    if (tableId == null || toolIdentifier == null) return null;
 
     if (tableId.isEmpty || toolIdentifier.isEmpty) {
       return null;
@@ -143,6 +157,35 @@ class ToolResolverService {
     return _NativeToolIdComponents(
       tableId: tableId,
       toolIdentifier: toolIdentifier,
+    );
+  }
+
+  static _SkillTemplateToolIdComponents? _parseSkillTemplateToolId(
+    String compositeId,
+  ) {
+    const userPrefix = 'skill__user__';
+    const appPrefix = 'skill__app__';
+    final isUserTool = compositeId.startsWith(userPrefix);
+    final isAppTool = compositeId.startsWith(appPrefix);
+    if (!isUserTool && !isAppTool) return null;
+
+    final source = isUserTool ? 'user' : 'app';
+    final prefix = isUserTool ? userPrefix : appPrefix;
+    final match = RegExp(
+      '^${RegExp.escape(prefix)}'
+      r'(.+)__(.+)$',
+    ).firstMatch(compositeId);
+    if (match == null) return null;
+
+    final skillSlug = match.group(1);
+    final toolSlug = match.group(2);
+    if (skillSlug == null || toolSlug == null) return null;
+    if (skillSlug.isEmpty || toolSlug.isEmpty) return null;
+
+    return _SkillTemplateToolIdComponents(
+      source: source,
+      skillSlug: skillSlug,
+      toolSlug: toolSlug,
     );
   }
 }

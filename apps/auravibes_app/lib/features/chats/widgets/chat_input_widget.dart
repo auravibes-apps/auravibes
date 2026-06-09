@@ -1,8 +1,4 @@
-// ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: prefer-extracting-callbacks
 // Required: UI callbacks stay local to their widgets.
 
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -17,6 +13,7 @@ class ChatInputWidget extends HookConsumerWidget {
   const ChatInputWidget({
     required this.onSendMessage,
     required this.onToolsPress,
+    this.onSkillsPress,
     this.disabled = false,
     this.isBusy = false,
     this.onStop,
@@ -29,6 +26,7 @@ class ChatInputWidget extends HookConsumerWidget {
   final bool isBusy;
   final void Function(String message) onSendMessage;
   final VoidCallback onToolsPress;
+  final VoidCallback? onSkillsPress;
   final VoidCallback? onStop;
   final VoidCallback? onCompact;
   final bool isCompacting;
@@ -68,7 +66,7 @@ class ChatInputWidget extends HookConsumerWidget {
         },
         footer: Row(
           children: [
-            // Tools button - always show, modal will handle availability
+            // Tools button - always show, modal will handle availability.
             Padding(
               padding: const EdgeInsets.only(right: 8),
               child: AuraButton(
@@ -78,6 +76,19 @@ class ChatInputWidget extends HookConsumerWidget {
                 size: AuraButtonSize.small,
               ),
             ),
+            if (onSkillsPress case final onSkillsPress?)
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Tooltip(
+                  message: LocaleKeys.skills_selector_title.tr(),
+                  child: AuraButton(
+                    onPressed: onSkillsPress,
+                    child: const AuraIcon(Icons.psychology_alt_outlined),
+                    variant: AuraButtonVariant.secondary,
+                    size: AuraButtonSize.small,
+                  ),
+                ),
+              ),
 
             const Spacer(),
 
@@ -115,7 +126,7 @@ class ChatInputWidget extends HookConsumerWidget {
                 ),
               ),
 
-            // Send button
+            // Send button.
             AuraButton(
               onPressed: sendMessage,
               child: const AuraIcon(Icons.arrow_upward),

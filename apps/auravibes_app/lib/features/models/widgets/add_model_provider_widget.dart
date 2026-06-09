@@ -1,16 +1,7 @@
-// ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-extracting-callbacks
 // Required: UI callbacks stay local to their widgets.
-// ignore_for_file: prefer-moving-to-variable
 // Required: Existing code repeats lookups where extraction adds noise.
-// ignore_for_file: prefer-single-widget-per-file
 // Required: Feature widgets keep closely related private widgets together.
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/repositories/model_connection_repository.dart';
@@ -28,11 +19,20 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod/experimental/mutation.dart';
 
 class AddModelProviderWidget extends HookConsumerWidget {
-  const AddModelProviderWidget({required this.workspaceId, super.key});
+  const AddModelProviderWidget({
+    required this.workspaceId,
+    super.key,
+    this.onCreated,
+    this.onCancel,
+    this.showHeader = true,
+  });
 
   final String workspaceId;
+  final VoidCallback? onCreated;
+  final VoidCallback? onCancel;
+  final bool showHeader;
 
-  // Extract long locale key to avoid line length issues
+  // Extract long locale key to avoid line length issues.
   static const String noModelsFoundKey =
       LocaleKeys.models_screens_add_provider_search_no_models_found;
 
@@ -43,7 +43,12 @@ class AddModelProviderWidget extends HookConsumerWidget {
       );
       final created = await notifier.addModelProvider();
       if (context.mounted && created != null) {
-        Navigator.of(context).pop(created);
+        final onCreated = this.onCreated;
+        if (onCreated != null) {
+          onCreated();
+        } else {
+          Navigator.of(context).pop(created);
+        }
       }
     });
   }
@@ -66,9 +71,10 @@ class AddModelProviderWidget extends HookConsumerWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _ModalHeader(
-          onClose: () => Navigator.of(context).pop(),
-        ),
+        if (showHeader)
+          _ModalHeader(
+            onClose: onCancel ?? () => Navigator.of(context).pop(),
+          ),
         _SelectedModelHeader(workspaceId: workspaceId),
         Flexible(
           child: SingleChildScrollView(
@@ -83,7 +89,7 @@ class AddModelProviderWidget extends HookConsumerWidget {
                   EnhancedModelInput(
                     workspaceId: workspaceId,
                     fieldType: ModelInputFieldType.name,
-                    // onSubmitted: keyFocusNode.requestFocus,
+                    // OnSubmitted: keyFocusNode.requestFocus,.
                   ),
                   EnhancedModelInput(
                     workspaceId: workspaceId,
@@ -109,7 +115,7 @@ class AddModelProviderWidget extends HookConsumerWidget {
   }
 }
 
-/// Modal header with title and close button
+/// Modal header with title and close button.
 class _ModalHeader extends StatelessWidget {
   const _ModalHeader({required this.onClose});
 
@@ -140,7 +146,7 @@ class _ModalHeader extends StatelessWidget {
   }
 }
 
-/// API configuration section with key and URL
+/// API configuration section with key and URL.
 class _ApiConfigSection extends StatelessWidget {
   const _ApiConfigSection({
     required this.workspaceId,
@@ -164,7 +170,7 @@ class _ApiConfigSection extends StatelessWidget {
   }
 }
 
-/// Reusable form section with title and content
+/// Reusable form section with title and content.
 class _HiddenSection extends HookWidget {
   const _HiddenSection({
     required this.title,
@@ -177,6 +183,7 @@ class _HiddenSection extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final visibilityState = useState(false);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -209,7 +216,7 @@ class _HiddenSection extends HookWidget {
   }
 }
 
-/// Error banner for displaying general errors
+/// Error banner for displaying general errors.
 class _ErrorBanner extends ConsumerWidget {
   const _ErrorBanner();
 
@@ -227,6 +234,7 @@ class _ErrorBanner extends ConsumerWidget {
     if (error == null) {
       return const SizedBox.shrink();
     }
+
     return Container(
       padding: EdgeInsets.all(context.auraTheme.spacing.md),
       decoration: BoxDecoration(
@@ -270,7 +278,7 @@ class _ErrorBanner extends ConsumerWidget {
   }
 }
 
-/// Create button with loading state
+/// Create button with loading state.
 class _CreateButton extends HookConsumerWidget {
   const _CreateButton({required this.workspaceId, required this.onSubmit});
 
@@ -322,7 +330,7 @@ class _SelectModelProvider extends HookConsumerWidget {
       addModelProviderStateProvider(workspaceId).notifier,
     );
 
-    // Filter models based on search query using useMemoized
+    // Filter models based on search query using useMemoized.
     final filteredModels = useMemoized(
       () {
         if (models == null) return <ApiModelProviderEntity>[];
@@ -332,6 +340,7 @@ class _SelectModelProvider extends HookConsumerWidget {
         }
 
         final query = searchQuery.value.toLowerCase();
+
         return models.where((model) {
           return model.name.toLowerCase().contains(query);
         }).toList();
@@ -354,7 +363,7 @@ class _SelectModelProvider extends HookConsumerWidget {
           ),
         ),
         SizedBox(height: context.auraTheme.spacing.md),
-        // Search input field
+        // Search input field.
         AuraInput(
           initialValue: searchQuery.value,
           placeholder: const AuraText(
@@ -396,6 +405,7 @@ class _SelectModelProvider extends HookConsumerWidget {
               : ListView.builder(
                   itemBuilder: (context, index) {
                     final model = filteredModels[index];
+
                     return AuraCard(
                       child: Row(
                         mainAxisAlignment: .spaceBetween,
@@ -421,7 +431,7 @@ class _SelectModelProvider extends HookConsumerWidget {
   }
 }
 
-/// Header showing the selected model with a back button
+/// Header showing the selected model with a back button.
 class _SelectedModelHeader extends HookConsumerWidget {
   const _SelectedModelHeader({required this.workspaceId});
 

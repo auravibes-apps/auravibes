@@ -1,18 +1,5 @@
-// ignore_for_file: no-magic-number
-// Required: UI tokens and layout use fixed design values.
-// ignore_for_file: avoid-returning-widgets
-// Required: Existing helper builders return widgets.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: always-remove-listener
-// Required: Listener is removed through nullable focus node field in dispose.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-extracting-callbacks
 // Required: Component callbacks stay colocated with UI state.
-// ignore_for_file: prefer-single-widget-per-file
 // Required: UI components keep related private widgets together.
 
 import 'package:auravibes_ui/src/atoms/aura_icon.dart';
@@ -71,10 +58,10 @@ class AuraDropdownSelector<T> extends StatefulWidget {
   /// Optional error text to display below the field.
   final Widget? error;
 
-  /// optional header for dropdown
+  /// Optional header for dropdown.
   final Widget? header;
 
-  /// optional footer for dropdown
+  /// Optional footer for dropdown.
   final Widget? footer;
 
   /// Whether the field is required.
@@ -106,18 +93,16 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
     if (focusNode == null) {
       throw StateError('_focusNode is not initialized');
     }
+
     return focusNode;
   }
 
   @override
   void initState() {
     super.initState();
-    final focusNode = widget.focusNode ?? FocusNode();
-    _focusNode = focusNode;
-    // Listen for focus changes
-    focusNode.addListener(
-      _onFocusChange,
-    ); // ignore: always-remove-listener - Removed in dispose via field.
+    _focusNode = widget.focusNode ?? FocusNode();
+    // Listen for focus changes.
+    _focusNode?.addListener(_onFocusChange);
   }
 
   @override
@@ -129,12 +114,12 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
         focusNode.dispose();
       }
     }
-    // Ensure overlay is removed before widget is disposed
+    // Ensure overlay is removed before widget is disposed.
     super.dispose();
   }
 
   void _onFocusChange() {
-    // Close dropdown when losing focus
+    // Close dropdown when losing focus.
     if (!_requiredFocusNode.hasFocus && _isDropdownOpen) {
       setState(() {
         _isDropdownOpen = false;
@@ -152,34 +137,32 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
 
   void _unfocus() => _requiredFocusNode.unfocus();
 
-  Widget _getDisplayText() {
-    final value = widget.value;
-    if (value == null) {
-      final placeholder = widget.placeholder;
-      if (placeholder != null) {
-        return AuraText(
-          child: placeholder,
-          color: AuraColorVariant.onSurfaceVariant,
-        );
-      }
-      return const Text('');
-    }
-
-    final selectedOption = widget.options.firstWhere(
-      (option) => option.value == value,
-      orElse: () => AuraDropdownOption<T>(
-        value: value,
-        child: const Text(''),
-      ),
-    );
-
-    return selectedOption.child ?? const Text('');
-  }
-
   @override
   Widget build(BuildContext context) {
     final hasError = widget.error != null;
     final state = hasError ? AuraFieldState.error : AuraFieldState.normal;
+    final value = widget.value;
+    final selectedOption = value == null
+        ? null
+        : widget.options.firstWhere(
+            (option) => option.value == value,
+            orElse: () => AuraDropdownOption<T>(
+              value: value,
+              child: const Text(''),
+            ),
+          );
+    final placeholder = widget.placeholder;
+    final Widget displayText;
+    if (value != null) {
+      displayText = selectedOption?.child ?? const Text('');
+    } else if (placeholder != null) {
+      displayText = AuraText(
+        child: placeholder,
+        color: AuraColorVariant.onSurfaceVariant,
+      );
+    } else {
+      displayText = const Text('');
+    }
 
     return FocusScope(
       child: Focus(
@@ -215,7 +198,7 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
                 ),
                 child: Row(
                   children: [
-                    Expanded(child: AuraText(child: _getDisplayText())),
+                    Expanded(child: AuraText(child: displayText)),
                     const SizedBox(width: DesignSpacing.sm),
                     AuraIcon(
                       _isDropdownOpen
@@ -256,8 +239,10 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
       onKey: (node, event) {
         if (event.logicalKey == LogicalKeyboardKey.escape && _isDropdownOpen) {
           _unfocus();
+
           return KeyEventResult.handled;
         }
+
         return KeyEventResult.ignored;
       },
     );

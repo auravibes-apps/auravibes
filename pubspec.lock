@@ -73,6 +73,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.0"
+  antlr4:
+    dependency: transitive
+    description:
+      name: antlr4
+      sha256: "752b4a6e4ad97953652a2b2bbf5377f46c94b579d3372b50080c7e5858234a05"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.13.2"
   archive:
     dependency: transitive
     description:
@@ -309,10 +317,10 @@ packages:
     dependency: "direct dev"
     description:
       name: dart_code_linter
-      sha256: "6b64163fdb49c54acbc639d043539742b23bcd1b10e002a5827fdcdbe41339e4"
+      sha256: "204603d62841d1ca63be9a1b6e4f2da4089d4070d4ca3ef98dd627e79eb49331"
       url: "https://pub.dev"
     source: hosted
-    version: "4.0.5"
+    version: "4.1.2"
   dart_style:
     dependency: transitive
     description:
@@ -357,10 +365,10 @@ packages:
     dependency: transitive
     description:
       name: desktop_webview_window
-      sha256: "57cf20d81689d5cbb1adfd0017e96b669398a669d927906073b0e42fc64111c0"
+      sha256: b6fdae2cbf9571879b1761c12f27facaf82e22d0bdc74d049907c2a09a432957
       url: "https://pub.dev"
     source: hosted
-    version: "0.2.3"
+    version: "0.3.0"
   device_frame_plus:
     dependency: transitive
     description:
@@ -393,6 +401,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.2"
+  dotprompt:
+    dependency: transitive
+    description:
+      name: dotprompt
+      sha256: d2bc4b143566e424d881db36e6357cbc9140304624c2f8f77d225d783847b4ca
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.1"
   drift:
     dependency: transitive
     description:
@@ -612,10 +628,10 @@ packages:
     dependency: transitive
     description:
       name: flutter_web_auth_2
-      sha256: d354998934ddc338e69b999b2abaeb33c6fd09999d3a5f92ead1a6b49b49712e
+      sha256: "8f9303471dcd96670878c9b7c0c4e14c37595b2add67465f6a868f17a5872dfc"
       url: "https://pub.dev"
     source: hosted
-    version: "5.0.2"
+    version: "5.0.3"
   flutter_web_auth_2_platform_interface:
     dependency: transitive
     description:
@@ -653,30 +669,38 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.0"
+  gato:
+    dependency: transitive
+    description:
+      name: gato
+      sha256: "03fa3a33d50f71a912e30827ddf47c89e06e9acfd2b6b178aff0e1aa2f1e8b90"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.5+1"
   genkit:
     dependency: transitive
     description:
       name: genkit
-      sha256: b55e406a0feacc25510fa1486ec2af0b9f7b6cacb786a2bf8672d2d00a562740
+      sha256: "9c779d5922349d713c4164f78a190ac9d2d123944908b4fcd1434bc39a737035"
       url: "https://pub.dev"
     source: hosted
-    version: "0.13.2"
+    version: "0.14.0"
   genkit_anthropic:
     dependency: transitive
     description:
       name: genkit_anthropic
-      sha256: "2dcd6aeb6c92135eed3d78f319a4275d28ffa05f20d30ee4c04f1654d3cd5fbe"
+      sha256: "23827f719d4915ba5166deb05fa50b82f228c64d4890bd6648c6495a3035a75f"
       url: "https://pub.dev"
     source: hosted
-    version: "0.2.7"
+    version: "0.2.8"
   genkit_openai:
     dependency: transitive
     description:
       name: genkit_openai
-      sha256: "76ccca99358c750635ab5f8cba049b78fd88eebaf490949b80d2d39f617bf69c"
+      sha256: "08821d24626372c32e5072d721bd4b784e7874d01bba5f0d5c91947b53ca543b"
       url: "https://pub.dev"
     source: hosted
-    version: "0.3.2"
+    version: "0.3.3"
   glob:
     dependency: transitive
     description:
@@ -689,10 +713,10 @@ packages:
     dependency: transitive
     description:
       name: go_router
-      sha256: "92d8cee7c57dff0a6c409c05597b460002434eccf7424a712283225b3962d03f"
+      sha256: "5922b2861e2235a3504896f0d6fa07d84141b480cf52eecd2f42cd25585a9e8a"
       url: "https://pub.dev"
     source: hosted
-    version: "17.2.3"
+    version: "17.3.0"
   go_router_builder:
     dependency: transitive
     description:
@@ -725,6 +749,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.3.2"
+  handlebars_dart:
+    dependency: transitive
+    description:
+      name: handlebars_dart
+      sha256: "016a072264069ff879db1de710f535934dd4526c4770cb592d12b1da79876be9"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.1"
   hooks:
     dependency: transitive
     description:
@@ -749,6 +781,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.15.6"
+  html_unescape:
+    dependency: transitive
+    description:
+      name: html_unescape
+      sha256: "15362d7a18f19d7b742ef8dcb811f5fd2a2df98db9f80ea393c075189e0b61e3"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.0"
   http:
     dependency: transitive
     description:
@@ -877,6 +917,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.2"
+  liquify:
+    dependency: transitive
+    description:
+      name: liquify
+      sha256: "23aaa728dd2adc15dcc863772dec64425e8bc35bfa3f81323e0726fb83e1e28f"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.5.1"
   logging:
     dependency: transitive
     description:
@@ -929,10 +977,10 @@ packages:
     dependency: "direct dev"
     description:
       name: melos
-      sha256: "9dcac9ca25da86540d1e843f85fffb29967cc5c79d76ca1aacddb57590cee84e"
+      sha256: b40731f34d3aacb199641a9b4955e52a866b0b0bc93ffc5c8ff21bffc6593134
       url: "https://pub.dev"
     source: hosted
-    version: "7.8.0"
+    version: "7.8.1"
   meta:
     dependency: transitive
     description:
@@ -1305,10 +1353,10 @@ packages:
     dependency: transitive
     description:
       name: schemantic
-      sha256: b593e339f89658b68ebaac3151379c65da487364512a6269daeddbce2407a70d
+      sha256: "87c9bb8c2b33be1904533f8f72094e76e772ef227b137dd0b77b4981c5f5ee77"
       url: "https://pub.dev"
     source: hosted
-    version: "0.1.3"
+    version: "0.2.0"
   shared_preferences:
     dependency: transitive
     description:
@@ -1462,10 +1510,10 @@ packages:
     dependency: transitive
     description:
       name: sqlite3
-      sha256: "56da3e13ed7d28a66f930aa2b2b29db6736a233f08283326e96321dd812030f5"
+      sha256: "9488c7d2cdb1091c91cacf7e207cff81b28bff8e366f042bad3afe7d34afe189"
       url: "https://pub.dev"
     source: hosted
-    version: "3.3.1"
+    version: "3.3.2"
   sqlite3_flutter_libs:
     dependency: transitive
     description:
@@ -1554,6 +1602,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.6.17"
+  timezone:
+    dependency: transitive
+    description:
+      name: timezone
+      sha256: "784a5e34d2eb62e1326f24d6f600aaaee452eb8ca8ef2f384a59244e292d158b"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.11.0"
   tint:
     dependency: transitive
     description:
@@ -1742,10 +1798,10 @@ packages:
     dependency: transitive
     description:
       name: widgetbook
-      sha256: "4ff857b441b7fc43432a69ec6fe56494184c895e36cec502e400648024710b9c"
+      sha256: "7ce2a15c59990610aefb0a8a4d69f67dd842d41676b7af6b5b746aa3371d32cf"
       url: "https://pub.dev"
     source: hosted
-    version: "3.23.0"
+    version: "3.24.0"
   widgetbook_annotation:
     dependency: transitive
     description:
@@ -1758,10 +1814,10 @@ packages:
     dependency: transitive
     description:
       name: widgetbook_generator
-      sha256: "8f7d6157f95d4406876088152d374e64c6632df32abe9b7ac27f95202996ae13"
+      sha256: "8fd3b4208bb74cbe60cd6fc99b443561b65542658b20d6dd700a2496edbd5647"
       url: "https://pub.dev"
     source: hosted
-    version: "3.23.0"
+    version: "3.24.0"
   win32:
     dependency: transitive
     description:
@@ -1820,4 +1876,4 @@ packages:
     version: "2.1.0"
 sdks:
   dart: ">=3.12.0 <4.0.0"
-  flutter: ">=3.38.9 <4.0.0"
+  flutter: ">=3.44.0 <4.0.0"

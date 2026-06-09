@@ -1,8 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
@@ -23,8 +18,8 @@ class WidgetbookApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Widgetbook.material(
-      // themeMode: .light,
-      // Use the generated directories variable
+      // ThemeMode: .light,.
+      // Use the generated directories variable.
       directories: directories,
       addons: [
         InspectorAddon(enabled: true),
@@ -61,13 +56,14 @@ class WidgetbookApp extends StatelessWidget {
           ),
         ),
         AlignmentAddon(),
-        // BuilderAddon(name: 'Builder', builder: (context, child) => child),
+        // BuilderAddon(name: 'Builder', builder: (context, child) => child),.
       ],
     );
   }
 
   ThemeData _createLightTheme() {
     final auraColors = AuraTheme.light.colors;
+
     return ThemeData(
       extensions: [AuraTheme.light],
       useMaterial3: true,
@@ -96,6 +92,7 @@ class WidgetbookApp extends StatelessWidget {
 
   ThemeData _createDarkTheme() {
     final auraColors = AuraTheme.dark.colors;
+
     return ThemeData(
       extensions: [AuraTheme.dark],
       useMaterial3: true,

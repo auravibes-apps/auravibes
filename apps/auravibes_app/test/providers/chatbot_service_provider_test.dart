@@ -19,8 +19,30 @@ class _FakeModelConnectionRepository implements ModelConnectionRepository {
   }
 
   @override
+  Stream<List<ModelConnectionEntity>> watchModelConnections(
+    ModelConnectionFilter filter,
+  ) {
+    throw UnimplementedError();
+  }
+
+  @override
   Future<ModelConnectionEntity> createModelConnection(
     ModelConnectionToCreate modelConnection,
+  ) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<ModelConnectionForEdit?> getModelConnectionForEdit(
+    String modelConnectionId,
+  ) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<ModelConnectionEntity> updateModelConnection(
+    String modelConnectionId,
+    ModelConnectionToUpdate modelConnection,
   ) {
     throw UnimplementedError();
   }

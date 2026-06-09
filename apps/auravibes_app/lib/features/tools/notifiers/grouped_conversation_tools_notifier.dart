@@ -1,9 +1,4 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 import 'package:auravibes_app/domain/models/mcp_connection_view_status.dart';
 import 'package:auravibes_app/features/tools/models/conversation_tools_group_with_tools.dart';
 import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.dart';
@@ -32,7 +27,7 @@ class GroupedConversationToolsNotifier
     required String workspaceId,
     String? conversationId,
   }) async {
-    // Get all conversation tool states
+    // Get all conversation tool states.
     final conversationTools = await ref.watch(
       conversationToolsProvider(
         workspaceId: workspaceId,
@@ -40,26 +35,26 @@ class GroupedConversationToolsNotifier
       ).future,
     );
 
-    // Get all tools groups for the workspace
+    // Get all tools groups for the workspace.
     final toolsGroupsRepo = ref.watch(toolsGroupsRepositoryProvider);
     final groups = await toolsGroupsRepo.getToolsGroupsForWorkspace(
       workspaceId,
     );
 
-    // Watch MCP connections for status enrichment
+    // Watch MCP connections for status enrichment.
     final mcpConnections = ref.watch(mcpConnectionProvider);
 
-    // Group tools by their workspaceToolsGroupId
+    // Group tools by their workspaceToolsGroupId.
     final toolsByGroupId = <String?, List<ConversationToolState>>{};
     for (final toolState in conversationTools) {
       final groupId = toolState.tool.workspaceToolsGroupId;
       toolsByGroupId.putIfAbsent(groupId, () => []).add(toolState);
     }
 
-    // Build result list
+    // Build result list.
     final result = <ConversationToolsGroupWithTools>[];
 
-    // 1. Default groups (tools with null groupId)
+    // 1. Default groups (tools with null groupId).
     final defaultTools = toolsByGroupId[null] ?? [];
     final builtInTools = defaultTools
         .where((toolState) => !toolState.tool.isNative)
@@ -88,14 +83,14 @@ class GroupedConversationToolsNotifier
       );
     }
 
-    // 2. MCP and custom groups (only include non-empty groups)
+    // 2. MCP and custom groups (only include non-empty groups).
     for (final group in groups) {
       final tools = toolsByGroupId[group.id] ?? [];
 
-      // Skip empty groups
+      // Skip empty groups.
       if (tools.isEmpty) continue;
 
-      // Find MCP connection state if this is an MCP group
+      // Find MCP connection state if this is an MCP group.
       McpConnectionState? mcpState;
       if (group.isMcpGroup && group.mcpServerId != null) {
         mcpState = mcpConnections
@@ -112,16 +107,17 @@ class GroupedConversationToolsNotifier
       );
     }
 
-    // Sort: Default first, then by priority (errors first), then by
-    // createdAt desc
+    // Sort: Default first, then by priority (errors first), then by.
+    // CreatedAt desc.
     result.sort((a, b) {
       final priorityCompare = a.sortPriority.compareTo(b.sortPriority);
       if (priorityCompare != 0) return priorityCompare;
 
-      // Same priority: sort by createdAt desc (newest first)
-      // Default group has no createdAt, use a far-future date to keep it first
+      // Same priority: sort by createdAt desc (newest first).
+      // Default group has no createdAt, use a far-future date to keep it first.
       final aDate = a.group?.createdAt ?? DateTime(2099);
       final bDate = b.group?.createdAt ?? DateTime(2099);
+
       return bDate.compareTo(aDate);
     });
 
@@ -155,7 +151,7 @@ class GroupedConversationToolsNotifier
     );
     if (group == null) return;
 
-    // Toggle each tool in the group
+    // Toggle each tool in the group.
     for (final toolState in group.tools) {
       final _ = await conversationNotifier.setToolEnabled(
         toolState.tool.id,
@@ -163,8 +159,8 @@ class GroupedConversationToolsNotifier
       );
     }
 
-    // The state will be automatically refreshed via the watch on
-    // conversationToolsProvider
+    // The state will be automatically refreshed via the watch on.
+    // ConversationToolsProvider.
   }
 
   /// Reconnect to an MCP server.

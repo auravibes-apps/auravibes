@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$NewChatState {
 
- String? get modelId;/// Stores the provider ID (or name-equivalent)
+ String? get modelId;/// Stores the provider ID (or name-equivalent).
 /// - for display and filtering models
  String? get providerId; bool get isLoading;
 /// Create a copy of NewChatState
@@ -214,7 +214,7 @@ class _NewChatState implements NewChatState {
   
 
 @override final  String? modelId;
-/// Stores the provider ID (or name-equivalent)
+/// Stores the provider ID (or name-equivalent).
 /// - for display and filtering models
 @override final  String? providerId;
 @override@JsonKey() final  bool isLoading;

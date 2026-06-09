@@ -1,12 +1,3 @@
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/repositories/workspace_model_selection_repository.dart';
@@ -78,7 +69,7 @@ void main() {
   });
 
   group('NewChatNotifier', () {
-    late ProviderContainer container;
+    var container = ProviderContainer();
 
     setUp(() {
       container = ProviderContainer();
@@ -126,7 +117,7 @@ void main() {
       );
     });
 
-    test('startConversation throws when no model selected', () async {
+    test('startConversation throws when no model selected', () {
       final notifier = container.read(newChatProvider('ws-1').notifier);
       expect(
         () => notifier.startConversation('hello'),

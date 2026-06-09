@@ -1,17 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/data/repositories/conversation_tools_repository_impl.dart';
@@ -30,56 +16,42 @@ import 'conversation_tools_repository_impl_test.mocks.dart';
 @GenerateMocks([WorkspaceToolsRepository])
 void main() {
   group('ConversationToolsRepositoryImpl - checkToolPermission', () {
-    late AppDatabase database;
-    late ConversationToolsRepositoryImpl repository;
-    late MockWorkspaceToolsRepository mockWorkspaceToolsRepository;
+    final fixture = _ConversationToolsRepositoryFixture();
 
     const testConversationId = 'test-conversation-id';
     const testWorkspaceId = 'test-workspace-id';
     const testToolId = 'read_file';
 
-    setUp(() {
-      // Create an in-memory database for testing
-      database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      mockWorkspaceToolsRepository = MockWorkspaceToolsRepository();
-      repository = ConversationToolsRepositoryImpl(
-        database,
-        mockWorkspaceToolsRepository,
-      );
-    });
+    setUp(fixture.setUp);
 
-    tearDown(() async {
-      await database.close();
-    });
+    tearDown(fixture.tearDown);
 
     test('returns notConfigured when tool is not in workspace', () async {
-      // Arrange
+      // Arrange.
       when(
-        mockWorkspaceToolsRepository.getWorkspaceTool(
+        fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
           testWorkspaceId,
           testToolId,
         ),
       ).thenAnswer((_) async => null);
 
-      // Act
-      final result = await repository.checkToolPermission(
+      // Act.
+      final result = await fixture.repository.checkToolPermission(
         conversationId: testConversationId,
         workspaceId: testWorkspaceId,
         toolId: testToolId,
       );
 
-      // Assert
+      // Assert.
       expect(result, ToolPermissionResult.notConfigured);
     });
 
     test(
       'returns notConfigured when workspace tool is disabled',
       () async {
-        // Arrange
+        // Arrange.
         when(
-          mockWorkspaceToolsRepository.getWorkspaceTool(
+          fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
             testWorkspaceId,
             testToolId,
           ),
@@ -95,14 +67,14 @@ void main() {
           ),
         );
 
-        // Act
-        final result = await repository.checkToolPermission(
+        // Act.
+        final result = await fixture.repository.checkToolPermission(
           conversationId: testConversationId,
           workspaceId: testWorkspaceId,
           toolId: testToolId,
         );
 
-        // Assert
+        // Assert.
         expect(result, ToolPermissionResult.notConfigured);
       },
     );
@@ -110,9 +82,9 @@ void main() {
     test(
       'returns granted when workspace grants and no conversation override',
       () async {
-        // Arrange
+        // Arrange.
         when(
-          mockWorkspaceToolsRepository.getWorkspaceTool(
+          fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
             testWorkspaceId,
             testToolId,
           ),
@@ -128,14 +100,14 @@ void main() {
           ),
         );
 
-        // Act
-        final result = await repository.checkToolPermission(
+        // Act.
+        final result = await fixture.repository.checkToolPermission(
           conversationId: testConversationId,
           workspaceId: testWorkspaceId,
           toolId: testToolId,
         );
 
-        // Assert
+        // Assert.
         expect(result, ToolPermissionResult.granted);
       },
     );
@@ -143,9 +115,9 @@ void main() {
     test(
       'returns needsConfirmation when workspace requires confirmation',
       () async {
-        // Arrange
+        // Arrange.
         when(
-          mockWorkspaceToolsRepository.getWorkspaceTool(
+          fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
             testWorkspaceId,
             testToolId,
           ),
@@ -161,14 +133,14 @@ void main() {
           ),
         );
 
-        // Act
-        final result = await repository.checkToolPermission(
+        // Act.
+        final result = await fixture.repository.checkToolPermission(
           conversationId: testConversationId,
           workspaceId: testWorkspaceId,
           toolId: testToolId,
         );
 
-        // Assert
+        // Assert.
         expect(result, ToolPermissionResult.needsConfirmation);
       },
     );
@@ -176,9 +148,9 @@ void main() {
     test(
       'conversation override takes priority - disables tool',
       () async {
-        // Arrange: workspace allows, but conversation disables
+        // Arrange: workspace allows, but conversation disables.
         when(
-          mockWorkspaceToolsRepository.getWorkspaceTool(
+          fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
             testWorkspaceId,
             testToolId,
           ),
@@ -194,22 +166,23 @@ void main() {
           ),
         );
 
-        // Create a conversation tool that disables this tool
-        final _ = await database.conversationToolsDao.upsertConversationTool(
-          testConversationId,
-          'workspace-tool-id',
-          isEnabled: false,
-          permission: PermissionAccess.ask,
-        );
+        // Create a conversation tool that disables this tool.
+        final _ = await fixture.database.conversationToolsDao
+            .upsertConversationTool(
+              testConversationId,
+              'workspace-tool-id',
+              isEnabled: false,
+              permission: PermissionAccess.ask,
+            );
 
-        // Act
-        final result = await repository.checkToolPermission(
+        // Act.
+        final result = await fixture.repository.checkToolPermission(
           conversationId: testConversationId,
           workspaceId: testWorkspaceId,
           toolId: testToolId,
         );
 
-        // Assert
+        // Assert.
         expect(result, ToolPermissionResult.disabledInConversation);
       },
     );
@@ -217,9 +190,9 @@ void main() {
     test(
       'conversation override takes priority - requires confirmation',
       () async {
-        // Arrange: workspace grants, but conversation requires confirmation
+        // Arrange: workspace grants, but conversation requires confirmation.
         when(
-          mockWorkspaceToolsRepository.getWorkspaceTool(
+          fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
             testWorkspaceId,
             testToolId,
           ),
@@ -235,22 +208,23 @@ void main() {
           ),
         );
 
-        // Create a conversation tool that requires confirmation
-        final _ = await database.conversationToolsDao.upsertConversationTool(
-          testConversationId,
-          'workspace-tool-id',
-          isEnabled: true,
-          permission: PermissionAccess.ask,
-        );
+        // Create a conversation tool that requires confirmation.
+        final _ = await fixture.database.conversationToolsDao
+            .upsertConversationTool(
+              testConversationId,
+              'workspace-tool-id',
+              isEnabled: true,
+              permission: PermissionAccess.ask,
+            );
 
-        // Act
-        final result = await repository.checkToolPermission(
+        // Act.
+        final result = await fixture.repository.checkToolPermission(
           conversationId: testConversationId,
           workspaceId: testWorkspaceId,
           toolId: testToolId,
         );
 
-        // Assert
+        // Assert.
         expect(result, ToolPermissionResult.needsConfirmation);
       },
     );
@@ -258,9 +232,9 @@ void main() {
     test(
       'conversation can grant when workspace requires confirmation',
       () async {
-        // Arrange: workspace asks, but conversation grants
+        // Arrange: workspace asks, but conversation grants.
         when(
-          mockWorkspaceToolsRepository.getWorkspaceTool(
+          fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
             testWorkspaceId,
             testToolId,
           ),
@@ -276,61 +250,50 @@ void main() {
           ),
         );
 
-        // Create a conversation tool that grants permission
-        final _ = await database.conversationToolsDao.upsertConversationTool(
-          testConversationId,
-          'workspace-tool-id',
-          isEnabled: true,
-          permission: PermissionAccess.granted,
-        );
+        // Create a conversation tool that grants permission.
+        final _ = await fixture.database.conversationToolsDao
+            .upsertConversationTool(
+              testConversationId,
+              'workspace-tool-id',
+              isEnabled: true,
+              permission: PermissionAccess.granted,
+            );
 
-        // Act
-        final result = await repository.checkToolPermission(
+        // Act.
+        final result = await fixture.repository.checkToolPermission(
           conversationId: testConversationId,
           workspaceId: testWorkspaceId,
           toolId: testToolId,
         );
 
-        // Assert
+        // Assert.
         expect(result, ToolPermissionResult.granted);
       },
     );
   });
 
   group('getConversationTools', () {
-    late AppDatabase database;
-    late ConversationToolsRepositoryImpl repository;
-    late MockWorkspaceToolsRepository mockWorkspaceToolsRepository;
+    final fixture = _ConversationToolsRepositoryFixture();
 
-    setUp(() {
-      database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      mockWorkspaceToolsRepository = MockWorkspaceToolsRepository();
-      repository = ConversationToolsRepositoryImpl(
-        database,
-        mockWorkspaceToolsRepository,
-      );
-    });
+    setUp(fixture.setUp);
 
-    tearDown(() async {
-      await database.close();
-    });
+    tearDown(fixture.tearDown);
 
     test('returns empty list when no tools configured', () async {
-      final tools = await repository.getConversationTools('conv-1');
+      final tools = await fixture.repository.getConversationTools('conv-1');
       expect(tools, isEmpty);
     });
 
     test('returns mapped entities from database', () async {
-      final _ = await database.conversationToolsDao.upsertConversationTool(
-        'conv-1',
-        'tool-1',
-        isEnabled: true,
-        permission: PermissionAccess.granted,
-      );
+      final _ = await fixture.database.conversationToolsDao
+          .upsertConversationTool(
+            'conv-1',
+            'tool-1',
+            isEnabled: true,
+            permission: PermissionAccess.granted,
+          );
 
-      final tools = await repository.getConversationTools('conv-1');
+      final tools = await fixture.repository.getConversationTools('conv-1');
       expect(tools, hasLength(1));
       expect(tools.firstOrNull?.conversationId, 'conv-1');
       expect(tools.firstOrNull?.toolId, 'tool-1');
@@ -340,39 +303,33 @@ void main() {
   });
 
   group('getConversationTool', () {
-    late AppDatabase database;
-    late ConversationToolsRepositoryImpl repository;
-    late MockWorkspaceToolsRepository mockWorkspaceToolsRepository;
+    final fixture = _ConversationToolsRepositoryFixture();
 
-    setUp(() {
-      database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      mockWorkspaceToolsRepository = MockWorkspaceToolsRepository();
-      repository = ConversationToolsRepositoryImpl(
-        database,
-        mockWorkspaceToolsRepository,
-      );
-    });
+    setUp(fixture.setUp);
 
-    tearDown(() async {
-      await database.close();
-    });
+    tearDown(fixture.tearDown);
 
     test('returns null when tool not found', () async {
-      final tool = await repository.getConversationTool('conv-1', 'tool-1');
+      final tool = await fixture.repository.getConversationTool(
+        'conv-1',
+        'tool-1',
+      );
       expect(tool, isNull);
     });
 
     test('returns mapped entity when found', () async {
-      final _ = await database.conversationToolsDao.upsertConversationTool(
+      final _ = await fixture.database.conversationToolsDao
+          .upsertConversationTool(
+            'conv-1',
+            'tool-1',
+            isEnabled: true,
+            permission: PermissionAccess.ask,
+          );
+
+      final tool = await fixture.repository.getConversationTool(
         'conv-1',
         'tool-1',
-        isEnabled: true,
-        permission: PermissionAccess.ask,
       );
-
-      final tool = await repository.getConversationTool('conv-1', 'tool-1');
       expect(tool, isNotNull);
       expect((tool ?? fail('Expected tool to be non-null')).toolId, 'tool-1');
       expect(tool.isEnabled, isTrue);
@@ -381,27 +338,14 @@ void main() {
   });
 
   group('setConversationToolEnabled', () {
-    late AppDatabase database;
-    late ConversationToolsRepositoryImpl repository;
-    late MockWorkspaceToolsRepository mockWorkspaceToolsRepository;
+    final fixture = _ConversationToolsRepositoryFixture();
 
-    setUp(() {
-      database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      mockWorkspaceToolsRepository = MockWorkspaceToolsRepository();
-      repository = ConversationToolsRepositoryImpl(
-        database,
-        mockWorkspaceToolsRepository,
-      );
-    });
+    setUp(fixture.setUp);
 
-    tearDown(() async {
-      await database.close();
-    });
+    tearDown(fixture.tearDown);
 
     test('returns true after enabling', () async {
-      final result = await repository.setConversationToolEnabled(
+      final result = await fixture.repository.setConversationToolEnabled(
         'conv-1',
         'tool-1',
         isEnabled: true,
@@ -410,7 +354,7 @@ void main() {
     });
 
     test('returns true after disabling', () async {
-      final result = await repository.setConversationToolEnabled(
+      final result = await fixture.repository.setConversationToolEnabled(
         'conv-1',
         'tool-1',
         isEnabled: false,
@@ -420,27 +364,14 @@ void main() {
   });
 
   group('setConversationToolPermission', () {
-    late AppDatabase database;
-    late ConversationToolsRepositoryImpl repository;
-    late MockWorkspaceToolsRepository mockWorkspaceToolsRepository;
+    final fixture = _ConversationToolsRepositoryFixture();
 
-    setUp(() {
-      database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      mockWorkspaceToolsRepository = MockWorkspaceToolsRepository();
-      repository = ConversationToolsRepositoryImpl(
-        database,
-        mockWorkspaceToolsRepository,
-      );
-    });
+    setUp(fixture.setUp);
 
-    tearDown(() async {
-      await database.close();
-    });
+    tearDown(fixture.tearDown);
 
     test('returns true after setting alwaysAllow', () async {
-      final result = await repository.setConversationToolPermission(
+      final result = await fixture.repository.setConversationToolPermission(
         'conv-1',
         'tool-1',
         permissionMode: ToolPermissionMode.alwaysAllow,
@@ -449,7 +380,7 @@ void main() {
     });
 
     test('returns true after setting alwaysAsk', () async {
-      final result = await repository.setConversationToolPermission(
+      final result = await fixture.repository.setConversationToolPermission(
         'conv-1',
         'tool-1',
         permissionMode: ToolPermissionMode.alwaysAsk,
@@ -459,27 +390,14 @@ void main() {
   });
 
   group('toggleConversationTool', () {
-    late AppDatabase database;
-    late ConversationToolsRepositoryImpl repository;
-    late MockWorkspaceToolsRepository mockWorkspaceToolsRepository;
+    final fixture = _ConversationToolsRepositoryFixture();
 
-    setUp(() {
-      database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      mockWorkspaceToolsRepository = MockWorkspaceToolsRepository();
-      repository = ConversationToolsRepositoryImpl(
-        database,
-        mockWorkspaceToolsRepository,
-      );
-    });
+    setUp(fixture.setUp);
 
-    tearDown(() async {
-      await database.close();
-    });
+    tearDown(fixture.tearDown);
 
     test('returns true (toggles) for non-existent tool', () async {
-      final result = await repository.toggleConversationTool(
+      final result = await fixture.repository.toggleConversationTool(
         'conv-1',
         'tool-1',
       );
@@ -487,46 +405,37 @@ void main() {
     });
 
     test('toggles enabled to disabled', () async {
-      final _ = await database.conversationToolsDao.upsertConversationTool(
-        'conv-1',
-        'tool-1',
-        isEnabled: true,
-        permission: PermissionAccess.ask,
-      );
+      final _ = await fixture.database.conversationToolsDao
+          .upsertConversationTool(
+            'conv-1',
+            'tool-1',
+            isEnabled: true,
+            permission: PermissionAccess.ask,
+          );
 
-      final result = await repository.toggleConversationTool(
+      final result = await fixture.repository.toggleConversationTool(
         'conv-1',
         'tool-1',
       );
       expect(result, isTrue);
 
-      final tool = await repository.getConversationTool('conv-1', 'tool-1');
+      final tool = await fixture.repository.getConversationTool(
+        'conv-1',
+        'tool-1',
+      );
       expect((tool ?? fail('Expected tool to be non-null')).isEnabled, isFalse);
     });
   });
 
   group('isConversationToolEnabled', () {
-    late AppDatabase database;
-    late ConversationToolsRepositoryImpl repository;
-    late MockWorkspaceToolsRepository mockWorkspaceToolsRepository;
+    final fixture = _ConversationToolsRepositoryFixture();
 
-    setUp(() {
-      database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      mockWorkspaceToolsRepository = MockWorkspaceToolsRepository();
-      repository = ConversationToolsRepositoryImpl(
-        database,
-        mockWorkspaceToolsRepository,
-      );
-    });
+    setUp(fixture.setUp);
 
-    tearDown(() async {
-      await database.close();
-    });
+    tearDown(fixture.tearDown);
 
     test('returns true when tool not found (defaults to enabled)', () async {
-      final result = await repository.isConversationToolEnabled(
+      final result = await fixture.repository.isConversationToolEnabled(
         'conv-1',
         'tool-1',
       );
@@ -534,14 +443,15 @@ void main() {
     });
 
     test('returns true when tool is enabled', () async {
-      final _ = await database.conversationToolsDao.upsertConversationTool(
-        'conv-1',
-        'tool-1',
-        isEnabled: true,
-        permission: PermissionAccess.ask,
-      );
+      final _ = await fixture.database.conversationToolsDao
+          .upsertConversationTool(
+            'conv-1',
+            'tool-1',
+            isEnabled: true,
+            permission: PermissionAccess.ask,
+          );
 
-      final result = await repository.isConversationToolEnabled(
+      final result = await fixture.repository.isConversationToolEnabled(
         'conv-1',
         'tool-1',
       );
@@ -550,27 +460,14 @@ void main() {
   });
 
   group('removeConversationTool', () {
-    late AppDatabase database;
-    late ConversationToolsRepositoryImpl repository;
-    late MockWorkspaceToolsRepository mockWorkspaceToolsRepository;
+    final fixture = _ConversationToolsRepositoryFixture();
 
-    setUp(() {
-      database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      mockWorkspaceToolsRepository = MockWorkspaceToolsRepository();
-      repository = ConversationToolsRepositoryImpl(
-        database,
-        mockWorkspaceToolsRepository,
-      );
-    });
+    setUp(fixture.setUp);
 
-    tearDown(() async {
-      await database.close();
-    });
+    tearDown(fixture.tearDown);
 
     test('returns false for non-existent tool', () async {
-      final result = await repository.removeConversationTool(
+      final result = await fixture.repository.removeConversationTool(
         'conv-1',
         'tool-1',
       );
@@ -578,90 +475,74 @@ void main() {
     });
 
     test('returns true and removes existing tool', () async {
-      final _ = await database.conversationToolsDao.upsertConversationTool(
-        'conv-1',
-        'tool-1',
-        isEnabled: true,
-        permission: PermissionAccess.ask,
-      );
+      final _ = await fixture.database.conversationToolsDao
+          .upsertConversationTool(
+            'conv-1',
+            'tool-1',
+            isEnabled: true,
+            permission: PermissionAccess.ask,
+          );
 
-      final result = await repository.removeConversationTool(
+      final result = await fixture.repository.removeConversationTool(
         'conv-1',
         'tool-1',
       );
       expect(result, isTrue);
 
-      final tool = await repository.getConversationTool('conv-1', 'tool-1');
+      final tool = await fixture.repository.getConversationTool(
+        'conv-1',
+        'tool-1',
+      );
       expect(tool, isNull);
     });
   });
 
   group('getConversationToolsCount', () {
-    late AppDatabase database;
-    late ConversationToolsRepositoryImpl repository;
-    late MockWorkspaceToolsRepository mockWorkspaceToolsRepository;
+    final fixture = _ConversationToolsRepositoryFixture();
 
-    setUp(() {
-      database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      mockWorkspaceToolsRepository = MockWorkspaceToolsRepository();
-      repository = ConversationToolsRepositoryImpl(
-        database,
-        mockWorkspaceToolsRepository,
-      );
-    });
+    setUp(fixture.setUp);
 
-    tearDown(() async {
-      await database.close();
-    });
+    tearDown(fixture.tearDown);
 
     test('returns zero when no tools', () async {
-      final count = await repository.getConversationToolsCount('conv-1');
+      final count = await fixture.repository.getConversationToolsCount(
+        'conv-1',
+      );
       expect(count, 0);
     });
 
     test('returns correct count', () async {
-      final _ = await database.conversationToolsDao.upsertConversationTool(
-        'conv-1',
-        'tool-1',
-        isEnabled: true,
-        permission: PermissionAccess.ask,
-      );
-      final _ = await database.conversationToolsDao.upsertConversationTool(
-        'conv-1',
-        'tool-2',
-        isEnabled: false,
-        permission: PermissionAccess.granted,
-      );
+      final _ = await fixture.database.conversationToolsDao
+          .upsertConversationTool(
+            'conv-1',
+            'tool-1',
+            isEnabled: true,
+            permission: PermissionAccess.ask,
+          );
+      final _ = await fixture.database.conversationToolsDao
+          .upsertConversationTool(
+            'conv-1',
+            'tool-2',
+            isEnabled: false,
+            permission: PermissionAccess.granted,
+          );
 
-      final count = await repository.getConversationToolsCount('conv-1');
+      final count = await fixture.repository.getConversationToolsCount(
+        'conv-1',
+      );
       expect(count, 2);
     });
   });
 
   group('getEnabledConversationToolsCount', () {
-    late AppDatabase database;
-    late ConversationToolsRepositoryImpl repository;
-    late MockWorkspaceToolsRepository mockWorkspaceToolsRepository;
+    final fixture = _ConversationToolsRepositoryFixture();
 
-    setUp(() {
-      database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      mockWorkspaceToolsRepository = MockWorkspaceToolsRepository();
-      repository = ConversationToolsRepositoryImpl(
-        database,
-        mockWorkspaceToolsRepository,
-      );
-    });
+    setUp(fixture.setUp);
 
-    tearDown(() async {
-      await database.close();
-    });
+    tearDown(fixture.tearDown);
 
     test('returns zero when conversation not found', () async {
-      final count = await repository.getEnabledConversationToolsCount(
+      final count = await fixture.repository.getEnabledConversationToolsCount(
         'nonexistent',
       );
       expect(count, 0);
@@ -669,36 +550,24 @@ void main() {
   });
 
   group('copyConversationTools', () {
-    late AppDatabase database;
-    late ConversationToolsRepositoryImpl repository;
-    late MockWorkspaceToolsRepository mockWorkspaceToolsRepository;
+    final fixture = _ConversationToolsRepositoryFixture();
 
-    setUp(() {
-      database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      mockWorkspaceToolsRepository = MockWorkspaceToolsRepository();
-      repository = ConversationToolsRepositoryImpl(
-        database,
-        mockWorkspaceToolsRepository,
-      );
-    });
+    setUp(fixture.setUp);
 
-    tearDown(() async {
-      await database.close();
-    });
+    tearDown(fixture.tearDown);
 
     test('copies tools from source to target conversation', () async {
-      final _ = await database.conversationToolsDao.upsertConversationTool(
-        'conv-1',
-        'tool-1',
-        isEnabled: true,
-        permission: PermissionAccess.granted,
-      );
+      final _ = await fixture.database.conversationToolsDao
+          .upsertConversationTool(
+            'conv-1',
+            'tool-1',
+            isEnabled: true,
+            permission: PermissionAccess.granted,
+          );
 
-      await repository.copyConversationTools('conv-1', 'conv-2');
+      await fixture.repository.copyConversationTools('conv-1', 'conv-2');
 
-      final tools = await repository.getConversationTools('conv-2');
+      final tools = await fixture.repository.getConversationTools('conv-2');
       expect(tools, hasLength(1));
       expect(tools.firstOrNull?.conversationId, 'conv-2');
       expect(tools.firstOrNull?.toolId, 'tool-1');
@@ -708,33 +577,23 @@ void main() {
   });
 
   group('isToolAvailableForConversation', () {
-    late AppDatabase database;
-    late ConversationToolsRepositoryImpl repository;
-    late MockWorkspaceToolsRepository mockWorkspaceToolsRepository;
+    final fixture = _ConversationToolsRepositoryFixture();
 
-    setUp(() {
-      database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      mockWorkspaceToolsRepository = MockWorkspaceToolsRepository();
-      repository = ConversationToolsRepositoryImpl(
-        database,
-        mockWorkspaceToolsRepository,
-      );
-    });
+    setUp(fixture.setUp);
 
-    tearDown(() async {
-      await database.close();
-    });
+    tearDown(fixture.tearDown);
 
     test(
       'returns true when workspace enabled and no conversation override',
       () async {
         when(
-          mockWorkspaceToolsRepository.isWorkspaceToolEnabled('ws-1', 'tool-1'),
+          fixture.mockWorkspaceToolsRepository.isWorkspaceToolEnabled(
+            'ws-1',
+            'tool-1',
+          ),
         ).thenAnswer((_) async => true);
 
-        final result = await repository.isToolAvailableForConversation(
+        final result = await fixture.repository.isToolAvailableForConversation(
           'conv-1',
           'ws-1',
           'tool-1',
@@ -745,10 +604,13 @@ void main() {
 
     test('returns false when workspace disabled', () async {
       when(
-        mockWorkspaceToolsRepository.isWorkspaceToolEnabled('ws-1', 'tool-1'),
+        fixture.mockWorkspaceToolsRepository.isWorkspaceToolEnabled(
+          'ws-1',
+          'tool-1',
+        ),
       ).thenAnswer((_) async => false);
 
-      final result = await repository.isToolAvailableForConversation(
+      final result = await fixture.repository.isToolAvailableForConversation(
         'conv-1',
         'ws-1',
         'tool-1',
@@ -760,17 +622,21 @@ void main() {
       'returns false when workspace enabled but conversation disabled',
       () async {
         when(
-          mockWorkspaceToolsRepository.isWorkspaceToolEnabled('ws-1', 'tool-1'),
+          fixture.mockWorkspaceToolsRepository.isWorkspaceToolEnabled(
+            'ws-1',
+            'tool-1',
+          ),
         ).thenAnswer((_) async => true);
 
-        final _ = await database.conversationToolsDao.upsertConversationTool(
-          'conv-1',
-          'tool-1',
-          isEnabled: false,
-          permission: PermissionAccess.ask,
-        );
+        final _ = await fixture.database.conversationToolsDao
+            .upsertConversationTool(
+              'conv-1',
+              'tool-1',
+              isEnabled: false,
+              permission: PermissionAccess.ask,
+            );
 
-        final result = await repository.isToolAvailableForConversation(
+        final result = await fixture.repository.isToolAvailableForConversation(
           'conv-1',
           'ws-1',
           'tool-1',
@@ -781,28 +647,15 @@ void main() {
   });
 
   group('getAvailableToolsForConversation', () {
-    late AppDatabase database;
-    late ConversationToolsRepositoryImpl repository;
-    late MockWorkspaceToolsRepository mockWorkspaceToolsRepository;
+    final fixture = _ConversationToolsRepositoryFixture();
 
-    setUp(() {
-      database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      mockWorkspaceToolsRepository = MockWorkspaceToolsRepository();
-      repository = ConversationToolsRepositoryImpl(
-        database,
-        mockWorkspaceToolsRepository,
-      );
-    });
+    setUp(fixture.setUp);
 
-    tearDown(() async {
-      await database.close();
-    });
+    tearDown(fixture.tearDown);
 
     test('returns all workspace tools when no disabled matches', () async {
       when(
-        mockWorkspaceToolsRepository.getEnabledWorkspaceTools('ws-1'),
+        fixture.mockWorkspaceToolsRepository.getEnabledWorkspaceTools('ws-1'),
       ).thenAnswer(
         (_) async => [
           WorkspaceToolEntity(
@@ -826,14 +679,15 @@ void main() {
         ],
       );
 
-      final _ = await database.conversationToolsDao.upsertConversationTool(
-        'conv-1',
-        'tool-1',
-        isEnabled: false,
-        permission: PermissionAccess.ask,
-      );
+      final _ = await fixture.database.conversationToolsDao
+          .upsertConversationTool(
+            'conv-1',
+            'tool-1',
+            isEnabled: false,
+            permission: PermissionAccess.ask,
+          );
 
-      final result = await repository.getAvailableToolsForConversation(
+      final result = await fixture.repository.getAvailableToolsForConversation(
         'conv-1',
         'ws-1',
       );
@@ -842,7 +696,7 @@ void main() {
 
     test('filters out disabled tools by workspace tool id', () async {
       when(
-        mockWorkspaceToolsRepository.getEnabledWorkspaceTools('ws-1'),
+        fixture.mockWorkspaceToolsRepository.getEnabledWorkspaceTools('ws-1'),
       ).thenAnswer(
         (_) async => [
           WorkspaceToolEntity(
@@ -857,7 +711,7 @@ void main() {
         ],
       );
 
-      final result = await repository.getAvailableToolsForConversation(
+      final result = await fixture.repository.getAvailableToolsForConversation(
         'conv-1',
         'ws-1',
       );
@@ -867,10 +721,10 @@ void main() {
 
     test('returns empty when no workspace tools', () async {
       when(
-        mockWorkspaceToolsRepository.getEnabledWorkspaceTools('ws-1'),
+        fixture.mockWorkspaceToolsRepository.getEnabledWorkspaceTools('ws-1'),
       ).thenAnswer((_) async => []);
 
-      final result = await repository.getAvailableToolsForConversation(
+      final result = await fixture.repository.getAvailableToolsForConversation(
         'conv-1',
         'ws-1',
       );
@@ -879,24 +733,11 @@ void main() {
   });
 
   group('getAvailableToolEntitiesForConversation', () {
-    late AppDatabase database;
-    late ConversationToolsRepositoryImpl repository;
-    late MockWorkspaceToolsRepository mockWorkspaceToolsRepository;
+    final fixture = _ConversationToolsRepositoryFixture();
 
-    setUp(() {
-      database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      mockWorkspaceToolsRepository = MockWorkspaceToolsRepository();
-      repository = ConversationToolsRepositoryImpl(
-        database,
-        mockWorkspaceToolsRepository,
-      );
-    });
+    setUp(fixture.setUp);
 
-    tearDown(() async {
-      await database.close();
-    });
+    tearDown(fixture.tearDown);
 
     test('returns all entities when disabled tool id does not match', () async {
       final wsTool = WorkspaceToolEntity(
@@ -909,20 +750,22 @@ void main() {
         updatedAt: DateTime(2026),
       );
       when(
-        mockWorkspaceToolsRepository.getEnabledWorkspaceTools('ws-1'),
+        fixture.mockWorkspaceToolsRepository.getEnabledWorkspaceTools('ws-1'),
       ).thenAnswer((_) async => [wsTool]);
 
-      final _ = await database.conversationToolsDao.upsertConversationTool(
-        'conv-1',
-        'tool-1',
-        isEnabled: false,
-        permission: PermissionAccess.ask,
-      );
+      final _ = await fixture.database.conversationToolsDao
+          .upsertConversationTool(
+            'conv-1',
+            'tool-1',
+            isEnabled: false,
+            permission: PermissionAccess.ask,
+          );
 
-      final result = await repository.getAvailableToolEntitiesForConversation(
-        'conv-1',
-        'ws-1',
-      );
+      final result = await fixture.repository
+          .getAvailableToolEntitiesForConversation(
+            'conv-1',
+            'ws-1',
+          );
       expect(result, hasLength(1));
     });
 
@@ -937,69 +780,47 @@ void main() {
         updatedAt: DateTime(2026),
       );
       when(
-        mockWorkspaceToolsRepository.getEnabledWorkspaceTools('ws-1'),
+        fixture.mockWorkspaceToolsRepository.getEnabledWorkspaceTools('ws-1'),
       ).thenAnswer((_) async => [wsTool]);
 
-      final result = await repository.getAvailableToolEntitiesForConversation(
-        'conv-1',
-        'ws-1',
-      );
+      final result = await fixture.repository
+          .getAvailableToolEntitiesForConversation(
+            'conv-1',
+            'ws-1',
+          );
       expect(result, hasLength(1));
       expect(result.firstOrNull?.id, 'tool-1');
     });
   });
 
   group('setConversationToolsDisabled', () {
-    late AppDatabase database;
-    late ConversationToolsRepositoryImpl repository;
-    late MockWorkspaceToolsRepository mockWorkspaceToolsRepository;
+    final fixture = _ConversationToolsRepositoryFixture();
 
-    setUp(() {
-      database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      mockWorkspaceToolsRepository = MockWorkspaceToolsRepository();
-      repository = ConversationToolsRepositoryImpl(
-        database,
-        mockWorkspaceToolsRepository,
-      );
-    });
+    setUp(fixture.setUp);
 
-    tearDown(() async {
-      await database.close();
-    });
+    tearDown(fixture.tearDown);
 
     test('completes without error', () async {
       await expectLater(
-        repository.setConversationToolsDisabled('conv-1', ['tool-1', 'tool-2']),
+        fixture.repository.setConversationToolsDisabled('conv-1', [
+          'tool-1',
+          'tool-2',
+        ]),
         completes,
       );
     });
   });
 
   group('validateConversationToolSetting', () {
-    late AppDatabase database;
-    late ConversationToolsRepositoryImpl repository;
-    late MockWorkspaceToolsRepository mockWorkspaceToolsRepository;
+    final fixture = _ConversationToolsRepositoryFixture();
 
-    setUp(() {
-      database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      mockWorkspaceToolsRepository = MockWorkspaceToolsRepository();
-      repository = ConversationToolsRepositoryImpl(
-        database,
-        mockWorkspaceToolsRepository,
-      );
-    });
+    setUp(fixture.setUp);
 
-    tearDown(() async {
-      await database.close();
-    });
+    tearDown(fixture.tearDown);
 
-    test('throws for non-existent conversation', () async {
+    test('throws for non-existent conversation', () {
       expect(
-        () => repository.validateConversationToolSetting(
+        () => fixture.repository.validateConversationToolSetting(
           'nonexistent',
           'calculator',
           isEnabled: true,
@@ -1008,9 +829,9 @@ void main() {
       );
     });
 
-    test('throws for invalid tool type', () async {
+    test('throws for invalid tool type', () {
       expect(
-        () => repository.validateConversationToolSetting(
+        () => fixture.repository.validateConversationToolSetting(
           'nonexistent-conversation',
           'invalid_tool_type_that_does_not_exist',
           isEnabled: true,
@@ -1021,31 +842,20 @@ void main() {
   });
 
   group('getEnabledConversationTools', () {
-    late AppDatabase database;
-    late ConversationToolsRepositoryImpl repository;
-    late MockWorkspaceToolsRepository mockWorkspaceToolsRepository;
+    final fixture = _ConversationToolsRepositoryFixture();
 
-    setUp(() {
-      database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      mockWorkspaceToolsRepository = MockWorkspaceToolsRepository();
-      repository = ConversationToolsRepositoryImpl(
-        database,
-        mockWorkspaceToolsRepository,
-      );
-    });
+    setUp(fixture.setUp);
 
-    tearDown(() async {
-      await database.close();
-    });
+    tearDown(fixture.tearDown);
 
     test('returns empty list when no workspace tools', () async {
       when(
-        mockWorkspaceToolsRepository.getEnabledWorkspaceTools(any),
+        fixture.mockWorkspaceToolsRepository.getEnabledWorkspaceTools(any),
       ).thenAnswer((_) async => []);
 
-      final tools = await repository.getEnabledConversationTools('conv-1');
+      final tools = await fixture.repository.getEnabledConversationTools(
+        'conv-1',
+      );
       expect(tools, isEmpty);
     });
 
@@ -1053,7 +863,7 @@ void main() {
       'returns enabled tools filtered by disabled conversation tools',
       () async {
         when(
-          mockWorkspaceToolsRepository.getEnabledWorkspaceTools(any),
+          fixture.mockWorkspaceToolsRepository.getEnabledWorkspaceTools(any),
         ).thenAnswer(
           (_) async => [
             WorkspaceToolEntity(
@@ -1068,9 +878,48 @@ void main() {
           ],
         );
 
-        final tools = await repository.getEnabledConversationTools('conv-1');
+        final tools = await fixture.repository.getEnabledConversationTools(
+          'conv-1',
+        );
         expect(tools, hasLength(1));
       },
     );
   });
+}
+
+final class _ConversationToolsRepositoryFixture {
+  AppDatabase? _database;
+  ConversationToolsRepositoryImpl? _repository;
+  MockWorkspaceToolsRepository? _mockWorkspaceToolsRepository;
+
+  AppDatabase get database =>
+      _database ?? fail('Expected database fixture to be initialized.');
+
+  ConversationToolsRepositoryImpl get repository =>
+      _repository ?? fail('Expected repository fixture to be initialized.');
+
+  MockWorkspaceToolsRepository get mockWorkspaceToolsRepository =>
+      _mockWorkspaceToolsRepository ??
+      fail('Expected workspace tools repository fixture to be initialized.');
+
+  void setUp() {
+    final database = AppDatabase(
+      connection: DatabaseConnection(NativeDatabase.memory()),
+    );
+    final mockWorkspaceToolsRepository = MockWorkspaceToolsRepository();
+
+    _database = database;
+    _mockWorkspaceToolsRepository = mockWorkspaceToolsRepository;
+    _repository = ConversationToolsRepositoryImpl(
+      database,
+      mockWorkspaceToolsRepository,
+    );
+  }
+
+  Future<void> tearDown() async {
+    await database.close();
+    _database = null;
+    _mockWorkspaceToolsRepository = null;
+    _repository = null;
+  }
 }

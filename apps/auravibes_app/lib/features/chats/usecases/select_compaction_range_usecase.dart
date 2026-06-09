@@ -1,12 +1,6 @@
-// ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-moving-to-variable
 // Required: Existing code repeats lookups where extraction adds noise.
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
@@ -42,6 +36,7 @@ class SelectCompactionRangeUsecase {
     final tailStart = _findTailStart(messages);
     if (tailStart <= 0) return 0;
     _validateTailSafety(messages, tailStart);
+
     return tailStart;
   }
 
@@ -61,6 +56,7 @@ class SelectCompactionRangeUsecase {
     }
 
     if (lastUserIndex == -1 || lastAssistantIndex == -1) return 0;
+
     return lastUserIndex;
   }
 
@@ -89,6 +85,7 @@ class SelectCompactionRangeUsecase {
     if (_hasUnfinishedStatus(m)) return false;
     if (_hasPendingToolApproval(m)) return false;
     if (_isCompactionSummary(m)) return false;
+
     return true;
   }
 
@@ -101,6 +98,7 @@ class SelectCompactionRangeUsecase {
   static bool _hasPendingToolApproval(MessageEntity m) {
     if (m.isUser) return false;
     final toolCalls = m.metadata?.toolCalls;
+
     return toolCalls != null && toolCalls.any((tc) => tc.isPending);
   }
 

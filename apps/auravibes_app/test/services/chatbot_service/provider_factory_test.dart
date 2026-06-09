@@ -1,12 +1,4 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-moving-to-variable
 // Required: Tests repeat generation config lookups for readability.
-// ignore_for_file: prefer-static-class
 // Required: Tests keep helper functions top-level.
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
@@ -153,9 +145,12 @@ void main() {
         supportsReasoning: true,
       );
 
-      expect(_generationConfigJson(factory.getGenerationConfig(config)), {
-        'thinking': {'type': 'enabled', 'budgetTokens': 1024},
-      });
+      expect(
+        _generationConfigJson(factory.getGenerationConfig<Object?>(config)),
+        {
+          'thinking': {'type': 'enabled', 'budgetTokens': 1024},
+        },
+      );
     });
 
     test('does not infer anthropic reasoning from known model ids', () {
@@ -164,7 +159,7 @@ void main() {
         modelId: 'claude-sonnet-4-5',
       );
 
-      expect(factory.getGenerationConfig(config), isNull);
+      expect(factory.getGenerationConfig<Object?>(config), isNull);
     });
 
     test(
@@ -183,7 +178,7 @@ void main() {
           );
 
           expect(
-            _generationConfigJson(factory.getGenerationConfig(config)),
+            _generationConfigJson(factory.getGenerationConfig<Object?>(config)),
             {
               'thinking': {'type': 'adaptive'},
             },
@@ -199,15 +194,18 @@ void main() {
         supportsReasoning: true,
       );
 
-      expect(_generationConfigJson(factory.getGenerationConfig(config)), {
-        'thinking': {'type': 'enabled', 'budgetTokens': 1024},
-      });
+      expect(
+        _generationConfigJson(factory.getGenerationConfig<Object?>(config)),
+        {
+          'thinking': {'type': 'enabled', 'budgetTokens': 1024},
+        },
+      );
     });
 
     test('does not enable thinking for non-reasoning anthropic models', () {
       final config = makeConfig(type: ModelProvidersType.anthropic);
 
-      expect(factory.getGenerationConfig(config), isNull);
+      expect(factory.getGenerationConfig<Object?>(config), isNull);
     });
 
     test('does not enable thinking for anthropic custom baseUrl', () {
@@ -217,7 +215,7 @@ void main() {
         connectionUrl: 'https://custom-proxy.example.com/v1',
       );
 
-      expect(factory.getGenerationConfig(config), isNull);
+      expect(factory.getGenerationConfig<Object?>(config), isNull);
     });
 
     test('enables thinking config for OpenAI-compatible reasoning models', () {
@@ -228,9 +226,12 @@ void main() {
         supportsReasoning: true,
       );
 
-      expect(_generationConfigJson(factory.getGenerationConfig(config)), {
-        'reasoning': {'type': 'enabled'},
-      });
+      expect(
+        _generationConfigJson(factory.getGenerationConfig<Object?>(config)),
+        {
+          'reasoning': {'type': 'enabled'},
+        },
+      );
     });
 
     test(
@@ -244,7 +245,7 @@ void main() {
         final ref = factory.getModelReference(config);
 
         expect(ref.name, 'openai/glm-4.5');
-        expect(factory.getGenerationConfig(config), isNull);
+        expect(factory.getGenerationConfig<Object?>(config), isNull);
       },
     );
   });

@@ -1,9 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-static-class
-// Required: Tests keep fixture helpers and fakes top-level.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
@@ -107,7 +101,7 @@ void main() {
       });
 
       final result = container.read(appDatabaseProvider);
-      expect(result.schemaVersion, 3);
+      expect(result.schemaVersion, 7);
     });
 
     test('overridden database has all DAOs accessible', () {

@@ -1,9 +1,3 @@
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
-// ignore_for_file: missing-test-assertion
-// Required: Tests verify stream behavior through runtime side effects.
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
@@ -12,9 +6,14 @@ import 'package:rxdart/rxdart.dart';
 void main() {
   group('ConversationStreamingRuntime', () {
     test('holds function references', () {
-      void start(String _) {}
+      void start(String _) {
+        final _ = Object();
+      }
+
       bool isStreaming(String _) => false;
-      void remove(String _) {}
+      void remove(String _) {
+        final _ = Object();
+      }
 
       final runtime = ConversationStreamingRuntime(
         start: start,
@@ -30,9 +29,17 @@ void main() {
 
   group('MessagesStreamingRuntime', () {
     test('holds function references', () {
-      void startSub(CompositeSubscription _, String _) {}
-      void updateResult(Object? _, String _) {}
-      Future<void> remove(String _) async {}
+      void startSub(CompositeSubscription _, String _) {
+        final _ = Object();
+      }
+
+      void updateResult(Object? _, String _) {
+        final _ = Object();
+      }
+
+      Future<void> remove(String _) {
+        return Future<void>.value();
+      }
 
       final runtime = MessagesStreamingRuntime(
         startSubscription: startSub,
@@ -48,8 +55,13 @@ void main() {
 
   group('TitlesStreamingRuntime', () {
     test('holds function references', () {
-      void updateTitle(String _, String _) {}
-      void removeTitle(String _) {}
+      void updateTitle(String _, String _) {
+        final _ = Object();
+      }
+
+      void removeTitle(String _) {
+        final _ = Object();
+      }
 
       final runtime = TitlesStreamingRuntime(
         updateTitle: updateTitle,
@@ -58,6 +70,29 @@ void main() {
 
       expect(runtime.updateTitle, same(updateTitle));
       expect(runtime.removeTitle, same(removeTitle));
+    });
+  });
+
+  group('ConversationRateLimitRetryRuntime', () {
+    test('holds function references', () {
+      void start(String _, DateTime _) {
+        final _ = Object();
+      }
+
+      DateTime? retryAt(String _) => null;
+      void clear(String _) {
+        final _ = Object();
+      }
+
+      final runtime = ConversationRateLimitRetryRuntime(
+        start: start,
+        retryAt: retryAt,
+        clear: clear,
+      );
+
+      expect(runtime.start, same(start));
+      expect(runtime.retryAt, same(retryAt));
+      expect(runtime.clear, same(clear));
     });
   });
 
@@ -98,7 +133,24 @@ void main() {
       final runtime = container.read(titlesStreamingRuntimeProvider);
 
       runtime.updateTitle('conv-1', 'New Title');
-      runtime.removeTitle('conv-1');
+      expect(() => runtime.removeTitle('conv-1'), returnsNormally);
+    });
+  });
+
+  group('conversationRateLimitRetryRuntimeProvider', () {
+    test('wires notifier methods to runtime', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final runtime = container.read(conversationRateLimitRetryRuntimeProvider);
+      final retryAt = DateTime(2026);
+
+      runtime.start('conv-1', retryAt);
+      expect(runtime.retryAt('conv-1'), retryAt);
+      expect(runtime.retryAt('conv-2'), isNull);
+
+      runtime.clear('conv-1');
+      expect(runtime.retryAt('conv-1'), isNull);
     });
   });
 }

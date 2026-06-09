@@ -1,10 +1,4 @@
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
@@ -17,8 +11,12 @@ import 'package:auravibes_app/features/tools/usecases/get_agent_iteration_decisi
 import 'package:auravibes_app/features/tools/usecases/load_latest_message_tool_calls_result.dart';
 import 'package:auravibes_app/features/tools/usecases/run_resolved_tool_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
+import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/utils/encode.dart';
+import 'package:logging/logging.dart';
 import 'package:riverpod/riverpod.dart';
+
+final _logger = Logger('run_allowed_tools_usecase');
 
 class RunAllowedToolsUsecase {
   const RunAllowedToolsUsecase({
@@ -53,6 +51,7 @@ class RunAllowedToolsUsecase {
 
     if (agentCancellationRuntime.isCancellationRequested(conversationId)) {
       await _stopPendingTools(messageId: latestToolCalls.messageId);
+
       return AgentIterationDecision.done;
     }
 
@@ -194,11 +193,33 @@ class RunAllowedToolsUsecase {
           resultStatus: ToolCallResultStatus.toolNotFound,
         );
       }
+
       return _ToolExecutionResult(
         resultStatus: ToolCallResultStatus.success,
         responseRaw: result.toString(),
       );
-    } on Object catch (_) {
+    } on FormatException catch (error, stackTrace) {
+      _logToolExecutionError(
+        conversationId: conversationId,
+        toolCallId: toolToCall.id,
+        tool: toolToCall.tool,
+        error: error,
+        stackTrace: stackTrace,
+      );
+
+      return _ToolExecutionResult(
+        resultStatus: ToolCallResultStatus.executionError,
+        responseRaw: 'Tool execution failed: ${error.message}',
+      );
+    } on Object catch (error, stackTrace) {
+      _logToolExecutionError(
+        conversationId: conversationId,
+        toolCallId: toolToCall.id,
+        tool: toolToCall.tool,
+        error: error,
+        stackTrace: stackTrace,
+      );
+
       return const _ToolExecutionResult(
         resultStatus: ToolCallResultStatus.executionError,
       );
@@ -214,12 +235,21 @@ class RunAllowedToolsUsecase {
         conversationId: conversationId,
         toolToCall: toolToCall,
       );
+
       return _ToolResultUpdate(
         toolCallId: toolToCall.id,
         resultStatus: result.resultStatus,
         responseRaw: result.responseRaw,
       );
-    } on Object catch (_) {
+    } on Object catch (error, stackTrace) {
+      _logToolExecutionError(
+        conversationId: conversationId,
+        toolCallId: toolToCall.id,
+        tool: toolToCall.tool,
+        error: error,
+        stackTrace: stackTrace,
+      );
+
       return _ToolResultUpdate(
         toolCallId: toolToCall.id,
         resultStatus:
@@ -242,6 +272,7 @@ class RunAllowedToolsUsecase {
       if (!toolCall.isPending) return toolCall;
 
       didUpdate = true;
+
       return toolCall.copyWith(
         resultStatus: ToolCallResultStatus.stoppedByUser,
       );
@@ -283,6 +314,24 @@ class RunAllowedToolsUsecase {
       ),
     );
   }
+}
+
+void _logToolExecutionError({
+  required String conversationId,
+  required String toolCallId,
+  required ResolvedTool tool,
+  required Object error,
+  required StackTrace stackTrace,
+}) {
+  _logger.severe(
+    'Tool execution failed '
+    'conversationId=$conversationId '
+    'toolCallId=$toolCallId '
+    'toolType=${tool.type.name} '
+    'toolIdentifier=${tool.toolIdentifier}',
+    error,
+    stackTrace,
+  );
 }
 
 final runAllowedToolsUsecaseProvider = Provider<RunAllowedToolsUsecase>((ref) {

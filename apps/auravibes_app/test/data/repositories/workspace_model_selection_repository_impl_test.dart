@@ -1,16 +1,7 @@
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: missing-test-assertion
-// Required: Repository tests verify side effects through database state.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_model_selection_with_connection.dart';
 import 'package:auravibes_app/data/database/drift/tables/model_providers_table_type.dart';
+import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/data/repositories/workspace_model_selection_repository_impl.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
@@ -25,17 +16,18 @@ import 'workspace_model_selection_repository_impl_test.mocks.dart';
 @GenerateNiceMocks([MockSpec<WorkspaceModelSelectionsDao>()])
 void main() {
   group('WorkspaceModelSelectionRepositoryImpl', () {
-    late MockWorkspaceModelSelectionsDao mockDao;
-    late _TestAppDatabase database;
-    late WorkspaceModelSelectionRepositoryImpl repository;
+    var mockDao = MockWorkspaceModelSelectionsDao();
+    var database = _TestAppDatabase(mockDao);
+    var repository = WorkspaceModelSelectionRepositoryImpl(database);
 
-    setUp(() {
+    tearDown(() async {
+      await database.close();
       mockDao = MockWorkspaceModelSelectionsDao();
       database = _TestAppDatabase(mockDao);
       repository = WorkspaceModelSelectionRepositoryImpl(database);
     });
 
-    tearDown(() async {
+    tearDownAll(() async {
       await database.close();
     });
 
@@ -60,7 +52,10 @@ void main() {
 
         await repository.createWorkspaceModelSelections(selections);
 
-        verify(mockDao.insertWorkspaceModelSelections(any)).called(1);
+        expect(
+          () => verify(mockDao.insertWorkspaceModelSelections(any)).called(1),
+          returnsNormally,
+        );
       });
 
       test('handles empty list', () async {
@@ -70,7 +65,10 @@ void main() {
 
         await repository.createWorkspaceModelSelections([]);
 
-        verify(mockDao.insertWorkspaceModelSelections(any)).called(1);
+        expect(
+          () => verify(mockDao.insertWorkspaceModelSelections(any)).called(1),
+          returnsNormally,
+        );
       });
     });
 
@@ -84,15 +82,18 @@ void main() {
             modelId: 'openai',
             modelConnectionId: 'conn-1',
           ),
-          modelConnection: ModelConnectionTable(
+          modelConnection: ServiceConnectionTable(
             id: 'conn-1',
             createdAt: now,
             updatedAt: now,
             name: 'My Connection',
-            modelId: 'openai',
-            keyValue: 'encrypted-key',
+            serviceId: 'openai',
+            kind: ServiceConnectionKindTable.modelProvider,
+            authenticationType: ServiceAuthenticationTypeTable.apiKey,
+            encryptedAuthValue: 'encrypted-key',
             keySuffix: 'abc123',
             workspaceId: 'ws-1',
+            isEnabled: true,
           ),
           modelProvider: const ApiModelProvidersTable(
             id: 'openai',
@@ -146,14 +147,17 @@ void main() {
             modelId: 'openai',
             modelConnectionId: 'conn-1',
           ),
-          modelConnection: ModelConnectionTable(
+          modelConnection: ServiceConnectionTable(
             id: 'conn-1',
             createdAt: now,
             updatedAt: now,
             name: 'My Connection',
-            modelId: 'openai',
-            keyValue: 'key',
+            serviceId: 'openai',
+            kind: ServiceConnectionKindTable.modelProvider,
+            authenticationType: ServiceAuthenticationTypeTable.apiKey,
+            encryptedAuthValue: 'key',
             workspaceId: 'ws-1',
+            isEnabled: true,
           ),
           modelProvider: const ApiModelProvidersTable(
             id: 'openai',
@@ -200,14 +204,17 @@ void main() {
             modelId: 'test',
             modelConnectionId: 'conn-1',
           ),
-          modelConnection: ModelConnectionTable(
+          modelConnection: ServiceConnectionTable(
             id: 'conn-1',
             createdAt: now,
             updatedAt: now,
             name: 'Conn',
-            modelId: 'test',
-            keyValue: 'key',
+            serviceId: 'test',
+            kind: ServiceConnectionKindTable.modelProvider,
+            authenticationType: ServiceAuthenticationTypeTable.apiKey,
+            encryptedAuthValue: 'key',
             workspaceId: 'ws-1',
+            isEnabled: true,
           ),
           modelProvider: const ApiModelProvidersTable(
             id: 'test',
@@ -238,14 +245,17 @@ void main() {
             modelId: 'anthropic',
             modelConnectionId: 'conn-1',
           ),
-          modelConnection: ModelConnectionTable(
+          modelConnection: ServiceConnectionTable(
             id: 'conn-1',
             createdAt: now,
             updatedAt: now,
             name: 'Conn',
-            modelId: 'anthropic',
-            keyValue: 'key',
+            serviceId: 'anthropic',
+            kind: ServiceConnectionKindTable.modelProvider,
+            authenticationType: ServiceAuthenticationTypeTable.apiKey,
+            encryptedAuthValue: 'key',
             workspaceId: 'ws-1',
+            isEnabled: true,
           ),
           modelProvider: const ApiModelProvidersTable(
             id: 'anthropic',

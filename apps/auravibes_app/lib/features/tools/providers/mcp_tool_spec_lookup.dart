@@ -1,10 +1,4 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
@@ -27,5 +21,6 @@ class McpToolSpecLookup {
 
 final mcpToolSpecLookupProvider = Provider<McpToolSpecLookup>((ref) {
   final notifier = ref.watch(mcpConnectionProvider.notifier);
+
   return McpToolSpecLookup(call: notifier.getToolSpec);
 });

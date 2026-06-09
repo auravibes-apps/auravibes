@@ -1,7 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 import 'package:auravibes_app/features/settings/notifiers/app_theme.dart';
 import 'package:auravibes_app/features/settings/screens/settings_screen.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
@@ -66,7 +62,7 @@ void main() {
     testWidgets('renders SettingsScreen', (tester) async {
       await tester.runAsync(() async {
         await tester.pumpWidget(
-          testableApp(
+          TestableApp(
             child: Theme(
               data: ThemeData(extensions: [AuraTheme.light]),
               child: const SettingsScreen(workspaceId: 'test-ws'),
@@ -84,7 +80,7 @@ void main() {
     testWidgets('tapping theme tile shows radio group dialog', (tester) async {
       await tester.runAsync(() async {
         await tester.pumpWidget(
-          testableApp(
+          TestableApp(
             child: Theme(
               data: ThemeData(extensions: [AuraTheme.light]),
               child: const SettingsScreen(workspaceId: 'test-ws'),

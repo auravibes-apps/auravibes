@@ -1,14 +1,5 @@
-// ignore_for_file: avoid-returning-widgets
-// Required: Existing helper builders return widgets.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-extracting-callbacks
 // Required: UI callbacks stay local to their widgets.
-// ignore_for_file: prefer-single-widget-per-file
 // Required: Feature widgets keep closely related private widgets together.
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
@@ -37,13 +28,14 @@ class ChatListWidget extends ConsumerWidget {
     return switch (chatListAsync) {
       AsyncData(value: final chats) => () {
         if (chats.isEmpty) {
-          return _buildEmptyState();
+          return const _ChatListEmptyState();
         }
 
         return ListView.separated(
           padding: const EdgeInsets.all(16),
           itemBuilder: (context, index) {
             final chat = chats[index];
+
             return _ChatTile(chat: chat, workspaceId: workspaceId);
           },
           separatorBuilder: (context, index) => const SizedBox(height: 10),
@@ -58,8 +50,13 @@ class ChatListWidget extends ConsumerWidget {
       ),
     };
   }
+}
 
-  Widget _buildEmptyState() {
+class _ChatListEmptyState extends StatelessWidget {
+  const _ChatListEmptyState();
+
+  @override
+  Widget build(BuildContext context) {
     return const Center(
       child: Padding(
         padding: EdgeInsets.all(32),
@@ -157,6 +154,7 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
         .modelId;
     final title =
         ref.watch(streamingTitleProvider(widget.chat.id)) ?? widget.chat.title;
+
     return AuraCard(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,

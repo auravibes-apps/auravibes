@@ -68,30 +68,30 @@ class _Fake$ApiModelProvidersTable_6 extends _i1.SmartFake
     : super(parent, parentInvocation);
 }
 
-class _Fake$ApiModelsTable_7 extends _i1.SmartFake
-    implements _i2.$ApiModelsTable {
-  _Fake$ApiModelsTable_7(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
-}
-
-class _Fake$WorkspacesTable_8 extends _i1.SmartFake
+class _Fake$WorkspacesTable_7 extends _i1.SmartFake
     implements _i2.$WorkspacesTable {
-  _Fake$WorkspacesTable_8(Object parent, Invocation parentInvocation)
+  _Fake$WorkspacesTable_7(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _Fake$ModelConnectionsTable_9 extends _i1.SmartFake
-    implements _i2.$ModelConnectionsTable {
-  _Fake$ModelConnectionsTable_9(Object parent, Invocation parentInvocation)
+class _Fake$ServiceConnectionsTable_8 extends _i1.SmartFake
+    implements _i2.$ServiceConnectionsTable {
+  _Fake$ServiceConnectionsTable_8(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _Fake$WorkspaceModelSelectionsTable_10 extends _i1.SmartFake
+class _Fake$WorkspaceModelSelectionsTable_9 extends _i1.SmartFake
     implements _i2.$WorkspaceModelSelectionsTable {
-  _Fake$WorkspaceModelSelectionsTable_10(
+  _Fake$WorkspaceModelSelectionsTable_9(
     Object parent,
     Invocation parentInvocation,
   ) : super(parent, parentInvocation);
+}
+
+class _Fake$ApiModelsTable_10 extends _i1.SmartFake
+    implements _i2.$ApiModelsTable {
+  _Fake$ApiModelsTable_10(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
 }
 
 class _FakeWorkspaceModelSelectionsDaoManager_11 extends _i1.SmartFake
@@ -282,29 +282,14 @@ class MockWorkspaceModelSelectionsDao extends _i1.Mock
           as _i2.$ApiModelProvidersTable);
 
   @override
-  _i2.$ApiModelsTable get apiModels =>
-      (super.noSuchMethod(
-            Invocation.getter(#apiModels),
-            returnValue: _Fake$ApiModelsTable_7(
-              this,
-              Invocation.getter(#apiModels),
-            ),
-            returnValueForMissingStub: _Fake$ApiModelsTable_7(
-              this,
-              Invocation.getter(#apiModels),
-            ),
-          )
-          as _i2.$ApiModelsTable);
-
-  @override
   _i2.$WorkspacesTable get workspaces =>
       (super.noSuchMethod(
             Invocation.getter(#workspaces),
-            returnValue: _Fake$WorkspacesTable_8(
+            returnValue: _Fake$WorkspacesTable_7(
               this,
               Invocation.getter(#workspaces),
             ),
-            returnValueForMissingStub: _Fake$WorkspacesTable_8(
+            returnValueForMissingStub: _Fake$WorkspacesTable_7(
               this,
               Invocation.getter(#workspaces),
             ),
@@ -312,34 +297,49 @@ class MockWorkspaceModelSelectionsDao extends _i1.Mock
           as _i2.$WorkspacesTable);
 
   @override
-  _i2.$ModelConnectionsTable get modelConnections =>
+  _i2.$ServiceConnectionsTable get serviceConnections =>
       (super.noSuchMethod(
-            Invocation.getter(#modelConnections),
-            returnValue: _Fake$ModelConnectionsTable_9(
+            Invocation.getter(#serviceConnections),
+            returnValue: _Fake$ServiceConnectionsTable_8(
               this,
-              Invocation.getter(#modelConnections),
+              Invocation.getter(#serviceConnections),
             ),
-            returnValueForMissingStub: _Fake$ModelConnectionsTable_9(
+            returnValueForMissingStub: _Fake$ServiceConnectionsTable_8(
               this,
-              Invocation.getter(#modelConnections),
+              Invocation.getter(#serviceConnections),
             ),
           )
-          as _i2.$ModelConnectionsTable);
+          as _i2.$ServiceConnectionsTable);
 
   @override
   _i2.$WorkspaceModelSelectionsTable get workspaceModelSelections =>
       (super.noSuchMethod(
             Invocation.getter(#workspaceModelSelections),
-            returnValue: _Fake$WorkspaceModelSelectionsTable_10(
+            returnValue: _Fake$WorkspaceModelSelectionsTable_9(
               this,
               Invocation.getter(#workspaceModelSelections),
             ),
-            returnValueForMissingStub: _Fake$WorkspaceModelSelectionsTable_10(
+            returnValueForMissingStub: _Fake$WorkspaceModelSelectionsTable_9(
               this,
               Invocation.getter(#workspaceModelSelections),
             ),
           )
           as _i2.$WorkspaceModelSelectionsTable);
+
+  @override
+  _i2.$ApiModelsTable get apiModels =>
+      (super.noSuchMethod(
+            Invocation.getter(#apiModels),
+            returnValue: _Fake$ApiModelsTable_10(
+              this,
+              Invocation.getter(#apiModels),
+            ),
+            returnValueForMissingStub: _Fake$ApiModelsTable_10(
+              this,
+              Invocation.getter(#apiModels),
+            ),
+          )
+          as _i2.$ApiModelsTable);
 
   @override
   _i5.WorkspaceModelSelectionsDaoManager get managers =>

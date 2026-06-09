@@ -1,12 +1,5 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: cascade_invocations
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
+
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -137,7 +130,9 @@ class _StubWorkspaceToolsRepository implements WorkspaceToolsRepository {
   Future<void> copyWorkspaceToolsToConversation(
     String workspaceId,
     String conversationId,
-  ) async {}
+  ) async {
+    final _ = Object();
+  }
 
   @override
   Future<bool> validateWorkspaceToolSetting(

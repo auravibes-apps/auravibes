@@ -1,13 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/tools_groups_dao.dart';
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
@@ -24,17 +14,18 @@ import 'tools_groups_repository_impl_test.mocks.dart';
 @GenerateNiceMocks([MockSpec<ToolsGroupsDao>()])
 void main() {
   group('ToolsGroupsRepositoryImpl', () {
-    late MockToolsGroupsDao mockDao;
-    late _TestAppDatabase database;
-    late ToolsGroupsRepositoryImpl repository;
+    var mockDao = MockToolsGroupsDao();
+    var database = _TestAppDatabase(mockDao);
+    var repository = ToolsGroupsRepositoryImpl(database);
 
-    setUp(() {
+    tearDown(() async {
+      await database.close();
       mockDao = MockToolsGroupsDao();
       database = _TestAppDatabase(mockDao);
       repository = ToolsGroupsRepositoryImpl(database);
     });
 
-    tearDown(() async {
+    tearDownAll(() async {
       await database.close();
     });
 

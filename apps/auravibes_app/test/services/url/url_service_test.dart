@@ -1,15 +1,4 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 
 import 'dart:async';
 import 'dart:typed_data';
@@ -51,7 +40,7 @@ void main() {
       final requestStarted = Completer<void>();
       CancelToken? observedCancelToken;
       final adapter = _FakeHttpClientAdapter(
-        onFetch: (options, _, _) async {
+        onFetch: (options, _, _) {
           observedCancelToken = options.cancelToken;
           if (!requestStarted.isCompleted) {
             requestStarted.complete();
@@ -442,6 +431,7 @@ void main() {
         final adapter = _FakeHttpClientAdapter(
           onFetch: (options, _, _) async {
             acceptHeader = options.headers['accept'] as String?;
+
             return ResponseBody.fromString('ok', 200);
           },
         );
@@ -467,6 +457,7 @@ void main() {
         final adapter = _FakeHttpClientAdapter(
           onFetch: (options, _, _) async {
             acceptHeader = options.headers['accept'] as String?;
+
             return ResponseBody.fromString('ok', 200);
           },
         );
@@ -492,6 +483,7 @@ void main() {
         final adapter = _FakeHttpClientAdapter(
           onFetch: (options, _, _) async {
             acceptHeader = options.headers['accept'] as String?;
+
             return ResponseBody.fromString('ok', 200);
           },
         );
@@ -515,6 +507,7 @@ void main() {
         final adapter = _FakeHttpClientAdapter(
           onFetch: (options, _, _) async {
             userAgent = options.headers['user-agent'] as String?;
+
             return ResponseBody.fromString('ok', 200);
           },
         );
@@ -536,6 +529,7 @@ void main() {
         final adapter = _FakeHttpClientAdapter(
           onFetch: (options, _, _) async {
             userAgent = options.headers['user-agent'] as String?;
+
             return ResponseBody.fromString('ok', 200);
           },
         );
@@ -559,6 +553,7 @@ void main() {
         final adapter = _FakeHttpClientAdapter(
           onFetch: (options, _, _) async {
             acceptLanguage = options.headers['accept-language'] as String?;
+
             return ResponseBody.fromString('ok', 200);
           },
         );
@@ -579,6 +574,7 @@ void main() {
         final adapter = _FakeHttpClientAdapter(
           onFetch: (options, _, _) async {
             acceptLanguage = options.headers['accept-language'] as String?;
+
             return ResponseBody.fromString('ok', 200);
           },
         );
@@ -620,5 +616,7 @@ final class _FakeHttpClientAdapter implements HttpClientAdapter {
   }
 
   @override
-  void close({bool force = false}) {}
+  void close({bool force = false}) {
+    final _ = Object();
+  }
 }

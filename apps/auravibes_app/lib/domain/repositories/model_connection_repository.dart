@@ -1,8 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 
@@ -17,39 +12,53 @@ abstract class ModelConnectionRepository {
     ModelConnectionFilter filter,
   );
 
+  Stream<List<ModelConnectionEntity>> watchModelConnections(
+    ModelConnectionFilter filter,
+  );
+
   Future<ModelConnectionEntity> createModelConnection(
     ModelConnectionToCreate modelConnection,
   );
 
-  /// Deletes a model connection
+  Future<ModelConnectionForEdit?> getModelConnectionForEdit(
+    String modelConnectionId,
+  );
+
+  Future<ModelConnectionEntity> updateModelConnection(
+    String modelConnectionId,
+    ModelConnectionToUpdate modelConnection,
+  );
+
+  /// Deletes a model connection.
   Future<void> deleteModelConnection(String modelConnectionId);
 }
 
 /// Base exception for model connection-related operations.
 class ModelConnectionException implements Exception {
-  /// Creates a new ModelConnectionException
+  /// Creates a new ModelConnectionException.
   const ModelConnectionException(this.message, [this.cause]);
 
-  /// Error message describing the exception
+  /// Error message describing the exception.
   final String message;
 
-  /// Optional original exception that caused this exception
+  /// Optional original exception that caused this exception.
   final Exception? cause;
 
   @override
   String toString() {
     final causedBy = cause != null ? ' (Caused by: $cause)' : '';
+
     return 'ModelConnectionException: $message$causedBy';
   }
 }
 
 /// Exception thrown when a model connection has no models.
 class ModelConnectionNoModelsException extends ModelConnectionException {
-  /// Creates a new ModelConnectionNoModelsException
+  /// Creates a new ModelConnectionNoModelsException.
   const ModelConnectionNoModelsException(this.modelId, [Exception? cause])
     : super('ModelProvider with type "$modelId" not found models', cause);
 
-  /// ID of the workspaceModelSelection that was not found
+  /// ID of the workspaceModelSelection that was not found.
   final String modelId;
 }
 

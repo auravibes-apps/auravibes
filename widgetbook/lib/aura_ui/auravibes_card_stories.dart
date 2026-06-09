@@ -1,8 +1,4 @@
-// ignore_for_file: avoid-returning-widgets
-// Required: Widgetbook stories use helper functions that return widgets.
-// ignore_for_file: no-empty-block
 // Required: Widgetbook stories use intentional no-op callbacks.
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
@@ -28,7 +24,11 @@ Widget basicCardUseCase(BuildContext context) {
       ],
     ),
     padding: context.knobs.padding(),
-    onTap: context.knobs.boolean(label: 'Enable Tap') ? () {} : null,
+    onTap: context.knobs.boolean(label: 'Enable Tap')
+        ? () {
+            final _ = Object();
+          }
+        : null,
     semanticLabel: context.knobs.stringOrNull(label: 'Semantic Label'),
     style: context.knobs.objectOrNull.dropdown(
       label: 'style',

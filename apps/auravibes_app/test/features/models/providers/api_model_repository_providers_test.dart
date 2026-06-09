@@ -1,8 +1,3 @@
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/api_model_repository_impl.dart';
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
@@ -83,7 +78,7 @@ void main() {
       expect(result, same(repo));
     });
 
-    test('builds repository from app database provider', () async {
+    test('builds repository from app database provider', () {
       final database = AppDatabase(
         connection: DatabaseConnection(NativeDatabase.memory()),
       );
@@ -216,7 +211,7 @@ void main() {
   });
 
   group('modelSyncServiceProvider', () {
-    test('creates ModelSyncService and cancels timer on dispose', () async {
+    test('creates ModelSyncService and cancels timer on dispose', () {
       final container = ProviderContainer(
         overrides: [
           apiModelRepositoryProvider.overrideWithValue(

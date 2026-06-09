@@ -186,6 +186,27 @@ void main() {
 
       expect(find.byType(Divider), findsOneWidget);
     });
+
+    testWidgets('button opens popup menu', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Portal(
+              child: AuraPopupMenuButton(
+                items: [
+                  AuraPopupMenuItem(title: Text('Edit')),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.byType(AuraPopupMenuButton));
+      await tester.pump();
+
+      expect(find.text('Edit'), findsOneWidget);
+    });
   });
 
   group('AuraPopupMenuController', () {

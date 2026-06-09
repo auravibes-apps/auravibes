@@ -1,6 +1,3 @@
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/services/mcp_service/o_auth_authenticate.dart';
@@ -27,6 +24,7 @@ class BuildMcpServerToCreateUseCase {
       if (bearerToken == null) {
         throw Exception('Bearer token is required');
       }
+
       return serverInfo.copyWith(
         authenticationType: McpAuthenticationTypeBearerToken(
           bearerToken: bearerToken,
@@ -45,6 +43,7 @@ class BuildMcpServerToCreateUseCase {
     }
 
     final token = await _authenticator.authenticate(discover);
+
     return serverInfo.copyWith(
       authenticationType: McpAuthenticationTypeOAuth(
         token: token.toEntity(),

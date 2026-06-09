@@ -1,10 +1,3 @@
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
@@ -23,38 +16,16 @@ import 'stop_conversation_usecase_test.mocks.dart';
 @GenerateMocks([MessageRepository])
 void main() {
   group('StopConversationUsecase', () {
-    late MockMessageRepository messageRepository;
-    late AgentCancellationRuntime agentCancellationRuntime;
-    late ProviderContainer container;
-    late StopConversationUsecase usecase;
+    final fixture = _StopConversationFixture();
 
-    setUp(() {
-      messageRepository = MockMessageRepository();
-      agentCancellationRuntime = AgentCancellationRuntime()
-        ..start('conversation-1');
-      container = ProviderContainer();
-      final queueNotifier = container.read(
-        conversationSendQueueProvider.notifier,
-      );
-      usecase = StopConversationUsecase(
-        agentCancellationRuntime: agentCancellationRuntime,
-        sendQueueRuntime: ConversationSendQueueRuntime(
-          enqueue: queueNotifier.enqueue,
-          dequeueAll: queueNotifier.dequeueAll,
-          clear: queueNotifier.clear,
-        ),
-        messageRepository: messageRepository,
-      );
-    });
+    setUp(fixture.reset);
 
-    tearDown(() {
-      container.dispose();
-    });
+    tearDown(fixture.dispose);
 
     test(
       'requests cancellation, clears queue, and stops pending tools',
       () async {
-        final _ = container
+        final _ = fixture.container
             .read(conversationSendQueueProvider.notifier)
             .enqueue(
               conversationId: 'conversation-1',
@@ -81,27 +52,32 @@ void main() {
         );
 
         when(
-          messageRepository.getMessagesByConversation('conversation-1'),
+          fixture.messageRepository.getMessagesByConversation('conversation-1'),
         ).thenAnswer((_) async => [message]);
         when(
-          messageRepository.patchMessage('assistant-1', any),
+          fixture.messageRepository.patchMessage('assistant-1', any),
         ).thenAnswer((_) async => message);
 
-        await usecase.call(conversationId: 'conversation-1');
+        await fixture.usecase.call(conversationId: 'conversation-1');
 
         expect(
-          agentCancellationRuntime.isCancellationRequested('conversation-1'),
+          fixture.agentCancellationRuntime.isCancellationRequested(
+            'conversation-1',
+          ),
           isTrue,
         );
         expect(
-          container
+          fixture.container
               .read(conversationSendQueueProvider.notifier)
               .peek('conversation-1'),
           isNull,
         );
         final patch =
             verify(
-                  messageRepository.patchMessage('assistant-1', captureAny),
+                  fixture.messageRepository.patchMessage(
+                    'assistant-1',
+                    captureAny,
+                  ),
                 ).captured.single
                 as MessagePatch;
         expect(
@@ -111,4 +87,53 @@ void main() {
       },
     );
   });
+}
+
+class _StopConversationFixture {
+  MockMessageRepository? _messageRepository;
+  AgentCancellationRuntime? _agentCancellationRuntime;
+  ProviderContainer? _container;
+  StopConversationUsecase? _usecase;
+
+  MockMessageRepository get messageRepository =>
+      _messageRepository ?? fail('Fixture not initialized');
+
+  AgentCancellationRuntime get agentCancellationRuntime =>
+      _agentCancellationRuntime ?? fail('Fixture not initialized');
+
+  ProviderContainer get container =>
+      _container ?? fail('Fixture not initialized');
+
+  StopConversationUsecase get usecase =>
+      _usecase ?? fail('Fixture not initialized');
+
+  void reset() {
+    final messageRepository = MockMessageRepository();
+    final agentCancellationRuntime = AgentCancellationRuntime()
+      ..start('conversation-1');
+    final container = ProviderContainer();
+    final queueNotifier = container.read(
+      conversationSendQueueProvider.notifier,
+    );
+    _messageRepository = messageRepository;
+    _agentCancellationRuntime = agentCancellationRuntime;
+    _container = container;
+    _usecase = StopConversationUsecase(
+      agentCancellationRuntime: agentCancellationRuntime,
+      sendQueueRuntime: ConversationSendQueueRuntime(
+        enqueue: queueNotifier.enqueue,
+        dequeueAll: queueNotifier.dequeueAll,
+        clear: queueNotifier.clear,
+      ),
+      messageRepository: messageRepository,
+    );
+  }
+
+  void dispose() {
+    container.dispose();
+    _messageRepository = null;
+    _agentCancellationRuntime = null;
+    _container = null;
+    _usecase = null;
+  }
 }

@@ -1,9 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 import 'package:auravibes_ui/src/atoms/aura_message_status.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
@@ -18,7 +12,7 @@ void main() {
           home: const Scaffold(
             body: AuraMessageStatus(
               status: AuraMessageDeliveryStatus.sending,
-              showAnimation: false, // Disable animation for stable testing
+              showAnimation: false, // Disable animation for stable testing.
             ),
           ),
           theme: ThemeData.light().copyWith(
@@ -30,7 +24,7 @@ void main() {
       expect(find.byIcon(Icons.access_time), findsOneWidget);
 
       final icon = tester.widget<Icon>(find.byIcon(Icons.access_time));
-      // In light theme, sending status uses onSurfaceVariant with 60% opacity
+      // In light theme, sending status uses onSurfaceVariant with 60% opacity.
       final expectedColor = DesignColors.neutral700.withValues(alpha: 0.6);
       expect(icon.color, expectedColor);
     });
@@ -41,7 +35,7 @@ void main() {
           home: const Scaffold(
             body: AuraMessageStatus(
               status: AuraMessageDeliveryStatus.sent,
-              showAnimation: false, // Disable animation for stable testing
+              showAnimation: false, // Disable animation for stable testing.
             ),
           ),
           theme: ThemeData.light().copyWith(
@@ -53,7 +47,7 @@ void main() {
       expect(find.byIcon(Icons.done), findsOneWidget);
 
       final icon = tester.widget<Icon>(find.byIcon(Icons.done));
-      // In light theme, sent status uses onSurfaceVariant (neutral700)
+      // In light theme, sent status uses onSurfaceVariant (neutral700).
       expect(icon.color, DesignColors.neutral700);
     });
 
@@ -63,7 +57,7 @@ void main() {
           home: Scaffold(
             body: AuraMessageStatus(
               status: AuraMessageDeliveryStatus.delivered,
-              showAnimation: false, // Disable animation for stable testing
+              showAnimation: false, // Disable animation for stable testing.
             ),
           ),
         ),
@@ -78,7 +72,7 @@ void main() {
           home: Scaffold(
             body: AuraMessageStatus(
               status: AuraMessageDeliveryStatus.read,
-              showAnimation: false, // Disable animation for stable testing
+              showAnimation: false, // Disable animation for stable testing.
             ),
           ),
         ),
@@ -94,7 +88,7 @@ void main() {
             body: AuraMessageStatus(
               status: AuraMessageDeliveryStatus.sent,
               size: AuraMessageStatusSize.small,
-              showAnimation: false, // Disable animation for stable testing
+              showAnimation: false, // Disable animation for stable testing.
             ),
           ),
         ),
@@ -110,7 +104,7 @@ void main() {
           home: Scaffold(
             body: AuraMessageStatus(
               status: AuraMessageDeliveryStatus.sent,
-              showAnimation: false, // Disable animation for stable testing
+              showAnimation: false, // Disable animation for stable testing.
             ),
           ),
         ),
@@ -127,7 +121,7 @@ void main() {
             body: AuraMessageStatus(
               status: AuraMessageDeliveryStatus.sent,
               size: AuraMessageStatusSize.large,
-              showAnimation: false, // Disable animation for stable testing
+              showAnimation: false, // Disable animation for stable testing.
             ),
           ),
         ),
@@ -146,7 +140,7 @@ void main() {
             body: AuraMessageStatus(
               status: AuraMessageDeliveryStatus.sent,
               color: customColor,
-              showAnimation: false, // Disable animation for stable testing
+              showAnimation: false, // Disable animation for stable testing.
             ),
           ),
         ),
@@ -220,13 +214,13 @@ void main() {
         ),
       );
 
-      // Should find the widget with animation enabled
+      // Should find the widget with animation enabled.
       final widget = tester.widget<AuraMessageStatus>(
         find.byType(AuraMessageStatus),
       );
       expect(widget.showAnimation, true);
 
-      // Wait for animation to complete to avoid hanging
+      // Wait for animation to complete to avoid hanging.
       final _ = await tester.pumpAndSettle();
     });
 
@@ -242,13 +236,13 @@ void main() {
         ),
       );
 
-      // Should find the widget with animation disabled
+      // Should find the widget with animation disabled.
       final widget = tester.widget<AuraMessageStatus>(
         find.byType(AuraMessageStatus),
       );
       expect(widget.showAnimation, false);
 
-      // Icon should be directly visible without animation wrapper
+      // Icon should be directly visible without animation wrapper.
       expect(find.byIcon(Icons.done), findsOneWidget);
     });
 
@@ -263,7 +257,7 @@ void main() {
         ),
       );
 
-      // Should find the widget with sending status and animation enabled
+      // Should find the widget with sending status and animation enabled.
       final widget = tester.widget<AuraMessageStatus>(
         find.byType(AuraMessageStatus),
       );
@@ -271,11 +265,11 @@ void main() {
       expect(widget.showAnimation, true);
       expect(find.byIcon(Icons.access_time), findsOneWidget);
 
-      // Pump some frames to let animation run briefly
+      // Pump some frames to let animation run briefly.
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
 
-      // Immediately clean up by disabling animation
+      // Immediately clean up by disabling animation.
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -287,7 +281,7 @@ void main() {
         ),
       );
 
-      // Wait for widget update
+      // Wait for widget update.
       await tester.pump();
     });
 
@@ -302,14 +296,14 @@ void main() {
         ),
       );
 
-      // Initial state should be sending
+      // Initial state should be sending.
       var widget = tester.widget<AuraMessageStatus>(
         find.byType(AuraMessageStatus),
       );
       expect(widget.status, AuraMessageDeliveryStatus.sending);
       expect(find.byIcon(Icons.access_time), findsOneWidget);
 
-      // Change status to stop the repeating animation
+      // Change status to stop the repeating animation.
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -320,12 +314,12 @@ void main() {
         ),
       );
 
-      // Status should have changed
+      // Status should have changed.
       widget = tester.widget<AuraMessageStatus>(find.byType(AuraMessageStatus));
       expect(widget.status, AuraMessageDeliveryStatus.sent);
       expect(find.byIcon(Icons.done), findsOneWidget);
 
-      // Wait for animation to complete
+      // Wait for animation to complete.
       final _ = await tester.pumpAndSettle();
     });
 
@@ -357,7 +351,7 @@ void main() {
 
       final containers = tester.widgetList<Container>(find.byType(Container));
 
-      // Check padding for each size
+      // Check padding for each size.
       expect(containers.firstOrNull?.padding, const EdgeInsets.all(2));
       expect(containers.elementAt(1).padding, const EdgeInsets.all(4));
       expect(containers.elementAt(2).padding, const EdgeInsets.all(6));

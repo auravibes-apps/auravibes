@@ -1,7 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: UI tokens and layout use fixed design values.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
@@ -85,7 +81,7 @@ class AuraSelectableText extends StatelessWidget {
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
     final baseStyle = auraResolveTextStyle(style: style, colors: auraColors);
-    // Only override color when colorVariant is provided
+    // Only override color when colorVariant is provided.
     final textStyle = colorVariant != null
         ? baseStyle.copyWith(color: auraColors.getColorOrNull(colorVariant))
         : baseStyle;

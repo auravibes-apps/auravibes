@@ -1,11 +1,4 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 import 'dart:async';
 
 import 'package:rxdart/rxdart.dart';
@@ -41,6 +34,7 @@ class _CoalescingSaver<T> {
     if (!_saving) {
       unawaited(_run());
     }
+
     return _doneCompleter.future;
   }
 
@@ -55,7 +49,7 @@ class _CoalescingSaver<T> {
             await _store(toSave);
             _onSaved(toSave);
           } on Exception catch (_) {
-            // Swallow exceptions to allow loop to continue
+            // Swallow exceptions to allow loop to continue.
           }
           if (_pending != null) continue;
         }

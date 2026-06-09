@@ -1,14 +1,5 @@
-// ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: avoid-substring
-// Required: Existing parsing uses code-unit substring offsets.
-// ignore_for_file: no-equal-arguments
 // Required: Existing argument values intentionally repeat.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/utils/string_extensions.dart';
 
@@ -42,19 +33,15 @@ class ToolNameFormatter {
   }
 
   static ParsedToolId? _parseMcpTool(String compositeId) {
-    if (!compositeId.startsWith('mcp_')) return null;
+    final match = RegExp(r'^mcp_([^_]+)_([^_]+)_(.+)$').firstMatch(
+      compositeId,
+    );
+    if (match == null) return null;
 
-    final withoutPrefix = compositeId.substring(4);
-    final firstUnderscoreIdx = withoutPrefix.indexOf('_');
-    if (firstUnderscoreIdx <= 0) return null;
-
-    final mcpId = withoutPrefix.substring(0, firstUnderscoreIdx);
-    final rest = withoutPrefix.substring(firstUnderscoreIdx + 1);
-    final secondUnderscoreIdx = rest.indexOf('_');
-    if (secondUnderscoreIdx <= 0) return null;
-
-    final slug = rest.substring(0, secondUnderscoreIdx);
-    final tool = rest.substring(secondUnderscoreIdx + 1);
+    final mcpId = match.group(1);
+    final slug = match.group(2);
+    final tool = match.group(3);
+    if (mcpId == null || slug == null || tool == null) return null;
     if (mcpId.isEmpty || slug.isEmpty || tool.isEmpty) return null;
 
     return ParsedToolId.mcp(
@@ -65,34 +52,39 @@ class ToolNameFormatter {
   }
 
   static ParsedToolId? _parseBuiltInTool(String compositeId) {
-    if (!compositeId.startsWith('built_in_')) return null;
     return _parseTableTool(
-      compositeId.substring(9),
+      compositeId,
+      'built_in',
       ParsedToolId.builtIn,
     );
   }
 
   static ParsedToolId? _parseNativeTool(String compositeId) {
-    if (!compositeId.startsWith('native_')) return null;
     return _parseTableTool(
-      compositeId.substring(7),
+      compositeId,
+      'native',
       ParsedToolId.native,
     );
   }
 
   static ParsedToolId? _parseTableTool(
     String value,
+    String prefix,
     ParsedToolId Function({
       required String tableId,
       required String toolIdentifier,
     })
     create,
   ) {
-    final firstUnderscoreIdx = value.indexOf('_');
-    if (firstUnderscoreIdx <= 0) return null;
+    final match = RegExp(
+      '^${RegExp.escape(prefix)}'
+      r'_([^_]+)_(.+)$',
+    ).firstMatch(value);
+    if (match == null) return null;
 
-    final tableId = value.substring(0, firstUnderscoreIdx);
-    final toolIdentifier = value.substring(firstUnderscoreIdx + 1);
+    final tableId = match.group(1);
+    final toolIdentifier = match.group(2);
+    if (tableId == null || toolIdentifier == null) return null;
     if (tableId.isEmpty || toolIdentifier.isEmpty) return null;
 
     return create(tableId: tableId, toolIdentifier: toolIdentifier);
@@ -113,6 +105,7 @@ class ToolNameFormatter {
       mcp: (mcpServerId, slugName, toolIdentifier) {
         final serverDisplayName = mcpServerName ?? slugName.toHumanReadable();
         final toolDisplayName = toolIdentifier.toHumanReadable();
+
         return '$serverDisplayName: $toolDisplayName';
       },
       builtIn: (tableId, toolIdentifier) {
@@ -122,7 +115,7 @@ class ToolNameFormatter {
         return toolIdentifier.toHumanReadable();
       },
       unknown: (rawName) {
-        // Best effort: try to make it readable
+        // Best effort: try to make it readable.
         return rawName.toHumanReadable();
       },
     );
