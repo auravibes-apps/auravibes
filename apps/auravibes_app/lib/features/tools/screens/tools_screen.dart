@@ -1,6 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: no-equal-arguments
 // Required: Existing argument values intentionally repeat.
 // ignore_for_file: prefer-extracting-callbacks
 // Required: UI callbacks stay local to their widgets.

@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: no-object-declaration
 // Required: Test fakes override noSuchMethod with Object return values.
 // ignore_for_file: prefer-correct-identifier-length

@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: UI tokens and layout use fixed design values.
-// ignore_for_file: no-equal-arguments
-// Required: UI geometry uses repeated values for symmetric layout.
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-single-widget-per-file
 // Required: UI components keep related private widgets together.

@@ -1,4 +1,3 @@
-// ignore_for_file: no-equal-arguments
 // Required: Existing argument values intentionally repeat.
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-extracting-callbacks

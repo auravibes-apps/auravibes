@@ -1,6 +1,5 @@
 // ignore_for_file: prefer-async-await
 // Required: Existing Future chains preserve callback flow.
-// ignore_for_file: no-equal-arguments
 // Required: Existing argument values intentionally repeat.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.

@@ -1,7 +1,5 @@
 // ignore_for_file: provider_dependencies
 // Required: widget tests override scoped providers directly.
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: prefer-moving-to-variable
 // Required: Tests repeat finders and fixture lookups for clarity.
 

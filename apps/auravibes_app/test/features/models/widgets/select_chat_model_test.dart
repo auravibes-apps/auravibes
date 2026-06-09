@@ -1,8 +1,6 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
 
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 // ignore_for_file: prefer-static-class

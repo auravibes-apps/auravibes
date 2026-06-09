@@ -1,6 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: no-equal-arguments
 // Required: Existing argument values intentionally repeat.
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';

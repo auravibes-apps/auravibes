@@ -38,6 +38,34 @@ plugins:
       missing-test-assertion: true
       no-blank-line-before-single-return: true
       no-empty-block: true
+      no-equal-arguments:
+        ignored-parameters:
+          # Fixtures often intentionally share lifecycle timestamps.
+          - updatedAt
+          # Widget tests intentionally reuse locale ranges for basic wrappers.
+          - startLocale
+          # UI geometry and callback wiring intentionally repeat symmetric values.
+          - activeWorkspaceId
+          - borderColor
+          - bottom
+          - height
+          - isWorkspaceEnabled
+          - margin
+          - mcpServerId
+          - minHeight
+          - name
+          - native
+          - onDelete
+          - onProviderChanged
+          - onReconnect
+          - onViewError
+          - portal
+          - receiveTimeout
+          - remove
+          - right
+          - skillToolSlug
+          - toolIdentifier
+          - top
       newline-before-return: true
       avoid-unnecessary-setstate: true
       avoid-double-slash-imports: true
