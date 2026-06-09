@@ -115,6 +115,7 @@ plugins:
           # and app-wide callers.
           - WorkspaceModelSelectionWithConnectionEntity
       prefer-define-hero-tag: true
+      prefer-enums-by-name: true
       prefer-correct-edge-insets-constructor: true
       prefer-first-or-null: true
       prefer-immediate-return: true

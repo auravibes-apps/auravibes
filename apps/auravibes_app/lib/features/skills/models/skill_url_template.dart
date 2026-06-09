@@ -77,12 +77,13 @@ class SkillUrlTemplate {
   }
 
   static UrlRequestMethod _methodFromJson(Object? value) {
-    final normalized = '${value ?? 'GET'}'.trim().toUpperCase();
+    final normalized = '${value ?? 'GET'}'.trim().toLowerCase();
+    if (normalized
+        case 'get' || 'post' || 'put' || 'delete' || 'patch' || 'head') {
+      return UrlRequestMethod.values.byName(normalized);
+    }
 
-    return UrlRequestMethod.values.firstWhere(
-      (method) => method.value == normalized,
-      orElse: () => throw FormatException('Unsupported method: $value.'),
-    );
+    throw FormatException('Unsupported method: $value.');
   }
 
   static Map<String, String> _stringMap(Object? value) {
@@ -107,11 +108,11 @@ class SkillUrlTemplate {
   static SkillUrlTemplateBodyFormat _bodyFormatFromJson(Object? value) {
     if (value == null) return SkillUrlTemplateBodyFormat.infer;
     final normalized = '$value'.trim().toLowerCase();
+    if (normalized case 'infer' || 'json' || 'text') {
+      return SkillUrlTemplateBodyFormat.values.byName(normalized);
+    }
 
-    return SkillUrlTemplateBodyFormat.values.firstWhere(
-      (format) => format.value == normalized,
-      orElse: () => throw FormatException('Unsupported bodyFormat: $value.'),
-    );
+    throw FormatException('Unsupported bodyFormat: $value.');
   }
 
   static Map<String, String> _canonicalizeMap(Map<String, String> value) {
