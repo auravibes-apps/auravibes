@@ -1,6 +1,5 @@
 // Required: Existing thresholds and limits use numeric values.
 // Required: UI callbacks stay local to their widgets.
-// ignore_for_file: prefer-moving-to-variable
 // Required: Existing code repeats lookups where extraction adds noise.
 import 'package:auravibes_app/features/settings/notifiers/app_theme.dart';
 import 'package:auravibes_app/features/settings/widgets/compaction_settings_section.dart';

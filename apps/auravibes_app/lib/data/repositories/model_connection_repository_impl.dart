@@ -1,4 +1,3 @@
-// ignore_for_file: prefer-moving-to-variable
 // Required: Existing code repeats lookups where extraction adds noise.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';

@@ -189,6 +189,8 @@ plugins:
       prefer-iterable-of: true
       prefer-last: true
       prefer-media-query-direct-access: true
+      prefer-moving-to-variable:
+        allowed-duplicated-chains: 3
       prefer-named-record-fields: true
       prefer-provide-intl-description: true
       prefer-single-quotes: true

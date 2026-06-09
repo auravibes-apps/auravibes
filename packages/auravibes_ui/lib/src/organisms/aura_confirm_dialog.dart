@@ -1,6 +1,4 @@
 // Required: Component callbacks stay colocated with UI state.
-// ignore_for_file: prefer-moving-to-variable
-// Required: UI components repeat theme and layout lookups intentionally.
 // ignore_for_file: prefer-single-widget-per-file
 // Required: UI components keep related private widgets together.
 // ignore_for_file: prefer-static-class

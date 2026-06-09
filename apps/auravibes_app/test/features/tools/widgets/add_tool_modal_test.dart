@@ -1,4 +1,3 @@
-// ignore_for_file: prefer-moving-to-variable
 // Required: Tests repeat finders and fixture lookups for clarity.
 // ignore_for_file: prefer-static-class
 // Required: Tests keep fixture helpers and fakes top-level.

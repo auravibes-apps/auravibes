@@ -1,5 +1,4 @@
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: prefer-moving-to-variable
 // Required: Existing code repeats lookups where extraction adds noise.
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';

@@ -1,6 +1,5 @@
 // Required: Existing thresholds and limits use numeric values.
 // Required: UI callbacks stay local to their widgets.
-// ignore_for_file: prefer-moving-to-variable
 // Required: Existing code repeats lookups where extraction adds noise.
 // ignore_for_file: prefer-single-widget-per-file
 // Required: Feature widgets keep closely related private widgets together.

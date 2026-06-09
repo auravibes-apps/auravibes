@@ -1,4 +1,3 @@
-// ignore_for_file: prefer-moving-to-variable
 // Required: Tests repeat finders and fixture lookups for clarity.
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';

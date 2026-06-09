@@ -1,5 +1,4 @@
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: prefer-moving-to-variable
 // Required: Existing code repeats lookups where extraction adds noise.
 // ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.

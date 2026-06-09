@@ -1,4 +1,3 @@
-// ignore_for_file: prefer-moving-to-variable
 // Required: Tests repeat finders and fixture lookups for clarity.
 import 'package:auravibes_app/features/chats/widgets/tool_call_response_modal.dart';
 import 'package:auravibes_ui/ui.dart';

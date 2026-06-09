@@ -1,4 +1,3 @@
-// ignore_for_file: prefer-moving-to-variable
 // Required: Existing code repeats lookups where extraction adds noise.
 
 import 'package:auravibes_app/features/models/models/add_model_provider_model.dart';

@@ -1,5 +1,4 @@
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-moving-to-variable
 // Required: Existing code repeats lookups where extraction adds noise.
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';

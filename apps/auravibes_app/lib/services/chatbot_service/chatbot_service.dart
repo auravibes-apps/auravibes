@@ -1,6 +1,5 @@
 // Required: Existing thresholds and limits use numeric values.
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-moving-to-variable
 // Required: Existing code repeats lookups where extraction adds noise.
 import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';

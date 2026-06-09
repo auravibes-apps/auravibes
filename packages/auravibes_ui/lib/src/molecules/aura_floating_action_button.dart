@@ -1,5 +1,3 @@
-// ignore_for_file: prefer-moving-to-variable
-// Required: UI components repeat theme and layout lookups intentionally.
 
 import 'package:auravibes_ui/src/atoms/aura_icon.dart';
 import 'package:auravibes_ui/src/atoms/aura_text.dart';

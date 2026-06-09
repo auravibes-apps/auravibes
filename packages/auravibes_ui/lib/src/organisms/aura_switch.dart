@@ -1,6 +1,4 @@
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-moving-to-variable
-// Required: UI components repeat theme and layout lookups intentionally.
 
 import 'package:auravibes_ui/src/atoms/aura_loading_circle.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';

@@ -1,4 +1,3 @@
-// ignore_for_file: prefer-moving-to-variable
 // Required: Tests repeat generation config lookups for readability.
 // ignore_for_file: prefer-static-class
 // Required: Tests keep helper functions top-level.

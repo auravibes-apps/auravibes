@@ -1,6 +1,4 @@
 // Required: Component callbacks stay colocated with UI state.
-// ignore_for_file: prefer-moving-to-variable
-// Required: UI components repeat theme and layout lookups intentionally.
 import 'dart:async';
 
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';

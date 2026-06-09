@@ -1,7 +1,6 @@
 // Required: Existing thresholds and limits use numeric values.
 // Required: Existing argument values intentionally repeat.
 // Required: UI callbacks stay local to their widgets.
-// ignore_for_file: prefer-moving-to-variable
 // Required: Existing code repeats lookups where extraction adds noise.
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/widgets/add_mcp_modal.dart';
