@@ -188,8 +188,8 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
     });
   }
 
-  void _initializeForm(BuildContext context, SkillDetail? detail) {
-    if (detail == null || _initialized) return;
+  void _initializeForm(BuildContext context, SkillDetail detail) {
+    if (_initialized) return;
 
     _titleController.text =
         detail.titleKey?.tr(context: context) ?? detail.title;

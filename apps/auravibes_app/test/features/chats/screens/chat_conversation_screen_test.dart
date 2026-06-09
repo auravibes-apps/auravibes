@@ -140,7 +140,7 @@ void main() {
     );
     final _ = await tester.pumpAndSettle();
 
-    expect(find.byType(AppErrorWidget), findsOneWidget);
+    expect(find.byType(AppErrorWidget<Object>), findsOneWidget);
   });
 
   testWidgets('shows error for ConversationNotFound result', (tester) async {
@@ -167,7 +167,7 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(find.byType(AppErrorWidget), findsOneWidget);
+    expect(find.byType(AppErrorWidget<String>), findsOneWidget);
   });
 
   testWidgets('shows error for ConversationWorkspaceMismatch result', (
@@ -198,7 +198,7 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(find.byType(AppErrorWidget), findsOneWidget);
+    expect(find.byType(AppErrorWidget<String>), findsOneWidget);
   });
 
   test('ConversationFound stores conversation', () {
@@ -269,7 +269,7 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(find.byType(AppErrorWidget), findsOneWidget);
+    expect(find.byType(AppErrorWidget<String>), findsOneWidget);
   });
 
   test('ConversationEntity hasValidTitle returns true for non-empty title', () {
