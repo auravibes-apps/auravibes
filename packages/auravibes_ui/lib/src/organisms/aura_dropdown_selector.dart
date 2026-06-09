@@ -6,8 +6,6 @@
 // Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: always-remove-listener
-// Required: Listener is removed through nullable focus node field in dispose.
 // ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-extracting-callbacks
@@ -112,12 +110,9 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
   @override
   void initState() {
     super.initState();
-    final focusNode = widget.focusNode ?? FocusNode();
-    _focusNode = focusNode;
+    _focusNode = widget.focusNode ?? FocusNode();
     // Listen for focus changes
-    focusNode.addListener(
-      _onFocusChange,
-    ); // ignore: always-remove-listener - Removed in dispose via field.
+    _focusNode?.addListener(_onFocusChange);
   }
 
   @override
