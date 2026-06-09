@@ -1,7 +1,5 @@
 // ignore_for_file: prefer-match-file-name
 // Required: This internal package keeps its small provider API in one file.
-// ignore_for_file: avoid-substring
-// Required: Streaming parser uses protocol byte offsets.
 // ignore_for_file: format-comment
 // Required: Protocol comments mirror upstream OpenAI-compatible naming.
 // ignore_for_file: member-ordering
@@ -243,7 +241,7 @@ class OpenAICompatReasoningPlugin extends GenkitPlugin {
               .transform(utf8.decoder)
               .transform(const LineSplitter())) {
         if (!line.startsWith('data:')) continue;
-        final data = line.substring(5).trim();
+        final data = line.replaceFirst('data:', '').trim();
         if (data.isEmpty || data == '[DONE]') continue;
 
         final chunk = jsonDecode(data) as Map<String, dynamic>;
@@ -312,9 +310,7 @@ class OpenAICompatReasoningPlugin extends GenkitPlugin {
   }
 
   Uri _chatCompletionsUri() {
-    final normalized = baseUrl.endsWith('/')
-        ? baseUrl.substring(0, baseUrl.length - 1)
-        : baseUrl;
+    final normalized = baseUrl.replaceFirst(RegExp(r'/$'), '');
     return Uri.parse('$normalized/chat/completions');
   }
 

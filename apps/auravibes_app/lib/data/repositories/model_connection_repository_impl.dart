@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-substring
-// Required: Existing parsing uses code-unit substring offsets.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
@@ -13,6 +11,7 @@ import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.d
 import 'package:auravibes_app/domain/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/model_provider_services/model_provider.dart';
+import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:drift/drift.dart';
 
 /// Implementation of the [ModelConnectionRepository] interface.
@@ -49,9 +48,7 @@ class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
     }
 
     // Extract last 6 characters for display
-    final keySuffix = modelConnection.key.length >= 6
-        ? modelConnection.key.substring(modelConnection.key.length - 6)
-        : modelConnection.key;
+    final keySuffix = modelConnection.key.lastCharacters(6);
 
     // Store API key encrypted
     final encryptedApiKey = await _encryptionService.encrypt(
@@ -239,7 +236,7 @@ class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
   }
 
   String _keySuffix(String key) {
-    return key.length >= 6 ? key.substring(key.length - 6) : key;
+    return key.lastCharacters(6);
   }
 
   ModelConnectionEntity _modelProviderTableToEntity(

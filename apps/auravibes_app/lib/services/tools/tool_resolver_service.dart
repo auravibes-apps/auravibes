@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-substring
-// Required: Existing parsing uses code-unit substring offsets.
 // ignore_for_file: no-equal-arguments
 // Required: Existing argument values intentionally repeat.
 // ignore_for_file: format-comment
@@ -132,21 +130,12 @@ class ToolResolverService {
   /// Note: Tool names must match pattern ^[a-zA-Z0-9_-]{1,128}$
   /// so we use underscores as separators instead of colons.
   static _BuiltInToolIdComponents? _parseBuiltInToolId(String compositeId) {
-    if (!compositeId.startsWith('built_in_')) {
-      return null;
-    }
+    final match = RegExp(r'^built_in_([^_]+)_(.+)$').firstMatch(compositeId);
+    if (match == null) return null;
 
-    // Remove 'built_in_' prefix
-    final withoutPrefix = compositeId.substring(9);
-
-    // Parse format: <table_id>_<tool_identifier>
-    final firstUnderscoreIdx = withoutPrefix.indexOf('_');
-    if (firstUnderscoreIdx <= 0) {
-      return null;
-    }
-
-    final tableId = withoutPrefix.substring(0, firstUnderscoreIdx);
-    final toolIdentifier = withoutPrefix.substring(firstUnderscoreIdx + 1);
+    final tableId = match.group(1);
+    final toolIdentifier = match.group(2);
+    if (tableId == null || toolIdentifier == null) return null;
 
     if (tableId.isEmpty || toolIdentifier.isEmpty) {
       return null;
@@ -159,18 +148,12 @@ class ToolResolverService {
   }
 
   static _NativeToolIdComponents? _parseNativeToolId(String compositeId) {
-    if (!compositeId.startsWith('native_')) {
-      return null;
-    }
+    final match = RegExp(r'^native_([^_]+)_(.+)$').firstMatch(compositeId);
+    if (match == null) return null;
 
-    final withoutPrefix = compositeId.substring(7);
-    final firstUnderscoreIdx = withoutPrefix.indexOf('_');
-    if (firstUnderscoreIdx <= 0) {
-      return null;
-    }
-
-    final tableId = withoutPrefix.substring(0, firstUnderscoreIdx);
-    final toolIdentifier = withoutPrefix.substring(firstUnderscoreIdx + 1);
+    final tableId = match.group(1);
+    final toolIdentifier = match.group(2);
+    if (tableId == null || toolIdentifier == null) return null;
 
     if (tableId.isEmpty || toolIdentifier.isEmpty) {
       return null;
@@ -192,14 +175,16 @@ class ToolResolverService {
     if (!isUserTool && !isAppTool) return null;
 
     final source = isUserTool ? 'user' : 'app';
-    final withoutPrefix = compositeId.substring(
-      isUserTool ? userPrefix.length : appPrefix.length,
-    );
-    final separatorIndex = withoutPrefix.indexOf('__');
-    if (separatorIndex <= 0) return null;
+    final prefix = isUserTool ? userPrefix : appPrefix;
+    final match = RegExp(
+      '^${RegExp.escape(prefix)}'
+      r'(.+)__(.+)$',
+    ).firstMatch(compositeId);
+    if (match == null) return null;
 
-    final skillSlug = withoutPrefix.substring(0, separatorIndex);
-    final toolSlug = withoutPrefix.substring(separatorIndex + 2);
+    final skillSlug = match.group(1);
+    final toolSlug = match.group(2);
+    if (skillSlug == null || toolSlug == null) return null;
     if (skillSlug.isEmpty || toolSlug.isEmpty) return null;
 
     return _SkillTemplateToolIdComponents(

@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: avoid-substring
-// Required: Existing parsing uses code-unit substring offsets.
 // ignore_for_file: cascade_invocations
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
@@ -16,6 +14,7 @@
 import 'package:auravibes_app/services/url/models/url_content_format.dart';
 import 'package:auravibes_app/services/url/models/url_request_method.dart';
 import 'package:auravibes_app/services/url/models/url_response.dart';
+import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart' as parser;
 
@@ -579,7 +578,7 @@ class UrlContentTransformer {
     StringBuffer buffer,
     String tag,
   ) {
-    final level = int.parse(tag.substring(1));
+    final level = int.parse(tag.replaceFirst('h', ''));
     final inlineBuffer = StringBuffer();
     _processInlineChildren(element, inlineBuffer);
     final text = inlineBuffer.toString().trim();
@@ -672,7 +671,7 @@ class UrlContentTransformer {
     }
     return (
       text:
-          '${body.substring(0, maxOutputLength - _truncationSuffix.length)}'
+          '${body.firstCharacters(maxOutputLength - _truncationSuffix.length)}'
           '$_truncationSuffix',
       truncated: true,
     );

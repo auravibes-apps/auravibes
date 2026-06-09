@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-substring
-// Required: Tests assert existing code-unit substring behavior.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: member-ordering
@@ -19,6 +17,7 @@ import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
 import 'package:auravibes_app/services/chatbot_service/provider_factory.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/secret_key_manager.dart';
+import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:collection/collection.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -478,12 +477,12 @@ void main() {
 String _stripQuotes(String title) {
   var processed = title.trim();
   if (processed.startsWith('"') && processed.endsWith('"')) {
-    processed = processed.substring(1, processed.length - 1);
+    processed = processed.withoutEdgeCharacters();
   }
   if (processed.length > 1 &&
-      processed.codeUnitAt(0) == 39 &&
-      processed.codeUnitAt(processed.length - 1) == 39) {
-    processed = processed.substring(1, processed.length - 1);
+      processed.startsWith("'") &&
+      processed.endsWith("'")) {
+    processed = processed.withoutEdgeCharacters();
   }
   return processed;
 }
@@ -491,10 +490,10 @@ String _stripQuotes(String title) {
 String _stripPrefixes(String title) {
   var processed = title.trim();
   if (processed.startsWith('Title:')) {
-    processed = processed.substring(6).trim();
+    processed = processed.replaceFirst('Title:', '').trim();
   }
   if (processed.startsWith('Conversation:')) {
-    processed = processed.substring(13).trim();
+    processed = processed.replaceFirst('Conversation:', '').trim();
   }
   return processed;
 }
@@ -502,23 +501,20 @@ String _stripPrefixes(String title) {
 String _processTitle(String title) {
   var processed = title.trim();
   if (processed.startsWith('"') && processed.endsWith('"')) {
-    processed = processed.substring(1, processed.length - 1);
+    processed = processed.withoutEdgeCharacters();
   }
   if (processed.length > 1 &&
-      processed.codeUnitAt(0) == 39 &&
-      processed.codeUnitAt(processed.length - 1) == 39) {
-    processed = processed.substring(1, processed.length - 1);
+      processed.startsWith("'") &&
+      processed.endsWith("'")) {
+    processed = processed.withoutEdgeCharacters();
   }
   if (processed.startsWith('Title:')) {
-    processed = processed.substring(6).trim();
+    processed = processed.replaceFirst('Title:', '').trim();
   }
   if (processed.startsWith('Conversation:')) {
-    processed = processed.substring(13).trim();
+    processed = processed.replaceFirst('Conversation:', '').trim();
   }
-  if (processed.length > 50) {
-    return '${processed.substring(0, 47)}...';
-  }
-  return processed;
+  return processed.truncateCharacters(50);
 }
 
 ChatbotService _createService({ProviderFactory? providerFactory}) {

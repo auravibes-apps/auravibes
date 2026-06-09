@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-substring
-// Required: Existing parsing uses code-unit substring offsets.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
@@ -123,30 +121,17 @@ class McpToolIdComponents {
   final String toolIdentifier;
 
   static McpToolIdComponents? fromComposite(String compositeId) {
-    if (!compositeId.startsWith('mcp_')) {
+    final match = RegExp(r'^mcp_([^_]+)_([^_]+)_(.+)$').firstMatch(
+      compositeId,
+    );
+    if (match == null) return null;
+
+    final mcpServerId = match.group(1);
+    final slugName = match.group(2);
+    final toolIdentifier = match.group(3);
+    if (mcpServerId == null || slugName == null || toolIdentifier == null) {
       return null;
     }
-
-    // Remove 'mcp_' prefix
-    final withoutPrefix = compositeId.substring(4);
-
-    // Parse format: <id>_<slug>_<tool>
-    // Since slug and tool can contain underscores, we parse carefully
-    final firstUnderscoreIdx = withoutPrefix.indexOf('_');
-    if (firstUnderscoreIdx <= 0) {
-      return null;
-    }
-
-    final mcpServerId = withoutPrefix.substring(0, firstUnderscoreIdx);
-    final rest = withoutPrefix.substring(firstUnderscoreIdx + 1);
-
-    final secondUnderscoreIdx = rest.indexOf('_');
-    if (secondUnderscoreIdx <= 0) {
-      return null;
-    }
-
-    final slugName = rest.substring(0, secondUnderscoreIdx);
-    final toolIdentifier = rest.substring(secondUnderscoreIdx + 1);
 
     if (mcpServerId.isEmpty || slugName.isEmpty || toolIdentifier.isEmpty) {
       return null;

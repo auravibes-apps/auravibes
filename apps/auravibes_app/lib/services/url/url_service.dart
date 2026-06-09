@@ -1,7 +1,5 @@
 // ignore_for_file: prefer-async-await
 // Required: Existing Future chains preserve callback flow.
-// ignore_for_file: avoid-substring
-// Required: Existing parsing uses code-unit substring offsets.
 // ignore_for_file: no-equal-arguments
 // Required: Existing argument values intentionally repeat.
 // ignore_for_file: member-ordering
@@ -17,6 +15,7 @@ import 'dart:convert';
 import 'package:async/async.dart';
 import 'package:auravibes_app/services/url/models/url_request_method.dart';
 import 'package:auravibes_app/services/url/models/url_response.dart';
+import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:dio/dio.dart';
 
 class UrlService {
@@ -190,7 +189,7 @@ class UrlService {
         }
 
         buffer
-          ..write(decodedChunk.substring(0, remainingChars))
+          ..write(decodedChunk.firstCharacters(remainingChars))
           ..write(_truncatedSuffix);
         receivedChars += remainingChars;
         completer.complete(buffer.toString());
@@ -217,7 +216,7 @@ class UrlService {
       return body;
     }
 
-    return '${body.substring(0, _maxResponseSize)}$_truncatedSuffix';
+    return '${body.firstCharacters(_maxResponseSize)}$_truncatedSuffix';
   }
 
   Map<String, String> _buildEffectiveHeaders(UrlRequest request) {

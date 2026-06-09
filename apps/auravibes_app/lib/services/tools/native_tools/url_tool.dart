@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: avoid-substring
-// Required: Existing parsing uses code-unit substring offsets.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -183,19 +181,11 @@ final class UrlTool extends NativeToolEntity<String, String> {
   static const int _truncationNoteReserve = 55;
 
   List<String> _takeLines(String text, int limit) {
-    final lines = <String>[];
-    var start = 0;
-    for (var i = 0; i < text.length; i++) {
-      if (text[i] == '\n') {
-        lines.add(text.substring(start, i));
-        start = i + 1;
-        if (lines.length > limit) break;
-      }
+    final lines = text.split('\n');
+    if (lines.isNotEmpty && text.endsWith('\n')) {
+      final _ = lines.removeLast();
     }
-    if (start < text.length && lines.length <= limit) {
-      lines.add(text.substring(start));
-    }
-    return lines;
+    return lines.take(limit + 1).toList();
   }
 
   ({String body, bool truncated}) _truncateBody(

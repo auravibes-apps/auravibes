@@ -7,6 +7,7 @@ import 'package:auravibes_app/domain/entities/skill_credential_definition_entity
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/domain/repositories/skill_credentials_repository.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
+import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:drift/drift.dart';
 import 'package:logging/logging.dart';
 
@@ -207,9 +208,7 @@ class SkillCredentialsRepositoryImpl implements SkillCredentialsRepository {
   String? _keySuffix(Iterable<String> values) {
     final firstSecret = values.where((value) => value.isNotEmpty).firstOrNull;
     if (firstSecret == null) return null;
-    return firstSecret.length >= 6
-        ? firstSecret.substring(firstSecret.length - 6)
-        : firstSecret;
+    return firstSecret.lastCharacters(6);
   }
 
   Future<Map<String, SkillCredentialAttributeDefinition>> _attributeDefinitions(

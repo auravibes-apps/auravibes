@@ -1,13 +1,12 @@
 // ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: avoid-substring
-// Required: Existing parsing uses code-unit substring offsets.
 // ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 import 'package:auravibes_app/domain/models/mcp_connection_view_status.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
+import 'package:auravibes_app/utils/string_extensions.dart';
 
 mixin ToolsGroupMixin {
   ToolsGroupEntity? get group;
@@ -48,8 +47,7 @@ mixin ToolsGroupMixin {
   String? get truncatedErrorMessage {
     final message = mcpErrorMessage;
     if (message == null) return null;
-    if (message.length <= 50) return message;
-    return '${message.substring(0, 47)}...';
+    return message.truncateCharacters(50);
   }
 
   bool get isEnabled => group?.isEnabled ?? true;
