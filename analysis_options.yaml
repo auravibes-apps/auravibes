@@ -150,6 +150,7 @@ plugins:
       prefer-single-quotes: true
       prefer-using-list-view: true
       provide-correct-intl-args: true
+      use-design-system-item: true
       prefer-trailing-comma: true
       tag-name: true
 
