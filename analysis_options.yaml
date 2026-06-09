@@ -149,6 +149,7 @@ plugins:
       prefer-provide-intl-description: true
       prefer-single-quotes: true
       prefer-using-list-view: true
+      provide-correct-intl-args: true
       prefer-trailing-comma: true
       tag-name: true
 
