@@ -50,7 +50,7 @@ class SelectWorkspaceModelSelectionWidget extends HookConsumerWidget
   final String? workspaceModelSelectionId;
   final void Function(String?) selectWorkspaceModelSelectionId;
 
-  /// Currently selected provider name (not ID).
+  /// Currently selected provider option key.
   final String? selectedProviderId;
 
   /// Callback when provider selection changes.
@@ -176,10 +176,13 @@ class SelectChatData extends HookWidget {
     final filteredModels = searchValue.value.isEmpty
         ? modelsForProvider
         : modelsForProvider.where((model) {
-            final searchTerm = model.workspaceModelSelection.modelId
-                .toLowerCase();
+            final selection = model.workspaceModelSelection;
+            final searchTerm = searchValue.value.toLowerCase();
+            final modelId = selection.modelId.toLowerCase();
+            final modelName = selection.modelName?.toLowerCase();
 
-            return searchTerm.contains(searchValue.value.toLowerCase());
+            return modelId.contains(searchTerm) ||
+                (modelName?.contains(searchTerm) ?? false);
           }).toList();
 
     if (groupedModels.isEmpty) {
@@ -191,10 +194,11 @@ class SelectChatData extends HookWidget {
       );
     }
 
-    final providerNames = groupedModels.keys.toList();
+    final providerIds = groupedModels.keys.toList();
 
     final provider = _ProviderDropdown(
-      providerNames: providerNames,
+      groupedModels: groupedModels,
+      providerIds: providerIds,
       selectedProvider: effectiveProviderId,
       onChanged: onSelectProviderCallback,
     );
@@ -244,29 +248,84 @@ class SelectChatData extends HookWidget {
 /// Provider dropdown widget - first step in two-step selection.
 class _ProviderDropdown extends StatelessWidget {
   const _ProviderDropdown({
-    required this.providerNames,
+    required this.groupedModels,
+    required this.providerIds,
     required this.selectedProvider,
     required this.onChanged,
   });
 
-  final List<String> providerNames;
+  final Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>
+  groupedModels;
+  final List<String> providerIds;
   final String? selectedProvider;
   final void Function(String?) onChanged;
 
   @override
   Widget build(BuildContext context) {
     return AuraDropdownSelector<String>(
-      options: providerNames
+      options: providerIds
           .map(
-            (name) => AuraDropdownOption(
-              value: name,
-              child: Text(name),
+            (providerId) => AuraDropdownOption(
+              value: providerId,
+              child: _ProviderOptionContent.fromModels(
+                models: groupedModels[providerId]!,
+                fallbackName: providerId,
+              ),
             ),
           )
           .toList(),
       value: selectedProvider,
       onChanged: onChanged,
       placeholder: const TextLocale(LocaleKeys.models_screens_select_provider),
+    );
+  }
+}
+
+class _ProviderOptionContent extends StatelessWidget {
+  const _ProviderOptionContent({
+    required this.providerName,
+    this.credentialName,
+  });
+
+  factory _ProviderOptionContent.fromModels({
+    required List<WorkspaceModelSelectionWithConnectionEntity> models,
+    required String fallbackName,
+  }) {
+    final model = models.firstOrNull;
+
+    return _ProviderOptionContent(
+      providerName: model?.modelsProvider.name ?? fallbackName,
+      credentialName: model?.modelConnection.name,
+    );
+  }
+
+  final String providerName;
+  final String? credentialName;
+
+  @override
+  Widget build(BuildContext context) {
+    final credentialName = this.credentialName;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AuraText(
+          child: Text(
+            providerName,
+            overflow: TextOverflow.ellipsis,
+          ),
+          style: AuraTextStyle.button,
+        ),
+        if (credentialName != null)
+          AuraText(
+            child: Text(
+              credentialName,
+              overflow: TextOverflow.ellipsis,
+            ),
+            style: AuraTextStyle.bodySmall,
+          ),
+      ],
     );
   }
 }
@@ -311,7 +370,7 @@ class _ModelDropdown extends StatelessWidget {
           .map(
             (model) => AuraDropdownOption(
               value: model.workspaceModelSelection.id,
-              child: Text(model.workspaceModelSelection.modelId),
+              child: _ModelOptionContent(model: model),
             ),
           )
           .toList(),
@@ -330,6 +389,38 @@ class _ModelDropdown extends StatelessWidget {
               ),
               padding: AuraEdgeInsetsGeometry.medium,
             ),
+    );
+  }
+}
+
+class _ModelOptionContent extends StatelessWidget {
+  const _ModelOptionContent({required this.model});
+
+  final WorkspaceModelSelectionWithConnectionEntity model;
+
+  @override
+  Widget build(BuildContext context) {
+    final selection = model.workspaceModelSelection;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AuraText(
+          child: Text(
+            selection.modelName ?? selection.modelId,
+            overflow: TextOverflow.ellipsis,
+          ),
+          style: AuraTextStyle.button,
+        ),
+        AuraText(
+          child: Text(
+            selection.modelId,
+            overflow: TextOverflow.ellipsis,
+          ),
+          style: AuraTextStyle.bodySmall,
+        ),
+      ],
     );
   }
 }

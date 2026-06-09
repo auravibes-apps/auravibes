@@ -92,15 +92,15 @@ final class ListWorkspaceModelSelectionsFamily extends $Family
   String toString() => r'listWorkspaceModelSelectionsProvider';
 }
 
-/// Groups models by provider name for two-step model selection.
-/// Returns a map where keys are provider names and values are lists of models.
+/// Groups models by connection id for two-step model selection.
+/// Returns a map where keys are credential-backed connection ids.
 
 @ProviderFor(listModelsGroupedByProvider)
 final listModelsGroupedByProviderProvider =
     ListModelsGroupedByProviderFamily._();
 
-/// Groups models by provider name for two-step model selection.
-/// Returns a map where keys are provider names and values are lists of models.
+/// Groups models by connection id for two-step model selection.
+/// Returns a map where keys are credential-backed connection ids.
 
 final class ListModelsGroupedByProviderProvider
     extends
@@ -118,8 +118,8 @@ final class ListModelsGroupedByProviderProvider
         $StreamProvider<
           Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>
         > {
-  /// Groups models by provider name for two-step model selection.
-  /// Returns a map where keys are provider names and values are lists of models.
+  /// Groups models by connection id for two-step model selection.
+  /// Returns a map where keys are credential-backed connection ids.
   ListModelsGroupedByProviderProvider._({
     required ListModelsGroupedByProviderFamily super.from,
     required String super.argument,
@@ -171,8 +171,8 @@ final class ListModelsGroupedByProviderProvider
 String _$listModelsGroupedByProviderHash() =>
     r'cb244814a31ca1aeb323f3f965073fb66447d0d0';
 
-/// Groups models by provider name for two-step model selection.
-/// Returns a map where keys are provider names and values are lists of models.
+/// Groups models by connection id for two-step model selection.
+/// Returns a map where keys are credential-backed connection ids.
 
 final class ListModelsGroupedByProviderFamily extends $Family
     with
@@ -191,8 +191,8 @@ final class ListModelsGroupedByProviderFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// Groups models by provider name for two-step model selection.
-  /// Returns a map where keys are provider names and values are lists of models.
+  /// Groups models by connection id for two-step model selection.
+  /// Returns a map where keys are credential-backed connection ids.
 
   ListModelsGroupedByProviderProvider call({required String workspaceId}) =>
       ListModelsGroupedByProviderProvider._(argument: workspaceId, from: this);
