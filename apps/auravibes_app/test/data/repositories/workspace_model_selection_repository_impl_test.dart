@@ -100,6 +100,14 @@ void main() {
             name: 'OpenAI',
             type: ModelProvidersTableType.openai,
           ),
+          apiModel: const ApiModelsTable(
+            modelProvider: 'openai',
+            id: 'openai',
+            name: 'GPT-4',
+            supportsReasoning: false,
+            limitContext: 128000,
+            limitOutput: 4096,
+          ),
         );
 
         when(
@@ -114,6 +122,7 @@ void main() {
         expect(result, hasLength(1));
         expect(result.firstOrNull?.workspaceModelSelection.id, 'sel-1');
         expect(result.firstOrNull?.workspaceModelSelection.modelId, 'openai');
+        expect(result.firstOrNull?.workspaceModelSelection.modelName, 'GPT-4');
         expect(result.firstOrNull?.modelConnection.id, 'conn-1');
         expect(result.firstOrNull?.modelConnection.name, 'My Connection');
         expect(result.firstOrNull?.modelsProvider.id, 'openai');

@@ -22,8 +22,8 @@ listWorkspaceModelSelections(
   );
 }
 
-/// Groups models by provider name for two-step model selection.
-/// Returns a map where keys are provider names and values are lists of models.
+/// Groups models by connection id for two-step model selection.
+/// Returns a map where keys are credential-backed connection ids.
 @riverpod
 Stream<Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>>
 listModelsGroupedByProvider(Ref ref, {required String workspaceId}) {
@@ -60,12 +60,32 @@ _groupModelsByProvider(
   final grouped = <String, List<WorkspaceModelSelectionWithConnectionEntity>>{};
 
   for (final model in models) {
-    final providerName = model.modelsProvider.name;
-    grouped.putIfAbsent(providerName, () => []).add(model);
+    final connectionId = model.modelConnection.id;
+    grouped.putIfAbsent(connectionId, () => []).add(model);
   }
 
-  // Sort provider names alphabetically (FR-006).
-  final sortedKeys = grouped.keys.toList()..sort();
+  final sortedKeys = grouped.keys.toList()
+    ..sort((left, right) => _compareProviderGroups(grouped, left, right));
 
   return {for (final key in sortedKeys) key: grouped[key]!};
+}
+
+int _compareProviderGroups(
+  Map<String, List<WorkspaceModelSelectionWithConnectionEntity>> grouped,
+  String left,
+  String right,
+) {
+  final leftModel = grouped[left]!.first;
+  final rightModel = grouped[right]!.first;
+  final providerCompare = leftModel.modelsProvider.name.compareTo(
+    rightModel.modelsProvider.name,
+  );
+  if (providerCompare != 0) return providerCompare;
+
+  final credentialCompare = leftModel.modelConnection.name.compareTo(
+    rightModel.modelConnection.name,
+  );
+  if (credentialCompare != 0) return credentialCompare;
+
+  return left.compareTo(right);
 }

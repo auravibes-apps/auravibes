@@ -46,6 +46,41 @@ class _FakeWorkspaceModelSelectionRepository
   }
 }
 
+WorkspaceModelSelectionWithConnectionEntity _makeSelection({
+  required String selectionId,
+  required String modelConnectionId,
+  required String modelConnectionName,
+  required String providerId,
+  required String providerName,
+  String? modelId,
+}) {
+  final now = DateTime(2026);
+
+  return WorkspaceModelSelectionWithConnectionEntity(
+    workspaceModelSelection: WorkspaceModelSelectionEntity(
+      id: selectionId,
+      modelId: modelId ?? 'model-$selectionId',
+      createdAt: now,
+      updatedAt: now,
+      modelConnectionId: modelConnectionId,
+    ),
+    modelConnection: ModelConnectionEntity(
+      id: modelConnectionId,
+      name: modelConnectionName,
+      key: 'key',
+      modelId: modelId ?? 'model-$selectionId',
+      createdAt: now,
+      updatedAt: now,
+      workspaceId: 'ws-1',
+    ),
+    modelsProvider: ApiModelProviderEntity(
+      id: providerId,
+      name: providerName,
+      type: null,
+    ),
+  );
+}
+
 void main() {
   group('listWorkspaceModelSelectionsProvider', () {
     test('returns selections for given workspace', () async {
@@ -188,77 +223,31 @@ void main() {
   });
 
   group('listModelsGroupedByProviderProvider', () {
-    test('groups models by provider name', () async {
-      final now = DateTime(2026);
+    test('groups models by model connection id', () async {
       final selections = [
-        WorkspaceModelSelectionWithConnectionEntity(
-          workspaceModelSelection: WorkspaceModelSelectionEntity(
-            id: 'sel-1',
-            modelId: 'gpt-4',
-            createdAt: now,
-            updatedAt: now,
-            modelConnectionId: 'conn-1',
-          ),
-          modelConnection: ModelConnectionEntity(
-            id: 'conn-1',
-            name: 'OpenAI Key',
-            key: 'key',
-            modelId: 'gpt-4',
-            createdAt: now,
-            updatedAt: now,
-            workspaceId: 'ws-1',
-          ),
-          modelsProvider: const ApiModelProviderEntity(
-            id: 'openai',
-            name: 'OpenAI',
-            type: null,
-          ),
+        _makeSelection(
+          selectionId: 'sel-1',
+          modelConnectionId: 'conn-1',
+          modelConnectionName: 'OpenAI Key',
+          providerId: 'openai',
+          providerName: 'OpenAI',
+          modelId: 'gpt-4',
         ),
-        WorkspaceModelSelectionWithConnectionEntity(
-          workspaceModelSelection: WorkspaceModelSelectionEntity(
-            id: 'sel-2',
-            modelId: 'claude-3',
-            createdAt: now,
-            updatedAt: now,
-            modelConnectionId: 'conn-2',
-          ),
-          modelConnection: ModelConnectionEntity(
-            id: 'conn-2',
-            name: 'Anthropic Key',
-            key: 'key',
-            modelId: 'claude-3',
-            createdAt: now,
-            updatedAt: now,
-            workspaceId: 'ws-1',
-          ),
-          modelsProvider: const ApiModelProviderEntity(
-            id: 'anthropic',
-            name: 'Anthropic',
-            type: null,
-          ),
+        _makeSelection(
+          selectionId: 'sel-2',
+          modelConnectionId: 'conn-2',
+          modelConnectionName: 'Anthropic Key',
+          providerId: 'anthropic',
+          providerName: 'Anthropic',
+          modelId: 'claude-3',
         ),
-        WorkspaceModelSelectionWithConnectionEntity(
-          workspaceModelSelection: WorkspaceModelSelectionEntity(
-            id: 'sel-3',
-            modelId: 'gpt-4o',
-            createdAt: now,
-            updatedAt: now,
-            modelConnectionId: 'conn-3',
-          ),
-          modelConnection: ModelConnectionEntity(
-            id: 'conn-3',
-            name: 'OpenAI Key 2',
-            key: 'key',
-            modelId: 'gpt-4o',
-            createdAt: now,
-            updatedAt: now,
-            workspaceId: 'ws-1',
-          ),
-          modelsProvider: const ApiModelProviderEntity(
-            id: 'openai',
-            name: 'OpenAI',
-            type: null,
-          ),
+        _makeSelection(
+          selectionId: 'sel-3',
+          modelConnectionId: 'conn-3',
+          modelConnectionName: 'OpenAI Key 2',
+          providerId: 'openai',
+          providerName: 'OpenAI',
+          modelId: 'gpt-4o',
         ),
       ];
       final container = ProviderContainer(
@@ -278,106 +267,160 @@ void main() {
 
       final result = await container.read(provider.future);
 
-      expect(result.keys, equals(['Anthropic', 'OpenAI']));
-      expect(result['OpenAI'], hasLength(2));
-      expect(result['Anthropic'], hasLength(1));
+      expect(result.keys, equals(['conn-2', 'conn-1', 'conn-3']));
+      expect(result['conn-1'], hasLength(1));
+      expect(result['conn-2'], hasLength(1));
+      expect(result['conn-3'], hasLength(1));
     });
 
-    test('sorts provider groups alphabetically by provider name', () async {
-      final now = DateTime(2026);
+    test('keeps multiple credentials for the same provider separate', () async {
       final selections = [
-        WorkspaceModelSelectionWithConnectionEntity(
-          workspaceModelSelection: WorkspaceModelSelectionEntity(
-            id: 'sel-zebra',
-            modelId: 'model-z',
-            createdAt: now,
-            updatedAt: now,
+        _makeSelection(
+          selectionId: 'sel-1',
+          modelConnectionId: 'anthropic-work',
+          modelConnectionName: 'Work API Key',
+          providerId: 'anthropic',
+          providerName: 'Anthropic',
+          modelId: 'claude-sonnet-4',
+        ),
+        _makeSelection(
+          selectionId: 'sel-2',
+          modelConnectionId: 'anthropic-personal',
+          modelConnectionName: 'Personal API Key',
+          providerId: 'anthropic',
+          providerName: 'Anthropic',
+          modelId: 'claude-opus-4',
+        ),
+      ];
+      final container = ProviderContainer(
+        overrides: [
+          workspaceModelSelectionRepositoryProvider.overrideWithValue(
+            _FakeWorkspaceModelSelectionRepository(selections),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final provider = listModelsGroupedByProviderProvider(workspaceId: 'ws-1');
+      final subscription = container.listen(provider, (_, _) {
+        final _ = Object();
+      });
+      addTearDown(subscription.close);
+
+      final result = await container.read(provider.future);
+
+      expect(result.keys, equals(['anthropic-personal', 'anthropic-work']));
+      expect(
+        result['anthropic-personal']?.single.modelConnection.name,
+        'Personal API Key',
+      );
+      expect(
+        result['anthropic-work']?.single.modelConnection.name,
+        'Work API Key',
+      );
+    });
+
+    test(
+      'keeps duplicate credential names separate by connection id',
+      () async {
+        final selections = [
+          _makeSelection(
+            selectionId: 'sel-1',
+            modelConnectionId: 'anthropic-a',
+            modelConnectionName: 'Default',
+            providerId: 'anthropic',
+            providerName: 'Anthropic',
+          ),
+          _makeSelection(
+            selectionId: 'sel-2',
+            modelConnectionId: 'anthropic-b',
+            modelConnectionName: 'Default',
+            providerId: 'anthropic',
+            providerName: 'Anthropic',
+          ),
+        ];
+        final container = ProviderContainer(
+          overrides: [
+            workspaceModelSelectionRepositoryProvider.overrideWithValue(
+              _FakeWorkspaceModelSelectionRepository(selections),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        final provider = listModelsGroupedByProviderProvider(
+          workspaceId: 'ws-1',
+        );
+        final subscription = container.listen(provider, (_, _) {
+          final _ = Object();
+        });
+        addTearDown(subscription.close);
+
+        final result = await container.read(provider.future);
+
+        expect(result.keys, equals(['anthropic-a', 'anthropic-b']));
+        expect(
+          result['anthropic-a']?.single.workspaceModelSelection.id,
+          'sel-1',
+        );
+        expect(
+          result['anthropic-b']?.single.workspaceModelSelection.id,
+          'sel-2',
+        );
+      },
+    );
+
+    test(
+      'sorts provider groups by provider name then credential name',
+      () async {
+        final selections = [
+          _makeSelection(
+            selectionId: 'sel-zebra',
             modelConnectionId: 'conn-z',
+            modelConnectionName: 'Zebra Key',
+            providerId: 'zebra',
+            providerName: 'Zebra',
           ),
-          modelConnection: ModelConnectionEntity(
-            id: 'conn-z',
-            name: 'Zebra Key',
-            key: 'key',
-            modelId: 'model-z',
-            createdAt: now,
-            updatedAt: now,
-            workspaceId: 'ws-1',
+          _makeSelection(
+            selectionId: 'sel-work',
+            modelConnectionId: 'conn-work',
+            modelConnectionName: 'Work Key',
+            providerId: 'anthropic',
+            providerName: 'Anthropic',
           ),
-          modelsProvider: const ApiModelProviderEntity(
-            id: 'zebra',
-            name: 'Zebra',
-            type: null,
+          _makeSelection(
+            selectionId: 'sel-personal',
+            modelConnectionId: 'conn-personal',
+            modelConnectionName: 'Personal Key',
+            providerId: 'anthropic',
+            providerName: 'Anthropic',
           ),
-        ),
-        WorkspaceModelSelectionWithConnectionEntity(
-          workspaceModelSelection: WorkspaceModelSelectionEntity(
-            id: 'sel-apple',
-            modelId: 'model-a',
-            createdAt: now,
-            updatedAt: now,
-            modelConnectionId: 'conn-a',
-          ),
-          modelConnection: ModelConnectionEntity(
-            id: 'conn-a',
-            name: 'Apple Key',
-            key: 'key',
-            modelId: 'model-a',
-            createdAt: now,
-            updatedAt: now,
-            workspaceId: 'ws-1',
-          ),
-          modelsProvider: const ApiModelProviderEntity(
-            id: 'apple',
-            name: 'Apple',
-            type: null,
-          ),
-        ),
-        WorkspaceModelSelectionWithConnectionEntity(
-          workspaceModelSelection: WorkspaceModelSelectionEntity(
-            id: 'sel-microsoft',
-            modelId: 'model-m',
-            createdAt: now,
-            updatedAt: now,
-            modelConnectionId: 'conn-m',
-          ),
-          modelConnection: ModelConnectionEntity(
-            id: 'conn-m',
-            name: 'Microsoft Key',
-            key: 'key',
-            modelId: 'model-m',
-            createdAt: now,
-            updatedAt: now,
-            workspaceId: 'ws-1',
-          ),
-          modelsProvider: const ApiModelProviderEntity(
-            id: 'microsoft',
-            name: 'Microsoft',
-            type: null,
-          ),
-        ),
-      ];
-      final container = ProviderContainer(
-        overrides: [
-          workspaceModelSelectionRepositoryProvider.overrideWithValue(
-            _FakeWorkspaceModelSelectionRepository(selections),
-          ),
-        ],
-      );
-      addTearDown(container.dispose);
+        ];
+        final container = ProviderContainer(
+          overrides: [
+            workspaceModelSelectionRepositoryProvider.overrideWithValue(
+              _FakeWorkspaceModelSelectionRepository(selections),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
 
-      final provider = listModelsGroupedByProviderProvider(workspaceId: 'ws-1');
-      final subscription = container.listen(provider, (_, _) {
-        final _ = Object();
-      });
-      addTearDown(subscription.close);
+        final provider = listModelsGroupedByProviderProvider(
+          workspaceId: 'ws-1',
+        );
+        final subscription = container.listen(provider, (_, _) {
+          final _ = Object();
+        });
+        addTearDown(subscription.close);
 
-      final result = await container.read(provider.future);
+        final result = await container.read(provider.future);
 
-      expect(result.keys, equals(['Apple', 'Microsoft', 'Zebra']));
-      expect(result['Apple'], hasLength(1));
-      expect(result['Microsoft'], hasLength(1));
-      expect(result['Zebra'], hasLength(1));
-    });
+        expect(result.keys, equals(['conn-personal', 'conn-work', 'conn-z']));
+        expect(result['conn-personal'], hasLength(1));
+        expect(result['conn-work'], hasLength(1));
+        expect(result['conn-z'], hasLength(1));
+      },
+    );
 
     test('returns empty map when no selections', () async {
       final container = ProviderContainer(

@@ -89,6 +89,7 @@ class WorkspaceModelSelectionRepositoryImpl
         createdAt: withProvider.model.createdAt,
         updatedAt: withProvider.model.updatedAt,
         modelConnectionId: withProvider.model.modelConnectionId,
+        modelName: withProvider.apiModel?.name,
         supportsReasoning: withProvider.apiModel?.supportsReasoning ?? false,
       ),
       modelConnection: ModelConnectionEntity(
