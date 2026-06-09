@@ -113,41 +113,13 @@ class _AuraRadioOptions<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final spacing = context.auraTheme.spacing;
-    final onChanged = this.onChanged;
-    final radios = options.map((option) {
-      return AuraRadio<T>(
-        value: option.value,
-        groupValue: value,
-        onChanged: onChanged,
-        colorVariant: colorVariant,
-      );
-    }).toList();
 
     return switch (direction) {
       Axis.vertical => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           for (int i = 0; i < options.length; i++) ...[
-            GestureDetector(
-              child: Row(
-                children: [
-                  radios[i],
-                  SizedBox(width: spacing.sm),
-                  Flexible(child: options[i].label),
-                ],
-              ),
-              onTap: onChanged == null
-                  ? null
-                  : () => onChanged(options[i].value),
-              behavior: HitTestBehavior.opaque,
-            ),
-            if (options[i].subtitle != null)
-              Padding(
-                padding: EdgeInsets.only(
-                  left: AuraRadioGroup._kRadioVisualSize + spacing.sm,
-                ),
-                child: options[i].subtitle,
-              ),
+            _buildVerticalOption(options[i], spacing),
             if (i < options.length - 1) SizedBox(height: spacing.sm),
           ],
         ],
@@ -157,23 +129,73 @@ class _AuraRadioOptions<T> extends StatelessWidget {
         runSpacing: spacing.sm,
         children: [
           for (int i = 0; i < options.length; i++)
-            GestureDetector(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  radios[i],
-                  SizedBox(width: spacing.sm),
-                  Flexible(child: options[i].label),
-                ],
-              ),
-              onTap: onChanged == null
-                  ? null
-                  : () => onChanged(options[i].value),
-              behavior: HitTestBehavior.opaque,
-            ),
+            _buildHorizontalOption(options[i], spacing),
         ],
       ),
     };
+  }
+
+  Widget _buildVerticalOption(
+    AuraRadioOption<T> option,
+    AuraSpacingTheme spacing,
+  ) {
+    final subtitle = option.subtitle;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GestureDetector(
+          child: _buildOptionRow(option, spacing),
+          onTap: _buildOptionTap(option),
+          behavior: HitTestBehavior.opaque,
+        ),
+        if (subtitle != null)
+          Padding(
+            padding: EdgeInsets.only(
+              left: AuraRadioGroup._kRadioVisualSize + spacing.sm,
+            ),
+            child: subtitle,
+          ),
+      ],
+    );
+  }
+
+  Widget _buildHorizontalOption(
+    AuraRadioOption<T> option,
+    AuraSpacingTheme spacing,
+  ) {
+    return GestureDetector(
+      child: _buildOptionRow(option, spacing, shrinkWrap: true),
+      onTap: _buildOptionTap(option),
+      behavior: HitTestBehavior.opaque,
+    );
+  }
+
+  Widget _buildOptionRow(
+    AuraRadioOption<T> option,
+    AuraSpacingTheme spacing, {
+    bool shrinkWrap = false,
+  }) {
+    return Row(
+      mainAxisSize: shrinkWrap ? MainAxisSize.min : MainAxisSize.max,
+      children: [
+        AuraRadio<T>(
+          value: option.value,
+          groupValue: value,
+          onChanged: onChanged,
+          colorVariant: colorVariant,
+        ),
+        SizedBox(width: spacing.sm),
+        Flexible(child: option.label),
+      ],
+    );
+  }
+
+  VoidCallback? _buildOptionTap(AuraRadioOption<T> option) {
+    final onChanged = this.onChanged;
+    if (onChanged == null) return null;
+
+    return () => onChanged(option.value);
   }
 }
 
