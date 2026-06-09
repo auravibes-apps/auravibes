@@ -1,5 +1,3 @@
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 import 'package:auravibes_ui/src/molecules/aura_snack_bar_variant.dart';
@@ -202,7 +200,9 @@ void main() {
                       context: context,
                       content: const Text('With action'),
                       actionLabel: 'UNDO',
-                      onAction: () {},
+                      onAction: () {
+                        final _ = Object();
+                      },
                     );
                   },
                   child: const Text('Show'),

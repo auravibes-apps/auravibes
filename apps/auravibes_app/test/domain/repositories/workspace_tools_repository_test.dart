@@ -1,8 +1,7 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: cascade_invocations
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
+
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: prefer-correct-identifier-length
@@ -137,7 +136,9 @@ class _StubWorkspaceToolsRepository implements WorkspaceToolsRepository {
   Future<void> copyWorkspaceToolsToConversation(
     String workspaceId,
     String conversationId,
-  ) async {}
+  ) async {
+    final _ = Object();
+  }
 
   @override
   Future<bool> validateWorkspaceToolSetting(

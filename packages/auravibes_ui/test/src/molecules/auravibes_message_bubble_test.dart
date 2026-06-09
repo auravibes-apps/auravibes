@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
 
 import 'package:auravibes_ui/src/atoms/aura_message_status.dart';
 import 'package:auravibes_ui/src/molecules/aura_message_bubble.dart';
@@ -156,7 +154,9 @@ void main() {
             body: AuraMessageBubble(
               content: 'Tappable message',
               isUser: true,
-              onTap: () {},
+              onTap: () {
+                final _ = Object();
+              },
             ),
           ),
         ),
@@ -174,7 +174,9 @@ void main() {
             body: AuraMessageBubble(
               content: 'Long pressable message',
               isUser: true,
-              onLongPress: () {},
+              onLongPress: () {
+                final _ = Object();
+              },
             ),
           ),
         ),

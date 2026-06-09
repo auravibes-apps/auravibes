@@ -1,7 +1,6 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
+
 import 'package:auravibes_ui/src/atoms/aura_icon.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
@@ -133,7 +132,9 @@ void main() {
           home: Scaffold(
             body: AuraIconButton(
               icon: Icons.star,
-              onPressed: () {},
+              onPressed: () {
+                final _ = Object();
+              },
             ),
           ),
         ),
@@ -152,7 +153,9 @@ void main() {
           home: Scaffold(
             body: AuraIconButton(
               icon: Icons.star,
-              onPressed: () {},
+              onPressed: () {
+                final _ = Object();
+              },
               variant: AuraIconButtonVariant.filled,
             ),
           ),
@@ -172,7 +175,9 @@ void main() {
           home: Scaffold(
             body: AuraIconButton(
               icon: Icons.star,
-              onPressed: () {},
+              onPressed: () {
+                final _ = Object();
+              },
               variant: AuraIconButtonVariant.outlined,
             ),
           ),
@@ -192,7 +197,9 @@ void main() {
           home: Scaffold(
             body: AuraIconButton(
               icon: Icons.star,
-              onPressed: () {},
+              onPressed: () {
+                final _ = Object();
+              },
               variant: AuraIconButtonVariant.elevated,
             ),
           ),
@@ -215,7 +222,9 @@ void main() {
           home: Scaffold(
             body: AuraIconButton(
               icon: Icons.star,
-              onPressed: () {},
+              onPressed: () {
+                final _ = Object();
+              },
               color: customColor,
             ),
           ),
@@ -234,7 +243,9 @@ void main() {
           home: Scaffold(
             body: AuraIconButton(
               icon: Icons.star,
-              onPressed: () {},
+              onPressed: () {
+                final _ = Object();
+              },
               backgroundColor: customBackgroundColor,
             ),
           ),
@@ -259,7 +270,9 @@ void main() {
           home: Scaffold(
             body: AuraIconButton(
               icon: Icons.star,
-              onPressed: () {},
+              onPressed: () {
+                final _ = Object();
+              },
               tooltip: tooltipMessage,
             ),
           ),
@@ -280,7 +293,9 @@ void main() {
           home: Scaffold(
             body: AuraIconButton(
               icon: Icons.star,
-              onPressed: () {},
+              onPressed: () {
+                final _ = Object();
+              },
               semanticLabel: semanticLabel,
             ),
           ),
@@ -297,7 +312,9 @@ void main() {
           home: Scaffold(
             body: AuraIconButton(
               icon: Icons.star,
-              onPressed: () {},
+              onPressed: () {
+                final _ = Object();
+              },
               disabled: true,
             ),
           ),

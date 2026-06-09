@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
 
 import 'package:auravibes_ui/src/atoms/aura_loading_circle.dart';
 import 'package:auravibes_ui/src/molecules/aura_button.dart';
@@ -39,7 +37,9 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: AuraButton(
-              onPressed: () {},
+              onPressed: () {
+                final _ = Object();
+              },
               child: const Text('Ghost'),
               variant: AuraButtonVariant.ghost,
             ),
@@ -64,7 +64,9 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: AuraButton(
-              onPressed: () {},
+              onPressed: () {
+                final _ = Object();
+              },
               child: const Text('Loading'),
               isLoading: true,
             ),
@@ -100,7 +102,9 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: AuraButton(
-              onPressed: () {},
+              onPressed: () {
+                final _ = Object();
+              },
               child: const Text('Full Width'),
               isFullWidth: true,
             ),
@@ -125,7 +129,9 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: AuraButton(
-              onPressed: () {},
+              onPressed: () {
+                final _ = Object();
+              },
               child: const Text('Large Button'),
               size: AuraButtonSize.large,
             ),

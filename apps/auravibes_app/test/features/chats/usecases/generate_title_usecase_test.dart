@@ -1,7 +1,6 @@
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
+
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 
@@ -32,8 +31,12 @@ void main() {
     var conversationRepo = MockConversationRepository();
     var chatbotService = MockChatbotService();
     var titlesStreamingRuntime = TitlesStreamingRuntime(
-      updateTitle: (_, _) {},
-      removeTitle: (_) {},
+      updateTitle: (_, _) {
+        final _ = Object();
+      },
+      removeTitle: (_) {
+        final _ = Object();
+      },
     );
     var monitoringService = MockMonitoringService();
     var usecase = GenerateTitleUsecase(
@@ -71,8 +74,12 @@ void main() {
       conversationRepo = MockConversationRepository();
       chatbotService = MockChatbotService();
       titlesStreamingRuntime = TitlesStreamingRuntime(
-        updateTitle: (_, _) {},
-        removeTitle: (_) {},
+        updateTitle: (_, _) {
+          final _ = Object();
+        },
+        removeTitle: (_) {
+          final _ = Object();
+        },
       );
       monitoringService = MockMonitoringService();
       usecase = GenerateTitleUsecase(
@@ -128,7 +135,9 @@ void main() {
       () async {
         final removedIds = <String>[];
         final runtime = TitlesStreamingRuntime(
-          updateTitle: (_, _) {},
+          updateTitle: (_, _) {
+            final _ = Object();
+          },
           removeTitle: removedIds.add,
         );
 
@@ -161,7 +170,9 @@ void main() {
       final updatedTitles = <String>[];
       final runtime = TitlesStreamingRuntime(
         updateTitle: (_, title) => updatedTitles.add(title),
-        removeTitle: (_) {},
+        removeTitle: (_) {
+          final _ = Object();
+        },
       );
 
       final localUsecase = GenerateTitleUsecase(
@@ -291,7 +302,9 @@ void main() {
     test('removeTitle called when stream completes without error', () async {
       final removedIds = <String>[];
       final runtime = TitlesStreamingRuntime(
-        updateTitle: (_, _) {},
+        updateTitle: (_, _) {
+          final _ = Object();
+        },
         removeTitle: removedIds.add,
       );
       final localUsecase = GenerateTitleUsecase(

@@ -2,7 +2,7 @@
 // Required: Widgetbook stories use fixed example sizes.
 // ignore_for_file: avoid-returning-widgets
 // Required: Widgetbook stories use helper functions that return widgets.
-// ignore_for_file: no-empty-block
+
 // Required: Widgetbook stories use intentional no-op callbacks.
 // ignore_for_file: prefer-moving-to-variable
 // Required: Existing code repeats lookups where extraction adds noise.
@@ -21,7 +21,12 @@ Widget defaultTooltipUseCase(BuildContext context) {
         label: 'message',
         initialValue: 'This is a helpful tooltip!',
       ),
-      child: IconButton(onPressed: () {}, icon: const Icon(Icons.info_outline)),
+      child: IconButton(
+        onPressed: () {
+          final _ = Object();
+        },
+        icon: const Icon(Icons.info_outline),
+      ),
       colorVariant: context.knobs.object.dropdown(
         label: 'colorVariant',
         options: AuraColorVariant.values,

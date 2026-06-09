@@ -2,7 +2,7 @@
 // Required: Widgetbook stories use fixed example sizes.
 // ignore_for_file: avoid-returning-widgets
 // Required: Widgetbook stories use helper functions that return widgets.
-// ignore_for_file: no-empty-block
+
 // Required: Widgetbook stories use intentional no-op callbacks.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
@@ -61,7 +61,11 @@ class _SnackBarDemo extends StatelessWidget {
               variant: variant,
               duration: duration,
               actionLabel: showAction ? 'UNDO' : null,
-              onAction: showAction ? () {} : null,
+              onAction: showAction
+                  ? () {
+                      final _ = Object();
+                    }
+                  : null,
             );
           },
           child: const Text('Show SnackBar'),

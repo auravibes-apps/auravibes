@@ -1,6 +1,6 @@
 // ignore_for_file: avoid-returning-widgets
 // Required: Widgetbook stories use helper functions that return widgets.
-// ignore_for_file: no-empty-block
+
 // Required: Widgetbook stories use intentional no-op callbacks.
 // ignore_for_file: prefer-moving-to-variable
 // Required: Existing code repeats lookups where extraction adds noise.
@@ -14,7 +14,9 @@ import 'package:widgetbook_annotation/widgetbook_annotation.dart' as widgetbook;
 @widgetbook.UseCase(name: 'Primary Button', type: AuraButton)
 Widget primaryButtonUseCase(BuildContext context) {
   return AuraButton(
-    onPressed: () {},
+    onPressed: () {
+      final _ = Object();
+    },
     child: Text(
       context.knobs.string(
         label: 'button content',

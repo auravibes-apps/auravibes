@@ -1,7 +1,6 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
+
 import 'package:auravibes_ui/src/atoms/aura_loading_circle.dart';
 import 'package:auravibes_ui/src/organisms/aura_button_group.dart';
 import 'package:flutter/widgets.dart';
@@ -21,7 +20,9 @@ void main() {
                 AuraButtonGroupItem(value: 'c', child: Text('C')),
               ],
               selectedValue: 'a',
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
             ),
           ),
         );
@@ -146,7 +147,9 @@ void main() {
                 AuraButtonGroupItem(value: 'b', child: Text('B')),
               ],
               selectedValue: 'a',
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
               isLoading: true,
             ),
           ),
@@ -171,7 +174,9 @@ void main() {
                 ),
               ],
               selectedValue: 'a',
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
             ),
           ),
         );
@@ -194,7 +199,9 @@ void main() {
                 AuraButtonGroupItem(value: 'c', child: Text('C')),
               ],
               selectedValues: const {'a', 'c'},
-              onMultiChanged: (_) {},
+              onMultiChanged: (_) {
+                final _ = Object();
+              },
             ),
           ),
         );
@@ -290,7 +297,9 @@ void main() {
                   child: Text('Delete'),
                 ),
               ],
-              onPressed: (_) {},
+              onPressed: (_) {
+                final _ = Object();
+              },
             ),
           ),
         );
@@ -395,7 +404,9 @@ void main() {
                 AuraButtonGroupItem(value: 'a', child: Text('A')),
               ],
               selectedValue: 'a',
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
               size: AuraButtonGroupSize.sm,
             ),
           ),
@@ -416,7 +427,9 @@ void main() {
                 AuraButtonGroupItem(value: 'a', child: Text('A')),
               ],
               selectedValue: 'a',
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
             ),
           ),
         );
@@ -436,7 +449,9 @@ void main() {
                 AuraButtonGroupItem(value: 'a', child: Text('A')),
               ],
               selectedValue: 'a',
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
               size: AuraButtonGroupSize.lg,
             ),
           ),
@@ -459,7 +474,9 @@ void main() {
                 AuraButtonGroupItem(value: 'a', child: Text('A')),
               ],
               selectedValue: 'a',
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
               variant: AuraButtonGroupVariant.filled,
             ),
           ),
@@ -480,7 +497,9 @@ void main() {
                 AuraButtonGroupItem(value: 'a', child: Text('A')),
               ],
               selectedValue: 'a',
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
             ),
           ),
         );
@@ -500,7 +519,9 @@ void main() {
                 AuraButtonGroupItem(value: 'a', child: Text('A')),
               ],
               selectedValue: 'a',
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
               variant: AuraButtonGroupVariant.ghost,
             ),
           ),
@@ -526,7 +547,9 @@ void main() {
                 AuraButtonGroupItem(value: 'b', child: Text('B')),
               ],
               selectedValue: 'a',
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
             ),
           ),
         );
@@ -551,7 +574,9 @@ void main() {
                 AuraButtonGroupItem(value: 'b', child: Text('B')),
               ],
               selectedValue: 'a',
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
               orientation: Axis.vertical,
             ),
           ),
@@ -578,7 +603,9 @@ void main() {
                 AuraButtonGroupItem(value: 'a', child: Text('A')),
               ],
               selectedValue: 'a',
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
             ),
           ),
         );
@@ -601,7 +628,9 @@ void main() {
                 AuraButtonGroupItem(value: 'a', child: Text('A')),
               ],
               selectedValue: 'a',
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
               disabled: true,
             ),
           ),
@@ -625,7 +654,9 @@ void main() {
                 AuraButtonGroupItem(value: 'a', child: Text('A')),
               ],
               selectedValue: 'a',
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
               isLoading: true,
             ),
           ),

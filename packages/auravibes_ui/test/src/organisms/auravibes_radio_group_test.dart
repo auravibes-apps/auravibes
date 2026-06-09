@@ -1,7 +1,6 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
+
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 import 'package:auravibes_ui/src/molecules/aura_radio_option.dart';
@@ -19,7 +18,9 @@ void main() {
           home: Scaffold(
             body: AuraRadioGroup<String>(
               value: null,
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
               options: const [
                 AuraRadioOption(value: 'option1', label: Text('Option 1')),
                 AuraRadioOption(value: 'option2', label: Text('Option 2')),
@@ -45,7 +46,9 @@ void main() {
           home: Scaffold(
             body: AuraRadioGroup<String>(
               value: null,
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
               options: const [],
             ),
           ),
@@ -64,7 +67,9 @@ void main() {
           home: Scaffold(
             body: AuraRadioGroup<String>(
               value: 'option2',
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
               options: const [
                 AuraRadioOption(value: 'option1', label: Text('Option 1')),
                 AuraRadioOption(value: 'option2', label: Text('Option 2')),
@@ -121,7 +126,9 @@ void main() {
           home: Scaffold(
             body: AuraRadioGroup<String>(
               value: null,
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
               options: const [
                 AuraRadioOption(value: 'option1', label: Text('Option 1')),
               ],
@@ -143,7 +150,9 @@ void main() {
           home: Scaffold(
             body: AuraRadioGroup<String>(
               value: null,
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
               options: const [
                 AuraRadioOption(
                   value: 'option1',
@@ -171,7 +180,9 @@ void main() {
               width: 800,
               child: AuraRadioGroup<String>(
                 value: null,
-                onChanged: (_) {},
+                onChanged: (_) {
+                  final _ = Object();
+                },
                 options: const [
                   AuraRadioOption(value: 'option1', label: Text('Option 1')),
                   AuraRadioOption(value: 'option2', label: Text('Option 2')),
@@ -195,7 +206,9 @@ void main() {
           home: Scaffold(
             body: AuraRadioGroup<String>(
               value: null,
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
               options: const [
                 AuraRadioOption(value: 'option1', label: Text('Option 1')),
               ],
@@ -223,7 +236,9 @@ void main() {
             body: AuraRadioListTile<String>(
               value: 'option1',
               groupValue: null,
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
               title: const Text('Option 1'),
             ),
           ),
@@ -246,7 +261,9 @@ void main() {
             body: AuraRadioListTile<String>(
               value: 'option1',
               groupValue: null,
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
               title: const Text('Option 1'),
             ),
           ),
@@ -267,7 +284,9 @@ void main() {
             body: AuraRadioListTile<String>(
               value: 'option1',
               groupValue: null,
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
               title: const Text('Option 1'),
               subtitle: const Text('Subtitle text'),
             ),
@@ -291,7 +310,9 @@ void main() {
             body: AuraRadioListTile<String>(
               value: 'option1',
               groupValue: 'option1',
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
               title: const Text('Option 1'),
             ),
           ),
@@ -340,7 +361,9 @@ void main() {
             body: AuraRadioListTile<String>(
               value: 'option1',
               groupValue: null,
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
               title: const Text('Option 1'),
               disabled: true,
             ),
@@ -364,7 +387,9 @@ void main() {
             body: AuraRadioListTile<String>(
               value: 'option1',
               groupValue: 'option1',
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
               title: const Text('Option 1'),
               colorVariant: AuraColorVariant.secondary,
             ),

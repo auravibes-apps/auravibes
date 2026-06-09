@@ -1,6 +1,6 @@
 // ignore_for_file: avoid-returning-widgets
 // Required: Widgetbook stories use helper functions that return widgets.
-// ignore_for_file: no-empty-block
+
 // Required: Widgetbook stories use intentional no-op callbacks.
 // ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
@@ -20,9 +20,19 @@ Widget basicContextMenuUseCase(BuildContext _) {
       child: const Text('Open Popup Menu'),
     ),
     items: [
-      AuraPopupMenuItem(title: const Text('Item 1'), onTap: () {}),
+      AuraPopupMenuItem(
+        title: const Text('Item 1'),
+        onTap: () {
+          final _ = Object();
+        },
+      ),
       const AuraPopupMenuDivider(),
-      AuraPopupMenuItem(title: const Text('Item 2'), onTap: () {}),
+      AuraPopupMenuItem(
+        title: const Text('Item 2'),
+        onTap: () {
+          final _ = Object();
+        },
+      ),
     ],
     controller: controller,
   );

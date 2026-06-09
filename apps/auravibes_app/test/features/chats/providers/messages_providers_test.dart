@@ -2,8 +2,7 @@
 // Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
+
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -224,7 +223,9 @@ void main() {
     test('returns empty list when no messages', () async {
       final _ = fixture.container.listen(
         chatMessagesProvider,
-        (_, _) {},
+        (_, _) {
+          final _ = Object();
+        },
         fireImmediately: true,
       );
       fixture.repository.emit([]);
@@ -236,7 +237,9 @@ void main() {
     test('returns message ids from messages', () async {
       final _ = fixture.container.listen(
         chatMessagesProvider,
-        (_, _) {},
+        (_, _) {
+          final _ = Object();
+        },
         fireImmediately: true,
       );
       fixture.repository.emit([
@@ -259,7 +262,9 @@ void main() {
     test('returns false when message is not streaming', () async {
       final _ = fixture.container.listen(
         chatMessagesProvider,
-        (_, _) {},
+        (_, _) {
+          final _ = Object();
+        },
         fireImmediately: true,
       );
       fixture.repository.emit([
@@ -275,10 +280,18 @@ void main() {
 
     test('returns true when message is streaming', () async {
       fixture.container
-        ..listen(chatMessagesProvider, (_, _) {}, fireImmediately: true)
+        ..listen(
+          chatMessagesProvider,
+          (_, _) {
+            final _ = Object();
+          },
+          fireImmediately: true,
+        )
         ..listen(
           isMessageStreamingProvider('m1'),
-          (_, _) {},
+          (_, _) {
+            final _ = Object();
+          },
           fireImmediately: true,
         );
       fixture.repository.emit([
@@ -321,7 +334,9 @@ void main() {
     test('returns 0 when no messages', () async {
       final _ = fixture.container.listen(
         chatMessagesProvider,
-        (_, _) {},
+        (_, _) {
+          final _ = Object();
+        },
         fireImmediately: true,
       );
       fixture.repository.emit([]);
@@ -333,7 +348,9 @@ void main() {
     test('returns 0 when only user messages exist', () async {
       final _ = fixture.container.listen(
         chatMessagesProvider,
-        (_, _) {},
+        (_, _) {
+          final _ = Object();
+        },
         fireImmediately: true,
       );
       fixture.repository.emit([
@@ -347,7 +364,9 @@ void main() {
     test('returns metadata tokens from latest assistant message', () async {
       final _ = fixture.container.listen(
         chatMessagesProvider,
-        (_, _) {},
+        (_, _) {
+          final _ = Object();
+        },
         fireImmediately: true,
       );
       fixture.repository.emit([

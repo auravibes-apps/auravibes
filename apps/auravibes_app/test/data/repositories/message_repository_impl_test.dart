@@ -2,8 +2,7 @@
 // Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
+
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: prefer-correct-identifier-length
@@ -109,7 +108,9 @@ void main() {
         final subscription = repository
             .watchMessagesByConversation('conversation-1')
             .listen(
-              (_) {},
+              (_) {
+                final _ = Object();
+              },
               onError: (Object error, StackTrace stackTrace) {
                 errorCompleter.complete(error);
                 stackTraceCompleter.complete(stackTrace);

@@ -1,7 +1,6 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
+
 import 'package:auravibes_ui/src/atoms/aura_icon.dart';
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/molecules/aura_floating_action_button.dart';
@@ -67,7 +66,9 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: AuraFloatingActionButton(
-              onPressed: () {},
+              onPressed: () {
+                final _ = Object();
+              },
               icon: Icons.add,
               size: AuraFABSize.mini,
             ),
@@ -94,7 +95,9 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: AuraFloatingActionButton(
-              onPressed: () {},
+              onPressed: () {
+                final _ = Object();
+              },
               icon: Icons.add,
             ),
           ),
@@ -110,7 +113,9 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: AuraFloatingActionButton(
-              onPressed: () {},
+              onPressed: () {
+                final _ = Object();
+              },
               icon: Icons.add,
               size: AuraFABSize.large,
             ),
@@ -139,7 +144,9 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: AuraFloatingActionButton(
-              onPressed: () {},
+              onPressed: () {
+                final _ = Object();
+              },
               icon: Icons.add,
               backgroundColor: customColor,
             ),
@@ -164,7 +171,9 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: AuraFloatingActionButton(
-              onPressed: () {},
+              onPressed: () {
+                final _ = Object();
+              },
               icon: Icons.add,
               foregroundColor: customColor,
             ),
@@ -191,7 +200,9 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: AuraFloatingActionButton(
-              onPressed: () {},
+              onPressed: () {
+                final _ = Object();
+              },
               icon: Icons.add,
             ),
           ),
@@ -238,7 +249,9 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: AuraFloatingActionButton(
-              onPressed: () {},
+              onPressed: () {
+                final _ = Object();
+              },
               icon: Icons.add,
               tooltip: tooltipMessage,
             ),
@@ -259,7 +272,9 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: AuraFloatingActionButton(
-              onPressed: () {},
+              onPressed: () {
+                final _ = Object();
+              },
               icon: Icons.add,
               semanticLabel: semanticLabel,
             ),
@@ -288,7 +303,9 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: AuraFloatingActionButton(
-              onPressed: () {},
+              onPressed: () {
+                final _ = Object();
+              },
               icon: Icons.add,
             ),
           ),

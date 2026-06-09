@@ -2,8 +2,7 @@
 // Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
+
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // Required: Existing test and UI helpers keep compact return flow.
@@ -114,10 +113,18 @@ void main() {
 
     test('applies streaming overlay only in message provider', () async {
       container
-        ..listen(chatMessagesProvider, (_, _) {}, fireImmediately: true)
+        ..listen(
+          chatMessagesProvider,
+          (_, _) {
+            final _ = Object();
+          },
+          fireImmediately: true,
+        )
         ..listen(
           messageConversationByIdProvider('message-1'),
-          (_, _) {},
+          (_, _) {
+            final _ = Object();
+          },
           fireImmediately: true,
         );
 
@@ -153,12 +160,16 @@ void main() {
         container
           ..listen(
             chatMessagesProvider,
-            (_, _) {},
+            (_, _) {
+              final _ = Object();
+            },
             fireImmediately: true,
           )
           ..listen(
             conversationUsedTokensProvider,
-            (_, _) {},
+            (_, _) {
+              final _ = Object();
+            },
             fireImmediately: true,
           );
 

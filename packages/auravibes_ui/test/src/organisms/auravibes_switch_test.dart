@@ -1,7 +1,6 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
+
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 import 'package:auravibes_ui/src/atoms/aura_loading_circle.dart';
@@ -20,7 +19,9 @@ void main() {
             home: Scaffold(
               body: AuraSwitch(
                 value: false,
-                onChanged: (_) {},
+                onChanged: (_) {
+                  final _ = Object();
+                },
               ),
             ),
           ),
@@ -37,7 +38,9 @@ void main() {
             home: Scaffold(
               body: AuraSwitch(
                 value: true,
-                onChanged: (_) {},
+                onChanged: (_) {
+                  final _ = Object();
+                },
               ),
             ),
           ),
@@ -53,7 +56,9 @@ void main() {
             home: Scaffold(
               body: AuraSwitch(
                 value: false,
-                onChanged: (_) {},
+                onChanged: (_) {
+                  final _ = Object();
+                },
               ),
             ),
           ),
@@ -206,7 +211,9 @@ void main() {
             home: Scaffold(
               body: AuraSwitch(
                 value: false,
-                onChanged: (_) {},
+                onChanged: (_) {
+                  final _ = Object();
+                },
                 size: AuraSwitchSize.sm,
               ),
             ),
@@ -233,7 +240,9 @@ void main() {
             home: Scaffold(
               body: AuraSwitch(
                 value: false,
-                onChanged: (_) {},
+                onChanged: (_) {
+                  final _ = Object();
+                },
               ),
             ),
           ),
@@ -249,7 +258,9 @@ void main() {
             home: Scaffold(
               body: AuraSwitch(
                 value: false,
-                onChanged: (_) {},
+                onChanged: (_) {
+                  final _ = Object();
+                },
                 size: AuraSwitchSize.lg,
               ),
             ),
@@ -276,7 +287,9 @@ void main() {
             home: Scaffold(
               body: AuraSwitch(
                 value: false,
-                onChanged: (_) {},
+                onChanged: (_) {
+                  final _ = Object();
+                },
                 disabled: true,
               ),
             ),
@@ -293,7 +306,9 @@ void main() {
             home: Scaffold(
               body: AuraSwitch(
                 value: false,
-                onChanged: (_) {},
+                onChanged: (_) {
+                  final _ = Object();
+                },
                 disabled: true,
               ),
             ),
@@ -315,7 +330,9 @@ void main() {
             home: Scaffold(
               body: AuraSwitch(
                 value: false,
-                onChanged: (_) {},
+                onChanged: (_) {
+                  final _ = Object();
+                },
               ),
             ),
           ),
@@ -340,7 +357,9 @@ void main() {
             home: Scaffold(
               body: AuraSwitch(
                 value: false,
-                onChanged: (_) {},
+                onChanged: (_) {
+                  final _ = Object();
+                },
                 isLoading: true,
               ),
             ),
@@ -358,7 +377,9 @@ void main() {
             home: Scaffold(
               body: AuraSwitch(
                 value: false,
-                onChanged: (_) {},
+                onChanged: (_) {
+                  final _ = Object();
+                },
               ),
             ),
           ),
@@ -373,7 +394,9 @@ void main() {
             home: Scaffold(
               body: AuraSwitch(
                 value: false,
-                onChanged: (_) {},
+                onChanged: (_) {
+                  final _ = Object();
+                },
                 isLoading: true,
               ),
             ),

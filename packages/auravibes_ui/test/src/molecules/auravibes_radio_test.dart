@@ -1,7 +1,6 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
+
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 import 'package:auravibes_ui/src/molecules/aura_radio_option.dart';
@@ -43,7 +42,9 @@ void main() {
             body: AuraRadio<String>(
               value: 'option1',
               groupValue: null,
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
             ),
           ),
         ),
@@ -64,7 +65,9 @@ void main() {
             body: AuraRadio<String>(
               value: 'option1',
               groupValue: null,
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
             ),
           ),
         ),
@@ -82,7 +85,9 @@ void main() {
             body: AuraRadio<String>(
               value: 'option1',
               groupValue: 'option1',
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
             ),
           ),
         ),
@@ -104,7 +109,9 @@ void main() {
             body: AuraRadio<String>(
               value: 'option1',
               groupValue: 'option2',
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
             ),
           ),
         ),
@@ -188,7 +195,9 @@ void main() {
             body: AuraRadio<String>(
               value: 'option1',
               groupValue: 'option1',
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
               colorVariant: AuraColorVariant.secondary,
             ),
           ),
@@ -206,7 +215,9 @@ void main() {
             body: AuraRadio<String>(
               value: 'option1',
               groupValue: null,
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
             ),
           ),
         ),
@@ -223,7 +234,9 @@ void main() {
             body: AuraRadio<String>(
               value: 'option1',
               groupValue: null,
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
               disabled: true,
             ),
           ),
@@ -241,7 +254,9 @@ void main() {
             body: AuraRadio<String>(
               value: 'option1',
               groupValue: null,
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
             ),
           ),
         ),

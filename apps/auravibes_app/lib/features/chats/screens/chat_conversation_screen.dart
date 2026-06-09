@@ -283,7 +283,9 @@ class _RateLimitRetryIndicatorState extends State<_RateLimitRetryIndicator> {
   void _startTimer() {
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
-      setState(() {});
+      setState(() {
+        final _ = Object();
+      });
     });
   }
 

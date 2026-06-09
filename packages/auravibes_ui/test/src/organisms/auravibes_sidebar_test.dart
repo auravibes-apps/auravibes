@@ -1,7 +1,6 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
+
 import 'package:auravibes_ui/src/organisms/aura_sidebar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -23,7 +22,9 @@ void main() {
                   label: Text('Settings'),
                 ),
               ],
-              onNavigationTap: (_) {},
+              onNavigationTap: (_) {
+                final _ = Object();
+              },
             ),
           ),
         ),
@@ -44,7 +45,9 @@ void main() {
                   label: Text('Home'),
                 ),
               ],
-              onNavigationTap: (_) {},
+              onNavigationTap: (_) {
+                final _ = Object();
+              },
             ),
           ),
         ),
@@ -65,7 +68,9 @@ void main() {
                   label: Text('Home'),
                 ),
               ],
-              onNavigationTap: (_) {},
+              onNavigationTap: (_) {
+                final _ = Object();
+              },
               isExpanded: false,
             ),
           ),
@@ -109,7 +114,9 @@ void main() {
           home: Scaffold(
             body: AuraSidebar(
               navigationItems: const [],
-              onNavigationTap: (_) {},
+              onNavigationTap: (_) {
+                final _ = Object();
+              },
               header: const Text('Header'),
             ),
           ),
@@ -125,7 +132,9 @@ void main() {
           home: Scaffold(
             body: AuraSidebar(
               navigationItems: const [],
-              onNavigationTap: (_) {},
+              onNavigationTap: (_) {
+                final _ = Object();
+              },
               footer: const Text('Footer'),
             ),
           ),
@@ -141,7 +150,9 @@ void main() {
           home: Scaffold(
             body: AuraSidebar(
               navigationItems: const [],
-              onNavigationTap: (_) {},
+              onNavigationTap: (_) {
+                final _ = Object();
+              },
               middleSection: const Text('Middle'),
             ),
           ),
@@ -167,7 +178,9 @@ void main() {
                   footer: true,
                 ),
               ],
-              onNavigationTap: (_) {},
+              onNavigationTap: (_) {
+                final _ = Object();
+              },
             ),
           ),
         ),

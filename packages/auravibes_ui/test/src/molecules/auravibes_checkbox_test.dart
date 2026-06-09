@@ -1,6 +1,6 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: no-empty-block
+
 // Required: Tests use intentional no-op callbacks.
 
 import 'package:auravibes_ui/src/molecules/aura_checkbox.dart';
@@ -14,7 +14,12 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: AuraCheckbox(value: false, onChanged: (_) {}),
+            body: AuraCheckbox(
+              value: false,
+              onChanged: (_) {
+                final _ = Object();
+              },
+            ),
           ),
           theme: ThemeData(extensions: [AuraTheme.light]),
         ),
@@ -77,7 +82,9 @@ void main() {
           home: Scaffold(
             body: AuraCheckboxListTile(
               value: false,
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
               title: const Text('Optional'),
               subtitle: const Text('Can be omitted'),
             ),

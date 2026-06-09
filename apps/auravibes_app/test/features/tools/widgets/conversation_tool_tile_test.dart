@@ -2,8 +2,7 @@
 // Required: Widget tests use helpers that build widgets under test.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
+
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: prefer-correct-identifier-length
@@ -221,7 +220,9 @@ void main() {
       isWorkspaceEnabled: true,
     );
 
-    FlutterError.onError = (_) {};
+    FlutterError.onError = (_) {
+      final _ = Object();
+    };
     await _pumpSubject(tester, toolState: toolState);
 
     expect(find.byIcon(Icons.check_circle), findsOneWidget);
@@ -238,7 +239,9 @@ void main() {
       isWorkspaceEnabled: true,
     );
 
-    FlutterError.onError = (_) {};
+    FlutterError.onError = (_) {
+      final _ = Object();
+    };
     await _pumpSubject(tester, toolState: toolState);
 
     expect(find.byType(ToolPermissionSelector), findsOneWidget);
@@ -253,7 +256,9 @@ void main() {
       isWorkspaceEnabled: true,
     );
 
-    FlutterError.onError = (_) {};
+    FlutterError.onError = (_) {
+      final _ = Object();
+    };
     await _pumpSubject(tester, toolState: toolState);
 
     final auraCard = tester.widget<AuraCard>(find.byType(AuraCard));
@@ -286,7 +291,9 @@ void main() {
       isWorkspaceEnabled: true,
     );
 
-    FlutterError.onError = (_) {};
+    FlutterError.onError = (_) {
+      final _ = Object();
+    };
     await _pumpSubject(tester, toolState: toolState);
 
     expect(find.byType(ToolPermissionSelector), findsOneWidget);

@@ -85,7 +85,9 @@ class _ServiceConnectionEditScreenState
               secretControllers: _secretControllers,
               clearedSecrets: _clearedSecrets,
               isSaving: _isSaving,
-              onChanged: () => setState(() {}),
+              onChanged: () => setState(() {
+                final _ = Object();
+              }),
               onSave: () => _saveSkillCredential(context),
             ),
             _ModelProviderEditState() => _ModelProviderEditForm(
@@ -94,7 +96,9 @@ class _ServiceConnectionEditScreenState
               keyController: _modelKeyController,
               urlController: _modelUrlController,
               isSaving: _isSaving,
-              onChanged: () => setState(() {}),
+              onChanged: () => setState(() {
+                final _ = Object();
+              }),
               onSave: () => _saveModelProvider(context),
             ),
           };

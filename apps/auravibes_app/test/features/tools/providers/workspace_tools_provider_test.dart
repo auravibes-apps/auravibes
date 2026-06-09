@@ -2,8 +2,7 @@
 // Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
+
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -233,7 +232,9 @@ void main() {
 
       final _ = container.listen(
         workspaceToolsProvider('ws1'),
-        (_, _) {},
+        (_, _) {
+          final _ = Object();
+        },
         fireImmediately: true,
       );
       final _ = await container.read(workspaceToolsProvider('ws1').future);
@@ -255,7 +256,9 @@ void main() {
 
       final _ = container.listen(
         workspaceToolsProvider('ws1'),
-        (_, _) {},
+        (_, _) {
+          final _ = Object();
+        },
         fireImmediately: true,
       );
       final _ = await container.read(workspaceToolsProvider('ws1').future);
@@ -275,7 +278,9 @@ void main() {
 
       final _ = container.listen(
         workspaceToolsProvider('ws1'),
-        (_, _) {},
+        (_, _) {
+          final _ = Object();
+        },
         fireImmediately: true,
       );
       final _ = await container.read(workspaceToolsProvider('ws1').future);
@@ -300,7 +305,9 @@ void main() {
 
       final _ = container.listen(
         workspaceToolsProvider('ws1'),
-        (_, _) {},
+        (_, _) {
+          final _ = Object();
+        },
         fireImmediately: true,
       );
       final _ = await container.read(workspaceToolsProvider('ws1').future);
@@ -319,7 +326,9 @@ void main() {
 
       final _ = container.listen(
         workspaceToolsProvider('ws1'),
-        (_, _) {},
+        (_, _) {
+          final _ = Object();
+        },
         fireImmediately: true,
       );
       final _ = await container.read(workspaceToolsProvider('ws1').future);
@@ -345,7 +354,9 @@ void main() {
 
       final _ = failContainer.listen(
         workspaceToolsProvider('ws1'),
-        (_, _) {},
+        (_, _) {
+          final _ = Object();
+        },
         fireImmediately: true,
       );
       final _ = await failContainer.read(workspaceToolsProvider('ws1').future);

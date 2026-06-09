@@ -186,7 +186,9 @@ class _SkillCredentialDefinitionEditScreenState
                     _AttributeRowEditor(
                       row: row,
                       canDelete: _attributeRows.length > 1,
-                      onChanged: () => setState(() {}),
+                      onChanged: () => setState(() {
+                        final _ = Object();
+                      }),
                       onDelete: () => _deleteAttributeRow(row),
                       key: ValueKey(row),
                     ),

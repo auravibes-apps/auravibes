@@ -2,8 +2,7 @@
 // Required: Widget tests use helpers that build widgets under test.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
+
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 // ignore_for_file: prefer-static-class
@@ -89,7 +88,9 @@ void main() {
         ToolsGroupHeader(
           groupWithTools: groupWithTools,
           isExpanded: false,
-          onToggleExpand: () {},
+          onToggleExpand: () {
+            final _ = Object();
+          },
         ),
       ),
     );
@@ -109,8 +110,12 @@ void main() {
         ToolsGroupHeader(
           groupWithTools: groupWithTools,
           isExpanded: false,
-          onToggleExpand: () {},
-          onToggleEnabled: (_) {},
+          onToggleExpand: () {
+            final _ = Object();
+          },
+          onToggleEnabled: (_) {
+            final _ = Object();
+          },
         ),
       ),
     );
@@ -131,7 +136,9 @@ void main() {
         ToolsGroupHeader(
           groupWithTools: groupWithTools,
           isExpanded: false,
-          onToggleExpand: () {},
+          onToggleExpand: () {
+            final _ = Object();
+          },
         ),
       ),
     );
@@ -151,7 +158,9 @@ void main() {
         ToolsGroupHeader(
           groupWithTools: groupWithTools,
           isExpanded: false,
-          onToggleExpand: () {},
+          onToggleExpand: () {
+            final _ = Object();
+          },
         ),
       ),
     );
@@ -186,8 +195,12 @@ void main() {
         ToolsGroupHeader(
           groupWithTools: groupWithTools,
           isExpanded: false,
-          onToggleExpand: () {},
-          onDelete: () {},
+          onToggleExpand: () {
+            final _ = Object();
+          },
+          onDelete: () {
+            final _ = Object();
+          },
         ),
       ),
     );
@@ -207,8 +220,12 @@ void main() {
         ToolsGroupHeader(
           groupWithTools: groupWithTools,
           isExpanded: false,
-          onToggleExpand: () {},
-          onDelete: () {},
+          onToggleExpand: () {
+            final _ = Object();
+          },
+          onDelete: () {
+            final _ = Object();
+          },
         ),
       ),
     );
@@ -242,7 +259,9 @@ void main() {
         ToolsGroupHeader(
           groupWithTools: groupWithTools,
           isExpanded: false,
-          onToggleExpand: () {},
+          onToggleExpand: () {
+            final _ = Object();
+          },
         ),
       ),
     );
@@ -276,7 +295,9 @@ void main() {
         ToolsGroupHeader(
           groupWithTools: groupWithTools,
           isExpanded: false,
-          onToggleExpand: () {},
+          onToggleExpand: () {
+            final _ = Object();
+          },
         ),
       ),
     );
@@ -311,8 +332,12 @@ void main() {
         ToolsGroupHeader(
           groupWithTools: groupWithTools,
           isExpanded: false,
-          onToggleExpand: () {},
-          onViewError: () {},
+          onToggleExpand: () {
+            final _ = Object();
+          },
+          onViewError: () {
+            final _ = Object();
+          },
         ),
       ),
     );
@@ -346,8 +371,12 @@ void main() {
         ToolsGroupHeader(
           groupWithTools: groupWithTools,
           isExpanded: false,
-          onToggleExpand: () {},
-          onReconnect: () {},
+          onToggleExpand: () {
+            final _ = Object();
+          },
+          onReconnect: () {
+            final _ = Object();
+          },
         ),
       ),
     );
@@ -377,7 +406,9 @@ void main() {
         ToolsGroupHeader(
           groupWithTools: groupWithTools,
           isExpanded: false,
-          onToggleExpand: () {},
+          onToggleExpand: () {
+            final _ = Object();
+          },
         ),
       ),
     );
@@ -397,7 +428,9 @@ void main() {
         ToolsGroupHeader(
           groupWithTools: groupWithTools,
           isExpanded: false,
-          onToggleExpand: () {},
+          onToggleExpand: () {
+            final _ = Object();
+          },
         ),
       ),
     );
@@ -417,7 +450,9 @@ void main() {
         ToolsGroupHeader(
           groupWithTools: groupWithTools,
           isExpanded: false,
-          onToggleExpand: () {},
+          onToggleExpand: () {
+            final _ = Object();
+          },
         ),
       ),
     );

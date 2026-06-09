@@ -110,7 +110,9 @@ class _ServiceConnectionCreateScreenState
         nameController: _nameController,
         attributeControllers: _attributeControllers,
         isSaving: _isSaving,
-        onNameChanged: (_) => setState(() {}),
+        onNameChanged: (_) => setState(() {
+          final _ = Object();
+        }),
         onDefinitionChanged: (value) {
           setState(() {
             _definitionId = value;

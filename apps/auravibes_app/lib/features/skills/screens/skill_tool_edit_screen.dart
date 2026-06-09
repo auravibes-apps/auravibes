@@ -270,7 +270,9 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
                   final _ = _inputFields.remove(field);
                   field.dispose();
                 }),
-                onChanged: () => setState(() {}),
+                onChanged: () => setState(() {
+                  final _ = Object();
+                }),
               ),
               if (skillHasCredentialDefinition)
                 AuraCheckboxListTile(

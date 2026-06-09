@@ -1,6 +1,6 @@
 // ignore_for_file: avoid-returning-widgets
 // Required: Widgetbook stories use helper functions that return widgets.
-// ignore_for_file: no-empty-block
+
 // Required: Widgetbook stories use intentional no-op callbacks.
 // ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
@@ -13,7 +13,9 @@ import 'package:widgetbook_workspace/knobs/icons.dart';
 @widgetbook.UseCase(name: 'Regular FAB', type: AuraFloatingActionButton)
 Widget regularFABUseCase(BuildContext context) {
   return AuraFloatingActionButton(
-    onPressed: () {},
+    onPressed: () {
+      final _ = Object();
+    },
     icon: context.knobs.iconData(label: 'Icon', initialValue: Icons.add),
     size: context.knobs.object.dropdown(
       label: 'size',
@@ -30,7 +32,9 @@ Widget regularFABUseCase(BuildContext context) {
 @widgetbook.UseCase(name: 'Extended FAB', type: AuraFloatingActionButton)
 Widget extendedFABUseCase(BuildContext context) {
   return AuraFloatingActionButton.extended(
-    onPressed: () {},
+    onPressed: () {
+      final _ = Object();
+    },
     icon: context.knobs.iconData(label: 'Icon', initialValue: Icons.add),
     text: context.knobs.string(label: 'Text', initialValue: 'Create New'),
     tooltip: context.knobs.stringOrNull(

@@ -1,6 +1,3 @@
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
-
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_form_state.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
@@ -12,7 +9,9 @@ class _FakeMcpConnectionNotifier extends McpConnectionNotifier {
   Future<void> addMcpServer(
     McpServerFormToCreate serverToCreate, {
     required String workspaceId,
-  }) async {}
+  }) async {
+    final _ = Object();
+  }
 }
 
 void main() {

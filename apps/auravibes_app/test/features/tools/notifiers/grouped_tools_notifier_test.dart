@@ -2,8 +2,7 @@
 // Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
+
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -306,7 +305,9 @@ class _FakeMcpServersRepository implements McpServersRepository {
   Future<void> syncMcpTools({
     required String mcpServerId,
     required List<McpToolInfo> currentTools,
-  }) async {}
+  }) async {
+    final _ = Object();
+  }
 }
 
 class _FakeWorkspaceToolsRepository implements WorkspaceToolsRepository {

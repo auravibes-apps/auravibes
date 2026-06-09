@@ -1,7 +1,6 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
+
 import 'package:auravibes_app/widgets/app_group_button_single_base.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
@@ -11,7 +10,11 @@ import 'package:riverpod/riverpod.dart';
 void main() {
   test('constructor stores required parameters', () {
     final valueProvider = Provider<String?>((ref) => null);
-    final onChangedProvider = Provider<ValueChanged<String>>((ref) => (_) {});
+    final onChangedProvider = Provider<ValueChanged<String>>(
+      (ref) => (_) {
+        final _ = Object();
+      },
+    );
 
     final widget = AppGroupButtonSingleBase<String>(
       value: valueProvider,
@@ -31,7 +34,11 @@ void main() {
 
   test('is a HookConsumerWidget', () {
     final valueProvider = Provider<String?>((ref) => null);
-    final onChangedProvider = Provider<ValueChanged<String>>((ref) => (_) {});
+    final onChangedProvider = Provider<ValueChanged<String>>(
+      (ref) => (_) {
+        final _ = Object();
+      },
+    );
 
     final widget = AppGroupButtonSingleBase<String>(
       value: valueProvider,

@@ -1,5 +1,3 @@
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
@@ -74,7 +72,9 @@ void main() {
                   ),
                 ),
               ],
-              onDidRemovePage: (_) {},
+              onDidRemovePage: (_) {
+                final _ = Object();
+              },
             ),
             overrides: [
               workspaceToolsProvider('test-ws').overrideWith(

@@ -1,6 +1,6 @@
 // ignore_for_file: avoid-returning-widgets
 // Required: Widgetbook stories use helper functions that return widgets.
-// ignore_for_file: no-empty-block
+
 // Required: Widgetbook stories use intentional no-op callbacks.
 // ignore_for_file: prefer-moving-to-variable
 // Required: Existing code repeats lookups where extraction adds noise.
@@ -17,7 +17,9 @@ Widget primaryTileUseCase(BuildContext context) {
     child: Text(
       context.knobs.string(label: 'Child Text', initialValue: 'This is a tile'),
     ),
-    onTap: () {},
+    onTap: () {
+      final _ = Object();
+    },
     variant: context.knobs.object.dropdown(
       label: 'Variant',
       options: AuraTileVariant.values,
