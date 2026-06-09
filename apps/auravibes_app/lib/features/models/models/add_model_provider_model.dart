@@ -1,6 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-moving-to-variable
 // Required: Existing code repeats lookups where extraction adds noise.
@@ -12,6 +11,7 @@ part 'add_model_provider_model.freezed.dart';
 
 bool _isLoopbackHost(String host) {
   final normalizedHost = host.toLowerCase();
+
   return switch (normalizedHost) {
     'localhost' || '127.0.0.1' || '::1' => true,
     _ when normalizedHost.endsWith('.localhost') => true,
@@ -40,6 +40,7 @@ abstract class AddModelProviderModel with _$AddModelProviderModel {
     if (name.trim().length > 50) {
       return 'Name must be less than 50 characters';
     }
+
     return null;
   }
 
@@ -51,6 +52,7 @@ abstract class AddModelProviderModel with _$AddModelProviderModel {
     if (key.trim().length < 5) {
       return 'API key appears to be too short';
     }
+
     return null;
   }
 
@@ -59,6 +61,7 @@ abstract class AddModelProviderModel with _$AddModelProviderModel {
     if (modelId == null) {
       return 'Please select a model provider';
     }
+
     return null;
   }
 
@@ -82,6 +85,7 @@ abstract class AddModelProviderModel with _$AddModelProviderModel {
     } on FormatException {
       return 'Please enter a valid URL';
     }
+
     return null;
   }
 

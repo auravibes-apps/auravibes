@@ -36,6 +36,7 @@ plugins:
           - ^coverage:.*
       list-all-equatable-fields: true
       missing-test-assertion: true
+      newline-before-return: true
       avoid-unnecessary-setstate: true
       avoid-double-slash-imports: true
       avoid-duplicate-exports: true

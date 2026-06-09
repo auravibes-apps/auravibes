@@ -1,6 +1,5 @@
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
@@ -62,6 +61,7 @@ class AppLogging {
 
     PlatformDispatcher.instance.onError = (error, stackTrace) {
       _logger.severe('Uncaught platform error', error, stackTrace);
+
       return false;
     };
   }

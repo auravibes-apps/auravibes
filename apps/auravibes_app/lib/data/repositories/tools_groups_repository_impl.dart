@@ -1,6 +1,5 @@
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
@@ -20,12 +19,14 @@ class ToolsGroupsRepositoryImpl implements ToolsGroupsRepository {
     final rows = await _database.toolsGroupsDao.getToolsGroupsForWorkspace(
       workspaceId,
     );
+
     return rows.map(_tableToEntity).toList();
   }
 
   @override
   Future<ToolsGroupEntity?> getToolsGroupById(String id) async {
     final row = await _database.toolsGroupsDao.getToolsGroupById(id);
+
     return row != null ? _tableToEntity(row) : null;
   }
 
@@ -36,6 +37,7 @@ class ToolsGroupsRepositoryImpl implements ToolsGroupsRepository {
     final row = await _database.toolsGroupsDao.getToolsGroupByMcpServerId(
       mcpServerId,
     );
+
     return row != null ? _tableToEntity(row) : null;
   }
 

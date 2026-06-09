@@ -4,7 +4,6 @@
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: no-empty-block
 // Required: Tests use intentional no-op callbacks and fake hooks.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -61,6 +60,7 @@ class _FakeWorkspaceToolsRepository implements WorkspaceToolsRepository {
     final tool = tools.firstWhere((t) => t.toolId == toolType);
     final updated = tool.copyWith(isEnabled: isEnabled);
     tools = tools.map((t) => t.id == tool.id ? updated : t).toList();
+
     return updated;
   }
 
@@ -72,12 +72,14 @@ class _FakeWorkspaceToolsRepository implements WorkspaceToolsRepository {
     final tool = tools.firstWhere((t) => t.id == id);
     final updated = tool.copyWith(isEnabled: isEnabled);
     updatedTools[id] = updated;
+
     return updated;
   }
 
   @override
   Future<bool> removeWorkspaceToolById(String id) async {
     removedIds.add(id);
+
     return removeResult;
   }
 
@@ -89,6 +91,7 @@ class _FakeWorkspaceToolsRepository implements WorkspaceToolsRepository {
     final tool = tools.firstWhere((t) => t.id == id);
     final updated = tool.copyWith(permissionMode: permissionMode);
     updatedTools[id] = updated;
+
     return updated;
   }
 
@@ -101,6 +104,7 @@ class _FakeWorkspaceToolsRepository implements WorkspaceToolsRepository {
     final tool = tools.firstWhere((t) => t.toolId == toolType);
     final updated = tool.copyWith(config: config);
     updatedTools[tool.id] = updated;
+
     return [updated];
   }
 

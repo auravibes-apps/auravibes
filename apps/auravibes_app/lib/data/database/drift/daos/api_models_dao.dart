@@ -1,6 +1,5 @@
 // ignore_for_file: prefer-async-await
 // Required: Existing Future chains preserve callback flow.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
@@ -76,6 +75,7 @@ class ApiModelsDao extends DatabaseAccessor<AppDatabase>
     final deleteCount = await (delete(
       apiModels,
     )..where((t) => t.id.equals(id))).go();
+
     return deleteCount > 0;
   }
 
@@ -99,6 +99,7 @@ class ApiModelsDao extends DatabaseAccessor<AppDatabase>
               ..where(apiModels.id.equals(id)))
             .get()
             .then((rows) => rows.length);
+
     return count > 0;
   }
 
@@ -153,6 +154,7 @@ class ApiModelsDao extends DatabaseAccessor<AppDatabase>
           _log.severe('Failed to insert model ${model.id.value}: $e');
         }
       }
+
       return results;
     });
   }

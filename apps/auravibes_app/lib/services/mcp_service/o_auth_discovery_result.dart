@@ -2,7 +2,6 @@
 // Required: Existing thresholds and limits use numeric values.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
@@ -83,6 +82,7 @@ class OAuthDiscoveryService {
       return null;
     } on Exception catch (e) {
       _logger.warning('OAuth discovery failed: $e');
+
       return null;
     }
   }
@@ -178,6 +178,7 @@ class OAuthDiscoveryService {
     if (headerResult != null) return headerResult;
 
     _logger.info('Server returned 401, may require OAuth');
+
     return _parseOAuthBodyChallenge(response.body);
   }
 
@@ -308,6 +309,7 @@ class OAuthDiscoveryService {
           _logger.info(
             'Dynamic client registration successful, client_id: $clientId',
           );
+
           return clientId;
         }
       } else {

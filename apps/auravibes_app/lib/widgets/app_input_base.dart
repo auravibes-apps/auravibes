@@ -1,4 +1,3 @@
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -45,6 +44,7 @@ class AppInputBase extends HookConsumerWidget {
       text: ref.watch(value),
     );
     final hintLocaleKey = this.hintLocaleKey;
+
     return AuraInput(
       controller: controller,
       placeholder: TextLocale(

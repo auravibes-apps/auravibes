@@ -2,7 +2,6 @@
 // Required: Existing helper builders return widgets.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -44,6 +43,7 @@ class ChatListWidget extends ConsumerWidget {
           padding: const EdgeInsets.all(16),
           itemBuilder: (context, index) {
             final chat = chats[index];
+
             return _ChatTile(chat: chat, workspaceId: workspaceId);
           },
           separatorBuilder: (context, index) => const SizedBox(height: 10),
@@ -157,6 +157,7 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
         .modelId;
     final title =
         ref.watch(streamingTitleProvider(widget.chat.id)) ?? widget.chat.title;
+
     return AuraCard(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,4 +1,3 @@
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:json_annotation/json_annotation.dart';
@@ -96,6 +95,7 @@ class ToolCallResultStatusConverter
   @override
   ToolCallResultStatus? fromJson(String? json) {
     if (json == null) return null;
+
     return switch (json) {
       'success' => ToolCallResultStatus.success,
       'skipped_by_user' => ToolCallResultStatus.skippedByUser,
@@ -112,6 +112,7 @@ class ToolCallResultStatusConverter
   @override
   String? toJson(ToolCallResultStatus? object) {
     if (object == null) return null;
+
     return switch (object) {
       ToolCallResultStatus.success => 'success',
       ToolCallResultStatus.skippedByUser => 'skipped_by_user',

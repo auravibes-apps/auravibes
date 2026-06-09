@@ -698,6 +698,7 @@ class _TestAppDatabase extends AppDatabase {
 
     final created = _TestMessageDao(this, _watchMessages);
     _testMessageDao = created;
+
     return created;
   }
 }

@@ -1,6 +1,5 @@
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
@@ -96,6 +95,7 @@ abstract class MessageMetadataEntity with _$MessageMetadataEntity {
     if (metadata == null) return null;
     try {
       final json = jsonDecode(metadata) as Map<String, dynamic>;
+
       return MessageMetadataEntity.fromJson(json);
     } on Exception catch (_) {
       return null;
@@ -179,6 +179,7 @@ abstract class MessageToCreate with _$MessageToCreate {
   /// Returns true if the message has valid content.
   bool get hasValidContent {
     final metadata = this.metadata;
+
     return content.isNotEmpty ||
         (!isUser &&
             metadata != null &&

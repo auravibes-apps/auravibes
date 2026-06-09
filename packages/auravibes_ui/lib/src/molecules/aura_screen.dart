@@ -2,7 +2,6 @@
 // Required: UI tokens and layout use fixed design values.
 // ignore_for_file: no-equal-arguments
 // Required: UI geometry uses repeated values for symmetric layout.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-single-widget-per-file
 // Required: UI components keep related private widgets together.
@@ -146,6 +145,7 @@ class _AuroraBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.auraColors;
+
     return Stack(
       children: [
         // Base color.

@@ -21,6 +21,7 @@ class SkillTemplateToolsRepositoryImpl implements SkillTemplateToolsRepository {
   @override
   Future<List<SkillTemplateToolEntity>> getSkillTools(String skillId) async {
     final rows = await _dao.getSkillTools(skillId);
+
     return rows.map(_tableToEntity).toList();
   }
 
@@ -28,6 +29,7 @@ class SkillTemplateToolsRepositoryImpl implements SkillTemplateToolsRepository {
   Future<SkillTemplateToolEntity?> getToolById(String toolId) async {
     final row = await _dao.getToolById(toolId);
     if (row == null) return null;
+
     return _tableToEntity(row);
   }
 
@@ -38,6 +40,7 @@ class SkillTemplateToolsRepositoryImpl implements SkillTemplateToolsRepository {
   ) async {
     final row = await _dao.getToolBySlug(skillId, slug);
     if (row == null) return null;
+
     return _tableToEntity(row);
   }
 

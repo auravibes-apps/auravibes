@@ -1,7 +1,6 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: cascade_invocations
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
@@ -90,6 +89,7 @@ class _StubMessageRepository implements MessageRepository {
       updatedAt: DateTime(2024),
     );
     created.add(entity);
+
     return entity;
   }
 
@@ -109,6 +109,7 @@ class _StubMessageRepository implements MessageRepository {
       updatedAt: DateTime(2024),
     );
     patched.add(entity);
+
     return entity;
   }
 

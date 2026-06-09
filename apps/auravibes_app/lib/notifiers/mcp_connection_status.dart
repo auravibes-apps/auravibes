@@ -1,6 +1,5 @@
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -243,6 +242,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
 
     if (_isDisposed) {
       _requiredMcpManagerService.disconnect(client);
+
       return;
     }
 
@@ -293,6 +293,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
     if (connection != null) {
       _requiredMcpManagerService.disconnect(connection.client);
       await _connectToMcp(connection.server);
+
       return;
     }
 

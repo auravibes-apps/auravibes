@@ -1,6 +1,5 @@
 // ignore_for_file: prefer-async-await
 // Required: Existing Future chains preserve callback flow.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/skill_credential_definitions.dart';
@@ -62,6 +61,7 @@ class SkillCredentialDefinitionsDao extends DatabaseAccessor<AppDatabase>
     if (updated == null) {
       throw StateError('Updated skill credential definition was not found');
     }
+
     return updated;
   }
 

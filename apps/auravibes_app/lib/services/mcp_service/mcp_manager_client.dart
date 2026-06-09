@@ -1,6 +1,5 @@
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
@@ -46,6 +45,7 @@ class McpManagerService {
       if (content is mcp.TextContent) {
         return content.text;
       }
+
       return content.toString();
     }).toList();
 
@@ -82,6 +82,7 @@ class McpManagerService {
   ) async {
     // List available tools from the MCP server.
     final tools = await client._client.listTools();
+
     return _convertTools(tools);
   }
 
@@ -111,6 +112,7 @@ class McpManagerService {
     }
 
     final oAuthConfig = _getOauthConfig(authType);
+
     return mcp.SseAuthClientTransport.create(
       serverUrl: server.url,
       oauthToken: _getOauthToken(authType),
@@ -158,6 +160,7 @@ class McpManagerService {
     if (authToken != null) {
       transport.setOAuthToken(authToken);
     }
+
     return transport;
   }
 
@@ -169,6 +172,7 @@ class McpManagerService {
         clientId: authType.clientId,
       );
     }
+
     return null;
   }
 
@@ -182,6 +186,7 @@ class McpManagerService {
         issuedAt: authType.token.issuedAt,
       );
     }
+
     return null;
   }
 
@@ -208,6 +213,7 @@ class McpManagerService {
     if (config == null || token == null) return null;
 
     final oauthClient = mcp.HttpOAuthClient(config: config);
+
     return mcp.OAuthTokenManager(oauthClient)..setToken(token);
   }
 }

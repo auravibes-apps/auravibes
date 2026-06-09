@@ -8,7 +8,6 @@
 // Required: Tests use intentional no-op callbacks and fake hooks.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -65,6 +64,7 @@ void main() {
                 ],
                 builder: (context, state, navigationShell) {
                   result = navigationShell.currentIndex;
+
                   return navigationShell;
                 },
               ),
@@ -115,6 +115,7 @@ void main() {
                 ],
                 builder: (context, state, navigationShell) {
                   capturedShellIndex = navigationShell.currentIndex;
+
                   return navigationShell;
                 },
               ),
@@ -233,6 +234,7 @@ void main() {
                 ],
                 builder: (context, state, navigationShell) {
                   capturedWorkspaceId = state.pathParameters['workspaceId'];
+
                   return Text('workspaceId: $capturedWorkspaceId');
                 },
               ),
@@ -279,6 +281,7 @@ void main() {
                 ],
                 builder: (context, state, navigationShell) {
                   capturedWorkspaceId = state.pathParameters['workspaceId'];
+
                   return Text('workspaceId: $capturedWorkspaceId');
                 },
               ),
@@ -289,6 +292,7 @@ void main() {
           if (state.uri.toString() == '/') {
             return '/workspaces/ws-redirect-test/chat/new';
           }
+
           return null;
         },
         initialLocation: '/',
@@ -342,6 +346,7 @@ void main() {
                 ],
                 builder: (context, state, navigationShell) {
                   capturedShellIndex = navigationShell.currentIndex;
+
                   return navigationShell;
                 },
               ),
@@ -394,6 +399,7 @@ void main() {
                 ],
                 builder: (context, state, navigationShell) {
                   capturedShellIndex = navigationShell.currentIndex;
+
                   return navigationShell;
                 },
               ),
@@ -455,6 +461,7 @@ void main() {
                 ],
                 builder: (context, state, navigationShell) {
                   capturedShellIndex = navigationShell.currentIndex;
+
                   return navigationShell;
                 },
               ),
@@ -494,6 +501,7 @@ void main() {
                 branches: branches,
                 builder: (context, state, navigationShell) {
                   final workspaceId = state.pathParameters['workspaceId'] ?? '';
+
                   return Theme(
                     data: ThemeData(extensions: [AuraTheme.light]),
                     child: Material(
@@ -548,6 +556,7 @@ void main() {
         useOnlyLangCode: true,
         useFallbackTranslations: true,
       );
+
       return (app: app, router: router);
     }
 
@@ -668,6 +677,7 @@ class _FakeConversationRepository implements ConversationRepository {
     controller.onCancel = () => _pendingRemoval.add(controller);
     _controllers.add(controller);
     controller.add(const []);
+
     return controller.stream;
   }
 

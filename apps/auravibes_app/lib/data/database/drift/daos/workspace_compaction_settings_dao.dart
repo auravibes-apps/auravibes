@@ -1,4 +1,3 @@
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -46,8 +45,10 @@ class WorkspaceCompactionSettingsDao extends DatabaseAccessor<AppDatabase>
       if (updated == null) {
         throw StateError('Updated compaction settings were not found');
       }
+
       return updated;
     }
+
     return into(workspaceCompactionSettings).insertReturning(
       companion.copyWith(workspaceId: Value(workspaceId)),
     );

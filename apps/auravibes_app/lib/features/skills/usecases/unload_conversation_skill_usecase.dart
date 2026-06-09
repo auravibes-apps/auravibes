@@ -30,6 +30,7 @@ class UnloadConversationSkillUsecase {
         userSkill.id,
         isLoaded: false,
       );
+
       return;
     }
 
@@ -40,6 +41,7 @@ class UnloadConversationSkillUsecase {
         appSkill.identifier,
         isLoaded: false,
       );
+
       return;
     }
 

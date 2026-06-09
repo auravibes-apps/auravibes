@@ -20,6 +20,7 @@ class SkillsRepositoryImpl implements SkillsRepository {
   @override
   Future<List<SkillEntity>> getWorkspaceSkills(String workspaceId) async {
     final rows = await _dao.getWorkspaceSkills(workspaceId);
+
     return rows.map(_tableToEntity).toList();
   }
 
@@ -27,6 +28,7 @@ class SkillsRepositoryImpl implements SkillsRepository {
   Future<SkillEntity?> getSkillById(String skillId) async {
     final row = await _dao.getSkillById(skillId);
     if (row == null) return null;
+
     return _tableToEntity(row);
   }
 
@@ -34,6 +36,7 @@ class SkillsRepositoryImpl implements SkillsRepository {
   Future<SkillEntity?> getSkillBySlug(String workspaceId, String slug) async {
     final row = await _dao.getSkillBySlug(workspaceId, slug);
     if (row == null) return null;
+
     return _tableToEntity(row);
   }
 
@@ -41,6 +44,7 @@ class SkillsRepositoryImpl implements SkillsRepository {
   Future<SkillEntity?> getSkillByTitle(String workspaceId, String title) async {
     final row = await _dao.getSkillByTitle(workspaceId, title.trim());
     if (row == null) return null;
+
     return _tableToEntity(row);
   }
 

@@ -1,4 +1,3 @@
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -112,6 +111,7 @@ class _ChatConversationScreen extends HookConsumerWidget {
           LocaleKeys.chats_screens_chat_conversation_error_not_found.tr(),
         _ => LocaleKeys.chats_screens_chat_conversation_error_not_found.tr(),
       };
+
       return AuraScreen(
         child: AppErrorWidget(
           error: errorMessage,

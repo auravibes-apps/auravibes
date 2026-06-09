@@ -405,6 +405,7 @@ class _McpServersRepositoryFixture {
       toolsGroupsDao,
       workspaceToolsDao,
     );
+
     return _McpServersRepositoryFixture._(
       mockMcpServersDao: mcpServersDao,
       mockToolsGroupsDao: toolsGroupsDao,

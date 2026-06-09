@@ -1,4 +1,3 @@
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
@@ -23,6 +22,7 @@ class AddModelProviderState extends _$AddModelProviderState {
   @override
   AddModelProviderModel build(String workspaceId) {
     _workspaceId = workspaceId;
+
     return const AddModelProviderModel();
   }
 

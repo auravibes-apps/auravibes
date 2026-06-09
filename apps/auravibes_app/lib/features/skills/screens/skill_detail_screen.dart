@@ -153,6 +153,7 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
     _initializeForm(context, detail);
 
     final isReadOnly = detail != null && !detail.isUserSkill;
+
     return ListView(
       padding: const EdgeInsets.all(12),
       children: [
@@ -254,6 +255,7 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
   List<Widget> _buildCredentialFields(SkillDetail? detail, bool isReadOnly) {
     final canEdit = _isCreate || !isReadOnly;
     final credentialDefinitionId = _credentialDefinitionId;
+
     return [
       if (canEdit)
         _CredentialDefinitionSelector(
@@ -285,6 +287,7 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
 
   List<Widget> _buildSaveActions(BuildContext context, bool isReadOnly) {
     final canSave = _isCreate || !isReadOnly;
+
     return [
       if (canSave)
         Align(
@@ -382,6 +385,7 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
           isEnabled: _isEnabled,
         ),
       );
+
       return;
     }
 
@@ -808,6 +812,7 @@ class _SkillCredentialsHint extends ConsumerWidget {
     final countKey = credentials.length == 1
         ? LocaleKeys.skill_credentials_configured_count_one
         : LocaleKeys.skill_credentials_configured_count_other;
+
     return AuraText(
       child: Text(
         countKey.tr(

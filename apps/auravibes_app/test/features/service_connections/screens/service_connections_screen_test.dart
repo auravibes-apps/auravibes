@@ -135,6 +135,7 @@ Future<void> _pumpScreen(
   addTearDown(() async {
     await tester.pumpWidget(const SizedBox.shrink());
   });
+
   return tester.pumpWidget(
     EasyLocalization(
       key: UniqueKey(),

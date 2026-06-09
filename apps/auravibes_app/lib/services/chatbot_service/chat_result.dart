@@ -1,6 +1,5 @@
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: no-object-declaration
 // Required: Genkit tool payloads expose raw Object values.
@@ -90,6 +89,7 @@ abstract class ChatMessage with _$ChatMessage {
     final newContent = content + delta.content;
     final newParts = [...parts, ...delta.parts];
     final newMetadata = {...metadata, ...delta.metadata};
+
     return ChatMessage(
       role: role,
       content: newContent,
@@ -129,6 +129,7 @@ abstract class LanguageModelUsage with _$LanguageModelUsage {
 
   static int? _add(int? a, int? b) {
     if (a == null && b == null) return null;
+
     return (a ?? 0) + (b ?? 0);
   }
 }
@@ -159,6 +160,7 @@ extension ChatResultConcat on ChatResult<ChatMessage> {
   static String? _concatThinking(String? current, String? delta) {
     if (delta == null || delta.isEmpty) return current;
     if (current == null || current.isEmpty) return delta;
+
     return _joinThinking(current, delta);
   }
 }
@@ -209,6 +211,7 @@ extension ChatResultEntities on ChatResult<ChatMessage> {
     ];
 
     if (chunks.isEmpty) return null;
+
     return chunks.reduce(_joinThinking).trim();
   }
 
@@ -250,5 +253,6 @@ String _joinThinking(String current, String delta) {
       delta.trim().isNotEmpty &&
       !RegExp(r'\s$').hasMatch(current) &&
       !RegExp(r'^\s').hasMatch(delta);
+
   return needsSeparator ? '$current $delta' : '$current$delta';
 }

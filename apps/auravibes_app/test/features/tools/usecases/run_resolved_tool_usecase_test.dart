@@ -1,4 +1,3 @@
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
@@ -24,6 +23,7 @@ void main() {
             serverId: mcpServerId,
             toolIdentifier: toolIdentifier,
           ));
+
           return 'mcp result';
         },
   );
@@ -43,6 +43,7 @@ void main() {
               serverId: mcpServerId,
               toolIdentifier: toolIdentifier,
             ));
+
             return 'mcp result';
           },
     );

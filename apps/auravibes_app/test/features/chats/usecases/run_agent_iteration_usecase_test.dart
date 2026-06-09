@@ -2,7 +2,6 @@
 // Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -350,6 +349,7 @@ void main() {
             startTime.add(const Duration(seconds: 3)),
           );
           currentTime = currentTime.add(delay);
+
           return Future<void>.value();
         },
       );
@@ -403,6 +403,7 @@ void main() {
           ),
         ).thenAnswer((_) async {
           callCount += 1;
+
           return ContinueAgentResult(
             messageId: 'assistant-$callCount',
             hasToolCalls: true,
@@ -421,6 +422,7 @@ void main() {
                 content: 'Queued follow-up',
               );
           fixture.agentCancellationRuntime.requestStop('conversation-1');
+
           return AgentIterationDecision.continueIteration;
         });
 
@@ -462,6 +464,7 @@ void main() {
           fixture.messageRepository.createMessage(any),
         ).thenAnswer((_) async {
           fixture.agentCancellationRuntime.requestStop('conversation-1');
+
           return MessageEntity(
             id: 'queued-user-1',
             conversationId: 'conversation-1',
@@ -651,6 +654,7 @@ void main() {
                 conversationId: 'conversation-1',
                 content: 'Queued follow-up',
               );
+
           return AgentIterationDecision.continueIteration;
         });
 
@@ -720,6 +724,7 @@ void main() {
           fixture.messageRepository.createMessage(any),
         ).thenAnswer((_) async {
           createdCount += 1;
+
           return MessageEntity(
             id: 'queued-user-$createdCount',
             conversationId: 'conversation-1',
@@ -808,6 +813,7 @@ void main() {
                 hasToolCalls: true,
               );
             }
+
             return const ContinueAgentResult(
               messageId: 'assistant-2',
               hasToolCalls: false,
@@ -931,6 +937,7 @@ void main() {
             fixture.messageRepository.createMessage(any),
           ).thenAnswer((_) async {
             fixture.agentCancellationRuntime.requestStop('conversation-1');
+
             return MessageEntity(
               id: 'queued-user-1',
               conversationId: 'conversation-1',

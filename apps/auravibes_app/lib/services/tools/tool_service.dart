@@ -1,4 +1,3 @@
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/services/tools/user_tool_type.dart';
 import 'package:auravibes_app/services/tools/user_tools/calculator_tool.dart';
@@ -20,6 +19,7 @@ class ToolService {
     if (without != null && without.isNotEmpty) {
       types = types.where((element) => !without.contains(element));
     }
+
     return types.toList();
   }
 
@@ -34,6 +34,7 @@ class ToolService {
     if (only != null) {
       types = types.where((element) => only.contains(element.type));
     }
+
     return types.toList();
   }
 

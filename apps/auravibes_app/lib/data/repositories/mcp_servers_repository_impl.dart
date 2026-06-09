@@ -1,6 +1,5 @@
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -184,6 +183,7 @@ class McpServersRepositoryImpl implements McpServersRepository {
       final results = await _mcpServersDao.getMcpServersForWorkspace(
         workspaceId,
       );
+
       return results.map(_tableToEntity).toList();
     } on Exception catch (e, stackTrace) {
       Error.throwWithStackTrace(
@@ -204,6 +204,7 @@ class McpServersRepositoryImpl implements McpServersRepository {
       final results = await _mcpServersDao.getEnabledMcpServersForWorkspace(
         workspaceId,
       );
+
       return results.map(_tableToEntity).toList();
     } on Exception catch (e, stackTrace) {
       Error.throwWithStackTrace(
@@ -221,6 +222,7 @@ class McpServersRepositoryImpl implements McpServersRepository {
     try {
       final result = await _mcpServersDao.getMcpServerById(serverId);
       if (result == null) return null;
+
       return _tableToEntity(result);
     } on Exception catch (e, stackTrace) {
       Error.throwWithStackTrace(

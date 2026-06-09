@@ -1,4 +1,3 @@
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -20,6 +19,7 @@ class CompactionExecution extends _$CompactionExecution {
         timer.cancel();
       }
     });
+
     return {};
   }
 
@@ -92,6 +92,7 @@ class CompactionExecution extends _$CompactionExecution {
 
   bool isCompacting(String conversationId) {
     final entry = state[conversationId];
+
     return entry != null && entry.status == CompactionExecutionStatus.running;
   }
 }
@@ -102,5 +103,6 @@ CompactionExecutionState? compactionExecutionState(
   String conversationId,
 ) {
   final all = ref.watch(compactionExecutionProvider);
+
   return all[conversationId];
 }

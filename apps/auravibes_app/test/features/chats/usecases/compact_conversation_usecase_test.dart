@@ -2,7 +2,6 @@
 // Required: Test files keep shared fixtures and helpers top-level.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -96,6 +95,7 @@ class _CompactConversationFixture {
     when(() => mockMessageRepo.createMessage(any())).thenAnswer(
       (invocation) async {
         final msg = invocation.positionalArguments.first as MessageToCreate;
+
         return MessageEntity(
           id: 'created-${DateTime.now().microsecondsSinceEpoch}',
           conversationId: msg.conversationId,
@@ -112,6 +112,7 @@ class _CompactConversationFixture {
     when(() => mockMessageRepo.patchMessage(any(), any())).thenAnswer(
       (invocation) async {
         final id = invocation.positionalArguments.first as String;
+
         return MessageEntity(
           id: id,
           conversationId: 'conv-1',

@@ -2,7 +2,6 @@
 // Required: Existing thresholds and limits use numeric values.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -43,6 +42,7 @@ class _CompactionSettingsSectionState
     if (controller == null) {
       throw StateError('_usageController is not initialized');
     }
+
     return controller;
   }
 
@@ -51,6 +51,7 @@ class _CompactionSettingsSectionState
     if (controller == null) {
       throw StateError('_remainingController is not initialized');
     }
+
     return controller;
   }
 
@@ -184,6 +185,7 @@ class _CompactionSettingsSectionState
             .compaction_settings_validation_settings_invalid
             .tr();
       });
+
       return;
     }
 
@@ -232,6 +234,7 @@ class _CompactionSettingsSectionState
           ),
         );
       }
+
       return;
     }
     const defaults = CompactionSettings.defaults;

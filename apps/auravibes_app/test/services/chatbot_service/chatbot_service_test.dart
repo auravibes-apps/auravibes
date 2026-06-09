@@ -4,7 +4,6 @@
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-static-class
 // Required: Tests keep fixture helpers and fakes top-level.
@@ -484,6 +483,7 @@ String _stripQuotes(String title) {
       processed.endsWith("'")) {
     processed = processed.withoutEdgeCharacters();
   }
+
   return processed;
 }
 
@@ -495,6 +495,7 @@ String _stripPrefixes(String title) {
   if (processed.startsWith('Conversation:')) {
     processed = processed.replaceFirst('Conversation:', '').trim();
   }
+
   return processed;
 }
 
@@ -514,6 +515,7 @@ String _processTitle(String title) {
   if (processed.startsWith('Conversation:')) {
     processed = processed.replaceFirst('Conversation:', '').trim();
   }
+
   return processed.truncateCharacters(50);
 }
 
@@ -588,6 +590,7 @@ class _FakeProviderFactory extends ProviderFactory {
           throw Exception('failed');
         }
         chunks.forEach(context.sendChunk);
+
         return response;
       },
     );

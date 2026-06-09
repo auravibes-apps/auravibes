@@ -1,6 +1,5 @@
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
@@ -62,18 +61,21 @@ class EncryptionService {
     final secretBox = SecretBox(cipherText, nonce: nonce, mac: mac);
 
     final decrypted = await _algorithm.decrypt(secretBox, secretKey: key);
+
     return utf8.decode(decrypted);
   }
 
   /// Encrypts data, returns null if input is null.
   Future<String?> encryptNullable(String? plaintext) async {
     if (plaintext == null) return null;
+
     return encrypt(plaintext);
   }
 
   /// Decrypts data, returns null if input is null.
   Future<String?> decryptNullable(String? encryptedBase64) async {
     if (encryptedBase64 == null) return null;
+
     return decrypt(encryptedBase64);
   }
 }
@@ -81,5 +83,6 @@ class EncryptionService {
 final Provider<EncryptionService> encryptionServiceProvider =
     Provider<EncryptionService>((ref) {
       final keyManager = ref.read(secretKeyManagerProvider);
+
       return EncryptionService(keyManager);
     });

@@ -1,6 +1,5 @@
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_model_selection_with_connection.dart';
@@ -41,6 +40,7 @@ class WorkspaceModelSelectionRepositoryImpl
         .getAllWorkspaceModelSelectionsByWorkspace(
           workspaceIds: filter.workspaces,
         );
+
     return tableResults.map(_withProviderTableToEntity).toList();
   }
 
@@ -68,6 +68,7 @@ class WorkspaceModelSelectionRepositoryImpl
         .workspaceModelSelectionsDao
         .getWorkspaceModelSelectionById(id);
     if (workspaceModelSelectionWithConnection == null) return null;
+
     return _withProviderTableToEntity(workspaceModelSelectionWithConnection);
   }
 
@@ -115,6 +116,7 @@ class WorkspaceModelSelectionRepositoryImpl
 
   ModelProvidersType? _mapToTypeTable(ModelProvidersTableType? type) {
     if (type == null) return null;
+
     return switch (type) {
       .openai => .openai,
       .anthropic => .anthropic,

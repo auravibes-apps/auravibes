@@ -6,7 +6,6 @@
 // Required: Existing argument values intentionally repeat.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -37,6 +36,7 @@ final _currentChatIdProvider = Provider<String?>(
     final [firstSegment, _, thirdSegment, fourthSegment, ...] = pathSegments;
     if (firstSegment != 'workspaces') return null;
     if (thirdSegment != 'chats') return null;
+
     return fourthSegment;
   },
 );
@@ -170,6 +170,7 @@ class SidebarConversationsWidget extends ConsumerWidget {
   bool _isCompacting(WidgetRef ref, String conversationId) {
     final execution = ref.watch(compactionExecutionProvider);
     final entry = execution[conversationId];
+
     return entry != null && entry.status == CompactionExecutionStatus.running;
   }
 }

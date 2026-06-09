@@ -1,6 +1,5 @@
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-static-class
 // Required: Tests keep fixture helpers and fakes top-level.
@@ -101,6 +100,7 @@ void main() {
 
 MessageEntity _message({MessageMetadataEntity? metadata}) {
   final now = DateTime(2026);
+
   return MessageEntity(
     id: 'message-id',
     conversationId: 'conversation-id',

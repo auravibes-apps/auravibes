@@ -4,7 +4,6 @@
 // Required: Existing helper builders return widgets.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 
 import 'package:auravibes_ui/src/atoms/aura_field_label.dart';
@@ -132,6 +131,7 @@ class _AuraFieldWrapperState extends State<AuraFieldWrapper> {
   Color _getBackgroundColor(AuraColorScheme colors) {
     if (!widget.isEnabled) return colors.surfaceVariant.withValues(alpha: 0.5);
     if (widget.isReadOnly) return colors.surfaceVariant;
+
     return colors.surface;
   }
 

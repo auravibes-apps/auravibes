@@ -1,6 +1,5 @@
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/domain/entities/conversation_tool_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
@@ -208,6 +207,7 @@ class ConversationToolsException implements Exception {
   @override
   String toString() {
     final causedBy = cause != null ? ' (Caused by: $cause)' : '';
+
     return 'ConversationToolsException: $message$causedBy';
   }
 }

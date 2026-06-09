@@ -21,5 +21,6 @@ Future<ConversationSkillSelectorState> conversationSkillSelector(
     workspaceId: workspaceId,
     filter: SkillLoadFilter.loadable,
   );
+
   return ConversationSkillSelectorState(loaded: loaded, loadable: loadable);
 }

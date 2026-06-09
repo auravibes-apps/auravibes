@@ -2,7 +2,6 @@
 // Required: UI tokens and layout use fixed design values.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -88,6 +87,7 @@ class AuraTheme extends ThemeExtension<AuraTheme> {
   @override
   AuraTheme lerp(AuraTheme? other, double t) {
     if (other == null) return this;
+
     return AuraTheme(
       colors: colors.lerp(other.colors, t),
       typography: typography.lerp(other.typography, t),
@@ -347,6 +347,7 @@ class AuraColorScheme {
   /// Get color by variant nullable.
   Color? getColorOrNull(AuraColorVariant? variant) {
     if (variant == null) return null;
+
     return getColor(variant);
   }
 
@@ -736,5 +737,6 @@ double? lerpDouble(double? a, double? b, double t) {
   if (a == null && b == null) return null;
   final aValue = a ?? 0;
   final bValue = b ?? 0;
+
   return aValue + (bValue - aValue) * t;
 }

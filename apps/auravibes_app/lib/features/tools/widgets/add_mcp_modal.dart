@@ -6,7 +6,6 @@
 // Required: Existing helper builders return widgets.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -201,6 +200,7 @@ class _ErrorBanner extends ConsumerWidget {
     if (errorMessage == null) {
       return const SizedBox.shrink();
     }
+
     return Container(
       padding: EdgeInsets.symmetric(
         vertical: context.auraTheme.spacing.sm,
@@ -259,6 +259,7 @@ class _Footer extends HookConsumerWidget {
       },
       [ref, context, workspaceId],
     );
+
     return Container(
       padding: EdgeInsets.all(context.auraTheme.spacing.md),
       decoration: BoxDecoration(

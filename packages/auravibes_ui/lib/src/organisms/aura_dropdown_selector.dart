@@ -4,7 +4,6 @@
 // Required: Existing helper builders return widgets.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-extracting-callbacks
 // Required: Component callbacks stay colocated with UI state.
@@ -102,6 +101,7 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
     if (focusNode == null) {
       throw StateError('_focusNode is not initialized');
     }
+
     return focusNode;
   }
 
@@ -155,6 +155,7 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
           color: AuraColorVariant.onSurfaceVariant,
         );
       }
+
       return const Text('');
     }
 
@@ -249,8 +250,10 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
       onKey: (node, event) {
         if (event.logicalKey == LogicalKeyboardKey.escape && _isDropdownOpen) {
           _unfocus();
+
           return KeyEventResult.handled;
         }
+
         return KeyEventResult.ignored;
       },
     );

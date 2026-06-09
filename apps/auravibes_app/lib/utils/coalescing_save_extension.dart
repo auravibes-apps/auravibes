@@ -1,6 +1,5 @@
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -39,6 +38,7 @@ class _CoalescingSaver<T> {
     if (!_saving) {
       unawaited(_run());
     }
+
     return _doneCompleter.future;
   }
 

@@ -1,6 +1,5 @@
 // ignore_for_file: prefer-async-await
 // Required: Existing Future chains preserve callback flow.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/conversations.dart';
@@ -42,6 +41,7 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
   }) {
     final query = _buildWorkspaceQuery(workspaceId);
     if (limit != null) query.limit(limit, offset: 0);
+
     return query.watch();
   }
 

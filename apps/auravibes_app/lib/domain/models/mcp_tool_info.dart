@@ -1,6 +1,5 @@
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ============================================================.
 // MCP Tool Info.
@@ -41,6 +40,7 @@ abstract class McpToolInfo with _$McpToolInfo {
       RegExp('[^a-zA-Z0-9_-]'),
       '_',
     );
+
     return 'mcp_${server.id}_${server.slugServerName}_$sanitizedToolName';
   }
 }

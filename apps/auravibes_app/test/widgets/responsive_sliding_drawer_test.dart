@@ -1,6 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -74,6 +73,7 @@ void main() {
             child: Builder(
               builder: (context) {
                 found = ResponsiveSlidingDrawerProvider.of(context);
+
                 return const SizedBox.shrink();
               },
             ),
@@ -93,6 +93,7 @@ void main() {
           home: Builder(
             builder: (context) {
               found = ResponsiveSlidingDrawerProvider.maybeOf(context);
+
               return const SizedBox.shrink();
             },
           ),
@@ -108,6 +109,7 @@ void main() {
           home: Builder(
             builder: (context) {
               final _ = ResponsiveSlidingDrawerProvider.of(context);
+
               return const SizedBox.shrink();
             },
           ),

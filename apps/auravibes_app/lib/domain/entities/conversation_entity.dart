@@ -1,6 +1,5 @@
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 
 import 'package:freezed_annotation/freezed_annotation.dart';
@@ -70,6 +69,7 @@ abstract class ConversationToCreate with _$ConversationToCreate {
   /// Returns true if the conversation is in a valid state.
   bool get isValid {
     final modelId = this.modelId;
+
     return hasValidTitle &&
         workspaceId.isNotEmpty &&
         (modelId == null || modelId.isNotEmpty);

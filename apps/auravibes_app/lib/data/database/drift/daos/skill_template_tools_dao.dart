@@ -1,6 +1,5 @@
 // ignore_for_file: prefer-async-await
 // Required: Existing Future chains preserve callback flow.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/skill_template_tools.dart';
@@ -47,6 +46,7 @@ class SkillTemplateToolsDao extends DatabaseAccessor<AppDatabase>
     if (updated == null) {
       throw StateError('Updated skill template tool was not found');
     }
+
     return updated;
   }
 

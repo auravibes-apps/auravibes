@@ -128,6 +128,7 @@ GetConversationBusyStateUsecase _createUsecase({
   required ProviderContainer container,
 }) {
   final notifier = container.read(conversationStreamingProvider.notifier);
+
   return GetConversationBusyStateUsecase(
     messageRepository: messageRepository,
     conversationStreamingRuntime: ConversationStreamingRuntime(

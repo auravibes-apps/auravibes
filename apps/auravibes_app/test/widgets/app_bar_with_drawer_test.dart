@@ -67,6 +67,7 @@ void main() {
       bar.preferredSize,
       equals(const Size.fromHeight(kToolbarHeight + 48)),
     );
+
     return Future<void>.value();
   });
 
@@ -76,6 +77,7 @@ void main() {
     );
 
     expect(bar.preferredSize, equals(const Size.fromHeight(kToolbarHeight)));
+
     return Future<void>.value();
   });
 

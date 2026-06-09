@@ -1,6 +1,5 @@
 // ignore_for_file: no-equal-arguments
 // Required: Existing argument values intentionally repeat.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-extracting-callbacks
 // Required: UI callbacks stay local to their widgets.
@@ -140,6 +139,7 @@ class SelectChatData extends HookWidget {
         if (selectedProviderId == null && internalProviderId.value != null) {
           internalProviderId.value = null;
         }
+
         return null;
       },
       [selectedProviderId],
@@ -182,6 +182,7 @@ class SelectChatData extends HookWidget {
         : modelsForProvider.where((model) {
             final searchTerm = model.workspaceModelSelection.modelId
                 .toLowerCase();
+
             return searchTerm.contains(searchValue.value.toLowerCase());
           }).toList();
 

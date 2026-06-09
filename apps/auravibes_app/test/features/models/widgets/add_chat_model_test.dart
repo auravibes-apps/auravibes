@@ -1,4 +1,3 @@
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -143,5 +142,6 @@ String _mapErrorMessage(Object error) {
   ) when message.trim().isNotEmpty) {
     return message;
   }
+
   return _fallback;
 }

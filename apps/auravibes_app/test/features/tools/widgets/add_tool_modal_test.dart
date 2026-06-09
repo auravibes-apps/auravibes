@@ -65,6 +65,7 @@ Future<void> _showDialog(WidgetTester tester) async {
       tester.element(find.byType(Scaffold)),
       workspaceId: _wsId,
     );
+
     return Future<void>.value();
   });
   await tester.pump();

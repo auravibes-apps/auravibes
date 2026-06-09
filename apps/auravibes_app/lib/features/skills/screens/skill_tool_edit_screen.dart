@@ -447,6 +447,7 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
       if (_bodyController.text.trim().isNotEmpty)
         'bodyFormat': _bodyFormat.value,
     };
+
     return jsonEncode(template);
   }
 
@@ -467,6 +468,7 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
         if (field.optional) 'optional': true,
       };
     }
+
     return jsonEncode(inputs);
   }
 }

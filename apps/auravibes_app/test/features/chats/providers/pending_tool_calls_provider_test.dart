@@ -4,7 +4,6 @@
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: no-object-declaration
 // Required: Test fakes override noSuchMethod with Object return values.
@@ -52,6 +51,7 @@ MessageEntity _assistantMessage({
   List<MessageToolCallEntity>? toolCalls,
 }) {
   final now = DateTime(2026);
+
   return MessageEntity(
     id: id,
     conversationId: conversationId,

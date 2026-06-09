@@ -76,6 +76,7 @@ class _ServiceConnectionEditScreenState
             return const Center(child: AuraSpinner());
           }
           _initialize(state);
+
           return switch (state) {
             _SkillCredentialEditState() => _SkillCredentialEditForm(
               state: state,
@@ -121,6 +122,7 @@ class _ServiceConnectionEditScreenState
       if (definition == null) {
         throw StateError('Skill credential definition not found.');
       }
+
       return _SkillCredentialEditState(
         credential: credential,
         definition: definition,
@@ -347,6 +349,7 @@ class _SkillCredentialEditForm extends StatelessWidget {
 
     final description = entry.value.description;
     final hint = description.isEmpty ? null : Text(description);
+
     return AuraInput(
       controller: nonSecretControllers[entry.key],
       label: Text(entry.key),
@@ -438,6 +441,7 @@ class _ModelProviderEditForm extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final suffix = state.connection.keySuffix;
+
     return ListView(
       padding: const EdgeInsets.all(12),
       children: [

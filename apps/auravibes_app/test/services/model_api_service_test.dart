@@ -1,6 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-static-class
 // Required: Tests keep fixture helpers and fakes top-level.
@@ -24,6 +23,7 @@ Dio _createDioWithResponse(Map<String, dynamic> data, {int statusCode = 200}) {
       ),
     ),
   );
+
   return dio;
 }
 
@@ -39,6 +39,7 @@ Dio _createDioWithNullData({int statusCode = 200}) {
       ),
     ),
   );
+
   return dio;
 }
 
@@ -55,6 +56,7 @@ Dio _createDioWithNon200({int statusCode = 500}) {
       ),
     ),
   );
+
   return dio;
 }
 
@@ -76,6 +78,7 @@ Dio _createDioWithHeadResponse({int statusCode = 200}) {
       },
     ),
   );
+
   return dio;
 }
 
@@ -92,6 +95,7 @@ Dio _createDioWithError() {
       ),
     ),
   );
+
   return dio;
 }
 

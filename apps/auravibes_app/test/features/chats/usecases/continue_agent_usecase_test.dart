@@ -6,7 +6,6 @@
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: no-empty-block
 // Required: Tests use intentional no-op callbacks and fake hooks.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -89,6 +88,7 @@ void main() {
         },
         remove: (messageId) {
           removedMessageIds.add(messageId);
+
           return Future<void>.value();
         },
       ),
@@ -138,6 +138,7 @@ void main() {
           },
           remove: (messageId) {
             removedMessageIds.add(messageId);
+
             return Future<void>.value();
           },
         ),
@@ -272,6 +273,7 @@ void main() {
             },
             remove: (messageId) {
               removedMessageIds.add(messageId);
+
               return Future<void>.value();
             },
           ),
@@ -308,6 +310,7 @@ void main() {
           );
           expect(history.firstOrNull?.text, contains('<skill>'));
           expect(history.firstOrNull?.toolResults, isEmpty);
+
           return Stream.fromIterable([
             ChatResult<ChatMessage>(
               output: ChatMessage.model('Done'),
@@ -701,6 +704,7 @@ void main() {
           if (!createStarted.isCompleted) {
             createStarted.complete();
           }
+
           return createCompleter.future;
         });
 

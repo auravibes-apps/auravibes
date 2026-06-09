@@ -16,6 +16,7 @@ void main() {
       final output = controller.stream.coalescingSave(
         store: (state) {
           savedStates.add(state);
+
           return Future<void>.value();
         },
       );
@@ -38,6 +39,7 @@ void main() {
       final output = controller.stream.coalescingSave(
         store: (state) {
           savedStates.add(state);
+
           return Future<void>.value();
         },
       );
@@ -70,6 +72,7 @@ void main() {
       final output = controller.stream.coalescingSave(
         store: (state) {
           savedStates.add(state);
+
           return Future<void>.value();
         },
       );
@@ -121,6 +124,7 @@ void main() {
       final output = controller.stream.coalescingSave(
         store: (state) {
           savedStates.add(state);
+
           return Future<void>.value();
         },
       );
@@ -139,6 +143,7 @@ void main() {
       final output = controller.stream.coalescingSave(
         store: (state) {
           savedStates.add(state);
+
           return Future<void>.value();
         },
       );
@@ -182,6 +187,7 @@ void main() {
           .coalescingSave(
             store: (state) {
               storeTimestamps.add(state);
+
               return Future<void>.value();
             },
           )
@@ -209,6 +215,7 @@ void main() {
       final output = controller.stream.coalescingSave(
         store: (state) {
           savedStates.add(state);
+
           return Future<void>.value();
         },
       );

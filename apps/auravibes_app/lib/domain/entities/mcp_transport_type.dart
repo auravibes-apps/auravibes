@@ -1,6 +1,5 @@
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 
 import 'package:auravibes_app/utils/map_exception.dart';
@@ -114,6 +113,7 @@ abstract class OAuthTokenEntity with _$OAuthTokenEntity {
     if (expiresIn == null) return true;
 
     final expiresAt = issuedAt.add(Duration(seconds: expiresIn));
+
     // Consider expired if within 5 minutes of expiry (buffer for refresh).
     return DateTime.now().isAfter(
       expiresAt.subtract(const Duration(minutes: 5)),

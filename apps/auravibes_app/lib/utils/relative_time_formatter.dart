@@ -1,4 +1,3 @@
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -36,6 +35,7 @@ class RelativeTimeFormatter {
         args: [diff.inHours.toString()],
       );
     }
+
     return tr(
       LocaleKeys.home_screen_date_formatting_days_ago,
       args: [diff.inDays.toString()],

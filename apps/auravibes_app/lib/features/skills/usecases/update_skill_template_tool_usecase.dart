@@ -49,6 +49,7 @@ class UpdateSkillTemplateToolUsecase {
         );
       }
     }
+
     return _skillTemplateToolsRepository.updateTool(toolId, toolToUpdate);
   }
 
@@ -67,6 +68,7 @@ class UpdateSkillTemplateToolUsecase {
       credentialDefinitionId,
     );
     if (definition == null) return const {};
+
     return SkillCredentialAttributeDefinition.parseMap(
       definition.attributesJson,
     );

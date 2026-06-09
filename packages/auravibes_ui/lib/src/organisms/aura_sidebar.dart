@@ -4,7 +4,6 @@
 // Required: Existing helper builders return widgets.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-extracting-callbacks
 // Required: Component callbacks stay colocated with UI state.
@@ -114,6 +113,7 @@ class AuraSidebar extends StatelessWidget {
       children: List.generate(navigationItems.length, (currentIndex) {
         final item = navigationItems[currentIndex];
         if (item.footer != footer) return null;
+
         return AuraPadding(
           child: _AuraSidebarItem(
             label: isExpanded ? item.label : const SizedBox.shrink(),
@@ -192,6 +192,7 @@ class _AuraSidebarItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.auraColors;
+
     return AuraPressable(
       child: AuraPadding(
         child: AuraText(

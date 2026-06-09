@@ -1,6 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
@@ -44,6 +43,7 @@ void main() {
       getMcpToolSpec: ({required mcpServerId, required toolName}) {
         expect(mcpServerId, 'mcp-1');
         expect(toolName, 'custom_tool');
+
         return const ToolSpec(
           name: 'mcp_tool',
           description: 'desc',

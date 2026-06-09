@@ -4,7 +4,6 @@
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: no-equal-arguments
 // Required: UI geometry uses repeated values for symmetric layout.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-extracting-callbacks
 // Required: Component callbacks stay colocated with UI state.
@@ -117,6 +116,7 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
     if (focusNode == null) {
       throw StateError('_focusNode is not initialized');
     }
+
     return focusNode;
   }
 
@@ -209,8 +209,10 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
       onKey: (node, event) {
         if (event.logicalKey == LogicalKeyboardKey.escape && _visible) {
           close();
+
           return KeyEventResult.handled;
         }
+
         return KeyEventResult.ignored;
       },
     );

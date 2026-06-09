@@ -1,6 +1,5 @@
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
@@ -66,6 +65,7 @@ class WidgetbookApp extends StatelessWidget {
 
   ThemeData _createLightTheme() {
     final auraColors = AuraTheme.light.colors;
+
     return ThemeData(
       extensions: [AuraTheme.light],
       useMaterial3: true,
@@ -94,6 +94,7 @@ class WidgetbookApp extends StatelessWidget {
 
   ThemeData _createDarkTheme() {
     final auraColors = AuraTheme.dark.colors;
+
     return ThemeData(
       extensions: [AuraTheme.dark],
       useMaterial3: true,

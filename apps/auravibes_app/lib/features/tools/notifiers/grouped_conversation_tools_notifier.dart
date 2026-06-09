@@ -1,4 +1,3 @@
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -120,6 +119,7 @@ class GroupedConversationToolsNotifier
       // Default group has no createdAt, use a far-future date to keep it first.
       final aDate = a.group?.createdAt ?? DateTime(2099);
       final bDate = b.group?.createdAt ?? DateTime(2099);
+
       return bDate.compareTo(aDate);
     });
 

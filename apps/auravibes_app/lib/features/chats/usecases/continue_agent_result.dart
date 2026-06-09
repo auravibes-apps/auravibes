@@ -1,6 +1,5 @@
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -139,6 +138,7 @@ class ContinueAgentUsecase {
     if (conversation == null) {
       throw Exception('Conversation not found');
     }
+
     return conversation;
   }
 
@@ -162,6 +162,7 @@ class ContinueAgentUsecase {
       'provider=${foundModel.modelsProvider.type} '
       'supportsReasoning=${selectedModel.supportsReasoning}',
     );
+
     return foundModel;
   }
 
@@ -191,6 +192,7 @@ class ContinueAgentUsecase {
               !m.isSkillContext,
           orElse: () => null,
         );
+
         return firstNonSystem == null ||
             firstNonSystem.role == ChatMessageRole.user;
       }(),
@@ -200,6 +202,7 @@ class ContinueAgentUsecase {
             .where((m) => !m.isSkillContext)
             .firstOrNull
             ?.role;
+
         return 'First non-system message after compaction must '
             'be user, got $firstNonSystemRole';
       }(),
@@ -375,6 +378,7 @@ class ContinueAgentUsecase {
         );
         await state.responseSubscription?.cancel();
         _completeResponse(state);
+
         return;
       }
 
@@ -398,6 +402,7 @@ class ContinueAgentUsecase {
         'debug:chunk ignored after cancellation '
         'conversation=${state.conversationId}',
       );
+
       return;
     }
 
@@ -486,6 +491,7 @@ class ContinueAgentUsecase {
         stackTrace: stackTrace,
       );
       _completeResponse(state);
+
       return;
     }
 
@@ -606,6 +612,7 @@ class ContinueAgentUsecase {
         const MessagePatch(status: MessageStatus.sent),
       );
     }
+
     return true;
   }
 

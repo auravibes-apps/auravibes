@@ -1,6 +1,5 @@
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-moving-to-variable
 // Required: Existing code repeats lookups where extraction adds noise.
@@ -91,6 +90,7 @@ class McpFormNotifier extends _$McpFormNotifier {
   @override
   McpFormState build(String workspaceId) {
     _workspaceId = workspaceId;
+
     return const McpFormState();
   }
 
@@ -170,6 +170,7 @@ class McpFormNotifier extends _$McpFormNotifier {
   Future<bool> submit() async {
     if (!state.isValid) {
       setError(state.validationErrors.join('\n'));
+
       return false;
     }
 
@@ -185,10 +186,12 @@ class McpFormNotifier extends _$McpFormNotifier {
           .addMcpServer(mcpToCreate, workspaceId: _workspaceId);
 
       setSubmitting(value: false);
+
       return true;
     } on Exception catch (e) {
       setError('Error: $e');
       setSubmitting(value: false);
+
       return false;
     }
   }

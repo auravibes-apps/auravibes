@@ -2,7 +2,6 @@
 // Required: Existing thresholds and limits use numeric values.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-moving-to-variable
 // Required: Existing code repeats lookups where extraction adds noise.
@@ -59,6 +58,7 @@ class GroupedToolsViewItem {
     if (mcpConnection?.status == McpConnectionViewStatus.connecting) {
       return 4;
     }
+
     return 5;
   }
 }

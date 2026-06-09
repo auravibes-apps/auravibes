@@ -23,6 +23,7 @@ class SkillCredentialDefinitionsRepositoryImpl
     String workspaceId,
   ) async {
     final rows = await _dao.getDefinitions(workspaceId);
+
     return rows.map(_tableToEntity).toList();
   }
 
@@ -43,6 +44,7 @@ class SkillCredentialDefinitionsRepositoryImpl
   ) async {
     final row = await _dao.getDefinitionById(definitionId);
     if (row == null) return null;
+
     return _tableToEntity(row);
   }
 
@@ -53,6 +55,7 @@ class SkillCredentialDefinitionsRepositoryImpl
   ) async {
     final row = await _dao.getDefinitionBySlug(workspaceId, slug);
     if (row == null) return null;
+
     return _tableToEntity(row);
   }
 

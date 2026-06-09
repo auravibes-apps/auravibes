@@ -128,6 +128,7 @@ class _ServiceConnectionCreateScreenState
         'debug:skill credential save ignored workspace=${widget.workspaceId} '
         'reason=already_saving type=${_type.name}',
       );
+
       return;
     }
     final definitionId = _definitionId;
@@ -136,6 +137,7 @@ class _ServiceConnectionCreateScreenState
         'debug:skill credential save blocked workspace=${widget.workspaceId} '
         'reason=missing_definition type=${_type.name}',
       );
+
       return;
     }
     setState(() => _isSaving = true);

@@ -1,4 +1,3 @@
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -78,6 +77,7 @@ class McpServersDao extends DatabaseAccessor<AppDatabase>
       final rowsDeleted = await (delete(
         mcpServers,
       )..where((t) => t.id.equals(id))).go();
+
       return rowsDeleted > 0;
     });
   }
@@ -92,6 +92,7 @@ class McpServersDao extends DatabaseAccessor<AppDatabase>
     final _ = await (update(mcpServers)..where((t) => t.id.equals(id))).write(
       McpServersCompanion(isEnabled: Value(isEnabled)),
     );
+
     return getMcpServerById(id);
   }
 }

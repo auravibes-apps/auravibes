@@ -4,7 +4,6 @@
 // Required: Existing helper builders return widgets.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-moving-to-variable
 // Required: UI components repeat theme and layout lookups intentionally.
@@ -160,6 +159,7 @@ class AuraTile extends StatelessWidget {
         color: enabled ? colors.outline : colors.outlineVariant,
       );
     }
+
     return null;
   }
 
@@ -167,6 +167,7 @@ class AuraTile extends StatelessWidget {
     if (variant == AuraTileVariant.surface) {
       return [DesignShadows.sm];
     }
+
     return [];
   }
 

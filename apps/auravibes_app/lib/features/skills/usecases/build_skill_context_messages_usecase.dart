@@ -19,6 +19,7 @@ class BuildSkillContextMessagesUsecase {
       workspaceId: workspaceId,
       filter: SkillLoadFilter.loaded,
     );
+
     return [
       for (final skill in loadedSkills)
         ChatMessage(

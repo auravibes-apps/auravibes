@@ -33,6 +33,7 @@ class CreateSkillCredentialDefinitionUsecase {
         'A credential definition with this title already exists',
       );
     }
+
     return _skillCredentialDefinitionsRepository.createDefinition(
       workspaceId,
       definition,

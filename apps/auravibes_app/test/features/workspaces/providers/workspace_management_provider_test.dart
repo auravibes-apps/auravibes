@@ -2,7 +2,6 @@
 // Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -44,6 +43,7 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
       updatedAt: DateTime(2026),
     );
     _workspaces.add(entity);
+
     return entity;
   }
 
@@ -60,6 +60,7 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
       updatedAt: DateTime(2026),
     );
     _workspaces[index] = updated;
+
     return updated;
   }
 
@@ -68,6 +69,7 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
     final index = _workspaces.indexWhere((w) => w.id == id);
     if (index == -1) return false;
     final _ = _workspaces.removeAt(index);
+
     return true;
   }
 

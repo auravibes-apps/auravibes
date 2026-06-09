@@ -4,7 +4,6 @@
 // Required: Existing argument values intentionally repeat.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/utils/string_extensions.dart';
 
@@ -110,6 +109,7 @@ class ToolNameFormatter {
       mcp: (mcpServerId, slugName, toolIdentifier) {
         final serverDisplayName = mcpServerName ?? slugName.toHumanReadable();
         final toolDisplayName = toolIdentifier.toHumanReadable();
+
         return '$serverDisplayName: $toolDisplayName';
       },
       builtIn: (tableId, toolIdentifier) {

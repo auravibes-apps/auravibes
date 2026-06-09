@@ -1,6 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -34,6 +33,7 @@ class ModelLogo extends StatelessWidget {
     if (svgBuilder != null) {
       return svgBuilder(context, url);
     }
+
     return SvgPicture.network(
       url,
       width: width,

@@ -1,6 +1,5 @@
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -31,6 +30,7 @@ class _FakeModelConnectionRepository implements ModelConnectionRepository {
       workspaceId: toCreate.workspaceId,
       url: toCreate.url,
     );
+
     return created ?? fail('Expected created model connection');
   }
 
@@ -39,6 +39,7 @@ class _FakeModelConnectionRepository implements ModelConnectionRepository {
     ModelConnectionFilter filter,
   ) async {
     final _ = filter;
+
     return const [];
   }
 
@@ -47,6 +48,7 @@ class _FakeModelConnectionRepository implements ModelConnectionRepository {
     ModelConnectionFilter filter,
   ) {
     final _ = filter;
+
     return Stream.value(const []);
   }
 
@@ -330,6 +332,7 @@ class _ThrowingModelConnectionRepository implements ModelConnectionRepository {
     ModelConnectionFilter filter,
   ) async {
     final _ = filter;
+
     return const [];
   }
 
@@ -338,6 +341,7 @@ class _ThrowingModelConnectionRepository implements ModelConnectionRepository {
     ModelConnectionFilter filter,
   ) {
     final _ = filter;
+
     return Stream.value(const []);
   }
 

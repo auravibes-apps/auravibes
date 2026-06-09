@@ -1,6 +1,5 @@
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
@@ -41,6 +40,7 @@ class ConversationRepositoryImpl implements ConversationRepository {
   Future<ConversationEntity?> getConversationById(String id) async {
     final conversationTable = await _database.conversationDao
         .getConversationById(id);
+
     return conversationTable != null
         ? _mapToConversation(conversationTable)
         : null;
@@ -124,6 +124,7 @@ class ConversationRepositoryImpl implements ConversationRepository {
     if (modelId != null && modelId.isEmpty) {
       return _modelIdEmpty;
     }
+
     return _unknownValidationError;
   }
 
@@ -145,6 +146,7 @@ class ConversationRepositoryImpl implements ConversationRepository {
     if (modelId != null && modelId.isEmpty) {
       return _modelIdEmpty;
     }
+
     return _unknownValidationError;
   }
 

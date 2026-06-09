@@ -2,7 +2,6 @@
 // Required: Existing thresholds and limits use numeric values.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/utils/map_exception.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
@@ -58,6 +57,7 @@ abstract class ApiModelEntity with _$ApiModelEntity {
     final cost = json.get<Map<String, dynamic>?>('cost');
     final limit = json.get<Map<String, dynamic>>('limit');
     final modalities = json.get<Map<String, dynamic>>('modalities');
+
     return ApiModelEntity(
       modelProvider: modelProvider,
       id: json.get('id'),
@@ -89,6 +89,7 @@ abstract class ApiModelEntity with _$ApiModelEntity {
     if (limitContext < 32000) return 'Medium';
     if (limitContext < 128000) return 'Large';
     if (limitContext < 1000000) return 'Very Large';
+
     return 'Massive';
   }
 }

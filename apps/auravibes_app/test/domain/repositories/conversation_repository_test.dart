@@ -1,6 +1,5 @@
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -49,6 +48,7 @@ class _StubConversationRepository implements ConversationRepository {
       modelId: conversation.modelId,
     );
     created.add(entity);
+
     return entity;
   }
 
@@ -67,6 +67,7 @@ class _StubConversationRepository implements ConversationRepository {
       modelId: conversation.modelId,
     );
     patched.add(entity);
+
     return entity;
   }
 

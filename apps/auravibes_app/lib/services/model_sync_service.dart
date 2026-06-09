@@ -1,6 +1,5 @@
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -70,6 +69,7 @@ class ModelSyncService {
       );
     } on Exception catch (e, s) {
       _log.severe('full sync pre-check failed', e, s);
+
       return ModelSyncResult(
         isSuccess: false,
         duration: DateTime.now().difference(startTime),
@@ -132,6 +132,7 @@ class ModelSyncService {
     } on Exception catch (e, s) {
       _log.severe('sync failed', e, s);
       errors.add('Sync operation failed: $e');
+
       return ModelSyncResult(
         isSuccess: false,
         providersAdded: providersAdded,
@@ -227,6 +228,7 @@ class ModelSyncResult {
     final changeStr = changes.join(', ');
     final duration = this.duration;
     final durationStr = duration != null ? ' in ${duration.inSeconds}s' : '';
+
     return 'Synchronized $changeStr$durationStr';
   }
 

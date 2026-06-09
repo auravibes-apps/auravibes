@@ -61,12 +61,14 @@ class SkillCredentialAttributeDefinition {
         'Credential attributes must be a JSON object.',
       );
     }
+
     return decoded.map((key, value) {
       if (value is! Map) {
         throw const FormatException(
           'Credential attribute definition must be an object.',
         );
       }
+
       return MapEntry(
         '$key',
         SkillCredentialAttributeDefinition(

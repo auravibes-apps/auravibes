@@ -114,6 +114,7 @@ class _ConnectionTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final menuController = AuraPopupMenuController();
+
     return AuraCard(
       child: AuraTile(
         child: AuraColumn(
@@ -181,12 +182,14 @@ class _ConnectionTile extends ConsumerWidget {
     if (suffix == null || suffix.isEmpty) {
       return '$kind - ${_serviceName(context)}';
     }
+
     return '$kind - ${_serviceName(context)} - ****$suffix';
   }
 
   String _serviceName(BuildContext context) {
     final serviceName = connection.serviceName;
     if (serviceName != null && serviceName.isNotEmpty) return serviceName;
+
     return LocaleKeys.service_connections_missing_credential_definition.tr(
       context: context,
     );

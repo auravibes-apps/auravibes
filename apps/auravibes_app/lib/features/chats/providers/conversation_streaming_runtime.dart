@@ -1,6 +1,5 @@
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_notifier.dart';
 import 'package:auravibes_app/features/chats/notifiers/messages_streaming_state.dart';
@@ -88,6 +87,7 @@ class ConversationRateLimitRetryNotifier
 final conversationStreamingRuntimeProvider =
     Provider<ConversationStreamingRuntime>((ref) {
       final notifier = ref.watch(conversationStreamingProvider.notifier);
+
       return ConversationStreamingRuntime(
         start: notifier.start,
         isStreaming: notifier.isStreaming,
@@ -99,6 +99,7 @@ final messagesStreamingRuntimeProvider = Provider<MessagesStreamingRuntime>((
   ref,
 ) {
   final notifier = ref.watch(messagesStreamingProvider.notifier);
+
   return MessagesStreamingRuntime(
     startSubscription: notifier.startSubscription,
     updateResult: notifier.updateResult,
@@ -108,6 +109,7 @@ final messagesStreamingRuntimeProvider = Provider<MessagesStreamingRuntime>((
 
 final titlesStreamingRuntimeProvider = Provider<TitlesStreamingRuntime>((ref) {
   final notifier = ref.watch(titlesStreamsProvider.notifier);
+
   return TitlesStreamingRuntime(
     updateTitle: notifier.updateTitle,
     removeTitle: notifier.removeTitle,
@@ -122,6 +124,7 @@ final conversationRateLimitRetryProvider =
 final conversationRateLimitRetryRuntimeProvider =
     Provider<ConversationRateLimitRetryRuntime>((ref) {
       final notifier = ref.watch(conversationRateLimitRetryProvider.notifier);
+
       return ConversationRateLimitRetryRuntime(
         start: notifier.start,
         retryAt: notifier.retryAt,

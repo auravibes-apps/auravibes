@@ -4,7 +4,6 @@
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: no-empty-block
 // Required: Tests use intentional no-op callbacks and fake hooks.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
@@ -69,6 +68,7 @@ void main() {
               calledMcpServerId = mcpServerId;
               calledMcpToolIdentifier = toolIdentifier;
               calledMcpArguments = arguments;
+
               return 'mcp result';
             },
       ),
@@ -128,6 +128,7 @@ void main() {
                 calledMcpServerId = mcpServerId;
                 calledMcpToolIdentifier = toolIdentifier;
                 calledMcpArguments = arguments;
+
                 return 'mcp result';
               },
         ),

@@ -1,6 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 import 'package:auravibes_app/domain/models/mcp_connection_view_status.dart';
@@ -22,6 +21,7 @@ mixin ToolsGroupMixin {
 
   String? get localizedDisplayNameKey {
     if (!isDefaultGroup) return null;
+
     return switch (defaultGroupType) {
       .native => LocaleKeys.tools_screen_native_group,
       .builtIn || null => LocaleKeys.tools_screen_default_group,
@@ -47,6 +47,7 @@ mixin ToolsGroupMixin {
   String? get truncatedErrorMessage {
     final message = mcpErrorMessage;
     if (message == null) return null;
+
     return message.truncateCharacters(50);
   }
 
@@ -64,6 +65,7 @@ mixin ToolsGroupMixin {
     if (hasMcpError) return 2;
     if (isMcpDisconnected) return 3;
     if (isMcpConnecting) return 4;
+
     return 5;
   }
 }

@@ -296,6 +296,7 @@ class _SkillCredentialDefinitionEditScreenState
         if (!row.secret) 'secret': false,
       };
     }
+
     return jsonEncode(attributes);
   }
 

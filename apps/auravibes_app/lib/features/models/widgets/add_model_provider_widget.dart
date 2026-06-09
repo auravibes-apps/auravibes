@@ -2,7 +2,6 @@
 // Required: Existing thresholds and limits use numeric values.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-extracting-callbacks
 // Required: UI callbacks stay local to their widgets.
@@ -190,6 +189,7 @@ class _HiddenSection extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final visibilityState = useState(false);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -240,6 +240,7 @@ class _ErrorBanner extends ConsumerWidget {
     if (error == null) {
       return const SizedBox.shrink();
     }
+
     return Container(
       padding: EdgeInsets.all(context.auraTheme.spacing.md),
       decoration: BoxDecoration(
@@ -345,6 +346,7 @@ class _SelectModelProvider extends HookConsumerWidget {
         }
 
         final query = searchQuery.value.toLowerCase();
+
         return models.where((model) {
           return model.name.toLowerCase().contains(query);
         }).toList();
@@ -409,6 +411,7 @@ class _SelectModelProvider extends HookConsumerWidget {
               : ListView.builder(
                   itemBuilder: (context, index) {
                     final model = filteredModels[index];
+
                     return AuraCard(
                       child: Row(
                         mainAxisAlignment: .spaceBetween,

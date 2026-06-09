@@ -1,6 +1,5 @@
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/model_providers_table_type.dart';
@@ -25,6 +24,7 @@ class ApiModelRepositoryImpl implements ApiModelRepository {
   Future<List<ApiModelProviderEntity>> getAllProviders() async {
     final providerTables = await _database.apiModelProvidersDao
         .getAllProviders();
+
     return providerTables.map(_mapToProviderEntity).toList();
   }
 
@@ -32,6 +32,7 @@ class ApiModelRepositoryImpl implements ApiModelRepository {
   Future<List<ApiModelProviderEntity>> getProvidersByType(String type) async {
     final providerTables = await _database.apiModelProvidersDao
         .getProvidersByType(type);
+
     return providerTables.map(_mapToProviderEntity).toList();
   }
 
@@ -40,6 +41,7 @@ class ApiModelRepositoryImpl implements ApiModelRepository {
   @override
   Future<List<ApiModelEntity>> getAllModels() async {
     final modelTables = await _database.apiModelsDao.getAllModels();
+
     return modelTables.map(_mapToModelEntity).toList();
   }
 
@@ -51,6 +53,7 @@ class ApiModelRepositoryImpl implements ApiModelRepository {
     final modelTable = await _database.apiModelsDao
         .getModelByProviderAndModelId(providerId, modelId);
     if (modelTable == null) return null;
+
     return _mapToModelEntity(modelTable);
   }
 
@@ -59,6 +62,7 @@ class ApiModelRepositoryImpl implements ApiModelRepository {
     final modelTables = await _database.apiModelsDao.getModelsByProvider(
       providerId,
     );
+
     return modelTables.map(_mapToModelEntity).toList();
   }
 
@@ -101,6 +105,7 @@ class ApiModelRepositoryImpl implements ApiModelRepository {
     final deletedModels = await _database.apiModelsDao.deleteAllModels();
     final deletedProviders = await _database.apiModelProvidersDao
         .deleteAllProviders();
+
     return deletedModels + deletedProviders;
   }
 
@@ -133,6 +138,7 @@ class ApiModelRepositoryImpl implements ApiModelRepository {
 
   ModelProvidersType? _mapToTypeTable(ModelProvidersTableType? type) {
     if (type == null) return null;
+
     return switch (type) {
       .openai => .openai,
       .anthropic => .anthropic,
@@ -141,6 +147,7 @@ class ApiModelRepositoryImpl implements ApiModelRepository {
 
   ModelProvidersTableType? _mapTableToType(ModelProvidersType? type) {
     if (type == null) return null;
+
     return switch (type) {
       .openai => .openai,
       .anthropic => .anthropic,
@@ -167,6 +174,7 @@ class ApiModelRepositoryImpl implements ApiModelRepository {
 
   ApiModelsCompanion? _mapEntityToCompanion(ApiModelEntity? entity) {
     if (entity == null) return null;
+
     return ApiModelsCompanion(
       modelProvider: .new(entity.modelProvider),
       id: .new(entity.id),

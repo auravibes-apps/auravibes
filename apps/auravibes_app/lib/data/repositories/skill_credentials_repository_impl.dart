@@ -34,6 +34,7 @@ class SkillCredentialsRepositoryImpl implements SkillCredentialsRepository {
       workspaceId: workspaceId,
       credentialDefinitionId: credentialDefinitionId,
     );
+
     return Future.wait(rows.map(_tableToEntity));
   }
 
@@ -52,6 +53,7 @@ class SkillCredentialsRepositoryImpl implements SkillCredentialsRepository {
   Future<SkillCredentialEntity?> getCredentialById(String credentialId) async {
     final row = await _dao.getCredentialById(credentialId);
     if (row == null) return null;
+
     return _tableToEntity(row);
   }
 
@@ -116,6 +118,7 @@ class SkillCredentialsRepositoryImpl implements SkillCredentialsRepository {
         workspaceId: Value(workspaceId),
       ),
     );
+
     return _tableToEntity(row);
   }
 
@@ -162,6 +165,7 @@ class SkillCredentialsRepositoryImpl implements SkillCredentialsRepository {
     if (updated == null) {
       throw StateError('Skill credential not found: $credentialId');
     }
+
     return _tableToEntity(updated);
   }
 
@@ -176,6 +180,7 @@ class SkillCredentialsRepositoryImpl implements SkillCredentialsRepository {
         'debug:skill credential delete no rows matched '
         'credentialId=$credentialId',
       );
+
       return;
     }
     _logger.info(
@@ -208,6 +213,7 @@ class SkillCredentialsRepositoryImpl implements SkillCredentialsRepository {
   String? _keySuffix(Iterable<String> values) {
     final firstSecret = values.where((value) => value.isNotEmpty).firstOrNull;
     if (firstSecret == null) return null;
+
     return firstSecret.lastCharacters(6);
   }
 
@@ -217,6 +223,7 @@ class SkillCredentialsRepositoryImpl implements SkillCredentialsRepository {
     final definition = await _database.skillCredentialDefinitionsDao
         .getDefinitionById(credentialDefinitionId);
     if (definition == null) return const {};
+
     return SkillCredentialAttributeDefinition.parseMap(
       definition.attributesJson,
     );
@@ -236,6 +243,7 @@ class SkillCredentialsRepositoryImpl implements SkillCredentialsRepository {
         secret[entry.key] = entry.value;
       }
     }
+
     return (secret: secret, nonSecret: nonSecret);
   }
 
@@ -265,6 +273,7 @@ class SkillCredentialsRepositoryImpl implements SkillCredentialsRepository {
     if (encryptedValue == null || encryptedValue.isEmpty) return {};
     final decryptedValue = await _encryptionService.decrypt(encryptedValue);
     final decoded = jsonDecode(decryptedValue);
+
     return decoded is Map
         ? decoded.map((key, value) => MapEntry('$key', '$value'))
         : <String, String>{};
@@ -277,6 +286,7 @@ class SkillCredentialsRepositoryImpl implements SkillCredentialsRepository {
     if (decoded is! Map) return {};
     final attributes = decoded['attributes'];
     if (attributes is! Map) return {};
+
     return attributes.map((key, value) => MapEntry('$key', '$value'));
   }
 

@@ -4,7 +4,6 @@
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: no-object-declaration
 // Required: Test fakes override noSuchMethod with Object return values.
@@ -154,6 +153,7 @@ void main() {
         onGetTools: (convId, wsId) async {
           capturedConvId = convId;
           capturedWsId = wsId;
+
           return <WorkspaceToolEntity>[];
         },
       );
@@ -229,6 +229,7 @@ void main() {
       final buildUseCase = _CapturingBuildCombined(
         onCall: (t) async {
           capturedTools = t;
+
           return [];
         },
       );

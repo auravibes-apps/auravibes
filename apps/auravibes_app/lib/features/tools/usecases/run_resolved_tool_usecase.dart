@@ -1,6 +1,5 @@
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
@@ -132,6 +131,7 @@ class RunResolvedToolUsecase {
       conversationId,
       operation,
     );
+
     return operation.valueOrCancellation();
   }
 
@@ -160,6 +160,7 @@ class RunResolvedToolUsecase {
       conversationId,
       operation,
     );
+
     return operation.valueOrCancellation();
   }
 
@@ -216,6 +217,7 @@ class RunResolvedToolUsecase {
         workspaceId: conversation.workspaceId,
         slug: slug,
       );
+
       return 'Skill "$slug" loaded.';
     }
 
@@ -228,6 +230,7 @@ class RunResolvedToolUsecase {
       workspaceId: conversation.workspaceId,
       slug: slug,
     );
+
     return 'Skill "$slug" unloaded.';
   }
 
@@ -273,6 +276,7 @@ class RunResolvedToolUsecase {
       workspaceId: conversation.workspaceId,
       credentialDefinitionId: credentialDefinitionId,
     );
+
     return {
       'skillSlug': skill.slug,
       'credentials': [
@@ -308,6 +312,7 @@ class RunResolvedToolUsecase {
     if (usecase == null) {
       throw StateError('RunSkillTemplateToolUsecase is not configured.');
     }
+
     return usecase.call(
       workspaceId: conversation.workspaceId,
       skillSlug: skillSlug,
@@ -353,6 +358,7 @@ class RunResolvedToolUsecase {
       toolSlug: toolSlug,
       result: result,
     );
+
     return result;
   }
 }

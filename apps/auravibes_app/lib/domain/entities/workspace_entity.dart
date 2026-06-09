@@ -1,6 +1,5 @@
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
@@ -65,6 +64,7 @@ abstract class WorkspaceToCreate with _$WorkspaceToCreate {
   bool get hasValidUrl {
     final url = this.url;
     if (isLocal && url == null) return true;
+
     return !isLocal && url != null && url.isNotEmpty;
   }
 

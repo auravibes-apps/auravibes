@@ -3,7 +3,6 @@
 // ignore_for_file: cascade_invocations
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -169,6 +168,7 @@ class UrlContentTransformer {
       final text = document.text?.trim() ?? '';
       final escaped = _escapeMarkdownText(text);
       final truncatedOutput = _truncateIfNeeded(escaped);
+
       return TransformedUrlContent(
         body: truncatedOutput.text,
         format: .markdown,
@@ -298,6 +298,7 @@ class UrlContentTransformer {
       }
     }
     final fence = '`' * (maxRun + 1);
+
     return '$fence $text $fence';
   }
 
@@ -473,6 +474,7 @@ class UrlContentTransformer {
       }
       if (!skipped) return h1;
     }
+
     return null;
   }
 
@@ -483,6 +485,7 @@ class UrlContentTransformer {
       if (parent.localName?.toLowerCase() == 'ul') return false;
       parent = parent.parent;
     }
+
     return false;
   }
 
@@ -492,6 +495,7 @@ class UrlContentTransformer {
       if (parent.localName?.toLowerCase() == 'pre') return true;
       parent = parent.parent;
     }
+
     return false;
   }
 
@@ -619,6 +623,7 @@ class UrlContentTransformer {
       if (identical(sibling, element)) break;
       if (sibling.localName?.toLowerCase() == 'li') index++;
     }
+
     return '$index. ';
   }
 
@@ -669,6 +674,7 @@ class UrlContentTransformer {
     if (body.length <= maxOutputLength) {
       return (text: body, truncated: false);
     }
+
     return (
       text:
           '${body.firstCharacters(maxOutputLength - _truncationSuffix.length)}'
@@ -687,6 +693,7 @@ class UrlContentTransformer {
         }
       }
     }
+
     return null;
   }
 }

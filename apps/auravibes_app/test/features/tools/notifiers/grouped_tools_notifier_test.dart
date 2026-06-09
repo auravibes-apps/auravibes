@@ -4,7 +4,6 @@
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: no-empty-block
 // Required: Tests use intentional no-op callbacks and fake hooks.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -263,12 +262,14 @@ class _FakeToolsGroupsRepository implements ToolsGroupsRepository {
     required bool isEnabled,
   }) async {
     setEnabledCalled = true;
+
     return true;
   }
 
   @override
   Future<bool> deleteToolsGroup(String id) async {
     deleteCalled = true;
+
     return true;
   }
 }

@@ -4,7 +4,6 @@
 // Required: Existing argument values intentionally repeat.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -99,11 +98,13 @@ class UrlService {
 
     if (error is! DioException) {
       completer.completeError(error, stackTrace);
+
       return;
     }
 
     if (error.type == DioExceptionType.cancel) {
       final _ = completer.operation.cancel();
+
       return;
     }
 
@@ -148,6 +149,7 @@ class UrlService {
         ? data
         : data.take(_maxResponseSize).toList(growable: false);
     final body = utf8.decode(bytes, allowMalformed: true);
+
     return data.length <= _maxResponseSize ? body : '$body$_truncatedSuffix';
   }
 
@@ -178,6 +180,7 @@ class UrlService {
           buffer.write(_truncatedSuffix);
           completer.complete(buffer.toString());
           unawaited(cancelSubscription());
+
           return;
         }
 
@@ -185,6 +188,7 @@ class UrlService {
         if (decodedChunk.length <= remainingChars) {
           buffer.write(decodedChunk);
           receivedChars += decodedChunk.length;
+
           return;
         }
 
@@ -221,6 +225,7 @@ class UrlService {
 
   Map<String, String> _buildEffectiveHeaders(UrlRequest request) {
     final headers = request.headers;
+
     return <String, String>{
       ...headers,
       if (!_hasHeader(headers, Headers.acceptHeader))

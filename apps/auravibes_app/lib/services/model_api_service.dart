@@ -2,7 +2,6 @@
 // Required: Existing thresholds and limits use numeric values.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
@@ -57,6 +56,7 @@ class ModelApiService {
     final response = await _dio.get<Map<String, dynamic>>(
       '/api.json',
     );
+
     return _parseDioResponse(
       response,
     );
@@ -200,6 +200,7 @@ class ModelApiStatus {
   String get statusMessage {
     if (isAccessible) {
       final responseTimeMs = responseTime?.inMilliseconds ?? 0;
+
       return 'Accessible (${responseTimeMs}ms)';
     } else {
       return error ?? 'Unknown error';

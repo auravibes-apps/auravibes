@@ -4,7 +4,6 @@
 // Required: Tests use intentional no-op callbacks and fake hooks.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -440,6 +439,7 @@ void main() {
         final adapter = _FakeHttpClientAdapter(
           onFetch: (options, _, _) async {
             acceptHeader = options.headers['accept'] as String?;
+
             return ResponseBody.fromString('ok', 200);
           },
         );
@@ -465,6 +465,7 @@ void main() {
         final adapter = _FakeHttpClientAdapter(
           onFetch: (options, _, _) async {
             acceptHeader = options.headers['accept'] as String?;
+
             return ResponseBody.fromString('ok', 200);
           },
         );
@@ -490,6 +491,7 @@ void main() {
         final adapter = _FakeHttpClientAdapter(
           onFetch: (options, _, _) async {
             acceptHeader = options.headers['accept'] as String?;
+
             return ResponseBody.fromString('ok', 200);
           },
         );
@@ -513,6 +515,7 @@ void main() {
         final adapter = _FakeHttpClientAdapter(
           onFetch: (options, _, _) async {
             userAgent = options.headers['user-agent'] as String?;
+
             return ResponseBody.fromString('ok', 200);
           },
         );
@@ -534,6 +537,7 @@ void main() {
         final adapter = _FakeHttpClientAdapter(
           onFetch: (options, _, _) async {
             userAgent = options.headers['user-agent'] as String?;
+
             return ResponseBody.fromString('ok', 200);
           },
         );
@@ -557,6 +561,7 @@ void main() {
         final adapter = _FakeHttpClientAdapter(
           onFetch: (options, _, _) async {
             acceptLanguage = options.headers['accept-language'] as String?;
+
             return ResponseBody.fromString('ok', 200);
           },
         );
@@ -577,6 +582,7 @@ void main() {
         final adapter = _FakeHttpClientAdapter(
           onFetch: (options, _, _) async {
             acceptLanguage = options.headers['accept-language'] as String?;
+
             return ResponseBody.fromString('ok', 200);
           },
         );

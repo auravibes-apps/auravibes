@@ -2,7 +2,6 @@
 // Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -55,6 +54,7 @@ class _FakeRepository implements WorkspaceRepository {
       updatedAt: DateTime(2026),
     );
     _workspaces.add(entity);
+
     return entity;
   }
 
@@ -74,6 +74,7 @@ class _FakeRepository implements WorkspaceRepository {
       updatedAt: DateTime(2026),
     );
     _workspaces[index] = updated;
+
     return updated;
   }
 
@@ -81,6 +82,7 @@ class _FakeRepository implements WorkspaceRepository {
   Future<bool> deleteWorkspace(String id) async {
     final before = _workspaces.length;
     _workspaces.removeWhere((w) => w.id == id);
+
     return _workspaces.length < before;
   }
 
@@ -326,6 +328,7 @@ void main() {
 class _CreateWorkspaceUseCaseFixture {
   factory _CreateWorkspaceUseCaseFixture() {
     final repository = _FakeRepository();
+
     return _CreateWorkspaceUseCaseFixture._(
       CreateWorkspaceUseCase(
         repository: repository,
@@ -342,6 +345,7 @@ class _CreateWorkspaceUseCaseFixture {
 class _EditWorkspaceUseCaseFixture {
   factory _EditWorkspaceUseCaseFixture() {
     final repository = _FakeRepository();
+
     return _EditWorkspaceUseCaseFixture._(
       repository,
       EditWorkspaceUseCase(
@@ -366,6 +370,7 @@ class _EditWorkspaceUseCaseFixture {
 class _DeleteWorkspaceUseCaseFixture {
   factory _DeleteWorkspaceUseCaseFixture() {
     final repository = _FakeRepository();
+
     return _DeleteWorkspaceUseCaseFixture._(
       repository,
       DeleteWorkspaceUseCase(repository: repository),

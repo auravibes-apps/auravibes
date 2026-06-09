@@ -4,7 +4,6 @@
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: no-object-declaration
 // Required: Test fakes override noSuchMethod with Object return values.
@@ -58,6 +57,7 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
     );
     _workspaces.add(entity);
     _emit();
+
     return entity;
   }
 
@@ -75,6 +75,7 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
     );
     _workspaces[index] = updated;
     _emit();
+
     return updated;
   }
 
@@ -84,6 +85,7 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
     if (index == -1) return false;
     final _ = _workspaces.removeAt(index);
     _emit();
+
     return true;
   }
 
@@ -136,6 +138,7 @@ void main() {
       WorkspaceRepository? repo,
     }) {
       final useRepo = repo ?? repository;
+
       return EasyLocalization(
         child: Builder(
           builder: (context) {
@@ -158,6 +161,7 @@ void main() {
                 ),
               );
             }
+
             return ProviderScope(
               overrides: overrides.cast(),
               child: MaterialApp(

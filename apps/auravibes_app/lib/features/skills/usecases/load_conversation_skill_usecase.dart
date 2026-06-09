@@ -42,6 +42,7 @@ class LoadConversationSkillUsecase {
         userSkill.id,
         isLoaded: true,
       );
+
       return;
     }
 
@@ -52,6 +53,7 @@ class LoadConversationSkillUsecase {
         appSkill.identifier,
         isLoaded: true,
       );
+
       return;
     }
 

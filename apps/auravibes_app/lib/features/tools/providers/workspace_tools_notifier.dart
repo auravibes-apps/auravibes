@@ -1,6 +1,5 @@
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -20,6 +19,7 @@ part 'workspace_tools_notifier.g.dart';
 @Riverpod(keepAlive: true)
 WorkspaceToolsRepository workspaceToolsRepository(Ref ref) {
   final appDatabase = ref.watch(appDatabaseProvider);
+
   return WorkspaceToolsRepositoryImpl(appDatabase);
 }
 
@@ -46,6 +46,7 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
     final repository = ref.watch(workspaceToolsRepositoryProvider);
     _repository = repository;
     _workspaceId = workspaceId;
+
     return repository.getWorkspaceTools(workspaceId);
   }
 
@@ -66,6 +67,7 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
           final workspaceTool = workspaceTools.firstWhereOrNull(
             (element) => element.id == wt.id,
           );
+
           return workspaceTool ?? wt;
         }).toList(),
       );
@@ -108,6 +110,7 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
     if (success) {
       _removeToolsByIds([id]);
     }
+
     return success;
   }
 
@@ -155,5 +158,6 @@ WorkspaceToolEntity? workspaceToolRow(Ref ref, String workspaceId) {
       workspaceToolIndex >= workspaceTools.length) {
     return null;
   }
+
   return workspaceTools[workspaceToolIndex];
 }

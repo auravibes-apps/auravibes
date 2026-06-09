@@ -35,6 +35,7 @@ class SkillCredentialDefinitionsScreen extends ConsumerWidget {
                   padding: const EdgeInsets.all(8),
                   itemBuilder: (context, index) {
                     final definition = value[index];
+
                     return AuraCard(
                       child: AuraTile(
                         child: AuraColumn(

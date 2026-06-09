@@ -2,7 +2,6 @@
 // Required: Existing thresholds and limits use numeric values.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -21,6 +20,7 @@ part 'context_usage_level.g.dart';
 ContextUsageData contextUsage(Ref ref) {
   final usedTokens = ref.watch(conversationUsedTokensProvider);
   final limitTokens = ref.watch(conversationContextLimitProvider).value;
+
   return ContextUsageData.compute(
     usedTokens: usedTokens,
     limitTokens: limitTokens,
@@ -42,6 +42,7 @@ enum ContextUsageLevel {
     final ratio = limitTokens > 0 ? usedTokens / limitTokens : 0.0;
     if (ratio >= 0.85) return ContextUsageLevel.warning;
     if (ratio >= 0.7) return ContextUsageLevel.elevated;
+
     return ContextUsageLevel.normal;
   }
 
@@ -161,6 +162,7 @@ String _formatCompactTokens(int value) {
     final formatted = value % 1000000 == 0
         ? (value / 1000000).toStringAsFixed(0)
         : (value / 1000000).toStringAsFixed(1);
+
     return '${formatted}m';
   }
 
@@ -175,8 +177,10 @@ String _formatCompactTokens(int value) {
       final mFormatted = m.truncateToDouble() == m
           ? m.toStringAsFixed(0)
           : m.toStringAsFixed(1);
+
       return '${mFormatted}m';
     }
+
     return '${formatted}k';
   }
 

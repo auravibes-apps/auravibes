@@ -1,4 +1,3 @@
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
@@ -15,6 +14,7 @@ Future<SharedPreferences> sharedPreferences(Ref _) =>
 @Riverpod(keepAlive: true)
 AppDatabase appDatabase(Ref _) {
   const dbPrefix = String.fromEnvironment('DB_PREFIX');
+
   return AppDatabase(
     dbPrefix: dbPrefix.isNotEmpty ? dbPrefix : null,
   );

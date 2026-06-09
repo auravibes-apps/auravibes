@@ -4,7 +4,6 @@
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: no-equal-arguments
 // Required: Existing argument values intentionally repeat.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -43,6 +42,7 @@ class ChatToolApprovalCard extends HookConsumerWidget {
       debugPrint(
         '[ChatToolApprovalCard] Error: ${asyncCalls.error}',
       );
+
       return const SizedBox.shrink();
     }
     final pendingCalls = asyncCalls.value ?? const <PendingToolCall>[];
@@ -55,6 +55,7 @@ class ChatToolApprovalCard extends HookConsumerWidget {
         if (currentIndex.value > lastIndex) {
           currentIndex.value = lastIndex;
         }
+
         return null;
       },
       [lastIndex],

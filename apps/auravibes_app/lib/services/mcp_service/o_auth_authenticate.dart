@@ -2,7 +2,6 @@
 // Required: Existing thresholds and limits use numeric values.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 
 import 'dart:convert';
@@ -60,6 +59,7 @@ class OAuthAuthenticate {
   static String generateCodeChallenge(String codeVerifier) {
     final bytes = utf8.encode(codeVerifier);
     final digest = sha256.convert(bytes);
+
     return base64Url.encode(digest.bytes).replaceAll('=', '');
   }
 
@@ -155,6 +155,7 @@ class OAuthAuthenticate {
     if (code == null || code.isEmpty) {
       throw Exception('OAuth code not found in redirect URL');
     }
+
     return code;
   }
 

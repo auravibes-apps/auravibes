@@ -1,6 +1,5 @@
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
@@ -33,6 +32,7 @@ class SecretKeyManager {
     final existingKey = await _loadKey();
     if (existingKey != null) {
       _cachedKey = existingKey;
+
       return existingKey;
     }
 
@@ -41,6 +41,7 @@ class SecretKeyManager {
     final newKey = await algorithm.newSecretKey();
     await _saveKey(newKey);
     _cachedKey = newKey;
+
     return newKey;
   }
 
@@ -49,6 +50,7 @@ class SecretKeyManager {
     if (keyBase64 == null) return null;
 
     final keyBytes = base64Decode(keyBase64);
+
     return SecretKey(keyBytes);
   }
 

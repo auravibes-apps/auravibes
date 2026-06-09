@@ -1,5 +1,4 @@
 // ignore_for_file: cascade_invocations
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
@@ -44,6 +43,7 @@ class _StubModelConnectionRepository implements ModelConnectionRepository {
       url: modelConnection.url,
     );
     created.add(entity);
+
     return entity;
   }
 
@@ -55,6 +55,7 @@ class _StubModelConnectionRepository implements ModelConnectionRepository {
         .where((connection) => connection.id == modelConnectionId)
         .firstOrNull;
     if (connection == null) return null;
+
     return ModelConnectionForEdit(
       id: connection.id,
       name: connection.name,

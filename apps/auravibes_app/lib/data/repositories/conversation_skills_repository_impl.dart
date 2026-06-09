@@ -18,6 +18,7 @@ class ConversationSkillsRepositoryImpl implements ConversationSkillsRepository {
     String conversationId,
   ) async {
     final rows = await _dao.getConversationSkills(conversationId);
+
     return rows.map(_tableToEntity).toList();
   }
 

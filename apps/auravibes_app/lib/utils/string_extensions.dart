@@ -30,6 +30,7 @@ extension StringExtensions on String {
       final wordCharacters = word.characters;
       final firstCharacter = wordCharacters.take(1).toString().toUpperCase();
       final remainingCharacters = wordCharacters.skip(1).toString();
+
       return '$firstCharacter${remainingCharacters.toLowerCase()}';
     });
 
@@ -45,6 +46,7 @@ extension StringExtensions on String {
   String lastCharacters(int count) {
     final stringCharacters = characters;
     if (stringCharacters.length <= count) return this;
+
     return stringCharacters.skip(stringCharacters.length - count).toString();
   }
 
@@ -66,6 +68,7 @@ extension StringExtensions on String {
   String withoutEdgeCharacters() {
     final stringCharacters = characters;
     if (stringCharacters.length <= 2) return '';
+
     return stringCharacters
         .skip(1)
         .take(stringCharacters.length - 2)

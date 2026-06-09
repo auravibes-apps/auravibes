@@ -72,6 +72,7 @@ class ListAvailableSkillsUsecase {
   Future<bool> _isCredentialReady(String workspaceId, SkillEntity skill) {
     final usecase = _checkSkillCredentialReadinessUsecase;
     if (usecase == null) return Future.value(true);
+
     return usecase.call(workspaceId: workspaceId, skill: skill);
   }
 }

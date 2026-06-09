@@ -6,7 +6,6 @@
 // Required: UI geometry uses repeated values for symmetric layout.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-extracting-callbacks
 // Required: Component callbacks stay colocated with UI state.
@@ -87,6 +86,7 @@ class _AuraLoadingCircleState extends State<AuraLoadingCircle>
     if (controller == null) {
       throw StateError('_controller is not initialized');
     }
+
     return controller;
   }
 
@@ -120,6 +120,7 @@ class _AuraLoadingCircleState extends State<AuraLoadingCircle>
         child: Stack(
           children: List.generate(itemCount, (i) {
             final position = widget.size * 0.5;
+
             return Positioned.fill(
               left: position,
               top: position,

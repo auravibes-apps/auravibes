@@ -2,7 +2,6 @@
 // Required: UI tokens and layout use fixed design values.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -89,6 +88,7 @@ class LinearSrgbColor extends ValueColor {
   OklabColor toOkLab() {
     final lms = vector.transform(lrgbToLms).cbrt();
     final oklab = lms.transform(lmsToOklab);
+
     return OklabColor.fromVector(oklab, alpha: alpha);
   }
 
@@ -321,6 +321,7 @@ class OKLCHColor {
   factory OKLCHColor.fromColor(Color color) {
     final rgbColor = RgbColor.fromColor(color);
     final lab = rgbColor.toOklab();
+
     return lab.toLch();
   }
 

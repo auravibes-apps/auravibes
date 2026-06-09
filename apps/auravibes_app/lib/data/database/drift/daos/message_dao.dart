@@ -2,7 +2,6 @@
 // Required: Existing Future chains preserve callback flow.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 import 'dart:convert';
 
@@ -177,6 +176,7 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
                 continue;
               }
             }
+
             return null;
           });
 }

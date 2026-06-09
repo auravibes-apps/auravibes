@@ -1,4 +1,3 @@
-// ignore_for_file: newline-before-return
 // Required: Tests keep compact return flow.
 // ignore_for_file: no-magic-number
 // Required: Tests use protocol numeric fixtures.
@@ -21,6 +20,7 @@ void main() {
     Map<String, dynamic>? capturedBody;
     final client = _FakeClient((request) async {
       capturedBody = await _readBody(request);
+
       return _jsonResponse({
         'choices': [
           {
@@ -81,6 +81,7 @@ void main() {
     Map<String, dynamic>? capturedBody;
     final client = _FakeClient((request) async {
       capturedBody = await _readBody(request);
+
       return _jsonResponse({
         'choices': [
           {
@@ -119,6 +120,7 @@ void main() {
     Map<String, dynamic>? capturedBody;
     final client = _FakeClient((request) async {
       capturedBody = await _readBody(request);
+
       return _jsonResponse({
         'choices': [
           {
@@ -174,6 +176,7 @@ void main() {
     Map<String, dynamic>? capturedBody;
     final client = _FakeClient((request) async {
       capturedBody = await _readBody(request);
+
       return _jsonResponse({
         'choices': [
           {
@@ -253,6 +256,7 @@ void main() {
     Map<String, dynamic>? capturedBody;
     final client = _FakeClient((request) async {
       capturedBody = await _readBody(request);
+
       return http.StreamedResponse(
         Stream.fromIterable([
           utf8.encode(

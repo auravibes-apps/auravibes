@@ -2089,12 +2089,14 @@ List<Object?> _slugEnumFor(List<ToolSpec> specs, String toolName) {
       .inputJsonSchema;
   final properties = schema['properties'] as Map<String, dynamic>;
   final slugSchema = properties['slug'] as Map<String, dynamic>;
+
   return slugSchema['enum'] as List<Object?>;
 }
 
 List<Object?> _propertyEnumFor(ToolSpec spec, String propertyName) {
   final properties = spec.inputJsonSchema['properties'] as Map<String, dynamic>;
   final propertySchema = properties[propertyName] as Map<String, dynamic>;
+
   return propertySchema['enum'] as List<Object?>;
 }
 
@@ -2114,6 +2116,7 @@ Dio _dioWithBody(String body, {List<RequestOptions>? requests}) {
       },
     ),
   );
+
   return dio;
 }
 
@@ -2122,8 +2125,10 @@ Future<String> _requestBody(RequestOptions options) async {
   if (data is Stream<List<int>>) {
     final bytes = <int>[];
     await data.forEach(bytes.addAll);
+
     return utf8.decode(bytes);
   }
+
   return '$data';
 }
 

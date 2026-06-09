@@ -140,6 +140,7 @@ Only create user skills from explicit user intent.
     for (final skill in getAll()) {
       if (skill.slug == slug) return skill;
     }
+
     return null;
   }
 }

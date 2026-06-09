@@ -4,7 +4,6 @@
 // Required: Existing helper builders return widgets.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -109,6 +108,7 @@ class WorkspaceManagementScreen extends HookConsumerWidget {
   ) async {
     final _ = await createWorkspaceMutation.run(ref, (transaction) {
       final usecase = ref.read(createWorkspaceUseCaseProvider);
+
       return usecase.call(name: name);
     });
 
@@ -133,6 +133,7 @@ class WorkspaceManagementScreen extends HookConsumerWidget {
   ) async {
     final _ = await editWorkspaceMutation.run(ref, (transaction) {
       final usecase = ref.read(editWorkspaceUseCaseProvider);
+
       return usecase.call(id: id, name: name);
     });
 
@@ -185,6 +186,7 @@ class WorkspaceManagementScreen extends HookConsumerWidget {
     if (confirmed == true && context.mounted) {
       await deleteWorkspaceMutation.run(ref, (transaction) {
         final usecase = ref.read(deleteWorkspaceUseCaseProvider);
+
         return usecase.call(
           id: id,
           workspaceCount: workspaces.length,
@@ -387,6 +389,7 @@ class _CreateWorkspaceFormState extends State<_CreateWorkspaceForm> {
           namedArgs: {'min': '3'},
         );
       });
+
       return;
     }
     if (name.length > 20) {
@@ -395,6 +398,7 @@ class _CreateWorkspaceFormState extends State<_CreateWorkspaceForm> {
           namedArgs: {'max': '20'},
         );
       });
+
       return;
     }
     setState(() => _errorText = null);

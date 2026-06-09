@@ -4,7 +4,6 @@
 // Required: Existing helper builders return widgets.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 
 import 'package:auravibes_ui/src/atoms/aura_icon.dart';
@@ -126,6 +125,7 @@ class AuraDropdownOption<T> extends StatelessWidget {
   Color _getBackgroundColor(AuraColorScheme colors) {
     if (!isEnabled) return Colors.transparent;
     if (isSelected) return colors.primary.withValues(alpha: 0.08);
+
     return Colors.transparent;
   }
 }

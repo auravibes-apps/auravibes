@@ -1,4 +1,3 @@
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -21,6 +20,7 @@ part 'api_model_repository_providers.g.dart';
 @Riverpod(keepAlive: true)
 ApiModelRepository apiModelRepository(Ref ref) {
   final appDatabase = ref.watch(appDatabaseProvider);
+
   return ApiModelRepositoryImpl(appDatabase);
 }
 
@@ -49,6 +49,7 @@ ModelSyncService modelSyncService(Ref ref) {
   );
 
   final _ = ref.onDispose(timer.cancel);
+
   return service;
 }
 

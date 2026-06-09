@@ -4,7 +4,6 @@
 // Required: UI geometry uses repeated values for symmetric layout.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -349,6 +348,7 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
   }) {
     if (isActive) return colors.primary;
     if (isHovered) return colors.primary.withValues(alpha: 0.8);
+
     return colors.primary.withValues(alpha: 0.6);
   }
 
@@ -359,6 +359,7 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
   }) {
     if (isActive) return colors.primary;
     if (isHovered) return colors.primary.withValues(alpha: 0.1);
+
     return DesignColors.transparent;
   }
 
@@ -369,6 +370,7 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
   }) {
     if (isActive) return colors.primary.withValues(alpha: 0.2);
     if (isHovered) return colors.primary.withValues(alpha: 0.1);
+
     return DesignColors.transparent;
   }
 
@@ -393,6 +395,7 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
     if (widget.disabled) return AuraColorVariant.onSurfaceVariant;
 
     final isActive = widget.isSelected || _isPressed;
+
     return switch (widget.variant) {
       AuraButtonGroupVariant.filled => AuraColorVariant.onPrimary,
       AuraButtonGroupVariant.outlined =>

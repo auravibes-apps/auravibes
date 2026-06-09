@@ -1,4 +1,3 @@
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
@@ -20,5 +19,6 @@ WorkspaceRepository workspaceRepository(Ref ref) {
 @Riverpod(keepAlive: true)
 Stream<List<WorkspaceEntity>> allWorkspaces(Ref ref) {
   final repo = ref.watch(workspaceRepositoryProvider);
+
   return repo.watchAllWorkspaces();
 }

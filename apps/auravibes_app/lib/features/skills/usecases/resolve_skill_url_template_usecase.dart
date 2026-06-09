@@ -51,6 +51,7 @@ class ResolveSkillUrlTemplateUsecase {
       if (rendered.trim().isEmpty) continue;
       result[entry.key] = rendered;
     }
+
     return result;
   }
 
@@ -81,6 +82,7 @@ class ResolveSkillUrlTemplateUsecase {
     if (query.isEmpty) return url;
     final uri = Uri.parse(url);
     final mergedQuery = {...uri.queryParameters, ...query};
+
     return uri.replace(queryParameters: mergedQuery).toString();
   }
 

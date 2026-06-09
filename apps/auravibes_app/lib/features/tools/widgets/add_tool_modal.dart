@@ -4,7 +4,6 @@
 // Required: Existing thresholds and limits use numeric values.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-extracting-callbacks
 // Required: UI callbacks stay local to their widgets.
@@ -54,6 +53,7 @@ class AddToolModal extends HookConsumerWidget {
       () {
         void listener() => searchQuery.value = searchController.text;
         searchController.addListener(listener);
+
         return () => searchController.removeListener(listener);
       },
       [searchController],
@@ -159,6 +159,7 @@ class _AvailableToolsList extends StatelessWidget {
         ? tools
         : tools.where((tool) {
             final name = tool.value.toLowerCase();
+
             return name.contains(searchQuery.toLowerCase());
           }).toList();
 
@@ -196,6 +197,7 @@ class _AvailableToolsList extends StatelessWidget {
       ),
       itemBuilder: (context, index) {
         final toolType = filteredTools[index];
+
         return _AvailableToolTile(
           toolType: toolType,
           workspaceId: workspaceId,

@@ -1,6 +1,5 @@
 // ignore_for_file: prefer-async-await
 // Required: Existing Future chains preserve callback flow.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -66,6 +65,7 @@ class WorkspaceToolsDao extends DatabaseAccessor<AppDatabase>
       if (updated == null) {
         throw StateError('Updated workspace tool was not found');
       }
+
       return updated;
     } else {
       // Insert new tool.
@@ -94,6 +94,7 @@ class WorkspaceToolsDao extends DatabaseAccessor<AppDatabase>
         isEnabled: Value(isEnabled),
       ),
     );
+
     return (select(tools)..where((tbl) => tbl.id.equals(id))).getSingle();
   }
 
@@ -254,6 +255,7 @@ class WorkspaceToolsDao extends DatabaseAccessor<AppDatabase>
         permissions: Value(permission),
       ),
     );
+
     return (select(
       tools,
     )..where((tbl) => tbl.id.equals(id))).getSingle();

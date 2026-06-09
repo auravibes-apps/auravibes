@@ -4,7 +4,6 @@
 // Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: avoid-top-level-members-in-tests
 // Required: Test files keep shared fixtures and helpers top-level.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -81,6 +80,7 @@ void main() {
         config: config != null ? Value(config) : const Value.absent(),
         isEnabled: Value(isEnabled),
       );
+
       return fixture.database.workspaceToolsDao
           .insertToolsBatch([companion])
           .then(

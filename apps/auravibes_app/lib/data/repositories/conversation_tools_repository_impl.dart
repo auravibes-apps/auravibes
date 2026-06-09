@@ -2,7 +2,6 @@
 // Required: Existing argument values intentionally repeat.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -31,6 +30,7 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
     String conversationId,
   ) async {
     final results = await _dao.getConversationTools(conversationId);
+
     return results.map(_tableToEntity).toList();
   }
 
@@ -84,6 +84,7 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
       toolId,
       isEnabled: isEnabled,
     );
+
     return true;
   }
 
@@ -106,6 +107,7 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
       toolId,
       permission: _mapPermissionMode(permissionMode),
     );
+
     return true;
   }
 
@@ -155,6 +157,7 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
       conversationId,
       conversation.workspaceId,
     );
+
     return availableCount.length;
   }
 

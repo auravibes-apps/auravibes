@@ -2,7 +2,6 @@
 // Required: UI tokens and layout use fixed design values.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 
 import 'package:auravibes_ui/src/atoms/aura_icon.dart';
@@ -193,6 +192,7 @@ class _CheckboxVisual extends StatelessWidget {
 
   Color _getActiveColor(BuildContext context) {
     final auraColors = context.auraColors;
+
     return switch (colorVariant) {
       AuraColorVariant.primary => auraColors.primary,
       AuraColorVariant.secondary => auraColors.secondary,

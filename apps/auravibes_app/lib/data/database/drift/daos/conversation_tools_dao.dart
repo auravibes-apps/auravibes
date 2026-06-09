@@ -1,6 +1,5 @@
 // ignore_for_file: prefer-async-await
 // Required: Existing Future chains preserve callback flow.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -90,6 +89,7 @@ class ConversationToolsDao extends DatabaseAccessor<AppDatabase>
       if (updated == null) {
         throw StateError('Updated conversation tool was not found');
       }
+
       return updated;
     } else {
       // Insert new.
@@ -128,6 +128,7 @@ class ConversationToolsDao extends DatabaseAccessor<AppDatabase>
       if (updated == null) {
         throw StateError('Updated conversation tool was not found');
       }
+
       return updated;
     } else {
       return into(conversationTools).insertReturning(
@@ -160,6 +161,7 @@ class ConversationToolsDao extends DatabaseAccessor<AppDatabase>
     String toolId,
   ) async {
     final tool = await getConversationTool(conversationId, toolId);
+
     // If no override exists, tool follows workspace setting.
     // (Considered enabled).
     return tool?.isEnabled ?? true;
@@ -234,6 +236,7 @@ class ConversationToolsDao extends DatabaseAccessor<AppDatabase>
       toolId,
       isEnabled: !isCurrentlyEnabled,
     );
+
     return true;
   }
 
@@ -242,6 +245,7 @@ class ConversationToolsDao extends DatabaseAccessor<AppDatabase>
     String toolId,
   ) async {
     final isEnabled = await isConversationToolEnabled(conversationId, toolId);
+
     return !isEnabled;
   }
 
@@ -249,11 +253,13 @@ class ConversationToolsDao extends DatabaseAccessor<AppDatabase>
     String conversationId,
   ) async {
     final tools = await getConversationTools(conversationId);
+
     return tools.where((t) => !t.isEnabled).toList();
   }
 
   Future<int> getDisabledConversationToolsCount(String conversationId) async {
     final disabled = await getDisabledConversationTools(conversationId);
+
     return disabled.length;
   }
 

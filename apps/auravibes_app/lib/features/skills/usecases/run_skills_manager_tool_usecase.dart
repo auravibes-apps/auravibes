@@ -103,6 +103,7 @@ class RunSkillsManagerToolUsecase {
 
   Future<Object> _listUserSkills(String workspaceId) async {
     final skills = await _skillsRepository.getWorkspaceSkills(workspaceId);
+
     return {
       'skills': [
         for (final skill in skills.where(
@@ -121,6 +122,7 @@ class RunSkillsManagerToolUsecase {
       workspaceId,
       _requiredString(arguments, 'skillSlug'),
     );
+
     return _skillResult('found', skill, includeDetails: true);
   }
 
@@ -145,6 +147,7 @@ class RunSkillsManagerToolUsecase {
         isEnabled: _optionalBool(arguments, 'isEnabled') ?? true,
       ),
     );
+
     return _skillResult('created', skill, includeDetails: true);
   }
 
@@ -178,6 +181,7 @@ class RunSkillsManagerToolUsecase {
         isEnabled: _optionalBool(arguments, 'isEnabled'),
       ),
     );
+
     return _skillResult('updated', updated, includeDetails: true);
   }
 
@@ -190,6 +194,7 @@ class RunSkillsManagerToolUsecase {
       _requiredString(arguments, 'skillSlug'),
     );
     final deleted = await _deleteSkillUsecase.call(skill.id);
+
     return {
       'status': deleted ? 'deleted' : 'not_deleted',
       'skillId': skill.id,
@@ -206,6 +211,7 @@ class RunSkillsManagerToolUsecase {
       _requiredString(arguments, 'skillSlug'),
     );
     final tools = await _skillTemplateToolsRepository.getSkillTools(skill.id);
+
     return {
       'skillSlug': skill.slug,
       'tools': [for (final tool in tools) _toolResult('found', tool)],
@@ -217,6 +223,7 @@ class RunSkillsManagerToolUsecase {
     Map<String, dynamic> arguments,
   ) async {
     final tool = await _getSkillTemplateTool(workspaceId, arguments);
+
     return _toolResult('found', tool, includeDetails: true);
   }
 
@@ -250,6 +257,7 @@ class RunSkillsManagerToolUsecase {
         isEnabled: _optionalBool(arguments, 'isEnabled') ?? true,
       ),
     );
+
     return _toolResult('created', tool, includeDetails: true);
   }
 
@@ -279,6 +287,7 @@ class RunSkillsManagerToolUsecase {
         isEnabled: _optionalBool(arguments, 'isEnabled'),
       ),
     );
+
     return _toolResult('updated', updated, includeDetails: true);
   }
 
@@ -288,6 +297,7 @@ class RunSkillsManagerToolUsecase {
   ) async {
     final tool = await _getSkillTemplateTool(workspaceId, arguments);
     final deleted = await _deleteSkillTemplateToolUsecase.call(tool.id);
+
     return {
       'status': deleted ? 'deleted' : 'not_deleted',
       'toolId': tool.id,
@@ -299,6 +309,7 @@ class RunSkillsManagerToolUsecase {
   Future<Object> _listSkillCredentialDefinitions(String workspaceId) async {
     final definitions = await _skillCredentialDefinitionsRepository
         .getDefinitions(workspaceId);
+
     return {
       'definitions': [
         for (final definition in definitions)
@@ -315,6 +326,7 @@ class RunSkillsManagerToolUsecase {
       workspaceId,
       _requiredString(arguments, 'definitionSlug'),
     );
+
     return _credentialDefinitionResult('found', definition);
   }
 
@@ -338,6 +350,7 @@ class RunSkillsManagerToolUsecase {
         attributesJson: _jsonObjectString(arguments, 'attributes'),
       ),
     );
+
     return _credentialDefinitionResult('created', definition);
   }
 
@@ -356,6 +369,7 @@ class RunSkillsManagerToolUsecase {
         attributesJson: _optionalJsonObjectString(arguments, 'attributes'),
       ),
     );
+
     return _credentialDefinitionResult('updated', updated);
   }
 
@@ -370,6 +384,7 @@ class RunSkillsManagerToolUsecase {
     final deleted = await _deleteSkillCredentialDefinitionUsecase.call(
       definition.id,
     );
+
     return {
       'status': deleted ? 'deleted' : 'not_deleted',
       'definitionId': definition.id,
@@ -382,6 +397,7 @@ class RunSkillsManagerToolUsecase {
     if (skill == null || skill.source != SkillSource.user) {
       throw StateError('User skill not found: $slug');
     }
+
     return skill;
   }
 
@@ -400,6 +416,7 @@ class RunSkillsManagerToolUsecase {
     if (tool == null) {
       throw StateError('Skill template tool not found.');
     }
+
     return tool;
   }
 
@@ -412,6 +429,7 @@ class RunSkillsManagerToolUsecase {
     if (definition == null) {
       throw StateError('Skill credential definition not found: $slug');
     }
+
     return definition;
   }
 
@@ -423,6 +441,7 @@ class RunSkillsManagerToolUsecase {
     if (definition == null) {
       throw StateError('Skill credential definition not found: $id');
     }
+
     return definition.id;
   }
 
@@ -487,6 +506,7 @@ class RunSkillsManagerToolUsecase {
     final attributes = SkillCredentialAttributeDefinition.parseMap(
       definition.attributesJson,
     );
+
     return {
       for (final entry in attributes.entries)
         entry.key: {
@@ -502,6 +522,7 @@ class RunSkillsManagerToolUsecase {
     if (value is! String || value.trim().isEmpty) {
       throw FormatException('$key is required.');
     }
+
     return value.trim();
   }
 
@@ -509,6 +530,7 @@ class RunSkillsManagerToolUsecase {
     final value = arguments[key];
     if (value == null) return null;
     if (value is! String) throw FormatException('$key must be a string.');
+
     return value.trim();
   }
 
@@ -516,6 +538,7 @@ class RunSkillsManagerToolUsecase {
     final value = arguments[key];
     if (value == null) return null;
     if (value is! bool) throw FormatException('$key must be a boolean.');
+
     return value;
   }
 
@@ -529,6 +552,7 @@ class RunSkillsManagerToolUsecase {
   String _jsonObjectString(Map<String, dynamic> arguments, String key) {
     final value = arguments[key];
     if (value is! Map) throw FormatException('$key must be a JSON object.');
+
     return jsonEncode(value);
   }
 
@@ -537,6 +561,7 @@ class RunSkillsManagerToolUsecase {
     String key,
   ) {
     if (!arguments.containsKey(key)) return null;
+
     return _jsonObjectString(arguments, key);
   }
 }

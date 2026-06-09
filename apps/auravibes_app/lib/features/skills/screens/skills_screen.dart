@@ -81,6 +81,7 @@ class SkillsScreen extends ConsumerWidget {
       padding: const EdgeInsets.all(8),
       itemBuilder: (context, index) {
         final skill = skills[index];
+
         return _SkillTile(
           skill: skill,
           onOpen: () => _openSkill(context, skill.id),

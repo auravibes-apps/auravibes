@@ -1,6 +1,5 @@
 // ignore_for_file: prefer-async-await
 // Required: Existing Future chains preserve callback flow.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspaces.dart';
@@ -69,6 +68,7 @@ class WorkspaceDao extends DatabaseAccessor<AppDatabase>
     final updateCount = await (update(
       workspaces,
     )..where((t) => t.id.equals(id))).write(workspace);
+
     return updateCount > 0;
   }
 
@@ -80,6 +80,7 @@ class WorkspaceDao extends DatabaseAccessor<AppDatabase>
     final deleteCount = await (delete(
       workspaces,
     )..where((t) => t.id.equals(id))).go();
+
     return deleteCount > 0;
   }
 
@@ -93,6 +94,7 @@ class WorkspaceDao extends DatabaseAccessor<AppDatabase>
               ..where(workspaces.id.equals(id)))
             .get()
             .then((rows) => rows.length);
+
     return count > 0;
   }
 
@@ -132,6 +134,7 @@ class WorkspaceDao extends DatabaseAccessor<AppDatabase>
         await (update(workspaces)..where((t) => t.id.equals(id))).write(
           WorkspacesCompanion(updatedAt: Value(DateTime.now())),
         );
+
     return rowsAffected > 0;
   }
 }

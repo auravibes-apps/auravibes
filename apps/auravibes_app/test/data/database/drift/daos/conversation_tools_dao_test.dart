@@ -4,7 +4,6 @@
 // Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: avoid-top-level-members-in-tests
 // Required: Test files keep shared fixtures and helpers top-level.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -71,6 +70,7 @@ void main() {
           .then((_) async {
             final t = await fixture.database.workspaceToolsDao
                 .getWorkspaceTools(ws.id);
+
             return t.firstOrNull;
           });
       toolId = (tool ?? fail('Expected tool to be non-null')).id;
@@ -433,6 +433,7 @@ void main() {
                           fail('Expected ws.firstOrNull to be non-null'))
                       .id,
                 );
+
             return t.firstWhere((e) => e.toolId == 'tool2');
           });
       await fixture.database.conversationToolsDao.disableConversationTools(

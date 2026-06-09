@@ -1,6 +1,5 @@
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
@@ -50,6 +49,7 @@ Future<List<MessageEntity>> chatMessages(Ref ref) {
 List<String> chatMessageIds(Ref ref) {
   final messages = ref.watch(chatMessagesProvider).value;
   if (messages == null || messages.isEmpty) return MessageIdList.empty;
+
   return MessageIdList(messages.map((m) => m.id));
 }
 
@@ -185,6 +185,7 @@ List<ConversationQueuedDraft> conversationQueuedDrafts(Ref ref) {
 @Riverpod(dependencies: [conversationSelected])
 CompactionExecutionState? conversationCompactionExecutionState(Ref ref) {
   final conversationId = ref.watch(conversationSelectedProvider);
+
   return ref.watch(compactionExecutionStateProvider(conversationId));
 }
 
@@ -279,6 +280,7 @@ Future<List<PendingToolCall>> pendingToolCalls(Ref ref) async {
       '[pendingToolCalls] No workspaceId for conversation $conversationId; '
       'returning pending tool calls as needing confirmation',
     );
+
     return pendingCalls
         .map(
           (toolCall) => PendingToolCall(
@@ -306,12 +308,14 @@ Future<List<PendingToolCall>> pendingToolCalls(Ref ref) async {
           toolCallId: toolCall.id,
           resolvedTool: resolvedTool,
         );
+
         return (
           toolCall: toolCall,
           needsConfirmation: decision.needsConfirmation,
         );
       } on Object catch (error) {
         debugPrint('[pendingToolCalls] Error resolving $toolCall: $error');
+
         return (toolCall: toolCall, needsConfirmation: true);
       }
     }),

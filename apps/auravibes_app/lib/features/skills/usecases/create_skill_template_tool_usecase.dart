@@ -31,6 +31,7 @@ class CreateSkillTemplateToolUsecase {
       inputsJson: tool.inputsJson,
       credentialDefinitions: credentialDefinitions,
     );
+
     return _skillTemplateToolsRepository.createTool(
       skillId,
       tool.copyWith(
@@ -56,6 +57,7 @@ class CreateSkillTemplateToolUsecase {
       credentialDefinitionId,
     );
     if (definition == null) return const {};
+
     return SkillCredentialAttributeDefinition.parseMap(
       definition.attributesJson,
     );

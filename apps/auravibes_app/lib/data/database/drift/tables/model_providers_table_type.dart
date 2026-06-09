@@ -1,4 +1,3 @@
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
@@ -17,6 +16,7 @@ enum ModelProvidersTableType {
   /// Throws [ArgumentError] if the value is not a valid chat model type
   static ModelProvidersTableType? fromString(String value) {
     final lowerValue = value.toLowerCase();
+
     return values.firstWhereOrNull(
       (element) => element.value == lowerValue,
     );

@@ -1,6 +1,5 @@
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-type-name
 // Required: Repository implementation names match domain contract.
@@ -43,6 +42,7 @@ class WorkspaceCompactionSettingsRepositoryImpl
   @override
   Future<CompactionSettings> getEffectiveSettings(String workspaceId) async {
     final row = await _dao.getByWorkspaceId(workspaceId);
+
     return _resolveEffective(row);
   }
 
@@ -57,12 +57,14 @@ class WorkspaceCompactionSettingsRepositoryImpl
       remainingTokenThreshold: Value(overrides.remainingTokenThreshold),
     );
     final row = await _dao.upsert(workspaceId, companion);
+
     return _resolveEffective(row);
   }
 
   @override
   Future<CompactionSettings> resetOverrides(String workspaceId) async {
     await _dao.deleteByWorkspaceId(workspaceId);
+
     return CompactionSettings.defaults;
   }
 }

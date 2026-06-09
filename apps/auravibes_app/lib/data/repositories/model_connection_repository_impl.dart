@@ -97,6 +97,7 @@ class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
     final modelConnection = await _database.modelConnectionsDao
         .getModelConnectionById(modelConnectionId);
     if (modelConnection == null) return null;
+
     return ModelConnectionForEdit(
       id: modelConnection.id,
       name: modelConnection.name,
@@ -208,6 +209,7 @@ class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
     if (filter.workspaces.isEmpty) {
       return Stream.value(const []);
     }
+
     return _database.modelConnectionsDao
         .watchAllModelConnectionsByWorkspace(workspaceIds: filter.workspaces)
         .map(
