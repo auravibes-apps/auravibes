@@ -14,9 +14,11 @@
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/usecases/manual_compaction_result.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
@@ -29,6 +31,7 @@ import 'package:auravibes_app/features/chats/widgets/chat_tool_approval_card.dar
 import 'package:auravibes_app/features/chats/widgets/conversation_context_usage_pill.dart';
 import 'package:auravibes_app/features/chats/widgets/mcp_connecting_indicator.dart';
 import 'package:auravibes_app/features/models/widgets/select_workspace_model_selection_widget.dart';
+import 'package:auravibes_app/features/skills/widgets/conversation_skill_selector_modal.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_management_modal.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/app_error_widget.dart';
@@ -64,7 +67,6 @@ class ChatConversationScreen extends ConsumerWidget {
 
 @Dependencies([
   ConversationChatNotifier,
-  chatMessageIds,
   chatMessages,
   contextUsage,
   conversationCompactionExecutionState,
@@ -153,6 +155,11 @@ class _ChatConversationScreen extends HookConsumerWidget {
     );
 
     final busyState = ref.watch(conversationBusyStateProvider).asData?.value;
+    final rateLimitRetryAt = ref.watch(
+      conversationRateLimitRetryProvider.select(
+        (retries) => retries[conversation.id],
+      ),
+    );
     final queuedDrafts = ref.watch(conversationQueuedDraftsProvider);
     final pendingCalls = ref.watch(pendingToolCallsProvider).value ?? const [];
     final hasPendingApprovals = pendingCalls.isNotEmpty;
@@ -181,6 +188,8 @@ class _ChatConversationScreen extends HookConsumerWidget {
           Expanded(child: _ChatList(pendingToolCalls: pendingCalls)),
           const McpConnectingIndicator(),
           if (busyState?.isStreaming == true) const ChatThinkingIndicator(),
+          if (rateLimitRetryAt != null)
+            _RateLimitRetryIndicator(retryAt: rateLimitRetryAt),
           if (queuedDrafts.isNotEmpty)
             ChatQueuedMessagesIndicator(queuedDrafts: queuedDrafts),
           if (hasPendingApprovals) const ChatToolApprovalCard(),
@@ -189,7 +198,12 @@ class _ChatConversationScreen extends HookConsumerWidget {
             child: ChatInputWidget(
               onSendMessage: onSendMessage,
               onToolsPress: onToolsPress,
-              isBusy: busyState?.isBusy ?? false,
+              onSkillsPress: () => _showSkillsModal(
+                context: context,
+                workspaceId: workspaceId,
+                conversationId: conversation.id,
+              ),
+              isBusy: (busyState?.isBusy ?? false) || rateLimitRetryAt != null,
               onStop: onStop,
               onCompact: onCompact,
               isCompacting: isCompacting,
@@ -202,6 +216,101 @@ class _ChatConversationScreen extends HookConsumerWidget {
       ),
     );
   }
+}
+
+class _RateLimitRetryIndicator extends StatefulWidget {
+  const _RateLimitRetryIndicator({required this.retryAt});
+
+  final DateTime retryAt;
+
+  @override
+  State<_RateLimitRetryIndicator> createState() =>
+      _RateLimitRetryIndicatorState();
+}
+
+class _RateLimitRetryIndicatorState extends State<_RateLimitRetryIndicator> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _startTimer();
+  }
+
+  @override
+  void didUpdateWidget(_RateLimitRetryIndicator oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.retryAt == widget.retryAt) return;
+
+    _timer?.cancel();
+    _startTimer();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final remainingSeconds = _remainingSeconds();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: DesignSpacing.md,
+        vertical: DesignSpacing.xs,
+      ),
+      child: Row(
+        children: [
+          const AuraSpinner(size: AuraSpinnerSize.small),
+          SizedBox(width: context.auraTheme.spacing.sm),
+          Flexible(
+            child: AuraText(
+              style: AuraTextStyle.bodySmall,
+              child: Text(
+                LocaleKeys.chats_screens_chat_conversation_rate_limit_retry.tr(
+                  namedArgs: {'seconds': remainingSeconds.toString()},
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _startTimer() {
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      setState(() {});
+    });
+  }
+
+  int _remainingSeconds() {
+    final remaining = widget.retryAt.difference(DateTime.now());
+    if (remaining <= Duration.zero) return 0;
+
+    return remaining.inSeconds + 1;
+  }
+}
+
+void _showSkillsModal({
+  required BuildContext context,
+  required String workspaceId,
+  required String conversationId,
+}) {
+  if (!context.mounted) return;
+
+  unawaited(
+    showDialog<void>(
+      context: context,
+      builder: (context) => ConversationSkillSelectorModal(
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+      ),
+    ),
+  );
 }
 
 void _showToolsModal({
@@ -313,7 +422,6 @@ Future<void> _manualCompact(
 }
 
 @Dependencies([
-  chatMessageIds,
   chatMessages,
   conversationCompactionExecutionState,
   messageConversationById,
@@ -332,7 +440,6 @@ class _ChatList extends ConsumerWidget {
       return const Center(child: AuraSpinner());
     }
 
-    final messages = ref.watch(chatMessageIdsProvider);
     final asyncError = chatMessages.asError;
     if (asyncError != null) {
       return AppErrorWidget(
@@ -341,8 +448,15 @@ class _ChatList extends ConsumerWidget {
       );
     }
 
+    final messages = chatMessages.value ?? const <MessageEntity>[];
+    final messageIds = MessageIdList(messages.map((message) => message.id));
+    final messageEntitiesById = {
+      for (final message in messages) message.id: message,
+    };
+
     return ChatMessagesWidget(
-      messages: messages,
+      messages: messageIds,
+      messageEntitiesById: messageEntitiesById,
       pendingToolCalls: pendingToolCalls,
     );
   }

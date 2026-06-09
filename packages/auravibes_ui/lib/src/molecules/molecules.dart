@@ -20,6 +20,7 @@
 export 'aura_badge.dart' show AuraBadge, AuraBadgeSize, AuraBadgeVariant;
 export 'aura_button.dart';
 export 'aura_card.dart';
+export 'aura_checkbox.dart';
 export 'aura_container.dart';
 export 'aura_divider.dart' show AuraDivider;
 export 'aura_dropdown_option.dart';

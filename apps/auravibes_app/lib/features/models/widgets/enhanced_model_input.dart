@@ -53,6 +53,7 @@ class EnhancedModelInput extends HookConsumerWidget {
       state: error != null ? AuraInputState.error : AuraInputState.normal,
       keyboardType: fieldData.keyboardType,
       textInputAction: _getTextInputAction(fieldType),
+      obscureText: fieldType == ModelInputFieldType.key,
       autofocus: fieldType == ModelInputFieldType.name && focusNode == null,
       onChanged: (newValue) => _onFieldChanged(fieldType, newValue, notifier),
       onSubmitted: (_) => onSubmitted?.call(),

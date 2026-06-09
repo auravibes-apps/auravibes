@@ -100,7 +100,7 @@ MessageEntity? messageConversationById(
   if (streamingResult == null) return messageEntity;
 
   final streamingMetadata = streamingResult.entityMetadata;
-  final metadata = _mergeStreamingMetadata(
+  final metadata = mergeStreamingMessageMetadata(
     messageEntity.metadata,
     streamingMetadata,
   );
@@ -111,7 +111,7 @@ MessageEntity? messageConversationById(
   );
 }
 
-MessageMetadataEntity? _mergeStreamingMetadata(
+MessageMetadataEntity? mergeStreamingMessageMetadata(
   MessageMetadataEntity? current,
   MessageMetadataEntity? streaming,
 ) {

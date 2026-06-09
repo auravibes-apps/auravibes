@@ -17,8 +17,12 @@ import 'package:auravibes_app/features/tools/usecases/get_agent_iteration_decisi
 import 'package:auravibes_app/features/tools/usecases/load_latest_message_tool_calls_result.dart';
 import 'package:auravibes_app/features/tools/usecases/run_resolved_tool_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
+import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/utils/encode.dart';
+import 'package:logging/logging.dart';
 import 'package:riverpod/riverpod.dart';
+
+final _logger = Logger('run_allowed_tools_usecase');
 
 class RunAllowedToolsUsecase {
   const RunAllowedToolsUsecase({
@@ -198,7 +202,26 @@ class RunAllowedToolsUsecase {
         resultStatus: ToolCallResultStatus.success,
         responseRaw: result.toString(),
       );
-    } on Object catch (_) {
+    } on FormatException catch (error, stackTrace) {
+      _logToolExecutionError(
+        conversationId: conversationId,
+        toolCallId: toolToCall.id,
+        tool: toolToCall.tool,
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return _ToolExecutionResult(
+        resultStatus: ToolCallResultStatus.executionError,
+        responseRaw: 'Tool execution failed: ${error.message}',
+      );
+    } on Object catch (error, stackTrace) {
+      _logToolExecutionError(
+        conversationId: conversationId,
+        toolCallId: toolToCall.id,
+        tool: toolToCall.tool,
+        error: error,
+        stackTrace: stackTrace,
+      );
       return const _ToolExecutionResult(
         resultStatus: ToolCallResultStatus.executionError,
       );
@@ -219,7 +242,14 @@ class RunAllowedToolsUsecase {
         resultStatus: result.resultStatus,
         responseRaw: result.responseRaw,
       );
-    } on Object catch (_) {
+    } on Object catch (error, stackTrace) {
+      _logToolExecutionError(
+        conversationId: conversationId,
+        toolCallId: toolToCall.id,
+        tool: toolToCall.tool,
+        error: error,
+        stackTrace: stackTrace,
+      );
       return _ToolResultUpdate(
         toolCallId: toolToCall.id,
         resultStatus:
@@ -283,6 +313,24 @@ class RunAllowedToolsUsecase {
       ),
     );
   }
+}
+
+void _logToolExecutionError({
+  required String conversationId,
+  required String toolCallId,
+  required ResolvedTool tool,
+  required Object error,
+  required StackTrace stackTrace,
+}) {
+  _logger.severe(
+    'Tool execution failed '
+    'conversationId=$conversationId '
+    'toolCallId=$toolCallId '
+    'toolType=${tool.type.name} '
+    'toolIdentifier=${tool.toolIdentifier}',
+    error,
+    stackTrace,
+  );
 }
 
 final runAllowedToolsUsecaseProvider = Provider<RunAllowedToolsUsecase>((ref) {

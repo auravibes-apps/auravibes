@@ -18,6 +18,9 @@ import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:genkit/genkit.dart' hide FinishReason;
 import 'package:schemantic/schemantic.dart';
 
+final _anthropicSafeToolCallId = RegExp(r'^[a-zA-Z0-9_-]+$');
+final _anthropicSafeToolCallIdChar = RegExp('[a-zA-Z0-9_-]');
+
 class ChatbotService {
   ChatbotService({
     required this.encryptionService,
@@ -149,8 +152,48 @@ class ChatbotService {
       },
       content: message.parts.isEmpty
           ? [TextPart(text: message.content)]
-          : message.parts,
+          : message.parts.map(_toProviderSafePart).toList(),
     );
+  }
+
+  Part _toProviderSafePart(Part part) {
+    return switch (part) {
+      ToolRequestPart(:final toolRequest) => ToolRequestPart(
+        toolRequest: ToolRequest(
+          ref: _providerSafeToolCallId(toolRequest.ref),
+          name: toolRequest.name,
+          input: toolRequest.input,
+        ),
+      ),
+      ToolResponsePart(:final toolResponse) => ToolResponsePart(
+        toolResponse: ToolResponse(
+          ref: _providerSafeToolCallId(toolResponse.ref),
+          name: toolResponse.name,
+          output: toolResponse.output,
+        ),
+      ),
+      _ => part,
+    };
+  }
+
+  String _providerSafeToolCallId(String? rawId) {
+    final raw = rawId?.trim() ?? '';
+    if (raw.isEmpty) return 'tool_call';
+    if (_anthropicSafeToolCallId.hasMatch(raw)) return raw;
+
+    final buffer = StringBuffer();
+    for (final codeUnit in raw.codeUnits) {
+      final char = String.fromCharCode(codeUnit);
+      if (_anthropicSafeToolCallIdChar.hasMatch(char)) {
+        buffer.write(char);
+      } else {
+        buffer
+          ..write('_x')
+          ..write(codeUnit.toRadixString(16))
+          ..write('_');
+      }
+    }
+    return buffer.toString();
   }
 
   String? _extractThinking(GenerateResponseChunk<Object?> chunk) {

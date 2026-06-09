@@ -48,11 +48,23 @@ class _FakeModelConnectionRepository implements ModelConnectionRepository {
     return const [];
   }
 
-  Future<ModelConnectionEntity?> getModelConnectionById(String _) async => null;
+  @override
+  Stream<List<ModelConnectionEntity>> watchModelConnections(
+    ModelConnectionFilter filter,
+  ) {
+    final _ = filter;
+    return Stream.value(const []);
+  }
 
+  @override
+  Future<ModelConnectionForEdit?> getModelConnectionForEdit(String _) async {
+    return null;
+  }
+
+  @override
   Future<ModelConnectionEntity> updateModelConnection(
     String _,
-    ModelConnectionToCreate _,
+    ModelConnectionToUpdate _,
   ) {
     throw UnimplementedError();
   }
@@ -320,11 +332,23 @@ class _ThrowingModelConnectionRepository implements ModelConnectionRepository {
     return const [];
   }
 
-  Future<ModelConnectionEntity?> getModelConnectionById(String _) async => null;
+  @override
+  Stream<List<ModelConnectionEntity>> watchModelConnections(
+    ModelConnectionFilter filter,
+  ) {
+    final _ = filter;
+    return Stream.value(const []);
+  }
 
+  @override
+  Future<ModelConnectionForEdit?> getModelConnectionForEdit(String _) async {
+    return null;
+  }
+
+  @override
   Future<ModelConnectionEntity> updateModelConnection(
     String _,
-    ModelConnectionToCreate _,
+    ModelConnectionToUpdate _,
   ) {
     throw UnimplementedError();
   }

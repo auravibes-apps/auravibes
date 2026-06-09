@@ -44,6 +44,16 @@ class ResolveToolApprovalDecisionUsecase {
     required String toolCallId,
     required ResolvedTool resolvedTool,
   }) async {
+    if (resolvedTool.isSkillControl ||
+        resolvedTool.isSkillTemplate ||
+        resolvedTool.isSkillNative) {
+      return ToolApprovalDecision(
+        toolCallId: toolCallId,
+        permissionResult: ToolPermissionResult.granted,
+        permissionTableId: resolvedTool.tableId,
+      );
+    }
+
     final permissionTableId = await _resolvePermissionTableId(resolvedTool);
     if (permissionTableId == null) {
       return ToolApprovalDecision(

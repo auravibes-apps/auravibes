@@ -33,6 +33,46 @@ class AuraPopupMenuController {
   void toggle() => _state?.toggle();
 }
 
+/// Icon button that opens an [AuraPopupMenu].
+class AuraPopupMenuButton extends StatefulWidget {
+  /// Creates an Aura popup menu button.
+  const AuraPopupMenuButton({
+    required this.items,
+    super.key,
+    this.icon = Icons.more_vert,
+    this.tooltip,
+  });
+
+  /// The icon shown in the trigger button.
+  final IconData icon;
+
+  /// Tooltip shown for the trigger button.
+  final String? tooltip;
+
+  /// The menu entries shown when opened.
+  final List<AuraPopupMenuEntry> items;
+
+  @override
+  State<AuraPopupMenuButton> createState() => _AuraPopupMenuButtonState();
+}
+
+class _AuraPopupMenuButtonState extends State<AuraPopupMenuButton> {
+  final _controller = AuraPopupMenuController();
+
+  @override
+  Widget build(BuildContext context) {
+    return AuraPopupMenu(
+      controller: _controller,
+      items: widget.items,
+      child: AuraIconButton(
+        icon: widget.icon,
+        onPressed: _controller.toggle,
+        tooltip: widget.tooltip,
+      ),
+    );
+  }
+}
+
 /// A popup menu widget that displays a list of menu items.
 ///
 /// The menu can be controlled programmatically using an

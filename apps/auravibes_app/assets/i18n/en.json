@@ -57,6 +57,27 @@
       }
     }
   },
+  "service_connections": {
+    "title": "Service Connections",
+    "create_title": "New Service Connection",
+    "edit_title": "Edit Service Connection",
+    "add": "Add connection",
+    "load_error": "Unable to load service connections",
+    "save_error": "Unable to save service connection",
+    "empty_title": "No service connections",
+    "empty_subtitle": "Add a model provider or skill credential to connect this workspace.",
+    "delete_credential_title": "Delete skill credential",
+    "delete_credential_confirm": "Delete credential \"{name}\"? This action cannot be undone.",
+    "delete_credential_error": "Unable to delete skill credential",
+    "missing_credential_definition": "Credential definition not found",
+    "type": {
+      "model_provider": "Model Provider",
+      "skill_credential": "Skill Credential"
+    },
+    "create": {
+      "type_label": "Connection type"
+    }
+  },
   "chats_screens": {
     "chats_list": {
       "title": "Chats",
@@ -68,6 +89,7 @@
       "stop_generation": "Stop generation",
       "stop_error": "Could not stop the conversation. Please try again.",
       "send_error": "Could not send the message. Please try again.",
+      "rate_limit_retry": "Rate limit reached. Retrying in {seconds}s.",
       "waiting_for_tools": "Waiting for tools to connect...",
       "waiting_for_tools_named": "Waiting for {tools} to connect...",
       "thinking_status": "Thinking...",
@@ -136,6 +158,148 @@
     "no_tools_in_group": "No tools available",
     "disabled_in_workspace": "Disabled in workspace"
   },
+  "skills_screen": {
+    "title": "Workspace Skills",
+    "detail_title": "Skill",
+    "create_title": "New Skill",
+    "create": "Create skill",
+    "save": "Save skill",
+    "delete": "Delete skill",
+    "duplicate": "Duplicate skill",
+    "delete_confirm": "Delete this skill? This also removes its conversation load state and template tools.",
+    "save_error": "Unable to save skill",
+    "not_found": "Skill not found",
+    "load_error": "Error loading skills",
+    "empty_title": "No skills available",
+    "empty_subtitle": "Create a skill to make it available in conversations",
+    "app_read_only": "App skills are built in and can only be enabled or disabled for this workspace.",
+    "slug_label": "Slug",
+    "title_label": "Title",
+    "description_label": "Description",
+    "content_label": "Content",
+    "enabled_label": "Enabled",
+    "credential_optional_label": "Credential is optional",
+    "credential_optional_hint": "Allow this skill to load even when no credential has been saved.",
+    "source": {
+      "user": "User",
+      "app": "App"
+    },
+    "kind": {
+      "template": "Template",
+      "native": "Native"
+    }
+  },
+  "skills_selector": {
+    "title": "Conversation skills",
+    "error": "Error loading conversation skills",
+    "loaded_title": "Loaded",
+    "loaded_empty": "No skills loaded",
+    "available_title": "Available",
+    "available_empty": "No skills available"
+  },
+  "skills_tool": {
+    "section_title": "Template tools",
+    "empty": "No template tools",
+    "create_title": "New template tool",
+    "edit_title": "Edit template tool",
+    "not_found": "Template tool not found",
+    "load_error": "Error loading template tools",
+    "save_error": "Unable to save template tool",
+    "delete_title": "Delete template tool",
+    "delete_confirm": "Delete this template tool?",
+    "description_label": "Tool description",
+    "description_hint": "Tell the AI when and how to use this tool.",
+    "url_label": "URL",
+    "url_hint": "https://api.example.com/company/{{ input.company_id }}",
+    "method_label": "Method",
+    "query_section_title": "Query parameters",
+    "query_hint": "Add URL query values one by one. Use Liquid like {{ input.search }} or {{ credential.api_key }}.",
+    "query_key_label": "Key",
+    "query_value_label": "Value",
+    "add_query": "Add query parameter",
+    "body_format_label": "Body format",
+    "body_format_json": "JSON",
+    "body_format_text": "Text",
+    "body_label": "Request body",
+    "body_hint": "Optional Liquid template. Use {{ input.name | json }} in JSON bodies and {% if input.name %} for optional fields.",
+    "inputs_section_title": "AI agent inputs",
+    "inputs_hint": "Define the fields the AI agent must collect before running this tool.",
+    "input_name_label": "Input name",
+    "input_type_label": "Type",
+    "input_description_label": "Description",
+    "input_description_hint": "Explain what value the AI should provide.",
+    "input_optional_label": "Optional",
+    "requires_credential_label": "Requires credential",
+    "requires_credential_hint": "Require the agent to pass a credentialId before this tool can run.",
+    "add_input": "Add input"
+  },
+  "skill_credentials_definitions": {
+    "title": "Skill Credential Definitions",
+    "create_title": "New Credential Definition",
+    "edit_title": "Edit Credential Definition",
+    "empty": "No credential definitions",
+    "error": "Error loading credential definitions",
+    "not_found": "Credential definition not found",
+    "save": "Save",
+    "save_error": "Unable to save credential definition",
+    "delete_title": "Delete credential definition",
+    "delete_confirm": "Delete this credential definition? Skills using it will no longer require these credentials.",
+    "attributes_label": "Attributes",
+    "attribute_variable_label": "Variable",
+    "attribute_description_label": "Description",
+    "attribute_optional": "Optional",
+    "attribute_secret": "Secret",
+    "add_attribute": "Add attribute",
+    "delete_attribute": "Delete attribute",
+    "hint": "Define the credential fields that skills can use, such as api_key or user_id."
+  },
+  "skill_credentials": {
+    "add_title": "Add Credential",
+    "definition_label": "Credential Definition",
+    "name_label": "Name",
+    "attributes_label": "Credential Attributes JSON",
+    "save_error": "Unable to save credential",
+    "load_error": "Error loading credentials",
+    "secret_saved": "Saved secret",
+    "clear_secret": "Clear secret",
+    "no_definitions": "Create a credential definition first",
+    "none": "No credential definition",
+    "missing_hint": "This skill needs a credential before it can be loaded.",
+    "optional_missing_hint": "No credential is configured. This skill can still be loaded, but tools that require credentials will stay unavailable.",
+    "configured_count": {
+      "one": "{} credential configured",
+      "other": "{} credentials configured"
+    }
+  },
+  "app_skills": {
+    "skills_manager": {
+      "title": "Skills Manager",
+      "description": "Create and edit user skills and skill template tools.",
+      "content": "Use this skill to create, inspect, edit, and delete user skills, skill template tools, and skill credential definitions.\nWhen creating a skill, add the skill instructions, any needed template tool definitions, and any needed credential definitions.\nSet isCredentialOptional true only when the skill can be loaded without a saved credential.\nSet requiresCredential true on each tool that cannot run without a credentialId.\nAgents must choose credentials explicitly with list_skill_credentials and pass credentialId; the app never auto-picks credentials.\nInspect existing workspace skills, template tools, and credential definitions before creating new records.\nUse Liquid templates for URL, query, headers, and body: {{ input.name }}, {{ credential.apiKey }}, {% if input.location %}, and {% for item in input.items %}.\nFor JSON request bodies, set bodyFormat to json and use {{ input.name | json }} or {{ credential.name | json }} for dynamic JSON values.\nUse Liquid conditionals for optional or dependent fields. Do not use {input:name}, {credential:name}, or {{name}} in new templates.\nDefine each tool input accurately with type, description, and optional when appropriate.\nOnly create user skills from explicit user intent.",
+      "tools": {
+        "create_user_skill": {
+          "title": "Create user skill",
+          "description": "Create a user-owned template skill."
+        },
+        "update_user_skill": {
+          "title": "Update user skill",
+          "description": "Update a user-owned skill by slug."
+        },
+        "create_skill_template_tool": {
+          "title": "Create skill template tool",
+          "description": "Create a URL template tool for a user skill."
+        },
+        "update_skill_template_tool": {
+          "title": "Update skill template tool",
+          "description": "Update a URL template tool by slug."
+        },
+        "create_skill_credential_definition": {
+          "title": "Create skill credential definition",
+          "description": "Create a reusable user credential definition."
+        }
+      }
+    }
+  },
   "tool_confirmation": {
     "allow_once": "Allow Once",
     "allow_conversation": "Allow for Conversation",
@@ -161,6 +325,7 @@
     "cancel": "Cancel",
     "remove": "Remove",
     "add": "Add",
+    "edit": "Edit",
     "save": "Save",
     "delete": "Delete",
     "confirm": "Confirm",
@@ -238,13 +403,21 @@
       "title": "Workspaces",
       "subtitle": "Manage your workspaces"
     },
-    "models": {
-      "title": "Model Providers",
-      "subtitle": "Manage your AI model providers"
+    "service_connections": {
+      "title": "Service Connections",
+      "subtitle": "Manage model providers and skill credentials"
+    },
+    "credential_definitions": {
+      "title": "Credential Definitions",
+      "subtitle": "Define credential fields used by skills"
     },
     "tools": {
       "title": "Tools",
       "subtitle": "Manage your tools and integrations"
+    },
+    "skills": {
+      "title": "Skills",
+      "subtitle": "Manage reusable agent skills"
     }
   },
   "sidebar": {

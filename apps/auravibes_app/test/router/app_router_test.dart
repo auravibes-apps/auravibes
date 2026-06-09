@@ -130,20 +130,33 @@ void main() {
     });
   });
 
-  group('ModelsRoute', () {
+  group('ServiceConnectionsRoute', () {
     test('constructor stores workspaceId', () {
-      final route = ModelsRoute(workspaceId: 'ws-1');
+      final route = ServiceConnectionsRoute(workspaceId: 'ws-1');
       expect(route.workspaceId, 'ws-1');
     });
 
-    test('location includes models path', () {
-      final route = ModelsRoute(workspaceId: 'ws-1');
-      expect(route.location, contains('models'));
+    test('location includes service-connections path', () {
+      final route = ServiceConnectionsRoute(workspaceId: 'ws-1');
+      expect(route.location, contains('service-connections'));
     });
 
     test('location is full correct path', () {
-      final route = ModelsRoute(workspaceId: 'ws-1');
-      expect(route.location, '/workspaces/ws-1/more/models');
+      final route = ServiceConnectionsRoute(workspaceId: 'ws-1');
+      expect(route.location, '/workspaces/ws-1/more/service-connections');
+    });
+
+    test('create route includes credential definition query params', () {
+      final route = ServiceConnectionCreateRoute(
+        workspaceId: 'ws-1',
+        type: 'skillCredential',
+        credentialDefinitionId: 'def-1',
+      );
+      expect(
+        route.location,
+        '/workspaces/ws-1/more/service-connections/new'
+        '?type=skillCredential&credentialDefinitionId=def-1',
+      );
     });
   });
 
@@ -183,7 +196,7 @@ void main() {
         ConversationRoute(workspaceId: 'ws-1', chatId: 'c1').location,
         ChatsRoute(workspaceId: 'ws-1').location,
         ToolsRoute(workspaceId: 'ws-1').location,
-        ModelsRoute(workspaceId: 'ws-1').location,
+        ServiceConnectionsRoute(workspaceId: 'ws-1').location,
         SettingsRoute(workspaceId: 'ws-1').location,
       };
       expect(locations, hasLength(7));
@@ -224,7 +237,7 @@ void main() {
         startsWith(prefix),
       );
       expect(
-        ModelsRoute(workspaceId: wsId).location,
+        ServiceConnectionsRoute(workspaceId: wsId).location,
         startsWith(prefix),
       );
       expect(
@@ -281,7 +294,7 @@ void main() {
         startsWith(prefix),
       );
       expect(
-        ModelsRoute(workspaceId: wsId).location,
+        ServiceConnectionsRoute(workspaceId: wsId).location,
         startsWith(prefix),
       );
       expect(
@@ -330,10 +343,13 @@ void main() {
     });
   });
 
-  group('ModelsRoute', () {
+  group('ServiceConnectionsRoute', () {
     test('location is correct with different workspace', () {
-      final route = ModelsRoute(workspaceId: 'ws-models');
-      expect(route.location, '/workspaces/ws-models/more/models');
+      final route = ServiceConnectionsRoute(workspaceId: 'ws-connections');
+      expect(
+        route.location,
+        '/workspaces/ws-connections/more/service-connections',
+      );
     });
   });
 

@@ -17,8 +17,21 @@ abstract class ModelConnectionRepository {
     ModelConnectionFilter filter,
   );
 
+  Stream<List<ModelConnectionEntity>> watchModelConnections(
+    ModelConnectionFilter filter,
+  );
+
   Future<ModelConnectionEntity> createModelConnection(
     ModelConnectionToCreate modelConnection,
+  );
+
+  Future<ModelConnectionForEdit?> getModelConnectionForEdit(
+    String modelConnectionId,
+  );
+
+  Future<ModelConnectionEntity> updateModelConnection(
+    String modelConnectionId,
+    ModelConnectionToUpdate modelConnection,
   );
 
   /// Deletes a model connection

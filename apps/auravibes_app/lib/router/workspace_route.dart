@@ -7,9 +7,16 @@
 import 'package:auravibes_app/features/chats/screens/chat_conversation_screen.dart';
 import 'package:auravibes_app/features/chats/screens/chats_list_screen.dart';
 import 'package:auravibes_app/features/chats/screens/new_chat_screen.dart';
-import 'package:auravibes_app/features/models/screens/models_screen.dart';
+import 'package:auravibes_app/features/service_connections/screens/service_connection_create_screen.dart';
+import 'package:auravibes_app/features/service_connections/screens/service_connection_edit_screen.dart';
+import 'package:auravibes_app/features/service_connections/screens/service_connections_screen.dart';
 import 'package:auravibes_app/features/settings/screens/more_screen.dart';
 import 'package:auravibes_app/features/settings/screens/settings_screen.dart';
+import 'package:auravibes_app/features/skills/screens/skill_credential_definition_edit_screen.dart';
+import 'package:auravibes_app/features/skills/screens/skill_credential_definitions_screen.dart';
+import 'package:auravibes_app/features/skills/screens/skill_detail_screen.dart';
+import 'package:auravibes_app/features/skills/screens/skill_tool_edit_screen.dart';
+import 'package:auravibes_app/features/skills/screens/skills_screen.dart';
 import 'package:auravibes_app/features/tools/screens/tools_screen.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_management_screen.dart';
 import 'package:auravibes_app/widgets/aura_sidebar_wrapper.dart';
@@ -48,6 +55,45 @@ final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
                 ),
                 TypedGoRoute<ModelsRoute>(
                   path: 'models',
+                ),
+                TypedGoRoute<ServiceConnectionsRoute>(
+                  path: 'service-connections',
+                  routes: [
+                    TypedGoRoute<ServiceConnectionCreateRoute>(
+                      path: 'new',
+                    ),
+                    TypedGoRoute<ServiceConnectionEditRoute>(
+                      path: ':connectionId',
+                    ),
+                  ],
+                ),
+                TypedGoRoute<SkillsRoute>(
+                  path: 'skills',
+                  routes: [
+                    TypedGoRoute<SkillCreateRoute>(
+                      path: 'new',
+                    ),
+                    TypedGoRoute<SkillToolCreateRoute>(
+                      path: ':skillId/tools/new',
+                    ),
+                    TypedGoRoute<SkillToolEditRoute>(
+                      path: ':skillId/tools/:toolId',
+                    ),
+                    TypedGoRoute<SkillDetailRoute>(
+                      path: ':skillId',
+                    ),
+                  ],
+                ),
+                TypedGoRoute<SkillCredentialDefinitionsRoute>(
+                  path: 'skill-credential-definitions',
+                  routes: [
+                    TypedGoRoute<SkillCredentialDefinitionCreateRoute>(
+                      path: 'new',
+                    ),
+                    TypedGoRoute<SkillCredentialDefinitionEditRoute>(
+                      path: ':definitionId',
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -159,8 +205,172 @@ class ModelsRoute extends GoRouteData with $ModelsRoute {
   final String workspaceId;
 
   @override
+  String redirect(BuildContext context, GoRouterState state) {
+    return ServiceConnectionsRoute(workspaceId: workspaceId).location;
+  }
+}
+
+class SkillsRoute extends GoRouteData with $SkillsRoute {
+  SkillsRoute({required this.workspaceId});
+
+  final String workspaceId;
+
+  @override
   Widget build(BuildContext context, GoRouterState state) {
-    return ModelsScreen(workspaceId: workspaceId);
+    return SkillsScreen(workspaceId: workspaceId);
+  }
+}
+
+class SkillCreateRoute extends GoRouteData with $SkillCreateRoute {
+  SkillCreateRoute({required this.workspaceId});
+
+  final String workspaceId;
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) {
+    return SkillDetailScreen(workspaceId: workspaceId);
+  }
+}
+
+class SkillDetailRoute extends GoRouteData with $SkillDetailRoute {
+  SkillDetailRoute({required this.workspaceId, required this.skillId});
+
+  final String workspaceId;
+  final String skillId;
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) {
+    return SkillDetailScreen(workspaceId: workspaceId, skillId: skillId);
+  }
+}
+
+class SkillToolCreateRoute extends GoRouteData with $SkillToolCreateRoute {
+  SkillToolCreateRoute({required this.workspaceId, required this.skillId});
+
+  final String workspaceId;
+  final String skillId;
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) {
+    return SkillToolEditScreen(workspaceId: workspaceId, skillId: skillId);
+  }
+}
+
+class SkillToolEditRoute extends GoRouteData with $SkillToolEditRoute {
+  SkillToolEditRoute({
+    required this.workspaceId,
+    required this.skillId,
+    required this.toolId,
+  });
+
+  final String workspaceId;
+  final String skillId;
+  final String toolId;
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) {
+    return SkillToolEditScreen(
+      workspaceId: workspaceId,
+      skillId: skillId,
+      toolId: toolId,
+    );
+  }
+}
+
+class SkillCredentialDefinitionsRoute extends GoRouteData
+    with $SkillCredentialDefinitionsRoute {
+  SkillCredentialDefinitionsRoute({required this.workspaceId});
+
+  final String workspaceId;
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) {
+    return SkillCredentialDefinitionsScreen(workspaceId: workspaceId);
+  }
+}
+
+class SkillCredentialDefinitionCreateRoute extends GoRouteData
+    with $SkillCredentialDefinitionCreateRoute {
+  SkillCredentialDefinitionCreateRoute({required this.workspaceId});
+
+  final String workspaceId;
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) {
+    return SkillCredentialDefinitionEditScreen(workspaceId: workspaceId);
+  }
+}
+
+class SkillCredentialDefinitionEditRoute extends GoRouteData
+    with $SkillCredentialDefinitionEditRoute {
+  SkillCredentialDefinitionEditRoute({
+    required this.workspaceId,
+    required this.definitionId,
+  });
+
+  final String workspaceId;
+  final String definitionId;
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) {
+    return SkillCredentialDefinitionEditScreen(
+      workspaceId: workspaceId,
+      definitionId: definitionId,
+    );
+  }
+}
+
+class ServiceConnectionsRoute extends GoRouteData
+    with $ServiceConnectionsRoute {
+  ServiceConnectionsRoute({required this.workspaceId});
+
+  final String workspaceId;
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) {
+    return ServiceConnectionsScreen(workspaceId: workspaceId);
+  }
+}
+
+class ServiceConnectionCreateRoute extends GoRouteData
+    with $ServiceConnectionCreateRoute {
+  ServiceConnectionCreateRoute({
+    required this.workspaceId,
+    this.type,
+    @TypedQueryParameter(name: 'credentialDefinitionId')
+    this.credentialDefinitionId,
+  });
+
+  final String workspaceId;
+  final String? type;
+  final String? credentialDefinitionId;
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) {
+    return ServiceConnectionCreateScreen(
+      workspaceId: workspaceId,
+      initialType: ServiceConnectionCreateTypeQuery.fromQueryValue(type),
+      initialCredentialDefinitionId: credentialDefinitionId,
+    );
+  }
+}
+
+class ServiceConnectionEditRoute extends GoRouteData
+    with $ServiceConnectionEditRoute {
+  ServiceConnectionEditRoute({
+    required this.workspaceId,
+    required this.connectionId,
+  });
+
+  final String workspaceId;
+  final String connectionId;
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) {
+    return ServiceConnectionEditScreen(
+      workspaceId: workspaceId,
+      connectionId: connectionId,
+    );
   }
 }
 

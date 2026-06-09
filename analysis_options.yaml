@@ -84,9 +84,6 @@ linter:
     discarded_futures: false
 
 dart_code_linter:
-  extends:
-    - package:dart_code_linter/presets/all.yaml
-
   rules:
     - avoid-double-slash-imports
     - avoid-duplicate-exports
@@ -127,7 +124,6 @@ dart_code_linter:
     - prefer-last
     - prefer-media-query-direct-access
     - prefer-named-record-fields
-    - prefer-single-quotes
     - prefer-trailing-comma
     - tag-name
 

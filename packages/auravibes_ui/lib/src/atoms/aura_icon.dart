@@ -77,6 +77,8 @@ class AuraIcon extends StatelessWidget {
 /// touch targets and accessibility features.
 class AuraIconButton extends StatelessWidget {
   /// Creates a Aura icon button.
+  // Null follows Flutter button semantics and disables the interaction.
+  // ignore: unnecessary-nullable
   const AuraIconButton({
     required this.icon,
     this.onPressed,

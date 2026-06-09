@@ -131,7 +131,12 @@ String? _mapLegacyRoute(Uri uri, {required String fallbackWorkspaceId}) {
       chatId: chatId,
     ).location,
     ['tools'] => ToolsRoute(workspaceId: fallbackWorkspaceId).location,
-    ['models'] => ModelsRoute(workspaceId: fallbackWorkspaceId).location,
+    ['models'] => ServiceConnectionsRoute(
+      workspaceId: fallbackWorkspaceId,
+    ).location,
+    ['service-connections'] => ServiceConnectionsRoute(
+      workspaceId: fallbackWorkspaceId,
+    ).location,
     ['settings'] => SettingsRoute(workspaceId: fallbackWorkspaceId).location,
     _ => null,
   };

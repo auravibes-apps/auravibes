@@ -53,15 +53,23 @@ void main() {
         Uri.parse('/tools'),
         fallbackWorkspaceId: 'ws-1',
       );
-      expect(result, '/workspaces/ws-1/tools');
+      expect(result, '/workspaces/ws-1/more/tools');
     });
 
-    test('maps models to ModelsRoute', () {
+    test('maps models to ServiceConnectionsRoute', () {
       final result = mapLegacyRoute(
         Uri.parse('/models'),
         fallbackWorkspaceId: 'ws-1',
       );
-      expect(result, '/workspaces/ws-1/models');
+      expect(result, '/workspaces/ws-1/more/service-connections');
+    });
+
+    test('maps service-connections to ServiceConnectionsRoute', () {
+      final result = mapLegacyRoute(
+        Uri.parse('/service-connections'),
+        fallbackWorkspaceId: 'ws-1',
+      );
+      expect(result, '/workspaces/ws-1/more/service-connections');
     });
 
     test('maps settings to SettingsRoute', () {
@@ -126,8 +134,10 @@ String? mapLegacyRoute(Uri uri, {required String fallbackWorkspaceId}) {
     ['chat', 'new'] => '/workspaces/$fallbackWorkspaceId/chat/new',
     ['chats'] => '/workspaces/$fallbackWorkspaceId/chats',
     ['chats', final chatId] => '/workspaces/$fallbackWorkspaceId/chats/$chatId',
-    ['tools'] => '/workspaces/$fallbackWorkspaceId/tools',
-    ['models'] => '/workspaces/$fallbackWorkspaceId/models',
+    ['tools'] => '/workspaces/$fallbackWorkspaceId/more/tools',
+    ['models'] => '/workspaces/$fallbackWorkspaceId/more/service-connections',
+    ['service-connections'] =>
+      '/workspaces/$fallbackWorkspaceId/more/service-connections',
     ['settings'] => '/workspaces/$fallbackWorkspaceId/settings',
     _ => null,
   };

@@ -562,6 +562,544 @@ as String?,
 }
 
 /// @nodoc
+mixin _$ModelConnectionForEdit {
+
+ String get id; String get name; String get modelId; String get workspaceId; bool get hasKey; String? get url; String? get keySuffix;
+/// Create a copy of ModelConnectionForEdit
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$ModelConnectionForEditCopyWith<ModelConnectionForEdit> get copyWith => _$ModelConnectionForEditCopyWithImpl<ModelConnectionForEdit>(this as ModelConnectionForEdit, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ModelConnectionForEdit&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.hasKey, hasKey) || other.hasKey == hasKey)&&(identical(other.url, url) || other.url == url)&&(identical(other.keySuffix, keySuffix) || other.keySuffix == keySuffix));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,id,name,modelId,workspaceId,hasKey,url,keySuffix);
+
+@override
+String toString() {
+  return 'ModelConnectionForEdit(id: $id, name: $name, modelId: $modelId, workspaceId: $workspaceId, hasKey: $hasKey, url: $url, keySuffix: $keySuffix)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $ModelConnectionForEditCopyWith<$Res>  {
+  factory $ModelConnectionForEditCopyWith(ModelConnectionForEdit value, $Res Function(ModelConnectionForEdit) _then) = _$ModelConnectionForEditCopyWithImpl;
+@useResult
+$Res call({
+ String id, String name, String modelId, String workspaceId, bool hasKey, String? url, String? keySuffix
+});
+
+
+
+
+}
+/// @nodoc
+class _$ModelConnectionForEditCopyWithImpl<$Res>
+    implements $ModelConnectionForEditCopyWith<$Res> {
+  _$ModelConnectionForEditCopyWithImpl(this._self, this._then);
+
+  final ModelConnectionForEdit _self;
+  final $Res Function(ModelConnectionForEdit) _then;
+
+/// Create a copy of ModelConnectionForEdit
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? modelId = null,Object? workspaceId = null,Object? hasKey = null,Object? url = freezed,Object? keySuffix = freezed,}) {
+  return _then(_self.copyWith(
+id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
+as String,modelId: null == modelId ? _self.modelId : modelId // ignore: cast_nullable_to_non_nullable
+as String,workspaceId: null == workspaceId ? _self.workspaceId : workspaceId // ignore: cast_nullable_to_non_nullable
+as String,hasKey: null == hasKey ? _self.hasKey : hasKey // ignore: cast_nullable_to_non_nullable
+as bool,url: freezed == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
+as String?,keySuffix: freezed == keySuffix ? _self.keySuffix : keySuffix // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [ModelConnectionForEdit].
+extension ModelConnectionForEditPatterns on ModelConnectionForEdit {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _ModelConnectionForEdit value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _ModelConnectionForEdit() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _ModelConnectionForEdit value)  $default,){
+final _that = this;
+switch (_that) {
+case _ModelConnectionForEdit():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _ModelConnectionForEdit value)?  $default,){
+final _that = this;
+switch (_that) {
+case _ModelConnectionForEdit() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  String modelId,  String workspaceId,  bool hasKey,  String? url,  String? keySuffix)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _ModelConnectionForEdit() when $default != null:
+return $default(_that.id,_that.name,_that.modelId,_that.workspaceId,_that.hasKey,_that.url,_that.keySuffix);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  String modelId,  String workspaceId,  bool hasKey,  String? url,  String? keySuffix)  $default,) {final _that = this;
+switch (_that) {
+case _ModelConnectionForEdit():
+return $default(_that.id,_that.name,_that.modelId,_that.workspaceId,_that.hasKey,_that.url,_that.keySuffix);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  String modelId,  String workspaceId,  bool hasKey,  String? url,  String? keySuffix)?  $default,) {final _that = this;
+switch (_that) {
+case _ModelConnectionForEdit() when $default != null:
+return $default(_that.id,_that.name,_that.modelId,_that.workspaceId,_that.hasKey,_that.url,_that.keySuffix);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+
+class _ModelConnectionForEdit implements ModelConnectionForEdit {
+  const _ModelConnectionForEdit({required this.id, required this.name, required this.modelId, required this.workspaceId, required this.hasKey, this.url, this.keySuffix});
+  
+
+@override final  String id;
+@override final  String name;
+@override final  String modelId;
+@override final  String workspaceId;
+@override final  bool hasKey;
+@override final  String? url;
+@override final  String? keySuffix;
+
+/// Create a copy of ModelConnectionForEdit
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$ModelConnectionForEditCopyWith<_ModelConnectionForEdit> get copyWith => __$ModelConnectionForEditCopyWithImpl<_ModelConnectionForEdit>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ModelConnectionForEdit&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.hasKey, hasKey) || other.hasKey == hasKey)&&(identical(other.url, url) || other.url == url)&&(identical(other.keySuffix, keySuffix) || other.keySuffix == keySuffix));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,id,name,modelId,workspaceId,hasKey,url,keySuffix);
+
+@override
+String toString() {
+  return 'ModelConnectionForEdit(id: $id, name: $name, modelId: $modelId, workspaceId: $workspaceId, hasKey: $hasKey, url: $url, keySuffix: $keySuffix)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$ModelConnectionForEditCopyWith<$Res> implements $ModelConnectionForEditCopyWith<$Res> {
+  factory _$ModelConnectionForEditCopyWith(_ModelConnectionForEdit value, $Res Function(_ModelConnectionForEdit) _then) = __$ModelConnectionForEditCopyWithImpl;
+@override @useResult
+$Res call({
+ String id, String name, String modelId, String workspaceId, bool hasKey, String? url, String? keySuffix
+});
+
+
+
+
+}
+/// @nodoc
+class __$ModelConnectionForEditCopyWithImpl<$Res>
+    implements _$ModelConnectionForEditCopyWith<$Res> {
+  __$ModelConnectionForEditCopyWithImpl(this._self, this._then);
+
+  final _ModelConnectionForEdit _self;
+  final $Res Function(_ModelConnectionForEdit) _then;
+
+/// Create a copy of ModelConnectionForEdit
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? modelId = null,Object? workspaceId = null,Object? hasKey = null,Object? url = freezed,Object? keySuffix = freezed,}) {
+  return _then(_ModelConnectionForEdit(
+id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
+as String,modelId: null == modelId ? _self.modelId : modelId // ignore: cast_nullable_to_non_nullable
+as String,workspaceId: null == workspaceId ? _self.workspaceId : workspaceId // ignore: cast_nullable_to_non_nullable
+as String,hasKey: null == hasKey ? _self.hasKey : hasKey // ignore: cast_nullable_to_non_nullable
+as bool,url: freezed == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
+as String?,keySuffix: freezed == keySuffix ? _self.keySuffix : keySuffix // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+
+
+}
+
+/// @nodoc
+mixin _$ModelConnectionToUpdate {
+
+ String? get name; String? get key; String? get url;
+/// Create a copy of ModelConnectionToUpdate
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$ModelConnectionToUpdateCopyWith<ModelConnectionToUpdate> get copyWith => _$ModelConnectionToUpdateCopyWithImpl<ModelConnectionToUpdate>(this as ModelConnectionToUpdate, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ModelConnectionToUpdate&&(identical(other.name, name) || other.name == name)&&(identical(other.key, key) || other.key == key)&&(identical(other.url, url) || other.url == url));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,name,key,url);
+
+@override
+String toString() {
+  return 'ModelConnectionToUpdate(name: $name, key: $key, url: $url)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $ModelConnectionToUpdateCopyWith<$Res>  {
+  factory $ModelConnectionToUpdateCopyWith(ModelConnectionToUpdate value, $Res Function(ModelConnectionToUpdate) _then) = _$ModelConnectionToUpdateCopyWithImpl;
+@useResult
+$Res call({
+ String? name, String? key, String? url
+});
+
+
+
+
+}
+/// @nodoc
+class _$ModelConnectionToUpdateCopyWithImpl<$Res>
+    implements $ModelConnectionToUpdateCopyWith<$Res> {
+  _$ModelConnectionToUpdateCopyWithImpl(this._self, this._then);
+
+  final ModelConnectionToUpdate _self;
+  final $Res Function(ModelConnectionToUpdate) _then;
+
+/// Create a copy of ModelConnectionToUpdate
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? name = freezed,Object? key = freezed,Object? url = freezed,}) {
+  return _then(_self.copyWith(
+name: freezed == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
+as String?,key: freezed == key ? _self.key : key // ignore: cast_nullable_to_non_nullable
+as String?,url: freezed == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [ModelConnectionToUpdate].
+extension ModelConnectionToUpdatePatterns on ModelConnectionToUpdate {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _ModelConnectionToUpdate value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _ModelConnectionToUpdate() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _ModelConnectionToUpdate value)  $default,){
+final _that = this;
+switch (_that) {
+case _ModelConnectionToUpdate():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _ModelConnectionToUpdate value)?  $default,){
+final _that = this;
+switch (_that) {
+case _ModelConnectionToUpdate() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? name,  String? key,  String? url)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _ModelConnectionToUpdate() when $default != null:
+return $default(_that.name,_that.key,_that.url);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? name,  String? key,  String? url)  $default,) {final _that = this;
+switch (_that) {
+case _ModelConnectionToUpdate():
+return $default(_that.name,_that.key,_that.url);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? name,  String? key,  String? url)?  $default,) {final _that = this;
+switch (_that) {
+case _ModelConnectionToUpdate() when $default != null:
+return $default(_that.name,_that.key,_that.url);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+
+class _ModelConnectionToUpdate implements ModelConnectionToUpdate {
+  const _ModelConnectionToUpdate({this.name, this.key, this.url});
+  
+
+@override final  String? name;
+@override final  String? key;
+@override final  String? url;
+
+/// Create a copy of ModelConnectionToUpdate
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$ModelConnectionToUpdateCopyWith<_ModelConnectionToUpdate> get copyWith => __$ModelConnectionToUpdateCopyWithImpl<_ModelConnectionToUpdate>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ModelConnectionToUpdate&&(identical(other.name, name) || other.name == name)&&(identical(other.key, key) || other.key == key)&&(identical(other.url, url) || other.url == url));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,name,key,url);
+
+@override
+String toString() {
+  return 'ModelConnectionToUpdate(name: $name, key: $key, url: $url)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$ModelConnectionToUpdateCopyWith<$Res> implements $ModelConnectionToUpdateCopyWith<$Res> {
+  factory _$ModelConnectionToUpdateCopyWith(_ModelConnectionToUpdate value, $Res Function(_ModelConnectionToUpdate) _then) = __$ModelConnectionToUpdateCopyWithImpl;
+@override @useResult
+$Res call({
+ String? name, String? key, String? url
+});
+
+
+
+
+}
+/// @nodoc
+class __$ModelConnectionToUpdateCopyWithImpl<$Res>
+    implements _$ModelConnectionToUpdateCopyWith<$Res> {
+  __$ModelConnectionToUpdateCopyWithImpl(this._self, this._then);
+
+  final _ModelConnectionToUpdate _self;
+  final $Res Function(_ModelConnectionToUpdate) _then;
+
+/// Create a copy of ModelConnectionToUpdate
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? name = freezed,Object? key = freezed,Object? url = freezed,}) {
+  return _then(_ModelConnectionToUpdate(
+name: freezed == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
+as String?,key: freezed == key ? _self.key : key // ignore: cast_nullable_to_non_nullable
+as String?,url: freezed == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+
+
+}
+
+/// @nodoc
 mixin _$ModelConnectionFilter {
 
  List<String> get workspaces; List<CredentialsModelType>? get types;

@@ -122,7 +122,7 @@ void main() {
     });
 
     test('has correct schema version', () {
-      expect(database.schemaVersion, 4);
+      expect(database.schemaVersion, 7);
     });
 
     test('creates successfully with in-memory connection', () {
@@ -182,6 +182,11 @@ void main() {
       expect(database.conversationDao, isNotNull);
       expect(database.messageDao, isNotNull);
       expect(database.conversationToolsDao, isNotNull);
+      expect(database.skillsDao, isNotNull);
+      expect(database.skillCredentialDefinitionsDao, isNotNull);
+      expect(database.skillTemplateToolsDao, isNotNull);
+      expect(database.conversationSkillsDao, isNotNull);
+      expect(database.appSkillWorkspaceSettingsDao, isNotNull);
     });
 
     test('all DAO getters return non-null', () {
@@ -209,8 +214,8 @@ void main() {
       expect(strategy, isNotNull);
     });
 
-    test('schemaVersion is 4', () {
-      expect(database.schemaVersion, 4);
+    test('schemaVersion is 7', () {
+      expect(database.schemaVersion, 7);
     });
 
     test(

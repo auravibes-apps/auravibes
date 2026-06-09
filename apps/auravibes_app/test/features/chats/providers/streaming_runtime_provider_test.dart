@@ -61,6 +61,24 @@ void main() {
     });
   });
 
+  group('ConversationRateLimitRetryRuntime', () {
+    test('holds function references', () {
+      void start(String _, DateTime _) {}
+      DateTime? retryAt(String _) => null;
+      void clear(String _) {}
+
+      final runtime = ConversationRateLimitRetryRuntime(
+        start: start,
+        retryAt: retryAt,
+        clear: clear,
+      );
+
+      expect(runtime.start, same(start));
+      expect(runtime.retryAt, same(retryAt));
+      expect(runtime.clear, same(clear));
+    });
+  });
+
   group('conversationStreamingRuntimeProvider', () {
     test('wires notifier methods to runtime', () {
       final container = ProviderContainer();
@@ -99,6 +117,23 @@ void main() {
 
       runtime.updateTitle('conv-1', 'New Title');
       runtime.removeTitle('conv-1');
+    });
+  });
+
+  group('conversationRateLimitRetryRuntimeProvider', () {
+    test('wires notifier methods to runtime', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final runtime = container.read(conversationRateLimitRetryRuntimeProvider);
+      final retryAt = DateTime(2026);
+
+      runtime.start('conv-1', retryAt);
+      expect(runtime.retryAt('conv-1'), retryAt);
+      expect(runtime.retryAt('conv-2'), isNull);
+
+      runtime.clear('conv-1');
+      expect(runtime.retryAt('conv-1'), isNull);
     });
   });
 }

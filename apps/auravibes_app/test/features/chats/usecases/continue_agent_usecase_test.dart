@@ -37,10 +37,12 @@ import 'package:auravibes_app/features/chats/providers/conversation_streaming_ru
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_context.dart';
 import 'package:auravibes_app/features/chats/usecases/continue_agent_result.dart';
 import 'package:auravibes_app/features/chats/usecases/select_prompt_messages_usecase.dart';
+import 'package:auravibes_app/features/skills/usecases/build_skill_context_messages_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
 import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
 import 'package:auravibes_app/services/monitoring_service.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genkit/genkit.dart' hide FinishReason;
 import 'package:mockito/annotations.dart';
@@ -121,6 +123,8 @@ void main() {
         agentCancellationRuntime: agentCancellationRuntime,
         monitoringService: monitoringService,
         selectPromptMessagesUsecase: selectPromptMessagesUsecase,
+        buildSkillContextMessagesUsecase:
+            const _FakeBuildSkillContextMessagesUsecase([]),
       );
 
       when(
@@ -219,6 +223,76 @@ void main() {
         expect(streamingUpdate.metadata?.completionTokens, 12);
         expect(streamingUpdate.metadata?.totalTokens, isNull);
         expect(streamingUpdate.metadata?.usedTokens, 22);
+      },
+    );
+
+    test(
+      'sends loaded skill context as user XML before prompt messages',
+      () async {
+        usecase = ContinueAgentUsecase(
+          chatbotService: chatbotService,
+          messageRepository: messageRepository,
+          workspaceModelSelectionsRepository:
+              workspaceModelSelectionsRepository,
+          conversationRepository: conversationRepository,
+          loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
+          messagesStreamingRuntime: MessagesStreamingRuntime(
+            startSubscription: (_, messageId) {
+              startedSubscriptionMessageIds.add(messageId);
+            },
+            updateResult: (result, messageId) {
+              updatedResults.add(result);
+              updatedMessageIds.add(messageId);
+            },
+            remove: (messageId) async {
+              removedMessageIds.add(messageId);
+            },
+          ),
+          conversationStreamingRuntime: ConversationStreamingRuntime(
+            start: startedConversationIds.add,
+            isStreaming: (_) => false,
+            remove: removedConversationIds.add,
+          ),
+          agentCancellationRuntime: agentCancellationRuntime,
+          monitoringService: monitoringService,
+          selectPromptMessagesUsecase: selectPromptMessagesUsecase,
+          buildSkillContextMessagesUsecase:
+              const _FakeBuildSkillContextMessagesUsecase([
+                ChatMessage(
+                  role: ChatMessageRole.user,
+                  content: _skillContextXml,
+                  metadata: {'kind': skillContextMetadataKind},
+                ),
+              ]),
+        );
+        when(
+          chatbotService.sendMessage(
+            _model,
+            any,
+            tools: const [],
+          ),
+        ).thenAnswer((invocation) {
+          final history =
+              invocation.positionalArguments[1] as List<ChatMessage>;
+          expect(history.firstOrNull?.role, ChatMessageRole.user);
+          expect(
+            history.firstOrNull?.metadata['kind'],
+            skillContextMetadataKind,
+          );
+          expect(history.firstOrNull?.text, contains('<skill>'));
+          expect(history.firstOrNull?.toolResults, isEmpty);
+          return Stream.fromIterable([
+            ChatResult<ChatMessage>(
+              output: ChatMessage.model('Done'),
+              finishReason: FinishReason.stop,
+              usage: const LanguageModelUsage(),
+            ),
+          ]);
+        });
+
+        final result = await usecase.call(conversationId: 'conversation-1');
+
+        expect(result.hasToolCalls, isFalse);
       },
     );
 
@@ -968,6 +1042,9 @@ final _unfinishedAssistantMessage = MessageEntity(
   updatedAt: DateTime(2025),
 );
 
+const _skillContextXml =
+    '<skill><name>Skills Manager</name><content>Manage skills.</content></skill>';
+
 final _model = WorkspaceModelSelectionWithConnectionEntity(
   workspaceModelSelection: WorkspaceModelSelectionEntity(
     id: 'model-1',
@@ -991,3 +1068,18 @@ final _model = WorkspaceModelSelectionWithConnectionEntity(
     type: ModelProvidersType.openai,
   ),
 );
+
+class _FakeBuildSkillContextMessagesUsecase
+    implements BuildSkillContextMessagesUsecase {
+  const _FakeBuildSkillContextMessagesUsecase(this.messages);
+
+  final List<ChatMessage> messages;
+
+  @override
+  Future<List<ChatMessage>> call({
+    required String conversationId,
+    required String workspaceId,
+  }) async {
+    return messages;
+  }
+}

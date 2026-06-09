@@ -150,6 +150,79 @@ void main() {
       expect(capturedRequest?.messages[2].text, 'model part');
     });
 
+    test('encodes unsafe tool refs before sending provider messages', () async {
+      genkit.ModelRequest? capturedRequest;
+      final providerFactory = _FakeProviderFactory(
+        onRequest: (request) => capturedRequest = request,
+      );
+      final service = _createService(providerFactory: providerFactory);
+
+      final _ = await service.sendMessage(
+        _makeConfig(type: ModelProvidersType.anthropic),
+        [
+          ChatMessage(
+            role: ChatMessageRole.tool,
+            parts: [
+              genkit.ToolResponsePart(
+                toolResponse: genkit.ToolResponse(
+                  ref: 'skill_context:example',
+                  name: 'skill_context',
+                  output: '<skill />',
+                ),
+              ),
+            ],
+          ),
+          ChatMessage.model(
+            '',
+            parts: [
+              genkit.ToolRequestPart(
+                toolRequest: genkit.ToolRequest(
+                  ref: 'tool:1',
+                  name: 'lookup_weather',
+                  input: const {'city': 'Medellin'},
+                ),
+              ),
+            ],
+          ),
+          ChatMessage(
+            role: ChatMessageRole.tool,
+            parts: [
+              genkit.ToolResponsePart(
+                toolResponse: genkit.ToolResponse(
+                  ref: 'tool:1',
+                  name: 'lookup_weather',
+                  output: 'sunny',
+                ),
+              ),
+            ],
+          ),
+        ],
+      ).toList();
+
+      final skillContextResult =
+          capturedRequest?.messages.firstOrNull?.content.single
+                  .toJson()['toolResponse']
+              as Map<String, Object?>?;
+      final replayedRequest =
+          capturedRequest?.messages[1].content.single.toJson()['toolRequest']
+              as Map<String, Object?>?;
+      final replayedResult =
+          capturedRequest?.messages[2].content.single.toJson()['toolResponse']
+              as Map<String, Object?>?;
+      final refs = [
+        skillContextResult?['ref'],
+        replayedRequest?['ref'],
+        replayedResult?['ref'],
+      ];
+
+      expect(refs, [
+        'skill_context_x3a_example',
+        'tool_x3a_1',
+        'tool_x3a_1',
+      ]);
+      expect(refs, everyElement(matches(RegExp(r'^[a-zA-Z0-9_-]+$'))));
+    });
+
     test(
       'passes thinking config for reasoning-capable anthropic chats',
       () async {
