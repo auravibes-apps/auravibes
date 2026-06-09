@@ -1,7 +1,3 @@
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
@@ -38,7 +34,7 @@ void main() {
     testWidgets('renders ToolsScreen', (tester) async {
       await tester.runAsync(() async {
         await tester.pumpWidget(
-          testableApp(
+          TestableApp(
             child: Theme(
               data: ThemeData(extensions: [AuraTheme.light]),
               child: const ToolsScreen(workspaceId: 'test-ws'),
@@ -63,7 +59,7 @@ void main() {
     testWidgets('back button pops ToolsScreen route', (tester) async {
       await tester.runAsync(() async {
         await tester.pumpWidget(
-          testableApp(
+          TestableApp(
             child: Navigator(
               pages: [
                 const MaterialPage<void>(child: Placeholder()),
@@ -74,7 +70,9 @@ void main() {
                   ),
                 ),
               ],
-              onDidRemovePage: (_) {},
+              onDidRemovePage: (_) {
+                final _ = Object();
+              },
             ),
             overrides: [
               workspaceToolsProvider('test-ws').overrideWith(

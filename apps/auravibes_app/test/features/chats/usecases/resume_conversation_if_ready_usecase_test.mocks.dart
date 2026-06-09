@@ -3,12 +3,12 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i15;
+import 'dart:async' as _i16;
 
 import 'package:auravibes_app/domain/entities/conversation_entity.dart' as _i3;
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart'
     as _i2;
-import 'package:auravibes_app/domain/enums/message_type.dart' as _i16;
+import 'package:auravibes_app/domain/enums/message_type.dart' as _i17;
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart'
     as _i13;
 import 'package:auravibes_app/domain/repositories/message_repository.dart'
@@ -17,16 +17,18 @@ import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtim
     as _i9;
 import 'package:auravibes_app/features/chats/providers/conversation_send_queue_runtime.dart'
     as _i14;
+import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart'
+    as _i15;
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_context.dart'
-    as _i19;
+    as _i20;
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_decision.dart'
-    as _i17;
+    as _i18;
 import 'package:auravibes_app/features/chats/usecases/continue_agent_result.dart'
     as _i10;
 import 'package:auravibes_app/features/chats/usecases/maybe_auto_compact_conversation_usecase.dart'
     as _i12;
 import 'package:auravibes_app/features/chats/usecases/run_agent_iteration_usecase.dart'
-    as _i18;
+    as _i19;
 import 'package:auravibes_app/features/tools/usecases/get_agent_iteration_decision_usecase.dart'
     as _i8;
 import 'package:auravibes_app/features/tools/usecases/load_latest_message_tool_calls_result.dart'
@@ -141,6 +143,24 @@ class _FakeConversationSendQueueRuntime_12 extends _i1.SmartFake
   ) : super(parent, parentInvocation);
 }
 
+class _FakeConversationRateLimitRetryRuntime_13 extends _i1.SmartFake
+    implements _i15.ConversationRateLimitRetryRuntime {
+  _FakeConversationRateLimitRetryRuntime_13(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(parent, parentInvocation);
+}
+
+class _FakeDuration_14 extends _i1.SmartFake implements Duration {
+  _FakeDuration_14(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
+class _FakeDateTime_15 extends _i1.SmartFake implements DateTime {
+  _FakeDateTime_15(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
 /// A class which mocks [MessageRepository].
 ///
 /// See the documentation for Mockito's code generation for more information.
@@ -150,29 +170,29 @@ class MockMessageRepository extends _i1.Mock implements _i5.MessageRepository {
   }
 
   @override
-  _i15.Future<List<_i2.MessageEntity>> getMessagesByConversation(
+  _i16.Future<List<_i2.MessageEntity>> getMessagesByConversation(
     String? conversationId,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getMessagesByConversation, [conversationId]),
-            returnValue: _i15.Future<List<_i2.MessageEntity>>.value(
+            returnValue: _i16.Future<List<_i2.MessageEntity>>.value(
               <_i2.MessageEntity>[],
             ),
           )
-          as _i15.Future<List<_i2.MessageEntity>>);
+          as _i16.Future<List<_i2.MessageEntity>>);
 
   @override
-  _i15.Stream<List<_i2.MessageEntity>> watchMessagesByConversation(
+  _i16.Stream<List<_i2.MessageEntity>> watchMessagesByConversation(
     String? conversationId,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#watchMessagesByConversation, [conversationId]),
-            returnValue: _i15.Stream<List<_i2.MessageEntity>>.empty(),
+            returnValue: _i16.Stream<List<_i2.MessageEntity>>.empty(),
           )
-          as _i15.Stream<List<_i2.MessageEntity>>);
+          as _i16.Stream<List<_i2.MessageEntity>>);
 
   @override
-  _i15.Future<List<_i2.MessageEntity>> getMessagesByConversationPaginated(
+  _i16.Future<List<_i2.MessageEntity>> getMessagesByConversationPaginated(
     String? conversationId,
     int? limit,
     int? offset,
@@ -183,143 +203,143 @@ class MockMessageRepository extends _i1.Mock implements _i5.MessageRepository {
               limit,
               offset,
             ]),
-            returnValue: _i15.Future<List<_i2.MessageEntity>>.value(
+            returnValue: _i16.Future<List<_i2.MessageEntity>>.value(
               <_i2.MessageEntity>[],
             ),
           )
-          as _i15.Future<List<_i2.MessageEntity>>);
+          as _i16.Future<List<_i2.MessageEntity>>);
 
   @override
-  _i15.Future<List<_i2.MessageEntity>> getMessagesByType(
+  _i16.Future<List<_i2.MessageEntity>> getMessagesByType(
     String? conversationId,
-    _i16.MessageType? messageType,
+    _i17.MessageType? messageType,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getMessagesByType, [
               conversationId,
               messageType,
             ]),
-            returnValue: _i15.Future<List<_i2.MessageEntity>>.value(
+            returnValue: _i16.Future<List<_i2.MessageEntity>>.value(
               <_i2.MessageEntity>[],
             ),
           )
-          as _i15.Future<List<_i2.MessageEntity>>);
+          as _i16.Future<List<_i2.MessageEntity>>);
 
   @override
-  _i15.Future<List<_i2.MessageEntity>> getUserMessages(
+  _i16.Future<List<_i2.MessageEntity>> getUserMessages(
     String? conversationId,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getUserMessages, [conversationId]),
-            returnValue: _i15.Future<List<_i2.MessageEntity>>.value(
+            returnValue: _i16.Future<List<_i2.MessageEntity>>.value(
               <_i2.MessageEntity>[],
             ),
           )
-          as _i15.Future<List<_i2.MessageEntity>>);
+          as _i16.Future<List<_i2.MessageEntity>>);
 
   @override
-  _i15.Future<List<_i2.MessageEntity>> getSystemMessages(
+  _i16.Future<List<_i2.MessageEntity>> getSystemMessages(
     String? conversationId,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getSystemMessages, [conversationId]),
-            returnValue: _i15.Future<List<_i2.MessageEntity>>.value(
+            returnValue: _i16.Future<List<_i2.MessageEntity>>.value(
               <_i2.MessageEntity>[],
             ),
           )
-          as _i15.Future<List<_i2.MessageEntity>>);
+          as _i16.Future<List<_i2.MessageEntity>>);
 
   @override
-  _i15.Future<_i2.MessageEntity?> getMessageById(String? id) =>
+  _i16.Future<_i2.MessageEntity?> getMessageById(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#getMessageById, [id]),
-            returnValue: _i15.Future<_i2.MessageEntity?>.value(),
+            returnValue: _i16.Future<_i2.MessageEntity?>.value(),
           )
-          as _i15.Future<_i2.MessageEntity?>);
+          as _i16.Future<_i2.MessageEntity?>);
 
   @override
-  _i15.Future<_i2.MessageEntity> createMessage(_i2.MessageToCreate? message) =>
+  _i16.Future<_i2.MessageEntity> createMessage(_i2.MessageToCreate? message) =>
       (super.noSuchMethod(
             Invocation.method(#createMessage, [message]),
-            returnValue: _i15.Future<_i2.MessageEntity>.value(
+            returnValue: _i16.Future<_i2.MessageEntity>.value(
               _FakeMessageEntity_0(
                 this,
                 Invocation.method(#createMessage, [message]),
               ),
             ),
           )
-          as _i15.Future<_i2.MessageEntity>);
+          as _i16.Future<_i2.MessageEntity>);
 
   @override
-  _i15.Future<_i2.MessageEntity> patchMessage(
+  _i16.Future<_i2.MessageEntity> patchMessage(
     String? id,
     _i2.MessagePatch? message,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#patchMessage, [id, message]),
-            returnValue: _i15.Future<_i2.MessageEntity>.value(
+            returnValue: _i16.Future<_i2.MessageEntity>.value(
               _FakeMessageEntity_0(
                 this,
                 Invocation.method(#patchMessage, [id, message]),
               ),
             ),
           )
-          as _i15.Future<_i2.MessageEntity>);
+          as _i16.Future<_i2.MessageEntity>);
 
   @override
-  _i15.Future<bool> deleteMessage(String? id) =>
+  _i16.Future<bool> deleteMessage(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#deleteMessage, [id]),
-            returnValue: _i15.Future<bool>.value(false),
+            returnValue: _i16.Future<bool>.value(false),
           )
-          as _i15.Future<bool>);
+          as _i16.Future<bool>);
 
   @override
-  _i15.Future<bool> messageExists(String? id) =>
+  _i16.Future<bool> messageExists(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#messageExists, [id]),
-            returnValue: _i15.Future<bool>.value(false),
+            returnValue: _i16.Future<bool>.value(false),
           )
-          as _i15.Future<bool>);
+          as _i16.Future<bool>);
 
   @override
-  _i15.Future<List<_i2.MessageEntity>> getMessagesByStatus(
+  _i16.Future<List<_i2.MessageEntity>> getMessagesByStatus(
     String? conversationId,
-    _i16.MessageStatus? status,
+    _i17.MessageStatus? status,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getMessagesByStatus, [conversationId, status]),
-            returnValue: _i15.Future<List<_i2.MessageEntity>>.value(
+            returnValue: _i16.Future<List<_i2.MessageEntity>>.value(
               <_i2.MessageEntity>[],
             ),
           )
-          as _i15.Future<List<_i2.MessageEntity>>);
+          as _i16.Future<List<_i2.MessageEntity>>);
 
   @override
-  _i15.Future<int> getMessageCountByConversation(String? conversationId) =>
+  _i16.Future<int> getMessageCountByConversation(String? conversationId) =>
       (super.noSuchMethod(
             Invocation.method(#getMessageCountByConversation, [conversationId]),
-            returnValue: _i15.Future<int>.value(0),
+            returnValue: _i16.Future<int>.value(0),
           )
-          as _i15.Future<int>);
+          as _i16.Future<int>);
 
   @override
-  _i15.Future<bool> validateMessage(_i2.MessageToCreate? message) =>
+  _i16.Future<bool> validateMessage(_i2.MessageToCreate? message) =>
       (super.noSuchMethod(
             Invocation.method(#validateMessage, [message]),
-            returnValue: _i15.Future<bool>.value(false),
+            returnValue: _i16.Future<bool>.value(false),
           )
-          as _i15.Future<bool>);
+          as _i16.Future<bool>);
 
   @override
-  _i15.Future<_i2.MessageEntity?> getLatestCompactionSummary(
+  _i16.Future<_i2.MessageEntity?> getLatestCompactionSummary(
     String? conversationId,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getLatestCompactionSummary, [conversationId]),
-            returnValue: _i15.Future<_i2.MessageEntity?>.value(),
+            returnValue: _i16.Future<_i2.MessageEntity?>.value(),
           )
-          as _i15.Future<_i2.MessageEntity?>);
+          as _i16.Future<_i2.MessageEntity?>);
 }
 
 /// A class which mocks [ConversationRepository].
@@ -332,7 +352,7 @@ class MockConversationRepository extends _i1.Mock
   }
 
   @override
-  _i15.Stream<List<_i3.ConversationEntity>> watchConversationsByWorkspace(
+  _i16.Stream<List<_i3.ConversationEntity>> watchConversationsByWorkspace(
     String? workspaceId, {
     int? limit,
   }) =>
@@ -342,64 +362,64 @@ class MockConversationRepository extends _i1.Mock
               [workspaceId],
               {#limit: limit},
             ),
-            returnValue: _i15.Stream<List<_i3.ConversationEntity>>.empty(),
+            returnValue: _i16.Stream<List<_i3.ConversationEntity>>.empty(),
           )
-          as _i15.Stream<List<_i3.ConversationEntity>>);
+          as _i16.Stream<List<_i3.ConversationEntity>>);
 
   @override
-  _i15.Stream<_i3.ConversationEntity?> watchConversationById(String? id) =>
+  _i16.Stream<_i3.ConversationEntity?> watchConversationById(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#watchConversationById, [id]),
-            returnValue: _i15.Stream<_i3.ConversationEntity?>.empty(),
+            returnValue: _i16.Stream<_i3.ConversationEntity?>.empty(),
           )
-          as _i15.Stream<_i3.ConversationEntity?>);
+          as _i16.Stream<_i3.ConversationEntity?>);
 
   @override
-  _i15.Future<_i3.ConversationEntity?> getConversationById(String? id) =>
+  _i16.Future<_i3.ConversationEntity?> getConversationById(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#getConversationById, [id]),
-            returnValue: _i15.Future<_i3.ConversationEntity?>.value(),
+            returnValue: _i16.Future<_i3.ConversationEntity?>.value(),
           )
-          as _i15.Future<_i3.ConversationEntity?>);
+          as _i16.Future<_i3.ConversationEntity?>);
 
   @override
-  _i15.Future<_i3.ConversationEntity> createConversation(
+  _i16.Future<_i3.ConversationEntity> createConversation(
     _i3.ConversationToCreate? conversation,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#createConversation, [conversation]),
-            returnValue: _i15.Future<_i3.ConversationEntity>.value(
+            returnValue: _i16.Future<_i3.ConversationEntity>.value(
               _FakeConversationEntity_1(
                 this,
                 Invocation.method(#createConversation, [conversation]),
               ),
             ),
           )
-          as _i15.Future<_i3.ConversationEntity>);
+          as _i16.Future<_i3.ConversationEntity>);
 
   @override
-  _i15.Future<_i3.ConversationEntity> patchConversation(
+  _i16.Future<_i3.ConversationEntity> patchConversation(
     String? id,
     _i3.ConversationPatch? conversation,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#patchConversation, [id, conversation]),
-            returnValue: _i15.Future<_i3.ConversationEntity>.value(
+            returnValue: _i16.Future<_i3.ConversationEntity>.value(
               _FakeConversationEntity_1(
                 this,
                 Invocation.method(#patchConversation, [id, conversation]),
               ),
             ),
           )
-          as _i15.Future<_i3.ConversationEntity>);
+          as _i16.Future<_i3.ConversationEntity>);
 
   @override
-  _i15.Future<bool> deleteConversation(String? id) =>
+  _i16.Future<bool> deleteConversation(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#deleteConversation, [id]),
-            returnValue: _i15.Future<bool>.value(false),
+            returnValue: _i16.Future<bool>.value(false),
           )
-          as _i15.Future<bool>);
+          as _i16.Future<bool>);
 }
 
 /// A class which mocks [RunAllowedToolsUsecase].
@@ -478,7 +498,7 @@ class MockRunAllowedToolsUsecase extends _i1.Mock
           as _i9.AgentCancellationRuntime);
 
   @override
-  _i15.Future<_i17.AgentIterationDecision> call({
+  _i16.Future<_i18.AgentIterationDecision> call({
     required String? conversationId,
     required String? workspaceId,
   }) =>
@@ -487,18 +507,18 @@ class MockRunAllowedToolsUsecase extends _i1.Mock
               #conversationId: conversationId,
               #workspaceId: workspaceId,
             }),
-            returnValue: _i15.Future<_i17.AgentIterationDecision>.value(
-              _i17.AgentIterationDecision.done,
+            returnValue: _i16.Future<_i18.AgentIterationDecision>.value(
+              _i18.AgentIterationDecision.done,
             ),
           )
-          as _i15.Future<_i17.AgentIterationDecision>);
+          as _i16.Future<_i18.AgentIterationDecision>);
 }
 
 /// A class which mocks [RunAgentIterationUsecase].
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockRunAgentIterationUsecase extends _i1.Mock
-    implements _i18.RunAgentIterationUsecase {
+    implements _i19.RunAgentIterationUsecase {
   MockRunAgentIterationUsecase() {
     _i1.throwOnMissingStub(this);
   }
@@ -582,18 +602,56 @@ class MockRunAgentIterationUsecase extends _i1.Mock
           as _i9.AgentCancellationRuntime);
 
   @override
-  _i15.Future<_i17.AgentIterationDecision> call({
+  _i15.ConversationRateLimitRetryRuntime get rateLimitRetryRuntime =>
+      (super.noSuchMethod(
+            Invocation.getter(#rateLimitRetryRuntime),
+            returnValue: _FakeConversationRateLimitRetryRuntime_13(
+              this,
+              Invocation.getter(#rateLimitRetryRuntime),
+            ),
+          )
+          as _i15.ConversationRateLimitRetryRuntime);
+
+  @override
+  Duration get rateLimitRetryDelay =>
+      (super.noSuchMethod(
+            Invocation.getter(#rateLimitRetryDelay),
+            returnValue: _FakeDuration_14(
+              this,
+              Invocation.getter(#rateLimitRetryDelay),
+            ),
+          )
+          as Duration);
+
+  @override
+  DateTime Function() get now =>
+      (super.noSuchMethod(
+            Invocation.getter(#now),
+            returnValue: () => _FakeDateTime_15(this, Invocation.getter(#now)),
+          )
+          as DateTime Function());
+
+  @override
+  _i16.Future<void> Function(Duration) get sleep =>
+      (super.noSuchMethod(
+            Invocation.getter(#sleep),
+            returnValue: (Duration duration) => _i16.Future<void>.value(),
+          )
+          as _i16.Future<void> Function(Duration));
+
+  @override
+  _i16.Future<_i18.AgentIterationDecision> call({
     required String? conversationId,
-    required _i19.AgentIterationContext? context,
+    required _i20.AgentIterationContext? context,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#call, [], {
               #conversationId: conversationId,
               #context: context,
             }),
-            returnValue: _i15.Future<_i17.AgentIterationDecision>.value(
-              _i17.AgentIterationDecision.done,
+            returnValue: _i16.Future<_i18.AgentIterationDecision>.value(
+              _i18.AgentIterationDecision.done,
             ),
           )
-          as _i15.Future<_i17.AgentIterationDecision>);
+          as _i16.Future<_i18.AgentIterationDecision>);
 }

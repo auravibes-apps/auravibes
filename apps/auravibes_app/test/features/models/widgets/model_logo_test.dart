@@ -1,13 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-returning-widgets
-// Required: Widget tests use helpers that build widgets under test.
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-static-class
-// Required: Tests keep fixture helpers and fakes top-level.
 import 'package:auravibes_app/features/models/widgets/model_logo.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -48,10 +38,10 @@ void main() {
     testWidgets('svgBuilder is used when provided', (tester) async {
       const key = Key('custom-builder');
       await tester.pumpWidget(
-        _easyLocalizationWrapper(
-          child: const ModelLogo(
+        _EasyLocalizationWrapper(
+          child: ModelLogo(
             modelId: 'openai',
-            svgBuilder: _customBuilder,
+            svgBuilder: (_, _) => const SizedBox(key: key),
           ),
         ),
       );
@@ -90,24 +80,29 @@ void main() {
   });
 }
 
-Widget _customBuilder(BuildContext _, String _) {
-  return const SizedBox(key: Key('custom-builder'));
-}
+class _EasyLocalizationWrapper extends StatelessWidget {
+  const _EasyLocalizationWrapper({required this.child});
 
-Widget _easyLocalizationWrapper({required Widget child}) => EasyLocalization(
-  child: Builder(
-    builder: (context) => MaterialApp(
-      home: Scaffold(body: child),
-      locale: context.locale,
-      localizationsDelegates: context.localizationDelegates,
-      supportedLocales: context.supportedLocales,
-    ),
-  ),
-  supportedLocales: const [Locale('en')],
-  path: 'assets/i18n',
-  fallbackLocale: const Locale('en'),
-  startLocale: const Locale('en'),
-  useOnlyLangCode: true,
-  useFallbackTranslations: true,
-  saveLocale: false,
-);
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return EasyLocalization(
+      child: Builder(
+        builder: (context) => MaterialApp(
+          home: Scaffold(body: child),
+          locale: context.locale,
+          localizationsDelegates: context.localizationDelegates,
+          supportedLocales: context.supportedLocales,
+        ),
+      ),
+      supportedLocales: const [Locale('en')],
+      path: 'assets/i18n',
+      fallbackLocale: const Locale('en'),
+      startLocale: const Locale('en'),
+      useOnlyLangCode: true,
+      useFallbackTranslations: true,
+      saveLocale: false,
+    );
+  }
+}

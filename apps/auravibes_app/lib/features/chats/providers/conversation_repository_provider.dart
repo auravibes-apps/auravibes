@@ -1,4 +1,3 @@
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/data/repositories/conversation_repository_impl.dart';
 import 'package:auravibes_app/data/repositories/message_repository_impl.dart';

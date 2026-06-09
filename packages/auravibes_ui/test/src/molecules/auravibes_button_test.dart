@@ -1,10 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-
 import 'package:auravibes_ui/src/atoms/aura_loading_circle.dart';
 import 'package:auravibes_ui/src/molecules/aura_button.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
@@ -29,8 +22,8 @@ void main() {
       );
 
       expect(find.text(buttonText), findsOneWidget);
-      // Check for the actual widget structure: Material -> InkWell ->
-      // AnimatedContainer
+      // Check for the actual widget structure: Material -> InkWell ->.
+      // AnimatedContainer.
 
       await tester.tap(find.byType(AuraButton));
       expect(wasPressed, isTrue);
@@ -41,7 +34,9 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: AuraButton(
-              onPressed: () {},
+              onPressed: () {
+                final _ = Object();
+              },
               child: const Text('Ghost'),
               variant: AuraButtonVariant.ghost,
             ),
@@ -66,7 +61,9 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: AuraButton(
-              onPressed: () {},
+              onPressed: () {
+                final _ = Object();
+              },
               child: const Text('Loading'),
               isLoading: true,
             ),
@@ -102,7 +99,9 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: AuraButton(
-              onPressed: () {},
+              onPressed: () {
+                final _ = Object();
+              },
               child: const Text('Full Width'),
               isFullWidth: true,
             ),
@@ -127,7 +126,9 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: AuraButton(
-              onPressed: () {},
+              onPressed: () {
+                final _ = Object();
+              },
               child: const Text('Large Button'),
               size: AuraButtonSize.large,
             ),

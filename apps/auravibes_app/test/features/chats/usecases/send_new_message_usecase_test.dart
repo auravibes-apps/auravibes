@@ -1,14 +1,3 @@
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: missing-test-assertion
-// Required: Tests verify usecase behavior through repository side effects.
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
@@ -25,6 +14,69 @@ import 'package:mockito/mockito.dart';
 
 import 'send_new_message_usecase_test.mocks.dart';
 
+class _SendNewMessageUsecaseFixture {
+  MockConversationRepository? _conversationRepo;
+  MockWorkspaceModelSelectionRepository? _workspaceModelSelectionRepo;
+  MockSendMessageUsecase? _sendMessageUsecase;
+  MockGenerateTitleUsecase? _generateTitleUsecase;
+  MockMonitoringService? _monitoringService;
+  SendNewMessageUsecase? _usecase;
+
+  MockConversationRepository get conversationRepo =>
+      _conversationRepo ??
+      fail('Conversation repository fixture not initialized.');
+
+  MockWorkspaceModelSelectionRepository get workspaceModelSelectionRepo =>
+      _workspaceModelSelectionRepo ??
+      fail('Workspace model selection repository fixture not initialized.');
+
+  MockSendMessageUsecase get sendMessageUsecase =>
+      _sendMessageUsecase ?? fail('Send message usecase not initialized.');
+
+  MockGenerateTitleUsecase get generateTitleUsecase =>
+      _generateTitleUsecase ?? fail('Generate title usecase not initialized.');
+
+  MockMonitoringService get monitoringService =>
+      _monitoringService ?? fail('Monitoring service fixture not initialized.');
+
+  SendNewMessageUsecase get usecase =>
+      _usecase ?? fail('Usecase fixture not initialized.');
+
+  void setUp({
+    required ConversationEntity newConversation,
+    required WorkspaceModelSelectionWithConnectionEntity modelSelection,
+  }) {
+    final conversationRepo = MockConversationRepository();
+    final workspaceModelSelectionRepo = MockWorkspaceModelSelectionRepository();
+    final sendMessageUsecase = MockSendMessageUsecase();
+    final generateTitleUsecase = MockGenerateTitleUsecase();
+    final monitoringService = MockMonitoringService();
+
+    _conversationRepo = conversationRepo;
+    _workspaceModelSelectionRepo = workspaceModelSelectionRepo;
+    _sendMessageUsecase = sendMessageUsecase;
+    _generateTitleUsecase = generateTitleUsecase;
+    _monitoringService = monitoringService;
+    _usecase = SendNewMessageUsecase(
+      conversationRepo: conversationRepo,
+      sendMessageUsecase: sendMessageUsecase,
+      workspaceModelSelectionRepository: workspaceModelSelectionRepo,
+      generateTitleUsecase: generateTitleUsecase,
+      monitoringService: monitoringService,
+    );
+
+    when(
+      workspaceModelSelectionRepo.getWorkspaceModelSelectionById(
+        any,
+      ),
+    ).thenAnswer((_) async => modelSelection);
+
+    when(conversationRepo.createConversation(any)).thenAnswer(
+      (_) async => newConversation,
+    );
+  }
+}
+
 @GenerateMocks([
   ConversationRepository,
   WorkspaceModelSelectionRepository,
@@ -34,12 +86,7 @@ import 'send_new_message_usecase_test.mocks.dart';
 ])
 void main() {
   group('SendNewMessageUsecase', () {
-    late MockConversationRepository conversationRepo;
-    late MockWorkspaceModelSelectionRepository workspaceModelSelectionRepo;
-    late MockSendMessageUsecase sendMessageUsecase;
-    late MockGenerateTitleUsecase generateTitleUsecase;
-    late MockMonitoringService monitoringService;
-    late SendNewMessageUsecase usecase;
+    final fixture = _SendNewMessageUsecaseFixture();
 
     final newConversation = ConversationEntity(
       id: 'conv-1',
@@ -76,48 +123,30 @@ void main() {
     );
 
     setUp(() {
-      conversationRepo = MockConversationRepository();
-      workspaceModelSelectionRepo = MockWorkspaceModelSelectionRepository();
-      sendMessageUsecase = MockSendMessageUsecase();
-      generateTitleUsecase = MockGenerateTitleUsecase();
-      monitoringService = MockMonitoringService();
-      usecase = SendNewMessageUsecase(
-        conversationRepo: conversationRepo,
-        sendMessageUsecase: sendMessageUsecase,
-        workspaceModelSelectionRepository: workspaceModelSelectionRepo,
-        generateTitleUsecase: generateTitleUsecase,
-        monitoringService: monitoringService,
-      );
-
-      when(
-        workspaceModelSelectionRepo.getWorkspaceModelSelectionById(
-          any,
-        ),
-      ).thenAnswer((_) async => modelSelection);
-
-      when(conversationRepo.createConversation(any)).thenAnswer(
-        (_) async => newConversation,
+      fixture.setUp(
+        newConversation: newConversation,
+        modelSelection: modelSelection,
       );
     });
 
     test('creates conversation and returns it', () async {
-      final result = await usecase.call(
+      final result = await fixture.usecase.call(
         workspaceId: 'ws-1',
         firstMessage: 'Hello',
         workspaceModelSelectionId: 'model-sel-1',
       );
 
       expect(result.id, 'conv-1');
-      verify(conversationRepo.createConversation(any)).called(1);
+      verify(fixture.conversationRepo.createConversation(any)).called(1);
     });
 
-    test('throws when model selection not found', () async {
+    test('throws when model selection not found', () {
       when(
-        workspaceModelSelectionRepo.getWorkspaceModelSelectionById(any),
+        fixture.workspaceModelSelectionRepo.getWorkspaceModelSelectionById(any),
       ).thenAnswer((_) async => null);
 
       expect(
-        () => usecase.call(
+        () => fixture.usecase.call(
           workspaceId: 'ws-1',
           firstMessage: 'Hello',
           workspaceModelSelectionId: 'missing',
@@ -127,45 +156,51 @@ void main() {
     });
 
     test('calls generateTitle with correct args', () async {
-      final _ = await usecase.call(
+      final _ = await fixture.usecase.call(
         workspaceId: 'ws-1',
         firstMessage: 'Hello',
         workspaceModelSelectionId: 'model-sel-1',
       );
 
-      verify(
-        generateTitleUsecase.call(
-          conversationId: 'conv-1',
-          firstMessage: 'Hello',
-          workspaceModelSelection: modelSelection,
-        ),
-      ).called(1);
+      expect(
+        () => verify(
+          fixture.generateTitleUsecase.call(
+            conversationId: 'conv-1',
+            firstMessage: 'Hello',
+            workspaceModelSelection: modelSelection,
+          ),
+        ).called(1),
+        returnsNormally,
+      );
     });
 
     test('calls sendMessage with correct args', () async {
-      final _ = await usecase.call(
+      final _ = await fixture.usecase.call(
         workspaceId: 'ws-1',
         firstMessage: 'Hello',
         workspaceModelSelectionId: 'model-sel-1',
       );
 
-      verify(
-        sendMessageUsecase.call(
-          conversationId: 'conv-1',
-          content: 'Hello',
-        ),
-      ).called(1);
+      expect(
+        () => verify(
+          fixture.sendMessageUsecase.call(
+            conversationId: 'conv-1',
+            content: 'Hello',
+          ),
+        ).called(1),
+        returnsNormally,
+      );
     });
 
     test('tracks error when sendMessage fails', () async {
       when(
-        sendMessageUsecase.call(
+        fixture.sendMessageUsecase.call(
           conversationId: anyNamed('conversationId'),
           content: anyNamed('content'),
         ),
       ).thenAnswer((_) async => throw Exception('Send failed'));
 
-      final result = await usecase.call(
+      final result = await fixture.usecase.call(
         workspaceId: 'ws-1',
         firstMessage: 'Hello',
         workspaceModelSelectionId: 'model-sel-1',
@@ -176,7 +211,7 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 100));
 
       verify(
-        monitoringService.trackError(
+        fixture.monitoringService.trackError(
           any,
           error: anyNamed('error'),
           stackTrace: anyNamed('stackTrace'),
@@ -185,39 +220,42 @@ void main() {
     });
 
     test('creates conversation with correct workspaceId and modelId', () async {
-      final _ = await usecase.call(
+      final _ = await fixture.usecase.call(
         workspaceId: 'ws-1',
         firstMessage: 'Hello',
         workspaceModelSelectionId: 'model-sel-1',
       );
 
       final captured = verify(
-        conversationRepo.createConversation(captureAny),
+        fixture.conversationRepo.createConversation(captureAny),
       ).captured;
       expect(captured, isNotEmpty);
     });
 
     test('retrieves model selection with correct ID', () async {
-      final _ = await usecase.call(
+      final _ = await fixture.usecase.call(
         workspaceId: 'ws-1',
         firstMessage: 'Hello',
         workspaceModelSelectionId: 'model-sel-1',
       );
 
-      verify(
-        workspaceModelSelectionRepo.getWorkspaceModelSelectionById(
-          'model-sel-1',
-        ),
-      ).called(1);
+      expect(
+        () => verify(
+          fixture.workspaceModelSelectionRepo.getWorkspaceModelSelectionById(
+            'model-sel-1',
+          ),
+        ).called(1),
+        returnsNormally,
+      );
     });
 
     test('exception message contains correct text', () async {
       when(
-        workspaceModelSelectionRepo.getWorkspaceModelSelectionById(any),
+        fixture.workspaceModelSelectionRepo.getWorkspaceModelSelectionById(any),
       ).thenAnswer((_) async => null);
 
       try {
-        final _ = await usecase.call(
+        final _ = await fixture.usecase.call(
           workspaceId: 'ws-1',
           firstMessage: 'Hello',
           workspaceModelSelectionId: 'missing',
@@ -229,7 +267,7 @@ void main() {
     });
 
     test('returns same conversation from repo', () async {
-      final result = await usecase.call(
+      final result = await fixture.usecase.call(
         workspaceId: 'ws-1',
         firstMessage: 'Hello',
         workspaceModelSelectionId: 'model-sel-1',

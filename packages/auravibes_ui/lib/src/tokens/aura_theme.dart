@@ -1,14 +1,4 @@
-// ignore_for_file: no-magic-number
-// Required: UI tokens and layout use fixed design values.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-static-class
 // Required: UI package exposes top-level helpers and constants.
 
 import 'package:auravibes_ui/src/colors/value_color.dart';
@@ -90,6 +80,7 @@ class AuraTheme extends ThemeExtension<AuraTheme> {
   @override
   AuraTheme lerp(AuraTheme? other, double t) {
     if (other == null) return this;
+
     return AuraTheme(
       colors: colors.lerp(other.colors, t),
       typography: typography.lerp(other.typography, t),
@@ -99,7 +90,7 @@ class AuraTheme extends ThemeExtension<AuraTheme> {
     );
   }
 
-  /// get the spacing based on enum
+  /// Get the spacing based on enum.
   double fromSpacing(AuraSpacing value) {
     return switch (value) {
       AuraSpacing.none => 0,
@@ -346,13 +337,14 @@ class AuraColorScheme {
     return Color.lerp(begin, end, t) ?? begin;
   }
 
-  /// Get color by variant nullable
+  /// Get color by variant nullable.
   Color? getColorOrNull(AuraColorVariant? variant) {
     if (variant == null) return null;
+
     return getColor(variant);
   }
 
-  /// Get color by variant
+  /// Get color by variant.
   Color getColor(AuraColorVariant variant) {
     return switch (variant) {
       AuraColorVariant.primary => primary,
@@ -411,7 +403,7 @@ class AuraTypographyTheme {
 
   /// Linearly interpolate between two typography themes.
   AuraTypographyTheme lerp(AuraTypographyTheme other, double t) {
-    // Typography doesn't interpolate, return this or other based on t
+    // Typography doesn't interpolate, return this or other based on t.
     return t < 0.5 ? this : other;
   }
 }
@@ -716,7 +708,7 @@ class AuraAnimationTheme {
 
   /// Linearly interpolate between two animation themes.
   AuraAnimationTheme lerp(AuraAnimationTheme other, double t) {
-    // Animation durations don't interpolate, return this or other based on t
+    // Animation durations don't interpolate, return this or other based on t.
     return t < 0.5 ? this : other;
   }
 }
@@ -738,5 +730,6 @@ double? lerpDouble(double? a, double? b, double t) {
   if (a == null && b == null) return null;
   final aValue = a ?? 0;
   final bValue = b ?? 0;
+
   return aValue + (bValue - aValue) * t;
 }

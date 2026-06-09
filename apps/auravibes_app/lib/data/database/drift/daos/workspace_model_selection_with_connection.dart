@@ -1,7 +1,6 @@
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/data/database/drift/tables/model_connections.dart';
+import 'package:auravibes_app/data/database/drift/tables/api_models.dart';
+import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_model_selections.dart';
 import 'package:drift/drift.dart';
 
@@ -16,13 +15,15 @@ class WorkspaceModelSelectionWithConnection {
   });
 
   final WorkspaceModelSelectionTable model;
-  final ModelConnectionTable modelConnection;
+  final ServiceConnectionTable modelConnection;
   final ApiModelProvidersTable modelProvider;
   final ApiModelsTable? apiModel;
 }
 
 /// Data Access Object for workspace operations.
-@DriftAccessor(tables: [WorkspaceModelSelections, ModelConnections])
+@DriftAccessor(
+  tables: [WorkspaceModelSelections, ServiceConnections, ApiModels],
+)
 class WorkspaceModelSelectionsDao extends DatabaseAccessor<AppDatabase>
     with _$WorkspaceModelSelectionsDaoMixin {
   WorkspaceModelSelectionsDao(super.attachedDatabase);
@@ -73,19 +74,19 @@ class WorkspaceModelSelectionsDao extends DatabaseAccessor<AppDatabase>
   JoinedSelectStatement<HasResultSet, dynamic> _queryJoins() {
     return select(workspaceModelSelections).join([
       innerJoin(
-        modelConnections,
-        modelConnections.id.equalsExp(
+        serviceConnections,
+        serviceConnections.id.equalsExp(
           workspaceModelSelections.modelConnectionId,
         ),
       ),
       innerJoin(
         apiModelProviders,
-        apiModelProviders.id.equalsExp(modelConnections.modelId),
+        apiModelProviders.id.equalsExp(serviceConnections.serviceId),
       ),
       leftOuterJoin(
         apiModels,
         apiModels.id.equalsExp(workspaceModelSelections.modelId) &
-            apiModels.modelProvider.equalsExp(modelConnections.modelId),
+            apiModels.modelProvider.equalsExp(serviceConnections.serviceId),
       ),
     ]);
   }
@@ -94,14 +95,18 @@ class WorkspaceModelSelectionsDao extends DatabaseAccessor<AppDatabase>
   _queryWorkspaceModelSelectionsByWorkspace({
     required List<String> workspaceIds,
   }) {
-    return _queryJoins()
-      ..where(modelConnections.workspaceId.isIn(workspaceIds));
+    return _queryJoins()..where(
+      serviceConnections.workspaceId.isIn(workspaceIds) &
+          serviceConnections.kind.equals(
+            ServiceConnectionKindTable.modelProvider.name,
+          ),
+    );
   }
 
   WorkspaceModelSelectionWithConnection _mapJoin(TypedResult row) =>
       WorkspaceModelSelectionWithConnection(
         model: row.readTable(workspaceModelSelections),
-        modelConnection: row.readTable(modelConnections),
+        modelConnection: row.readTable(serviceConnections),
         modelProvider: row.readTable(apiModelProviders),
         apiModel: row.readTableOrNull(apiModels),
       );

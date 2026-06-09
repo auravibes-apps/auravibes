@@ -1,10 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-// ignore_for_file: missing-test-assertion
-// Required: Tests verify sync behavior through repository side effects.
-
 import 'package:auravibes_app/domain/repositories/api_model_repository.dart';
 import 'package:auravibes_app/services/model_api_service.dart';
 import 'package:auravibes_app/services/model_sync_service.dart';
@@ -187,9 +180,12 @@ void main() {
   });
 
   group('ModelSyncService', () {
-    late MockApiModelRepository repository;
-    late MockModelApiService apiService;
-    late ModelSyncService service;
+    var repository = MockApiModelRepository();
+    var apiService = MockModelApiService();
+    var service = ModelSyncService(
+      repository: repository,
+      apiService: apiService,
+    );
 
     setUp(() {
       repository = MockApiModelRepository();
@@ -265,7 +261,7 @@ void main() {
 
     test('dispose calls apiService dispose', () {
       service.dispose();
-      verify(apiService.dispose()).called(1);
+      expect(() => verify(apiService.dispose()).called(1), returnsNormally);
     });
   });
 }

@@ -1,4 +1,3 @@
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/data/repositories/model_connection_repository_impl.dart';
 import 'package:auravibes_app/data/repositories/workspace_model_selection_repository_impl.dart';

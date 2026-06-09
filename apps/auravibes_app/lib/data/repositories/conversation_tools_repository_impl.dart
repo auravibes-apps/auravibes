@@ -1,13 +1,5 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: no-equal-arguments
 // Required: Existing argument values intentionally repeat.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/conversation_tools_dao.dart';
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
@@ -18,7 +10,7 @@ import 'package:auravibes_app/domain/repositories/conversation_tools_repository.
 import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/services/tools/tool_service.dart';
 
-/// Implementation of the ConversationToolsRepository
+/// Implementation of the ConversationToolsRepository.
 class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
   ConversationToolsRepositoryImpl(
     this._database,
@@ -33,6 +25,7 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
     String conversationId,
   ) async {
     final results = await _dao.getConversationTools(conversationId);
+
     return results.map(_tableToEntity).toList();
   }
 
@@ -40,11 +33,11 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
   Future<List<ConversationToolEntity>> getEnabledConversationTools(
     String conversationId,
   ) async {
-    // Get available tools for the conversation by computing:
-    // Available tools = Workspace enabled tools - Conversation disabled tools
+    // Get available tools for the conversation by computing:.
+    // Available tools = Workspace enabled tools - Conversation disabled tools.
     final availableToolTypes = await getAvailableToolsForConversation(
       conversationId,
-      '', // workspaceId will be retrieved from conversation
+      '', // WorkspaceId will be retrieved from conversation.
     );
 
     return availableToolTypes
@@ -52,7 +45,7 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
           (toolId) => ConversationToolEntity(
             conversationId: conversationId,
             toolId: toolId,
-            isEnabled: true, // These are computed enabled tools
+            isEnabled: true, // These are computed enabled tools.
             permissionMode: ToolPermissionMode.alwaysAsk,
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
@@ -86,6 +79,7 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
       toolId,
       isEnabled: isEnabled,
     );
+
     return true;
   }
 
@@ -108,6 +102,7 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
       toolId,
       permission: _mapPermissionMode(permissionMode),
     );
+
     return true;
   }
 
@@ -152,11 +147,12 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
       return 0;
     }
 
-    // This is computed as available tools - disabled tools
+    // This is computed as available tools - disabled tools.
     final availableCount = await getAvailableToolsForConversation(
       conversationId,
       conversation.workspaceId,
     );
+
     return availableCount.length;
   }
 
@@ -177,7 +173,7 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
     String toolId, {
     required bool isEnabled,
   }) async {
-    // Check if conversation exists
+    // Check if conversation exists.
     final conversation = await _database.conversationDao.getConversationById(
       conversationId,
     );
@@ -187,7 +183,7 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
       );
     }
 
-    // Check if tool type is valid
+    // Check if tool type is valid.
     if (!ToolService.hasTypeString(toolId)) {
       throw ConversationToolsValidationException(
         'Invalid tool type: $toolId',
@@ -203,17 +199,17 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
     String workspaceId,
     String toolId,
   ) async {
-    // Check if workspace has tool enabled
+    // Check if workspace has tool enabled.
     final workspaceEnabled = await _workspaceToolsRepository
         .isWorkspaceToolEnabled(workspaceId, toolId);
 
-    // Check if conversation has disabled override for this tool
+    // Check if conversation has disabled override for this tool.
     final conversationDisabled = await _dao.isConversationToolDisabled(
       conversationId,
       toolId,
     );
 
-    // Tool is available if workspace enabled AND not conversation disabled
+    // Tool is available if workspace enabled AND not conversation disabled.
     return workspaceEnabled && !conversationDisabled;
   }
 
@@ -222,27 +218,27 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
     String conversationId,
     String workspaceId,
   ) async {
-    // Get workspace enabled tools
+    // Get workspace enabled tools.
     final workspaceEnabledTools = await _workspaceToolsRepository
         .getEnabledWorkspaceTools(workspaceId);
 
-    // Get conversation disabled tools
+    // Get conversation disabled tools.
     final conversationTools = await _dao.getDisabledConversationTools(
       conversationId,
     );
 
-    // Extract tool types from workspace enabled tools
+    // Extract tool types from workspace enabled tools.
     final workspaceEnabledToolTypes = workspaceEnabledTools
         .map((tool) => tool.toolId)
         .toList();
 
-    // Extract tool types from disabled tools
+    // Extract tool types from disabled tools.
     final disabledToolTypes = conversationTools
         .where((tool) => !tool.isEnabled)
         .map((tool) => tool.toolId)
         .toSet();
 
-    // Available tools = workspace enabled tools - disabled tools
+    // Available tools = workspace enabled tools - disabled tools.
     return workspaceEnabledToolTypes
         .where((toolType) => !disabledToolTypes.contains(toolType))
         .toList();
@@ -253,22 +249,22 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
     String conversationId,
     String workspaceId,
   ) async {
-    // Get workspace enabled tools (full entities with table IDs)
+    // Get workspace enabled tools (full entities with table IDs).
     final workspaceEnabledTools = await _workspaceToolsRepository
         .getEnabledWorkspaceTools(workspaceId);
 
-    // Get conversation disabled tools
+    // Get conversation disabled tools.
     final conversationTools = await _dao.getDisabledConversationTools(
       conversationId,
     );
 
-    // Extract tool types from disabled tools
+    // Extract tool types from disabled tools.
     final disabledToolTypes = conversationTools
         .where((tool) => !tool.isEnabled)
         .map((tool) => tool.toolId)
         .toSet();
 
-    // Available tools = workspace enabled tools - disabled tools
+    // Available tools = workspace enabled tools - disabled tools.
     return workspaceEnabledTools
         .where((tool) => !disabledToolTypes.contains(tool.toolId))
         .toList();
@@ -305,25 +301,25 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
     required String workspaceId,
     required String toolId,
   }) async {
-    // 1. Check workspace - tool must exist and be enabled
+    // 1. Check workspace - tool must exist and be enabled.
     final workspaceTool = await _workspaceToolsRepository.getWorkspaceTool(
       workspaceId,
       toolId,
     );
 
-    // Tool not in workspace or disabled = cannot run
+    // Tool not in workspace or disabled = cannot run.
     if (workspaceTool == null || !workspaceTool.isEnabled) {
       return ToolPermissionResult.notConfigured;
     }
 
-    // 2. Check conversation override (takes priority)
+    // 2. Check conversation override (takes priority).
     final conversationTool = await getConversationTool(
       conversationId,
       workspaceTool.id,
     );
 
     if (conversationTool != null) {
-      // Conversation rule exists - it takes priority
+      // Conversation rule exists - it takes priority.
       if (!conversationTool.isEnabled) {
         return ToolPermissionResult.disabledInConversation;
       }
@@ -332,11 +328,11 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
         return ToolPermissionResult.needsConfirmation;
       }
 
-      // Conversation says GRANTED (alwaysAllow)
+      // Conversation says granted (alwaysAllow).
       return ToolPermissionResult.granted;
     }
 
-    // 3. No conversation override - use workspace permission
+    // 3. No conversation override - use workspace permission.
     if (workspaceTool.permissionMode == ToolPermissionMode.alwaysAsk) {
       return ToolPermissionResult.needsConfirmation;
     }

@@ -1,14 +1,4 @@
-// ignore_for_file: prefer-async-await
-// Required: Overlay teardown uses callback-based animation flow.
-// ignore_for_file: no-magic-number
-// Required: UI tokens and layout use fixed design values.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: prefer-extracting-callbacks
 // Required: Component callbacks stay colocated with UI state.
-// ignore_for_file: prefer-static-class
 // Required: UI package exposes top-level helpers and constants.
 
 import 'dart:async';
@@ -18,19 +8,19 @@ import 'package:flutter/material.dart';
 
 /// Semantic variants for snackbar notifications.
 enum AuraSnackBarVariant {
-  /// Default appearance using surface colors
+  /// Default appearance using surface colors.
   default_,
 
-  /// Success message with green accent
+  /// Success message with green accent.
   success,
 
-  /// Error message with red accent
+  /// Error message with red accent.
   error,
 
-  /// Warning message with yellow accent
+  /// Warning message with yellow accent.
   warning,
 
-  /// Info message with blue accent
+  /// Info message with blue accent.
   info,
 }
 
@@ -72,13 +62,13 @@ AuraSnackBarController showAuraSnackBar({
   final backgroundColor = _getBackgroundColor(variant, colors);
   final foregroundColor = _getForegroundColor(variant, colors);
 
-  // Validate duration is within bounds (1-60 seconds)
+  // Validate duration is within bounds (1-60 seconds).
   final validatedDuration = Duration(
     seconds: duration.inSeconds.clamp(1, 60),
   );
 
-  // Get overlay state - use maybeOf with rootOverlay
-  // to avoid appearing under dialogs
+  // Get overlay state - use maybeOf with rootOverlay.
+  // To avoid appearing under dialogs.
   final overlayState = Overlay.maybeOf(context, rootOverlay: true);
   if (overlayState == null) {
     throw FlutterError(
@@ -88,20 +78,20 @@ AuraSnackBarController showAuraSnackBar({
     );
   }
 
-  // Track overlay entry for removal
+  // Track overlay entry for removal.
   OverlayEntry? entry;
 
-  // Guard flag to prevent double-removal
+  // Guard flag to prevent double-removal.
   var isDismissing = false;
 
-  // Create dismiss callback that removes the overlay
+  // Create dismiss callback that removes the overlay.
   void dismissWithCleanup() {
     if (isDismissing) return;
     isDismissing = true;
     entry?.remove();
   }
 
-  // Create the snackbar widget with internal state management
+  // Create the snackbar widget with internal state management.
   final snackbarWidget = _AuraSnackBarOverlayEntry(
     backgroundColor: backgroundColor,
     foregroundColor: foregroundColor,
@@ -112,10 +102,10 @@ AuraSnackBarController showAuraSnackBar({
     onAction: onAction,
   );
 
-  // Create overlay entry
+  // Create overlay entry.
   entry = OverlayEntry(builder: (context) => snackbarWidget);
 
-  // Insert the overlay entry
+  // Insert the overlay entry.
   overlayState.insert(entry);
 
   return AuraSnackBarController(
@@ -161,14 +151,14 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
   void initState() {
     super.initState();
 
-    // Initialize animation controller
+    // Initialize animation controller.
     final animationController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
     _animationController = animationController;
 
-    // Set up slide animation (slide up from bottom)
+    // Set up slide animation (slide up from bottom).
     _slideAnimation =
         Tween<Offset>(
           begin: const Offset(0, 1),
@@ -180,7 +170,7 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
           ),
         );
 
-    // Set up fade animation
+    // Set up fade animation.
     _fadeAnimation =
         Tween<double>(
           begin: 0,
@@ -192,10 +182,10 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
           ),
         );
 
-    // Start entry animation
+    // Start entry animation.
     unawaited(animationController.forward());
 
-    // Set up auto-dismiss timer
+    // Set up auto-dismiss timer.
     _dismissTimer = Timer(widget.duration, dismiss);
   }
 
@@ -218,23 +208,22 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
 
       return;
     }
-    unawaited(
-      animationController
-          .reverse()
-          .orCancel
-          .then((_) {
-            // Only call dismiss callback - don't dispose here
-            // as dispose() will be called by the framework
-            widget.dismissCallback();
-          })
-          .catchError((Object error) {
-            // Ignore ticker cancellations caused by widget disposal
-            // during animation.
-            if (error is TickerCanceled) return;
-            // ignore: only_throw_errors - re-throwing non-cancellation errors
-            throw error;
-          }),
-    );
+    unawaited(_reverseAndDismiss(animationController));
+  }
+
+  Future<void> _reverseAndDismiss(
+    AnimationController animationController,
+  ) async {
+    try {
+      await animationController.reverse().orCancel;
+    } on TickerCanceled {
+      // Ignore ticker cancellations caused by widget disposal during animation.
+      return;
+    }
+
+    // Only call dismiss callback - don't dispose here.
+    // As dispose() will be called by the framework.
+    widget.dismissCallback();
   }
 
   @override
@@ -278,7 +267,7 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
                   ),
                   child: Row(
                     children: [
-                      // Content
+                      // Content.
                       Expanded(
                         child: DefaultTextStyle(
                           style: TextStyle(
@@ -289,7 +278,7 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
                           child: widget.content,
                         ),
                       ),
-                      // Action button
+                      // Action button.
                       if (actionLabel != null) ...[
                         const SizedBox(width: 8),
                         GestureDetector(

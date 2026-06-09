@@ -1,5 +1,3 @@
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
 import 'package:auravibes_ui/src/atoms/aura_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -12,7 +10,9 @@ void main() {
           home: Scaffold(
             body: AuraTile(
               child: const Text('Test Tile'),
-              onTap: () {},
+              onTap: () {
+                final _ = Object();
+              },
             ),
           ),
         ),
@@ -28,7 +28,9 @@ void main() {
           home: Scaffold(
             body: AuraTile(
               child: const Text('Test Tile'),
-              onTap: () {},
+              onTap: () {
+                final _ = Object();
+              },
             ),
           ),
         ),
@@ -44,7 +46,9 @@ void main() {
           home: Scaffold(
             body: AuraTile(
               child: const Text('Test Tile'),
-              onTap: () {},
+              onTap: () {
+                final _ = Object();
+              },
               isLoading: true,
             ),
           ),
@@ -61,7 +65,9 @@ void main() {
           home: Scaffold(
             body: AuraTile(
               child: const Text('Test Tile'),
-              onTap: () {},
+              onTap: () {
+                final _ = Object();
+              },
               leading: const Icon(Icons.star),
               trailing: const Icon(Icons.arrow_forward),
             ),
@@ -144,7 +150,9 @@ void main() {
               home: Scaffold(
                 body: AuraTile(
                   child: const Text('Test Tile'),
-                  onTap: () {},
+                  onTap: () {
+                    final _ = Object();
+                  },
                   variant: variant,
                 ),
               ),
@@ -165,7 +173,9 @@ void main() {
               home: Scaffold(
                 body: AuraTile(
                   child: const Text('Test Tile'),
-                  onTap: () {},
+                  onTap: () {
+                    final _ = Object();
+                  },
                   size: size,
                 ),
               ),

@@ -6,12 +6,12 @@ part of 'workspace_model_selection_with_connection.dart';
 mixin _$WorkspaceModelSelectionsDaoMixin on DatabaseAccessor<AppDatabase> {
   $ApiModelProvidersTable get apiModelProviders =>
       attachedDatabase.apiModelProviders;
-  $ApiModelsTable get apiModels => attachedDatabase.apiModels;
   $WorkspacesTable get workspaces => attachedDatabase.workspaces;
-  $ModelConnectionsTable get modelConnections =>
-      attachedDatabase.modelConnections;
+  $ServiceConnectionsTable get serviceConnections =>
+      attachedDatabase.serviceConnections;
   $WorkspaceModelSelectionsTable get workspaceModelSelections =>
       attachedDatabase.workspaceModelSelections;
+  $ApiModelsTable get apiModels => attachedDatabase.apiModels;
   WorkspaceModelSelectionsDaoManager get managers =>
       WorkspaceModelSelectionsDaoManager(this);
 }
@@ -24,18 +24,18 @@ class WorkspaceModelSelectionsDaoManager {
         _db.attachedDatabase,
         _db.apiModelProviders,
       );
-  $$ApiModelsTableTableManager get apiModels =>
-      $$ApiModelsTableTableManager(_db.attachedDatabase, _db.apiModels);
   $$WorkspacesTableTableManager get workspaces =>
       $$WorkspacesTableTableManager(_db.attachedDatabase, _db.workspaces);
-  $$ModelConnectionsTableTableManager get modelConnections =>
-      $$ModelConnectionsTableTableManager(
+  $$ServiceConnectionsTableTableManager get serviceConnections =>
+      $$ServiceConnectionsTableTableManager(
         _db.attachedDatabase,
-        _db.modelConnections,
+        _db.serviceConnections,
       );
   $$WorkspaceModelSelectionsTableTableManager get workspaceModelSelections =>
       $$WorkspaceModelSelectionsTableTableManager(
         _db.attachedDatabase,
         _db.workspaceModelSelections,
       );
+  $$ApiModelsTableTableManager get apiModels =>
+      $$ApiModelsTableTableManager(_db.attachedDatabase, _db.apiModels);
 }

@@ -1,9 +1,4 @@
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-static-class
-// Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_notifier.dart';
 import 'package:auravibes_app/features/chats/notifiers/messages_streaming_state.dart';
 import 'package:auravibes_app/features/chats/notifiers/titles_streams_notifier.dart';
@@ -47,9 +42,50 @@ class TitlesStreamingRuntime {
   final void Function(String conversationId) removeTitle;
 }
 
+class ConversationRateLimitRetryRuntime {
+  const ConversationRateLimitRetryRuntime({
+    required this.start,
+    required this.retryAt,
+    required this.clear,
+  });
+
+  final void Function(String conversationId, DateTime retryAt) start;
+  final DateTime? Function(String conversationId) retryAt;
+  final void Function(String conversationId) clear;
+}
+
+class ConversationRateLimitRetryNotifier
+    extends Notifier<Map<String, DateTime>> {
+  @override
+  Map<String, DateTime> build() {
+    return {};
+  }
+
+  void start(String conversationId, DateTime retryAt) {
+    state = {
+      ...state,
+      conversationId: retryAt,
+    };
+  }
+
+  DateTime? retryAt(String conversationId) {
+    return state[conversationId];
+  }
+
+  void clear(String conversationId) {
+    if (!state.containsKey(conversationId)) return;
+
+    state = {
+      for (final entry in state.entries)
+        if (entry.key != conversationId) entry.key: entry.value,
+    };
+  }
+}
+
 final conversationStreamingRuntimeProvider =
     Provider<ConversationStreamingRuntime>((ref) {
       final notifier = ref.watch(conversationStreamingProvider.notifier);
+
       return ConversationStreamingRuntime(
         start: notifier.start,
         isStreaming: notifier.isStreaming,
@@ -61,6 +97,7 @@ final messagesStreamingRuntimeProvider = Provider<MessagesStreamingRuntime>((
   ref,
 ) {
   final notifier = ref.watch(messagesStreamingProvider.notifier);
+
   return MessagesStreamingRuntime(
     startSubscription: notifier.startSubscription,
     updateResult: notifier.updateResult,
@@ -70,8 +107,25 @@ final messagesStreamingRuntimeProvider = Provider<MessagesStreamingRuntime>((
 
 final titlesStreamingRuntimeProvider = Provider<TitlesStreamingRuntime>((ref) {
   final notifier = ref.watch(titlesStreamsProvider.notifier);
+
   return TitlesStreamingRuntime(
     updateTitle: notifier.updateTitle,
     removeTitle: notifier.removeTitle,
   );
 });
+
+final conversationRateLimitRetryProvider =
+    NotifierProvider<ConversationRateLimitRetryNotifier, Map<String, DateTime>>(
+      ConversationRateLimitRetryNotifier.new,
+    );
+
+final conversationRateLimitRetryRuntimeProvider =
+    Provider<ConversationRateLimitRetryRuntime>((ref) {
+      final notifier = ref.watch(conversationRateLimitRetryProvider.notifier);
+
+      return ConversationRateLimitRetryRuntime(
+        start: notifier.start,
+        retryAt: notifier.retryAt,
+        clear: notifier.clear,
+      );
+    });

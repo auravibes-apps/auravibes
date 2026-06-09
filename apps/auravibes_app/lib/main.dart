@@ -1,8 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/settings/notifiers/app_theme.dart';
 import 'package:auravibes_app/flavor.dart';
@@ -17,9 +12,9 @@ import 'package:flutter/services.dart'
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 Future<void> main() async {
-  F.appFlavor = AppFlavorResolver.resolve(appFlavor);
+  AppFlavorConfig.appFlavor = AppFlavorResolver.resolve(appFlavor);
   final _ = WidgetsFlutterBinding.ensureInitialized();
-  AppLogging.configure(enabled: F.appFlavor != Flavor.prod);
+  AppLogging.configure(enabled: AppFlavorConfig.appFlavor != Flavor.prod);
   await MainLocale.ensureInitialized();
 
   SystemChrome.setSystemUIOverlayStyle(
@@ -32,7 +27,7 @@ Future<void> main() async {
     appDatabaseProvider,
   );
 
-  // Load defaults after the database connection is established
+  // Load defaults after the database connection is established.
   await appDatabase.initializeWithDefaults();
   final _ = container.read(modelSyncServiceProvider);
 
@@ -71,7 +66,7 @@ class MyApp extends ConsumerWidget {
         builder: (context, child) => AuraText(
           child: child ?? const SizedBox.shrink(),
         ),
-        title: F.title,
+        title: AppFlavorConfig.title,
         theme: ThemeData(
           extensions: [
             AuraTheme.light,
@@ -87,7 +82,7 @@ class MyApp extends ConsumerWidget {
         locale: context.locale,
         localizationsDelegates: context.localizationDelegates,
         supportedLocales: context.supportedLocales,
-        debugShowCheckedModeBanner: F.appFlavor != Flavor.prod,
+        debugShowCheckedModeBanner: AppFlavorConfig.appFlavor != Flavor.prod,
       ),
     );
   }

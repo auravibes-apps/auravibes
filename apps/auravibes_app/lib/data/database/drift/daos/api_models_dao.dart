@@ -1,10 +1,3 @@
-// ignore_for_file: prefer-async-await
-// Required: Existing Future chains preserve callback flow.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: newline-before-return
-// Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/api_models.dart';
@@ -78,6 +71,7 @@ class ApiModelsDao extends DatabaseAccessor<AppDatabase>
     final deleteCount = await (delete(
       apiModels,
     )..where((t) => t.id.equals(id))).go();
+
     return deleteCount > 0;
   }
 
@@ -95,13 +89,13 @@ class ApiModelsDao extends DatabaseAccessor<AppDatabase>
   ///
   /// Returns true if the model exists, false otherwise.
   Future<bool> modelExists(String id) async {
-    final count =
+    final rows =
         await (selectOnly(apiModels)
               ..addColumns([apiModels.id])
               ..where(apiModels.id.equals(id)))
-            .get()
-            .then((rows) => rows.length);
-    return count > 0;
+            .get();
+
+    return rows.isNotEmpty;
   }
 
   /// Searches for models by name.
@@ -121,21 +115,25 @@ class ApiModelsDao extends DatabaseAccessor<AppDatabase>
   /// Gets the count of all models.
   ///
   /// Returns the total number of models in the database.
-  Future<int> getModelCount() {
-    return (selectOnly(
+  Future<int> getModelCount() async {
+    final rows = await (selectOnly(
       apiModels,
-    )..addColumns([apiModels.id])).get().then((rows) => rows.length);
+    )..addColumns([apiModels.id])).get();
+
+    return rows.length;
   }
 
   /// Gets the count of models by provider.
   ///
   /// Returns the number of models with the specified [providerId].
-  Future<int> getModelCountByProvider(String providerId) {
-    return (selectOnly(apiModels)
-          ..addColumns([apiModels.id])
-          ..where(apiModels.modelProvider.equals(providerId)))
-        .get()
-        .then((rows) => rows.length);
+  Future<int> getModelCountByProvider(String providerId) async {
+    final rows =
+        await (selectOnly(apiModels)
+              ..addColumns([apiModels.id])
+              ..where(apiModels.modelProvider.equals(providerId)))
+            .get();
+
+    return rows.length;
   }
 
   /// Batch inserts multiple models into the database.
@@ -151,10 +149,11 @@ class ApiModelsDao extends DatabaseAccessor<AppDatabase>
           final inserted = await upsertModel(model);
           results.add(inserted);
         } on Exception catch (e) {
-          // Continue with other models if one fails
+          // Continue with other models if one fails.
           _log.severe('Failed to insert model ${model.id.value}: $e');
         }
       }
+
       return results;
     });
   }

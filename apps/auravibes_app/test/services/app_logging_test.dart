@@ -1,13 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-
 import 'dart:ui';
 
 import 'package:auravibes_app/services/app_log_buffer.dart';
@@ -40,7 +30,7 @@ void main() {
   });
 
   group('AppLogging', () {
-    late DebugPrintCallback previousDebugPrint;
+    var previousDebugPrint = debugPrint;
     FlutterExceptionHandler? previousFlutterError;
     ErrorCallback? previousPlatformError;
 
@@ -50,7 +40,9 @@ void main() {
       previousDebugPrint = debugPrint;
       previousFlutterError = FlutterError.onError;
       previousPlatformError = PlatformDispatcher.instance.onError;
-      debugPrint = (_, {wrapWidth}) {};
+      debugPrint = (_, {wrapWidth}) {
+        final _ = Object();
+      };
     });
 
     tearDown(() {

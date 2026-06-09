@@ -40,6 +40,6 @@ jobs:
           ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
 
       - name: 📦 Melos Bootstrap
-        uses: bluefireteam/melos-action@62e2570ad84b9f7c84a1d324f2077a30bf3f877d
+        uses: bluefireteam/melos-action@2982f8e4fc92440a219490009d6d05195cb1a6a5
         with:
           run-bootstrap: true

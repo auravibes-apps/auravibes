@@ -1,8 +1,4 @@
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 import 'dart:collection';
 
@@ -48,10 +44,9 @@ Future<List<MessageEntity>> chatMessages(Ref ref) {
 
 @Riverpod(dependencies: [chatMessages])
 List<String> chatMessageIds(Ref ref) {
-  final messages = ref.watch(
-    chatMessagesProvider.select((value) => value.value),
-  );
+  final messages = ref.watch(chatMessagesProvider).value;
   if (messages == null || messages.isEmpty) return MessageIdList.empty;
+
   return MessageIdList(messages.map((m) => m.id));
 }
 
@@ -88,11 +83,10 @@ MessageEntity? messageConversationById(
   Ref ref,
   String messageId,
 ) {
-  final messageEntity = ref.watch(
-    chatMessagesProvider.select(
-      (value) => value.value?.firstWhereOrNull((c) => c.id == messageId),
-    ),
-  );
+  final messageEntity = ref
+      .watch(chatMessagesProvider)
+      .value
+      ?.firstWhereOrNull((c) => c.id == messageId);
 
   if (messageEntity == null) return null;
 
@@ -103,7 +97,7 @@ MessageEntity? messageConversationById(
   if (streamingResult == null) return messageEntity;
 
   final streamingMetadata = streamingResult.entityMetadata;
-  final metadata = _mergeStreamingMetadata(
+  final metadata = mergeStreamingMessageMetadata(
     messageEntity.metadata,
     streamingMetadata,
   );
@@ -114,7 +108,7 @@ MessageEntity? messageConversationById(
   );
 }
 
-MessageMetadataEntity? _mergeStreamingMetadata(
+MessageMetadataEntity? mergeStreamingMessageMetadata(
   MessageMetadataEntity? current,
   MessageMetadataEntity? streaming,
 ) {
@@ -188,6 +182,7 @@ List<ConversationQueuedDraft> conversationQueuedDrafts(Ref ref) {
 @Riverpod(dependencies: [conversationSelected])
 CompactionExecutionState? conversationCompactionExecutionState(Ref ref) {
   final conversationId = ref.watch(conversationSelectedProvider);
+
   return ref.watch(compactionExecutionStateProvider(conversationId));
 }
 
@@ -215,9 +210,7 @@ class PendingToolCall {
 
 @Riverpod(dependencies: [chatMessages])
 int conversationUsedTokens(Ref ref) {
-  final messages = ref.watch(
-    chatMessagesProvider.select((value) => value.value),
-  );
+  final messages = ref.watch(chatMessagesProvider).value;
   if (messages == null || messages.isEmpty) return 0;
 
   final latestAssistantMessage = messages.lastWhereOrNull(
@@ -261,9 +254,7 @@ Future<int?> conversationContextLimit(Ref ref) async {
 )
 Future<List<PendingToolCall>> pendingToolCalls(Ref ref) async {
   final conversationId = ref.watch(conversationSelectedProvider);
-  final messages = ref.watch(
-    chatMessagesProvider.select((value) => value.value),
-  );
+  final messages = ref.watch(chatMessagesProvider).value;
   if (messages == null || messages.isEmpty) return const [];
 
   final latestAssistantMessage = messages.lastWhereOrNull(
@@ -286,6 +277,7 @@ Future<List<PendingToolCall>> pendingToolCalls(Ref ref) async {
       '[pendingToolCalls] No workspaceId for conversation $conversationId; '
       'returning pending tool calls as needing confirmation',
     );
+
     return pendingCalls
         .map(
           (toolCall) => PendingToolCall(
@@ -313,12 +305,14 @@ Future<List<PendingToolCall>> pendingToolCalls(Ref ref) async {
           toolCallId: toolCall.id,
           resolvedTool: resolvedTool,
         );
+
         return (
           toolCall: toolCall,
           needsConfirmation: decision.needsConfirmation,
         );
       } on Object catch (error) {
         debugPrint('[pendingToolCalls] Error resolving $toolCall: $error');
+
         return (toolCall: toolCall, needsConfirmation: true);
       }
     }),

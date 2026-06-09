@@ -1,7 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 import 'package:auravibes_ui/src/organisms/aura_input.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -140,7 +136,7 @@ void main() {
         ),
       );
 
-      // Test that the input is read-only by checking if we can enter text
+      // Test that the input is read-only by checking if we can enter text.
       await tester.enterText(find.byType(TextFormField), 'test');
       expect(find.text('test'), findsNothing);
     });
@@ -157,11 +153,11 @@ void main() {
         ),
       );
 
-      // Find the AuraInput widget and verify obscureText property is set
+      // Find the AuraInput widget and verify obscureText property is set.
       final auraInput = tester.widget<AuraInput>(find.byType(AuraInput));
       expect(auraInput.obscureText, isTrue);
 
-      // Verify the initial value is set correctly
+      // Verify the initial value is set correctly.
       expect(auraInput.initialValue, equals('password'));
     });
 

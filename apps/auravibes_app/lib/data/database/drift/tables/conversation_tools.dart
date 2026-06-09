@@ -1,8 +1,6 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // coverage:ignore-file
-// Required: Drift table DSL is unreachable at runtime
-// (see api_models.dart).
+// Required: Drift table DSL is unreachable at runtime.
+// (See api_models.dart).
 import 'package:auravibes_app/data/database/drift/tables/conversations.dart';
 import 'package:auravibes_app/data/database/drift/tables/table_mixin.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools.dart';
@@ -12,7 +10,7 @@ export 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 
 @DataClassName('ConversationToolsTable')
 class ConversationTools extends Table with TableMixin {
-  /// Reference to the conversation this tool setting belongs to
+  /// Reference to the conversation this tool setting belongs to.
   TextColumn get conversationId => text().references(
     Conversations,
     #id,
@@ -25,7 +23,7 @@ class ConversationTools extends Table with TableMixin {
     onDelete: KeyAction.cascade,
   )();
 
-  /// Whether the tool is enabled for this workspace
+  /// Whether the tool is enabled for this workspace.
   BoolColumn get isEnabled => boolean().withDefault(const Constant(false))();
 
   TextColumn get permissions => textEnum<PermissionAccess>().withDefault(

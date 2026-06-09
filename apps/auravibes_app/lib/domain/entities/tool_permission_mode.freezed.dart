@@ -14,17 +14,17 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$WorkspaceToolEntity {
 
-/// Unique ID of this tool record in the database
- String get id;/// ID of the workspace this tool setting belongs to
- String get workspaceId;/// Tool identifier (e.g., 'web_search', 'calculator', etc.)
- String get toolId;/// Whether the tool is enabled for this workspace
- bool get isEnabled;/// Permission mode for this tool (always ask or always allow)
- ToolPermissionMode get permissionMode;/// Timestamp when this setting was created
- DateTime get createdAt;/// Timestamp when this setting was last updated
- DateTime get updatedAt;/// Tool configuration as JSON (optional)
- String? get config;/// Optional description of the tool (from MCP or user-defined)
- String? get description;/// JSON Schema for input parameters (for MCP tools)
- String? get inputSchema;/// Optional reference to the tools group this tool belongs to
+/// Unique ID of this tool record in the database.
+ String get id;/// ID of the workspace this tool setting belongs to.
+ String get workspaceId;/// Tool identifier (for example, 'web_search', 'calculator', etc).
+ String get toolId;/// Whether the tool is enabled for this workspace.
+ bool get isEnabled;/// Permission mode for this tool (always ask or always allow).
+ ToolPermissionMode get permissionMode;/// Timestamp when this setting was created.
+ DateTime get createdAt;/// Timestamp when this setting was last updated.
+ DateTime get updatedAt;/// Tool configuration as JSON (optional).
+ String? get config;/// Optional description of the tool (from MCP or user-defined).
+ String? get description;/// JSON schema for input parameters (for MCP tools).
+ String? get inputSchema;/// Optional reference to the tools group this tool belongs to.
  String? get workspaceToolsGroupId;
 /// Create a copy of WorkspaceToolEntity
 /// with the given fields replaced by the non-null parameter values.
@@ -230,27 +230,27 @@ class _WorkspaceToolEntity extends WorkspaceToolEntity {
   const _WorkspaceToolEntity({required this.id, required this.workspaceId, required this.toolId, required this.isEnabled, required this.permissionMode, required this.createdAt, required this.updatedAt, this.config, this.description, this.inputSchema, this.workspaceToolsGroupId}): super._();
   
 
-/// Unique ID of this tool record in the database
+/// Unique ID of this tool record in the database.
 @override final  String id;
-/// ID of the workspace this tool setting belongs to
+/// ID of the workspace this tool setting belongs to.
 @override final  String workspaceId;
-/// Tool identifier (e.g., 'web_search', 'calculator', etc.)
+/// Tool identifier (for example, 'web_search', 'calculator', etc).
 @override final  String toolId;
-/// Whether the tool is enabled for this workspace
+/// Whether the tool is enabled for this workspace.
 @override final  bool isEnabled;
-/// Permission mode for this tool (always ask or always allow)
+/// Permission mode for this tool (always ask or always allow).
 @override final  ToolPermissionMode permissionMode;
-/// Timestamp when this setting was created
+/// Timestamp when this setting was created.
 @override final  DateTime createdAt;
-/// Timestamp when this setting was last updated
+/// Timestamp when this setting was last updated.
 @override final  DateTime updatedAt;
-/// Tool configuration as JSON (optional)
+/// Tool configuration as JSON (optional).
 @override final  String? config;
-/// Optional description of the tool (from MCP or user-defined)
+/// Optional description of the tool (from MCP or user-defined).
 @override final  String? description;
-/// JSON Schema for input parameters (for MCP tools)
+/// JSON schema for input parameters (for MCP tools).
 @override final  String? inputSchema;
-/// Optional reference to the tools group this tool belongs to
+/// Optional reference to the tools group this tool belongs to.
 @override final  String? workspaceToolsGroupId;
 
 /// Create a copy of WorkspaceToolEntity
@@ -323,12 +323,12 @@ as String?,
 /// @nodoc
 mixin _$WorkspaceToolToCreate {
 
-/// Tool identifier (e.g., 'web_search', 'calculator', etc.)
- String get toolId;/// Tool configuration as JSON (optional)
- String? get config;/// Whether the tool should be enabled (defaults to true)
- bool? get isEnabled;/// Optional description of the tool
- String? get description;/// JSON Schema for input parameters (for MCP tools)
- String? get inputSchema;/// Optional reference to the tools group this tool belongs to
+/// Tool identifier (for example, 'web_search', 'calculator', etc).
+ String get toolId;/// Tool configuration as JSON (optional).
+ String? get config;/// Whether the tool should be enabled (defaults to true).
+ bool? get isEnabled;/// Optional description of the tool.
+ String? get description;/// JSON schema for input parameters (for MCP tools).
+ String? get inputSchema;/// Optional reference to the tools group this tool belongs to.
  String? get workspaceToolsGroupId;
 /// Create a copy of WorkspaceToolToCreate
 /// with the given fields replaced by the non-null parameter values.
@@ -529,17 +529,17 @@ class _WorkspaceToolToCreate extends WorkspaceToolToCreate {
   const _WorkspaceToolToCreate({required this.toolId, this.config, this.isEnabled, this.description, this.inputSchema, this.workspaceToolsGroupId}): super._();
   
 
-/// Tool identifier (e.g., 'web_search', 'calculator', etc.)
+/// Tool identifier (for example, 'web_search', 'calculator', etc).
 @override final  String toolId;
-/// Tool configuration as JSON (optional)
+/// Tool configuration as JSON (optional).
 @override final  String? config;
-/// Whether the tool should be enabled (defaults to true)
+/// Whether the tool should be enabled (defaults to true).
 @override final  bool? isEnabled;
-/// Optional description of the tool
+/// Optional description of the tool.
 @override final  String? description;
-/// JSON Schema for input parameters (for MCP tools)
+/// JSON schema for input parameters (for MCP tools).
 @override final  String? inputSchema;
-/// Optional reference to the tools group this tool belongs to
+/// Optional reference to the tools group this tool belongs to.
 @override final  String? workspaceToolsGroupId;
 
 /// Create a copy of WorkspaceToolToCreate

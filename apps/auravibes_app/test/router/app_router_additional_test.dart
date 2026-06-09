@@ -1,7 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -57,9 +53,12 @@ void main() {
       expect(route.location, '/workspaces/12345/more/tools');
     });
 
-    test('ModelsRoute with special chars workspaceId', () {
-      final route = ModelsRoute(workspaceId: 'ws_test-123');
-      expect(route.location, '/workspaces/ws_test-123/more/models');
+    test('ServiceConnectionsRoute with special chars workspaceId', () {
+      final route = ServiceConnectionsRoute(workspaceId: 'ws_test-123');
+      expect(
+        route.location,
+        '/workspaces/ws_test-123/more/service-connections',
+      );
     });
 
     test('WorkspaceRoute location with hyphenated workspaceId', () {

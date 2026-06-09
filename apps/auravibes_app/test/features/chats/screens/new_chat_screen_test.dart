@@ -1,5 +1,3 @@
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 import 'package:auravibes_app/features/chats/notifiers/new_chat_state.dart';
 import 'package:auravibes_app/features/chats/screens/new_chat_screen.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
@@ -74,7 +72,7 @@ void main() {
     testWidgets('renders NewChatScreen', (tester) async {
       await tester.runAsync(() async {
         await tester.pumpWidget(
-          testableApp(
+          TestableApp(
             child: Theme(
               data: ThemeData(extensions: [AuraTheme.light]),
               child: const NewChatScreen(workspaceId: 'test-ws'),
@@ -101,7 +99,7 @@ void main() {
     ) async {
       await tester.runAsync(() async {
         await tester.pumpWidget(
-          testableApp(
+          TestableApp(
             child: Theme(
               data: ThemeData(extensions: [AuraTheme.light]),
               child: const NewChatScreen(workspaceId: 'test-ws'),

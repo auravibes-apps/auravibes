@@ -1,10 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
@@ -35,7 +28,7 @@ class GenerateTitleUsecase {
     required WorkspaceModelSelectionWithConnectionEntity
     workspaceModelSelection,
   }) {
-    // stream title
+    // Stream title.
     final stream = chatbotService.streamTitle(
       workspaceModelSelection,
       firstMessage,

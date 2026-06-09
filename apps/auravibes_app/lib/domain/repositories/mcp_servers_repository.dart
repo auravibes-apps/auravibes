@@ -1,8 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
@@ -86,33 +81,34 @@ abstract class McpServersRepository {
 class McpServersException implements Exception {
   // Cause is optional because not all domain failures wrap an exception.
   // ignore: unnecessary-nullable
-  /// Creates a new McpServersException
+  /// Creates a new McpServersException.
   const McpServersException(
     this.message, [
     this.cause,
   ]);
 
-  /// Error message describing the exception
+  /// Error message describing the exception.
   final String message;
 
-  /// Optional original exception that caused this exception
+  /// Optional original exception that caused this exception.
   final Exception? cause;
 
   @override
   String toString() {
     final causedBy = cause != null ? ' (Caused by: $cause)' : '';
+
     return 'McpServersException: $message$causedBy';
   }
 }
 
 /// Exception thrown when an MCP server is not found.
 class McpServerNotFoundException extends McpServersException {
-  /// Creates a new McpServerNotFoundException
+  /// Creates a new McpServerNotFoundException.
   const McpServerNotFoundException(
     this.serverId, [
     Exception? cause,
   ]) : super('MCP server "$serverId" not found', cause);
 
-  /// ID of the MCP server that was not found
+  /// ID of the MCP server that was not found.
   final String serverId;
 }

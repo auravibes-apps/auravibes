@@ -1,14 +1,5 @@
-// ignore_for_file: prefer-async-await
-// Required: Stories use Future chains from sync callbacks.
-// ignore_for_file: avoid-returning-widgets
-// Required: Widgetbook stories use helper functions that return widgets.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-extracting-callbacks
 // Required: Stories keep callbacks inline for readability.
-// ignore_for_file: prefer-single-widget-per-file
 // Required: Widgetbook stories group related story widgets.
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 import 'dart:async';
 
@@ -48,28 +39,29 @@ class _ConfirmDialogDemo extends StatelessWidget {
       body: Center(
         child: ElevatedButton(
           onPressed: () {
-            unawaited(
-              showAuraConfirmDialog(
-                context: context,
-                title: const Text('Delete Item'),
-                message: const Text(
-                  'Are you sure you want to delete this item? This action cannot be undone.',
-                ),
-                isDestructive: isDestructive,
-                colorVariant: colorVariant,
-              ).then((result) {
-                if (context.mounted) {
-                  final _ = ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text('Result: $result')));
-                }
-              }),
-            );
+            unawaited(_showConfirmDialog(context));
           },
           child: const Text('Show Confirm Dialog'),
         ),
       ),
     );
+  }
+
+  Future<void> _showConfirmDialog(BuildContext context) async {
+    final result = await showAuraConfirmDialog(
+      context: context,
+      title: const Text('Delete Item'),
+      message: const Text(
+        'Are you sure you want to delete this item? This action cannot be undone.',
+      ),
+      isDestructive: isDestructive,
+      colorVariant: colorVariant,
+    );
+    if (!context.mounted) return;
+
+    final _ = ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Result: $result')));
   }
 }
 

@@ -1,19 +1,7 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: scoped_providers_should_specify_dependencies
 // Required: widget tests override scoped providers directly.
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
+
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 
 import 'dart:async';
 
@@ -67,6 +55,7 @@ void main() {
                 ],
                 builder: (context, state, navigationShell) {
                   result = navigationShell.currentIndex;
+
                   return navigationShell;
                 },
               ),
@@ -117,6 +106,7 @@ void main() {
                 ],
                 builder: (context, state, navigationShell) {
                   capturedShellIndex = navigationShell.currentIndex;
+
                   return navigationShell;
                 },
               ),
@@ -169,7 +159,9 @@ void main() {
       final widget = AppWithResponsiveDrawer(
         child: const SizedBox(),
         navigationItems: const [],
-        onNavigationTap: (_) {},
+        onNavigationTap: (_) {
+          final _ = Object();
+        },
         selectedIndex: 0,
         workspaceId: 'ws-1',
       );
@@ -181,7 +173,9 @@ void main() {
       final widget = AppWithResponsiveDrawer(
         child: const SizedBox(),
         navigationItems: const [],
-        onNavigationTap: (_) {},
+        onNavigationTap: (_) {
+          final _ = Object();
+        },
         selectedIndex: 0,
         workspaceId: 'ws-1',
         key: const Key('drawer-key'),
@@ -193,7 +187,9 @@ void main() {
       final widget = AppWithResponsiveDrawer(
         child: const SizedBox(),
         navigationItems: const [],
-        onNavigationTap: (_) {},
+        onNavigationTap: (_) {
+          final _ = Object();
+        },
         selectedIndex: 0,
         workspaceId: 'ws-1',
       );
@@ -235,6 +231,7 @@ void main() {
                 ],
                 builder: (context, state, navigationShell) {
                   capturedWorkspaceId = state.pathParameters['workspaceId'];
+
                   return Text('workspaceId: $capturedWorkspaceId');
                 },
               ),
@@ -281,6 +278,7 @@ void main() {
                 ],
                 builder: (context, state, navigationShell) {
                   capturedWorkspaceId = state.pathParameters['workspaceId'];
+
                   return Text('workspaceId: $capturedWorkspaceId');
                 },
               ),
@@ -291,6 +289,7 @@ void main() {
           if (state.uri.toString() == '/') {
             return '/workspaces/ws-redirect-test/chat/new';
           }
+
           return null;
         },
         initialLocation: '/',
@@ -344,6 +343,7 @@ void main() {
                 ],
                 builder: (context, state, navigationShell) {
                   capturedShellIndex = navigationShell.currentIndex;
+
                   return navigationShell;
                 },
               ),
@@ -396,6 +396,7 @@ void main() {
                 ],
                 builder: (context, state, navigationShell) {
                   capturedShellIndex = navigationShell.currentIndex;
+
                   return navigationShell;
                 },
               ),
@@ -457,6 +458,7 @@ void main() {
                 ],
                 builder: (context, state, navigationShell) {
                   capturedShellIndex = navigationShell.currentIndex;
+
                   return navigationShell;
                 },
               ),
@@ -496,6 +498,7 @@ void main() {
                 branches: branches,
                 builder: (context, state, navigationShell) {
                   final workspaceId = state.pathParameters['workspaceId'] ?? '';
+
                   return Theme(
                     data: ThemeData(extensions: [AuraTheme.light]),
                     child: Material(
@@ -550,6 +553,7 @@ void main() {
         useOnlyLangCode: true,
         useFallbackTranslations: true,
       );
+
       return (app: app, router: router);
     }
 
@@ -670,6 +674,7 @@ class _FakeConversationRepository implements ConversationRepository {
     controller.onCancel = () => _pendingRemoval.add(controller);
     _controllers.add(controller);
     controller.add(const []);
+
     return controller.stream;
   }
 

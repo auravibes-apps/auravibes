@@ -1,8 +1,3 @@
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
-
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
@@ -27,24 +22,14 @@ import 'resolve_tool_approval_decision_usecase_test.mocks.dart';
 ])
 void main() {
   group('ResolveToolApprovalDecisionUsecase', () {
-    late MockConversationToolsRepository conversationToolsRepository;
-    late MockToolsGroupsRepository toolsGroupsRepository;
-    late MockWorkspaceToolsRepository workspaceToolsRepository;
-    late ResolveToolApprovalDecisionUsecase usecase;
+    final fixture = _ResolveToolApprovalDecisionFixture();
 
-    setUp(() {
-      conversationToolsRepository = MockConversationToolsRepository();
-      toolsGroupsRepository = MockToolsGroupsRepository();
-      workspaceToolsRepository = MockWorkspaceToolsRepository();
-      usecase = ResolveToolApprovalDecisionUsecase(
-        conversationToolsRepository: conversationToolsRepository,
-        toolsGroupsRepository: toolsGroupsRepository,
-        workspaceToolsRepository: workspaceToolsRepository,
-      );
-    });
+    setUp(fixture.setUp);
 
     group('built-in tools', () {
       test('returns granted for always-approved built-in tool', () async {
+        final conversationToolsRepository = fixture.conversationToolsRepository;
+        final usecase = fixture.usecase;
         final resolvedTool = ResolvedTool.builtIn(
           tableId: 'calc',
           toolIdentifier: 'calculator',
@@ -75,6 +60,9 @@ void main() {
       test(
         'returns needsConfirmation for conversation-ask built-in tool',
         () async {
+          final conversationToolsRepository =
+              fixture.conversationToolsRepository;
+          final usecase = fixture.usecase;
           final resolvedTool = ResolvedTool.builtIn(
             tableId: 'calc',
             toolIdentifier: 'calculator',
@@ -107,6 +95,8 @@ void main() {
 
     group('native tools', () {
       test('returns granted for native tool using toolIdentifier', () async {
+        final conversationToolsRepository = fixture.conversationToolsRepository;
+        final usecase = fixture.usecase;
         final resolvedTool = ResolvedTool.native(
           tableId: 'native-1',
           nativeToolType: NativeToolType.url,
@@ -136,6 +126,11 @@ void main() {
       test(
         'resolves permission table ID via tool group and workspace tool',
         () async {
+          final conversationToolsRepository =
+              fixture.conversationToolsRepository;
+          final toolsGroupsRepository = fixture.toolsGroupsRepository;
+          final workspaceToolsRepository = fixture.workspaceToolsRepository;
+          final usecase = fixture.usecase;
           final resolvedTool = ResolvedTool.mcp(
             tableId: 'server-1',
             toolIdentifier: 'sum',
@@ -195,6 +190,8 @@ void main() {
       );
 
       test('returns notConfigured when MCP tool group not found', () async {
+        final toolsGroupsRepository = fixture.toolsGroupsRepository;
+        final usecase = fixture.usecase;
         final resolvedTool = ResolvedTool.mcp(
           tableId: 'server-1',
           toolIdentifier: 'sum',
@@ -217,6 +214,9 @@ void main() {
       });
 
       test('returns notConfigured when MCP workspace tool not found', () async {
+        final toolsGroupsRepository = fixture.toolsGroupsRepository;
+        final workspaceToolsRepository = fixture.workspaceToolsRepository;
+        final usecase = fixture.usecase;
         final resolvedTool = ResolvedTool.mcp(
           tableId: 'server-1',
           toolIdentifier: 'sum',
@@ -257,6 +257,8 @@ void main() {
 
     group('disabled tools', () {
       test('returns disabledInConversation', () async {
+        final conversationToolsRepository = fixture.conversationToolsRepository;
+        final usecase = fixture.usecase;
         final resolvedTool = ResolvedTool.builtIn(
           tableId: 'calc',
           toolIdentifier: 'calculator',
@@ -288,4 +290,41 @@ void main() {
       });
     });
   });
+}
+
+class _ResolveToolApprovalDecisionFixture {
+  MockConversationToolsRepository? _conversationToolsRepository;
+  MockToolsGroupsRepository? _toolsGroupsRepository;
+  MockWorkspaceToolsRepository? _workspaceToolsRepository;
+  ResolveToolApprovalDecisionUsecase? _usecase;
+
+  MockConversationToolsRepository get conversationToolsRepository =>
+      _conversationToolsRepository ??
+      fail('Expected conversationToolsRepository to be initialized');
+
+  MockToolsGroupsRepository get toolsGroupsRepository =>
+      _toolsGroupsRepository ??
+      fail('Expected toolsGroupsRepository to be initialized');
+
+  MockWorkspaceToolsRepository get workspaceToolsRepository =>
+      _workspaceToolsRepository ??
+      fail('Expected workspaceToolsRepository to be initialized');
+
+  ResolveToolApprovalDecisionUsecase get usecase =>
+      _usecase ?? fail('Expected usecase to be initialized');
+
+  void setUp() {
+    final conversationToolsRepository = MockConversationToolsRepository();
+    final toolsGroupsRepository = MockToolsGroupsRepository();
+    final workspaceToolsRepository = MockWorkspaceToolsRepository();
+
+    _conversationToolsRepository = conversationToolsRepository;
+    _toolsGroupsRepository = toolsGroupsRepository;
+    _workspaceToolsRepository = workspaceToolsRepository;
+    _usecase = ResolveToolApprovalDecisionUsecase(
+      conversationToolsRepository: conversationToolsRepository,
+      toolsGroupsRepository: toolsGroupsRepository,
+      workspaceToolsRepository: workspaceToolsRepository,
+    );
+  }
 }

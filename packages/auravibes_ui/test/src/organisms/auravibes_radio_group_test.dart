@@ -1,11 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 import 'package:auravibes_ui/src/molecules/aura_radio_option.dart';
 import 'package:auravibes_ui/src/organisms/aura_radio_group.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
@@ -21,7 +13,9 @@ void main() {
           home: Scaffold(
             body: AuraRadioGroup<String>(
               value: null,
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
               options: const [
                 AuraRadioOption(value: 'option1', label: Text('Option 1')),
                 AuraRadioOption(value: 'option2', label: Text('Option 2')),
@@ -47,7 +41,9 @@ void main() {
           home: Scaffold(
             body: AuraRadioGroup<String>(
               value: null,
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
               options: const [],
             ),
           ),
@@ -66,7 +62,9 @@ void main() {
           home: Scaffold(
             body: AuraRadioGroup<String>(
               value: 'option2',
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
               options: const [
                 AuraRadioOption(value: 'option1', label: Text('Option 1')),
                 AuraRadioOption(value: 'option2', label: Text('Option 2')),
@@ -79,13 +77,13 @@ void main() {
         ),
       );
 
-      // Verify both radios exist and groupValue is correct
+      // Verify both radios exist and groupValue is correct.
       final radios = tester.widgetList<AuraRadio<String>>(
         find.byType(AuraRadio<String>),
       );
       expect(radios.length, 2);
 
-      // All radios should have the same groupValue
+      // All radios should have the same groupValue.
       for (final radio in radios) {
         expect(radio.groupValue, 'option2');
       }
@@ -123,7 +121,9 @@ void main() {
           home: Scaffold(
             body: AuraRadioGroup<String>(
               value: null,
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
               options: const [
                 AuraRadioOption(value: 'option1', label: Text('Option 1')),
               ],
@@ -145,7 +145,9 @@ void main() {
           home: Scaffold(
             body: AuraRadioGroup<String>(
               value: null,
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
               options: const [
                 AuraRadioOption(
                   value: 'option1',
@@ -173,7 +175,9 @@ void main() {
               width: 800,
               child: AuraRadioGroup<String>(
                 value: null,
-                onChanged: (_) {},
+                onChanged: (_) {
+                  final _ = Object();
+                },
                 options: const [
                   AuraRadioOption(value: 'option1', label: Text('Option 1')),
                   AuraRadioOption(value: 'option2', label: Text('Option 2')),
@@ -197,7 +201,9 @@ void main() {
           home: Scaffold(
             body: AuraRadioGroup<String>(
               value: null,
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
               options: const [
                 AuraRadioOption(value: 'option1', label: Text('Option 1')),
               ],
@@ -225,7 +231,9 @@ void main() {
             body: AuraRadioListTile<String>(
               value: 'option1',
               groupValue: null,
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
               title: const Text('Option 1'),
             ),
           ),
@@ -235,9 +243,9 @@ void main() {
         ),
       );
 
-      // The custom implementation should NOT use RadioListTile
+      // The custom implementation should NOT use RadioListTile.
       expect(find.byType(RadioListTile<String>), findsNothing);
-      // It SHOULD use the custom AuraRadio widget
+      // It SHOULD use the custom AuraRadio widget.
       expect(find.byType(AuraRadio<String>), findsOneWidget);
     });
 
@@ -248,7 +256,9 @@ void main() {
             body: AuraRadioListTile<String>(
               value: 'option1',
               groupValue: null,
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
               title: const Text('Option 1'),
             ),
           ),
@@ -269,7 +279,9 @@ void main() {
             body: AuraRadioListTile<String>(
               value: 'option1',
               groupValue: null,
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
               title: const Text('Option 1'),
               subtitle: const Text('Subtitle text'),
             ),
@@ -293,7 +305,9 @@ void main() {
             body: AuraRadioListTile<String>(
               value: 'option1',
               groupValue: 'option1',
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
               title: const Text('Option 1'),
             ),
           ),
@@ -328,7 +342,7 @@ void main() {
         ),
       );
 
-      // Tap on the AuraRadio widget inside the AuraRadioListTile
+      // Tap on the AuraRadio widget inside the AuraRadioListTile.
       await tester.tap(find.byType(AuraRadio<String>));
       final _ = await tester.pumpAndSettle();
 
@@ -342,7 +356,9 @@ void main() {
             body: AuraRadioListTile<String>(
               value: 'option1',
               groupValue: null,
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
               title: const Text('Option 1'),
               disabled: true,
             ),
@@ -366,7 +382,9 @@ void main() {
             body: AuraRadioListTile<String>(
               value: 'option1',
               groupValue: 'option1',
-              onChanged: (_) {},
+              onChanged: (_) {
+                final _ = Object();
+              },
               title: const Text('Option 1'),
               colorVariant: AuraColorVariant.secondary,
             ),

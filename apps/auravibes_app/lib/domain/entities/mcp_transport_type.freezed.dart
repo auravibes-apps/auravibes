@@ -971,11 +971,11 @@ as String,
 /// @nodoc
 mixin _$McpServerToCreate {
 
-/// User-friendly name for the MCP server
- String get name;/// URL endpoint for the MCP server
- String get url;/// Transport type used for communication
- McpTransportType get transport;/// Authentication type for the MCP server
- McpAuthenticationType get authenticationType;/// Optional description of what this MCP server provides
+/// User-friendly name for the MCP server.
+ String get name;/// URL endpoint for the MCP server.
+ String get url;/// Transport type used for communication.
+ McpTransportType get transport;/// Authentication type for the MCP server.
+ McpAuthenticationType get authenticationType;/// Optional description of what this MCP server provides.
  String? get description;
 /// Create a copy of McpServerToCreate
 /// with the given fields replaced by the non-null parameter values.
@@ -1184,15 +1184,15 @@ class _McpServerToCreate extends McpServerToCreate {
   const _McpServerToCreate({required this.name, required this.url, required this.transport, required this.authenticationType, this.description}): super._();
   
 
-/// User-friendly name for the MCP server
+/// User-friendly name for the MCP server.
 @override final  String name;
-/// URL endpoint for the MCP server
+/// URL endpoint for the MCP server.
 @override final  String url;
-/// Transport type used for communication
+/// Transport type used for communication.
 @override final  McpTransportType transport;
-/// Authentication type for the MCP server
+/// Authentication type for the MCP server.
 @override final  McpAuthenticationType authenticationType;
-/// Optional description of what this MCP server provides
+/// Optional description of what this MCP server provides.
 @override final  String? description;
 
 /// Create a copy of McpServerToCreate
@@ -1268,16 +1268,16 @@ $McpAuthenticationTypeCopyWith<$Res> get authenticationType {
 /// @nodoc
 mixin _$McpServerEntity {
 
-/// Unique ID of this MCP server record in the database
- String get id;/// ID of the workspace this MCP server belongs to
- String get workspaceId;/// User-friendly name for the MCP server
- String get name;/// URL endpoint for the MCP server
- String get url;/// Transport type used for communication
- McpTransportType get transport;/// Authentication type for the MCP server
- McpAuthenticationType get authenticationType;/// Timestamp when this configuration was created
- DateTime get createdAt;/// Timestamp when this configuration was last updated
- DateTime get updatedAt;/// Optional description of what this MCP server provides
- String? get description;/// Whether the MCP server is enabled
+/// Unique ID of this MCP server record in the database.
+ String get id;/// ID of the workspace this MCP server belongs to.
+ String get workspaceId;/// User-friendly name for the MCP server.
+ String get name;/// URL endpoint for the MCP server.
+ String get url;/// Transport type used for communication.
+ McpTransportType get transport;/// Authentication type for the MCP server.
+ McpAuthenticationType get authenticationType;/// Timestamp when this configuration was created.
+ DateTime get createdAt;/// Timestamp when this configuration was last updated.
+ DateTime get updatedAt;/// Optional description of what this MCP server provides.
+ String? get description;/// Whether the MCP server is enabled.
  bool get isEnabled;
 /// Create a copy of McpServerEntity
 /// with the given fields replaced by the non-null parameter values.
@@ -1491,25 +1491,25 @@ class _McpServerEntity extends McpServerEntity {
   const _McpServerEntity({required this.id, required this.workspaceId, required this.name, required this.url, required this.transport, required this.authenticationType, required this.createdAt, required this.updatedAt, this.description, this.isEnabled = true}): super._();
   
 
-/// Unique ID of this MCP server record in the database
+/// Unique ID of this MCP server record in the database.
 @override final  String id;
-/// ID of the workspace this MCP server belongs to
+/// ID of the workspace this MCP server belongs to.
 @override final  String workspaceId;
-/// User-friendly name for the MCP server
+/// User-friendly name for the MCP server.
 @override final  String name;
-/// URL endpoint for the MCP server
+/// URL endpoint for the MCP server.
 @override final  String url;
-/// Transport type used for communication
+/// Transport type used for communication.
 @override final  McpTransportType transport;
-/// Authentication type for the MCP server
+/// Authentication type for the MCP server.
 @override final  McpAuthenticationType authenticationType;
-/// Timestamp when this configuration was created
+/// Timestamp when this configuration was created.
 @override final  DateTime createdAt;
-/// Timestamp when this configuration was last updated
+/// Timestamp when this configuration was last updated.
 @override final  DateTime updatedAt;
-/// Optional description of what this MCP server provides
+/// Optional description of what this MCP server provides.
 @override final  String? description;
-/// Whether the MCP server is enabled
+/// Whether the MCP server is enabled.
 @override@JsonKey() final  bool isEnabled;
 
 /// Create a copy of McpServerEntity

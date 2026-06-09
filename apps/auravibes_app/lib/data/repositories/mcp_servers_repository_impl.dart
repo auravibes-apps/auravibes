@@ -1,11 +1,4 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
@@ -21,7 +14,7 @@ import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 import 'package:auravibes_app/domain/repositories/mcp_servers_repository.dart';
 import 'package:drift/drift.dart';
 
-/// Implementation of the McpServersRepository
+/// Implementation of the McpServersRepository.
 class McpServersRepositoryImpl implements McpServersRepository {
   /// Creates a new [McpServersRepositoryImpl] instance.
   McpServersRepositoryImpl(this._database)
@@ -41,9 +34,9 @@ class McpServersRepositoryImpl implements McpServersRepository {
     required List<McpToolInfo> tools,
   }) async {
     try {
-      // Use a transaction to ensure atomicity
+      // Use a transaction to ensure atomicity.
       return await _database.transaction(() async {
-        // 1. Insert the MCP server
+        // 1. Insert the MCP server.
         final mcpServer = await _mcpServersDao.insertMcpServer(
           McpServersCompanion.insert(
             workspaceId: workspaceId,
@@ -55,7 +48,7 @@ class McpServersRepositoryImpl implements McpServersRepository {
           ),
         );
 
-        // 2. Create a ToolsGroup with the MCP server name
+        // 2. Create a ToolsGroup with the MCP server name.
         final toolsGroup = await _toolsGroupsDao.insertToolsGroup(
           ToolsGroupsCompanion.insert(
             workspaceId: workspaceId,
@@ -65,7 +58,7 @@ class McpServersRepositoryImpl implements McpServersRepository {
           ),
         );
 
-        // 3. Insert all tools with the group ID
+        // 3. Insert all tools with the group ID.
         if (tools.isNotEmpty) {
           final toolCompanions = tools.map((tool) {
             return ToolsCompanion.insert(
@@ -98,7 +91,7 @@ class McpServersRepositoryImpl implements McpServersRepository {
   @override
   Future<bool> deleteMcpServer(String serverId) async {
     try {
-      // The cascade delete will handle ToolsGroup and Tools
+      // The cascade delete will handle ToolsGroup and Tools.
       return await _mcpServersDao.deleteMcpServer(serverId);
     } on Exception catch (e, stackTrace) {
       Error.throwWithStackTrace(
@@ -117,7 +110,7 @@ class McpServersRepositoryImpl implements McpServersRepository {
     required List<McpToolInfo> currentTools,
   }) async {
     try {
-      // 1. Get the tools group for this MCP
+      // 1. Get the tools group for this MCP.
       final group = await _toolsGroupsDao.getToolsGroupByMcpServerId(
         mcpServerId,
       );
@@ -125,24 +118,24 @@ class McpServersRepositoryImpl implements McpServersRepository {
         throw McpServerNotFoundException(mcpServerId);
       }
 
-      // 2. Get existing tools for this group
+      // 2. Get existing tools for this group.
       final existingTools = await _workspaceToolsDao.getToolsByGroupId(
         group.id,
       );
       final existingToolIds = existingTools.map((t) => t.toolId).toSet();
       final currentToolIds = currentTools.map((t) => t.toolName).toSet();
 
-      // 3. Find tools to add (in current but not in existing)
+      // 3. Find tools to add (in current but not in existing).
       final toolsToAdd = currentTools
           .where((t) => !existingToolIds.contains(t.toolName))
           .toList();
 
-      // 4. Find tools to remove (in existing but not in current)
+      // 4. Find tools to remove (in existing but not in current).
       final toolsToRemove = existingTools
           .where((t) => !currentToolIds.contains(t.toolId))
           .toList();
 
-      // 5. Add new tools (enabled by default, permission = ask)
+      // 5. Add new tools (enabled by default, permission = ask).
       if (toolsToAdd.isNotEmpty) {
         final toolCompanions = toolsToAdd.map((tool) {
           return ToolsCompanion.insert(
@@ -159,12 +152,12 @@ class McpServersRepositoryImpl implements McpServersRepository {
         await _workspaceToolsDao.insertToolsBatch(toolCompanions);
       }
 
-      // 6. Remove old tools
+      // 6. Remove old tools.
       for (final tool in toolsToRemove) {
         final _ = await _workspaceToolsDao.deleteWorkspaceToolById(tool.id);
       }
 
-      // Note: Existing tools are NOT modified - user customizations preserved
+      // Note: Existing tools are NOT modified - user customizations preserved.
     } on McpServerNotFoundException {
       rethrow;
     } on Exception catch (e, stackTrace) {
@@ -186,6 +179,7 @@ class McpServersRepositoryImpl implements McpServersRepository {
       final results = await _mcpServersDao.getMcpServersForWorkspace(
         workspaceId,
       );
+
       return results.map(_tableToEntity).toList();
     } on Exception catch (e, stackTrace) {
       Error.throwWithStackTrace(
@@ -206,6 +200,7 @@ class McpServersRepositoryImpl implements McpServersRepository {
       final results = await _mcpServersDao.getEnabledMcpServersForWorkspace(
         workspaceId,
       );
+
       return results.map(_tableToEntity).toList();
     } on Exception catch (e, stackTrace) {
       Error.throwWithStackTrace(
@@ -223,6 +218,7 @@ class McpServersRepositoryImpl implements McpServersRepository {
     try {
       final result = await _mcpServersDao.getMcpServerById(serverId);
       if (result == null) return null;
+
       return _tableToEntity(result);
     } on Exception catch (e, stackTrace) {
       Error.throwWithStackTrace(

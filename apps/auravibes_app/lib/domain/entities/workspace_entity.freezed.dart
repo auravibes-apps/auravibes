@@ -14,12 +14,12 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$WorkspaceEntity {
 
-/// Unique identifier for the workspace
- String get id;/// Human-readable name of the workspace
- String get name;/// Type of workspace (local or remote)
- WorkspaceType get type;/// Timestamp when the workspace was created
- DateTime get createdAt;/// Timestamp when the workspace was last updated
- DateTime get updatedAt;/// URL for remote workspaces, null for local workspaces
+/// Unique identifier for the workspace.
+ String get id;/// Human-readable name of the workspace.
+ String get name;/// Type of workspace (local or remote).
+ WorkspaceType get type;/// Timestamp when the workspace was created.
+ DateTime get createdAt;/// Timestamp when the workspace was last updated.
+ DateTime get updatedAt;/// URL for remote workspaces, null for local workspaces.
  String? get url;
 /// Create a copy of WorkspaceEntity
 /// with the given fields replaced by the non-null parameter values.
@@ -220,17 +220,17 @@ class _WorkspaceEntity extends WorkspaceEntity {
   const _WorkspaceEntity({required this.id, required this.name, required this.type, required this.createdAt, required this.updatedAt, this.url}): super._();
   
 
-/// Unique identifier for the workspace
+/// Unique identifier for the workspace.
 @override final  String id;
-/// Human-readable name of the workspace
+/// Human-readable name of the workspace.
 @override final  String name;
-/// Type of workspace (local or remote)
+/// Type of workspace (local or remote).
 @override final  WorkspaceType type;
-/// Timestamp when the workspace was created
+/// Timestamp when the workspace was created.
 @override final  DateTime createdAt;
-/// Timestamp when the workspace was last updated
+/// Timestamp when the workspace was last updated.
 @override final  DateTime updatedAt;
-/// URL for remote workspaces, null for local workspaces
+/// URL for remote workspaces, null for local workspaces.
 @override final  String? url;
 
 /// Create a copy of WorkspaceEntity
@@ -298,9 +298,9 @@ as String?,
 /// @nodoc
 mixin _$WorkspaceToCreate {
 
-/// Human-readable name of the workspace
- String get name;/// Type of workspace (local or remote)
- WorkspaceType get type;/// URL for remote workspaces, null for local workspaces
+/// Human-readable name of the workspace.
+ String get name;/// Type of workspace (local or remote).
+ WorkspaceType get type;/// URL for remote workspaces, null for local workspaces.
  String? get url;
 /// Create a copy of WorkspaceToCreate
 /// with the given fields replaced by the non-null parameter values.
@@ -498,11 +498,11 @@ class _WorkspaceToCreate extends WorkspaceToCreate {
   const _WorkspaceToCreate({required this.name, required this.type, this.url}): super._();
   
 
-/// Human-readable name of the workspace
+/// Human-readable name of the workspace.
 @override final  String name;
-/// Type of workspace (local or remote)
+/// Type of workspace (local or remote).
 @override final  WorkspaceType type;
-/// URL for remote workspaces, null for local workspaces
+/// URL for remote workspaces, null for local workspaces.
 @override final  String? url;
 
 /// Create a copy of WorkspaceToCreate

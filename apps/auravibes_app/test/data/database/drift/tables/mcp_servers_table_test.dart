@@ -1,15 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-static-class
-// Required: Tests keep fixture helpers and fakes top-level.
-
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/mcp_servers.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
@@ -24,6 +12,25 @@ QueryExecutor _testConnection() {
       );
     }),
   );
+}
+
+final class _DatabaseFixture {
+  _DatabaseFixture(this.createConnection);
+
+  final QueryExecutor Function() createConnection;
+  AppDatabase? _database;
+
+  AppDatabase get database =>
+      _database ?? fail('Database fixture not initialized');
+
+  void reset() {
+    _database = AppDatabase(connection: createConnection());
+  }
+
+  Future<void> close() async {
+    await _database?.close();
+    _database = null;
+  }
 }
 
 void main() {
@@ -252,17 +259,15 @@ void main() {
   });
 
   group('McpServers table insert', () {
-    late AppDatabase db;
+    final fixture = _DatabaseFixture(_testConnection);
 
-    setUp(() async {
-      db = AppDatabase(connection: _testConnection());
-    });
+    setUp(fixture.reset);
 
-    tearDown(() async => db.close());
+    tearDown(fixture.close);
 
     test('inserts and reads a row', () async {
-      final inserted = await db
-          .into(db.mcpServers)
+      final inserted = await fixture.database
+          .into(fixture.database.mcpServers)
           .insertReturning(
             McpServersCompanion.insert(
               workspaceId: 'ws-1',
@@ -272,8 +277,8 @@ void main() {
               authenticationType: const McpAuthenticationTypeNone(),
             ),
           );
-      final row = await (db.select(
-        db.mcpServers,
+      final row = await (fixture.database.select(
+        fixture.database.mcpServers,
       )..where((t) => t.id.equals(inserted.id))).getSingle();
       expect(row.name, 'Test Server');
       expect(row.url, 'https://example.com');
@@ -282,15 +287,17 @@ void main() {
   });
 
   group('McpServers table schema', () {
-    late AppDatabase db;
-    late List<QueryRow> columns;
+    final fixture = _DatabaseFixture(_testConnection);
+    var columns = <QueryRow>[];
 
     setUp(() async {
-      db = AppDatabase(connection: _testConnection());
-      columns = await db.customSelect('PRAGMA table_info(mcp_servers)').get();
+      fixture.reset();
+      columns = await fixture.database
+          .customSelect('PRAGMA table_info(mcp_servers)')
+          .get();
     });
 
-    tearDown(() async => db.close());
+    tearDown(fixture.close);
 
     test('has expected columns', () {
       final names = columns.map((r) => r.read<String>('name')).toSet();

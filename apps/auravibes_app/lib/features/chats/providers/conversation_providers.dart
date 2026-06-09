@@ -1,4 +1,3 @@
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/chats/notifiers/titles_streams_notifier.dart';
@@ -13,6 +12,7 @@ Stream<ConversationEntity?> conversationByIdStream(
   required String conversationId,
 }) {
   final repo = ref.watch(conversationRepositoryProvider);
+
   return repo.watchConversationById(conversationId);
 }
 
@@ -23,11 +23,13 @@ Stream<List<ConversationEntity>> conversationsStream(
   int? limit,
 }) {
   final repo = ref.watch(conversationRepositoryProvider);
+
   return repo.watchConversationsByWorkspace(workspaceId, limit: limit);
 }
 
 @riverpod
 String? streamingTitle(Ref ref, String conversationId) {
   final titles = ref.watch(titlesStreamsProvider);
+
   return titles[conversationId];
 }

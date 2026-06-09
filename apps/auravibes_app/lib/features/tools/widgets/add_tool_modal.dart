@@ -1,18 +1,6 @@
-// ignore_for_file: prefer-async-await
-// Required: Existing Future chains preserve callback flow.
-// ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
-// Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-extracting-callbacks
 // Required: UI callbacks stay local to their widgets.
-// ignore_for_file: prefer-moving-to-variable
 // Required: Existing code repeats lookups where extraction adds noise.
-// ignore_for_file: prefer-single-widget-per-file
 // Required: Feature widgets keep closely related private widgets together.
 import 'dart:async';
 
@@ -27,13 +15,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-/// Modal for adding new tools to the workspace
+/// Modal for adding new tools to the workspace.
 class AddToolModal extends HookConsumerWidget {
   const AddToolModal({required this.workspaceId, super.key});
 
   final String workspaceId;
 
-  /// Shows the add tool modal as a dialog
+  /// Shows the add tool modal as a dialog.
   static Future<void> show(
     BuildContext context, {
     required String workspaceId,
@@ -56,6 +44,7 @@ class AddToolModal extends HookConsumerWidget {
       () {
         void listener() => searchQuery.value = searchController.text;
         searchController.addListener(listener);
+
         return () => searchController.removeListener(listener);
       },
       [searchController],
@@ -73,7 +62,7 @@ class AddToolModal extends HookConsumerWidget {
         ),
         child: AuraColumn(
           children: [
-            // Header with close button
+            // Header with close button.
             Container(
               padding: EdgeInsets.all(context.auraTheme.spacing.md),
               decoration: BoxDecoration(
@@ -101,7 +90,7 @@ class AddToolModal extends HookConsumerWidget {
               ),
             ),
 
-            // Search input
+            // Search input.
             Padding(
               padding: EdgeInsets.all(context.auraTheme.spacing.md),
               child: AuraInput(
@@ -117,7 +106,7 @@ class AddToolModal extends HookConsumerWidget {
               ),
             ),
 
-            // Tools list
+            // Tools list.
             Flexible(
               child: switch (availableToolsAsync) {
                 AsyncLoading() => const Center(child: AuraSpinner()),
@@ -133,7 +122,7 @@ class AddToolModal extends HookConsumerWidget {
               },
             ),
 
-            // Bottom padding
+            // Bottom padding.
             SizedBox(height: context.auraTheme.spacing.md),
           ],
           mainAxisSize: MainAxisSize.min,
@@ -156,11 +145,12 @@ class _AvailableToolsList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Filter tools based on search query
+    // Filter tools based on search query.
     final filteredTools = searchQuery.isEmpty
         ? tools
         : tools.where((tool) {
             final name = tool.value.toLowerCase();
+
             return name.contains(searchQuery.toLowerCase());
           }).toList();
 
@@ -193,12 +183,12 @@ class _AvailableToolsList extends StatelessWidget {
     }
 
     return ListView.separated(
-      shrinkWrap: true,
       padding: EdgeInsets.symmetric(
         horizontal: context.auraTheme.spacing.md,
       ),
       itemBuilder: (context, index) {
         final toolType = filteredTools[index];
+
         return _AvailableToolTile(
           toolType: toolType,
           workspaceId: workspaceId,
@@ -237,16 +227,7 @@ class _AvailableToolTile extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
       ),
       onTap: () {
-        unawaited(
-          ref
-              .read(workspaceToolsProvider(workspaceId).notifier)
-              .addTool(toolType)
-              .then((_) {
-                if (context.mounted) {
-                  Navigator.of(context).pop();
-                }
-              }),
-        );
+        unawaited(_addTool(context, ref));
       },
       variant: AuraTileVariant.surface,
       leading: Container(
@@ -265,5 +246,14 @@ class _AvailableToolTile extends ConsumerWidget {
         color: AuraColorVariant.primary,
       ),
     );
+  }
+
+  Future<void> _addTool(BuildContext context, WidgetRef ref) async {
+    await ref
+        .read(workspaceToolsProvider(workspaceId).notifier)
+        .addTool(toolType);
+    if (!context.mounted) return;
+
+    Navigator.of(context).pop();
   }
 }

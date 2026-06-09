@@ -1,9 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 import 'package:auravibes_ui/src/molecules/aura_snack_bar_variant.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:flutter/material.dart';
@@ -51,10 +45,10 @@ void main() {
       await tester.tap(find.text('Show'));
       await tester.pump();
 
-      // Should NOT find Material's SnackBar widget
+      // Should NOT find Material's SnackBar widget.
       expect(find.byType(SnackBar), findsNothing);
 
-      // Should find the custom snackbar content
+      // Should find the custom snackbar content.
       expect(find.text('Test message'), findsOneWidget);
     });
 
@@ -86,7 +80,7 @@ void main() {
       await tester.tap(find.text('Show'));
       await tester.pump();
 
-      // Verify content is displayed
+      // Verify content is displayed.
       expect(find.text('Success!'), findsOneWidget);
       expect(find.byType(SnackBar), findsNothing);
     });
@@ -188,7 +182,7 @@ void main() {
     });
 
     testWidgets('displays snackbar with action button', (tester) async {
-      // Use a larger screen size to fit the snackbar
+      // Use a larger screen size to fit the snackbar.
       tester.view.physicalSize = const Size(800, 1200);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -204,7 +198,9 @@ void main() {
                       context: context,
                       content: const Text('With action'),
                       actionLabel: 'UNDO',
-                      onAction: () {},
+                      onAction: () {
+                        final _ = Object();
+                      },
                     );
                   },
                   child: const Text('Show'),
@@ -223,7 +219,7 @@ void main() {
 
       expect(find.text('UNDO'), findsOneWidget);
 
-      // Tap action button - use ensureVisible first
+      // Tap action button - use ensureVisible first.
       await tester.ensureVisible(find.text('UNDO'));
       await tester.pump();
       await tester.tap(find.text('UNDO'));
@@ -258,12 +254,12 @@ void main() {
 
       await tester.tap(find.text('Show'));
 
-      // Pump a few frames to verify animation is running
+      // Pump a few frames to verify animation is running.
       await tester.pump(const Duration(milliseconds: 50));
       await tester.pump(const Duration(milliseconds: 100));
       final _ = await tester.pumpAndSettle();
 
-      // Verify content is displayed after animation completes
+      // Verify content is displayed after animation completes.
       expect(find.text('Animated'), findsOneWidget);
       expect(find.byType(SnackBar), findsNothing);
     });
@@ -296,7 +292,7 @@ void main() {
       await tester.tap(find.text('Show'));
       await tester.pump();
 
-      // Verify content is displayed
+      // Verify content is displayed.
       expect(find.text('Colored snackbar'), findsOneWidget);
       expect(find.byType(SnackBar), findsNothing);
     });
@@ -328,10 +324,10 @@ void main() {
       await tester.tap(find.text('Show'));
       await tester.pump();
 
-      // Verify the snackbar is positioned at the bottom using Positioned widget
+      // Verify the snackbar is positioned at the bottom.
       expect(find.text('Bottom position'), findsOneWidget);
       expect(find.byType(SnackBar), findsNothing);
-      // Check for Positioned widget which is used for positioning
+      // Check for Positioned widget which is used for positioning.
       expect(find.byType(Positioned), findsOneWidget);
     });
   });

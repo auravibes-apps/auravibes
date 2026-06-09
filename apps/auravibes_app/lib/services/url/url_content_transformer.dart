@@ -1,14 +1,6 @@
-// ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: avoid-substring
-// Required: Existing parsing uses code-unit substring offsets.
 // ignore_for_file: cascade_invocations
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 // StringBuffer.write returns void, making cascades meaningless.
 // The _processTable method's for-loop bodies separate consecutive
 // buffer calls where cascading across control flow is misleading.
@@ -16,6 +8,7 @@
 import 'package:auravibes_app/services/url/models/url_content_format.dart';
 import 'package:auravibes_app/services/url/models/url_request_method.dart';
 import 'package:auravibes_app/services/url/models/url_response.dart';
+import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart' as parser;
 
@@ -170,6 +163,7 @@ class UrlContentTransformer {
       final text = document.text?.trim() ?? '';
       final escaped = _escapeMarkdownText(text);
       final truncatedOutput = _truncateIfNeeded(escaped);
+
       return TransformedUrlContent(
         body: truncatedOutput.text,
         format: .markdown,
@@ -299,6 +293,7 @@ class UrlContentTransformer {
       }
     }
     final fence = '`' * (maxRun + 1);
+
     return '$fence $text $fence';
   }
 
@@ -474,6 +469,7 @@ class UrlContentTransformer {
       }
       if (!skipped) return h1;
     }
+
     return null;
   }
 
@@ -484,6 +480,7 @@ class UrlContentTransformer {
       if (parent.localName?.toLowerCase() == 'ul') return false;
       parent = parent.parent;
     }
+
     return false;
   }
 
@@ -493,6 +490,7 @@ class UrlContentTransformer {
       if (parent.localName?.toLowerCase() == 'pre') return true;
       parent = parent.parent;
     }
+
     return false;
   }
 
@@ -579,7 +577,7 @@ class UrlContentTransformer {
     StringBuffer buffer,
     String tag,
   ) {
-    final level = int.parse(tag.substring(1));
+    final level = int.parse(tag.replaceFirst('h', ''));
     final inlineBuffer = StringBuffer();
     _processInlineChildren(element, inlineBuffer);
     final text = inlineBuffer.toString().trim();
@@ -620,6 +618,7 @@ class UrlContentTransformer {
       if (identical(sibling, element)) break;
       if (sibling.localName?.toLowerCase() == 'li') index++;
     }
+
     return '$index. ';
   }
 
@@ -670,9 +669,10 @@ class UrlContentTransformer {
     if (body.length <= maxOutputLength) {
       return (text: body, truncated: false);
     }
+
     return (
       text:
-          '${body.substring(0, maxOutputLength - _truncationSuffix.length)}'
+          '${body.firstCharacters(maxOutputLength - _truncationSuffix.length)}'
           '$_truncationSuffix',
       truncated: true,
     );
@@ -688,6 +688,7 @@ class UrlContentTransformer {
         }
       }
     }
+
     return null;
   }
 }

@@ -1,7 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
 import 'package:auravibes_app/services/tools/native_tool_type.dart';
 import 'package:auravibes_app/services/tools/user_tool_type.dart';
 
@@ -9,6 +5,9 @@ enum ResolvedToolType {
   builtIn,
   mcp,
   native,
+  skillControl,
+  skillNative,
+  skillTemplate,
 }
 
 /// Represents a resolved tool that can be built-in, native, or MCP.
@@ -23,6 +22,8 @@ class ResolvedTool {
     this.builtInTool,
     this.mcpServerId,
     this.nativeTool,
+    this.skillSlug,
+    this.skillToolSlug,
   });
 
   /// Creates a resolved built-in tool.
@@ -65,13 +66,50 @@ class ResolvedTool {
     );
   }
 
-  /// The type of tool (built-in or MCP)
+  factory ResolvedTool.skillControl({
+    required String toolIdentifier,
+  }) {
+    return ResolvedTool._(
+      type: ResolvedToolType.skillControl,
+      tableId: toolIdentifier,
+      toolIdentifier: toolIdentifier,
+    );
+  }
+
+  factory ResolvedTool.skillTemplate({
+    required String tableId,
+    required String skillSlug,
+    required String toolIdentifier,
+  }) {
+    return ResolvedTool._(
+      type: ResolvedToolType.skillTemplate,
+      tableId: tableId,
+      toolIdentifier: toolIdentifier,
+      skillSlug: skillSlug,
+    );
+  }
+
+  factory ResolvedTool.skillNative({
+    required String tableId,
+    required String skillSlug,
+    required String toolIdentifier,
+  }) {
+    return ResolvedTool._(
+      type: ResolvedToolType.skillNative,
+      tableId: tableId,
+      toolIdentifier: toolIdentifier,
+      skillSlug: skillSlug,
+      skillToolSlug: toolIdentifier,
+    );
+  }
+
+  /// The type of tool (built-in or MCP).
   final ResolvedToolType type;
 
-  /// The database table ID for permission checks
+  /// The database table ID for permission checks.
   final String tableId;
 
-  /// The tool identifier (e.g., "calculator" or original MCP tool name)
+  /// The tool identifier (for example, "calculator" or original MCP tool name).
   final String toolIdentifier;
 
   final UserToolType? builtInTool;
@@ -80,9 +118,19 @@ class ResolvedTool {
 
   final NativeToolType? nativeTool;
 
+  final String? skillSlug;
+
+  final String? skillToolSlug;
+
   bool get isBuiltIn => type == ResolvedToolType.builtIn;
 
   bool get isMcp => type == ResolvedToolType.mcp;
 
   bool get isNative => type == ResolvedToolType.native;
+
+  bool get isSkillControl => type == ResolvedToolType.skillControl;
+
+  bool get isSkillNative => type == ResolvedToolType.skillNative;
+
+  bool get isSkillTemplate => type == ResolvedToolType.skillTemplate;
 }

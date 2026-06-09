@@ -1,8 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
@@ -42,12 +37,13 @@ class McpManagerService {
   }) async {
     final result = await client._client.callTool(toolIdentifier, arguments);
 
-    // Convert the result content to a string
-    // The result.content is a list of content items (TextContent, etc.)
+    // Convert the result content to a string.
+    // The result.content is a list of content items (TextContent, etc).
     final contentStrings = result.content.map((content) {
       if (content is mcp.TextContent) {
         return content.text;
       }
+
       return content.toString();
     }).toList();
 
@@ -57,20 +53,20 @@ class McpManagerService {
   Future<McpManagerClient> connectMcp(
     McpServerToCreate serverInfo,
   ) async {
-    // Create client configuration
+    // Create client configuration.
     final config = mcp.McpClient.simpleConfig(
       name: 'AuraVibes MCP Client',
       version: '1.0.0',
     );
 
-    // Create and connect client
+    // Create and connect client.
     final clientResult = mcp.McpClient.createClient(
       config,
     );
 
-    // clientResult.connect(transport)
+    // ClientResult.connect(transport.)
 
-    // Create transport configuration based on server settings
+    // Create transport configuration based on server settings.
     final clientTransport = await _createTransportConfig(serverInfo);
     await clientResult.connect(clientTransport);
 
@@ -82,8 +78,9 @@ class McpManagerService {
   Future<List<McpToolInfo>> getTools(
     McpManagerClient client,
   ) async {
-    // List available tools from the MCP server
+    // List available tools from the MCP server.
     final tools = await client._client.listTools();
+
     return _convertTools(tools);
   }
 
@@ -113,6 +110,7 @@ class McpManagerService {
     }
 
     final oAuthConfig = _getOauthConfig(authType);
+
     return mcp.SseAuthClientTransport.create(
       serverUrl: server.url,
       oauthToken: _getOauthToken(authType),
@@ -160,6 +158,7 @@ class McpManagerService {
     if (authToken != null) {
       transport.setOAuthToken(authToken);
     }
+
     return transport;
   }
 
@@ -171,6 +170,7 @@ class McpManagerService {
         clientId: authType.clientId,
       );
     }
+
     return null;
   }
 
@@ -184,6 +184,7 @@ class McpManagerService {
         issuedAt: authType.token.issuedAt,
       );
     }
+
     return null;
   }
 
@@ -210,6 +211,7 @@ class McpManagerService {
     if (config == null || token == null) return null;
 
     final oauthClient = mcp.HttpOAuthClient(config: config);
+
     return mcp.OAuthTokenManager(oauthClient)..setToken(token);
   }
 }

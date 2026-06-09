@@ -182,7 +182,7 @@ final class ChatMessageIdsProvider
   }
 }
 
-String _$chatMessageIdsHash() => r'3d15c6497c6d4f965f843647065c5f04204832cc';
+String _$chatMessageIdsHash() => r'a12618af2a572a40f192e0330c0f39a582a9f30b';
 
 @ProviderFor(messageConversationById)
 final messageConversationByIdProvider = MessageConversationByIdFamily._();
@@ -247,7 +247,7 @@ final class MessageConversationByIdProvider
 }
 
 String _$messageConversationByIdHash() =>
-    r'7e40a605b5151cf15d412ccfd70236e18daff4b4';
+    r'441407a8d6ef1fd61793cbb3cb504a42d388ebe7';
 
 final class MessageConversationByIdFamily extends $Family
     with $FunctionalFamilyOverride<MessageEntity?, String> {
@@ -611,7 +611,7 @@ final class ConversationUsedTokensProvider
 }
 
 String _$conversationUsedTokensHash() =>
-    r'd6ec1ef3e4f93b68f0ec31dab03c986a4ea3cf7b';
+    r'c568c9ae5c1fce2c73eb1d3af8b6622763d0032d';
 
 @ProviderFor(conversationContextLimit)
 final conversationContextLimitProvider = ConversationContextLimitProvider._();
@@ -699,4 +699,4 @@ final class PendingToolCallsProvider
   }
 }
 
-String _$pendingToolCallsHash() => r'b798f2ab62009e516db82ae97cc7687427703f75';
+String _$pendingToolCallsHash() => r'316b2aa2566082bf3c46746920011a327991fe09';

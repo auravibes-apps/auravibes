@@ -1,8 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 
 import 'package:auravibes_app/utils/map_exception.dart';
@@ -116,13 +111,14 @@ abstract class OAuthTokenEntity with _$OAuthTokenEntity {
     if (expiresIn == null) return true;
 
     final expiresAt = issuedAt.add(Duration(seconds: expiresIn));
-    // Consider expired if within 5 minutes of expiry (buffer for refresh)
+
+    // Consider expired if within 5 minutes of expiry (buffer for refresh).
     return DateTime.now().isAfter(
       expiresAt.subtract(const Duration(minutes: 5)),
     );
   }
 
-  /// Returns true if OAuth token needs refresh
+  /// Returns true if OAuth token needs refresh.
   /// (has token but it's expired or about to expire)
   bool get needsOAuthTokenRefresh =>
       isOAuthTokenExpired && refreshToken != null;
@@ -180,24 +176,24 @@ sealed class McpAuthenticationType with _$McpAuthenticationType {
   }
 }
 
-/// Entity for creating/updating MCP server configurations
+/// Entity for creating/updating MCP server configurations.
 @freezed
 abstract class McpServerToCreate with _$McpServerToCreate {
-  /// Creates a new McpServerToCreate instance
+  /// Creates a new McpServerToCreate instance.
   const factory McpServerToCreate({
-    /// User-friendly name for the MCP server
+    /// User-friendly name for the MCP server.
     required String name,
 
-    /// URL endpoint for the MCP server
+    /// URL endpoint for the MCP server.
     required String url,
 
-    /// Transport type used for communication
+    /// Transport type used for communication.
     required McpTransportType transport,
 
-    /// Authentication type for the MCP server
+    /// Authentication type for the MCP server.
     required McpAuthenticationType authenticationType,
 
-    /// Optional description of what this MCP server provides
+    /// Optional description of what this MCP server provides.
     String? description,
   }) = _McpServerToCreate;
   const McpServerToCreate._();
@@ -218,36 +214,36 @@ abstract class McpServerToCreate with _$McpServerToCreate {
 @freezed
 abstract class McpServerEntity extends McpServerToCreate
     with _$McpServerEntity {
-  /// Creates a new McpServerEntity instance
+  /// Creates a new McpServerEntity instance.
   const factory McpServerEntity({
-    /// Unique ID of this MCP server record in the database
+    /// Unique ID of this MCP server record in the database.
     required String id,
 
-    /// ID of the workspace this MCP server belongs to
+    /// ID of the workspace this MCP server belongs to.
     required String workspaceId,
 
-    /// User-friendly name for the MCP server
+    /// User-friendly name for the MCP server.
     required String name,
 
-    /// URL endpoint for the MCP server
+    /// URL endpoint for the MCP server.
     required String url,
 
-    /// Transport type used for communication
+    /// Transport type used for communication.
     required McpTransportType transport,
 
-    /// Authentication type for the MCP server
+    /// Authentication type for the MCP server.
     required McpAuthenticationType authenticationType,
 
-    /// Timestamp when this configuration was created
+    /// Timestamp when this configuration was created.
     required DateTime createdAt,
 
-    /// Timestamp when this configuration was last updated
+    /// Timestamp when this configuration was last updated.
     required DateTime updatedAt,
 
-    /// Optional description of what this MCP server provides
+    /// Optional description of what this MCP server provides.
     String? description,
 
-    /// Whether the MCP server is enabled
+    /// Whether the MCP server is enabled.
     @Default(true) bool isEnabled,
   }) = _McpServerEntity;
   const McpServerEntity._() : super._();
@@ -290,7 +286,7 @@ abstract class McpServerFormToCreate with _$McpServerFormToCreate {
       case McpAuthenticationTypeOptions.none:
         return true;
       case McpAuthenticationTypeOptions.oauth:
-        // OAuth requires no additional fields here
+        // OAuth requires no additional fields here.
         return true;
       case McpAuthenticationTypeOptions.bearerToken:
         return bearerToken?.isNotEmpty ?? false;
@@ -311,7 +307,7 @@ abstract class McpServerFormToCreate with _$McpServerFormToCreate {
       case McpAuthenticationTypeOptions.none:
         break;
       case McpAuthenticationTypeOptions.oauth:
-        // No additional fields to validate here
+        // No additional fields to validate here.
         break;
       case McpAuthenticationTypeOptions.bearerToken:
         final bearerToken = this.bearerToken;

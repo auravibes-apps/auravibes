@@ -1,18 +1,7 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-top-level-members-in-tests
-// Required: Test files keep shared fixtures and helpers top-level.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_compaction_settings_dao.dart';
 import 'package:auravibes_app/data/repositories/workspace_compaction_settings_repository_impl.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
-import 'package:auravibes_app/domain/repositories/workspace_compaction_settings_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -22,16 +11,16 @@ class FakeCompanion extends Fake
     implements WorkspaceCompactionSettingsCompanion {}
 
 void main() {
-  late MockDao mockDao;
-  late WorkspaceCompactionSettingsRepository repo;
+  var mockDao = MockDao();
+  var repo = WorkspaceCompactionSettingsRepoImpl(mockDao);
 
   setUpAll(() {
     registerFallbackValue(FakeCompanion());
   });
 
-  setUp(() {
+  tearDown(() {
     mockDao = MockDao();
-    repo = WorkspaceCompactionSettingsRepositoryImpl(mockDao);
+    repo = WorkspaceCompactionSettingsRepoImpl(mockDao);
   });
 
   group('getEffectiveSettings', () {
@@ -64,7 +53,7 @@ void main() {
 
       expect(settings.autoCompactionEnabled, isFalse);
       expect(settings.usagePercentageThreshold, 50);
-      expect(settings.remainingTokenThreshold, 2000); // falls back
+      expect(settings.remainingTokenThreshold, 2000); // Falls back.
       expect(settings.updatedAt, DateTime(2026, 1, 2));
     });
   });

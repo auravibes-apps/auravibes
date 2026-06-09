@@ -1,6 +1,3 @@
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:async/async.dart';
 import 'package:auravibes_app/domain/entities/tool_spec.dart';
@@ -14,6 +11,7 @@ enum NativeToolType {
     for (final enumVariant in NativeToolType.values) {
       if (enumVariant.value == value) return enumVariant;
     }
+
     return null;
   }
 

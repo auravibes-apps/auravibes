@@ -1,9 +1,4 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
@@ -265,6 +260,7 @@ void main() {
           home: Builder(
             builder: (context) {
               expect(context.auraTheme, AuraTheme.light);
+
               return const SizedBox();
             },
           ),
@@ -279,6 +275,7 @@ void main() {
           home: Builder(
             builder: (context) {
               expect(context.auraColors, AuraTheme.light.colors);
+
               return const SizedBox();
             },
           ),
@@ -293,6 +290,7 @@ void main() {
           home: Builder(
             builder: (context) {
               expect(context.auraTheme, AuraTheme.light);
+
               return const SizedBox();
             },
           ),

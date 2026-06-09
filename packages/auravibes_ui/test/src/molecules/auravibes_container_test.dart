@@ -1,8 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-
 import 'package:auravibes_ui/src/atoms/aura_edge_insets_geometry.dart';
 import 'package:auravibes_ui/src/molecules/aura_container.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
@@ -83,7 +78,7 @@ void main() {
           (container.decoration ??
                   fail('Expected container.decoration to be non-null'))
               as BoxDecoration;
-      // Note: The actual color will be resolved from AuraColorVariant.error
+      // Note: The actual color will be resolved from AuraColorVariant.error.
       expect(decoration.color, isNotNull);
     });
 

@@ -1,18 +1,4 @@
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-static-class
-// Required: Tests keep fixture helpers and fakes top-level.
-
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
 
 // ignore_for_file: cascade_invocations
 import 'dart:async';
@@ -194,9 +180,9 @@ void main() {
   });
 
   group('McpConnectionNotifier', () {
-    late _FakeMcpServersRepository mcpServersRepository;
-    late McpManagerService mcpManagerService;
-    late ProviderContainer container;
+    var mcpServersRepository = _FakeMcpServersRepository();
+    var mcpManagerService = McpManagerService();
+    var container = ProviderContainer();
 
     setUp(() {
       mcpServersRepository = _FakeMcpServersRepository();
@@ -599,7 +585,7 @@ void main() {
       expect(state.firstOrNull?.server.id, 'server-2');
     });
 
-    test('dispose cleans up connections', () async {
+    test('dispose cleans up connections', () {
       container.read(mcpConnectionProvider.notifier).state = [
         McpConnectionState(
           server: _server,
@@ -655,7 +641,7 @@ void main() {
       expect(state, isEmpty);
     });
 
-    test('disconnectMcpServer for missing server is no-op', () async {
+    test('disconnectMcpServer for missing server is no-op', () {
       final notifier = container.read(mcpConnectionProvider.notifier);
       notifier.disconnectMcpServer('nonexistent');
 
@@ -758,6 +744,7 @@ class _FakeMcpServersRepository implements McpServersRepository {
   @override
   Future<bool> deleteMcpServer(String serverId) async {
     deletedIds.add(serverId);
+
     return true;
   }
 
@@ -808,7 +795,9 @@ class _SuccessfulMcpManagerService extends McpManagerService {
   }
 
   @override
-  Future<void> disconnect(McpManagerClient? client) async {}
+  Future<void> disconnect(McpManagerClient? client) async {
+    final _ = Object();
+  }
 
   @override
   Future<List<McpToolInfo>> getTools(McpManagerClient client) async {

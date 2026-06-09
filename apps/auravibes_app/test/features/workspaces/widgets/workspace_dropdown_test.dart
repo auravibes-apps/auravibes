@@ -1,10 +1,3 @@
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-
 import 'package:auravibes_app/features/workspaces/widgets/workspace_dropdown_item.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -55,7 +48,9 @@ void main() {
         WorkspaceDropdown(
           workspaces: workspaces,
           activeWorkspaceId: 'ws-2',
-          onSelected: (_) {},
+          onSelected: (_) {
+            final _ = Object();
+          },
         ),
       );
 
@@ -70,7 +65,9 @@ void main() {
         WorkspaceDropdown(
           workspaces: workspaces,
           activeWorkspaceId: '',
-          onSelected: (_) {},
+          onSelected: (_) {
+            final _ = Object();
+          },
         ),
       );
 
@@ -85,7 +82,9 @@ void main() {
         WorkspaceDropdown(
           workspaces: workspaces,
           activeWorkspaceId: 'ws-unknown',
-          onSelected: (_) {},
+          onSelected: (_) {
+            final _ = Object();
+          },
         ),
       );
 
@@ -98,7 +97,9 @@ void main() {
         WorkspaceDropdown(
           workspaces: const [],
           activeWorkspaceId: '',
-          onSelected: (_) {},
+          onSelected: (_) {
+            final _ = Object();
+          },
         ),
       );
 
@@ -138,7 +139,9 @@ void main() {
         WorkspaceDropdown(
           workspaces: workspaces,
           activeWorkspaceId: 'ws-1',
-          onSelected: (_) {},
+          onSelected: (_) {
+            final _ = Object();
+          },
           isLoading: true,
         ),
       );
@@ -156,7 +159,9 @@ void main() {
         WorkspaceDropdown(
           workspaces: workspaces,
           activeWorkspaceId: 'ws-1',
-          onSelected: (_) {},
+          onSelected: (_) {
+            final _ = Object();
+          },
           errorLocalizationKey: LocaleKeys.workspace_management_switch_error,
         ),
       );

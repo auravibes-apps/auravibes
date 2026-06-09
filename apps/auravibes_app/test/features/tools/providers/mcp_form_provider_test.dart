@@ -1,8 +1,3 @@
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
-
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_form_state.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
@@ -14,7 +9,9 @@ class _FakeMcpConnectionNotifier extends McpConnectionNotifier {
   Future<void> addMcpServer(
     McpServerFormToCreate serverToCreate, {
     required String workspaceId,
-  }) async {}
+  }) async {
+    final _ = Object();
+  }
 }
 
 void main() {
@@ -177,148 +174,155 @@ void main() {
   });
 
   group('McpFormNotifier', () {
-    late ProviderContainer container;
-    late McpFormNotifier notifier;
+    ProviderContainer? container;
+    McpFormNotifier? notifier;
+    ProviderContainer readContainer() =>
+        container ?? fail('ProviderContainer not initialized');
+    McpFormNotifier readNotifier() =>
+        notifier ?? fail('McpFormNotifier not initialized');
 
     setUp(() {
-      container = ProviderContainer(
+      final testContainer = ProviderContainer(
         overrides: [
           mcpConnectionProvider.overrideWith(_FakeMcpConnectionNotifier.new),
         ],
       );
-      notifier = container.read(mcpFormProvider('ws1').notifier);
+      container = testContainer;
+      notifier = testContainer.read(mcpFormProvider('ws1').notifier);
     });
 
-    tearDown(() => container.dispose());
+    tearDown(() => container?.dispose());
 
     test('build returns default state', () {
-      expect(container.read(mcpFormProvider('ws1')).name, '');
+      expect(readContainer().read(mcpFormProvider('ws1')).name, '');
     });
 
     test('setName updates name', () {
-      notifier.setName('New Name');
-      expect(container.read(mcpFormProvider('ws1')).name, 'New Name');
+      readNotifier().setName('New Name');
+      expect(readContainer().read(mcpFormProvider('ws1')).name, 'New Name');
     });
 
     test('setDescription updates description', () {
-      notifier.setDescription('Desc');
+      readNotifier().setDescription('Desc');
       expect(
-        container.read(mcpFormProvider('ws1')).description,
+        readContainer().read(mcpFormProvider('ws1')).description,
         'Desc',
       );
     });
 
     test('setUrl updates url', () {
-      notifier.setUrl('https://example.com');
+      readNotifier().setUrl('https://example.com');
       expect(
-        container.read(mcpFormProvider('ws1')).url,
+        readContainer().read(mcpFormProvider('ws1')).url,
         'https://example.com',
       );
     });
 
     test('setTransport resets http2 when switching to sse', () {
-      notifier.setUseHttp2(true);
-      expect(container.read(mcpFormProvider('ws1')).useHttp2, isTrue);
+      readNotifier().setUseHttp2(true);
+      expect(readContainer().read(mcpFormProvider('ws1')).useHttp2, isTrue);
 
-      notifier.setTransport(McpTransportTypeOptions.sse);
+      readNotifier().setTransport(McpTransportTypeOptions.sse);
       expect(
-        container.read(mcpFormProvider('ws1')).useHttp2,
+        readContainer().read(mcpFormProvider('ws1')).useHttp2,
         isFalse,
       );
     });
 
     test('setTransport resets auth when switching to streamableHttp', () {
-      notifier
+      readNotifier()
         ..setTransport(McpTransportTypeOptions.sse)
         ..setAuthenticationType(McpAuthenticationTypeOptions.bearerToken);
 
       expect(
-        container.read(mcpFormProvider('ws1')).authenticationType,
+        readContainer().read(mcpFormProvider('ws1')).authenticationType,
         McpAuthenticationTypeOptions.bearerToken,
       );
 
-      notifier.setTransport(McpTransportTypeOptions.streamableHttp);
+      readNotifier().setTransport(McpTransportTypeOptions.streamableHttp);
       expect(
-        container.read(mcpFormProvider('ws1')).authenticationType,
+        readContainer().read(mcpFormProvider('ws1')).authenticationType,
         McpAuthenticationTypeOptions.none,
       );
     });
 
     test('setTransport does nothing when value is null', () {
-      final original = container.read(mcpFormProvider('ws1'));
-      notifier.setTransport(null);
+      final original = readContainer().read(mcpFormProvider('ws1'));
+      readNotifier().setTransport(null);
       expect(
-        container.read(mcpFormProvider('ws1')).transport,
+        readContainer().read(mcpFormProvider('ws1')).transport,
         original.transport,
       );
     });
 
     test('setAuthenticationType updates auth type', () {
-      notifier.setAuthenticationType(McpAuthenticationTypeOptions.bearerToken);
+      readNotifier().setAuthenticationType(
+        McpAuthenticationTypeOptions.bearerToken,
+      );
       expect(
-        container.read(mcpFormProvider('ws1')).authenticationType,
+        readContainer().read(mcpFormProvider('ws1')).authenticationType,
         McpAuthenticationTypeOptions.bearerToken,
       );
     });
 
     test('setBearerToken updates token', () {
-      notifier.setBearerToken('my-token');
+      readNotifier().setBearerToken('my-token');
       expect(
-        container.read(mcpFormProvider('ws1')).bearerToken,
+        readContainer().read(mcpFormProvider('ws1')).bearerToken,
         'my-token',
       );
     });
 
     test('setUseHttp2 updates flag', () {
-      notifier.setUseHttp2(true);
-      expect(container.read(mcpFormProvider('ws1')).useHttp2, isTrue);
+      readNotifier().setUseHttp2(true);
+      expect(readContainer().read(mcpFormProvider('ws1')).useHttp2, isTrue);
     });
 
     test('setSubmitting updates flag', () {
-      notifier.setSubmitting(value: true);
+      readNotifier().setSubmitting(value: true);
       expect(
-        container.read(mcpFormProvider('ws1')).isSubmitting,
+        readContainer().read(mcpFormProvider('ws1')).isSubmitting,
         isTrue,
       );
     });
 
     test('setError sets error message', () {
-      notifier.setError('Something went wrong');
+      readNotifier().setError('Something went wrong');
       expect(
-        container.read(mcpFormProvider('ws1')).errorMessage,
+        readContainer().read(mcpFormProvider('ws1')).errorMessage,
         'Something went wrong',
       );
     });
 
     test('clearError clears error message', () {
-      notifier
+      readNotifier()
         ..setError('Error')
         ..clearError();
       expect(
-        container.read(mcpFormProvider('ws1')).errorMessage,
+        readContainer().read(mcpFormProvider('ws1')).errorMessage,
         isNull,
       );
     });
 
     test('submit returns false when invalid', () async {
-      final result = await notifier.submit();
+      final result = await readNotifier().submit();
       expect(result, isFalse);
       expect(
-        container.read(mcpFormProvider('ws1')).errorMessage,
+        readContainer().read(mcpFormProvider('ws1')).errorMessage,
         isNotNull,
       );
     });
 
     test('submit returns true when valid', () async {
-      notifier
+      readNotifier()
         ..setName('Test')
         ..setUrl('https://example.com')
         ..setAuthenticationType(McpAuthenticationTypeOptions.none);
 
-      final result = await notifier.submit();
+      final result = await readNotifier().submit();
       expect(result, isTrue);
       expect(
-        container.read(mcpFormProvider('ws1')).isSubmitting,
+        readContainer().read(mcpFormProvider('ws1')).isSubmitting,
         isFalse,
       );
     });

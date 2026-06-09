@@ -1,19 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-top-level-members-in-tests
-// Required: Test files keep shared fixtures and helpers top-level.
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: missing-test-assertion
-// Required: Tests verify usecase behavior through repository side effects.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-static-class
-// Required: Tests keep fixture helpers and fakes top-level.
-
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
@@ -46,6 +30,57 @@ class MockShouldCompactConversationUsecase extends Mock
 
 class MockCompactConversationUsecase extends Mock
     implements CompactConversationUsecase {}
+
+class MaybeAutoCompactFixture {
+  MockConversationRepository? _mockConvRepo;
+  MockWorkspaceModelSelectionsRepository? _mockModelRepo;
+  MockApiModelRepository? _mockApiModelRepo;
+  MockShouldCompactConversationUsecase? _mockShouldCompact;
+  MockCompactConversationUsecase? _mockCompact;
+  MaybeAutoCompactConversationUsecase? _usecase;
+
+  MockConversationRepository get mockConvRepo =>
+      _mockConvRepo ?? fail('Conversation repository fixture not initialized.');
+
+  MockWorkspaceModelSelectionsRepository get mockModelRepo =>
+      _mockModelRepo ??
+      fail('Workspace model selection repository fixture not initialized.');
+
+  MockApiModelRepository get mockApiModelRepo =>
+      _mockApiModelRepo ??
+      fail('API model repository fixture not initialized.');
+
+  MockShouldCompactConversationUsecase get mockShouldCompact =>
+      _mockShouldCompact ??
+      fail('Should compact usecase fixture not initialized.');
+
+  MockCompactConversationUsecase get mockCompact =>
+      _mockCompact ?? fail('Compact usecase fixture not initialized.');
+
+  MaybeAutoCompactConversationUsecase get usecase =>
+      _usecase ?? fail('Usecase fixture not initialized.');
+
+  void setUp() {
+    final mockConvRepo = MockConversationRepository();
+    final mockModelRepo = MockWorkspaceModelSelectionsRepository();
+    final mockApiModelRepo = MockApiModelRepository();
+    final mockShouldCompact = MockShouldCompactConversationUsecase();
+    final mockCompact = MockCompactConversationUsecase();
+
+    _mockConvRepo = mockConvRepo;
+    _mockModelRepo = mockModelRepo;
+    _mockApiModelRepo = mockApiModelRepo;
+    _mockShouldCompact = mockShouldCompact;
+    _mockCompact = mockCompact;
+    _usecase = MaybeAutoCompactConversationUsecase(
+      conversationRepository: mockConvRepo,
+      workspaceModelSelectionsRepository: mockModelRepo,
+      apiModelRepository: mockApiModelRepo,
+      shouldCompactConversationUsecase: mockShouldCompact,
+      compactConversationUsecase: mockCompact,
+    );
+  }
+}
 
 final _modelSelection = WorkspaceModelSelectionEntity(
   id: 'sel-1',
@@ -115,67 +150,61 @@ void main() {
     registerFallbackValue(CompactionTrigger.auto);
   });
 
-  late MockConversationRepository mockConvRepo;
-  late MockWorkspaceModelSelectionsRepository mockModelRepo;
-  late MockApiModelRepository mockApiModelRepo;
-  late MockShouldCompactConversationUsecase mockShouldCompact;
-  late MockCompactConversationUsecase mockCompact;
-  late MaybeAutoCompactConversationUsecase usecase;
+  final fixture = MaybeAutoCompactFixture();
 
-  setUp(() {
-    mockConvRepo = MockConversationRepository();
-    mockModelRepo = MockWorkspaceModelSelectionsRepository();
-    mockApiModelRepo = MockApiModelRepository();
-    mockShouldCompact = MockShouldCompactConversationUsecase();
-    mockCompact = MockCompactConversationUsecase();
-    usecase = MaybeAutoCompactConversationUsecase(
-      conversationRepository: mockConvRepo,
-      workspaceModelSelectionsRepository: mockModelRepo,
-      apiModelRepository: mockApiModelRepo,
-      shouldCompactConversationUsecase: mockShouldCompact,
-      compactConversationUsecase: mockCompact,
-    );
-  });
+  setUp(fixture.setUp);
 
   test('exits early when conversation not found', () async {
     when(
-      () => mockConvRepo.getConversationById('conv-1'),
+      () => fixture.mockConvRepo.getConversationById('conv-1'),
     ).thenAnswer((_) async => null);
 
-    await usecase(conversationId: 'conv-1');
+    await expectLater(fixture.usecase(conversationId: 'conv-1'), completes);
 
-    final _ = verifyNever(
-      () => mockCompact(
-        conversationId: 'conv-1',
-        trigger: CompactionTrigger.auto,
+    expect(
+      () => verifyNever(
+        () => fixture.mockCompact(
+          conversationId: 'conv-1',
+          trigger: CompactionTrigger.auto,
+        ),
       ),
+      returnsNormally,
     );
   });
 
   test('exits early when conversation has no modelId', () async {
     when(
-      () => mockConvRepo.getConversationById('conv-1'),
+      () => fixture.mockConvRepo.getConversationById('conv-1'),
     ).thenAnswer((_) async => _makeConv(modelId: null));
 
-    await usecase(conversationId: 'conv-1');
+    await expectLater(fixture.usecase(conversationId: 'conv-1'), completes);
 
-    final _ = verifyNever(
-      () => mockModelRepo.getWorkspaceModelSelectionById(any()),
+    expect(
+      () => verifyNever(
+        () => fixture.mockModelRepo.getWorkspaceModelSelectionById(any()),
+      ),
+      returnsNormally,
     );
   });
 
   test('exits early when model selection not found', () async {
     when(
-      () => mockConvRepo.getConversationById('conv-1'),
+      () => fixture.mockConvRepo.getConversationById('conv-1'),
     ).thenAnswer((_) async => _makeConv());
     when(
-      () => mockModelRepo.getWorkspaceModelSelectionById('comp-1'),
+      () => fixture.mockModelRepo.getWorkspaceModelSelectionById('comp-1'),
     ).thenAnswer((_) async => null);
 
-    await usecase(conversationId: 'conv-1');
+    await expectLater(fixture.usecase(conversationId: 'conv-1'), completes);
 
-    final _ = verifyNever(
-      () => mockApiModelRepo.getModelByProviderAndModelId(any(), any()),
+    expect(
+      () => verifyNever(
+        () => fixture.mockApiModelRepo.getModelByProviderAndModelId(
+          any(),
+          any(),
+        ),
+      ),
+      returnsNormally,
     );
   });
 
@@ -187,19 +216,19 @@ void main() {
     );
 
     when(
-      () => mockConvRepo.getConversationById('conv-1'),
+      () => fixture.mockConvRepo.getConversationById('conv-1'),
     ).thenAnswer((_) async => _makeConv());
     when(
-      () => mockModelRepo.getWorkspaceModelSelectionById('comp-1'),
+      () => fixture.mockModelRepo.getWorkspaceModelSelectionById('comp-1'),
     ).thenAnswer((_) async => _completion);
     when(
-      () => mockApiModelRepo.getModelByProviderAndModelId(
+      () => fixture.mockApiModelRepo.getModelByProviderAndModelId(
         'provider-1',
         'model-1',
       ),
     ).thenAnswer((_) async => _makeModel());
     when(
-      () => mockShouldCompact(
+      () => fixture.mockShouldCompact(
         conversationId: 'conv-1',
         workspaceId: 'ws-1',
         selectedModelId: 'model-1',
@@ -209,20 +238,23 @@ void main() {
       ),
     ).thenAnswer((_) async => decision);
     when(
-      () => mockCompact(
+      () => fixture.mockCompact(
         conversationId: 'conv-1',
         trigger: CompactionTrigger.auto,
       ),
     ).thenAnswer((_) async => _makeExecState('conv-1'));
 
-    await usecase(conversationId: 'conv-1');
+    await fixture.usecase(conversationId: 'conv-1');
 
-    verify(
-      () => mockCompact(
-        conversationId: 'conv-1',
-        trigger: CompactionTrigger.auto,
-      ),
-    ).called(1);
+    expect(
+      () => verify(
+        () => fixture.mockCompact(
+          conversationId: 'conv-1',
+          trigger: CompactionTrigger.auto,
+        ),
+      ).called(1),
+      returnsNormally,
+    );
   });
 
   test('skips compaction when decision says shouldCompact is false', () async {
@@ -233,19 +265,19 @@ void main() {
     );
 
     when(
-      () => mockConvRepo.getConversationById('conv-1'),
+      () => fixture.mockConvRepo.getConversationById('conv-1'),
     ).thenAnswer((_) async => _makeConv());
     when(
-      () => mockModelRepo.getWorkspaceModelSelectionById('comp-1'),
+      () => fixture.mockModelRepo.getWorkspaceModelSelectionById('comp-1'),
     ).thenAnswer((_) async => _completion);
     when(
-      () => mockApiModelRepo.getModelByProviderAndModelId(
+      () => fixture.mockApiModelRepo.getModelByProviderAndModelId(
         'provider-1',
         'model-1',
       ),
     ).thenAnswer((_) async => _makeModel());
     when(
-      () => mockShouldCompact(
+      () => fixture.mockShouldCompact(
         conversationId: 'conv-1',
         workspaceId: 'ws-1',
         selectedModelId: 'model-1',
@@ -255,13 +287,16 @@ void main() {
       ),
     ).thenAnswer((_) async => decision);
 
-    await usecase(conversationId: 'conv-1');
+    await expectLater(fixture.usecase(conversationId: 'conv-1'), completes);
 
-    final _ = verifyNever(
-      () => mockCompact(
-        conversationId: 'conv-1',
-        trigger: CompactionTrigger.auto,
+    expect(
+      () => verifyNever(
+        () => fixture.mockCompact(
+          conversationId: 'conv-1',
+          trigger: CompactionTrigger.auto,
+        ),
       ),
+      returnsNormally,
     );
   });
 
@@ -273,19 +308,19 @@ void main() {
     );
 
     when(
-      () => mockConvRepo.getConversationById('conv-1'),
+      () => fixture.mockConvRepo.getConversationById('conv-1'),
     ).thenAnswer((_) async => _makeConv());
     when(
-      () => mockModelRepo.getWorkspaceModelSelectionById('comp-1'),
+      () => fixture.mockModelRepo.getWorkspaceModelSelectionById('comp-1'),
     ).thenAnswer((_) async => _completion);
     when(
-      () => mockApiModelRepo.getModelByProviderAndModelId(
+      () => fixture.mockApiModelRepo.getModelByProviderAndModelId(
         'provider-1',
         'model-1',
       ),
     ).thenAnswer((_) async => null);
     when(
-      () => mockShouldCompact(
+      () => fixture.mockShouldCompact(
         conversationId: 'conv-1',
         workspaceId: 'ws-1',
         selectedModelId: 'model-1',
@@ -294,32 +329,39 @@ void main() {
       ),
     ).thenAnswer((_) async => decision);
 
-    await usecase(conversationId: 'conv-1');
+    await expectLater(fixture.usecase(conversationId: 'conv-1'), completes);
 
-    verify(
-      () => mockShouldCompact(
-        conversationId: 'conv-1',
-        workspaceId: 'ws-1',
-        selectedModelId: 'model-1',
-        selectedProviderId: 'provider-1',
-        maxOutputTokens: 4096,
-      ),
-    ).called(1);
+    expect(
+      () => verify(
+        () => fixture.mockShouldCompact(
+          conversationId: 'conv-1',
+          workspaceId: 'ws-1',
+          selectedModelId: 'model-1',
+          selectedProviderId: 'provider-1',
+          maxOutputTokens: 4096,
+        ),
+      ).called(1),
+      returnsNormally,
+    );
   });
 
   test('provider creates usecase with all dependencies', () {
     final container = ProviderContainer(
       overrides: [
-        conversationRepositoryProvider.overrideWith((ref) => mockConvRepo),
-        workspaceModelSelectionRepositoryProvider.overrideWith(
-          (ref) => mockModelRepo,
+        conversationRepositoryProvider.overrideWith(
+          (ref) => fixture.mockConvRepo,
         ),
-        apiModelRepositoryProvider.overrideWith((ref) => mockApiModelRepo),
+        workspaceModelSelectionRepositoryProvider.overrideWith(
+          (ref) => fixture.mockModelRepo,
+        ),
+        apiModelRepositoryProvider.overrideWith(
+          (ref) => fixture.mockApiModelRepo,
+        ),
         shouldCompactConversationUsecaseProvider.overrideWith(
-          (ref) => mockShouldCompact,
+          (ref) => fixture.mockShouldCompact,
         ),
         compactConversationUsecaseProvider.overrideWith(
-          (ref) => mockCompact,
+          (ref) => fixture.mockCompact,
         ),
       ],
     );

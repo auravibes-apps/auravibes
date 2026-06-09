@@ -1,18 +1,4 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
-// ignore_for_file: missing-test-assertion
-// Required: Tests verify usecase behavior through repository side effects.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
 
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
@@ -46,17 +32,42 @@ import 'approve_tool_call_usecase_test.mocks.dart';
 ])
 void main() {
   group('ApproveToolCallUsecase', () {
-    late MockMessageRepository messageRepository;
-    late MockConversationToolsRepository conversationToolsRepository;
-    late MockToolsGroupsRepository toolsGroupsRepository;
-    late MockWorkspaceToolsRepository workspaceToolsRepository;
-    late MockToolResolverService toolResolverService;
-    late MockResumeConversationIfReadyUsecase resumeConversationIfReadyUsecase;
-    late AgentCancellationRuntime agentCancellationRuntime;
-    late ApproveToolCallUsecase usecase;
+    var messageRepository = MockMessageRepository();
+    var conversationToolsRepository = MockConversationToolsRepository();
+    var toolsGroupsRepository = MockToolsGroupsRepository();
+    var workspaceToolsRepository = MockWorkspaceToolsRepository();
+    var toolResolverService = MockToolResolverService();
+    var resumeConversationIfReadyUsecase =
+        MockResumeConversationIfReadyUsecase();
+    var agentCancellationRuntime = AgentCancellationRuntime()
+      ..start('conversation-1');
     String? calledMcpServerId;
     String? calledMcpToolIdentifier;
     Map<String, dynamic>? calledMcpArguments;
+    var usecase = ApproveToolCallUsecase(
+      messageRepository: messageRepository,
+      conversationToolsRepository: conversationToolsRepository,
+      toolsGroupsRepository: toolsGroupsRepository,
+      workspaceToolsRepository: workspaceToolsRepository,
+      toolResolverService: toolResolverService,
+      resumeConversationIfReadyUsecase: resumeConversationIfReadyUsecase,
+      runResolvedToolUsecase: RunResolvedToolUsecase(
+        agentCancellationRuntime: agentCancellationRuntime,
+        mcpToolCaller:
+            ({
+              required mcpServerId,
+              required toolIdentifier,
+              required arguments,
+            }) async {
+              calledMcpServerId = mcpServerId;
+              calledMcpToolIdentifier = toolIdentifier;
+              calledMcpArguments = arguments;
+
+              return 'mcp result';
+            },
+      ),
+      agentCancellationRuntime: agentCancellationRuntime,
+    );
 
     const toolCallId = 'tool-1';
     const messageId = 'message-1';
@@ -111,6 +122,7 @@ void main() {
                 calledMcpServerId = mcpServerId;
                 calledMcpToolIdentifier = toolIdentifier;
                 calledMcpArguments = arguments;
+
                 return 'mcp result';
               },
         ),
@@ -125,7 +137,9 @@ void main() {
       );
       when(
         resumeConversationIfReadyUsecase.call(messageId: anyNamed('messageId')),
-      ).thenAnswer((_) async {});
+      ).thenAnswer((_) {
+        return Future<void>.value();
+      });
     });
 
     test('marks tool as not found when resolution fails', () async {

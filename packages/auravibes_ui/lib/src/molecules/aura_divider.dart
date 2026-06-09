@@ -1,8 +1,3 @@
-// ignore_for_file: avoid-returning-widgets
-// Required: Existing helper builders return widgets.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
@@ -82,17 +77,57 @@ class AuraDivider extends StatelessWidget {
 
     final label = this.label;
     if (label != null) {
-      return _buildLabeledDivider(dividerColor, dividerThickness, label);
+      return Container(
+        height: height ?? DesignSpacing.xl,
+        margin: EdgeInsets.only(
+          left: indent,
+          right: endIndent,
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Container(
+                color: dividerColor,
+                height: dividerThickness,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: DesignSpacing.md,
+              ),
+              child: AuraText(
+                child: label,
+                style: AuraTextStyle.caption,
+                color: AuraColorVariant.onSurfaceVariant,
+              ),
+            ),
+            Expanded(
+              child: Container(
+                color: dividerColor,
+                height: dividerThickness,
+              ),
+            ),
+          ],
+        ),
+      );
     }
 
     if (orientation == AuraDividerOrientation.vertical) {
-      return _buildVerticalDivider(dividerColor, dividerThickness);
+      return Container(
+        width: width ?? DesignSpacing.md,
+        margin: EdgeInsets.only(
+          top: indent,
+          bottom: endIndent,
+        ),
+        child: Center(
+          child: Container(
+            color: dividerColor,
+            width: dividerThickness,
+          ),
+        ),
+      );
     }
 
-    return _buildHorizontalDivider(dividerColor, dividerThickness);
-  }
-
-  Widget _buildHorizontalDivider(Color dividerColor, double dividerThickness) {
     return Container(
       height: height ?? DesignSpacing.md,
       margin: EdgeInsets.only(
@@ -104,62 +139,6 @@ class AuraDivider extends StatelessWidget {
           color: dividerColor,
           height: dividerThickness,
         ),
-      ),
-    );
-  }
-
-  Widget _buildVerticalDivider(Color dividerColor, double dividerThickness) {
-    return Container(
-      width: width ?? DesignSpacing.md,
-      margin: EdgeInsets.only(
-        top: indent,
-        bottom: endIndent,
-      ),
-      child: Center(
-        child: Container(
-          color: dividerColor,
-          width: dividerThickness,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLabeledDivider(
-    Color dividerColor,
-    double dividerThickness,
-    Widget label,
-  ) {
-    return Container(
-      height: height ?? DesignSpacing.xl,
-      margin: EdgeInsets.only(
-        left: indent,
-        right: endIndent,
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Container(
-              color: dividerColor,
-              height: dividerThickness,
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: DesignSpacing.md,
-            ),
-            child: AuraText(
-              child: label,
-              style: AuraTextStyle.caption,
-              color: AuraColorVariant.onSurfaceVariant,
-            ),
-          ),
-          Expanded(
-            child: Container(
-              color: dividerColor,
-              height: dividerThickness,
-            ),
-          ),
-        ],
       ),
     );
   }

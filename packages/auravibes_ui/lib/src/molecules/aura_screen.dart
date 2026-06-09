@@ -1,12 +1,4 @@
-// ignore_for_file: no-magic-number
-// Required: UI tokens and layout use fixed design values.
-// ignore_for_file: no-equal-arguments
-// Required: UI geometry uses repeated values for symmetric layout.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-single-widget-per-file
 // Required: UI components keep related private widgets together.
 
 import 'dart:ui';
@@ -14,9 +6,9 @@ import 'dart:ui';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 
-/// screen manager
+/// Screen manager.
 class AuraScreen extends StatelessWidget {
-  /// Screen manager
+  /// Screen manager.
   const AuraScreen({
     required this.child,
     this.appBar,
@@ -25,16 +17,16 @@ class AuraScreen extends StatelessWidget {
     super.key,
   });
 
-  /// chilg
+  /// Chilg.
   final Widget child;
 
-  /// app bar
+  /// App bar.
   final PreferredSizeWidget? appBar;
 
-  /// padding
+  /// Padding.
   final AuraEdgeInsetsGeometry? padding;
 
-  /// variant
+  /// Variant.
   final AuraScreenVariation variant;
 
   @override
@@ -84,9 +76,9 @@ class AuraScreen extends StatelessWidget {
   }
 }
 
-/// App Bar
+/// App Bar.
 class AuraAppBar extends StatelessWidget implements PreferredSizeWidget {
-  /// constructor
+  /// Constructor.
   const AuraAppBar({
     super.key,
     this.title,
@@ -95,13 +87,13 @@ class AuraAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.leading,
   });
 
-  /// title
+  /// Title.
   final Widget? title;
 
-  /// acions
+  /// Acions.
   final List<Widget>? actions;
 
-  /// bottom of bar
+  /// Bottom of bar.
   final PreferredSizeWidget? bottom;
 
   /// Optional custom leading widget that replaces the automatic back button.
@@ -133,12 +125,12 @@ class AuraAppBar extends StatelessWidget implements PreferredSizeWidget {
   );
 }
 
-/// screen variation
+/// Screen variation.
 enum AuraScreenVariation {
-  /// standard
+  /// Standard.
   standard,
 
-  /// aurora
+  /// Aurora.
   aurora,
 }
 
@@ -148,11 +140,12 @@ class _AuroraBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.auraColors;
+
     return Stack(
       children: [
-        // Base color
+        // Base color.
         Container(color: colors.background),
-        // Blob 1 (Top Left - Primary)
+        // Blob 1 (Top Left - Primary).
         Positioned(
           left: -100,
           top: -100,
@@ -161,7 +154,7 @@ class _AuroraBackground extends StatelessWidget {
             size: 400,
           ),
         ),
-        // Blob 2 (Center Right - Secondary)
+        // Blob 2 (Center Right - Secondary).
         Positioned(
           top: 200,
           right: -100,
@@ -170,7 +163,7 @@ class _AuroraBackground extends StatelessWidget {
             size: 300,
           ),
         ),
-        // Blob 3 (Bottom Left - Primary/Accent)
+        // Blob 3 (Bottom Left - Primary/Accent).
         Positioned(
           left: -50,
           bottom: -50,
@@ -179,7 +172,7 @@ class _AuroraBackground extends StatelessWidget {
             size: 350,
           ),
         ),
-        // Blur Mesh
+        // Blur Mesh.
         BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
           child: Container(color: Colors.transparent),

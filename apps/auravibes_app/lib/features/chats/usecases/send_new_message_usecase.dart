@@ -1,10 +1,4 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
@@ -36,7 +30,7 @@ class SendNewMessageUsecase {
     required String firstMessage,
     required String workspaceModelSelectionId,
   }) async {
-    // Validate model selection exists before creating conversation
+    // Validate model selection exists before creating conversation.
     final workspaceModelSelection = await workspaceModelSelectionRepository
         .getWorkspaceModelSelectionById(workspaceModelSelectionId);
 
@@ -44,7 +38,7 @@ class SendNewMessageUsecase {
       throw Exception('Selected model not found');
     }
 
-    // create conversation
+    // Create conversation.
     final newConversation = await conversationRepo.createConversation(
       .new(
         title: 'New Conversation',
@@ -53,7 +47,7 @@ class SendNewMessageUsecase {
       ),
     );
 
-    // stream title
+    // Stream title.
     generateTitleUsecase.call(
       conversationId: newConversation.id,
       firstMessage: firstMessage,
@@ -72,6 +66,7 @@ class SendNewMessageUsecase {
             stackTrace: stackTrace,
           );
         });
+
     return newConversation;
   }
 }

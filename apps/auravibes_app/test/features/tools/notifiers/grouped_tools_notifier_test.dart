@@ -1,17 +1,4 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
-// ignore_for_file: missing-test-assertion
-// Required: Tests verify notifier behavior through repository side effects.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
@@ -31,9 +18,22 @@ import 'package:riverpod/riverpod.dart';
 
 void main() {
   group('GroupedToolsNotifier', () {
-    late _FakeToolsGroupsRepository toolsGroupsRepository;
-    late _FakeWorkspaceToolsRepository workspaceToolsRepository;
-    late ProviderContainer container;
+    var toolsGroupsRepository = _FakeToolsGroupsRepository();
+    var workspaceToolsRepository = _FakeWorkspaceToolsRepository();
+    var container = ProviderContainer(
+      overrides: [
+        toolsGroupsRepositoryProvider.overrideWithValue(
+          toolsGroupsRepository,
+        ),
+        workspaceToolsRepositoryProvider.overrideWithValue(
+          workspaceToolsRepository,
+        ),
+        mcpManagerServiceProvider.overrideWithValue(McpManagerService()),
+        mcpServersRepositoryProvider.overrideWithValue(
+          _FakeMcpServersRepository(),
+        ),
+      ],
+    );
 
     final createdAt = DateTime(2026);
 
@@ -203,7 +203,8 @@ void main() {
         groupedToolsProvider('workspace-1').future,
       );
 
-      await notifier.deleteMcpGroup('group-1');
+      await expectLater(notifier.deleteMcpGroup('group-1'), completes);
+      expect(toolsGroupsRepository.deleteCalled, isFalse);
     });
 
     test('deleteMcpGroup does nothing when group not found', () async {
@@ -216,7 +217,8 @@ void main() {
         groupedToolsProvider('workspace-1').future,
       );
 
-      await notifier.deleteMcpGroup('unknown');
+      await expectLater(notifier.deleteMcpGroup('unknown'), completes);
+      expect(toolsGroupsRepository.deleteCalled, isFalse);
     });
   });
 }
@@ -225,6 +227,7 @@ class _FakeToolsGroupsRepository implements ToolsGroupsRepository {
   List<ToolsGroupEntity> groups = const [];
   ToolsGroupEntity? groupById;
   bool setEnabledCalled = false;
+  bool deleteCalled = false;
 
   @override
   Future<List<ToolsGroupEntity>> getToolsGroupsForWorkspace(
@@ -251,11 +254,14 @@ class _FakeToolsGroupsRepository implements ToolsGroupsRepository {
     required bool isEnabled,
   }) async {
     setEnabledCalled = true;
+
     return true;
   }
 
   @override
   Future<bool> deleteToolsGroup(String id) async {
+    deleteCalled = true;
+
     return true;
   }
 }
@@ -292,7 +298,9 @@ class _FakeMcpServersRepository implements McpServersRepository {
   Future<void> syncMcpTools({
     required String mcpServerId,
     required List<McpToolInfo> currentTools,
-  }) async {}
+  }) async {
+    final _ = Object();
+  }
 }
 
 class _FakeWorkspaceToolsRepository implements WorkspaceToolsRepository {

@@ -1,10 +1,4 @@
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
@@ -13,12 +7,19 @@ import 'package:auravibes_app/domain/repositories/message_repository.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_send_queue_runtime.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_context.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_decision.dart';
 import 'package:auravibes_app/features/chats/usecases/continue_agent_result.dart';
 import 'package:auravibes_app/features/chats/usecases/maybe_auto_compact_conversation_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/run_allowed_tools_usecase.dart';
 import 'package:riverpod/riverpod.dart';
+
+const defaultAgentRateLimitRetryDelay = Duration(seconds: 60);
+
+Future<void> _defaultAgentSleep(Duration duration) {
+  return Future<void>.delayed(duration);
+}
 
 class RunAgentIterationUsecase {
   const RunAgentIterationUsecase({
@@ -29,6 +30,10 @@ class RunAgentIterationUsecase {
     required this.messageRepository,
     required this.sendQueueRuntime,
     required this.agentCancellationRuntime,
+    required this.rateLimitRetryRuntime,
+    this.rateLimitRetryDelay = defaultAgentRateLimitRetryDelay,
+    this.now = DateTime.now,
+    this.sleep = _defaultAgentSleep,
   });
 
   final ContinueAgentUsecase continueAgentUsecase;
@@ -38,6 +43,10 @@ class RunAgentIterationUsecase {
   final MessageRepository messageRepository;
   final ConversationSendQueueRuntime sendQueueRuntime;
   final AgentCancellationRuntime agentCancellationRuntime;
+  final ConversationRateLimitRetryRuntime rateLimitRetryRuntime;
+  final Duration rateLimitRetryDelay;
+  final DateTime Function() now;
+  final Future<void> Function(Duration duration) sleep;
 
   Future<AgentIterationDecision> call({
     required String conversationId,
@@ -77,11 +86,28 @@ class RunAgentIterationUsecase {
       );
       if (cancelDecision != null) return cancelDecision;
 
-      final result = await _runIteration(
-        conversationId: conversationId,
-        workspaceId: workspaceId,
-        context: currentContext,
-      );
+      final _AgentIterationStep result;
+      try {
+        result = await _runIteration(
+          conversationId: conversationId,
+          workspaceId: workspaceId,
+          context: currentContext,
+        );
+      } catch (error) {
+        final retryDelay = _rateLimitRetryDelayFor(error);
+        if (retryDelay == null) rethrow;
+
+        final retryAt = now().add(retryDelay);
+        rateLimitRetryRuntime.start(conversationId, retryAt);
+        final cancelled = await _waitForRateLimitRetry(
+          conversationId: conversationId,
+          retryAt: retryAt,
+          context: currentContext,
+        );
+        rateLimitRetryRuntime.clear(conversationId);
+        if (cancelled != null) return cancelled;
+        continue;
+      }
       currentContext = result.context;
       if (result.decision != AgentIterationDecision.continueIteration) {
         return result.decision;
@@ -137,6 +163,7 @@ class RunAgentIterationUsecase {
       conversationId,
       currentContext,
     );
+
     return _AgentIterationStep(
       currentContext,
       postToolCancel ?? decision,
@@ -154,6 +181,7 @@ class RunAgentIterationUsecase {
     final decision = queuedContext == currentContext
         ? AgentIterationDecision.done
         : AgentIterationDecision.continueIteration;
+
     return _AgentIterationStep(queuedContext, decision);
   }
 
@@ -167,6 +195,7 @@ class RunAgentIterationUsecase {
 
     await _markAckMessagesSent(context);
     sendQueueRuntime.clear(conversationId);
+
     return AgentIterationDecision.done;
   }
 
@@ -215,6 +244,59 @@ class RunAgentIterationUsecase {
       ),
     );
   }
+
+  Future<AgentIterationDecision?> _waitForRateLimitRetry({
+    required String conversationId,
+    required DateTime retryAt,
+    required AgentIterationContext? context,
+  }) async {
+    while (now().isBefore(retryAt)) {
+      final cancelDecision = await _cancelIfRequested(conversationId, context);
+      if (cancelDecision != null) return cancelDecision;
+
+      final remaining = retryAt.difference(now());
+      final delay = remaining > const Duration(seconds: 1)
+          ? const Duration(seconds: 1)
+          : remaining;
+      if (delay > Duration.zero) {
+        await sleep(delay);
+      }
+    }
+
+    return _cancelIfRequested(conversationId, context);
+  }
+
+  Duration? _rateLimitRetryDelayFor(Object error) {
+    final message = error.toString().toLowerCase();
+    final isRateLimit =
+        message.contains('ratelimitexception') ||
+        message.contains('resource_exhausted') ||
+        message.contains('rate limit') ||
+        message.contains('429');
+    if (!isRateLimit) return null;
+
+    return _knownRateLimitDelay(message) ?? rateLimitRetryDelay;
+  }
+
+  Duration? _knownRateLimitDelay(String message) {
+    final secondsMatch = RegExp(
+      r'(?:retry[- ]?after|try again in)\D+(\d+)\s*(?:s|sec|second|seconds)',
+    ).firstMatch(message);
+    if (secondsMatch != null) {
+      final seconds = int.tryParse(secondsMatch.group(1) ?? '');
+      if (seconds != null) return Duration(seconds: seconds);
+    }
+
+    final minutesMatch = RegExp(
+      r'(?:retry[- ]?after|try again in)\D+(\d+)\s*(?:m|min|minute|minutes)',
+    ).firstMatch(message);
+    if (minutesMatch != null) {
+      final minutes = int.tryParse(minutesMatch.group(1) ?? '');
+      if (minutes != null) return Duration(minutes: minutes);
+    }
+
+    return null;
+  }
 }
 
 class _AgentIterationStep {
@@ -237,5 +319,6 @@ final runAgentIterationUsecaseProvider = Provider<RunAgentIterationUsecase>((
     messageRepository: ref.watch(messageRepositoryProvider),
     sendQueueRuntime: ref.watch(conversationSendQueueRuntimeProvider),
     agentCancellationRuntime: ref.watch(agentCancellationRuntimeProvider),
+    rateLimitRetryRuntime: ref.watch(conversationRateLimitRetryRuntimeProvider),
   );
 });

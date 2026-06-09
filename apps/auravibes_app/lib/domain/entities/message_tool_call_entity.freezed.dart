@@ -616,15 +616,15 @@ as DateTime?,
 /// @nodoc
 mixin _$MessageEntity {
 
-/// Unique identifier for the message
- String get id;/// ID of the conversation this message belongs to
- String get conversationId;/// Content of the message (JSON structure based on message type)
- String get content;/// Type of the message
- MessageType get messageType;/// Whether this message was sent by the user
- bool get isUser;/// Status of the message
- MessageStatus get status;/// Timestamp when the message was created
- DateTime get createdAt;/// Timestamp when the message was last updated
- DateTime get updatedAt;/// Additional metadata for the message (JSON)
+/// Unique identifier for the message.
+ String get id;/// ID of the conversation this message belongs to.
+ String get conversationId;/// Content of the message (JSON structure based on message type).
+ String get content;/// Type of the message.
+ MessageType get messageType;/// Whether this message was sent by the user.
+ bool get isUser;/// Status of the message.
+ MessageStatus get status;/// Timestamp when the message was created.
+ DateTime get createdAt;/// Timestamp when the message was last updated.
+ DateTime get updatedAt;/// Additional metadata for the message (JSON).
  MessageMetadataEntity? get metadata;
 /// Create a copy of MessageEntity
 /// with the given fields replaced by the non-null parameter values.
@@ -840,23 +840,23 @@ class _MessageEntity extends MessageEntity {
   const _MessageEntity({required this.id, required this.conversationId, required this.content, required this.messageType, required this.isUser, required this.status, required this.createdAt, required this.updatedAt, this.metadata}): super._();
   
 
-/// Unique identifier for the message
+/// Unique identifier for the message.
 @override final  String id;
-/// ID of the conversation this message belongs to
+/// ID of the conversation this message belongs to.
 @override final  String conversationId;
-/// Content of the message (JSON structure based on message type)
+/// Content of the message (JSON structure based on message type).
 @override final  String content;
-/// Type of the message
+/// Type of the message.
 @override final  MessageType messageType;
-/// Whether this message was sent by the user
+/// Whether this message was sent by the user.
 @override final  bool isUser;
-/// Status of the message
+/// Status of the message.
 @override final  MessageStatus status;
-/// Timestamp when the message was created
+/// Timestamp when the message was created.
 @override final  DateTime createdAt;
-/// Timestamp when the message was last updated
+/// Timestamp when the message was last updated.
 @override final  DateTime updatedAt;
-/// Additional metadata for the message (JSON)
+/// Additional metadata for the message (JSON).
 @override final  MessageMetadataEntity? metadata;
 
 /// Create a copy of MessageEntity
@@ -939,11 +939,11 @@ $MessageMetadataEntityCopyWith<$Res>? get metadata {
 /// @nodoc
 mixin _$MessageToCreate {
 
-/// ID of the conversation this message belongs to
- String get conversationId;/// Content of the message (JSON structure based on message type)
- String get content;/// Type of the message
- MessageType get messageType;/// Whether this message was sent by the user
- bool get isUser; MessageStatus get status;/// Additional metadata for the message (JSON)
+/// ID of the conversation this message belongs to.
+ String get conversationId;/// Content of the message (JSON structure based on message type).
+ String get content;/// Type of the message.
+ MessageType get messageType;/// Whether this message was sent by the user.
+ bool get isUser; MessageStatus get status;/// Additional metadata for the message (JSON).
  String? get metadata;
 /// Create a copy of MessageToCreate
 /// with the given fields replaced by the non-null parameter values.
@@ -1144,16 +1144,16 @@ class _MessageToCreate extends MessageToCreate {
   const _MessageToCreate({required this.conversationId, required this.content, required this.messageType, required this.isUser, required this.status, this.metadata}): super._();
   
 
-/// ID of the conversation this message belongs to
+/// ID of the conversation this message belongs to.
 @override final  String conversationId;
-/// Content of the message (JSON structure based on message type)
+/// Content of the message (JSON structure based on message type).
 @override final  String content;
-/// Type of the message
+/// Type of the message.
 @override final  MessageType messageType;
-/// Whether this message was sent by the user
+/// Whether this message was sent by the user.
 @override final  bool isUser;
 @override final  MessageStatus status;
-/// Additional metadata for the message (JSON)
+/// Additional metadata for the message (JSON).
 @override final  String? metadata;
 
 /// Create a copy of MessageToCreate
@@ -1221,8 +1221,8 @@ as String?,
 /// @nodoc
 mixin _$MessagePatch {
 
-/// Content of the message (JSON structure based on message type)
- String? get content;/// Additional metadata for the message (JSON)
+/// Content of the message (JSON structure based on message type).
+ String? get content;/// Additional metadata for the message (JSON).
  MessageMetadataEntity? get metadata; MessageStatus? get status;
 /// Create a copy of MessagePatch
 /// with the given fields replaced by the non-null parameter values.
@@ -1432,9 +1432,9 @@ class _MessagePatch extends MessagePatch {
   const _MessagePatch({this.content, this.metadata, this.status}): super._();
   
 
-/// Content of the message (JSON structure based on message type)
+/// Content of the message (JSON structure based on message type).
 @override final  String? content;
-/// Additional metadata for the message (JSON)
+/// Additional metadata for the message (JSON).
 @override final  MessageMetadataEntity? metadata;
 @override final  MessageStatus? status;
 

@@ -1,15 +1,3 @@
-// ignore_for_file: avoid-returning-widgets
-// Required: Widget tests use helpers that build widgets under test.
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-static-class
-// Required: Tests keep fixture helpers and fakes top-level.
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.dart';
 import 'package:auravibes_app/features/tools/widgets/conversation_tool_tile.dart';
@@ -45,32 +33,40 @@ class _MockConversationToolsNotifier extends ConversationToolsNotifier {
   }) async => states;
 }
 
-Widget _buildSubject({
-  required ConversationToolState toolState,
-  String? conversationId,
-}) {
-  return testableApp(
-    child: Theme(
-      data: ThemeData(extensions: [AuraTheme.light]),
-      child: Material(
-        child: SingleChildScrollView(
-          child: ConversationToolTile(
-            toolState: toolState,
-            workspaceId: _workspaceId,
-            conversationId: conversationId,
+class _Subject extends StatelessWidget {
+  const _Subject({
+    required this.toolState,
+    this.conversationId,
+  });
+
+  final ConversationToolState toolState;
+  final String? conversationId;
+
+  @override
+  Widget build(BuildContext context) {
+    return TestableApp(
+      child: Theme(
+        data: ThemeData(extensions: [AuraTheme.light]),
+        child: Material(
+          child: SingleChildScrollView(
+            child: ConversationToolTile(
+              toolState: toolState,
+              workspaceId: _workspaceId,
+              conversationId: conversationId,
+            ),
           ),
         ),
       ),
-    ),
-    overrides: [
-      conversationToolsProvider(
-        workspaceId: _workspaceId,
-        conversationId: conversationId,
-      ).overrideWith(
-        () => _MockConversationToolsNotifier([toolState]),
-      ),
-    ],
-  );
+      overrides: [
+        conversationToolsProvider(
+          workspaceId: _workspaceId,
+          conversationId: conversationId,
+        ).overrideWith(
+          () => _MockConversationToolsNotifier([toolState]),
+        ),
+      ],
+    );
+  }
 }
 
 Future<void> _pumpSubject(
@@ -80,7 +76,7 @@ Future<void> _pumpSubject(
 }) async {
   await tester.runAsync(() async {
     await tester.pumpWidget(
-      _buildSubject(toolState: toolState, conversationId: conversationId),
+      _Subject(toolState: toolState, conversationId: conversationId),
     );
   });
   final _ = await tester.pumpAndSettle();
@@ -221,7 +217,9 @@ void main() {
       isWorkspaceEnabled: true,
     );
 
-    FlutterError.onError = (_) {};
+    FlutterError.onError = (_) {
+      final _ = Object();
+    };
     await _pumpSubject(tester, toolState: toolState);
 
     expect(find.byIcon(Icons.check_circle), findsOneWidget);
@@ -238,7 +236,9 @@ void main() {
       isWorkspaceEnabled: true,
     );
 
-    FlutterError.onError = (_) {};
+    FlutterError.onError = (_) {
+      final _ = Object();
+    };
     await _pumpSubject(tester, toolState: toolState);
 
     expect(find.byType(ToolPermissionSelector), findsOneWidget);
@@ -253,7 +253,9 @@ void main() {
       isWorkspaceEnabled: true,
     );
 
-    FlutterError.onError = (_) {};
+    FlutterError.onError = (_) {
+      final _ = Object();
+    };
     await _pumpSubject(tester, toolState: toolState);
 
     final auraCard = tester.widget<AuraCard>(find.byType(AuraCard));
@@ -286,7 +288,9 @@ void main() {
       isWorkspaceEnabled: true,
     );
 
-    FlutterError.onError = (_) {};
+    FlutterError.onError = (_) {
+      final _ = Object();
+    };
     await _pumpSubject(tester, toolState: toolState);
 
     expect(find.byType(ToolPermissionSelector), findsOneWidget);

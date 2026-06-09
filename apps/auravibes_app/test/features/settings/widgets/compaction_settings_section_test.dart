@@ -1,17 +1,4 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-top-level-members-in-tests
-// Required: Test files keep shared fixtures and helpers top-level.
-// ignore_for_file: missing-test-assertion
-// Required: Widget tests verify side effects through mocked dependencies.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-moving-to-variable
 // Required: Tests repeat finders and fixture lookups for clarity.
-
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
@@ -38,9 +25,15 @@ class MockResetUsecase extends Mock
 void main() {
   const testWorkspaceId = 'test-ws';
 
-  late MockSaveUsecase mockSave;
-  late MockResetUsecase mockReset;
-  late StreamController<CompactionSettings> settingsController;
+  MockSaveUsecase? mockSave;
+  MockResetUsecase? mockReset;
+  StreamController<CompactionSettings>? settingsController;
+  MockSaveUsecase readMockSave() =>
+      mockSave ?? fail('MockSaveUsecase not initialized');
+  MockResetUsecase readMockReset() =>
+      mockReset ?? fail('MockResetUsecase not initialized');
+  StreamController<CompactionSettings> readSettingsController() =>
+      settingsController ?? fail('Settings stream not initialized');
 
   setUpAll(() {
     registerFallbackValue(CompactionSettings.defaults);
@@ -53,11 +46,11 @@ void main() {
   });
 
   tearDown(() {
-    final _ = settingsController.close();
+    final _ = settingsController?.close();
   });
 
   Widget buildSubject() {
-    return testableApp(
+    return TestableApp(
       child: Theme(
         data: ThemeData(extensions: [AuraTheme.light]),
         child: const Scaffold(
@@ -70,13 +63,13 @@ void main() {
       ),
       overrides: [
         compactionSettingsProvider(testWorkspaceId).overrideWith(
-          (ref) => settingsController.stream,
+          (ref) => readSettingsController().stream,
         ),
         saveWorkspaceCompactionSettingsUsecaseProvider.overrideWith(
-          (ref) => mockSave,
+          (ref) => readMockSave(),
         ),
         resetWorkspaceCompactionSettingsUsecaseProvider.overrideWith(
-          (ref) => mockReset,
+          (ref) => readMockReset(),
         ),
       ],
     );
@@ -92,7 +85,7 @@ void main() {
 
   group('render', () {
     testWidgets('renders title, subtitle and switch', (tester) async {
-      settingsController.add(CompactionSettings.defaults);
+      readSettingsController().add(CompactionSettings.defaults);
       await pumpSubject(tester);
       expect(find.byType(CompactionSettingsSection), findsOneWidget);
       expect(find.byType(SwitchListTile), findsOneWidget);
@@ -104,10 +97,10 @@ void main() {
     testWidgets('updates form fields when stream emits new settings', (
       tester,
     ) async {
-      settingsController.add(CompactionSettings.defaults);
+      readSettingsController().add(CompactionSettings.defaults);
       await pumpSubject(tester);
 
-      settingsController.add(
+      readSettingsController().add(
         const CompactionSettings(
           autoCompactionEnabled: false,
           usagePercentageThreshold: 45,
@@ -131,13 +124,13 @@ void main() {
   group('_save', () {
     testWidgets('calls save usecase with parsed thresholds', (tester) async {
       when(
-        () => mockSave(
+        () => readMockSave()(
           workspaceId: testWorkspaceId,
           settings: any(named: 'settings'),
         ),
       ).thenAnswer((_) async => CompactionSettings.defaults);
 
-      settingsController.add(CompactionSettings.defaults);
+      readSettingsController().add(CompactionSettings.defaults);
       await pumpSubject(tester);
 
       await tester.enterText(find.byType(TextField).first, '50');
@@ -153,20 +146,23 @@ void main() {
       );
       await tester.pump();
 
-      verify(
-        () => mockSave(
-          workspaceId: testWorkspaceId,
-          settings: const CompactionSettings(
-            usagePercentageThreshold: 50,
-            remainingTokenThreshold: 3000,
+      expect(
+        () => verify(
+          () => readMockSave()(
+            workspaceId: testWorkspaceId,
+            settings: const CompactionSettings(
+              usagePercentageThreshold: 50,
+              remainingTokenThreshold: 3000,
+            ),
           ),
-        ),
-      ).called(1);
+        ).called(1),
+        returnsNormally,
+      );
     });
 
     testWidgets('shows validation error on usecase exception', (tester) async {
       when(
-        () => mockSave(
+        () => readMockSave()(
           workspaceId: testWorkspaceId,
           settings: any(named: 'settings'),
         ),
@@ -176,7 +172,7 @@ void main() {
         ),
       );
 
-      settingsController.add(CompactionSettings.defaults);
+      readSettingsController().add(CompactionSettings.defaults);
       await pumpSubject(tester);
 
       await tester.enterText(find.byType(TextField).first, '2');
@@ -192,24 +188,27 @@ void main() {
       );
       await tester.pump();
 
-      verify(
-        () => mockSave(
-          workspaceId: testWorkspaceId,
-          settings: const CompactionSettings(
-            usagePercentageThreshold: 2,
+      expect(
+        () => verify(
+          () => readMockSave()(
+            workspaceId: testWorkspaceId,
+            settings: const CompactionSettings(
+              usagePercentageThreshold: 2,
+            ),
           ),
-        ),
-      ).called(1);
+        ).called(1),
+        returnsNormally,
+      );
     });
   });
 
   group('_resetDefaults', () {
     testWidgets('calls reset usecase even when it fails', (tester) async {
       when(
-        () => mockReset(workspaceId: testWorkspaceId),
+        () => readMockReset()(workspaceId: testWorkspaceId),
       ).thenThrow(Exception('DB error'));
 
-      settingsController.add(CompactionSettings.defaults);
+      readSettingsController().add(CompactionSettings.defaults);
       await pumpSubject(tester);
 
       await tester.tap(
@@ -222,15 +221,20 @@ void main() {
       );
       await tester.pump();
 
-      verify(() => mockReset(workspaceId: testWorkspaceId)).called(1);
+      expect(
+        () => verify(
+          () => readMockReset()(workspaceId: testWorkspaceId),
+        ).called(1),
+        returnsNormally,
+      );
     });
 
     testWidgets('resets form fields on success', (tester) async {
       when(
-        () => mockReset(workspaceId: testWorkspaceId),
+        () => readMockReset()(workspaceId: testWorkspaceId),
       ).thenAnswer((_) async => CompactionSettings.defaults);
 
-      settingsController.add(CompactionSettings.defaults);
+      readSettingsController().add(CompactionSettings.defaults);
       await pumpSubject(tester);
 
       await tester.tap(
@@ -243,7 +247,7 @@ void main() {
       );
       await tester.pump();
 
-      verify(() => mockReset(workspaceId: testWorkspaceId)).called(1);
+      verify(() => readMockReset()(workspaceId: testWorkspaceId)).called(1);
 
       final textFields = find.byType(TextField);
       final usageField = tester.widget<TextField>(textFields.first);

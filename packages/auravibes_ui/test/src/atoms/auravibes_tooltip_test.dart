@@ -1,5 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 import 'package:auravibes_ui/src/atoms/aura_tooltip.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
@@ -83,7 +81,7 @@ void main() {
       await tester.pump();
       expect(find.text('Tooltip text'), findsOneWidget);
 
-      // Long press again to hide
+      // Long press again to hide.
       await tester.longPress(find.text('Target'));
       await tester.pump();
       expect(find.text('Tooltip text'), findsNothing);

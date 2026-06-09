@@ -1,22 +1,17 @@
-// ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: avoid-substring
-// Required: Existing parsing uses code-unit substring offsets.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-moving-to-variable
 // Required: Existing code repeats lookups where extraction adds noise.
 import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:auravibes_app/services/chatbot_service/provider_factory.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
+import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:genkit/genkit.dart' hide FinishReason;
 import 'package:schemantic/schemantic.dart';
+
+final _anthropicSafeToolCallId = RegExp(r'^[a-zA-Z0-9_-]+$');
+final _anthropicSafeToolCallIdChar = RegExp('[a-zA-Z0-9_-]');
 
 class ChatbotService {
   ChatbotService({
@@ -36,7 +31,7 @@ class ChatbotService {
   }) async* {
     final ai = await _providerFactory.createGenkit(chatProvider);
     final model = _providerFactory.getModelReference(chatProvider);
-    final config = _providerFactory.getGenerationConfig(chatProvider);
+    final config = _providerFactory.getGenerationConfig<Object?>(chatProvider);
 
     final genkitTools = _defineGenkitTools(ai, tools);
     final genkitHistory = history.map(_toGenkitMessage).toList();
@@ -114,7 +109,8 @@ class ChatbotService {
         .where((word) => word.isNotEmpty)
         .take(4)
         .join(' ');
-    return words.length > 30 ? '${words.substring(0, 27)}...' : words;
+
+    return words.truncateCharacters(30);
   }
 
   List<Tool<Map<String, Object?>, Object?>>? _defineGenkitTools(
@@ -149,8 +145,49 @@ class ChatbotService {
       },
       content: message.parts.isEmpty
           ? [TextPart(text: message.content)]
-          : message.parts,
+          : message.parts.map(_toProviderSafePart).toList(),
     );
+  }
+
+  Part _toProviderSafePart(Part part) {
+    return switch (part) {
+      ToolRequestPart(:final toolRequest) => ToolRequestPart(
+        toolRequest: ToolRequest(
+          ref: _providerSafeToolCallId(toolRequest.ref),
+          name: toolRequest.name,
+          input: toolRequest.input,
+        ),
+      ),
+      ToolResponsePart(:final toolResponse) => ToolResponsePart(
+        toolResponse: ToolResponse(
+          ref: _providerSafeToolCallId(toolResponse.ref),
+          name: toolResponse.name,
+          output: toolResponse.output,
+        ),
+      ),
+      _ => part,
+    };
+  }
+
+  String _providerSafeToolCallId(String? rawId) {
+    final raw = rawId?.trim() ?? '';
+    if (raw.isEmpty) return 'tool_call';
+    if (_anthropicSafeToolCallId.hasMatch(raw)) return raw;
+
+    final buffer = StringBuffer();
+    for (final codeUnit in raw.codeUnits) {
+      final char = String.fromCharCode(codeUnit);
+      if (_anthropicSafeToolCallIdChar.hasMatch(char)) {
+        buffer.write(char);
+      } else {
+        buffer
+          ..write('_x')
+          ..write(codeUnit.toRadixString(16))
+          ..write('_');
+      }
+    }
+
+    return buffer.toString();
   }
 
   String? _extractThinking(GenerateResponseChunk<Object?> chunk) {
@@ -161,6 +198,7 @@ class ChatbotService {
         thinking.write(reasoning);
       }
     }
+
     return thinking.isEmpty ? null : thinking.toString();
   }
 
@@ -213,26 +251,24 @@ class ChatbotService {
   String _processGeneratedTitle(String title, String firstMessage) {
     var processedTitle = title.trim();
     if (processedTitle.startsWith('"') && processedTitle.endsWith('"')) {
-      processedTitle = processedTitle.substring(1, processedTitle.length - 1);
+      processedTitle = processedTitle.withoutEdgeCharacters();
     }
     if (processedTitle.length > 1 &&
-        processedTitle.codeUnitAt(0) == 39 &&
-        processedTitle.codeUnitAt(processedTitle.length - 1) == 39) {
-      processedTitle = processedTitle.substring(1, processedTitle.length - 1);
+        processedTitle.startsWith(String.fromCharCode(39)) &&
+        processedTitle.endsWith(String.fromCharCode(39))) {
+      processedTitle = processedTitle.withoutEdgeCharacters();
     }
     if (processedTitle.startsWith('Title:')) {
-      processedTitle = processedTitle.substring(6).trim();
+      processedTitle = processedTitle.replaceFirst('Title:', '').trim();
     }
     if (processedTitle.startsWith('Conversation:')) {
-      processedTitle = processedTitle.substring(13).trim();
+      processedTitle = processedTitle.replaceFirst('Conversation:', '').trim();
     }
 
     if (processedTitle.isEmpty) {
       return generateFallbackTitle(firstMessage);
     }
-    if (processedTitle.length > 50) {
-      return '${processedTitle.substring(0, 47)}...';
-    }
-    return processedTitle;
+
+    return processedTitle.truncateCharacters(50);
   }
 }

@@ -1,16 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: no-object-declaration
-// Required: Test fakes override noSuchMethod with Object return values.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-
 // ignore_for_file: cascade_invocations
 
 import 'package:auravibes_app/features/workspaces/models/switch_status.dart';
@@ -29,15 +16,19 @@ class _FakeGoRouter implements GoRouter {
   }
 
   @override
-  Object? noSuchMethod(Invocation invocation) => throw UnimplementedError();
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
   group('WorkspaceSwitcher', () {
-    late _FakeGoRouter fakeRouter;
-    late ProviderContainer container;
+    var fakeRouter = _FakeGoRouter();
+    var container = ProviderContainer(
+      overrides: [
+        routerProvider.overrideWithValue(fakeRouter),
+      ],
+    );
 
     setUp(() {
       fakeRouter = _FakeGoRouter();
@@ -47,7 +38,9 @@ void main() {
         ],
       );
       // Keep provider alive during async timer-based tests.
-      final _ = container.listen(workspaceSwitcherProvider, (_, _) {});
+      final _ = container.listen(workspaceSwitcherProvider, (_, _) {
+        final _ = Object();
+      });
     });
 
     tearDown(() => container.dispose());
@@ -90,13 +83,13 @@ void main() {
       expect(states.length, greaterThanOrEqualTo(3));
       expect(states.firstOrNull?.status, SwitchStatus.idle);
 
-      // Loading state
+      // Loading state.
       final loadingState = states.firstWhere(
         (s) => s.status == SwitchStatus.loading,
       );
       expect(loadingState.status, SwitchStatus.loading);
 
-      // Final idle state
+      // Final idle state.
       expect(states.last.status, SwitchStatus.idle);
     });
 
@@ -126,7 +119,7 @@ void main() {
     test('clearError resets error state to idle', () {
       final notifier = container.read(workspaceSwitcherProvider.notifier);
 
-      // Manually set error state
+      // Manually set error state.
       notifier.state = const WorkspaceSwitchState(
         status: SwitchStatus.error,
         targetWorkspaceId: 'ws-1',

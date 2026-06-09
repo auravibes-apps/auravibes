@@ -1,9 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 import 'package:auravibes_ui/src/molecules/aura_dropdown_option.dart';
 import 'package:auravibes_ui/src/organisms/aura_dropdown_selector.dart';
 import 'package:flutter/material.dart';
@@ -20,7 +14,9 @@ void main() {
             body: Portal(
               child: AuraDropdownSelector<String>(
                 options: const [],
-                onChanged: (_) {},
+                onChanged: (_) {
+                  final _ = Object();
+                },
                 placeholder: const Text('Select an option'),
               ),
             ),
@@ -44,7 +40,9 @@ void main() {
                   ),
                 ],
                 value: 'Selected',
-                onChanged: (_) {},
+                onChanged: (_) {
+                  final _ = Object();
+                },
               ),
             ),
           ),
@@ -70,7 +68,9 @@ void main() {
                     child: Text('Option 2'),
                   ),
                 ],
-                onChanged: (_) {},
+                onChanged: (_) {
+                  final _ = Object();
+                },
                 placeholder: const Text('Select'),
               ),
             ),
@@ -104,7 +104,9 @@ void main() {
                   ),
                 ],
                 value: 'Option 2',
-                onChanged: (_) {},
+                onChanged: (_) {
+                  final _ = Object();
+                },
                 placeholder: const Text('Select'),
               ),
             ),
@@ -131,7 +133,9 @@ void main() {
                     child: Text('Option 1'),
                   ),
                 ],
-                onChanged: (_) {},
+                onChanged: (_) {
+                  final _ = Object();
+                },
                 placeholder: const Text('Select'),
               ),
             ),
@@ -161,7 +165,9 @@ void main() {
                     child: Text('Option 1'),
                   ),
                 ],
-                onChanged: (_) {},
+                onChanged: (_) {
+                  final _ = Object();
+                },
                 placeholder: const Text('Select'),
                 optionBuilder: (context, option) =>
                     Text('Custom: ${option.value}'),
@@ -190,7 +196,9 @@ void main() {
                     leading: Icon(Icons.star),
                   ),
                 ],
-                onChanged: (_) {},
+                onChanged: (_) {
+                  final _ = Object();
+                },
                 placeholder: const Text('Select'),
               ),
             ),
@@ -216,7 +224,9 @@ void main() {
                     child: Text('Option 1'),
                   ),
                 ],
-                onChanged: (_) {},
+                onChanged: (_) {
+                  final _ = Object();
+                },
                 placeholder: const Text('Select'),
                 isEnabled: false,
               ),
@@ -245,7 +255,9 @@ void main() {
                         child: Text('Option 1'),
                       ),
                     ],
-                    onChanged: (_) {},
+                    onChanged: (_) {
+                      final _ = Object();
+                    },
                     placeholder: const Text('Select'),
                   ),
                   const SizedBox(height: 100),

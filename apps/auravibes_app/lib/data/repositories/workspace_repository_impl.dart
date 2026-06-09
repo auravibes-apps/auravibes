@@ -1,8 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
@@ -25,6 +20,7 @@ class WorkspaceRepositoryImpl implements WorkspaceRepository {
   @override
   Future<List<WorkspaceEntity>> getAllWorkspaces() async {
     final workspaceTables = await _database.workspaceDao.getAllWorkspaces();
+
     return workspaceTables.map(_mapToWorkspace).toList();
   }
 
@@ -38,6 +34,7 @@ class WorkspaceRepositoryImpl implements WorkspaceRepository {
   @override
   Future<WorkspaceEntity?> getWorkspaceById(String id) async {
     final workspacesTable = await _database.workspaceDao.getWorkspaceById(id);
+
     return workspacesTable != null ? _mapToWorkspace(workspacesTable) : null;
   }
 
@@ -46,12 +43,13 @@ class WorkspaceRepositoryImpl implements WorkspaceRepository {
     final workspaceTables = await _database.workspaceDao.getWorkspacesByType(
       type,
     );
+
     return workspaceTables.map(_mapToWorkspace).toList();
   }
 
   @override
   Future<WorkspaceEntity> createWorkspace(WorkspaceToCreate workspace) async {
-    // Validate workspace before creating
+    // Validate workspace before creating.
     if (!await validateWorkspace(workspace)) {
       throw const WorkspaceValidationException('Invalid workspace data');
     }
@@ -104,9 +102,9 @@ class WorkspaceRepositoryImpl implements WorkspaceRepository {
 
   @override
   Future<bool> deleteWorkspace(String id) async {
-    // Check if workspace exists
+    // Check if workspace exists.
     if (!await workspaceExists(id)) {
-      return false; // Return false instead of throwing for delete operations
+      return false; // Return false instead of throwing for delete operations.
     }
 
     // ON DELETE CASCADE at the schema level handles all related data.
@@ -123,6 +121,7 @@ class WorkspaceRepositoryImpl implements WorkspaceRepository {
     final workspaceTables = await _database.workspaceDao.searchWorkspacesByName(
       query,
     );
+
     return workspaceTables.map(_mapToWorkspace).toList();
   }
 
@@ -143,14 +142,15 @@ class WorkspaceRepositoryImpl implements WorkspaceRepository {
         _getValidationErrorToCreate(workspace),
       );
     }
+
     return true;
   }
 
   @override
   Future<bool> patchWorkspaceTimestamp(String id) async {
-    // Check if workspace exists
+    // Check if workspace exists.
     if (!await workspaceExists(id)) {
-      return false; // Return false instead of throwing for patch operations
+      return false; // Return false instead of throwing for patch operations.
     }
 
     return _database.workspaceDao.patchWorkspaceTimestamp(id);
@@ -217,6 +217,7 @@ class WorkspaceRepositoryImpl implements WorkspaceRepository {
         (url == null || url.isEmpty)) {
       return 'Remote workspace must have a URL';
     }
+
     return 'Unknown validation error';
   }
 }

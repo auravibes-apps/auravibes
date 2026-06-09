@@ -1,10 +1,4 @@
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 
 import 'dart:async';
@@ -24,6 +18,7 @@ import 'package:auravibes_app/features/chats/providers/conversation_streaming_ru
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_context.dart';
 import 'package:auravibes_app/features/chats/usecases/select_prompt_messages_usecase.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
+import 'package:auravibes_app/features/skills/usecases/build_skill_context_messages_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
 import 'package:auravibes_app/providers/chatbot_service_provider.dart';
 import 'package:auravibes_app/services/chatbot_service/build_prompt_chat_messages.dart';
@@ -63,7 +58,9 @@ class _ContinueAgentRunState {
   MessageEntity? firstMessage;
   bool hasAcknowledgedPendingUsers = false;
   StreamController<ChatResult<ChatMessage>>? streamingController;
+  StreamController<ChatResult<ChatMessage>>? uiStreamingController;
   Future<void>? persistenceFuture;
+  Future<void>? uiStreamingFuture;
   StreamSubscription<ChatResult<ChatMessage>>? responseSubscription;
   Future<void>? activeChunkProcessing;
   final Stopwatch stopwatch = Stopwatch()..start();
@@ -84,6 +81,7 @@ class ContinueAgentUsecase {
     required this.agentCancellationRuntime,
     required this.monitoringService,
     required this.selectPromptMessagesUsecase,
+    this.buildSkillContextMessagesUsecase,
   });
 
   final ChatbotService chatbotService;
@@ -96,6 +94,7 @@ class ContinueAgentUsecase {
   final AgentCancellationRuntime agentCancellationRuntime;
   final MonitoringService monitoringService;
   final SelectPromptMessagesUsecase selectPromptMessagesUsecase;
+  final BuildSkillContextMessagesUsecase? buildSkillContextMessagesUsecase;
 
   Future<ContinueAgentResult> call({
     required String conversationId,
@@ -106,6 +105,12 @@ class ContinueAgentUsecase {
     final conversation = await _loadConversation(conversationId);
     final foundModel = await _loadSelectedModel(conversation);
     final messages = await _selectPromptMessages(conversationId);
+    final skillContextMessages =
+        await buildSkillContextMessagesUsecase?.call(
+          conversationId: conversationId,
+          workspaceId: conversation.workspaceId,
+        ) ??
+        const <ChatMessage>[];
     final tools = await loadConversationToolSpecsUsecase.call(
       conversationId: conversationId,
       workspaceId: conversation.workspaceId,
@@ -116,6 +121,7 @@ class ContinueAgentUsecase {
       context: context,
       foundModel: foundModel,
       messages: messages,
+      skillContextMessages: skillContextMessages,
       tools: tools,
     );
   }
@@ -127,6 +133,7 @@ class ContinueAgentUsecase {
     if (conversation == null) {
       throw Exception('Conversation not found');
     }
+
     return conversation;
   }
 
@@ -150,6 +157,7 @@ class ContinueAgentUsecase {
       'provider=${foundModel.modelsProvider.type} '
       'supportsReasoning=${selectedModel.supportsReasoning}',
     );
+
     return foundModel;
   }
 
@@ -158,9 +166,13 @@ class ContinueAgentUsecase {
     required AgentIterationContext? context,
     required WorkspaceModelSelectionWithConnectionEntity foundModel,
     required List<MessageEntity> messages,
+    required List<ChatMessage> skillContextMessages,
     required List<ToolSpec> tools,
   }) async {
-    final chatHistory = const BuildPromptChatMessages()(messages);
+    final chatHistory = [
+      ...skillContextMessages,
+      ...const BuildPromptChatMessages()(messages),
+    ];
     _logger.info(
       'debug:prompt ready conversation=$conversationId '
       'messages=${messages.length} chatHistory=${chatHistory.length} '
@@ -169,17 +181,23 @@ class ContinueAgentUsecase {
     assert(
       () {
         final firstNonSystem = chatHistory.cast<ChatMessage?>().firstWhere(
-          (m) => m?.role != ChatMessageRole.system,
+          (m) =>
+              m != null &&
+              m.role != ChatMessageRole.system &&
+              !m.isSkillContext,
           orElse: () => null,
         );
+
         return firstNonSystem == null ||
             firstNonSystem.role == ChatMessageRole.user;
       }(),
       () {
         final firstNonSystemRole = chatHistory
             .where((m) => m.role != ChatMessageRole.system)
+            .where((m) => !m.isSkillContext)
             .firstOrNull
             ?.role;
+
         return 'First non-system message after compaction must '
             'be user, got $firstNonSystemRole';
       }(),
@@ -288,6 +306,24 @@ class ContinueAgentUsecase {
           .drain<void>();
   }
 
+  void _startUiStreaming(
+    _ContinueAgentRunState state,
+    String messageId,
+  ) {
+    final uiStreamingController =
+        StreamController<ChatResult<ChatMessage>>.broadcast();
+    state
+      ..uiStreamingController = uiStreamingController
+      ..uiStreamingFuture = uiStreamingController.stream
+          .coalescingSave(
+            store: (result) async {
+              await Future<void>.delayed(Duration.zero);
+              messagesStreamingRuntime.updateResult(result, messageId);
+            },
+          )
+          .drain<void>();
+  }
+
   void _listenToResponse(
     _ContinueAgentRunState state,
     Stream<ChatResult<ChatMessage>> responseStream,
@@ -337,6 +373,7 @@ class ContinueAgentUsecase {
         );
         await state.responseSubscription?.cancel();
         _completeResponse(state);
+
         return;
       }
 
@@ -360,6 +397,7 @@ class ContinueAgentUsecase {
         'debug:chunk ignored after cancellation '
         'conversation=${state.conversationId}',
       );
+
       return;
     }
 
@@ -383,12 +421,15 @@ class ContinueAgentUsecase {
     await _ensureAssistantMessage(state, currentResult);
     final currentMessage = state.firstMessage;
     final streamingController = state.streamingController;
-    if (currentMessage == null || streamingController == null) {
+    final uiStreamingController = state.uiStreamingController;
+    if (currentMessage == null ||
+        streamingController == null ||
+        uiStreamingController == null) {
       throw StateError('Assistant stream is not initialized');
     }
 
     streamingController.add(currentResult);
-    messagesStreamingRuntime.updateResult(currentResult, currentMessage.id);
+    uiStreamingController.add(currentResult);
   }
 
   Future<void> _ensureAssistantMessage(
@@ -424,6 +465,7 @@ class ContinueAgentUsecase {
       state.subs,
       firstMessage.id,
     );
+    _startUiStreaming(state, firstMessage.id);
   }
 
   void _handleResponseError(
@@ -444,6 +486,7 @@ class ContinueAgentUsecase {
         stackTrace: stackTrace,
       );
       _completeResponse(state);
+
       return;
     }
 
@@ -492,10 +535,14 @@ class ContinueAgentUsecase {
 
   Future<void> _closePersistence(_ContinueAgentRunState state) async {
     final _ = await state.streamingController?.close();
+    final _ = await state.uiStreamingController?.close();
     await state.persistenceFuture;
+    await state.uiStreamingFuture;
     state
       ..streamingController = null
-      ..persistenceFuture = null;
+      ..uiStreamingController = null
+      ..persistenceFuture = null
+      ..uiStreamingFuture = null;
   }
 
   Future<Never> _handleContinuationError(
@@ -529,7 +576,9 @@ class ContinueAgentUsecase {
     state.stage = 'cleanup';
     await state.responseSubscription?.cancel();
     final _ = await state.streamingController?.close();
+    final _ = await state.uiStreamingController?.close();
     await state.persistenceFuture;
+    await state.uiStreamingFuture;
     conversationStreamingRuntime.remove(state.conversationId);
     final firstMessage = state.firstMessage;
     if (firstMessage != null && !state.streamingRuntimeRemoved) {
@@ -558,6 +607,7 @@ class ContinueAgentUsecase {
         const MessagePatch(status: MessageStatus.sent),
       );
     }
+
     return true;
   }
 
@@ -674,5 +724,12 @@ final continueAgentUsecaseProvider = Provider<ContinueAgentUsecase>((ref) {
     agentCancellationRuntime: ref.watch(agentCancellationRuntimeProvider),
     monitoringService: ref.watch(monitoringServiceProvider),
     selectPromptMessagesUsecase: ref.watch(selectPromptMessagesUsecaseProvider),
+    buildSkillContextMessagesUsecase: ref.watch(
+      buildSkillContextMessagesUsecaseProvider,
+    ),
   );
 });
+
+extension on ChatMessage {
+  bool get isSkillContext => metadata['kind'] == skillContextMetadataKind;
+}

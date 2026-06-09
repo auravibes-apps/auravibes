@@ -1,10 +1,5 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-moving-to-variable
 // Required: Existing code repeats lookups where extraction adds noise.
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 
 import 'package:auravibes_app/data/repositories/tools_groups_repository_impl.dart';
@@ -23,6 +18,7 @@ part 'grouped_tools_notifier.g.dart';
 @Riverpod(keepAlive: true)
 ToolsGroupsRepository toolsGroupsRepository(Ref ref) {
   final appDatabase = ref.watch(appDatabaseProvider);
+
   return ToolsGroupsRepositoryImpl(appDatabase);
 }
 
@@ -184,6 +180,7 @@ Future<int> enabledToolsCount(Ref ref, String workspaceId) async {
   final groupedTools = await ref.watch(
     groupedToolsProvider(workspaceId).future,
   );
+
   return groupedTools.fold<int>(
     0,
     (sum, group) => sum + group.enabledToolsCount,
@@ -196,6 +193,7 @@ Future<int> totalToolsCount(Ref ref, String workspaceId) async {
   final groupedTools = await ref.watch(
     groupedToolsProvider(workspaceId).future,
   );
+
   return groupedTools.fold<int>(
     0,
     (sum, group) => sum + group.totalToolsCount,

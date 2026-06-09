@@ -203,13 +203,13 @@ abstract class _$WorkspaceToolsNotifier
   }
 }
 
-/// Provider that returns the list of available built-in tools
+/// Provider that returns the list of available built-in tools.
 /// that can be added to the workspace
 
 @ProviderFor(availableToolsToAdd)
 final availableToolsToAddProvider = AvailableToolsToAddFamily._();
 
-/// Provider that returns the list of available built-in tools
+/// Provider that returns the list of available built-in tools.
 /// that can be added to the workspace
 
 final class AvailableToolsToAddProvider
@@ -222,7 +222,7 @@ final class AvailableToolsToAddProvider
     with
         $FutureModifier<List<UserToolType>>,
         $FutureProvider<List<UserToolType>> {
-  /// Provider that returns the list of available built-in tools
+  /// Provider that returns the list of available built-in tools.
   /// that can be added to the workspace
   AvailableToolsToAddProvider._({
     required AvailableToolsToAddFamily super.from,
@@ -271,7 +271,7 @@ final class AvailableToolsToAddProvider
 String _$availableToolsToAddHash() =>
     r'b4421c2ea167f1368160bbd3e3fc633b1058cab5';
 
-/// Provider that returns the list of available built-in tools
+/// Provider that returns the list of available built-in tools.
 /// that can be added to the workspace
 
 final class AvailableToolsToAddFamily extends $Family
@@ -285,7 +285,7 @@ final class AvailableToolsToAddFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// Provider that returns the list of available built-in tools
+  /// Provider that returns the list of available built-in tools.
   /// that can be added to the workspace
 
   AvailableToolsToAddProvider call(String workspaceId) =>

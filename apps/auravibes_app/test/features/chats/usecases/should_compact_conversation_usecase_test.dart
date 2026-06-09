@@ -1,21 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-top-level-members-in-tests
-// Required: Test files keep shared fixtures and helpers top-level.
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: missing-test-assertion
-// Required: Tests cover guard clauses that return without assertions.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-correct-type-name
-// Required: Test doubles mirror repository contract names.
-
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
@@ -28,17 +10,20 @@ import 'package:mocktail/mocktail.dart';
 
 class MockMessageRepository extends Mock implements MessageRepository {}
 
-class MockWorkspaceCompactionSettingsRepository extends Mock
+class MockCompactionSettingsRepository extends Mock
     implements WorkspaceCompactionSettingsRepository {}
 
 void main() {
-  late MockMessageRepository mockRepository;
-  late MockWorkspaceCompactionSettingsRepository mockSettingsRepo;
-  late ShouldCompactConversationUsecase usecase;
+  var mockRepository = MockMessageRepository();
+  var mockSettingsRepo = MockCompactionSettingsRepository();
+  var usecase = ShouldCompactConversationUsecase(
+    messageRepository: mockRepository,
+    settingsRepository: mockSettingsRepo,
+  );
 
   setUp(() {
     mockRepository = MockMessageRepository();
-    mockSettingsRepo = MockWorkspaceCompactionSettingsRepository();
+    mockSettingsRepo = MockCompactionSettingsRepository();
   });
 
   MessageEntity _makeMessage({
@@ -408,17 +393,22 @@ void main() {
         contextLimit: 128000,
       );
 
-      verify(() => mockSettingsRepo.getEffectiveSettings(any())).called(1);
+      expect(
+        () => verify(
+          () => mockSettingsRepo.getEffectiveSettings(any()),
+        ).called(1),
+        returnsNormally,
+      );
     });
   });
 
   group('Saved settings integration', () {
-    late MockMessageRepository mockRepository;
-    late MockWorkspaceCompactionSettingsRepository mockSettingsRepo;
+    var mockRepository = MockMessageRepository();
+    var mockSettingsRepo = MockCompactionSettingsRepository();
 
     setUp(() {
       mockRepository = MockMessageRepository();
-      mockSettingsRepo = MockWorkspaceCompactionSettingsRepository();
+      mockSettingsRepo = MockCompactionSettingsRepository();
     });
 
     MessageEntity _makeMessage({
@@ -599,8 +589,8 @@ void main() {
           contextLimit: 128000,
         );
 
-        // 10 args + 10 response + 0 content = 20 chars / 4 = 5 tokens
-        // 5/128000 = 0.004% → way below 1% → char count fallback works
+        // 10 Args + 10 response + 0 content = 20 chars / 4 = 5 tokens.
+        // 5/128000 = 0.004% → Way below 1% → char count fallback works.
         expect(
           decision.reason,
           CompactionDecisionReason.belowPercentageThreshold,

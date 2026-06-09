@@ -1,8 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/domain/entities/conversation_tool_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
@@ -198,24 +193,25 @@ abstract class ConversationToolsRepository {
 
 /// Base exception for conversation tools-related operations.
 class ConversationToolsException implements Exception {
-  /// Creates a new ConversationToolsException
+  /// Creates a new ConversationToolsException.
   const ConversationToolsException(this.message, [this.cause]);
 
-  /// Error message describing the exception
+  /// Error message describing the exception.
   final String message;
 
-  /// Optional original exception that caused this exception
+  /// Optional original exception that caused this exception.
   final Exception? cause;
 
   @override
   String toString() {
     final causedBy = cause != null ? ' (Caused by: $cause)' : '';
+
     return 'ConversationToolsException: $message$causedBy';
   }
 }
 
 /// Exception thrown when conversation tool validation fails.
 class ConversationToolsValidationException extends ConversationToolsException {
-  /// Creates a new ConversationToolsValidationException
+  /// Creates a new ConversationToolsValidationException.
   const ConversationToolsValidationException(super.message, [super.cause]);
 }

@@ -1,6 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 
 import 'dart:convert';
@@ -112,6 +109,7 @@ void main() {
                 200,
               );
             }
+
             return Response('{}', 404);
           });
         },
@@ -150,6 +148,7 @@ void main() {
                 200,
               );
             }
+
             return Response('{}', 404);
           });
         },
@@ -183,6 +182,7 @@ void main() {
                 401,
               );
             }
+
             return Response('{}', 404);
           });
         },
@@ -217,6 +217,7 @@ void main() {
                 200,
               );
             }
+
             return Response('{}', 404);
           });
         },
@@ -260,6 +261,7 @@ void main() {
                 201,
               );
             }
+
             return Response('{}', 404);
           });
         },
@@ -291,6 +293,7 @@ void main() {
                 200,
               );
             }
+
             return Response('{}', 404);
           });
         },
@@ -328,6 +331,7 @@ void main() {
                 },
               );
             }
+
             return Response('{}', 404);
           });
         },
@@ -371,6 +375,7 @@ void main() {
               if (request.url.path.contains('/register')) {
                 return Response('{"error": "forbidden"}', 403);
               }
+
               return Response('{}', 404);
             });
           },
@@ -413,6 +418,7 @@ void main() {
             if (request.url.path.contains('/sse')) {
               return Response('Not JSON', 401);
             }
+
             return Response('{}', 404);
           });
         },

@@ -1,9 +1,4 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/mcp_servers.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools.dart';
@@ -65,21 +60,22 @@ class McpServersDao extends DatabaseAccessor<AppDatabase>
         tools,
       )..where((t) => t.workspaceToolsGroupId.equals(toolGroup.id))).get();
 
-      // delete tools
+      // Delete tools.
       for (final tool in toolsToDelete) {
         final _ = await (delete(
           tools,
         )..where((t) => t.id.equals(tool.id))).go();
       }
-      // delete tool groups
+      // Delete tool groups.
       final _ = await (delete(
         toolsGroups,
       )..where((tg) => tg.id.equals(toolGroup.id))).go();
-      // delete server
+      // Delete server.
 
       final rowsDeleted = await (delete(
         mcpServers,
       )..where((t) => t.id.equals(id))).go();
+
       return rowsDeleted > 0;
     });
   }
@@ -94,6 +90,7 @@ class McpServersDao extends DatabaseAccessor<AppDatabase>
     final _ = await (update(mcpServers)..where((t) => t.id.equals(id))).write(
       McpServersCompanion(isEnabled: Value(isEnabled)),
     );
+
     return getMcpServerById(id);
   }
 }

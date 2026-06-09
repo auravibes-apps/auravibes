@@ -1,16 +1,4 @@
-// ignore_for_file: no-magic-number
-// Required: UI tokens and layout use fixed design values.
-// ignore_for_file: avoid-returning-widgets
-// Required: Existing helper builders return widgets.
-// ignore_for_file: no-equal-arguments
-// Required: UI geometry uses repeated values for symmetric layout.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-extracting-callbacks
 // Required: Component callbacks stay colocated with UI state.
 
 import 'dart:async';
@@ -38,9 +26,9 @@ class _DelayTween extends Tween<double> {
   double evaluate(Animation<double> animation) => lerp(animation.value);
 }
 
-/// Loading Widget
+/// Loading Widget.
 class AuraLoadingCircle extends StatefulWidget {
-  /// constructor
+  /// Constructor.
   const AuraLoadingCircle({
     required this.colorVariant,
     super.key,
@@ -58,22 +46,22 @@ class AuraLoadingCircle extends StatefulWidget {
   /// rendering.
   final AuraColorVariant colorVariant;
 
-  /// size
+  /// Size.
   final double size;
 
-  /// itemSize
+  /// ItemSize.
   final double? itemSize;
 
-  /// itemCount
+  /// ItemCount.
   final int? itemCount;
 
-  /// itemBuilder
+  /// ItemBuilder.
   final IndexedWidgetBuilder? itemBuilder;
 
-  /// duration
+  /// Duration.
   final Duration duration;
 
-  /// controller
+  /// Controller.
   final AnimationController? controller;
 
   @override
@@ -89,6 +77,7 @@ class _AuraLoadingCircleState extends State<AuraLoadingCircle>
     if (controller == null) {
       throw StateError('_controller is not initialized');
     }
+
     return controller;
   }
 
@@ -116,12 +105,14 @@ class _AuraLoadingCircleState extends State<AuraLoadingCircle>
   Widget build(BuildContext context) {
     final itemSize = widget.itemSize ?? widget.size * 0.15;
     final itemCount = widget.itemCount ?? 12;
+    final itemBuilder = widget.itemBuilder;
 
     return Center(
       child: SizedBox.fromSize(
         child: Stack(
           children: List.generate(itemCount, (i) {
             final position = widget.size * 0.5;
+
             return Positioned.fill(
               left: position,
               top: position,
@@ -135,7 +126,18 @@ class _AuraLoadingCircleState extends State<AuraLoadingCircle>
                       end: 1,
                     ).animate(_requiredController),
                     child: SizedBox.fromSize(
-                      child: _itemBuilder(i),
+                      child:
+                          itemBuilder?.call(context, i) ??
+                          DecoratedBox(
+                            decoration: BoxDecoration(
+                              color:
+                                  context.auraColors.getColorOrNull(
+                                    widget.colorVariant,
+                                  ) ??
+                                  context.auraColors.primary,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
                       size: Size.square(itemSize),
                     ),
                   ),
@@ -145,22 +147,6 @@ class _AuraLoadingCircleState extends State<AuraLoadingCircle>
           }),
         ),
         size: Size.square(widget.size),
-      ),
-    );
-  }
-
-  Widget _itemBuilder(int index) {
-    final itemBuilder = widget.itemBuilder;
-    if (itemBuilder != null) {
-      return itemBuilder(context, index);
-    }
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color:
-            context.auraColors.getColorOrNull(widget.colorVariant) ??
-            context.auraColors.primary,
-        shape: BoxShape.circle,
       ),
     );
   }

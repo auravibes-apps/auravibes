@@ -1,12 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: UI tokens and layout use fixed design values.
-// ignore_for_file: avoid-returning-widgets
-// Required: Existing helper builders return widgets.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 
 import 'package:auravibes_ui/src/atoms/aura_field_label.dart';
@@ -92,7 +83,31 @@ class _AuraFieldWrapperState extends State<AuraFieldWrapper> {
           if (label != null)
             AuraFieldLabel(child: label, isRequired: widget.isRequired),
           if (label != null) const SizedBox(height: DesignSpacing.xs),
-          _buildFieldContainer(auraColors),
+          AuraPressable(
+            child: AnimatedContainer(
+              decoration: BoxDecoration(
+                // Color: _getBackgroundColor(auraColors),.
+                border: Border.all(
+                  color: _getBorderColor(auraColors),
+                ),
+                borderRadius: const BorderRadius.all(
+                  Radius.circular(DesignBorderRadius.xl),
+                ),
+                boxShadow: _getBoxShadow(auraColors),
+              ),
+              child: widget.child,
+              duration: DesignDuration.normal,
+            ),
+            color: auraColors.primary,
+            decoration: BoxDecoration(
+              color: _getBackgroundColor(auraColors),
+              borderRadius: const BorderRadius.all(
+                Radius.circular(DesignBorderRadius.xl),
+              ),
+              // Color: auraColors.primary,.
+            ),
+            onPressed: widget.isEnabled ? widget.onTap : null,
+          ),
           if (widget.hint != null || widget.error != null)
             const SizedBox(height: DesignSpacing.xs),
           if (widget.hint != null || widget.error != null)
@@ -103,37 +118,10 @@ class _AuraFieldWrapperState extends State<AuraFieldWrapper> {
     );
   }
 
-  Widget _buildFieldContainer(AuraColorScheme auraColors) {
-    return AuraPressable(
-      child: AnimatedContainer(
-        decoration: BoxDecoration(
-          // color: _getBackgroundColor(auraColors),
-          border: Border.all(
-            color: _getBorderColor(auraColors),
-          ),
-          borderRadius: const BorderRadius.all(
-            Radius.circular(DesignBorderRadius.xl),
-          ),
-          boxShadow: _getBoxShadow(auraColors),
-        ),
-        child: widget.child,
-        duration: DesignDuration.normal,
-      ),
-      color: auraColors.primary,
-      decoration: BoxDecoration(
-        color: _getBackgroundColor(auraColors),
-        borderRadius: const BorderRadius.all(
-          Radius.circular(DesignBorderRadius.xl),
-        ),
-        // color: auraColors.primary,
-      ),
-      onPressed: widget.isEnabled ? widget.onTap : null,
-    );
-  }
-
   Color _getBackgroundColor(AuraColorScheme colors) {
     if (!widget.isEnabled) return colors.surfaceVariant.withValues(alpha: 0.5);
     if (widget.isReadOnly) return colors.surfaceVariant;
+
     return colors.surface;
   }
 

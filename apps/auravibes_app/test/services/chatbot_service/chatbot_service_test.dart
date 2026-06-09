@@ -1,17 +1,4 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-substring
-// Required: Tests assert existing code-unit substring behavior.
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-static-class
-// Required: Tests keep fixture helpers and fakes top-level.
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/tool_spec.dart';
@@ -21,6 +8,7 @@ import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
 import 'package:auravibes_app/services/chatbot_service/provider_factory.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/secret_key_manager.dart';
+import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:collection/collection.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -148,6 +136,79 @@ void main() {
         'tool',
       ]);
       expect(capturedRequest?.messages[2].text, 'model part');
+    });
+
+    test('encodes unsafe tool refs before sending provider messages', () async {
+      genkit.ModelRequest? capturedRequest;
+      final providerFactory = _FakeProviderFactory(
+        onRequest: (request) => capturedRequest = request,
+      );
+      final service = _createService(providerFactory: providerFactory);
+
+      final _ = await service.sendMessage(
+        _makeConfig(type: ModelProvidersType.anthropic),
+        [
+          ChatMessage(
+            role: ChatMessageRole.tool,
+            parts: [
+              genkit.ToolResponsePart(
+                toolResponse: genkit.ToolResponse(
+                  ref: 'skill_context:example',
+                  name: 'skill_context',
+                  output: '<skill />',
+                ),
+              ),
+            ],
+          ),
+          ChatMessage.model(
+            '',
+            parts: [
+              genkit.ToolRequestPart(
+                toolRequest: genkit.ToolRequest(
+                  ref: 'tool:1',
+                  name: 'lookup_weather',
+                  input: const {'city': 'Medellin'},
+                ),
+              ),
+            ],
+          ),
+          ChatMessage(
+            role: ChatMessageRole.tool,
+            parts: [
+              genkit.ToolResponsePart(
+                toolResponse: genkit.ToolResponse(
+                  ref: 'tool:1',
+                  name: 'lookup_weather',
+                  output: 'sunny',
+                ),
+              ),
+            ],
+          ),
+        ],
+      ).toList();
+
+      final skillContextResult =
+          capturedRequest?.messages.firstOrNull?.content.single
+                  .toJson()['toolResponse']
+              as Map<String, Object?>?;
+      final replayedRequest =
+          capturedRequest?.messages[1].content.single.toJson()['toolRequest']
+              as Map<String, Object?>?;
+      final replayedResult =
+          capturedRequest?.messages[2].content.single.toJson()['toolResponse']
+              as Map<String, Object?>?;
+      final refs = [
+        skillContextResult?['ref'],
+        replayedRequest?['ref'],
+        replayedResult?['ref'],
+      ];
+
+      expect(refs, [
+        'skill_context_x3a_example',
+        'tool_x3a_1',
+        'tool_x3a_1',
+      ]);
+      expect(refs, everyElement(matches(RegExp(r'^[a-zA-Z0-9_-]+$'))));
     });
 
     test(
@@ -363,12 +424,12 @@ void main() {
       expect(titles, ['hello world from failure']);
     });
 
-    test('strips double quotes from title', () async {
+    test('strips double quotes from title', () {
       final stripped = _stripQuotes('"My Title"');
       expect(stripped, 'My Title');
     });
 
-    test('strips single quotes from title', () async {
+    test('strips single quotes from title', () {
       final quote = String.fromCharCode(39);
       final stripped = _stripQuotes('${quote}My Title$quote');
       expect(stripped, 'My Title');
@@ -407,47 +468,47 @@ void main() {
 String _stripQuotes(String title) {
   var processed = title.trim();
   if (processed.startsWith('"') && processed.endsWith('"')) {
-    processed = processed.substring(1, processed.length - 1);
+    processed = processed.withoutEdgeCharacters();
   }
   if (processed.length > 1 &&
-      processed.codeUnitAt(0) == 39 &&
-      processed.codeUnitAt(processed.length - 1) == 39) {
-    processed = processed.substring(1, processed.length - 1);
+      processed.startsWith(String.fromCharCode(39)) &&
+      processed.endsWith(String.fromCharCode(39))) {
+    processed = processed.withoutEdgeCharacters();
   }
+
   return processed;
 }
 
 String _stripPrefixes(String title) {
   var processed = title.trim();
   if (processed.startsWith('Title:')) {
-    processed = processed.substring(6).trim();
+    processed = processed.replaceFirst('Title:', '').trim();
   }
   if (processed.startsWith('Conversation:')) {
-    processed = processed.substring(13).trim();
+    processed = processed.replaceFirst('Conversation:', '').trim();
   }
+
   return processed;
 }
 
 String _processTitle(String title) {
   var processed = title.trim();
   if (processed.startsWith('"') && processed.endsWith('"')) {
-    processed = processed.substring(1, processed.length - 1);
+    processed = processed.withoutEdgeCharacters();
   }
   if (processed.length > 1 &&
-      processed.codeUnitAt(0) == 39 &&
-      processed.codeUnitAt(processed.length - 1) == 39) {
-    processed = processed.substring(1, processed.length - 1);
+      processed.startsWith(String.fromCharCode(39)) &&
+      processed.endsWith(String.fromCharCode(39))) {
+    processed = processed.withoutEdgeCharacters();
   }
   if (processed.startsWith('Title:')) {
-    processed = processed.substring(6).trim();
+    processed = processed.replaceFirst('Title:', '').trim();
   }
   if (processed.startsWith('Conversation:')) {
-    processed = processed.substring(13).trim();
+    processed = processed.replaceFirst('Conversation:', '').trim();
   }
-  if (processed.length > 50) {
-    return '${processed.substring(0, 47)}...';
-  }
-  return processed;
+
+  return processed.truncateCharacters(50);
 }
 
 ChatbotService _createService({ProviderFactory? providerFactory}) {
@@ -521,6 +582,7 @@ class _FakeProviderFactory extends ProviderFactory {
           throw Exception('failed');
         }
         chunks.forEach(context.sendChunk);
+
         return response;
       },
     );

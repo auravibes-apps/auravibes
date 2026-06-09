@@ -1,12 +1,5 @@
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: no-object-declaration
-// Required: Genkit tool payloads expose raw Object values.
-// ignore_for_file: prefer-moving-to-variable
 // Required: Existing code repeats lookups where extraction adds noise.
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 
 import 'dart:convert';
@@ -36,14 +29,19 @@ class ChatMessageToolCall {
   final ToolRequest request;
   String get callId => request.ref ?? '';
   String get toolName => request.name;
-  Object? get argumentsRaw => request.input;
+  String get argumentsRaw => jsonEncode(request.input);
 }
 
 class ChatMessageToolResult {
   ChatMessageToolResult(this.response);
   final ToolResponse response;
   String get callId => response.ref ?? '';
-  Object? get result => response.output;
+  String get result {
+    return switch (response.output) {
+      final String raw => raw,
+      final raw => jsonEncode(raw),
+    };
+  }
 }
 
 @freezed
@@ -90,6 +88,7 @@ abstract class ChatMessage with _$ChatMessage {
     final newContent = content + delta.content;
     final newParts = [...parts, ...delta.parts];
     final newMetadata = {...metadata, ...delta.metadata};
+
     return ChatMessage(
       role: role,
       content: newContent,
@@ -129,6 +128,7 @@ abstract class LanguageModelUsage with _$LanguageModelUsage {
 
   static int? _add(int? a, int? b) {
     if (a == null && b == null) return null;
+
     return (a ?? 0) + (b ?? 0);
   }
 }
@@ -159,6 +159,7 @@ extension ChatResultConcat on ChatResult<ChatMessage> {
   static String? _concatThinking(String? current, String? delta) {
     if (delta == null || delta.isEmpty) return current;
     if (current == null || current.isEmpty) return delta;
+
     return _joinThinking(current, delta);
   }
 }
@@ -173,10 +174,7 @@ extension ChatResultEntities on ChatResult<ChatMessage> {
           (tc) => MessageToolCallEntity(
             id: tc.callId,
             name: tc.toolName,
-            argumentsRaw: switch (tc.argumentsRaw) {
-              final String raw => raw,
-              final raw => jsonEncode(raw),
-            },
+            argumentsRaw: tc.argumentsRaw,
           ),
         )
         .toList();
@@ -209,11 +207,12 @@ extension ChatResultEntities on ChatResult<ChatMessage> {
     ];
 
     if (chunks.isEmpty) return null;
+
     return chunks.reduce(_joinThinking).trim();
   }
 
-  Map<String, Object?> get entityModelMetadata {
-    return <String, Object?>{
+  Map<String, dynamic> get entityModelMetadata {
+    return <String, dynamic>{
       ...metadata,
       ...output.metadata,
       for (final message in messages) ...message.metadata,
@@ -250,5 +249,6 @@ String _joinThinking(String current, String delta) {
       delta.trim().isNotEmpty &&
       !RegExp(r'\s$').hasMatch(current) &&
       !RegExp(r'^\s').hasMatch(delta);
+
   return needsSeparator ? '$current $delta' : '$current$delta';
 }

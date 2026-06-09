@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/responsive_sliding_drawer_controller.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -56,7 +54,7 @@ void main() {
     expect(find.byIcon(Icons.settings), findsOneWidget);
   });
 
-  testWidgets('preferredSize includes bottom height', (tester) async {
+  testWidgets('preferredSize includes bottom height', (tester) {
     const bar = AuraAppBarWithDrawer(
       title: Text('Test AppBar'),
       bottom: PreferredSize(
@@ -69,14 +67,18 @@ void main() {
       bar.preferredSize,
       equals(const Size.fromHeight(kToolbarHeight + 48)),
     );
+
+    return Future<void>.value();
   });
 
-  testWidgets('preferredSize without bottom is kToolbarHeight', (tester) async {
+  testWidgets('preferredSize without bottom is kToolbarHeight', (tester) {
     const bar = AuraAppBarWithDrawer(
       title: Text('Test AppBar'),
     );
 
     expect(bar.preferredSize, equals(const Size.fromHeight(kToolbarHeight)));
+
+    return Future<void>.value();
   });
 
   testWidgets('toggle drawer when controller available', (tester) async {

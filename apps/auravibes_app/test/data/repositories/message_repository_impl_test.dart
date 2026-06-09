@@ -1,21 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-static-class
-// Required: Tests keep fixture helpers and fakes top-level.
-
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
@@ -32,11 +14,16 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('MessageRepositoryImpl.watchMessagesByConversation', () {
-    late _TestAppDatabase database;
-    late MessageRepositoryImpl repository;
+    final initialDatabase = _TestAppDatabase((_) => const Stream.empty());
+    var database = initialDatabase;
+    var repository = MessageRepositoryImpl(database);
 
     tearDown(() async {
       await database.close();
+    });
+
+    tearDownAll(() async {
+      await initialDatabase.close();
     });
 
     test('maps streamed message rows into message entities', () async {
@@ -109,7 +96,9 @@ void main() {
         final subscription = repository
             .watchMessagesByConversation('conversation-1')
             .listen(
-              (_) {},
+              (_) {
+                final _ = Object();
+              },
               onError: (Object error, StackTrace stackTrace) {
                 errorCompleter.complete(error);
                 stackTraceCompleter.complete(stackTrace);
@@ -133,8 +122,11 @@ void main() {
   });
 
   group('MessageRepositoryImpl with real database', () {
-    late AppDatabase database;
-    late MessageRepositoryImpl repository;
+    final initialDatabase = AppDatabase(
+      connection: DatabaseConnection(NativeDatabase.memory()),
+    );
+    var database = initialDatabase;
+    var repository = MessageRepositoryImpl(database);
 
     setUp(() {
       database = AppDatabase(
@@ -145,6 +137,10 @@ void main() {
 
     tearDown(() async {
       await database.close();
+    });
+
+    tearDownAll(() async {
+      await initialDatabase.close();
     });
 
     test('getMessagesByConversation returns empty when no messages', () async {
@@ -274,7 +270,7 @@ void main() {
       expect(patched.content, 'updated');
     });
 
-    test('patchMessage throws for non-existent', () async {
+    test('patchMessage throws for non-existent', () {
       expect(
         () => repository.patchMessage(
           'nonexistent',
@@ -366,7 +362,7 @@ void main() {
       expect(valid, isTrue);
     });
 
-    test('validateMessage throws for invalid message', () async {
+    test('validateMessage throws for invalid message', () {
       expect(
         () => repository.validateMessage(
           const MessageToCreate(
@@ -507,7 +503,7 @@ void main() {
       },
     );
 
-    test('createMessage rejects empty user content with metadata', () async {
+    test('createMessage rejects empty user content with metadata', () {
       expect(
         () => repository.createMessage(
           const MessageToCreate(
@@ -525,7 +521,7 @@ void main() {
 
     test(
       'createMessage rejects empty assistant content with invalid metadata',
-      () async {
+      () {
         expect(
           () => repository.createMessage(
             const MessageToCreate(
@@ -544,7 +540,7 @@ void main() {
 
     test(
       'createMessage rejects empty assistant content with blank metadata',
-      () async {
+      () {
         expect(
           () => repository.createMessage(
             const MessageToCreate(
@@ -680,10 +676,20 @@ class _TestAppDatabase extends AppDatabase {
   final Stream<List<MessagesTable>> Function(String conversationId)
   _watchMessages;
 
-  late final MessageDao _testMessageDao = _TestMessageDao(this, _watchMessages);
+  MessageDao? _testMessageDao;
 
   @override
-  MessageDao get messageDao => _testMessageDao;
+  MessageDao get messageDao {
+    final existing = _testMessageDao;
+    if (existing != null) {
+      return existing;
+    }
+
+    final created = _TestMessageDao(this, _watchMessages);
+    _testMessageDao = created;
+
+    return created;
+  }
 }
 
 class _TestMessageDao extends MessageDao {

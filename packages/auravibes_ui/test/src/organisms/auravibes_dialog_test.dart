@@ -1,15 +1,3 @@
-// ignore_for_file: avoid-top-level-members-in-tests
-// Required: Test files keep shared fixtures and helpers top-level.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-static-class
-// Required: Tests keep fixture helpers and fakes top-level.
-
-// ignore_for_file: avoid-returning-widgets
-// Required: Widget tests use helpers that build widgets under test.
-
 import 'dart:async';
 
 import 'package:auravibes_ui/src/molecules/aura_button.dart';
@@ -19,16 +7,25 @@ import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Test helper to create a widget with Aura theme
-Widget wrapWithAuraTheme(Widget child) {
-  return MaterialApp(
-    home: Scaffold(
-      body: child,
-    ),
-    theme: ThemeData(
-      extensions: [AuraTheme.light],
-    ),
-  );
+/// Test helper to create a widget with Aura theme.
+class AuraThemeWrapper extends StatelessWidget {
+  /// Creates an [AuraThemeWrapper].
+  const AuraThemeWrapper({required this.child, super.key});
+
+  /// The widget under test.
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        body: child,
+      ),
+      theme: ThemeData(
+        extensions: [AuraTheme.light],
+      ),
+    );
+  }
 }
 
 /// Finds an [AuraButton] whose child is a [Text] widget with [label].
@@ -56,8 +53,8 @@ void main() {
   group('AuraConfirmDialog', () {
     testWidgets('renders with required parameters', (tester) async {
       await tester.pumpWidget(
-        wrapWithAuraTheme(
-          const AuraConfirmDialog(
+        const AuraThemeWrapper(
+          child: AuraConfirmDialog(
             title: Text('Confirm Action'),
             message: Text('Are you sure you want to proceed?'),
             confirmLabel: Text('Confirm'),
@@ -72,8 +69,8 @@ void main() {
 
     testWidgets('displays confirm and cancel buttons', (tester) async {
       await tester.pumpWidget(
-        wrapWithAuraTheme(
-          const AuraConfirmDialog(
+        const AuraThemeWrapper(
+          child: AuraConfirmDialog(
             title: Text('Delete Item'),
             message: Text('This action cannot be undone.'),
             confirmLabel: Text('Confirm'),
@@ -82,7 +79,7 @@ void main() {
         ),
       );
 
-      // Find the action buttons (default labels)
+      // Find the action buttons (default labels).
       expect(find.text('Confirm'), findsOneWidget);
       expect(find.text('Cancel'), findsOneWidget);
     });
@@ -91,8 +88,8 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        wrapWithAuraTheme(
-          const AuraConfirmDialog(
+        const AuraThemeWrapper(
+          child: AuraConfirmDialog(
             title: Text('Delete'),
             message: Text('Are you sure?'),
             confirmLabel: Text('Confirm'),
@@ -102,7 +99,7 @@ void main() {
         ),
       );
 
-      // The confirm button should have error styling
+      // The confirm button should have error styling.
       final confirmButton = findAuraButtonByColorVariant(
         AuraColorVariant.error,
       );
@@ -112,8 +109,8 @@ void main() {
 
     testWidgets('uses custom labels when provided', (tester) async {
       await tester.pumpWidget(
-        wrapWithAuraTheme(
-          const AuraConfirmDialog(
+        const AuraThemeWrapper(
+          child: AuraConfirmDialog(
             title: Text('Custom Title'),
             message: Text('Custom message'),
             confirmLabel: Text('Yes'),
@@ -128,8 +125,8 @@ void main() {
 
     testWidgets('applies custom colorVariant when provided', (tester) async {
       await tester.pumpWidget(
-        wrapWithAuraTheme(
-          const AuraConfirmDialog(
+        const AuraThemeWrapper(
+          child: AuraConfirmDialog(
             title: Text('Warning'),
             message: Text('Proceed with caution'),
             confirmLabel: Text('Confirm'),
@@ -148,8 +145,8 @@ void main() {
       var confirmCalled = false;
 
       await tester.pumpWidget(
-        wrapWithAuraTheme(
-          AuraConfirmDialog(
+        AuraThemeWrapper(
+          child: AuraConfirmDialog(
             title: const Text('Dialog Title'),
             message: const Text('Message'),
             confirmLabel: const Text('Confirm'),
@@ -161,7 +158,7 @@ void main() {
         ),
       );
 
-      // Use widget type finder to avoid matching title text
+      // Use widget type finder to avoid matching title text.
       final confirmButton = findAuraButtonByLabel('Confirm');
       await tester.tap(confirmButton);
       await tester.pump();
@@ -173,8 +170,8 @@ void main() {
       var cancelCalled = false;
 
       await tester.pumpWidget(
-        wrapWithAuraTheme(
-          AuraConfirmDialog(
+        AuraThemeWrapper(
+          child: AuraConfirmDialog(
             title: const Text('Dialog Title'),
             message: const Text('Message'),
             confirmLabel: const Text('Confirm'),
@@ -196,8 +193,8 @@ void main() {
   group('AuraAlertDialog', () {
     testWidgets('renders with required parameters', (tester) async {
       await tester.pumpWidget(
-        wrapWithAuraTheme(
-          const AuraAlertDialog(
+        const AuraThemeWrapper(
+          child: AuraAlertDialog(
             title: Text('Alert'),
             message: Text('Something happened.'),
             dismissLabel: Text('OK'),
@@ -211,8 +208,8 @@ void main() {
 
     testWidgets('displays dismiss button with default label', (tester) async {
       await tester.pumpWidget(
-        wrapWithAuraTheme(
-          const AuraAlertDialog(
+        const AuraThemeWrapper(
+          child: AuraAlertDialog(
             title: Text('Alert'),
             message: Text('Message'),
             dismissLabel: Text('OK'),
@@ -225,8 +222,8 @@ void main() {
 
     testWidgets('uses custom dismiss label when provided', (tester) async {
       await tester.pumpWidget(
-        wrapWithAuraTheme(
-          const AuraAlertDialog(
+        const AuraThemeWrapper(
+          child: AuraAlertDialog(
             title: Text('Alert'),
             message: Text('Message'),
             dismissLabel: Text('Got it'),
@@ -243,8 +240,8 @@ void main() {
       bool? dialogResult;
 
       await tester.pumpWidget(
-        wrapWithAuraTheme(
-          Builder(
+        AuraThemeWrapper(
+          child: Builder(
             builder: (context) => TextButton(
               onPressed: runDialogAction(() async {
                 dialogResult = await showAuraConfirmDialog(
@@ -262,15 +259,15 @@ void main() {
       await tester.tap(find.text('Open'));
       final _ = await tester.pumpAndSettle();
 
-      // Dialog should be visible (custom Container dialog)
+      // Dialog should be visible (custom Container dialog).
       expect(find.byType(AuraConfirmDialog), findsOneWidget);
 
-      // Use widget type finder to avoid matching title
+      // Use widget type finder to avoid matching title.
       final confirmButton = findAuraButtonByLabel('Confirm');
       await tester.tap(confirmButton);
       final _ = await tester.pumpAndSettle();
 
-      // Dialog should be dismissed
+      // Dialog should be dismissed.
       expect(find.byType(AuraConfirmDialog), findsNothing);
       expect(dialogResult, isTrue);
     });
@@ -281,8 +278,8 @@ void main() {
       bool? dialogResult;
 
       await tester.pumpWidget(
-        wrapWithAuraTheme(
-          Builder(
+        AuraThemeWrapper(
+          child: Builder(
             builder: (context) => TextButton(
               onPressed: runDialogAction(() async {
                 dialogResult = await showAuraConfirmDialog(
@@ -300,14 +297,14 @@ void main() {
       await tester.tap(find.text('Open'));
       final _ = await tester.pumpAndSettle();
 
-      // Dialog should be visible
+      // Dialog should be visible.
       expect(find.byType(AuraConfirmDialog), findsOneWidget);
 
-      // Tap cancel
+      // Tap cancel.
       await tester.tap(find.text('Cancel'));
       final _ = await tester.pumpAndSettle();
 
-      // Dialog should be dismissed
+      // Dialog should be dismissed.
       expect(find.byType(AuraConfirmDialog), findsNothing);
       expect(dialogResult, isFalse);
     });
@@ -316,8 +313,8 @@ void main() {
   group('showAuraAlertDialog', () {
     testWidgets('shows dialog and dismisses on button tap', (tester) async {
       await tester.pumpWidget(
-        wrapWithAuraTheme(
-          Builder(
+        AuraThemeWrapper(
+          child: Builder(
             builder: (context) => TextButton(
               onPressed: runDialogAction(() async {
                 await showAuraAlertDialog(
@@ -337,18 +334,18 @@ void main() {
 
       expect(find.byType(AuraAlertDialog), findsOneWidget);
 
-      // Tap dismiss
+      // Tap dismiss.
       await tester.tap(find.text('OK'));
       final _ = await tester.pumpAndSettle();
 
-      // Dialog should be dismissed
+      // Dialog should be dismissed.
       expect(find.byType(AuraAlertDialog), findsNothing);
     });
 
     testWidgets('does not dismiss when tapping outside dialog', (tester) async {
       await tester.pumpWidget(
-        wrapWithAuraTheme(
-          Builder(
+        AuraThemeWrapper(
+          child: Builder(
             builder: (context) => TextButton(
               onPressed: runDialogAction(() async {
                 await showAuraAlertDialog(
@@ -376,7 +373,7 @@ void main() {
       // Alert dialog should still be visible (non-barrier-dismissible).
       expect(find.byType(AuraAlertDialog), findsOneWidget);
 
-      // Close explicitly
+      // Close explicitly.
       await tester.tap(find.text('OK'));
       final _ = await tester.pumpAndSettle();
       expect(find.byType(AuraAlertDialog), findsNothing);
@@ -388,8 +385,8 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        wrapWithAuraTheme(
-          Builder(
+        AuraThemeWrapper(
+          child: Builder(
             builder: (context) => TextButton(
               onPressed: runDialogAction(() async {
                 final _ = await showAuraConfirmDialog(
@@ -407,17 +404,17 @@ void main() {
       await tester.tap(find.text('Open'));
       final _ = await tester.pumpAndSettle();
 
-      // The dialog should NOT use Material's AlertDialog
+      // The dialog should NOT use Material's AlertDialog.
       expect(find.byType(AlertDialog), findsNothing);
 
-      // Instead, it should use a custom Container
+      // Instead, it should use a custom Container.
       expect(find.byType(Container), findsWidgets);
     });
 
     testWidgets('showAuraAlertDialog does NOT use AlertDialog', (tester) async {
       await tester.pumpWidget(
-        wrapWithAuraTheme(
-          Builder(
+        AuraThemeWrapper(
+          child: Builder(
             builder: (context) => TextButton(
               onPressed: runDialogAction(() async {
                 await showAuraAlertDialog(
@@ -435,10 +432,10 @@ void main() {
       await tester.tap(find.text('Open'));
       final _ = await tester.pumpAndSettle();
 
-      // The dialog should NOT use Material's AlertDialog
+      // The dialog should NOT use Material's AlertDialog.
       expect(find.byType(AlertDialog), findsNothing);
 
-      // Instead, it should use a custom Container
+      // Instead, it should use a custom Container.
       expect(find.byType(Container), findsWidgets);
     });
 
@@ -448,8 +445,8 @@ void main() {
       bool? result;
 
       await tester.pumpWidget(
-        wrapWithAuraTheme(
-          Builder(
+        AuraThemeWrapper(
+          child: Builder(
             builder: (context) => TextButton(
               onPressed: runDialogAction(() async {
                 result = await showAuraConfirmDialog(
@@ -467,7 +464,7 @@ void main() {
       await tester.tap(find.text('Open'));
       final _ = await tester.pumpAndSettle();
 
-      // Tap cancel button
+      // Tap cancel button.
       await tester.tap(find.text('Cancel'));
       final _ = await tester.pumpAndSettle();
 
@@ -480,8 +477,8 @@ void main() {
       bool? result;
 
       await tester.pumpWidget(
-        wrapWithAuraTheme(
-          Builder(
+        AuraThemeWrapper(
+          child: Builder(
             builder: (context) => TextButton(
               onPressed: runDialogAction(() async {
                 result = await showAuraConfirmDialog(
@@ -499,11 +496,11 @@ void main() {
       await tester.tap(find.text('Open'));
       final _ = await tester.pumpAndSettle();
 
-      // Tap outside the dialog (barrier)
+      // Tap outside the dialog (barrier).
       await tester.tapAt(const Offset(1, 1));
       final _ = await tester.pumpAndSettle();
 
-      // Dialog should be dismissed and result should be null
+      // Dialog should be dismissed and result should be null.
       expect(find.byType(AuraConfirmDialog), findsNothing);
       expect(result, isNull);
     });
@@ -514,8 +511,8 @@ void main() {
         bool? result;
 
         await tester.pumpWidget(
-          wrapWithAuraTheme(
-            Builder(
+          AuraThemeWrapper(
+            child: Builder(
               builder: (context) => TextButton(
                 onPressed: runDialogAction(() async {
                   result = await showAuraConfirmDialog(
@@ -534,16 +531,16 @@ void main() {
         await tester.tap(find.text('Open'));
         final _ = await tester.pumpAndSettle();
 
-        // Tap outside the dialog (barrier)
+        // Tap outside the dialog (barrier).
         await tester.tapAt(const Offset(1, 1));
         final _ = await tester.pumpAndSettle();
 
-        // Dialog should remain visible and unresolved
+        // Dialog should remain visible and unresolved.
         expect(find.text('Title'), findsOneWidget);
         expect(find.text('Message'), findsOneWidget);
         expect(result, isNull);
 
-        // Close explicitly
+        // Close explicitly.
         await tester.tap(find.text('Cancel'));
         final _ = await tester.pumpAndSettle();
         expect(result, isFalse);

@@ -1,6 +1,3 @@
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
 import 'package:auravibes_app/domain/repositories/conversation_tools_repository.dart';
@@ -44,6 +41,16 @@ class ResolveToolApprovalDecisionUsecase {
     required String toolCallId,
     required ResolvedTool resolvedTool,
   }) async {
+    if (resolvedTool.isSkillControl ||
+        resolvedTool.isSkillTemplate ||
+        resolvedTool.isSkillNative) {
+      return ToolApprovalDecision(
+        toolCallId: toolCallId,
+        permissionResult: ToolPermissionResult.granted,
+        permissionTableId: resolvedTool.tableId,
+      );
+    }
+
     final permissionTableId = await _resolvePermissionTableId(resolvedTool);
     if (permissionTableId == null) {
       return ToolApprovalDecision(

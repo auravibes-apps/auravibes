@@ -1,5 +1,3 @@
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/screens/chats_list_screen.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
@@ -29,7 +27,7 @@ void main() {
     testWidgets('renders ChatsListScreen', (tester) async {
       await tester.runAsync(() async {
         await tester.pumpWidget(
-          testableApp(
+          TestableApp(
             child: Theme(
               data: ThemeData(extensions: [AuraTheme.light]),
               child: const ChatsListScreen(workspaceId: 'test-ws'),

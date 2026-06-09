@@ -1,6 +1,4 @@
-// ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -25,6 +23,7 @@ class ToolCountEnabledWidget extends ConsumerWidget {
         ),
       ),
     );
+
     return switch (countAsync) {
       AsyncLoading() => const AuraSpinner(),
 

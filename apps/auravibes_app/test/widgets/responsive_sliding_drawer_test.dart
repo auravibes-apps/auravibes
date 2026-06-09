@@ -1,11 +1,4 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 
 // ignore_for_file: cascade_invocations
 import 'package:auravibes_app/widgets/responsive_sliding_drawer_controller.dart';
@@ -67,7 +60,7 @@ void main() {
 
     testWidgets('of returns controller from context', (tester) async {
       final controller = ResponsiveSlidingDrawerController();
-      late ResponsiveSlidingDrawerController found;
+      ResponsiveSlidingDrawerController? found;
 
       await tester.pumpWidget(
         MaterialApp(
@@ -76,6 +69,7 @@ void main() {
             child: Builder(
               builder: (context) {
                 found = ResponsiveSlidingDrawerProvider.of(context);
+
                 return const SizedBox.shrink();
               },
             ),
@@ -83,7 +77,8 @@ void main() {
         ),
       );
 
-      expect(identical(found, controller), isTrue);
+      final foundController = found ?? fail('Expected controller');
+      expect(identical(foundController, controller), isTrue);
     });
 
     testWidgets('maybeOf returns null without provider', (tester) async {
@@ -94,6 +89,7 @@ void main() {
           home: Builder(
             builder: (context) {
               found = ResponsiveSlidingDrawerProvider.maybeOf(context);
+
               return const SizedBox.shrink();
             },
           ),
@@ -109,6 +105,7 @@ void main() {
           home: Builder(
             builder: (context) {
               final _ = ResponsiveSlidingDrawerProvider.of(context);
+
               return const SizedBox.shrink();
             },
           ),

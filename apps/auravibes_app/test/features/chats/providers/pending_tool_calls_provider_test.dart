@@ -1,22 +1,9 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: no-object-declaration
-// Required: Test fakes override noSuchMethod with Object return values.
-// ignore_for_file: prefer-static-class
-// Required: Tests keep fixture helpers and fakes top-level.
 
 // ignore_for_file: provider_dependencies
 // Required: provider unit tests read scoped providers directly.
+
+import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
@@ -24,15 +11,22 @@ import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
 import 'package:auravibes_app/domain/repositories/conversation_tools_repository.dart';
+import 'package:auravibes_app/domain/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/repositories/tools_groups_repository.dart';
 import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dart';
+import 'package:auravibes_app/features/chats/notifiers/messages_streaming_state.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
+import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart' as hooks;
 import 'package:riverpod/riverpod.dart';
 import 'package:riverpod_annotation/experimental/scope.dart';
+import 'package:rxdart/rxdart.dart';
 
 MessageToolCallEntity _pendingToolCall({
   required String id,
@@ -47,6 +41,7 @@ MessageEntity _assistantMessage({
   List<MessageToolCallEntity>? toolCalls,
 }) {
   final now = DateTime(2026);
+
   return MessageEntity(
     id: id,
     conversationId: conversationId,
@@ -89,23 +84,145 @@ class _FakeResolveToolApprovalDecisionUsecase
 
 class _NoOpConversationToolsRepository implements ConversationToolsRepository {
   @override
-  Object? noSuchMethod(Invocation invocation) => null;
+  Null noSuchMethod(Invocation invocation) => null;
 }
 
 class _NoOpToolsGroupsRepository implements ToolsGroupsRepository {
   @override
-  Object? noSuchMethod(Invocation invocation) => null;
+  Null noSuchMethod(Invocation invocation) => null;
 }
 
 class _NoOpWorkspaceToolsRepository implements WorkspaceToolsRepository {
   @override
-  Object? noSuchMethod(Invocation invocation) => null;
+  Null noSuchMethod(Invocation invocation) => null;
 }
 
-@Dependencies([pendingToolCalls])
+class _StreamingMessageRepository implements MessageRepository {
+  final StreamController<List<MessageEntity>> _controller =
+      StreamController<List<MessageEntity>>.broadcast();
+
+  void emit(List<MessageEntity> messages) => _controller.add(messages);
+
+  Future<void> dispose() => _controller.close();
+
+  @override
+  Stream<List<MessageEntity>> watchMessagesByConversation(
+    String conversationId,
+  ) => _controller.stream;
+
+  @override
+  Null noSuchMethod(Invocation invocation) => null;
+}
+
+@Dependencies([chatMessageIds, messageConversationById, pendingToolCalls])
 void main() {
+  testWidgets(
+    'updates from real chatMessagesProvider without overlapping '
+    'scheduler tasks',
+    (tester) async {
+      final repository = _StreamingMessageRepository();
+      addTearDown(repository.dispose);
+
+      await tester.pumpWidget(
+        hooks.ProviderScope(
+          overrides: [
+            conversationSelectedProvider.overrideWithValue('conv-1'),
+            messageRepositoryProvider.overrideWithValue(repository),
+          ],
+          child: hooks.Consumer(
+            builder: (context, ref, child) {
+              final pendingCalls = ref.watch(pendingToolCallsProvider);
+
+              return Directionality(
+                textDirection: TextDirection.ltr,
+                child: Text('${pendingCalls.value?.length ?? 0}'),
+              );
+            },
+          ),
+        ),
+      );
+
+      repository
+        ..emit(const <MessageEntity>[])
+        ..emit([
+          _assistantMessage(
+            id: 'msg-1',
+            conversationId: 'conv-1',
+          ),
+        ]);
+      await tester.pump();
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('0'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'streams assistant response through real message providers without '
+    'overlapping scheduler tasks',
+    (tester) async {
+      final repository = _StreamingMessageRepository();
+      addTearDown(repository.dispose);
+      final widgetRefCompleter = Completer<hooks.WidgetRef>();
+
+      await tester.pumpWidget(
+        hooks.ProviderScope(
+          overrides: [
+            conversationSelectedProvider.overrideWithValue('conv-1'),
+            messageRepositoryProvider.overrideWithValue(repository),
+          ],
+          child: hooks.Consumer(
+            builder: (context, ref, child) {
+              if (!widgetRefCompleter.isCompleted) {
+                widgetRefCompleter.complete(ref);
+              }
+              final messageIds = ref.watch(chatMessageIdsProvider);
+              final contents = [
+                for (final messageId in messageIds)
+                  ref
+                      .watch(messageConversationByIdProvider(messageId))
+                      ?.content,
+              ].nonNulls.join('|');
+
+              return Directionality(
+                textDirection: TextDirection.ltr,
+                child: Text(contents),
+              );
+            },
+          ),
+        ),
+      );
+
+      repository.emit([
+        _assistantMessage(id: 'msg-1', conversationId: 'conv-1'),
+      ]);
+      await tester.pump();
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('assistant'), findsOneWidget);
+
+      final widgetRef = await widgetRefCompleter.future;
+      widgetRef.read(messagesStreamingProvider.notifier)
+        ..startSubscription(CompositeSubscription(), 'msg-1')
+        ..updateResult(
+          ChatResult<ChatMessage>(
+            output: ChatMessage.model('streaming response'),
+            usage: const LanguageModelUsage(),
+          ),
+          'msg-1',
+        );
+      await tester.pump();
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('streaming response'), findsOneWidget);
+    },
+  );
+
   group('pendingToolCallsProvider', () {
-    late ProviderContainer container;
+    var container = ProviderContainer();
 
     tearDown(() {
       container.dispose();

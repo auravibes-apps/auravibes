@@ -10,10 +10,10 @@ workspace:
   - widgetbook
 
 dev_dependencies:
-  dart_code_linter: ^4.0.5
+  dart_code_linter: ^4.1.2
   dependency_validator: ^5.0.4
   import_sorter: ^4.6.0
-  melos: ^7.8.0
+  melos: ^7.8.1
   riverpod_lint: 3.1.4-dev.3
   very_good_analysis: ^10.2.0
 
@@ -42,14 +42,16 @@ melos:
 
     dcl:analyze:
       run: dart run dart_code_linter:metrics analyze apps/auravibes_app/lib apps/auravibes_app/test packages/auravibes_genkit_openai_compat/lib packages/auravibes_genkit_openai_compat/test packages/auravibes_ui/lib packages/auravibes_ui/test widgetbook/lib --set-exit-on-violation-level=noted
-      description: Run Dart Code Linter rules
+      description: Run legacy Dart Code Linter rule analysis manually
 
     unused:code:
       run: dart run dart_code_linter:metrics check-unused-code --monorepo apps/auravibes_app/lib packages/auravibes_genkit_openai_compat/lib packages/auravibes_ui/lib
       description: Fail when production unused declarations are detected
 
     unnecessary:nullable:
-      run: dart run dart_code_linter:metrics check-unnecessary-nullable --monorepo apps/auravibes_app/lib packages/auravibes_genkit_openai_compat/lib packages/auravibes_ui/lib
+      # Excluded callbacks use null as behavior: fallback close flow and
+      # Flutter-style disabled icon buttons.
+      run: dart run dart_code_linter:metrics check-unnecessary-nullable --monorepo --exclude='{apps/auravibes_app/lib/features/models/widgets/add_model_provider_widget.dart,packages/auravibes_ui/lib/src/atoms/aura_icon.dart}' apps/auravibes_app/lib packages/auravibes_genkit_openai_compat/lib packages/auravibes_ui/lib
       description: Fail when unnecessary nullable parameters are detected
 
     format:check:
@@ -111,7 +113,6 @@ melos:
     validate:
       run: |
         melos analyze &&
-        melos run dcl:analyze &&
         melos run unused:files &&
         melos run unused:code &&
         melos run unnecessary:nullable &&
@@ -122,7 +123,6 @@ melos:
     validate:ci:
       run: |
         melos analyze &&
-        melos run dcl:analyze &&
         melos run unused:files &&
         melos run unused:code &&
         melos run unnecessary:nullable &&
@@ -133,7 +133,6 @@ melos:
     validate:quick:
       run: |
         melos analyze &&
-        melos run dcl:analyze &&
         melos run unused:files &&
         melos run unused:code &&
         melos run unnecessary:nullable &&

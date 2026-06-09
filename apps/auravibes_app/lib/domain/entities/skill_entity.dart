@@ -1,0 +1,55 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'skill_entity.freezed.dart';
+
+@freezed
+abstract class SkillEntity with _$SkillEntity {
+  const factory SkillEntity({
+    required String id,
+    required String workspaceId,
+    required SkillSource source,
+    required SkillKind kind,
+    required String title,
+    required String slug,
+    required String description,
+    required String content,
+    required bool isEnabled,
+    required bool isCredentialOptional,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    String? credentialDefinitionId,
+  }) = _SkillEntity;
+  const SkillEntity._();
+}
+
+@freezed
+abstract class SkillToCreate with _$SkillToCreate {
+  const factory SkillToCreate({
+    required SkillKind kind,
+    required String title,
+    required String description,
+    required String content,
+    String? credentialDefinitionId,
+    @Default(false) bool isCredentialOptional,
+    @Default(true) bool isEnabled,
+  }) = _SkillToCreate;
+  const SkillToCreate._();
+}
+
+@freezed
+abstract class SkillToUpdate with _$SkillToUpdate {
+  const factory SkillToUpdate({
+    String? title,
+    String? description,
+    String? content,
+    String? credentialDefinitionId,
+    @Default(false) bool clearCredentialDefinition,
+    bool? isCredentialOptional,
+    bool? isEnabled,
+  }) = _SkillToUpdate;
+  const SkillToUpdate._();
+}
+
+enum SkillSource { user, app }
+
+enum SkillKind { template, native }

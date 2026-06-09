@@ -1,4 +1,3 @@
-// ignore_for_file: no-magic-number
 // Required: Tests use fixed widget dimensions.
 
 import 'package:auravibes_ui/src/organisms/aura_field_wrapper.dart';

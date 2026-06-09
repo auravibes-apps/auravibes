@@ -1,19 +1,5 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-returning-widgets
-// Required: Widget tests use helpers that build widgets under test.
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: scoped_providers_should_specify_dependencies
 // Required: widget tests override scoped providers directly.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-static-class
-// Required: Tests keep fixture helpers and fakes top-level.
 
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
@@ -99,35 +85,42 @@ class _MockGroupedConversationToolsNotifier
   }) async => groups;
 }
 
-Widget _buildSubject(Widget child) {
-  return EasyLocalization(
-    child: TestProviderScope(
-      overrides: [
-        conversationToolsProvider(
-          workspaceId: _workspaceId,
-        ).overrideWith(
-          () => _MockConversationToolsNotifier([]),
-        ),
-        groupedConversationToolsProvider(
-          workspaceId: _workspaceId,
-        ).overrideWith(
-          () => _MockGroupedConversationToolsNotifier([]),
-        ),
-      ],
-      child: MaterialApp(
-        home: Theme(
-          data: ThemeData(extensions: [AuraTheme.light]),
-          child: Material(child: child),
+class _Subject extends StatelessWidget {
+  const _Subject({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return EasyLocalization(
+      child: TestProviderScope(
+        overrides: [
+          conversationToolsProvider(
+            workspaceId: _workspaceId,
+          ).overrideWith(
+            () => _MockConversationToolsNotifier([]),
+          ),
+          groupedConversationToolsProvider(
+            workspaceId: _workspaceId,
+          ).overrideWith(
+            () => _MockGroupedConversationToolsNotifier([]),
+          ),
+        ],
+        child: MaterialApp(
+          home: Theme(
+            data: ThemeData(extensions: [AuraTheme.light]),
+            child: Material(child: child),
+          ),
         ),
       ),
-    ),
-    supportedLocales: const [Locale('en')],
-    path: 'assets/i18n',
-    fallbackLocale: const Locale('en'),
-    startLocale: const Locale('en'),
-    useOnlyLangCode: true,
-    useFallbackTranslations: true,
-  );
+      supportedLocales: const [Locale('en')],
+      path: 'assets/i18n',
+      fallbackLocale: const Locale('en'),
+      startLocale: const Locale('en'),
+      useOnlyLangCode: true,
+      useFallbackTranslations: true,
+    );
+  }
 }
 
 void main() {
@@ -138,8 +131,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ConversationToolsGroupCard(
+      _Subject(
+        child: ConversationToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
         ),
@@ -160,8 +153,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ConversationToolsGroupCard(
+      _Subject(
+        child: ConversationToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
         ),
@@ -179,8 +172,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ConversationToolsGroupCard(
+      _Subject(
+        child: ConversationToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
         ),
@@ -201,8 +194,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ConversationToolsGroupCard(
+      _Subject(
+        child: ConversationToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
         ),
@@ -223,8 +216,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ConversationToolsGroupCard(
+      _Subject(
+        child: ConversationToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
         ),
@@ -247,8 +240,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ConversationToolsGroupCard(
+      _Subject(
+        child: ConversationToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
         ),
@@ -266,8 +259,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ConversationToolsGroupCard(
+      _Subject(
+        child: ConversationToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
           conversationId: 'conv-1',
@@ -286,8 +279,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ConversationToolsGroupCard(
+      _Subject(
+        child: ConversationToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
           initiallyExpanded: true,
@@ -308,8 +301,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ConversationToolsGroupCard(
+      _Subject(
+        child: ConversationToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
           initiallyExpanded: true,
@@ -347,8 +340,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ConversationToolsGroupCard(
+      _Subject(
+        child: ConversationToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
         ),
@@ -384,8 +377,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ConversationToolsGroupCard(
+      _Subject(
+        child: ConversationToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
         ),
@@ -421,8 +414,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ConversationToolsGroupCard(
+      _Subject(
+        child: ConversationToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
         ),
@@ -441,8 +434,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        const ConversationToolsGroupCard(
+      const _Subject(
+        child: ConversationToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
         ),
@@ -478,8 +471,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ConversationToolsGroupCard(
+      _Subject(
+        child: ConversationToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
         ),
@@ -497,8 +490,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ConversationToolsGroupCard(
+      _Subject(
+        child: ConversationToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
         ),
@@ -526,8 +519,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ConversationToolsGroupCard(
+      _Subject(
+        child: ConversationToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
           conversationId: 'conv-1',
@@ -549,8 +542,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ConversationToolsGroupCard(
+      _Subject(
+        child: ConversationToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
           initiallyExpanded: true,
@@ -571,8 +564,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ConversationToolsGroupCard(
+      _Subject(
+        child: ConversationToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
         ),
@@ -617,8 +610,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ConversationToolsGroupCard(
+      _Subject(
+        child: ConversationToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
         ),
@@ -662,8 +655,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ConversationToolsGroupCard(
+      _Subject(
+        child: ConversationToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
         ),
@@ -687,8 +680,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ConversationToolsGroupCard(
+      _Subject(
+        child: ConversationToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
         ),

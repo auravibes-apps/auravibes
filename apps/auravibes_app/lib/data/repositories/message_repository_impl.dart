@@ -1,8 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 
 import 'dart:async';
@@ -33,6 +28,7 @@ class MessageRepositoryImpl implements MessageRepository {
     final messageTables = await _database.messageDao.getMessagesByConversation(
       conversationId,
     );
+
     return messageTables.map(_mapToMessage).toList();
   }
 
@@ -69,6 +65,7 @@ class MessageRepositoryImpl implements MessageRepository {
                   ),
                   stackTrace,
                 );
+
                 return;
               }
 
@@ -86,6 +83,7 @@ class MessageRepositoryImpl implements MessageRepository {
   ) async {
     final messageTables = await _database.messageDao
         .getMessagesByConversationPaginated(conversationId, limit, offset);
+
     return messageTables.map(_mapToMessage).toList();
   }
 
@@ -98,6 +96,7 @@ class MessageRepositoryImpl implements MessageRepository {
       conversationId,
       _messageTypeToTableType(messageType),
     );
+
     return messageTables.map(_mapToMessage).toList();
   }
 
@@ -106,6 +105,7 @@ class MessageRepositoryImpl implements MessageRepository {
     final messageTables = await _database.messageDao.getUserMessages(
       conversationId,
     );
+
     return messageTables.map(_mapToMessage).toList();
   }
 
@@ -114,18 +114,20 @@ class MessageRepositoryImpl implements MessageRepository {
     final messageTables = await _database.messageDao.getSystemMessages(
       conversationId,
     );
+
     return messageTables.map(_mapToMessage).toList();
   }
 
   @override
   Future<MessageEntity?> getMessageById(String id) async {
     final messageTable = await _database.messageDao.getMessageById(id);
+
     return messageTable != null ? _mapToMessage(messageTable) : null;
   }
 
   @override
   Future<MessageEntity> createMessage(MessageToCreate message) async {
-    // Validate message before creating
+    // Validate message before creating.
     if (!await validateMessage(message)) {
       throw const MessageValidationException('Invalid message data');
     }
@@ -160,9 +162,9 @@ class MessageRepositoryImpl implements MessageRepository {
 
   @override
   Future<bool> deleteMessage(String id) async {
-    // Check if message exists
+    // Check if message exists.
     if (!await messageExists(id)) {
-      return false; // Return false instead of throwing for delete operations
+      return false; // Return false instead of throwing for delete operations.
     }
 
     return _database.messageDao.deleteMessage(id);
@@ -182,6 +184,7 @@ class MessageRepositoryImpl implements MessageRepository {
       conversationId,
       status.value,
     );
+
     return messageTables.map(_mapToMessage).toList();
   }
 
@@ -195,6 +198,7 @@ class MessageRepositoryImpl implements MessageRepository {
     if (!message.isValid) {
       throw MessageValidationException(_getValidationErrorToCreate(message));
     }
+
     return true;
   }
 
@@ -205,6 +209,7 @@ class MessageRepositoryImpl implements MessageRepository {
     final row = await _database.messageDao.getLatestCompactionSummary(
       conversationId,
     );
+
     return row != null ? _mapToMessage(row) : null;
   }
 
@@ -268,6 +273,7 @@ class MessageRepositoryImpl implements MessageRepository {
       return 'Conversation ID cannot be empty';
     }
     if (message.content.isEmpty) return 'Message content cannot be empty';
+
     return 'Unknown validation error';
   }
 
@@ -281,6 +287,7 @@ class MessageRepositoryImpl implements MessageRepository {
         message.status == null) {
       return 'Must set content, metadata, or status';
     }
+
     return null;
   }
 
@@ -295,6 +302,7 @@ class MessageRepositoryImpl implements MessageRepository {
 
   MessageTableStatus? _messageStatusToTableStatus(MessageStatus? status) {
     if (status == null) return null;
+
     return switch (status) {
       MessageStatus.sent => MessageTableStatus.sent,
       MessageStatus.sending => MessageTableStatus.sending,
