@@ -1,4 +1,3 @@
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/repositories/workspace_compaction_settings_repository.dart';

@@ -1,4 +1,3 @@
-// ignore_for_file: prefer-static-class
 // Required: Tests keep helper functions top-level.
 
 import 'package:auravibes_app/flavor.dart';

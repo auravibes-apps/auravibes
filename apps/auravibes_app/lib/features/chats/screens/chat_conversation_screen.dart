@@ -2,7 +2,6 @@
 // Required: UI callbacks stay local to their widgets.
 // Required: Existing code repeats lookups where extraction adds noise.
 // Required: Feature widgets keep closely related private widgets together.
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 
 import 'dart:async';

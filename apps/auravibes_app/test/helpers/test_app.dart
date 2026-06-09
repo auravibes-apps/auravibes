@@ -1,5 +1,3 @@
-// ignore_for_file: prefer-static-class
-// Required: Tests keep fixture helpers and fakes top-level.
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';

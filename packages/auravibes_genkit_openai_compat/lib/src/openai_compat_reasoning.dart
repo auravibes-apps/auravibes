@@ -1,7 +1,6 @@
 // Required: DTO fields stay grouped with their constructors.
 // Required: Parser helpers keep compact return flow.
 // Required: Protocol parsing uses fixed SSE and JSON offsets.
-// ignore_for_file: prefer-static-class
 // Required: Genkit plugin API exposes top-level helpers.
 
 import 'dart:async';

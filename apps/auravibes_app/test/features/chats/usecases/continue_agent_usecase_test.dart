@@ -1,6 +1,4 @@
 
-// ignore_for_file: prefer-static-class
-// Required: Tests keep fixture helpers and fakes top-level.
 
 import 'dart:async';
 import 'dart:convert';

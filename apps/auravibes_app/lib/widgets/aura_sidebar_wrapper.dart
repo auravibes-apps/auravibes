@@ -2,7 +2,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: UI callbacks stay local to their widgets.
 // Required: Feature widgets keep closely related private widgets together.
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/features/chats/widgets/sidebar_conversations_widget.dart';
 import 'package:auravibes_app/features/workspaces/models/switch_status.dart';

@@ -1,5 +1,3 @@
-// ignore_for_file: prefer-static-class
-// Required: Tests keep fixture helpers and fakes top-level.
 import 'package:auravibes_app/features/models/widgets/model_logo.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';

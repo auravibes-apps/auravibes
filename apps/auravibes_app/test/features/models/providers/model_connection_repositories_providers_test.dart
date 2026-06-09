@@ -1,5 +1,3 @@
-// ignore_for_file: prefer-static-class
-// Required: Tests keep fixture helpers and fakes top-level.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/model_connection_repository_impl.dart';
 import 'package:auravibes_app/data/repositories/workspace_model_selection_repository_impl.dart';

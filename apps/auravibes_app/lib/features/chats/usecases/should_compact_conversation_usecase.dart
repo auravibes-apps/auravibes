@@ -1,5 +1,4 @@
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';

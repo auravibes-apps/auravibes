@@ -1,8 +1,6 @@
 // ignore_for_file: scoped_providers_should_specify_dependencies
 // Required: widget tests override scoped providers directly.
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-static-class
-// Required: Tests keep fixture helpers and fakes top-level.
 
 import 'dart:async';
 

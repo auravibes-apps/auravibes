@@ -1,7 +1,6 @@
 // Required: Existing thresholds and limits use numeric values.
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing code repeats lookups where extraction adds noise.
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 
 import 'dart:convert';

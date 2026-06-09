@@ -1,5 +1,4 @@
 // Required: Component callbacks stay colocated with UI state.
-// ignore_for_file: prefer-static-class
 // Required: UI package exposes top-level helpers and constants.
 
 import 'dart:async';

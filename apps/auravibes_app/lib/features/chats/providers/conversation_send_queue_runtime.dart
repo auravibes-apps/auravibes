@@ -1,5 +1,4 @@
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
 import 'package:riverpod/riverpod.dart';

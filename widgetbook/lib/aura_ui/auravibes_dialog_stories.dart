@@ -1,6 +1,5 @@
 // Required: Stories keep callbacks inline for readability.
 // Required: Widgetbook stories group related story widgets.
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 import 'dart:async';
 

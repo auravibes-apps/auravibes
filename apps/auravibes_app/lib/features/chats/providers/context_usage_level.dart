@@ -1,6 +1,5 @@
 // Required: Existing thresholds and limits use numeric values.
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_ui/ui.dart';

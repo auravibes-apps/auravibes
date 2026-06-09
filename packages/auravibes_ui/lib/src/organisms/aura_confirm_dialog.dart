@@ -1,6 +1,5 @@
 // Required: Component callbacks stay colocated with UI state.
 // Required: UI components keep related private widgets together.
-// ignore_for_file: prefer-static-class
 // Required: UI package exposes top-level helpers and constants.
 import 'package:auravibes_ui/src/molecules/aura_button.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';

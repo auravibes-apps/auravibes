@@ -196,6 +196,8 @@ plugins:
       prefer-single-quotes: true
       prefer-single-widget-per-file:
         ignore-private-widgets: true
+      prefer-static-class:
+        ignore-private: true
       prefer-using-list-view: true
       provide-correct-intl-args: true
       use-design-system-item: true

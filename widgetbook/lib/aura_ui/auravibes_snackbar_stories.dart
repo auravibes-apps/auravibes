@@ -2,7 +2,6 @@
 
 // Required: Widgetbook stories use intentional no-op callbacks.
 // Required: Stories keep callbacks inline for readability.
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';

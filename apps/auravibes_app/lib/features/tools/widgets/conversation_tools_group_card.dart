@@ -1,6 +1,5 @@
 // Required: Existing code repeats lookups where extraction adds noise.
 // Required: Feature widgets keep closely related private widgets together.
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 
 import 'package:auravibes_app/features/tools/models/conversation_tools_group_with_tools.dart';

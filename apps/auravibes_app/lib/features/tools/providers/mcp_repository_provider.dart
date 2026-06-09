@@ -1,5 +1,4 @@
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/data/repositories/mcp_servers_repository_impl.dart';
 import 'package:auravibes_app/domain/repositories/mcp_servers_repository.dart';

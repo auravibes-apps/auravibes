@@ -1,6 +1,4 @@
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-static-class
-// Required: Tests keep fixture helpers and fakes top-level.
 
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/utils/relative_time_formatter.dart';

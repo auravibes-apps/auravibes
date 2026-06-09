@@ -1,7 +1,6 @@
 // Required: Tests keep compact return flow.
 // Required: Tests use protocol numeric fixtures.
 // Required: Test fakes keep related fields near constructors.
-// ignore_for_file: prefer-static-class
 // Required: Tests keep helper functions and fakes top-level.
 
 import 'dart:convert';
