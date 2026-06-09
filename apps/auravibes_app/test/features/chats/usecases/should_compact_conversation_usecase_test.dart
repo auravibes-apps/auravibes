@@ -2,8 +2,6 @@
 // Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: avoid-top-level-members-in-tests
 // Required: Test files keep shared fixtures and helpers top-level.
-// ignore_for_file: prefer-correct-type-name
-// Required: Test doubles mirror repository contract names.
 
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
@@ -17,12 +15,12 @@ import 'package:mocktail/mocktail.dart';
 
 class MockMessageRepository extends Mock implements MessageRepository {}
 
-class MockWorkspaceCompactionSettingsRepository extends Mock
+class MockCompactionSettingsRepository extends Mock
     implements WorkspaceCompactionSettingsRepository {}
 
 void main() {
   var mockRepository = MockMessageRepository();
-  var mockSettingsRepo = MockWorkspaceCompactionSettingsRepository();
+  var mockSettingsRepo = MockCompactionSettingsRepository();
   var usecase = ShouldCompactConversationUsecase(
     messageRepository: mockRepository,
     settingsRepository: mockSettingsRepo,
@@ -30,7 +28,7 @@ void main() {
 
   setUp(() {
     mockRepository = MockMessageRepository();
-    mockSettingsRepo = MockWorkspaceCompactionSettingsRepository();
+    mockSettingsRepo = MockCompactionSettingsRepository();
   });
 
   MessageEntity _makeMessage({
@@ -411,11 +409,11 @@ void main() {
 
   group('Saved settings integration', () {
     var mockRepository = MockMessageRepository();
-    var mockSettingsRepo = MockWorkspaceCompactionSettingsRepository();
+    var mockSettingsRepo = MockCompactionSettingsRepository();
 
     setUp(() {
       mockRepository = MockMessageRepository();
-      mockSettingsRepo = MockWorkspaceCompactionSettingsRepository();
+      mockSettingsRepo = MockCompactionSettingsRepository();
     });
 
     MessageEntity _makeMessage({

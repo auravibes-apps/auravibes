@@ -38,7 +38,7 @@ class MockShouldCompactConversationUsecase extends Mock
 class MockCompactConversationUsecase extends Mock
     implements CompactConversationUsecase {}
 
-class _MaybeAutoCompactConversationUsecaseFixture {
+class MaybeAutoCompactFixture {
   MockConversationRepository? _mockConvRepo;
   MockWorkspaceModelSelectionsRepository? _mockModelRepo;
   MockApiModelRepository? _mockApiModelRepo;
@@ -157,7 +157,7 @@ void main() {
     registerFallbackValue(CompactionTrigger.auto);
   });
 
-  final fixture = _MaybeAutoCompactConversationUsecaseFixture();
+  final fixture = MaybeAutoCompactFixture();
 
   setUp(fixture.setUp);
 

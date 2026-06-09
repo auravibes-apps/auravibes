@@ -14,7 +14,7 @@ WorkspaceCompactionSettingsRepository workspaceCompactionSettingsRepository(
 ) {
   final db = ref.watch(appDatabaseProvider);
 
-  return WorkspaceCompactionSettingsRepositoryImpl(
+  return WorkspaceCompactionSettingsRepoImpl(
     db.workspaceCompactionSettingsDao,
   );
 }

@@ -12,9 +12,9 @@ import 'package:flutter/services.dart'
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 Future<void> main() async {
-  F.appFlavor = AppFlavorResolver.resolve(appFlavor);
+  AppFlavorConfig.appFlavor = AppFlavorResolver.resolve(appFlavor);
   final _ = WidgetsFlutterBinding.ensureInitialized();
-  AppLogging.configure(enabled: F.appFlavor != Flavor.prod);
+  AppLogging.configure(enabled: AppFlavorConfig.appFlavor != Flavor.prod);
   await MainLocale.ensureInitialized();
 
   SystemChrome.setSystemUIOverlayStyle(
@@ -66,7 +66,7 @@ class MyApp extends ConsumerWidget {
         builder: (context, child) => AuraText(
           child: child ?? const SizedBox.shrink(),
         ),
-        title: F.title,
+        title: AppFlavorConfig.title,
         theme: ThemeData(
           extensions: [
             AuraTheme.light,
@@ -82,7 +82,7 @@ class MyApp extends ConsumerWidget {
         locale: context.locale,
         localizationsDelegates: context.localizationDelegates,
         supportedLocales: context.supportedLocales,
-        debugShowCheckedModeBanner: F.appFlavor != Flavor.prod,
+        debugShowCheckedModeBanner: AppFlavorConfig.appFlavor != Flavor.prod,
       ),
     );
   }

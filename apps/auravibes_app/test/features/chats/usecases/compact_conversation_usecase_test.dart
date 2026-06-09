@@ -1,8 +1,6 @@
 // ignore_for_file: avoid-top-level-members-in-tests
 // Required: Test files keep shared fixtures and helpers top-level.
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-type-name
-// Required: Test doubles mirror domain contract names.
 // ignore_for_file: prefer-static-class
 // Required: Tests keep fixture helpers and fakes top-level.
 
@@ -37,7 +35,7 @@ class MockWorkspaceModelSelectionRepository extends Mock
 
 class MockChatbotService extends Mock implements ChatbotService {}
 
-class FakeWorkspaceModelSelectionWithConnectionEntity extends Fake
+class FakeModelSelectionConnection extends Fake
     implements WorkspaceModelSelectionWithConnectionEntity {}
 
 class FakeMessageToCreate extends Fake implements MessageToCreate {}
@@ -138,7 +136,7 @@ void main() {
   final fixture = _CompactConversationFixture();
 
   setUpAll(() {
-    registerFallbackValue(FakeWorkspaceModelSelectionWithConnectionEntity());
+    registerFallbackValue(FakeModelSelectionConnection());
     registerFallbackValue(FakeMessageToCreate());
     registerFallbackValue(FakeConversationPatch());
     registerFallbackValue(FakeMessagePatch());

@@ -109,6 +109,11 @@ plugins:
         include:
           - test/**
           - "**/test/**"
+      prefer-correct-type-name:
+        excluded:
+          # Public Freezed domain API; rename would churn generated contract
+          # and app-wide callers.
+          - WorkspaceModelSelectionWithConnectionEntity
       prefer-correct-edge-insets-constructor: true
       prefer-first-or-null: true
       prefer-immediate-return: true

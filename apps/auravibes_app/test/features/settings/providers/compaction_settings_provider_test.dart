@@ -2,8 +2,6 @@
 // Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: avoid-top-level-members-in-tests
 // Required: Test files keep shared fixtures and helpers top-level.
-// ignore_for_file: prefer-correct-type-name
-// Required: Test doubles mirror repository contract names.
 
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
@@ -16,7 +14,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
 
-class MockWorkspaceCompactionSettingsRepository extends Mock
+class MockCompactionSettingsRepository extends Mock
     implements WorkspaceCompactionSettingsRepository {}
 
 void main() {
@@ -364,17 +362,17 @@ void main() {
 }
 
 class _CompactionSettingsProviderFixture {
-  MockWorkspaceCompactionSettingsRepository? _mockRepository;
+  MockCompactionSettingsRepository? _mockRepository;
   ProviderContainer? _container;
 
-  MockWorkspaceCompactionSettingsRepository get mockRepository =>
+  MockCompactionSettingsRepository get mockRepository =>
       _mockRepository ?? fail('Expected mockRepository to be initialized');
 
   ProviderContainer get container =>
       _container ?? fail('Expected container to be initialized');
 
   void setUp() {
-    final repository = MockWorkspaceCompactionSettingsRepository();
+    final repository = MockCompactionSettingsRepository();
     _mockRepository = repository;
     _container = ProviderContainer(
       overrides: [

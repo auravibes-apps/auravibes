@@ -17,7 +17,7 @@ class FakeCompanion extends Fake
 
 void main() {
   var mockDao = MockDao();
-  var repo = WorkspaceCompactionSettingsRepositoryImpl(mockDao);
+  var repo = WorkspaceCompactionSettingsRepoImpl(mockDao);
 
   setUpAll(() {
     registerFallbackValue(FakeCompanion());
@@ -25,7 +25,7 @@ void main() {
 
   tearDown(() {
     mockDao = MockDao();
-    repo = WorkspaceCompactionSettingsRepositoryImpl(mockDao);
+    repo = WorkspaceCompactionSettingsRepoImpl(mockDao);
   });
 
   group('getEffectiveSettings', () {
