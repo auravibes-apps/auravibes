@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-dynamic
-// Required: Tests inspect raw Genkit protocol payloads.
 // ignore_for_file: avoid-ignoring-return-values
 // Required: Tests execute streams for side effects.
 // ignore_for_file: avoid-non-null-assertion
@@ -56,7 +54,7 @@ void main() {
       ],
     );
 
-    final response = await ai.generate<OpenAICompatReasoningOptions, dynamic>(
+    final response = await ai.generate<OpenAICompatReasoningOptions, Object?>(
       model: openAICompatReasoning.model('glm-4.5'),
       returnToolRequests: true,
       messages: [
@@ -109,7 +107,7 @@ void main() {
       ],
     );
 
-    await ai.generate<OpenAICompatReasoningOptions, dynamic>(
+    await ai.generate<OpenAICompatReasoningOptions, Object?>(
       model: openAICompatReasoning.model('glm-4.5'),
       messages: [
         Message(
@@ -147,7 +145,7 @@ void main() {
       ],
     );
 
-    await ai.generate<OpenAICompatReasoningOptions, dynamic>(
+    await ai.generate<OpenAICompatReasoningOptions, Object?>(
       model: openAICompatReasoning.model('glm-4.5'),
       messages: [
         Message(
@@ -214,7 +212,7 @@ void main() {
       ],
     );
 
-    final response = await ai.generate<OpenAICompatReasoningOptions, dynamic>(
+    final response = await ai.generate<OpenAICompatReasoningOptions, Object?>(
       model: openAICompatReasoning.model('glm-4.5'),
       returnToolRequests: true,
       messages: [
@@ -281,7 +279,7 @@ void main() {
           ),
           utf8.encode(
             'data: ${jsonEncode({
-              'choices': <Map<String, dynamic>>[],
+              'choices': <Map<String, Object?>>[],
               'usage': {
                 'prompt_tokens': 3,
                 'completion_tokens': 4,
@@ -305,7 +303,7 @@ void main() {
       ],
     );
 
-    final stream = ai.generateStream<OpenAICompatReasoningOptions, dynamic>(
+    final stream = ai.generateStream<OpenAICompatReasoningOptions, Object?>(
       model: openAICompatReasoning.model('glm-4.5'),
       returnToolRequests: true,
       messages: [
@@ -390,7 +388,7 @@ void main() {
       ],
     );
 
-    final stream = ai.generateStream<OpenAICompatReasoningOptions, dynamic>(
+    final stream = ai.generateStream<OpenAICompatReasoningOptions, Object?>(
       model: openAICompatReasoning.model('glm-4.5'),
       returnToolRequests: true,
       messages: [
@@ -442,7 +440,7 @@ void main() {
     );
 
     expect(
-      () => ai.generate<OpenAICompatReasoningOptions, dynamic>(
+      () => ai.generate<OpenAICompatReasoningOptions, Object?>(
         model: openAICompatReasoning.model('glm-4.5'),
         messages: [
           Message(
@@ -456,13 +454,13 @@ void main() {
   });
 }
 
-Future<Map<String, dynamic>> _readBody(http.BaseRequest request) async {
+Future<Map<String, Object?>> _readBody(http.BaseRequest request) async {
   return jsonDecode(await request.finalize().bytesToString())
-      as Map<String, dynamic>;
+      as Map<String, Object?>;
 }
 
 http.StreamedResponse _jsonResponse(
-  Map<String, dynamic> body, {
+  Map<String, Object?> body, {
   int statusCode = 200,
 }) {
   return http.StreamedResponse(
