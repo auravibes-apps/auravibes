@@ -5,12 +5,12 @@ void main() {
   group('ToolNameFormatter.parse', () {
     group('MCP tools', () {
       test('parses valid mcp_ prefix', () {
-        final result = ToolNameFormatter.parse('mcp_42_my_server_read_file');
+        final result = ToolNameFormatter.parse('mcp_42_my-server_read_file');
         expect(result, isA<McpParsedToolId>());
         final mcp = result as McpParsedToolId;
         expect(mcp.mcpServerId, '42');
-        expect(mcp.slugName, 'my');
-        expect(mcp.toolIdentifier, 'server_read_file');
+        expect(mcp.slugName, 'my-server');
+        expect(mcp.toolIdentifier, 'read_file');
       });
 
       test('parses mcp with single-char id', () {
@@ -108,9 +108,9 @@ void main() {
     });
 
     test('formats MCP display name without override uses slug', () {
-      final parsed = ToolNameFormatter.parse('mcp_42_my_server_read_file');
+      final parsed = ToolNameFormatter.parse('mcp_42_my-server_read_file');
       final result = ToolNameFormatter.formatDisplayName(parsed);
-      expect(result, 'My: Server Read File');
+      expect(result, 'My Server: Read File');
     });
 
     test('formats built-in display name', () {

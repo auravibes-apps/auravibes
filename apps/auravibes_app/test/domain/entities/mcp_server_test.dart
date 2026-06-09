@@ -46,7 +46,7 @@ void main() {
         transport: McpTransportTypeSSE(),
         authenticationType: McpAuthenticationTypeNone(),
       );
-      expect(create.slugServerName, 'my_server_');
+      expect(create.slugServerName, 'my-server');
     });
 
     test('slugServerName lowercases and replaces non-alphanumeric', () {
@@ -56,7 +56,17 @@ void main() {
         transport: McpTransportTypeSSE(),
         authenticationType: McpAuthenticationTypeNone(),
       );
-      expect(create.slugServerName, 'hello_world_2025');
+      expect(create.slugServerName, 'hello-world-2025');
+    });
+
+    test('slugServerName falls back when normalized slug is empty', () {
+      const create = McpServerToCreate(
+        name: '!!!',
+        url: 'http://localhost',
+        transport: McpTransportTypeSSE(),
+        authenticationType: McpAuthenticationTypeNone(),
+      );
+      expect(create.slugServerName, 'server');
     });
   });
 

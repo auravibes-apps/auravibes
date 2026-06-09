@@ -199,7 +199,11 @@ abstract class McpServerToCreate with _$McpServerToCreate {
   const McpServerToCreate._();
 
   String get slugServerName {
-    return name.toLowerCase().replaceAll(RegExp('[^a-z0-9]+'), '_');
+    final slug = name
+        .toLowerCase()
+        .replaceAll(RegExp('[^a-z0-9]+'), '-')
+        .replaceAll(RegExp(r'^-+|-+$'), '');
+    return slug.isEmpty ? 'server' : slug;
   }
 }
 

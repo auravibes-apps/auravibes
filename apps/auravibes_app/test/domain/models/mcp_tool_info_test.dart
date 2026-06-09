@@ -46,7 +46,7 @@ void main() {
         updatedAt: DateTime(2025),
       );
       final name = info.finalToolName(server);
-      expect(name, 'mcp_42_my_server_read_file_');
+      expect(name, 'mcp_42_my-server_read_file_');
     });
 
     test('finalToolName sanitizes special chars', () {
