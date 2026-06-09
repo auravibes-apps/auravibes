@@ -1,10 +1,7 @@
-// ignore_for_file: prefer-async-await
-// Required: Tests use Future chains to assert async side effects.
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: avoid-top-level-members-in-tests
 // Required: Test files keep shared fixtures and helpers top-level.
-// Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 // ignore_for_file: prefer-static-class
@@ -70,7 +67,7 @@ void main() {
       bool isEnabled = false,
       String? groupId,
       String? config,
-    }) {
+    }) async {
       final companion = ToolsCompanion.insert(
         workspaceId: workspaceId,
         workspaceToolsGroupId: groupId != null
@@ -81,15 +78,14 @@ void main() {
         isEnabled: Value(isEnabled),
       );
 
-      return fixture.database.workspaceToolsDao
-          .insertToolsBatch([companion])
-          .then(
-            (_) => fixture.database.workspaceToolsDao.getWorkspaceToolByToolId(
-              workspaceId,
-              toolId,
-            ),
-          )
-          .then((tool) => tool ?? fail('Expected workspace tool'));
+      await fixture.database.workspaceToolsDao.insertToolsBatch([companion]);
+      final tool = await fixture.database.workspaceToolsDao
+          .getWorkspaceToolByToolId(
+            workspaceId,
+            toolId,
+          );
+
+      return tool ?? fail('Expected workspace tool');
     }
 
     test('getWorkspaceTools returns empty when no tools', () async {

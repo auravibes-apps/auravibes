@@ -1,6 +1,3 @@
-// ignore_for_file: prefer-async-await
-// Required: Existing Future chains preserve callback flow.
-// Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:drift/drift.dart';
@@ -67,30 +64,36 @@ class SkillCredentialsDao extends DatabaseAccessor<AppDatabase>
   Future<ServiceConnectionTable?> updateCredential(
     String credentialId,
     ServiceConnectionsCompanion credential,
-  ) {
-    return (update(serviceConnections)..where(
-          (tbl) =>
-              tbl.id.equals(credentialId) &
-              tbl.kind.equals(ServiceConnectionKindTable.skillCredential.name),
-        ))
-        .writeReturning(credential)
-        .then((rows) => rows.firstOrNull);
+  ) async {
+    final rows =
+        await (update(serviceConnections)..where(
+              (tbl) =>
+                  tbl.id.equals(credentialId) &
+                  tbl.kind.equals(
+                    ServiceConnectionKindTable.skillCredential.name,
+                  ),
+            ))
+            .writeReturning(credential);
+
+    return rows.firstOrNull;
   }
 
-  Future<int> deleteCredential(String credentialId) {
-    return (delete(serviceConnections)..where(
-          (tbl) =>
-              tbl.id.equals(credentialId) &
-              tbl.kind.equals(ServiceConnectionKindTable.skillCredential.name),
-        ))
-        .go()
-        .then((count) {
-          _logger.info(
-            'debug:skill credential dao delete complete '
-            'credentialId=$credentialId deletedRows=$count',
-          );
+  Future<int> deleteCredential(String credentialId) async {
+    final count =
+        await (delete(serviceConnections)..where(
+              (tbl) =>
+                  tbl.id.equals(credentialId) &
+                  tbl.kind.equals(
+                    ServiceConnectionKindTable.skillCredential.name,
+                  ),
+            ))
+            .go();
 
-          return count;
-        });
+    _logger.info(
+      'debug:skill credential dao delete complete '
+      'credentialId=$credentialId deletedRows=$count',
+    );
+
+    return count;
   }
 }

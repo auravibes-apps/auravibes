@@ -1,5 +1,3 @@
-// ignore_for_file: prefer-async-await
-// Required: Existing Future chains preserve callback flow.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
@@ -27,14 +25,14 @@ class ConversationSkillsRepositoryImpl implements ConversationSkillsRepository {
     String conversationId,
     String workspaceSkillId, {
     required bool isLoaded,
-  }) {
-    return _dao
-        .setWorkspaceSkillLoaded(
-          conversationId,
-          workspaceSkillId,
-          isLoaded: isLoaded,
-        )
-        .then(_tableToEntity);
+  }) async {
+    final table = await _dao.setWorkspaceSkillLoaded(
+      conversationId,
+      workspaceSkillId,
+      isLoaded: isLoaded,
+    );
+
+    return _tableToEntity(table);
   }
 
   @override
@@ -42,14 +40,14 @@ class ConversationSkillsRepositoryImpl implements ConversationSkillsRepository {
     String conversationId,
     String appSkillIdentifier, {
     required bool isLoaded,
-  }) {
-    return _dao
-        .setAppSkillLoaded(
-          conversationId,
-          appSkillIdentifier,
-          isLoaded: isLoaded,
-        )
-        .then(_tableToEntity);
+  }) async {
+    final table = await _dao.setAppSkillLoaded(
+      conversationId,
+      appSkillIdentifier,
+      isLoaded: isLoaded,
+    );
+
+    return _tableToEntity(table);
   }
 
   ConversationSkillEntity _tableToEntity(ConversationSkillsTable table) {

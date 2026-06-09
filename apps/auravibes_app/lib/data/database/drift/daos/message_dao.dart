@@ -1,8 +1,5 @@
-// ignore_for_file: prefer-async-await
-// Required: Existing Future chains preserve callback flow.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// Required: Existing test and UI helpers keep compact return flow.
 import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
@@ -25,13 +22,21 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
   Future<MessagesTable?> patchMessage(
     String id,
     MessagesCompanion companion,
-  ) => (update(messages)..where((tbl) => tbl.id.equals(id)))
-      .writeReturning(companion)
-      .then((tables) => tables.firstOrNull);
+  ) async {
+    final tables = await (update(
+      messages,
+    )..where((tbl) => tbl.id.equals(id))).writeReturning(companion);
 
-  Future<bool> deleteMessage(String id) => (delete(
-    messages,
-  )..where((tbl) => tbl.id.equals(id))).go().then((count) => count > 0);
+    return tables.firstOrNull;
+  }
+
+  Future<bool> deleteMessage(String id) async {
+    final count = await (delete(
+      messages,
+    )..where((tbl) => tbl.id.equals(id))).go();
+
+    return count > 0;
+  }
 
   // Business-specific queries.
   Future<List<MessagesTable>> getMessagesByConversation(
@@ -123,13 +128,16 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
           .map((row) => row.read(messages.id.count()) ?? 0)
           .getSingle();
 
-  Future<bool> messageExists(String id) =>
-      (selectOnly(messages)
-            ..addColumns([messages.id.count()])
-            ..where(messages.id.equals(id)))
-          .map((row) => row.read(messages.id.count()) ?? 0)
-          .getSingle()
-          .then((result) => result > 0);
+  Future<bool> messageExists(String id) async {
+    final result =
+        await (selectOnly(messages)
+              ..addColumns([messages.id.count()])
+              ..where(messages.id.equals(id)))
+            .map((row) => row.read(messages.id.count()) ?? 0)
+            .getSingle();
+
+    return result > 0;
+  }
 
   Future<List<MessagesTable>> getMessagesByStatus(
     String conversationId,
@@ -149,34 +157,37 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
             ]))
           .get();
 
-  Future<MessagesTable?> getLatestCompactionSummary(String conversationId) =>
-      (select(messages)
-            ..where(
-              (tbl) =>
-                  tbl.conversationId.equals(conversationId) &
-                  tbl.messageType.equals(MessagesTableType.system.value) &
-                  tbl.status.equals(MessageTableStatus.sent.value) &
-                  tbl.metadata.isNotNull(),
-            )
-            ..orderBy([
-              (tbl) => OrderingTerm(
-                expression: tbl.createdAt,
-                mode: OrderingMode.desc,
-              ),
-            ]))
-          .get()
-          .then((rows) {
-            for (final row in rows) {
-              final metadataStr = row.metadata;
-              if (metadataStr == null) continue;
-              try {
-                final json = jsonDecode(metadataStr) as Map<String, dynamic>;
-                if (json['isCompactionSummary'] == true) return row;
-              } on Exception {
-                continue;
-              }
-            }
+  Future<MessagesTable?> getLatestCompactionSummary(
+    String conversationId,
+  ) async {
+    final rows =
+        await (select(messages)
+              ..where(
+                (tbl) =>
+                    tbl.conversationId.equals(conversationId) &
+                    tbl.messageType.equals(MessagesTableType.system.value) &
+                    tbl.status.equals(MessageTableStatus.sent.value) &
+                    tbl.metadata.isNotNull(),
+              )
+              ..orderBy([
+                (tbl) => OrderingTerm(
+                  expression: tbl.createdAt,
+                  mode: OrderingMode.desc,
+                ),
+              ]))
+            .get();
 
-            return null;
-          });
+    for (final row in rows) {
+      final metadataStr = row.metadata;
+      if (metadataStr == null) continue;
+      try {
+        final json = jsonDecode(metadataStr) as Map<String, dynamic>;
+        if (json['isCompactionSummary'] == true) return row;
+      } on Exception {
+        continue;
+      }
+    }
+
+    return null;
+  }
 }

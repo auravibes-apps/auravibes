@@ -1,10 +1,7 @@
-// ignore_for_file: prefer-async-await
-// Required: Existing Future chains preserve callback flow.
 // ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-extracting-callbacks
 // Required: UI callbacks stay local to their widgets.
 // ignore_for_file: prefer-moving-to-variable
@@ -236,16 +233,7 @@ class _AvailableToolTile extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
       ),
       onTap: () {
-        unawaited(
-          ref
-              .read(workspaceToolsProvider(workspaceId).notifier)
-              .addTool(toolType)
-              .then((_) {
-                if (context.mounted) {
-                  Navigator.of(context).pop();
-                }
-              }),
-        );
+        unawaited(_addTool(context, ref));
       },
       variant: AuraTileVariant.surface,
       leading: Container(
@@ -264,5 +252,14 @@ class _AvailableToolTile extends ConsumerWidget {
         color: AuraColorVariant.primary,
       ),
     );
+  }
+
+  Future<void> _addTool(BuildContext context, WidgetRef ref) async {
+    await ref
+        .read(workspaceToolsProvider(workspaceId).notifier)
+        .addTool(toolType);
+    if (!context.mounted) return;
+
+    Navigator.of(context).pop();
   }
 }

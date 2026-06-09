@@ -1,9 +1,6 @@
-// ignore_for_file: prefer-async-await
-// Required: Tests use Future chains to assert async side effects.
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
 
-// Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 // ignore_for_file: prefer-static-class
@@ -716,7 +713,12 @@ void main() {
         await createStarted.future;
 
         var didComplete = false;
-        unawaited(future.then((_) => didComplete = true));
+        Future<void> markComplete() async {
+          final _ = await future;
+          didComplete = true;
+        }
+
+        unawaited(markComplete());
         agentCancellationRuntime.requestStop('conversation-1');
         await Future<void>.delayed(Duration.zero);
 

@@ -1,6 +1,3 @@
-// ignore_for_file: prefer-async-await
-// Required: Existing Future chains preserve callback flow.
-// Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/skill_template_tools.dart';
 import 'package:drift/drift.dart';
@@ -50,7 +47,11 @@ class SkillTemplateToolsDao extends DatabaseAccessor<AppDatabase>
     return updated;
   }
 
-  Future<bool> deleteTool(String toolId) => (delete(
-    skillTemplateTools,
-  )..where((tbl) => tbl.id.equals(toolId))).go().then((count) => count > 0);
+  Future<bool> deleteTool(String toolId) async {
+    final count = await (delete(
+      skillTemplateTools,
+    )..where((tbl) => tbl.id.equals(toolId))).go();
+
+    return count > 0;
+  }
 }

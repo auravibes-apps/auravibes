@@ -1,5 +1,3 @@
-// ignore_for_file: prefer-async-await
-// Required: Existing Future chains preserve callback flow.
 // ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
 // ignore_for_file: member-ordering
@@ -203,9 +201,10 @@ class AppDatabase extends _$AppDatabase {
   /// initial data when the app first starts.
   Future<void> initializeWithDefaults() async {
     // Check if workspaces table is empty.
-    final workspaceCount = await customSelect(
+    final workspaceCountResult = await customSelect(
       'SELECT COUNT(*) as count FROM workspaces',
-    ).getSingle().then((result) => result.read<int>('count'));
+    ).getSingle();
+    final workspaceCount = workspaceCountResult.read<int>('count');
 
     if (workspaceCount == 0) {
       final _ = await into(workspaces).insert(
@@ -238,21 +237,24 @@ class AppDatabase extends _$AppDatabase {
     final stats = <String, dynamic>{};
 
     // Get workspace count.
-    final workspaceCount = await customSelect(
+    final workspaceCountResult = await customSelect(
       'SELECT COUNT(*) as count FROM workspaces',
-    ).getSingle().then((result) => result.read<int>('count'));
+    ).getSingle();
+    final workspaceCount = workspaceCountResult.read<int>('count');
     stats['workspaceCount'] = workspaceCount;
 
     // Get database page count (approximate size).
-    final pageCount = await customSelect(
+    final pageCountResult = await customSelect(
       'SELECT page_count FROM pragma_page_count()',
-    ).getSingle().then((result) => result.read<int>('page_count'));
+    ).getSingle();
+    final pageCount = pageCountResult.read<int>('page_count');
     stats['pageCount'] = pageCount;
 
     // Get page size.
-    final pageSize = await customSelect(
+    final pageSizeResult = await customSelect(
       'SELECT page_size FROM pragma_page_size()',
-    ).getSingle().then((result) => result.read<int>('page_size'));
+    ).getSingle();
+    final pageSize = pageSizeResult.read<int>('page_size');
     stats['pageSize'] = pageSize;
 
     // Calculate approximate database size.

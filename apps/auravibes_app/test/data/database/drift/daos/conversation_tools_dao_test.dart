@@ -1,10 +1,7 @@
-// ignore_for_file: prefer-async-await
-// Required: Tests use Future chains to assert async side effects.
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: avoid-top-level-members-in-tests
 // Required: Test files keep shared fixtures and helpers top-level.
-// Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 // ignore_for_file: prefer-static-class
@@ -63,16 +60,13 @@ void main() {
         ConversationsCompanion.insert(workspaceId: ws.id, title: 'Conv'),
       );
       conversationId = conv.id;
-      final tool = await fixture.database.workspaceToolsDao
-          .insertToolsBatch([
-            ToolsCompanion.insert(workspaceId: ws.id, toolId: 'web_search'),
-          ])
-          .then((_) async {
-            final t = await fixture.database.workspaceToolsDao
-                .getWorkspaceTools(ws.id);
-
-            return t.firstOrNull;
-          });
+      await fixture.database.workspaceToolsDao.insertToolsBatch([
+        ToolsCompanion.insert(workspaceId: ws.id, toolId: 'web_search'),
+      ]);
+      final tools = await fixture.database.workspaceToolsDao.getWorkspaceTools(
+        ws.id,
+      );
+      final tool = tools.firstOrNull;
       toolId = (tool ?? fail('Expected tool to be non-null')).id;
     });
 
@@ -416,26 +410,18 @@ void main() {
 
     test('disableConversationTools batch disables', () async {
       final ws = await fixture.database.workspaceDao.getAllWorkspaces();
-      final tool2 = await fixture.database.workspaceToolsDao
-          .insertToolsBatch([
-            ToolsCompanion.insert(
-              workspaceId:
-                  (ws.firstOrNull ??
-                          fail('Expected ws.firstOrNull to be non-null'))
-                      .id,
-              toolId: 'tool2',
-            ),
-          ])
-          .then((_) async {
-            final t = await fixture.database.workspaceToolsDao
-                .getWorkspaceTools(
-                  (ws.firstOrNull ??
-                          fail('Expected ws.firstOrNull to be non-null'))
-                      .id,
-                );
-
-            return t.firstWhere((e) => e.toolId == 'tool2');
-          });
+      final workspace =
+          ws.firstOrNull ?? fail('Expected ws.firstOrNull to be non-null');
+      await fixture.database.workspaceToolsDao.insertToolsBatch([
+        ToolsCompanion.insert(
+          workspaceId: workspace.id,
+          toolId: 'tool2',
+        ),
+      ]);
+      final tools = await fixture.database.workspaceToolsDao.getWorkspaceTools(
+        workspace.id,
+      );
+      final tool2 = tools.firstWhere((e) => e.toolId == 'tool2');
       await fixture.database.conversationToolsDao.disableConversationTools(
         conversationId,
         [toolId, tool2.id],

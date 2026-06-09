@@ -1,8 +1,5 @@
-// ignore_for_file: prefer-async-await
-// Required: Existing Future chains preserve callback flow.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
@@ -81,9 +78,13 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
     String toolType, {
     required bool isEnabled,
   }) async {
-    return _dao
-        .setWorkspaceToolEnabled(workspaceId, toolType, isEnabled: isEnabled)
-        .then(_tableToEntity);
+    final table = await _dao.setWorkspaceToolEnabled(
+      workspaceId,
+      toolType,
+      isEnabled: isEnabled,
+    );
+
+    return _tableToEntity(table);
   }
 
   @override
@@ -91,9 +92,12 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
     String id, {
     required bool isEnabled,
   }) async {
-    return _dao
-        .setWorkspaceToolEnabledById(id, isEnabled: isEnabled)
-        .then(_tableToEntity);
+    final table = await _dao.setWorkspaceToolEnabledById(
+      id,
+      isEnabled: isEnabled,
+    );
+
+    return _tableToEntity(table);
   }
 
   @override
@@ -183,9 +187,13 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
     String? config,
   ) async {
     try {
-      return await _dao
-          .patchWorkspaceToolConfig(workspaceId, toolType, config)
-          .then((value) => value.map(_tableToEntity).toList());
+      final tables = await _dao.patchWorkspaceToolConfig(
+        workspaceId,
+        toolType,
+        config,
+      );
+
+      return tables.map(_tableToEntity).toList();
     } catch (e, stackTrace) {
       Error.throwWithStackTrace(
         WorkspaceToolsException(
@@ -232,25 +240,25 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
     String id, {
     required ToolPermissionMode permissionMode,
   }) async {
-    return _dao
-        .setWorkspaceToolPermission(
-          id,
-          permission: _mapPermissionMode(permissionMode),
-        )
-        .then(_tableToEntity);
+    final table = await _dao.setWorkspaceToolPermission(
+      id,
+      permission: _mapPermissionMode(permissionMode),
+    );
+
+    return _tableToEntity(table);
   }
 
   @override
   Future<WorkspaceToolEntity?> getWorkspaceToolByToolName({
     required String toolGroupId,
     required String toolName,
-  }) {
-    return _dao
-        .getEnabledToolByToolName(toolGroupId: toolGroupId, toolName: toolName)
-        .then((value) {
-          if (value == null) return null;
+  }) async {
+    final table = await _dao.getEnabledToolByToolName(
+      toolGroupId: toolGroupId,
+      toolName: toolName,
+    );
+    if (table == null) return null;
 
-          return _tableToEntity(value);
-        });
+    return _tableToEntity(table);
   }
 }

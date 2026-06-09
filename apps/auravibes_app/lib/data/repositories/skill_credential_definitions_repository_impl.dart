@@ -1,5 +1,3 @@
-// ignore_for_file: prefer-async-await
-// Required: Existing Future chains preserve callback flow.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
@@ -63,37 +61,37 @@ class SkillCredentialDefinitionsRepositoryImpl
   Future<SkillCredentialDefinitionEntity> createDefinition(
     String workspaceId,
     SkillCredentialDefinitionToCreate definition,
-  ) {
-    return _dao
-        .createDefinition(
-          SkillCredentialDefinitionsCompanion(
-            workspaceId: Value(workspaceId),
-            title: Value(definition.title.trim()),
-            slug: Value(_generateSlug.call(definition.title)),
-            attributesJson: Value(definition.attributesJson),
-          ),
-        )
-        .then(_tableToEntity);
+  ) async {
+    final table = await _dao.createDefinition(
+      SkillCredentialDefinitionsCompanion(
+        workspaceId: Value(workspaceId),
+        title: Value(definition.title.trim()),
+        slug: Value(_generateSlug.call(definition.title)),
+        attributesJson: Value(definition.attributesJson),
+      ),
+    );
+
+    return _tableToEntity(table);
   }
 
   @override
   Future<SkillCredentialDefinitionEntity> updateDefinition(
     String definitionId,
     SkillCredentialDefinitionToUpdate definition,
-  ) {
-    return _dao
-        .updateDefinition(
-          definitionId,
-          SkillCredentialDefinitionsCompanion(
-            updatedAt: Value(DateTime.now()),
-            title: switch (definition.title) {
-              null => const Value.absent(),
-              final title => Value(title.trim()),
-            },
-            attributesJson: Value.absentIfNull(definition.attributesJson),
-          ),
-        )
-        .then(_tableToEntity);
+  ) async {
+    final table = await _dao.updateDefinition(
+      definitionId,
+      SkillCredentialDefinitionsCompanion(
+        updatedAt: Value(DateTime.now()),
+        title: switch (definition.title) {
+          null => const Value.absent(),
+          final title => Value(title.trim()),
+        },
+        attributesJson: Value.absentIfNull(definition.attributesJson),
+      ),
+    );
+
+    return _tableToEntity(table);
   }
 
   @override

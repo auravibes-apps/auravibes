@@ -80,6 +80,7 @@ plugins:
       double-literal-format: true
       no-boolean-literal-compare: true
       only-barrel-import: true
+      prefer-async-await: true
       prefer-correct-edge-insets-constructor: true
       prefer-first-or-null: true
       prefer-immediate-return: true

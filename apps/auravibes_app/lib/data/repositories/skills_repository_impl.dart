@@ -1,5 +1,3 @@
-// ignore_for_file: prefer-async-await
-// Required: Existing Future chains preserve callback flow.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
@@ -52,48 +50,48 @@ class SkillsRepositoryImpl implements SkillsRepository {
   Future<SkillEntity> createSkill(
     String workspaceId,
     SkillToCreate skill,
-  ) {
-    return _dao
-        .createSkill(
-          SkillsCompanion(
-            workspaceId: Value(workspaceId),
-            source: const Value(SkillSourceTable.user),
-            kind: Value(_mapKindToTable(skill.kind)),
-            title: Value(skill.title.trim()),
-            slug: Value(_generateSlug.call(skill.title)),
-            description: Value(skill.description),
-            content: Value(skill.content),
-            credentialDefinitionId: Value(skill.credentialDefinitionId),
-            isCredentialOptional: Value(skill.isCredentialOptional),
-            isEnabled: Value(skill.isEnabled),
-          ),
-        )
-        .then(_tableToEntity);
+  ) async {
+    final table = await _dao.createSkill(
+      SkillsCompanion(
+        workspaceId: Value(workspaceId),
+        source: const Value(SkillSourceTable.user),
+        kind: Value(_mapKindToTable(skill.kind)),
+        title: Value(skill.title.trim()),
+        slug: Value(_generateSlug.call(skill.title)),
+        description: Value(skill.description),
+        content: Value(skill.content),
+        credentialDefinitionId: Value(skill.credentialDefinitionId),
+        isCredentialOptional: Value(skill.isCredentialOptional),
+        isEnabled: Value(skill.isEnabled),
+      ),
+    );
+
+    return _tableToEntity(table);
   }
 
   @override
-  Future<SkillEntity> updateSkill(String skillId, SkillToUpdate skill) {
-    return _dao
-        .updateSkill(
-          skillId,
-          SkillsCompanion(
-            updatedAt: Value(DateTime.now()),
-            title: switch (skill.title) {
-              null => const Value.absent(),
-              final title => Value(title.trim()),
-            },
-            description: Value.absentIfNull(skill.description),
-            content: Value.absentIfNull(skill.content),
-            credentialDefinitionId: skill.clearCredentialDefinition
-                ? const Value(null)
-                : Value.absentIfNull(skill.credentialDefinitionId),
-            isCredentialOptional: Value.absentIfNull(
-              skill.isCredentialOptional,
-            ),
-            isEnabled: Value.absentIfNull(skill.isEnabled),
-          ),
-        )
-        .then(_tableToEntity);
+  Future<SkillEntity> updateSkill(String skillId, SkillToUpdate skill) async {
+    final table = await _dao.updateSkill(
+      skillId,
+      SkillsCompanion(
+        updatedAt: Value(DateTime.now()),
+        title: switch (skill.title) {
+          null => const Value.absent(),
+          final title => Value(title.trim()),
+        },
+        description: Value.absentIfNull(skill.description),
+        content: Value.absentIfNull(skill.content),
+        credentialDefinitionId: skill.clearCredentialDefinition
+            ? const Value(null)
+            : Value.absentIfNull(skill.credentialDefinitionId),
+        isCredentialOptional: Value.absentIfNull(
+          skill.isCredentialOptional,
+        ),
+        isEnabled: Value.absentIfNull(skill.isEnabled),
+      ),
+    );
+
+    return _tableToEntity(table);
   }
 
   @override

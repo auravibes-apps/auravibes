@@ -1,9 +1,6 @@
-// ignore_for_file: prefer-async-await
-// Required: Existing Future chains preserve callback flow.
 // Required: Existing argument values intentionally repeat.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 
@@ -42,45 +39,63 @@ class UrlService {
         ? rawBody
         : Stream<List<int>>.value(utf8.encode(rawBody));
 
-    _dio
-        .request<ResponseBody>(
-          request.url,
-          data: requestBody,
-          cancelToken: cancelToken,
-          options: Options(
-            method: request.method.value,
-            sendTimeout: request.timeout,
-            receiveTimeout: request.timeout,
-            headers: effectiveHeaders,
-            responseType: ResponseType.stream,
-          ),
-        )
-        .then((response) async {
-          if (completer.isCanceled) {
-            return;
-          }
-
-          final body = await _readResponseBody(response.data);
-          stopwatch.stop();
-          completer.complete(
-            UrlResponse(
-              statusCode: response.statusCode ?? 0,
-              body: body,
-              headers: response.headers.map,
-              elapsed: stopwatch.elapsed,
-            ),
-          );
-        })
-        .catchError((Object error, StackTrace stackTrace) async {
-          await _handleRequestError(
-            error,
-            stackTrace,
-            completer,
-            stopwatch,
-          );
-        });
+    unawaited(
+      _executeRequest(
+        request,
+        requestBody,
+        effectiveHeaders,
+        cancelToken,
+        completer,
+        stopwatch,
+      ),
+    );
 
     return completer.operation;
+  }
+
+  Future<void> _executeRequest(
+    UrlRequest request,
+    Object? requestBody,
+    Map<String, String> effectiveHeaders,
+    CancelToken cancelToken,
+    CancelableCompleter<UrlResponse> completer,
+    Stopwatch stopwatch,
+  ) async {
+    try {
+      final response = await _dio.request<ResponseBody>(
+        request.url,
+        data: requestBody,
+        cancelToken: cancelToken,
+        options: Options(
+          method: request.method.value,
+          sendTimeout: request.timeout,
+          receiveTimeout: request.timeout,
+          headers: effectiveHeaders,
+          responseType: ResponseType.stream,
+        ),
+      );
+      if (completer.isCanceled) {
+        return;
+      }
+
+      final body = await _readResponseBody(response.data);
+      stopwatch.stop();
+      completer.complete(
+        UrlResponse(
+          statusCode: response.statusCode ?? 0,
+          body: body,
+          headers: response.headers.map,
+          elapsed: stopwatch.elapsed,
+        ),
+      );
+    } on Object catch (error, stackTrace) {
+      await _handleRequestError(
+        error,
+        stackTrace,
+        completer,
+        stopwatch,
+      );
+    }
   }
 
   Future<void> _handleRequestError(

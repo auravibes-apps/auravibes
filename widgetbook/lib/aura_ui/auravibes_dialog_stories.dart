@@ -1,5 +1,3 @@
-// ignore_for_file: prefer-async-await
-// Required: Stories use Future chains from sync callbacks.
 // ignore_for_file: avoid-returning-widgets
 // Required: Widgetbook stories use helper functions that return widgets.
 // ignore_for_file: prefer-correct-identifier-length
@@ -48,28 +46,29 @@ class _ConfirmDialogDemo extends StatelessWidget {
       body: Center(
         child: ElevatedButton(
           onPressed: () {
-            unawaited(
-              showAuraConfirmDialog(
-                context: context,
-                title: const Text('Delete Item'),
-                message: const Text(
-                  'Are you sure you want to delete this item? This action cannot be undone.',
-                ),
-                isDestructive: isDestructive,
-                colorVariant: colorVariant,
-              ).then((result) {
-                if (context.mounted) {
-                  final _ = ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text('Result: $result')));
-                }
-              }),
-            );
+            unawaited(_showConfirmDialog(context));
           },
           child: const Text('Show Confirm Dialog'),
         ),
       ),
     );
+  }
+
+  Future<void> _showConfirmDialog(BuildContext context) async {
+    final result = await showAuraConfirmDialog(
+      context: context,
+      title: const Text('Delete Item'),
+      message: const Text(
+        'Are you sure you want to delete this item? This action cannot be undone.',
+      ),
+      isDestructive: isDestructive,
+      colorVariant: colorVariant,
+    );
+    if (!context.mounted) return;
+
+    final _ = ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Result: $result')));
   }
 }
 

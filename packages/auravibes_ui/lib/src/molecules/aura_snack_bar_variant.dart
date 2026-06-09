@@ -1,5 +1,3 @@
-// ignore_for_file: prefer-async-await
-// Required: Overlay teardown uses callback-based animation flow.
 // ignore_for_file: no-magic-number
 // Required: UI tokens and layout use fixed design values.
 // ignore_for_file: member-ordering
@@ -216,23 +214,22 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
 
       return;
     }
-    unawaited(
-      animationController
-          .reverse()
-          .orCancel
-          .then((_) {
-            // Only call dismiss callback - don't dispose here.
-            // As dispose() will be called by the framework.
-            widget.dismissCallback();
-          })
-          .catchError((Object error) {
-            // Ignore ticker cancellations caused by widget disposal
-            // during animation.
-            if (error is TickerCanceled) return;
-            // ignore: only_throw_errors - re-throwing non-cancellation errors
-            throw error;
-          }),
-    );
+    unawaited(_reverseAndDismiss(animationController));
+  }
+
+  Future<void> _reverseAndDismiss(
+    AnimationController animationController,
+  ) async {
+    try {
+      await animationController.reverse().orCancel;
+    } on TickerCanceled {
+      // Ignore ticker cancellations caused by widget disposal during animation.
+      return;
+    }
+
+    // Only call dismiss callback - don't dispose here.
+    // As dispose() will be called by the framework.
+    widget.dismissCallback();
   }
 
   @override

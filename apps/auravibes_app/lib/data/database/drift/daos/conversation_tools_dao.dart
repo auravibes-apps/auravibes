@@ -1,6 +1,3 @@
-// ignore_for_file: prefer-async-await
-// Required: Existing Future chains preserve callback flow.
-// Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 
@@ -146,14 +143,17 @@ class ConversationToolsDao extends DatabaseAccessor<AppDatabase>
   Future<bool> deleteConversationTool(
     String conversationId,
     String toolId,
-  ) =>
-      (delete(conversationTools)..where(
-            (tbl) =>
-                tbl.conversationId.equals(conversationId) &
-                tbl.toolId.equals(toolId),
-          ))
-          .go()
-          .then((count) => count > 0);
+  ) async {
+    final count =
+        await (delete(conversationTools)..where(
+              (tbl) =>
+                  tbl.conversationId.equals(conversationId) &
+                  tbl.toolId.equals(toolId),
+            ))
+            .go();
+
+    return count > 0;
+  }
 
   /// Check if a tool is enabled for a conversation.
   Future<bool> isConversationToolEnabled(

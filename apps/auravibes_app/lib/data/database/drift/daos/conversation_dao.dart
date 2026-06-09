@@ -1,6 +1,3 @@
-// ignore_for_file: prefer-async-await
-// Required: Existing Future chains preserve callback flow.
-// Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/conversations.dart';
 import 'package:drift/drift.dart';
@@ -23,13 +20,21 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
   Future<bool> patchConversation(
     String id,
     ConversationsCompanion companion,
-  ) => (update(conversations)..where((tbl) => tbl.id.equals(id)))
-      .write(companion)
-      .then((count) => count > 0);
+  ) async {
+    final count = await (update(
+      conversations,
+    )..where((tbl) => tbl.id.equals(id))).write(companion);
 
-  Future<bool> deleteConversation(String id) => (delete(
-    conversations,
-  )..where((tbl) => tbl.id.equals(id))).go().then((count) => count > 0);
+    return count > 0;
+  }
+
+  Future<bool> deleteConversation(String id) async {
+    final count = await (delete(
+      conversations,
+    )..where((tbl) => tbl.id.equals(id))).go();
+
+    return count > 0;
+  }
 
   Stream<ConversationsTable?> watchConversationById(String id) => (select(
     conversations,

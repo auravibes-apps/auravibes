@@ -1,6 +1,3 @@
-// ignore_for_file: prefer-async-await
-// Required: Existing Future chains preserve callback flow.
-// Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
@@ -111,14 +108,13 @@ class ApiModelProvidersDao extends DatabaseAccessor<AppDatabase>
   ///
   /// Returns true if the provider exists, false otherwise.
   Future<bool> providerExists(String id) async {
-    final count =
+    final rows =
         await (selectOnly(apiModelProviders)
               ..addColumns([apiModelProviders.id])
               ..where(apiModelProviders.id.equals(id)))
-            .get()
-            .then((rows) => rows.length);
+            .get();
 
-    return count > 0;
+    return rows.isNotEmpty;
   }
 
   /// Searches for providers by name.
@@ -135,10 +131,12 @@ class ApiModelProvidersDao extends DatabaseAccessor<AppDatabase>
   /// Gets the count of all providers.
   ///
   /// Returns the total number of providers in the database.
-  Future<int> getProviderCount() {
-    return (selectOnly(
+  Future<int> getProviderCount() async {
+    final rows = await (selectOnly(
       apiModelProviders,
-    )..addColumns([apiModelProviders.id])).get().then((rows) => rows.length);
+    )..addColumns([apiModelProviders.id])).get();
+
+    return rows.length;
   }
 
   /// Batch inserts multiple providers into the database.

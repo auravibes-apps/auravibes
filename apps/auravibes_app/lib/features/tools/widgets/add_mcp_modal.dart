@@ -1,12 +1,9 @@
-// ignore_for_file: prefer-async-await
-// Required: Existing Future chains preserve callback flow.
 // ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
 // ignore_for_file: avoid-returning-widgets
 // Required: Existing helper builders return widgets.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 // ignore_for_file: prefer-moving-to-variable
@@ -242,20 +239,7 @@ class _Footer extends HookConsumerWidget {
 
     final onSave = useCallback(
       () {
-        unawaited(
-          ref.read(mcpFormProvider(workspaceId).notifier).submit().then((
-            success,
-          ) {
-            if (success && context.mounted) {
-              final _ = showAuraSnackBar(
-                context: context,
-                content: Text(LocaleKeys.mcp_modal_save_success.tr()),
-                variant: AuraSnackBarVariant.success,
-              );
-              Navigator.of(context).pop();
-            }
-          }),
-        );
+        unawaited(_submit(context, ref, workspaceId));
       },
       [ref, context, workspaceId],
     );
@@ -289,6 +273,24 @@ class _Footer extends HookConsumerWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _submit(
+    BuildContext context,
+    WidgetRef ref,
+    String workspaceId,
+  ) async {
+    final success = await ref
+        .read(mcpFormProvider(workspaceId).notifier)
+        .submit();
+    if (!success || !context.mounted) return;
+
+    final _ = showAuraSnackBar(
+      context: context,
+      content: Text(LocaleKeys.mcp_modal_save_success.tr()),
+      variant: AuraSnackBarVariant.success,
+    );
+    Navigator.of(context).pop();
   }
 }
 
