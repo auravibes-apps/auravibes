@@ -66,6 +66,7 @@ plugins:
           - skillToolSlug
           - toolIdentifier
           - top
+      no-equal-then-else: true
       newline-before-return: true
       avoid-unnecessary-setstate: true
       avoid-double-slash-imports: true
