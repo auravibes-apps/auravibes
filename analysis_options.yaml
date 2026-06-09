@@ -151,6 +151,7 @@ plugins:
       prefer-using-list-view: true
       provide-correct-intl-args: true
       use-design-system-item: true
+      use-setstate-synchronously: true
       prefer-trailing-comma: true
       tag-name: true
 

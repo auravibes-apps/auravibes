@@ -318,6 +318,8 @@ class _SkillCredentialDefinitionEditScreenState
       ),
     );
     if (shouldDelete != true) return;
+    if (!mounted) return;
+
     final definitionId = widget.definitionId;
     if (definitionId == null) return;
 
