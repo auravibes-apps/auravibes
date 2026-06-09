@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: missing-test-assertion
@@ -149,7 +147,7 @@ void main() {
       verify(fixture.conversationRepo.createConversation(any)).called(1);
     });
 
-    test('throws when model selection not found', () async {
+    test('throws when model selection not found', () {
       when(
         fixture.workspaceModelSelectionRepo.getWorkspaceModelSelectionById(any),
       ).thenAnswer((_) async => null);

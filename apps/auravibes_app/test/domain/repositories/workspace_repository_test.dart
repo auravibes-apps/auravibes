@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: cascade_invocations
@@ -216,7 +214,7 @@ void main() {
       );
     });
 
-    test('validateWorkspace throws for invalid name', () async {
+    test('validateWorkspace throws for invalid name', () {
       final repo = _StubWorkspaceRepository();
       repo.validateResult = false;
 

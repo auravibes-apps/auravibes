@@ -2,8 +2,6 @@
 // Required: Tests use Future chains to assert async side effects.
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: no-empty-block
@@ -91,8 +89,9 @@ void main() {
           updatedResults.add(result);
           updatedMessageIds.add(messageId);
         },
-        remove: (messageId) async {
+        remove: (messageId) {
           removedMessageIds.add(messageId);
+          return Future<void>.value();
         },
       ),
       conversationStreamingRuntime: ConversationStreamingRuntime(
@@ -139,8 +138,9 @@ void main() {
             updatedResults.add(result);
             updatedMessageIds.add(messageId);
           },
-          remove: (messageId) async {
+          remove: (messageId) {
             removedMessageIds.add(messageId);
+            return Future<void>.value();
           },
         ),
         conversationStreamingRuntime: ConversationStreamingRuntime(
@@ -272,8 +272,9 @@ void main() {
               updatedResults.add(result);
               updatedMessageIds.add(messageId);
             },
-            remove: (messageId) async {
+            remove: (messageId) {
               removedMessageIds.add(messageId);
+              return Future<void>.value();
             },
           ),
           conversationStreamingRuntime: ConversationStreamingRuntime(
@@ -763,7 +764,9 @@ void main() {
       messagesStreamingRuntime: MessagesStreamingRuntime(
         startSubscription: (_, _) {},
         updateResult: (_, _) {},
-        remove: (_) async {},
+        remove: (_) {
+          return Future<void>.value();
+        },
       ),
       conversationStreamingRuntime: ConversationStreamingRuntime(
         start: (_) {},
@@ -796,7 +799,9 @@ void main() {
         messagesStreamingRuntime: MessagesStreamingRuntime(
           startSubscription: (_, _) {},
           updateResult: (_, _) {},
-          remove: (_) async {},
+          remove: (_) {
+            return Future<void>.value();
+          },
         ),
         conversationStreamingRuntime: ConversationStreamingRuntime(
           start: (_) {},
@@ -813,7 +818,7 @@ void main() {
       ).thenAnswer((_) async => [_userMessage]);
     });
 
-    test('throws when conversation not found', () async {
+    test('throws when conversation not found', () {
       when(
         conversationRepository.getConversationById('conversation-1'),
       ).thenAnswer((_) async => null);
@@ -824,7 +829,7 @@ void main() {
       );
     });
 
-    test('throws when conversation has no model id', () async {
+    test('throws when conversation has no model id', () {
       final noModelConversation = ConversationEntity(
         id: 'conversation-1',
         title: 'No Model',
@@ -846,7 +851,7 @@ void main() {
       );
     });
 
-    test('throws when model not found', () async {
+    test('throws when model not found', () {
       when(
         conversationRepository.getConversationById('conversation-1'),
       ).thenAnswer((_) async => _conversation);
@@ -966,7 +971,9 @@ void main() {
       messagesStreamingRuntime: MessagesStreamingRuntime(
         startSubscription: (_, _) {},
         updateResult: (_, _) {},
-        remove: (_) async {},
+        remove: (_) {
+          return Future<void>.value();
+        },
       ),
       conversationStreamingRuntime: ConversationStreamingRuntime(
         start: (_) {},
@@ -999,7 +1006,9 @@ void main() {
         messagesStreamingRuntime: MessagesStreamingRuntime(
           startSubscription: (_, _) {},
           updateResult: (_, _) {},
-          remove: (_) async {},
+          remove: (_) {
+            return Future<void>.value();
+          },
         ),
         conversationStreamingRuntime: ConversationStreamingRuntime(
           start: (_) {},

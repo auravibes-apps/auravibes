@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: format-comment
@@ -829,7 +827,7 @@ void main() {
 
     tearDown(fixture.tearDown);
 
-    test('throws for non-existent conversation', () async {
+    test('throws for non-existent conversation', () {
       expect(
         () => fixture.repository.validateConversationToolSetting(
           'nonexistent',
@@ -840,7 +838,7 @@ void main() {
       );
     });
 
-    test('throws for invalid tool type', () async {
+    test('throws for invalid tool type', () {
       expect(
         () => fixture.repository.validateConversationToolSetting(
           'nonexistent-conversation',

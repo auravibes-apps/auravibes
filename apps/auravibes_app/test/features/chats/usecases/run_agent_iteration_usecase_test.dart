@@ -342,13 +342,14 @@ void main() {
         agentCancellationRuntime: fixture.agentCancellationRuntime,
         rateLimitRetryRuntime: fixture.rateLimitRetryRuntime,
         now: () => currentTime,
-        sleep: (delay) async {
+        sleep: (delay) {
           delays.add(delay);
           expect(
             fixture.rateLimitRetryRuntime.retryAt('conversation-1'),
             startTime.add(const Duration(seconds: 3)),
           );
           currentTime = currentTime.add(delay);
+          return Future<void>.value();
         },
       );
 

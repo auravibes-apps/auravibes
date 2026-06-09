@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: no-empty-block
@@ -73,7 +71,9 @@ void main() {
         resumeConversationIfReadyUsecase.call(
           messageId: anyNamed('messageId'),
         ),
-      ).thenAnswer((_) async {});
+      ).thenAnswer((_) {
+        return Future<void>.value();
+      });
     });
 
     test('marks tool call as skippedByUser and resumes conversation', () async {

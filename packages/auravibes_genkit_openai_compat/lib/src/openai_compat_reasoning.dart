@@ -1,7 +1,5 @@
 // ignore_for_file: prefer-match-file-name
 // Required: This internal package keeps its small provider API in one file.
-// ignore_for_file: avoid-redundant-async
-// Required: Genkit callback signatures remain async-compatible.
 // ignore_for_file: avoid-substring
 // Required: Streaming parser uses protocol byte offsets.
 // ignore_for_file: format-comment

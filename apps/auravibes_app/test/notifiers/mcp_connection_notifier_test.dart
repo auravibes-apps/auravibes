@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: no-empty-block
@@ -596,7 +594,7 @@ void main() {
       expect(state.firstOrNull?.server.id, 'server-2');
     });
 
-    test('dispose cleans up connections', () async {
+    test('dispose cleans up connections', () {
       container.read(mcpConnectionProvider.notifier).state = [
         McpConnectionState(
           server: _server,
@@ -652,7 +650,7 @@ void main() {
       expect(state, isEmpty);
     });
 
-    test('disconnectMcpServer for missing server is no-op', () async {
+    test('disconnectMcpServer for missing server is no-op', () {
       final notifier = container.read(mcpConnectionProvider.notifier);
       notifier.disconnectMcpServer('nonexistent');
 

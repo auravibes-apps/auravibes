@@ -5,9 +5,6 @@
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
 
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
-
 import 'dart:convert';
 
 import 'package:auravibes_app/services/encryption_service.dart';
@@ -116,7 +113,7 @@ void main() {
       );
     });
 
-    test('decrypt rejects malformed base64 payloads', () async {
+    test('decrypt rejects malformed base64 payloads', () {
       expect(
         service.decrypt('not-valid-base64%%%'),
         throwsA(isA<FormatException>()),

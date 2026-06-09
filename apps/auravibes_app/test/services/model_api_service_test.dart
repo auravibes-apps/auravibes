@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
 // ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-static-class
@@ -481,7 +479,7 @@ void main() {
         dio.close();
       });
 
-      test('throws on non-200 status code', () async {
+      test('throws on non-200 status code', () {
         final dio = _createDioWithNon200();
         final service = ModelApiService(dio: dio);
 
@@ -493,7 +491,7 @@ void main() {
         dio.close();
       });
 
-      test('throws on null data', () async {
+      test('throws on null data', () {
         final dio = _createDioWithNullData();
         final service = ModelApiService(dio: dio);
 
@@ -505,7 +503,7 @@ void main() {
         dio.close();
       });
 
-      test('throws on 404 status code', () async {
+      test('throws on 404 status code', () {
         final dio = _createDioWithNon200(statusCode: 404);
         final service = ModelApiService(dio: dio);
 

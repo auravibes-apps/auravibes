@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: format-comment
@@ -196,14 +194,14 @@ void main() {
       expect(entity.name, 'Workspace');
     });
 
-    test('throws for name shorter than 3 characters', () async {
+    test('throws for name shorter than 3 characters', () {
       expect(
         () => fixture.usecase.call(name: 'ab'),
         throwsA(isA<WorkspaceValidationException>()),
       );
     });
 
-    test('throws for name longer than 20 characters', () async {
+    test('throws for name longer than 20 characters', () {
       expect(
         () => fixture.usecase.call(name: 'a' * 21),
         throwsA(isA<WorkspaceValidationException>()),
@@ -237,14 +235,14 @@ void main() {
       expect(entity.name, 'Updated');
     });
 
-    test('throws for invalid name', () async {
+    test('throws for invalid name', () {
       expect(
         () => fixture.usecase.call(id: 'ws-1', name: 'ab'),
         throwsA(isA<WorkspaceValidationException>()),
       );
     });
 
-    test('throws for name longer than 20 characters', () async {
+    test('throws for name longer than 20 characters', () {
       expect(
         () => fixture.usecase.call(id: 'ws-1', name: 'a' * 21),
         throwsA(isA<WorkspaceValidationException>()),

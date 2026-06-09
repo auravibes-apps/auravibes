@@ -15,8 +15,6 @@
 // ignore_for_file: prefer-static-class
 // Required: Tests keep fixture helpers and fakes top-level.
 
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
@@ -290,7 +288,7 @@ void main() {
       final _ = verifyNever(() => fixture.mockMessageRepo.createMessage(any()));
     });
 
-    test('manual failure leaves state unchanged', () async {
+    test('manual failure leaves state unchanged', () {
       final messages = [
         _makeMessage(),
         _makeMessage(id: 'msg-2', isUser: false),
@@ -368,7 +366,7 @@ void main() {
   group('CompactConversationUsecase', () {
     test(
       'throws CompactionUnavailableException when conversation not found',
-      () async {
+      () {
         when(
           () => fixture.mockConversationRepo.getConversationById('conv-1'),
         ).thenAnswer((_) async => null);
@@ -385,7 +383,7 @@ void main() {
 
     test(
       'throws CompactionUnavailableException when no model selected',
-      () async {
+      () {
         when(
           () => fixture.mockConversationRepo.getConversationById('conv-1'),
         ).thenAnswer((_) async => _makeConversation(modelId: null));
@@ -400,7 +398,7 @@ void main() {
       },
     );
 
-    test('throws CompactionUnsafeException when no safe range', () async {
+    test('throws CompactionUnsafeException when no safe range', () {
       when(
         () => fixture.mockConversationRepo.getConversationById('conv-1'),
       ).thenAnswer((_) async => _makeConversation());
@@ -463,7 +461,7 @@ void main() {
       verify(() => fixture.mockMessageRepo.createMessage(any())).called(1);
     });
 
-    test('throws CompactionFailedException on AI service failure', () async {
+    test('throws CompactionFailedException on AI service failure', () {
       final messages = [
         _makeMessage(),
         _makeMessage(id: 'msg-2', isUser: false),

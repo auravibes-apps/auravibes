@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: no-empty-block
@@ -283,7 +281,7 @@ void main() {
       expect(patched.content, 'updated');
     });
 
-    test('patchMessage throws for non-existent', () async {
+    test('patchMessage throws for non-existent', () {
       expect(
         () => repository.patchMessage(
           'nonexistent',
@@ -375,7 +373,7 @@ void main() {
       expect(valid, isTrue);
     });
 
-    test('validateMessage throws for invalid message', () async {
+    test('validateMessage throws for invalid message', () {
       expect(
         () => repository.validateMessage(
           const MessageToCreate(
@@ -516,7 +514,7 @@ void main() {
       },
     );
 
-    test('createMessage rejects empty user content with metadata', () async {
+    test('createMessage rejects empty user content with metadata', () {
       expect(
         () => repository.createMessage(
           const MessageToCreate(
@@ -534,7 +532,7 @@ void main() {
 
     test(
       'createMessage rejects empty assistant content with invalid metadata',
-      () async {
+      () {
         expect(
           () => repository.createMessage(
             const MessageToCreate(
@@ -553,7 +551,7 @@ void main() {
 
     test(
       'createMessage rejects empty assistant content with blank metadata',
-      () async {
+      () {
         expect(
           () => repository.createMessage(
             const MessageToCreate(

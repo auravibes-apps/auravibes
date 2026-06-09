@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: format-comment
@@ -251,7 +249,7 @@ void main() {
       expect(await repository.getWorkspaceCount(), 1);
     });
 
-    test('throws validation error for short name', () async {
+    test('throws validation error for short name', () {
       expect(
         () => usecase.call(name: 'ab'),
         throwsA(isA<WorkspaceValidationException>()),
@@ -301,7 +299,7 @@ void main() {
       );
     });
 
-    test('throws when workspace not found', () async {
+    test('throws when workspace not found', () {
       expect(
         () => usecase.call(id: 'nonexistent', name: 'New Name'),
         throwsA(isA<Exception>()),

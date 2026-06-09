@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
 // ignore_for_file: no-empty-block
 // Required: Tests use intentional no-op callbacks and fake hooks.
 // ignore_for_file: missing-test-assertion
@@ -36,7 +34,9 @@ void main() {
       ).thenAnswer((_) async => null);
       when(
         mockStorage.write(key: anyNamed('key'), value: anyNamed('value')),
-      ).thenAnswer((_) async {});
+      ).thenAnswer((_) {
+        return Future<void>.value();
+      });
 
       final _ = await manager.getOrCreateSecretKey();
       manager.clearCache();
@@ -45,7 +45,9 @@ void main() {
     });
 
     test('deleteKey removes from storage and clears cache', () async {
-      when(mockStorage.delete(key: anyNamed('key'))).thenAnswer((_) async {});
+      when(mockStorage.delete(key: anyNamed('key'))).thenAnswer((_) {
+        return Future<void>.value();
+      });
 
       await manager.deleteKey();
 
@@ -58,7 +60,9 @@ void main() {
       ).thenAnswer((_) async => null);
       when(
         mockStorage.write(key: anyNamed('key'), value: anyNamed('value')),
-      ).thenAnswer((_) async {});
+      ).thenAnswer((_) {
+        return Future<void>.value();
+      });
 
       final key1 = await manager.getOrCreateSecretKey();
       final key2 = await manager.getOrCreateSecretKey();
@@ -96,7 +100,9 @@ void main() {
         ).thenAnswer((_) async => null);
         when(
           mockStorage.write(key: anyNamed('key'), value: anyNamed('value')),
-        ).thenAnswer((_) async {});
+        ).thenAnswer((_) {
+          return Future<void>.value();
+        });
 
         final key = await manager.getOrCreateSecretKey();
         final bytes = await key.extractBytes();

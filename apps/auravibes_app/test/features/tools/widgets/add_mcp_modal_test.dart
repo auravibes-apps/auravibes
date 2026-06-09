@@ -6,8 +6,6 @@
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
 // ignore_for_file: scoped_providers_should_specify_dependencies
 // Required: widget tests override scoped providers directly.
 // ignore_for_file: prefer-moving-to-variable
@@ -94,11 +92,12 @@ Future<void> _pumpAndInit(WidgetTester tester, Widget widget) async {
 }
 
 Future<void> _showDialog(WidgetTester tester) async {
-  await tester.runAsync(() async {
+  await tester.runAsync(() {
     AddMcpModal.show(
       tester.element(find.byType(Scaffold)),
       workspaceId: _wsId,
     );
+    return Future<void>.value();
   });
   await tester.pump();
   await tester.pump();

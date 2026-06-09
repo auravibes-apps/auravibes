@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 // ignore_for_file: prefer-static-class
@@ -270,11 +268,9 @@ void main() {
   group('McpServers table insert', () {
     final fixture = _DatabaseFixture(_testConnection);
 
-    setUp(() async {
-      fixture.reset();
-    });
+    setUp(fixture.reset);
 
-    tearDown(() async => fixture.close());
+    tearDown(fixture.close);
 
     test('inserts and reads a row', () async {
       final inserted = await fixture.database
@@ -308,7 +304,7 @@ void main() {
           .get();
     });
 
-    tearDown(() async => fixture.close());
+    tearDown(fixture.close);
 
     test('has expected columns', () {
       final names = columns.map((r) => r.read<String>('name')).toSet();

@@ -2,8 +2,6 @@
 // Required: Widget tests use helpers that build widgets under test.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 // ignore_for_file: prefer-moving-to-variable
@@ -62,11 +60,12 @@ Future<void> _pumpAndInit(WidgetTester tester, Widget widget) async {
 }
 
 Future<void> _showDialog(WidgetTester tester) async {
-  await tester.runAsync(() async {
+  await tester.runAsync(() {
     AddToolModal.show(
       tester.element(find.byType(Scaffold)),
       workspaceId: _wsId,
     );
+    return Future<void>.value();
   });
   await tester.pump();
   await tester.pump();

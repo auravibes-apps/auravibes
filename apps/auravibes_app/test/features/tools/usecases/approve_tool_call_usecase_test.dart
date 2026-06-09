@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: no-empty-block
@@ -146,7 +144,9 @@ void main() {
       );
       when(
         resumeConversationIfReadyUsecase.call(messageId: anyNamed('messageId')),
-      ).thenAnswer((_) async {});
+      ).thenAnswer((_) {
+        return Future<void>.value();
+      });
     });
 
     test('marks tool as not found when resolution fails', () async {

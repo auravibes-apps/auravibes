@@ -1,9 +1,6 @@
 // ignore_for_file: avoid-top-level-members-in-tests
 // Required: Test files keep shared fixtures and helpers top-level.
 
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
-
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/features/chats/usecases/compact_conversation_usecase.dart';
@@ -82,7 +79,7 @@ void main() {
       expect(result.error, same(exception));
     });
 
-    test('catches only CompactionException, not unexpected errors', () async {
+    test('catches only CompactionException, not unexpected errors', () {
       when(
         () => mockCompact.call(
           conversationId: 'conv-1',

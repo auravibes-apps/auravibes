@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
 // ignore_for_file: no-empty-block
 // Required: Tests use intentional no-op callbacks and fake hooks.
 // ignore_for_file: member-ordering
@@ -51,7 +49,7 @@ void main() {
       final requestStarted = Completer<void>();
       CancelToken? observedCancelToken;
       final adapter = _FakeHttpClientAdapter(
-        onFetch: (options, _, _) async {
+        onFetch: (options, _, _) {
           observedCancelToken = options.cancelToken;
           if (!requestStarted.isCompleted) {
             requestStarted.complete();

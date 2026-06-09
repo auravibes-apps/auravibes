@@ -9,9 +9,6 @@
 // ignore_for_file: prefer-static-class
 // Required: Tests keep fixture helpers and fakes top-level.
 
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
-
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
@@ -58,10 +55,7 @@ void main() {
   group('WorkspaceDao Tests', () {
     final fixture = _DatabaseFixture(createTestConnection);
 
-    setUp(() async {
-      // Use in-memory database for testing
-      fixture.reset();
-    });
+    setUp(fixture.reset);
 
     tearDown(() async {
       await fixture.close();

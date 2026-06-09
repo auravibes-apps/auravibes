@@ -11,9 +11,6 @@
 // ignore_for_file: prefer-static-class
 // Required: Tests keep fixture helpers and fakes top-level.
 
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
-
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools_groups.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
@@ -74,7 +71,7 @@ void main() {
       bool isEnabled = false,
       String? groupId,
       String? config,
-    }) async {
+    }) {
       final companion = ToolsCompanion.insert(
         workspaceId: workspaceId,
         workspaceToolsGroupId: groupId != null

@@ -4,8 +4,6 @@
 // Required: Tests assert existing code-unit substring behavior.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -436,12 +434,12 @@ void main() {
       expect(titles, ['hello world from failure']);
     });
 
-    test('strips double quotes from title', () async {
+    test('strips double quotes from title', () {
       final stripped = _stripQuotes('"My Title"');
       expect(stripped, 'My Title');
     });
 
-    test('strips single quotes from title', () async {
+    test('strips single quotes from title', () {
       final quote = String.fromCharCode(39);
       final stripped = _stripQuotes('${quote}My Title$quote');
       expect(stripped, 'My Title');

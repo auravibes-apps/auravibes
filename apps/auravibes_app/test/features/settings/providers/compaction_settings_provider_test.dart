@@ -9,8 +9,6 @@
 // ignore_for_file: prefer-correct-type-name
 // Required: Test doubles mirror repository contract names.
 
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/domain/repositories/workspace_compaction_settings_repository.dart';
@@ -175,7 +173,7 @@ void main() {
   });
 
   group('compactionSettingsProvider', () {
-    test('reads overridden value', () async {
+    test('reads overridden value', () {
       final container = ProviderContainer(
         overrides: [
           compactionSettingsProvider(testWorkspaceId).overrideWithValue(
@@ -191,7 +189,7 @@ void main() {
       expect(asyncValue.value, CompactionSettings.defaults);
     });
 
-    test('reads custom overridden value', () async {
+    test('reads custom overridden value', () {
       const custom = CompactionSettings(
         autoCompactionEnabled: false,
         usagePercentageThreshold: 60,
@@ -248,7 +246,7 @@ void main() {
       ).called(1);
     });
 
-    test('rejects usage percentage below 5', () async {
+    test('rejects usage percentage below 5', () {
       final container = fixture.container;
       const invalid = CompactionSettings(
         usagePercentageThreshold: 4,
@@ -264,7 +262,7 @@ void main() {
       );
     });
 
-    test('rejects usage percentage above 100', () async {
+    test('rejects usage percentage above 100', () {
       final container = fixture.container;
       const invalid = CompactionSettings(
         usagePercentageThreshold: 101,
@@ -280,7 +278,7 @@ void main() {
       );
     });
 
-    test('rejects remaining token threshold <= 0', () async {
+    test('rejects remaining token threshold <= 0', () {
       final container = fixture.container;
       const invalid = CompactionSettings(
         usagePercentageThreshold: 50,

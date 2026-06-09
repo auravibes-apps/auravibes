@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: prefer-correct-identifier-length
@@ -124,7 +122,7 @@ void main() {
       );
     });
 
-    test('startConversation throws when no model selected', () async {
+    test('startConversation throws when no model selected', () {
       final notifier = container.read(newChatProvider('ws-1').notifier);
       expect(
         () => notifier.startConversation('hello'),

@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: prefer-correct-identifier-length
@@ -18,8 +16,9 @@ void main() {
       final controller = StreamController<int>();
 
       final output = controller.stream.coalescingSave(
-        store: (state) async {
+        store: (state) {
           savedStates.add(state);
+          return Future<void>.value();
         },
       );
 
@@ -39,8 +38,9 @@ void main() {
       final controller = StreamController<int>();
 
       final output = controller.stream.coalescingSave(
-        store: (state) async {
+        store: (state) {
           savedStates.add(state);
+          return Future<void>.value();
         },
       );
 
@@ -70,8 +70,9 @@ void main() {
       final controller = StreamController<String>();
 
       final output = controller.stream.coalescingSave(
-        store: (state) async {
+        store: (state) {
           savedStates.add(state);
+          return Future<void>.value();
         },
       );
 
@@ -120,8 +121,9 @@ void main() {
       final savedStates = <int>[];
 
       final output = controller.stream.coalescingSave(
-        store: (state) async {
+        store: (state) {
           savedStates.add(state);
+          return Future<void>.value();
         },
       );
 
@@ -137,8 +139,9 @@ void main() {
       final controller = StreamController<int>();
 
       final output = controller.stream.coalescingSave(
-        store: (state) async {
+        store: (state) {
           savedStates.add(state);
+          return Future<void>.value();
         },
       );
 
@@ -179,8 +182,9 @@ void main() {
 
       final _ = controller.stream
           .coalescingSave(
-            store: (state) async {
+            store: (state) {
               storeTimestamps.add(state);
+              return Future<void>.value();
             },
           )
           .listen((state) {
@@ -205,8 +209,9 @@ void main() {
       final controller = StreamController<String>();
 
       final output = controller.stream.coalescingSave(
-        store: (state) async {
+        store: (state) {
           savedStates.add(state);
+          return Future<void>.value();
         },
       );
 

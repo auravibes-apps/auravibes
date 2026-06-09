@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: newline-before-return
@@ -215,7 +213,7 @@ void main() {
       expect(state.name, isNull);
     });
 
-    test('setUrl with null clears url', () async {
+    test('setUrl with null clears url', () {
       final notifier = container.read(
         addModelProviderStateProvider('ws1').notifier,
       );
@@ -299,7 +297,7 @@ void main() {
       );
     });
 
-    test('build with different workspaceIds are independent', () async {
+    test('build with different workspaceIds are independent', () {
       final state1 = container.read(addModelProviderStateProvider('ws1'));
       final state2 = container.read(addModelProviderStateProvider('ws2'));
 

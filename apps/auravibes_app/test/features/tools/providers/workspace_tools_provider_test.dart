@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: no-empty-block
@@ -359,7 +357,7 @@ void main() {
   });
 
   group('workspaceToolRowProvider', () {
-    test('returns null when index equals list length', () async {
+    test('returns null when index equals list length', () {
       final repository = _FakeWorkspaceToolsRepository()
         ..tools = [_tool(id: 't1')];
       final container2 = ProviderContainer(
