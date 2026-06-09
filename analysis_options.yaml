@@ -158,6 +158,8 @@ plugins:
           - WorkspaceModelSelectionWithConnectionEntity
       prefer-define-hero-tag: true
       prefer-enums-by-name: true
+      prefer-extracting-callbacks:
+        allowed-line-count: 2
       prefer-first: true
       prefer-match-file-name:
         ignore-typedefs: true

@@ -1,5 +1,4 @@
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-extracting-callbacks
 // Required: Component callbacks stay colocated with UI state.
 // ignore_for_file: prefer-single-widget-per-file
 // Required: UI components keep related private widgets together.

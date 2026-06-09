@@ -1,5 +1,4 @@
 // Required: Existing UI spacing uses small numeric values.
-// ignore_for_file: prefer-extracting-callbacks
 // Required: Form callbacks stay local to this screen.
 import 'dart:async';
 

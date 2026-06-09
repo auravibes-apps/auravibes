@@ -1,4 +1,3 @@
-// ignore_for_file: prefer-extracting-callbacks
 // Required: Stories keep callbacks inline for readability.
 // ignore_for_file: prefer-single-widget-per-file
 // Required: Widgetbook stories group related story widgets.

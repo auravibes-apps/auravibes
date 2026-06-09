@@ -1,5 +1,4 @@
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-extracting-callbacks
 // Required: UI callbacks stay local to their widgets.
 // ignore_for_file: prefer-single-widget-per-file
 // Required: Feature widgets keep closely related private widgets together.
