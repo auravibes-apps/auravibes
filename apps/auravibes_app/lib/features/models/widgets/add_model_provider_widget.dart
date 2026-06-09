@@ -28,9 +28,18 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod/experimental/mutation.dart';
 
 class AddModelProviderWidget extends HookConsumerWidget {
-  const AddModelProviderWidget({required this.workspaceId, super.key});
+  const AddModelProviderWidget({
+    required this.workspaceId,
+    super.key,
+    this.onCreated,
+    this.onCancel,
+    this.showHeader = true,
+  });
 
   final String workspaceId;
+  final VoidCallback? onCreated;
+  final VoidCallback? onCancel;
+  final bool showHeader;
 
   // Extract long locale key to avoid line length issues
   static const String noModelsFoundKey =
@@ -43,7 +52,12 @@ class AddModelProviderWidget extends HookConsumerWidget {
       );
       final created = await notifier.addModelProvider();
       if (context.mounted && created != null) {
-        Navigator.of(context).pop(created);
+        final onCreated = this.onCreated;
+        if (onCreated != null) {
+          onCreated();
+        } else {
+          Navigator.of(context).pop(created);
+        }
       }
     });
   }
@@ -66,9 +80,10 @@ class AddModelProviderWidget extends HookConsumerWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _ModalHeader(
-          onClose: () => Navigator.of(context).pop(),
-        ),
+        if (showHeader)
+          _ModalHeader(
+            onClose: onCancel ?? () => Navigator.of(context).pop(),
+          ),
         _SelectedModelHeader(workspaceId: workspaceId),
         Flexible(
           child: SingleChildScrollView(

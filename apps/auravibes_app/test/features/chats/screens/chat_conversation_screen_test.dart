@@ -23,6 +23,7 @@ import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart'
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/screens/chat_conversation_screen.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
@@ -558,6 +559,97 @@ void main() {
     final input = tester.widget<ChatInputWidget>(find.byType(ChatInputWidget));
     expect(input.isCompacting, isTrue);
   });
+
+  testWidgets('shows rate-limit retry countdown and marks input busy', (
+    tester,
+  ) async {
+    final conversation = ConversationEntity(
+      id: _chatId,
+      title: 'Chat',
+      workspaceId: _workspaceId,
+      isPinned: false,
+      createdAt: DateTime(2026),
+      updatedAt: DateTime(2026),
+    );
+    final retryAt = DateTime.now().add(const Duration(seconds: 30));
+
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        EasyLocalization(
+          child: Builder(
+            builder: (context) {
+              return TestProviderScope(
+                overrides: [
+                  conversationSelectedProvider.overrideWithValue(_chatId),
+                  routerPathSegmentsProvider.overrideWithValue(const []),
+                  conversationRepositoryProvider.overrideWithValue(
+                    _StubConversationRepository(),
+                  ),
+                  conversationChatProvider(_workspaceId).overrideWith(
+                    () => _ResultChatNotifier(
+                      ConversationFound(conversation),
+                    ),
+                  ),
+                  conversationBusyStateProvider.overrideWith(
+                    (ref) async => const ConversationBusyState(
+                      isStreaming: false,
+                      hasPendingTools: false,
+                    ),
+                  ),
+                  conversationRateLimitRetryProvider.overrideWith(
+                    () => _StaticRateLimitRetryNotifier(retryAt),
+                  ),
+                  chatMessagesProvider.overrideWith(
+                    (ref) async => const <MessageEntity>[],
+                  ),
+                  chatMessageIdsProvider.overrideWith(
+                    (ref) => MessageIdList.empty,
+                  ),
+                  contextUsageProvider.overrideWith(
+                    (ref) => ContextUsageData.compute(
+                      usedTokens: 0,
+                      limitTokens: null,
+                    ),
+                  ),
+                  pendingToolCallsProvider.overrideWith(
+                    (ref) async => const <PendingToolCall>[],
+                  ),
+                  listModelsGroupedByProviderProvider(
+                    workspaceId: _workspaceId,
+                  ).overrideWith(
+                    (ref) => Stream.value(const {}),
+                  ),
+                ],
+                child: MaterialApp(
+                  home: const ChatConversationScreen(
+                    workspaceId: _workspaceId,
+                    chatId: _chatId,
+                  ),
+                  locale: context.locale,
+                  localizationsDelegates: context.localizationDelegates,
+                  supportedLocales: context.supportedLocales,
+                ),
+              );
+            },
+          ),
+          supportedLocales: const [Locale('en')],
+          path: 'assets/i18n',
+          fallbackLocale: const Locale('en'),
+          startLocale: const Locale('en'),
+          useOnlyLangCode: true,
+          useFallbackTranslations: true,
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+    });
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.textContaining('Rate limit reached'), findsOneWidget);
+    final input = tester.widget<ChatInputWidget>(find.byType(ChatInputWidget));
+    expect(input.isBusy, isTrue);
+  });
 }
 
 class _ForeverLoadingChatNotifier extends ConversationChatNotifier {
@@ -580,6 +672,15 @@ class _ResultChatNotifier extends ConversationChatNotifier {
 
   @override
   Future<ConversationResult> build(String workspaceId) async => result;
+}
+
+class _StaticRateLimitRetryNotifier extends ConversationRateLimitRetryNotifier {
+  _StaticRateLimitRetryNotifier(this.retryDeadline);
+
+  final DateTime retryDeadline;
+
+  @override
+  Map<String, DateTime> build() => {_chatId: retryDeadline};
 }
 
 class _StubConversationRepository implements ConversationRepository {

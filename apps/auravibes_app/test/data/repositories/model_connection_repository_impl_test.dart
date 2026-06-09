@@ -235,6 +235,113 @@ void main() {
       });
     });
 
+    group('updateModelConnection', () {
+      test('preserves encrypted key when key is unchanged', () async {
+        final updatedRow = connectionRow.copyWith(
+          name: 'Renamed Connection',
+          url: const Value('https://proxy.example.com'),
+        );
+        when(
+          mockConnectionsDao.getModelConnectionById('conn-1'),
+        ).thenAnswer((_) async => connectionRow);
+        when(
+          mockProvidersDao.getProviderById('openai'),
+        ).thenAnswer((_) async => providerRow);
+        when(
+          mockEncryptionService.decrypt('encrypted-key'),
+        ).thenAnswer((_) async => 'plain-existing-key');
+        when(
+          mockModelProviderServices.getWorkspaceModelSelections(any),
+        ).thenAnswer((_) async => const []);
+        when(
+          mockConnectionsDao.updateModelConnection('conn-1', any),
+        ).thenAnswer((_) async => updatedRow);
+
+        final result = await repository.updateModelConnection(
+          'conn-1',
+          const ModelConnectionToUpdate(
+            name: 'Renamed Connection',
+            url: 'https://proxy.example.com',
+          ),
+        );
+
+        expect(result.name, 'Renamed Connection');
+        expect(result.key, 'encrypted-key');
+        verifyNever(mockEncryptionService.encrypt(any));
+        verify(mockEncryptionService.decrypt('encrypted-key')).called(1);
+      });
+
+      test('encrypts replacement key', () async {
+        final updatedRow = connectionRow.copyWith(
+          encryptedAuthValue: const Value('encrypted-new-key'),
+          keySuffix: const Value('123456'),
+        );
+        when(
+          mockConnectionsDao.getModelConnectionById('conn-1'),
+        ).thenAnswer((_) async => connectionRow);
+        when(
+          mockProvidersDao.getProviderById('openai'),
+        ).thenAnswer((_) async => providerRow);
+        when(
+          mockEncryptionService.encrypt('new-api-key-123456'),
+        ).thenAnswer((_) async => 'encrypted-new-key');
+        when(
+          mockModelProviderServices.getWorkspaceModelSelections(any),
+        ).thenAnswer((_) async => const []);
+        when(
+          mockConnectionsDao.updateModelConnection('conn-1', any),
+        ).thenAnswer((_) async => updatedRow);
+
+        final result = await repository.updateModelConnection(
+          'conn-1',
+          const ModelConnectionToUpdate(key: 'new-api-key-123456'),
+        );
+
+        expect(result.key, 'encrypted-new-key');
+        expect(result.keySuffix, '123456');
+        verifyNever(mockEncryptionService.decrypt(any));
+        verify(mockEncryptionService.encrypt('new-api-key-123456')).called(1);
+      });
+
+      test('preserves url when url update is omitted', () async {
+        final existingRow = connectionRow.copyWith(
+          url: const Value('https://proxy.example.com'),
+        );
+        final updatedRow = existingRow.copyWith(name: 'Renamed Connection');
+        when(
+          mockConnectionsDao.getModelConnectionById('conn-1'),
+        ).thenAnswer((_) async => existingRow);
+        when(
+          mockProvidersDao.getProviderById('openai'),
+        ).thenAnswer((_) async => providerRow);
+        when(
+          mockEncryptionService.decrypt('encrypted-key'),
+        ).thenAnswer((_) async => 'plain-existing-key');
+        when(
+          mockModelProviderServices.getWorkspaceModelSelections(any),
+        ).thenAnswer((_) async => const []);
+        when(
+          mockConnectionsDao.updateModelConnection('conn-1', any),
+        ).thenAnswer((_) async => updatedRow);
+
+        final result = await repository.updateModelConnection(
+          'conn-1',
+          const ModelConnectionToUpdate(name: 'Renamed Connection'),
+        );
+
+        expect(result.url, 'https://proxy.example.com');
+        final companion =
+            verify(
+                  mockConnectionsDao.updateModelConnection(
+                    'conn-1',
+                    captureAny,
+                  ),
+                ).captured.single
+                as ServiceConnectionsCompanion;
+        expect(companion.url.present, isFalse);
+      });
+    });
+
     group('deleteModelConnection', () {
       test('deletes existing connection', () async {
         when(

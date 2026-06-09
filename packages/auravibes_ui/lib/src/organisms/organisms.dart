@@ -20,6 +20,7 @@ export 'aura_input.dart';
 export 'aura_popup_menu_controller.dart'
     show
         AuraPopupMenu,
+        AuraPopupMenuButton,
         AuraPopupMenuController,
         AuraPopupMenuDivider,
         AuraPopupMenuItem;

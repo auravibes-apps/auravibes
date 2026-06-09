@@ -1189,6 +1189,19 @@ class MockModelConnectionsDao extends _i1.Mock
           as _i6.Future<List<_i2.ServiceConnectionTable>>);
 
   @override
+  _i6.Stream<List<_i2.ServiceConnectionTable>>
+  watchAllModelConnectionsByWorkspace({required List<String>? workspaceIds}) =>
+      (super.noSuchMethod(
+            Invocation.method(#watchAllModelConnectionsByWorkspace, [], {
+              #workspaceIds: workspaceIds,
+            }),
+            returnValue: _i6.Stream<List<_i2.ServiceConnectionTable>>.empty(),
+            returnValueForMissingStub:
+                _i6.Stream<List<_i2.ServiceConnectionTable>>.empty(),
+          )
+          as _i6.Stream<List<_i2.ServiceConnectionTable>>);
+
+  @override
   _i6.Future<_i2.ServiceConnectionTable?> getModelConnectionById(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#getModelConnectionById, [id]),
@@ -1221,6 +1234,19 @@ class MockModelConnectionsDao extends _i1.Mock
                 ),
           )
           as _i6.Future<_i2.ServiceConnectionTable>);
+
+  @override
+  _i6.Future<_i2.ServiceConnectionTable?> updateModelConnection(
+    String? id,
+    _i2.ServiceConnectionsCompanion? modelConnection,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#updateModelConnection, [id, modelConnection]),
+            returnValue: _i6.Future<_i2.ServiceConnectionTable?>.value(),
+            returnValueForMissingStub:
+                _i6.Future<_i2.ServiceConnectionTable?>.value(),
+          )
+          as _i6.Future<_i2.ServiceConnectionTable?>);
 
   @override
   _i6.Future<void> deleteModelConnection(String? id) =>

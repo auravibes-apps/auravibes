@@ -25,7 +25,10 @@ import 'package:auravibes_app/features/tools/usecases/run_resolved_tool_usecase.
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
 import 'package:auravibes_app/utils/encode.dart';
+import 'package:logging/logging.dart';
 import 'package:riverpod/riverpod.dart';
+
+final _logger = Logger('approve_tool_call_usecase');
 
 class ApproveToolCallUsecase {
   const ApproveToolCallUsecase({
@@ -133,7 +136,28 @@ class ApproveToolCallUsecase {
         resultStatus: ToolCallResultStatus.success,
         responseRaw: result.toString(),
       );
-    } on Object catch (_) {
+    } on FormatException catch (error, stackTrace) {
+      _logger.severe(
+        'Approved tool execution failed '
+        'conversationId=$conversationId '
+        'toolType=${tool.type.name} '
+        'toolIdentifier=${tool.toolIdentifier}',
+        error,
+        stackTrace,
+      );
+      return _ExecutionResult(
+        resultStatus: ToolCallResultStatus.executionError,
+        responseRaw: 'Tool execution failed: ${error.message}',
+      );
+    } on Object catch (error, stackTrace) {
+      _logger.severe(
+        'Approved tool execution failed '
+        'conversationId=$conversationId '
+        'toolType=${tool.type.name} '
+        'toolIdentifier=${tool.toolIdentifier}',
+        error,
+        stackTrace,
+      );
       return const _ExecutionResult(
         resultStatus: ToolCallResultStatus.executionError,
       );

@@ -36,6 +36,7 @@ class AuraInput extends StatefulWidget {
     this.enabled = true,
     this.readOnly = false,
     this.autofocus = false,
+    this.minLines,
     this.maxLines = 1,
     this.maxLength,
     this.inputFormatters,
@@ -101,6 +102,9 @@ class AuraInput extends StatefulWidget {
   /// Whether this input field should focus itself if nothing else is already
   /// focused.
   final bool autofocus;
+
+  /// The minimum number of lines to show.
+  final int? minLines;
 
   /// The maximum number of lines to show at one time.
   final int maxLines;
@@ -213,6 +217,7 @@ class _AuraInputState extends State<AuraInput> {
                     autofocus: widget.autofocus,
                     readOnly: widget.readOnly,
                     obscureText: widget.obscureText,
+                    minLines: widget.minLines,
                     maxLines: widget.maxLines,
                     maxLength: widget.maxLength,
                     onChanged: widget.onChanged,

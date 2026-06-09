@@ -45,7 +45,9 @@ enum ServiceConnectionKindTable {
   modelProvider('model_provider'),
   mcpServer('mcp_server'),
   gmail('gmail'),
-  customHttp('custom_http');
+  customHttp('custom_http'),
+  skillCredential('skill_credential'),
+  appSkillCredential('app_skill_credential');
 
   const ServiceConnectionKindTable(this.value);
   final String value;

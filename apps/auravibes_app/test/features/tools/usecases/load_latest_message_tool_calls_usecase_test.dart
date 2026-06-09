@@ -137,8 +137,8 @@ void main() {
       },
     );
     test(
-      'T009: filters out pending tool call whose name matches '
-      'a previously-failed tool in the same conversation',
+      'T009: filters out pending tool call whose name and arguments match '
+      'a previously-failed tool in the same turn window',
       () async {
         when(
           messageRepository.getMessagesByConversation('conversation-1'),
@@ -168,6 +168,11 @@ void main() {
                     name: 'native_ws-tool-123_url',
                     argumentsRaw: '{"input": "https://other.com"}',
                   ),
+                  MessageToolCallEntity(
+                    id: 'new-call-2',
+                    name: 'native_ws-tool-123_url',
+                    argumentsRaw: '{"input": "https://example.com"}',
+                  ),
                 ],
               ),
             ),
@@ -177,8 +182,8 @@ void main() {
         final result = await usecase.call(conversationId: 'conversation-1');
 
         expect(result.hasToolCalls, isTrue);
-        expect(result.toolsToRun, isEmpty);
-        expect(result.previouslyFailedToolCallIds, contains('new-call-1'));
+        expect(result.toolsToRun.map((tool) => tool.id), ['new-call-1']);
+        expect(result.previouslyFailedToolCallIds, ['new-call-2']);
         expect(result.notFoundToolCallIds, isEmpty);
       },
     );

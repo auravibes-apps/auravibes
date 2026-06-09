@@ -67,13 +67,13 @@ class LoadLatestMessageToolCallsUsecase {
     final notFoundToolCallIds = <String>[];
     final previouslyFailedToolCallIds = <String>[];
 
-    final failedToolNames = _collectFailedToolNames(
+    final failedToolCalls = _collectFailedToolCalls(
       messages,
       excludeMessageId: latestAssistantMessage.id,
     );
 
     for (final toolCall in toolCalls.where((toolCall) => toolCall.isPending)) {
-      if (failedToolNames.contains(toolCall.name)) {
+      if (failedToolCalls.contains(_toolCallIdentity(toolCall))) {
         previouslyFailedToolCallIds.add(toolCall.id);
         continue;
       }
@@ -102,7 +102,7 @@ class LoadLatestMessageToolCallsUsecase {
     );
   }
 
-  Set<String> _collectFailedToolNames(
+  Set<({String argumentsRaw, String name})> _collectFailedToolCalls(
     List<MessageEntity> messages, {
     required String excludeMessageId,
   }) {
@@ -112,13 +112,13 @@ class LoadLatestMessageToolCallsUsecase {
     if (excludeIndex == -1) return const {};
 
     final startIndex = _findFailedToolScanStart(messages, excludeIndex);
-    final latestStatusByToolName = _collectLatestToolStatuses(
+    final latestStatusByToolCall = _collectLatestToolStatuses(
       messages,
       startIndex: startIndex,
       endIndex: excludeIndex,
     );
 
-    return _failedToolNames(latestStatusByToolName);
+    return _failedToolCalls(latestStatusByToolCall);
   }
 
   int _findFailedToolScanStart(
@@ -135,12 +135,14 @@ class LoadLatestMessageToolCallsUsecase {
     return 0;
   }
 
-  Map<String, ToolCallResultStatus> _collectLatestToolStatuses(
+  Map<({String argumentsRaw, String name}), ToolCallResultStatus>
+  _collectLatestToolStatuses(
     List<MessageEntity> messages, {
     required int startIndex,
     required int endIndex,
   }) {
-    final latestStatusByToolName = <String, ToolCallResultStatus>{};
+    final latestStatusByToolCall =
+        <({String argumentsRaw, String name}), ToolCallResultStatus>{};
     for (var i = startIndex; i < endIndex; i++) {
       final message = messages[i];
       if (message.isUser) continue;
@@ -148,25 +150,32 @@ class LoadLatestMessageToolCallsUsecase {
       for (final toolCall in toolCalls) {
         final status = toolCall.resultStatus;
         if (status == null) continue;
-        latestStatusByToolName[toolCall.name] = status;
+        latestStatusByToolCall[_toolCallIdentity(toolCall)] = status;
       }
     }
-    return latestStatusByToolName;
+    return latestStatusByToolCall;
   }
 
-  Set<String> _failedToolNames(
-    Map<String, ToolCallResultStatus> latestStatusByToolName,
+  Set<({String argumentsRaw, String name})> _failedToolCalls(
+    Map<({String argumentsRaw, String name}), ToolCallResultStatus>
+    latestStatusByToolCall,
   ) {
-    final failedNames = <String>{};
-    latestStatusByToolName.forEach((toolName, status) {
+    final failedCalls = <({String argumentsRaw, String name})>{};
+    latestStatusByToolCall.forEach((toolCall, status) {
       if (status != ToolCallResultStatus.success &&
           status != ToolCallResultStatus.skippedByUser &&
           status != ToolCallResultStatus.stoppedByUser) {
-        final _ = failedNames.add(toolName);
+        final _ = failedCalls.add(toolCall);
       }
     });
-    return failedNames;
+    return failedCalls;
   }
+}
+
+({String argumentsRaw, String name}) _toolCallIdentity(
+  MessageToolCallEntity toolCall,
+) {
+  return (name: toolCall.name, argumentsRaw: toolCall.argumentsRaw);
 }
 
 final loadLatestMessageToolCallsUsecaseProvider =

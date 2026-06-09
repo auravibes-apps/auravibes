@@ -13,11 +13,13 @@ import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
+import 'package:auravibes_app/features/chats/notifiers/messages_streaming_state.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
 import 'package:auravibes_app/features/chats/widgets/compacted_message_details.dart';
 import 'package:auravibes_app/features/chats/widgets/tool_call_response_preview.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:auravibes_app/utils/relative_time_formatter.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
 import 'package:auravibes_app/utils/try_decode_tool_metadata.dart';
@@ -35,13 +37,17 @@ import 'package:riverpod_annotation/experimental/scope.dart';
   messageConversationById,
 ])
 class ChatMessagesWidget extends HookConsumerWidget {
+  // Null lets callers fall back to per-message provider reads.
+  // ignore: unnecessary-nullable
   const ChatMessagesWidget({
     required this.messages,
+    this.messageEntitiesById,
     this.pendingToolCalls = const [],
     super.key,
   });
 
   final List<String> messages;
+  final Map<String, MessageEntity>? messageEntitiesById;
   final List<PendingToolCall> pendingToolCalls;
 
   @override
@@ -70,6 +76,7 @@ class ChatMessagesWidget extends HookConsumerWidget {
 
         return _ChatMessageRow(
           messageId: messageId,
+          baseMessage: messageEntitiesById?[messageId],
           pendingToolCalls: pendingToolCalls,
         );
       },
@@ -86,15 +93,26 @@ class ChatMessagesWidget extends HookConsumerWidget {
 class _ChatMessageRow extends HookConsumerWidget {
   const _ChatMessageRow({
     required this.messageId,
+    required this.baseMessage,
     required this.pendingToolCalls,
   });
 
   final String messageId;
+  final MessageEntity? baseMessage;
   final List<PendingToolCall> pendingToolCalls;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final message = ref.watch(messageConversationByIdProvider(messageId));
+    final streamingResult = ref.watch(
+      messagesStreamingProvider.select((state) => state[messageId]?.lastResult),
+    );
+    final message = switch (baseMessage) {
+      final baseMessage? => _mergeStreamingResult(
+        baseMessage,
+        streamingResult,
+      ),
+      null => ref.watch(messageConversationByIdProvider(messageId)),
+    };
     if (message == null) {
       return const SizedBox.shrink();
     }
@@ -157,6 +175,21 @@ class _ChatMessageRow extends HookConsumerWidget {
       ),
       alignment: Alignment.topLeft,
       duration: const Duration(microseconds: 200),
+    );
+  }
+
+  MessageEntity _mergeStreamingResult(
+    MessageEntity message,
+    ChatResult<ChatMessage>? streamingResult,
+  ) {
+    if (streamingResult == null) return message;
+
+    return message.copyWith(
+      content: streamingResult.output.text,
+      metadata: mergeStreamingMessageMetadata(
+        message.metadata,
+        streamingResult.entityMetadata,
+      ),
     );
   }
 
