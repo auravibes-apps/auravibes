@@ -1,6 +1,30 @@
 include: package:very_good_analysis/analysis_options.yaml
 
 plugins:
+  dart_code_linter:
+    version: ^4.1.2
+    diagnostics:
+      avoid-double-slash-imports: true
+      avoid-duplicate-exports: true
+      avoid-border-all: true
+      avoid-expanded-as-spacer: true
+      avoid-unnecessary-conditionals: true
+      binary-expression-operand-order: true
+      correct-game-instantiating: true
+      double-literal-format: true
+      no-boolean-literal-compare: true
+      only-barrel-import: true
+      prefer-correct-edge-insets-constructor: true
+      prefer-first-or-null: true
+      prefer-immediate-return: true
+      prefer-intl-name: true
+      prefer-iterable-of: true
+      prefer-last: true
+      prefer-media-query-direct-access: true
+      prefer-named-record-fields: true
+      prefer-trailing-comma: true
+      tag-name: true
+
   riverpod_lint:
     version: 3.1.4-dev.3
     diagnostics:
@@ -85,20 +109,10 @@ linter:
 
 dart_code_linter:
   rules:
-    - avoid-double-slash-imports
-    - avoid-duplicate-exports
-    - avoid-border-all
-    - avoid-expanded-as-spacer
-    - avoid-unnecessary-conditionals
-    - binary-expression-operand-order
-    - correct-game-instantiating
-    - double-literal-format
-    - no-boolean-literal-compare
-    - only-barrel-import
-    - prefer-correct-edge-insets-constructor
-    - prefer-first-or-null
-    - prefer-intl-name
+    # Keep only CLI-owned DCL rules here. Rules mirrored in the analyzer plugin
+    # diagnostics above are omitted to avoid duplicate analyzer + DCL reporting.
     - prefer-match-file-name:
+        ignore-typedefs: true
         exclude:
           - test/**
           - "**/test/**"
@@ -119,13 +133,6 @@ dart_code_linter:
           - apps/auravibes_app/lib/i18n/**
           - apps/auravibes_app/web/**
     - prefer-first
-    - prefer-immediate-return
-    - prefer-iterable-of
-    - prefer-last
-    - prefer-media-query-direct-access
-    - prefer-named-record-fields
-    - prefer-trailing-comma
-    - tag-name
 
     # Disabled: enabling the full DCL preset on the existing codebase surfaces
     # thousands of style-only changes across production, tests, and widgetbook.

@@ -30,7 +30,12 @@ void main() {
     final now = DateTime(2026, 4, 5, 12);
 
     test('0 seconds ago -> just now', () {
-      final result = formatter.format(now, now: now, translate: mockTranslate);
+      final timestamp = DateTime(2026, 4, 5, 12);
+      final result = formatter.format(
+        timestamp,
+        now: now,
+        translate: mockTranslate,
+      );
       expect(result, LocaleKeys.home_screen_date_formatting_just_now);
     });
 
