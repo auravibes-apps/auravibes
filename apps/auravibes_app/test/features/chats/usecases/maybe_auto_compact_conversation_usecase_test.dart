@@ -4,8 +4,6 @@
 // Required: Test files keep shared fixtures and helpers top-level.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: missing-test-assertion
-// Required: Tests verify usecase behavior through repository side effects.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 // ignore_for_file: prefer-static-class
@@ -172,13 +170,16 @@ void main() {
       () => fixture.mockConvRepo.getConversationById('conv-1'),
     ).thenAnswer((_) async => null);
 
-    await fixture.usecase(conversationId: 'conv-1');
+    await expectLater(fixture.usecase(conversationId: 'conv-1'), completes);
 
-    final _ = verifyNever(
-      () => fixture.mockCompact(
-        conversationId: 'conv-1',
-        trigger: CompactionTrigger.auto,
+    expect(
+      () => verifyNever(
+        () => fixture.mockCompact(
+          conversationId: 'conv-1',
+          trigger: CompactionTrigger.auto,
+        ),
       ),
+      returnsNormally,
     );
   });
 
@@ -187,10 +188,13 @@ void main() {
       () => fixture.mockConvRepo.getConversationById('conv-1'),
     ).thenAnswer((_) async => _makeConv(modelId: null));
 
-    await fixture.usecase(conversationId: 'conv-1');
+    await expectLater(fixture.usecase(conversationId: 'conv-1'), completes);
 
-    final _ = verifyNever(
-      () => fixture.mockModelRepo.getWorkspaceModelSelectionById(any()),
+    expect(
+      () => verifyNever(
+        () => fixture.mockModelRepo.getWorkspaceModelSelectionById(any()),
+      ),
+      returnsNormally,
     );
   });
 
@@ -202,10 +206,16 @@ void main() {
       () => fixture.mockModelRepo.getWorkspaceModelSelectionById('comp-1'),
     ).thenAnswer((_) async => null);
 
-    await fixture.usecase(conversationId: 'conv-1');
+    await expectLater(fixture.usecase(conversationId: 'conv-1'), completes);
 
-    final _ = verifyNever(
-      () => fixture.mockApiModelRepo.getModelByProviderAndModelId(any(), any()),
+    expect(
+      () => verifyNever(
+        () => fixture.mockApiModelRepo.getModelByProviderAndModelId(
+          any(),
+          any(),
+        ),
+      ),
+      returnsNormally,
     );
   });
 
@@ -247,12 +257,15 @@ void main() {
 
     await fixture.usecase(conversationId: 'conv-1');
 
-    verify(
-      () => fixture.mockCompact(
-        conversationId: 'conv-1',
-        trigger: CompactionTrigger.auto,
-      ),
-    ).called(1);
+    expect(
+      () => verify(
+        () => fixture.mockCompact(
+          conversationId: 'conv-1',
+          trigger: CompactionTrigger.auto,
+        ),
+      ).called(1),
+      returnsNormally,
+    );
   });
 
   test('skips compaction when decision says shouldCompact is false', () async {
@@ -285,13 +298,16 @@ void main() {
       ),
     ).thenAnswer((_) async => decision);
 
-    await fixture.usecase(conversationId: 'conv-1');
+    await expectLater(fixture.usecase(conversationId: 'conv-1'), completes);
 
-    final _ = verifyNever(
-      () => fixture.mockCompact(
-        conversationId: 'conv-1',
-        trigger: CompactionTrigger.auto,
+    expect(
+      () => verifyNever(
+        () => fixture.mockCompact(
+          conversationId: 'conv-1',
+          trigger: CompactionTrigger.auto,
+        ),
       ),
+      returnsNormally,
     );
   });
 
@@ -324,17 +340,20 @@ void main() {
       ),
     ).thenAnswer((_) async => decision);
 
-    await fixture.usecase(conversationId: 'conv-1');
+    await expectLater(fixture.usecase(conversationId: 'conv-1'), completes);
 
-    verify(
-      () => fixture.mockShouldCompact(
-        conversationId: 'conv-1',
-        workspaceId: 'ws-1',
-        selectedModelId: 'model-1',
-        selectedProviderId: 'provider-1',
-        maxOutputTokens: 4096,
-      ),
-    ).called(1);
+    expect(
+      () => verify(
+        () => fixture.mockShouldCompact(
+          conversationId: 'conv-1',
+          workspaceId: 'ws-1',
+          selectedModelId: 'model-1',
+          selectedProviderId: 'provider-1',
+          maxOutputTokens: 4096,
+        ),
+      ).called(1),
+      returnsNormally,
+    );
   });
 
   test('provider creates usecase with all dependencies', () {

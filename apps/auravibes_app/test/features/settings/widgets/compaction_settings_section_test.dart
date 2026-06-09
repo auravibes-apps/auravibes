@@ -2,8 +2,6 @@
 // Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: avoid-top-level-members-in-tests
 // Required: Test files keep shared fixtures and helpers top-level.
-// ignore_for_file: missing-test-assertion
-// Required: Widget tests verify side effects through mocked dependencies.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 // ignore_for_file: prefer-moving-to-variable
@@ -155,15 +153,18 @@ void main() {
       );
       await tester.pump();
 
-      verify(
-        () => readMockSave()(
-          workspaceId: testWorkspaceId,
-          settings: const CompactionSettings(
-            usagePercentageThreshold: 50,
-            remainingTokenThreshold: 3000,
+      expect(
+        () => verify(
+          () => readMockSave()(
+            workspaceId: testWorkspaceId,
+            settings: const CompactionSettings(
+              usagePercentageThreshold: 50,
+              remainingTokenThreshold: 3000,
+            ),
           ),
-        ),
-      ).called(1);
+        ).called(1),
+        returnsNormally,
+      );
     });
 
     testWidgets('shows validation error on usecase exception', (tester) async {
@@ -194,14 +195,17 @@ void main() {
       );
       await tester.pump();
 
-      verify(
-        () => readMockSave()(
-          workspaceId: testWorkspaceId,
-          settings: const CompactionSettings(
-            usagePercentageThreshold: 2,
+      expect(
+        () => verify(
+          () => readMockSave()(
+            workspaceId: testWorkspaceId,
+            settings: const CompactionSettings(
+              usagePercentageThreshold: 2,
+            ),
           ),
-        ),
-      ).called(1);
+        ).called(1),
+        returnsNormally,
+      );
     });
   });
 
@@ -224,7 +228,12 @@ void main() {
       );
       await tester.pump();
 
-      verify(() => readMockReset()(workspaceId: testWorkspaceId)).called(1);
+      expect(
+        () => verify(
+          () => readMockReset()(workspaceId: testWorkspaceId),
+        ).called(1),
+        returnsNormally,
+      );
     });
 
     testWidgets('resets form fields on success', (tester) async {

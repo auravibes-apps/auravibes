@@ -2,8 +2,6 @@
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: no-empty-block
 // Required: Tests use intentional no-op callbacks and fake hooks.
-// ignore_for_file: missing-test-assertion
-// Required: Tests verify usecase behavior through repository side effects.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 
@@ -101,11 +99,19 @@ void main() {
 
       await usecase.call(toolCallId: toolCallId, messageId: messageId);
 
-      final _ = verifyNever(
-        messageRepository.patchMessage(any, any),
+      expect(
+        () => verifyNever(
+          messageRepository.patchMessage(any, any),
+        ),
+        returnsNormally,
       );
-      final _ = verifyNever(
-        resumeConversationIfReadyUsecase.call(messageId: anyNamed('messageId')),
+      expect(
+        () => verifyNever(
+          resumeConversationIfReadyUsecase.call(
+            messageId: anyNamed('messageId'),
+          ),
+        ),
+        returnsNormally,
       );
     });
   });

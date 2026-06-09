@@ -2,8 +2,6 @@
 // Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: no-empty-block
 // Required: Tests use intentional no-op callbacks and fake hooks.
-// ignore_for_file: missing-test-assertion
-// Required: Tests verify service behavior by absence of thrown errors.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 
@@ -41,7 +39,10 @@ void main() {
       final _ = await manager.getOrCreateSecretKey();
       manager.clearCache();
 
-      final _ = verifyNever(mockStorage.delete(key: anyNamed('key')));
+      expect(
+        () => verifyNever(mockStorage.delete(key: anyNamed('key'))),
+        returnsNormally,
+      );
     });
 
     test('deleteKey removes from storage and clears cache', () async {
@@ -51,7 +52,12 @@ void main() {
 
       await manager.deleteKey();
 
-      verify(mockStorage.delete(key: 'app_encryption_secret_key')).called(1);
+      expect(
+        () => verify(
+          mockStorage.delete(key: 'app_encryption_secret_key'),
+        ).called(1),
+        returnsNormally,
+      );
     });
 
     test('getOrCreateSecretKey returns cached key on second call', () async {

@@ -1,7 +1,5 @@
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: missing-test-assertion
-// Required: Tests verify usecase behavior through repository side effects.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 
@@ -169,13 +167,16 @@ void main() {
         workspaceModelSelectionId: 'model-sel-1',
       );
 
-      verify(
-        fixture.generateTitleUsecase.call(
-          conversationId: 'conv-1',
-          firstMessage: 'Hello',
-          workspaceModelSelection: modelSelection,
-        ),
-      ).called(1);
+      expect(
+        () => verify(
+          fixture.generateTitleUsecase.call(
+            conversationId: 'conv-1',
+            firstMessage: 'Hello',
+            workspaceModelSelection: modelSelection,
+          ),
+        ).called(1),
+        returnsNormally,
+      );
     });
 
     test('calls sendMessage with correct args', () async {
@@ -185,12 +186,15 @@ void main() {
         workspaceModelSelectionId: 'model-sel-1',
       );
 
-      verify(
-        fixture.sendMessageUsecase.call(
-          conversationId: 'conv-1',
-          content: 'Hello',
-        ),
-      ).called(1);
+      expect(
+        () => verify(
+          fixture.sendMessageUsecase.call(
+            conversationId: 'conv-1',
+            content: 'Hello',
+          ),
+        ).called(1),
+        returnsNormally,
+      );
     });
 
     test('tracks error when sendMessage fails', () async {
@@ -240,11 +244,14 @@ void main() {
         workspaceModelSelectionId: 'model-sel-1',
       );
 
-      verify(
-        fixture.workspaceModelSelectionRepo.getWorkspaceModelSelectionById(
-          'model-sel-1',
-        ),
-      ).called(1);
+      expect(
+        () => verify(
+          fixture.workspaceModelSelectionRepo.getWorkspaceModelSelectionById(
+            'model-sel-1',
+          ),
+        ).called(1),
+        returnsNormally,
+      );
     });
 
     test('exception message contains correct text', () async {

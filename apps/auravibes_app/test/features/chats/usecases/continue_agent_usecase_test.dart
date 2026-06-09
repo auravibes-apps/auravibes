@@ -6,8 +6,6 @@
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: no-empty-block
 // Required: Tests use intentional no-op callbacks and fake hooks.
-// ignore_for_file: missing-test-assertion
-// Required: Tests verify orchestration through repository side effects.
 // ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
@@ -1066,9 +1064,17 @@ void main() {
 
       final _ = await usecase.call(conversationId: 'conversation-1');
 
-      verify(selectPromptMessagesUsecase.call('conversation-1')).called(1);
-      final _ = verifyNever(
-        messageRepository.getMessagesByConversation('conversation-1'),
+      expect(
+        () => verify(
+          selectPromptMessagesUsecase.call('conversation-1'),
+        ).called(1),
+        returnsNormally,
+      );
+      expect(
+        () => verifyNever(
+          messageRepository.getMessagesByConversation('conversation-1'),
+        ),
+        returnsNormally,
       );
     });
 

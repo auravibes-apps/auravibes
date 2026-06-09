@@ -2,8 +2,6 @@
 // Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: missing-test-assertion
-// Required: Widget tests verify side effects through mocked dependencies.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -442,6 +440,7 @@ void main() {
       await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
       final _ = await tester.pumpAndSettle();
 
+      expect(find.byIcon(Icons.arrow_back), findsOneWidget);
       await tester.tap(find.byIcon(Icons.arrow_back));
       final _ = await tester.pumpAndSettle();
     });

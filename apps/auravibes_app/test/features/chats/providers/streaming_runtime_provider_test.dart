@@ -1,7 +1,5 @@
 // ignore_for_file: no-empty-block
 // Required: Tests use intentional no-op callbacks and fake hooks.
-// ignore_for_file: missing-test-assertion
-// Required: Tests verify stream behavior through runtime side effects.
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
@@ -116,7 +114,7 @@ void main() {
       final runtime = container.read(titlesStreamingRuntimeProvider);
 
       runtime.updateTitle('conv-1', 'New Title');
-      runtime.removeTitle('conv-1');
+      expect(() => runtime.removeTitle('conv-1'), returnsNormally);
     });
   });
 

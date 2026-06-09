@@ -1,7 +1,5 @@
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: missing-test-assertion
-// Required: Repository tests verify side effects through database state.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 
@@ -369,7 +367,12 @@ void main() {
 
         await repository.deleteModelConnection('conn-1');
 
-        verify(mockConnectionsDao.deleteModelConnection('conn-1')).called(1);
+        expect(
+          () => verify(
+            mockConnectionsDao.deleteModelConnection('conn-1'),
+          ).called(1),
+          returnsNormally,
+        );
       });
 
       test('throws when connection not found', () async {

@@ -4,8 +4,6 @@
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: no-empty-block
 // Required: Tests use intentional no-op callbacks and fake hooks.
-// ignore_for_file: missing-test-assertion
-// Required: Tests verify notifier behavior through repository side effects.
 // ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
@@ -214,7 +212,8 @@ void main() {
         groupedToolsProvider('workspace-1').future,
       );
 
-      await notifier.deleteMcpGroup('group-1');
+      await expectLater(notifier.deleteMcpGroup('group-1'), completes);
+      expect(toolsGroupsRepository.deleteCalled, isFalse);
     });
 
     test('deleteMcpGroup does nothing when group not found', () async {
@@ -227,7 +226,8 @@ void main() {
         groupedToolsProvider('workspace-1').future,
       );
 
-      await notifier.deleteMcpGroup('unknown');
+      await expectLater(notifier.deleteMcpGroup('unknown'), completes);
+      expect(toolsGroupsRepository.deleteCalled, isFalse);
     });
   });
 }
@@ -236,6 +236,7 @@ class _FakeToolsGroupsRepository implements ToolsGroupsRepository {
   List<ToolsGroupEntity> groups = const [];
   ToolsGroupEntity? groupById;
   bool setEnabledCalled = false;
+  bool deleteCalled = false;
 
   @override
   Future<List<ToolsGroupEntity>> getToolsGroupsForWorkspace(
@@ -267,6 +268,7 @@ class _FakeToolsGroupsRepository implements ToolsGroupsRepository {
 
   @override
   Future<bool> deleteToolsGroup(String id) async {
+    deleteCalled = true;
     return true;
   }
 }

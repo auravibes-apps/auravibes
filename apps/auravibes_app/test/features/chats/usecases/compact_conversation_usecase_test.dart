@@ -2,8 +2,6 @@
 // Required: Test files keep shared fixtures and helpers top-level.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: missing-test-assertion
-// Required: Tests verify usecase behavior through repository side effects.
 // ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
@@ -274,16 +272,18 @@ void main() {
         () => fixture.mockChatbotService.sendMessage(any(), any()),
       ).thenThrow(Exception('API error'));
 
-      try {
-        final _ = await fixture.usecase(
+      await expectLater(
+        fixture.usecase(
           conversationId: 'conv-1',
           trigger: CompactionTrigger.manual,
-        );
-      } on CompactionFailedException {
-        // Expected.
-      }
+        ),
+        throwsA(isA<CompactionFailedException>()),
+      );
 
-      final _ = verifyNever(() => fixture.mockMessageRepo.createMessage(any()));
+      expect(
+        () => verifyNever(() => fixture.mockMessageRepo.createMessage(any())),
+        returnsNormally,
+      );
     });
 
     test('manual failure leaves state unchanged', () {
@@ -567,9 +567,12 @@ void main() {
         trigger: CompactionTrigger.manual,
       );
 
-      verify(
-        () => fixture.mockChatbotService.sendMessage(any(), any()),
-      ).called(1);
+      expect(
+        () => verify(
+          () => fixture.mockChatbotService.sendMessage(any(), any()),
+        ).called(1),
+        returnsNormally,
+      );
     });
 
     test(

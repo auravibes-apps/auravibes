@@ -1,7 +1,5 @@
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: missing-test-assertion
-// Required: Tests verify usecase behavior through queue side effects.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 
@@ -75,15 +73,18 @@ void main() {
         content: 'Hello',
       );
 
-      verify(
-        fixture.runAgentIterationUsecase.call(
-          conversationId: 'conversation-1',
-          context: const AgentIterationContext(
-            origin: AgentIterationOrigin.userMessage,
-            ackMessageIds: ['user-1'],
+      expect(
+        () => verify(
+          fixture.runAgentIterationUsecase.call(
+            conversationId: 'conversation-1',
+            context: const AgentIterationContext(
+              origin: AgentIterationOrigin.userMessage,
+              ackMessageIds: ['user-1'],
+            ),
           ),
-        ),
-      ).called(1);
+        ).called(1),
+        returnsNormally,
+      );
     });
 
     test(

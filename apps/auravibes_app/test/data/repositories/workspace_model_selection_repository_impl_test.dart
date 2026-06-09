@@ -1,7 +1,5 @@
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: missing-test-assertion
-// Required: Repository tests verify side effects through database state.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 
@@ -59,7 +57,10 @@ void main() {
 
         await repository.createWorkspaceModelSelections(selections);
 
-        verify(mockDao.insertWorkspaceModelSelections(any)).called(1);
+        expect(
+          () => verify(mockDao.insertWorkspaceModelSelections(any)).called(1),
+          returnsNormally,
+        );
       });
 
       test('handles empty list', () async {
@@ -69,7 +70,10 @@ void main() {
 
         await repository.createWorkspaceModelSelections([]);
 
-        verify(mockDao.insertWorkspaceModelSelections(any)).called(1);
+        expect(
+          () => verify(mockDao.insertWorkspaceModelSelections(any)).called(1),
+          returnsNormally,
+        );
       });
     });
 

@@ -2,8 +2,6 @@
 // Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: missing-test-assertion
-// Required: Tests verify orchestration through repository side effects.
 // ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
@@ -133,15 +131,18 @@ void main() {
         ),
       );
 
-      verify(
-        fixture.continueAgentUsecase.call(
-          conversationId: 'conversation-1',
-          context: const AgentIterationContext(
-            origin: AgentIterationOrigin.userMessage,
-            ackMessageIds: ['user-1'],
+      expect(
+        () => verify(
+          fixture.continueAgentUsecase.call(
+            conversationId: 'conversation-1',
+            context: const AgentIterationContext(
+              origin: AgentIterationOrigin.userMessage,
+              ackMessageIds: ['user-1'],
+            ),
           ),
-        ),
-      ).called(1);
+        ).called(1),
+        returnsNormally,
+      );
     });
 
     test(
@@ -775,15 +776,18 @@ void main() {
             ),
           );
 
-          final _ = verifyInOrder([
-            fixture.maybeAutoCompactConversationUsecase.call(
-              conversationId: 'conversation-1',
-            ),
-            fixture.continueAgentUsecase.call(
-              conversationId: 'conversation-1',
-              context: anyNamed('context'),
-            ),
-          ]);
+          expect(
+            () => verifyInOrder([
+              fixture.maybeAutoCompactConversationUsecase.call(
+                conversationId: 'conversation-1',
+              ),
+              fixture.continueAgentUsecase.call(
+                conversationId: 'conversation-1',
+                context: anyNamed('context'),
+              ),
+            ]),
+            returnsNormally,
+          );
         },
       );
 
@@ -826,11 +830,14 @@ void main() {
             ),
           );
 
-          verify(
-            fixture.maybeAutoCompactConversationUsecase.call(
-              conversationId: 'conversation-1',
-            ),
-          ).called(2);
+          expect(
+            () => verify(
+              fixture.maybeAutoCompactConversationUsecase.call(
+                conversationId: 'conversation-1',
+              ),
+            ).called(2),
+            returnsNormally,
+          );
         },
       );
 
@@ -853,11 +860,14 @@ void main() {
             ),
             throwsA(isA<Exception>()),
           );
-          final _ = verifyNever(
-            fixture.continueAgentUsecase.call(
-              conversationId: anyNamed('conversationId'),
-              context: anyNamed('context'),
+          expect(
+            () => verifyNever(
+              fixture.continueAgentUsecase.call(
+                conversationId: anyNamed('conversationId'),
+                context: anyNamed('context'),
+              ),
             ),
+            returnsNormally,
           );
         },
       );
@@ -892,16 +902,19 @@ void main() {
             ),
           );
 
-          final _ = verifyInOrder([
-            fixture.messageRepository.createMessage(any),
-            fixture.maybeAutoCompactConversationUsecase.call(
-              conversationId: 'conversation-1',
-            ),
-            fixture.continueAgentUsecase.call(
-              conversationId: 'conversation-1',
-              context: anyNamed('context'),
-            ),
-          ]);
+          expect(
+            () => verifyInOrder([
+              fixture.messageRepository.createMessage(any),
+              fixture.maybeAutoCompactConversationUsecase.call(
+                conversationId: 'conversation-1',
+              ),
+              fixture.continueAgentUsecase.call(
+                conversationId: 'conversation-1',
+                context: anyNamed('context'),
+              ),
+            ]),
+            returnsNormally,
+          );
         },
       );
 

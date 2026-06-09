@@ -1,7 +1,5 @@
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: missing-test-assertion
-// Required: Repository tests verify side effects through database state.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: prefer-correct-identifier-length
@@ -256,10 +254,18 @@ void main() {
           ],
         );
 
-        verify(fixture.mockWorkspaceToolsDao.insertToolsBatch(any)).called(1);
-        verify(
-          fixture.mockWorkspaceToolsDao.deleteWorkspaceToolById('t1'),
-        ).called(1);
+        expect(
+          () => verify(
+            fixture.mockWorkspaceToolsDao.insertToolsBatch(any),
+          ).called(1),
+          returnsNormally,
+        );
+        expect(
+          () => verify(
+            fixture.mockWorkspaceToolsDao.deleteWorkspaceToolById('t1'),
+          ).called(1),
+          returnsNormally,
+        );
       });
 
       test('throws McpServerNotFoundException when group missing', () async {
@@ -306,11 +312,17 @@ void main() {
           ],
         );
 
-        final _ = verifyNever(
-          fixture.mockWorkspaceToolsDao.insertToolsBatch(any),
+        expect(
+          () => verifyNever(
+            fixture.mockWorkspaceToolsDao.insertToolsBatch(any),
+          ),
+          returnsNormally,
         );
-        final _ = verifyNever(
-          fixture.mockWorkspaceToolsDao.deleteWorkspaceToolById(any),
+        expect(
+          () => verifyNever(
+            fixture.mockWorkspaceToolsDao.deleteWorkspaceToolById(any),
+          ),
+          returnsNormally,
         );
       });
     });

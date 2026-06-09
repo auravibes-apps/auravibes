@@ -2,8 +2,6 @@
 // Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: avoid-top-level-members-in-tests
 // Required: Test files keep shared fixtures and helpers top-level.
-// ignore_for_file: missing-test-assertion
-// Required: Database tests verify operations by absence of thrown errors.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 // ignore_for_file: prefer-static-class
@@ -173,7 +171,7 @@ void main() {
     );
 
     test('performMaintenance completes without error', () async {
-      await fixture.database.performMaintenance();
+      await expectLater(fixture.database.performMaintenance(), completes);
     });
 
     test('getDatabaseStats returns valid stats', () async {
@@ -403,8 +401,8 @@ void main() {
     });
 
     test('performMaintenance can be called multiple times', () async {
-      await fixture.database.performMaintenance();
-      await fixture.database.performMaintenance();
+      await expectLater(fixture.database.performMaintenance(), completes);
+      await expectLater(fixture.database.performMaintenance(), completes);
     });
 
     test('database can be closed and recreated', () async {

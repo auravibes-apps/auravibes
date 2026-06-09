@@ -2,8 +2,6 @@
 // Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: avoid-top-level-members-in-tests
 // Required: Test files keep shared fixtures and helpers top-level.
-// ignore_for_file: missing-test-assertion
-// Required: Tests verify async provider side effects through state changes.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 // ignore_for_file: prefer-correct-type-name
@@ -241,9 +239,12 @@ void main() {
             settings: newSettings,
           );
 
-      verify(
-        () => mockRepository.saveOverrides(testWorkspaceId, newSettings),
-      ).called(1);
+      expect(
+        () => verify(
+          () => mockRepository.saveOverrides(testWorkspaceId, newSettings),
+        ).called(1),
+        returnsNormally,
+      );
     });
 
     test('rejects usage percentage below 5', () {
@@ -305,11 +306,13 @@ void main() {
         () => mockRepository.saveOverrides(testWorkspaceId, valid),
       ).thenAnswer((_) async => valid.copyWith(updatedAt: DateTime(2026)));
 
-      final _ =
+      final result =
           await container.read(saveWorkspaceCompactionSettingsUsecaseProvider)(
             workspaceId: testWorkspaceId,
             settings: valid,
           );
+
+      expect(result.usagePercentageThreshold, 5);
     });
 
     test('accepts valid settings at boundary 100', () async {
@@ -323,11 +326,13 @@ void main() {
         () => mockRepository.saveOverrides(testWorkspaceId, valid),
       ).thenAnswer((_) async => valid.copyWith(updatedAt: DateTime(2026)));
 
-      final _ =
+      final result =
           await container.read(saveWorkspaceCompactionSettingsUsecaseProvider)(
             workspaceId: testWorkspaceId,
             settings: valid,
           );
+
+      expect(result.usagePercentageThreshold, 100);
     });
   });
 
@@ -350,7 +355,12 @@ void main() {
             workspaceId: testWorkspaceId,
           );
 
-      verify(() => mockRepository.resetOverrides(testWorkspaceId)).called(1);
+      expect(
+        () => verify(
+          () => mockRepository.resetOverrides(testWorkspaceId),
+        ).called(1),
+        returnsNormally,
+      );
     });
   });
 }

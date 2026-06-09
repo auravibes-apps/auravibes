@@ -4,8 +4,6 @@
 // Required: Test files keep shared fixtures and helpers top-level.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: missing-test-assertion
-// Required: Tests cover guard clauses that return without assertions.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 // ignore_for_file: prefer-correct-type-name
@@ -406,7 +404,12 @@ void main() {
         contextLimit: 128000,
       );
 
-      verify(() => mockSettingsRepo.getEffectiveSettings(any())).called(1);
+      expect(
+        () => verify(
+          () => mockSettingsRepo.getEffectiveSettings(any()),
+        ).called(1),
+        returnsNormally,
+      );
     });
   });
 

@@ -35,6 +35,7 @@ plugins:
         ignored-patterns:
           - ^coverage:.*
       list-all-equatable-fields: true
+      missing-test-assertion: true
       avoid-unnecessary-setstate: true
       avoid-double-slash-imports: true
       avoid-duplicate-exports: true

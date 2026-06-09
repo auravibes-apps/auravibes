@@ -2,8 +2,6 @@
 // Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: missing-test-assertion
-// Required: Repository tests verify side effects through database state.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: prefer-correct-identifier-length
@@ -98,9 +96,12 @@ void main() {
             .watchConversationsByWorkspace('ws-1', limit: 5)
             .first;
 
-        verify(
-          mockDao.watchConversationsByWorkspace('ws-1', limit: 5),
-        ).called(1);
+        expect(
+          () => verify(
+            mockDao.watchConversationsByWorkspace('ws-1', limit: 5),
+          ).called(1),
+          returnsNormally,
+        );
       });
     });
 
