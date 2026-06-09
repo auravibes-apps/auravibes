@@ -1,10 +1,3 @@
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: prefer-static-class
-// Required: Tests keep fixture helpers and fakes top-level.
-
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
@@ -18,9 +11,9 @@ import 'package:riverpod/riverpod.dart';
 
 void main() {
   group('McpConnectionNotifier', () {
-    late _FakeMcpServersRepository mcpServersRepository;
-    late _FakeMcpManagerService mcpManagerService;
-    late ProviderContainer container;
+    var mcpServersRepository = _FakeMcpServersRepository();
+    var mcpManagerService = _FakeMcpManagerService();
+    var container = ProviderContainer();
 
     setUp(() {
       mcpServersRepository = _FakeMcpServersRepository();

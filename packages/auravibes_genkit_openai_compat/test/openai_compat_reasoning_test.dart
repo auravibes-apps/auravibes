@@ -1,18 +1,6 @@
-// ignore_for_file: avoid-dynamic
-// Required: Tests inspect raw Genkit protocol payloads.
-// ignore_for_file: avoid-ignoring-return-values
-// Required: Tests execute streams for side effects.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Tests assert decoded nullable protocol fields.
-// ignore_for_file: newline-before-return
 // Required: Tests keep compact return flow.
-// ignore_for_file: no-magic-number
 // Required: Tests use protocol numeric fixtures.
-// ignore_for_file: member-ordering
 // Required: Test fakes keep related fields near constructors.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Tests mirror Genkit `ai` naming convention.
-// ignore_for_file: prefer-static-class
 // Required: Tests keep helper functions and fakes top-level.
 
 import 'dart:convert';
@@ -27,6 +15,7 @@ void main() {
     Map<String, dynamic>? capturedBody;
     final client = _FakeClient((request) async {
       capturedBody = await _readBody(request);
+
       return _jsonResponse({
         'choices': [
           {
@@ -56,7 +45,7 @@ void main() {
       ],
     );
 
-    final response = await ai.generate<OpenAICompatReasoningOptions, dynamic>(
+    final response = await ai.generate<OpenAICompatReasoningOptions, Object?>(
       model: openAICompatReasoning.model('glm-4.5'),
       returnToolRequests: true,
       messages: [
@@ -74,11 +63,9 @@ void main() {
     expect(capturedBody?['messages'], [
       {'role': 'user', 'content': 'Hi'},
     ]);
+    final message = response.rawResponse.message ?? fail('message missing');
     expect(
-      response.rawResponse.message!.content
-          .map((part) => part.reasoning)
-          .nonNulls
-          .single,
+      message.content.map((part) => part.reasoning).nonNulls.single,
       'Think first.',
     );
     expect(response.text, 'Answer.');
@@ -89,6 +76,7 @@ void main() {
     Map<String, dynamic>? capturedBody;
     final client = _FakeClient((request) async {
       capturedBody = await _readBody(request);
+
       return _jsonResponse({
         'choices': [
           {
@@ -109,7 +97,7 @@ void main() {
       ],
     );
 
-    await ai.generate<OpenAICompatReasoningOptions, dynamic>(
+    final _ = await ai.generate<OpenAICompatReasoningOptions, Object?>(
       model: openAICompatReasoning.model('glm-4.5'),
       messages: [
         Message(
@@ -127,6 +115,7 @@ void main() {
     Map<String, dynamic>? capturedBody;
     final client = _FakeClient((request) async {
       capturedBody = await _readBody(request);
+
       return _jsonResponse({
         'choices': [
           {
@@ -147,7 +136,7 @@ void main() {
       ],
     );
 
-    await ai.generate<OpenAICompatReasoningOptions, dynamic>(
+    final _ = await ai.generate<OpenAICompatReasoningOptions, Object?>(
       model: openAICompatReasoning.model('glm-4.5'),
       messages: [
         Message(
@@ -182,6 +171,7 @@ void main() {
     Map<String, dynamic>? capturedBody;
     final client = _FakeClient((request) async {
       capturedBody = await _readBody(request);
+
       return _jsonResponse({
         'choices': [
           {
@@ -214,7 +204,7 @@ void main() {
       ],
     );
 
-    final response = await ai.generate<OpenAICompatReasoningOptions, dynamic>(
+    final response = await ai.generate<OpenAICompatReasoningOptions, Object?>(
       model: openAICompatReasoning.model('glm-4.5'),
       returnToolRequests: true,
       messages: [
@@ -249,12 +239,9 @@ void main() {
         },
       ],
     });
+    final message = response.rawResponse.message ?? fail('message missing');
     expect(
-      response.rawResponse.message!.content
-          .map((part) => part.toolRequest)
-          .nonNulls
-          .single
-          .name,
+      message.content.map((part) => part.toolRequest).nonNulls.single.name,
       'lookup',
     );
     expect(response.rawResponse.finishReason, FinishReason.length);
@@ -264,6 +251,7 @@ void main() {
     Map<String, dynamic>? capturedBody;
     final client = _FakeClient((request) async {
       capturedBody = await _readBody(request);
+
       return http.StreamedResponse(
         Stream.fromIterable([
           utf8.encode(
@@ -281,7 +269,7 @@ void main() {
           ),
           utf8.encode(
             'data: ${jsonEncode({
-              'choices': <Map<String, dynamic>>[],
+              'choices': <Map<String, Object?>>[],
               'usage': {
                 'prompt_tokens': 3,
                 'completion_tokens': 4,
@@ -305,7 +293,7 @@ void main() {
       ],
     );
 
-    final stream = ai.generateStream<OpenAICompatReasoningOptions, dynamic>(
+    final stream = ai.generateStream<OpenAICompatReasoningOptions, Object?>(
       model: openAICompatReasoning.model('glm-4.5'),
       returnToolRequests: true,
       messages: [
@@ -323,16 +311,18 @@ void main() {
     final result = await stream.onResult;
 
     expect(capturedBody?['stream_options'], {'include_usage': true});
+    final firstChunk = chunks.firstOrNull ?? fail('first chunk missing');
     expect(
-      chunks.firstOrNull!.content.map((part) => part.reasoning).nonNulls.single,
+      firstChunk.content.map((part) => part.reasoning).nonNulls.single,
       'Think',
     );
     expect(chunks.last.text, 'Answer');
+    final message = result.message ?? fail('message missing');
     expect(
-      result.message!.content.map((part) => part.reasoning).nonNulls.single,
+      message.content.map((part) => part.reasoning).nonNulls.single,
       'Think',
     );
-    expect(result.message!.text, 'Answer');
+    expect(message.text, 'Answer');
     expect(result.usage?.totalTokens, 7);
   });
 
@@ -390,7 +380,7 @@ void main() {
       ],
     );
 
-    final stream = ai.generateStream<OpenAICompatReasoningOptions, dynamic>(
+    final stream = ai.generateStream<OpenAICompatReasoningOptions, Object?>(
       model: openAICompatReasoning.model('glm-4.5'),
       returnToolRequests: true,
       messages: [
@@ -403,7 +393,8 @@ void main() {
 
     await stream.drain<void>();
     final result = await stream.onResult;
-    final toolRequest = result.message!.content
+    final message = result.message ?? fail('message missing');
+    final toolRequest = message.content
         .map((part) => part.toolRequest)
         .nonNulls
         .single;
@@ -442,7 +433,7 @@ void main() {
     );
 
     expect(
-      () => ai.generate<OpenAICompatReasoningOptions, dynamic>(
+      () => ai.generate<OpenAICompatReasoningOptions, Object?>(
         model: openAICompatReasoning.model('glm-4.5'),
         messages: [
           Message(
@@ -456,13 +447,13 @@ void main() {
   });
 }
 
-Future<Map<String, dynamic>> _readBody(http.BaseRequest request) async {
+Future<Map<String, Object?>> _readBody(http.BaseRequest request) async {
   return jsonDecode(await request.finalize().bytesToString())
-      as Map<String, dynamic>;
+      as Map<String, Object?>;
 }
 
 http.StreamedResponse _jsonResponse(
-  Map<String, dynamic> body, {
+  Map<String, Object?> body, {
   int statusCode = 200,
 }) {
   return http.StreamedResponse(

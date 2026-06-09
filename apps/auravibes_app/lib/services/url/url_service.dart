@@ -1,15 +1,4 @@
-// ignore_for_file: prefer-async-await
-// Required: Existing Future chains preserve callback flow.
-// ignore_for_file: avoid-substring
-// Required: Existing parsing uses code-unit substring offsets.
-// ignore_for_file: no-equal-arguments
 // Required: Existing argument values intentionally repeat.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
-// Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 
 import 'dart:async';
 import 'dart:convert';
@@ -17,6 +6,7 @@ import 'dart:convert';
 import 'package:async/async.dart';
 import 'package:auravibes_app/services/url/models/url_request_method.dart';
 import 'package:auravibes_app/services/url/models/url_response.dart';
+import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:dio/dio.dart';
 
 class UrlService {
@@ -45,45 +35,63 @@ class UrlService {
         ? rawBody
         : Stream<List<int>>.value(utf8.encode(rawBody));
 
-    _dio
-        .request<ResponseBody>(
-          request.url,
-          data: requestBody,
-          cancelToken: cancelToken,
-          options: Options(
-            method: request.method.value,
-            sendTimeout: request.timeout,
-            receiveTimeout: request.timeout,
-            headers: effectiveHeaders,
-            responseType: ResponseType.stream,
-          ),
-        )
-        .then((response) async {
-          if (completer.isCanceled) {
-            return;
-          }
-
-          final body = await _readResponseBody(response.data);
-          stopwatch.stop();
-          completer.complete(
-            UrlResponse(
-              statusCode: response.statusCode ?? 0,
-              body: body,
-              headers: response.headers.map,
-              elapsed: stopwatch.elapsed,
-            ),
-          );
-        })
-        .catchError((Object error, StackTrace stackTrace) async {
-          await _handleRequestError(
-            error,
-            stackTrace,
-            completer,
-            stopwatch,
-          );
-        });
+    unawaited(
+      _executeRequest(
+        request,
+        requestBody,
+        effectiveHeaders,
+        cancelToken,
+        completer,
+        stopwatch,
+      ),
+    );
 
     return completer.operation;
+  }
+
+  Future<void> _executeRequest(
+    UrlRequest request,
+    Object? requestBody,
+    Map<String, String> effectiveHeaders,
+    CancelToken cancelToken,
+    CancelableCompleter<UrlResponse> completer,
+    Stopwatch stopwatch,
+  ) async {
+    try {
+      final response = await _dio.request<ResponseBody>(
+        request.url,
+        data: requestBody,
+        cancelToken: cancelToken,
+        options: Options(
+          method: request.method.value,
+          sendTimeout: request.timeout,
+          receiveTimeout: request.timeout,
+          headers: effectiveHeaders,
+          responseType: ResponseType.stream,
+        ),
+      );
+      if (completer.isCanceled) {
+        return;
+      }
+
+      final body = await _readResponseBody(response.data);
+      stopwatch.stop();
+      completer.complete(
+        UrlResponse(
+          statusCode: response.statusCode ?? 0,
+          body: body,
+          headers: response.headers.map,
+          elapsed: stopwatch.elapsed,
+        ),
+      );
+    } on Object catch (error, stackTrace) {
+      await _handleRequestError(
+        error,
+        stackTrace,
+        completer,
+        stopwatch,
+      );
+    }
   }
 
   Future<void> _handleRequestError(
@@ -100,11 +108,13 @@ class UrlService {
 
     if (error is! DioException) {
       completer.completeError(error, stackTrace);
+
       return;
     }
 
     if (error.type == DioExceptionType.cancel) {
       final _ = completer.operation.cancel();
+
       return;
     }
 
@@ -149,6 +159,7 @@ class UrlService {
         ? data
         : data.take(_maxResponseSize).toList(growable: false);
     final body = utf8.decode(bytes, allowMalformed: true);
+
     return data.length <= _maxResponseSize ? body : '$body$_truncatedSuffix';
   }
 
@@ -179,6 +190,7 @@ class UrlService {
           buffer.write(_truncatedSuffix);
           completer.complete(buffer.toString());
           unawaited(cancelSubscription());
+
           return;
         }
 
@@ -186,11 +198,12 @@ class UrlService {
         if (decodedChunk.length <= remainingChars) {
           buffer.write(decodedChunk);
           receivedChars += decodedChunk.length;
+
           return;
         }
 
         buffer
-          ..write(decodedChunk.substring(0, remainingChars))
+          ..write(decodedChunk.firstCharacters(remainingChars))
           ..write(_truncatedSuffix);
         receivedChars += remainingChars;
         completer.complete(buffer.toString());
@@ -217,11 +230,12 @@ class UrlService {
       return body;
     }
 
-    return '${body.substring(0, _maxResponseSize)}$_truncatedSuffix';
+    return '${body.firstCharacters(_maxResponseSize)}$_truncatedSuffix';
   }
 
   Map<String, String> _buildEffectiveHeaders(UrlRequest request) {
     final headers = request.headers;
+
     return <String, String>{
       ...headers,
       if (!_hasHeader(headers, Headers.acceptHeader))

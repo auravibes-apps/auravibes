@@ -14,15 +14,15 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ApiModelEntity {
 
-/// ID of the provider that offers this model
- String get modelProvider;/// Unique identifier for the model
- String get id;/// Human-readable name of the model
- String get name;/// Maximum context window size
- int get limitContext;/// Maximum output tokens
- int get limitOutput; List<String> get modalitiesInput; List<String> get modalitiesOuput;/// Cost per 1M input tokens
- double? get costInput;/// Cost per 1M cache read tokens
- double? get costCacheRead;/// Cost per 1M output tokens
- double? get costOutput;/// Whether the model is open source
+/// ID of the provider that offers this model.
+ String get modelProvider;/// Unique identifier for the model.
+ String get id;/// Human-readable name of the model.
+ String get name;/// Maximum context window size.
+ int get limitContext;/// Maximum output tokens.
+ int get limitOutput; List<String> get modalitiesInput; List<String> get modalitiesOuput;/// Cost per 1M input tokens.
+ double? get costInput;/// Cost per 1M cache read tokens.
+ double? get costCacheRead;/// Cost per 1M output tokens.
+ double? get costOutput;/// Whether the model is open source.
  bool? get openWeights;/// Whether the provider reports reasoning/thinking support for this model.
  bool get supportsReasoning;
 /// Create a copy of ApiModelEntity
@@ -230,15 +230,15 @@ class _ApiModelEntity extends ApiModelEntity {
   const _ApiModelEntity({required this.modelProvider, required this.id, required this.name, required this.limitContext, required this.limitOutput, required final  List<String> modalitiesInput, required final  List<String> modalitiesOuput, this.costInput, this.costCacheRead, this.costOutput, this.openWeights, this.supportsReasoning = false}): _modalitiesInput = modalitiesInput,_modalitiesOuput = modalitiesOuput,super._();
   
 
-/// ID of the provider that offers this model
+/// ID of the provider that offers this model.
 @override final  String modelProvider;
-/// Unique identifier for the model
+/// Unique identifier for the model.
 @override final  String id;
-/// Human-readable name of the model
+/// Human-readable name of the model.
 @override final  String name;
-/// Maximum context window size
+/// Maximum context window size.
 @override final  int limitContext;
-/// Maximum output tokens
+/// Maximum output tokens.
 @override final  int limitOutput;
  final  List<String> _modalitiesInput;
 @override List<String> get modalitiesInput {
@@ -254,13 +254,13 @@ class _ApiModelEntity extends ApiModelEntity {
   return EqualUnmodifiableListView(_modalitiesOuput);
 }
 
-/// Cost per 1M input tokens
+/// Cost per 1M input tokens.
 @override final  double? costInput;
-/// Cost per 1M cache read tokens
+/// Cost per 1M cache read tokens.
 @override final  double? costCacheRead;
-/// Cost per 1M output tokens
+/// Cost per 1M output tokens.
 @override final  double? costOutput;
-/// Whether the model is open source
+/// Whether the model is open source.
 @override final  bool? openWeights;
 /// Whether the provider reports reasoning/thinking support for this model.
 @override@JsonKey() final  bool supportsReasoning;

@@ -1,10 +1,4 @@
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
@@ -169,6 +163,7 @@ class RunAgentIterationUsecase {
       conversationId,
       currentContext,
     );
+
     return _AgentIterationStep(
       currentContext,
       postToolCancel ?? decision,
@@ -186,6 +181,7 @@ class RunAgentIterationUsecase {
     final decision = queuedContext == currentContext
         ? AgentIterationDecision.done
         : AgentIterationDecision.continueIteration;
+
     return _AgentIterationStep(queuedContext, decision);
   }
 
@@ -199,6 +195,7 @@ class RunAgentIterationUsecase {
 
     await _markAckMessagesSent(context);
     sendQueueRuntime.clear(conversationId);
+
     return AgentIterationDecision.done;
   }
 

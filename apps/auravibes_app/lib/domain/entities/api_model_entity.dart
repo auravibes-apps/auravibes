@@ -1,10 +1,4 @@
-// ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/utils/map_exception.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
@@ -17,35 +11,35 @@ part 'api_model_entity.freezed.dart';
 /// responses, such as GPT-4, Claude-3, etc.
 @freezed
 abstract class ApiModelEntity with _$ApiModelEntity {
-  /// Creates a new ApiModelEntity instance
+  /// Creates a new ApiModelEntity instance.
   const factory ApiModelEntity({
-    /// ID of the provider that offers this model
+    /// ID of the provider that offers this model.
     required String modelProvider,
 
-    /// Unique identifier for the model
+    /// Unique identifier for the model.
     required String id,
 
-    /// Human-readable name of the model
+    /// Human-readable name of the model.
     required String name,
 
-    /// Maximum context window size
+    /// Maximum context window size.
     required int limitContext,
 
-    /// Maximum output tokens
+    /// Maximum output tokens.
     required int limitOutput,
     required List<String> modalitiesInput,
     required List<String> modalitiesOuput,
 
-    /// Cost per 1M input tokens
+    /// Cost per 1M input tokens.
     double? costInput,
 
-    /// Cost per 1M cache read tokens
+    /// Cost per 1M cache read tokens.
     double? costCacheRead,
 
-    /// Cost per 1M output tokens
+    /// Cost per 1M output tokens.
     double? costOutput,
 
-    /// Whether the model is open source
+    /// Whether the model is open source.
     bool? openWeights,
 
     /// Whether the provider reports reasoning/thinking support for this model.
@@ -60,6 +54,7 @@ abstract class ApiModelEntity with _$ApiModelEntity {
     final cost = json.get<Map<String, dynamic>?>('cost');
     final limit = json.get<Map<String, dynamic>>('limit');
     final modalities = json.get<Map<String, dynamic>>('modalities');
+
     return ApiModelEntity(
       modelProvider: modelProvider,
       id: json.get('id'),
@@ -76,21 +71,22 @@ abstract class ApiModelEntity with _$ApiModelEntity {
     );
   }
 
-  /// Returns true if the model is open source
+  /// Returns true if the model is open source.
   bool get isOpenSource => openWeights ?? false;
 
-  /// Returns true if the model has a large context window (> 100k)
+  /// Returns true if the model has a large context window (> 100k).
   bool get hasLargeContext => limitContext > 100000;
 
-  /// Returns true if the model has a very large context window (> 1M)
+  /// Returns true if the model has a very large context window (> 1M).
   bool get hasVeryLargeContext => limitContext > 1000000;
 
-  /// Returns a context size category for the model
+  /// Returns a context size category for the model.
   String get contextCategory {
     if (limitContext < 4000) return 'Small';
     if (limitContext < 32000) return 'Medium';
     if (limitContext < 128000) return 'Large';
     if (limitContext < 1000000) return 'Very Large';
+
     return 'Massive';
   }
 }

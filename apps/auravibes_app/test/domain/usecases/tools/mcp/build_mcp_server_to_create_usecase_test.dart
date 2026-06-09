@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/usecases/tools/mcp/build_mcp_server_to_create_use_case.dart';
 import 'package:auravibes_app/services/mcp_service/o_auth_authenticate.dart';
@@ -41,7 +39,7 @@ void main() {
     expect(result.authenticationType, isA<McpAuthenticationTypeBearerToken>());
   });
 
-  test('throws when bearer type selected but token is null', () async {
+  test('throws when bearer type selected but token is null', () {
     final usecase = BuildMcpServerToCreateUseCase(authenticator: authenticator);
     const form = McpServerFormToCreate(
       name: 'Server',
@@ -57,7 +55,7 @@ void main() {
     );
   });
 
-  test('throws when oauth discovery fails', () async {
+  test('throws when oauth discovery fails', () {
     final usecase = BuildMcpServerToCreateUseCase(authenticator: authenticator);
     const form = McpServerFormToCreate(
       name: 'Server',

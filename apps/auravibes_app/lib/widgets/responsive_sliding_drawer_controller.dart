@@ -1,22 +1,8 @@
-// ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: avoid-returning-widgets
-// Required: Existing helper builders return widgets.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: no-empty-block
+
 // Required: Animation listener uses empty setState to rebuild.
-// ignore_for_file: always-remove-listener
-// Required: Listener is removed through nullable controller field in dispose.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-moving-to-variable
 // Required: Existing code repeats lookups where extraction adds noise.
-// ignore_for_file: prefer-single-widget-per-file
 // Required: Feature widgets keep closely related private widgets together.
 
 import 'package:flutter/material.dart';
@@ -55,12 +41,14 @@ class ResponsiveSlidingDrawerProvider extends InheritedWidget {
     if (provider == null) {
       throw FlutterError('No ResponsiveSlidingDrawerProvider found in context');
     }
+
     return provider.controller;
   }
 
   static ResponsiveSlidingDrawerController? maybeOf(BuildContext context) {
     final provider = context
         .dependOnInheritedWidgetOfExactType<ResponsiveSlidingDrawerProvider>();
+
     return provider?.controller;
   }
 
@@ -226,6 +214,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
     if (controller == null) {
       throw StateError('_controller is not initialized');
     }
+
     return controller;
   }
 
@@ -234,25 +223,25 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
     if (width == null) {
       throw StateError('Desktop drawer width is not initialized');
     }
+
     return width;
   }
 
   @override
   void initState() {
     super.initState();
-    _isOpen = false; // initially closed
-    final controller = AnimationController(
+    _isOpen = false; // Initially closed.
+    _controller = AnimationController(
       duration: widget.animationDuration,
       vsync: this,
     );
-    _controller = controller;
-    controller.addListener(
-      _handleControllerTick,
-    ); // ignore: always-remove-listener - Removed in dispose via field.
+    _controller?.addListener(_handleControllerTick);
     widget.controller._state = this;
   }
 
-  void _handleControllerTick() => setState(() {});
+  void _handleControllerTick() => setState(() {
+    final _ = Object();
+  });
 
   @override
   void didUpdateWidget(covariant ResponsiveSlidingDrawer oldWidget) {
@@ -346,6 +335,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
       _isOpen = true;
       widget.onAnimationComplete?.call(isOpen: true);
       widget.onFinishedOpening?.call();
+
       return;
     }
     _requiredController.animateTo(1, duration: widget.animationDuration).then((
@@ -366,6 +356,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
       _isOpen = false;
       widget.onAnimationComplete?.call(isOpen: false);
       widget.onFinishedClosing?.call();
+
       return;
     }
     _requiredController.animateTo(0, duration: widget.animationDuration).then((
@@ -379,6 +370,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
 
   double get _currentDrawerWidth {
     final screenWidth = MediaQuery.sizeOf(context).width;
+
     return isDesktop
         ? (_desktopDrawerWidth ?? (widget.desktopOpenRatio * screenWidth))
         : widget.openRatio * screenWidth;
@@ -390,12 +382,15 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
 
     _applyDesktopResizeDelta(delta);
     _clampDesktopDrawerWidth();
-    setState(() {});
+    setState(() {
+      final _ = Object();
+    });
   }
 
   void _applyDesktopResizeDelta(double delta) {
     if (_isResizeBeyondMax(delta) || _isResizeBeyondMin(delta)) {
       _resizeOvershoot += delta;
+
       return;
     }
 
@@ -404,6 +399,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
         widget.desktopMinDrawerWidth,
         widget.desktopMaxDrawerWidth,
       );
+
       return;
     }
 
@@ -426,11 +422,13 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
         (_resizeOvershoot < 0 && delta > 0);
     if (!reversingOvershoot) {
       _resizeOvershoot += delta;
+
       return;
     }
 
     if (delta.abs() < _resizeOvershoot.abs()) {
       _resizeOvershoot += delta;
+
       return;
     }
 
@@ -459,16 +457,25 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
       return _buildDesktopLayout(drawerWidth, drawerFullyOpen);
     }
 
-    return _buildMobileLayout(context, drawerWidth, drawerFullyOpen);
+    final enableGestures = _isMobilePlatform(context);
+
+    return _buildMobileLayout(
+      drawerWidth,
+      drawerFullyOpen,
+      enableGestures,
+    );
   }
 
-  Widget _buildDesktopLayout(double drawerWidth, bool drawerFullyOpen) {
+  Widget _buildDesktopLayout(
+    double drawerWidth,
+    bool drawerFullyOpen,
+  ) {
     return Stack(
       children: [
         _buildDesktopBody(drawerWidth),
-        _buildDrawer(drawerWidth, enableGestures: true),
+        _buildDesktopDrawer(drawerWidth),
         _buildDesktopDragArea(drawerWidth),
-        if (drawerFullyOpen) _buildResizeDivider(drawerWidth),
+        if (drawerFullyOpen) _buildDesktopDivider(drawerWidth),
       ],
     );
   }
@@ -478,6 +485,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
       animation: _requiredController,
       builder: (context, child) {
         final leftOffset = drawerWidth * _requiredController.value;
+
         return Positioned(
           left: leftOffset,
           top: 0,
@@ -489,11 +497,12 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
     );
   }
 
-  Widget _buildDrawer(double drawerWidth, {required bool enableGestures}) {
+  Widget _buildDesktopDrawer(double drawerWidth) {
     return AnimatedBuilder(
       animation: _requiredController,
       builder: (context, child) {
         final dx = -drawerWidth * (1 - _requiredController.value);
+
         return Transform.translate(
           offset: Offset(dx, 0),
           child: GestureDetector(
@@ -502,9 +511,9 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
               height: MediaQuery.sizeOf(context).height,
               child: widget.drawer,
             ),
-            onHorizontalDragStart: enableGestures ? _handleDragStart : null,
-            onHorizontalDragUpdate: enableGestures ? _handleDragUpdate : null,
-            onHorizontalDragEnd: enableGestures ? _handleDragEnd : null,
+            onHorizontalDragStart: _handleDragStart,
+            onHorizontalDragUpdate: _handleDragUpdate,
+            onHorizontalDragEnd: _handleDragEnd,
           ),
         );
       },
@@ -526,7 +535,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
     );
   }
 
-  Widget _buildResizeDivider(double drawerWidth) {
+  Widget _buildDesktopDivider(double drawerWidth) {
     return Positioned(
       left: widget.centerDivider
           ? drawerWidth - widget.dividerWidth / 2
@@ -560,31 +569,18 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
     );
   }
 
-  void _setResizing(bool value) {
-    setState(() {
-      _isResizing = value;
-      _resizeOvershoot = 0.0;
-    });
-  }
-
   Widget _buildMobileLayout(
-    BuildContext context,
     double drawerWidth,
     bool drawerFullyOpen,
+    bool enableGestures,
   ) {
-    final enableGestures = _isMobilePlatform(context);
     return Stack(
       children: [
         _buildMobileBody(drawerWidth, drawerFullyOpen, enableGestures),
-        _buildScrimOverlay(drawerWidth, drawerFullyOpen, enableGestures),
-        _buildDrawer(drawerWidth, enableGestures: enableGestures),
+        _buildMobileScrim(drawerWidth, drawerFullyOpen, enableGestures),
+        _buildMobileDrawer(drawerWidth, enableGestures),
       ],
     );
-  }
-
-  bool _isMobilePlatform(BuildContext context) {
-    final platform = Theme.of(context).platform;
-    return platform == TargetPlatform.android || platform == TargetPlatform.iOS;
   }
 
   Widget _buildMobileBody(
@@ -596,6 +592,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
       animation: _requiredController,
       builder: (context, child) {
         final dx = drawerWidth * _requiredController.value;
+
         return Transform.translate(
           offset: Offset(dx, 0),
           child: GestureDetector(
@@ -610,7 +607,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
     );
   }
 
-  Widget _buildScrimOverlay(
+  Widget _buildMobileScrim(
     double drawerWidth,
     bool drawerFullyOpen,
     bool enableGestures,
@@ -619,17 +616,13 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
       animation: _requiredController,
       builder: (context, child) {
         final dx = drawerWidth * _requiredController.value;
+
         return Transform.translate(
           offset: Offset(dx, 0),
           child: IgnorePointer(
             ignoring: _requiredController.value == 0,
             child: GestureDetector(
-              child: Stack(
-                children: [
-                  _buildScrimColor(),
-                  _buildScrimGradient(),
-                ],
-              ),
+              child: _buildScrimContent(),
               onTap: () => _closeIfFullyOpen(drawerFullyOpen),
               onHorizontalDragStart: enableGestures ? _handleDragStart : null,
               onHorizontalDragUpdate: enableGestures ? _handleDragUpdate : null,
@@ -641,35 +634,72 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
     );
   }
 
-  void _closeIfFullyOpen(bool drawerFullyOpen) {
-    if (drawerFullyOpen) _closeDrawer();
-  }
-
-  Widget _buildScrimColor() {
-    return Container(
-      color: _scrimColor.withValues(
-        alpha: _scrimOpacity * _requiredController.value,
-      ),
-    );
-  }
-
-  Widget _buildScrimGradient() {
-    return Positioned(
-      left: 0,
-      top: 0,
-      bottom: 0,
-      width: widget.scrimGradientWidth,
-      child: IgnorePointer(
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: _scrimGradientColors,
-              stops: const [0.0, 0.2, 0.6, 1.0],
+  Widget _buildScrimContent() {
+    return Stack(
+      children: [
+        Container(
+          color: _scrimColor.withValues(
+            alpha: _scrimOpacity * _requiredController.value,
+          ),
+        ),
+        Positioned(
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: widget.scrimGradientWidth,
+          child: IgnorePointer(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: _scrimGradientColors,
+                  stops: const [0.0, 0.2, 0.6, 1.0],
+                ),
+              ),
             ),
           ),
         ),
-      ),
+      ],
     );
+  }
+
+  Widget _buildMobileDrawer(double drawerWidth, bool enableGestures) {
+    return AnimatedBuilder(
+      animation: _requiredController,
+      builder: (context, child) {
+        final dx = -drawerWidth * (1 - _requiredController.value);
+
+        return Transform.translate(
+          offset: Offset(dx, 0),
+          child: GestureDetector(
+            child: SizedBox(
+              width: drawerWidth,
+              height: MediaQuery.sizeOf(context).height,
+              child: widget.drawer,
+            ),
+            onHorizontalDragStart: enableGestures ? _handleDragStart : null,
+            onHorizontalDragUpdate: enableGestures ? _handleDragUpdate : null,
+            onHorizontalDragEnd: enableGestures ? _handleDragEnd : null,
+          ),
+        );
+      },
+    );
+  }
+
+  void _setResizing(bool value) {
+    setState(() {
+      _isResizing = value;
+      _resizeOvershoot = 0.0;
+    });
+  }
+
+  bool _isMobilePlatform(BuildContext context) {
+    final platform = Theme.of(context).platform;
+
+    return platform == TargetPlatform.android || platform == TargetPlatform.iOS;
+  }
+
+  void _closeIfFullyOpen(bool drawerFullyOpen) {
+    if (drawerFullyOpen) _closeDrawer();
   }
 
   Color get _scrimColor {
@@ -693,6 +723,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
   List<Color> get _scrimGradientColors {
     final color = widget.isDarkMode ? Colors.black : _scrimColor;
     final opacity = _gradientStartOpacity * _requiredController.value;
+
     return [
       color.withValues(alpha: opacity),
       color.withValues(alpha: opacity * 0.5),

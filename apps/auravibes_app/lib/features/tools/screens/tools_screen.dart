@@ -1,10 +1,6 @@
-// ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: no-equal-arguments
 // Required: Existing argument values intentionally repeat.
-// ignore_for_file: prefer-extracting-callbacks
 // Required: UI callbacks stay local to their widgets.
-// ignore_for_file: prefer-moving-to-variable
 // Required: Existing code repeats lookups where extraction adds noise.
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/widgets/add_mcp_modal.dart';
@@ -104,6 +100,7 @@ class ToolsScreen extends ConsumerWidget {
               onPressed: () =>
                   AddToolModal.show(context, workspaceId: workspaceId),
               icon: Icons.add,
+              heroTag: const ValueKey<String>('tools_add_tool_fab'),
               tooltip: LocaleKeys.tools_screen_add_tool_tooltip.tr(
                 context: context,
               ),

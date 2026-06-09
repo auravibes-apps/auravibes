@@ -1,6 +1,3 @@
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-
 // ignore_for_file: cascade_invocations
 import 'package:auravibes_app/features/chats/notifiers/titles_streams_notifier.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,7 +5,7 @@ import 'package:riverpod/riverpod.dart';
 
 void main() {
   group('TitlesStreamsNotifier', () {
-    late ProviderContainer container;
+    var container = ProviderContainer();
 
     setUp(() {
       container = ProviderContainer();

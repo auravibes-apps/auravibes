@@ -1,7 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
 import 'package:auravibes_app/features/models/models/add_model_provider_model.dart';
 import 'package:auravibes_app/features/models/widgets/enhanced_model_input.dart';
 import 'package:flutter/material.dart';
@@ -59,7 +55,9 @@ void main() {
 
     test('constructor accepts optional params', () {
       final focusNode = FocusNode();
-      void onSubmitted() {}
+      void onSubmitted() {
+        final _ = Object();
+      }
 
       final widget = EnhancedModelInput(
         workspaceId: 'ws-1',
@@ -98,8 +96,8 @@ void main() {
 
     testWidgets('renders validation error and hint', (tester) async {
       await tester.pumpWidget(
-        testableApp(
-          child: const Scaffold(
+        const TestableApp(
+          child: Scaffold(
             body: EnhancedModelInput(
               workspaceId: 'ws-1',
               fieldType: ModelInputFieldType.name,

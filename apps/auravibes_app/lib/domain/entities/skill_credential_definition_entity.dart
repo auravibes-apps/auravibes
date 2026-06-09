@@ -1,7 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
 import 'dart:convert';
 
 import 'package:freezed_annotation/freezed_annotation.dart';
@@ -63,12 +59,14 @@ class SkillCredentialAttributeDefinition {
         'Credential attributes must be a JSON object.',
       );
     }
+
     return decoded.map((key, value) {
       if (value is! Map) {
         throw const FormatException(
           'Credential attribute definition must be an object.',
         );
       }
+
       return MapEntry(
         '$key',
         SkillCredentialAttributeDefinition(

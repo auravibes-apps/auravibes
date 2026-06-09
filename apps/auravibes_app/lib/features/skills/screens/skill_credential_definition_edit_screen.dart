@@ -1,4 +1,3 @@
-// ignore_for_file: no-magic-number
 // Required: Existing UI spacing uses small numeric values.
 import 'dart:convert';
 
@@ -54,18 +53,78 @@ class _SkillCredentialDefinitionEditScreenState
         ? null
         : ref.watch(skillCredentialDefinitionProvider(definitionId));
     final currentDefinition = definitionAsync?.value;
+    final Widget child;
+    if (definitionAsync == null) {
+      _initializeForm(null);
+      child = _SkillCredentialDefinitionForm(
+        definition: null,
+        titleController: _titleController,
+        attributeRows: _attributeRows,
+        isSaving: _isSaving,
+        onAddAttributeRow: _addAttributeRow,
+        onDeleteAttributeRow: _deleteAttributeRow,
+        onSave: () => _save(context),
+        onChanged: () => setState(() {
+          final _ = Object();
+        }),
+      );
+    } else {
+      child = switch (definitionAsync) {
+        AsyncData(value: null) => const Center(
+          child: TextLocale(
+            LocaleKeys.skill_credentials_definitions_not_found,
+          ),
+        ),
+        AsyncData(value: final definition?) => () {
+          _initializeForm(definition);
+
+          return _SkillCredentialDefinitionForm(
+            definition: definition,
+            titleController: _titleController,
+            attributeRows: _attributeRows,
+            isSaving: _isSaving,
+            onAddAttributeRow: _addAttributeRow,
+            onDeleteAttributeRow: _deleteAttributeRow,
+            onSave: () => _save(context),
+            onChanged: () => setState(() {
+              final _ = Object();
+            }),
+          );
+        }(),
+        AsyncLoading() when currentDefinition != null => () {
+          _initializeForm(currentDefinition);
+
+          return _SkillCredentialDefinitionForm(
+            definition: currentDefinition,
+            titleController: _titleController,
+            attributeRows: _attributeRows,
+            isSaving: _isSaving,
+            onAddAttributeRow: _addAttributeRow,
+            onDeleteAttributeRow: _deleteAttributeRow,
+            onSave: () => _save(context),
+            onChanged: () => setState(() {
+              final _ = Object();
+            }),
+          );
+        }(),
+        AsyncLoading() => const Center(
+          child: AuraSpinner(),
+        ),
+        AsyncError() => const Center(
+          child: TextLocale(
+            LocaleKeys.skill_credentials_definitions_error,
+          ),
+        ),
+      };
+    }
 
     return AuraScreen(
-      child: _buildBody(context, definitionAsync, currentDefinition),
+      child: child,
       appBar: AuraAppBar(
         title: TextLocale(
           _isCreate
               ? LocaleKeys.skill_credentials_definitions_create_title
               : LocaleKeys.skill_credentials_definitions_edit_title,
-        ),
-        leading: AuraIconButton(
-          icon: Icons.arrow_back,
-          onPressed: () => Navigator.of(context).pop(),
         ),
         actions: [
           if (!_isCreate)
@@ -84,139 +143,35 @@ class _SkillCredentialDefinitionEditScreenState
             ),
           ),
         ],
+        leading: AuraIconButton(
+          icon: Icons.arrow_back,
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
     );
   }
 
-  Widget _buildBody(
-    BuildContext context,
-    AsyncValue<SkillCredentialDefinitionEntity?>? definitionAsync,
-    SkillCredentialDefinitionEntity? currentDefinition,
-  ) {
-    if (definitionAsync == null) {
-      return _buildForm(context, null);
-    }
-
-    return switch (definitionAsync) {
-      AsyncData(:final value) => _buildLoadedBody(context, value),
-      AsyncLoading() when currentDefinition != null => _buildForm(
-        context,
-        currentDefinition,
-      ),
-      AsyncLoading() => const Center(
-        child: AuraSpinner(),
-      ),
-      AsyncError() => const Center(
-        child: TextLocale(
-          LocaleKeys.skill_credentials_definitions_error,
-        ),
-      ),
-    };
-  }
-
-  Widget _buildLoadedBody(
-    BuildContext context,
-    SkillCredentialDefinitionEntity? definition,
-  ) {
-    if (definition == null) {
-      return const Center(
-        child: TextLocale(
-          LocaleKeys.skill_credentials_definitions_not_found,
+  void _initializeForm(SkillCredentialDefinitionEntity? definition) {
+    if (_initialized) return;
+    if (definition != null) {
+      _titleController.text = definition.title;
+      _attributeRows.addAll(
+        SkillCredentialAttributeDefinition.parseMap(
+          definition.attributesJson,
+        ).entries.map(
+          (entry) => _AttributeFormRow(
+            variable: entry.key,
+            description: entry.value.description,
+            optional: entry.value.optional,
+            secret: entry.value.secret,
+          ),
         ),
       );
     }
-
-    return _buildForm(context, definition);
-  }
-
-  Widget _buildForm(
-    BuildContext context,
-    SkillCredentialDefinitionEntity? definition,
-  ) {
-    if (!_initialized) {
-      if (definition != null) {
-        _titleController.text = definition.title;
-        _attributeRows.addAll(
-          SkillCredentialAttributeDefinition.parseMap(
-            definition.attributesJson,
-          ).entries.map(
-            (entry) => _AttributeFormRow(
-              variable: entry.key,
-              description: entry.value.description,
-              optional: entry.value.optional,
-              secret: entry.value.secret,
-            ),
-          ),
-        );
-      }
-      if (_attributeRows.isEmpty) {
-        _attributeRows.add(_AttributeFormRow());
-      }
-      _initialized = true;
+    if (_attributeRows.isEmpty) {
+      _attributeRows.add(_AttributeFormRow());
     }
-
-    return ListView(
-      padding: const EdgeInsets.all(12),
-      children: [
-        AuraCard(
-          child: AuraColumn(
-            spacing: AuraSpacing.md,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const AuraText(
-                child: TextLocale(
-                  LocaleKeys.skill_credentials_definitions_hint,
-                ),
-                color: AuraColorVariant.onSurfaceVariant,
-              ),
-              if (definition != null) AuraSelectableText(definition.slug),
-              AuraInput(
-                controller: _titleController,
-                label: Text(
-                  LocaleKeys.skills_screen_title_label.tr(context: context),
-                ),
-              ),
-              AuraColumn(
-                spacing: AuraSpacing.sm,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const AuraText(
-                    child: TextLocale(
-                      LocaleKeys.skill_credentials_definitions_attributes_label,
-                    ),
-                    color: AuraColorVariant.onSurface,
-                  ),
-                  for (final row in _attributeRows)
-                    _AttributeRowEditor(
-                      key: ValueKey(row),
-                      row: row,
-                      canDelete: _attributeRows.length > 1,
-                      onChanged: () => setState(() {}),
-                      onDelete: () => _deleteAttributeRow(row),
-                    ),
-                  AuraButton(
-                    onPressed: _addAttributeRow,
-                    child: const TextLocale(
-                      LocaleKeys.skill_credentials_definitions_add_attribute,
-                    ),
-                  ),
-                ],
-              ),
-              Align(
-                alignment: Alignment.centerRight,
-                child: AuraButton(
-                  onPressed: () => _save(context),
-                  disabled: _isSaving,
-                  child: const TextLocale(
-                    LocaleKeys.skill_credentials_definitions_save,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
+    _initialized = true;
   }
 
   Future<void> _save(BuildContext context) async {
@@ -235,31 +190,33 @@ class _SkillCredentialDefinitionEditScreenState
           ),
         );
       } else {
+        final definitionId = widget.definitionId;
+        if (definitionId == null) return;
         final usecase = ref.read(
           updateSkillCredentialDefinitionUsecaseProvider,
         );
         final _ = await usecase.call(
-          widget.definitionId!,
+          definitionId,
           SkillCredentialDefinitionToUpdate(
             title: _titleController.text,
             attributesJson: attributesJson,
           ),
         );
-        ref.invalidate(skillCredentialDefinitionProvider(widget.definitionId!));
+        ref.invalidate(skillCredentialDefinitionProvider(definitionId));
       }
       ref.invalidate(skillCredentialDefinitionsProvider(widget.workspaceId));
       if (!context.mounted) return;
       Navigator.of(context).pop();
     } on Object {
       if (!context.mounted) return;
-      showAuraSnackBar(
+      final _ = showAuraSnackBar(
         context: context,
-        variant: AuraSnackBarVariant.error,
         content: Text(
           LocaleKeys.skill_credentials_definitions_save_error.tr(
             context: context,
           ),
         ),
+        variant: AuraSnackBarVariant.error,
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -294,6 +251,7 @@ class _SkillCredentialDefinitionEditScreenState
         if (!row.secret) 'secret': false,
       };
     }
+
     return jsonEncode(attributes);
   }
 
@@ -307,36 +265,130 @@ class _SkillCredentialDefinitionEditScreenState
         message: const TextLocale(
           LocaleKeys.skill_credentials_definitions_delete_confirm,
         ),
-        cancelLabel: Text(LocaleKeys.common_cancel.tr(context: context)),
         confirmLabel: Text(LocaleKeys.common_delete.tr(context: context)),
+        cancelLabel: Text(LocaleKeys.common_cancel.tr(context: context)),
         isDestructive: true,
       ),
     );
     if (shouldDelete != true) return;
+    if (!mounted) return;
+
+    final definitionId = widget.definitionId;
+    if (definitionId == null) return;
 
     setState(() => _isSaving = true);
     try {
       final usecase = ref.read(
         deleteSkillCredentialDefinitionUsecaseProvider,
       );
-      final _ = await usecase.call(widget.definitionId!);
+      final _ = await usecase.call(definitionId);
       ref.invalidate(skillCredentialDefinitionsProvider(widget.workspaceId));
       if (!context.mounted) return;
       Navigator.of(context).pop();
     } on Object {
       if (!context.mounted) return;
-      showAuraSnackBar(
+      final _ = showAuraSnackBar(
         context: context,
-        variant: AuraSnackBarVariant.error,
         content: Text(
           LocaleKeys.skill_credentials_definitions_save_error.tr(
             context: context,
           ),
         ),
+        variant: AuraSnackBarVariant.error,
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
+  }
+}
+
+class _SkillCredentialDefinitionForm extends StatelessWidget {
+  const _SkillCredentialDefinitionForm({
+    required this.definition,
+    required this.titleController,
+    required this.attributeRows,
+    required this.isSaving,
+    required this.onAddAttributeRow,
+    required this.onDeleteAttributeRow,
+    required this.onSave,
+    required this.onChanged,
+  });
+
+  final SkillCredentialDefinitionEntity? definition;
+  final TextEditingController titleController;
+  final List<_AttributeFormRow> attributeRows;
+  final bool isSaving;
+  final VoidCallback onAddAttributeRow;
+  final ValueChanged<_AttributeFormRow> onDeleteAttributeRow;
+  final VoidCallback onSave;
+  final VoidCallback onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final definition = this.definition;
+
+    return ListView(
+      padding: const EdgeInsets.all(12),
+      children: [
+        AuraCard(
+          child: AuraColumn(
+            children: [
+              const AuraText(
+                child: TextLocale(
+                  LocaleKeys.skill_credentials_definitions_hint,
+                ),
+                color: AuraColorVariant.onSurfaceVariant,
+              ),
+              if (definition != null) AuraSelectableText(definition.slug),
+              AuraInput(
+                controller: titleController,
+                label: Text(
+                  LocaleKeys.skills_screen_title_label.tr(context: context),
+                ),
+              ),
+              AuraColumn(
+                children: [
+                  const AuraText(
+                    child: TextLocale(
+                      LocaleKeys.skill_credentials_definitions_attributes_label,
+                    ),
+                    color: AuraColorVariant.onSurface,
+                  ),
+                  for (final row in attributeRows)
+                    _AttributeRowEditor(
+                      row: row,
+                      canDelete: attributeRows.length > 1,
+                      onChanged: onChanged,
+                      onDelete: () => onDeleteAttributeRow(row),
+                      key: ValueKey(row),
+                    ),
+                  AuraButton(
+                    onPressed: onAddAttributeRow,
+                    child: const TextLocale(
+                      LocaleKeys.skill_credentials_definitions_add_attribute,
+                    ),
+                  ),
+                ],
+                spacing: AuraSpacing.sm,
+                crossAxisAlignment: CrossAxisAlignment.start,
+              ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: AuraButton(
+                  onPressed: onSave,
+                  child: const TextLocale(
+                    LocaleKeys.skill_credentials_definitions_save,
+                  ),
+                  disabled: isSaving,
+                ),
+              ),
+            ],
+            spacing: AuraSpacing.md,
+            crossAxisAlignment: CrossAxisAlignment.start,
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -386,13 +438,11 @@ class _AttributeRowEditor extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         border: Border.all(color: Theme.of(context).dividerColor),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: const BorderRadius.all(Radius.circular(8)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: AuraColumn(
-          spacing: AuraSpacing.sm,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -420,7 +470,6 @@ class _AttributeRowEditor extends StatelessWidget {
               onChanged: (_) => onChanged(),
             ),
             AuraRow(
-              spacing: AuraSpacing.md,
               children: [
                 AuraSwitch(
                   value: row.optional,
@@ -438,9 +487,9 @@ class _AttributeRowEditor extends StatelessWidget {
                   ),
                 ),
               ],
+              spacing: AuraSpacing.md,
             ),
             AuraRow(
-              spacing: AuraSpacing.md,
               children: [
                 AuraSwitch(
                   value: row.secret,
@@ -457,8 +506,11 @@ class _AttributeRowEditor extends StatelessWidget {
                   ),
                 ),
               ],
+              spacing: AuraSpacing.md,
             ),
           ],
+          spacing: AuraSpacing.sm,
+          crossAxisAlignment: CrossAxisAlignment.start,
         ),
       ),
     );

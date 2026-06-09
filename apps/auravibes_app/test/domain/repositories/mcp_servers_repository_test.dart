@@ -1,10 +1,3 @@
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-
 // ignore_for_file: cascade_invocations
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
@@ -34,7 +27,9 @@ class _StubMcpServersRepository implements McpServersRepository {
   Future<void> syncMcpTools({
     required String mcpServerId,
     required List<McpToolInfo> currentTools,
-  }) async {}
+  }) async {
+    final _ = Object();
+  }
 
   @override
   Future<List<McpServerEntity>> getMcpServersForWorkspace(

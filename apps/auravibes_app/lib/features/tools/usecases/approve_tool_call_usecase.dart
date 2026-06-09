@@ -1,10 +1,4 @@
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
@@ -72,6 +66,7 @@ class ApproveToolCallUsecase {
         resultStatus: ToolCallResultStatus.toolNotFound,
       );
       await _resumeConversationIfReadyUsecase.call(messageId: messageId);
+
       return;
     }
 
@@ -132,6 +127,7 @@ class ApproveToolCallUsecase {
           resultStatus: ToolCallResultStatus.toolNotFound,
         );
       }
+
       return _ExecutionResult(
         resultStatus: ToolCallResultStatus.success,
         responseRaw: result.toString(),
@@ -145,6 +141,7 @@ class ApproveToolCallUsecase {
         error,
         stackTrace,
       );
+
       return _ExecutionResult(
         resultStatus: ToolCallResultStatus.executionError,
         responseRaw: 'Tool execution failed: ${error.message}',
@@ -158,6 +155,7 @@ class ApproveToolCallUsecase {
         error,
         stackTrace,
       );
+
       return const _ExecutionResult(
         resultStatus: ToolCallResultStatus.executionError,
       );

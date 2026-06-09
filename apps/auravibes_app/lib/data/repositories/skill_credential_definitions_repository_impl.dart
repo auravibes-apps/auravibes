@@ -1,7 +1,3 @@
-// ignore_for_file: prefer-async-await
-// Required: Existing Future chains preserve callback flow.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/skill_credential_definitions_dao.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
@@ -23,6 +19,7 @@ class SkillCredentialDefinitionsRepositoryImpl
     String workspaceId,
   ) async {
     final rows = await _dao.getDefinitions(workspaceId);
+
     return rows.map(_tableToEntity).toList();
   }
 
@@ -43,6 +40,7 @@ class SkillCredentialDefinitionsRepositoryImpl
   ) async {
     final row = await _dao.getDefinitionById(definitionId);
     if (row == null) return null;
+
     return _tableToEntity(row);
   }
 
@@ -53,6 +51,7 @@ class SkillCredentialDefinitionsRepositoryImpl
   ) async {
     final row = await _dao.getDefinitionBySlug(workspaceId, slug);
     if (row == null) return null;
+
     return _tableToEntity(row);
   }
 
@@ -60,38 +59,37 @@ class SkillCredentialDefinitionsRepositoryImpl
   Future<SkillCredentialDefinitionEntity> createDefinition(
     String workspaceId,
     SkillCredentialDefinitionToCreate definition,
-  ) {
-    return _dao
-        .createDefinition(
-          SkillCredentialDefinitionsCompanion(
-            workspaceId: Value(workspaceId),
-            title: Value(definition.title.trim()),
-            slug: Value(_generateSlug.call(definition.title)),
-            attributesJson: Value(definition.attributesJson),
-          ),
-        )
-        .then(_tableToEntity);
+  ) async {
+    final table = await _dao.createDefinition(
+      SkillCredentialDefinitionsCompanion(
+        workspaceId: Value(workspaceId),
+        title: Value(definition.title.trim()),
+        slug: Value(_generateSlug.call(definition.title)),
+        attributesJson: Value(definition.attributesJson),
+      ),
+    );
+
+    return _tableToEntity(table);
   }
 
   @override
   Future<SkillCredentialDefinitionEntity> updateDefinition(
     String definitionId,
     SkillCredentialDefinitionToUpdate definition,
-  ) {
-    return _dao
-        .updateDefinition(
-          definitionId,
-          SkillCredentialDefinitionsCompanion(
-            updatedAt: Value(DateTime.now()),
-            title: definition.title == null
-                ? const Value.absent()
-                : Value(
-                    definition.title!.trim(),
-                  ),
-            attributesJson: Value.absentIfNull(definition.attributesJson),
-          ),
-        )
-        .then(_tableToEntity);
+  ) async {
+    final table = await _dao.updateDefinition(
+      definitionId,
+      SkillCredentialDefinitionsCompanion(
+        updatedAt: Value(DateTime.now()),
+        title: switch (definition.title) {
+          null => const Value.absent(),
+          final title => Value(title.trim()),
+        },
+        attributesJson: Value.absentIfNull(definition.attributesJson),
+      ),
+    );
+
+    return _tableToEntity(table);
   }
 
   @override

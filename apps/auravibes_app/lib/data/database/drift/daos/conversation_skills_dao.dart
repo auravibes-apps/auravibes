@@ -1,9 +1,3 @@
-// ignore_for_file: prefer-async-await
-// Required: Existing Future chains preserve callback flow.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: newline-before-return
-// Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/conversation_skills.dart';
 import 'package:drift/drift.dart';
@@ -81,6 +75,7 @@ class ConversationSkillsDao extends DatabaseAccessor<AppDatabase>
     if (updated == null) {
       throw StateError('Updated conversation skill was not found');
     }
+
     return updated;
   }
 
@@ -120,6 +115,7 @@ class ConversationSkillsDao extends DatabaseAccessor<AppDatabase>
     if (updated == null) {
       throw StateError('Updated conversation app skill was not found');
     }
+
     return updated;
   }
 }

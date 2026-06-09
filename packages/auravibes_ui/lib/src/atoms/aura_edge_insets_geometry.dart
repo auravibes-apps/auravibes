@@ -1,14 +1,10 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
 import 'package:auravibes_ui/src/tokens/tokens.dart';
 import 'package:flutter/widgets.dart';
 
 @immutable
-/// definition of aura paddings
+/// Definition of aura paddings.
 class AuraEdgeInsetsGeometry {
-  /// constructor for each side
+  /// Constructor for each side.
   const AuraEdgeInsetsGeometry.only({
     this.left = .none,
     this.top = .none,
@@ -16,21 +12,21 @@ class AuraEdgeInsetsGeometry {
     this.bottom = .none,
   });
 
-  /// constructor for horizontal padding
+  /// Constructor for horizontal padding.
   const AuraEdgeInsetsGeometry.horizontal(AuraSpacing spacing)
     : left = spacing,
       right = spacing,
       top = .none,
       bottom = .none;
 
-  /// constructor for vertical padding
+  /// Constructor for vertical padding.
   const AuraEdgeInsetsGeometry.vertical(AuraSpacing spacing)
     : top = spacing,
       bottom = spacing,
       left = .none,
       right = .none;
 
-  /// constructor for all same padding
+  /// Constructor for all same padding.
   const AuraEdgeInsetsGeometry.all(AuraSpacing spacing)
     : left = spacing,
       top = spacing,
@@ -46,31 +42,31 @@ class AuraEdgeInsetsGeometry {
        top = vertical,
        bottom = vertical;
 
-  /// none spacing
+  /// None spacing.
   static const none = AuraEdgeInsetsGeometry.all(.none);
 
-  /// base spacing
+  /// Base spacing.
   static const base = AuraEdgeInsetsGeometry.all(.base);
 
-  /// medium spacing
+  /// Medium spacing.
   static const medium = AuraEdgeInsetsGeometry.all(.md);
 
-  /// large spacing
+  /// Large spacing.
   static const large = AuraEdgeInsetsGeometry.all(.lg);
 
-  /// small spacing
+  /// Small spacing.
   static const small = AuraEdgeInsetsGeometry.all(.sm);
 
-  /// left padding
+  /// Left padding.
   final AuraSpacing left;
 
-  /// top padding
+  /// Top padding.
   final AuraSpacing top;
 
-  /// right padding
+  /// Right padding.
   final AuraSpacing right;
 
-  /// bottom padding
+  /// Bottom padding.
   final AuraSpacing bottom;
 
   EdgeInsetsGeometry _padding(BuildContext context) {
@@ -84,13 +80,13 @@ class AuraEdgeInsetsGeometry {
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || // Quick check for same instance
-      other is AuraEdgeInsetsGeometry && // Check if 'other' is also a Person
-          runtimeType == other.runtimeType && // Ensure same type
-          left == other.left && // Compare properties
-          right == other.right && // Compare properties
-          top == other.top && // Compare properties
-          bottom == other.bottom; // Compare properties
+      identical(this, other) || // Quick check for same instance.
+      other is AuraEdgeInsetsGeometry && // Check if 'other' is also a Person.
+          runtimeType == other.runtimeType && // Ensure same type.
+          left == other.left && // Compare properties.
+          right == other.right && // Compare properties.
+          top == other.top && // Compare properties.
+          bottom == other.bottom; // Compare properties.
 
   @override
   int get hashCode => Object.hashAll([
@@ -98,22 +94,22 @@ class AuraEdgeInsetsGeometry {
     top,
     bottom,
     top,
-  ]); // Combine hash codes
+  ]); // Combine hash codes.
 }
 
-/// Padding for const
+/// Padding for const.
 class AuraPadding extends StatelessWidget {
-  /// default constructor
+  /// Default constructor.
   const AuraPadding({
     required this.child,
     this.padding = .base,
     super.key,
   });
 
-  /// pading chilg
+  /// Pading chilg.
   final Widget child;
 
-  /// spacing for padding
+  /// Spacing for padding.
   final AuraEdgeInsetsGeometry padding;
 
   @override

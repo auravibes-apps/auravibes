@@ -1,10 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: UI tokens and layout use fixed design values.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 
 import 'package:auravibes_ui/src/atoms/aura_icon.dart';
@@ -178,23 +171,24 @@ class _CheckboxVisual extends StatelessWidget {
       decoration: BoxDecoration(
         color: value ? activeColor : Colors.transparent,
         border: Border.all(color: borderColor, width: 2),
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: const BorderRadius.all(Radius.circular(4)),
       ),
       width: 24,
       height: 24,
-      duration: context.auraTheme.animation.fast,
       child: value
           ? const AuraIcon(
               Icons.check,
-              color: AuraColorVariant.onPrimary,
               size: AuraIconSize.extraSmall,
+              color: AuraColorVariant.onPrimary,
             )
           : null,
+      duration: context.auraTheme.animation.fast,
     );
   }
 
   Color _getActiveColor(BuildContext context) {
     final auraColors = context.auraColors;
+
     return switch (colorVariant) {
       AuraColorVariant.primary => auraColors.primary,
       AuraColorVariant.secondary => auraColors.secondary,

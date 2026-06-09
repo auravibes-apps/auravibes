@@ -1,5 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository_impl.dart';
 import 'package:auravibes_app/data/repositories/skill_credentials_repository_impl.dart';
@@ -72,13 +70,13 @@ void main() {
     );
 
     await _pumpScreen(tester, container, workspace.id);
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('Main Token'), findsOneWidget);
     await tester.tap(find.byIcon(Icons.more_vert));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     await tester.tap(find.text('Delete'));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('Delete skill credential'), findsOneWidget);
     expect(
@@ -88,7 +86,7 @@ void main() {
       findsOneWidget,
     );
     await tester.tap(find.text('Delete').last);
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('Main Token'), findsNothing);
     final credentials = await credentialsRepository.getCredentialsForDefinition(
@@ -105,7 +103,7 @@ void main() {
         attributes: const {'token': 'secret-value'},
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('Second Token'), findsOneWidget);
 
@@ -117,7 +115,7 @@ void main() {
         attributes: {'token': 'secret-value'},
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('Stale Token'), findsOneWidget);
     expect(
@@ -135,15 +133,10 @@ Future<void> _pumpScreen(
   addTearDown(() async {
     await tester.pumpWidget(const SizedBox.shrink());
   });
+
   return tester.pumpWidget(
     EasyLocalization(
       key: UniqueKey(),
-      supportedLocales: const [Locale('en')],
-      path: 'assets/i18n',
-      fallbackLocale: const Locale('en'),
-      startLocale: const Locale('en'),
-      useOnlyLangCode: true,
-      useFallbackTranslations: true,
       child: Builder(
         builder: (context) {
           return UncontrolledProviderScope(
@@ -157,6 +150,12 @@ Future<void> _pumpScreen(
           );
         },
       ),
+      supportedLocales: const [Locale('en')],
+      path: 'assets/i18n',
+      fallbackLocale: const Locale('en'),
+      startLocale: const Locale('en'),
+      useOnlyLangCode: true,
+      useFallbackTranslations: true,
     ),
   );
 }

@@ -1,18 +1,13 @@
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-type-name
-// Required: Repository implementation names match domain contract.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_compaction_settings_dao.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/repositories/workspace_compaction_settings_repository.dart';
 import 'package:drift/drift.dart';
 
-class WorkspaceCompactionSettingsRepositoryImpl
+class WorkspaceCompactionSettingsRepoImpl
     implements WorkspaceCompactionSettingsRepository {
-  WorkspaceCompactionSettingsRepositoryImpl(this._dao);
+  WorkspaceCompactionSettingsRepoImpl(this._dao);
 
   final WorkspaceCompactionSettingsDao _dao;
 
@@ -43,6 +38,7 @@ class WorkspaceCompactionSettingsRepositoryImpl
   @override
   Future<CompactionSettings> getEffectiveSettings(String workspaceId) async {
     final row = await _dao.getByWorkspaceId(workspaceId);
+
     return _resolveEffective(row);
   }
 
@@ -57,12 +53,14 @@ class WorkspaceCompactionSettingsRepositoryImpl
       remainingTokenThreshold: Value(overrides.remainingTokenThreshold),
     );
     final row = await _dao.upsert(workspaceId, companion);
+
     return _resolveEffective(row);
   }
 
   @override
   Future<CompactionSettings> resetOverrides(String workspaceId) async {
     await _dao.deleteByWorkspaceId(workspaceId);
+
     return CompactionSettings.defaults;
   }
 }

@@ -1,18 +1,5 @@
-// ignore_for_file: no-magic-number
-// Required: UI tokens and layout use fixed design values.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: no-equal-arguments
-// Required: UI geometry uses repeated values for symmetric layout.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: prefer-extracting-callbacks
 // Required: Component callbacks stay colocated with UI state.
-// ignore_for_file: prefer-moving-to-variable
-// Required: UI components repeat theme and layout lookups intentionally.
-// ignore_for_file: prefer-single-widget-per-file
 // Required: UI components keep related private widgets together.
-// ignore_for_file: prefer-static-class
 // Required: UI package exposes top-level helpers and constants.
 import 'package:auravibes_ui/src/molecules/aura_button.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
@@ -168,7 +155,7 @@ class _AuraDialogShell extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Title
+              // Title.
               Padding(
                 padding: EdgeInsets.only(
                   left: auraTheme.spacing.md,
@@ -184,7 +171,7 @@ class _AuraDialogShell extends StatelessWidget {
                   child: title,
                 ),
               ),
-              // Message (scrollable if too long)
+              // Message (scrollable if too long).
               Flexible(
                 child: SingleChildScrollView(
                   padding: EdgeInsets.symmetric(

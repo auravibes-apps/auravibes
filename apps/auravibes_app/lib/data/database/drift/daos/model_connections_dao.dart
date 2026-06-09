@@ -57,14 +57,16 @@ class ModelConnectionsDao extends DatabaseAccessor<AppDatabase>
   Future<ServiceConnectionTable?> updateModelConnection(
     String id,
     ServiceConnectionsCompanion modelConnection,
-  ) {
-    return (update(serviceConnections)..where(
-          (t) =>
-              t.id.equals(id) &
-              t.kind.equals(ServiceConnectionKindTable.modelProvider.name),
-        ))
-        .writeReturning(modelConnection)
-        .then((rows) => rows.firstOrNull);
+  ) async {
+    final rows =
+        await (update(serviceConnections)..where(
+              (t) =>
+                  t.id.equals(id) &
+                  t.kind.equals(ServiceConnectionKindTable.modelProvider.name),
+            ))
+            .writeReturning(modelConnection);
+
+    return rows.firstOrNull;
   }
 
   Future<void> deleteModelConnection(String id) {

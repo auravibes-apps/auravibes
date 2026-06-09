@@ -1,10 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: UI tokens and layout use fixed design values.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: always-remove-listener
-// Required: Listener is removed through nullable focus node field in dispose.
-
 import 'package:auravibes_ui/src/organisms/aura_field_wrapper.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
@@ -154,11 +147,8 @@ class _AuraInputState extends State<AuraInput> {
   @override
   void initState() {
     super.initState();
-    final focusNode = widget.focusNode ?? FocusNode();
-    _focusNode = focusNode;
-    focusNode.addListener(
-      _onFocusChange,
-    ); // ignore: always-remove-listener - Removed in dispose via field.
+    _focusNode = widget.focusNode ?? FocusNode();
+    _focusNode?.addListener(_onFocusChange);
   }
 
   @override
@@ -217,8 +207,8 @@ class _AuraInputState extends State<AuraInput> {
                     autofocus: widget.autofocus,
                     readOnly: widget.readOnly,
                     obscureText: widget.obscureText,
-                    minLines: widget.minLines,
                     maxLines: widget.maxLines,
+                    minLines: widget.minLines,
                     maxLength: widget.maxLength,
                     onChanged: widget.onChanged,
                     onTap: widget.onTap,

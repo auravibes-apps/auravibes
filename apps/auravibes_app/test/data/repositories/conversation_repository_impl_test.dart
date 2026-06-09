@@ -1,17 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: missing-test-assertion
-// Required: Repository tests verify side effects through database state.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-
 // ignore_for_file: cascade_invocations
 import 'dart:async';
 
@@ -31,17 +17,18 @@ import 'conversation_repository_impl_test.mocks.dart';
 @GenerateNiceMocks([MockSpec<ConversationDao>()])
 void main() {
   group('ConversationRepositoryImpl', () {
-    late MockConversationDao mockDao;
-    late _TestAppDatabase database;
-    late ConversationRepositoryImpl repository;
+    var mockDao = MockConversationDao();
+    var database = _TestAppDatabase(mockDao);
+    var repository = ConversationRepositoryImpl(database);
 
-    setUp(() {
+    tearDown(() async {
+      await database.close();
       mockDao = MockConversationDao();
       database = _TestAppDatabase(mockDao);
       repository = ConversationRepositoryImpl(database);
     });
 
-    tearDown(() async {
+    tearDownAll(() async {
       await database.close();
     });
 
@@ -100,9 +87,12 @@ void main() {
             .watchConversationsByWorkspace('ws-1', limit: 5)
             .first;
 
-        verify(
-          mockDao.watchConversationsByWorkspace('ws-1', limit: 5),
-        ).called(1);
+        expect(
+          () => verify(
+            mockDao.watchConversationsByWorkspace('ws-1', limit: 5),
+          ).called(1),
+          returnsNormally,
+        );
       });
     });
 

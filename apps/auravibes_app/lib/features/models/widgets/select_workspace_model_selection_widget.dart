@@ -1,14 +1,7 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: no-equal-arguments
 // Required: Existing argument values intentionally repeat.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-extracting-callbacks
 // Required: UI callbacks stay local to their widgets.
-// ignore_for_file: prefer-single-widget-per-file
 // Required: Feature widgets keep closely related private widgets together.
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
@@ -97,7 +90,7 @@ class SelectWorkspaceModelSelectionWidget extends HookConsumerWidget
   }
 
   @override
-  // Use 120 to accommodate both Row (60) and Column (stacked) layouts
+  // Use 120 to accommodate both Row (60) and Column (stacked) layouts.
   Size get preferredSize => const Size.fromHeight(120);
 }
 
@@ -122,13 +115,13 @@ class SelectChatData extends HookWidget {
   Widget build(BuildContext context) {
     final controller = useTextEditingController();
 
-    // Responsive layout - stacked below md breakpoint (768px)
+    // Responsive layout - stacked below md breakpoint (768px).
     final screenWidth = MediaQuery.sizeOf(context).width;
     final isCompact = screenWidth < DesignBreakpoints.md;
 
     final searchValue = useState<String>('');
 
-    // Internal provider state if no external control
+    // Internal provider state if no external control.
     final internalProviderId = useState<String?>(null);
     final derivedProviderId = useMemoized(
       () => findProviderForModelId(groupedModels, workspaceModelSelectionId),
@@ -142,6 +135,7 @@ class SelectChatData extends HookWidget {
         if (selectedProviderId == null && internalProviderId.value != null) {
           internalProviderId.value = null;
         }
+
         return null;
       },
       [selectedProviderId],
@@ -174,7 +168,7 @@ class SelectChatData extends HookWidget {
       [onSelectProvider, selectedProviderId],
     );
 
-    // Filter models by search - computed unconditionally (not in hook)
+    // Filter models by search - computed unconditionally (not in hook).
     final modelsForProvider = effectiveProviderId != null
         ? groupedModels[effectiveProviderId] ??
               <WorkspaceModelSelectionWithConnectionEntity>[]
@@ -184,6 +178,7 @@ class SelectChatData extends HookWidget {
         : modelsForProvider.where((model) {
             final searchTerm = model.workspaceModelSelection.modelId
                 .toLowerCase();
+
             return searchTerm.contains(searchValue.value.toLowerCase());
           }).toList();
 
@@ -301,13 +296,13 @@ class _ModelDropdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (!providerSelected) {
-      // Disabled state - show placeholder (FR-002)
+      // Disabled state - show placeholder (FR-002).
       return const AuraDropdownSelector<String>(
         options: [],
         placeholder: TextLocale(
           LocaleKeys.models_screens_select_provider_first,
         ),
-        isEnabled: false, // Empty when disabled
+        isEnabled: false, // Empty when disabled.
       );
     }
 

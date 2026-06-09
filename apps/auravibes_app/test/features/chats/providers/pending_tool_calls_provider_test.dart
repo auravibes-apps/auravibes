@@ -1,19 +1,4 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: no-object-declaration
-// Required: Test fakes override noSuchMethod with Object return values.
-// ignore_for_file: prefer-static-class
-// Required: Tests keep fixture helpers and fakes top-level.
 
 // ignore_for_file: provider_dependencies
 // Required: provider unit tests read scoped providers directly.
@@ -56,6 +41,7 @@ MessageEntity _assistantMessage({
   List<MessageToolCallEntity>? toolCalls,
 }) {
   final now = DateTime(2026);
+
   return MessageEntity(
     id: id,
     conversationId: conversationId,
@@ -98,17 +84,17 @@ class _FakeResolveToolApprovalDecisionUsecase
 
 class _NoOpConversationToolsRepository implements ConversationToolsRepository {
   @override
-  Object? noSuchMethod(Invocation invocation) => null;
+  Null noSuchMethod(Invocation invocation) => null;
 }
 
 class _NoOpToolsGroupsRepository implements ToolsGroupsRepository {
   @override
-  Object? noSuchMethod(Invocation invocation) => null;
+  Null noSuchMethod(Invocation invocation) => null;
 }
 
 class _NoOpWorkspaceToolsRepository implements WorkspaceToolsRepository {
   @override
-  Object? noSuchMethod(Invocation invocation) => null;
+  Null noSuchMethod(Invocation invocation) => null;
 }
 
 class _StreamingMessageRepository implements MessageRepository {
@@ -125,7 +111,7 @@ class _StreamingMessageRepository implements MessageRepository {
   ) => _controller.stream;
 
   @override
-  Object? noSuchMethod(Invocation invocation) => null;
+  Null noSuchMethod(Invocation invocation) => null;
 }
 
 @Dependencies([chatMessageIds, messageConversationById, pendingToolCalls])
@@ -178,7 +164,7 @@ void main() {
     (tester) async {
       final repository = _StreamingMessageRepository();
       addTearDown(repository.dispose);
-      late hooks.WidgetRef widgetRef;
+      final widgetRefCompleter = Completer<hooks.WidgetRef>();
 
       await tester.pumpWidget(
         hooks.ProviderScope(
@@ -188,7 +174,9 @@ void main() {
           ],
           child: hooks.Consumer(
             builder: (context, ref, child) {
-              widgetRef = ref;
+              if (!widgetRefCompleter.isCompleted) {
+                widgetRefCompleter.complete(ref);
+              }
               final messageIds = ref.watch(chatMessageIdsProvider);
               final contents = [
                 for (final messageId in messageIds)
@@ -215,6 +203,7 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.text('assistant'), findsOneWidget);
 
+      final widgetRef = await widgetRefCompleter.future;
       widgetRef.read(messagesStreamingProvider.notifier)
         ..startSubscription(CompositeSubscription(), 'msg-1')
         ..updateResult(
@@ -233,7 +222,7 @@ void main() {
   );
 
   group('pendingToolCallsProvider', () {
-    late ProviderContainer container;
+    var container = ProviderContainer();
 
     tearDown(() {
       container.dispose();

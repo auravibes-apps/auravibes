@@ -1,5 +1,6 @@
-// ignore_for_file: prefer-single-widget-per-file
 // Required: Feature widgets keep closely related private widgets together.
+
+import 'dart:async';
 
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
@@ -25,28 +26,10 @@ class ServiceConnectionsScreen extends ConsumerWidget {
     final connectionsAsync = ref.watch(serviceConnectionsProvider(workspaceId));
 
     return AuraScreen(
-      appBar: AuraAppBar(
-        title: const TextLocale(LocaleKeys.service_connections_title),
-        leading: AuraIconButton(
-          icon: Icons.arrow_back,
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        actions: [
-          AuraIconButton(
-            icon: Icons.add,
-            onPressed: () async {
-              await context.push<bool>(
-                '/workspaces/$workspaceId/more/service-connections/new',
-              );
-            },
-            tooltip: LocaleKeys.service_connections_add.tr(context: context),
-          ),
-        ],
-      ),
       child: switch (connectionsAsync) {
         AsyncData(:final value) => _ConnectionsList(connections: value),
-        AsyncLoading(:final value, hasValue: true) => _ConnectionsList(
-          connections: value!,
+        AsyncLoading(value: final value?, hasValue: true) => _ConnectionsList(
+          connections: value,
         ),
         AsyncLoading() => const Center(child: AuraSpinner()),
         AsyncError() => const Center(
@@ -56,6 +39,26 @@ class ServiceConnectionsScreen extends ConsumerWidget {
           ),
         ),
       },
+      appBar: AuraAppBar(
+        title: const TextLocale(LocaleKeys.service_connections_title),
+        actions: [
+          AuraIconButton(
+            icon: Icons.add,
+            onPressed: () {
+              unawaited(
+                context.push<bool>(
+                  '/workspaces/$workspaceId/more/service-connections/new',
+                ),
+              );
+            },
+            tooltip: LocaleKeys.service_connections_add.tr(context: context),
+          ),
+        ],
+        leading: AuraIconButton(
+          icon: Icons.arrow_back,
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
     );
   }
 }
@@ -70,7 +73,6 @@ class _ConnectionsList extends StatelessWidget {
     if (connections.isEmpty) {
       return const Center(
         child: AuraColumn(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             AuraIcon(
               Icons.hub_outlined,
@@ -87,6 +89,7 @@ class _ConnectionsList extends StatelessWidget {
               color: AuraColorVariant.onSurfaceVariant,
             ),
           ],
+          mainAxisAlignment: MainAxisAlignment.center,
         ),
       );
     }
@@ -110,8 +113,23 @@ class _ConnectionTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final menuController = AuraPopupMenuController();
+
     return AuraCard(
       child: AuraTile(
+        child: AuraColumn(
+          children: [
+            AuraText(
+              child: Text(connection.name),
+              style: AuraTextStyle.heading6,
+            ),
+            AuraText(
+              child: Text(_subtitle(context)),
+              color: AuraColorVariant.onSurfaceVariant,
+            ),
+          ],
+          spacing: AuraSpacing.xs,
+          crossAxisAlignment: CrossAxisAlignment.start,
+        ),
         variant: AuraTileVariant.ghost,
         leading: AuraIcon(_icon),
         trailing: AuraPopupMenu(
@@ -139,20 +157,6 @@ class _ConnectionTile extends ConsumerWidget {
           ],
           controller: menuController,
         ),
-        child: AuraColumn(
-          spacing: AuraSpacing.xs,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AuraText(
-              child: Text(connection.name),
-              style: AuraTextStyle.heading6,
-            ),
-            AuraText(
-              child: Text(_subtitle(context)),
-              color: AuraColorVariant.onSurfaceVariant,
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -177,12 +181,14 @@ class _ConnectionTile extends ConsumerWidget {
     if (suffix == null || suffix.isEmpty) {
       return '$kind - ${_serviceName(context)}';
     }
+
     return '$kind - ${_serviceName(context)} - ****$suffix';
   }
 
   String _serviceName(BuildContext context) {
     final serviceName = connection.serviceName;
     if (serviceName != null && serviceName.isNotEmpty) return serviceName;
+
     return LocaleKeys.service_connections_missing_credential_definition.tr(
       context: context,
     );
@@ -243,12 +249,12 @@ class _ConnectionTile extends ConsumerWidget {
         stackTrace,
       );
       if (!context.mounted) return;
-      showAuraSnackBar(
+      final _ = showAuraSnackBar(
         context: context,
-        variant: AuraSnackBarVariant.error,
         content: const TextLocale(
           LocaleKeys.service_connections_delete_credential_error,
         ),
+        variant: AuraSnackBarVariant.error,
       );
     }
   }

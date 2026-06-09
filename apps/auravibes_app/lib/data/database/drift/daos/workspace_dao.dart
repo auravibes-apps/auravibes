@@ -1,7 +1,3 @@
-// ignore_for_file: prefer-async-await
-// Required: Existing Future chains preserve callback flow.
-// ignore_for_file: newline-before-return
-// Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspaces.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
@@ -69,6 +65,7 @@ class WorkspaceDao extends DatabaseAccessor<AppDatabase>
     final updateCount = await (update(
       workspaces,
     )..where((t) => t.id.equals(id))).write(workspace);
+
     return updateCount > 0;
   }
 
@@ -80,6 +77,7 @@ class WorkspaceDao extends DatabaseAccessor<AppDatabase>
     final deleteCount = await (delete(
       workspaces,
     )..where((t) => t.id.equals(id))).go();
+
     return deleteCount > 0;
   }
 
@@ -87,13 +85,13 @@ class WorkspaceDao extends DatabaseAccessor<AppDatabase>
   ///
   /// Returns true if the workspace exists, false otherwise.
   Future<bool> workspaceExists(String id) async {
-    final count =
+    final rows =
         await (selectOnly(workspaces)
               ..addColumns([workspaces.id])
               ..where(workspaces.id.equals(id)))
-            .get()
-            .then((rows) => rows.length);
-    return count > 0;
+            .get();
+
+    return rows.isNotEmpty;
   }
 
   /// Searches for workspaces by name.
@@ -110,21 +108,25 @@ class WorkspaceDao extends DatabaseAccessor<AppDatabase>
   /// Gets the count of all workspaces.
   ///
   /// Returns the total number of workspaces in the database.
-  Future<int> getWorkspaceCount() {
-    return (selectOnly(
+  Future<int> getWorkspaceCount() async {
+    final rows = await (selectOnly(
       workspaces,
-    )..addColumns([workspaces.id])).get().then((rows) => rows.length);
+    )..addColumns([workspaces.id])).get();
+
+    return rows.length;
   }
 
   /// Gets the count of workspaces by type.
   ///
   /// Returns the number of workspaces with the specified [type].
-  Future<int> getWorkspaceCountByType(WorkspaceType type) {
-    return (selectOnly(workspaces)
-          ..addColumns([workspaces.id])
-          ..where(workspaces.type.equals(type.value)))
-        .get()
-        .then((rows) => rows.length);
+  Future<int> getWorkspaceCountByType(WorkspaceType type) async {
+    final rows =
+        await (selectOnly(workspaces)
+              ..addColumns([workspaces.id])
+              ..where(workspaces.type.equals(type.value)))
+            .get();
+
+    return rows.length;
   }
 
   Future<bool> patchWorkspaceTimestamp(String id) async {
@@ -132,6 +134,7 @@ class WorkspaceDao extends DatabaseAccessor<AppDatabase>
         await (update(workspaces)..where((t) => t.id.equals(id))).write(
           WorkspacesCompanion(updatedAt: Value(DateTime.now())),
         );
+
     return rowsAffected > 0;
   }
 }

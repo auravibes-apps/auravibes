@@ -81,6 +81,7 @@ class RunSkillTemplateToolUsecase {
       if (requiresCredential) {
         throw StateError('Skill tool requires a credential definition.');
       }
+
       return null;
     }
 
@@ -88,6 +89,7 @@ class RunSkillTemplateToolUsecase {
       if (requiresCredential) {
         throw StateError('Skill tool requires a credentialId argument.');
       }
+
       return null;
     }
 
@@ -100,6 +102,7 @@ class RunSkillTemplateToolUsecase {
         !credential.isEnabled) {
       throw StateError('Skill credential is not available for this tool.');
     }
+
     return credential;
   }
 
@@ -111,6 +114,7 @@ class RunSkillTemplateToolUsecase {
     if (definition == null) {
       throw StateError('Skill credential definition not found.');
     }
+
     return SkillCredentialAttributeDefinition.parseMap(
       definition.attributesJson,
     );

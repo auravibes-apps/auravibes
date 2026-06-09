@@ -23,6 +23,7 @@ class DuplicateSkillTemplateToolUsecase {
     }
 
     final title = await _copyTitle(tool);
+
     return createSkillTemplateToolUsecase.call(
       tool.skillId,
       SkillTemplateToolToCreate(

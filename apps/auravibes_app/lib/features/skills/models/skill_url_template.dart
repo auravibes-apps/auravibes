@@ -26,6 +26,7 @@ class SkillUrlTemplate {
     }
 
     final body = decoded['body'] as String?;
+
     return SkillUrlTemplate(
       url: _canonicalizeTemplate(url),
       method: _methodFromJson(decoded['method']),
@@ -66,19 +67,23 @@ class SkillUrlTemplate {
   final UrlResponseFormat format;
 
   SkillUrlTemplateBodyFormat get resolvedBodyFormat {
+    final body = this.body;
     if (body == null) return SkillUrlTemplateBodyFormat.text;
     if (bodyFormat != SkillUrlTemplateBodyFormat.infer) return bodyFormat;
-    return _looksLikeJson(body!)
+
+    return _looksLikeJson(body)
         ? SkillUrlTemplateBodyFormat.json
         : SkillUrlTemplateBodyFormat.text;
   }
 
   static UrlRequestMethod _methodFromJson(Object? value) {
-    final normalized = '${value ?? 'GET'}'.trim().toUpperCase();
-    return UrlRequestMethod.values.firstWhere(
-      (method) => method.value == normalized,
-      orElse: () => throw FormatException('Unsupported method: $value.'),
-    );
+    final normalized = '${value ?? 'GET'}'.trim().toLowerCase();
+    if (normalized
+        case 'get' || 'post' || 'put' || 'delete' || 'patch' || 'head') {
+      return UrlRequestMethod.values.byName(normalized);
+    }
+
+    throw FormatException('Unsupported method: $value.');
   }
 
   static Map<String, String> _stringMap(Object? value) {
@@ -86,6 +91,7 @@ class SkillUrlTemplate {
     if (value is! Map) {
       throw const FormatException('Expected a JSON object map.');
     }
+
     return value.map((key, value) => MapEntry('$key', '$value'));
   }
 
@@ -95,16 +101,18 @@ class SkillUrlTemplate {
     if (parsed == null || parsed <= 0) {
       throw FormatException('Expected a positive integer, got $value.');
     }
+
     return parsed;
   }
 
   static SkillUrlTemplateBodyFormat _bodyFormatFromJson(Object? value) {
     if (value == null) return SkillUrlTemplateBodyFormat.infer;
     final normalized = '$value'.trim().toLowerCase();
-    return SkillUrlTemplateBodyFormat.values.firstWhere(
-      (format) => format.value == normalized,
-      orElse: () => throw FormatException('Unsupported bodyFormat: $value.'),
-    );
+    if (normalized case 'infer' || 'json' || 'text') {
+      return SkillUrlTemplateBodyFormat.values.byName(normalized);
+    }
+
+    throw FormatException('Unsupported bodyFormat: $value.');
   }
 
   static Map<String, String> _canonicalizeMap(Map<String, String> value) {
@@ -117,6 +125,7 @@ class SkillUrlTemplate {
     final wholePlaceholder = RegExp(
       r'"\{(input|credential):([A-Za-z0-9_]+)\}"',
     );
+
     return _canonicalizeTemplate(
       value.replaceAllMapped(wholePlaceholder, (match) {
         return '{{ ${match.group(1)}.${match.group(2)} | json }}';
@@ -132,6 +141,7 @@ class SkillUrlTemplate {
 
   static bool _looksLikeJson(String value) {
     final trimmed = value.trimLeft();
+
     return trimmed.startsWith('{') || trimmed.startsWith('[');
   }
 }
@@ -166,10 +176,12 @@ class SkillTemplateInputDefinition {
     if (decoded is! Map) {
       throw const FormatException('Inputs must be a JSON object.');
     }
+
     return decoded.map((key, value) {
       if (value is! Map) {
         throw const FormatException('Input definition must be an object.');
       }
+
       return MapEntry(
         '$key',
         SkillTemplateInputDefinition(

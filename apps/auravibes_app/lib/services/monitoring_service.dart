@@ -1,9 +1,5 @@
-// ignore_for_file: avoid-substring
-// Required: Existing parsing uses code-unit substring offsets.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
+import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -38,7 +34,7 @@ class MonitoringService {
       return normalized;
     }
 
-    return '${normalized.substring(0, _maxLogFieldLength)}...';
+    return '${normalized.firstCharacters(_maxLogFieldLength)}...';
   }
 
   static const _maxLogFieldLength = 500;

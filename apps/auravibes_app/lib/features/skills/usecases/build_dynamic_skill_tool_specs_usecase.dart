@@ -83,6 +83,7 @@ class BuildDynamicSkillToolSpecsUsecase {
         '${skill.kind.name}) - ${skill.description};',
       );
     }
+
     return buffer.toString();
   }
 
@@ -94,6 +95,7 @@ class BuildDynamicSkillToolSpecsUsecase {
               skill.credentialDefinitionId != null,
         )
         .toList();
+
     return ToolSpec(
       name: listSkillCredentialsToolName,
       description:

@@ -1,12 +1,4 @@
-// ignore_for_file: no-magic-number
-// Required: UI tokens and layout use fixed design values.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: no-equal-arguments
-// Required: UI geometry uses repeated values for symmetric layout.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-extracting-callbacks
 // Required: Component callbacks stay colocated with UI state.
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
@@ -62,13 +54,13 @@ class _AuraPopupMenuButtonState extends State<AuraPopupMenuButton> {
   @override
   Widget build(BuildContext context) {
     return AuraPopupMenu(
-      controller: _controller,
-      items: widget.items,
       child: AuraIconButton(
         icon: widget.icon,
         onPressed: _controller.toggle,
         tooltip: widget.tooltip,
       ),
+      items: widget.items,
+      controller: _controller,
     );
   }
 }
@@ -117,6 +109,7 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
     if (focusNode == null) {
       throw StateError('_focusNode is not initialized');
     }
+
     return focusNode;
   }
 
@@ -209,8 +202,10 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
       onKey: (node, event) {
         if (event.logicalKey == LogicalKeyboardKey.escape && _visible) {
           close();
+
           return KeyEventResult.handled;
         }
+
         return KeyEventResult.ignored;
       },
     );

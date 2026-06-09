@@ -1,12 +1,5 @@
-// ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 import 'dart:convert';
 
@@ -15,7 +8,7 @@ import 'package:logging/logging.dart';
 
 const _jsonAcceptHeader = {'Accept': 'application/json'};
 
-/// Result of OAuth discovery for an MCP server
+/// Result of OAuth discovery for an MCP server.
 class OAuthDiscoveryResult {
   const OAuthDiscoveryResult({
     required this.authorizationUrl,
@@ -24,16 +17,16 @@ class OAuthDiscoveryResult {
     required this.scope,
   });
 
-  /// OAuth authorization endpoint URL
+  /// OAuth authorization endpoint URL.
   final String authorizationUrl;
 
-  /// OAuth token endpoint URL
+  /// OAuth token endpoint URL.
   final String tokenUrl;
 
-  /// OAuth client ID (may be null for public clients)
+  /// OAuth client ID (may be null for public clients).
   final String? clientId;
 
-  /// OAuth scope string
+  /// OAuth scope string.
   final String? scope;
 }
 
@@ -55,7 +48,7 @@ class OAuthConnector {
 class OAuthDiscoveryService {
   static final Logger _logger = Logger('OAuthDiscoveryService');
 
-  /// Automatically discovers OAuth configuration for an MCP server URL
+  /// Automatically discovers OAuth configuration for an MCP server URL.
   static Future<OAuthDiscoveryResult?> discoverOAuth(
     OAuthConnector registrer,
   ) async {
@@ -67,7 +60,7 @@ class OAuthDiscoveryService {
       final baseUri = Uri.parse(registrer.serverUrl);
       final baseUrl = '${baseUri.scheme}://${baseUri.host}:${baseUri.port}';
 
-      // Try multiple discovery methods
+      // Try multiple discovery methods.
       var result = await _tryWellKnownEndpoint(
         baseUrl: baseUrl,
         redirectUrl: registrer.redirectUrl,
@@ -81,15 +74,16 @@ class OAuthDiscoveryService {
       result = await _tryOAuthMetadataEndpoint(baseUrl);
       if (result != null) return result;
 
-      // No OAuth required
+      // No OAuth required.
       return null;
     } on Exception catch (e) {
       _logger.warning('OAuth discovery failed: $e');
+
       return null;
     }
   }
 
-  /// Try RFC 8414 OAuth 2.0 Authorization Server Metadata
+  /// Try RFC 8414 OAuth 2.0 Authorization Server Metadata.
   static Future<OAuthDiscoveryResult?> _tryWellKnownEndpoint({
     required String baseUrl,
     required String redirectUrl,
@@ -116,14 +110,14 @@ class OAuthDiscoveryService {
         if (authorizationEndpoint != null && tokenEndpoint != null) {
           _logger.info('Found OAuth metadata via well-known endpoint');
 
-          // Check if dynamic client registration is available
+          // Check if dynamic client registration is available.
           final registrationEndpoint =
               metadata['registration_endpoint'] as String?;
           var clientId = metadata['client_id'] as String?;
 
-          // For servers like Notion that support dynamic registration
-          // and public clients, we'll try to register a client dynamically
-          // if no client_id is provided
+          // For servers like Notion that support dynamic registration.
+          // And public clients, we'll try to register a client dynamically.
+          // If no client_id is provided.
           if (clientId == null && registrationEndpoint != null) {
             clientId = await _tryDynamicClientRegistration(
               registrationEndpoint: registrationEndpoint,
@@ -135,7 +129,7 @@ class OAuthDiscoveryService {
           return OAuthDiscoveryResult(
             authorizationUrl: authorizationEndpoint,
             tokenUrl: tokenEndpoint,
-            clientId: clientId, // May be null for public clients
+            clientId: clientId, // May be null for public clients.
             scope: metadata['scope'] as String?,
           );
         }
@@ -147,7 +141,7 @@ class OAuthDiscoveryService {
     return null;
   }
 
-  /// Try probing the MCP server directly for OAuth requirements
+  /// Try probing the MCP server directly for OAuth requirements.
   static Future<OAuthDiscoveryResult?> _tryDirectServerProbe(
     String serverUrl,
   ) async {
@@ -180,6 +174,7 @@ class OAuthDiscoveryService {
     if (headerResult != null) return headerResult;
 
     _logger.info('Server returned 401, may require OAuth');
+
     return _parseOAuthBodyChallenge(response.body);
   }
 
@@ -230,7 +225,7 @@ class OAuthDiscoveryService {
     return null;
   }
 
-  /// Try OAuth metadata endpoint
+  /// Try OAuth metadata endpoint.
   static Future<OAuthDiscoveryResult?> _tryOAuthMetadataEndpoint(
     String baseUrl,
   ) async {
@@ -269,7 +264,7 @@ class OAuthDiscoveryService {
     return null;
   }
 
-  /// Try dynamic client registration (RFC 7591)
+  /// Try dynamic client registration (RFC 7591).
   static Future<String?> _tryDynamicClientRegistration({
     required String registrationEndpoint,
     required String redirectUrl,
@@ -285,9 +280,9 @@ class OAuthDiscoveryService {
         'redirect_uris': [redirectUrl],
         'grant_types': ['authorization_code', 'refresh_token'],
         'response_types': ['code'],
-        'token_endpoint_auth_method': 'none', // Public client
+        'token_endpoint_auth_method': 'none', // Public client.
         'application_type': 'web',
-        // 'scope': 'read write',
+        // 'Scope': 'read write',.
       };
 
       final response = await http
@@ -310,6 +305,7 @@ class OAuthDiscoveryService {
           _logger.info(
             'Dynamic client registration successful, client_id: $clientId',
           );
+
           return clientId;
         }
       } else {

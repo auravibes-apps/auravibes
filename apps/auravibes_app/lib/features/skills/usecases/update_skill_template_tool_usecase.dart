@@ -49,6 +49,7 @@ class UpdateSkillTemplateToolUsecase {
         );
       }
     }
+
     return _skillTemplateToolsRepository.updateTool(toolId, toolToUpdate);
   }
 
@@ -67,6 +68,7 @@ class UpdateSkillTemplateToolUsecase {
       credentialDefinitionId,
     );
     if (definition == null) return const {};
+
     return SkillCredentialAttributeDefinition.parseMap(
       definition.attributesJson,
     );
@@ -77,12 +79,12 @@ final updateSkillTemplateToolUsecaseProvider =
     Provider<UpdateSkillTemplateToolUsecase>((ref) {
       return UpdateSkillTemplateToolUsecase(
         ref.watch(skillTemplateToolsRepositoryProvider),
+        validateSkillTemplateToolUsecase: ref.watch(
+          validateSkillTemplateToolUsecaseProvider,
+        ),
         skillsRepository: ref.watch(skillsRepositoryProvider),
         skillCredentialDefinitionsRepository: ref.watch(
           skillCredentialDefinitionsRepositoryProvider,
-        ),
-        validateSkillTemplateToolUsecase: ref.watch(
-          validateSkillTemplateToolUsecaseProvider,
         ),
       );
     });

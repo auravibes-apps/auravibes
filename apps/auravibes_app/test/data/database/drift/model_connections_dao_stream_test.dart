@@ -1,5 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
 import 'package:async/async.dart';
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
@@ -30,7 +28,6 @@ void main() {
     expect(await stream.next, isEmpty);
     final connection = await database.modelConnectionsDao.insertModelConnection(
       ServiceConnectionsCompanion(
-        workspaceId: Value(workspace.id),
         name: const Value('OpenAI'),
         serviceId: const Value('openai'),
         kind: const Value(ServiceConnectionKindTable.modelProvider),
@@ -38,6 +35,7 @@ void main() {
           ServiceAuthenticationTypeTable.apiKey,
         ),
         encryptedAuthValue: const Value('encrypted'),
+        workspaceId: Value(workspace.id),
       ),
     );
 

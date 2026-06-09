@@ -1,7 +1,3 @@
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: no-object-declaration
-// Required: Genkit provider configs use package-specific option objects.
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
@@ -9,6 +5,8 @@ import 'package:auravibes_genkit_openai_compat/auravibes_genkit_openai_compat.da
 import 'package:genkit/genkit.dart';
 import 'package:genkit_anthropic/genkit_anthropic.dart';
 import 'package:genkit_openai/genkit_openai.dart';
+
+typedef UntypedModelRef = ModelRef<Object?>;
 
 class ProviderFactory {
   const ProviderFactory({
@@ -52,7 +50,7 @@ class ProviderFactory {
     );
   }
 
-  ModelRef<Object?> getModelReference(
+  UntypedModelRef getModelReference(
     WorkspaceModelSelectionWithConnectionEntity config,
   ) {
     final type = config.modelsProvider.type;
@@ -73,7 +71,7 @@ class ProviderFactory {
     return openAI.model(modelId);
   }
 
-  Object? getGenerationConfig(
+  T? getGenerationConfig<T>(
     WorkspaceModelSelectionWithConnectionEntity config,
   ) {
     if (!_shouldUseAnthropic(
@@ -82,8 +80,9 @@ class ProviderFactory {
     )) {
       if (_shouldUseOpenAICompatReasoning(config)) {
         return OpenAICompatReasoningOptions(
-          reasoning: const OpenAICompatReasoningConfig(),
-        );
+              reasoning: const OpenAICompatReasoningConfig(),
+            )
+            as T;
       }
 
       return null;
@@ -97,11 +96,12 @@ class ProviderFactory {
     final usesAdaptiveThinking = _usesAdaptiveThinking(modelId);
 
     return AnthropicOptions(
-      thinking: ThinkingConfig(
-        type: usesAdaptiveThinking ? 'adaptive' : 'enabled',
-        budgetTokens: usesAdaptiveThinking ? null : _thinkingBudgetTokens,
-      ),
-    );
+          thinking: ThinkingConfig(
+            type: usesAdaptiveThinking ? 'adaptive' : 'enabled',
+            budgetTokens: usesAdaptiveThinking ? null : _thinkingBudgetTokens,
+          ),
+        )
+        as T;
   }
 
   bool _shouldUseAnthropic(ModelProvidersType? type, String? connectionUrl) {

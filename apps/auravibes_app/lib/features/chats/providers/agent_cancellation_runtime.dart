@@ -1,6 +1,3 @@
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 import 'dart:async';
 

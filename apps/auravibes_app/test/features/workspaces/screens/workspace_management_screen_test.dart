@@ -1,19 +1,4 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: missing-test-assertion
-// Required: Widget tests verify side effects through mocked dependencies.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: no-object-declaration
-// Required: Test fakes override noSuchMethod with Object return values.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 
 import 'dart:async';
 
@@ -31,7 +16,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class _FakeGoRouter implements GoRouter {
   @override
-  Object? noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
 class _FakeWorkspaceRepository implements WorkspaceRepository {
@@ -62,6 +47,7 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
     );
     _workspaces.add(entity);
     _emit();
+
     return entity;
   }
 
@@ -79,6 +65,7 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
     );
     _workspaces[index] = updated;
     _emit();
+
     return updated;
   }
 
@@ -88,6 +75,7 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
     if (index == -1) return false;
     final _ = _workspaces.removeAt(index);
     _emit();
+
     return true;
   }
 
@@ -125,8 +113,8 @@ void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
   group('WorkspaceManagementScreen', () {
-    late _FakeWorkspaceRepository repository;
-    late _FakeGoRouter router;
+    var repository = _FakeWorkspaceRepository();
+    var router = _FakeGoRouter();
 
     setUp(() {
       repository = _FakeWorkspaceRepository();
@@ -140,6 +128,7 @@ void main() {
       WorkspaceRepository? repo,
     }) {
       final useRepo = repo ?? repository;
+
       return EasyLocalization(
         child: Builder(
           builder: (context) {
@@ -162,6 +151,7 @@ void main() {
                 ),
               );
             }
+
             return ProviderScope(
               overrides: overrides.cast(),
               child: MaterialApp(
@@ -444,6 +434,7 @@ void main() {
       await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
       final _ = await tester.pumpAndSettle();
 
+      expect(find.byIcon(Icons.arrow_back), findsOneWidget);
       await tester.tap(find.byIcon(Icons.arrow_back));
       final _ = await tester.pumpAndSettle();
     });

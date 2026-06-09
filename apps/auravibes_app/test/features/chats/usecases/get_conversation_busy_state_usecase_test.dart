@@ -1,10 +1,3 @@
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: prefer-static-class
-// Required: Tests keep fixture helpers and fakes top-level.
-
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
@@ -22,21 +15,19 @@ import 'get_conversation_busy_state_usecase_test.mocks.dart';
 @GenerateMocks([MessageRepository])
 void main() {
   group('GetConversationBusyStateUsecase', () {
-    late MockMessageRepository messageRepository;
-    late ProviderContainer container;
-    late GetConversationBusyStateUsecase usecase;
+    var messageRepository = MockMessageRepository();
+    var container = ProviderContainer();
+    var usecase = _createUsecase(
+      messageRepository: messageRepository,
+      container: container,
+    );
 
     setUp(() {
       messageRepository = MockMessageRepository();
       container = ProviderContainer();
-      final notifier = container.read(conversationStreamingProvider.notifier);
-      usecase = GetConversationBusyStateUsecase(
+      usecase = _createUsecase(
         messageRepository: messageRepository,
-        conversationStreamingRuntime: ConversationStreamingRuntime(
-          start: notifier.start,
-          isStreaming: notifier.isStreaming,
-          remove: notifier.remove,
-        ),
+        container: container,
       );
 
       when(messageRepository.getMessagesByConversation(any)).thenAnswer(
@@ -125,6 +116,22 @@ void main() {
       },
     );
   });
+}
+
+GetConversationBusyStateUsecase _createUsecase({
+  required MessageRepository messageRepository,
+  required ProviderContainer container,
+}) {
+  final notifier = container.read(conversationStreamingProvider.notifier);
+
+  return GetConversationBusyStateUsecase(
+    messageRepository: messageRepository,
+    conversationStreamingRuntime: ConversationStreamingRuntime(
+      start: notifier.start,
+      isStreaming: notifier.isStreaming,
+      remove: notifier.remove,
+    ),
+  );
 }
 
 MessageEntity _message({

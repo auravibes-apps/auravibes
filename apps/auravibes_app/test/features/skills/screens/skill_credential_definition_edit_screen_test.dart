@@ -1,4 +1,3 @@
-// ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository_impl.dart';
@@ -73,7 +72,7 @@ void main() {
     await tester.pumpWidget(
       buildScreen(container: container, workspaceId: workspace.id),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('New Credential Definition'), findsOneWidget);
     expect(find.text('Attributes JSON'), findsNothing);
@@ -84,16 +83,16 @@ void main() {
     await tester.enterText(find.byType(TextFormField).at(1), 'api_key');
     await tester.enterText(find.byType(TextFormField).at(2), 'API key');
     await tester.tap(find.text('Add attribute'));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextFormField).at(3), 'user_id');
     await tester.enterText(find.byType(TextFormField).at(4), 'User id');
     await tester.ensureVisible(find.text('Optional').last);
     await tester.tap(find.byType(AuraSwitch).at(2));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     await tester.tap(find.byType(AuraSwitch).at(3));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.save_outlined));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     final definition = await repository.getDefinitionBySlug(
       workspace.id,

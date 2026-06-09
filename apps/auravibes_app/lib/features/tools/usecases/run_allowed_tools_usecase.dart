@@ -1,10 +1,4 @@
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
@@ -57,6 +51,7 @@ class RunAllowedToolsUsecase {
 
     if (agentCancellationRuntime.isCancellationRequested(conversationId)) {
       await _stopPendingTools(messageId: latestToolCalls.messageId);
+
       return AgentIterationDecision.done;
     }
 
@@ -198,6 +193,7 @@ class RunAllowedToolsUsecase {
           resultStatus: ToolCallResultStatus.toolNotFound,
         );
       }
+
       return _ToolExecutionResult(
         resultStatus: ToolCallResultStatus.success,
         responseRaw: result.toString(),
@@ -210,6 +206,7 @@ class RunAllowedToolsUsecase {
         error: error,
         stackTrace: stackTrace,
       );
+
       return _ToolExecutionResult(
         resultStatus: ToolCallResultStatus.executionError,
         responseRaw: 'Tool execution failed: ${error.message}',
@@ -222,6 +219,7 @@ class RunAllowedToolsUsecase {
         error: error,
         stackTrace: stackTrace,
       );
+
       return const _ToolExecutionResult(
         resultStatus: ToolCallResultStatus.executionError,
       );
@@ -237,6 +235,7 @@ class RunAllowedToolsUsecase {
         conversationId: conversationId,
         toolToCall: toolToCall,
       );
+
       return _ToolResultUpdate(
         toolCallId: toolToCall.id,
         resultStatus: result.resultStatus,
@@ -250,6 +249,7 @@ class RunAllowedToolsUsecase {
         error: error,
         stackTrace: stackTrace,
       );
+
       return _ToolResultUpdate(
         toolCallId: toolToCall.id,
         resultStatus:
@@ -272,6 +272,7 @@ class RunAllowedToolsUsecase {
       if (!toolCall.isPending) return toolCall;
 
       didUpdate = true;
+
       return toolCall.copyWith(
         resultStatus: ToolCallResultStatus.stoppedByUser,
       );

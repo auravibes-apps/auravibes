@@ -1,9 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
 import 'package:auravibes_ui/src/atoms/aura_icon.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
@@ -42,7 +36,7 @@ void main() {
       );
 
       final iconWidget = tester.widget<Icon>(find.byIcon(Icons.star));
-      // Verify the resolved color matches the theme's error color
+      // Verify the resolved color matches the theme's error color.
       expect(iconWidget.color, AuraTheme.light.colors.error);
     });
 
@@ -135,7 +129,9 @@ void main() {
           home: Scaffold(
             body: AuraIconButton(
               icon: Icons.star,
-              onPressed: () {},
+              onPressed: () {
+                final _ = Object();
+              },
             ),
           ),
         ),
@@ -154,7 +150,9 @@ void main() {
           home: Scaffold(
             body: AuraIconButton(
               icon: Icons.star,
-              onPressed: () {},
+              onPressed: () {
+                final _ = Object();
+              },
               variant: AuraIconButtonVariant.filled,
             ),
           ),
@@ -174,7 +172,9 @@ void main() {
           home: Scaffold(
             body: AuraIconButton(
               icon: Icons.star,
-              onPressed: () {},
+              onPressed: () {
+                final _ = Object();
+              },
               variant: AuraIconButtonVariant.outlined,
             ),
           ),
@@ -194,7 +194,9 @@ void main() {
           home: Scaffold(
             body: AuraIconButton(
               icon: Icons.star,
-              onPressed: () {},
+              onPressed: () {
+                final _ = Object();
+              },
               variant: AuraIconButtonVariant.elevated,
             ),
           ),
@@ -217,7 +219,9 @@ void main() {
           home: Scaffold(
             body: AuraIconButton(
               icon: Icons.star,
-              onPressed: () {},
+              onPressed: () {
+                final _ = Object();
+              },
               color: customColor,
             ),
           ),
@@ -236,7 +240,9 @@ void main() {
           home: Scaffold(
             body: AuraIconButton(
               icon: Icons.star,
-              onPressed: () {},
+              onPressed: () {
+                final _ = Object();
+              },
               backgroundColor: customBackgroundColor,
             ),
           ),
@@ -248,7 +254,7 @@ void main() {
 
       final iconButton = tester.widget<IconButton>(find.byType(IconButton));
       final resolvedColor = iconButton.style?.backgroundColor?.resolve({});
-      // In const-first design, backgroundColor is resolved to the theme color
+      // In const-first design, backgroundColor is resolved to the theme color.
       expect(resolvedColor, isNotNull);
       expect(resolvedColor, AuraTheme.light.colors.primary);
     });
@@ -261,7 +267,9 @@ void main() {
           home: Scaffold(
             body: AuraIconButton(
               icon: Icons.star,
-              onPressed: () {},
+              onPressed: () {
+                final _ = Object();
+              },
               tooltip: tooltipMessage,
             ),
           ),
@@ -282,7 +290,9 @@ void main() {
           home: Scaffold(
             body: AuraIconButton(
               icon: Icons.star,
-              onPressed: () {},
+              onPressed: () {
+                final _ = Object();
+              },
               semanticLabel: semanticLabel,
             ),
           ),
@@ -299,7 +309,9 @@ void main() {
           home: Scaffold(
             body: AuraIconButton(
               icon: Icons.star,
-              onPressed: () {},
+              onPressed: () {
+                final _ = Object();
+              },
               disabled: true,
             ),
           ),

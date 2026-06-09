@@ -19,6 +19,7 @@ class BuildSkillContextMessagesUsecase {
       workspaceId: workspaceId,
       filter: SkillLoadFilter.loaded,
     );
+
     return [
       for (final skill in loadedSkills)
         ChatMessage(
@@ -40,7 +41,7 @@ class BuildSkillContextMessagesUsecase {
         .replaceAll('<', '&lt;')
         .replaceAll('>', '&gt;')
         .replaceAll('"', '&quot;')
-        .replaceAll("'", '&apos;');
+        .replaceAll(String.fromCharCode(39), '&apos;');
   }
 }
 

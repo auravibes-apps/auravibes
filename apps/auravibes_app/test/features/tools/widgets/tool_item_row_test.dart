@@ -1,17 +1,5 @@
-// ignore_for_file: avoid-returning-widgets
-// Required: Widget tests use helpers that build widgets under test.
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: scoped_providers_should_specify_dependencies
 // Required: widget tests override scoped providers directly.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-static-class
-// Required: Tests keep fixture helpers and fakes top-level.
 
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
@@ -57,31 +45,38 @@ class _MockGroupedNotifier extends GroupedToolsNotifier {
   Future<List<ToolsGroupWithTools>> build(String workspaceId) async => groups;
 }
 
-Widget _buildSubject(Widget child) {
-  return EasyLocalization(
-    child: TestProviderScope(
-      overrides: [
-        workspaceToolsProvider(_workspaceId).overrideWith(
-          () => _MockWorkspaceToolsNotifier([_tool()]),
-        ),
-        groupedToolsProvider(
-          _workspaceId,
-        ).overrideWith(() => _MockGroupedNotifier([])),
-      ],
-      child: MaterialApp(
-        home: Theme(
-          data: ThemeData(extensions: [AuraTheme.light]),
-          child: Material(child: child),
+class _Subject extends StatelessWidget {
+  const _Subject({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return EasyLocalization(
+      child: TestProviderScope(
+        overrides: [
+          workspaceToolsProvider(_workspaceId).overrideWith(
+            () => _MockWorkspaceToolsNotifier([_tool()]),
+          ),
+          groupedToolsProvider(
+            _workspaceId,
+          ).overrideWith(() => _MockGroupedNotifier([])),
+        ],
+        child: MaterialApp(
+          home: Theme(
+            data: ThemeData(extensions: [AuraTheme.light]),
+            child: Material(child: child),
+          ),
         ),
       ),
-    ),
-    supportedLocales: const [Locale('en')],
-    path: 'assets/i18n',
-    fallbackLocale: const Locale('en'),
-    startLocale: const Locale('en'),
-    useOnlyLangCode: true,
-    useFallbackTranslations: true,
-  );
+      supportedLocales: const [Locale('en')],
+      path: 'assets/i18n',
+      fallbackLocale: const Locale('en'),
+      startLocale: const Locale('en'),
+      useOnlyLangCode: true,
+      useFallbackTranslations: true,
+    );
+  }
 }
 
 void main() {
@@ -89,8 +84,8 @@ void main() {
     final tool = _tool();
 
     await tester.pumpWidget(
-      _buildSubject(
-        ToolItemRow(tool: tool, workspaceId: _workspaceId),
+      _Subject(
+        child: ToolItemRow(tool: tool, workspaceId: _workspaceId),
       ),
     );
     final _ = await tester.pumpAndSettle();
@@ -103,8 +98,8 @@ void main() {
     final tool = _tool();
 
     await tester.pumpWidget(
-      _buildSubject(
-        ToolItemRow(tool: tool, workspaceId: _workspaceId),
+      _Subject(
+        child: ToolItemRow(tool: tool, workspaceId: _workspaceId),
       ),
     );
     final _ = await tester.pumpAndSettle();
@@ -118,8 +113,8 @@ void main() {
     final tool = _tool(isEnabled: false);
 
     await tester.pumpWidget(
-      _buildSubject(
-        ToolItemRow(tool: tool, workspaceId: _workspaceId),
+      _Subject(
+        child: ToolItemRow(tool: tool, workspaceId: _workspaceId),
       ),
     );
     final _ = await tester.pumpAndSettle();
@@ -132,8 +127,8 @@ void main() {
     final tool = _tool(isEnabled: false);
 
     await tester.pumpWidget(
-      _buildSubject(
-        ToolItemRow(tool: tool, workspaceId: _workspaceId),
+      _Subject(
+        child: ToolItemRow(tool: tool, workspaceId: _workspaceId),
       ),
     );
     final _ = await tester.pumpAndSettle();
@@ -148,8 +143,8 @@ void main() {
     final tool = _tool();
 
     await tester.pumpWidget(
-      _buildSubject(
-        ToolItemRow(tool: tool, workspaceId: _workspaceId),
+      _Subject(
+        child: ToolItemRow(tool: tool, workspaceId: _workspaceId),
       ),
     );
     final _ = await tester.pumpAndSettle();
@@ -163,8 +158,8 @@ void main() {
     final tool = _tool(isEnabled: false);
 
     await tester.pumpWidget(
-      _buildSubject(
-        ToolItemRow(
+      _Subject(
+        child: ToolItemRow(
           tool: tool,
           workspaceId: _workspaceId,
           showDeleteButton: false,
@@ -185,8 +180,8 @@ void main() {
     final tool = _tool(isEnabled: false);
 
     await tester.pumpWidget(
-      _buildSubject(
-        ToolItemRow(
+      _Subject(
+        child: ToolItemRow(
           tool: tool,
           workspaceId: _workspaceId,
         ),
@@ -204,8 +199,8 @@ void main() {
     final tool = _tool();
 
     await tester.pumpWidget(
-      _buildSubject(
-        ToolItemRow(tool: tool, workspaceId: _workspaceId),
+      _Subject(
+        child: ToolItemRow(tool: tool, workspaceId: _workspaceId),
       ),
     );
     final _ = await tester.pumpAndSettle();
@@ -223,8 +218,8 @@ void main() {
     final tool = _tool(isEnabled: false);
 
     await tester.pumpWidget(
-      _buildSubject(
-        ToolItemRow(tool: tool, workspaceId: _workspaceId),
+      _Subject(
+        child: ToolItemRow(tool: tool, workspaceId: _workspaceId),
       ),
     );
     final _ = await tester.pumpAndSettle();

@@ -1,5 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository_impl.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository_impl.dart';
@@ -62,12 +60,6 @@ void main() {
     await tester.pumpWidget(
       EasyLocalization(
         key: UniqueKey(),
-        supportedLocales: const [Locale('en')],
-        path: 'assets/i18n',
-        fallbackLocale: const Locale('en'),
-        startLocale: const Locale('en'),
-        useOnlyLangCode: true,
-        useFallbackTranslations: true,
         child: Builder(
           builder: (context) {
             return UncontrolledProviderScope(
@@ -85,9 +77,15 @@ void main() {
             );
           },
         ),
+        supportedLocales: const [Locale('en')],
+        path: 'assets/i18n',
+        fallbackLocale: const Locale('en'),
+        startLocale: const Locale('en'),
+        useOnlyLangCode: true,
+        useFallbackTranslations: true,
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('Skill Credential'), findsOneWidget);
     expect(find.text('TheCatAPI Key'), findsOneWidget);

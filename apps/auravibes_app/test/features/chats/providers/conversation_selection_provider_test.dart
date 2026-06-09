@@ -1,7 +1,5 @@
 // ignore_for_file: provider_dependencies
 // Required: provider unit tests read scoped providers directly.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 
 import 'package:auravibes_app/features/chats/providers/conversation_selection_provider.dart';
 import 'package:flutter_test/flutter_test.dart';

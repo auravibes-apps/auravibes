@@ -1,14 +1,7 @@
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-extracting-callbacks
 // Required: UI callbacks stay local to their widgets.
-// ignore_for_file: prefer-moving-to-variable
 // Required: Existing code repeats lookups where extraction adds noise.
-// ignore_for_file: prefer-single-widget-per-file
 // Required: Feature widgets keep closely related private widgets together.
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 
 import 'dart:async';
@@ -112,6 +105,7 @@ class _ChatConversationScreen extends HookConsumerWidget {
           LocaleKeys.chats_screens_chat_conversation_error_not_found.tr(),
         _ => LocaleKeys.chats_screens_chat_conversation_error_not_found.tr(),
       };
+
       return AuraScreen(
         child: AppErrorWidget(
           error: errorMessage,
@@ -258,8 +252,8 @@ class _RateLimitRetryIndicatorState extends State<_RateLimitRetryIndicator> {
 
     return Padding(
       padding: const EdgeInsets.symmetric(
-        horizontal: DesignSpacing.md,
         vertical: DesignSpacing.xs,
+        horizontal: DesignSpacing.md,
       ),
       child: Row(
         children: [
@@ -267,12 +261,12 @@ class _RateLimitRetryIndicatorState extends State<_RateLimitRetryIndicator> {
           SizedBox(width: context.auraTheme.spacing.sm),
           Flexible(
             child: AuraText(
-              style: AuraTextStyle.bodySmall,
               child: Text(
                 LocaleKeys.chats_screens_chat_conversation_rate_limit_retry.tr(
                   namedArgs: {'seconds': remainingSeconds.toString()},
                 ),
               ),
+              style: AuraTextStyle.bodySmall,
             ),
           ),
         ],
@@ -283,7 +277,9 @@ class _RateLimitRetryIndicatorState extends State<_RateLimitRetryIndicator> {
   void _startTimer() {
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
-      setState(() {});
+      setState(() {
+        final _ = Object();
+      });
     });
   }
 

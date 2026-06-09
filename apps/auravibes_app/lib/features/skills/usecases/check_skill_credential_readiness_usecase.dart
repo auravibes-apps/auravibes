@@ -23,6 +23,7 @@ class CheckSkillCredentialReadinessUsecase {
           workspaceId: workspaceId,
           credentialDefinitionId: credentialDefinitionId,
         );
+
     return credentials.isNotEmpty;
   }
 }

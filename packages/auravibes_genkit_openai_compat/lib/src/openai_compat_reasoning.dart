@@ -1,22 +1,6 @@
-// ignore_for_file: prefer-match-file-name
-// Required: This internal package keeps its small provider API in one file.
-// ignore_for_file: avoid-non-null-assertion
-// Required: Compat parser validates payload shape before extracting fields.
-// ignore_for_file: avoid-redundant-async
-// Required: Genkit callback signatures remain async-compatible.
-// ignore_for_file: avoid-substring
-// Required: Streaming parser uses protocol byte offsets.
-// ignore_for_file: format-comment
-// Required: Protocol comments mirror upstream OpenAI-compatible naming.
-// ignore_for_file: member-ordering
 // Required: DTO fields stay grouped with their constructors.
-// ignore_for_file: newline-before-return
 // Required: Parser helpers keep compact return flow.
-// ignore_for_file: no-magic-number
 // Required: Protocol parsing uses fixed SSE and JSON offsets.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Protocol fields use upstream identifier names.
-// ignore_for_file: prefer-static-class
 // Required: Genkit plugin API exposes top-level helpers.
 
 import 'dart:async';
@@ -83,6 +67,7 @@ class OpenAICompatReasoningOptions {
 
   factory OpenAICompatReasoningOptions.fromJson(Map<String, dynamic>? json) {
     if (json == null) return OpenAICompatReasoningOptions();
+
     return OpenAICompatReasoningOptions(
       version: json['version'] as String?,
       temperature: (json['temperature'] as num?)?.toDouble(),
@@ -188,6 +173,7 @@ class OpenAICompatReasoningPlugin extends GenkitPlugin {
     String name,
   ) {
     if (actionType != 'model') return null;
+
     return _createModel(name, null);
   }
 
@@ -195,7 +181,10 @@ class OpenAICompatReasoningPlugin extends GenkitPlugin {
     return Model<dynamic>(
       name: '$_name/$modelName',
       fn: (req, ctx) async {
-        final request = req!;
+        if (req == null) {
+          throw ArgumentError.notNull('req');
+        }
+        final request = req;
         final options = OpenAICompatReasoningOptions.fromJson(request.config);
         final body = _buildRequestBody(
           modelName: modelName,
@@ -207,6 +196,7 @@ class OpenAICompatReasoningPlugin extends GenkitPlugin {
         if (ctx.streamingRequested) {
           return _stream(body, ctx.sendChunk);
         }
+
         return _complete(body);
       },
       metadata: {'model': ?info?.toJson()},
@@ -217,6 +207,7 @@ class OpenAICompatReasoningPlugin extends GenkitPlugin {
     final response = await _send(body);
     final json = jsonDecode(response.body) as Map<String, dynamic>;
     _throwIfError(response.statusCode, json);
+
     return _modelResponseFromJson(json);
   }
 
@@ -244,7 +235,7 @@ class OpenAICompatReasoningPlugin extends GenkitPlugin {
               .transform(utf8.decoder)
               .transform(const LineSplitter())) {
         if (!line.startsWith('data:')) continue;
-        final data = line.substring(5).trim();
+        final data = line.replaceFirst('data:', '').trim();
         if (data.isEmpty || data == '[DONE]') continue;
 
         final chunk = jsonDecode(data) as Map<String, dynamic>;
@@ -313,29 +304,34 @@ class OpenAICompatReasoningPlugin extends GenkitPlugin {
   }
 
   Uri _chatCompletionsUri() {
-    final normalized = baseUrl.endsWith('/')
-        ? baseUrl.substring(0, baseUrl.length - 1)
-        : baseUrl;
+    final normalized = baseUrl.replaceFirst(RegExp(r'/$'), '');
+
     return Uri.parse('$normalized/chat/completions');
   }
 
   Future<String?> _resolveApiKey() async {
     final provider = apiKeyProvider;
     if (provider != null) return provider();
+
     return apiKey;
   }
 }
 
 List<Map<String, dynamic>> _messageToJson(Message message) {
   if (message.role == Role.tool) {
-    return message.content.where((part) => part.isToolResponse).map((part) {
-      final response = part.toolResponse!;
-      return {
-        'role': 'tool',
-        'tool_call_id': response.ref,
-        'content': jsonEncode(response.output),
-      };
-    }).toList();
+    return message.content
+        .map((part) {
+          final response = part.toolResponse;
+          if (response == null) return null;
+
+          return {
+            'role': 'tool',
+            'tool_call_id': response.ref,
+            'content': jsonEncode(response.output),
+          };
+        })
+        .nonNulls
+        .toList();
   }
 
   return [
@@ -351,6 +347,7 @@ String _roleToJson(Role role) {
   if (role == Role.system) return 'system';
   if (role == Role.user) return 'user';
   if (role == Role.model) return 'assistant';
+
   return role.value;
 }
 
@@ -362,7 +359,8 @@ Object? _contentToJson(List<Part> parts) {
     if (part.isText) {
       text.write(part.text);
     } else if (part.isMedia) {
-      final media = part.media!;
+      final media = part.media;
+      if (media == null) continue;
       content.add({
         'type': 'image_url',
         'image_url': {'url': media.url},
@@ -372,21 +370,28 @@ Object? _contentToJson(List<Part> parts) {
 
   if (content.isEmpty) return text.toString();
   if (text.isNotEmpty) content.insert(0, {'type': 'text', 'text': '$text'});
+
   return content;
 }
 
 List<Map<String, dynamic>>? _toolCallsToJson(List<Part> parts) {
-  final toolCalls = parts.where((part) => part.isToolRequest).map((part) {
-    final tool = part.toolRequest!;
-    return {
-      'id': tool.ref,
-      'type': 'function',
-      'function': {
-        'name': tool.name,
-        'arguments': jsonEncode(tool.input ?? const <String, dynamic>{}),
-      },
-    };
-  }).toList();
+  final toolCalls = parts
+      .map((part) {
+        final tool = part.toolRequest;
+        if (tool == null) return null;
+
+        return {
+          'id': tool.ref,
+          'type': 'function',
+          'function': {
+            'name': tool.name,
+            'arguments': jsonEncode(tool.input ?? const <String, dynamic>{}),
+          },
+        };
+      })
+      .nonNulls
+      .toList();
+
   return toolCalls.isEmpty ? null : toolCalls;
 }
 
@@ -411,6 +416,7 @@ ModelResponse _modelResponseFromJson(Map<String, dynamic> json) {
   if (choices.isEmpty) throw GenkitException('Model returned no choices.');
   final choice = choices.firstOrNull as Map<String, dynamic>;
   final message = choice['message'] as Map<String, dynamic>? ?? const {};
+
   return ModelResponse(
     message: _messageFromJson(message),
     finishReason: _finishReason(choice['finish_reason'] as String?),
@@ -442,6 +448,7 @@ Message _messageFromJson(Map<String, dynamic> message) {
 ToolRequestPart _toolRequestFromJson(Map<String, dynamic> toolCall) {
   final function = toolCall['function'] as Map<String, dynamic>? ?? const {};
   final arguments = function['arguments'];
+
   return ToolRequestPart(
     toolRequest: ToolRequest(
       ref: toolCall['id'] as String?,
@@ -455,6 +462,7 @@ ToolRequestPart _toolRequestFromJson(Map<String, dynamic> toolCall) {
 
 GenerationUsage? _usageFromJson(Map<String, dynamic>? usage) {
   if (usage == null) return null;
+
   return GenerationUsage(
     inputTokens: (usage['prompt_tokens'] as num?)?.toDouble(),
     outputTokens: (usage['completion_tokens'] as num?)?.toDouble(),
@@ -539,6 +547,7 @@ class _StreamAccumulator {
     final function = toolCall['function'] as Map<String, dynamic>?;
     if (function == null) {
       delta.id ??= toolCall['id'] as String?;
+
       return;
     }
 
@@ -556,6 +565,7 @@ class _ToolCallDelta {
 
   ToolRequestPart toPart() {
     final rawArguments = arguments.toString();
+
     return ToolRequestPart(
       toolRequest: ToolRequest(
         ref: id,

@@ -1,12 +1,4 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/data/repositories/workspace_tools_repository_impl.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
@@ -22,6 +14,7 @@ part 'workspace_tools_notifier.g.dart';
 @Riverpod(keepAlive: true)
 WorkspaceToolsRepository workspaceToolsRepository(Ref ref) {
   final appDatabase = ref.watch(appDatabaseProvider);
+
   return WorkspaceToolsRepositoryImpl(appDatabase);
 }
 
@@ -48,10 +41,11 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
     final repository = ref.watch(workspaceToolsRepositoryProvider);
     _repository = repository;
     _workspaceId = workspaceId;
+
     return repository.getWorkspaceTools(workspaceId);
   }
 
-  /// Add a new built-in tool to the workspace
+  /// Add a new built-in tool to the workspace.
   Future<void> addTool(UserToolType toolType) async {
     final _ = await _requiredRepository.setWorkspaceToolEnabled(
       _workspaceId,
@@ -68,6 +62,7 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
           final workspaceTool = workspaceTools.firstWhereOrNull(
             (element) => element.id == wt.id,
           );
+
           return workspaceTool ?? wt;
         }).toList(),
       );
@@ -82,7 +77,7 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
     }
   }
 
-  /// Enable or disable a workspace tool by its database ID
+  /// Enable or disable a workspace tool by its database ID.
   Future<void> setToolEnabled(
     String id, {
     required bool isEnabled,
@@ -94,7 +89,7 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
     _replaceTools([newTool]);
   }
 
-  /// Update workspace tool configuration
+  /// Update workspace tool configuration.
   Future<void> updateToolConfig(String toolId, String? config) async {
     final success = await _requiredRepository.patchWorkspaceToolConfig(
       _workspaceId,
@@ -104,16 +99,17 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
     _replaceTools(success);
   }
 
-  /// Remove a workspace tool by its database ID
+  /// Remove a workspace tool by its database ID.
   Future<bool> removeToolById(String id) async {
     final success = await _requiredRepository.removeWorkspaceToolById(id);
     if (success) {
       _removeToolsByIds([id]);
     }
+
     return success;
   }
 
-  /// Set the permission mode for a workspace tool
+  /// Set the permission mode for a workspace tool.
   Future<void> setToolPermissionMode(
     String id, {
     required ToolPermissionMode permissionMode,
@@ -126,7 +122,7 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
   }
 }
 
-/// Provider that returns the list of available built-in tools
+/// Provider that returns the list of available built-in tools.
 /// that can be added to the workspace
 @riverpod
 Future<List<UserToolType>> availableToolsToAdd(
@@ -157,5 +153,6 @@ WorkspaceToolEntity? workspaceToolRow(Ref ref, String workspaceId) {
       workspaceToolIndex >= workspaceTools.length) {
     return null;
   }
+
   return workspaceTools[workspaceToolIndex];
 }

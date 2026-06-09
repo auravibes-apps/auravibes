@@ -1,5 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 
@@ -10,7 +8,7 @@ import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 /// Implementations should handle data persistence, retrieval, and
 /// business logic validation for API model operations.
 abstract class ApiModelRepository {
-  // Provider operations
+  // Provider operations.
 
   /// Retrieves all API model providers from the data source.
   ///
@@ -23,14 +21,14 @@ abstract class ApiModelRepository {
   /// Returns a list of providers with the specified [type] ordered by name.
   Future<List<ApiModelProviderEntity>> getProvidersByType(String type);
 
-  // Model operations
+  // Model operations.
 
   /// Retrieves all API models from the data source.
   ///
   /// Returns a list of all models ordered by provider and name.
   Future<List<ApiModelEntity>> getAllModels();
 
-  /// Retrieves a model by provider + model ID.
+  /// Retrieves a model by provider + model identifier.
   ///
   /// [providerId] Provider ID (for example: openai).
   /// [modelId] Model ID inside that provider.
@@ -46,7 +44,7 @@ abstract class ApiModelRepository {
   /// Returns a list of models ordered by model name.
   Future<List<ApiModelEntity>> getModelsByProvider(String providerId);
 
-  // Batch operations for synchronization
+  // Batch operations for synchronization.
 
   /// Batch inserts or updates multiple providers.
   ///

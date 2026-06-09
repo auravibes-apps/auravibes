@@ -1,10 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: UI tokens and layout use fixed design values.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-
 import 'dart:async';
 
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
@@ -140,7 +133,7 @@ class _AuraMessageStatusState extends State<AuraMessageStatus>
       if (widget.status == AuraMessageDeliveryStatus.sending &&
           _rotationController != null &&
           rotationAnimation != null) {
-        // Rotating animation for sending status
+        // Rotating animation for sending status.
         statusIcon = AnimatedBuilder(
           animation: rotationAnimation,
           builder: (context, child) {
@@ -152,7 +145,7 @@ class _AuraMessageStatusState extends State<AuraMessageStatus>
           child: statusIcon,
         );
       } else if (_scaleController != null && scaleAnimation != null) {
-        // Scale animation for other statuses
+        // Scale animation for other statuses.
         statusIcon = AnimatedBuilder(
           animation: scaleAnimation,
           builder: (context, child) {
@@ -231,7 +224,7 @@ enum AuraMessageDeliveryStatus {
   /// The message is currently being sent.
   sending,
 
-  /// The message was interrupted before completion (e.g. app crash, network
+  /// The message was interrupted before completion (e.g. app crash, network.
   /// loss). Loaded from DB with truncated content.
   unfinished,
 

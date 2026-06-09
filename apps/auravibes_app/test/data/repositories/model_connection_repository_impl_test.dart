@@ -1,12 +1,3 @@
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: missing-test-assertion
-// Required: Repository tests verify side effects through database state.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/api_model_providers_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/model_connections_dao.dart';
@@ -36,13 +27,25 @@ import 'model_connection_repository_impl_test.mocks.dart';
 ])
 void main() {
   group('ModelConnectionRepositoryImpl', () {
-    late MockApiModelProvidersDao mockProvidersDao;
-    late MockModelConnectionsDao mockConnectionsDao;
-    late MockWorkspaceModelSelectionsDao mockSelectionsDao;
-    late MockEncryptionService mockEncryptionService;
-    late MockModelProviderServices mockModelProviderServices;
-    late _TestAppDatabase database;
-    late ModelConnectionRepositoryImpl repository;
+    var mockProvidersDao = MockApiModelProvidersDao();
+    var mockConnectionsDao = MockModelConnectionsDao();
+    var mockSelectionsDao = MockWorkspaceModelSelectionsDao();
+    var mockEncryptionService = MockEncryptionService();
+    var mockModelProviderServices = MockModelProviderServices();
+    var database = _TestAppDatabase(
+      MockApiModelProvidersDao(),
+      MockModelConnectionsDao(),
+      MockWorkspaceModelSelectionsDao(),
+    );
+    var repository = ModelConnectionRepositoryImpl(
+      database: database,
+      encryptionService: mockEncryptionService,
+      modelProviderServices: mockModelProviderServices,
+    );
+
+    tearDownAll(() async {
+      await database.close();
+    });
 
     setUp(() {
       mockProvidersDao = MockApiModelProvidersDao();
@@ -267,8 +270,10 @@ void main() {
 
         expect(result.name, 'Renamed Connection');
         expect(result.key, 'encrypted-key');
-        verifyNever(mockEncryptionService.encrypt(any));
-        verify(mockEncryptionService.decrypt('encrypted-key')).called(1);
+        final _ = verifyNever(mockEncryptionService.encrypt(any));
+        final _ = verify(
+          mockEncryptionService.decrypt('encrypted-key'),
+        ).called(1);
       });
 
       test('encrypts replacement key', () async {
@@ -299,8 +304,10 @@ void main() {
 
         expect(result.key, 'encrypted-new-key');
         expect(result.keySuffix, '123456');
-        verifyNever(mockEncryptionService.decrypt(any));
-        verify(mockEncryptionService.encrypt('new-api-key-123456')).called(1);
+        final _ = verifyNever(mockEncryptionService.decrypt(any));
+        final _ = verify(
+          mockEncryptionService.encrypt('new-api-key-123456'),
+        ).called(1);
       });
 
       test('preserves url when url update is omitted', () async {
@@ -355,7 +362,12 @@ void main() {
 
         await repository.deleteModelConnection('conn-1');
 
-        verify(mockConnectionsDao.deleteModelConnection('conn-1')).called(1);
+        expect(
+          () => verify(
+            mockConnectionsDao.deleteModelConnection('conn-1'),
+          ).called(1),
+          returnsNormally,
+        );
       });
 
       test('throws when connection not found', () async {

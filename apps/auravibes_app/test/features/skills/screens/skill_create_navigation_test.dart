@@ -1,4 +1,3 @@
-// ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository_impl.dart';
@@ -47,7 +46,6 @@ void main() {
           ),
         );
     final router = GoRouter(
-      initialLocation: '/workspaces/${workspace.id}/more/skills',
       routes: [
         GoRoute(
           path: '/workspaces/:workspaceId/more/skills/new',
@@ -69,6 +67,7 @@ void main() {
           ),
         ),
       ],
+      initialLocation: '/workspaces/${workspace.id}/more/skills',
     );
     addTearDown(router.dispose);
 
@@ -95,18 +94,18 @@ void main() {
         useFallbackTranslations: true,
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     await tester.tap(find.byIcon(Icons.add));
-    await tester.pumpAndSettle();
-    await tester.pump();
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
+    final _ = await tester.pump();
+    final _ = await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextFormField).at(0), 'Write Summary');
     await tester.enterText(find.byType(TextFormField).at(1), 'Summarize text');
     await tester.enterText(find.byType(TextFormField).at(2), 'Summarize text.');
     await tester.tap(find.byIcon(Icons.save_outlined));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('Unable to save skill'), findsNothing);
     expect(
@@ -119,10 +118,13 @@ void main() {
     final skill = await SkillsRepositoryImpl(
       database,
     ).getSkillByTitle(workspace.id, 'Write Summary');
-    expect(skill?.credentialDefinitionId, null);
+    final skillId = (skill ?? fail('skill missing')).id;
+    expect(skill.credentialDefinitionId, null);
 
-    router.push('/workspaces/${workspace.id}/more/skills/${skill!.id}');
-    await tester.pumpAndSettle();
+    final _ = router.push(
+      '/workspaces/${workspace.id}/more/skills/$skillId',
+    );
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('No credential definition'), findsOneWidget);
     expect(

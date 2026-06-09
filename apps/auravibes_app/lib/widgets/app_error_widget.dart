@@ -1,16 +1,13 @@
-// ignore_for_file: no-object-declaration
-// Required: Framework error callbacks expose Object errors.
-
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 
-class AppErrorWidget extends StatelessWidget {
+class AppErrorWidget<T extends Object> extends StatelessWidget {
   const AppErrorWidget({
     required this.error,
     required this.stackTrace,
     super.key,
   });
-  final Object error;
+  final T error;
   final StackTrace stackTrace;
 
   @override

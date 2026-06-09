@@ -1,8 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-
 import 'dart:convert';
 
 import 'package:async/async.dart';
@@ -65,19 +60,42 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('SkillsRepositoryImpl', () {
-    late AppDatabase database;
-    late WorkspaceRepositoryImpl workspaceRepository;
-    late ConversationRepositoryImpl conversationRepository;
-    late SkillsRepositoryImpl skillsRepository;
-    late SkillTemplateToolsRepositoryImpl toolsRepository;
-    late SkillCredentialDefinitionsRepositoryImpl
-    skillCredentialDefinitionsRepository;
-    late SkillCredentialsRepositoryImpl skillCredentialsRepository;
-    late ConversationSkillsRepositoryImpl conversationSkillsRepository;
-    late AppSkillWorkspaceSettingsRepositoryImpl appSkillSettingsRepository;
-    late CreateSkillUsecase createSkillUsecase;
-    late UpdateSkillUsecase updateSkillUsecase;
-    late ListAvailableSkillsUsecase listAvailableSkillsUsecase;
+    final initialDatabase = AppDatabase(
+      connection: DatabaseConnection(NativeDatabase.memory()),
+    );
+    var database = initialDatabase;
+    var workspaceRepository = WorkspaceRepositoryImpl(database);
+    var conversationRepository = ConversationRepositoryImpl(database);
+    var skillsRepository = SkillsRepositoryImpl(database);
+    var toolsRepository = SkillTemplateToolsRepositoryImpl(database);
+    var skillCredentialDefinitionsRepository =
+        SkillCredentialDefinitionsRepositoryImpl(database);
+    var skillCredentialsRepository = SkillCredentialsRepositoryImpl(
+      database: database,
+      encryptionService: EncryptionService(_FakeSecretKeyManager()),
+    );
+    var conversationSkillsRepository = ConversationSkillsRepositoryImpl(
+      database,
+    );
+    var appSkillSettingsRepository = AppSkillWorkspaceSettingsRepositoryImpl(
+      database,
+    );
+    var createSkillUsecase = CreateSkillUsecase(
+      skillsRepository,
+      const GenerateSkillSlugUsecase(),
+      const ValidateSkillTitleUsecase(),
+    );
+    var updateSkillUsecase = UpdateSkillUsecase(
+      skillsRepository,
+      const ValidateSkillTitleUsecase(),
+    );
+    var listAvailableSkillsUsecase = ListAvailableSkillsUsecase(
+      skillsRepository,
+      conversationSkillsRepository,
+      appSkillSettingsRepository,
+      const AppSkillRegistry(),
+      CheckSkillCredentialReadinessUsecase(skillCredentialsRepository),
+    );
 
     setUp(() {
       database = AppDatabase(
@@ -119,6 +137,10 @@ void main() {
       await database.close();
     });
 
+    tearDownAll(() async {
+      await initialDatabase.close();
+    });
+
     DuplicateSkillUsecase duplicateSkillUsecase() {
       return DuplicateSkillUsecase(
         skillsRepository,
@@ -130,22 +152,22 @@ void main() {
     CreateSkillTemplateToolUsecase createTemplateToolUsecase() {
       return CreateSkillTemplateToolUsecase(
         toolsRepository,
+        validateSkillTemplateToolUsecase:
+            const ValidateSkillTemplateToolUsecase(),
         skillsRepository: skillsRepository,
         skillCredentialDefinitionsRepository:
             skillCredentialDefinitionsRepository,
-        validateSkillTemplateToolUsecase:
-            const ValidateSkillTemplateToolUsecase(),
       );
     }
 
     UpdateSkillTemplateToolUsecase updateTemplateToolUsecase() {
       return UpdateSkillTemplateToolUsecase(
         toolsRepository,
+        validateSkillTemplateToolUsecase:
+            const ValidateSkillTemplateToolUsecase(),
         skillsRepository: skillsRepository,
         skillCredentialDefinitionsRepository:
             skillCredentialDefinitionsRepository,
-        validateSkillTemplateToolUsecase:
-            const ValidateSkillTemplateToolUsecase(),
       );
     }
 
@@ -211,7 +233,7 @@ void main() {
           type: WorkspaceType.local,
         ),
       );
-      await createSkillUsecase.call(
+      final _ = await createSkillUsecase.call(
         workspace.id,
         const SkillToCreate(
           kind: SkillKind.template,
@@ -505,7 +527,7 @@ void main() {
           content: 'Use <company> & account data.',
         ),
       );
-      await conversationSkillsRepository.setWorkspaceSkillLoaded(
+      final _ = await conversationSkillsRepository.setWorkspaceSkillLoaded(
         conversation.id,
         skill.id,
         isLoaded: true,
@@ -668,7 +690,7 @@ void main() {
             credentialDefinitionId: definition.id,
           ),
         );
-        await conversationSkillsRepository.setWorkspaceSkillLoaded(
+        final _ = await conversationSkillsRepository.setWorkspaceSkillLoaded(
           conversation.id,
           skill.id,
           isLoaded: true,
@@ -744,7 +766,7 @@ void main() {
           credentialDefinitionId: definition.id,
         ),
       );
-      await toolsRepository.createTool(
+      final _ = await toolsRepository.createTool(
         skill.id,
         SkillTemplateToolToCreate(
           templateType: SkillTemplateToolType.url,
@@ -775,7 +797,7 @@ void main() {
               '{"company_id":{"description":"Company id","type":"string"}}',
         ),
       );
-      await conversationSkillsRepository.setWorkspaceSkillLoaded(
+      final _ = await conversationSkillsRepository.setWorkspaceSkillLoaded(
         conversation.id,
         skill.id,
         isLoaded: true,
@@ -808,7 +830,7 @@ void main() {
         toolSlug: 'find_company',
         arguments: {'company_id': 'acme'},
       );
-      await skillCredentialsRepository.createCredential(
+      final _ = await skillCredentialsRepository.createCredential(
         workspace.id,
         SkillCredentialToCreate(
           credentialDefinitionId: definition.id,
@@ -882,7 +904,7 @@ void main() {
           isCredentialOptional: true,
         ),
       );
-      await toolsRepository.createTool(
+      final _ = await toolsRepository.createTool(
         skill.id,
         SkillTemplateToolToCreate(
           templateType: SkillTemplateToolType.url,
@@ -892,7 +914,7 @@ void main() {
           inputsJson: '{}',
         ),
       );
-      await toolsRepository.createTool(
+      final _ = await toolsRepository.createTool(
         skill.id,
         SkillTemplateToolToCreate(
           templateType: SkillTemplateToolType.url,
@@ -903,7 +925,7 @@ void main() {
           requiresCredential: true,
         ),
       );
-      await conversationSkillsRepository.setWorkspaceSkillLoaded(
+      final _ = await conversationSkillsRepository.setWorkspaceSkillLoaded(
         conversation.id,
         skill.id,
         isLoaded: true,
@@ -998,32 +1020,33 @@ void main() {
           attributes: const {'api_key': 'secret-token'},
         ),
       );
-      await conversationSkillsRepository.setWorkspaceSkillLoaded(
+      final _ = await conversationSkillsRepository.setWorkspaceSkillLoaded(
         conversation.id,
         skill.id,
         isLoaded: true,
       );
       final runUsecase = RunResolvedToolUsecase(
         agentCancellationRuntime: AgentCancellationRuntime(),
-        conversationRepository: conversationRepository,
-        listAvailableSkillsUsecase: listAvailableSkillsUsecase,
-        skillCredentialsRepository: skillCredentialsRepository,
         mcpToolCaller:
             ({
               required mcpServerId,
               required toolIdentifier,
               required arguments,
             }) async => '',
+        conversationRepository: conversationRepository,
+        listAvailableSkillsUsecase: listAvailableSkillsUsecase,
+        skillCredentialsRepository: skillCredentialsRepository,
       );
 
+      final output = await runUsecase.call(
+        conversationId: conversation.id,
+        tool: ResolvedTool.skillControl(
+          toolIdentifier: listSkillCredentialsToolName,
+        ),
+        arguments: {'skillSlug': skill.slug},
+      );
       final result =
-          (await runUsecase.call(
-                conversationId: conversation.id,
-                tool: ResolvedTool.skillControl(
-                  toolIdentifier: listSkillCredentialsToolName,
-                ),
-                arguments: {'skillSlug': skill.slug},
-              ))!
+          (output ?? fail('skill control result missing'))
               as Map<String, Object?>;
 
       expect(result, containsPair('skillSlug', skill.slug));
@@ -1074,7 +1097,8 @@ void main() {
 
         expect(request.url, 'https://example.com');
         expect(request.headers, isNot(contains('X-User')));
-        expect(jsonDecode(request.body!), {'level': 2});
+        final body = request.body ?? fail('body missing');
+        expect(jsonDecode(body), {'level': 2});
       },
     );
 
@@ -1124,7 +1148,8 @@ void main() {
         },
       );
 
-      expect(jsonDecode(request.body!), {
+      final body = request.body ?? fail('body missing');
+      expect(jsonDecode(body), {
         'filters': [
           {'field': 'species', 'op': 'equals', 'value': 'dog'},
         ],
@@ -1462,7 +1487,7 @@ void main() {
           );
       expect((await stream.next).map((item) => item.title), [updated.title]);
 
-      await skillCredentialDefinitionsRepository.deleteDefinition(
+      final _ = await skillCredentialDefinitionsRepository.deleteDefinition(
         definition.id,
       );
       expect(await stream.next, isEmpty);
@@ -1516,7 +1541,7 @@ void main() {
           workspaceId: workspace.id,
         ),
       );
-      await conversationSkillsRepository.setAppSkillLoaded(
+      final _ = await conversationSkillsRepository.setAppSkillLoaded(
         conversation.id,
         'skills_manager',
         isLoaded: true,
@@ -1973,10 +1998,11 @@ void main() {
               workspace.id,
               'rescuegroups_api',
             );
+        final definitionId = (definition ?? fail('definition missing')).id;
         final credential = await skillCredentialsRepository.createCredential(
           workspace.id,
           SkillCredentialToCreate(
-            credentialDefinitionId: definition!.id,
+            credentialDefinitionId: definitionId,
             name: 'RescueGroups Credential',
             attributes: const {'api_key': 'secret-token'},
           ),
@@ -2060,12 +2086,14 @@ List<Object?> _slugEnumFor(List<ToolSpec> specs, String toolName) {
       .inputJsonSchema;
   final properties = schema['properties'] as Map<String, dynamic>;
   final slugSchema = properties['slug'] as Map<String, dynamic>;
+
   return slugSchema['enum'] as List<Object?>;
 }
 
 List<Object?> _propertyEnumFor(ToolSpec spec, String propertyName) {
   final properties = spec.inputJsonSchema['properties'] as Map<String, dynamic>;
   final propertySchema = properties[propertyName] as Map<String, dynamic>;
+
   return propertySchema['enum'] as List<Object?>;
 }
 
@@ -2077,14 +2105,15 @@ Dio _dioWithBody(String body, {List<RequestOptions>? requests}) {
         requests?.add(options);
         handler.resolve(
           Response<ResponseBody>(
+            data: ResponseBody.fromString(body, 200),
             requestOptions: options,
             statusCode: 200,
-            data: ResponseBody.fromString(body, 200),
           ),
         );
       },
     ),
   );
+
   return dio;
 }
 
@@ -2093,8 +2122,10 @@ Future<String> _requestBody(RequestOptions options) async {
   if (data is Stream<List<int>>) {
     final bytes = <int>[];
     await data.forEach(bytes.addAll);
+
     return utf8.decode(bytes);
   }
+
   return '$data';
 }
 

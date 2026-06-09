@@ -168,23 +168,23 @@ class $WorkspacesTable extends Workspaces
 }
 
 class WorkspacesTable extends DataClass implements Insertable<WorkspacesTable> {
-  ///Primary key column as string
+  /// Primary key column as string.
   final String id;
 
-  /// when was created timestamp
+  /// When was created timestamp.
   final DateTime createdAt;
 
-  /// when was last updated timestamp
+  /// When was last updated timestamp.
   final DateTime updatedAt;
 
-  /// Human-readable name of the workspace
+  /// Human-readable name of the workspace.
   final String name;
 
-  /// Type of workspace (local or remote)
+  /// Type of workspace (local or remote).
   /// Stored as string to handle enum conversion
   final WorkspaceType type;
 
-  /// URL for remote workspaces, null for local workspaces
+  /// URL for remote workspaces, null for local workspaces.
   final String? url;
   const WorkspacesTable({
     required this.id,
@@ -772,13 +772,13 @@ class $ServiceConnectionsTable extends ServiceConnections
 
 class ServiceConnectionTable extends DataClass
     implements Insertable<ServiceConnectionTable> {
-  ///Primary key column as string
+  /// Primary key column as string.
   final String id;
 
-  /// when was created timestamp
+  /// When was created timestamp.
   final DateTime createdAt;
 
-  /// when was last updated timestamp
+  /// When was last updated timestamp.
   final DateTime updatedAt;
 
   /// Human-readable name of the external service connection.
@@ -1383,10 +1383,10 @@ class ApiModelProvidersTable extends DataClass
     implements Insertable<ApiModelProvidersTable> {
   final String id;
 
-  /// Human-readable name of the model
+  /// Human-readable name of the model.
   final String name;
 
-  /// Type of chat model (local or remote)
+  /// Type of chat model (local or remote).
   /// Stored as string to handle enum conversion
   final ModelProvidersTableType? type;
   final String? url;
@@ -1775,16 +1775,16 @@ class $WorkspaceModelSelectionsTable extends WorkspaceModelSelections
 
 class WorkspaceModelSelectionTable extends DataClass
     implements Insertable<WorkspaceModelSelectionTable> {
-  ///Primary key column as string
+  /// Primary key column as string.
   final String id;
 
-  /// when was created timestamp
+  /// When was created timestamp.
   final DateTime createdAt;
 
-  /// when was last updated timestamp
+  /// When was last updated timestamp.
   final DateTime updatedAt;
 
-  /// model unique identifier
+  /// Model unique identifier.
   final String modelId;
   final String modelConnectionId;
   const WorkspaceModelSelectionTable({
@@ -2331,10 +2331,10 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
   final String modelProvider;
   final String id;
 
-  /// Human-readable name of the model
+  /// Human-readable name of the model.
   final String name;
 
-  /// Type of chat model (local or remote)
+  /// Type of chat model (local or remote).
   /// Stored as string to handle enum conversion
   final List<String>? modalitiesInput;
   final List<String>? modalitiesOuput;
@@ -2979,13 +2979,13 @@ class $ConversationsTable extends Conversations
 
 class ConversationsTable extends DataClass
     implements Insertable<ConversationsTable> {
-  ///Primary key column as string
+  /// Primary key column as string.
   final String id;
 
-  /// when was created timestamp
+  /// When was created timestamp.
   final DateTime createdAt;
 
-  /// when was last updated timestamp
+  /// When was last updated timestamp.
   final DateTime updatedAt;
   final String workspaceId;
   final String title;
@@ -3492,13 +3492,13 @@ class $MessagesTable extends Messages
 }
 
 class MessagesTable extends DataClass implements Insertable<MessagesTable> {
-  ///Primary key column as string
+  /// Primary key column as string.
   final String id;
 
-  /// when was created timestamp
+  /// When was created timestamp.
   final DateTime createdAt;
 
-  /// when was last updated timestamp
+  /// When was last updated timestamp.
   final DateTime updatedAt;
   final String conversationId;
   final String content;
@@ -4099,34 +4099,34 @@ class $McpServersTable extends McpServers
 }
 
 class McpServersTable extends DataClass implements Insertable<McpServersTable> {
-  ///Primary key column as string
+  /// Primary key column as string.
   final String id;
 
-  /// when was created timestamp
+  /// When was created timestamp.
   final DateTime createdAt;
 
-  /// when was last updated timestamp
+  /// When was last updated timestamp.
   final DateTime updatedAt;
 
-  /// Reference to the workspace this MCP server belongs to
+  /// Reference to the workspace this MCP server belongs to.
   final String workspaceId;
 
-  /// User-friendly name for the MCP server
+  /// User-friendly name for the MCP server.
   final String name;
 
-  /// URL endpoint for the MCP server
+  /// URL endpoint for the MCP server.
   final String url;
 
-  /// Transport type: 'sse' or 'streamable_http'
+  /// Transport type: 'sse' or 'streamable_http.'.
   final McpTransportType transport;
 
-  /// Authentication type: 'none', 'oauth', or 'bearer_token'
+  /// Authentication type: 'none', 'oauth', or 'bearer_token.'.
   final McpAuthenticationType authenticationType;
 
-  /// Optional description of what this MCP server provides
+  /// Optional description of what this MCP server provides.
   final String? description;
 
-  /// Whether the MCP server is enabled for connections
+  /// Whether the MCP server is enabled for connections.
   final bool isEnabled;
   const McpServersTable({
     required this.id,
@@ -4711,16 +4711,16 @@ class $ToolsGroupsTable extends ToolsGroups
 
 class ToolsGroupsTable extends DataClass
     implements Insertable<ToolsGroupsTable> {
-  ///Primary key column as string
+  /// Primary key column as string.
   final String id;
 
-  /// when was created timestamp
+  /// When was created timestamp.
   final DateTime createdAt;
 
-  /// when was last updated timestamp
+  /// When was last updated timestamp.
   final DateTime updatedAt;
 
-  /// Reference to the workspace this tools group belongs to
+  /// Reference to the workspace this tools group belongs to.
   final String workspaceId;
 
   /// Optional reference to the MCP server this group belongs to.
@@ -4728,7 +4728,7 @@ class ToolsGroupsTable extends DataClass
   final String? mcpServerId;
   final String name;
 
-  /// Whether the tool is enabled for this workspace
+  /// Whether the tool is enabled for this workspace.
   final bool isEnabled;
   final PermissionAccess permissions;
   const ToolsGroupsTable({
@@ -5371,34 +5371,34 @@ class $ToolsTable extends Tools with TableInfo<$ToolsTable, ToolsTable> {
 }
 
 class ToolsTable extends DataClass implements Insertable<ToolsTable> {
-  ///Primary key column as string
+  /// Primary key column as string.
   final String id;
 
-  /// when was created timestamp
+  /// When was created timestamp.
   final DateTime createdAt;
 
-  /// when was last updated timestamp
+  /// When was last updated timestamp.
   final DateTime updatedAt;
 
-  /// Reference to the workspace this tool belongs to
+  /// Reference to the workspace this tool belongs to.
   final String workspaceId;
   final String? workspaceToolsGroupId;
 
-  /// Type of tool (e.g., 'web_search', 'calculator', etc.)
+  /// Type of tool (for example, 'web_search', 'calculator', etc).
   final String toolId;
   final String? customName;
 
-  /// Optional description of the tool (from MCP or user-defined)
+  /// Optional description of the tool (from MCP or user-defined).
   final String? description;
   final String? additionalPrompt;
 
-  /// Tool configuration as JSON (optional)
+  /// Tool configuration as JSON (optional).
   final String? config;
 
-  /// JSON Schema for the tool's input parameters (for MCP tools)
+  /// JSON schema for the tool's input parameters (for MCP tools).
   final String? inputSchema;
 
-  /// Whether the tool is enabled for this workspace
+  /// Whether the tool is enabled for this workspace.
   final bool isEnabled;
   final PermissionAccess permissions;
   const ToolsTable({
@@ -6053,20 +6053,20 @@ class $ConversationToolsTable extends ConversationTools
 
 class ConversationToolsTable extends DataClass
     implements Insertable<ConversationToolsTable> {
-  ///Primary key column as string
+  /// Primary key column as string.
   final String id;
 
-  /// when was created timestamp
+  /// When was created timestamp.
   final DateTime createdAt;
 
-  /// when was last updated timestamp
+  /// When was last updated timestamp.
   final DateTime updatedAt;
 
-  /// Reference to the conversation this tool setting belongs to
+  /// Reference to the conversation this tool setting belongs to.
   final String conversationId;
   final String toolId;
 
-  /// Whether the tool is enabled for this workspace
+  /// Whether the tool is enabled for this workspace.
   final bool isEnabled;
   final PermissionAccess permissions;
   const ConversationToolsTable({
@@ -6552,13 +6552,13 @@ class $WorkspaceCompactionSettingsTable extends WorkspaceCompactionSettings
 
 class WorkspaceCompactionSettingsTable extends DataClass
     implements Insertable<WorkspaceCompactionSettingsTable> {
-  ///Primary key column as string
+  /// Primary key column as string.
   final String id;
 
-  /// when was created timestamp
+  /// When was created timestamp.
   final DateTime createdAt;
 
-  /// when was last updated timestamp
+  /// When was last updated timestamp.
   final DateTime updatedAt;
   final String workspaceId;
   final bool? autoCompactEnabled;
@@ -7080,13 +7080,13 @@ class $SkillCredentialDefinitionsTable extends SkillCredentialDefinitions
 
 class SkillCredentialDefinitionsTable extends DataClass
     implements Insertable<SkillCredentialDefinitionsTable> {
-  ///Primary key column as string
+  /// Primary key column as string.
   final String id;
 
-  /// when was created timestamp
+  /// When was created timestamp.
   final DateTime createdAt;
 
-  /// when was last updated timestamp
+  /// When was last updated timestamp.
   final DateTime updatedAt;
   final String workspaceId;
   final String title;
@@ -7702,13 +7702,13 @@ class $SkillsTable extends Skills with TableInfo<$SkillsTable, SkillsTable> {
 }
 
 class SkillsTable extends DataClass implements Insertable<SkillsTable> {
-  ///Primary key column as string
+  /// Primary key column as string.
   final String id;
 
-  /// when was created timestamp
+  /// When was created timestamp.
   final DateTime createdAt;
 
-  /// when was last updated timestamp
+  /// When was last updated timestamp.
   final DateTime updatedAt;
   final String workspaceId;
   final SkillSourceTable source;
@@ -8495,13 +8495,13 @@ class $SkillTemplateToolsTable extends SkillTemplateTools
 
 class SkillTemplateToolsTable extends DataClass
     implements Insertable<SkillTemplateToolsTable> {
-  ///Primary key column as string
+  /// Primary key column as string.
   final String id;
 
-  /// when was created timestamp
+  /// When was created timestamp.
   final DateTime createdAt;
 
-  /// when was last updated timestamp
+  /// When was last updated timestamp.
   final DateTime updatedAt;
   final String skillId;
   final SkillTemplateToolTypeTable templateType;
@@ -9115,13 +9115,13 @@ class $ConversationSkillsTable extends ConversationSkills
 
 class ConversationSkillsTable extends DataClass
     implements Insertable<ConversationSkillsTable> {
-  ///Primary key column as string
+  /// Primary key column as string.
   final String id;
 
-  /// when was created timestamp
+  /// When was created timestamp.
   final DateTime createdAt;
 
-  /// when was last updated timestamp
+  /// When was last updated timestamp.
   final DateTime updatedAt;
   final String conversationId;
   final String? workspaceSkillId;
@@ -9592,13 +9592,13 @@ class $AppSkillWorkspaceSettingsTable extends AppSkillWorkspaceSettings
 
 class AppSkillWorkspaceSettingsTable extends DataClass
     implements Insertable<AppSkillWorkspaceSettingsTable> {
-  ///Primary key column as string
+  /// Primary key column as string.
   final String id;
 
-  /// when was created timestamp
+  /// When was created timestamp.
   final DateTime createdAt;
 
-  /// when was last updated timestamp
+  /// When was last updated timestamp.
   final DateTime updatedAt;
   final String workspaceId;
   final String appSkillIdentifier;

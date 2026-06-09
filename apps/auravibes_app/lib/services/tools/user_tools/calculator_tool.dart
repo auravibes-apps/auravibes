@@ -1,15 +1,10 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:async/async.dart';
 import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/services/tools/user_tool_type.dart';
 import 'package:math_expressions/math_expressions.dart';
 
-/// Represents an available tool in the app
+/// Represents an available tool in the app.
 final class CalculatorTool extends UserToolEntity<String, Object, String> {
   const CalculatorTool();
 
@@ -39,14 +34,17 @@ final class CalculatorTool extends UserToolEntity<String, Object, String> {
   CancelableOperation<String> runner(String toolInput) {
     final parser = GrammarParser();
     final evaluator = RealEvaluator();
+
     return CancelableOperation.fromFuture(
       Future(() {
         try {
           final exp = parser.parse(toolInput);
+
           return evaluator.evaluate(exp).toString();
         } on Exception catch (_) {
           const apostropheCodeUnit = 39;
           final apostrophe = String.fromCharCode(apostropheCodeUnit);
+
           return 'I don${apostrophe}t know how to do that.';
         }
       }),

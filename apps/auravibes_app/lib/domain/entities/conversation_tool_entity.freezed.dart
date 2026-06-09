@@ -14,15 +14,15 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ConversationToolEntity {
 
-/// ID of the conversation this tool setting belongs to
+/// ID of the conversation this tool setting belongs to.
  String get conversationId;/// ID of the workspace tool record this setting overrides.
 ///
 /// Corresponds to [WorkspaceToolEntity.id],
 /// not [WorkspaceToolEntity.toolId].
- String get toolId;/// Whether the tool is enabled for this conversation
- bool get isEnabled;/// Permission mode for this tool (always ask or always allow)
- ToolPermissionMode get permissionMode;/// Timestamp when this setting was created
- DateTime get createdAt;/// Timestamp when this setting was last updated
+ String get toolId;/// Whether the tool is enabled for this conversation.
+ bool get isEnabled;/// Permission mode for this tool (always ask or always allow).
+ ToolPermissionMode get permissionMode;/// Timestamp when this setting was created.
+ DateTime get createdAt;/// Timestamp when this setting was last updated.
  DateTime get updatedAt;
 /// Create a copy of ConversationToolEntity
 /// with the given fields replaced by the non-null parameter values.
@@ -223,20 +223,20 @@ class _ConversationToolEntity extends ConversationToolEntity {
   const _ConversationToolEntity({required this.conversationId, required this.toolId, required this.isEnabled, required this.permissionMode, required this.createdAt, required this.updatedAt}): super._();
   
 
-/// ID of the conversation this tool setting belongs to
+/// ID of the conversation this tool setting belongs to.
 @override final  String conversationId;
 /// ID of the workspace tool record this setting overrides.
 ///
 /// Corresponds to [WorkspaceToolEntity.id],
 /// not [WorkspaceToolEntity.toolId].
 @override final  String toolId;
-/// Whether the tool is enabled for this conversation
+/// Whether the tool is enabled for this conversation.
 @override final  bool isEnabled;
-/// Permission mode for this tool (always ask or always allow)
+/// Permission mode for this tool (always ask or always allow).
 @override final  ToolPermissionMode permissionMode;
-/// Timestamp when this setting was created
+/// Timestamp when this setting was created.
 @override final  DateTime createdAt;
-/// Timestamp when this setting was last updated
+/// Timestamp when this setting was last updated.
 @override final  DateTime updatedAt;
 
 /// Create a copy of ConversationToolEntity
@@ -308,8 +308,8 @@ mixin _$ConversationToolToCreate {
 ///
 /// Corresponds to [WorkspaceToolEntity.id],
 /// not [WorkspaceToolEntity.toolId].
- String get toolId;/// Whether the tool should be enabled (defaults to true)
- bool? get isEnabled;/// Permission mode for this tool (defaults to alwaysAsk)
+ String get toolId;/// Whether the tool should be enabled (defaults to true).
+ bool? get isEnabled;/// Permission mode for this tool (defaults to alwaysAsk).
  ToolPermissionMode? get permissionMode;
 /// Create a copy of ConversationToolToCreate
 /// with the given fields replaced by the non-null parameter values.
@@ -512,9 +512,9 @@ class _ConversationToolToCreate extends ConversationToolToCreate {
 /// Corresponds to [WorkspaceToolEntity.id],
 /// not [WorkspaceToolEntity.toolId].
 @override final  String toolId;
-/// Whether the tool should be enabled (defaults to true)
+/// Whether the tool should be enabled (defaults to true).
 @override final  bool? isEnabled;
-/// Permission mode for this tool (defaults to alwaysAsk)
+/// Permission mode for this tool (defaults to alwaysAsk).
 @override final  ToolPermissionMode? permissionMode;
 
 /// Create a copy of ConversationToolToCreate

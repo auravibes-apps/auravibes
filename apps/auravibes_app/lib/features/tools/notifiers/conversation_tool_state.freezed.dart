@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ConversationToolState {
 
- WorkspaceToolEntity get tool; bool get isEnabled; ToolPermissionMode get permissionMode;/// Whether this tool is enabled at the workspace level
+ WorkspaceToolEntity get tool; bool get isEnabled; ToolPermissionMode get permissionMode;/// Whether this tool is enabled at the workspace level.
  bool get isWorkspaceEnabled;
 /// Create a copy of ConversationToolState
 /// with the given fields replaced by the non-null parameter values.
@@ -225,7 +225,7 @@ class _ConversationToolState implements ConversationToolState {
 @override final  WorkspaceToolEntity tool;
 @override final  bool isEnabled;
 @override final  ToolPermissionMode permissionMode;
-/// Whether this tool is enabled at the workspace level
+/// Whether this tool is enabled at the workspace level.
 @override final  bool isWorkspaceEnabled;
 
 /// Create a copy of ConversationToolState

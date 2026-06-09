@@ -1,10 +1,3 @@
-// ignore_for_file: avoid-substring
-// Required: Existing parsing uses code-unit substring offsets.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: prefer-moving-to-variable
 // Required: Existing code repeats lookups where extraction adds noise.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
@@ -13,6 +6,7 @@ import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.d
 import 'package:auravibes_app/domain/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/model_provider_services/model_provider.dart';
+import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:drift/drift.dart';
 
 /// Implementation of the [ModelConnectionRepository] interface.
@@ -48,17 +42,15 @@ class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
       throw ModelConnectionNoTypeException(modelConnection.modelId);
     }
 
-    // Extract last 6 characters for display
-    final keySuffix = modelConnection.key.length >= 6
-        ? modelConnection.key.substring(modelConnection.key.length - 6)
-        : modelConnection.key;
+    // Extract last 6 characters for display.
+    final keySuffix = modelConnection.key.lastCharacters(6);
 
-    // Store API key encrypted
+    // Store API key encrypted.
     final encryptedApiKey = await _encryptionService.encrypt(
       modelConnection.key,
     );
 
-    // Validate API key with model provider
+    // Validate API key with model provider.
     final models = await _modelProviderServices.getWorkspaceModelSelections(
       ModelProvider(
         type: .fromString(modelType.value),
@@ -102,14 +94,15 @@ class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
     final modelConnection = await _database.modelConnectionsDao
         .getModelConnectionById(modelConnectionId);
     if (modelConnection == null) return null;
+
     return ModelConnectionForEdit(
       id: modelConnection.id,
       name: modelConnection.name,
       modelId: modelConnection.serviceId,
       workspaceId: modelConnection.workspaceId,
+      hasKey: modelConnection.encryptedAuthValue?.isNotEmpty == true,
       url: modelConnection.url,
       keySuffix: modelConnection.keySuffix,
-      hasKey: modelConnection.encryptedAuthValue?.isNotEmpty == true,
     );
   }
 
@@ -146,12 +139,19 @@ class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
       throw const ModelConnectionException('Model connection has no API key');
     }
     final keyForValidation =
-        key ?? await _encryptionService.decrypt(existingEncryptedKey!);
+        key ??
+        await _encryptionService.decrypt(
+          existingEncryptedKey ??
+              (throw const ModelConnectionException(
+                'Model connection has no API key',
+              )),
+        );
     final hasUrlUpdate = modelConnection.url != null;
     var nextUrl = existing.url;
     if (hasUrlUpdate) {
-      final updatedUrl = modelConnection.url!.trim();
-      nextUrl = updatedUrl.isEmpty ? null : modelConnection.url;
+      final url = modelConnection.url;
+      final updatedUrl = url?.trim();
+      nextUrl = updatedUrl?.isEmpty == true ? null : url;
     }
     final models = await _modelProviderServices.getWorkspaceModelSelections(
       ModelProvider(
@@ -206,6 +206,7 @@ class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
     if (filter.workspaces.isEmpty) {
       return Stream.value(const []);
     }
+
     return _database.modelConnectionsDao
         .watchAllModelConnectionsByWorkspace(workspaceIds: filter.workspaces)
         .map(
@@ -232,7 +233,7 @@ class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
   }
 
   String _keySuffix(String key) {
-    return key.length >= 6 ? key.substring(key.length - 6) : key;
+    return key.lastCharacters(6);
   }
 
   ModelConnectionEntity _modelProviderTableToEntity(
@@ -262,7 +263,7 @@ class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
 
   @override
   Future<void> deleteModelConnection(String modelConnectionId) async {
-    // Verify the model connection exists before attempting deletion
+    // Verify the model connection exists before attempting deletion.
     final modelConnection = await _database.modelConnectionsDao
         .getModelConnectionById(
           modelConnectionId,
@@ -273,7 +274,7 @@ class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
       );
     }
 
-    // Delete from database
+    // Delete from database.
     await _database.modelConnectionsDao.deleteModelConnection(
       modelConnectionId,
     );

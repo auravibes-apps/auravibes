@@ -1,9 +1,3 @@
-// ignore_for_file: prefer-async-await
-// Required: Existing Future chains preserve callback flow.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: newline-before-return
-// Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/app_skill_workspace_settings.dart';
 import 'package:drift/drift.dart';
@@ -31,6 +25,7 @@ class AppSkillWorkspaceSettingsDao extends DatabaseAccessor<AppDatabase>
     String appSkillIdentifier,
   ) async {
     final setting = await getSetting(workspaceId, appSkillIdentifier);
+
     return setting?.isEnabled ?? true;
   }
 
@@ -64,6 +59,7 @@ class AppSkillWorkspaceSettingsDao extends DatabaseAccessor<AppDatabase>
     if (updated == null) {
       throw StateError('Updated app skill workspace setting was not found');
     }
+
     return updated;
   }
 }

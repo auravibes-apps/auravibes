@@ -1,4 +1,3 @@
-// ignore_for_file: prefer-single-widget-per-file
 // Required: Feature widgets keep closely related private widgets together.
 
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
@@ -63,13 +62,6 @@ class _ServiceConnectionEditScreenState
   @override
   Widget build(BuildContext context) {
     return AuraScreen(
-      appBar: AuraAppBar(
-        title: const TextLocale(LocaleKeys.service_connections_edit_title),
-        leading: AuraIconButton(
-          icon: Icons.arrow_back,
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
       child: FutureBuilder<_ConnectionEditState>(
         future: _future,
         builder: (context, snapshot) {
@@ -83,6 +75,7 @@ class _ServiceConnectionEditScreenState
             return const Center(child: AuraSpinner());
           }
           _initialize(state);
+
           return switch (state) {
             _SkillCredentialEditState() => _SkillCredentialEditForm(
               state: state,
@@ -91,8 +84,10 @@ class _ServiceConnectionEditScreenState
               secretControllers: _secretControllers,
               clearedSecrets: _clearedSecrets,
               isSaving: _isSaving,
-              onChanged: () => setState(() {}),
-              onSave: () => _saveSkillCredential(context, state),
+              onChanged: () => setState(() {
+                final _ = Object();
+              }),
+              onSave: () => _saveSkillCredential(context),
             ),
             _ModelProviderEditState() => _ModelProviderEditForm(
               state: state,
@@ -100,11 +95,20 @@ class _ServiceConnectionEditScreenState
               keyController: _modelKeyController,
               urlController: _modelUrlController,
               isSaving: _isSaving,
-              onChanged: () => setState(() {}),
-              onSave: () => _saveModelProvider(context, state),
+              onChanged: () => setState(() {
+                final _ = Object();
+              }),
+              onSave: () => _saveModelProvider(context),
             ),
           };
         },
+      ),
+      appBar: AuraAppBar(
+        title: const TextLocale(LocaleKeys.service_connections_edit_title),
+        leading: AuraIconButton(
+          icon: Icons.arrow_back,
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
     );
   }
@@ -121,6 +125,7 @@ class _ServiceConnectionEditScreenState
       if (definition == null) {
         throw StateError('Skill credential definition not found.');
       }
+
       return _SkillCredentialEditState(
         credential: credential,
         definition: definition,
@@ -149,12 +154,12 @@ class _ServiceConnectionEditScreenState
         );
         for (final entry in attributes.entries) {
           if (entry.value.secret) {
-            _secretControllers.putIfAbsent(
+            final _ = _secretControllers.putIfAbsent(
               entry.key,
               TextEditingController.new,
             );
           } else {
-            _nonSecretControllers.putIfAbsent(
+            final _ = _nonSecretControllers.putIfAbsent(
               entry.key,
               () => TextEditingController(
                 text: credential.nonSecretAttributes[entry.key] ?? '',
@@ -169,13 +174,10 @@ class _ServiceConnectionEditScreenState
     _initialized = true;
   }
 
-  Future<void> _saveSkillCredential(
-    BuildContext context,
-    _SkillCredentialEditState state,
-  ) async {
+  Future<void> _saveSkillCredential(BuildContext context) async {
     setState(() => _isSaving = true);
     try {
-      await ref
+      final _ = await ref
           .read(skillCredentialsRepositoryProvider)
           .updateCredential(
             widget.connectionId,
@@ -196,23 +198,20 @@ class _ServiceConnectionEditScreenState
       Navigator.of(context).pop(true);
     } on Object {
       if (!context.mounted) return;
-      showAuraSnackBar(
+      final _ = showAuraSnackBar(
         context: context,
-        variant: AuraSnackBarVariant.error,
         content: const TextLocale(LocaleKeys.skill_credentials_save_error),
+        variant: AuraSnackBarVariant.error,
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
   }
 
-  Future<void> _saveModelProvider(
-    BuildContext context,
-    _ModelProviderEditState state,
-  ) async {
+  Future<void> _saveModelProvider(BuildContext context) async {
     setState(() => _isSaving = true);
     try {
-      await ref
+      final _ = await ref
           .read(modelConnectionRepositoryProvider)
           .updateModelConnection(
             widget.connectionId,
@@ -228,12 +227,12 @@ class _ServiceConnectionEditScreenState
       Navigator.of(context).pop(true);
     } on Object {
       if (!context.mounted) return;
-      showAuraSnackBar(
+      final _ = showAuraSnackBar(
         context: context,
-        variant: AuraSnackBarVariant.error,
         content: const TextLocale(
           LocaleKeys.service_connections_save_error,
         ),
+        variant: AuraSnackBarVariant.error,
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -291,8 +290,6 @@ class _SkillCredentialEditForm extends StatelessWidget {
       children: [
         AuraCard(
           child: AuraColumn(
-            spacing: AuraSpacing.md,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               AuraText(
                 child: Text(state.definition.title),
@@ -308,43 +305,57 @@ class _SkillCredentialEditForm extends StatelessWidget {
                 onChanged: (_) => onChanged(),
               ),
               for (final entry in attributes.entries)
-                _buildAttributeInput(
+                _SkillCredentialAttributeInput(
                   entry,
-                  state,
-                  secretControllers,
-                  nonSecretControllers,
-                  clearedSecrets,
-                  onChanged,
+                  editState: state,
+                  secretControllers: secretControllers,
+                  nonSecretControllers: nonSecretControllers,
+                  clearedSecrets: clearedSecrets,
+                  onChanged: onChanged,
                 ),
               Align(
                 alignment: Alignment.centerRight,
                 child: AuraButton(
                   onPressed: onSave,
-                  disabled: isSaving || nameController.text.trim().isEmpty,
-                  isLoading: isSaving,
                   child: const TextLocale(LocaleKeys.common_save),
+                  isLoading: isSaving,
+                  disabled: isSaving || nameController.text.trim().isEmpty,
                 ),
               ),
             ],
+            spacing: AuraSpacing.md,
+            crossAxisAlignment: CrossAxisAlignment.start,
           ),
         ),
       ],
     );
   }
+}
 
-  Widget _buildAttributeInput(
-    MapEntry<String, SkillCredentialAttributeDefinition> entry,
-    _SkillCredentialEditState state,
-    Map<String, TextEditingController> secretControllers,
-    Map<String, TextEditingController> nonSecretControllers,
-    Set<String> clearedSecrets,
-    VoidCallback onChanged,
-  ) {
+class _SkillCredentialAttributeInput extends StatelessWidget {
+  const _SkillCredentialAttributeInput(
+    this.entry, {
+    required this.editState,
+    required this.secretControllers,
+    required this.nonSecretControllers,
+    required this.clearedSecrets,
+    required this.onChanged,
+  });
+
+  final MapEntry<String, SkillCredentialAttributeDefinition> entry;
+  final _SkillCredentialEditState editState;
+  final Map<String, TextEditingController> secretControllers;
+  final Map<String, TextEditingController> nonSecretControllers;
+  final Set<String> clearedSecrets;
+  final VoidCallback onChanged;
+
+  @override
+  Widget build(BuildContext context) {
     if (entry.value.secret) {
       return _SecretAttributeInput(
         name: entry.key,
         definition: entry.value,
-        state: state.credential.secretAttributes[entry.key],
+        state: editState.credential.secretAttributes[entry.key],
         controller: secretControllers[entry.key]!,
         clearedSecrets: clearedSecrets,
         onChanged: onChanged,
@@ -353,6 +364,7 @@ class _SkillCredentialEditForm extends StatelessWidget {
 
     final description = entry.value.description;
     final hint = description.isEmpty ? null : Text(description);
+
     return AuraInput(
       controller: nonSecretControllers[entry.key],
       label: Text(entry.key),
@@ -393,24 +405,18 @@ class _SecretAttributeInput extends StatelessWidget {
 
     return AuraInput(
       controller: controller,
+      placeholder: placeholder == null ? null : Text(placeholder),
       label: Text(name),
       hint: definition.description.isEmpty
           ? null
           : Text(definition.description),
-      placeholder: placeholder == null ? null : Text(placeholder),
       isRequired: !definition.optional,
-      obscureText: true,
-      keyboardType: TextInputType.visiblePassword,
-      onChanged: (_) {
-        clearedSecrets.remove(name);
-        onChanged();
-      },
       suffixIcon: definition.optional
           ? AuraIconButton(
               icon: Icons.clear,
               onPressed: () {
                 controller.clear();
-                clearedSecrets.add(name);
+                final _ = clearedSecrets.add(name);
                 onChanged();
               },
               tooltip: LocaleKeys.skill_credentials_clear_secret.tr(
@@ -418,6 +424,12 @@ class _SecretAttributeInput extends StatelessWidget {
               ),
             )
           : null,
+      keyboardType: TextInputType.visiblePassword,
+      obscureText: true,
+      onChanged: (_) {
+        final _ = clearedSecrets.remove(name);
+        onChanged();
+      },
     );
   }
 }
@@ -444,13 +456,12 @@ class _ModelProviderEditForm extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final suffix = state.connection.keySuffix;
+
     return ListView(
       padding: const EdgeInsets.all(12),
       children: [
         AuraCard(
           child: AuraColumn(
-            spacing: AuraSpacing.md,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               AuraText(
                 child: Text(state.connection.modelId),
@@ -465,9 +476,6 @@ class _ModelProviderEditForm extends StatelessWidget {
               ),
               AuraInput(
                 controller: keyController,
-                label: const TextLocale(
-                  LocaleKeys.models_screens_add_provider_fields_key_label,
-                ),
                 placeholder: Text(
                   suffix == null
                       ? LocaleKeys.skill_credentials_secret_saved.tr(
@@ -478,8 +486,11 @@ class _ModelProviderEditForm extends StatelessWidget {
                             )} '
                             '****$suffix',
                 ),
-                obscureText: true,
+                label: const TextLocale(
+                  LocaleKeys.models_screens_add_provider_fields_key_label,
+                ),
                 keyboardType: TextInputType.visiblePassword,
+                obscureText: true,
                 onChanged: (_) => onChanged(),
               ),
               AuraInput(
@@ -494,12 +505,14 @@ class _ModelProviderEditForm extends StatelessWidget {
                 alignment: Alignment.centerRight,
                 child: AuraButton(
                   onPressed: onSave,
-                  disabled: isSaving || nameController.text.trim().isEmpty,
-                  isLoading: isSaving,
                   child: const TextLocale(LocaleKeys.common_save),
+                  isLoading: isSaving,
+                  disabled: isSaving || nameController.text.trim().isEmpty,
                 ),
               ),
             ],
+            spacing: AuraSpacing.md,
+            crossAxisAlignment: CrossAxisAlignment.start,
           ),
         ),
       ],

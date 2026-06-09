@@ -7,6 +7,7 @@ import 'package:auravibes_app/domain/entities/skill_credential_definition_entity
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/domain/repositories/skill_credentials_repository.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
+import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:drift/drift.dart';
 import 'package:logging/logging.dart';
 
@@ -33,6 +34,7 @@ class SkillCredentialsRepositoryImpl implements SkillCredentialsRepository {
       workspaceId: workspaceId,
       credentialDefinitionId: credentialDefinitionId,
     );
+
     return Future.wait(rows.map(_tableToEntity));
   }
 
@@ -51,6 +53,7 @@ class SkillCredentialsRepositoryImpl implements SkillCredentialsRepository {
   Future<SkillCredentialEntity?> getCredentialById(String credentialId) async {
     final row = await _dao.getCredentialById(credentialId);
     if (row == null) return null;
+
     return _tableToEntity(row);
   }
 
@@ -80,8 +83,8 @@ class SkillCredentialsRepositoryImpl implements SkillCredentialsRepository {
             keySuffix: _keySuffix([secretAttributes[entry.key] ?? '']),
           ),
       },
-      keySuffix: row.keySuffix,
       isEnabled: row.isEnabled,
+      keySuffix: row.keySuffix,
     );
   }
 
@@ -105,7 +108,6 @@ class SkillCredentialsRepositoryImpl implements SkillCredentialsRepository {
     final keySuffix = _keySuffix(split.secret.values);
     final row = await _dao.createCredential(
       ServiceConnectionsCompanion(
-        workspaceId: Value(workspaceId),
         name: Value(credential.name),
         serviceId: Value(credential.credentialDefinitionId),
         kind: const Value(ServiceConnectionKindTable.skillCredential),
@@ -113,8 +115,10 @@ class SkillCredentialsRepositoryImpl implements SkillCredentialsRepository {
         encryptedAuthValue: Value(encryptedAttributes),
         keySuffix: Value(keySuffix),
         metadataJson: Value(_metadataJson(split.nonSecret)),
+        workspaceId: Value(workspaceId),
       ),
     );
+
     return _tableToEntity(row);
   }
 
@@ -161,6 +165,7 @@ class SkillCredentialsRepositoryImpl implements SkillCredentialsRepository {
     if (updated == null) {
       throw StateError('Skill credential not found: $credentialId');
     }
+
     return _tableToEntity(updated);
   }
 
@@ -175,6 +180,7 @@ class SkillCredentialsRepositoryImpl implements SkillCredentialsRepository {
         'debug:skill credential delete no rows matched '
         'credentialId=$credentialId',
       );
+
       return;
     }
     _logger.info(
@@ -197,19 +203,18 @@ class SkillCredentialsRepositoryImpl implements SkillCredentialsRepository {
       credentialDefinitionId: table.serviceId,
       name: table.name,
       attributes: attributes,
-      keySuffix: table.keySuffix,
       isEnabled: table.isEnabled,
       createdAt: table.createdAt,
       updatedAt: table.updatedAt,
+      keySuffix: table.keySuffix,
     );
   }
 
   String? _keySuffix(Iterable<String> values) {
     final firstSecret = values.where((value) => value.isNotEmpty).firstOrNull;
     if (firstSecret == null) return null;
-    return firstSecret.length >= 6
-        ? firstSecret.substring(firstSecret.length - 6)
-        : firstSecret;
+
+    return firstSecret.lastCharacters(6);
   }
 
   Future<Map<String, SkillCredentialAttributeDefinition>> _attributeDefinitions(
@@ -218,6 +223,7 @@ class SkillCredentialsRepositoryImpl implements SkillCredentialsRepository {
     final definition = await _database.skillCredentialDefinitionsDao
         .getDefinitionById(credentialDefinitionId);
     if (definition == null) return const {};
+
     return SkillCredentialAttributeDefinition.parseMap(
       definition.attributesJson,
     );
@@ -237,6 +243,7 @@ class SkillCredentialsRepositoryImpl implements SkillCredentialsRepository {
         secret[entry.key] = entry.value;
       }
     }
+
     return (secret: secret, nonSecret: nonSecret);
   }
 
@@ -266,6 +273,7 @@ class SkillCredentialsRepositoryImpl implements SkillCredentialsRepository {
     if (encryptedValue == null || encryptedValue.isEmpty) return {};
     final decryptedValue = await _encryptionService.decrypt(encryptedValue);
     final decoded = jsonDecode(decryptedValue);
+
     return decoded is Map
         ? decoded.map((key, value) => MapEntry('$key', '$value'))
         : <String, String>{};
@@ -278,6 +286,7 @@ class SkillCredentialsRepositoryImpl implements SkillCredentialsRepository {
     if (decoded is! Map) return {};
     final attributes = decoded['attributes'];
     if (attributes is! Map) return {};
+
     return attributes.map((key, value) => MapEntry('$key', '$value'));
   }
 

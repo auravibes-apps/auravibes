@@ -1,13 +1,4 @@
-// ignore_for_file: prefer-async-await
-// Required: Existing Future chains preserve callback flow.
-// ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 import 'package:auravibes_app/data/database/drift/daos/api_model_providers_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/api_models_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/app_skill_workspace_settings_dao.dart';
@@ -204,10 +195,11 @@ class AppDatabase extends _$AppDatabase {
   /// This method can be called to populate the database with
   /// initial data when the app first starts.
   Future<void> initializeWithDefaults() async {
-    // Check if workspaces table is empty
-    final workspaceCount = await customSelect(
+    // Check if workspaces table is empty.
+    final workspaceCountResult = await customSelect(
       'SELECT COUNT(*) as count FROM workspaces',
-    ).getSingle().then((result) => result.read<int>('count'));
+    ).getSingle();
+    final workspaceCount = workspaceCountResult.read<int>('count');
 
     if (workspaceCount == 0) {
       final _ = await into(workspaces).insert(
@@ -224,10 +216,10 @@ class AppDatabase extends _$AppDatabase {
   /// This method can be called periodically to optimize the database,
   /// clean up old data, and perform other maintenance tasks.
   Future<void> performMaintenance() async {
-    // Example maintenance tasks:
-    // - Vacuum the database to reclaim space
-    // - Update statistics
-    // - Clean up orphaned records
+    // Example maintenance tasks:.
+    // - Vacuum the database to reclaim space.
+    // - Update statistics.
+    // - Clean up orphaned records.
 
     await customStatement('VACUUM');
     await customStatement('ANALYZE');
@@ -239,25 +231,28 @@ class AppDatabase extends _$AppDatabase {
   Future<Map<String, dynamic>> getDatabaseStats() async {
     final stats = <String, dynamic>{};
 
-    // Get workspace count
-    final workspaceCount = await customSelect(
+    // Get workspace count.
+    final workspaceCountResult = await customSelect(
       'SELECT COUNT(*) as count FROM workspaces',
-    ).getSingle().then((result) => result.read<int>('count'));
+    ).getSingle();
+    final workspaceCount = workspaceCountResult.read<int>('count');
     stats['workspaceCount'] = workspaceCount;
 
-    // Get database page count (approximate size)
-    final pageCount = await customSelect(
+    // Get database page count (approximate size).
+    final pageCountResult = await customSelect(
       'SELECT page_count FROM pragma_page_count()',
-    ).getSingle().then((result) => result.read<int>('page_count'));
+    ).getSingle();
+    final pageCount = pageCountResult.read<int>('page_count');
     stats['pageCount'] = pageCount;
 
-    // Get page size
-    final pageSize = await customSelect(
+    // Get page size.
+    final pageSizeResult = await customSelect(
       'SELECT page_size FROM pragma_page_size()',
-    ).getSingle().then((result) => result.read<int>('page_size'));
+    ).getSingle();
+    final pageSize = pageSizeResult.read<int>('page_size');
     stats['pageSize'] = pageSize;
 
-    // Calculate approximate database size
+    // Calculate approximate database size.
     stats['approximateSizeBytes'] = pageCount * pageSize;
 
     return stats;

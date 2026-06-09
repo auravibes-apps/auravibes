@@ -1,7 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: no-object-declaration
-// Required: Test fakes override noSuchMethod with Object return values.
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -437,5 +433,5 @@ void main() {
 
 class _FakeBuildContext implements BuildContext {
   @override
-  Object? noSuchMethod(Invocation invocation) => throw UnimplementedError();
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }

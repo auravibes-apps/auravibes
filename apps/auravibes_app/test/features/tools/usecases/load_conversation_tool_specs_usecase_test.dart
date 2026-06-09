@@ -1,15 +1,4 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: no-object-declaration
-// Required: Test fakes override noSuchMethod with Object return values.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/tool_spec.dart';
@@ -35,7 +24,7 @@ class _FakeConversationToolsRepository extends ConversationToolsRepository {
   ) async => _tools;
 
   @override
-  Object? noSuchMethod(Invocation invocation) => throw UnimplementedError();
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
 class _FakeBuildCombinedToolSpecsUseCase extends BuildCombinedToolSpecsUseCase {
@@ -74,18 +63,18 @@ class _FakeBuildDynamicSkillToolSpecsUsecase
 
 class _NeverSkillsRepository extends SkillsRepository {
   @override
-  Object? noSuchMethod(Invocation invocation) => throw UnimplementedError();
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
 class _NeverConversationSkillsRepository extends ConversationSkillsRepository {
   @override
-  Object? noSuchMethod(Invocation invocation) => throw UnimplementedError();
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
 class _NeverAppSkillSettingsRepository
     extends AppSkillWorkspaceSettingsRepository {
   @override
-  Object? noSuchMethod(Invocation invocation) => throw UnimplementedError();
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
 class _CapturingRepo extends ConversationToolsRepository {
@@ -100,7 +89,7 @@ class _CapturingRepo extends ConversationToolsRepository {
   ) async => onGetTools(conversationId, workspaceId);
 
   @override
-  Object? noSuchMethod(Invocation invocation) => throw UnimplementedError();
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
 void main() {
@@ -154,6 +143,7 @@ void main() {
         onGetTools: (convId, wsId) async {
           capturedConvId = convId;
           capturedWsId = wsId;
+
           return <WorkspaceToolEntity>[];
         },
       );
@@ -229,6 +219,7 @@ void main() {
       final buildUseCase = _CapturingBuildCombined(
         onCall: (t) async {
           capturedTools = t;
+
           return [];
         },
       );

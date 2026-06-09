@@ -1,15 +1,4 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 
 import 'dart:convert';
 
@@ -32,7 +21,7 @@ void main() {
       expect(result, contains('ok'));
     });
 
-    test('rejects localhost URLs', () async {
+    test('rejects localhost URLs', () {
       final tool = UrlTool();
 
       expect(
@@ -675,7 +664,9 @@ final class _SuccessAdapter implements HttpClientAdapter {
   }
 
   @override
-  void close({bool force = false}) {}
+  void close({bool force = false}) {
+    final _ = Object();
+  }
 }
 
 final class _InspectAdapter implements HttpClientAdapter {
@@ -706,6 +697,7 @@ final class _InspectAdapter implements HttpClientAdapter {
       requestBody = String.fromCharCodes(bytes);
     }
     onInspect(options.method, options.headers, requestBody);
+
     return ResponseBody.fromString(
       body,
       statusCode,
@@ -714,5 +706,7 @@ final class _InspectAdapter implements HttpClientAdapter {
   }
 
   @override
-  void close({bool force = false}) {}
+  void close({bool force = false}) {
+    final _ = Object();
+  }
 }

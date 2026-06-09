@@ -1,6 +1,4 @@
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/data/repositories/workspace_repository_impl.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
@@ -20,5 +18,6 @@ WorkspaceRepository workspaceRepository(Ref ref) {
 @Riverpod(keepAlive: true)
 Stream<List<WorkspaceEntity>> allWorkspaces(Ref ref) {
   final repo = ref.watch(workspaceRepositoryProvider);
+
   return repo.watchAllWorkspaces();
 }

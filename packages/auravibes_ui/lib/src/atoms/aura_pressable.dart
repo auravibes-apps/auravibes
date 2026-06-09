@@ -1,16 +1,12 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
 import 'dart:async';
 
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 
-/// Pessable implementation of auravibes
+/// Pessable implementation of auravibes.
 class AuraPressable extends StatefulWidget {
-  /// constructor
+  /// Constructor.
   const AuraPressable({
     required this.child,
     required this.color,
@@ -22,22 +18,22 @@ class AuraPressable extends StatefulWidget {
     this.padding,
   });
 
-  /// child
+  /// Child.
   final Widget child;
 
-  /// color
+  /// Color.
   final Color color;
 
-  /// decoration
+  /// Decoration.
   final Decoration? decoration;
 
-  /// onPressed
+  /// OnPressed.
   final void Function()? onPressed;
 
-  /// onLongPress
+  /// OnLongPress.
   final void Function()? onLongPress;
 
-  /// clipBehavior
+  /// ClipBehavior.
   final Clip? clipBehavior;
 
   /// Optional padding to apply around the pressable widget.
@@ -47,9 +43,9 @@ class AuraPressable extends StatefulWidget {
   AuraPressableState createState() => AuraPressableState();
 }
 
-/// AuraPressableState
+/// AuraPressableState.
 class AuraPressableState extends State<AuraPressable> {
-  // Our state
+  // Our state.
   bool _hovering = false;
   final bool _pressed = false;
   bool _pressDown = false;

@@ -1,8 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 
@@ -158,24 +153,25 @@ abstract class WorkspaceToolsRepository {
 
 /// Base exception for workspace tools-related operations.
 class WorkspaceToolsException implements Exception {
-  /// Creates a new WorkspaceToolsException
+  /// Creates a new WorkspaceToolsException.
   const WorkspaceToolsException(this.message, [this.cause]);
 
-  /// Error message describing the exception
+  /// Error message describing the exception.
   final String message;
 
-  /// Optional original exception that caused this exception
+  /// Optional original exception that caused this exception.
   final Exception? cause;
 
   @override
   String toString() {
     final causedBy = cause != null ? ' (Caused by: $cause)' : '';
+
     return 'WorkspaceToolsException: $message$causedBy';
   }
 }
 
 /// Exception thrown when workspace tool validation fails.
 class WorkspaceToolsValidationException extends WorkspaceToolsException {
-  /// Creates a new WorkspaceToolsValidationException
+  /// Creates a new WorkspaceToolsValidationException.
   const WorkspaceToolsValidationException(super.message, [super.cause]);
 }

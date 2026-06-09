@@ -22,7 +22,9 @@ class CreateSkillCredentialDefinitionUsecase {
     SkillCredentialDefinitionToCreate definition,
   ) async {
     validateSkillTitleUsecase.call(definition.title);
-    SkillCredentialAttributeDefinition.parseMap(definition.attributesJson);
+    final _ = SkillCredentialAttributeDefinition.parseMap(
+      definition.attributesJson,
+    );
     final slug = generateSkillSlugUsecase.call(definition.title);
     final existing = await _skillCredentialDefinitionsRepository
         .getDefinitionBySlug(workspaceId, slug);
@@ -31,6 +33,7 @@ class CreateSkillCredentialDefinitionUsecase {
         'A credential definition with this title already exists',
       );
     }
+
     return _skillCredentialDefinitionsRepository.createDefinition(
       workspaceId,
       definition,

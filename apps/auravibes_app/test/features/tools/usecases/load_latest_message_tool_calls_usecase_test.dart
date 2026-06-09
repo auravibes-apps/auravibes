@@ -1,11 +1,4 @@
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-static-class
-// Required: Tests keep fixture helpers and fakes top-level.
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
@@ -23,8 +16,11 @@ import 'load_latest_message_tool_calls_usecase_test.mocks.dart';
 @GenerateMocks([MessageRepository])
 void main() {
   group('LoadLatestMessageToolCallsUsecase', () {
-    late MockMessageRepository messageRepository;
-    late LoadLatestMessageToolCallsUsecase usecase;
+    var messageRepository = MockMessageRepository();
+    var usecase = LoadLatestMessageToolCallsUsecase(
+      messageRepository: messageRepository,
+      toolResolverService: ToolResolverService(),
+    );
 
     setUp(() {
       messageRepository = MockMessageRepository();
@@ -196,6 +192,7 @@ MessageEntity _message({
   MessageMetadataEntity? metadata,
 }) {
   final now = DateTime(2026);
+
   return MessageEntity(
     id: id,
     conversationId: 'conversation-1',

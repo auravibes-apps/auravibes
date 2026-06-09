@@ -1,6 +1,4 @@
-// ignore_for_file: no-magic-number
 // Required: Existing UI spacing uses small numeric values.
-// ignore_for_file: prefer-single-widget-per-file
 // Required: Modal keeps small private row widgets together.
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_provider.dart';
@@ -99,8 +97,6 @@ class _SelectorContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       child: AuraColumn(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        spacing: AuraSpacing.md,
         children: [
           _SkillSection(
             titleKey: LocaleKeys.skills_selector_loaded_title,
@@ -117,6 +113,8 @@ class _SelectorContent extends StatelessWidget {
             onPressed: onLoad,
           ),
         ],
+        spacing: AuraSpacing.md,
+        crossAxisAlignment: CrossAxisAlignment.start,
       ),
     );
   }
@@ -140,8 +138,6 @@ class _SkillSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraColumn(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: AuraSpacing.sm,
       children: [
         AuraText(
           child: TextLocale(titleKey),
@@ -155,14 +151,7 @@ class _SkillSection extends StatelessWidget {
         else
           for (final skill in skills)
             AuraTile(
-              variant: AuraTileVariant.ghost,
-              trailing: AuraIconButton(
-                icon: actionIcon,
-                onPressed: () => onPressed(skill),
-              ),
               child: AuraColumn(
-                spacing: AuraSpacing.xs,
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   AuraText(child: Text(skill.title)),
                   AuraText(
@@ -170,9 +159,18 @@ class _SkillSection extends StatelessWidget {
                     color: AuraColorVariant.onSurfaceVariant,
                   ),
                 ],
+                spacing: AuraSpacing.xs,
+                crossAxisAlignment: CrossAxisAlignment.start,
+              ),
+              variant: AuraTileVariant.ghost,
+              trailing: AuraIconButton(
+                icon: actionIcon,
+                onPressed: () => onPressed(skill),
               ),
             ),
       ],
+      spacing: AuraSpacing.sm,
+      crossAxisAlignment: CrossAxisAlignment.start,
     );
   }
 }

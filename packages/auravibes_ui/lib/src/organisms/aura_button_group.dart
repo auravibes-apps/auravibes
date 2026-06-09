@@ -1,18 +1,4 @@
-// ignore_for_file: no-magic-number
-// Required: UI tokens and layout use fixed design values.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: no-equal-arguments
-// Required: UI geometry uses repeated values for symmetric layout.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-moving-to-variable
-// Required: UI components repeat theme and layout lookups intentionally.
-// ignore_for_file: prefer-single-widget-per-file
 // Required: UI components keep related private widgets together.
 import 'package:auravibes_ui/src/atoms/aura_loading_circle.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
@@ -133,8 +119,8 @@ class AuraButtonGroup<T> extends StatelessWidget {
       final isItemDisabled = disabled || item.disabled;
       final isItemLoading = isLoading || item.isLoading;
 
-      // Use Transform.translate to collapse double borders between items
-      // by shifting non-first items back by 1px (the border width)
+      // Use Transform.translate to collapse double borders between items.
+      // By shifting non-first items back by 1px (the border width).
       Widget child = _AuraButtonGroupItem(
         item: item,
         isSelected: isSelected,
@@ -151,7 +137,7 @@ class AuraButtonGroup<T> extends StatelessWidget {
         auraTheme: auraTheme,
       );
 
-      // Shift non-first items to collapse the double border
+      // Shift non-first items to collapse the double border.
       if (!isFirst && variant != AuraButtonGroupVariant.ghost) {
         child = Transform.translate(
           offset: orientation == Axis.horizontal
@@ -175,7 +161,7 @@ class AuraButtonGroup<T> extends StatelessWidget {
             children: children,
           );
 
-    // Wrap entire group in ClipRRect for rounded corners
+    // Wrap entire group in ClipRRect for rounded corners.
     return ClipRRect(
       borderRadius: BorderRadius.circular(borderRadius),
       child: content,
@@ -351,6 +337,7 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
   }) {
     if (isActive) return colors.primary;
     if (isHovered) return colors.primary.withValues(alpha: 0.8);
+
     return colors.primary.withValues(alpha: 0.6);
   }
 
@@ -361,6 +348,7 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
   }) {
     if (isActive) return colors.primary;
     if (isHovered) return colors.primary.withValues(alpha: 0.1);
+
     return DesignColors.transparent;
   }
 
@@ -371,6 +359,7 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
   }) {
     if (isActive) return colors.primary.withValues(alpha: 0.2);
     if (isHovered) return colors.primary.withValues(alpha: 0.1);
+
     return DesignColors.transparent;
   }
 
@@ -395,6 +384,7 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
     if (widget.disabled) return AuraColorVariant.onSurfaceVariant;
 
     final isActive = widget.isSelected || _isPressed;
+
     return switch (widget.variant) {
       AuraButtonGroupVariant.filled => AuraColorVariant.onPrimary,
       AuraButtonGroupVariant.outlined =>
@@ -414,9 +404,9 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
         ? colors.outlineVariant
         : colors.primary;
 
-    // Use uniform border on all sides to support the parent ClipRRect
-    // The double borders between items are collapsed using Transform.translate
-    // in the parent widget
+    // Use uniform border on all sides to support the parent ClipRRect.
+    // The double borders between items are collapsed using Transform.translate.
+    // In the parent widget.
     return Border.all(color: borderColor);
   }
 

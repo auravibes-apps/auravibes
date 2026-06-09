@@ -4,6 +4,114 @@ plugins:
   dart_code_linter:
     version: ^4.1.2
     diagnostics:
+      always-remove-listener: true
+      arguments-ordering: true
+      avoid-cascade-after-if-null: true
+      avoid-collection-methods-with-unrelated-types: true
+      avoid-creating-vector-in-update: true
+      avoid-dynamic: true
+      avoid-global-state: true
+      avoid-ignoring-return-values: true
+      avoid-initializing-in-on-mount: true
+      avoid-late-keyword: true
+      avoid-missing-enum-constant-in-map: true
+      avoid-nested-conditional-expressions: true
+      avoid-non-ascii-symbols: true
+      avoid-non-null-assertion: true
+      avoid-passing-async-when-sync-expected: true
+      avoid-redundant-async: true
+      avoid-redundant-async-on-load: true
+      avoid-returning-widgets:
+        ignored-annotations:
+          # Widgetbook generator requires annotated top-level widget factories.
+          - UseCase
+      avoid-shrink-wrap-in-lists: true
+      avoid-substring: true
+      avoid-throw-in-catch-block: true
+      avoid-top-level-members-in-tests:
+        include:
+          - test/**
+          - "**/test/**"
+      avoid-unnecessary-type-assertions: true
+      avoid-unnecessary-type-casts: true
+      avoid-unrelated-type-assertions: true
+      avoid-unused-parameters: true
+      avoid-wrapping-in-padding: true
+      check-for-equals-in-render-object-setters: true
+      consistent-update-render-object: true
+      format-comment:
+        ignored-patterns:
+          - ^coverage:.*
+      list-all-equatable-fields: true
+      member-ordering:
+        order:
+          - public-static-const-fields
+          - private-static-const-fields
+          - public-static-final-fields
+          - private-static-final-fields
+          - constructors
+          - public-fields
+          - private-fields
+          - public-getters
+          - private-getters
+          - public-setters
+          - private-setters
+          - public-methods
+          - private-methods
+        widgets-order:
+          - public-static-const-fields
+          - private-static-const-fields
+          - public-static-final-fields
+          - private-static-final-fields
+          - constructors
+          - public-fields
+          - private-fields
+          - public-getters
+          - private-getters
+          - public-setters
+          - private-setters
+          - init-state-method
+          - dispose-method
+          - public-methods
+          - build-method
+          - private-methods
+      missing-test-assertion: true
+      no-blank-line-before-single-return: true
+      no-empty-block: true
+      no-equal-arguments:
+        ignored-parameters:
+          # Fixtures often intentionally share lifecycle timestamps.
+          - updatedAt
+          # Widget tests intentionally reuse locale ranges for basic wrappers.
+          - startLocale
+          # UI geometry and callback wiring intentionally repeat symmetric values.
+          - activeWorkspaceId
+          - borderColor
+          - bottom
+          - height
+          - isWorkspaceEnabled
+          - margin
+          - mcpServerId
+          - minHeight
+          - name
+          - native
+          - onDelete
+          - onProviderChanged
+          - onReconnect
+          - onViewError
+          - portal
+          - receiveTimeout
+          - remove
+          - right
+          - skillToolSlug
+          - toolIdentifier
+          - top
+      no-equal-then-else: true
+      no-magic-number:
+        allow-only-once: true
+      no-object-declaration: true
+      newline-before-return: true
+      avoid-unnecessary-setstate: true
       avoid-double-slash-imports: true
       avoid-duplicate-exports: true
       avoid-border-all: true
@@ -14,6 +122,66 @@ plugins:
       double-literal-format: true
       no-boolean-literal-compare: true
       only-barrel-import: true
+      prefer-async-await: true
+      prefer-commenting-analyzer-ignores: true
+      prefer-conditional-expressions: true
+      prefer-const-border-radius: true
+      prefer-correct-identifier-length:
+        exceptions:
+          # Conventional IDs, handles, coordinates, channels, and loop names.
+          - a
+          - ai
+          - b
+          - db
+          - dx
+          - dy
+          - e
+          - g
+          - i
+          - id
+          - j
+          - k
+          - ok
+          - r
+          - ui
+          - x
+          - y
+          - z
+      prefer-correct-test-file-name:
+        include:
+          - test/**
+          - "**/test/**"
+      prefer-correct-type-name:
+        excluded:
+          # Public Freezed domain API; rename would churn generated contract
+          # and app-wide callers.
+          - WorkspaceModelSelectionWithConnectionEntity
+      prefer-define-hero-tag: true
+      prefer-enums-by-name: true
+      prefer-extracting-callbacks:
+        allowed-line-count: 2
+      prefer-first: true
+      prefer-match-file-name:
+        ignore-typedefs: true
+        exclude:
+          - test/**
+          - "**/test/**"
+          - "**/*.g.dart"
+          - "**/*.freezed.dart"
+          - "**/atoms.dart"
+          - "**/molecules.dart"
+          - "**/organisms.dart"
+          - "**/tokens.dart"
+          - "**/ui.dart"
+          - widgetbook/lib/aura_ui/**
+          - widgetbook/lib/knobs/**
+          - lib/aura_ui/**
+          - lib/knobs/**
+          - main.dart
+          - "**/main.dart"
+          - apps/auravibes_app/lib/main.dart
+          - apps/auravibes_app/lib/i18n/**
+          - apps/auravibes_app/web/**
       prefer-correct-edge-insets-constructor: true
       prefer-first-or-null: true
       prefer-immediate-return: true
@@ -21,7 +189,19 @@ plugins:
       prefer-iterable-of: true
       prefer-last: true
       prefer-media-query-direct-access: true
+      prefer-moving-to-variable:
+        allowed-duplicated-chains: 3
       prefer-named-record-fields: true
+      prefer-provide-intl-description: true
+      prefer-single-quotes: true
+      prefer-single-widget-per-file:
+        ignore-private-widgets: true
+      prefer-static-class:
+        ignore-private: true
+      prefer-using-list-view: true
+      provide-correct-intl-args: true
+      use-design-system-item: true
+      use-setstate-synchronously: true
       prefer-trailing-comma: true
       tag-name: true
 
@@ -106,33 +286,3 @@ linter:
     ##
     flutter_style_todos: false
     discarded_futures: false
-
-dart_code_linter:
-  rules:
-    # Keep only CLI-owned DCL rules here. Rules mirrored in the analyzer plugin
-    # diagnostics above are omitted to avoid duplicate analyzer + DCL reporting.
-    - prefer-match-file-name:
-        ignore-typedefs: true
-        exclude:
-          - test/**
-          - "**/test/**"
-          - "**/*.g.dart"
-          - "**/*.freezed.dart"
-          - "**/atoms.dart"
-          - "**/molecules.dart"
-          - "**/organisms.dart"
-          - "**/tokens.dart"
-          - "**/ui.dart"
-          - widgetbook/lib/aura_ui/**
-          - widgetbook/lib/knobs/**
-          - lib/aura_ui/**
-          - lib/knobs/**
-          - main.dart
-          - "**/main.dart"
-          - apps/auravibes_app/lib/main.dart
-          - apps/auravibes_app/lib/i18n/**
-          - apps/auravibes_app/web/**
-    - prefer-first
-
-    # Disabled: enabling the full DCL preset on the existing codebase surfaces
-    # thousands of style-only changes across production, tests, and widgetbook.

@@ -1,6 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:json_annotation/json_annotation.dart';
@@ -11,28 +8,28 @@ import 'package:json_annotation/json_annotation.dart';
 /// A null resultStatus means the tool is still pending or running.
 @JsonEnum(fieldRename: FieldRename.snake)
 enum ToolCallResultStatus {
-  /// Tool executed successfully, responseRaw contains the output
+  /// Tool executed successfully, responseRaw contains the output.
   success,
 
-  /// User skipped this specific tool (continues AI loop)
+  /// User skipped this specific tool (continues AI loop).
   skippedByUser,
 
-  /// User stopped all pending tools (halts AI loop)
+  /// User stopped all pending tools (halts AI loop).
   stoppedByUser,
 
-  /// Tool not found or not available
+  /// Tool not found or not available.
   toolNotFound,
 
-  /// Tool disabled in workspace settings
+  /// Tool disabled in workspace settings.
   disabledInWorkspace,
 
-  /// Tool disabled in conversation settings
+  /// Tool disabled in conversation settings.
   disabledInConversation,
 
-  /// Tool not configured
+  /// Tool not configured.
   notConfigured,
 
-  /// Tool execution threw an error
+  /// Tool execution threw an error.
   executionError,
 }
 
@@ -98,6 +95,7 @@ class ToolCallResultStatusConverter
   @override
   ToolCallResultStatus? fromJson(String? json) {
     if (json == null) return null;
+
     return switch (json) {
       'success' => ToolCallResultStatus.success,
       'skipped_by_user' => ToolCallResultStatus.skippedByUser,
@@ -114,6 +112,7 @@ class ToolCallResultStatusConverter
   @override
   String? toJson(ToolCallResultStatus? object) {
     if (object == null) return null;
+
     return switch (object) {
       ToolCallResultStatus.success => 'success',
       ToolCallResultStatus.skippedByUser => 'skipped_by_user',

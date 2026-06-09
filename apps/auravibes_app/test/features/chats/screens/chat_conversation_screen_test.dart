@@ -1,17 +1,6 @@
 // ignore_for_file: scoped_providers_should_specify_dependencies
 // Required: widget tests override scoped providers directly.
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-static-class
-// Required: Tests keep fixture helpers and fakes top-level.
 
 import 'dart:async';
 
@@ -51,6 +40,7 @@ void main() {
             if (methodCall.method == 'getTemporaryDirectory') {
               return '.';
             }
+
             return null;
           },
         );
@@ -150,7 +140,7 @@ void main() {
     );
     final _ = await tester.pumpAndSettle();
 
-    expect(find.byType(AppErrorWidget), findsOneWidget);
+    expect(find.byType(AppErrorWidget<Object>), findsOneWidget);
   });
 
   testWidgets('shows error for ConversationNotFound result', (tester) async {
@@ -177,7 +167,7 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(find.byType(AppErrorWidget), findsOneWidget);
+    expect(find.byType(AppErrorWidget<String>), findsOneWidget);
   });
 
   testWidgets('shows error for ConversationWorkspaceMismatch result', (
@@ -208,7 +198,7 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(find.byType(AppErrorWidget), findsOneWidget);
+    expect(find.byType(AppErrorWidget<String>), findsOneWidget);
   });
 
   test('ConversationFound stores conversation', () {
@@ -279,7 +269,7 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(find.byType(AppErrorWidget), findsOneWidget);
+    expect(find.byType(AppErrorWidget<String>), findsOneWidget);
   });
 
   test('ConversationEntity hasValidTitle returns true for non-empty title', () {

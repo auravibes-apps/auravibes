@@ -1,6 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: prefer-static-class
 // Required: UI package exposes top-level helpers and constants.
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
@@ -26,10 +23,10 @@ class AuraText extends StatelessWidget {
   /// The style variant to apply to the text.
   final AuraTextStyle style;
 
-  /// Aligmnet
+  /// Aligmnet.
   final TextAlign? textAlign;
 
-  /// enum color options
+  /// Enum color options.
   final AuraColorVariant? color;
 
   @override

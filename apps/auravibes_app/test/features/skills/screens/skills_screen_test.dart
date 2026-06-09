@@ -1,5 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/app_skill_workspace_settings_repository_impl.dart';
 import 'package:auravibes_app/data/repositories/skills_repository_impl.dart';
@@ -74,10 +72,10 @@ void main() {
     final skill = await skillsRepository.createSkill(
       workspace.id,
       const SkillToCreate(
+        kind: SkillKind.template,
         title: 'Write Summary',
         description: 'Summarize selected content.',
         content: 'Summarize selected content.',
-        kind: SkillKind.template,
       ),
     );
     final appSkillSettings = AppSkillWorkspaceSettingsRepositoryImpl(database);
@@ -95,9 +93,8 @@ void main() {
     );
   }
 
-  GoRouter createRouter(String workspaceId) {
+  GoRouter createRouter() {
     return GoRouter(
-      initialLocation: '/',
       routes: [
         GoRoute(
           path: '/',
@@ -116,6 +113,7 @@ void main() {
           ),
         ),
       ],
+      initialLocation: '/',
     );
   }
 
@@ -123,13 +121,13 @@ void main() {
     tester,
   ) async {
     final fixture = await createFixture();
-    final router = createRouter(fixture.workspace.id);
+    final router = createRouter();
     addTearDown(router.dispose);
 
     await tester.pumpWidget(buildRouterScreen(fixture.container, router));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     router.go('/workspaces/${fixture.workspace.id}/more/skills');
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('Workspace Skills'), findsOneWidget);
     expect(find.text('Write Summary'), findsOneWidget);
@@ -141,27 +139,27 @@ void main() {
     expect(find.byType(AuraSwitch), findsNWidgets(2));
 
     await tester.tap(find.text('Write Summary'));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('Editing ${fixture.skill.id}'), findsOneWidget);
 
     router.go('/workspaces/${fixture.workspace.id}/more/skills');
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     await tester.tap(find.byIcon(Icons.more_vert));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     await tester.tap(find.text('Edit'));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('Editing ${fixture.skill.id}'), findsOneWidget);
 
     router.go('/workspaces/${fixture.workspace.id}/more/skills');
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     await tester.tap(find.byIcon(Icons.more_vert));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     await tester.tap(find.text('Delete'));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('Delete skill'), findsOneWidget);
     expect(
@@ -173,7 +171,7 @@ void main() {
     );
 
     await tester.tap(find.widgetWithText(AuraButton, 'Delete'));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('Write Summary'), findsNothing);
   });

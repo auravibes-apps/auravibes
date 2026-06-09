@@ -72,6 +72,7 @@ class ListAvailableSkillsUsecase {
   Future<bool> _isCredentialReady(String workspaceId, SkillEntity skill) {
     final usecase = _checkSkillCredentialReadinessUsecase;
     if (usecase == null) return Future.value(true);
+
     return usecase.call(workspaceId: workspaceId, skill: skill);
   }
 }
@@ -102,19 +103,15 @@ enum SkillLoadFilter {
 
 extension on List<ConversationSkillEntity> {
   Set<String> get loadedUserSkillIds {
-    return {
-      for (final skill in this)
-        if (skill.isLoaded && skill.workspaceSkillId != null)
-          skill.workspaceSkillId!,
-    };
+    return where(
+      (skill) => skill.isLoaded,
+    ).map((skill) => skill.workspaceSkillId).nonNulls.toSet();
   }
 
   Set<String> get loadedAppSkillIdentifiers {
-    return {
-      for (final skill in this)
-        if (skill.isLoaded && skill.appSkillIdentifier != null)
-          skill.appSkillIdentifier!,
-    };
+    return where(
+      (skill) => skill.isLoaded,
+    ).map((skill) => skill.appSkillIdentifier).nonNulls.toSet();
   }
 }
 

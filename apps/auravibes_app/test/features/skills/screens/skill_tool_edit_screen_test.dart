@@ -1,4 +1,3 @@
-// ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures.
 import 'dart:convert';
 
@@ -61,7 +60,6 @@ void main() {
       ),
     );
     final router = GoRouter(
-      initialLocation: '/workspaces/${workspace.id}/more/skills/${skill.id}',
       routes: [
         GoRoute(
           path: '/workspaces/:workspaceId/more/skills/:skillId',
@@ -75,6 +73,7 @@ void main() {
           ),
         ),
       ],
+      initialLocation: '/workspaces/${workspace.id}/more/skills/${skill.id}',
     );
     addTearDown(router.dispose);
 
@@ -101,11 +100,11 @@ void main() {
         useFallbackTranslations: true,
       ),
     );
-    await tester.pumpAndSettle();
-    router.push(
+    final _ = await tester.pumpAndSettle();
+    final _ = router.push(
       '/workspaces/${workspace.id}/more/skills/${skill.id}/tools/new',
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('Request body'), findsOneWidget);
     expect(find.text('AI agent inputs'), findsOneWidget);
@@ -123,12 +122,12 @@ void main() {
       'https://example.com/company',
     );
     await tester.tap(find.text('GET'));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     await tester.tap(find.text('POST').last);
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('Add query parameter'));
     await tester.tap(find.text('Add query parameter'));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextFormField).at(3), 'token');
     await tester.enterText(
       find.byType(TextFormField).at(4),
@@ -141,15 +140,16 @@ void main() {
     await tester.enterText(find.byType(TextFormField).at(6), 'company_id');
     await tester.enterText(find.byType(TextFormField).at(7), 'Company id');
     await tester.tap(find.text('Requires credential'));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.save_outlined));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     final tool = await SkillTemplateToolsRepositoryImpl(
       database,
     ).getToolBySlug(skill.id, 'find_company');
-    expect(tool?.description, 'Find company records.');
-    expect(jsonDecode(tool!.templateJson), {
+    final templateJson = (tool ?? fail('tool missing')).templateJson;
+    expect(tool.description, 'Find company records.');
+    expect(jsonDecode(templateJson), {
       'url': 'https://example.com/company',
       'method': 'POST',
       'query': {'token': '{{ credential.api_key }}'},

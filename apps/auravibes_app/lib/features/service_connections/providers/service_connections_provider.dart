@@ -44,6 +44,7 @@ List<ServiceConnectionListItem> _buildItems(
   };
   final skillCredentialItems = credentials.map((credential) {
     final definition = definitionsById[credential.credentialDefinitionId];
+
     return ServiceConnectionListItem.fromSkillCredential(
       credential: credential,
       definition: definition,

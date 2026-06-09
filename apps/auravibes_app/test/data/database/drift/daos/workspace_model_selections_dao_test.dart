@@ -1,13 +1,3 @@
-// ignore_for_file: avoid-top-level-members-in-tests
-// Required: Test files keep shared fixtures and helpers top-level.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-static-class
-// Required: Tests keep fixture helpers and fakes top-level.
-
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-
 import 'dart:async';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
@@ -29,46 +19,67 @@ QueryExecutor createTestConnection() {
   );
 }
 
+final class _DatabaseFixture {
+  _DatabaseFixture(this.createConnection);
+
+  final QueryExecutor Function() createConnection;
+  AppDatabase? _database;
+
+  AppDatabase get database =>
+      _database ?? fail('Database fixture not initialized');
+
+  void reset() {
+    _database = AppDatabase(connection: createConnection());
+  }
+
+  Future<void> close() async {
+    await _database?.close();
+    _database = null;
+  }
+}
+
 void main() {
   group('WorkspaceModelSelectionsDao', () {
-    late AppDatabase database;
-    late String workspaceId;
+    final fixture = _DatabaseFixture(createTestConnection);
+    var workspaceId = '';
 
     setUp(() async {
-      database = AppDatabase(connection: createTestConnection());
-      final ws = await database.workspaceDao.insertWorkspace(
+      fixture.reset();
+      final ws = await fixture.database.workspaceDao.insertWorkspace(
         WorkspacesCompanion.insert(name: 'WS', type: WorkspaceType.local),
       );
       workspaceId = ws.id;
     });
 
     tearDown(() async {
-      await database.close();
+      await fixture.close();
     });
 
     test('insertWorkspaceModelSelections inserts records', () async {
-      final _ = await database.apiModelProvidersDao.upsertProvider(
+      final _ = await fixture.database.apiModelProvidersDao.upsertProvider(
         ApiModelProvidersCompanion.insert(id: 'openai', name: 'OpenAI'),
       );
-      final conn = await database.modelConnectionsDao.insertModelConnection(
-        ServiceConnectionsCompanion.insert(
-          name: 'Conn',
-          serviceId: 'openai',
-          kind: ServiceConnectionKindTable.modelProvider,
-          authenticationType: ServiceAuthenticationTypeTable.apiKey,
-          encryptedAuthValue: const Value('key'),
-          workspaceId: workspaceId,
-        ),
-      );
-      await database.workspaceModelSelectionsDao.insertWorkspaceModelSelections(
-        [
-          WorkspaceModelSelectionsCompanion.insert(
-            modelId: 'openai',
-            modelConnectionId: conn.id,
-          ),
-        ],
-      );
-      final results = await database.workspaceModelSelectionsDao
+      final conn = await fixture.database.modelConnectionsDao
+          .insertModelConnection(
+            ServiceConnectionsCompanion.insert(
+              name: 'Conn',
+              serviceId: 'openai',
+              kind: ServiceConnectionKindTable.modelProvider,
+              authenticationType: ServiceAuthenticationTypeTable.apiKey,
+              encryptedAuthValue: const Value('key'),
+              workspaceId: workspaceId,
+            ),
+          );
+      await fixture.database.workspaceModelSelectionsDao
+          .insertWorkspaceModelSelections(
+            [
+              WorkspaceModelSelectionsCompanion.insert(
+                modelId: 'openai',
+                modelConnectionId: conn.id,
+              ),
+            ],
+          );
+      final results = await fixture.database.workspaceModelSelectionsDao
           .getAllWorkspaceModelSelectionsByWorkspace(
             workspaceIds: [workspaceId],
           );
@@ -76,21 +87,22 @@ void main() {
     });
 
     test('watchAllWorkspaceModelSelectionsByWorkspace emits inserts', () async {
-      final _ = await database.apiModelProvidersDao.upsertProvider(
+      final _ = await fixture.database.apiModelProvidersDao.upsertProvider(
         ApiModelProvidersCompanion.insert(id: 'openai', name: 'OpenAI'),
       );
-      final conn = await database.modelConnectionsDao.insertModelConnection(
-        ServiceConnectionsCompanion.insert(
-          name: 'Conn',
-          serviceId: 'openai',
-          kind: ServiceConnectionKindTable.modelProvider,
-          authenticationType: ServiceAuthenticationTypeTable.apiKey,
-          encryptedAuthValue: const Value('key'),
-          workspaceId: workspaceId,
-        ),
-      );
+      final conn = await fixture.database.modelConnectionsDao
+          .insertModelConnection(
+            ServiceConnectionsCompanion.insert(
+              name: 'Conn',
+              serviceId: 'openai',
+              kind: ServiceConnectionKindTable.modelProvider,
+              authenticationType: ServiceAuthenticationTypeTable.apiKey,
+              encryptedAuthValue: const Value('key'),
+              workspaceId: workspaceId,
+            ),
+          );
 
-      final stream = database.workspaceModelSelectionsDao
+      final stream = fixture.database.workspaceModelSelectionsDao
           .watchAllWorkspaceModelSelectionsByWorkspace(
             workspaceIds: [workspaceId],
           );
@@ -100,14 +112,15 @@ void main() {
       expect(await iterator.moveNext(), isTrue);
       expect(iterator.current, isEmpty);
 
-      await database.workspaceModelSelectionsDao.insertWorkspaceModelSelections(
-        [
-          WorkspaceModelSelectionsCompanion.insert(
-            modelId: 'openai',
-            modelConnectionId: conn.id,
-          ),
-        ],
-      );
+      await fixture.database.workspaceModelSelectionsDao
+          .insertWorkspaceModelSelections(
+            [
+              WorkspaceModelSelectionsCompanion.insert(
+                modelId: 'openai',
+                modelConnectionId: conn.id,
+              ),
+            ],
+          );
 
       expect(await iterator.moveNext(), isTrue);
       expect(iterator.current, hasLength(1));
@@ -116,7 +129,7 @@ void main() {
     test(
       'getAllWorkspaceModelSelectionsByWorkspace returns empty for no match',
       () async {
-        final results = await database.workspaceModelSelectionsDao
+        final results = await fixture.database.workspaceModelSelectionsDao
             .getAllWorkspaceModelSelectionsByWorkspace(
               workspaceIds: [workspaceId],
             );
@@ -125,32 +138,34 @@ void main() {
     );
 
     test('getWorkspaceModelSelectionById returns selection', () async {
-      final _ = await database.apiModelProvidersDao.upsertProvider(
+      final _ = await fixture.database.apiModelProvidersDao.upsertProvider(
         ApiModelProvidersCompanion.insert(id: 'openai', name: 'OpenAI'),
       );
-      final conn = await database.modelConnectionsDao.insertModelConnection(
-        ServiceConnectionsCompanion.insert(
-          name: 'Conn',
-          serviceId: 'openai',
-          kind: ServiceConnectionKindTable.modelProvider,
-          authenticationType: ServiceAuthenticationTypeTable.apiKey,
-          encryptedAuthValue: const Value('key'),
-          workspaceId: workspaceId,
-        ),
-      );
-      await database.workspaceModelSelectionsDao.insertWorkspaceModelSelections(
-        [
-          WorkspaceModelSelectionsCompanion.insert(
-            modelId: 'openai',
-            modelConnectionId: conn.id,
-          ),
-        ],
-      );
-      final all = await database.workspaceModelSelectionsDao
+      final conn = await fixture.database.modelConnectionsDao
+          .insertModelConnection(
+            ServiceConnectionsCompanion.insert(
+              name: 'Conn',
+              serviceId: 'openai',
+              kind: ServiceConnectionKindTable.modelProvider,
+              authenticationType: ServiceAuthenticationTypeTable.apiKey,
+              encryptedAuthValue: const Value('key'),
+              workspaceId: workspaceId,
+            ),
+          );
+      await fixture.database.workspaceModelSelectionsDao
+          .insertWorkspaceModelSelections(
+            [
+              WorkspaceModelSelectionsCompanion.insert(
+                modelId: 'openai',
+                modelConnectionId: conn.id,
+              ),
+            ],
+          );
+      final all = await fixture.database.workspaceModelSelectionsDao
           .getAllWorkspaceModelSelectionsByWorkspace(
             workspaceIds: [workspaceId],
           );
-      final found = await database.workspaceModelSelectionsDao
+      final found = await fixture.database.workspaceModelSelectionsDao
           .getWorkspaceModelSelectionById(
             (all.firstOrNull ?? fail('Expected all.firstOrNull to be non-null'))
                 .model
@@ -166,7 +181,7 @@ void main() {
     test(
       'getWorkspaceModelSelectionById returns null for nonexistent',
       () async {
-        final found = await database.workspaceModelSelectionsDao
+        final found = await fixture.database.workspaceModelSelectionsDao
             .getWorkspaceModelSelectionById('missing');
         expect(found, isNull);
       },

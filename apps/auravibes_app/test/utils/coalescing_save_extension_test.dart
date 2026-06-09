@@ -1,11 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 import 'dart:async';
 
 import 'package:auravibes_app/utils/coalescing_save_extension.dart';
@@ -18,8 +10,10 @@ void main() {
       final controller = StreamController<int>();
 
       final output = controller.stream.coalescingSave(
-        store: (state) async {
+        store: (state) {
           savedStates.add(state);
+
+          return Future<void>.value();
         },
       );
 
@@ -39,18 +33,20 @@ void main() {
       final controller = StreamController<int>();
 
       final output = controller.stream.coalescingSave(
-        store: (state) async {
+        store: (state) {
           savedStates.add(state);
+
+          return Future<void>.value();
         },
       );
 
-      // Rapid emissions before any await completes
+      // Rapid emissions before any await completes.
       controller
         ..add(1)
         ..add(2)
         ..add(3);
 
-      // Wait a bit then add more
+      // Wait a bit then add more.
       await Future<void>.delayed(Duration.zero);
       controller
         ..add(4)
@@ -58,9 +54,9 @@ void main() {
         ..close();
 
       final results = await output.toList();
-      // Due to coalescing during async await,
-      // intermediate states may be skipped
-      // but the final state (5) should be present
+      // Due to coalescing during async await,.
+      // Intermediate states may be skipped.
+      // But the final state (5) should be present.
       expect(results.last, 5);
       expect(savedStates.last, 5);
     });
@@ -70,8 +66,10 @@ void main() {
       final controller = StreamController<String>();
 
       final output = controller.stream.coalescingSave(
-        store: (state) async {
+        store: (state) {
           savedStates.add(state);
+
+          return Future<void>.value();
         },
       );
 
@@ -108,9 +106,9 @@ void main() {
         ..close();
 
       final results = await output.toList();
-      // State 2 throws error, so it's not emitted - but 1 and 3 are
+      // State 2 throws error, so it's not emitted - but 1 and 3 are.
       expect(results, [1, 3]);
-      // All states are attempted to be saved
+      // All states are attempted to be saved.
       expect(savedStates, [1, 2, 3]);
       expect(errorCount, 1);
     });
@@ -120,8 +118,10 @@ void main() {
       final savedStates = <int>[];
 
       final output = controller.stream.coalescingSave(
-        store: (state) async {
+        store: (state) {
           savedStates.add(state);
+
+          return Future<void>.value();
         },
       );
 
@@ -137,8 +137,10 @@ void main() {
       final controller = StreamController<int>();
 
       final output = controller.stream.coalescingSave(
-        store: (state) async {
+        store: (state) {
           savedStates.add(state);
+
+          return Future<void>.value();
         },
       );
 
@@ -179,8 +181,10 @@ void main() {
 
       final _ = controller.stream
           .coalescingSave(
-            store: (state) async {
+            store: (state) {
               storeTimestamps.add(state);
+
+              return Future<void>.value();
             },
           )
           .listen((state) {
@@ -194,9 +198,9 @@ void main() {
 
       await Future<void>.delayed(const Duration(milliseconds: 10));
 
-      // State 1 should be emitted before state 2
+      // State 1 should be emitted before state 2.
       expect(emitTimestamps[1], lessThan(emitTimestamps[2]!));
-      // Store should happen in order
+      // Store should happen in order.
       expect(storeTimestamps, [1, 2]);
     });
 
@@ -205,8 +209,10 @@ void main() {
       final controller = StreamController<String>();
 
       final output = controller.stream.coalescingSave(
-        store: (state) async {
+        store: (state) {
           savedStates.add(state);
+
+          return Future<void>.value();
         },
       );
 

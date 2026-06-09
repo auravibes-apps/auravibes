@@ -1,7 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/molecules/aura_divider.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
@@ -22,7 +18,7 @@ void main() {
       expect(
         find.byType(Container),
         findsNWidgets(2),
-      ); // Outer and inner container
+      ); // Outer and inner container.
     });
 
     testWidgets('applies custom height correctly', (tester) async {
@@ -79,7 +75,7 @@ void main() {
       final innerContainer = tester.widget<Container>(
         find.byType(Container).last,
       );
-      // Note: The actual color will be resolved from AuraColorVariant.error
+      // Note: The actual color will be resolved from AuraColorVariant.error.
       expect(innerContainer.color, isNotNull);
     });
 
@@ -190,7 +186,7 @@ void main() {
         expect(find.text(labelText), findsOneWidget);
         expect(find.byType(AuraText), findsOneWidget);
         expect(find.byType(Row), findsOneWidget);
-        expect(find.byType(Expanded), findsNWidgets(2)); // Two line segments
+        expect(find.byType(Expanded), findsNWidgets(2)); // Two line segments.
       });
 
       testWidgets('applies custom height to labeled divider', (tester) async {

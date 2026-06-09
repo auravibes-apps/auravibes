@@ -1,7 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'skill_credential_entity.freezed.dart';

@@ -1,16 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
-// ignore_for_file: missing-test-assertion
-// Required: Tests verify service behavior by absence of thrown errors.
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-
 import 'dart:convert';
 
 import 'package:auravibes_app/services/secret_key_manager.dart';
@@ -24,8 +11,8 @@ import 'secret_manager_service_test.mocks.dart';
 
 void main() {
   group('SecretKeyManager', () {
-    late MockFlutterSecureStorage mockStorage;
-    late SecretKeyManager manager;
+    var mockStorage = MockFlutterSecureStorage();
+    var manager = SecretKeyManager(secureStorage: mockStorage);
 
     setUp(() {
       mockStorage = MockFlutterSecureStorage();
@@ -38,20 +25,32 @@ void main() {
       ).thenAnswer((_) async => null);
       when(
         mockStorage.write(key: anyNamed('key'), value: anyNamed('value')),
-      ).thenAnswer((_) async {});
+      ).thenAnswer((_) {
+        return Future<void>.value();
+      });
 
       final _ = await manager.getOrCreateSecretKey();
       manager.clearCache();
 
-      final _ = verifyNever(mockStorage.delete(key: anyNamed('key')));
+      expect(
+        () => verifyNever(mockStorage.delete(key: anyNamed('key'))),
+        returnsNormally,
+      );
     });
 
     test('deleteKey removes from storage and clears cache', () async {
-      when(mockStorage.delete(key: anyNamed('key'))).thenAnswer((_) async {});
+      when(mockStorage.delete(key: anyNamed('key'))).thenAnswer((_) {
+        return Future<void>.value();
+      });
 
       await manager.deleteKey();
 
-      verify(mockStorage.delete(key: 'app_encryption_secret_key')).called(1);
+      expect(
+        () => verify(
+          mockStorage.delete(key: 'app_encryption_secret_key'),
+        ).called(1),
+        returnsNormally,
+      );
     });
 
     test('getOrCreateSecretKey returns cached key on second call', () async {
@@ -60,7 +59,9 @@ void main() {
       ).thenAnswer((_) async => null);
       when(
         mockStorage.write(key: anyNamed('key'), value: anyNamed('value')),
-      ).thenAnswer((_) async {});
+      ).thenAnswer((_) {
+        return Future<void>.value();
+      });
 
       final key1 = await manager.getOrCreateSecretKey();
       final key2 = await manager.getOrCreateSecretKey();
@@ -98,7 +99,9 @@ void main() {
         ).thenAnswer((_) async => null);
         when(
           mockStorage.write(key: anyNamed('key'), value: anyNamed('value')),
-        ).thenAnswer((_) async {});
+        ).thenAnswer((_) {
+          return Future<void>.value();
+        });
 
         final key = await manager.getOrCreateSecretKey();
         final bytes = await key.extractBytes();

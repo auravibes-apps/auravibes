@@ -1,18 +1,16 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // Organism components - groups of molecules joined together.
 //
-// Organisms are groups of molecules joined together to form a relatively
-// complex, distinct section of an interface. These organisms form distinct
-// sections of an interface.
+// Organisms are groups of molecules joined together to form a relatively.
+// Complex, distinct section of an interface. These organisms form distinct.
+// Sections of an interface.
 //
-// Examples:
-// - Header with logo, navigation, and search
-// - Product listing with filters and cards
-// - Chat interface with messages and input
-// - Settings panel with multiple form sections
+// Examples:.
+// - Header with logo, navigation, and search.
+// - Product listing with filters and cards.
+// - Chat interface with messages and input.
+// - Settings panel with multiple form sections.
 
-// Export all organism components here
+// Export all organism components here.
 export 'aura_button_group.dart';
 export 'aura_confirm_dialog.dart';
 export 'aura_dropdown_selector.dart';

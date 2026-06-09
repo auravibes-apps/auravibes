@@ -1,8 +1,4 @@
-// ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';

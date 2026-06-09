@@ -50,5 +50,6 @@ Future<List<WorkspaceSkill>> workspaceSkills(
   }
 
   result.sort((a, b) => a.title.compareTo(b.title));
+
   return result;
 }

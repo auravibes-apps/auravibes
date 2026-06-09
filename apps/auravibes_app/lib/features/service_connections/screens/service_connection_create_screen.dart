@@ -1,5 +1,6 @@
-// ignore_for_file: prefer-single-widget-per-file
 // Required: Feature widgets keep closely related private widgets together.
+
+import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
@@ -40,14 +41,14 @@ class _ServiceConnectionCreateScreenState
     extends ConsumerState<ServiceConnectionCreateScreen> {
   final _nameController = TextEditingController();
   final _attributeControllers = <String, TextEditingController>{};
-  late ServiceConnectionCreateType _type;
+  ServiceConnectionCreateType _type = ServiceConnectionCreateType.modelProvider;
   String? _definitionId;
   bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
-    _type = widget.initialType ?? ServiceConnectionCreateType.modelProvider;
+    _type = widget.initialType ?? _type;
     _definitionId = widget.initialCredentialDefinitionId;
   }
 
@@ -63,13 +64,6 @@ class _ServiceConnectionCreateScreenState
   @override
   Widget build(BuildContext context) {
     return AuraScreen(
-      appBar: AuraAppBar(
-        title: const TextLocale(LocaleKeys.service_connections_create_title),
-        leading: AuraIconButton(
-          icon: Icons.arrow_back,
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
       child: AuraColumn(
         children: [
           Padding(
@@ -86,38 +80,45 @@ class _ServiceConnectionCreateScreenState
               },
             ),
           ),
-          Expanded(child: _buildSelectedForm(context)),
+          Expanded(
+            child: switch (_type) {
+              ServiceConnectionCreateType.modelProvider => Padding(
+                padding: const EdgeInsets.all(12),
+                child: AddModelProviderWidget(
+                  workspaceId: widget.workspaceId,
+                  onCreated: () => unawaited(_closeAfterSave()),
+                  showHeader: false,
+                ),
+              ),
+              ServiceConnectionCreateType.skillCredential => _CredentialForm(
+                workspaceId: widget.workspaceId,
+                selectedDefinitionId: _definitionId,
+                nameController: _nameController,
+                attributeControllers: _attributeControllers,
+                isSaving: _isSaving,
+                onNameChanged: (_) => setState(() {
+                  final _ = Object();
+                }),
+                onDefinitionChanged: (value) {
+                  setState(() {
+                    _definitionId = value;
+                    _resetAttributeControllers();
+                  });
+                },
+                onSave: () => unawaited(_saveSkillCredential()),
+              ),
+            },
+          ),
         ],
       ),
-    );
-  }
-
-  Widget _buildSelectedForm(BuildContext context) {
-    return switch (_type) {
-      ServiceConnectionCreateType.modelProvider => Padding(
-        padding: const EdgeInsets.all(12),
-        child: AddModelProviderWidget(
-          workspaceId: widget.workspaceId,
-          showHeader: false,
-          onCreated: _closeAfterSave,
+      appBar: AuraAppBar(
+        title: const TextLocale(LocaleKeys.service_connections_create_title),
+        leading: AuraIconButton(
+          icon: Icons.arrow_back,
+          onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-      ServiceConnectionCreateType.skillCredential => _CredentialForm(
-        workspaceId: widget.workspaceId,
-        selectedDefinitionId: _definitionId,
-        nameController: _nameController,
-        attributeControllers: _attributeControllers,
-        isSaving: _isSaving,
-        onNameChanged: (_) => setState(() {}),
-        onDefinitionChanged: (value) {
-          setState(() {
-            _definitionId = value;
-            _resetAttributeControllers();
-          });
-        },
-        onSave: _saveSkillCredential,
-      ),
-    };
+    );
   }
 
   Future<void> _saveSkillCredential() async {
@@ -126,6 +127,7 @@ class _ServiceConnectionCreateScreenState
         'debug:skill credential save ignored workspace=${widget.workspaceId} '
         'reason=already_saving type=${_type.name}',
       );
+
       return;
     }
     final definitionId = _definitionId;
@@ -134,6 +136,7 @@ class _ServiceConnectionCreateScreenState
         'debug:skill credential save blocked workspace=${widget.workspaceId} '
         'reason=missing_definition type=${_type.name}',
       );
+
       return;
     }
     setState(() => _isSaving = true);
@@ -176,12 +179,12 @@ class _ServiceConnectionCreateScreenState
         stackTrace,
       );
       if (!mounted) return;
-      showAuraSnackBar(
+      final _ = showAuraSnackBar(
         context: context,
-        variant: AuraSnackBarVariant.error,
         content: Text(
           LocaleKeys.skill_credentials_save_error.tr(context: context),
         ),
+        variant: AuraSnackBarVariant.error,
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -249,10 +252,6 @@ class _TypeSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraDropdownSelector<ServiceConnectionCreateType>(
-      value: value,
-      label: Text(
-        LocaleKeys.service_connections_create_type_label.tr(context: context),
-      ),
       options: [
         AuraDropdownOption(
           value: ServiceConnectionCreateType.modelProvider,
@@ -271,7 +270,11 @@ class _TypeSelector extends StatelessWidget {
           ),
         ),
       ],
+      value: value,
       onChanged: onChanged,
+      label: Text(
+        LocaleKeys.service_connections_create_type_label.tr(context: context),
+      ),
     );
   }
 }
@@ -304,22 +307,55 @@ class _CredentialForm extends ConsumerWidget {
     );
 
     return switch (definitionsAsync) {
-      AsyncData(:final value) => _buildForm(
-        context,
-        value,
+      AsyncData(:final value) => _CredentialFormContent(
+        definitions: value,
+        selectedDefinitionId: selectedDefinitionId,
+        nameController: nameController,
+        attributeControllers: attributeControllers,
+        isSaving: isSaving,
+        onNameChanged: onNameChanged,
+        onDefinitionChanged: onDefinitionChanged,
+        onSave: onSave,
       ),
-      AsyncLoading(:final value, hasValue: true) => _buildForm(
-        context,
-        value!,
-      ),
+      AsyncLoading(value: final value?, hasValue: true) =>
+        _CredentialFormContent(
+          definitions: value,
+          selectedDefinitionId: selectedDefinitionId,
+          nameController: nameController,
+          attributeControllers: attributeControllers,
+          isSaving: isSaving,
+          onNameChanged: onNameChanged,
+          onDefinitionChanged: onDefinitionChanged,
+          onSave: onSave,
+        ),
       _ => const Center(child: AuraSpinner()),
     };
   }
+}
 
-  Widget _buildForm(
-    BuildContext context,
-    List<SkillCredentialDefinitionEntity> definitions,
-  ) {
+class _CredentialFormContent extends StatelessWidget {
+  const _CredentialFormContent({
+    required this.definitions,
+    required this.selectedDefinitionId,
+    required this.nameController,
+    required this.attributeControllers,
+    required this.isSaving,
+    required this.onNameChanged,
+    required this.onDefinitionChanged,
+    required this.onSave,
+  });
+
+  final List<SkillCredentialDefinitionEntity> definitions;
+  final String? selectedDefinitionId;
+  final TextEditingController nameController;
+  final Map<String, TextEditingController> attributeControllers;
+  final bool isSaving;
+  final ValueChanged<String> onNameChanged;
+  final ValueChanged<String?> onDefinitionChanged;
+  final VoidCallback onSave;
+
+  @override
+  Widget build(BuildContext context) {
     final selectedDefinition = definitions
         .where((definition) => definition.id == selectedDefinitionId)
         .firstOrNull;
@@ -329,8 +365,6 @@ class _CredentialForm extends ConsumerWidget {
       children: [
         AuraCard(
           child: AuraColumn(
-            spacing: AuraSpacing.md,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _DefinitionSelector(
                 definitions: definitions,
@@ -349,12 +383,12 @@ class _CredentialForm extends ConsumerWidget {
               else ...[
                 AuraInput(
                   controller: nameController,
-                  onChanged: onNameChanged,
                   label: Text(
                     LocaleKeys.skill_credentials_name_label.tr(
                       context: context,
                     ),
                   ),
+                  onChanged: onNameChanged,
                 ),
                 _CredentialAttributesFields(
                   definition: selectedDefinition,
@@ -364,13 +398,15 @@ class _CredentialForm extends ConsumerWidget {
                   alignment: Alignment.centerRight,
                   child: AuraButton(
                     onPressed: onSave,
-                    disabled: isSaving || nameController.text.trim().isEmpty,
-                    isLoading: isSaving,
                     child: const TextLocale(LocaleKeys.common_save),
+                    isLoading: isSaving,
+                    disabled: isSaving || nameController.text.trim().isEmpty,
                   ),
                 ),
               ],
             ],
+            spacing: AuraSpacing.md,
+            crossAxisAlignment: CrossAxisAlignment.start,
           ),
         ),
       ],
@@ -392,10 +428,6 @@ class _DefinitionSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraDropdownSelector<String>(
-      value: selectedDefinitionId,
-      label: Text(
-        LocaleKeys.skill_credentials_definition_label.tr(context: context),
-      ),
       options: [
         for (final definition in definitions)
           AuraDropdownOption(
@@ -403,7 +435,11 @@ class _DefinitionSelector extends StatelessWidget {
             child: Text(definition.title),
           ),
       ],
+      value: selectedDefinitionId,
       onChanged: onChanged,
+      label: Text(
+        LocaleKeys.skill_credentials_definition_label.tr(context: context),
+      ),
     );
   }
 }
@@ -424,8 +460,6 @@ class _CredentialAttributesFields extends StatelessWidget {
     );
 
     return AuraColumn(
-      spacing: AuraSpacing.md,
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         for (final entry in attributes.entries)
           AuraInput(
@@ -438,12 +472,14 @@ class _CredentialAttributesFields extends StatelessWidget {
                 ? null
                 : Text(entry.value.description),
             isRequired: !entry.value.optional,
-            obscureText: entry.value.secret,
             keyboardType: entry.value.secret
                 ? TextInputType.visiblePassword
                 : TextInputType.text,
+            obscureText: entry.value.secret,
           ),
       ],
+      spacing: AuraSpacing.md,
+      crossAxisAlignment: CrossAxisAlignment.start,
     );
   }
 }

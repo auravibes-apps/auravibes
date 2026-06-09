@@ -1,5 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository_impl.dart';
 import 'package:auravibes_app/data/repositories/skill_credentials_repository_impl.dart';
@@ -43,9 +41,9 @@ void main() {
                 container: value.container,
                 child: MaterialApp(
                   home: SkillDetailScreen(
-                    key: ValueKey('${value.workspaceId}:${value.skillId}'),
                     workspaceId: value.workspaceId,
                     skillId: value.skillId,
+                    key: ValueKey('${value.workspaceId}:${value.skillId}'),
                   ),
                   locale: context.locale,
                   localizationsDelegates: context.localizationDelegates,
@@ -219,9 +217,9 @@ void main() {
     addTearDown(fixture.dispose);
 
     await tester.pumpWidget(buildScreen(fixture));
-    await tester.pumpAndSettle();
-    await tester.pump();
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
+    final _ = await tester.pump();
+    final _ = await tester.pumpAndSettle();
 
     expect(
       find.text(
@@ -244,12 +242,12 @@ void main() {
       workspaceId: selectedCredentialWorkspace.id,
       skillId: skillWithDefinition.id,
     );
-    await tester.pumpAndSettle();
-    await tester.pump();
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
+    final _ = await tester.pump();
+    final _ = await tester.pumpAndSettle();
     await pumpUntilFound(tester, find.byType(Scrollable));
     await tester.drag(find.byType(Scrollable).first, const Offset(0, -600));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('TheCatAPI Key'), findsOneWidget);
     expect(find.text('1 credential configured'), findsOneWidget);
@@ -260,12 +258,12 @@ void main() {
       workspaceId: selectedCredentialWorkspace.id,
       skillId: optionalSkill.id,
     );
-    await tester.pumpAndSettle();
-    await tester.pump();
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
+    final _ = await tester.pump();
+    final _ = await tester.pumpAndSettle();
     await pumpUntilFound(tester, find.byType(Scrollable));
     await tester.drag(find.byType(Scrollable).first, const Offset(0, -600));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(
       find.text(
@@ -280,12 +278,12 @@ void main() {
       workspaceId: staleCredentialWorkspace.id,
       skillId: skillWithStaleDefinition.id,
     );
-    await tester.pumpAndSettle();
-    await tester.pump();
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
+    final _ = await tester.pump();
+    final _ = await tester.pumpAndSettle();
     await pumpUntilFound(tester, find.byType(Scrollable));
     await tester.drag(find.byType(Scrollable).first, const Offset(0, -600));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('Credential definition not found'), findsOneWidget);
     expect(

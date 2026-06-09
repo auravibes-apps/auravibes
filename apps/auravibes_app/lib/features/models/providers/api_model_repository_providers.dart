@@ -1,10 +1,4 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 import 'dart:async';
 
@@ -19,20 +13,21 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'api_model_repository_providers.g.dart';
 
-/// Provider for the API model repository
+/// Provider for the API model repository.
 @Riverpod(keepAlive: true)
 ApiModelRepository apiModelRepository(Ref ref) {
   final appDatabase = ref.watch(appDatabaseProvider);
+
   return ApiModelRepositoryImpl(appDatabase);
 }
 
-/// Provider for the model API service
+/// Provider for the model API service.
 @riverpod
 ModelApiService modelApiService(Ref _) {
   return ModelApiService();
 }
 
-/// Provider for the model sync service
+/// Provider for the model sync service.
 @riverpod
 ModelSyncService modelSyncService(Ref ref) {
   final repository = ref.watch(apiModelRepositoryProvider);
@@ -51,6 +46,7 @@ ModelSyncService modelSyncService(Ref ref) {
   );
 
   final _ = ref.onDispose(timer.cancel);
+
   return service;
 }
 

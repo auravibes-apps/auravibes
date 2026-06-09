@@ -1,8 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
-
 import 'package:auravibes_ui/src/atoms/aura_typing_indicator.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
@@ -20,13 +15,13 @@ void main() {
         ),
       );
 
-      // Find all containers that represent dots
+      // Find all containers that represent dots.
       final dotContainers = find.descendant(
         of: find.byType(AuraTypingIndicator),
         matching: find.byType(Container),
       );
 
-      // Should have at least 3 dot containers (plus the main container)
+      // Should have at least 3 dot containers (plus the main container).
       expect(dotContainers, findsAtLeastNWidgets(3));
     });
 
@@ -39,10 +34,10 @@ void main() {
         ),
       );
 
-      // Should not find Align widget when container is hidden
+      // Should not find Align widget when container is hidden.
       expect(find.byType(Align), findsNothing);
 
-      // Should still find the dots
+      // Should still find the dots.
       expect(find.byType(Row), findsOneWidget);
     });
 
@@ -57,9 +52,9 @@ void main() {
         ),
       );
 
-      // Check that dots are rendered with correct size
-      // We can't easily test the exact size in widget tests, so we just verify
-      // that the typing indicator renders correctly
+      // Check that dots are rendered with correct size.
+      // We can't easily test the exact size in widget tests, so we just verify.
+      // That the typing indicator renders correctly.
       expect(find.byType(AuraTypingIndicator), findsOneWidget);
       expect(find.byType(Row), findsOneWidget);
     });
@@ -73,9 +68,9 @@ void main() {
         ),
       );
 
-      // Check that dots are rendered with correct size
-      // We can't easily test the exact size in widget tests, so we just verify
-      // that the typing indicator renders correctly
+      // Check that dots are rendered with correct size.
+      // We can't easily test the exact size in widget tests, so we just verify.
+      // That the typing indicator renders correctly.
       expect(find.byType(AuraTypingIndicator), findsOneWidget);
       expect(find.byType(Row), findsOneWidget);
     });
@@ -91,9 +86,9 @@ void main() {
         ),
       );
 
-      // Check that dots are rendered with correct size
-      // We can't easily test the exact size in widget tests, so we just verify
-      // that the typing indicator renders correctly
+      // Check that dots are rendered with correct size.
+      // We can't easily test the exact size in widget tests, so we just verify.
+      // That the typing indicator renders correctly.
       expect(find.byType(AuraTypingIndicator), findsOneWidget);
       expect(find.byType(Row), findsOneWidget);
     });
@@ -111,7 +106,7 @@ void main() {
         ),
       );
 
-      // Find dot containers and check their color
+      // Find dot containers and check their color.
       final dotContainers = tester
           .widgetList<Container>(find.byType(Container))
           .where(
@@ -146,8 +141,8 @@ void main() {
         ),
       );
 
-      // Find dot containers and check they use default color
-      // (onSurfaceVariant in light theme)
+      // Find dot containers and check they use default color.
+      // (OnSurfaceVariant in light theme).
       final dotContainers = tester
           .widgetList<Container>(find.byType(Container))
           .where(
@@ -166,7 +161,7 @@ void main() {
             (container.decoration ??
                     fail('Expected container.decoration to be non-null'))
                 as BoxDecoration;
-        // In light theme, onSurfaceVariant is neutral700
+        // In light theme, onSurfaceVariant is neutral700.
         expect(decoration.color, DesignColors.neutral700);
       }
     });
@@ -192,11 +187,11 @@ void main() {
         ),
       );
 
-      // Pump a few frames to let animation start
+      // Pump a few frames to let animation start.
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
 
-      // Find animated builders specifically within the AuraTypingIndicator
+      // Find animated builders specifically within the AuraTypingIndicator.
       final typingIndicator = find.byType(AuraTypingIndicator);
       final animatedBuilders = find.descendant(
         of: typingIndicator,
@@ -218,10 +213,10 @@ void main() {
         ),
       );
 
-      // The animation should be running
+      // The animation should be running.
       await tester.pump();
 
-      // Find animated builders specifically within the AuraTypingIndicator
+      // Find animated builders specifically within the AuraTypingIndicator.
       final typingIndicator = find.byType(AuraTypingIndicator);
       final animatedBuilders = find.descendant(
         of: typingIndicator,

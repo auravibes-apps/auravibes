@@ -87,10 +87,11 @@ class ValidateSkillTemplateToolUsecase {
       credentialDefinitions: credentialDefinitions,
     )) {
       try {
-        jsonDecode(rendered);
-      } on FormatException catch (error) {
-        throw FormatException(
-          'Rendered JSON body is invalid: ${error.message}',
+        final _ = jsonDecode(rendered);
+      } on FormatException catch (error, stackTrace) {
+        Error.throwWithStackTrace(
+          FormatException('Rendered JSON body is invalid: ${error.message}'),
+          stackTrace,
         );
       }
     }
@@ -158,9 +159,12 @@ class ValidateSkillTemplateToolUsecase {
 
   void _parseLiquid(String value) {
     try {
-      _liquid.parse(value);
-    } on Object catch (error) {
-      throw FormatException('Invalid Liquid template: $error');
+      final _ = _liquid.parse(value);
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        FormatException('Invalid Liquid template: $error'),
+        stackTrace,
+      );
     }
   }
 
@@ -172,12 +176,22 @@ class ValidateSkillTemplateToolUsecase {
     Set<String> omittedInputKeys = const {},
     Set<String> omittedCredentialKeys = const {},
   }) {
+    Object? sampleInput(SkillTemplateInputDefinition definition) {
+      return switch (definition.type.trim().toLowerCase()) {
+        'array' => const ['sample'],
+        'boolean' => true,
+        'number' || 'integer' => 1,
+        'object' => const {'sample': 'value'},
+        _ => 'sample',
+      };
+    }
+
     try {
       return _liquid.parse(value).render({
         'input': {
           for (final entry in inputDefinitions.entries)
             if (!omittedInputKeys.contains(entry.key))
-              entry.key: _sampleInput(entry.value),
+              entry.key: sampleInput(entry.value),
         },
         'credential': {
           for (final entry in credentialDefinitions.entries)
@@ -185,8 +199,11 @@ class ValidateSkillTemplateToolUsecase {
               entry.key: 'credential-value',
         },
       });
-    } on Object catch (error) {
-      throw FormatException('Liquid template render failed: $error');
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        FormatException('Liquid template render failed: $error'),
+        stackTrace,
+      );
     }
   }
 
@@ -235,16 +252,6 @@ class ValidateSkillTemplateToolUsecase {
       omittedInputKeys: optionalInputKeys.toSet(),
       omittedCredentialKeys: optionalCredentialKeys.toSet(),
     );
-  }
-
-  Object? _sampleInput(SkillTemplateInputDefinition definition) {
-    return switch (definition.type.trim().toLowerCase()) {
-      'array' => const ['sample'],
-      'boolean' => true,
-      'number' || 'integer' => 1,
-      'object' => const {'sample': 'value'},
-      _ => 'sample',
-    };
   }
 
   Iterable<_TemplateReference> _references(String value) {

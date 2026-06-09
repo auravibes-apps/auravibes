@@ -1,24 +1,3 @@
-// ignore_for_file: prefer-async-await
-// Required: Tests use Future chains to assert async side effects.
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-redundant-async
-// Required: Test callbacks intentionally preserve async-compatible signatures.
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: no-empty-block
-// Required: Tests use intentional no-op callbacks and fake hooks.
-// ignore_for_file: missing-test-assertion
-// Required: Tests verify orchestration through repository side effects.
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-// ignore_for_file: newline-before-return
-// Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: prefer-static-class
-// Required: Tests keep fixture helpers and fakes top-level.
-
 import 'dart:async';
 import 'dart:convert';
 
@@ -62,22 +41,54 @@ import 'continue_agent_usecase_test.mocks.dart';
 ])
 void main() {
   group('ContinueAgentUsecase', () {
-    late MockChatbotService chatbotService;
-    late MockMessageRepository messageRepository;
-    late MockWorkspaceModelSelectionRepository
-    workspaceModelSelectionsRepository;
-    late MockConversationRepository conversationRepository;
-    late MockLoadConversationToolSpecsUsecase loadConversationToolSpecsUsecase;
-    late MockMonitoringService monitoringService;
-    late MockSelectPromptMessagesUsecase selectPromptMessagesUsecase;
-    late ContinueAgentUsecase usecase;
-    late List<String> removedMessageIds;
-    late List<String> startedConversationIds;
-    late List<String> removedConversationIds;
-    late List<String> updatedMessageIds;
-    late List<ChatResult<ChatMessage>> updatedResults;
-    late List<String> startedSubscriptionMessageIds;
-    late AgentCancellationRuntime agentCancellationRuntime;
+    var chatbotService = MockChatbotService();
+    var messageRepository = MockMessageRepository();
+    var workspaceModelSelectionsRepository =
+        MockWorkspaceModelSelectionRepository();
+    var conversationRepository = MockConversationRepository();
+    var loadConversationToolSpecsUsecase =
+        MockLoadConversationToolSpecsUsecase();
+    var monitoringService = MockMonitoringService();
+    var selectPromptMessagesUsecase = MockSelectPromptMessagesUsecase();
+    var removedMessageIds = <String>[];
+    var startedConversationIds = <String>[];
+    var removedConversationIds = <String>[];
+    var updatedMessageIds = <String>[];
+    var updatedResults = <ChatResult<ChatMessage>>[];
+    var startedSubscriptionMessageIds = <String>[];
+    var agentCancellationRuntime = AgentCancellationRuntime()
+      ..start('conversation-1');
+    var usecase = ContinueAgentUsecase(
+      chatbotService: chatbotService,
+      messageRepository: messageRepository,
+      workspaceModelSelectionsRepository: workspaceModelSelectionsRepository,
+      conversationRepository: conversationRepository,
+      loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
+      messagesStreamingRuntime: MessagesStreamingRuntime(
+        startSubscription: (_, messageId) {
+          startedSubscriptionMessageIds.add(messageId);
+        },
+        updateResult: (result, messageId) {
+          updatedResults.add(result);
+          updatedMessageIds.add(messageId);
+        },
+        remove: (messageId) {
+          removedMessageIds.add(messageId);
+
+          return Future<void>.value();
+        },
+      ),
+      conversationStreamingRuntime: ConversationStreamingRuntime(
+        start: startedConversationIds.add,
+        isStreaming: (_) => false,
+        remove: removedConversationIds.add,
+      ),
+      agentCancellationRuntime: agentCancellationRuntime,
+      monitoringService: monitoringService,
+      selectPromptMessagesUsecase: selectPromptMessagesUsecase,
+      buildSkillContextMessagesUsecase:
+          const _FakeBuildSkillContextMessagesUsecase([]),
+    );
 
     setUp(() {
       chatbotService = MockChatbotService();
@@ -111,8 +122,10 @@ void main() {
             updatedResults.add(result);
             updatedMessageIds.add(messageId);
           },
-          remove: (messageId) async {
+          remove: (messageId) {
             removedMessageIds.add(messageId);
+
+            return Future<void>.value();
           },
         ),
         conversationStreamingRuntime: ConversationStreamingRuntime(
@@ -244,8 +257,10 @@ void main() {
               updatedResults.add(result);
               updatedMessageIds.add(messageId);
             },
-            remove: (messageId) async {
+            remove: (messageId) {
               removedMessageIds.add(messageId);
+
+              return Future<void>.value();
             },
           ),
           conversationStreamingRuntime: ConversationStreamingRuntime(
@@ -281,6 +296,7 @@ void main() {
           );
           expect(history.firstOrNull?.text, contains('<skill>'));
           expect(history.firstOrNull?.toolResults, isEmpty);
+
           return Stream.fromIterable([
             ChatResult<ChatMessage>(
               output: ChatMessage.model('Done'),
@@ -674,6 +690,7 @@ void main() {
           if (!createStarted.isCompleted) {
             createStarted.complete();
           }
+
           return createCompleter.future;
         });
 
@@ -688,7 +705,12 @@ void main() {
         await createStarted.future;
 
         var didComplete = false;
-        unawaited(future.then((_) => didComplete = true));
+        Future<void> markComplete() async {
+          final _ = await future;
+          didComplete = true;
+        }
+
+        unawaited(markComplete());
         agentCancellationRuntime.requestStop('conversation-1');
         await Future<void>.delayed(Duration.zero);
 
@@ -715,16 +737,47 @@ void main() {
   });
 
   group('ContinueAgentUsecase error paths', () {
-    late MockChatbotService chatbotService;
-    late MockMessageRepository messageRepository;
-    late MockWorkspaceModelSelectionRepository
-    workspaceModelSelectionsRepository;
-    late MockConversationRepository conversationRepository;
-    late MockLoadConversationToolSpecsUsecase loadConversationToolSpecsUsecase;
-    late MockMonitoringService monitoringService;
-    late MockSelectPromptMessagesUsecase selectPromptMessagesUsecase;
-    late ContinueAgentUsecase usecase;
-    late AgentCancellationRuntime agentCancellationRuntime;
+    var chatbotService = MockChatbotService();
+    var messageRepository = MockMessageRepository();
+    var workspaceModelSelectionsRepository =
+        MockWorkspaceModelSelectionRepository();
+    var conversationRepository = MockConversationRepository();
+    var loadConversationToolSpecsUsecase =
+        MockLoadConversationToolSpecsUsecase();
+    var monitoringService = MockMonitoringService();
+    var selectPromptMessagesUsecase = MockSelectPromptMessagesUsecase();
+    var agentCancellationRuntime = AgentCancellationRuntime()
+      ..start('conversation-1');
+    var usecase = ContinueAgentUsecase(
+      chatbotService: chatbotService,
+      messageRepository: messageRepository,
+      workspaceModelSelectionsRepository: workspaceModelSelectionsRepository,
+      conversationRepository: conversationRepository,
+      loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
+      messagesStreamingRuntime: MessagesStreamingRuntime(
+        startSubscription: (_, _) {
+          final _ = Object();
+        },
+        updateResult: (_, _) {
+          final _ = Object();
+        },
+        remove: (_) {
+          return Future<void>.value();
+        },
+      ),
+      conversationStreamingRuntime: ConversationStreamingRuntime(
+        start: (_) {
+          final _ = Object();
+        },
+        isStreaming: (_) => false,
+        remove: (_) {
+          final _ = Object();
+        },
+      ),
+      agentCancellationRuntime: agentCancellationRuntime,
+      monitoringService: monitoringService,
+      selectPromptMessagesUsecase: selectPromptMessagesUsecase,
+    );
 
     setUp(() {
       chatbotService = MockChatbotService();
@@ -745,14 +798,24 @@ void main() {
         conversationRepository: conversationRepository,
         loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
         messagesStreamingRuntime: MessagesStreamingRuntime(
-          startSubscription: (_, _) {},
-          updateResult: (_, _) {},
-          remove: (_) async {},
+          startSubscription: (_, _) {
+            final _ = Object();
+          },
+          updateResult: (_, _) {
+            final _ = Object();
+          },
+          remove: (_) {
+            return Future<void>.value();
+          },
         ),
         conversationStreamingRuntime: ConversationStreamingRuntime(
-          start: (_) {},
+          start: (_) {
+            final _ = Object();
+          },
           isStreaming: (_) => false,
-          remove: (_) {},
+          remove: (_) {
+            final _ = Object();
+          },
         ),
         agentCancellationRuntime: agentCancellationRuntime,
         monitoringService: monitoringService,
@@ -764,7 +827,7 @@ void main() {
       ).thenAnswer((_) async => [_userMessage]);
     });
 
-    test('throws when conversation not found', () async {
+    test('throws when conversation not found', () {
       when(
         conversationRepository.getConversationById('conversation-1'),
       ).thenAnswer((_) async => null);
@@ -775,7 +838,7 @@ void main() {
       );
     });
 
-    test('throws when conversation has no model id', () async {
+    test('throws when conversation has no model id', () {
       final noModelConversation = ConversationEntity(
         id: 'conversation-1',
         title: 'No Model',
@@ -797,7 +860,7 @@ void main() {
       );
     });
 
-    test('throws when model not found', () async {
+    test('throws when model not found', () {
       when(
         conversationRepository.getConversationById('conversation-1'),
       ).thenAnswer((_) async => _conversation);
@@ -897,16 +960,47 @@ void main() {
   });
 
   group('ContinueAgentUsecase prompt selection', () {
-    late MockChatbotService chatbotService;
-    late MockMessageRepository messageRepository;
-    late MockWorkspaceModelSelectionRepository
-    workspaceModelSelectionsRepository;
-    late MockConversationRepository conversationRepository;
-    late MockLoadConversationToolSpecsUsecase loadConversationToolSpecsUsecase;
-    late MockMonitoringService monitoringService;
-    late MockSelectPromptMessagesUsecase selectPromptMessagesUsecase;
-    late ContinueAgentUsecase usecase;
-    late AgentCancellationRuntime agentCancellationRuntime;
+    var chatbotService = MockChatbotService();
+    var messageRepository = MockMessageRepository();
+    var workspaceModelSelectionsRepository =
+        MockWorkspaceModelSelectionRepository();
+    var conversationRepository = MockConversationRepository();
+    var loadConversationToolSpecsUsecase =
+        MockLoadConversationToolSpecsUsecase();
+    var monitoringService = MockMonitoringService();
+    var selectPromptMessagesUsecase = MockSelectPromptMessagesUsecase();
+    var agentCancellationRuntime = AgentCancellationRuntime()
+      ..start('conversation-1');
+    var usecase = ContinueAgentUsecase(
+      chatbotService: chatbotService,
+      messageRepository: messageRepository,
+      workspaceModelSelectionsRepository: workspaceModelSelectionsRepository,
+      conversationRepository: conversationRepository,
+      loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
+      messagesStreamingRuntime: MessagesStreamingRuntime(
+        startSubscription: (_, _) {
+          final _ = Object();
+        },
+        updateResult: (_, _) {
+          final _ = Object();
+        },
+        remove: (_) {
+          return Future<void>.value();
+        },
+      ),
+      conversationStreamingRuntime: ConversationStreamingRuntime(
+        start: (_) {
+          final _ = Object();
+        },
+        isStreaming: (_) => false,
+        remove: (_) {
+          final _ = Object();
+        },
+      ),
+      agentCancellationRuntime: agentCancellationRuntime,
+      monitoringService: monitoringService,
+      selectPromptMessagesUsecase: selectPromptMessagesUsecase,
+    );
 
     setUp(() {
       chatbotService = MockChatbotService();
@@ -927,14 +1021,24 @@ void main() {
         conversationRepository: conversationRepository,
         loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
         messagesStreamingRuntime: MessagesStreamingRuntime(
-          startSubscription: (_, _) {},
-          updateResult: (_, _) {},
-          remove: (_) async {},
+          startSubscription: (_, _) {
+            final _ = Object();
+          },
+          updateResult: (_, _) {
+            final _ = Object();
+          },
+          remove: (_) {
+            return Future<void>.value();
+          },
         ),
         conversationStreamingRuntime: ConversationStreamingRuntime(
-          start: (_) {},
+          start: (_) {
+            final _ = Object();
+          },
           isStreaming: (_) => false,
-          remove: (_) {},
+          remove: (_) {
+            final _ = Object();
+          },
         ),
         agentCancellationRuntime: agentCancellationRuntime,
         monitoringService: monitoringService,
@@ -987,9 +1091,17 @@ void main() {
 
       final _ = await usecase.call(conversationId: 'conversation-1');
 
-      verify(selectPromptMessagesUsecase.call('conversation-1')).called(1);
-      final _ = verifyNever(
-        messageRepository.getMessagesByConversation('conversation-1'),
+      expect(
+        () => verify(
+          selectPromptMessagesUsecase.call('conversation-1'),
+        ).called(1),
+        returnsNormally,
+      );
+      expect(
+        () => verifyNever(
+          messageRepository.getMessagesByConversation('conversation-1'),
+        ),
+        returnsNormally,
       );
     });
 

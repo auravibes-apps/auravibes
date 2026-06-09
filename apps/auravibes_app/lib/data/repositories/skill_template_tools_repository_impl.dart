@@ -1,7 +1,3 @@
-// ignore_for_file: prefer-async-await
-// Required: Existing Future chains preserve callback flow.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/skill_template_tools_dao.dart';
 import 'package:auravibes_app/data/database/drift/tables/skill_template_tools.dart';
@@ -21,6 +17,7 @@ class SkillTemplateToolsRepositoryImpl implements SkillTemplateToolsRepository {
   @override
   Future<List<SkillTemplateToolEntity>> getSkillTools(String skillId) async {
     final rows = await _dao.getSkillTools(skillId);
+
     return rows.map(_tableToEntity).toList();
   }
 
@@ -28,6 +25,7 @@ class SkillTemplateToolsRepositoryImpl implements SkillTemplateToolsRepository {
   Future<SkillTemplateToolEntity?> getToolById(String toolId) async {
     final row = await _dao.getToolById(toolId);
     if (row == null) return null;
+
     return _tableToEntity(row);
   }
 
@@ -38,6 +36,7 @@ class SkillTemplateToolsRepositoryImpl implements SkillTemplateToolsRepository {
   ) async {
     final row = await _dao.getToolBySlug(skillId, slug);
     if (row == null) return null;
+
     return _tableToEntity(row);
   }
 
@@ -45,49 +44,49 @@ class SkillTemplateToolsRepositoryImpl implements SkillTemplateToolsRepository {
   Future<SkillTemplateToolEntity> createTool(
     String skillId,
     SkillTemplateToolToCreate tool,
-  ) {
-    return _dao
-        .createTool(
-          SkillTemplateToolsCompanion(
-            skillId: Value(skillId),
-            templateType: Value(_mapTypeToTable(tool.templateType)),
-            title: Value(tool.title.trim()),
-            description: Value(tool.description.trim()),
-            slug: Value(_generateSlug.call(tool.title)),
-            templateJson: Value(tool.templateJson),
-            inputsJson: Value(tool.inputsJson),
-            requiresCredential: Value(tool.requiresCredential),
-            isEnabled: Value(tool.isEnabled),
-          ),
-        )
-        .then(_tableToEntity);
+  ) async {
+    final table = await _dao.createTool(
+      SkillTemplateToolsCompanion(
+        skillId: Value(skillId),
+        templateType: Value(_mapTypeToTable(tool.templateType)),
+        title: Value(tool.title.trim()),
+        description: Value(tool.description.trim()),
+        slug: Value(_generateSlug.call(tool.title)),
+        templateJson: Value(tool.templateJson),
+        inputsJson: Value(tool.inputsJson),
+        requiresCredential: Value(tool.requiresCredential),
+        isEnabled: Value(tool.isEnabled),
+      ),
+    );
+
+    return _tableToEntity(table);
   }
 
   @override
   Future<SkillTemplateToolEntity> updateTool(
     String toolId,
     SkillTemplateToolToUpdate tool,
-  ) {
-    return _dao
-        .updateTool(
-          toolId,
-          SkillTemplateToolsCompanion(
-            updatedAt: Value(DateTime.now()),
-            title: tool.title == null
-                ? const Value.absent()
-                : Value(
-                    tool.title!.trim(),
-                  ),
-            description: tool.description == null
-                ? const Value.absent()
-                : Value(tool.description!.trim()),
-            templateJson: Value.absentIfNull(tool.templateJson),
-            inputsJson: Value.absentIfNull(tool.inputsJson),
-            requiresCredential: Value.absentIfNull(tool.requiresCredential),
-            isEnabled: Value.absentIfNull(tool.isEnabled),
-          ),
-        )
-        .then(_tableToEntity);
+  ) async {
+    final table = await _dao.updateTool(
+      toolId,
+      SkillTemplateToolsCompanion(
+        updatedAt: Value(DateTime.now()),
+        title: switch (tool.title) {
+          null => const Value.absent(),
+          final title => Value(title.trim()),
+        },
+        description: switch (tool.description) {
+          null => const Value.absent(),
+          final description => Value(description.trim()),
+        },
+        templateJson: Value.absentIfNull(tool.templateJson),
+        inputsJson: Value.absentIfNull(tool.inputsJson),
+        requiresCredential: Value.absentIfNull(tool.requiresCredential),
+        isEnabled: Value.absentIfNull(tool.isEnabled),
+      ),
+    );
+
+    return _tableToEntity(table);
   }
 
   @override
@@ -103,8 +102,8 @@ class SkillTemplateToolsRepositoryImpl implements SkillTemplateToolsRepository {
       slug: table.slug,
       templateJson: table.templateJson,
       inputsJson: table.inputsJson,
-      requiresCredential: table.requiresCredential,
       isEnabled: table.isEnabled,
+      requiresCredential: table.requiresCredential,
       createdAt: table.createdAt,
       updatedAt: table.updatedAt,
     );

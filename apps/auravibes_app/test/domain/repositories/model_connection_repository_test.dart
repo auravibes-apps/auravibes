@@ -1,10 +1,5 @@
 // ignore_for_file: cascade_invocations
-// ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: no-equal-arguments
-// Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/enums/credentials_model_type.dart';
 import 'package:auravibes_app/domain/repositories/model_connection_repository.dart';
@@ -44,6 +39,7 @@ class _StubModelConnectionRepository implements ModelConnectionRepository {
       url: modelConnection.url,
     );
     created.add(entity);
+
     return entity;
   }
 
@@ -55,14 +51,15 @@ class _StubModelConnectionRepository implements ModelConnectionRepository {
         .where((connection) => connection.id == modelConnectionId)
         .firstOrNull;
     if (connection == null) return null;
+
     return ModelConnectionForEdit(
       id: connection.id,
       name: connection.name,
       modelId: connection.modelId,
       workspaceId: connection.workspaceId,
+      hasKey: connection.key.isNotEmpty,
       url: connection.url,
       keySuffix: connection.keySuffix,
-      hasKey: connection.key.isNotEmpty,
     );
   }
 

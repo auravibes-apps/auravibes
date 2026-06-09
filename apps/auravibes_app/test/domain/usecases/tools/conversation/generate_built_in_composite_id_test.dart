@@ -1,5 +1,3 @@
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 import 'package:auravibes_app/domain/usecases/tools/conversation/generate_built_in_composite_id.dart';
 import 'package:flutter_test/flutter_test.dart';
 
