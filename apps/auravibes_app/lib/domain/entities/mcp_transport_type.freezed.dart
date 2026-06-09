@@ -35,10 +35,6 @@ bool operator ==(Object other) {
 @override
 int get hashCode => Object.hash(runtimeType,accessToken,refreshToken,expiresIn,tokenType,scope);
 
-@override
-String toString() {
-  return 'OAuthTokenModel(accessToken: $accessToken, refreshToken: $refreshToken, expiresIn: $expiresIn, tokenType: $tokenType, scope: $scope)';
-}
 
 
 }
@@ -242,10 +238,6 @@ bool operator ==(Object other) {
 @override
 int get hashCode => Object.hash(runtimeType,accessToken,refreshToken,expiresIn,tokenType,scope);
 
-@override
-String toString() {
-  return 'OAuthTokenModel(accessToken: $accessToken, refreshToken: $refreshToken, expiresIn: $expiresIn, tokenType: $tokenType, scope: $scope)';
-}
 
 
 }
@@ -310,10 +302,6 @@ bool operator ==(Object other) {
 @override
 int get hashCode => Object.hash(runtimeType,accessToken,issuedAt,refreshToken,expiresIn,tokenType,const DeepCollectionEquality().hash(scopes));
 
-@override
-String toString() {
-  return 'OAuthTokenEntity(accessToken: $accessToken, issuedAt: $issuedAt, refreshToken: $refreshToken, expiresIn: $expiresIn, tokenType: $tokenType, scopes: $scopes)';
-}
 
 
 }
@@ -527,10 +515,6 @@ bool operator ==(Object other) {
 @override
 int get hashCode => Object.hash(runtimeType,accessToken,issuedAt,refreshToken,expiresIn,tokenType,const DeepCollectionEquality().hash(_scopes));
 
-@override
-String toString() {
-  return 'OAuthTokenEntity(accessToken: $accessToken, issuedAt: $issuedAt, refreshToken: $refreshToken, expiresIn: $expiresIn, tokenType: $tokenType, scopes: $scopes)';
-}
 
 
 }
@@ -618,10 +602,6 @@ bool operator ==(Object other) {
 @override
 int get hashCode => runtimeType.hashCode;
 
-@override
-String toString() {
-  return 'McpAuthenticationType()';
-}
 
 
 }
@@ -796,10 +776,6 @@ bool operator ==(Object other) {
 @override
 int get hashCode => runtimeType.hashCode;
 
-@override
-String toString() {
-  return 'McpAuthenticationType.none()';
-}
 
 
 }
@@ -843,10 +819,6 @@ bool operator ==(Object other) {
 @override
 int get hashCode => Object.hash(runtimeType,token,clientId,authorizationEndpoint,tokenEndpoint);
 
-@override
-String toString() {
-  return 'McpAuthenticationType.oauth(token: $token, clientId: $clientId, authorizationEndpoint: $authorizationEndpoint, tokenEndpoint: $tokenEndpoint)';
-}
 
 
 }
@@ -928,10 +900,6 @@ bool operator ==(Object other) {
 @override
 int get hashCode => Object.hash(runtimeType,bearerToken);
 
-@override
-String toString() {
-  return 'McpAuthenticationType.bearerToken(bearerToken: $bearerToken)';
-}
 
 
 }
@@ -1608,10 +1576,6 @@ bool operator ==(Object other) {
 @override
 int get hashCode => Object.hash(runtimeType,name,url,transport,authenticationType,bearerToken,description);
 
-@override
-String toString() {
-  return 'McpServerFormToCreate(name: $name, url: $url, transport: $transport, authenticationType: $authenticationType, bearerToken: $bearerToken, description: $description)';
-}
 
 
 }
@@ -1814,10 +1778,6 @@ bool operator ==(Object other) {
 @override
 int get hashCode => Object.hash(runtimeType,name,url,transport,authenticationType,bearerToken,description);
 
-@override
-String toString() {
-  return 'McpServerFormToCreate(name: $name, url: $url, transport: $transport, authenticationType: $authenticationType, bearerToken: $bearerToken, description: $description)';
-}
 
 
 }
