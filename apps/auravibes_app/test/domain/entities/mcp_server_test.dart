@@ -272,6 +272,18 @@ void main() {
         );
         expect(form.validationErrors, isEmpty);
       });
+
+      test('toString redacts bearer token', () {
+        const form = McpServerFormToCreate(
+          name: 'S',
+          url: 'http://x',
+          transport: McpTransportTypeSSE(),
+          authenticationType: McpAuthenticationTypeOptions.bearerToken,
+          bearerToken: 'plain-bearer',
+        );
+
+        expect(form.toString(), isNot(contains('plain-bearer')));
+      });
     });
   });
 
@@ -360,6 +372,19 @@ void main() {
       expect(encrypted.accessToken, 'enc-access');
       expect(encrypted.refreshToken, isNull);
     });
+
+    test('toString redacts token values', () {
+      final token = OAuthTokenEntity(
+        accessToken: 'plain-access',
+        issuedAt: DateTime(2026),
+        refreshToken: 'plain-refresh',
+      );
+
+      final output = token.toString();
+
+      expect(output, isNot(contains('plain-access')));
+      expect(output, isNot(contains('plain-refresh')));
+    });
   });
 
   group('OAuthTokenModel', () {
@@ -391,6 +416,18 @@ void main() {
       expect(entity.expiresIn, isNull);
       expect(entity.tokenType, isNull);
       expect(entity.scopes, isNull);
+    });
+
+    test('toString redacts token values', () {
+      const model = OAuthTokenModel(
+        accessToken: 'plain-access',
+        refreshToken: 'plain-refresh',
+      );
+
+      final output = model.toString();
+
+      expect(output, isNot(contains('plain-access')));
+      expect(output, isNot(contains('plain-refresh')));
     });
   });
 
@@ -429,6 +466,32 @@ void main() {
       expect(oauth.token.accessToken, 'enc-access');
       expect(oauth.token.refreshToken, 'enc-refresh');
       expect(oauth.clientId, 'client-1');
+    });
+
+    test('toString redacts bearer token', () {
+      const auth = McpAuthenticationTypeBearerToken(
+        bearerToken: 'plain-bearer',
+      );
+
+      expect(auth.toString(), isNot(contains('plain-bearer')));
+    });
+
+    test('toString redacts oauth token', () {
+      final auth = McpAuthenticationTypeOAuth(
+        token: OAuthTokenEntity(
+          accessToken: 'plain-access',
+          issuedAt: DateTime(2026),
+          refreshToken: 'plain-refresh',
+        ),
+        clientId: 'client-1',
+        authorizationEndpoint: 'https://auth.example.com',
+        tokenEndpoint: 'https://token.example.com',
+      );
+
+      final output = auth.toString();
+
+      expect(output, isNot(contains('plain-access')));
+      expect(output, isNot(contains('plain-refresh')));
     });
   });
 

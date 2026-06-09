@@ -61,7 +61,7 @@ class McpTransportTypeStreamableHttp extends McpTransportType {
   }
 }
 
-@freezed
+@Freezed(toStringOverride: false)
 abstract class OAuthTokenModel with _$OAuthTokenModel {
   // ignore: invalid_annotation_target - Required for Freezed JSON annotation.
   @JsonSerializable(fieldRename: .snake)
@@ -89,7 +89,7 @@ abstract class OAuthTokenModel with _$OAuthTokenModel {
   }
 }
 
-@freezed
+@Freezed(toStringOverride: false)
 abstract class OAuthTokenEntity with _$OAuthTokenEntity {
   const factory OAuthTokenEntity({
     required String accessToken,
@@ -139,7 +139,7 @@ abstract class OAuthTokenEntity with _$OAuthTokenEntity {
   }
 }
 
-@freezed
+@Freezed(toStringOverride: false)
 sealed class McpAuthenticationType with _$McpAuthenticationType {
   const McpAuthenticationType._();
   const factory McpAuthenticationType.none() = McpAuthenticationTypeNone;
@@ -260,7 +260,7 @@ enum McpTransportTypeOptions {
   sse,
 }
 
-@freezed
+@Freezed(toStringOverride: false)
 abstract class McpServerFormToCreate with _$McpServerFormToCreate {
   const factory McpServerFormToCreate({
     required String name,
