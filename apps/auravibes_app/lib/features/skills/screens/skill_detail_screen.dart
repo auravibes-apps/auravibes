@@ -2,6 +2,8 @@
 // Required: Existing UI spacing uses small numeric values.
 // ignore_for_file: prefer-extracting-callbacks
 // Required: Form callbacks stay local to this screen.
+import 'dart:async';
+
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
@@ -572,10 +574,14 @@ class _SkillToolsCard extends ConsumerWidget {
   }
 
   void _scheduleToolsRefresh(ProviderContainer container) {
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await container.pump();
-      container.invalidate(skillTemplateToolsProvider(skillId));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_refreshToolsAfterFrame(container));
     });
+  }
+
+  Future<void> _refreshToolsAfterFrame(ProviderContainer container) async {
+    await container.pump();
+    container.invalidate(skillTemplateToolsProvider(skillId));
   }
 
   Future<void> _duplicateTool(
@@ -868,15 +874,29 @@ class _SkillCredentialsHint extends ConsumerWidget {
     String workspaceId,
     String credentialDefinitionId,
   ) {
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await container.pump();
-      container.invalidate(
-        skillCredentialsForDefinitionProvider(
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(
+        _refreshCredentialAfterFrame(
+          container,
           workspaceId,
           credentialDefinitionId,
         ),
       );
     });
+  }
+
+  Future<void> _refreshCredentialAfterFrame(
+    ProviderContainer container,
+    String workspaceId,
+    String credentialDefinitionId,
+  ) async {
+    await container.pump();
+    container.invalidate(
+      skillCredentialsForDefinitionProvider(
+        workspaceId,
+        credentialDefinitionId,
+      ),
+    );
   }
 }
 

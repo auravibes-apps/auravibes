@@ -4,6 +4,8 @@
 // Required: Local builders keep this small screen readable.
 // ignore_for_file: prefer-single-widget-per-file
 // Required: Feature widgets keep closely related private widgets together.
+import 'dart:async';
+
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/skills/models/workspace_skill.dart';
 import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
@@ -120,10 +122,16 @@ class SkillsScreen extends ConsumerWidget {
   }
 
   void _scheduleWorkspaceSkillsRefresh(ProviderContainer container) {
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await container.pump();
-      container.invalidate(workspaceSkillsProvider(workspaceId));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_refreshWorkspaceSkillsAfterFrame(container));
     });
+  }
+
+  Future<void> _refreshWorkspaceSkillsAfterFrame(
+    ProviderContainer container,
+  ) async {
+    await container.pump();
+    container.invalidate(workspaceSkillsProvider(workspaceId));
   }
 
   Future<void> _setSkillEnabled(

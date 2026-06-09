@@ -1,6 +1,8 @@
 // ignore_for_file: prefer-single-widget-per-file
 // Required: Feature widgets keep closely related private widgets together.
 
+import 'dart:async';
+
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/features/models/providers/add_model_provider_state.dart';
@@ -98,7 +100,7 @@ class _ServiceConnectionCreateScreenState
         padding: const EdgeInsets.all(12),
         child: AddModelProviderWidget(
           workspaceId: widget.workspaceId,
-          onCreated: _closeAfterSave,
+          onCreated: () => unawaited(_closeAfterSave()),
           showHeader: false,
         ),
       ),
@@ -115,7 +117,7 @@ class _ServiceConnectionCreateScreenState
             _resetAttributeControllers();
           });
         },
-        onSave: _saveSkillCredential,
+        onSave: () => unawaited(_saveSkillCredential()),
       ),
     };
   }

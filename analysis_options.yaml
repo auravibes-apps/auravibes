@@ -18,6 +18,7 @@ plugins:
       avoid-nested-conditional-expressions: true
       avoid-non-ascii-symbols: true
       avoid-non-null-assertion: true
+      avoid-passing-async-when-sync-expected: true
       avoid-double-slash-imports: true
       avoid-duplicate-exports: true
       avoid-border-all: true

@@ -1,6 +1,8 @@
 // ignore_for_file: prefer-single-widget-per-file
 // Required: Feature widgets keep closely related private widgets together.
 
+import 'dart:async';
+
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
@@ -43,9 +45,11 @@ class ServiceConnectionsScreen extends ConsumerWidget {
         actions: [
           AuraIconButton(
             icon: Icons.add,
-            onPressed: () async {
-              final _ = await context.push<bool>(
-                '/workspaces/$workspaceId/more/service-connections/new',
+            onPressed: () {
+              unawaited(
+                context.push<bool>(
+                  '/workspaces/$workspaceId/more/service-connections/new',
+                ),
               );
             },
             tooltip: LocaleKeys.service_connections_add.tr(context: context),
