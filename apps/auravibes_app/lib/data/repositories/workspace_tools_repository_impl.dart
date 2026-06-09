@@ -1,7 +1,5 @@
 // ignore_for_file: prefer-async-await
 // Required: Existing Future chains preserve callback flow.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -16,7 +14,7 @@ import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dar
 import 'package:auravibes_app/services/tools/native_tool_service.dart';
 import 'package:auravibes_app/services/tools/tool_service.dart';
 
-/// Implementation of the WorkspaceToolsRepository
+/// Implementation of the WorkspaceToolsRepository.
 class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
   WorkspaceToolsRepositoryImpl(this._database)
     : _dao = _database.workspaceToolsDao;
@@ -148,7 +146,7 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
     required bool isEnabled,
     String? config,
   }) async {
-    // Check if workspace exists
+    // Check if workspace exists.
     final workspace = await _database.workspaceDao.getWorkspaceById(
       workspaceId,
     );
@@ -158,7 +156,7 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
       );
     }
 
-    // Check if tool type is valid
+    // Check if tool type is valid.
     if (!ToolService.hasTypeString(toolType) &&
         !NativeToolService.hasTypeString(toolType)) {
       throw WorkspaceToolsValidationException('Invalid tool type: $toolType');

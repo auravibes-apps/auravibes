@@ -1,7 +1,5 @@
 // ignore_for_file: prefer-async-await
 // Required: Existing Future chains preserve callback flow.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
@@ -18,7 +16,7 @@ class ConversationToolsDao extends DatabaseAccessor<AppDatabase>
     with _$ConversationToolsDaoMixin {
   ConversationToolsDao(super.attachedDatabase);
 
-  /// Get a specific conversation tool setting
+  /// Get a specific conversation tool setting.
   Future<ConversationToolsTable?> getConversationTool(
     String conversationId,
     String toolId,
@@ -30,7 +28,7 @@ class ConversationToolsDao extends DatabaseAccessor<AppDatabase>
           ))
           .getSingleOrNull();
 
-  /// Get all conversation tool settings for a conversation
+  /// Get all conversation tool settings for a conversation.
   Future<List<ConversationToolsTable>> getConversationTools(
     String conversationId,
   ) =>
@@ -41,7 +39,7 @@ class ConversationToolsDao extends DatabaseAccessor<AppDatabase>
             ]))
           .get();
 
-  /// Upsert a conversation tool setting (enabled with permission)
+  /// Upsert a conversation tool setting (enabled with permission).
   Future<ConversationToolsTable> upsertConversationTool(
     String conversationId,
     String toolId, {
@@ -65,17 +63,17 @@ class ConversationToolsDao extends DatabaseAccessor<AppDatabase>
     );
   }
 
-  /// Set whether a tool is enabled for a conversation
+  /// Set whether a tool is enabled for a conversation.
   Future<ConversationToolsTable> setConversationToolEnabled(
     String conversationId,
     String toolId, {
     required bool isEnabled,
   }) async {
-    // Check if exists first
+    // Check if exists first.
     final existing = await getConversationTool(conversationId, toolId);
 
     if (existing != null) {
-      // Update existing
+      // Update existing.
       final _ =
           await (update(conversationTools)..where(
                 (tbl) =>
@@ -94,7 +92,7 @@ class ConversationToolsDao extends DatabaseAccessor<AppDatabase>
       }
       return updated;
     } else {
-      // Insert new
+      // Insert new.
       return into(conversationTools).insertReturning(
         ConversationToolsCompanion(
           conversationId: Value(conversationId),
@@ -105,7 +103,7 @@ class ConversationToolsDao extends DatabaseAccessor<AppDatabase>
     }
   }
 
-  /// Set the permission for a conversation tool
+  /// Set the permission for a conversation tool.
   Future<ConversationToolsTable> setConversationToolPermission(
     String conversationId,
     String toolId, {
@@ -143,7 +141,7 @@ class ConversationToolsDao extends DatabaseAccessor<AppDatabase>
     }
   }
 
-  /// Delete a conversation tool setting
+  /// Delete a conversation tool setting.
   Future<bool> deleteConversationTool(
     String conversationId,
     String toolId,
@@ -156,18 +154,18 @@ class ConversationToolsDao extends DatabaseAccessor<AppDatabase>
           .go()
           .then((count) => count > 0);
 
-  /// Check if a tool is enabled for a conversation
+  /// Check if a tool is enabled for a conversation.
   Future<bool> isConversationToolEnabled(
     String conversationId,
     String toolId,
   ) async {
     final tool = await getConversationTool(conversationId, toolId);
-    // If no override exists, tool follows workspace setting
-    // (considered enabled)
+    // If no override exists, tool follows workspace setting.
+    // (Considered enabled).
     return tool?.isEnabled ?? true;
   }
 
-  /// Get count of conversation tool settings
+  /// Get count of conversation tool settings.
   Future<int> getConversationToolsCount(String conversationId) =>
       (selectOnly(conversationTools)
             ..addColumns([conversationTools.id.count()])
@@ -177,12 +175,12 @@ class ConversationToolsDao extends DatabaseAccessor<AppDatabase>
           .map((row) => row.read(conversationTools.id.count()) ?? 0)
           .getSingle();
 
-  /// Remove all tool settings for a conversation
+  /// Remove all tool settings for a conversation.
   Future<void> removeToolsForConversation(String conversationId) => (delete(
     conversationTools,
   )..where((tbl) => tbl.conversationId.equals(conversationId))).go();
 
-  /// Copy conversation tools from one conversation to another
+  /// Copy conversation tools from one conversation to another.
   Future<void> copyConversationTools(
     String sourceConversationId,
     String targetConversationId,
@@ -199,7 +197,7 @@ class ConversationToolsDao extends DatabaseAccessor<AppDatabase>
     }
   }
 
-  // Legacy methods for backward compatibility
+  // Legacy methods for backward compatibility.
   Future<ConversationToolsTable?> getDisabledConversationTool(
     String conversationId,
     String toolId,

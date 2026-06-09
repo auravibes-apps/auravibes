@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: no-empty-block
 // Required: Tests use intentional no-op callbacks and fake hooks.
 import 'package:auravibes_ui/src/atoms/aura_icon.dart';
@@ -155,7 +153,7 @@ void main() {
       final fab = tester.widget<FloatingActionButton>(
         find.byType(FloatingActionButton),
       );
-      // Verify the resolved color matches the theme's error color
+      // Verify the resolved color matches the theme's error color.
       expect(fab.backgroundColor, AuraTheme.light.colors.error);
     });
 
@@ -180,11 +178,11 @@ void main() {
       final fab = tester.widget<FloatingActionButton>(
         find.byType(FloatingActionButton),
       );
-      // Verify the resolved color matches the theme's onPrimary color
+      // Verify the resolved color matches the theme's onPrimary color.
       expect(fab.foregroundColor, AuraTheme.light.colors.onPrimary);
 
       final auraIcon = tester.widget<AuraIcon>(find.byType(AuraIcon));
-      // AuraIcon now receives AuraColorVariant, not Color
+      // AuraIcon now receives AuraColorVariant, not Color.
       expect(auraIcon.color, customColor);
     });
 
@@ -206,12 +204,12 @@ void main() {
       final fab = tester.widget<FloatingActionButton>(
         find.byType(FloatingActionButton),
       );
-      // Default colors are resolved from AuraTheme
+      // Default colors are resolved from AuraTheme.
       expect(fab.backgroundColor, isNotNull);
       expect(fab.foregroundColor, isNotNull);
 
       final auraIcon = tester.widget<AuraIcon>(find.byType(AuraIcon));
-      // Default foreground color for icon is onPrimary (matches FAB foreground)
+      // Default foreground color for icon is onPrimary.
       expect(auraIcon.color, AuraColorVariant.onPrimary);
     });
 
@@ -276,7 +274,7 @@ void main() {
         ),
       );
 
-      // Find the Semantics widget with the correct label
+      // Find the Semantics widget with the correct label.
       final semantics = semanticsWidgets.firstWhere(
         (s) => s.properties.label == semanticLabel,
       );

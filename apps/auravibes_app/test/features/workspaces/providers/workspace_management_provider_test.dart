@@ -2,16 +2,14 @@
 // Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 
 // ignore_for_file: cascade_invocations
-// Required: test expectations use chaining on matchers
-// (e.g. find.text().findsOneWidget) which triggers cascade_invocations lint.
+// Required: test expectations use chaining on matchers.
+// (E.g. find.text().findsOneWidget) which triggers cascade_invocations lint.
 // Not applicable in test assertions.
 
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';

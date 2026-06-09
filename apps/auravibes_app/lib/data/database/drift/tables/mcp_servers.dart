@@ -1,5 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 
@@ -45,30 +43,30 @@ McpAuthenticationType _authenticationTypeFromJson(Object? json) {
 /// and transport configurations.
 @DataClassName('McpServersTable')
 class McpServers extends Table with TableMixin {
-  /// Reference to the workspace this MCP server belongs to
+  /// Reference to the workspace this MCP server belongs to.
   TextColumn get workspaceId => text().references(
     Workspaces,
     #id,
     onDelete: KeyAction.cascade,
   )();
 
-  /// User-friendly name for the MCP server
+  /// User-friendly name for the MCP server.
   TextColumn get name => text()();
 
-  /// URL endpoint for the MCP server
+  /// URL endpoint for the MCP server.
   TextColumn get url => text()();
 
-  /// Transport type: 'sse' or 'streamable_http'
+  /// Transport type: 'sse' or 'streamable_http.'.
   TextColumn get transport => text().map(transportTypeConverter)();
 
-  /// Authentication type: 'none', 'oauth', or 'bearer_token'
+  /// Authentication type: 'none', 'oauth', or 'bearer_token.'.
   TextColumn get authenticationType =>
       text().map(authenticationTypeConverter)();
 
-  /// Optional description of what this MCP server provides
+  /// Optional description of what this MCP server provides.
   TextColumn get description => text().nullable()();
 
-  /// Whether the MCP server is enabled for connections
+  /// Whether the MCP server is enabled for connections.
   BoolColumn get isEnabled => boolean().withDefault(const Constant(true))();
 
   @override

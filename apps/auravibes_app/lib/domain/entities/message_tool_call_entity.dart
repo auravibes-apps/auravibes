@@ -1,5 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -116,69 +114,69 @@ abstract class MessageMetadataEntity with _$MessageMetadataEntity {
 @freezed
 abstract class MessageEntity with _$MessageEntity {
   const factory MessageEntity({
-    /// Unique identifier for the message
+    /// Unique identifier for the message.
     required String id,
 
-    /// ID of the conversation this message belongs to
+    /// ID of the conversation this message belongs to.
     required String conversationId,
 
-    /// Content of the message (JSON structure based on message type)
+    /// Content of the message (JSON structure based on message type).
     required String content,
 
-    /// Type of the message
+    /// Type of the message.
     required MessageType messageType,
 
-    /// Whether this message was sent by the user
+    /// Whether this message was sent by the user.
     required bool isUser,
 
-    /// Status of the message
+    /// Status of the message.
     required MessageStatus status,
 
-    /// Timestamp when the message was created
+    /// Timestamp when the message was created.
     required DateTime createdAt,
 
-    /// Timestamp when the message was last updated
+    /// Timestamp when the message was last updated.
     required DateTime updatedAt,
 
-    /// Additional metadata for the message (JSON)
+    /// Additional metadata for the message (JSON).
     MessageMetadataEntity? metadata,
   }) = _MessageEntity;
   const MessageEntity._();
 
-  /// Returns true if the message has valid content
+  /// Returns true if the message has valid content.
   bool get hasValidContent => content.isNotEmpty;
 
-  /// Returns true if the message is in a valid state
+  /// Returns true if the message is in a valid state.
   bool get isValid {
     return hasValidContent && conversationId.isNotEmpty;
   }
 }
 
-/// Entity for creating a new message
+/// Entity for creating a new message.
 @freezed
 abstract class MessageToCreate with _$MessageToCreate {
-  /// Creates a new MessageToCreate instance
+  /// Creates a new MessageToCreate instance.
   const factory MessageToCreate({
-    /// ID of the conversation this message belongs to
+    /// ID of the conversation this message belongs to.
     required String conversationId,
 
-    /// Content of the message (JSON structure based on message type)
+    /// Content of the message (JSON structure based on message type).
     required String content,
 
-    /// Type of the message
+    /// Type of the message.
     required MessageType messageType,
 
-    /// Whether this message was sent by the user
+    /// Whether this message was sent by the user.
     required bool isUser,
 
     required MessageStatus status,
 
-    /// Additional metadata for the message (JSON)
+    /// Additional metadata for the message (JSON).
     String? metadata,
   }) = _MessageToCreate;
   const MessageToCreate._();
 
-  /// Returns true if the message has valid content
+  /// Returns true if the message has valid content.
   bool get hasValidContent {
     final metadata = this.metadata;
     return content.isNotEmpty ||
@@ -188,28 +186,28 @@ abstract class MessageToCreate with _$MessageToCreate {
             safeJsonDecode(metadata) != null);
   }
 
-  /// Returns true if the message is in a valid state
+  /// Returns true if the message is in a valid state.
   bool get isValid {
     return hasValidContent && conversationId.isNotEmpty;
   }
 }
 
-/// Entity for patching an existing message
+/// Entity for patching an existing message.
 @freezed
 abstract class MessagePatch with _$MessagePatch {
-  /// Creates a new MessagePatch instance
+  /// Creates a new MessagePatch instance.
   const factory MessagePatch({
-    /// Content of the message (JSON structure based on message type)
+    /// Content of the message (JSON structure based on message type).
     String? content,
 
-    /// Additional metadata for the message (JSON)
+    /// Additional metadata for the message (JSON).
     MessageMetadataEntity? metadata,
 
     MessageStatus? status,
   }) = _MessagePatch;
   const MessagePatch._();
 
-  /// Returns true if the message is in a valid state
+  /// Returns true if the message is in a valid state.
   bool get isValid {
     return content != null || metadata != null || status != null;
   }

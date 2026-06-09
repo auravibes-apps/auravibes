@@ -1,5 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -125,7 +123,7 @@ class MessageRepositoryImpl implements MessageRepository {
 
   @override
   Future<MessageEntity> createMessage(MessageToCreate message) async {
-    // Validate message before creating
+    // Validate message before creating.
     if (!await validateMessage(message)) {
       throw const MessageValidationException('Invalid message data');
     }
@@ -160,9 +158,9 @@ class MessageRepositoryImpl implements MessageRepository {
 
   @override
   Future<bool> deleteMessage(String id) async {
-    // Check if message exists
+    // Check if message exists.
     if (!await messageExists(id)) {
-      return false; // Return false instead of throwing for delete operations
+      return false; // Return false instead of throwing for delete operations.
     }
 
     return _database.messageDao.deleteMessage(id);

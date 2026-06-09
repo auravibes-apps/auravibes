@@ -2,8 +2,6 @@
 // Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: avoid-top-level-members-in-tests
 // Required: Test files keep shared fixtures and helpers top-level.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 // ignore_for_file: prefer-static-class
@@ -24,7 +22,7 @@ QueryExecutor createTestConnection() {
     Future(() {
       return DatabaseConnection(
         LazyDatabase(() async {
-          // Use an in-memory database for testing
+          // Use an in-memory database for testing.
           return NativeDatabase.memory();
         }),
       );
@@ -69,7 +67,7 @@ void main() {
         type: WorkspaceType.local,
       );
 
-      // Insert the workspace
+      // Insert the workspace.
       final retrieved = await workspaceDao.insertWorkspace(workspace);
 
       expect(retrieved, isNotNull);
@@ -81,7 +79,7 @@ void main() {
     test('should get all workspaces', () async {
       final workspaceDao = fixture.database.workspaceDao;
 
-      // Insert test workspaces
+      // Insert test workspaces.
       final _ = await workspaceDao.insertWorkspace(
         WorkspacesCompanion.insert(
           name: 'Workspace 1',
@@ -97,7 +95,7 @@ void main() {
         ),
       );
 
-      // Get all workspaces
+      // Get all workspaces.
       final workspaces = await workspaceDao.getAllWorkspaces();
 
       expect(workspaces.length, equals(2));
@@ -109,7 +107,7 @@ void main() {
     test('should update workspace', () async {
       final workspaceDao = fixture.database.workspaceDao;
 
-      // Insert a workspace
+      // Insert a workspace.
       final idCreated = await workspaceDao.insertWorkspace(
         WorkspacesCompanion.insert(
           name: 'Original Name',
@@ -117,7 +115,7 @@ void main() {
         ),
       );
 
-      // Update the workspace
+      // Update the workspace.
       final updated = await workspaceDao.patchWorkspace(
         idCreated.id,
         WorkspacesCompanion(
@@ -128,7 +126,7 @@ void main() {
 
       expect(updated, isTrue);
 
-      // Verify the update
+      // Verify the update.
       final retrieved = await workspaceDao.getWorkspaceById(idCreated.id);
       expect(
         (retrieved ?? fail('Expected retrieved to be non-null')).name,
@@ -139,7 +137,7 @@ void main() {
     test('should delete workspace', () async {
       final workspaceDao = fixture.database.workspaceDao;
 
-      // Insert a workspace
+      // Insert a workspace.
       final createdId = await workspaceDao.insertWorkspace(
         WorkspacesCompanion.insert(
           name: 'Test Workspace',
@@ -147,11 +145,11 @@ void main() {
         ),
       );
 
-      // Delete the workspace
+      // Delete the workspace.
       final deleted = await workspaceDao.deleteWorkspace(createdId.id);
       expect(deleted, isTrue);
 
-      // Verify deletion
+      // Verify deletion.
       final retrieved = await workspaceDao.getWorkspaceById(createdId.id);
       expect(retrieved, isNull);
     });
@@ -159,7 +157,7 @@ void main() {
     test('should search workspaces by name', () async {
       final workspaceDao = fixture.database.workspaceDao;
 
-      // Insert test workspaces
+      // Insert test workspaces.
       final _ = await workspaceDao.insertWorkspace(
         WorkspacesCompanion.insert(
           name: 'Development Workspace',
@@ -175,7 +173,7 @@ void main() {
         ),
       );
 
-      // Search for workspaces
+      // Search for workspaces.
       final results = await workspaceDao.searchWorkspacesByName('Development');
 
       expect(results.length, equals(1));
@@ -185,7 +183,7 @@ void main() {
     test('should get workspace count by type', () async {
       final workspaceDao = fixture.database.workspaceDao;
 
-      // Insert test workspaces
+      // Insert test workspaces.
       final _ = await workspaceDao.insertWorkspace(
         WorkspacesCompanion.insert(
           name: 'Local Workspace 1',
@@ -208,7 +206,7 @@ void main() {
         ),
       );
 
-      // Get counts by type
+      // Get counts by type.
       final localCount = await workspaceDao.getWorkspaceCountByType(
         WorkspaceType.local,
       );

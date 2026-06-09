@@ -1,5 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -21,7 +19,7 @@ class ApiModelRepositoryImpl implements ApiModelRepository {
   /// The database instance for API model operations.
   final AppDatabase _database;
 
-  // Provider operations
+  // Provider operations.
 
   @override
   Future<List<ApiModelProviderEntity>> getAllProviders() async {
@@ -37,7 +35,7 @@ class ApiModelRepositoryImpl implements ApiModelRepository {
     return providerTables.map(_mapToProviderEntity).toList();
   }
 
-  // Model operations
+  // Model operations.
 
   @override
   Future<List<ApiModelEntity>> getAllModels() async {
@@ -64,7 +62,7 @@ class ApiModelRepositoryImpl implements ApiModelRepository {
     return modelTables.map(_mapToModelEntity).toList();
   }
 
-  // Batch operations
+  // Batch operations.
 
   @override
   Future<List<ApiModelProviderEntity>> batchUpsertProviders(
@@ -106,7 +104,7 @@ class ApiModelRepositoryImpl implements ApiModelRepository {
     return deletedModels + deletedProviders;
   }
 
-  // Helper methods
+  // Helper methods.
 
   /// Maps a database table record to a domain entity.
   ApiModelProviderEntity _mapToProviderEntity(

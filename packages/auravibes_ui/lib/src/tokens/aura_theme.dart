@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: UI tokens and layout use fixed design values.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -99,7 +97,7 @@ class AuraTheme extends ThemeExtension<AuraTheme> {
     );
   }
 
-  /// get the spacing based on enum
+  /// Get the spacing based on enum.
   double fromSpacing(AuraSpacing value) {
     return switch (value) {
       AuraSpacing.none => 0,
@@ -346,13 +344,13 @@ class AuraColorScheme {
     return Color.lerp(begin, end, t) ?? begin;
   }
 
-  /// Get color by variant nullable
+  /// Get color by variant nullable.
   Color? getColorOrNull(AuraColorVariant? variant) {
     if (variant == null) return null;
     return getColor(variant);
   }
 
-  /// Get color by variant
+  /// Get color by variant.
   Color getColor(AuraColorVariant variant) {
     return switch (variant) {
       AuraColorVariant.primary => primary,
@@ -411,7 +409,7 @@ class AuraTypographyTheme {
 
   /// Linearly interpolate between two typography themes.
   AuraTypographyTheme lerp(AuraTypographyTheme other, double t) {
-    // Typography doesn't interpolate, return this or other based on t
+    // Typography doesn't interpolate, return this or other based on t.
     return t < 0.5 ? this : other;
   }
 }
@@ -716,7 +714,7 @@ class AuraAnimationTheme {
 
   /// Linearly interpolate between two animation themes.
   AuraAnimationTheme lerp(AuraAnimationTheme other, double t) {
-    // Animation durations don't interpolate, return this or other based on t
+    // Animation durations don't interpolate, return this or other based on t.
     return t < 0.5 ? this : other;
   }
 }

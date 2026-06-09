@@ -1,12 +1,10 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
-// ============================================================
-// MCP Tool Info
-// ============================================================
+// ============================================================.
+// MCP Tool Info.
+// ============================================================.
 
 import 'package:auravibes_app/data/database/drift/tables/mcp_servers.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
@@ -14,7 +12,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'mcp_tool_info.freezed.dart';
 
-/// Information about a tool provided by an MCP server
+/// Information about a tool provided by an MCP server.
 @freezed
 abstract class McpToolInfo with _$McpToolInfo {
   const factory McpToolInfo({
@@ -38,7 +36,7 @@ abstract class McpToolInfo with _$McpToolInfo {
   /// Note: Tool names must match pattern ^[a-zA-Z0-9_-]{1,128}$
   /// so we use underscores as separators instead of colons.
   String finalToolName(McpServerEntity server) {
-    // Sanitize toolName to only contain valid characters
+    // Sanitize toolName to only contain valid characters.
     final sanitizedToolName = toolName.replaceAll(
       RegExp('[^a-zA-Z0-9_-]'),
       '_',
@@ -47,7 +45,7 @@ abstract class McpToolInfo with _$McpToolInfo {
   }
 }
 
-/// Information about a tool provided by an MCP server
+/// Information about a tool provided by an MCP server.
 @freezed
 abstract class MCPServerWithTools with _$MCPServerWithTools {
   const factory MCPServerWithTools({

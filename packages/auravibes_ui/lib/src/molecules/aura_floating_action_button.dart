@@ -4,8 +4,6 @@
 // Required: Existing helper builders return widgets.
 // ignore_for_file: no-equal-arguments
 // Required: UI geometry uses repeated values for symmetric layout.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: prefer-moving-to-variable
@@ -96,7 +94,7 @@ class AuraFloatingActionButton extends StatelessWidget {
       ),
     );
 
-    // Override size for mini and large variants
+    // Override size for mini and large variants.
     if (size == AuraFABSize.mini || size == AuraFABSize.large) {
       fab = SizedBox(
         width: _getFABSize(),
@@ -207,7 +205,7 @@ class AuraFloatingActionButton extends StatelessWidget {
       AuraFABSize.mini => 40.0,
       AuraFABSize.regular => 56.0,
       AuraFABSize.large => 72.0,
-      AuraFABSize.extended => 56.0, // Height for extended
+      AuraFABSize.extended => 56.0, // Height for extended.
     };
   }
 

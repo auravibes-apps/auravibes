@@ -1,5 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -55,7 +53,7 @@ class _CoalescingSaver<T> {
             await _store(toSave);
             _onSaved(toSave);
           } on Exception catch (_) {
-            // Swallow exceptions to allow loop to continue
+            // Swallow exceptions to allow loop to continue.
           }
           if (_pending != null) continue;
         }

@@ -1,5 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -33,55 +31,55 @@ part 'mcp_connection_status.g.dart';
 
 final _logger = Logger('McpConnectionNotifier');
 
-// ============================================================
-// MCP Connection Status
-// ============================================================
+// ============================================================.
+// MCP Connection Status.
+// ============================================================.
 
-/// Status of an MCP server connection
+/// Status of an MCP server connection.
 enum McpConnectionStatus {
-  /// Not connected to the server
+  /// Not connected to the server.
   disconnected,
 
-  /// Currently attempting to connect
+  /// Currently attempting to connect.
   connecting,
 
-  /// Successfully connected and ready
+  /// Successfully connected and ready.
   connected,
 
-  /// Connection failed with an error
+  /// Connection failed with an error.
   error,
 }
 
-// ============================================================
-// MCP Connection State
-// ============================================================
+// ============================================================.
+// MCP Connection State.
+// ============================================================.
 
-/// State for a single MCP server connection
+/// State for a single MCP server connection.
 @freezed
 abstract class McpConnectionState with _$McpConnectionState {
   const factory McpConnectionState({
-    /// The MCP server configuration
+    /// The MCP server configuration.
     required McpServerEntity server,
 
-    /// Current connection status
+    /// Current connection status.
     required McpConnectionStatus status,
 
-    /// The connected MCP client instance (null if not connected)
+    /// The connected MCP client instance (null if not connected).
     McpManagerClient? client,
 
-    /// Tools available from this MCP server
+    /// Tools available from this MCP server.
     @Default([]) List<McpToolInfo> tools,
 
-    /// Error message if connection failed
+    /// Error message if connection failed.
     String? errorMessage,
   }) = _McpConnectionState;
 
   const McpConnectionState._();
 
-  /// Whether this connection is ready to use
+  /// Whether this connection is ready to use.
   bool get isReady => status == McpConnectionStatus.connected && client != null;
 
-  /// Whether this connection has tools available
+  /// Whether this connection has tools available.
   bool get hasTools => tools.isNotEmpty;
 }
 
@@ -94,9 +92,9 @@ extension _McpToolInfoSpec on McpToolInfo {
     );
   }
 }
-// ============================================================
-// MCP Tool ID Components
-// ============================================================
+// ============================================================.
+// MCP Tool ID Components.
+// ============================================================.
 
 /// Parsed components of a composite MCP tool ID.
 ///
@@ -111,13 +109,13 @@ class McpToolIdComponents {
     required this.toolIdentifier,
   });
 
-  /// The database ID of the MCP server
+  /// The database ID of the MCP server.
   final String mcpServerId;
 
-  /// The slugified server name (for readability)
+  /// The slugified server name (for readability).
   final String slugName;
 
-  /// The original tool name from the MCP server
+  /// The original tool name from the MCP server.
   final String toolIdentifier;
 
   static McpToolIdComponents? fromComposite(String compositeId) {
@@ -145,9 +143,9 @@ class McpToolIdComponents {
   }
 }
 
-// ============================================================
-// MCP Manager Notifier
-// ============================================================
+// ============================================================.
+// MCP Manager Notifier.
+// ============================================================.
 
 /// Manages MCP server connections and their tools.
 ///
@@ -204,9 +202,9 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
     return [];
   }
 
-  // ============================================================
-  // Public API
-  // ============================================================
+  // ============================================================.
+  // Public API.
+  // ============================================================.
 
   /// Add a new MCP server from the form data.
   ///
@@ -263,24 +261,24 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
     }
   }
 
-  /// Delete an MCP server by ID.
+  /// Delete an MCP server by identifier.
   ///
   /// This will:
   /// 1. Disconnect the client if connected
   /// 2. Remove from state
   /// 3. Delete from database (cascades to tools group and tools)
   Future<void> deleteMcpServer(String serverId) async {
-    // Find and disconnect the client
+    // Find and disconnect the client.
     final connection = state.firstWhereOrNull((c) => c.server.id == serverId);
 
     if (connection != null) {
       _requiredMcpManagerService.disconnect(connection.client);
     }
 
-    // Remove from state
+    // Remove from state.
     _setState(state.where((c) => c.server.id != serverId).toList());
 
-    // Delete from database (cascades to tools group and tools)
+    // Delete from database (cascades to tools group and tools).
     final repository = ref.read(mcpServersRepositoryProvider);
     final _ = await repository.deleteMcpServer(serverId);
   }
@@ -458,9 +456,9 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
     );
   }
 
-  // ============================================================
-  // Private: Database Operations
-  // ============================================================
+  // ============================================================.
+  // Private: Database Operations.
+  // ============================================================.
 
   /// Load enabled MCPs only for the active workspace.
   Future<void> _loadMcpsForWorkspace(String workspaceId) async {
@@ -504,9 +502,9 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
       );
     }
   }
-  // ============================================================
-  // Private: Connection Management
-  // ============================================================
+  // ============================================================.
+  // Private: Connection Management.
+  // ============================================================.
 
   /// Connect to an MCP server.
   Future<void> _connectToMcp(McpServerEntity server) async {
@@ -514,12 +512,12 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
       return;
     }
 
-    // Check if already in state
+    // Check if already in state.
     final existingIndex = state.indexWhere(
       (c) => c.server.id == server.id,
     );
 
-    // Add or update state to "connecting"
+    // Add or update state to "connecting.".
     if (existingIndex >= 0) {
       _setState([
         ...state.sublist(0, existingIndex),
@@ -550,7 +548,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
         return;
       }
 
-      // Update state with connected client and tools
+      // Update state with connected client and tools.
       _updateConnectionState(
         server.id,
         (connection) => connection.copyWith(
@@ -562,10 +560,10 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
       );
       connectedClient = null;
 
-      // Sync tools to database
+      // Sync tools to database.
       await _syncMcpToolsToDatabase(server, mcpTools);
     } on Exception catch (e) {
-      // Update state with error
+      // Update state with error.
       _updateConnectionState(
         server.id,
         (connection) => connection.copyWith(
@@ -620,9 +618,9 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
     state = nextState;
   }
 
-  // ============================================================
-  // Private: Tool Synchronization
-  // ============================================================
+  // ============================================================.
+  // Private: Tool Synchronization.
+  // ============================================================.
 
   /// Sync MCP tools to the database.
   ///

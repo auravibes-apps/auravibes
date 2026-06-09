@@ -1,5 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
@@ -13,9 +11,9 @@ part 'conversation_tool_entity.freezed.dart';
 /// allowing different conversations to override workspace tool settings.
 @freezed
 abstract class ConversationToolEntity with _$ConversationToolEntity {
-  /// Creates a new ConversationTool instance
+  /// Creates a new ConversationTool instance.
   const factory ConversationToolEntity({
-    /// ID of the conversation this tool setting belongs to
+    /// ID of the conversation this tool setting belongs to.
     required String conversationId,
 
     /// ID of the workspace tool record this setting overrides.
@@ -24,28 +22,28 @@ abstract class ConversationToolEntity with _$ConversationToolEntity {
     /// not [WorkspaceToolEntity.toolId].
     required String toolId,
 
-    /// Whether the tool is enabled for this conversation
+    /// Whether the tool is enabled for this conversation.
     required bool isEnabled,
 
-    /// Permission mode for this tool (always ask or always allow)
+    /// Permission mode for this tool (always ask or always allow).
     required ToolPermissionMode permissionMode,
 
-    /// Timestamp when this setting was created
+    /// Timestamp when this setting was created.
     required DateTime createdAt,
 
-    /// Timestamp when this setting was last updated
+    /// Timestamp when this setting was last updated.
     required DateTime updatedAt,
   }) = _ConversationToolEntity;
   const ConversationToolEntity._();
 
-  /// Returns true if the tool is currently enabled
+  /// Returns true if the tool is currently enabled.
   bool get isAvailable => isEnabled;
 }
 
-/// Entity for creating/updating conversation tool settings
+/// Entity for creating/updating conversation tool settings.
 @freezed
 abstract class ConversationToolToCreate with _$ConversationToolToCreate {
-  /// Creates a new ConversationToolToCreate instance
+  /// Creates a new ConversationToolToCreate instance.
   const factory ConversationToolToCreate({
     /// ID of the workspace tool record this setting overrides.
     ///
@@ -53,21 +51,21 @@ abstract class ConversationToolToCreate with _$ConversationToolToCreate {
     /// not [WorkspaceToolEntity.toolId].
     required String toolId,
 
-    /// Whether the tool should be enabled (defaults to true)
+    /// Whether the tool should be enabled (defaults to true).
     bool? isEnabled,
 
-    /// Permission mode for this tool (defaults to alwaysAsk)
+    /// Permission mode for this tool (defaults to alwaysAsk).
     ToolPermissionMode? permissionMode,
   }) = _ConversationToolToCreate;
   const ConversationToolToCreate._();
 
-  /// Returns true if the tool type is valid
+  /// Returns true if the tool type is valid.
   bool get hasValidToolId => toolId.isNotEmpty;
 
-  /// Returns the default enabled status (true if not specified)
+  /// Returns the default enabled status (true if not specified).
   bool get defaultEnabled => isEnabled ?? true;
 
-  /// Returns the default permission mode (alwaysAsk if not specified)
+  /// Returns the default permission mode (alwaysAsk if not specified).
   ToolPermissionMode get defaultPermissionMode =>
       permissionMode ?? ToolPermissionMode.alwaysAsk;
 }

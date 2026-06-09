@@ -2,8 +2,6 @@
 // Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 
@@ -36,7 +34,7 @@ void main() {
     tearDown(fixture.tearDown);
 
     test('returns notConfigured when tool is not in workspace', () async {
-      // Arrange
+      // Arrange.
       when(
         fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
           testWorkspaceId,
@@ -44,21 +42,21 @@ void main() {
         ),
       ).thenAnswer((_) async => null);
 
-      // Act
+      // Act.
       final result = await fixture.repository.checkToolPermission(
         conversationId: testConversationId,
         workspaceId: testWorkspaceId,
         toolId: testToolId,
       );
 
-      // Assert
+      // Assert.
       expect(result, ToolPermissionResult.notConfigured);
     });
 
     test(
       'returns notConfigured when workspace tool is disabled',
       () async {
-        // Arrange
+        // Arrange.
         when(
           fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
             testWorkspaceId,
@@ -76,14 +74,14 @@ void main() {
           ),
         );
 
-        // Act
+        // Act.
         final result = await fixture.repository.checkToolPermission(
           conversationId: testConversationId,
           workspaceId: testWorkspaceId,
           toolId: testToolId,
         );
 
-        // Assert
+        // Assert.
         expect(result, ToolPermissionResult.notConfigured);
       },
     );
@@ -91,7 +89,7 @@ void main() {
     test(
       'returns granted when workspace grants and no conversation override',
       () async {
-        // Arrange
+        // Arrange.
         when(
           fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
             testWorkspaceId,
@@ -109,14 +107,14 @@ void main() {
           ),
         );
 
-        // Act
+        // Act.
         final result = await fixture.repository.checkToolPermission(
           conversationId: testConversationId,
           workspaceId: testWorkspaceId,
           toolId: testToolId,
         );
 
-        // Assert
+        // Assert.
         expect(result, ToolPermissionResult.granted);
       },
     );
@@ -124,7 +122,7 @@ void main() {
     test(
       'returns needsConfirmation when workspace requires confirmation',
       () async {
-        // Arrange
+        // Arrange.
         when(
           fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
             testWorkspaceId,
@@ -142,14 +140,14 @@ void main() {
           ),
         );
 
-        // Act
+        // Act.
         final result = await fixture.repository.checkToolPermission(
           conversationId: testConversationId,
           workspaceId: testWorkspaceId,
           toolId: testToolId,
         );
 
-        // Assert
+        // Assert.
         expect(result, ToolPermissionResult.needsConfirmation);
       },
     );
@@ -157,7 +155,7 @@ void main() {
     test(
       'conversation override takes priority - disables tool',
       () async {
-        // Arrange: workspace allows, but conversation disables
+        // Arrange: workspace allows, but conversation disables.
         when(
           fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
             testWorkspaceId,
@@ -175,7 +173,7 @@ void main() {
           ),
         );
 
-        // Create a conversation tool that disables this tool
+        // Create a conversation tool that disables this tool.
         final _ = await fixture.database.conversationToolsDao
             .upsertConversationTool(
               testConversationId,
@@ -184,14 +182,14 @@ void main() {
               permission: PermissionAccess.ask,
             );
 
-        // Act
+        // Act.
         final result = await fixture.repository.checkToolPermission(
           conversationId: testConversationId,
           workspaceId: testWorkspaceId,
           toolId: testToolId,
         );
 
-        // Assert
+        // Assert.
         expect(result, ToolPermissionResult.disabledInConversation);
       },
     );
@@ -199,7 +197,7 @@ void main() {
     test(
       'conversation override takes priority - requires confirmation',
       () async {
-        // Arrange: workspace grants, but conversation requires confirmation
+        // Arrange: workspace grants, but conversation requires confirmation.
         when(
           fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
             testWorkspaceId,
@@ -217,7 +215,7 @@ void main() {
           ),
         );
 
-        // Create a conversation tool that requires confirmation
+        // Create a conversation tool that requires confirmation.
         final _ = await fixture.database.conversationToolsDao
             .upsertConversationTool(
               testConversationId,
@@ -226,14 +224,14 @@ void main() {
               permission: PermissionAccess.ask,
             );
 
-        // Act
+        // Act.
         final result = await fixture.repository.checkToolPermission(
           conversationId: testConversationId,
           workspaceId: testWorkspaceId,
           toolId: testToolId,
         );
 
-        // Assert
+        // Assert.
         expect(result, ToolPermissionResult.needsConfirmation);
       },
     );
@@ -241,7 +239,7 @@ void main() {
     test(
       'conversation can grant when workspace requires confirmation',
       () async {
-        // Arrange: workspace asks, but conversation grants
+        // Arrange: workspace asks, but conversation grants.
         when(
           fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
             testWorkspaceId,
@@ -259,7 +257,7 @@ void main() {
           ),
         );
 
-        // Create a conversation tool that grants permission
+        // Create a conversation tool that grants permission.
         final _ = await fixture.database.conversationToolsDao
             .upsertConversationTool(
               testConversationId,
@@ -268,14 +266,14 @@ void main() {
               permission: PermissionAccess.granted,
             );
 
-        // Act
+        // Act.
         final result = await fixture.repository.checkToolPermission(
           conversationId: testConversationId,
           workspaceId: testWorkspaceId,
           toolId: testToolId,
         );
 
-        // Assert
+        // Assert.
         expect(result, ToolPermissionResult.granted);
       },
     );

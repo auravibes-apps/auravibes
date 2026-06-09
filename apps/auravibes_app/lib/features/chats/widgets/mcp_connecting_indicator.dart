@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: no-equal-arguments
 // Required: Existing argument values intentionally repeat.
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
@@ -25,7 +23,7 @@ class McpConnectingIndicator extends ConsumerWidget {
       return const SizedBox.shrink();
     }
 
-    // Get the server names for the pending MCPs
+    // Get the server names for the pending MCPs.
     final mcpConnections = ref.watch(mcpConnectionProvider);
     final pendingServerNames = mcpConnections
         .where((c) => pendingMcpIds.contains(c.server.id))

@@ -2,8 +2,6 @@
 // Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: avoid-top-level-members-in-tests
 // Required: Test files keep shared fixtures and helpers top-level.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_compaction_settings_dao.dart';
@@ -60,7 +58,7 @@ void main() {
 
       expect(settings.autoCompactionEnabled, isFalse);
       expect(settings.usagePercentageThreshold, 50);
-      expect(settings.remainingTokenThreshold, 2000); // falls back
+      expect(settings.remainingTokenThreshold, 2000); // Falls back.
       expect(settings.updatedAt, DateTime(2026, 1, 2));
     });
   });

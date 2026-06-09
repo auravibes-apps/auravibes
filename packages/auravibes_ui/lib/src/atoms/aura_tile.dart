@@ -2,8 +2,6 @@
 // Required: UI tokens and layout use fixed design values.
 // ignore_for_file: avoid-returning-widgets
 // Required: Existing helper builders return widgets.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -108,13 +106,13 @@ class AuraTile extends StatelessWidget {
       );
     }
 
-    // Check if child is effectively empty (like SizedBox.shrink())
+    // Check if child is effectively empty (like SizedBox.shrink().).
     final tileChild = child;
     final isChildEmpty =
         tileChild is SizedBox && tileChild.width == 0 && tileChild.height == 0;
 
     if (isChildEmpty && leading != null && trailing == null) {
-      // Icon-only case: center the leading icon
+      // Icon-only case: center the leading icon.
       return Center(child: leading);
     }
 

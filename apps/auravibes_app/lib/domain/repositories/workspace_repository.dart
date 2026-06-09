@@ -1,5 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -108,7 +106,7 @@ abstract class WorkspaceRepository {
 
 /// Base exception for workspace-related operations.
 class WorkspaceException implements Exception {
-  /// Creates a new WorkspaceException
+  /// Creates a new WorkspaceException.
   const WorkspaceException(this.message, {this.localizationKey, this.cause});
 
   /// Error message describing the exception.
@@ -118,7 +116,7 @@ class WorkspaceException implements Exception {
   /// Localization key for user-facing error messages.
   final String? localizationKey;
 
-  /// Optional original exception that caused this exception
+  /// Optional original exception that caused this exception.
   final Exception? cause;
 
   @override
@@ -130,7 +128,7 @@ class WorkspaceException implements Exception {
 
 /// Exception thrown when workspace validation fails.
 class WorkspaceValidationException extends WorkspaceException {
-  /// Creates a new WorkspaceValidationException
+  /// Creates a new WorkspaceValidationException.
   const WorkspaceValidationException(
     super.message, {
     super.localizationKey,
@@ -140,33 +138,33 @@ class WorkspaceValidationException extends WorkspaceException {
 
 /// Exception thrown when a workspace is not found.
 class WorkspaceNotFoundException extends WorkspaceException {
-  /// Creates a new WorkspaceNotFoundException
+  /// Creates a new WorkspaceNotFoundException.
   const WorkspaceNotFoundException(this.workspaceId, {super.cause})
     : super(
         'Workspace with ID "$workspaceId" not found',
         localizationKey: LocaleKeys.workspace_management_error_not_found,
       );
 
-  /// ID of the workspace that was not found
+  /// ID of the workspace that was not found.
   final String workspaceId;
 }
 
 /// Exception thrown when attempting to create a duplicate workspace.
 class WorkspaceDuplicateException extends WorkspaceException {
-  /// Creates a new WorkspaceDuplicateException
+  /// Creates a new WorkspaceDuplicateException.
   const WorkspaceDuplicateException(this.workspaceId, {super.cause})
     : super(
         'Workspace with ID "$workspaceId" already exists',
         localizationKey: LocaleKeys.workspace_management_error_duplicate,
       );
 
-  /// ID of the duplicate workspace
+  /// ID of the duplicate workspace.
   final String workspaceId;
 }
 
 /// Exception thrown when attempting to delete the last remaining workspace.
 class WorkspaceDeleteLastException extends WorkspaceException {
-  /// Creates a new WorkspaceDeleteLastException
+  /// Creates a new WorkspaceDeleteLastException.
   const WorkspaceDeleteLastException()
     : super(
         'Cannot delete the last remaining workspace.',
@@ -176,7 +174,7 @@ class WorkspaceDeleteLastException extends WorkspaceException {
 
 /// Exception thrown when attempting to delete the currently active workspace.
 class WorkspaceDeleteActiveException extends WorkspaceException {
-  /// Creates a new WorkspaceDeleteActiveException
+  /// Creates a new WorkspaceDeleteActiveException.
   const WorkspaceDeleteActiveException()
     : super(
         'Cannot delete the currently active workspace. '

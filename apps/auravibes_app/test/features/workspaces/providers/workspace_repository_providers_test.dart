@@ -1,7 +1,5 @@
 // ignore_for_file: no-empty-block
 // Required: Tests use intentional no-op callbacks and fake hooks.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 // ignore_for_file: prefer-static-class
@@ -134,7 +132,7 @@ void main() {
       );
       addTearDown(testContainer.dispose);
 
-      // Keep provider alive during async test
+      // Keep provider alive during async test.
       final _ = testContainer.listen(allWorkspacesProvider, (_, _) {});
 
       final result = await testContainer.read(allWorkspacesProvider.future);
@@ -150,7 +148,7 @@ void main() {
       );
       addTearDown(testContainer.dispose);
 
-      // Keep provider alive during async test
+      // Keep provider alive during async test.
       final _ = testContainer.listen(allWorkspacesProvider, (_, _) {});
 
       final first = await testContainer.read(allWorkspacesProvider.future);

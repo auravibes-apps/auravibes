@@ -1,7 +1,5 @@
 // ignore_for_file: prefer-async-await
 // Required: Existing Future chains preserve callback flow.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-static-class
@@ -151,7 +149,7 @@ class ApiModelsDao extends DatabaseAccessor<AppDatabase>
           final inserted = await upsertModel(model);
           results.add(inserted);
         } on Exception catch (e) {
-          // Continue with other models if one fails
+          // Continue with other models if one fails.
           _log.severe('Failed to insert model ${model.id.value}: $e');
         }
       }

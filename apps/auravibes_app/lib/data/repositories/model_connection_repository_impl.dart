@@ -1,5 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: prefer-moving-to-variable
@@ -47,15 +45,15 @@ class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
       throw ModelConnectionNoTypeException(modelConnection.modelId);
     }
 
-    // Extract last 6 characters for display
+    // Extract last 6 characters for display.
     final keySuffix = modelConnection.key.lastCharacters(6);
 
-    // Store API key encrypted
+    // Store API key encrypted.
     final encryptedApiKey = await _encryptionService.encrypt(
       modelConnection.key,
     );
 
-    // Validate API key with model provider
+    // Validate API key with model provider.
     final models = await _modelProviderServices.getWorkspaceModelSelections(
       ModelProvider(
         type: .fromString(modelType.value),
@@ -266,7 +264,7 @@ class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
 
   @override
   Future<void> deleteModelConnection(String modelConnectionId) async {
-    // Verify the model connection exists before attempting deletion
+    // Verify the model connection exists before attempting deletion.
     final modelConnection = await _database.modelConnectionsDao
         .getModelConnectionById(
           modelConnectionId,
@@ -277,7 +275,7 @@ class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
       );
     }
 
-    // Delete from database
+    // Delete from database.
     await _database.modelConnectionsDao.deleteModelConnection(
       modelConnectionId,
     );

@@ -1,7 +1,5 @@
 // ignore_for_file: prefer-async-await
 // Required: Existing Future chains preserve callback flow.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -18,7 +16,7 @@ part 'message_dao.g.dart';
 class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
   MessageDao(super.attachedDatabase);
 
-  // Core CRUD operations
+  // Core CRUD operations.
   Future<MessagesTable> insertMessage(MessagesCompanion message) =>
       into(messages).insertReturning(message);
 
@@ -36,7 +34,7 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
     messages,
   )..where((tbl) => tbl.id.equals(id))).go().then((count) => count > 0);
 
-  // Business-specific queries
+  // Business-specific queries.
   Future<List<MessagesTable>> getMessagesByConversation(
     String conversationId,
   ) => _messagesByConversationQuery(conversationId).get();

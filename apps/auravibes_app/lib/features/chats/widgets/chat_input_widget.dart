@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: prefer-extracting-callbacks
 // Required: UI callbacks stay local to their widgets.
 
@@ -70,7 +68,7 @@ class ChatInputWidget extends HookConsumerWidget {
         },
         footer: Row(
           children: [
-            // Tools button - always show, modal will handle availability
+            // Tools button - always show, modal will handle availability.
             Padding(
               padding: const EdgeInsets.only(right: 8),
               child: AuraButton(
@@ -130,7 +128,7 @@ class ChatInputWidget extends HookConsumerWidget {
                 ),
               ),
 
-            // Send button
+            // Send button.
             AuraButton(
               onPressed: sendMessage,
               child: const AuraIcon(Icons.arrow_upward),

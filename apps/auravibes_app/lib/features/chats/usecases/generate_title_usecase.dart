@@ -1,5 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: prefer-correct-identifier-length
@@ -35,7 +33,7 @@ class GenerateTitleUsecase {
     required WorkspaceModelSelectionWithConnectionEntity
     workspaceModelSelection,
   }) {
-    // stream title
+    // Stream title.
     final stream = chatbotService.streamTitle(
       workspaceModelSelection,
       firstMessage,

@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-moving-to-variable
@@ -67,7 +65,7 @@ abstract class AddModelProviderModel with _$AddModelProviderModel {
   String? validateUrl() {
     final url = this.url;
     if (url == null || url.trim().isEmpty) {
-      return null; // URL is optional
+      return null; // URL is optional.
     }
     final trimmedUrl = url.trim();
     try {

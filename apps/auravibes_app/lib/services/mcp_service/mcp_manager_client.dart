@@ -1,5 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -42,8 +40,8 @@ class McpManagerService {
   }) async {
     final result = await client._client.callTool(toolIdentifier, arguments);
 
-    // Convert the result content to a string
-    // The result.content is a list of content items (TextContent, etc.)
+    // Convert the result content to a string.
+    // The result.content is a list of content items (TextContent, etc).
     final contentStrings = result.content.map((content) {
       if (content is mcp.TextContent) {
         return content.text;
@@ -57,20 +55,20 @@ class McpManagerService {
   Future<McpManagerClient> connectMcp(
     McpServerToCreate serverInfo,
   ) async {
-    // Create client configuration
+    // Create client configuration.
     final config = mcp.McpClient.simpleConfig(
       name: 'AuraVibes MCP Client',
       version: '1.0.0',
     );
 
-    // Create and connect client
+    // Create and connect client.
     final clientResult = mcp.McpClient.createClient(
       config,
     );
 
-    // clientResult.connect(transport)
+    // ClientResult.connect(transport.)
 
-    // Create transport configuration based on server settings
+    // Create transport configuration based on server settings.
     final clientTransport = await _createTransportConfig(serverInfo);
     await clientResult.connect(clientTransport);
 
@@ -82,7 +80,7 @@ class McpManagerService {
   Future<List<McpToolInfo>> getTools(
     McpManagerClient client,
   ) async {
-    // List available tools from the MCP server
+    // List available tools from the MCP server.
     final tools = await client._client.listTools();
     return _convertTools(tools);
   }

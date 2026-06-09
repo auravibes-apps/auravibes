@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: UI tokens and layout use fixed design values.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: no-equal-arguments
 // Required: UI geometry uses repeated values for symmetric layout.
 // ignore_for_file: member-ordering
@@ -168,7 +166,7 @@ class _AuraDialogShell extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Title
+              // Title.
               Padding(
                 padding: EdgeInsets.only(
                   left: auraTheme.spacing.md,
@@ -184,7 +182,7 @@ class _AuraDialogShell extends StatelessWidget {
                   child: title,
                 ),
               ),
-              // Message (scrollable if too long)
+              // Message (scrollable if too long).
               Flexible(
                 child: SingleChildScrollView(
                   padding: EdgeInsets.symmetric(

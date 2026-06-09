@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: no-empty-block
 // Required: Tests use intentional no-op callbacks and fake hooks.
 // ignore_for_file: prefer-correct-identifier-length
@@ -192,11 +190,11 @@ void main() {
           ),
         );
 
-        // Should not throw when tapped
+        // Should not throw when tapped.
         await tester.tap(find.byType(AuraSwitch));
         await tester.pump();
 
-        // Widget should still render correctly
+        // Widget should still render correctly.
         expect(find.byType(AuraSwitch), findsOneWidget);
       });
     });
@@ -218,12 +216,12 @@ void main() {
         final auraSwitch = tester.widget<AuraSwitch>(find.byType(AuraSwitch));
         expect(auraSwitch.size, AuraSwitchSize.sm);
 
-        // Verify the switch renders with smaller dimensions
+        // Verify the switch renders with smaller dimensions.
         final animatedContainer = tester.widget<AnimatedContainer>(
           find.byType(AnimatedContainer).first,
         );
         final constraints = animatedContainer.constraints;
-        // sm size should have width of 36.0
+        // Sm size should have width of 36.0.
         expect(constraints?.maxWidth, 36.0);
       });
 
@@ -261,12 +259,12 @@ void main() {
         final auraSwitch = tester.widget<AuraSwitch>(find.byType(AuraSwitch));
         expect(auraSwitch.size, AuraSwitchSize.lg);
 
-        // Verify the switch renders with larger dimensions
+        // Verify the switch renders with larger dimensions.
         final animatedContainer = tester.widget<AnimatedContainer>(
           find.byType(AnimatedContainer).first,
         );
         final constraints = animatedContainer.constraints;
-        // lg size should have width of 52.0
+        // Lg size should have width of 52.0.
         expect(constraints?.maxWidth, 52.0);
       });
     });
@@ -415,23 +413,23 @@ void main() {
           ),
         );
 
-        // Get initial position
+        // Get initial position.
         final animatedPositionedBefore = tester.widget<AnimatedPositioned>(
           find.byType(AnimatedPositioned),
         );
         final initialLeft = animatedPositionedBefore.left;
 
-        // Tap to toggle
+        // Tap to toggle.
         await tester.tap(find.byType(AuraSwitch));
         final _ = await tester.pumpAndSettle();
 
-        // Get final position
+        // Get final position.
         final animatedPositionedAfter = tester.widget<AnimatedPositioned>(
           find.byType(AnimatedPositioned),
         );
         final finalLeft = animatedPositionedAfter.left;
 
-        // Position should have changed
+        // Position should have changed.
         expect(finalLeft, isNot(equals(initialLeft)));
       });
     });

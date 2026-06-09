@@ -1,5 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: prefer-correct-identifier-length
@@ -50,7 +48,7 @@ class HueColorValues {
 class DesignColors {
   DesignColors._();
 
-  // Primary colors
+  // Primary colors.
 
   /// Main primary color for primary actions and branding.
   static const Color primaryBase = Color(0xFF2563EB);
@@ -64,7 +62,7 @@ class DesignColors {
   /// Contrast color for text and icons on primary backgrounds.
   static const Color primaryContrast = Color(0xFFFFFFFF);
 
-  // Secondary colors
+  // Secondary colors.
 
   /// Main secondary color for secondary actions and accents.
   static const Color secondaryBase = Color(0xFFEC4899);
@@ -78,7 +76,7 @@ class DesignColors {
   /// Contrast color for text and icons on secondary backgrounds.
   static const Color secondaryContrast = Color(0xFFFFFFFF);
 
-  // Accent colors
+  // Accent colors.
 
   /// Main accent color for special highlights and features.
   static const Color accentBase = Color(0xFF8B5CF6);
@@ -92,7 +90,7 @@ class DesignColors {
   /// Contrast color for text and icons on accent backgrounds.
   static const Color accentContrast = Color(0xFFFFFFFF);
 
-  // Neutral colors
+  // Neutral colors.
 
   /// Very light neutral color for backgrounds and subtle dividers.
   static const Color neutral50 = Color(0xFFF8FAFC);
@@ -124,9 +122,9 @@ class DesignColors {
   /// Darkest neutral for primary text in dark mode.
   static const Color neutral900 = Color(0xFF0F172A);
 
-  // Semantic colors
+  // Semantic colors.
 
-  /// Transparent color
+  /// Transparent color.
   static const Color transparent = Color(0x00000000);
 }
 
@@ -137,7 +135,7 @@ class DesignColors {
 class DesignTypography {
   DesignTypography._();
 
-  // Font families
+  // Font families.
 
   /// Font family for headings and display text.
   static const String headingFontFamily = 'Inter';
@@ -148,7 +146,7 @@ class DesignTypography {
   /// Monospace font family for code and technical content.
   static const String monoFontFamily = 'JetBrains Mono';
 
-  // Font sizes (in logical pixels)
+  // Font sizes (in logical pixels).
 
   /// Extra small font size (12px, 0.75rem) for captions and fine print.
   static const double fontSizeXs = 12;
@@ -177,7 +175,7 @@ class DesignTypography {
   /// 5X large font size (48px, 3rem) for hero text and large displays.
   static const double fontSize5Xl = 48;
 
-  // Font weights
+  // Font weights.
 
   /// Light font weight (300) for subtle text elements.
   static const FontWeight fontWeightLight = FontWeight.w300;
@@ -194,7 +192,7 @@ class DesignTypography {
   /// Bold font weight (700) for headings and strong emphasis.
   static const FontWeight fontWeightBold = FontWeight.w700;
 
-  // Line heights
+  // Line heights.
 
   /// Extra tight line height (1.2) for compact text layouts.
   static const double lineHeightXs = 1.2;
@@ -223,7 +221,7 @@ class DesignTypography {
   /// 5X large line height (1.0) for hero text and tight displays.
   static const double lineHeight5Xl = 1;
 
-  // Letter spacing
+  // Letter spacing.
 
   /// Tight letter spacing (-0.025) for compact text.
   static const double letterSpacingTight = -0.025;
@@ -267,7 +265,7 @@ class DesignSpacing {
 
   static const double xl3 = 64;
 
-  // Layout spacing
+  // Layout spacing.
 
   /// Content padding (24px, 1.5rem) for main content areas.
   static const double contentPadding = 24;
@@ -473,65 +471,65 @@ class DesignShadows {
   );
 }
 
-/// define spacing on components
+/// Define spacing on components.
 enum AuraSpacing {
-  /// no spacing
+  /// No spacing.
   none,
 
-  /// common spacing
+  /// Common spacing.
   base,
 
-  /// extra small spacing
+  /// Extra small spacing.
   xs,
 
-  /// small spacing
+  /// Small spacing.
   sm,
 
-  /// medium spacing
+  /// Medium spacing.
   md,
 
-  /// large spacing
+  /// Large spacing.
   lg,
 
-  /// extra large spacing
+  /// Extra large spacing.
   xl,
 
-  /// 2x extra large spacing
+  /// 2X extra large spacing.
   xl2,
 
-  /// 3x extra large spacing
+  /// 3X extra large spacing.
   xl3,
 }
 
-/// Options for colors
+/// Options for colors.
 enum AuraColorVariant {
-  /// primary
+  /// Primary.
   primary,
 
-  /// on surface option
+  /// On surface option.
   onSurface,
 
-  /// on surface variant option
+  /// On surface variant option.
   onSurfaceVariant,
 
-  /// surface variant option
+  /// Surface variant option.
   surfaceVariant,
 
-  /// error option
+  /// Error option.
   error,
 
-  /// on primary option
+  /// On primary option.
   onPrimary,
 
-  /// secondary option
+  /// Secondary option.
   secondary,
 
-  /// success option (semantic)
+  /// Success option (semantic).
   success,
 
-  /// warning option (semantic)
+  /// Warning option (semantic).
   warning,
 
-  /// info option (semantic)
+  /// Info option (semantic).
   info,
 }

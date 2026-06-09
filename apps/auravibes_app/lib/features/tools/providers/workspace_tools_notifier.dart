@@ -1,5 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -51,7 +49,7 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
     return repository.getWorkspaceTools(workspaceId);
   }
 
-  /// Add a new built-in tool to the workspace
+  /// Add a new built-in tool to the workspace.
   Future<void> addTool(UserToolType toolType) async {
     final _ = await _requiredRepository.setWorkspaceToolEnabled(
       _workspaceId,
@@ -82,7 +80,7 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
     }
   }
 
-  /// Enable or disable a workspace tool by its database ID
+  /// Enable or disable a workspace tool by its database ID.
   Future<void> setToolEnabled(
     String id, {
     required bool isEnabled,
@@ -94,7 +92,7 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
     _replaceTools([newTool]);
   }
 
-  /// Update workspace tool configuration
+  /// Update workspace tool configuration.
   Future<void> updateToolConfig(String toolId, String? config) async {
     final success = await _requiredRepository.patchWorkspaceToolConfig(
       _workspaceId,
@@ -104,7 +102,7 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
     _replaceTools(success);
   }
 
-  /// Remove a workspace tool by its database ID
+  /// Remove a workspace tool by its database ID.
   Future<bool> removeToolById(String id) async {
     final success = await _requiredRepository.removeWorkspaceToolById(id);
     if (success) {
@@ -113,7 +111,7 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
     return success;
   }
 
-  /// Set the permission mode for a workspace tool
+  /// Set the permission mode for a workspace tool.
   Future<void> setToolPermissionMode(
     String id, {
     required ToolPermissionMode permissionMode,
@@ -126,7 +124,7 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
   }
 }
 
-/// Provider that returns the list of available built-in tools
+/// Provider that returns the list of available built-in tools.
 /// that can be added to the workspace
 @riverpod
 Future<List<UserToolType>> availableToolsToAdd(

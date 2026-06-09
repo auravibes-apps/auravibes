@@ -2,8 +2,6 @@
 // Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: no-empty-block
 // Required: Tests use intentional no-op callbacks and fake hooks.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: no-object-declaration
 // Required: Test fakes override noSuchMethod with Object return values.
 // ignore_for_file: prefer-correct-identifier-length
@@ -92,13 +90,13 @@ void main() {
       expect(states.length, greaterThanOrEqualTo(3));
       expect(states.firstOrNull?.status, SwitchStatus.idle);
 
-      // Loading state
+      // Loading state.
       final loadingState = states.firstWhere(
         (s) => s.status == SwitchStatus.loading,
       );
       expect(loadingState.status, SwitchStatus.loading);
 
-      // Final idle state
+      // Final idle state.
       expect(states.last.status, SwitchStatus.idle);
     });
 
@@ -128,7 +126,7 @@ void main() {
     test('clearError resets error state to idle', () {
       final notifier = container.read(workspaceSwitcherProvider.notifier);
 
-      // Manually set error state
+      // Manually set error state.
       notifier.state = const WorkspaceSwitchState(
         status: SwitchStatus.error,
         targetWorkspaceId: 'ws-1',

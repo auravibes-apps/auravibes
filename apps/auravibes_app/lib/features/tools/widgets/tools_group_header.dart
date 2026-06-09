@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: prefer-single-widget-per-file
 // Required: Feature widgets keep closely related private widgets together.
 
@@ -59,15 +57,15 @@ class ToolsGroupHeader extends StatelessWidget {
 
     return AuraRow(
       children: [
-        // Group icon
+        // Group icon.
         _GroupIcon(groupWithTools: groupWithTools),
         SizedBox(width: context.auraTheme.spacing.sm),
 
-        // Group name and status
+        // Group name and status.
         Expanded(
           child: AuraColumn(
             children: [
-              // Name row with status badge
+              // Name row with status badge.
               AuraText(
                 child: Text(
                   groupWithTools.localizedDisplayNameKey?.tr() ??
@@ -84,7 +82,7 @@ class ToolsGroupHeader extends StatelessWidget {
                   onReconnect: onReconnect,
                   onViewError: onViewError,
                 ),
-              // Tool count
+              // Tool count.
               AuraText(
                 child: Text(
                   LocaleKeys.tools_screen_tools_count.tr(
@@ -103,7 +101,7 @@ class ToolsGroupHeader extends StatelessWidget {
           ),
         ),
 
-        // Actions row
+        // Actions row.
         AuraRow(
           children: [
             if (groupWithTools.isMcpGroup && onDelete != null)

@@ -2,8 +2,6 @@
 // Required: Existing thresholds and limits use numeric values.
 // ignore_for_file: avoid-returning-widgets
 // Required: Existing helper builders return widgets.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: prefer-moving-to-variable
@@ -61,10 +59,10 @@ class ToolCallResponseModal extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Header with tool name and close button
+            // Header with tool name and close button.
             _buildHeader(context),
 
-            // Scrollable markdown content
+            // Scrollable markdown content.
             Flexible(
               child: SingleChildScrollView(
                 padding: EdgeInsets.all(context.auraTheme.spacing.md),
@@ -79,7 +77,7 @@ class ToolCallResponseModal extends StatelessWidget {
               ),
             ),
 
-            // Footer with close button
+            // Footer with close button.
             _buildFooter(context),
           ],
         ),

@@ -1,5 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -28,10 +26,10 @@ class ModelSyncService {
     required this.apiService,
   });
 
-  /// Repository for local data operations
+  /// Repository for local data operations.
   final ApiModelRepository repository;
 
-  /// API service for external data fetching
+  /// API service for external data fetching.
   final ModelApiService apiService;
 
   /// Performs a full synchronization of all models and providers.
@@ -95,7 +93,7 @@ class ModelSyncService {
     final errors = <String>[];
 
     try {
-      // Convert API data to domain entities
+      // Convert API data to domain entities.
       final apiProviderEntities = apiResponse.providers
           .map(
             (e) => e.modelProvider,
@@ -107,13 +105,13 @@ class ModelSyncService {
           )
           .flattenedToList;
 
-      // Sync providers (clear and replace for full sync)
+      // Sync providers (clear and replace for full sync).
       if (fullSync) {
         final _ = await repository.deleteAllData();
         providersRemoved = localProviders.length;
       }
 
-      // Batch insert providers and models
+      // Batch insert providers and models.
       final insertedProviders = await repository.batchUpsertProviders(
         apiProviderEntities,
       );
@@ -165,37 +163,37 @@ class ModelSyncResult {
     this.errors = const [],
   });
 
-  /// Whether the synchronization was successful
+  /// Whether the synchronization was successful.
   final bool isSuccess;
 
-  /// How long the synchronization took
+  /// How long the synchronization took.
   final Duration? duration;
 
-  /// Whether this was a full synchronization
+  /// Whether this was a full synchronization.
   final bool fullSync;
 
-  /// Number of providers added
+  /// Number of providers added.
   final int providersAdded;
 
-  /// Number of providers updated
+  /// Number of providers updated.
   final int providersUpdated;
 
-  /// Number of providers removed
+  /// Number of providers removed.
   final int providersRemoved;
 
-  /// Number of models added
+  /// Number of models added.
   final int modelsAdded;
 
-  /// Number of models updated
+  /// Number of models updated.
   final int modelsUpdated;
 
-  /// Number of models removed
+  /// Number of models removed.
   final int modelsRemoved;
 
-  /// List of errors that occurred during synchronization
+  /// List of errors that occurred during synchronization.
   final List<String> errors;
 
-  /// Total number of changes made
+  /// Total number of changes made.
   int get totalChanges =>
       providersAdded +
       providersUpdated +
@@ -204,7 +202,7 @@ class ModelSyncResult {
       modelsUpdated +
       modelsRemoved;
 
-  /// Human-readable summary of the sync result
+  /// Human-readable summary of the sync result.
   String get summary {
     if (!isSuccess) {
       return 'Synchronization failed with ${errors.length} errors';

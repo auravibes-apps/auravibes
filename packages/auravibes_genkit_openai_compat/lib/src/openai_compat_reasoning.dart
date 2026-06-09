@@ -1,7 +1,5 @@
 // ignore_for_file: prefer-match-file-name
 // Required: This internal package keeps its small provider API in one file.
-// ignore_for_file: format-comment
-// Required: Protocol comments mirror upstream OpenAI-compatible naming.
 // ignore_for_file: member-ordering
 // Required: DTO fields stay grouped with their constructors.
 // ignore_for_file: newline-before-return

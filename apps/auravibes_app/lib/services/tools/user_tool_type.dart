@@ -1,5 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -21,11 +19,11 @@ enum UserToolType {
   final String value;
 }
 
-/// Represents an available tool in the app
+/// Represents an available tool in the app.
 abstract class UserToolEntity<Input, Options, Output> {
   const UserToolEntity();
 
-  /// Type identifier for the tool
+  /// Type identifier for the tool.
   UserToolType get type;
 
   ToolSpec getTool();

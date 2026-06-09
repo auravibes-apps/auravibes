@@ -2,8 +2,6 @@
 // Required: Existing thresholds and limits use numeric values.
 // ignore_for_file: no-equal-arguments
 // Required: Existing argument values intentionally repeat.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -121,7 +119,7 @@ class ToolNameFormatter {
         return toolIdentifier.toHumanReadable();
       },
       unknown: (rawName) {
-        // Best effort: try to make it readable
+        // Best effort: try to make it readable.
         return rawName.toHumanReadable();
       },
     );

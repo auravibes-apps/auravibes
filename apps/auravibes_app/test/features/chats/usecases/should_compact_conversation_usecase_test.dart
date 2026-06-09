@@ -6,8 +6,6 @@
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: missing-test-assertion
 // Required: Tests cover guard clauses that return without assertions.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 // ignore_for_file: prefer-correct-type-name
@@ -599,8 +597,8 @@ void main() {
           contextLimit: 128000,
         );
 
-        // 10 args + 10 response + 0 content = 20 chars / 4 = 5 tokens
-        // 5/128000 = 0.004% → way below 1% → char count fallback works
+        // 10 Args + 10 response + 0 content = 20 chars / 4 = 5 tokens.
+        // 5/128000 = 0.004% → Way below 1% → char count fallback works.
         expect(
           decision.reason,
           CompactionDecisionReason.belowPercentageThreshold,

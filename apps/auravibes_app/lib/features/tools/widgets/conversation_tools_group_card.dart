@@ -1,5 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: prefer-moving-to-variable
@@ -21,7 +19,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-// Locale key for no tools in group message
+// Locale key for no tools in group message.
 const _kNoToolsInGroup = 'tools_screen.no_tools_in_group';
 const _kMcpErrorTitle = 'tools_screen.mcp_error';
 
@@ -60,7 +58,7 @@ class ConversationToolsGroupCard extends HookConsumerWidget {
       child: AuraCard(
         child: AuraColumn(
           children: [
-            // Header
+            // Header.
             ConversationGroupHeader(
               groupWithTools: groupWithTools,
               isExpanded: isExpanded.value,
@@ -76,7 +74,7 @@ class ConversationToolsGroupCard extends HookConsumerWidget {
                   : null,
             ),
 
-            // Expanded content
+            // Expanded content.
             if (isExpanded.value) ...[
               const AuraDivider(),
               _ToolsList(

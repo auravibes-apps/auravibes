@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: prefer-single-widget-per-file
 // Required: Feature widgets keep closely related private widgets together.
 import 'package:auravibes_app/features/tools/models/conversation_tools_group_with_tools.dart';
@@ -12,7 +10,7 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-/// Modal for managing conversation tools
+/// Modal for managing conversation tools.
 ///
 /// Shows ALL workspace tools organized by group (Built-in Tools, MCP servers).
 /// Each group is collapsible (collapsed by default) with:
@@ -53,7 +51,7 @@ class ToolsManagementModal extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Header with close button
+            // Header with close button.
             Container(
               padding: const EdgeInsets.all(DesignSpacing.md),
               decoration: BoxDecoration(
@@ -81,7 +79,7 @@ class ToolsManagementModal extends ConsumerWidget {
               ),
             ),
 
-            // Tools groups list
+            // Tools groups list.
             Flexible(
               child: switch (groupedToolsAsync) {
                 AsyncLoading() => const Center(child: AuraSpinner()),
@@ -99,7 +97,7 @@ class ToolsManagementModal extends ConsumerWidget {
               },
             ),
 
-            // Bottom padding
+            // Bottom padding.
             const SizedBox(height: DesignSpacing.md),
           ],
         ),

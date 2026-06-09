@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 
@@ -34,17 +32,17 @@ void main() {
     });
 
     test('should create and retrieve a workspace', () async {
-      // Arrange
+      // Arrange.
       const workspace = WorkspaceToCreate(
         name: 'Test Workspace',
         type: WorkspaceType.local,
       );
 
-      // Act
+      // Act.
       final createResult = await repository.createWorkspace(workspace);
       final getResult = await repository.getWorkspaceById(createResult.id);
 
-      // Assert
+      // Assert.
       expect(createResult.name, 'Test Workspace');
       expect(createResult.type, WorkspaceType.local);
 
@@ -56,7 +54,7 @@ void main() {
     });
 
     test('should retrieve all workspaces', () async {
-      // Arrange
+      // Arrange.
       const workspace1 = WorkspaceToCreate(
         name: 'Test Workspace 1',
         type: WorkspaceType.local,
@@ -67,19 +65,19 @@ void main() {
         url: 'https://example.com',
       );
 
-      // Act
+      // Act.
       final _ = await repository.createWorkspace(workspace1);
       final _ = await repository.createWorkspace(workspace2);
       final result = await repository.getAllWorkspaces();
 
-      // Assert
+      // Assert.
       expect(result.length, 2);
       expect(result.firstOrNull?.name, 'Test Workspace 1');
       expect(result[1].name, 'Test Workspace 2');
     });
 
     test('should update a workspace', () async {
-      // Arrange
+      // Arrange.
       const workspace = WorkspaceToCreate(
         name: 'Test Workspace',
         type: WorkspaceType.local,
@@ -88,25 +86,25 @@ void main() {
 
       const updatedWorkspace = WorkspacePatch(name: 'Updated Workspace');
 
-      // Act
+      // Act.
       final result = await repository.patchWorkspace(
         createdWorkspace.id,
         updatedWorkspace,
       );
 
-      // Assert
+      // Assert.
       expect(result.name, 'Updated Workspace');
     });
 
     test('should reject empty workspace patch', () async {
-      // Arrange
+      // Arrange.
       const workspace = WorkspaceToCreate(
         name: 'Test Workspace',
         type: WorkspaceType.local,
       );
       final createdWorkspace = await repository.createWorkspace(workspace);
 
-      // Act + Assert
+      // Act + Assert.
       await expectLater(
         repository.patchWorkspace(createdWorkspace.id, const WorkspacePatch()),
         throwsA(
@@ -120,7 +118,7 @@ void main() {
     });
 
     test('should reject invalid merged workspace patch invariants', () async {
-      // Arrange
+      // Arrange.
       const localWorkspace = WorkspaceToCreate(
         name: 'Local Workspace',
         type: WorkspaceType.local,
@@ -133,7 +131,7 @@ void main() {
       final createdLocal = await repository.createWorkspace(localWorkspace);
       final createdRemote = await repository.createWorkspace(remoteWorkspace);
 
-      // Act + Assert: local + URL should fail
+      // Act + Assert: local + URL should fail.
       await expectLater(
         repository.patchWorkspace(
           createdLocal.id,
@@ -142,7 +140,8 @@ void main() {
         throwsA(isA<WorkspaceValidationException>()),
       );
 
-      // Act + Assert: changing remote -> local without clearing URL should fail
+      // Act and assert that changing remote to local without clearing URL
+      // should fail.
       await expectLater(
         repository.patchWorkspace(
           createdRemote.id,
@@ -153,25 +152,25 @@ void main() {
     });
 
     test('should delete a workspace', () async {
-      // Arrange
+      // Arrange.
       const workspace = WorkspaceToCreate(
         name: 'Test Workspace',
         type: WorkspaceType.local,
       );
       final cretadWorkspace = await repository.createWorkspace(workspace);
 
-      // Act
+      // Act.
       final deleteResult = await repository.deleteWorkspace(cretadWorkspace.id);
       final getResult = await repository.getWorkspaceById(cretadWorkspace.id);
 
-      // Assert
+      // Assert.
       expect(deleteResult, true);
 
       expect(getResult, isNull);
     });
 
     test('should search workspaces by name', () async {
-      // Arrange
+      // Arrange.
       const workspace1 = WorkspaceToCreate(
         name: 'Development Workspace',
         type: WorkspaceType.local,
@@ -185,23 +184,23 @@ void main() {
       final _ = await repository.createWorkspace(workspace1);
       final _ = await repository.createWorkspace(workspace2);
 
-      // Act
+      // Act.
       final result = await repository.searchWorkspacesByName('Development');
 
-      // Assert
+      // Assert.
       expect(result.length, 1);
       expect(result.firstOrNull?.name, 'Development Workspace');
     });
 
     test('should handle invalid workspace creation', () async {
-      // Arrange - Create invalid workspace (local with URL)
+      // Arrange - Create invalid workspace (local with URL).
       const invalidWorkspace = WorkspaceToCreate(
         name: 'Test Workspace',
         type: WorkspaceType.local,
-        url: 'https://example.com', // Local workspace shouldn't have URL
+        url: 'https://example.com', // Local workspace shouldn't have URL.
       );
 
-      // Act
+      // Act.
       await expectLater(
         repository.createWorkspace(invalidWorkspace),
         throwsA(isA<WorkspaceValidationException>()),

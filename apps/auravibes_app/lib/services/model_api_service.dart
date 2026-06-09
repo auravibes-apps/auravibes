@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -19,10 +17,10 @@ import 'package:dio_smart_retry/dio_smart_retry.dart';
 class ModelApiService {
   ModelApiService({Dio? dio}) : _dio = dio ?? _createDefaultDio();
 
-  /// Dio client for API requests
+  /// Dio client for API requests.
   final Dio _dio;
 
-  /// Creates a default Dio instance with configuration
+  /// Creates a default Dio instance with configuration.
   static Dio _createDefaultDio() {
     final dio = Dio(
       BaseOptions(
@@ -37,7 +35,7 @@ class ModelApiService {
       ),
     );
 
-    // Add retry interceptor
+    // Add retry interceptor.
     dio.interceptors.add(
       RetryInterceptor(
         dio: dio,
@@ -103,7 +101,7 @@ class ModelApiService {
       );
     }
 
-    // Parse providers
+    // Parse providers.
     final providersData = jsonData;
 
     final providers = providersData.entries
@@ -127,18 +125,18 @@ class ModelApiService {
 class ModelApiResponse {
   ModelApiResponse({required this.providers});
 
-  /// List of providers with their models
+  /// List of providers with their models.
   final List<ApiProviderDto> providers;
 
-  /// Gets all models from all providers
+  /// Gets all models from all providers.
   List<ApiModelEntity> get allModels {
     return providers.expand((provider) => provider.models).toList();
   }
 
-  /// Gets the total count of providers
+  /// Gets the total count of providers.
   int get providerCount => providers.length;
 
-  /// Gets the total count of models
+  /// Gets the total count of models.
   int get modelCount => allModels.length;
 }
 
@@ -146,7 +144,7 @@ class ModelApiResponse {
 class ApiProviderDto {
   ApiProviderDto({required this.modelProvider, required this.models});
 
-  /// Creates an ApiProviderDto from JSON
+  /// Creates an ApiProviderDto from JSON.
   factory ApiProviderDto.fromJson(Map<String, dynamic> json) {
     final modelProvider = ApiModelProviderEntity.fromJson(json);
     final modelsData = json['models'] as Map<String, dynamic>? ?? {};
@@ -169,7 +167,7 @@ class ApiProviderDto {
 
   final List<ApiModelEntity> models;
 
-  /// Provider name
+  /// Provider name.
   final ApiModelProviderEntity modelProvider;
 }
 
@@ -183,22 +181,22 @@ class ModelApiStatus {
     this.error,
   });
 
-  /// Whether the API is accessible
+  /// Whether the API is accessible.
   final bool isAccessible;
 
-  /// HTTP status code from the last check
+  /// HTTP status code from the last check.
   final int? statusCode;
 
-  /// Response time from the last check
+  /// Response time from the last check.
   final Duration? responseTime;
 
-  /// When the status was last checked
+  /// When the status was last checked.
   final DateTime lastChecked;
 
-  /// Error message if the check failed
+  /// Error message if the check failed.
   final String? error;
 
-  /// Returns a human-readable status message
+  /// Returns a human-readable status message.
   String get statusMessage {
     if (isAccessible) {
       final responseTimeMs = responseTime?.inMilliseconds ?? 0;

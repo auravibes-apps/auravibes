@@ -1,5 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -21,7 +19,7 @@ class EncryptionService {
   static const int _macLength = 16;
   static const int _minimumPayloadLength = _nonceLength + _macLength;
 
-  /// Encrypts a string and returns base64-encoded ciphertext
+  /// Encrypts a string and returns base64-encoded ciphertext.
   /// Format: [12-byte nonce][ciphertext][16-byte MAC]
   Future<String> encrypt(String plaintext) async {
     final key = await _keyManager.getOrCreateSecretKey();
@@ -33,7 +31,7 @@ class EncryptionService {
       nonce: nonce,
     );
 
-    // Combine nonce + ciphertext + mac for storage
+    // Combine nonce + ciphertext + mac for storage.
     final combined = Uint8List.fromList([
       ...secretBox.nonce,
       ...secretBox.cipherText,
@@ -43,7 +41,7 @@ class EncryptionService {
     return base64Encode(combined);
   }
 
-  /// Decrypts a base64-encoded ciphertext
+  /// Decrypts a base64-encoded ciphertext.
   Future<String> decrypt(String encryptedBase64) async {
     final combined = base64Decode(encryptedBase64);
     if (combined.length < _minimumPayloadLength) {
@@ -67,13 +65,13 @@ class EncryptionService {
     return utf8.decode(decrypted);
   }
 
-  /// Encrypts data, returns null if input is null
+  /// Encrypts data, returns null if input is null.
   Future<String?> encryptNullable(String? plaintext) async {
     if (plaintext == null) return null;
     return encrypt(plaintext);
   }
 
-  /// Decrypts data, returns null if input is null
+  /// Decrypts data, returns null if input is null.
   Future<String?> decryptNullable(String? encryptedBase64) async {
     if (encryptedBase64 == null) return null;
     return decrypt(encryptedBase64);

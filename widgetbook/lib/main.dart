@@ -1,5 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -23,8 +21,8 @@ class WidgetbookApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Widgetbook.material(
-      // themeMode: .light,
-      // Use the generated directories variable
+      // ThemeMode: .light,.
+      // Use the generated directories variable.
       directories: directories,
       addons: [
         InspectorAddon(enabled: true),
@@ -61,7 +59,7 @@ class WidgetbookApp extends StatelessWidget {
           ),
         ),
         AlignmentAddon(),
-        // BuilderAddon(name: 'Builder', builder: (context, child) => child),
+        // BuilderAddon(name: 'Builder', builder: (context, child) => child),.
       ],
     );
   }

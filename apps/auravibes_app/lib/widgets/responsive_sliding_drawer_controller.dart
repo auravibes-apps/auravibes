@@ -2,8 +2,6 @@
 // Required: Existing thresholds and limits use numeric values.
 // ignore_for_file: avoid-returning-widgets
 // Required: Existing helper builders return widgets.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -238,7 +236,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
   @override
   void initState() {
     super.initState();
-    _isOpen = false; // initially closed
+    _isOpen = false; // Initially closed.
     _controller = AnimationController(
       duration: widget.animationDuration,
       vsync: this,

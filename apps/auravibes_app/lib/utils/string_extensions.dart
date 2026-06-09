@@ -1,10 +1,8 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 import 'package:characters/characters.dart';
 
 /// Extension methods for String manipulation.
 extension StringExtensions on String {
-  /// Converts an identifier (snake_case, camelCase, kebab-case, or mixed)
+  /// Converts an identifier (snake_case, camelCase, kebab-case, or mixed).
   /// to a human-readable format with proper capitalization.
   ///
   /// Examples:
@@ -17,16 +15,16 @@ extension StringExtensions on String {
   String toHumanReadable() {
     if (isEmpty) return this;
 
-    // First, insert spaces before uppercase letters (for camelCase/PascalCase)
+    // First, insert spaces before uppercase letters (for camelCase/PascalCase).
     final withSpaces = replaceAllMapped(
       RegExp('([a-z])([A-Z])'),
       (match) => '${match.group(1)} ${match.group(2)}',
     );
 
-    // Replace underscores and hyphens with spaces
+    // Replace underscores and hyphens with spaces.
     final normalized = withSpaces.replaceAll(RegExp('[_-]+'), ' ');
 
-    // Split into words, capitalize each, and join
+    // Split into words, capitalize each, and join.
     final words = normalized.split(RegExp(r'\s+'));
     final capitalizedWords = words.where((word) => word.isNotEmpty).map((word) {
       final wordCharacters = word.characters;

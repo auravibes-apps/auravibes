@@ -1,5 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -9,7 +7,7 @@
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
 import 'package:riverpod/riverpod.dart';
 
-/// Runtime adapter that captures notifier method references behind plain
+/// Runtime adapter that captures notifier method references behind plain.
 /// callback interfaces, so use cases stay decoupled from Riverpod notifier
 /// classes.
 ///

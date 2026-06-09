@@ -1,5 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/services/tools/user_tool_type.dart';
@@ -12,7 +10,7 @@ import 'package:collection/collection.dart';
 /// of tool availability based on conversation and workspace preferences.
 /// The resolution priority is: conversation → workspace → app defaults.
 class ToolService {
-  /// Hardcoded list of all available tools in the app
+  /// Hardcoded list of all available tools in the app.
   static const List<UserToolEntity<Object, Object, Object>> availableTools = [
     CalculatorTool(),
   ];

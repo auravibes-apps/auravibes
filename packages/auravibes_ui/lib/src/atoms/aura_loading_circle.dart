@@ -4,8 +4,6 @@
 // Required: Existing helper builders return widgets.
 // ignore_for_file: no-equal-arguments
 // Required: UI geometry uses repeated values for symmetric layout.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -38,9 +36,9 @@ class _DelayTween extends Tween<double> {
   double evaluate(Animation<double> animation) => lerp(animation.value);
 }
 
-/// Loading Widget
+/// Loading Widget.
 class AuraLoadingCircle extends StatefulWidget {
-  /// constructor
+  /// Constructor.
   const AuraLoadingCircle({
     required this.colorVariant,
     super.key,
@@ -58,22 +56,22 @@ class AuraLoadingCircle extends StatefulWidget {
   /// rendering.
   final AuraColorVariant colorVariant;
 
-  /// size
+  /// Size.
   final double size;
 
-  /// itemSize
+  /// ItemSize.
   final double? itemSize;
 
-  /// itemCount
+  /// ItemCount.
   final int? itemCount;
 
-  /// itemBuilder
+  /// ItemBuilder.
   final IndexedWidgetBuilder? itemBuilder;
 
-  /// duration
+  /// Duration.
   final Duration duration;
 
-  /// controller
+  /// Controller.
   final AnimationController? controller;
 
   @override

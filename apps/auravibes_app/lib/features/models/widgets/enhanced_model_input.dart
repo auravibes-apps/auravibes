@@ -1,5 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: prefer-moving-to-variable
@@ -14,7 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-/// Enhanced input widget for the add model provider form with validation
+/// Enhanced input widget for the add model provider form with validation.
 class EnhancedModelInput extends HookConsumerWidget {
   const EnhancedModelInput({
     required this.workspaceId,
@@ -36,7 +34,7 @@ class EnhancedModelInput extends HookConsumerWidget {
       addModelProviderStateProvider(workspaceId).notifier,
     );
 
-    // Get field-specific values
+    // Get field-specific values.
     final fieldData = _getFieldData(fieldType, state);
     final hint = fieldData.hint;
     final error = fieldData.error;
@@ -140,7 +138,7 @@ class EnhancedModelInput extends HookConsumerWidget {
   }
 }
 
-/// Enum representing the different input field types in the form
+/// Enum representing the different input field types in the form.
 enum ModelInputFieldType {
   name,
   key,

@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: no-empty-block
 // Required: Tests use intentional no-op callbacks and fake hooks.
 // ignore_for_file: prefer-correct-identifier-length
@@ -79,13 +77,13 @@ void main() {
         ),
       );
 
-      // Verify both radios exist and groupValue is correct
+      // Verify both radios exist and groupValue is correct.
       final radios = tester.widgetList<AuraRadio<String>>(
         find.byType(AuraRadio<String>),
       );
       expect(radios.length, 2);
 
-      // All radios should have the same groupValue
+      // All radios should have the same groupValue.
       for (final radio in radios) {
         expect(radio.groupValue, 'option2');
       }
@@ -235,9 +233,9 @@ void main() {
         ),
       );
 
-      // The custom implementation should NOT use RadioListTile
+      // The custom implementation should NOT use RadioListTile.
       expect(find.byType(RadioListTile<String>), findsNothing);
-      // It SHOULD use the custom AuraRadio widget
+      // It SHOULD use the custom AuraRadio widget.
       expect(find.byType(AuraRadio<String>), findsOneWidget);
     });
 
@@ -328,7 +326,7 @@ void main() {
         ),
       );
 
-      // Tap on the AuraRadio widget inside the AuraRadioListTile
+      // Tap on the AuraRadio widget inside the AuraRadioListTile.
       await tester.tap(find.byType(AuraRadio<String>));
       final _ = await tester.pumpAndSettle();
 

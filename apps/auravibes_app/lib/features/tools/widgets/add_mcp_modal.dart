@@ -4,8 +4,6 @@
 // Required: Existing thresholds and limits use numeric values.
 // ignore_for_file: avoid-returning-widgets
 // Required: Existing helper builders return widgets.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -33,13 +31,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-/// Modal for adding new MCP (Model Context Protocol) servers to the workspace
+/// Modal for adding new MCP (Model Context Protocol) servers to the workspace.
 class AddMcpModal extends HookConsumerWidget {
   const AddMcpModal({required this.workspaceId, super.key});
 
   final String workspaceId;
 
-  /// Shows the add MCP modal as a dialog
+  /// Shows the add MCP modal as a dialog.
   static Future<void> show(
     BuildContext context, {
     required String workspaceId,
@@ -65,13 +63,13 @@ class AddMcpModal extends HookConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Header with close button
+            // Header with close button.
             _buildHeader(context),
 
-            // Error message
+            // Error message.
             _ErrorBanner(workspaceId: workspaceId),
 
-            // Scrollable form content
+            // Scrollable form content.
             Flexible(
               child: SingleChildScrollView(
                 padding: EdgeInsets.all(context.auraTheme.spacing.md),
@@ -79,19 +77,19 @@ class AddMcpModal extends HookConsumerWidget {
                   children: [
                     AuraColumn(
                       children: [
-                        // Name field (required)
+                        // Name field (required).
                         _NameInput(workspaceId: workspaceId),
 
-                        // Description field (optional)
+                        // Description field (optional).
                         _DescriptionInput(workspaceId: workspaceId),
 
-                        // URL field (required)
+                        // URL field (required).
                         _UrlInput(workspaceId: workspaceId),
 
-                        // Transport selector
+                        // Transport selector.
                         _TransportSelector(workspaceId: workspaceId),
 
-                        // HTTP/2 toggle (only for streamableHttp)
+                        // HTTP/2 toggle (only for streamableHttp).
                         AppVisibilityBase(
                           visible: mcpFormProvider(workspaceId).select(
                             (value) => value.showHttp2Toggle,
@@ -99,10 +97,10 @@ class AddMcpModal extends HookConsumerWidget {
                           child: _Http2Toggle(workspaceId: workspaceId),
                         ),
 
-                        // Authentication selector
+                        // Authentication selector.
                         _AuthenticationSelector(workspaceId: workspaceId),
 
-                        // Bearer token field
+                        // Bearer token field.
                         AppVisibilityBase(
                           visible: mcpFormProvider(workspaceId).select(
                             (value) => value.showBearerTokenField,
@@ -119,7 +117,7 @@ class AddMcpModal extends HookConsumerWidget {
               ),
             ),
 
-            // Footer with action buttons
+            // Footer with action buttons.
             _Footer(workspaceId: workspaceId),
           ],
         ),

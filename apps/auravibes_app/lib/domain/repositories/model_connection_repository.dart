@@ -1,5 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -34,19 +32,19 @@ abstract class ModelConnectionRepository {
     ModelConnectionToUpdate modelConnection,
   );
 
-  /// Deletes a model connection
+  /// Deletes a model connection.
   Future<void> deleteModelConnection(String modelConnectionId);
 }
 
 /// Base exception for model connection-related operations.
 class ModelConnectionException implements Exception {
-  /// Creates a new ModelConnectionException
+  /// Creates a new ModelConnectionException.
   const ModelConnectionException(this.message, [this.cause]);
 
-  /// Error message describing the exception
+  /// Error message describing the exception.
   final String message;
 
-  /// Optional original exception that caused this exception
+  /// Optional original exception that caused this exception.
   final Exception? cause;
 
   @override
@@ -58,11 +56,11 @@ class ModelConnectionException implements Exception {
 
 /// Exception thrown when a model connection has no models.
 class ModelConnectionNoModelsException extends ModelConnectionException {
-  /// Creates a new ModelConnectionNoModelsException
+  /// Creates a new ModelConnectionNoModelsException.
   const ModelConnectionNoModelsException(this.modelId, [Exception? cause])
     : super('ModelProvider with type "$modelId" not found models', cause);
 
-  /// ID of the workspaceModelSelection that was not found
+  /// ID of the workspaceModelSelection that was not found.
   final String modelId;
 }
 

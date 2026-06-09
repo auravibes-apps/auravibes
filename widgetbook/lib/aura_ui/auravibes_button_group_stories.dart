@@ -1,7 +1,5 @@
 // ignore_for_file: avoid-returning-widgets
 // Required: Widgetbook stories use helper functions that return widgets.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: prefer-moving-to-variable
 // Required: Existing code repeats lookups where extraction adds noise.
 // ignore_for_file: prefer-single-widget-per-file
@@ -91,7 +89,7 @@ Widget buttonGroupActionUseCase(BuildContext context) {
   );
 }
 
-// Single Selection Demo
+// Single Selection Demo.
 class _SingleSelectionDemo extends StatefulWidget {
   const _SingleSelectionDemo({
     required this.size,
@@ -145,7 +143,7 @@ class _SingleSelectionDemoState extends State<_SingleSelectionDemo> {
   }
 }
 
-// Multi Selection Demo
+// Multi Selection Demo.
 class _MultiSelectionDemo extends StatefulWidget {
   const _MultiSelectionDemo({
     required this.size,
@@ -209,7 +207,7 @@ class _MultiSelectionDemoState extends State<_MultiSelectionDemo> {
   }
 }
 
-// Action Demo
+// Action Demo.
 class _ActionDemo extends StatefulWidget {
   const _ActionDemo({
     required this.size,

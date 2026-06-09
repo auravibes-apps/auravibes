@@ -1,5 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -51,7 +49,7 @@ class WorkspaceRepositoryImpl implements WorkspaceRepository {
 
   @override
   Future<WorkspaceEntity> createWorkspace(WorkspaceToCreate workspace) async {
-    // Validate workspace before creating
+    // Validate workspace before creating.
     if (!await validateWorkspace(workspace)) {
       throw const WorkspaceValidationException('Invalid workspace data');
     }
@@ -104,9 +102,9 @@ class WorkspaceRepositoryImpl implements WorkspaceRepository {
 
   @override
   Future<bool> deleteWorkspace(String id) async {
-    // Check if workspace exists
+    // Check if workspace exists.
     if (!await workspaceExists(id)) {
-      return false; // Return false instead of throwing for delete operations
+      return false; // Return false instead of throwing for delete operations.
     }
 
     // ON DELETE CASCADE at the schema level handles all related data.
@@ -148,9 +146,9 @@ class WorkspaceRepositoryImpl implements WorkspaceRepository {
 
   @override
   Future<bool> patchWorkspaceTimestamp(String id) async {
-    // Check if workspace exists
+    // Check if workspace exists.
     if (!await workspaceExists(id)) {
-      return false; // Return false instead of throwing for patch operations
+      return false; // Return false instead of throwing for patch operations.
     }
 
     return _database.workspaceDao.patchWorkspaceTimestamp(id);

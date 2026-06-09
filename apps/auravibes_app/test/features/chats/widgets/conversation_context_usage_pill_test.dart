@@ -2,8 +2,6 @@
 // Required: widget tests override scoped providers directly.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 
 import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
 import 'package:auravibes_app/features/chats/widgets/conversation_context_usage_pill.dart';

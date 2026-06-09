@@ -1,7 +1,5 @@
 // ignore_for_file: avoid-top-level-members-in-tests
 // Required: Test files keep shared fixtures and helpers top-level.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 // ignore_for_file: prefer-static-class
@@ -19,7 +17,7 @@ import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Test helper to create a widget with Aura theme
+/// Test helper to create a widget with Aura theme.
 Widget wrapWithAuraTheme(Widget child) {
   return MaterialApp(
     home: Scaffold(
@@ -82,7 +80,7 @@ void main() {
         ),
       );
 
-      // Find the action buttons (default labels)
+      // Find the action buttons (default labels).
       expect(find.text('Confirm'), findsOneWidget);
       expect(find.text('Cancel'), findsOneWidget);
     });
@@ -102,7 +100,7 @@ void main() {
         ),
       );
 
-      // The confirm button should have error styling
+      // The confirm button should have error styling.
       final confirmButton = findAuraButtonByColorVariant(
         AuraColorVariant.error,
       );
@@ -161,7 +159,7 @@ void main() {
         ),
       );
 
-      // Use widget type finder to avoid matching title text
+      // Use widget type finder to avoid matching title text.
       final confirmButton = findAuraButtonByLabel('Confirm');
       await tester.tap(confirmButton);
       await tester.pump();
@@ -262,15 +260,15 @@ void main() {
       await tester.tap(find.text('Open'));
       final _ = await tester.pumpAndSettle();
 
-      // Dialog should be visible (custom Container dialog)
+      // Dialog should be visible (custom Container dialog).
       expect(find.byType(AuraConfirmDialog), findsOneWidget);
 
-      // Use widget type finder to avoid matching title
+      // Use widget type finder to avoid matching title.
       final confirmButton = findAuraButtonByLabel('Confirm');
       await tester.tap(confirmButton);
       final _ = await tester.pumpAndSettle();
 
-      // Dialog should be dismissed
+      // Dialog should be dismissed.
       expect(find.byType(AuraConfirmDialog), findsNothing);
       expect(dialogResult, isTrue);
     });
@@ -300,14 +298,14 @@ void main() {
       await tester.tap(find.text('Open'));
       final _ = await tester.pumpAndSettle();
 
-      // Dialog should be visible
+      // Dialog should be visible.
       expect(find.byType(AuraConfirmDialog), findsOneWidget);
 
-      // Tap cancel
+      // Tap cancel.
       await tester.tap(find.text('Cancel'));
       final _ = await tester.pumpAndSettle();
 
-      // Dialog should be dismissed
+      // Dialog should be dismissed.
       expect(find.byType(AuraConfirmDialog), findsNothing);
       expect(dialogResult, isFalse);
     });
@@ -337,11 +335,11 @@ void main() {
 
       expect(find.byType(AuraAlertDialog), findsOneWidget);
 
-      // Tap dismiss
+      // Tap dismiss.
       await tester.tap(find.text('OK'));
       final _ = await tester.pumpAndSettle();
 
-      // Dialog should be dismissed
+      // Dialog should be dismissed.
       expect(find.byType(AuraAlertDialog), findsNothing);
     });
 
@@ -376,7 +374,7 @@ void main() {
       // Alert dialog should still be visible (non-barrier-dismissible).
       expect(find.byType(AuraAlertDialog), findsOneWidget);
 
-      // Close explicitly
+      // Close explicitly.
       await tester.tap(find.text('OK'));
       final _ = await tester.pumpAndSettle();
       expect(find.byType(AuraAlertDialog), findsNothing);
@@ -407,10 +405,10 @@ void main() {
       await tester.tap(find.text('Open'));
       final _ = await tester.pumpAndSettle();
 
-      // The dialog should NOT use Material's AlertDialog
+      // The dialog should NOT use Material's AlertDialog.
       expect(find.byType(AlertDialog), findsNothing);
 
-      // Instead, it should use a custom Container
+      // Instead, it should use a custom Container.
       expect(find.byType(Container), findsWidgets);
     });
 
@@ -435,10 +433,10 @@ void main() {
       await tester.tap(find.text('Open'));
       final _ = await tester.pumpAndSettle();
 
-      // The dialog should NOT use Material's AlertDialog
+      // The dialog should NOT use Material's AlertDialog.
       expect(find.byType(AlertDialog), findsNothing);
 
-      // Instead, it should use a custom Container
+      // Instead, it should use a custom Container.
       expect(find.byType(Container), findsWidgets);
     });
 
@@ -467,7 +465,7 @@ void main() {
       await tester.tap(find.text('Open'));
       final _ = await tester.pumpAndSettle();
 
-      // Tap cancel button
+      // Tap cancel button.
       await tester.tap(find.text('Cancel'));
       final _ = await tester.pumpAndSettle();
 
@@ -499,11 +497,11 @@ void main() {
       await tester.tap(find.text('Open'));
       final _ = await tester.pumpAndSettle();
 
-      // Tap outside the dialog (barrier)
+      // Tap outside the dialog (barrier).
       await tester.tapAt(const Offset(1, 1));
       final _ = await tester.pumpAndSettle();
 
-      // Dialog should be dismissed and result should be null
+      // Dialog should be dismissed and result should be null.
       expect(find.byType(AuraConfirmDialog), findsNothing);
       expect(result, isNull);
     });
@@ -534,16 +532,16 @@ void main() {
         await tester.tap(find.text('Open'));
         final _ = await tester.pumpAndSettle();
 
-        // Tap outside the dialog (barrier)
+        // Tap outside the dialog (barrier).
         await tester.tapAt(const Offset(1, 1));
         final _ = await tester.pumpAndSettle();
 
-        // Dialog should remain visible and unresolved
+        // Dialog should remain visible and unresolved.
         expect(find.text('Title'), findsOneWidget);
         expect(find.text('Message'), findsOneWidget);
         expect(result, isNull);
 
-        // Close explicitly
+        // Close explicitly.
         await tester.tap(find.text('Cancel'));
         final _ = await tester.pumpAndSettle();
         expect(result, isFalse);

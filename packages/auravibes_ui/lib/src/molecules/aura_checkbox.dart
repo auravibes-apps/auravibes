@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: UI tokens and layout use fixed design values.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return

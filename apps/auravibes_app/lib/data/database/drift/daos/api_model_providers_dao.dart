@@ -1,7 +1,5 @@
 // ignore_for_file: prefer-async-await
 // Required: Existing Future chains preserve callback flow.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-static-class
@@ -13,7 +11,7 @@ import 'package:drift/drift.dart';
 
 part 'api_model_providers_dao.g.dart';
 
-// Define popular providers in priority order (top 10)
+// Define popular providers in priority order (top 10).
 final popularProviders = [
   'openai',
   'anthropic',
@@ -31,22 +29,22 @@ int _sortProviders(ApiModelProvidersTable a, ApiModelProvidersTable b) {
   final aIndex = popularProviders.indexOf(a.id);
   final bIndex = popularProviders.indexOf(b.id);
 
-  // If both are popular, sort by their position in the popular list
+  // If both are popular, sort by their position in the popular list.
   if (aIndex != -1 && bIndex != -1) {
     return aIndex.compareTo(bIndex);
   }
 
-  // If only a is popular, a comes first
+  // If only a is popular, a comes first.
   if (aIndex != -1) {
     return -1;
   }
 
-  // If only b is popular, b comes first
+  // If only b is popular, b comes first.
   if (bIndex != -1) {
     return 1;
   }
 
-  // If neither is popular, sort alphabetically by name
+  // If neither is popular, sort alphabetically by name.
   return a.name.compareTo(b.name);
 }
 
@@ -63,7 +61,7 @@ class ApiModelProvidersDao extends DatabaseAccessor<AppDatabase>
   Future<List<ApiModelProvidersTable>> getAllProviders() async {
     final allProviders = await select(apiModelProviders).get();
 
-    // Sort providers: popular ones first in defined order, then alphabetically
+    // Sort providers: popular ones first in defined order, then alphabetically.
     return allProviders.sorted(_sortProviders);
   }
 

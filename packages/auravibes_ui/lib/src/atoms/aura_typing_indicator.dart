@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: UI tokens and layout use fixed design values.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: no-equal-arguments
 // Required: UI geometry uses repeated values for symmetric layout.
 // ignore_for_file: member-ordering
@@ -60,10 +58,10 @@ class _AuraTypingIndicatorState extends State<AuraTypingIndicator>
     );
     _animationController = animationController;
 
-    // Create staggered animations for each dot
+    // Create staggered animations for each dot.
     _dotAnimations = List.generate(3, (index) {
-      final begin = index * 0.2; // Stagger by 20% of the animation
-      final end = begin + 0.4; // Each dot animates for 40% of the cycle
+      final begin = index * 0.2; // Stagger by 20% of the animation.
+      final end = begin + 0.4; // Each dot animates for 40% of the cycle.
 
       return Tween<double>(
         begin: 0.4,

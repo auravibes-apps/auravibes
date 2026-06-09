@@ -1,5 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
@@ -52,7 +50,7 @@ class CompactionExecution extends _$CompactionExecution {
     );
   }
 
-  /// @visibleForTesting
+  /// @VisibleForTesting.
   void markSuccessCleanup(String conversationId) {
     if (state[conversationId]?.status == CompactionExecutionStatus.success) {
       state = {
@@ -81,7 +79,7 @@ class CompactionExecution extends _$CompactionExecution {
     );
   }
 
-  /// @visibleForTesting
+  /// @VisibleForTesting.
   void markFailureCleanup(String conversationId) {
     if (state[conversationId]?.status == CompactionExecutionStatus.failure) {
       state = {

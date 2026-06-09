@@ -1,5 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -198,13 +196,13 @@ abstract class ConversationToolsRepository {
 
 /// Base exception for conversation tools-related operations.
 class ConversationToolsException implements Exception {
-  /// Creates a new ConversationToolsException
+  /// Creates a new ConversationToolsException.
   const ConversationToolsException(this.message, [this.cause]);
 
-  /// Error message describing the exception
+  /// Error message describing the exception.
   final String message;
 
-  /// Optional original exception that caused this exception
+  /// Optional original exception that caused this exception.
   final Exception? cause;
 
   @override
@@ -216,6 +214,6 @@ class ConversationToolsException implements Exception {
 
 /// Exception thrown when conversation tool validation fails.
 class ConversationToolsValidationException extends ConversationToolsException {
-  /// Creates a new ConversationToolsValidationException
+  /// Creates a new ConversationToolsValidationException.
   const ConversationToolsValidationException(super.message, [super.cause]);
 }

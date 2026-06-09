@@ -2,8 +2,6 @@
 // Required: UI tokens and layout use fixed design values.
 // ignore_for_file: avoid-returning-widgets
 // Required: Existing helper builders return widgets.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -69,10 +67,10 @@ class AuraDropdownSelector<T> extends StatefulWidget {
   /// Optional error text to display below the field.
   final Widget? error;
 
-  /// optional header for dropdown
+  /// Optional header for dropdown.
   final Widget? header;
 
-  /// optional footer for dropdown
+  /// Optional footer for dropdown.
   final Widget? footer;
 
   /// Whether the field is required.
@@ -111,7 +109,7 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
   void initState() {
     super.initState();
     _focusNode = widget.focusNode ?? FocusNode();
-    // Listen for focus changes
+    // Listen for focus changes.
     _focusNode?.addListener(_onFocusChange);
   }
 
@@ -124,12 +122,12 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
         focusNode.dispose();
       }
     }
-    // Ensure overlay is removed before widget is disposed
+    // Ensure overlay is removed before widget is disposed.
     super.dispose();
   }
 
   void _onFocusChange() {
-    // Close dropdown when losing focus
+    // Close dropdown when losing focus.
     if (!_requiredFocusNode.hasFocus && _isDropdownOpen) {
       setState(() {
         _isDropdownOpen = false;

@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: UI tokens and layout use fixed design values.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: no-equal-arguments
 // Required: UI geometry uses repeated values for symmetric layout.
 // ignore_for_file: member-ordering
@@ -133,8 +131,8 @@ class AuraButtonGroup<T> extends StatelessWidget {
       final isItemDisabled = disabled || item.disabled;
       final isItemLoading = isLoading || item.isLoading;
 
-      // Use Transform.translate to collapse double borders between items
-      // by shifting non-first items back by 1px (the border width)
+      // Use Transform.translate to collapse double borders between items.
+      // By shifting non-first items back by 1px (the border width).
       Widget child = _AuraButtonGroupItem(
         item: item,
         isSelected: isSelected,
@@ -151,7 +149,7 @@ class AuraButtonGroup<T> extends StatelessWidget {
         auraTheme: auraTheme,
       );
 
-      // Shift non-first items to collapse the double border
+      // Shift non-first items to collapse the double border.
       if (!isFirst && variant != AuraButtonGroupVariant.ghost) {
         child = Transform.translate(
           offset: orientation == Axis.horizontal
@@ -175,7 +173,7 @@ class AuraButtonGroup<T> extends StatelessWidget {
             children: children,
           );
 
-    // Wrap entire group in ClipRRect for rounded corners
+    // Wrap entire group in ClipRRect for rounded corners.
     return ClipRRect(
       borderRadius: BorderRadius.circular(borderRadius),
       child: content,
@@ -414,9 +412,9 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
         ? colors.outlineVariant
         : colors.primary;
 
-    // Use uniform border on all sides to support the parent ClipRRect
-    // The double borders between items are collapsed using Transform.translate
-    // in the parent widget
+    // Use uniform border on all sides to support the parent ClipRRect.
+    // The double borders between items are collapsed using Transform.translate.
+    // In the parent widget.
     return Border.all(color: borderColor);
   }
 

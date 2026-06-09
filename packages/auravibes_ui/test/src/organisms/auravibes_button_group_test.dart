@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: no-empty-block
 // Required: Tests use intentional no-op callbacks and fake hooks.
 import 'package:auravibes_ui/src/atoms/aura_loading_circle.dart';
@@ -129,7 +127,7 @@ void main() {
           ),
         );
 
-        // Find a GestureDetector to tap since loading spinner replaces text
+        // Find a GestureDetector to tap since loading spinner replaces text.
         await tester.tap(find.byType(GestureDetector).first);
         await tester.pump();
 
@@ -538,7 +536,7 @@ void main() {
         );
         expect(buttonGroup.orientation, Axis.horizontal);
 
-        // Verify it uses Row
+        // Verify it uses Row.
         expect(find.byType(Row), findsOneWidget);
         expect(find.byType(Column), findsNothing);
       });
@@ -564,7 +562,7 @@ void main() {
         );
         expect(buttonGroup.orientation, Axis.vertical);
 
-        // Verify it uses Column
+        // Verify it uses Column.
         expect(find.byType(Column), findsOneWidget);
         expect(find.byType(Row), findsNothing);
       });

@@ -2,8 +2,6 @@
 // Required: UI tokens and layout use fixed design values.
 // ignore_for_file: avoid-returning-widgets
 // Required: Existing helper builders return widgets.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -161,7 +159,7 @@ class AuraNavigationData {
   /// Whether this item belongs to the footer section.
   final bool footer;
 
-  /// copy with
+  /// Copy with.
   AuraNavigationData copyWith({
     Widget? icon,
     Widget? label,

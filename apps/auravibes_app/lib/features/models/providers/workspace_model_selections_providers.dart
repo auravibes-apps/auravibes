@@ -1,5 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 // ignore_for_file: prefer-static-class
@@ -69,7 +67,7 @@ _groupModelsByProvider(
     grouped.putIfAbsent(providerName, () => []).add(model);
   }
 
-  // Sort provider names alphabetically (FR-006)
+  // Sort provider names alphabetically (FR-006).
   final sortedKeys = grouped.keys.toList()..sort();
 
   return {for (final key in sortedKeys) key: grouped[key]!};

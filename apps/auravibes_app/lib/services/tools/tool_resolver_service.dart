@@ -1,7 +1,5 @@
 // ignore_for_file: no-equal-arguments
 // Required: Existing argument values intentionally repeat.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
@@ -43,9 +41,9 @@ class _SkillTemplateToolIdComponents {
 }
 
 class ToolResolverService {
-  // ============================================================
-  // Helper: Tool resolution
-  // ============================================================
+  // ============================================================.
+  // Helper: Tool resolution.
+  // ============================================================.
 
   /// Resolves a composite tool name to its implementation.
   ///
@@ -89,7 +87,7 @@ class ToolResolverService {
     );
     if (components != null) {
       return ResolvedTool.mcp(
-        tableId: components.mcpServerId, // MCP server ID serves as table ID
+        tableId: components.mcpServerId, // MCP server ID serves as table ID.
         toolIdentifier: components.toolIdentifier,
         mcpServerId: components.mcpServerId,
       );

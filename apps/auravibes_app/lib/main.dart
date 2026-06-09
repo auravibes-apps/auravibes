@@ -1,5 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 
@@ -32,7 +30,7 @@ Future<void> main() async {
     appDatabaseProvider,
   );
 
-  // Load defaults after the database connection is established
+  // Load defaults after the database connection is established.
   await appDatabase.initializeWithDefaults();
   final _ = container.read(modelSyncServiceProvider);
 

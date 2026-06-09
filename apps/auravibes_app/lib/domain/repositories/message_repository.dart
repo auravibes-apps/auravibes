@@ -1,5 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -133,16 +131,16 @@ abstract class MessageRepository {
 class MessageException implements Exception {
   // Cause is optional because not all domain failures wrap an exception.
   // ignore: unnecessary-nullable
-  /// Creates a new MessageException
+  /// Creates a new MessageException.
   const MessageException(
     this.message, [
     this.cause,
   ]);
 
-  /// Error message describing the exception
+  /// Error message describing the exception.
   final String message;
 
-  /// Optional original exception that caused this exception
+  /// Optional original exception that caused this exception.
   final Exception? cause;
 
   @override
@@ -154,26 +152,26 @@ class MessageException implements Exception {
 
 /// Exception thrown when message validation fails.
 class MessageValidationException extends MessageException {
-  /// Creates a new MessageValidationException
+  /// Creates a new MessageValidationException.
   const MessageValidationException(super.message, [super.cause]);
 }
 
 /// Exception thrown when a message is not found.
 class MessageNotFoundException extends MessageException {
-  /// Creates a new MessageNotFoundException
+  /// Creates a new MessageNotFoundException.
   const MessageNotFoundException(this.messageId, [Exception? cause])
     : super('Message with ID "$messageId" not found', cause);
 
-  /// ID of the message that was not found
+  /// ID of the message that was not found.
   final String messageId;
 }
 
 /// Exception thrown when attempting to create a duplicate message.
 class MessageDuplicateException extends MessageException {
-  /// Creates a new MessageDuplicateException
+  /// Creates a new MessageDuplicateException.
   const MessageDuplicateException(this.messageId, [Exception? cause])
     : super('Message with ID "$messageId" already exists', cause);
 
-  /// ID of the duplicate message
+  /// ID of the duplicate message.
   final String messageId;
 }

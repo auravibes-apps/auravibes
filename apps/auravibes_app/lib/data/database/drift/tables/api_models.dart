@@ -1,11 +1,9 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 // coverage:ignore-file
-// Required: Drift table DSL methods (text(), real(), boolean(), integer())
-// call _isGenerated() which throws at runtime. The generated subclass
-// overrides every column getter with late final GeneratedColumn fields, and
+// Required: Drift table DSL methods (text(), real(), boolean(), integer(.))
+// Call _isGenerated() which throws at runtime. The generated subclass.
+// Overrides every column getter with late final GeneratedColumn fields, and.
 // TableInfo mixin overrides primaryKey. No code here executes at runtime.
 import 'package:auravibes_app/data/database/drift/converters/list_converter.dart';
 import 'package:auravibes_app/data/database/drift/tables/model_providers_table_type.dart';
@@ -18,13 +16,13 @@ export 'package:auravibes_app/data/database/drift/converters/list_converter.dart
 class ApiModels extends Table {
   TextColumn get modelProvider => text().references(ApiModelProviders, #id)();
 
-  // model id
+  // Model id.
   TextColumn get id => text()();
 
-  /// Human-readable name of the model
+  /// Human-readable name of the model.
   TextColumn get name => text()();
 
-  /// Type of chat model (local or remote)
+  /// Type of chat model (local or remote).
   /// Stored as string to handle enum conversion
 
   TextColumn get modalitiesInput =>
@@ -37,7 +35,7 @@ class ApiModels extends Table {
   BoolColumn get supportsReasoning =>
       boolean().withDefault(const Constant(false))();
 
-  // cost
+  // Cost.
   RealColumn get costInput => real().nullable()();
   RealColumn get costOutput => real().nullable()();
   RealColumn get costCacheRead => real().nullable()();

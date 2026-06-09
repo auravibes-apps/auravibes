@@ -2,8 +2,6 @@
 // Required: Existing Future chains preserve callback flow.
 // ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -27,13 +25,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-/// Modal for adding new tools to the workspace
+/// Modal for adding new tools to the workspace.
 class AddToolModal extends HookConsumerWidget {
   const AddToolModal({required this.workspaceId, super.key});
 
   final String workspaceId;
 
-  /// Shows the add tool modal as a dialog
+  /// Shows the add tool modal as a dialog.
   static Future<void> show(
     BuildContext context, {
     required String workspaceId,
@@ -73,7 +71,7 @@ class AddToolModal extends HookConsumerWidget {
         ),
         child: AuraColumn(
           children: [
-            // Header with close button
+            // Header with close button.
             Container(
               padding: EdgeInsets.all(context.auraTheme.spacing.md),
               decoration: BoxDecoration(
@@ -101,7 +99,7 @@ class AddToolModal extends HookConsumerWidget {
               ),
             ),
 
-            // Search input
+            // Search input.
             Padding(
               padding: EdgeInsets.all(context.auraTheme.spacing.md),
               child: AuraInput(
@@ -117,7 +115,7 @@ class AddToolModal extends HookConsumerWidget {
               ),
             ),
 
-            // Tools list
+            // Tools list.
             Flexible(
               child: switch (availableToolsAsync) {
                 AsyncLoading() => const Center(child: AuraSpinner()),
@@ -133,7 +131,7 @@ class AddToolModal extends HookConsumerWidget {
               },
             ),
 
-            // Bottom padding
+            // Bottom padding.
             SizedBox(height: context.auraTheme.spacing.md),
           ],
           mainAxisSize: MainAxisSize.min,
@@ -156,7 +154,7 @@ class _AvailableToolsList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Filter tools based on search query
+    // Filter tools based on search query.
     final filteredTools = searchQuery.isEmpty
         ? tools
         : tools.where((tool) {

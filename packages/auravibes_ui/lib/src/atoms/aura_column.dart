@@ -1,14 +1,12 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: prefer-single-widget-per-file
 // Required: UI components keep related private widgets together.
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/widgets.dart';
 
-/// Contextual Column management
+/// Contextual Column management.
 class AuraColumn extends StatelessWidget {
-  /// creates auravibes column
+  /// Creates auravibes column.
   const AuraColumn({
     required this.children,
     this.spacing = AuraSpacing.base,
@@ -18,19 +16,19 @@ class AuraColumn extends StatelessWidget {
     super.key,
   });
 
-  /// Flex children
+  /// Flex children.
   final List<Widget> children;
 
-  /// crossAxisAlignment
+  /// CrossAxisAlignment.
   final CrossAxisAlignment crossAxisAlignment;
 
-  /// mainAxisSize
+  /// MainAxisSize.
   final MainAxisSize mainAxisSize;
 
-  /// mainAxisAlignment
+  /// MainAxisAlignment.
   final MainAxisAlignment mainAxisAlignment;
 
-  /// Enum representing different spacing options for layout components
+  /// Enum representing different spacing options for layout components.
   final AuraSpacing spacing;
   @override
   Widget build(BuildContext context) {
@@ -44,9 +42,9 @@ class AuraColumn extends StatelessWidget {
   }
 }
 
-/// Contextual Row management
+/// Contextual Row management.
 class AuraRow extends StatelessWidget {
-  /// creates auravibes row
+  /// Creates auravibes row.
   const AuraRow({
     required this.children,
     this.spacing = AuraSpacing.base,
@@ -56,19 +54,19 @@ class AuraRow extends StatelessWidget {
     super.key,
   });
 
-  /// Flex children
+  /// Flex children.
   final List<Widget> children;
 
-  /// crossAxisAlignment
+  /// CrossAxisAlignment.
   final CrossAxisAlignment crossAxisAlignment;
 
-  /// mainAxisSize
+  /// MainAxisSize.
   final MainAxisSize mainAxisSize;
 
-  /// mainAxisAlignment
+  /// MainAxisAlignment.
   final MainAxisAlignment mainAxisAlignment;
 
-  /// Enum representing different spacing options for layout components
+  /// Enum representing different spacing options for layout components.
   final AuraSpacing spacing;
 
   @override

@@ -1,5 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: prefer-moving-to-variable
@@ -21,7 +19,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-// Locale keys for MCP group deletion
+// Locale keys for MCP group deletion.
 const _kDeleteMcpTitle = 'tools_screen.delete_mcp_title';
 const _kDeleteMcpConfirm = 'tools_screen.delete_mcp_confirm';
 const _kNoToolsInGroup = 'tools_screen.no_tools_in_group';
@@ -51,7 +49,7 @@ class ToolsGroupCard extends HookConsumerWidget {
       child: AuraCard(
         child: AuraColumn(
           children: [
-            // Header
+            // Header.
             ToolsGroupHeader(
               groupWithTools: groupWithTools,
               isExpanded: isExpanded.value,
@@ -70,7 +68,7 @@ class ToolsGroupCard extends HookConsumerWidget {
                   : null,
             ),
 
-            // Expanded content
+            // Expanded content.
             if (isExpanded.value) ...[
               const AuraDivider(),
               _ToolsList(
@@ -184,7 +182,7 @@ class _ToolsList extends StatelessWidget {
               (tool) => ToolItemRow(
                 tool: tool,
                 workspaceId: workspaceId,
-                // MCP tools cannot be individually deleted
+                // MCP tools cannot be individually deleted.
                 showDeleteButton: !groupWithTools.isMcpGroup,
               ),
             )

@@ -1,5 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -25,20 +23,20 @@ enum ModelProvidersType {
 /// such as OpenAI, Anthropic, Google, etc.
 @freezed
 abstract class ApiModelProviderEntity with _$ApiModelProviderEntity {
-  /// Creates a new ApiModelProviderEntity instance
+  /// Creates a new ApiModelProviderEntity instance.
   const factory ApiModelProviderEntity({
-    /// Unique identifier for the provider
+    /// Unique identifier for the provider.
     required String id,
 
-    /// Human-readable name of the provider
+    /// Human-readable name of the provider.
     required String name,
 
     required ModelProvidersType? type,
 
-    /// API endpoint URL for the provider
+    /// API endpoint URL for the provider.
     String? url,
 
-    /// Documentation URL for the provider
+    /// Documentation URL for the provider.
     String? doc,
   }) = _ApiModelProviderEntity;
 
@@ -64,9 +62,9 @@ abstract class ApiModelProviderEntity with _$ApiModelProviderEntity {
     return null;
   }
 
-  /// Returns true if the provider has a URL
+  /// Returns true if the provider has a URL.
   bool get hasUrl => url?.isNotEmpty ?? false;
 
-  /// Returns true if the provider has documentation
+  /// Returns true if the provider has documentation.
   bool get hasDocumentation => doc?.isNotEmpty ?? false;
 }

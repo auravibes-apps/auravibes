@@ -1,5 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 /// Atomic components - the smallest building blocks of the design system.
 ///
 /// Atoms are the basic building blocks of matter. Applied to web interfaces,
@@ -16,7 +14,7 @@
 /// - Chat-specific components
 library;
 
-// Export all atomic components alphabetically
+// Export all atomic components alphabetically.
 
 export 'aura_column.dart';
 export 'aura_edge_insets_geometry.dart';

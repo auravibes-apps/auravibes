@@ -1,5 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 
@@ -35,7 +33,7 @@ class AuraFieldHint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // final auraColors = context.auraColors;
+    // Final auraColors = context.auraColors;.
     final displayText = error ?? text;
 
     if (displayText == null) return const SizedBox.shrink();

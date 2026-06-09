@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -48,7 +46,7 @@ class OAuthAuthenticate {
 
   static final Random _rng = _createSecureRandom();
 
-  /// Generates a random string for PKCE code verifier
+  /// Generates a random string for PKCE code verifier.
   static String _generateRandomString(int length) {
     return String.fromCharCodes(
       Iterable.generate(
@@ -58,7 +56,7 @@ class OAuthAuthenticate {
     );
   }
 
-  /// Generates PKCE code challenge from verifier
+  /// Generates PKCE code challenge from verifier.
   static String generateCodeChallenge(String codeVerifier) {
     final bytes = utf8.encode(codeVerifier);
     final digest = sha256.convert(bytes);

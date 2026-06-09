@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 import 'package:auravibes_app/features/chats/widgets/tool_call_response_modal.dart';
@@ -43,7 +41,7 @@ class _ToolCallResponsePreviewState extends State<ToolCallResponsePreview> {
   @override
   void initState() {
     super.initState();
-    // Schedule measurement after the first frame
+    // Schedule measurement after the first frame.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _measureTextOverflow();
     });
@@ -53,7 +51,7 @@ class _ToolCallResponsePreviewState extends State<ToolCallResponsePreview> {
   void didUpdateWidget(ToolCallResponsePreview oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.content != widget.content) {
-      // Re-measure when content changes
+      // Re-measure when content changes.
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _measureTextOverflow();
       });
@@ -67,7 +65,7 @@ class _ToolCallResponsePreviewState extends State<ToolCallResponsePreview> {
     final renderObject = context.findRenderObject();
     if (renderObject is! RenderBox) return;
 
-    // Get the text painter to measure if text would overflow
+    // Get the text painter to measure if text would overflow.
     final textStyle = DefaultTextStyle.of(context).style;
     final textSpan = TextSpan(text: widget.content, style: textStyle);
     final textPainter = TextPainter(
@@ -97,7 +95,7 @@ class _ToolCallResponsePreviewState extends State<ToolCallResponsePreview> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Preview text with max 3 lines
+        // Preview text with max 3 lines.
         Text(
           widget.content,
           key: _textKey,
@@ -110,7 +108,7 @@ class _ToolCallResponsePreviewState extends State<ToolCallResponsePreview> {
           maxLines: ToolCallResponsePreview.maxPreviewLines,
         ),
 
-        // Show more button (only if content exceeds max lines)
+        // Show more button (only if content exceeds max lines).
         if (_exceedsMaxLines)
           Padding(
             padding: EdgeInsets.only(top: context.auraTheme.spacing.xs),

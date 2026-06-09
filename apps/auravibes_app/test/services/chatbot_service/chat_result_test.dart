@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -29,15 +27,15 @@ void main() {
       final copied = msg.copyWith(content: 'world');
       expect(copied.role, ChatMessageRole.user);
       expect(copied.content, 'world');
-      // Verify metadata is empty by default and copyWith doesn't fail
+      // Verify metadata is empty by default and copyWith doesn't fail.
       expect(copied.metadata, isEmpty);
 
-      // Call copyWith without metadata parameter (essential for nullable check)
+      // Call copyWith without metadata parameter.
       final anotherCopy = msg.copyWith(role: ChatMessageRole.model);
       expect(anotherCopy.role, ChatMessageRole.model);
       expect(anotherCopy.metadata, isEmpty);
 
-      // Call copyWith with metadata
+      // Call copyWith with metadata.
       final withMeta = msg.copyWith(metadata: {'key': 'value'});
       expect(withMeta.metadata['key'], 'value');
     });

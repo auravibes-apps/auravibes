@@ -2,8 +2,6 @@
 // Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: avoid-top-level-members-in-tests
 // Required: Test files keep shared fixtures and helpers top-level.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 // ignore_for_file: prefer-static-class
@@ -109,7 +107,7 @@ void main() {
       expect(second.autoCompactEnabled, true);
       expect(second.usagePercentageThreshold, 75);
       expect(second.remainingTokenThreshold, 5000);
-      expect(second.id, first.id); // same row, same PK
+      expect(second.id, first.id); // Same row, same PK.
     });
 
     test('getByWorkspaceId returns settings after upsert', () async {

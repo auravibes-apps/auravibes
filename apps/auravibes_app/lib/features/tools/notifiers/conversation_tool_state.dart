@@ -1,7 +1,5 @@
 // ignore_for_file: no-equal-arguments
 // Required: Existing argument values intentionally repeat.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -22,7 +20,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'conversation_tool_state.freezed.dart';
 part 'conversation_tool_state.g.dart';
 
-/// State for a single tool in a conversation context
+/// State for a single tool in a conversation context.
 @freezed
 abstract class ConversationToolState with _$ConversationToolState {
   const factory ConversationToolState({
@@ -30,7 +28,7 @@ abstract class ConversationToolState with _$ConversationToolState {
     required bool isEnabled,
     required ToolPermissionMode permissionMode,
 
-    /// Whether this tool is enabled at the workspace level
+    /// Whether this tool is enabled at the workspace level.
     required bool isWorkspaceEnabled,
   }) = _ConversationToolState;
 }
@@ -98,7 +96,7 @@ class ConversationToolsNotifier extends _$ConversationToolsNotifier {
     return states;
   }
 
-  /// Toggle a conversation tool's enabled status
+  /// Toggle a conversation tool's enabled status.
   Future<bool> toggleTool(String toolId) async {
     final currentState = state.value;
     if (currentState == null) return false;
@@ -112,7 +110,7 @@ class ConversationToolsNotifier extends _$ConversationToolsNotifier {
     return setToolEnabled(toolId, isEnabled: !currentToolState.isEnabled);
   }
 
-  /// Enable or disable a conversation tool
+  /// Enable or disable a conversation tool.
   Future<bool> setToolEnabled(
     String toolId, {
     required bool isEnabled,
@@ -167,7 +165,7 @@ class ConversationToolsNotifier extends _$ConversationToolsNotifier {
     return success;
   }
 
-  /// Get the current enabled tools as a list of tool IDs
+  /// Get the current enabled tools as a list of tool IDs.
   List<String> getEnabledToolIds() {
     final currentState = state.value;
     if (currentState == null) return [];
@@ -178,13 +176,13 @@ class ConversationToolsNotifier extends _$ConversationToolsNotifier {
         .toList();
   }
 
-  /// Get the current tool states list
+  /// Get the current tool states list.
   List<ConversationToolState> getToolStates() {
     return state.value ?? [];
   }
 }
 
-/// Provider to get context-aware tools for chat
+/// Provider to get context-aware tools for chat.
 /// (conversation -> workspace -> app defaults)
 @riverpod
 class ContextAwareToolsNotifier extends _$ContextAwareToolsNotifier {
@@ -207,7 +205,7 @@ class ContextAwareToolsNotifier extends _$ContextAwareToolsNotifier {
     );
   }
 
-  /// Refresh the context-aware tools list
+  /// Refresh the context-aware tools list.
   Future<void> refresh() async {
     state = const AsyncValue.loading();
     try {
@@ -245,7 +243,7 @@ class ContextAwareToolEntitiesNotifier
     );
   }
 
-  /// Refresh the context-aware tools list
+  /// Refresh the context-aware tools list.
   Future<void> refresh() async {
     state = const AsyncValue.loading();
     try {

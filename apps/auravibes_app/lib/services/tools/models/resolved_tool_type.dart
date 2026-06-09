@@ -1,5 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 import 'package:auravibes_app/services/tools/native_tool_type.dart';
@@ -107,13 +105,13 @@ class ResolvedTool {
     );
   }
 
-  /// The type of tool (built-in or MCP)
+  /// The type of tool (built-in or MCP).
   final ResolvedToolType type;
 
-  /// The database table ID for permission checks
+  /// The database table ID for permission checks.
   final String tableId;
 
-  /// The tool identifier (e.g., "calculator" or original MCP tool name)
+  /// The tool identifier (for example, "calculator" or original MCP tool name).
   final String toolIdentifier;
 
   final UserToolType? builtInTool;

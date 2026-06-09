@@ -2,8 +2,6 @@
 // Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: no-empty-block
 // Required: Tests use intentional no-op callbacks and fake hooks.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 
 import 'package:auravibes_ui/src/atoms/aura_message_status.dart';
 import 'package:auravibes_ui/src/molecules/aura_message_bubble.dart';
@@ -47,7 +45,7 @@ void main() {
       final align = tester.widget<Align>(find.byType(Align));
       expect(align.alignment, Alignment.centerRight);
 
-      // Find the message container with decoration
+      // Find the message container with decoration.
       final containers = tester.widgetList<Container>(find.byType(Container));
       final messageContainer = containers.firstWhere(
         (container) =>
@@ -200,7 +198,7 @@ void main() {
         ),
       );
 
-      // Find the container with constraints
+      // Find the container with constraints.
       final containers = tester.widgetList<Container>(find.byType(Container));
       final constrainedContainer = containers.firstWhere(
         (container) =>

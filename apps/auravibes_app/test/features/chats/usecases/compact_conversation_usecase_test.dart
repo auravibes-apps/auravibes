@@ -4,8 +4,6 @@
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: missing-test-assertion
 // Required: Tests verify usecase behavior through repository side effects.
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
@@ -282,7 +280,7 @@ void main() {
           trigger: CompactionTrigger.manual,
         );
       } on CompactionFailedException {
-        // expected
+        // Expected.
       }
 
       final _ = verifyNever(() => fixture.mockMessageRepo.createMessage(any()));
@@ -522,7 +520,7 @@ void main() {
           trigger: CompactionTrigger.auto,
         );
       } on CompactionFailedException {
-        // expected
+        // Expected.
       }
 
       final captured =

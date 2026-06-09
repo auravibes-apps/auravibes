@@ -1,5 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: prefer-static-class
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
@@ -9,13 +7,13 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'workspace_management_mode.g.dart';
 
-// ─── Mutation providers ───
+// ─── Mutation providers ───.
 
 final createWorkspaceMutation = Mutation<WorkspaceEntity>();
 final editWorkspaceMutation = Mutation<WorkspaceEntity>();
 final deleteWorkspaceMutation = Mutation<void>();
 
-// ─── UI mode notifier ───
+// ─── UI mode notifier ───.
 
 /// Notifier that tracks the workspace-management UI mode and
 /// which workspace is currently being edited.

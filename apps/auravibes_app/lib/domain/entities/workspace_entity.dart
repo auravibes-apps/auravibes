@@ -1,5 +1,3 @@
-// ignore_for_file: format-comment
-// Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: newline-before-return
@@ -16,24 +14,24 @@ part 'workspace_entity.freezed.dart';
 /// projects or environments within the Aura application.
 @freezed
 abstract class WorkspaceEntity with _$WorkspaceEntity {
-  /// Creates a new Workspace instance
+  /// Creates a new Workspace instance.
   const factory WorkspaceEntity({
-    /// Unique identifier for the workspace
+    /// Unique identifier for the workspace.
     required String id,
 
-    /// Human-readable name of the workspace
+    /// Human-readable name of the workspace.
     required String name,
 
-    /// Type of workspace (local or remote)
+    /// Type of workspace (local or remote).
     required WorkspaceType type,
 
-    /// Timestamp when the workspace was created
+    /// Timestamp when the workspace was created.
     required DateTime createdAt,
 
-    /// Timestamp when the workspace was last updated
+    /// Timestamp when the workspace was last updated.
     required DateTime updatedAt,
 
-    /// URL for remote workspaces, null for local workspaces
+    /// URL for remote workspaces, null for local workspaces.
     String? url,
   }) = _WorkspaceEntity;
   const WorkspaceEntity._();
@@ -41,36 +39,36 @@ abstract class WorkspaceEntity with _$WorkspaceEntity {
 
 @freezed
 abstract class WorkspaceToCreate with _$WorkspaceToCreate {
-  /// Creates a new WorkspaceToCreate instance
+  /// Creates a new WorkspaceToCreate instance.
   const factory WorkspaceToCreate({
-    /// Human-readable name of the workspace
+    /// Human-readable name of the workspace.
     required String name,
 
-    /// Type of workspace (local or remote)
+    /// Type of workspace (local or remote).
     required WorkspaceType type,
 
-    /// URL for remote workspaces, null for local workspaces
+    /// URL for remote workspaces, null for local workspaces.
     String? url,
   }) = _WorkspaceToCreate;
   const WorkspaceToCreate._();
 
-  /// Returns true if the workspace name is not empty
+  /// Returns true if the workspace name is not empty.
   bool get hasValidName => name.isNotEmpty;
 
-  /// Returns true if this is a local workspace
+  /// Returns true if this is a local workspace.
   bool get isLocal => type.isLocal;
 
-  /// Returns true if this is a remote workspace
+  /// Returns true if this is a remote workspace.
   bool get isRemote => type.isRemote;
 
-  /// Returns true if the workspace has a valid URL (for remote workspaces)
+  /// Returns true if the workspace has a valid URL (for remote workspaces).
   bool get hasValidUrl {
     final url = this.url;
     if (isLocal && url == null) return true;
     return !isLocal && url != null && url.isNotEmpty;
   }
 
-  /// Returns true if the workspace is in a valid state
+  /// Returns true if the workspace is in a valid state.
   bool get isValid {
     return hasValidName && hasValidUrl;
   }
