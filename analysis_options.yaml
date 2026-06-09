@@ -148,6 +148,7 @@ plugins:
       prefer-named-record-fields: true
       prefer-provide-intl-description: true
       prefer-single-quotes: true
+      prefer-using-list-view: true
       prefer-trailing-comma: true
       tag-name: true
 
