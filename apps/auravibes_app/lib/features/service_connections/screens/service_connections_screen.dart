@@ -2,6 +2,7 @@
 
 import 'dart:async';
 
+import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
@@ -146,14 +147,12 @@ class _ConnectionTile extends ConsumerWidget {
               ),
               leading: const AuraIcon(Icons.edit_outlined),
             ),
-            if (connection.kind ==
-                ServiceConnectionListItemKind.skillCredential)
-              AuraPopupMenuItem(
-                title: const TextLocale(LocaleKeys.common_delete),
-                onTap: () => _confirmDeleteCredential(context, ref),
-                leading: const AuraIcon(Icons.delete_outline),
-                variant: AuraTileVariant.error,
-              ),
+            AuraPopupMenuItem(
+              title: const TextLocale(LocaleKeys.common_delete),
+              onTap: () => _confirmDelete(context, ref),
+              leading: const AuraIcon(Icons.delete_outline),
+              variant: AuraTileVariant.error,
+            ),
           ],
           controller: menuController,
         ),
@@ -194,22 +193,33 @@ class _ConnectionTile extends ConsumerWidget {
     );
   }
 
-  Future<void> _confirmDeleteCredential(
+  Future<void> _confirmDelete(
     BuildContext context,
     WidgetRef ref,
   ) async {
+    final titleKey = switch (connection.kind) {
+      ServiceConnectionListItemKind.modelProvider =>
+        LocaleKeys.service_connections_delete_model_provider_title,
+      ServiceConnectionListItemKind.skillCredential =>
+        LocaleKeys.service_connections_delete_credential_title,
+    };
+    final confirmKey = switch (connection.kind) {
+      ServiceConnectionListItemKind.modelProvider =>
+        LocaleKeys.service_connections_delete_model_provider_confirm,
+      ServiceConnectionListItemKind.skillCredential =>
+        LocaleKeys.service_connections_delete_credential_confirm,
+    };
     _logger.info(
-      'debug:skill credential delete confirmation opened '
-      'workspace=${connection.workspaceId} credentialId=${connection.id} '
-      'credentialNameLength=${connection.name.length}',
+      'debug:service connection delete confirmation opened '
+      'workspace=${connection.workspaceId} connectionId=${connection.id} '
+      'kind=${connection.kind.name} connectionNameLength='
+      '${connection.name.length}',
     );
     final confirmed = await showAuraConfirmDialog(
       context: context,
-      title: const TextLocale(
-        LocaleKeys.service_connections_delete_credential_title,
-      ),
+      title: TextLocale(titleKey),
       message: Text(
-        LocaleKeys.service_connections_delete_credential_confirm.tr(
+        confirmKey.tr(
           namedArgs: {'name': connection.name},
           context: context,
         ),
@@ -222,38 +232,53 @@ class _ConnectionTile extends ConsumerWidget {
     );
 
     _logger.info(
-      'debug:skill credential delete confirmation closed '
-      'workspace=${connection.workspaceId} credentialId=${connection.id} '
-      'confirmed=$confirmed contextMounted=${context.mounted}',
+      'debug:service connection delete confirmation closed '
+      'workspace=${connection.workspaceId} connectionId=${connection.id} '
+      'kind=${connection.kind.name} confirmed=$confirmed '
+      'contextMounted=${context.mounted}',
     );
 
     if (confirmed != true || !context.mounted) return;
 
     try {
       _logger.info(
-        'debug:skill credential delete start '
-        'workspace=${connection.workspaceId} credentialId=${connection.id}',
+        'debug:service connection delete start '
+        'workspace=${connection.workspaceId} connectionId=${connection.id} '
+        'kind=${connection.kind.name}',
       );
-      await ref
-          .read(skillCredentialsRepositoryProvider)
-          .deleteCredential(connection.id);
+      switch (connection.kind) {
+        case ServiceConnectionListItemKind.modelProvider:
+          await ref
+              .read(modelConnectionRepositoryProvider)
+              .deleteModelConnection(connection.id);
+        case ServiceConnectionListItemKind.skillCredential:
+          await ref
+              .read(skillCredentialsRepositoryProvider)
+              .deleteCredential(connection.id);
+      }
       _logger.info(
-        'debug:skill credential delete completed '
-        'workspace=${connection.workspaceId} credentialId=${connection.id}',
+        'debug:service connection delete completed '
+        'workspace=${connection.workspaceId} connectionId=${connection.id} '
+        'kind=${connection.kind.name}',
       );
     } on Object catch (error, stackTrace) {
       _logger.severe(
-        'debug:skill credential delete failed '
-        'workspace=${connection.workspaceId} credentialId=${connection.id}',
+        'debug:service connection delete failed '
+        'workspace=${connection.workspaceId} connectionId=${connection.id} '
+        'kind=${connection.kind.name}',
         error,
         stackTrace,
       );
       if (!context.mounted) return;
+      final errorKey = switch (connection.kind) {
+        ServiceConnectionListItemKind.modelProvider =>
+          LocaleKeys.service_connections_delete_model_provider_error,
+        ServiceConnectionListItemKind.skillCredential =>
+          LocaleKeys.service_connections_delete_credential_error,
+      };
       final _ = showAuraSnackBar(
         context: context,
-        content: const TextLocale(
-          LocaleKeys.service_connections_delete_credential_error,
-        ),
+        content: TextLocale(errorKey),
         variant: AuraSnackBarVariant.error,
       );
     }
