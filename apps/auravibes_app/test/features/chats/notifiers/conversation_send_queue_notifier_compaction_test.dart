@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
 // ignore_for_file: prefer-correct-identifier-length
@@ -13,7 +11,7 @@ import 'package:riverpod/riverpod.dart';
 
 void main() {
   group('ConversationSendQueue compaction-as-busy ordering', () {
-    late ProviderContainer container;
+    var container = ProviderContainer();
 
     setUp(() {
       container = ProviderContainer();

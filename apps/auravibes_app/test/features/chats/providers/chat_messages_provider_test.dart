@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: no-empty-block
@@ -51,8 +49,13 @@ List<String> _messageIds(ProviderContainer container) =>
 @Dependencies([chatMessages, conversationUsedTokens, messageConversationById])
 void main() {
   group('chatMessagesProvider', () {
-    late _FakeMessageRepository repository;
-    late ProviderContainer container;
+    var repository = _FakeMessageRepository();
+    var container = ProviderContainer(
+      overrides: [
+        conversationSelectedProvider.overrideWithValue('conversation-1'),
+        messageRepositoryProvider.overrideWithValue(repository),
+      ],
+    );
 
     setUp(() {
       repository = _FakeMessageRepository();

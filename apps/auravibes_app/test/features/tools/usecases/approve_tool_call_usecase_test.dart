@@ -11,9 +11,6 @@
 // ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
@@ -46,17 +43,41 @@ import 'approve_tool_call_usecase_test.mocks.dart';
 ])
 void main() {
   group('ApproveToolCallUsecase', () {
-    late MockMessageRepository messageRepository;
-    late MockConversationToolsRepository conversationToolsRepository;
-    late MockToolsGroupsRepository toolsGroupsRepository;
-    late MockWorkspaceToolsRepository workspaceToolsRepository;
-    late MockToolResolverService toolResolverService;
-    late MockResumeConversationIfReadyUsecase resumeConversationIfReadyUsecase;
-    late AgentCancellationRuntime agentCancellationRuntime;
-    late ApproveToolCallUsecase usecase;
+    var messageRepository = MockMessageRepository();
+    var conversationToolsRepository = MockConversationToolsRepository();
+    var toolsGroupsRepository = MockToolsGroupsRepository();
+    var workspaceToolsRepository = MockWorkspaceToolsRepository();
+    var toolResolverService = MockToolResolverService();
+    var resumeConversationIfReadyUsecase =
+        MockResumeConversationIfReadyUsecase();
+    var agentCancellationRuntime = AgentCancellationRuntime()
+      ..start('conversation-1');
     String? calledMcpServerId;
     String? calledMcpToolIdentifier;
     Map<String, dynamic>? calledMcpArguments;
+    var usecase = ApproveToolCallUsecase(
+      messageRepository: messageRepository,
+      conversationToolsRepository: conversationToolsRepository,
+      toolsGroupsRepository: toolsGroupsRepository,
+      workspaceToolsRepository: workspaceToolsRepository,
+      toolResolverService: toolResolverService,
+      resumeConversationIfReadyUsecase: resumeConversationIfReadyUsecase,
+      runResolvedToolUsecase: RunResolvedToolUsecase(
+        agentCancellationRuntime: agentCancellationRuntime,
+        mcpToolCaller:
+            ({
+              required mcpServerId,
+              required toolIdentifier,
+              required arguments,
+            }) async {
+              calledMcpServerId = mcpServerId;
+              calledMcpToolIdentifier = toolIdentifier;
+              calledMcpArguments = arguments;
+              return 'mcp result';
+            },
+      ),
+      agentCancellationRuntime: agentCancellationRuntime,
+    );
 
     const toolCallId = 'tool-1';
     const messageId = 'message-1';

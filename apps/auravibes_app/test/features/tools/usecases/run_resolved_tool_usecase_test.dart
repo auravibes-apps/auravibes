@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
 // ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 
@@ -12,9 +10,23 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 
 void main() {
-  late AgentCancellationRuntime cancellationRuntime;
-  late RunResolvedToolUsecase usecase;
-  late List<({String serverId, String toolIdentifier})> mcpCalls;
+  var cancellationRuntime = AgentCancellationRuntime();
+  var mcpCalls = <({String serverId, String toolIdentifier})>[];
+  var usecase = RunResolvedToolUsecase(
+    agentCancellationRuntime: cancellationRuntime,
+    mcpToolCaller:
+        ({
+          required mcpServerId,
+          required toolIdentifier,
+          required arguments,
+        }) async {
+          mcpCalls.add((
+            serverId: mcpServerId,
+            toolIdentifier: toolIdentifier,
+          ));
+          return 'mcp result';
+        },
+  );
 
   setUp(() {
     cancellationRuntime = AgentCancellationRuntime();

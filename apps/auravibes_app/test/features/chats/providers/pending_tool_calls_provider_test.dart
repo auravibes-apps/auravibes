@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: format-comment
@@ -178,7 +176,7 @@ void main() {
     (tester) async {
       final repository = _StreamingMessageRepository();
       addTearDown(repository.dispose);
-      late hooks.WidgetRef widgetRef;
+      final widgetRefCompleter = Completer<hooks.WidgetRef>();
 
       await tester.pumpWidget(
         hooks.ProviderScope(
@@ -188,7 +186,9 @@ void main() {
           ],
           child: hooks.Consumer(
             builder: (context, ref, child) {
-              widgetRef = ref;
+              if (!widgetRefCompleter.isCompleted) {
+                widgetRefCompleter.complete(ref);
+              }
               final messageIds = ref.watch(chatMessageIdsProvider);
               final contents = [
                 for (final messageId in messageIds)
@@ -215,6 +215,7 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.text('assistant'), findsOneWidget);
 
+      final widgetRef = await widgetRefCompleter.future;
       widgetRef.read(messagesStreamingProvider.notifier)
         ..startSubscription(CompositeSubscription(), 'msg-1')
         ..updateResult(
@@ -233,7 +234,7 @@ void main() {
   );
 
   group('pendingToolCallsProvider', () {
-    late ProviderContainer container;
+    var container = ProviderContainer();
 
     tearDown(() {
       container.dispose();

@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 // ignore_for_file: prefer-static-class
@@ -28,43 +26,46 @@ QueryExecutor _testConnection() {
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
-  late AppDatabase testDatabase;
-  late ProviderContainer container;
+  AppDatabase? testDatabase;
+  ProviderContainer? container;
+  ProviderContainer readContainer() =>
+      container ?? fail('ProviderContainer not initialized');
 
   setUp(() {
-    testDatabase = AppDatabase(connection: _testConnection());
+    final database = AppDatabase(connection: _testConnection());
+    testDatabase = database;
     container = ProviderContainer(
-      overrides: [appDatabaseProvider.overrideWithValue(testDatabase)],
+      overrides: [appDatabaseProvider.overrideWithValue(database)],
     );
   });
 
   tearDown(() async {
-    container.dispose();
-    await testDatabase.close();
+    container?.dispose();
+    await testDatabase?.close();
   });
 
   group('conversationRepositoryProvider', () {
     test('returns a ConversationRepository instance', () {
-      final repo = container.read(conversationRepositoryProvider);
+      final repo = readContainer().read(conversationRepositoryProvider);
       expect(repo, isA<ConversationRepository>());
     });
 
     test('returns same instance on subsequent reads (keepAlive)', () {
-      final first = container.read(conversationRepositoryProvider);
-      final second = container.read(conversationRepositoryProvider);
+      final first = readContainer().read(conversationRepositoryProvider);
+      final second = readContainer().read(conversationRepositoryProvider);
       expect(identical(first, second), isTrue);
     });
   });
 
   group('messageRepositoryProvider', () {
     test('returns a MessageRepository instance', () {
-      final repo = container.read(messageRepositoryProvider);
+      final repo = readContainer().read(messageRepositoryProvider);
       expect(repo, isA<MessageRepository>());
     });
 
     test('returns same instance on subsequent reads (keepAlive)', () {
-      final first = container.read(messageRepositoryProvider);
-      final second = container.read(messageRepositoryProvider);
+      final first = readContainer().read(messageRepositoryProvider);
+      final second = readContainer().read(messageRepositoryProvider);
       expect(identical(first, second), isTrue);
     });
   });

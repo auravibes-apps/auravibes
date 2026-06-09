@@ -10,8 +10,6 @@
 // Required: Tests use intentional no-op callbacks and fake hooks.
 // ignore_for_file: missing-test-assertion
 // Required: Tests verify orchestration through repository side effects.
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
 // ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
@@ -62,22 +60,52 @@ import 'continue_agent_usecase_test.mocks.dart';
 ])
 void main() {
   group('ContinueAgentUsecase', () {
-    late MockChatbotService chatbotService;
-    late MockMessageRepository messageRepository;
-    late MockWorkspaceModelSelectionRepository
-    workspaceModelSelectionsRepository;
-    late MockConversationRepository conversationRepository;
-    late MockLoadConversationToolSpecsUsecase loadConversationToolSpecsUsecase;
-    late MockMonitoringService monitoringService;
-    late MockSelectPromptMessagesUsecase selectPromptMessagesUsecase;
-    late ContinueAgentUsecase usecase;
-    late List<String> removedMessageIds;
-    late List<String> startedConversationIds;
-    late List<String> removedConversationIds;
-    late List<String> updatedMessageIds;
-    late List<ChatResult<ChatMessage>> updatedResults;
-    late List<String> startedSubscriptionMessageIds;
-    late AgentCancellationRuntime agentCancellationRuntime;
+    var chatbotService = MockChatbotService();
+    var messageRepository = MockMessageRepository();
+    var workspaceModelSelectionsRepository =
+        MockWorkspaceModelSelectionRepository();
+    var conversationRepository = MockConversationRepository();
+    var loadConversationToolSpecsUsecase =
+        MockLoadConversationToolSpecsUsecase();
+    var monitoringService = MockMonitoringService();
+    var selectPromptMessagesUsecase = MockSelectPromptMessagesUsecase();
+    var removedMessageIds = <String>[];
+    var startedConversationIds = <String>[];
+    var removedConversationIds = <String>[];
+    var updatedMessageIds = <String>[];
+    var updatedResults = <ChatResult<ChatMessage>>[];
+    var startedSubscriptionMessageIds = <String>[];
+    var agentCancellationRuntime = AgentCancellationRuntime()
+      ..start('conversation-1');
+    var usecase = ContinueAgentUsecase(
+      chatbotService: chatbotService,
+      messageRepository: messageRepository,
+      workspaceModelSelectionsRepository: workspaceModelSelectionsRepository,
+      conversationRepository: conversationRepository,
+      loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
+      messagesStreamingRuntime: MessagesStreamingRuntime(
+        startSubscription: (_, messageId) {
+          startedSubscriptionMessageIds.add(messageId);
+        },
+        updateResult: (result, messageId) {
+          updatedResults.add(result);
+          updatedMessageIds.add(messageId);
+        },
+        remove: (messageId) async {
+          removedMessageIds.add(messageId);
+        },
+      ),
+      conversationStreamingRuntime: ConversationStreamingRuntime(
+        start: startedConversationIds.add,
+        isStreaming: (_) => false,
+        remove: removedConversationIds.add,
+      ),
+      agentCancellationRuntime: agentCancellationRuntime,
+      monitoringService: monitoringService,
+      selectPromptMessagesUsecase: selectPromptMessagesUsecase,
+      buildSkillContextMessagesUsecase:
+          const _FakeBuildSkillContextMessagesUsecase([]),
+    );
 
     setUp(() {
       chatbotService = MockChatbotService();
@@ -715,16 +743,37 @@ void main() {
   });
 
   group('ContinueAgentUsecase error paths', () {
-    late MockChatbotService chatbotService;
-    late MockMessageRepository messageRepository;
-    late MockWorkspaceModelSelectionRepository
-    workspaceModelSelectionsRepository;
-    late MockConversationRepository conversationRepository;
-    late MockLoadConversationToolSpecsUsecase loadConversationToolSpecsUsecase;
-    late MockMonitoringService monitoringService;
-    late MockSelectPromptMessagesUsecase selectPromptMessagesUsecase;
-    late ContinueAgentUsecase usecase;
-    late AgentCancellationRuntime agentCancellationRuntime;
+    var chatbotService = MockChatbotService();
+    var messageRepository = MockMessageRepository();
+    var workspaceModelSelectionsRepository =
+        MockWorkspaceModelSelectionRepository();
+    var conversationRepository = MockConversationRepository();
+    var loadConversationToolSpecsUsecase =
+        MockLoadConversationToolSpecsUsecase();
+    var monitoringService = MockMonitoringService();
+    var selectPromptMessagesUsecase = MockSelectPromptMessagesUsecase();
+    var agentCancellationRuntime = AgentCancellationRuntime()
+      ..start('conversation-1');
+    var usecase = ContinueAgentUsecase(
+      chatbotService: chatbotService,
+      messageRepository: messageRepository,
+      workspaceModelSelectionsRepository: workspaceModelSelectionsRepository,
+      conversationRepository: conversationRepository,
+      loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
+      messagesStreamingRuntime: MessagesStreamingRuntime(
+        startSubscription: (_, _) {},
+        updateResult: (_, _) {},
+        remove: (_) async {},
+      ),
+      conversationStreamingRuntime: ConversationStreamingRuntime(
+        start: (_) {},
+        isStreaming: (_) => false,
+        remove: (_) {},
+      ),
+      agentCancellationRuntime: agentCancellationRuntime,
+      monitoringService: monitoringService,
+      selectPromptMessagesUsecase: selectPromptMessagesUsecase,
+    );
 
     setUp(() {
       chatbotService = MockChatbotService();
@@ -897,16 +946,37 @@ void main() {
   });
 
   group('ContinueAgentUsecase prompt selection', () {
-    late MockChatbotService chatbotService;
-    late MockMessageRepository messageRepository;
-    late MockWorkspaceModelSelectionRepository
-    workspaceModelSelectionsRepository;
-    late MockConversationRepository conversationRepository;
-    late MockLoadConversationToolSpecsUsecase loadConversationToolSpecsUsecase;
-    late MockMonitoringService monitoringService;
-    late MockSelectPromptMessagesUsecase selectPromptMessagesUsecase;
-    late ContinueAgentUsecase usecase;
-    late AgentCancellationRuntime agentCancellationRuntime;
+    var chatbotService = MockChatbotService();
+    var messageRepository = MockMessageRepository();
+    var workspaceModelSelectionsRepository =
+        MockWorkspaceModelSelectionRepository();
+    var conversationRepository = MockConversationRepository();
+    var loadConversationToolSpecsUsecase =
+        MockLoadConversationToolSpecsUsecase();
+    var monitoringService = MockMonitoringService();
+    var selectPromptMessagesUsecase = MockSelectPromptMessagesUsecase();
+    var agentCancellationRuntime = AgentCancellationRuntime()
+      ..start('conversation-1');
+    var usecase = ContinueAgentUsecase(
+      chatbotService: chatbotService,
+      messageRepository: messageRepository,
+      workspaceModelSelectionsRepository: workspaceModelSelectionsRepository,
+      conversationRepository: conversationRepository,
+      loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
+      messagesStreamingRuntime: MessagesStreamingRuntime(
+        startSubscription: (_, _) {},
+        updateResult: (_, _) {},
+        remove: (_) async {},
+      ),
+      conversationStreamingRuntime: ConversationStreamingRuntime(
+        start: (_) {},
+        isStreaming: (_) => false,
+        remove: (_) {},
+      ),
+      agentCancellationRuntime: agentCancellationRuntime,
+      monitoringService: monitoringService,
+      selectPromptMessagesUsecase: selectPromptMessagesUsecase,
+    );
 
     setUp(() {
       chatbotService = MockChatbotService();

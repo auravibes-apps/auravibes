@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: format-comment
@@ -383,15 +381,21 @@ class _SeededConversationRepository extends _RecordingConversationRepository {
       _WorkspaceWatchCall(workspaceId: workspaceId, limit: limit),
     );
 
-    late final StreamController<List<ConversationEntity>> controller;
+    StreamController<List<ConversationEntity>>? controller;
     controller = StreamController<List<ConversationEntity>>.broadcast(
-      onCancel: () => _controllers.remove(controller),
+      onCancel: () {
+        final activeController = controller;
+        if (activeController != null) {
+          final _ = _controllers.remove(activeController);
+        }
+      },
     );
-    _controllers.add(controller);
+    final activeController = controller;
+    _controllers.add(activeController);
 
-    Future.microtask(() => controller.add(_conversations));
+    Future.microtask(() => activeController.add(_conversations));
 
-    return controller.stream;
+    return activeController.stream;
   }
 }
 
@@ -480,12 +484,18 @@ class _RecordingConversationRepository implements ConversationRepository {
       _WorkspaceWatchCall(workspaceId: workspaceId, limit: limit),
     );
 
-    late final StreamController<List<ConversationEntity>> controller;
+    StreamController<List<ConversationEntity>>? controller;
     controller = StreamController<List<ConversationEntity>>.broadcast(
-      onCancel: () => _controllers.remove(controller),
+      onCancel: () {
+        final activeController = controller;
+        if (activeController != null) {
+          final _ = _controllers.remove(activeController);
+        }
+      },
     );
-    _controllers.add(controller);
-    return controller.stream;
+    final activeController = controller;
+    _controllers.add(activeController);
+    return activeController.stream;
   }
 
   Future<void> close() async {

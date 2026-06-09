@@ -17,9 +17,6 @@
 
 // ignore_for_file: avoid-redundant-async
 // Required: Test callbacks intentionally preserve async-compatible signatures.
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
@@ -60,30 +57,40 @@ class FakeConversationPatch extends Fake implements ConversationPatch {}
 
 class FakeMessagePatch extends Fake implements MessagePatch {}
 
-void main() {
-  late MockMessageRepository mockMessageRepo;
-  late MockConversationRepository mockConversationRepo;
-  late MockWorkspaceModelSelectionRepository mockModelSelectionRepo;
-  late MockChatbotService mockChatbotService;
-  late ProviderContainer container;
-  late CompactionExecution compactionExecution;
-  late CompactConversationUsecase usecase;
+class _CompactConversationFixture {
+  MockMessageRepository? _mockMessageRepo;
+  MockConversationRepository? _mockConversationRepo;
+  MockWorkspaceModelSelectionRepository? _mockModelSelectionRepo;
+  MockChatbotService? _mockChatbotService;
+  ProviderContainer? _container;
+  CompactConversationUsecase? _usecase;
 
-  setUpAll(() {
-    registerFallbackValue(FakeWorkspaceModelSelectionWithConnectionEntity());
-    registerFallbackValue(FakeMessageToCreate());
-    registerFallbackValue(FakeConversationPatch());
-    registerFallbackValue(FakeMessagePatch());
-  });
+  MockMessageRepository get mockMessageRepo =>
+      _mockMessageRepo ?? fail('mockMessageRepo not initialized');
 
-  setUp(() {
-    mockMessageRepo = MockMessageRepository();
-    mockConversationRepo = MockConversationRepository();
-    mockModelSelectionRepo = MockWorkspaceModelSelectionRepository();
-    mockChatbotService = MockChatbotService();
-    container = ProviderContainer();
-    compactionExecution = container.read(compactionExecutionProvider.notifier);
-    usecase = CompactConversationUsecase(
+  MockConversationRepository get mockConversationRepo =>
+      _mockConversationRepo ?? fail('mockConversationRepo not initialized');
+
+  MockWorkspaceModelSelectionRepository get mockModelSelectionRepo =>
+      _mockModelSelectionRepo ?? fail('mockModelSelectionRepo not initialized');
+
+  MockChatbotService get mockChatbotService =>
+      _mockChatbotService ?? fail('mockChatbotService not initialized');
+
+  CompactConversationUsecase get usecase =>
+      _usecase ?? fail('usecase not initialized');
+
+  void reset() {
+    _mockMessageRepo = MockMessageRepository();
+    _mockConversationRepo = MockConversationRepository();
+    _mockModelSelectionRepo = MockWorkspaceModelSelectionRepository();
+    _mockChatbotService = MockChatbotService();
+    final container = ProviderContainer();
+    _container = container;
+    final compactionExecution = container.read(
+      compactionExecutionProvider.notifier,
+    );
+    _usecase = CompactConversationUsecase(
       messageRepository: mockMessageRepo,
       conversationRepository: mockConversationRepo,
       workspaceModelSelectionsRepository: mockModelSelectionRepo,
@@ -123,11 +130,32 @@ void main() {
         );
       },
     );
+  }
+
+  void dispose() {
+    _container?.dispose();
+    _container = null;
+    _mockMessageRepo = null;
+    _mockConversationRepo = null;
+    _mockModelSelectionRepo = null;
+    _mockChatbotService = null;
+    _usecase = null;
+  }
+}
+
+void main() {
+  final fixture = _CompactConversationFixture();
+
+  setUpAll(() {
+    registerFallbackValue(FakeWorkspaceModelSelectionWithConnectionEntity());
+    registerFallbackValue(FakeMessageToCreate());
+    registerFallbackValue(FakeConversationPatch());
+    registerFallbackValue(FakeMessagePatch());
   });
 
-  tearDown(() {
-    container.dispose();
-  });
+  setUp(fixture.reset);
+
+  tearDown(fixture.dispose);
 
   MessageEntity _makeMessage({
     String id = 'msg-1',
@@ -161,15 +189,19 @@ void main() {
       ];
 
       when(
-        () => mockConversationRepo.getConversationById('conv-1'),
+        () => fixture.mockConversationRepo.getConversationById('conv-1'),
       ).thenAnswer((_) async => _makeConversation());
       when(
-        () => mockModelSelectionRepo.getWorkspaceModelSelectionById('model-1'),
+        () => fixture.mockModelSelectionRepo.getWorkspaceModelSelectionById(
+          'model-1',
+        ),
       ).thenAnswer((_) async => _makeModelSelection());
       when(
-        () => mockMessageRepo.getMessagesByConversation('conv-1'),
+        () => fixture.mockMessageRepo.getMessagesByConversation('conv-1'),
       ).thenAnswer((_) async => messages);
-      when(() => mockChatbotService.sendMessage(any(), any())).thenAnswer(
+      when(
+        () => fixture.mockChatbotService.sendMessage(any(), any()),
+      ).thenAnswer(
         (_) => Stream.value(
           ChatResult<ChatMessage>(
             output: ChatMessage.model('Manual summary'),
@@ -178,7 +210,7 @@ void main() {
         ),
       );
 
-      final result = await usecase(
+      final result = await fixture.usecase(
         conversationId: 'conv-1',
         trigger: CompactionTrigger.manual,
       );
@@ -188,7 +220,7 @@ void main() {
 
       final captured =
           verify(
-                () => mockMessageRepo.createMessage(captureAny()),
+                () => fixture.mockMessageRepo.createMessage(captureAny()),
               ).captured.single
               as MessageToCreate;
       final meta = MessageMetadataEntity.fromJsonString(captured.metadata);
@@ -198,13 +230,15 @@ void main() {
 
     test('manual throws CompactionUnsafeException for busy/unsafe state', () {
       when(
-        () => mockConversationRepo.getConversationById('conv-1'),
+        () => fixture.mockConversationRepo.getConversationById('conv-1'),
       ).thenAnswer((_) async => _makeConversation());
       when(
-        () => mockModelSelectionRepo.getWorkspaceModelSelectionById('model-1'),
+        () => fixture.mockModelSelectionRepo.getWorkspaceModelSelectionById(
+          'model-1',
+        ),
       ).thenAnswer((_) async => _makeModelSelection());
       when(
-        () => mockMessageRepo.getMessagesByConversation('conv-1'),
+        () => fixture.mockMessageRepo.getMessagesByConversation('conv-1'),
       ).thenAnswer(
         (_) async => [
           _makeMessage(),
@@ -213,7 +247,7 @@ void main() {
       );
 
       expect(
-        () => usecase(
+        () => fixture.usecase(
           conversationId: 'conv-1',
           trigger: CompactionTrigger.manual,
         ),
@@ -230,20 +264,22 @@ void main() {
       ];
 
       when(
-        () => mockConversationRepo.getConversationById('conv-1'),
+        () => fixture.mockConversationRepo.getConversationById('conv-1'),
       ).thenAnswer((_) async => _makeConversation());
       when(
-        () => mockModelSelectionRepo.getWorkspaceModelSelectionById('model-1'),
+        () => fixture.mockModelSelectionRepo.getWorkspaceModelSelectionById(
+          'model-1',
+        ),
       ).thenAnswer((_) async => _makeModelSelection());
       when(
-        () => mockMessageRepo.getMessagesByConversation('conv-1'),
+        () => fixture.mockMessageRepo.getMessagesByConversation('conv-1'),
       ).thenAnswer((_) async => messages);
       when(
-        () => mockChatbotService.sendMessage(any(), any()),
+        () => fixture.mockChatbotService.sendMessage(any(), any()),
       ).thenThrow(Exception('API error'));
 
       try {
-        final _ = await usecase(
+        final _ = await fixture.usecase(
           conversationId: 'conv-1',
           trigger: CompactionTrigger.manual,
         );
@@ -251,7 +287,7 @@ void main() {
         // expected
       }
 
-      final _ = verifyNever(() => mockMessageRepo.createMessage(any()));
+      final _ = verifyNever(() => fixture.mockMessageRepo.createMessage(any()));
     });
 
     test('manual failure leaves state unchanged', () async {
@@ -263,20 +299,22 @@ void main() {
       ];
 
       when(
-        () => mockConversationRepo.getConversationById('conv-1'),
+        () => fixture.mockConversationRepo.getConversationById('conv-1'),
       ).thenAnswer((_) async => _makeConversation());
       when(
-        () => mockModelSelectionRepo.getWorkspaceModelSelectionById('model-1'),
+        () => fixture.mockModelSelectionRepo.getWorkspaceModelSelectionById(
+          'model-1',
+        ),
       ).thenAnswer((_) async => _makeModelSelection());
       when(
-        () => mockMessageRepo.getMessagesByConversation('conv-1'),
+        () => fixture.mockMessageRepo.getMessagesByConversation('conv-1'),
       ).thenAnswer((_) async => messages);
       when(
-        () => mockChatbotService.sendMessage(any(), any()),
+        () => fixture.mockChatbotService.sendMessage(any(), any()),
       ).thenThrow(Exception('API error'));
 
       expect(
-        () => usecase(
+        () => fixture.usecase(
           conversationId: 'conv-1',
           trigger: CompactionTrigger.manual,
         ),
@@ -293,15 +331,19 @@ void main() {
       ];
 
       when(
-        () => mockConversationRepo.getConversationById('conv-1'),
+        () => fixture.mockConversationRepo.getConversationById('conv-1'),
       ).thenAnswer((_) async => _makeConversation());
       when(
-        () => mockModelSelectionRepo.getWorkspaceModelSelectionById('model-1'),
+        () => fixture.mockModelSelectionRepo.getWorkspaceModelSelectionById(
+          'model-1',
+        ),
       ).thenAnswer((_) async => _makeModelSelection());
       when(
-        () => mockMessageRepo.getMessagesByConversation('conv-1'),
+        () => fixture.mockMessageRepo.getMessagesByConversation('conv-1'),
       ).thenAnswer((_) async => messages);
-      when(() => mockChatbotService.sendMessage(any(), any())).thenAnswer(
+      when(
+        () => fixture.mockChatbotService.sendMessage(any(), any()),
+      ).thenAnswer(
         (_) => Stream.value(
           ChatResult<ChatMessage>(
             output: ChatMessage.model('Summary'),
@@ -310,14 +352,14 @@ void main() {
         ),
       );
 
-      final result = await usecase(
+      final result = await fixture.usecase(
         conversationId: 'conv-1',
         trigger: CompactionTrigger.manual,
       );
 
-      verify(() => mockMessageRepo.createMessage(any())).called(1);
+      verify(() => fixture.mockMessageRepo.createMessage(any())).called(1);
       final _ = verifyNever(
-        () => mockConversationRepo.patchConversation(any(), any()),
+        () => fixture.mockConversationRepo.patchConversation(any(), any()),
       );
       expect(result.status, CompactionExecutionStatus.success);
     });
@@ -328,11 +370,11 @@ void main() {
       'throws CompactionUnavailableException when conversation not found',
       () async {
         when(
-          () => mockConversationRepo.getConversationById('conv-1'),
+          () => fixture.mockConversationRepo.getConversationById('conv-1'),
         ).thenAnswer((_) async => null);
 
         expect(
-          () => usecase(
+          () => fixture.usecase(
             conversationId: 'conv-1',
             trigger: CompactionTrigger.auto,
           ),
@@ -345,11 +387,11 @@ void main() {
       'throws CompactionUnavailableException when no model selected',
       () async {
         when(
-          () => mockConversationRepo.getConversationById('conv-1'),
+          () => fixture.mockConversationRepo.getConversationById('conv-1'),
         ).thenAnswer((_) async => _makeConversation(modelId: null));
 
         expect(
-          () => usecase(
+          () => fixture.usecase(
             conversationId: 'conv-1',
             trigger: CompactionTrigger.auto,
           ),
@@ -360,19 +402,21 @@ void main() {
 
     test('throws CompactionUnsafeException when no safe range', () async {
       when(
-        () => mockConversationRepo.getConversationById('conv-1'),
+        () => fixture.mockConversationRepo.getConversationById('conv-1'),
       ).thenAnswer((_) async => _makeConversation());
       when(
-        () => mockModelSelectionRepo.getWorkspaceModelSelectionById('model-1'),
+        () => fixture.mockModelSelectionRepo.getWorkspaceModelSelectionById(
+          'model-1',
+        ),
       ).thenAnswer((_) async => _makeModelSelection());
       when(
-        () => mockMessageRepo.getMessagesByConversation('conv-1'),
+        () => fixture.mockMessageRepo.getMessagesByConversation('conv-1'),
       ).thenAnswer(
         (_) async => [_makeMessage(), _makeMessage(id: 'msg-2', isUser: false)],
       );
 
       expect(
-        () => usecase(
+        () => fixture.usecase(
           conversationId: 'conv-1',
           trigger: CompactionTrigger.manual,
         ),
@@ -389,15 +433,19 @@ void main() {
       ];
 
       when(
-        () => mockConversationRepo.getConversationById('conv-1'),
+        () => fixture.mockConversationRepo.getConversationById('conv-1'),
       ).thenAnswer((_) async => _makeConversation());
       when(
-        () => mockModelSelectionRepo.getWorkspaceModelSelectionById('model-1'),
+        () => fixture.mockModelSelectionRepo.getWorkspaceModelSelectionById(
+          'model-1',
+        ),
       ).thenAnswer((_) async => _makeModelSelection());
       when(
-        () => mockMessageRepo.getMessagesByConversation('conv-1'),
+        () => fixture.mockMessageRepo.getMessagesByConversation('conv-1'),
       ).thenAnswer((_) async => messages);
-      when(() => mockChatbotService.sendMessage(any(), any())).thenAnswer(
+      when(
+        () => fixture.mockChatbotService.sendMessage(any(), any()),
+      ).thenAnswer(
         (_) => Stream.value(
           ChatResult<ChatMessage>(
             output: ChatMessage.model('Summary text'),
@@ -406,13 +454,13 @@ void main() {
         ),
       );
 
-      final result = await usecase(
+      final result = await fixture.usecase(
         conversationId: 'conv-1',
         trigger: CompactionTrigger.auto,
       );
 
       expect(result.status, CompactionExecutionStatus.success);
-      verify(() => mockMessageRepo.createMessage(any())).called(1);
+      verify(() => fixture.mockMessageRepo.createMessage(any())).called(1);
     });
 
     test('throws CompactionFailedException on AI service failure', () async {
@@ -424,20 +472,22 @@ void main() {
       ];
 
       when(
-        () => mockConversationRepo.getConversationById('conv-1'),
+        () => fixture.mockConversationRepo.getConversationById('conv-1'),
       ).thenAnswer((_) async => _makeConversation());
       when(
-        () => mockModelSelectionRepo.getWorkspaceModelSelectionById('model-1'),
+        () => fixture.mockModelSelectionRepo.getWorkspaceModelSelectionById(
+          'model-1',
+        ),
       ).thenAnswer((_) async => _makeModelSelection());
       when(
-        () => mockMessageRepo.getMessagesByConversation('conv-1'),
+        () => fixture.mockMessageRepo.getMessagesByConversation('conv-1'),
       ).thenAnswer((_) async => messages);
       when(
-        () => mockChatbotService.sendMessage(any(), any()),
+        () => fixture.mockChatbotService.sendMessage(any(), any()),
       ).thenThrow(Exception('API error'));
 
       expect(
-        () => usecase(
+        () => fixture.usecase(
           conversationId: 'conv-1',
           trigger: CompactionTrigger.auto,
         ),
@@ -454,20 +504,22 @@ void main() {
       ];
 
       when(
-        () => mockConversationRepo.getConversationById('conv-1'),
+        () => fixture.mockConversationRepo.getConversationById('conv-1'),
       ).thenAnswer((_) async => _makeConversation());
       when(
-        () => mockModelSelectionRepo.getWorkspaceModelSelectionById('model-1'),
+        () => fixture.mockModelSelectionRepo.getWorkspaceModelSelectionById(
+          'model-1',
+        ),
       ).thenAnswer((_) async => _makeModelSelection());
       when(
-        () => mockMessageRepo.getMessagesByConversation('conv-1'),
+        () => fixture.mockMessageRepo.getMessagesByConversation('conv-1'),
       ).thenAnswer((_) async => messages);
       when(
-        () => mockChatbotService.sendMessage(any(), any()),
+        () => fixture.mockChatbotService.sendMessage(any(), any()),
       ).thenThrow(Exception('API error'));
 
       try {
-        final _ = await usecase(
+        final _ = await fixture.usecase(
           conversationId: 'conv-1',
           trigger: CompactionTrigger.auto,
         );
@@ -477,7 +529,7 @@ void main() {
 
       final captured =
           verify(
-                () => mockMessageRepo.createMessage(captureAny()),
+                () => fixture.mockMessageRepo.createMessage(captureAny()),
               ).captured.single
               as MessageToCreate;
       final meta = MessageMetadataEntity.fromJsonString(captured.metadata);
@@ -493,15 +545,19 @@ void main() {
       ];
 
       when(
-        () => mockConversationRepo.getConversationById('conv-1'),
+        () => fixture.mockConversationRepo.getConversationById('conv-1'),
       ).thenAnswer((_) async => _makeConversation());
       when(
-        () => mockModelSelectionRepo.getWorkspaceModelSelectionById('model-1'),
+        () => fixture.mockModelSelectionRepo.getWorkspaceModelSelectionById(
+          'model-1',
+        ),
       ).thenAnswer((_) async => _makeModelSelection());
       when(
-        () => mockMessageRepo.getMessagesByConversation('conv-1'),
+        () => fixture.mockMessageRepo.getMessagesByConversation('conv-1'),
       ).thenAnswer((_) async => messages);
-      when(() => mockChatbotService.sendMessage(any(), any())).thenAnswer(
+      when(
+        () => fixture.mockChatbotService.sendMessage(any(), any()),
+      ).thenAnswer(
         (_) => Stream.value(
           ChatResult<ChatMessage>(
             output: ChatMessage.model('Summary'),
@@ -510,12 +566,14 @@ void main() {
         ),
       );
 
-      final _ = await usecase(
+      final _ = await fixture.usecase(
         conversationId: 'conv-1',
         trigger: CompactionTrigger.manual,
       );
 
-      verify(() => mockChatbotService.sendMessage(any(), any())).called(1);
+      verify(
+        () => fixture.mockChatbotService.sendMessage(any(), any()),
+      ).called(1);
     });
 
     test(
@@ -544,16 +602,19 @@ void main() {
         ];
 
         when(
-          () => mockConversationRepo.getConversationById('conv-1'),
+          () => fixture.mockConversationRepo.getConversationById('conv-1'),
         ).thenAnswer((_) async => _makeConversation());
         when(
-          () =>
-              mockModelSelectionRepo.getWorkspaceModelSelectionById('model-1'),
+          () => fixture.mockModelSelectionRepo.getWorkspaceModelSelectionById(
+            'model-1',
+          ),
         ).thenAnswer((_) async => _makeModelSelection());
         when(
-          () => mockMessageRepo.getMessagesByConversation('conv-1'),
+          () => fixture.mockMessageRepo.getMessagesByConversation('conv-1'),
         ).thenAnswer((_) async => messages);
-        when(() => mockChatbotService.sendMessage(any(), any())).thenAnswer(
+        when(
+          () => fixture.mockChatbotService.sendMessage(any(), any()),
+        ).thenAnswer(
           (_) => Stream.value(
             ChatResult<ChatMessage>(
               output: ChatMessage.model('Summary'),
@@ -562,14 +623,17 @@ void main() {
           ),
         );
 
-        final _ = await usecase(
+        final _ = await fixture.usecase(
           conversationId: 'conv-1',
           trigger: CompactionTrigger.manual,
         );
 
         final captured =
             verify(
-                  () => mockChatbotService.sendMessage(any(), captureAny()),
+                  () => fixture.mockChatbotService.sendMessage(
+                    any(),
+                    captureAny(),
+                  ),
                 ).captured.single
                 as List<ChatMessage>;
 

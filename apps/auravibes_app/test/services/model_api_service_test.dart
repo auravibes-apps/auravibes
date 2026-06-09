@@ -7,9 +7,6 @@
 // ignore_for_file: prefer-static-class
 // Required: Tests keep fixture helpers and fakes top-level.
 
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/services/model_api_service.dart';
@@ -102,8 +99,8 @@ Dio _createDioWithError() {
 
 void main() {
   group('ModelApiService', () {
-    late Dio dio;
-    late ModelApiService service;
+    var dio = Dio(BaseOptions(baseUrl: 'https://models.dev'));
+    var service = ModelApiService(dio: dio);
 
     setUp(() {
       dio = Dio(BaseOptions(baseUrl: 'https://models.dev'));

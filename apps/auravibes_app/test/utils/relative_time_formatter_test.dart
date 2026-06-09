@@ -5,9 +5,6 @@
 // ignore_for_file: prefer-static-class
 // Required: Tests keep fixture helpers and fakes top-level.
 
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/utils/relative_time_formatter.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -20,11 +17,7 @@ String mockTranslate(String key, {List<String>? args}) {
 }
 
 void main() {
-  late RelativeTimeFormatter formatter;
-
-  setUp(() {
-    formatter = const RelativeTimeFormatter();
-  });
+  const formatter = RelativeTimeFormatter();
 
   group('boundary conditions', () {
     final now = DateTime(2026, 4, 5, 12);

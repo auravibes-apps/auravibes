@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: newline-before-return
@@ -28,11 +26,7 @@ import 'package:riverpod/riverpod.dart';
 
 void main() {
   group('GroupedConversationToolsNotifier', () {
-    late _FakeToolsGroupsRepository toolsGroupsRepository;
-    late _FakeWorkspaceToolsRepository workspaceToolsRepository;
-    late _FakeConversationToolsRepository conversationToolsRepository;
-    late _FakeMcpConnectionNotifier mcpNotifier;
-    late ProviderContainer container;
+    final fixture = _GroupedConversationToolsFixture();
 
     final createdAt = DateTime(2026);
 
@@ -78,35 +72,16 @@ void main() {
       mcpServerId: 'server-1',
     );
 
-    setUp(() {
-      toolsGroupsRepository = _FakeToolsGroupsRepository();
-      workspaceToolsRepository = _FakeWorkspaceToolsRepository();
-      conversationToolsRepository = _FakeConversationToolsRepository();
-      mcpNotifier = _FakeMcpConnectionNotifier();
+    setUp(fixture.setUp);
 
-      container = ProviderContainer(
-        overrides: [
-          toolsGroupsRepositoryProvider.overrideWithValue(
-            toolsGroupsRepository,
-          ),
-          workspaceToolsRepositoryProvider.overrideWithValue(
-            workspaceToolsRepository,
-          ),
-          conversationToolsRepositoryProvider.overrideWithValue(
-            conversationToolsRepository,
-          ),
-          mcpConnectionProvider.overrideWith(() => mcpNotifier),
-        ],
-      );
-    });
-
-    tearDown(() {
-      container.dispose();
-    });
+    tearDown(fixture.dispose);
 
     test(
       'groups tools into built-in and native default groups',
       () async {
+        final workspaceToolsRepository = fixture.workspaceToolsRepository;
+        final toolsGroupsRepository = fixture.toolsGroupsRepository;
+        final container = fixture.container;
         workspaceToolsRepository.workspaceTools = [
           builtInTool,
           nativeTool,
@@ -142,6 +117,9 @@ void main() {
     test(
       'groups MCP tools under their group with connection state',
       () async {
+        final workspaceToolsRepository = fixture.workspaceToolsRepository;
+        final toolsGroupsRepository = fixture.toolsGroupsRepository;
+        final container = fixture.container;
         workspaceToolsRepository.workspaceTools = [groupedTool];
         toolsGroupsRepository.groups = [mcpGroup];
 
@@ -159,6 +137,9 @@ void main() {
     );
 
     test('skips empty groups', () async {
+      final workspaceToolsRepository = fixture.workspaceToolsRepository;
+      final toolsGroupsRepository = fixture.toolsGroupsRepository;
+      final container = fixture.container;
       workspaceToolsRepository.workspaceTools = [builtInTool];
       toolsGroupsRepository.groups = [mcpGroup];
 
@@ -175,6 +156,10 @@ void main() {
     test(
       'reconnectMcp delegates to McpConnectionNotifier',
       () async {
+        final workspaceToolsRepository = fixture.workspaceToolsRepository;
+        final toolsGroupsRepository = fixture.toolsGroupsRepository;
+        final container = fixture.container;
+        final mcpNotifier = fixture.mcpNotifier;
         workspaceToolsRepository.workspaceTools = [builtInTool];
         toolsGroupsRepository.groups = [];
 
@@ -198,6 +183,10 @@ void main() {
     test(
       'toggleGroupTools with null groupId and defaultGroupType enables tools',
       () async {
+        final workspaceToolsRepository = fixture.workspaceToolsRepository;
+        final toolsGroupsRepository = fixture.toolsGroupsRepository;
+        final conversationToolsRepository = fixture.conversationToolsRepository;
+        final container = fixture.container;
         workspaceToolsRepository.workspaceTools = [builtInTool, nativeTool];
         toolsGroupsRepository.groups = [];
         conversationToolsRepository.setEnabledResult = true;
@@ -228,6 +217,67 @@ void main() {
       },
     );
   });
+}
+
+class _GroupedConversationToolsFixture {
+  _FakeToolsGroupsRepository? _toolsGroupsRepository;
+  _FakeWorkspaceToolsRepository? _workspaceToolsRepository;
+  _FakeConversationToolsRepository? _conversationToolsRepository;
+  _FakeMcpConnectionNotifier? _mcpNotifier;
+  ProviderContainer? _container;
+
+  _FakeToolsGroupsRepository get toolsGroupsRepository =>
+      _toolsGroupsRepository ??
+      fail('Expected toolsGroupsRepository to be initialized');
+
+  _FakeWorkspaceToolsRepository get workspaceToolsRepository =>
+      _workspaceToolsRepository ??
+      fail('Expected workspaceToolsRepository to be initialized');
+
+  _FakeConversationToolsRepository get conversationToolsRepository =>
+      _conversationToolsRepository ??
+      fail('Expected conversationToolsRepository to be initialized');
+
+  _FakeMcpConnectionNotifier get mcpNotifier =>
+      _mcpNotifier ?? fail('Expected mcpNotifier to be initialized');
+
+  ProviderContainer get container =>
+      _container ?? fail('Expected container to be initialized');
+
+  void setUp() {
+    final toolsGroupsRepository = _FakeToolsGroupsRepository();
+    final workspaceToolsRepository = _FakeWorkspaceToolsRepository();
+    final conversationToolsRepository = _FakeConversationToolsRepository();
+    final mcpNotifier = _FakeMcpConnectionNotifier();
+
+    _toolsGroupsRepository = toolsGroupsRepository;
+    _workspaceToolsRepository = workspaceToolsRepository;
+    _conversationToolsRepository = conversationToolsRepository;
+    _mcpNotifier = mcpNotifier;
+    _container = ProviderContainer(
+      overrides: [
+        toolsGroupsRepositoryProvider.overrideWithValue(
+          toolsGroupsRepository,
+        ),
+        workspaceToolsRepositoryProvider.overrideWithValue(
+          workspaceToolsRepository,
+        ),
+        conversationToolsRepositoryProvider.overrideWithValue(
+          conversationToolsRepository,
+        ),
+        mcpConnectionProvider.overrideWith(() => mcpNotifier),
+      ],
+    );
+  }
+
+  void dispose() {
+    _container?.dispose();
+    _container = null;
+    _mcpNotifier = null;
+    _conversationToolsRepository = null;
+    _workspaceToolsRepository = null;
+    _toolsGroupsRepository = null;
+  }
 }
 
 class _FakeToolsGroupsRepository implements ToolsGroupsRepository {

@@ -2,8 +2,6 @@
 // Required: Test callbacks intentionally preserve async-compatible signatures.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 
@@ -78,7 +76,7 @@ void main() {
   });
 
   group('NewChatNotifier', () {
-    late ProviderContainer container;
+    var container = ProviderContainer();
 
     setUp(() {
       container = ProviderContainer();

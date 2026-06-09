@@ -8,9 +8,6 @@
 // ignore_for_file: avoid-redundant-async
 // Required: Test callbacks intentionally preserve async-compatible signatures.
 
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-
 import 'dart:convert';
 
 import 'package:auravibes_app/services/encryption_service.dart';
@@ -29,7 +26,7 @@ class MockSecretKeyManager extends SecretKeyManager {
 
 void main() {
   group('EncryptionService', () {
-    late EncryptionService service;
+    var service = EncryptionService(MockSecretKeyManager());
 
     setUp(() {
       service = EncryptionService(MockSecretKeyManager());
@@ -128,7 +125,7 @@ void main() {
   });
 
   group('EncryptionService nullable methods', () {
-    late EncryptionService service;
+    var service = EncryptionService(MockSecretKeyManager());
 
     setUp(() {
       service = EncryptionService(MockSecretKeyManager());

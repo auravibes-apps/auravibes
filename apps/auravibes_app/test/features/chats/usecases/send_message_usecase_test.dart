@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: missing-test-assertion
@@ -31,33 +29,13 @@ import 'send_message_usecase_test.mocks.dart';
 ])
 void main() {
   group('SendMessageUsecase', () {
-    late MockRunAgentIterationUsecase runAgentIterationUsecase;
-    late MockMessageRepository messageRepository;
-    late MockGetConversationBusyStateUsecase getConversationBusyStateUsecase;
-    late ProviderContainer container;
-    late SendMessageUsecase usecase;
+    var fixture = _SendMessageUsecaseFixture.create();
 
     setUp(() {
-      runAgentIterationUsecase = MockRunAgentIterationUsecase();
-      messageRepository = MockMessageRepository();
-      getConversationBusyStateUsecase = MockGetConversationBusyStateUsecase();
-      container = ProviderContainer();
-      usecase = SendMessageUsecase(
-        runAgentIterationUsecase: runAgentIterationUsecase,
-        messageRepository: messageRepository,
-        getConversationBusyStateUsecase: getConversationBusyStateUsecase,
-        sendQueueRuntime: ConversationSendQueueRuntime(
-          enqueue: container
-              .read(conversationSendQueueProvider.notifier)
-              .enqueue,
-          dequeueAll: container
-              .read(conversationSendQueueProvider.notifier)
-              .dequeueAll,
-          clear: container.read(conversationSendQueueProvider.notifier).clear,
-        ),
-      );
+      fixture.dispose();
+      fixture = _SendMessageUsecaseFixture.create();
 
-      when(messageRepository.createMessage(any)).thenAnswer(
+      when(fixture.messageRepository.createMessage(any)).thenAnswer(
         (_) async => MessageEntity(
           id: 'user-1',
           conversationId: 'conversation-1',
@@ -70,13 +48,13 @@ void main() {
         ),
       );
       when(
-        runAgentIterationUsecase.call(
+        fixture.runAgentIterationUsecase.call(
           conversationId: anyNamed('conversationId'),
           context: anyNamed('context'),
         ),
       ).thenAnswer((_) async => AgentIterationDecision.done);
       when(
-        getConversationBusyStateUsecase.call(
+        fixture.getConversationBusyStateUsecase.call(
           conversationId: anyNamed('conversationId'),
         ),
       ).thenAnswer(
@@ -88,17 +66,17 @@ void main() {
     });
 
     tearDown(() {
-      container.dispose();
+      fixture.dispose();
     });
 
     test('forwards the created user message id as the ack target', () async {
-      await usecase.call(
+      await fixture.usecase.call(
         conversationId: 'conversation-1',
         content: 'Hello',
       );
 
       verify(
-        runAgentIterationUsecase.call(
+        fixture.runAgentIterationUsecase.call(
           conversationId: 'conversation-1',
           context: const AgentIterationContext(
             origin: AgentIterationOrigin.userMessage,
@@ -112,7 +90,7 @@ void main() {
       'queues the draft instead of persisting when the conversation is busy',
       () async {
         when(
-          getConversationBusyStateUsecase.call(
+          fixture.getConversationBusyStateUsecase.call(
             conversationId: 'conversation-1',
           ),
         ).thenAnswer(
@@ -122,20 +100,20 @@ void main() {
           ),
         );
 
-        await usecase.call(
+        await fixture.usecase.call(
           conversationId: 'conversation-1',
           content: 'Queued hello',
         );
 
-        final _ = verifyNever(messageRepository.createMessage(any));
+        final _ = verifyNever(fixture.messageRepository.createMessage(any));
         final _ = verifyNever(
-          runAgentIterationUsecase.call(
+          fixture.runAgentIterationUsecase.call(
             conversationId: anyNamed('conversationId'),
             context: anyNamed('context'),
           ),
         );
         expect(
-          container
+          fixture.container
               .read(conversationSendQueueProvider.notifier)
               .peek('conversation-1')
               ?.content,
@@ -144,4 +122,58 @@ void main() {
       },
     );
   });
+}
+
+class _SendMessageUsecaseFixture {
+  _SendMessageUsecaseFixture({
+    required this.runAgentIterationUsecase,
+    required this.messageRepository,
+    required this.getConversationBusyStateUsecase,
+    required this.container,
+    required this.usecase,
+  });
+
+  factory _SendMessageUsecaseFixture.create() {
+    final runAgentIterationUsecase = MockRunAgentIterationUsecase();
+    final messageRepository = MockMessageRepository();
+    final getConversationBusyStateUsecase =
+        MockGetConversationBusyStateUsecase();
+    final container = ProviderContainer();
+    final queueNotifier = container.read(
+      conversationSendQueueProvider.notifier,
+    );
+
+    return _SendMessageUsecaseFixture(
+      runAgentIterationUsecase: runAgentIterationUsecase,
+      messageRepository: messageRepository,
+      getConversationBusyStateUsecase: getConversationBusyStateUsecase,
+      container: container,
+      usecase: SendMessageUsecase(
+        runAgentIterationUsecase: runAgentIterationUsecase,
+        messageRepository: messageRepository,
+        getConversationBusyStateUsecase: getConversationBusyStateUsecase,
+        sendQueueRuntime: ConversationSendQueueRuntime(
+          enqueue: queueNotifier.enqueue,
+          dequeueAll: queueNotifier.dequeueAll,
+          clear: queueNotifier.clear,
+        ),
+      ),
+    );
+  }
+
+  final MockRunAgentIterationUsecase runAgentIterationUsecase;
+  final MockMessageRepository messageRepository;
+  final MockGetConversationBusyStateUsecase getConversationBusyStateUsecase;
+  final ProviderContainer container;
+  final SendMessageUsecase usecase;
+  var _isDisposed = false;
+
+  void dispose() {
+    if (_isDisposed) {
+      return;
+    }
+
+    _isDisposed = true;
+    container.dispose();
+  }
 }

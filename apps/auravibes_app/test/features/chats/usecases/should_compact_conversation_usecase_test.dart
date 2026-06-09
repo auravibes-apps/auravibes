@@ -13,9 +13,6 @@
 // ignore_for_file: prefer-correct-type-name
 // Required: Test doubles mirror repository contract names.
 
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
@@ -32,9 +29,12 @@ class MockWorkspaceCompactionSettingsRepository extends Mock
     implements WorkspaceCompactionSettingsRepository {}
 
 void main() {
-  late MockMessageRepository mockRepository;
-  late MockWorkspaceCompactionSettingsRepository mockSettingsRepo;
-  late ShouldCompactConversationUsecase usecase;
+  var mockRepository = MockMessageRepository();
+  var mockSettingsRepo = MockWorkspaceCompactionSettingsRepository();
+  var usecase = ShouldCompactConversationUsecase(
+    messageRepository: mockRepository,
+    settingsRepository: mockSettingsRepo,
+  );
 
   setUp(() {
     mockRepository = MockMessageRepository();
@@ -413,8 +413,8 @@ void main() {
   });
 
   group('Saved settings integration', () {
-    late MockMessageRepository mockRepository;
-    late MockWorkspaceCompactionSettingsRepository mockSettingsRepo;
+    var mockRepository = MockMessageRepository();
+    var mockSettingsRepo = MockWorkspaceCompactionSettingsRepository();
 
     setUp(() {
       mockRepository = MockMessageRepository();

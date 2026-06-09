@@ -2,8 +2,6 @@
 // Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: avoid-redundant-async
 // Required: Test callbacks intentionally preserve async-compatible signatures.
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 // ignore_for_file: prefer-static-class
@@ -26,21 +24,40 @@ QueryExecutor _testConnection() {
   );
 }
 
+final class _DatabaseFixture {
+  _DatabaseFixture(this.createConnection);
+
+  final QueryExecutor Function() createConnection;
+  AppDatabase? _database;
+
+  AppDatabase get database =>
+      _database ?? fail('Database fixture not initialized');
+
+  void reset() {
+    _database = AppDatabase(connection: createConnection());
+  }
+
+  Future<void> close() async {
+    await _database?.close();
+    _database = null;
+  }
+}
+
 void main() {
   group('ServiceConnections schema', () {
-    late AppDatabase db;
-    late List<QueryRow> columns;
+    final fixture = _DatabaseFixture(_testConnection);
+    var columns = <QueryRow>[];
 
     setUp(() async {
-      db = AppDatabase(connection: _testConnection());
-      columns = await db
+      fixture.reset();
+      columns = await fixture.database
           .customSelect(
             'PRAGMA table_info(service_connections)',
           )
           .get();
     });
 
-    tearDown(() async => db.close());
+    tearDown(() async => fixture.close());
 
     test('has expected columns', () {
       final names = columns.map((r) => r.read<String>('name')).toSet();
@@ -126,16 +143,16 @@ void main() {
   });
 
   group('ServiceConnections column accessors', () {
-    late AppDatabase db;
+    final fixture = _DatabaseFixture(_testConnection);
 
     setUp(() async {
-      db = AppDatabase(connection: _testConnection());
+      fixture.reset();
     });
 
-    tearDown(() async => db.close());
+    tearDown(() async => fixture.close());
 
     test('all column getters are accessible', () {
-      final table = db.serviceConnections;
+      final table = fixture.database.serviceConnections;
       expect(table.name, isNotNull);
       expect(table.serviceId, isNotNull);
       expect(table.kind, isNotNull);
@@ -149,7 +166,7 @@ void main() {
     });
 
     test('column names match expected snake_case', () {
-      final table = db.serviceConnections;
+      final table = fixture.database.serviceConnections;
       expect(table.name.name, 'name');
       expect(table.serviceId.name, 'service_id');
       expect(table.kind.name, 'kind');
@@ -163,20 +180,26 @@ void main() {
     });
 
     test(r'$columns returns all columns including TableMixin', () {
-      final table = db.serviceConnections;
+      final table = fixture.database.serviceConnections;
       expect(table.$columns.length, 13);
     });
 
     test('table name is service_connections', () {
-      expect(db.serviceConnections.actualTableName, 'service_connections');
+      expect(
+        fixture.database.serviceConnections.actualTableName,
+        'service_connections',
+      );
     });
 
     test('aliasedName returns actualTableName without alias', () {
-      expect(db.serviceConnections.aliasedName, 'service_connections');
+      expect(
+        fixture.database.serviceConnections.aliasedName,
+        'service_connections',
+      );
     });
 
     test('createAlias returns new table with alias', () {
-      final aliased = db.serviceConnections.createAlias('mca');
+      final aliased = fixture.database.serviceConnections.createAlias('mca');
       expect(aliased.aliasedName, 'mca');
     });
   });

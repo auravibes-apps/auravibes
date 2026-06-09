@@ -9,9 +9,6 @@
 // ignore_for_file: prefer-static-class
 // Required: Tests keep fixture helpers and fakes top-level.
 
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-
 import 'dart:async';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
@@ -32,25 +29,44 @@ QueryExecutor createTestConnection() {
   );
 }
 
+final class _DatabaseFixture {
+  _DatabaseFixture(this.createConnection);
+
+  final QueryExecutor Function() createConnection;
+  AppDatabase? _database;
+
+  AppDatabase get database =>
+      _database ?? fail('Database fixture not initialized');
+
+  void reset() {
+    _database = AppDatabase(connection: createConnection());
+  }
+
+  Future<void> close() async {
+    await _database?.close();
+    _database = null;
+  }
+}
+
 void main() {
   group('WorkspaceCompactionSettingsDao', () {
-    late AppDatabase database;
-    late String workspaceId;
+    final fixture = _DatabaseFixture(createTestConnection);
+    var workspaceId = '';
 
     setUp(() async {
-      database = AppDatabase(connection: createTestConnection());
-      final ws = await database.workspaceDao.insertWorkspace(
+      fixture.reset();
+      final ws = await fixture.database.workspaceDao.insertWorkspace(
         WorkspacesCompanion.insert(name: 'Test WS', type: WorkspaceType.local),
       );
       workspaceId = ws.id;
     });
 
     tearDown(() async {
-      await database.close();
+      await fixture.close();
     });
 
     test('getByWorkspaceId returns null for nonexistent settings', () async {
-      final result = await database.workspaceCompactionSettingsDao
+      final result = await fixture.database.workspaceCompactionSettingsDao
           .getByWorkspaceId(workspaceId);
       expect(result, isNull);
     });
@@ -60,7 +76,7 @@ void main() {
         autoCompactEnabled: Value(false),
         usagePercentageThreshold: Value(50),
       );
-      final row = await database.workspaceCompactionSettingsDao.upsert(
+      final row = await fixture.database.workspaceCompactionSettingsDao.upsert(
         workspaceId,
         companion,
       );
@@ -71,22 +87,24 @@ void main() {
     });
 
     test('upsert updates existing settings row', () async {
-      final first = await database.workspaceCompactionSettingsDao.upsert(
-        workspaceId,
-        const WorkspaceCompactionSettingsCompanion(
-          autoCompactEnabled: Value(false),
-          usagePercentageThreshold: Value(50),
-        ),
-      );
+      final first = await fixture.database.workspaceCompactionSettingsDao
+          .upsert(
+            workspaceId,
+            const WorkspaceCompactionSettingsCompanion(
+              autoCompactEnabled: Value(false),
+              usagePercentageThreshold: Value(50),
+            ),
+          );
 
-      final second = await database.workspaceCompactionSettingsDao.upsert(
-        workspaceId,
-        const WorkspaceCompactionSettingsCompanion(
-          autoCompactEnabled: Value(true),
-          usagePercentageThreshold: Value(75),
-          remainingTokenThreshold: Value(5000),
-        ),
-      );
+      final second = await fixture.database.workspaceCompactionSettingsDao
+          .upsert(
+            workspaceId,
+            const WorkspaceCompactionSettingsCompanion(
+              autoCompactEnabled: Value(true),
+              usagePercentageThreshold: Value(75),
+              remainingTokenThreshold: Value(5000),
+            ),
+          );
 
       expect(second.autoCompactEnabled, true);
       expect(second.usagePercentageThreshold, 75);
@@ -95,14 +113,14 @@ void main() {
     });
 
     test('getByWorkspaceId returns settings after upsert', () async {
-      final _ = await database.workspaceCompactionSettingsDao.upsert(
+      final _ = await fixture.database.workspaceCompactionSettingsDao.upsert(
         workspaceId,
         const WorkspaceCompactionSettingsCompanion(
           usagePercentageThreshold: Value(60),
         ),
       );
 
-      final result = await database.workspaceCompactionSettingsDao
+      final result = await fixture.database.workspaceCompactionSettingsDao
           .getByWorkspaceId(workspaceId);
       expect(result, isNotNull);
       expect(
@@ -113,9 +131,10 @@ void main() {
     });
 
     test('watchByWorkspaceId emits null initially then updates', () async {
-      final stream = database.workspaceCompactionSettingsDao.watchByWorkspaceId(
-        workspaceId,
-      );
+      final stream = fixture.database.workspaceCompactionSettingsDao
+          .watchByWorkspaceId(
+            workspaceId,
+          );
 
       final completer = Completer<bool>();
       var callCount = 0;
@@ -130,7 +149,7 @@ void main() {
         }
       });
 
-      final _ = await database.workspaceCompactionSettingsDao.upsert(
+      final _ = await fixture.database.workspaceCompactionSettingsDao.upsert(
         workspaceId,
         const WorkspaceCompactionSettingsCompanion(
           usagePercentageThreshold: Value(40),
@@ -146,7 +165,7 @@ void main() {
     });
 
     test('watchByWorkspaceId emits row when settings exist', () async {
-      final _ = await database.workspaceCompactionSettingsDao.upsert(
+      final _ = await fixture.database.workspaceCompactionSettingsDao.upsert(
         workspaceId,
         const WorkspaceCompactionSettingsCompanion(
           usagePercentageThreshold: Value(70),
@@ -154,7 +173,7 @@ void main() {
       );
 
       final completer = Completer<WorkspaceCompactionSettingsTable?>();
-      final sub = database.workspaceCompactionSettingsDao
+      final sub = fixture.database.workspaceCompactionSettingsDao
           .watchByWorkspaceId(workspaceId)
           .listen((row) {
             if (!completer.isCompleted) {
@@ -174,18 +193,18 @@ void main() {
     });
 
     test('deleteByWorkspaceId removes settings', () async {
-      final _ = await database.workspaceCompactionSettingsDao.upsert(
+      final _ = await fixture.database.workspaceCompactionSettingsDao.upsert(
         workspaceId,
         const WorkspaceCompactionSettingsCompanion(
           usagePercentageThreshold: Value(80),
         ),
       );
 
-      await database.workspaceCompactionSettingsDao.deleteByWorkspaceId(
+      await fixture.database.workspaceCompactionSettingsDao.deleteByWorkspaceId(
         workspaceId,
       );
 
-      final result = await database.workspaceCompactionSettingsDao
+      final result = await fixture.database.workspaceCompactionSettingsDao
           .getByWorkspaceId(workspaceId);
       expect(result, isNull);
     });

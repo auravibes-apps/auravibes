@@ -11,9 +11,6 @@
 
 // ignore_for_file: avoid-redundant-async
 // Required: Test callbacks intentionally preserve async-compatible signatures.
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/domain/repositories/workspace_compaction_settings_repository.dart';
@@ -220,23 +217,15 @@ void main() {
   });
 
   group('SaveWorkspaceCompactionSettingsUsecase', () {
-    late MockWorkspaceCompactionSettingsRepository mockRepository;
-    late ProviderContainer container;
+    final fixture = _CompactionSettingsProviderFixture();
 
-    setUp(() {
-      mockRepository = MockWorkspaceCompactionSettingsRepository();
-      container = ProviderContainer(
-        overrides: [
-          workspaceCompactionSettingsRepositoryProvider.overrideWith(
-            (ref) => mockRepository,
-          ),
-        ],
-      );
-    });
+    setUp(fixture.setUp);
 
-    tearDown(() => container.dispose());
+    tearDown(fixture.dispose);
 
     test('persists via repository', () async {
+      final mockRepository = fixture.mockRepository;
+      final container = fixture.container;
       const newSettings = CompactionSettings(
         autoCompactionEnabled: false,
         usagePercentageThreshold: 70,
@@ -260,6 +249,7 @@ void main() {
     });
 
     test('rejects usage percentage below 5', () async {
+      final container = fixture.container;
       const invalid = CompactionSettings(
         usagePercentageThreshold: 4,
         remainingTokenThreshold: 1000,
@@ -275,6 +265,7 @@ void main() {
     });
 
     test('rejects usage percentage above 100', () async {
+      final container = fixture.container;
       const invalid = CompactionSettings(
         usagePercentageThreshold: 101,
         remainingTokenThreshold: 1000,
@@ -290,6 +281,7 @@ void main() {
     });
 
     test('rejects remaining token threshold <= 0', () async {
+      final container = fixture.container;
       const invalid = CompactionSettings(
         usagePercentageThreshold: 50,
         remainingTokenThreshold: 0,
@@ -305,6 +297,8 @@ void main() {
     });
 
     test('accepts valid settings at boundary 5', () async {
+      final mockRepository = fixture.mockRepository;
+      final container = fixture.container;
       const valid = CompactionSettings(
         usagePercentageThreshold: 5,
         remainingTokenThreshold: 1,
@@ -321,6 +315,8 @@ void main() {
     });
 
     test('accepts valid settings at boundary 100', () async {
+      final mockRepository = fixture.mockRepository;
+      final container = fixture.container;
       const valid = CompactionSettings(
         usagePercentageThreshold: 100,
         remainingTokenThreshold: 10000,
@@ -338,23 +334,15 @@ void main() {
   });
 
   group('ResetWorkspaceCompactionSettingsUsecase', () {
-    late MockWorkspaceCompactionSettingsRepository mockRepository;
-    late ProviderContainer container;
+    final fixture = _CompactionSettingsProviderFixture();
 
-    setUp(() {
-      mockRepository = MockWorkspaceCompactionSettingsRepository();
-      container = ProviderContainer(
-        overrides: [
-          workspaceCompactionSettingsRepositoryProvider.overrideWith(
-            (ref) => mockRepository,
-          ),
-        ],
-      );
-    });
+    setUp(fixture.setUp);
 
-    tearDown(() => container.dispose());
+    tearDown(fixture.dispose);
 
     test('calls repository reset', () async {
+      final mockRepository = fixture.mockRepository;
+      final container = fixture.container;
       when(
         () => mockRepository.resetOverrides(testWorkspaceId),
       ).thenAnswer((_) async => CompactionSettings.defaults);
@@ -367,4 +355,33 @@ void main() {
       verify(() => mockRepository.resetOverrides(testWorkspaceId)).called(1);
     });
   });
+}
+
+class _CompactionSettingsProviderFixture {
+  MockWorkspaceCompactionSettingsRepository? _mockRepository;
+  ProviderContainer? _container;
+
+  MockWorkspaceCompactionSettingsRepository get mockRepository =>
+      _mockRepository ?? fail('Expected mockRepository to be initialized');
+
+  ProviderContainer get container =>
+      _container ?? fail('Expected container to be initialized');
+
+  void setUp() {
+    final repository = MockWorkspaceCompactionSettingsRepository();
+    _mockRepository = repository;
+    _container = ProviderContainer(
+      overrides: [
+        workspaceCompactionSettingsRepositoryProvider.overrideWith(
+          (ref) => repository,
+        ),
+      ],
+    );
+  }
+
+  void dispose() {
+    _container?.dispose();
+    _container = null;
+    _mockRepository = null;
+  }
 }

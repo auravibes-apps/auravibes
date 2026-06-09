@@ -9,9 +9,6 @@
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-
 // ignore_for_file: cascade_invocations
 import 'dart:async';
 
@@ -31,17 +28,18 @@ import 'conversation_repository_impl_test.mocks.dart';
 @GenerateNiceMocks([MockSpec<ConversationDao>()])
 void main() {
   group('ConversationRepositoryImpl', () {
-    late MockConversationDao mockDao;
-    late _TestAppDatabase database;
-    late ConversationRepositoryImpl repository;
+    var mockDao = MockConversationDao();
+    var database = _TestAppDatabase(mockDao);
+    var repository = ConversationRepositoryImpl(database);
 
-    setUp(() {
+    tearDown(() async {
+      await database.close();
       mockDao = MockConversationDao();
       database = _TestAppDatabase(mockDao);
       repository = ConversationRepositoryImpl(database);
     });
 
-    tearDown(() async {
+    tearDownAll(() async {
       await database.close();
     });
 

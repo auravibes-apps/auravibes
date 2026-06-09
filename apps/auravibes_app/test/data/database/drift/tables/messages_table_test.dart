@@ -2,8 +2,6 @@
 // Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: avoid-redundant-async
 // Required: Test callbacks intentionally preserve async-compatible signatures.
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 // ignore_for_file: prefer-static-class
@@ -25,6 +23,25 @@ QueryExecutor _testConnection() {
       );
     }),
   );
+}
+
+final class _DatabaseFixture {
+  _DatabaseFixture(this.createConnection);
+
+  final QueryExecutor Function() createConnection;
+  AppDatabase? _database;
+
+  AppDatabase get database =>
+      _database ?? fail('Database fixture not initialized');
+
+  void reset() {
+    _database = AppDatabase(connection: createConnection());
+  }
+
+  Future<void> close() async {
+    await _database?.close();
+    _database = null;
+  }
 }
 
 void main() {
@@ -107,19 +124,19 @@ void main() {
   });
 
   group('Messages schema', () {
-    late AppDatabase db;
-    late List<QueryRow> columns;
+    final fixture = _DatabaseFixture(_testConnection);
+    var columns = <QueryRow>[];
 
     setUp(() async {
-      db = AppDatabase(connection: _testConnection());
-      columns = await db
+      fixture.reset();
+      columns = await fixture.database
           .customSelect(
             'PRAGMA table_info(messages)',
           )
           .get();
     });
 
-    tearDown(() async => db.close());
+    tearDown(() async => fixture.close());
 
     test('has expected columns', () {
       final names = columns.map((r) => r.read<String>('name')).toSet();
@@ -180,16 +197,16 @@ void main() {
   });
 
   group('Messages column accessors', () {
-    late AppDatabase db;
+    final fixture = _DatabaseFixture(_testConnection);
 
     setUp(() async {
-      db = AppDatabase(connection: _testConnection());
+      fixture.reset();
     });
 
-    tearDown(() async => db.close());
+    tearDown(() async => fixture.close());
 
     test('all column getters are accessible', () {
-      final table = db.messages;
+      final table = fixture.database.messages;
       expect(table.conversationId, isNotNull);
       expect(table.content, isNotNull);
       expect(table.messageType, isNotNull);
@@ -199,7 +216,7 @@ void main() {
     });
 
     test('column names match expected snake_case', () {
-      final table = db.messages;
+      final table = fixture.database.messages;
       expect(table.conversationId.name, 'conversation_id');
       expect(table.content.name, 'content');
       expect(table.messageType.name, 'message_type');
@@ -209,20 +226,20 @@ void main() {
     });
 
     test(r'$columns returns all columns including TableMixin', () {
-      final table = db.messages;
+      final table = fixture.database.messages;
       expect(table.$columns.length, 9);
     });
 
     test('table name is messages', () {
-      expect(db.messages.actualTableName, 'messages');
+      expect(fixture.database.messages.actualTableName, 'messages');
     });
 
     test('aliasedName returns actualTableName without alias', () {
-      expect(db.messages.aliasedName, 'messages');
+      expect(fixture.database.messages.aliasedName, 'messages');
     });
 
     test('createAlias returns new table with alias', () {
-      final aliased = db.messages.createAlias('ma');
+      final aliased = fixture.database.messages.createAlias('ma');
       expect(aliased.aliasedName, 'ma');
     });
   });

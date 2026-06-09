@@ -12,9 +12,6 @@
 // ignore_for_file: avoid-redundant-async
 // Required: Test callbacks intentionally preserve async-compatible signatures.
 
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
@@ -38,21 +35,40 @@ QueryExecutor createTestConnection() {
   );
 }
 
+final class _DatabaseFixture {
+  _DatabaseFixture(this.createConnection);
+
+  final QueryExecutor Function() createConnection;
+  AppDatabase? _database;
+
+  AppDatabase get database =>
+      _database ?? fail('Database fixture not initialized');
+
+  void reset() {
+    _database = AppDatabase(connection: createConnection());
+  }
+
+  Future<void> close() async {
+    await _database?.close();
+    _database = null;
+  }
+}
+
 void main() {
   group('WorkspaceDao Tests', () {
-    late AppDatabase database;
+    final fixture = _DatabaseFixture(createTestConnection);
 
     setUp(() async {
       // Use in-memory database for testing
-      database = AppDatabase(connection: createTestConnection());
+      fixture.reset();
     });
 
     tearDown(() async {
-      await database.close();
+      await fixture.close();
     });
 
     test('should insert and retrieve workspace', () async {
-      final workspaceDao = database.workspaceDao;
+      final workspaceDao = fixture.database.workspaceDao;
 
       final workspace = WorkspacesCompanion.insert(
         name: 'Test Workspace',
@@ -69,7 +85,7 @@ void main() {
     });
 
     test('should get all workspaces', () async {
-      final workspaceDao = database.workspaceDao;
+      final workspaceDao = fixture.database.workspaceDao;
 
       // Insert test workspaces
       final _ = await workspaceDao.insertWorkspace(
@@ -97,7 +113,7 @@ void main() {
     });
 
     test('should update workspace', () async {
-      final workspaceDao = database.workspaceDao;
+      final workspaceDao = fixture.database.workspaceDao;
 
       // Insert a workspace
       final idCreated = await workspaceDao.insertWorkspace(
@@ -127,7 +143,7 @@ void main() {
     });
 
     test('should delete workspace', () async {
-      final workspaceDao = database.workspaceDao;
+      final workspaceDao = fixture.database.workspaceDao;
 
       // Insert a workspace
       final createdId = await workspaceDao.insertWorkspace(
@@ -147,7 +163,7 @@ void main() {
     });
 
     test('should search workspaces by name', () async {
-      final workspaceDao = database.workspaceDao;
+      final workspaceDao = fixture.database.workspaceDao;
 
       // Insert test workspaces
       final _ = await workspaceDao.insertWorkspace(
@@ -173,7 +189,7 @@ void main() {
     });
 
     test('should get workspace count by type', () async {
-      final workspaceDao = database.workspaceDao;
+      final workspaceDao = fixture.database.workspaceDao;
 
       // Insert test workspaces
       final _ = await workspaceDao.insertWorkspace(

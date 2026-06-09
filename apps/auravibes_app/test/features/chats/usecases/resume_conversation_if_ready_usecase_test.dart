@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: missing-test-assertion
@@ -31,11 +29,16 @@ import 'resume_conversation_if_ready_usecase_test.mocks.dart';
 ])
 void main() {
   group('ResumeConversationIfReadyUsecase', () {
-    late MockMessageRepository messageRepository;
-    late MockConversationRepository conversationRepository;
-    late MockRunAllowedToolsUsecase runAllowedToolsUsecase;
-    late MockRunAgentIterationUsecase runAgentIterationUsecase;
-    late ResumeConversationIfReadyUsecase usecase;
+    var messageRepository = MockMessageRepository();
+    var conversationRepository = MockConversationRepository();
+    var runAllowedToolsUsecase = MockRunAllowedToolsUsecase();
+    var runAgentIterationUsecase = MockRunAgentIterationUsecase();
+    var usecase = ResumeConversationIfReadyUsecase(
+      messageRepository: messageRepository,
+      conversationRepository: conversationRepository,
+      runAllowedToolsUsecase: runAllowedToolsUsecase,
+      runAgentIterationUsecase: runAgentIterationUsecase,
+    );
 
     const messageId = 'message-1';
     const conversationId = 'conversation-1';

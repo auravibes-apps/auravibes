@@ -5,9 +5,6 @@
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository_impl.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
@@ -19,18 +16,20 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('WorkspaceRepositoryImpl', () {
-    late AppDatabase database;
-    late WorkspaceRepositoryImpl repository;
+    var database = AppDatabase(
+      connection: DatabaseConnection(NativeDatabase.memory()),
+    );
+    var repository = WorkspaceRepositoryImpl(database);
 
-    setUp(() {
-      // Create an in-memory database for testing
+    tearDown(() async {
+      await database.close();
       database = AppDatabase(
         connection: DatabaseConnection(NativeDatabase.memory()),
       );
       repository = WorkspaceRepositoryImpl(database);
     });
 
-    tearDown(() async {
+    tearDownAll(() async {
       await database.close();
     });
 

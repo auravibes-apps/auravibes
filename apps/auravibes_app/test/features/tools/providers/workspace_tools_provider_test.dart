@@ -15,9 +15,6 @@
 // ignore_for_file: prefer-static-class
 // Required: Tests keep fixture helpers and fakes top-level.
 
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-
 // ignore_for_file: provider_dependencies
 // Required: provider unit tests read scoped providers directly.
 
@@ -181,27 +178,22 @@ class _FakeWorkspaceToolsRepository implements WorkspaceToolsRepository {
 @Dependencies([workspaceToolRow])
 void main() {
   group('workspaceToolRowProvider', () {
-    late _FakeWorkspaceToolsRepository repository;
-    late ProviderContainer container;
+    final fixture = _WorkspaceToolsProviderFixture(
+      includeWorkspaceToolIndex: true,
+    );
 
-    setUp(() {
-      repository = _FakeWorkspaceToolsRepository();
-      container = ProviderContainer(
-        overrides: [
-          workspaceToolsRepositoryProvider.overrideWithValue(repository),
-          workspaceToolIndexProvider.overrideWithValue(0),
-        ],
-      );
-    });
+    setUp(fixture.setUp);
 
-    tearDown(() => container.dispose());
+    tearDown(fixture.dispose);
 
     test('returns null when workspace tools is loading', () {
+      final container = fixture.container;
       final result = container.read(workspaceToolRowProvider('ws1'));
       expect(result, isNull);
     });
 
     test('returns null when index is negative', () {
+      final repository = fixture.repository;
       final container2 = ProviderContainer(
         overrides: [
           workspaceToolsRepositoryProvider.overrideWithValue(repository),
@@ -216,21 +208,15 @@ void main() {
   });
 
   group('WorkspaceToolsNotifier', () {
-    late _FakeWorkspaceToolsRepository repository;
-    late ProviderContainer container;
+    final fixture = _WorkspaceToolsProviderFixture();
 
-    setUp(() {
-      repository = _FakeWorkspaceToolsRepository();
-      container = ProviderContainer(
-        overrides: [
-          workspaceToolsRepositoryProvider.overrideWithValue(repository),
-        ],
-      );
-    });
+    setUp(fixture.setUp);
 
-    tearDown(() => container.dispose());
+    tearDown(fixture.dispose);
 
     test('build loads workspace tools from repository', () async {
+      final repository = fixture.repository;
+      final container = fixture.container;
       repository.tools = [_tool(id: 't1'), _tool(id: 't2', toolId: 'search')];
 
       final result = await container.read(
@@ -241,6 +227,8 @@ void main() {
     });
 
     test('setToolEnabled updates tool in state', () async {
+      final repository = fixture.repository;
+      final container = fixture.container;
       repository.tools = [_tool(id: 't1')];
 
       final _ = container.listen(
@@ -261,6 +249,8 @@ void main() {
     });
 
     test('removeToolById removes tool from state', () async {
+      final repository = fixture.repository;
+      final container = fixture.container;
       repository.tools = [_tool(id: 't1'), _tool(id: 't2')];
 
       final _ = container.listen(
@@ -279,6 +269,8 @@ void main() {
     });
 
     test('setToolPermissionMode updates permission', () async {
+      final repository = fixture.repository;
+      final container = fixture.container;
       repository.tools = [_tool(id: 't1')];
 
       final _ = container.listen(
@@ -302,6 +294,8 @@ void main() {
     });
 
     test('addTool enables tool and invalidates self', () async {
+      final repository = fixture.repository;
+      final container = fixture.container;
       repository.tools = [_tool(id: 't1', isEnabled: false)];
 
       final _ = container.listen(
@@ -319,6 +313,8 @@ void main() {
     });
 
     test('updateToolConfig patches config and replaces tool', () async {
+      final repository = fixture.repository;
+      final container = fixture.container;
       repository.tools = [_tool(id: 't1')];
 
       final _ = container.listen(
@@ -429,4 +425,38 @@ void main() {
       expect(result, contains(UserToolType.calculator));
     });
   });
+}
+
+class _WorkspaceToolsProviderFixture {
+  _WorkspaceToolsProviderFixture({
+    this.includeWorkspaceToolIndex = false,
+  });
+
+  final bool includeWorkspaceToolIndex;
+  _FakeWorkspaceToolsRepository? _repository;
+  ProviderContainer? _container;
+
+  _FakeWorkspaceToolsRepository get repository =>
+      _repository ?? fail('Expected repository to be initialized');
+
+  ProviderContainer get container =>
+      _container ?? fail('Expected container to be initialized');
+
+  void setUp() {
+    final repository = _FakeWorkspaceToolsRepository();
+    _repository = repository;
+    _container = ProviderContainer(
+      overrides: [
+        workspaceToolsRepositoryProvider.overrideWithValue(repository),
+        if (includeWorkspaceToolIndex)
+          workspaceToolIndexProvider.overrideWithValue(0),
+      ],
+    );
+  }
+
+  void dispose() {
+    _container?.dispose();
+    _container = null;
+    _repository = null;
+  }
 }

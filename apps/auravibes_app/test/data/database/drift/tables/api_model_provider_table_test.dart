@@ -2,8 +2,6 @@
 // Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: avoid-redundant-async
 // Required: Test callbacks intentionally preserve async-compatible signatures.
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 // ignore_for_file: prefer-static-class
@@ -25,6 +23,25 @@ QueryExecutor _testConnection() {
       );
     }),
   );
+}
+
+final class _DatabaseFixture {
+  _DatabaseFixture(this.createConnection);
+
+  final QueryExecutor Function() createConnection;
+  AppDatabase? _database;
+
+  AppDatabase get database =>
+      _database ?? fail('Database fixture not initialized');
+
+  void reset() {
+    _database = AppDatabase(connection: createConnection());
+  }
+
+  Future<void> close() async {
+    await _database?.close();
+    _database = null;
+  }
 }
 
 void main() {
@@ -87,19 +104,19 @@ void main() {
   });
 
   group('ApiModelProviders schema', () {
-    late AppDatabase db;
-    late List<QueryRow> columns;
+    final fixture = _DatabaseFixture(_testConnection);
+    var columns = <QueryRow>[];
 
     setUp(() async {
-      db = AppDatabase(connection: _testConnection());
-      columns = await db
+      fixture.reset();
+      columns = await fixture.database
           .customSelect(
             'PRAGMA table_info(api_model_providers)',
           )
           .get();
     });
 
-    tearDown(() async => db.close());
+    tearDown(() async => fixture.close());
 
     test('has expected columns', () {
       final names = columns.map((r) => r.read<String>('name')).toSet();
@@ -137,16 +154,16 @@ void main() {
   });
 
   group('ApiModelProviders column accessors', () {
-    late AppDatabase db;
+    final fixture = _DatabaseFixture(_testConnection);
 
     setUp(() async {
-      db = AppDatabase(connection: _testConnection());
+      fixture.reset();
     });
 
-    tearDown(() async => db.close());
+    tearDown(() async => fixture.close());
 
     test('all column getters are accessible', () {
-      final table = db.apiModelProviders;
+      final table = fixture.database.apiModelProviders;
       expect(table.id, isNotNull);
       expect(table.name, isNotNull);
       expect(table.type, isNotNull);
@@ -155,14 +172,14 @@ void main() {
     });
 
     test('primaryKey contains id', () {
-      final table = db.apiModelProviders;
+      final table = fixture.database.apiModelProviders;
       expect(table.primaryKey.length, 1);
       expect(table.primaryKey, contains(table.id));
     });
 
     test('can insert provider with nullable fields null', () async {
-      final _ = await db
-          .into(db.apiModelProviders)
+      final _ = await fixture.database
+          .into(fixture.database.apiModelProviders)
           .insert(
             ApiModelProvidersCompanion.insert(
               id: 'test-provider',
@@ -170,7 +187,8 @@ void main() {
             ),
           );
 
-      final rows = await db.apiModelProvidersDao.getAllProviders();
+      final rows = await fixture.database.apiModelProvidersDao
+          .getAllProviders();
       expect(rows, hasLength(1));
       expect(rows.firstOrNull?.id, 'test-provider');
       expect(rows.firstOrNull?.name, 'Test Provider');
@@ -180,8 +198,8 @@ void main() {
     });
 
     test('can insert provider with all fields', () async {
-      final _ = await db
-          .into(db.apiModelProviders)
+      final _ = await fixture.database
+          .into(fixture.database.apiModelProviders)
           .insert(
             ApiModelProvidersCompanion.insert(
               id: 'full-provider',
@@ -192,7 +210,8 @@ void main() {
             ),
           );
 
-      final rows = await db.apiModelProvidersDao.getAllProviders();
+      final rows = await fixture.database.apiModelProvidersDao
+          .getAllProviders();
       expect(rows, hasLength(1));
       expect(rows.firstOrNull?.id, 'full-provider');
       expect(rows.firstOrNull?.name, 'Full Provider');
@@ -202,16 +221,16 @@ void main() {
     });
 
     test('can insert multiple providers', () async {
-      final _ = await db
-          .into(db.apiModelProviders)
+      final _ = await fixture.database
+          .into(fixture.database.apiModelProviders)
           .insert(
             ApiModelProvidersCompanion.insert(
               id: 'provider-1',
               name: 'Provider 1',
             ),
           );
-      final _ = await db
-          .into(db.apiModelProviders)
+      final _ = await fixture.database
+          .into(fixture.database.apiModelProviders)
           .insert(
             ApiModelProvidersCompanion.insert(
               id: 'provider-2',
@@ -220,7 +239,8 @@ void main() {
             ),
           );
 
-      final rows = await db.apiModelProvidersDao.getAllProviders();
+      final rows = await fixture.database.apiModelProvidersDao
+          .getAllProviders();
       expect(rows, hasLength(2));
     });
   });

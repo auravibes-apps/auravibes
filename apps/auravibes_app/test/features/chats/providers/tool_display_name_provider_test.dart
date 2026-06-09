@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: member-ordering
@@ -58,10 +56,6 @@ class _FakeMcpServersRepository implements McpServersRepository {
 
 void main() {
   group('toolDisplayNameProvider', () {
-    late ProviderContainer container;
-
-    tearDown(() => container.dispose());
-
     test('returns display name for MCP tool with server name', () async {
       final server = McpServerEntity(
         id: 'srv1',
@@ -74,13 +68,14 @@ void main() {
         updatedAt: DateTime(2026),
       );
 
-      container = ProviderContainer(
+      final container = ProviderContainer(
         overrides: [
           mcpServersRepositoryProvider.overrideWithValue(
             _FakeMcpServersRepository({'srv1': server}),
           ),
         ],
       );
+      addTearDown(container.dispose);
 
       final name = await container.read(
         toolDisplayNameProvider('mcp_srv1_myserver_read_file').future,
@@ -89,13 +84,14 @@ void main() {
     });
 
     test('returns display name for built-in tool', () async {
-      container = ProviderContainer(
+      final container = ProviderContainer(
         overrides: [
           mcpServersRepositoryProvider.overrideWithValue(
             _FakeMcpServersRepository({}),
           ),
         ],
       );
+      addTearDown(container.dispose);
 
       final name = await container.read(
         toolDisplayNameProvider('built_in_123_calculator').future,
@@ -104,13 +100,14 @@ void main() {
     });
 
     test('returns display name for native tool', () async {
-      container = ProviderContainer(
+      final container = ProviderContainer(
         overrides: [
           mcpServersRepositoryProvider.overrideWithValue(
             _FakeMcpServersRepository({}),
           ),
         ],
       );
+      addTearDown(container.dispose);
 
       final name = await container.read(
         toolDisplayNameProvider('native_456_read_file').future,
@@ -119,13 +116,14 @@ void main() {
     });
 
     test('falls back to raw name for unknown format', () async {
-      container = ProviderContainer(
+      final container = ProviderContainer(
         overrides: [
           mcpServersRepositoryProvider.overrideWithValue(
             _FakeMcpServersRepository({}),
           ),
         ],
       );
+      addTearDown(container.dispose);
 
       final name = await container.read(
         toolDisplayNameProvider('unknown_tool').future,
@@ -134,13 +132,14 @@ void main() {
     });
 
     test('falls back to slug when server not found', () async {
-      container = ProviderContainer(
+      final container = ProviderContainer(
         overrides: [
           mcpServersRepositoryProvider.overrideWithValue(
             _FakeMcpServersRepository({}),
           ),
         ],
       );
+      addTearDown(container.dispose);
 
       final name = await container.read(
         toolDisplayNameProvider('mcp_missing_myserver_do_stuff').future,

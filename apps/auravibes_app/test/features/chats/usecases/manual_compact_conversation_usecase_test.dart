@@ -3,8 +3,6 @@
 
 // ignore_for_file: avoid-redundant-async
 // Required: Test callbacks intentionally preserve async-compatible signatures.
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
 
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
@@ -37,8 +35,10 @@ void main() {
   });
 
   group('ManualCompactConversationUsecase', () {
-    late MockCompactConversationUsecase mockCompact;
-    late ManualCompactConversationUsecase usecase;
+    var mockCompact = MockCompactConversationUsecase();
+    var usecase = ManualCompactConversationUsecase(
+      compactConversationUsecase: mockCompact,
+    );
 
     setUp(() {
       mockCompact = MockCompactConversationUsecase();

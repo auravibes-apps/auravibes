@@ -2,8 +2,6 @@
 // Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: avoid-redundant-async
 // Required: Test callbacks intentionally preserve async-compatible signatures.
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 // ignore_for_file: prefer-static-class
@@ -26,21 +24,40 @@ QueryExecutor _testConnection() {
   );
 }
 
+final class _DatabaseFixture {
+  _DatabaseFixture(this.createConnection);
+
+  final QueryExecutor Function() createConnection;
+  AppDatabase? _database;
+
+  AppDatabase get database =>
+      _database ?? fail('Database fixture not initialized');
+
+  void reset() {
+    _database = AppDatabase(connection: createConnection());
+  }
+
+  Future<void> close() async {
+    await _database?.close();
+    _database = null;
+  }
+}
+
 void main() {
   group('Conversations schema', () {
-    late AppDatabase db;
-    late List<QueryRow> columns;
+    final fixture = _DatabaseFixture(_testConnection);
+    var columns = <QueryRow>[];
 
     setUp(() async {
-      db = AppDatabase(connection: _testConnection());
-      columns = await db
+      fixture.reset();
+      columns = await fixture.database
           .customSelect(
             'PRAGMA table_info(conversations)',
           )
           .get();
     });
 
-    tearDown(() async => db.close());
+    tearDown(() async => fixture.close());
 
     test('has expected columns', () {
       final names = columns.map((r) => r.read<String>('name')).toSet();
@@ -92,16 +109,16 @@ void main() {
   });
 
   group('Conversations column accessors', () {
-    late AppDatabase db;
+    final fixture = _DatabaseFixture(_testConnection);
 
     setUp(() async {
-      db = AppDatabase(connection: _testConnection());
+      fixture.reset();
     });
 
-    tearDown(() async => db.close());
+    tearDown(() async => fixture.close());
 
     test('all column getters are accessible', () {
-      final table = db.conversations;
+      final table = fixture.database.conversations;
       expect(table.workspaceId, isNotNull);
       expect(table.title, isNotNull);
       expect(table.modelId, isNotNull);
@@ -109,7 +126,7 @@ void main() {
     });
 
     test('column names match expected snake_case', () {
-      final table = db.conversations;
+      final table = fixture.database.conversations;
       expect(table.workspaceId.name, 'workspace_id');
       expect(table.title.name, 'title');
       expect(table.modelId.name, 'model_id');
@@ -117,20 +134,20 @@ void main() {
     });
 
     test(r'$columns returns all columns including TableMixin', () {
-      final table = db.conversations;
+      final table = fixture.database.conversations;
       expect(table.$columns.length, 7);
     });
 
     test('table name is conversations', () {
-      expect(db.conversations.actualTableName, 'conversations');
+      expect(fixture.database.conversations.actualTableName, 'conversations');
     });
 
     test('aliasedName returns actualTableName without alias', () {
-      expect(db.conversations.aliasedName, 'conversations');
+      expect(fixture.database.conversations.aliasedName, 'conversations');
     });
 
     test('createAlias returns new table with alias', () {
-      final aliased = db.conversations.createAlias('ca');
+      final aliased = fixture.database.conversations.createAlias('ca');
       expect(aliased.aliasedName, 'ca');
     });
   });

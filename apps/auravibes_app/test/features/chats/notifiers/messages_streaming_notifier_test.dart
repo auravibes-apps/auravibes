@@ -1,6 +1,3 @@
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-
 // ignore_for_file: cascade_invocations
 import 'package:auravibes_app/features/chats/notifiers/messages_streaming_state.dart';
 import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
@@ -14,7 +11,7 @@ import 'messages_streaming_notifier_test.mocks.dart';
 @GenerateNiceMocks([MockSpec<ChatResult<ChatMessage>>()])
 void main() {
   group('MessagesStreamingNotifier', () {
-    late ProviderContainer container;
+    var container = ProviderContainer();
 
     setUp(() {
       container = ProviderContainer();

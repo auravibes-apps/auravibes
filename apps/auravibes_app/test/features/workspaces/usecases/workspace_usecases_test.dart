@@ -6,8 +6,6 @@
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
 // ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
@@ -179,62 +177,50 @@ void main() {
   });
 
   group('CreateWorkspaceUseCase', () {
-    late _FakeRepository repository;
-    late CreateWorkspaceUseCase usecase;
+    var fixture = _CreateWorkspaceUseCaseFixture();
 
     setUp(() {
-      repository = _FakeRepository();
-      usecase = CreateWorkspaceUseCase(
-        repository: repository,
-        validateName: const ValidateWorkspaceNameUseCase(),
-      );
+      fixture = _CreateWorkspaceUseCaseFixture();
     });
 
     test('creates workspace with valid name', () async {
-      final entity = await usecase.call(name: 'My Workspace');
+      final entity = await fixture.usecase.call(name: 'My Workspace');
 
       expect(entity.name, 'My Workspace');
       expect(entity.type, WorkspaceType.local);
     });
 
     test('trims whitespace from name', () async {
-      final entity = await usecase.call(name: '  Workspace  ');
+      final entity = await fixture.usecase.call(name: '  Workspace  ');
 
       expect(entity.name, 'Workspace');
     });
 
     test('throws for name shorter than 3 characters', () async {
       expect(
-        () => usecase.call(name: 'ab'),
+        () => fixture.usecase.call(name: 'ab'),
         throwsA(isA<WorkspaceValidationException>()),
       );
     });
 
     test('throws for name longer than 20 characters', () async {
       expect(
-        () => usecase.call(name: 'a' * 21),
+        () => fixture.usecase.call(name: 'a' * 21),
         throwsA(isA<WorkspaceValidationException>()),
       );
     });
   });
 
   group('EditWorkspaceUseCase', () {
-    late _FakeRepository repository;
-    late EditWorkspaceUseCase usecase;
+    var fixture = _EditWorkspaceUseCaseFixture();
 
     setUp(() async {
-      repository = _FakeRepository();
-      final _ = await repository.createWorkspace(
-        const WorkspaceToCreate(name: 'Original', type: WorkspaceType.local),
-      );
-      usecase = EditWorkspaceUseCase(
-        repository: repository,
-        validateName: const ValidateWorkspaceNameUseCase(),
-      );
+      fixture = _EditWorkspaceUseCaseFixture();
+      await fixture.setUp();
     });
 
     test('edits workspace name successfully', () async {
-      final entity = await usecase.call(
+      final entity = await fixture.usecase.call(
         id: 'ws-1',
         name: 'New Name',
       );
@@ -243,7 +229,7 @@ void main() {
     });
 
     test('trims whitespace from edited name', () async {
-      final entity = await usecase.call(
+      final entity = await fixture.usecase.call(
         id: 'ws-1',
         name: '  Updated  ',
       );
@@ -253,53 +239,51 @@ void main() {
 
     test('throws for invalid name', () async {
       expect(
-        () => usecase.call(id: 'ws-1', name: 'ab'),
+        () => fixture.usecase.call(id: 'ws-1', name: 'ab'),
         throwsA(isA<WorkspaceValidationException>()),
       );
     });
 
     test('throws for name longer than 20 characters', () async {
       expect(
-        () => usecase.call(id: 'ws-1', name: 'a' * 21),
+        () => fixture.usecase.call(id: 'ws-1', name: 'a' * 21),
         throwsA(isA<WorkspaceValidationException>()),
       );
     });
   });
 
   group('DeleteWorkspaceUseCase', () {
-    late _FakeRepository repository;
-    late DeleteWorkspaceUseCase usecase;
+    var fixture = _DeleteWorkspaceUseCaseFixture();
 
-    setUp(() async {
-      repository = _FakeRepository();
-      usecase = DeleteWorkspaceUseCase(repository: repository);
+    setUp(() {
+      fixture = _DeleteWorkspaceUseCaseFixture();
     });
 
     test('deletes workspace successfully', () async {
-      final _ = await repository.createWorkspace(
+      final _ = await fixture.repository.createWorkspace(
         const WorkspaceToCreate(name: 'WS1', type: WorkspaceType.local),
       );
-      final _ = await repository.createWorkspace(
+      final _ = await fixture.repository.createWorkspace(
         const WorkspaceToCreate(name: 'WS2', type: WorkspaceType.local),
       );
 
-      await usecase.call(
+      await fixture.usecase.call(
         id: 'ws-1',
         workspaceCount: 2,
         activeWorkspaceId: 'ws-2',
       );
 
-      final remaining = await repository.getAllWorkspaces();
+      final remaining = await fixture.repository.getAllWorkspaces();
       expect(remaining, hasLength(1));
     });
 
     test('throws when deleting last remaining workspace', () async {
-      final _ = await repository.createWorkspace(
+      final _ = await fixture.repository.createWorkspace(
         const WorkspaceToCreate(name: 'Only', type: WorkspaceType.local),
       );
 
       expect(
-        () => usecase.call(
+        () => fixture.usecase.call(
           id: 'ws-1',
           workspaceCount: 1,
           activeWorkspaceId: 'ws-1',
@@ -309,15 +293,15 @@ void main() {
     });
 
     test('throws when deleting active workspace', () async {
-      final _ = await repository.createWorkspace(
+      final _ = await fixture.repository.createWorkspace(
         const WorkspaceToCreate(name: 'WS1', type: WorkspaceType.local),
       );
-      final _ = await repository.createWorkspace(
+      final _ = await fixture.repository.createWorkspace(
         const WorkspaceToCreate(name: 'WS2', type: WorkspaceType.local),
       );
 
       expect(
-        () => usecase.call(
+        () => fixture.usecase.call(
           id: 'ws-1',
           workspaceCount: 2,
           activeWorkspaceId: 'ws-1',
@@ -327,12 +311,12 @@ void main() {
     });
 
     test('last workspace guard takes priority over active guard', () async {
-      final _ = await repository.createWorkspace(
+      final _ = await fixture.repository.createWorkspace(
         const WorkspaceToCreate(name: 'Only', type: WorkspaceType.local),
       );
 
       expect(
-        () => usecase.call(
+        () => fixture.usecase.call(
           id: 'ws-1',
           workspaceCount: 1,
           activeWorkspaceId: 'ws-1',
@@ -341,4 +325,59 @@ void main() {
       );
     });
   });
+}
+
+class _CreateWorkspaceUseCaseFixture {
+  factory _CreateWorkspaceUseCaseFixture() {
+    final repository = _FakeRepository();
+    return _CreateWorkspaceUseCaseFixture._(
+      CreateWorkspaceUseCase(
+        repository: repository,
+        validateName: const ValidateWorkspaceNameUseCase(),
+      ),
+    );
+  }
+
+  const _CreateWorkspaceUseCaseFixture._(this.usecase);
+
+  final CreateWorkspaceUseCase usecase;
+}
+
+class _EditWorkspaceUseCaseFixture {
+  factory _EditWorkspaceUseCaseFixture() {
+    final repository = _FakeRepository();
+    return _EditWorkspaceUseCaseFixture._(
+      repository,
+      EditWorkspaceUseCase(
+        repository: repository,
+        validateName: const ValidateWorkspaceNameUseCase(),
+      ),
+    );
+  }
+
+  const _EditWorkspaceUseCaseFixture._(this.repository, this.usecase);
+
+  final _FakeRepository repository;
+  final EditWorkspaceUseCase usecase;
+
+  Future<void> setUp() async {
+    final _ = await repository.createWorkspace(
+      const WorkspaceToCreate(name: 'Original', type: WorkspaceType.local),
+    );
+  }
+}
+
+class _DeleteWorkspaceUseCaseFixture {
+  factory _DeleteWorkspaceUseCaseFixture() {
+    final repository = _FakeRepository();
+    return _DeleteWorkspaceUseCaseFixture._(
+      repository,
+      DeleteWorkspaceUseCase(repository: repository),
+    );
+  }
+
+  const _DeleteWorkspaceUseCaseFixture._(this.repository, this.usecase);
+
+  final _FakeRepository repository;
+  final DeleteWorkspaceUseCase usecase;
 }

@@ -5,9 +5,6 @@
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_model_selection_with_connection.dart';
 import 'package:auravibes_app/data/database/drift/tables/model_providers_table_type.dart';
@@ -26,17 +23,18 @@ import 'workspace_model_selection_repository_impl_test.mocks.dart';
 @GenerateNiceMocks([MockSpec<WorkspaceModelSelectionsDao>()])
 void main() {
   group('WorkspaceModelSelectionRepositoryImpl', () {
-    late MockWorkspaceModelSelectionsDao mockDao;
-    late _TestAppDatabase database;
-    late WorkspaceModelSelectionRepositoryImpl repository;
+    var mockDao = MockWorkspaceModelSelectionsDao();
+    var database = _TestAppDatabase(mockDao);
+    var repository = WorkspaceModelSelectionRepositoryImpl(database);
 
-    setUp(() {
+    tearDown(() async {
+      await database.close();
       mockDao = MockWorkspaceModelSelectionsDao();
       database = _TestAppDatabase(mockDao);
       repository = WorkspaceModelSelectionRepositoryImpl(database);
     });
 
-    tearDown(() async {
+    tearDownAll(() async {
       await database.close();
     });
 

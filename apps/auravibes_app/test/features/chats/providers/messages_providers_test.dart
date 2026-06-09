@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: no-empty-block
@@ -145,6 +143,35 @@ class _FakeMessageRepository implements MessageRepository {
   }
 }
 
+class _MessagesProvidersFixture {
+  _FakeMessageRepository? _repository;
+  ProviderContainer? _container;
+
+  _FakeMessageRepository get repository =>
+      _repository ?? fail('Repository fixture not initialized.');
+
+  ProviderContainer get container =>
+      _container ?? fail('Container fixture not initialized.');
+
+  void setUp() {
+    final repository = _FakeMessageRepository();
+    _repository = repository;
+    _container = ProviderContainer(
+      overrides: [
+        conversationSelectedProvider.overrideWithValue('conv-1'),
+        messageRepositoryProvider.overrideWithValue(repository),
+      ],
+    );
+  }
+
+  Future<void> tearDown() async {
+    container.dispose();
+    await repository.dispose();
+    _container = null;
+    _repository = null;
+  }
+}
+
 @Dependencies([
   chatMessageIds,
   chatMessages,
@@ -190,100 +217,86 @@ void main() {
   });
 
   group('chatMessageIdsProvider', () {
-    late _FakeMessageRepository repository;
-    late ProviderContainer container;
+    final fixture = _MessagesProvidersFixture();
 
-    setUp(() {
-      repository = _FakeMessageRepository();
-      container = ProviderContainer(
-        overrides: [
-          conversationSelectedProvider.overrideWithValue('conv-1'),
-          messageRepositoryProvider.overrideWithValue(repository),
-        ],
-      );
-    });
+    setUp(fixture.setUp);
 
-    tearDown(() async {
-      container.dispose();
-      await repository.dispose();
-    });
+    tearDown(fixture.tearDown);
 
     test('returns empty list when no messages', () async {
-      final _ = container.listen(
+      final _ = fixture.container.listen(
         chatMessagesProvider,
         (_, _) {},
         fireImmediately: true,
       );
-      repository.emit([]);
+      fixture.repository.emit([]);
       await Future<void>.delayed(Duration.zero);
 
-      expect(container.read(chatMessageIdsProvider), isEmpty);
+      expect(fixture.container.read(chatMessageIdsProvider), isEmpty);
     });
 
     test('returns message ids from messages', () async {
-      final _ = container.listen(
+      final _ = fixture.container.listen(
         chatMessagesProvider,
         (_, _) {},
         fireImmediately: true,
       );
-      repository.emit([
+      fixture.repository.emit([
         _message(id: 'm1', content: 'hi', isUser: true),
         _message(id: 'm2', content: 'hello', isUser: false),
       ]);
       await Future<void>.delayed(Duration.zero);
 
-      expect(container.read(chatMessageIdsProvider), ['m1', 'm2']);
+      expect(fixture.container.read(chatMessageIdsProvider), ['m1', 'm2']);
     });
   });
 
   group('isMessageStreamingProvider', () {
-    late _FakeMessageRepository repository;
-    late ProviderContainer container;
+    final fixture = _MessagesProvidersFixture();
 
-    setUp(() {
-      repository = _FakeMessageRepository();
-      container = ProviderContainer(
-        overrides: [
-          conversationSelectedProvider.overrideWithValue('conv-1'),
-          messageRepositoryProvider.overrideWithValue(repository),
-        ],
-      );
-    });
+    setUp(fixture.setUp);
 
-    tearDown(() async {
-      container.dispose();
-      await repository.dispose();
-    });
+    tearDown(fixture.tearDown);
 
     test('returns false when message is not streaming', () async {
-      final _ = container.listen(
+      final _ = fixture.container.listen(
         chatMessagesProvider,
         (_, _) {},
         fireImmediately: true,
       );
-      repository.emit([_message(id: 'm1', content: 'hi', isUser: true)]);
+      fixture.repository.emit([
+        _message(id: 'm1', content: 'hi', isUser: true),
+      ]);
       await Future<void>.delayed(Duration.zero);
 
-      expect(container.read(isMessageStreamingProvider('m1')), isFalse);
+      expect(
+        fixture.container.read(isMessageStreamingProvider('m1')),
+        isFalse,
+      );
     });
 
     test('returns true when message is streaming', () async {
-      container
+      fixture.container
         ..listen(chatMessagesProvider, (_, _) {}, fireImmediately: true)
         ..listen(
           isMessageStreamingProvider('m1'),
           (_, _) {},
           fireImmediately: true,
         );
-      repository.emit([_message(id: 'm1', content: 'hi', isUser: true)]);
+      fixture.repository.emit([
+        _message(id: 'm1', content: 'hi', isUser: true),
+      ]);
       await Future<void>.delayed(Duration.zero);
 
-      container
+      fixture.container
           .read(messagesStreamingProvider.notifier)
           .startSubscription(CompositeSubscription(), 'm1');
       await Future<void>.delayed(Duration.zero);
 
-      expect(container.read(isMessageStreamingProvider('m1')), isTrue);
+      expect(
+        fixture.container.read(isMessageStreamingProvider('m1')),
+        isTrue,
+      );
     });
   });
 
@@ -301,55 +314,45 @@ void main() {
   });
 
   group('conversationUsedTokensProvider', () {
-    late _FakeMessageRepository repository;
-    late ProviderContainer container;
+    final fixture = _MessagesProvidersFixture();
 
-    setUp(() {
-      repository = _FakeMessageRepository();
-      container = ProviderContainer(
-        overrides: [
-          conversationSelectedProvider.overrideWithValue('conv-1'),
-          messageRepositoryProvider.overrideWithValue(repository),
-        ],
-      );
-    });
+    setUp(fixture.setUp);
 
-    tearDown(() async {
-      container.dispose();
-      await repository.dispose();
-    });
+    tearDown(fixture.tearDown);
 
     test('returns 0 when no messages', () async {
-      final _ = container.listen(
+      final _ = fixture.container.listen(
         chatMessagesProvider,
         (_, _) {},
         fireImmediately: true,
       );
-      repository.emit([]);
+      fixture.repository.emit([]);
       await Future<void>.delayed(Duration.zero);
 
-      expect(container.read(conversationUsedTokensProvider), 0);
+      expect(fixture.container.read(conversationUsedTokensProvider), 0);
     });
 
     test('returns 0 when only user messages exist', () async {
-      final _ = container.listen(
+      final _ = fixture.container.listen(
         chatMessagesProvider,
         (_, _) {},
         fireImmediately: true,
       );
-      repository.emit([_message(id: 'm1', content: 'hi', isUser: true)]);
+      fixture.repository.emit([
+        _message(id: 'm1', content: 'hi', isUser: true),
+      ]);
       await Future<void>.delayed(Duration.zero);
 
-      expect(container.read(conversationUsedTokensProvider), 0);
+      expect(fixture.container.read(conversationUsedTokensProvider), 0);
     });
 
     test('returns metadata tokens from latest assistant message', () async {
-      final _ = container.listen(
+      final _ = fixture.container.listen(
         chatMessagesProvider,
         (_, _) {},
         fireImmediately: true,
       );
-      repository.emit([
+      fixture.repository.emit([
         _message(id: 'm1', content: 'hi', isUser: true),
         _message(
           id: 'm2',
@@ -360,7 +363,7 @@ void main() {
       ]);
       await Future<void>.delayed(Duration.zero);
 
-      expect(container.read(conversationUsedTokensProvider), 500);
+      expect(fixture.container.read(conversationUsedTokensProvider), 500);
     });
   });
 

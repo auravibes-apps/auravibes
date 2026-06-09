@@ -13,6 +13,7 @@ plugins:
       avoid-global-state: true
       avoid-ignoring-return-values: true
       avoid-initializing-in-on-mount: true
+      avoid-late-keyword: true
       avoid-double-slash-imports: true
       avoid-duplicate-exports: true
       avoid-border-all: true

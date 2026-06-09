@@ -6,8 +6,6 @@
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: format-comment
 // Required: Existing comments use generated or domain-specific formatting.
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
 // ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
@@ -109,33 +107,47 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
   Future<bool> patchWorkspaceTimestamp(String id) async => true;
 }
 
+class _WorkspaceManagementModeFixture {
+  ProviderContainer? _container;
+
+  ProviderContainer get container =>
+      _container ?? fail('container not initialized');
+
+  void reset() {
+    _container = ProviderContainer();
+  }
+
+  void dispose() {
+    _container?.dispose();
+    _container = null;
+  }
+}
+
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
   group('WorkspaceManagementMode', () {
-    late ProviderContainer container;
+    final fixture = _WorkspaceManagementModeFixture();
 
-    setUp(() {
-      container = ProviderContainer();
-    });
+    setUp(fixture.reset);
 
-    tearDown(() => container.dispose());
+    tearDown(fixture.dispose);
 
     test('initial state is list mode with no editing workspace', () {
-      final state = container.read(workspaceManagementModeProvider);
+      final state = fixture.container.read(workspaceManagementModeProvider);
 
       expect(state.mode, ManagementMode.list);
       expect(state.editingWorkspace, isNull);
     });
 
     test('setMode changes mode', () {
-      final notifier = container.read(
+      final notifier = fixture.container.read(
         workspaceManagementModeProvider.notifier,
       );
 
       notifier.setMode(ManagementMode.create);
 
-      final state = container.read(workspaceManagementModeProvider);
+      final state = fixture.container.read(workspaceManagementModeProvider);
       expect(state.mode, ManagementMode.create);
       expect(state.editingWorkspace, isNull);
     });
@@ -148,13 +160,13 @@ void main() {
         createdAt: DateTime(2026),
         updatedAt: DateTime(2026),
       );
-      final notifier = container.read(
+      final notifier = fixture.container.read(
         workspaceManagementModeProvider.notifier,
       );
 
       notifier.setMode(ManagementMode.edit, editingWorkspace: workspace);
 
-      final state = container.read(workspaceManagementModeProvider);
+      final state = fixture.container.read(workspaceManagementModeProvider);
       expect(state.mode, ManagementMode.edit);
       expect(state.editingWorkspace, workspace);
     });
@@ -167,14 +179,14 @@ void main() {
         createdAt: DateTime(2026),
         updatedAt: DateTime(2026),
       );
-      final notifier = container.read(
+      final notifier = fixture.container.read(
         workspaceManagementModeProvider.notifier,
       );
 
       notifier.setMode(ManagementMode.edit, editingWorkspace: workspace);
       notifier.clearEditing();
 
-      final state = container.read(workspaceManagementModeProvider);
+      final state = fixture.container.read(workspaceManagementModeProvider);
       expect(state.mode, ManagementMode.list);
       expect(state.editingWorkspace, isNull);
     });
@@ -218,8 +230,11 @@ void main() {
   });
 
   group('CreateWorkspaceUseCase', () {
-    late _FakeWorkspaceRepository repository;
-    late CreateWorkspaceUseCase usecase;
+    var repository = _FakeWorkspaceRepository();
+    var usecase = CreateWorkspaceUseCase(
+      repository: repository,
+      validateName: const ValidateWorkspaceNameUseCase(),
+    );
 
     setUp(() {
       repository = _FakeWorkspaceRepository();
@@ -251,8 +266,11 @@ void main() {
   });
 
   group('EditWorkspaceUseCase', () {
-    late _FakeWorkspaceRepository repository;
-    late EditWorkspaceUseCase usecase;
+    var repository = _FakeWorkspaceRepository();
+    var usecase = EditWorkspaceUseCase(
+      repository: repository,
+      validateName: const ValidateWorkspaceNameUseCase(),
+    );
 
     setUp(() {
       repository = _FakeWorkspaceRepository();
@@ -292,8 +310,8 @@ void main() {
   });
 
   group('DeleteWorkspaceUseCase', () {
-    late _FakeWorkspaceRepository repository;
-    late DeleteWorkspaceUseCase usecase;
+    var repository = _FakeWorkspaceRepository();
+    var usecase = DeleteWorkspaceUseCase(repository: repository);
 
     setUp(() {
       repository = _FakeWorkspaceRepository();

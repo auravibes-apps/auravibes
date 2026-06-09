@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: no-empty-block
@@ -33,11 +31,19 @@ import 'generate_title_usecase_test.mocks.dart';
 ])
 void main() {
   group('GenerateTitleUsecase', () {
-    late MockConversationRepository conversationRepo;
-    late MockChatbotService chatbotService;
-    late TitlesStreamingRuntime titlesStreamingRuntime;
-    late MockMonitoringService monitoringService;
-    late GenerateTitleUsecase usecase;
+    var conversationRepo = MockConversationRepository();
+    var chatbotService = MockChatbotService();
+    var titlesStreamingRuntime = TitlesStreamingRuntime(
+      updateTitle: (_, _) {},
+      removeTitle: (_) {},
+    );
+    var monitoringService = MockMonitoringService();
+    var usecase = GenerateTitleUsecase(
+      conversationRepo: conversationRepo,
+      chatbotService: chatbotService,
+      titlesStreamingRuntime: titlesStreamingRuntime,
+      monitoringService: monitoringService,
+    );
 
     final modelSelection = WorkspaceModelSelectionWithConnectionEntity(
       workspaceModelSelection: WorkspaceModelSelectionEntity(

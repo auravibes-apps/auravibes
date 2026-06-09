@@ -6,8 +6,6 @@
 // Required: Tests use intentional no-op callbacks and fake hooks.
 // ignore_for_file: missing-test-assertion
 // Required: Tests verify service behavior by absence of thrown errors.
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 
@@ -24,8 +22,8 @@ import 'secret_manager_service_test.mocks.dart';
 
 void main() {
   group('SecretKeyManager', () {
-    late MockFlutterSecureStorage mockStorage;
-    late SecretKeyManager manager;
+    var mockStorage = MockFlutterSecureStorage();
+    var manager = SecretKeyManager(secureStorage: mockStorage);
 
     setUp(() {
       mockStorage = MockFlutterSecureStorage();

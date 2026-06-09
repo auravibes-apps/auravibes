@@ -7,9 +7,6 @@
 // ignore_for_file: prefer-static-class
 // Required: Tests keep fixture helpers and fakes top-level.
 
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools_groups.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
@@ -46,25 +43,44 @@ McpServersCompanion _testServer({
   );
 }
 
+final class _DatabaseFixture {
+  _DatabaseFixture(this.createConnection);
+
+  final QueryExecutor Function() createConnection;
+  AppDatabase? _database;
+
+  AppDatabase get database =>
+      _database ?? fail('Database fixture not initialized');
+
+  void reset() {
+    _database = AppDatabase(connection: createConnection());
+  }
+
+  Future<void> close() async {
+    await _database?.close();
+    _database = null;
+  }
+}
+
 void main() {
   group('McpServersDao', () {
-    late AppDatabase database;
-    late String workspaceId;
+    final fixture = _DatabaseFixture(createTestConnection);
+    var workspaceId = '';
 
     setUp(() async {
-      database = AppDatabase(connection: createTestConnection());
-      final ws = await database.workspaceDao.insertWorkspace(
+      fixture.reset();
+      final ws = await fixture.database.workspaceDao.insertWorkspace(
         WorkspacesCompanion.insert(name: 'WS', type: WorkspaceType.local),
       );
       workspaceId = ws.id;
     });
 
     tearDown(() async {
-      await database.close();
+      await fixture.close();
     });
 
     test('insertMcpServer creates and returns server', () async {
-      final inserted = await database.mcpServersDao.insertMcpServer(
+      final inserted = await fixture.database.mcpServersDao.insertMcpServer(
         _testServer(workspaceId: workspaceId),
       );
       expect(inserted.name, equals('Test MCP'));
@@ -72,10 +88,12 @@ void main() {
     });
 
     test('getMcpServerById returns server', () async {
-      final created = await database.mcpServersDao.insertMcpServer(
+      final created = await fixture.database.mcpServersDao.insertMcpServer(
         _testServer(workspaceId: workspaceId),
       );
-      final found = await database.mcpServersDao.getMcpServerById(created.id);
+      final found = await fixture.database.mcpServersDao.getMcpServerById(
+        created.id,
+      );
       expect(found, isNotNull);
       expect(
         (found ?? fail('Expected found to be non-null')).name,
@@ -84,48 +102,52 @@ void main() {
     });
 
     test('getMcpServerById returns null for nonexistent', () async {
-      final found = await database.mcpServersDao.getMcpServerById('missing');
+      final found = await fixture.database.mcpServersDao.getMcpServerById(
+        'missing',
+      );
       expect(found, isNull);
     });
 
     test('getMcpServersForWorkspace returns servers for workspace', () async {
-      final _ = await database.mcpServersDao.insertMcpServer(
+      final _ = await fixture.database.mcpServersDao.insertMcpServer(
         _testServer(workspaceId: workspaceId, name: 'Server 1'),
       );
-      final _ = await database.mcpServersDao.insertMcpServer(
+      final _ = await fixture.database.mcpServersDao.insertMcpServer(
         _testServer(workspaceId: workspaceId, name: 'Server 2'),
       );
-      final servers = await database.mcpServersDao.getMcpServersForWorkspace(
-        workspaceId,
-      );
+      final servers = await fixture.database.mcpServersDao
+          .getMcpServersForWorkspace(
+            workspaceId,
+          );
       expect(servers.length, equals(2));
     });
 
     test(
       'getMcpServersForWorkspace returns empty for other workspace',
       () async {
-        final _ = await database.mcpServersDao.insertMcpServer(
+        final _ = await fixture.database.mcpServersDao.insertMcpServer(
           _testServer(workspaceId: workspaceId),
         );
-        final servers = await database.mcpServersDao.getMcpServersForWorkspace(
-          'other-ws',
-        );
+        final servers = await fixture.database.mcpServersDao
+            .getMcpServersForWorkspace(
+              'other-ws',
+            );
         expect(servers, isEmpty);
       },
     );
 
     test('getEnabledMcpServersForWorkspace returns only enabled', () async {
-      final _ = await database.mcpServersDao.insertMcpServer(
+      final _ = await fixture.database.mcpServersDao.insertMcpServer(
         _testServer(workspaceId: workspaceId, name: 'Enabled'),
       );
-      final _ = await database.mcpServersDao.insertMcpServer(
+      final _ = await fixture.database.mcpServersDao.insertMcpServer(
         _testServer(
           workspaceId: workspaceId,
           name: 'Disabled',
           isEnabled: false,
         ),
       );
-      final enabled = await database.mcpServersDao
+      final enabled = await fixture.database.mcpServersDao
           .getEnabledMcpServersForWorkspace(
             workspaceId,
           );
@@ -134,10 +156,10 @@ void main() {
     });
 
     test('deleteMcpServer deletes server with tool group and tools', () async {
-      final server = await database.mcpServersDao.insertMcpServer(
+      final server = await fixture.database.mcpServersDao.insertMcpServer(
         _testServer(workspaceId: workspaceId),
       );
-      final group = await database.toolsGroupsDao.insertToolsGroup(
+      final group = await fixture.database.toolsGroupsDao.insertToolsGroup(
         ToolsGroupsCompanion.insert(
           workspaceId: workspaceId,
           mcpServerId: Value(server.id),
@@ -145,34 +167,39 @@ void main() {
           permissions: PermissionAccess.ask,
         ),
       );
-      await database.workspaceToolsDao.insertToolsBatch([
+      await fixture.database.workspaceToolsDao.insertToolsBatch([
         ToolsCompanion.insert(
           workspaceId: workspaceId,
           workspaceToolsGroupId: Value(group.id),
           toolId: 'tool1',
         ),
       ]);
-      final deleted = await database.mcpServersDao.deleteMcpServer(server.id);
+      final deleted = await fixture.database.mcpServersDao.deleteMcpServer(
+        server.id,
+      );
       expect(deleted, isTrue);
       expect(
-        await database.mcpServersDao.getMcpServerById(server.id),
+        await fixture.database.mcpServersDao.getMcpServerById(server.id),
         isNull,
       );
     });
 
     test('deleteMcpServer returns false when no tool group', () async {
-      final deleted = await database.mcpServersDao.deleteMcpServer('missing');
+      final deleted = await fixture.database.mcpServersDao.deleteMcpServer(
+        'missing',
+      );
       expect(deleted, isFalse);
     });
 
     test('toggleMcpServerEnabled updates enabled state', () async {
-      final server = await database.mcpServersDao.insertMcpServer(
+      final server = await fixture.database.mcpServersDao.insertMcpServer(
         _testServer(workspaceId: workspaceId),
       );
-      final toggled = await database.mcpServersDao.toggleMcpServerEnabled(
-        server.id,
-        isEnabled: false,
-      );
+      final toggled = await fixture.database.mcpServersDao
+          .toggleMcpServerEnabled(
+            server.id,
+            isEnabled: false,
+          );
       expect(toggled, isNotNull);
       expect(
         (toggled ?? fail('Expected toggled to be non-null')).isEnabled,

@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
 // ignore_for_file: no-empty-block
 // Required: Tests use intentional no-op callbacks and fake hooks.
 // ignore_for_file: format-comment
@@ -36,8 +34,12 @@ void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
   group('WorkspaceSwitcher', () {
-    late _FakeGoRouter fakeRouter;
-    late ProviderContainer container;
+    var fakeRouter = _FakeGoRouter();
+    var container = ProviderContainer(
+      overrides: [
+        routerProvider.overrideWithValue(fakeRouter),
+      ],
+    );
 
     setUp(() {
       fakeRouter = _FakeGoRouter();

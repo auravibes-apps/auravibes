@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: prefer-correct-identifier-length
@@ -70,22 +68,11 @@ class _FakeConversationRepository implements ConversationRepository {
 
 void main() {
   group('conversationByIdStreamProvider', () {
-    late _FakeConversationRepository repository;
-    late ProviderContainer container;
+    final fixture = _ConversationProviderFixture();
 
-    setUp(() {
-      repository = _FakeConversationRepository();
-      container = ProviderContainer(
-        overrides: [
-          conversationRepositoryProvider.overrideWithValue(repository),
-        ],
-      );
-    });
+    setUp(fixture.reset);
 
-    tearDown(() async {
-      container.dispose();
-      await repository.dispose();
-    });
+    tearDown(fixture.dispose);
 
     test('emits conversation from repository stream', () async {
       final conversation = ConversationEntity(
@@ -98,7 +85,7 @@ void main() {
       );
 
       final completer = Completer<void>();
-      final _ = container.listen(
+      final _ = fixture.container.listen(
         conversationByIdStreamProvider(conversationId: 'c1'),
         (_, next) {
           if (next.hasValue && !completer.isCompleted) {
@@ -108,10 +95,10 @@ void main() {
         fireImmediately: true,
       );
 
-      repository.emitById(conversation);
+      fixture.repository.emitById(conversation);
       await completer.future;
 
-      final asyncValue = container.read(
+      final asyncValue = fixture.container.read(
         conversationByIdStreamProvider(conversationId: 'c1'),
       );
       expect(asyncValue.value, equals(conversation));
@@ -119,22 +106,11 @@ void main() {
   });
 
   group('conversationsStreamProvider', () {
-    late _FakeConversationRepository repository;
-    late ProviderContainer container;
+    final fixture = _ConversationProviderFixture();
 
-    setUp(() {
-      repository = _FakeConversationRepository();
-      container = ProviderContainer(
-        overrides: [
-          conversationRepositoryProvider.overrideWithValue(repository),
-        ],
-      );
-    });
+    setUp(fixture.reset);
 
-    tearDown(() async {
-      container.dispose();
-      await repository.dispose();
-    });
+    tearDown(fixture.dispose);
 
     test('emits conversations list from repository stream', () async {
       final conversations = [
@@ -149,7 +125,7 @@ void main() {
       ];
 
       final completer = Completer<void>();
-      final _ = container.listen(
+      final _ = fixture.container.listen(
         conversationsStreamProvider(workspaceId: 'ws1'),
         (_, next) {
           if (next.hasValue && !completer.isCompleted) {
@@ -159,10 +135,10 @@ void main() {
         fireImmediately: true,
       );
 
-      repository.emitByWorkspace(conversations);
+      fixture.repository.emitByWorkspace(conversations);
       await completer.future;
 
-      final asyncValue = container.read(
+      final asyncValue = fixture.container.read(
         conversationsStreamProvider(workspaceId: 'ws1'),
       );
       expect(asyncValue.value, equals(conversations));
@@ -185,4 +161,32 @@ void main() {
       expect(container.read(streamingTitleProvider('c1')), 'New');
     });
   });
+}
+
+class _ConversationProviderFixture {
+  _FakeConversationRepository? _repository;
+  ProviderContainer? _container;
+
+  _FakeConversationRepository get repository =>
+      _repository ?? fail('Fixture not initialized');
+
+  ProviderContainer get container =>
+      _container ?? fail('Fixture not initialized');
+
+  void reset() {
+    final repository = _FakeConversationRepository();
+    _repository = repository;
+    _container = ProviderContainer(
+      overrides: [
+        conversationRepositoryProvider.overrideWithValue(repository),
+      ],
+    );
+  }
+
+  Future<void> dispose() async {
+    container.dispose();
+    await repository.dispose();
+    _repository = null;
+    _container = null;
+  }
 }

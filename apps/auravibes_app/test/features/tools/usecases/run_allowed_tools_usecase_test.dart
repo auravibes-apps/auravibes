@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: newline-before-return
@@ -38,17 +36,39 @@ import 'run_allowed_tools_usecase_test.mocks.dart';
 ])
 void main() {
   group('RunAllowedToolsUsecase', () {
-    late MockLoadLatestMessageToolCallsUsecase
-    loadLatestMessageToolCallsUsecase;
-    late MockMessageRepository messageRepository;
-    late MockResolveToolApprovalDecisionUsecase resolveToolApprovalDecision;
-    late MockGetAgentIterationDecisionUsecase getAgentIterationDecisionUsecase;
-    late AgentCancellationRuntime agentCancellationRuntime;
-    late RunAllowedToolsUsecase usecase;
-    late MessageEntity toolMessage;
+    var loadLatestMessageToolCallsUsecase =
+        MockLoadLatestMessageToolCallsUsecase();
+    var messageRepository = MockMessageRepository();
+    var resolveToolApprovalDecision = MockResolveToolApprovalDecisionUsecase();
+    var getAgentIterationDecisionUsecase =
+        MockGetAgentIterationDecisionUsecase();
+    var agentCancellationRuntime = AgentCancellationRuntime()
+      ..start('conversation-1');
+    var toolMessage = _runAllowedToolsToolMessage();
     String? calledMcpServerId;
     String? calledMcpToolIdentifier;
     Map<String, dynamic>? calledMcpArguments;
+    var usecase = RunAllowedToolsUsecase(
+      loadLatestMessageToolCallsUsecase: loadLatestMessageToolCallsUsecase,
+      messageRepository: messageRepository,
+      resolveToolApprovalDecision: resolveToolApprovalDecision,
+      runResolvedToolUsecase: RunResolvedToolUsecase(
+        agentCancellationRuntime: agentCancellationRuntime,
+        mcpToolCaller:
+            ({
+              required mcpServerId,
+              required toolIdentifier,
+              required arguments,
+            }) async {
+              calledMcpServerId = mcpServerId;
+              calledMcpToolIdentifier = toolIdentifier;
+              calledMcpArguments = arguments;
+              return 'mcp result';
+            },
+      ),
+      getAgentIterationDecisionUsecase: getAgentIterationDecisionUsecase,
+      agentCancellationRuntime: agentCancellationRuntime,
+    );
 
     setUp(() {
       loadLatestMessageToolCallsUsecase =
@@ -62,30 +82,7 @@ void main() {
       calledMcpToolIdentifier = null;
       calledMcpArguments = null;
 
-      toolMessage = MessageEntity(
-        id: 'message-1',
-        conversationId: 'conversation-1',
-        content: 'assistant',
-        messageType: MessageType.text,
-        isUser: false,
-        status: MessageStatus.sent,
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026),
-        metadata: const MessageMetadataEntity(
-          toolCalls: [
-            MessageToolCallEntity(
-              id: 'tool-1',
-              name: 'built_in_calc_calculator',
-              argumentsRaw: '{"input": "1+1"}',
-            ),
-            MessageToolCallEntity(
-              id: 'missing-tool',
-              name: 'missing',
-              argumentsRaw: '{}',
-            ),
-          ],
-        ),
-      );
+      toolMessage = _runAllowedToolsToolMessage();
 
       usecase = RunAllowedToolsUsecase(
         loadLatestMessageToolCallsUsecase: loadLatestMessageToolCallsUsecase,
@@ -833,13 +830,32 @@ void main() {
   });
 
   group('RunAllowedToolsUsecase native tools', () {
-    late MockLoadLatestMessageToolCallsUsecase
-    loadLatestMessageToolCallsUsecase;
-    late MockMessageRepository messageRepository;
-    late MockResolveToolApprovalDecisionUsecase resolveToolApprovalDecision;
-    late MockGetAgentIterationDecisionUsecase getAgentIterationDecisionUsecase;
-    late AgentCancellationRuntime agentCancellationRuntime;
-    late RunAllowedToolsUsecase usecase;
+    var loadLatestMessageToolCallsUsecase =
+        MockLoadLatestMessageToolCallsUsecase();
+    var messageRepository = MockMessageRepository();
+    var resolveToolApprovalDecision = MockResolveToolApprovalDecisionUsecase();
+    var getAgentIterationDecisionUsecase =
+        MockGetAgentIterationDecisionUsecase();
+    var agentCancellationRuntime = AgentCancellationRuntime()
+      ..start('conversation-1');
+    var usecase = RunAllowedToolsUsecase(
+      loadLatestMessageToolCallsUsecase: loadLatestMessageToolCallsUsecase,
+      messageRepository: messageRepository,
+      resolveToolApprovalDecision: resolveToolApprovalDecision,
+      runResolvedToolUsecase: RunResolvedToolUsecase(
+        agentCancellationRuntime: agentCancellationRuntime,
+        mcpToolCaller:
+            ({
+              required mcpServerId,
+              required toolIdentifier,
+              required arguments,
+            }) async {
+              return 'mcp result';
+            },
+      ),
+      getAgentIterationDecisionUsecase: getAgentIterationDecisionUsecase,
+      agentCancellationRuntime: agentCancellationRuntime,
+    );
 
     setUp(() {
       loadLatestMessageToolCallsUsecase =
@@ -1289,13 +1305,32 @@ void main() {
   });
 
   group('RunAllowedToolsUsecase cancellation and error paths', () {
-    late MockLoadLatestMessageToolCallsUsecase
-    loadLatestMessageToolCallsUsecase;
-    late MockMessageRepository messageRepository;
-    late MockResolveToolApprovalDecisionUsecase resolveToolApprovalDecision;
-    late MockGetAgentIterationDecisionUsecase getAgentIterationDecisionUsecase;
-    late AgentCancellationRuntime agentCancellationRuntime;
-    late RunAllowedToolsUsecase usecase;
+    var loadLatestMessageToolCallsUsecase =
+        MockLoadLatestMessageToolCallsUsecase();
+    var messageRepository = MockMessageRepository();
+    var resolveToolApprovalDecision = MockResolveToolApprovalDecisionUsecase();
+    var getAgentIterationDecisionUsecase =
+        MockGetAgentIterationDecisionUsecase();
+    var agentCancellationRuntime = AgentCancellationRuntime()
+      ..start('conversation-1');
+    var usecase = RunAllowedToolsUsecase(
+      loadLatestMessageToolCallsUsecase: loadLatestMessageToolCallsUsecase,
+      messageRepository: messageRepository,
+      resolveToolApprovalDecision: resolveToolApprovalDecision,
+      runResolvedToolUsecase: RunResolvedToolUsecase(
+        agentCancellationRuntime: agentCancellationRuntime,
+        mcpToolCaller:
+            ({
+              required mcpServerId,
+              required toolIdentifier,
+              required arguments,
+            }) async {
+              return 'mcp result';
+            },
+      ),
+      getAgentIterationDecisionUsecase: getAgentIterationDecisionUsecase,
+      agentCancellationRuntime: agentCancellationRuntime,
+    );
 
     setUp(() {
       loadLatestMessageToolCallsUsecase =
@@ -1636,4 +1671,31 @@ void main() {
       },
     );
   });
+}
+
+MessageEntity _runAllowedToolsToolMessage() {
+  return MessageEntity(
+    id: 'message-1',
+    conversationId: 'conversation-1',
+    content: 'assistant',
+    messageType: MessageType.text,
+    isUser: false,
+    status: MessageStatus.sent,
+    createdAt: DateTime(2026),
+    updatedAt: DateTime(2026),
+    metadata: const MessageMetadataEntity(
+      toolCalls: [
+        MessageToolCallEntity(
+          id: 'tool-1',
+          name: 'built_in_calc_calculator',
+          argumentsRaw: '{"input": "1+1"}',
+        ),
+        MessageToolCallEntity(
+          id: 'missing-tool',
+          name: 'missing',
+          argumentsRaw: '{}',
+        ),
+      ],
+    ),
+  );
 }

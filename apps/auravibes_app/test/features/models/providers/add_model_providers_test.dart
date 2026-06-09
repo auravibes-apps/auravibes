@@ -6,10 +6,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
-
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-
 // ignore_for_file: cascade_invocations
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
@@ -77,7 +73,14 @@ class _FakeModelConnectionRepository implements ModelConnectionRepository {
 
 void main() {
   group('AddModelProviderState', () {
-    late ProviderContainer container;
+    var container = ProviderContainer(
+      overrides: [
+        modelConnectionRepositoryProvider.overrideWithValue(
+          _FakeModelConnectionRepository(),
+        ),
+        apiModelProvidersProvider.overrideWith((_) async => []),
+      ],
+    );
 
     setUp(() {
       container = ProviderContainer(

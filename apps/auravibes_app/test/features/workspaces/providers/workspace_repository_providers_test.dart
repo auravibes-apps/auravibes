@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
 // ignore_for_file: no-empty-block
 // Required: Tests use intentional no-op callbacks and fake hooks.
 // ignore_for_file: format-comment
@@ -101,24 +99,27 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
-  late AppDatabase testDatabase;
-  late ProviderContainer container;
+  AppDatabase? testDatabase;
+  ProviderContainer? container;
+  ProviderContainer readContainer() =>
+      container ?? fail('ProviderContainer not initialized');
 
   setUp(() {
-    testDatabase = AppDatabase(connection: _testConnection());
+    final database = AppDatabase(connection: _testConnection());
+    testDatabase = database;
     container = ProviderContainer(
-      overrides: [appDatabaseProvider.overrideWithValue(testDatabase)],
+      overrides: [appDatabaseProvider.overrideWithValue(database)],
     );
   });
 
   tearDown(() async {
-    container.dispose();
-    await testDatabase.close();
+    container?.dispose();
+    await testDatabase?.close();
   });
 
   group('workspaceRepositoryProvider', () {
     test('returns a WorkspaceRepository instance', () {
-      final repo = container.read(workspaceRepositoryProvider);
+      final repo = readContainer().read(workspaceRepositoryProvider);
       expect(repo, isA<WorkspaceRepository>());
     });
   });

@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: missing-test-assertion
@@ -125,8 +123,8 @@ void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
   group('WorkspaceManagementScreen', () {
-    late _FakeWorkspaceRepository repository;
-    late _FakeGoRouter router;
+    var repository = _FakeWorkspaceRepository();
+    var router = _FakeGoRouter();
 
     setUp(() {
       repository = _FakeWorkspaceRepository();

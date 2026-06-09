@@ -2,8 +2,6 @@
 // Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: avoid-redundant-async
 // Required: Test callbacks intentionally preserve async-compatible signatures.
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 // ignore_for_file: prefer-static-class
@@ -25,6 +23,25 @@ QueryExecutor _testConnection() {
       );
     }),
   );
+}
+
+final class _DatabaseFixture {
+  _DatabaseFixture(this.createConnection);
+
+  final QueryExecutor Function() createConnection;
+  AppDatabase? _database;
+
+  AppDatabase get database =>
+      _database ?? fail('Database fixture not initialized');
+
+  void reset() {
+    _database = AppDatabase(connection: createConnection());
+  }
+
+  Future<void> close() async {
+    await _database?.close();
+    _database = null;
+  }
 }
 
 void main() {
@@ -51,19 +68,19 @@ void main() {
   });
 
   group('Tools schema', () {
-    late AppDatabase db;
-    late List<QueryRow> columns;
+    final fixture = _DatabaseFixture(_testConnection);
+    var columns = <QueryRow>[];
 
     setUp(() async {
-      db = AppDatabase(connection: _testConnection());
-      columns = await db
+      fixture.reset();
+      columns = await fixture.database
           .customSelect(
             'PRAGMA table_info(tools)',
           )
           .get();
     });
 
-    tearDown(() async => db.close());
+    tearDown(() async => fixture.close());
 
     test('has expected columns', () {
       final names = columns.map((r) => r.read<String>('name')).toSet();
@@ -167,16 +184,16 @@ void main() {
   });
 
   group('Tools column accessors', () {
-    late AppDatabase db;
+    final fixture = _DatabaseFixture(_testConnection);
 
     setUp(() async {
-      db = AppDatabase(connection: _testConnection());
+      fixture.reset();
     });
 
-    tearDown(() async => db.close());
+    tearDown(() async => fixture.close());
 
     test('all column getters are accessible', () {
-      final table = db.tools;
+      final table = fixture.database.tools;
       expect(table.workspaceId, isNotNull);
       expect(table.workspaceToolsGroupId, isNotNull);
       expect(table.toolId, isNotNull);
@@ -190,14 +207,14 @@ void main() {
     });
 
     test('primaryKey contains workspace_id and id', () {
-      final table = db.tools;
+      final table = fixture.database.tools;
       expect(table.primaryKey.length, 2);
       expect(table.primaryKey, contains(table.workspaceId));
       expect(table.primaryKey, contains(table.id));
     });
 
     test('column names match expected snake_case', () {
-      final table = db.tools;
+      final table = fixture.database.tools;
       expect(table.workspaceId.name, 'workspace_id');
       expect(table.workspaceToolsGroupId.name, 'workspace_tools_group_id');
       expect(table.toolId.name, 'tool_id');
@@ -211,20 +228,20 @@ void main() {
     });
 
     test(r'$columns returns all columns including TableMixin', () {
-      final table = db.tools;
+      final table = fixture.database.tools;
       expect(table.$columns.length, 13);
     });
 
     test('table name is tools', () {
-      expect(db.tools.actualTableName, 'tools');
+      expect(fixture.database.tools.actualTableName, 'tools');
     });
 
     test('aliasedName returns actualTableName without alias', () {
-      expect(db.tools.aliasedName, 'tools');
+      expect(fixture.database.tools.aliasedName, 'tools');
     });
 
     test('createAlias returns new table with alias', () {
-      final aliased = db.tools.createAlias('ta');
+      final aliased = fixture.database.tools.createAlias('ta');
       expect(aliased.aliasedName, 'ta');
     });
   });

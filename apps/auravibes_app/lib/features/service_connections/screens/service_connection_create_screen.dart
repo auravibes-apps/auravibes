@@ -40,14 +40,14 @@ class _ServiceConnectionCreateScreenState
     extends ConsumerState<ServiceConnectionCreateScreen> {
   final _nameController = TextEditingController();
   final _attributeControllers = <String, TextEditingController>{};
-  late ServiceConnectionCreateType _type;
+  ServiceConnectionCreateType _type = ServiceConnectionCreateType.modelProvider;
   String? _definitionId;
   bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
-    _type = widget.initialType ?? ServiceConnectionCreateType.modelProvider;
+    _type = widget.initialType ?? _type;
     _definitionId = widget.initialCredentialDefinitionId;
   }
 

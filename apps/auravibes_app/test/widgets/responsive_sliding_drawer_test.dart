@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
 // ignore_for_file: newline-before-return
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
@@ -67,7 +65,7 @@ void main() {
 
     testWidgets('of returns controller from context', (tester) async {
       final controller = ResponsiveSlidingDrawerController();
-      late ResponsiveSlidingDrawerController found;
+      ResponsiveSlidingDrawerController? found;
 
       await tester.pumpWidget(
         MaterialApp(
@@ -83,7 +81,8 @@ void main() {
         ),
       );
 
-      expect(identical(found, controller), isTrue);
+      final foundController = found ?? fail('Expected controller');
+      expect(identical(foundController, controller), isTrue);
     });
 
     testWidgets('maybeOf returns null without provider', (tester) async {

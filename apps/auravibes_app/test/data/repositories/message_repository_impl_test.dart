@@ -13,9 +13,6 @@
 // ignore_for_file: prefer-static-class
 // Required: Tests keep fixture helpers and fakes top-level.
 
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
@@ -32,11 +29,16 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('MessageRepositoryImpl.watchMessagesByConversation', () {
-    late _TestAppDatabase database;
-    late MessageRepositoryImpl repository;
+    final initialDatabase = _TestAppDatabase((_) => const Stream.empty());
+    var database = initialDatabase;
+    var repository = MessageRepositoryImpl(database);
 
     tearDown(() async {
       await database.close();
+    });
+
+    tearDownAll(() async {
+      await initialDatabase.close();
     });
 
     test('maps streamed message rows into message entities', () async {
@@ -133,8 +135,11 @@ void main() {
   });
 
   group('MessageRepositoryImpl with real database', () {
-    late AppDatabase database;
-    late MessageRepositoryImpl repository;
+    final initialDatabase = AppDatabase(
+      connection: DatabaseConnection(NativeDatabase.memory()),
+    );
+    var database = initialDatabase;
+    var repository = MessageRepositoryImpl(database);
 
     setUp(() {
       database = AppDatabase(
@@ -145,6 +150,10 @@ void main() {
 
     tearDown(() async {
       await database.close();
+    });
+
+    tearDownAll(() async {
+      await initialDatabase.close();
     });
 
     test('getMessagesByConversation returns empty when no messages', () async {
@@ -680,10 +689,19 @@ class _TestAppDatabase extends AppDatabase {
   final Stream<List<MessagesTable>> Function(String conversationId)
   _watchMessages;
 
-  late final MessageDao _testMessageDao = _TestMessageDao(this, _watchMessages);
+  MessageDao? _testMessageDao;
 
   @override
-  MessageDao get messageDao => _testMessageDao;
+  MessageDao get messageDao {
+    final existing = _testMessageDao;
+    if (existing != null) {
+      return existing;
+    }
+
+    final created = _TestMessageDao(this, _watchMessages);
+    _testMessageDao = created;
+    return created;
+  }
 }
 
 class _TestMessageDao extends MessageDao {

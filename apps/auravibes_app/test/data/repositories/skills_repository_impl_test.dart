@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
 
 import 'dart:convert';
 
@@ -65,19 +63,42 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('SkillsRepositoryImpl', () {
-    late AppDatabase database;
-    late WorkspaceRepositoryImpl workspaceRepository;
-    late ConversationRepositoryImpl conversationRepository;
-    late SkillsRepositoryImpl skillsRepository;
-    late SkillTemplateToolsRepositoryImpl toolsRepository;
-    late SkillCredentialDefinitionsRepositoryImpl
-    skillCredentialDefinitionsRepository;
-    late SkillCredentialsRepositoryImpl skillCredentialsRepository;
-    late ConversationSkillsRepositoryImpl conversationSkillsRepository;
-    late AppSkillWorkspaceSettingsRepositoryImpl appSkillSettingsRepository;
-    late CreateSkillUsecase createSkillUsecase;
-    late UpdateSkillUsecase updateSkillUsecase;
-    late ListAvailableSkillsUsecase listAvailableSkillsUsecase;
+    final initialDatabase = AppDatabase(
+      connection: DatabaseConnection(NativeDatabase.memory()),
+    );
+    var database = initialDatabase;
+    var workspaceRepository = WorkspaceRepositoryImpl(database);
+    var conversationRepository = ConversationRepositoryImpl(database);
+    var skillsRepository = SkillsRepositoryImpl(database);
+    var toolsRepository = SkillTemplateToolsRepositoryImpl(database);
+    var skillCredentialDefinitionsRepository =
+        SkillCredentialDefinitionsRepositoryImpl(database);
+    var skillCredentialsRepository = SkillCredentialsRepositoryImpl(
+      database: database,
+      encryptionService: EncryptionService(_FakeSecretKeyManager()),
+    );
+    var conversationSkillsRepository = ConversationSkillsRepositoryImpl(
+      database,
+    );
+    var appSkillSettingsRepository = AppSkillWorkspaceSettingsRepositoryImpl(
+      database,
+    );
+    var createSkillUsecase = CreateSkillUsecase(
+      skillsRepository,
+      const GenerateSkillSlugUsecase(),
+      const ValidateSkillTitleUsecase(),
+    );
+    var updateSkillUsecase = UpdateSkillUsecase(
+      skillsRepository,
+      const ValidateSkillTitleUsecase(),
+    );
+    var listAvailableSkillsUsecase = ListAvailableSkillsUsecase(
+      skillsRepository,
+      conversationSkillsRepository,
+      appSkillSettingsRepository,
+      const AppSkillRegistry(),
+      CheckSkillCredentialReadinessUsecase(skillCredentialsRepository),
+    );
 
     setUp(() {
       database = AppDatabase(
@@ -117,6 +138,10 @@ void main() {
 
     tearDown(() async {
       await database.close();
+    });
+
+    tearDownAll(() async {
+      await initialDatabase.close();
     });
 
     DuplicateSkillUsecase duplicateSkillUsecase() {

@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
 // ignore_for_file: missing-test-assertion
 // Required: Tests verify sync behavior through repository side effects.
 
@@ -187,9 +185,12 @@ void main() {
   });
 
   group('ModelSyncService', () {
-    late MockApiModelRepository repository;
-    late MockModelApiService apiService;
-    late ModelSyncService service;
+    var repository = MockApiModelRepository();
+    var apiService = MockModelApiService();
+    var service = ModelSyncService(
+      repository: repository,
+      apiService: apiService,
+    );
 
     setUp(() {
       repository = MockApiModelRepository();

@@ -5,9 +5,6 @@
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-
 import 'dart:ui';
 
 import 'package:auravibes_app/services/app_log_buffer.dart';
@@ -40,7 +37,7 @@ void main() {
   });
 
   group('AppLogging', () {
-    late DebugPrintCallback previousDebugPrint;
+    var previousDebugPrint = debugPrint;
     FlutterExceptionHandler? previousFlutterError;
     ErrorCallback? previousPlatformError;
 

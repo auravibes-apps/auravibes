@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: newline-before-return
@@ -23,8 +21,11 @@ import 'load_latest_message_tool_calls_usecase_test.mocks.dart';
 @GenerateMocks([MessageRepository])
 void main() {
   group('LoadLatestMessageToolCallsUsecase', () {
-    late MockMessageRepository messageRepository;
-    late LoadLatestMessageToolCallsUsecase usecase;
+    var messageRepository = MockMessageRepository();
+    var usecase = LoadLatestMessageToolCallsUsecase(
+      messageRepository: messageRepository,
+      toolResolverService: ToolResolverService(),
+    );
 
     setUp(() {
       messageRepository = MockMessageRepository();

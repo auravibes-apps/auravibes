@@ -10,9 +10,6 @@
 // ignore_for_file: avoid-redundant-async
 // Required: Test callbacks intentionally preserve async-compatible signatures.
 
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
@@ -31,23 +28,42 @@ QueryExecutor createTestConnection() {
   );
 }
 
+final class _DatabaseFixture {
+  _DatabaseFixture(this.createConnection);
+
+  final QueryExecutor Function() createConnection;
+  AppDatabase? _database;
+
+  AppDatabase get database =>
+      _database ?? fail('Database fixture not initialized');
+
+  void reset() {
+    _database = AppDatabase(connection: createConnection());
+  }
+
+  Future<void> close() async {
+    await _database?.close();
+    _database = null;
+  }
+}
+
 void main() {
   group('ConversationDao', () {
-    late AppDatabase database;
+    final fixture = _DatabaseFixture(createTestConnection);
 
     setUp(() async {
-      database = AppDatabase(connection: createTestConnection());
+      fixture.reset();
     });
 
     tearDown(() async {
-      await database.close();
+      await fixture.close();
     });
 
     test('insertConversation creates and returns conversation', () async {
-      final ws = await database.workspaceDao.insertWorkspace(
+      final ws = await fixture.database.workspaceDao.insertWorkspace(
         WorkspacesCompanion.insert(name: 'WS', type: WorkspaceType.local),
       );
-      final conv = await database.conversationDao.insertConversation(
+      final conv = await fixture.database.conversationDao.insertConversation(
         ConversationsCompanion.insert(
           workspaceId: ws.id,
           title: 'Test Conversation',
@@ -58,16 +74,16 @@ void main() {
     });
 
     test('getConversationById returns conversation', () async {
-      final ws = await database.workspaceDao.insertWorkspace(
+      final ws = await fixture.database.workspaceDao.insertWorkspace(
         WorkspacesCompanion.insert(name: 'WS', type: WorkspaceType.local),
       );
-      final created = await database.conversationDao.insertConversation(
+      final created = await fixture.database.conversationDao.insertConversation(
         ConversationsCompanion.insert(
           workspaceId: ws.id,
           title: 'Test',
         ),
       );
-      final found = await database.conversationDao.getConversationById(
+      final found = await fixture.database.conversationDao.getConversationById(
         created.id,
       );
       expect(found, isNotNull);
@@ -78,23 +94,23 @@ void main() {
     });
 
     test('getConversationById returns null for nonexistent', () async {
-      final found = await database.conversationDao.getConversationById(
+      final found = await fixture.database.conversationDao.getConversationById(
         'nonexistent',
       );
       expect(found, isNull);
     });
 
     test('patchConversation updates fields', () async {
-      final ws = await database.workspaceDao.insertWorkspace(
+      final ws = await fixture.database.workspaceDao.insertWorkspace(
         WorkspacesCompanion.insert(name: 'WS', type: WorkspaceType.local),
       );
-      final created = await database.conversationDao.insertConversation(
+      final created = await fixture.database.conversationDao.insertConversation(
         ConversationsCompanion.insert(
           workspaceId: ws.id,
           title: 'Original',
         ),
       );
-      final patched = await database.conversationDao.patchConversation(
+      final patched = await fixture.database.conversationDao.patchConversation(
         created.id,
         ConversationsCompanion(
           updatedAt: Value(DateTime.now()),
@@ -102,7 +118,7 @@ void main() {
         ),
       );
       expect(patched, isTrue);
-      final found = await database.conversationDao.getConversationById(
+      final found = await fixture.database.conversationDao.getConversationById(
         created.id,
       );
       expect(
@@ -112,7 +128,7 @@ void main() {
     });
 
     test('patchConversation returns false for nonexistent', () async {
-      final patched = await database.conversationDao.patchConversation(
+      final patched = await fixture.database.conversationDao.patchConversation(
         'nonexistent',
         const ConversationsCompanion(title: Value('X')),
       );
@@ -120,43 +136,43 @@ void main() {
     });
 
     test('deleteConversation removes conversation', () async {
-      final ws = await database.workspaceDao.insertWorkspace(
+      final ws = await fixture.database.workspaceDao.insertWorkspace(
         WorkspacesCompanion.insert(name: 'WS', type: WorkspaceType.local),
       );
-      final created = await database.conversationDao.insertConversation(
+      final created = await fixture.database.conversationDao.insertConversation(
         ConversationsCompanion.insert(
           workspaceId: ws.id,
           title: 'To Delete',
         ),
       );
-      final deleted = await database.conversationDao.deleteConversation(
+      final deleted = await fixture.database.conversationDao.deleteConversation(
         created.id,
       );
       expect(deleted, isTrue);
       expect(
-        await database.conversationDao.getConversationById(created.id),
+        await fixture.database.conversationDao.getConversationById(created.id),
         isNull,
       );
     });
 
     test('deleteConversation returns false for nonexistent', () async {
-      final deleted = await database.conversationDao.deleteConversation(
+      final deleted = await fixture.database.conversationDao.deleteConversation(
         'nonexistent',
       );
       expect(deleted, isFalse);
     });
 
     test('watchConversationById emits conversation', () async {
-      final ws = await database.workspaceDao.insertWorkspace(
+      final ws = await fixture.database.workspaceDao.insertWorkspace(
         WorkspacesCompanion.insert(name: 'WS', type: WorkspaceType.local),
       );
-      final created = await database.conversationDao.insertConversation(
+      final created = await fixture.database.conversationDao.insertConversation(
         ConversationsCompanion.insert(
           workspaceId: ws.id,
           title: 'Watched',
         ),
       );
-      final emitted = await database.conversationDao
+      final emitted = await fixture.database.conversationDao
           .watchConversationById(created.id)
           .first;
       expect(emitted, isNotNull);
@@ -167,32 +183,32 @@ void main() {
     });
 
     test('watchConversationsByWorkspace emits list', () async {
-      final ws = await database.workspaceDao.insertWorkspace(
+      final ws = await fixture.database.workspaceDao.insertWorkspace(
         WorkspacesCompanion.insert(name: 'WS', type: WorkspaceType.local),
       );
-      final _ = await database.conversationDao.insertConversation(
+      final _ = await fixture.database.conversationDao.insertConversation(
         ConversationsCompanion.insert(workspaceId: ws.id, title: 'A'),
       );
-      final _ = await database.conversationDao.insertConversation(
+      final _ = await fixture.database.conversationDao.insertConversation(
         ConversationsCompanion.insert(workspaceId: ws.id, title: 'B'),
       );
-      final emitted = await database.conversationDao
+      final emitted = await fixture.database.conversationDao
           .watchConversationsByWorkspace(ws.id)
           .first;
       expect(emitted.length, equals(2));
     });
 
     test('watchConversationsByWorkspace with limit', () async {
-      final ws = await database.workspaceDao.insertWorkspace(
+      final ws = await fixture.database.workspaceDao.insertWorkspace(
         WorkspacesCompanion.insert(name: 'WS', type: WorkspaceType.local),
       );
-      final _ = await database.conversationDao.insertConversation(
+      final _ = await fixture.database.conversationDao.insertConversation(
         ConversationsCompanion.insert(workspaceId: ws.id, title: 'A'),
       );
-      final _ = await database.conversationDao.insertConversation(
+      final _ = await fixture.database.conversationDao.insertConversation(
         ConversationsCompanion.insert(workspaceId: ws.id, title: 'B'),
       );
-      final emitted = await database.conversationDao
+      final emitted = await fixture.database.conversationDao
           .watchConversationsByWorkspace(ws.id, limit: 1)
           .first;
       expect(emitted.length, equals(1));

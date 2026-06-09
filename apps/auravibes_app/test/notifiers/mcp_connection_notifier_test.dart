@@ -11,9 +11,6 @@
 // ignore_for_file: prefer-static-class
 // Required: Tests keep fixture helpers and fakes top-level.
 
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
-
 // ignore_for_file: cascade_invocations
 import 'dart:async';
 
@@ -194,9 +191,9 @@ void main() {
   });
 
   group('McpConnectionNotifier', () {
-    late _FakeMcpServersRepository mcpServersRepository;
-    late McpManagerService mcpManagerService;
-    late ProviderContainer container;
+    var mcpServersRepository = _FakeMcpServersRepository();
+    var mcpManagerService = McpManagerService();
+    var container = ProviderContainer();
 
     setUp(() {
       mcpServersRepository = _FakeMcpServersRepository();

@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-late-keyword
-// Required: Test fixtures are assigned in setUp.
 // ignore_for_file: no-equal-arguments
 // Required: Tests use repeated fixture values to assert equality semantics.
 // ignore_for_file: missing-test-assertion
@@ -36,13 +34,25 @@ import 'model_connection_repository_impl_test.mocks.dart';
 ])
 void main() {
   group('ModelConnectionRepositoryImpl', () {
-    late MockApiModelProvidersDao mockProvidersDao;
-    late MockModelConnectionsDao mockConnectionsDao;
-    late MockWorkspaceModelSelectionsDao mockSelectionsDao;
-    late MockEncryptionService mockEncryptionService;
-    late MockModelProviderServices mockModelProviderServices;
-    late _TestAppDatabase database;
-    late ModelConnectionRepositoryImpl repository;
+    var mockProvidersDao = MockApiModelProvidersDao();
+    var mockConnectionsDao = MockModelConnectionsDao();
+    var mockSelectionsDao = MockWorkspaceModelSelectionsDao();
+    var mockEncryptionService = MockEncryptionService();
+    var mockModelProviderServices = MockModelProviderServices();
+    var database = _TestAppDatabase(
+      MockApiModelProvidersDao(),
+      MockModelConnectionsDao(),
+      MockWorkspaceModelSelectionsDao(),
+    );
+    var repository = ModelConnectionRepositoryImpl(
+      database: database,
+      encryptionService: mockEncryptionService,
+      modelProviderServices: mockModelProviderServices,
+    );
+
+    tearDownAll(() async {
+      await database.close();
+    });
 
     setUp(() {
       mockProvidersDao = MockApiModelProvidersDao();
