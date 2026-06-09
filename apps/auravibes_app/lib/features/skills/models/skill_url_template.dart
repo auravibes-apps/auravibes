@@ -66,9 +66,10 @@ class SkillUrlTemplate {
   final UrlResponseFormat format;
 
   SkillUrlTemplateBodyFormat get resolvedBodyFormat {
+    final body = this.body;
     if (body == null) return SkillUrlTemplateBodyFormat.text;
     if (bodyFormat != SkillUrlTemplateBodyFormat.infer) return bodyFormat;
-    return _looksLikeJson(body!)
+    return _looksLikeJson(body)
         ? SkillUrlTemplateBodyFormat.json
         : SkillUrlTemplateBodyFormat.text;
   }

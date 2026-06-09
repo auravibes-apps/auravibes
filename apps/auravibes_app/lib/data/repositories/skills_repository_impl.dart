@@ -74,11 +74,10 @@ class SkillsRepositoryImpl implements SkillsRepository {
           skillId,
           SkillsCompanion(
             updatedAt: Value(DateTime.now()),
-            title: skill.title == null
-                ? const Value.absent()
-                : Value(
-                    skill.title!.trim(),
-                  ),
+            title: switch (skill.title) {
+              null => const Value.absent(),
+              final title => Value(title.trim()),
+            },
             description: Value.absentIfNull(skill.description),
             content: Value.absentIfNull(skill.content),
             credentialDefinitionId: skill.clearCredentialDefinition

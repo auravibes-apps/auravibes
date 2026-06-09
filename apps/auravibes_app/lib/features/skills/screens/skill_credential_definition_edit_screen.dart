@@ -235,17 +235,19 @@ class _SkillCredentialDefinitionEditScreenState
           ),
         );
       } else {
+        final definitionId = widget.definitionId;
+        if (definitionId == null) return;
         final usecase = ref.read(
           updateSkillCredentialDefinitionUsecaseProvider,
         );
         final _ = await usecase.call(
-          widget.definitionId!,
+          definitionId,
           SkillCredentialDefinitionToUpdate(
             title: _titleController.text,
             attributesJson: attributesJson,
           ),
         );
-        ref.invalidate(skillCredentialDefinitionProvider(widget.definitionId!));
+        ref.invalidate(skillCredentialDefinitionProvider(definitionId));
       }
       ref.invalidate(skillCredentialDefinitionsProvider(widget.workspaceId));
       if (!context.mounted) return;
@@ -313,13 +315,15 @@ class _SkillCredentialDefinitionEditScreenState
       ),
     );
     if (shouldDelete != true) return;
+    final definitionId = widget.definitionId;
+    if (definitionId == null) return;
 
     setState(() => _isSaving = true);
     try {
       final usecase = ref.read(
         deleteSkillCredentialDefinitionUsecaseProvider,
       );
-      final _ = await usecase.call(widget.definitionId!);
+      final _ = await usecase.call(definitionId);
       ref.invalidate(skillCredentialDefinitionsProvider(widget.workspaceId));
       if (!context.mounted) return;
       Navigator.of(context).pop();

@@ -80,13 +80,13 @@ class ChatInputWidget extends HookConsumerWidget {
                 size: AuraButtonSize.small,
               ),
             ),
-            if (onSkillsPress != null)
+            if (onSkillsPress case final onSkillsPress?)
               Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: Tooltip(
                   message: LocaleKeys.skills_selector_title.tr(),
                   child: AuraButton(
-                    onPressed: onSkillsPress!,
+                    onPressed: onSkillsPress,
                     child: const AuraIcon(Icons.psychology_alt_outlined),
                     variant: AuraButtonVariant.secondary,
                     size: AuraButtonSize.small,

@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-non-null-assertion
-// Required: Tests assert decoded nullable protocol fields.
 // ignore_for_file: newline-before-return
 // Required: Tests keep compact return flow.
 // ignore_for_file: no-magic-number
@@ -70,11 +68,9 @@ void main() {
     expect(capturedBody?['messages'], [
       {'role': 'user', 'content': 'Hi'},
     ]);
+    final message = response.rawResponse.message ?? fail('message missing');
     expect(
-      response.rawResponse.message!.content
-          .map((part) => part.reasoning)
-          .nonNulls
-          .single,
+      message.content.map((part) => part.reasoning).nonNulls.single,
       'Think first.',
     );
     expect(response.text, 'Answer.');
@@ -245,12 +241,9 @@ void main() {
         },
       ],
     });
+    final message = response.rawResponse.message ?? fail('message missing');
     expect(
-      response.rawResponse.message!.content
-          .map((part) => part.toolRequest)
-          .nonNulls
-          .single
-          .name,
+      message.content.map((part) => part.toolRequest).nonNulls.single.name,
       'lookup',
     );
     expect(response.rawResponse.finishReason, FinishReason.length);
@@ -319,16 +312,18 @@ void main() {
     final result = await stream.onResult;
 
     expect(capturedBody?['stream_options'], {'include_usage': true});
+    final firstChunk = chunks.firstOrNull ?? fail('first chunk missing');
     expect(
-      chunks.firstOrNull!.content.map((part) => part.reasoning).nonNulls.single,
+      firstChunk.content.map((part) => part.reasoning).nonNulls.single,
       'Think',
     );
     expect(chunks.last.text, 'Answer');
+    final message = result.message ?? fail('message missing');
     expect(
-      result.message!.content.map((part) => part.reasoning).nonNulls.single,
+      message.content.map((part) => part.reasoning).nonNulls.single,
       'Think',
     );
-    expect(result.message!.text, 'Answer');
+    expect(message.text, 'Answer');
     expect(result.usage?.totalTokens, 7);
   });
 
@@ -399,7 +394,8 @@ void main() {
 
     await stream.drain<void>();
     final result = await stream.onResult;
-    final toolRequest = result.message!.content
+    final message = result.message ?? fail('message missing');
+    final toolRequest = message.content
         .map((part) => part.toolRequest)
         .nonNulls
         .single;

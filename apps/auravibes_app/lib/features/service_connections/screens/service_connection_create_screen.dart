@@ -308,9 +308,9 @@ class _CredentialForm extends ConsumerWidget {
         context,
         value,
       ),
-      AsyncLoading(:final value, hasValue: true) => _buildForm(
+      AsyncLoading(value: final value?, hasValue: true) => _buildForm(
         context,
-        value!,
+        value,
       ),
       _ => const Center(child: AuraSpinner()),
     };

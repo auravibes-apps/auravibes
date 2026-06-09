@@ -148,8 +148,9 @@ void main() {
     final tool = await SkillTemplateToolsRepositoryImpl(
       database,
     ).getToolBySlug(skill.id, 'find_company');
-    expect(tool?.description, 'Find company records.');
-    expect(jsonDecode(tool!.templateJson), {
+    final templateJson = (tool ?? fail('tool missing')).templateJson;
+    expect(tool.description, 'Find company records.');
+    expect(jsonDecode(templateJson), {
       'url': 'https://example.com/company',
       'method': 'POST',
       'query': {'token': '{{ credential.api_key }}'},

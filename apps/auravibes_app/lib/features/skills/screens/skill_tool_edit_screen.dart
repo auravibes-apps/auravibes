@@ -391,9 +391,11 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
           ),
         );
       } else {
+        final toolId = widget.toolId;
+        if (toolId == null) return;
         final usecase = ref.read(updateSkillTemplateToolUsecaseProvider);
         final _ = await usecase.call(
-          widget.toolId!,
+          toolId,
           SkillTemplateToolToUpdate(
             title: _titleController.text,
             description: _descriptionController.text,

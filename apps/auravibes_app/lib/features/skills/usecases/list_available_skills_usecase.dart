@@ -102,19 +102,15 @@ enum SkillLoadFilter {
 
 extension on List<ConversationSkillEntity> {
   Set<String> get loadedUserSkillIds {
-    return {
-      for (final skill in this)
-        if (skill.isLoaded && skill.workspaceSkillId != null)
-          skill.workspaceSkillId!,
-    };
+    return where(
+      (skill) => skill.isLoaded,
+    ).map((skill) => skill.workspaceSkillId).nonNulls.toSet();
   }
 
   Set<String> get loadedAppSkillIdentifiers {
-    return {
-      for (final skill in this)
-        if (skill.isLoaded && skill.appSkillIdentifier != null)
-          skill.appSkillIdentifier!,
-    };
+    return where(
+      (skill) => skill.isLoaded,
+    ).map((skill) => skill.appSkillIdentifier).nonNulls.toSet();
   }
 }
 

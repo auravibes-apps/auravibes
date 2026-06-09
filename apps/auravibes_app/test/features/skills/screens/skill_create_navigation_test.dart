@@ -119,10 +119,11 @@ void main() {
     final skill = await SkillsRepositoryImpl(
       database,
     ).getSkillByTitle(workspace.id, 'Write Summary');
-    expect(skill?.credentialDefinitionId, null);
+    final skillId = (skill ?? fail('skill missing')).id;
+    expect(skill.credentialDefinitionId, null);
 
     final _ = router.push(
-      '/workspaces/${workspace.id}/more/skills/${skill!.id}',
+      '/workspaces/${workspace.id}/more/skills/$skillId',
     );
     final _ = await tester.pumpAndSettle();
 

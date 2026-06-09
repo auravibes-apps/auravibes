@@ -83,11 +83,10 @@ class SkillCredentialDefinitionsRepositoryImpl
           definitionId,
           SkillCredentialDefinitionsCompanion(
             updatedAt: Value(DateTime.now()),
-            title: definition.title == null
-                ? const Value.absent()
-                : Value(
-                    definition.title!.trim(),
-                  ),
+            title: switch (definition.title) {
+              null => const Value.absent(),
+              final title => Value(title.trim()),
+            },
             attributesJson: Value.absentIfNull(definition.attributesJson),
           ),
         )

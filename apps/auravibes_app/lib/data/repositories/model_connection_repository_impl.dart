@@ -146,12 +146,19 @@ class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
       throw const ModelConnectionException('Model connection has no API key');
     }
     final keyForValidation =
-        key ?? await _encryptionService.decrypt(existingEncryptedKey!);
+        key ??
+        await _encryptionService.decrypt(
+          existingEncryptedKey ??
+              (throw const ModelConnectionException(
+                'Model connection has no API key',
+              )),
+        );
     final hasUrlUpdate = modelConnection.url != null;
     var nextUrl = existing.url;
     if (hasUrlUpdate) {
-      final updatedUrl = modelConnection.url!.trim();
-      nextUrl = updatedUrl.isEmpty ? null : modelConnection.url;
+      final url = modelConnection.url;
+      final updatedUrl = url?.trim();
+      nextUrl = updatedUrl?.isEmpty == true ? null : url;
     }
     final models = await _modelProviderServices.getWorkspaceModelSelections(
       ModelProvider(

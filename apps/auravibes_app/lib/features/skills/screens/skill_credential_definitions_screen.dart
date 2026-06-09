@@ -61,9 +61,9 @@ class SkillCredentialDefinitionsScreen extends ConsumerWidget {
                   separatorBuilder: (_, _) => const SizedBox(height: 8),
                   itemCount: value.length,
                 ),
-        AsyncLoading(:final value, hasValue: true) => ListView(
+        AsyncLoading(value: final value?, hasValue: true) => ListView(
           children: [
-            for (final definition in value!)
+            for (final definition in value)
               AuraTile(
                 child: AuraColumn(
                   children: [

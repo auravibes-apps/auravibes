@@ -1041,14 +1041,15 @@ void main() {
         skillCredentialsRepository: skillCredentialsRepository,
       );
 
+      final output = await runUsecase.call(
+        conversationId: conversation.id,
+        tool: ResolvedTool.skillControl(
+          toolIdentifier: listSkillCredentialsToolName,
+        ),
+        arguments: {'skillSlug': skill.slug},
+      );
       final result =
-          (await runUsecase.call(
-                conversationId: conversation.id,
-                tool: ResolvedTool.skillControl(
-                  toolIdentifier: listSkillCredentialsToolName,
-                ),
-                arguments: {'skillSlug': skill.slug},
-              ))!
+          (output ?? fail('skill control result missing'))
               as Map<String, Object?>;
 
       expect(result, containsPair('skillSlug', skill.slug));
@@ -1099,7 +1100,8 @@ void main() {
 
         expect(request.url, 'https://example.com');
         expect(request.headers, isNot(contains('X-User')));
-        expect(jsonDecode(request.body!), {'level': 2});
+        final body = request.body ?? fail('body missing');
+        expect(jsonDecode(body), {'level': 2});
       },
     );
 
@@ -1149,7 +1151,8 @@ void main() {
         },
       );
 
-      expect(jsonDecode(request.body!), {
+      final body = request.body ?? fail('body missing');
+      expect(jsonDecode(body), {
         'filters': [
           {'field': 'species', 'op': 'equals', 'value': 'dog'},
         ],
@@ -1998,10 +2001,11 @@ void main() {
               workspace.id,
               'rescuegroups_api',
             );
+        final definitionId = (definition ?? fail('definition missing')).id;
         final credential = await skillCredentialsRepository.createCredential(
           workspace.id,
           SkillCredentialToCreate(
-            credentialDefinitionId: definition!.id,
+            credentialDefinitionId: definitionId,
             name: 'RescueGroups Credential',
             attributes: const {'api_key': 'secret-token'},
           ),

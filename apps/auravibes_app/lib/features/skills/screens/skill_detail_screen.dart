@@ -69,6 +69,9 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
         ? null
         : ref.watch(skillDetailProvider(widget.workspaceId, skillId));
     final currentDetail = detailAsync?.value;
+    final userSkillDetail = currentDetail != null && currentDetail.isUserSkill
+        ? currentDetail
+        : null;
 
     return AuraScreen(
       child: _buildBody(context, detailAsync, currentDetail),
@@ -79,19 +82,19 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
               : LocaleKeys.skills_screen_detail_title,
         ),
         actions: [
-          if (!_isCreate && currentDetail?.isUserSkill == true) ...[
+          if (!_isCreate && userSkillDetail != null) ...[
             AuraIconButton(
               icon: Icons.copy_outlined,
               onPressed: _isSaving
                   ? null
-                  : () => _duplicateSkill(context, currentDetail!),
+                  : () => _duplicateSkill(context, userSkillDetail),
               tooltip: LocaleKeys.skills_screen_duplicate.tr(context: context),
             ),
             AuraIconButton(
               icon: Icons.delete_outline,
               onPressed: _isSaving
                   ? null
-                  : () => _confirmDelete(context, currentDetail!),
+                  : () => _confirmDelete(context, userSkillDetail),
               tooltip: LocaleKeys.skills_screen_delete.tr(context: context),
             ),
           ],
@@ -248,6 +251,7 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
 
   List<Widget> _buildCredentialFields(SkillDetail? detail, bool isReadOnly) {
     final canEdit = _isCreate || !isReadOnly;
+    final credentialDefinitionId = _credentialDefinitionId;
     return [
       if (canEdit)
         _CredentialDefinitionSelector(
@@ -268,10 +272,10 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
             LocaleKeys.skills_screen_credential_optional_hint,
           ),
         ),
-      if (detail != null && _credentialDefinitionId != null)
+      if (detail != null && credentialDefinitionId != null)
         _SkillCredentialsHint(
           workspaceId: widget.workspaceId,
-          credentialDefinitionId: _credentialDefinitionId!,
+          credentialDefinitionId: credentialDefinitionId,
           isCredentialOptional: _isCredentialOptional,
         ),
     ];
@@ -379,9 +383,11 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
       return;
     }
 
+    final skillId = widget.skillId;
+    if (skillId == null) return;
     final usecase = ref.read(updateSkillUsecaseProvider);
     final _ = await usecase.call(
-      widget.skillId!,
+      skillId,
       SkillToUpdate(
         title: _titleController.text,
         description: _descriptionController.text,
@@ -529,8 +535,8 @@ class _SkillToolsCard extends ConsumerWidget {
                           ),
                       ],
                     ),
-            AsyncLoading(:final value, hasValue: true) => AuraText(
-              child: Text('${value!.length}'),
+            AsyncLoading(value: final value?, hasValue: true) => AuraText(
+              child: Text('${value.length}'),
             ),
             AsyncLoading() => const Center(child: AuraSpinner()),
             AsyncError() => const AuraText(
@@ -622,17 +628,19 @@ class _AppSkillToolsCard extends StatelessWidget {
               child: AuraColumn(
                 children: [
                   AuraText(
-                    child: tool.titleKey == null
-                        ? Text(tool.title)
-                        : TextLocale(tool.titleKey!),
+                    child: switch (tool.titleKey) {
+                      null => Text(tool.title),
+                      final titleKey => TextLocale(titleKey),
+                    },
                   ),
                   AuraText(
-                    child: tool.descriptionKey == null
-                        ? Text('${tool.slug}\n${tool.description}')
-                        : Text(
-                            '${tool.slug}\n'
-                            '${tool.descriptionKey!.tr(context: context)}',
-                          ),
+                    child: switch (tool.descriptionKey) {
+                      null => Text('${tool.slug}\n${tool.description}'),
+                      final descriptionKey => Text(
+                        '${tool.slug}\n'
+                        '${descriptionKey.tr(context: context)}',
+                      ),
+                    },
                     color: AuraColorVariant.onSurfaceVariant,
                   ),
                 ],

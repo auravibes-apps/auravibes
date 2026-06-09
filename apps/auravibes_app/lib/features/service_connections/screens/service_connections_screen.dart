@@ -27,8 +27,8 @@ class ServiceConnectionsScreen extends ConsumerWidget {
     return AuraScreen(
       child: switch (connectionsAsync) {
         AsyncData(:final value) => _ConnectionsList(connections: value),
-        AsyncLoading(:final value, hasValue: true) => _ConnectionsList(
-          connections: value!,
+        AsyncLoading(value: final value?, hasValue: true) => _ConnectionsList(
+          connections: value,
         ),
         AsyncLoading() => const Center(child: AuraSpinner()),
         AsyncError() => const Center(

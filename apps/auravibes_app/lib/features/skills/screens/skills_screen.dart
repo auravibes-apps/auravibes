@@ -185,13 +185,14 @@ class _SkillTile extends StatelessWidget {
         child: AuraColumn(
           children: [
             AuraText(
-              child: skill.titleKey == null
-                  ? Text(skill.title)
-                  : TextLocale(skill.titleKey!),
+              child: switch (skill.titleKey) {
+                null => Text(skill.title),
+                final titleKey => TextLocale(titleKey),
+              },
             ),
-            if (skill.descriptionKey != null)
+            if (skill.descriptionKey case final descriptionKey?)
               AuraText(
-                child: TextLocale(skill.descriptionKey!),
+                child: TextLocale(descriptionKey),
                 color: AuraColorVariant.onSurfaceVariant,
               )
             else if (skill.description.isNotEmpty)

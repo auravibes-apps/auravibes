@@ -73,14 +73,14 @@ class SkillTemplateToolsRepositoryImpl implements SkillTemplateToolsRepository {
           toolId,
           SkillTemplateToolsCompanion(
             updatedAt: Value(DateTime.now()),
-            title: tool.title == null
-                ? const Value.absent()
-                : Value(
-                    tool.title!.trim(),
-                  ),
-            description: tool.description == null
-                ? const Value.absent()
-                : Value(tool.description!.trim()),
+            title: switch (tool.title) {
+              null => const Value.absent(),
+              final title => Value(title.trim()),
+            },
+            description: switch (tool.description) {
+              null => const Value.absent(),
+              final description => Value(description.trim()),
+            },
             templateJson: Value.absentIfNull(tool.templateJson),
             inputsJson: Value.absentIfNull(tool.inputsJson),
             requiresCredential: Value.absentIfNull(tool.requiresCredential),
