@@ -28,6 +28,10 @@ plugins:
       avoid-shrink-wrap-in-lists: true
       avoid-substring: true
       avoid-throw-in-catch-block: true
+      avoid-top-level-members-in-tests:
+        include:
+          - test/**
+          - "**/test/**"
       avoid-unnecessary-type-assertions: true
       avoid-unnecessary-type-casts: true
       avoid-unrelated-type-assertions: true
