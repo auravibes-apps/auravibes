@@ -88,9 +88,10 @@ class ValidateSkillTemplateToolUsecase {
     )) {
       try {
         final _ = jsonDecode(rendered);
-      } on FormatException catch (error) {
-        throw FormatException(
-          'Rendered JSON body is invalid: ${error.message}',
+      } on FormatException catch (error, stackTrace) {
+        Error.throwWithStackTrace(
+          FormatException('Rendered JSON body is invalid: ${error.message}'),
+          stackTrace,
         );
       }
     }
@@ -159,8 +160,11 @@ class ValidateSkillTemplateToolUsecase {
   void _parseLiquid(String value) {
     try {
       final _ = _liquid.parse(value);
-    } on Object catch (error) {
-      throw FormatException('Invalid Liquid template: $error');
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        FormatException('Invalid Liquid template: $error'),
+        stackTrace,
+      );
     }
   }
 
@@ -185,8 +189,11 @@ class ValidateSkillTemplateToolUsecase {
               entry.key: 'credential-value',
         },
       });
-    } on Object catch (error) {
-      throw FormatException('Liquid template render failed: $error');
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        FormatException('Liquid template render failed: $error'),
+        stackTrace,
+      );
     }
   }
 

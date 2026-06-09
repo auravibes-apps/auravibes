@@ -69,9 +69,10 @@ class ResolveSkillUrlTemplateUsecase {
 
     try {
       return jsonEncode(jsonDecode(rendered));
-    } on FormatException catch (error) {
-      throw FormatException(
-        'Rendered JSON body is invalid: ${error.message}',
+    } on FormatException catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        FormatException('Rendered JSON body is invalid: ${error.message}'),
+        stackTrace,
       );
     }
   }
@@ -86,8 +87,11 @@ class ResolveSkillUrlTemplateUsecase {
   String _render(String source, _TemplateContext context) {
     try {
       return _liquid.parse(source).render(context.values);
-    } on Object catch (error) {
-      throw FormatException('Liquid template render failed: $error');
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        FormatException('Liquid template render failed: $error'),
+        stackTrace,
+      );
     }
   }
 }
