@@ -211,7 +211,7 @@ void main() {
           type: WorkspaceType.local,
         ),
       );
-      await createSkillUsecase.call(
+      final _ = await createSkillUsecase.call(
         workspace.id,
         const SkillToCreate(
           kind: SkillKind.template,
@@ -505,7 +505,7 @@ void main() {
           content: 'Use <company> & account data.',
         ),
       );
-      await conversationSkillsRepository.setWorkspaceSkillLoaded(
+      final _ = await conversationSkillsRepository.setWorkspaceSkillLoaded(
         conversation.id,
         skill.id,
         isLoaded: true,
@@ -668,7 +668,7 @@ void main() {
             credentialDefinitionId: definition.id,
           ),
         );
-        await conversationSkillsRepository.setWorkspaceSkillLoaded(
+        final _ = await conversationSkillsRepository.setWorkspaceSkillLoaded(
           conversation.id,
           skill.id,
           isLoaded: true,
@@ -744,7 +744,7 @@ void main() {
           credentialDefinitionId: definition.id,
         ),
       );
-      await toolsRepository.createTool(
+      final _ = await toolsRepository.createTool(
         skill.id,
         SkillTemplateToolToCreate(
           templateType: SkillTemplateToolType.url,
@@ -775,7 +775,7 @@ void main() {
               '{"company_id":{"description":"Company id","type":"string"}}',
         ),
       );
-      await conversationSkillsRepository.setWorkspaceSkillLoaded(
+      final _ = await conversationSkillsRepository.setWorkspaceSkillLoaded(
         conversation.id,
         skill.id,
         isLoaded: true,
@@ -808,7 +808,7 @@ void main() {
         toolSlug: 'find_company',
         arguments: {'company_id': 'acme'},
       );
-      await skillCredentialsRepository.createCredential(
+      final _ = await skillCredentialsRepository.createCredential(
         workspace.id,
         SkillCredentialToCreate(
           credentialDefinitionId: definition.id,
@@ -882,7 +882,7 @@ void main() {
           isCredentialOptional: true,
         ),
       );
-      await toolsRepository.createTool(
+      final _ = await toolsRepository.createTool(
         skill.id,
         SkillTemplateToolToCreate(
           templateType: SkillTemplateToolType.url,
@@ -892,7 +892,7 @@ void main() {
           inputsJson: '{}',
         ),
       );
-      await toolsRepository.createTool(
+      final _ = await toolsRepository.createTool(
         skill.id,
         SkillTemplateToolToCreate(
           templateType: SkillTemplateToolType.url,
@@ -903,7 +903,7 @@ void main() {
           requiresCredential: true,
         ),
       );
-      await conversationSkillsRepository.setWorkspaceSkillLoaded(
+      final _ = await conversationSkillsRepository.setWorkspaceSkillLoaded(
         conversation.id,
         skill.id,
         isLoaded: true,
@@ -998,7 +998,7 @@ void main() {
           attributes: const {'api_key': 'secret-token'},
         ),
       );
-      await conversationSkillsRepository.setWorkspaceSkillLoaded(
+      final _ = await conversationSkillsRepository.setWorkspaceSkillLoaded(
         conversation.id,
         skill.id,
         isLoaded: true,
@@ -1462,7 +1462,7 @@ void main() {
           );
       expect((await stream.next).map((item) => item.title), [updated.title]);
 
-      await skillCredentialDefinitionsRepository.deleteDefinition(
+      final _ = await skillCredentialDefinitionsRepository.deleteDefinition(
         definition.id,
       );
       expect(await stream.next, isEmpty);
@@ -1516,7 +1516,7 @@ void main() {
           workspaceId: workspace.id,
         ),
       );
-      await conversationSkillsRepository.setAppSkillLoaded(
+      final _ = await conversationSkillsRepository.setAppSkillLoaded(
         conversation.id,
         'skills_manager',
         isLoaded: true,

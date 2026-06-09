@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-ignoring-return-values
-// Required: Tests execute streams for side effects.
 // ignore_for_file: avoid-non-null-assertion
 // Required: Tests assert decoded nullable protocol fields.
 // ignore_for_file: newline-before-return
@@ -107,7 +105,7 @@ void main() {
       ],
     );
 
-    await ai.generate<OpenAICompatReasoningOptions, Object?>(
+    final _ = await ai.generate<OpenAICompatReasoningOptions, Object?>(
       model: openAICompatReasoning.model('glm-4.5'),
       messages: [
         Message(
@@ -145,7 +143,7 @@ void main() {
       ],
     );
 
-    await ai.generate<OpenAICompatReasoningOptions, Object?>(
+    final _ = await ai.generate<OpenAICompatReasoningOptions, Object?>(
       model: openAICompatReasoning.model('glm-4.5'),
       messages: [
         Message(

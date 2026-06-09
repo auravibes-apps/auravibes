@@ -42,7 +42,7 @@ void main() {
       );
 
       await tester.tap(find.byType(AuraCheckbox));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(selectedValue, isTrue);
     });
@@ -64,7 +64,7 @@ void main() {
       );
 
       await tester.tap(find.byType(AuraCheckbox));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(selectedValue, isNull);
     });
@@ -108,7 +108,7 @@ void main() {
       );
 
       await tester.tap(find.byType(AuraCheckboxListTile));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(selectedValue, isTrue);
     });

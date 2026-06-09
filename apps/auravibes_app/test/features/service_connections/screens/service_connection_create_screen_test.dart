@@ -87,7 +87,7 @@ void main() {
         useFallbackTranslations: true,
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('Skill Credential'), findsOneWidget);
     expect(find.text('TheCatAPI Key'), findsOneWidget);

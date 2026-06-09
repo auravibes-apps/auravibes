@@ -176,7 +176,7 @@ class _ServiceConnectionCreateScreenState
         stackTrace,
       );
       if (!mounted) return;
-      showAuraSnackBar(
+      final _ = showAuraSnackBar(
         context: context,
         content: Text(
           LocaleKeys.skill_credentials_save_error.tr(context: context),

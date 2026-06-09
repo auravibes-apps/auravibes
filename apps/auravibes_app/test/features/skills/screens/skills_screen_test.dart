@@ -127,9 +127,9 @@ void main() {
     addTearDown(router.dispose);
 
     await tester.pumpWidget(buildRouterScreen(fixture.container, router));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     router.go('/workspaces/${fixture.workspace.id}/more/skills');
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('Workspace Skills'), findsOneWidget);
     expect(find.text('Write Summary'), findsOneWidget);
@@ -141,27 +141,27 @@ void main() {
     expect(find.byType(AuraSwitch), findsNWidgets(2));
 
     await tester.tap(find.text('Write Summary'));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('Editing ${fixture.skill.id}'), findsOneWidget);
 
     router.go('/workspaces/${fixture.workspace.id}/more/skills');
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     await tester.tap(find.byIcon(Icons.more_vert));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     await tester.tap(find.text('Edit'));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('Editing ${fixture.skill.id}'), findsOneWidget);
 
     router.go('/workspaces/${fixture.workspace.id}/more/skills');
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     await tester.tap(find.byIcon(Icons.more_vert));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     await tester.tap(find.text('Delete'));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('Delete skill'), findsOneWidget);
     expect(
@@ -173,7 +173,7 @@ void main() {
     );
 
     await tester.tap(find.widgetWithText(AuraButton, 'Delete'));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('Write Summary'), findsNothing);
   });

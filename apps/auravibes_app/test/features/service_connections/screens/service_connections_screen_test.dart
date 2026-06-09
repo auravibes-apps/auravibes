@@ -72,13 +72,13 @@ void main() {
     );
 
     await _pumpScreen(tester, container, workspace.id);
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('Main Token'), findsOneWidget);
     await tester.tap(find.byIcon(Icons.more_vert));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     await tester.tap(find.text('Delete'));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('Delete skill credential'), findsOneWidget);
     expect(
@@ -88,7 +88,7 @@ void main() {
       findsOneWidget,
     );
     await tester.tap(find.text('Delete').last);
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('Main Token'), findsNothing);
     final credentials = await credentialsRepository.getCredentialsForDefinition(
@@ -105,7 +105,7 @@ void main() {
         attributes: const {'token': 'secret-value'},
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('Second Token'), findsOneWidget);
 
@@ -117,7 +117,7 @@ void main() {
         attributes: {'token': 'secret-value'},
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('Stale Token'), findsOneWidget);
     expect(

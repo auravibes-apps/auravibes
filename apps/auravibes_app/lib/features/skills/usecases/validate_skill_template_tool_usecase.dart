@@ -87,7 +87,7 @@ class ValidateSkillTemplateToolUsecase {
       credentialDefinitions: credentialDefinitions,
     )) {
       try {
-        jsonDecode(rendered);
+        final _ = jsonDecode(rendered);
       } on FormatException catch (error) {
         throw FormatException(
           'Rendered JSON body is invalid: ${error.message}',
@@ -158,7 +158,7 @@ class ValidateSkillTemplateToolUsecase {
 
   void _parseLiquid(String value) {
     try {
-      _liquid.parse(value);
+      final _ = _liquid.parse(value);
     } on Object catch (error) {
       throw FormatException('Invalid Liquid template: $error');
     }

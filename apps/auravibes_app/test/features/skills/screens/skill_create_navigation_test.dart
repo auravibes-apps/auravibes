@@ -95,18 +95,18 @@ void main() {
         useFallbackTranslations: true,
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     await tester.tap(find.byIcon(Icons.add));
-    await tester.pumpAndSettle();
-    await tester.pump();
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
+    final _ = await tester.pump();
+    final _ = await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextFormField).at(0), 'Write Summary');
     await tester.enterText(find.byType(TextFormField).at(1), 'Summarize text');
     await tester.enterText(find.byType(TextFormField).at(2), 'Summarize text.');
     await tester.tap(find.byIcon(Icons.save_outlined));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('Unable to save skill'), findsNothing);
     expect(
@@ -121,8 +121,10 @@ void main() {
     ).getSkillByTitle(workspace.id, 'Write Summary');
     expect(skill?.credentialDefinitionId, null);
 
-    router.push('/workspaces/${workspace.id}/more/skills/${skill!.id}');
-    await tester.pumpAndSettle();
+    final _ = router.push(
+      '/workspaces/${workspace.id}/more/skills/${skill!.id}',
+    );
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('No credential definition'), findsOneWidget);
     expect(

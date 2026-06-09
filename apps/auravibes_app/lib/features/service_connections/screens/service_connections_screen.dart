@@ -44,7 +44,7 @@ class ServiceConnectionsScreen extends ConsumerWidget {
           AuraIconButton(
             icon: Icons.add,
             onPressed: () async {
-              await context.push<bool>(
+              final _ = await context.push<bool>(
                 '/workspaces/$workspaceId/more/service-connections/new',
               );
             },
@@ -243,7 +243,7 @@ class _ConnectionTile extends ConsumerWidget {
         stackTrace,
       );
       if (!context.mounted) return;
-      showAuraSnackBar(
+      final _ = showAuraSnackBar(
         context: context,
         content: const TextLocale(
           LocaleKeys.service_connections_delete_credential_error,

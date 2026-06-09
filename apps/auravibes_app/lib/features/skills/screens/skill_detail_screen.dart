@@ -346,7 +346,7 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
       didSave = true;
     } on Object {
       if (!context.mounted) return;
-      showAuraSnackBar(
+      final _ = showAuraSnackBar(
         context: context,
         content: Text(
           LocaleKeys.skills_screen_save_error.tr(context: context),
@@ -416,7 +416,7 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
       Navigator.of(context).pop();
     } on Object {
       if (!context.mounted) return;
-      showAuraSnackBar(
+      final _ = showAuraSnackBar(
         context: context,
         content: Text(
           LocaleKeys.skills_screen_save_error.tr(context: context),

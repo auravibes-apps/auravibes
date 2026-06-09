@@ -149,12 +149,12 @@ class _ServiceConnectionEditScreenState
         );
         for (final entry in attributes.entries) {
           if (entry.value.secret) {
-            _secretControllers.putIfAbsent(
+            final _ = _secretControllers.putIfAbsent(
               entry.key,
               TextEditingController.new,
             );
           } else {
-            _nonSecretControllers.putIfAbsent(
+            final _ = _nonSecretControllers.putIfAbsent(
               entry.key,
               () => TextEditingController(
                 text: credential.nonSecretAttributes[entry.key] ?? '',
@@ -175,7 +175,7 @@ class _ServiceConnectionEditScreenState
   ) async {
     setState(() => _isSaving = true);
     try {
-      await ref
+      final _ = await ref
           .read(skillCredentialsRepositoryProvider)
           .updateCredential(
             widget.connectionId,
@@ -196,7 +196,7 @@ class _ServiceConnectionEditScreenState
       Navigator.of(context).pop(true);
     } on Object {
       if (!context.mounted) return;
-      showAuraSnackBar(
+      final _ = showAuraSnackBar(
         context: context,
         content: const TextLocale(LocaleKeys.skill_credentials_save_error),
         variant: AuraSnackBarVariant.error,
@@ -212,7 +212,7 @@ class _ServiceConnectionEditScreenState
   ) async {
     setState(() => _isSaving = true);
     try {
-      await ref
+      final _ = await ref
           .read(modelConnectionRepositoryProvider)
           .updateModelConnection(
             widget.connectionId,
@@ -228,7 +228,7 @@ class _ServiceConnectionEditScreenState
       Navigator.of(context).pop(true);
     } on Object {
       if (!context.mounted) return;
-      showAuraSnackBar(
+      final _ = showAuraSnackBar(
         context: context,
         content: const TextLocale(
           LocaleKeys.service_connections_save_error,
@@ -404,7 +404,7 @@ class _SecretAttributeInput extends StatelessWidget {
               icon: Icons.clear,
               onPressed: () {
                 controller.clear();
-                clearedSecrets.add(name);
+                final _ = clearedSecrets.add(name);
                 onChanged();
               },
               tooltip: LocaleKeys.skill_credentials_clear_secret.tr(
@@ -415,7 +415,7 @@ class _SecretAttributeInput extends StatelessWidget {
       keyboardType: TextInputType.visiblePassword,
       obscureText: true,
       onChanged: (_) {
-        clearedSecrets.remove(name);
+        final _ = clearedSecrets.remove(name);
         onChanged();
       },
     );

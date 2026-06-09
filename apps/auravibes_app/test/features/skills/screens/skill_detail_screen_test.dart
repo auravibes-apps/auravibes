@@ -219,9 +219,9 @@ void main() {
     addTearDown(fixture.dispose);
 
     await tester.pumpWidget(buildScreen(fixture));
-    await tester.pumpAndSettle();
-    await tester.pump();
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
+    final _ = await tester.pump();
+    final _ = await tester.pumpAndSettle();
 
     expect(
       find.text(
@@ -244,12 +244,12 @@ void main() {
       workspaceId: selectedCredentialWorkspace.id,
       skillId: skillWithDefinition.id,
     );
-    await tester.pumpAndSettle();
-    await tester.pump();
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
+    final _ = await tester.pump();
+    final _ = await tester.pumpAndSettle();
     await pumpUntilFound(tester, find.byType(Scrollable));
     await tester.drag(find.byType(Scrollable).first, const Offset(0, -600));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('TheCatAPI Key'), findsOneWidget);
     expect(find.text('1 credential configured'), findsOneWidget);
@@ -260,12 +260,12 @@ void main() {
       workspaceId: selectedCredentialWorkspace.id,
       skillId: optionalSkill.id,
     );
-    await tester.pumpAndSettle();
-    await tester.pump();
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
+    final _ = await tester.pump();
+    final _ = await tester.pumpAndSettle();
     await pumpUntilFound(tester, find.byType(Scrollable));
     await tester.drag(find.byType(Scrollable).first, const Offset(0, -600));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(
       find.text(
@@ -280,12 +280,12 @@ void main() {
       workspaceId: staleCredentialWorkspace.id,
       skillId: skillWithStaleDefinition.id,
     );
-    await tester.pumpAndSettle();
-    await tester.pump();
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
+    final _ = await tester.pump();
+    final _ = await tester.pumpAndSettle();
     await pumpUntilFound(tester, find.byType(Scrollable));
     await tester.drag(find.byType(Scrollable).first, const Offset(0, -600));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('Credential definition not found'), findsOneWidget);
     expect(

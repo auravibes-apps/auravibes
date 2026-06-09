@@ -267,8 +267,10 @@ void main() {
 
         expect(result.name, 'Renamed Connection');
         expect(result.key, 'encrypted-key');
-        verifyNever(mockEncryptionService.encrypt(any));
-        verify(mockEncryptionService.decrypt('encrypted-key')).called(1);
+        final _ = verifyNever(mockEncryptionService.encrypt(any));
+        final _ = verify(
+          mockEncryptionService.decrypt('encrypted-key'),
+        ).called(1);
       });
 
       test('encrypts replacement key', () async {
@@ -299,8 +301,10 @@ void main() {
 
         expect(result.key, 'encrypted-new-key');
         expect(result.keySuffix, '123456');
-        verifyNever(mockEncryptionService.decrypt(any));
-        verify(mockEncryptionService.encrypt('new-api-key-123456')).called(1);
+        final _ = verifyNever(mockEncryptionService.decrypt(any));
+        final _ = verify(
+          mockEncryptionService.encrypt('new-api-key-123456'),
+        ).called(1);
       });
 
       test('preserves url when url update is omitted', () async {

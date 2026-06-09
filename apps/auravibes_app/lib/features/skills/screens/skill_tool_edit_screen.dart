@@ -220,7 +220,7 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
                 fields: _queryFields,
                 onAdd: () => setState(() => _queryFields.add(_KeyValueField())),
                 onRemove: (field) => setState(() {
-                  _queryFields.remove(field);
+                  final _ = _queryFields.remove(field);
                   field.dispose();
                 }),
               ),
@@ -267,7 +267,7 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
                 fields: _inputFields,
                 onAdd: () => setState(() => _inputFields.add(_InputField())),
                 onRemove: (field) => setState(() {
-                  _inputFields.remove(field);
+                  final _ = _inputFields.remove(field);
                   field.dispose();
                 }),
                 onChanged: () => setState(() {}),
@@ -408,7 +408,7 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
       Navigator.of(context).pop(true);
     } on Object {
       if (!context.mounted) return;
-      showAuraSnackBar(
+      final _ = showAuraSnackBar(
         context: context,
         content: Text(LocaleKeys.skills_tool_save_error.tr(context: context)),
         variant: AuraSnackBarVariant.error,

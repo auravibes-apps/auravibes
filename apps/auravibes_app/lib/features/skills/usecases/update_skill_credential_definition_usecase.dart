@@ -40,7 +40,7 @@ class UpdateSkillCredentialDefinitionUsecase {
     }
     final attributesJson = definition.attributesJson;
     if (attributesJson != null) {
-      SkillCredentialAttributeDefinition.parseMap(attributesJson);
+      final _ = SkillCredentialAttributeDefinition.parseMap(attributesJson);
     }
     return _skillCredentialDefinitionsRepository.updateDefinition(
       definitionId,

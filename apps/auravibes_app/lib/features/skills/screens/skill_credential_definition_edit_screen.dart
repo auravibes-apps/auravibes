@@ -252,7 +252,7 @@ class _SkillCredentialDefinitionEditScreenState
       Navigator.of(context).pop();
     } on Object {
       if (!context.mounted) return;
-      showAuraSnackBar(
+      final _ = showAuraSnackBar(
         context: context,
         content: Text(
           LocaleKeys.skill_credentials_definitions_save_error.tr(
@@ -325,7 +325,7 @@ class _SkillCredentialDefinitionEditScreenState
       Navigator.of(context).pop();
     } on Object {
       if (!context.mounted) return;
-      showAuraSnackBar(
+      final _ = showAuraSnackBar(
         context: context,
         content: Text(
           LocaleKeys.skill_credentials_definitions_save_error.tr(
