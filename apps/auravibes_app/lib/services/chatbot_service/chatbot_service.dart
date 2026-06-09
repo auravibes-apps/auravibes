@@ -37,7 +37,7 @@ class ChatbotService {
   }) async* {
     final ai = await _providerFactory.createGenkit(chatProvider);
     final model = _providerFactory.getModelReference(chatProvider);
-    final config = _providerFactory.getGenerationConfig(chatProvider);
+    final config = _providerFactory.getGenerationConfig<Object?>(chatProvider);
 
     final genkitTools = _defineGenkitTools(ai, tools);
     final genkitHistory = history.map(_toGenkitMessage).toList();

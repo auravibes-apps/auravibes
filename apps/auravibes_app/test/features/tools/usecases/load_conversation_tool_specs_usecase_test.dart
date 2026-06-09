@@ -3,8 +3,6 @@
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: no-object-declaration
-// Required: Test fakes override noSuchMethod with Object return values.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 
@@ -32,7 +30,7 @@ class _FakeConversationToolsRepository extends ConversationToolsRepository {
   ) async => _tools;
 
   @override
-  Object? noSuchMethod(Invocation invocation) => throw UnimplementedError();
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
 class _FakeBuildCombinedToolSpecsUseCase extends BuildCombinedToolSpecsUseCase {
@@ -71,18 +69,18 @@ class _FakeBuildDynamicSkillToolSpecsUsecase
 
 class _NeverSkillsRepository extends SkillsRepository {
   @override
-  Object? noSuchMethod(Invocation invocation) => throw UnimplementedError();
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
 class _NeverConversationSkillsRepository extends ConversationSkillsRepository {
   @override
-  Object? noSuchMethod(Invocation invocation) => throw UnimplementedError();
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
 class _NeverAppSkillSettingsRepository
     extends AppSkillWorkspaceSettingsRepository {
   @override
-  Object? noSuchMethod(Invocation invocation) => throw UnimplementedError();
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
 class _CapturingRepo extends ConversationToolsRepository {
@@ -97,7 +95,7 @@ class _CapturingRepo extends ConversationToolsRepository {
   ) async => onGetTools(conversationId, workspaceId);
 
   @override
-  Object? noSuchMethod(Invocation invocation) => throw UnimplementedError();
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
 void main() {

@@ -3,8 +3,6 @@
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: no-object-declaration
-// Required: Test fakes override noSuchMethod with Object return values.
 // ignore_for_file: prefer-static-class
 // Required: Tests keep fixture helpers and fakes top-level.
 
@@ -92,17 +90,17 @@ class _FakeResolveToolApprovalDecisionUsecase
 
 class _NoOpConversationToolsRepository implements ConversationToolsRepository {
   @override
-  Object? noSuchMethod(Invocation invocation) => null;
+  Null noSuchMethod(Invocation invocation) => null;
 }
 
 class _NoOpToolsGroupsRepository implements ToolsGroupsRepository {
   @override
-  Object? noSuchMethod(Invocation invocation) => null;
+  Null noSuchMethod(Invocation invocation) => null;
 }
 
 class _NoOpWorkspaceToolsRepository implements WorkspaceToolsRepository {
   @override
-  Object? noSuchMethod(Invocation invocation) => null;
+  Null noSuchMethod(Invocation invocation) => null;
 }
 
 class _StreamingMessageRepository implements MessageRepository {
@@ -119,7 +117,7 @@ class _StreamingMessageRepository implements MessageRepository {
   ) => _controller.stream;
 
   @override
-  Object? noSuchMethod(Invocation invocation) => null;
+  Null noSuchMethod(Invocation invocation) => null;
 }
 
 @Dependencies([chatMessageIds, messageConversationById, pendingToolCalls])

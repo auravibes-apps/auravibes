@@ -151,9 +151,12 @@ void main() {
         supportsReasoning: true,
       );
 
-      expect(_generationConfigJson(factory.getGenerationConfig(config)), {
-        'thinking': {'type': 'enabled', 'budgetTokens': 1024},
-      });
+      expect(
+        _generationConfigJson(factory.getGenerationConfig<Object?>(config)),
+        {
+          'thinking': {'type': 'enabled', 'budgetTokens': 1024},
+        },
+      );
     });
 
     test('does not infer anthropic reasoning from known model ids', () {
@@ -162,7 +165,7 @@ void main() {
         modelId: 'claude-sonnet-4-5',
       );
 
-      expect(factory.getGenerationConfig(config), isNull);
+      expect(factory.getGenerationConfig<Object?>(config), isNull);
     });
 
     test(
@@ -181,7 +184,7 @@ void main() {
           );
 
           expect(
-            _generationConfigJson(factory.getGenerationConfig(config)),
+            _generationConfigJson(factory.getGenerationConfig<Object?>(config)),
             {
               'thinking': {'type': 'adaptive'},
             },
@@ -197,15 +200,18 @@ void main() {
         supportsReasoning: true,
       );
 
-      expect(_generationConfigJson(factory.getGenerationConfig(config)), {
-        'thinking': {'type': 'enabled', 'budgetTokens': 1024},
-      });
+      expect(
+        _generationConfigJson(factory.getGenerationConfig<Object?>(config)),
+        {
+          'thinking': {'type': 'enabled', 'budgetTokens': 1024},
+        },
+      );
     });
 
     test('does not enable thinking for non-reasoning anthropic models', () {
       final config = makeConfig(type: ModelProvidersType.anthropic);
 
-      expect(factory.getGenerationConfig(config), isNull);
+      expect(factory.getGenerationConfig<Object?>(config), isNull);
     });
 
     test('does not enable thinking for anthropic custom baseUrl', () {
@@ -215,7 +221,7 @@ void main() {
         connectionUrl: 'https://custom-proxy.example.com/v1',
       );
 
-      expect(factory.getGenerationConfig(config), isNull);
+      expect(factory.getGenerationConfig<Object?>(config), isNull);
     });
 
     test('enables thinking config for OpenAI-compatible reasoning models', () {
@@ -226,9 +232,12 @@ void main() {
         supportsReasoning: true,
       );
 
-      expect(_generationConfigJson(factory.getGenerationConfig(config)), {
-        'reasoning': {'type': 'enabled'},
-      });
+      expect(
+        _generationConfigJson(factory.getGenerationConfig<Object?>(config)),
+        {
+          'reasoning': {'type': 'enabled'},
+        },
+      );
     });
 
     test(
@@ -242,7 +251,7 @@ void main() {
         final ref = factory.getModelReference(config);
 
         expect(ref.name, 'openai/glm-4.5');
-        expect(factory.getGenerationConfig(config), isNull);
+        expect(factory.getGenerationConfig<Object?>(config), isNull);
       },
     );
   });

@@ -176,12 +176,22 @@ class ValidateSkillTemplateToolUsecase {
     Set<String> omittedInputKeys = const {},
     Set<String> omittedCredentialKeys = const {},
   }) {
+    Object? sampleInput(SkillTemplateInputDefinition definition) {
+      return switch (definition.type.trim().toLowerCase()) {
+        'array' => const ['sample'],
+        'boolean' => true,
+        'number' || 'integer' => 1,
+        'object' => const {'sample': 'value'},
+        _ => 'sample',
+      };
+    }
+
     try {
       return _liquid.parse(value).render({
         'input': {
           for (final entry in inputDefinitions.entries)
             if (!omittedInputKeys.contains(entry.key))
-              entry.key: _sampleInput(entry.value),
+              entry.key: sampleInput(entry.value),
         },
         'credential': {
           for (final entry in credentialDefinitions.entries)
@@ -242,16 +252,6 @@ class ValidateSkillTemplateToolUsecase {
       omittedInputKeys: optionalInputKeys.toSet(),
       omittedCredentialKeys: optionalCredentialKeys.toSet(),
     );
-  }
-
-  Object? _sampleInput(SkillTemplateInputDefinition definition) {
-    return switch (definition.type.trim().toLowerCase()) {
-      'array' => const ['sample'],
-      'boolean' => true,
-      'number' || 'integer' => 1,
-      'object' => const {'sample': 'value'},
-      _ => 'sample',
-    };
   }
 
   Iterable<_TemplateReference> _references(String value) {
