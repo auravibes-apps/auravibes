@@ -175,7 +175,7 @@ class _CheckboxVisual extends StatelessWidget {
       decoration: BoxDecoration(
         color: value ? activeColor : Colors.transparent,
         border: Border.all(color: borderColor, width: 2),
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: const BorderRadius.all(Radius.circular(4)),
       ),
       width: 24,
       height: 24,

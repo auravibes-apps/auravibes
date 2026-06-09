@@ -83,6 +83,7 @@ plugins:
       prefer-async-await: true
       prefer-commenting-analyzer-ignores: true
       prefer-conditional-expressions: true
+      prefer-const-border-radius: true
       prefer-correct-edge-insets-constructor: true
       prefer-first-or-null: true
       prefer-immediate-return: true
