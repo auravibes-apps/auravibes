@@ -1,4 +1,3 @@
-
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 

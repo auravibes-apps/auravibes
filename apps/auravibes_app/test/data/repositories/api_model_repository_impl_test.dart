@@ -1,4 +1,3 @@
-
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/api_model_providers_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/api_models_dao.dart';

@@ -1,4 +1,3 @@
-
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/data/repositories/conversation_tools_repository_impl.dart';

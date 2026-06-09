@@ -1,4 +1,3 @@
-
 // Required: Existing test and UI helpers keep compact return flow.
 
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';

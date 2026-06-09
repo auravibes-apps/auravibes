@@ -1,4 +1,3 @@
-
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';

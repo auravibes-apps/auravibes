@@ -1,4 +1,3 @@
-
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_manager_client.dart';

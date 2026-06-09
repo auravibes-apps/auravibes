@@ -1,4 +1,3 @@
-
 // Required: Widgetbook stories use intentional no-op callbacks.
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_ui/ui.dart';

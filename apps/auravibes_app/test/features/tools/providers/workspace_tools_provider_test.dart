@@ -1,4 +1,3 @@
-
 // Required: Existing test and UI helpers keep compact return flow.
 
 // ignore_for_file: provider_dependencies

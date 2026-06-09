@@ -1,4 +1,3 @@
-
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';

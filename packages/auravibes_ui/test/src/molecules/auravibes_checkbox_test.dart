@@ -1,4 +1,3 @@
-
 // Required: Tests use intentional no-op callbacks.
 
 import 'package:auravibes_ui/src/molecules/aura_checkbox.dart';

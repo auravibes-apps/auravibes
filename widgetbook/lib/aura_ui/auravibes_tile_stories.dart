@@ -1,4 +1,3 @@
-
 // Required: Widgetbook stories use intentional no-op callbacks.
 // Required: Existing code repeats lookups where extraction adds noise.
 // Required: Existing helpers remain top-level for local feature use.

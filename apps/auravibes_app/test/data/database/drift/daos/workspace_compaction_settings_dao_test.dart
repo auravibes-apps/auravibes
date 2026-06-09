@@ -1,4 +1,3 @@
-
 import 'dart:async';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';

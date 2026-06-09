@@ -1,4 +1,3 @@
-
 import 'dart:ui';
 
 import 'package:auravibes_app/services/app_log_buffer.dart';

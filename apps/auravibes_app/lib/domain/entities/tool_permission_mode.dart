@@ -1,4 +1,3 @@
-
 import 'package:auravibes_app/services/tools/native_tool_type.dart';
 import 'package:auravibes_app/services/tools/user_tool_type.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';

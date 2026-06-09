@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 
 import 'package:auravibes_app/services/encryption_service.dart';

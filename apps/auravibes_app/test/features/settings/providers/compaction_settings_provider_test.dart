@@ -1,4 +1,3 @@
-
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/domain/repositories/workspace_compaction_settings_repository.dart';
