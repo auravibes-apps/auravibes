@@ -193,7 +193,6 @@ class _AvailableToolsList extends StatelessWidget {
     }
 
     return ListView.separated(
-      shrinkWrap: true,
       padding: EdgeInsets.symmetric(
         horizontal: context.auraTheme.spacing.md,
       ),

@@ -127,7 +127,6 @@ class _GroupedToolsList extends StatelessWidget {
     }
 
     return ListView.builder(
-      shrinkWrap: true,
       padding: const EdgeInsets.all(DesignSpacing.md),
       itemBuilder: (context, index) {
         final group = groups[index];
