@@ -14,6 +14,7 @@ plugins:
       avoid-ignoring-return-values: true
       avoid-initializing-in-on-mount: true
       avoid-late-keyword: true
+      avoid-missing-enum-constant-in-map: true
       avoid-double-slash-imports: true
       avoid-duplicate-exports: true
       avoid-border-all: true
