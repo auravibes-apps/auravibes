@@ -2,8 +2,6 @@
 // Required: Existing thresholds and limits use numeric values.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 // ignore_for_file: prefer-extracting-callbacks
 // Required: UI callbacks stay local to their widgets.
 // ignore_for_file: prefer-moving-to-variable

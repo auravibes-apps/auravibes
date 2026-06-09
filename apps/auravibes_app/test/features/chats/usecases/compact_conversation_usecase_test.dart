@@ -1,8 +1,6 @@
 // ignore_for_file: avoid-top-level-members-in-tests
 // Required: Test files keep shared fixtures and helpers top-level.
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 // ignore_for_file: prefer-correct-type-name
 // Required: Test doubles mirror domain contract names.
 // ignore_for_file: prefer-static-class

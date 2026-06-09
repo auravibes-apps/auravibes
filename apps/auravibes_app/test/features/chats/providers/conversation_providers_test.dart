@@ -1,6 +1,3 @@
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';

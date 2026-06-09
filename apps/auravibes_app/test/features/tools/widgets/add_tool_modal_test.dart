@@ -1,7 +1,5 @@
 // ignore_for_file: avoid-returning-widgets
 // Required: Widget tests use helpers that build widgets under test.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 // ignore_for_file: prefer-moving-to-variable
 // Required: Tests repeat finders and fixture lookups for clarity.
 // ignore_for_file: prefer-static-class

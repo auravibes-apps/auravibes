@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 import 'package:auravibes_app/features/settings/screens/more_screen.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:easy_localization/easy_localization.dart';

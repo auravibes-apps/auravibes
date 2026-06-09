@@ -1,6 +1,4 @@
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 import 'package:auravibes_app/domain/models/mcp_connection_view_status.dart';
 import 'package:auravibes_app/features/tools/models/conversation_tools_group_with_tools.dart';
 import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.dart';

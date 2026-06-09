@@ -1,9 +1,6 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
 
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-
 import 'dart:ui';
 
 import 'package:auravibes_app/services/app_log_buffer.dart';

@@ -2,8 +2,6 @@
 // Required: Existing thresholds and limits use numeric values.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 import 'package:auravibes_app/data/database/drift/daos/api_model_providers_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/api_models_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/app_skill_workspace_settings_dao.dart';

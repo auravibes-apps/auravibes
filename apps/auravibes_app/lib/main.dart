@@ -1,6 +1,3 @@
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/settings/notifiers/app_theme.dart';
 import 'package:auravibes_app/flavor.dart';

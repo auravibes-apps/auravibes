@@ -1,6 +1,3 @@
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-
 // ignore_for_file: cascade_invocations
 // Required: Test readability.
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';

@@ -1,9 +1,6 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
 
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
-
 // ignore_for_file: cascade_invocations
 
 import 'package:auravibes_app/features/workspaces/models/switch_status.dart';

@@ -1,7 +1,5 @@
 // ignore_for_file: avoid-returning-widgets
 // Required: Widgetbook stories use helper functions that return widgets.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 // ignore_for_file: prefer-moving-to-variable
 // Required: Existing code repeats lookups where extraction adds noise.
 // ignore_for_file: prefer-static-class

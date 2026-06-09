@@ -3,8 +3,6 @@
 // Required: Tests use protocol numeric fixtures.
 // ignore_for_file: member-ordering
 // Required: Test fakes keep related fields near constructors.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Tests mirror Genkit `ai` naming convention.
 // ignore_for_file: prefer-static-class
 // Required: Tests keep helper functions and fakes top-level.
 

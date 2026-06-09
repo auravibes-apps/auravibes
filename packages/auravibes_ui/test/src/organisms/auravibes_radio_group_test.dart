@@ -1,8 +1,6 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
 
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 import 'package:auravibes_ui/src/molecules/aura_radio_option.dart';
 import 'package:auravibes_ui/src/organisms/aura_radio_group.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';

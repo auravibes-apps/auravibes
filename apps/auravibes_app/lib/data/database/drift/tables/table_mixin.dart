@@ -1,5 +1,3 @@
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 // coverage:ignore-file
 // Required: Drift table DSL is unreachable at runtime.
 // (See api_models.dart).

@@ -3,8 +3,6 @@
 
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 // ignore_for_file: prefer-static-class
 // Required: Tests keep fixture helpers and fakes top-level.
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';

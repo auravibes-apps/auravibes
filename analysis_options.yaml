@@ -84,6 +84,27 @@ plugins:
       prefer-commenting-analyzer-ignores: true
       prefer-conditional-expressions: true
       prefer-const-border-radius: true
+      prefer-correct-identifier-length:
+        exceptions:
+          # Conventional IDs, handles, coordinates, channels, and loop names.
+          - a
+          - ai
+          - b
+          - db
+          - dx
+          - dy
+          - e
+          - g
+          - i
+          - id
+          - j
+          - k
+          - ok
+          - r
+          - ui
+          - x
+          - y
+          - z
       prefer-correct-edge-insets-constructor: true
       prefer-first-or-null: true
       prefer-immediate-return: true

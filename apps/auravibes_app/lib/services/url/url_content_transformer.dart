@@ -4,8 +4,6 @@
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // Required: Existing test and UI helpers keep compact return flow.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 // StringBuffer.write returns void, making cascades meaningless.
 // The _processTable method's for-loop bodies separate consecutive
 // buffer calls where cascading across control flow is misleading.

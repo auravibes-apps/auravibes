@@ -1,7 +1,5 @@
 // ignore_for_file: provider_dependencies
 // Required: widget tests override scoped providers directly.
-// ignore_for_file: prefer-correct-identifier-length
-// Required: Existing short identifiers follow callback and pattern APIs.
 // ignore_for_file: prefer-moving-to-variable
 // Required: Tests repeat finders and fixture lookups for clarity.
 
