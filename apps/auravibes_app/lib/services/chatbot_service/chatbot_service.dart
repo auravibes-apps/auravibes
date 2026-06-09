@@ -258,8 +258,8 @@ class ChatbotService {
       processedTitle = processedTitle.withoutEdgeCharacters();
     }
     if (processedTitle.length > 1 &&
-        processedTitle.startsWith("'") &&
-        processedTitle.endsWith("'")) {
+        processedTitle.startsWith(String.fromCharCode(39)) &&
+        processedTitle.endsWith(String.fromCharCode(39))) {
       processedTitle = processedTitle.withoutEdgeCharacters();
     }
     if (processedTitle.startsWith('Title:')) {

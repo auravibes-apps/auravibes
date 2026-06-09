@@ -477,8 +477,8 @@ String _stripQuotes(String title) {
     processed = processed.withoutEdgeCharacters();
   }
   if (processed.length > 1 &&
-      processed.startsWith("'") &&
-      processed.endsWith("'")) {
+      processed.startsWith(String.fromCharCode(39)) &&
+      processed.endsWith(String.fromCharCode(39))) {
     processed = processed.withoutEdgeCharacters();
   }
 
@@ -503,8 +503,8 @@ String _processTitle(String title) {
     processed = processed.withoutEdgeCharacters();
   }
   if (processed.length > 1 &&
-      processed.startsWith("'") &&
-      processed.endsWith("'")) {
+      processed.startsWith(String.fromCharCode(39)) &&
+      processed.endsWith(String.fromCharCode(39))) {
     processed = processed.withoutEdgeCharacters();
   }
   if (processed.startsWith('Title:')) {

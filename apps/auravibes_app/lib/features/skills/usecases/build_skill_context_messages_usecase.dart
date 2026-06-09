@@ -41,7 +41,7 @@ class BuildSkillContextMessagesUsecase {
         .replaceAll('<', '&lt;')
         .replaceAll('>', '&gt;')
         .replaceAll('"', '&quot;')
-        .replaceAll("'", '&apos;');
+        .replaceAll(String.fromCharCode(39), '&apos;');
   }
 }
 

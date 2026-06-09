@@ -147,6 +147,7 @@ plugins:
       prefer-media-query-direct-access: true
       prefer-named-record-fields: true
       prefer-provide-intl-description: true
+      prefer-single-quotes: true
       prefer-trailing-comma: true
       tag-name: true
 
