@@ -10,8 +10,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: no-empty-block
 // Required: Animation listener uses empty setState to rebuild.
-// ignore_for_file: always-remove-listener
-// Required: Listener is removed through nullable controller field in dispose.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
 // ignore_for_file: prefer-moving-to-variable
@@ -241,14 +239,11 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
   void initState() {
     super.initState();
     _isOpen = false; // initially closed
-    final controller = AnimationController(
+    _controller = AnimationController(
       duration: widget.animationDuration,
       vsync: this,
     );
-    _controller = controller;
-    controller.addListener(
-      _handleControllerTick,
-    ); // ignore: always-remove-listener - Removed in dispose via field.
+    _requiredController.addListener(_handleControllerTick);
     widget.controller._state = this;
   }
 
@@ -704,7 +699,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
   @override
   void dispose() {
     widget.controller._state = null;
-    _controller?.removeListener(_handleControllerTick);
+    _requiredController.removeListener(_handleControllerTick);
     _controller?.dispose();
     super.dispose();
   }

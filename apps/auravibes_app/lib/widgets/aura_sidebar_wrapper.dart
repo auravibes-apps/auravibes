@@ -8,8 +8,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-correct-identifier-length
 // Required: Existing short identifiers follow callback and pattern APIs.
-// ignore_for_file: always-remove-listener
-// Required: Listener is removed through nullable router field in dispose.
 // ignore_for_file: prefer-extracting-callbacks
 // Required: UI callbacks stay local to their widgets.
 // ignore_for_file: prefer-single-widget-per-file
@@ -187,7 +185,7 @@ class _AppWithResponsiveDrawerState extends State<AppWithResponsiveDrawer> {
     final router = GoRouter.of(context);
     _router = router;
     _previousRoute = router.routeInformationProvider.value.uri;
-    router.routeInformationProvider.addListener(_onRouteChanged);
+    _requiredRouter.routeInformationProvider.addListener(_onRouteChanged);
   }
 
   void _onRouteChanged() {
@@ -203,7 +201,7 @@ class _AppWithResponsiveDrawerState extends State<AppWithResponsiveDrawer> {
 
   @override
   void dispose() {
-    _router?.routeInformationProvider.removeListener(_onRouteChanged);
+    _requiredRouter.routeInformationProvider.removeListener(_onRouteChanged);
     super.dispose();
   }
 
