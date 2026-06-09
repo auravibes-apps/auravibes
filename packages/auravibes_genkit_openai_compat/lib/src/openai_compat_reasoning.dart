@@ -1,5 +1,3 @@
-// ignore_for_file: prefer-match-file-name
-// Required: This internal package keeps its small provider API in one file.
 // ignore_for_file: member-ordering
 // Required: DTO fields stay grouped with their constructors.
 // Required: Parser helpers keep compact return flow.

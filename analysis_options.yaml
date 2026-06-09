@@ -117,6 +117,27 @@ plugins:
       prefer-define-hero-tag: true
       prefer-enums-by-name: true
       prefer-first: true
+      prefer-match-file-name:
+        ignore-typedefs: true
+        exclude:
+          - test/**
+          - "**/test/**"
+          - "**/*.g.dart"
+          - "**/*.freezed.dart"
+          - "**/atoms.dart"
+          - "**/molecules.dart"
+          - "**/organisms.dart"
+          - "**/tokens.dart"
+          - "**/ui.dart"
+          - widgetbook/lib/aura_ui/**
+          - widgetbook/lib/knobs/**
+          - lib/aura_ui/**
+          - lib/knobs/**
+          - main.dart
+          - "**/main.dart"
+          - apps/auravibes_app/lib/main.dart
+          - apps/auravibes_app/lib/i18n/**
+          - apps/auravibes_app/web/**
       prefer-correct-edge-insets-constructor: true
       prefer-first-or-null: true
       prefer-immediate-return: true
@@ -209,32 +230,3 @@ linter:
     ##
     flutter_style_todos: false
     discarded_futures: false
-
-dart_code_linter:
-  rules:
-    # Keep only CLI-owned DCL rules here. Rules mirrored in the analyzer plugin
-    # diagnostics above are omitted to avoid duplicate analyzer + DCL reporting.
-    - prefer-match-file-name:
-        ignore-typedefs: true
-        exclude:
-          - test/**
-          - "**/test/**"
-          - "**/*.g.dart"
-          - "**/*.freezed.dart"
-          - "**/atoms.dart"
-          - "**/molecules.dart"
-          - "**/organisms.dart"
-          - "**/tokens.dart"
-          - "**/ui.dart"
-          - widgetbook/lib/aura_ui/**
-          - widgetbook/lib/knobs/**
-          - lib/aura_ui/**
-          - lib/knobs/**
-          - main.dart
-          - "**/main.dart"
-          - apps/auravibes_app/lib/main.dart
-          - apps/auravibes_app/lib/i18n/**
-          - apps/auravibes_app/web/**
-
-    # Disabled: enabling the full DCL preset on the existing codebase surfaces
-    # thousands of style-only changes across production, tests, and widgetbook.
