@@ -85,7 +85,7 @@ class _ServiceConnectionEditScreenState
               clearedSecrets: _clearedSecrets,
               isSaving: _isSaving,
               onChanged: () => setState(() {}),
-              onSave: () => _saveSkillCredential(context, state),
+              onSave: () => _saveSkillCredential(context),
             ),
             _ModelProviderEditState() => _ModelProviderEditForm(
               state: state,
@@ -94,7 +94,7 @@ class _ServiceConnectionEditScreenState
               urlController: _modelUrlController,
               isSaving: _isSaving,
               onChanged: () => setState(() {}),
-              onSave: () => _saveModelProvider(context, state),
+              onSave: () => _saveModelProvider(context),
             ),
           };
         },
@@ -169,10 +169,7 @@ class _ServiceConnectionEditScreenState
     _initialized = true;
   }
 
-  Future<void> _saveSkillCredential(
-    BuildContext context,
-    _SkillCredentialEditState state,
-  ) async {
+  Future<void> _saveSkillCredential(BuildContext context) async {
     setState(() => _isSaving = true);
     try {
       final _ = await ref
@@ -206,10 +203,7 @@ class _ServiceConnectionEditScreenState
     }
   }
 
-  Future<void> _saveModelProvider(
-    BuildContext context,
-    _ModelProviderEditState state,
-  ) async {
+  Future<void> _saveModelProvider(BuildContext context) async {
     setState(() => _isSaving = true);
     try {
       final _ = await ref

@@ -27,6 +27,7 @@ plugins:
       avoid-unnecessary-type-assertions: true
       avoid-unnecessary-type-casts: true
       avoid-unrelated-type-assertions: true
+      avoid-unused-parameters: true
       avoid-unnecessary-setstate: true
       avoid-double-slash-imports: true
       avoid-duplicate-exports: true

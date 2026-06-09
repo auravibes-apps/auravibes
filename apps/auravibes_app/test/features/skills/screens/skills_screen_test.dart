@@ -95,7 +95,7 @@ void main() {
     );
   }
 
-  GoRouter createRouter(String workspaceId) {
+  GoRouter createRouter() {
     return GoRouter(
       routes: [
         GoRoute(
@@ -123,7 +123,7 @@ void main() {
     tester,
   ) async {
     final fixture = await createFixture();
-    final router = createRouter(fixture.workspace.id);
+    final router = createRouter();
     addTearDown(router.dispose);
 
     await tester.pumpWidget(buildRouterScreen(fixture.container, router));

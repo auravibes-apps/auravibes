@@ -30,8 +30,8 @@ class SkillsScreen extends ConsumerWidget {
 
     return AuraScreen(
       child: switch (skillsAsync) {
-        AsyncData(:final value) => _buildBody(context, ref, value),
-        AsyncLoading(:final value?) => _buildBody(context, ref, value),
+        AsyncData(:final value) => _buildBody(ref, value),
+        AsyncLoading(:final value?) => _buildBody(ref, value),
         AsyncLoading() => const Center(child: AuraSpinner()),
         AsyncError() => const Center(
           child: AuraText(
@@ -44,7 +44,7 @@ class SkillsScreen extends ConsumerWidget {
         actions: [
           AuraIconButton(
             icon: Icons.add,
-            onPressed: () => _openCreateSkill(context, ref),
+            onPressed: () => _openCreateSkill(context),
             tooltip: LocaleKeys.skills_screen_create.tr(context: context),
           ),
         ],
@@ -56,11 +56,7 @@ class SkillsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildBody(
-    BuildContext context,
-    WidgetRef ref,
-    List<WorkspaceSkill> skills,
-  ) {
+  Widget _buildBody(WidgetRef ref, List<WorkspaceSkill> skills) {
     if (skills.isEmpty) {
       return const Center(
         child: AuraColumn(
@@ -87,7 +83,7 @@ class SkillsScreen extends ConsumerWidget {
         final skill = skills[index];
         return _SkillTile(
           skill: skill,
-          onOpen: () => _openSkill(context, ref, skill.id),
+          onOpen: () => _openSkill(context, skill.id),
           onDelete: () => _confirmDeleteSkill(context, ref, skill),
           onChanged: (value) => _setSkillEnabled(ref, skill, value),
         );
@@ -97,7 +93,7 @@ class SkillsScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _openCreateSkill(BuildContext context, WidgetRef ref) async {
+  Future<void> _openCreateSkill(BuildContext context) async {
     final container = ProviderScope.containerOf(context, listen: false);
     final result = await context.push<bool>(
       '/workspaces/$workspaceId/more/skills/new',
@@ -109,7 +105,6 @@ class SkillsScreen extends ConsumerWidget {
 
   Future<void> _openSkill(
     BuildContext context,
-    WidgetRef ref,
     String skillId,
   ) async {
     final container = ProviderScope.containerOf(context, listen: false);

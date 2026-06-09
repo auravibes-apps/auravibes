@@ -81,7 +81,7 @@ class _ServiceConnectionCreateScreenState
               },
             ),
           ),
-          Expanded(child: _buildSelectedForm(context)),
+          Expanded(child: _buildSelectedForm()),
         ],
       ),
       appBar: AuraAppBar(
@@ -94,7 +94,7 @@ class _ServiceConnectionCreateScreenState
     );
   }
 
-  Widget _buildSelectedForm(BuildContext context) {
+  Widget _buildSelectedForm() {
     return switch (_type) {
       ServiceConnectionCreateType.modelProvider => Padding(
         padding: const EdgeInsets.all(12),
