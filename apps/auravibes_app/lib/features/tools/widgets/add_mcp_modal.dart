@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: avoid-returning-widgets
-// Required: Existing helper builders return widgets.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: prefer-moving-to-variable
@@ -58,7 +56,7 @@ class AddMcpModal extends HookConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             // Header with close button.
-            _buildHeader(context),
+            const _AddMcpModalHeader(),
 
             // Error message.
             _ErrorBanner(workspaceId: workspaceId),
@@ -118,8 +116,13 @@ class AddMcpModal extends HookConsumerWidget {
       ),
     );
   }
+}
 
-  Widget _buildHeader(BuildContext context) {
+class _AddMcpModalHeader extends StatelessWidget {
+  const _AddMcpModalHeader();
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.all(context.auraTheme.spacing.md),
       decoration: BoxDecoration(

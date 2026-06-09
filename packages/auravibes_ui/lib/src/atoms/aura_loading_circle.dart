@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: UI tokens and layout use fixed design values.
-// ignore_for_file: avoid-returning-widgets
-// Required: Existing helper builders return widgets.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // Required: Existing test and UI helpers keep compact return flow.
@@ -112,6 +110,7 @@ class _AuraLoadingCircleState extends State<AuraLoadingCircle>
   Widget build(BuildContext context) {
     final itemSize = widget.itemSize ?? widget.size * 0.15;
     final itemCount = widget.itemCount ?? 12;
+    final itemBuilder = widget.itemBuilder;
 
     return Center(
       child: SizedBox.fromSize(
@@ -132,7 +131,18 @@ class _AuraLoadingCircleState extends State<AuraLoadingCircle>
                       end: 1,
                     ).animate(_requiredController),
                     child: SizedBox.fromSize(
-                      child: _itemBuilder(i),
+                      child:
+                          itemBuilder?.call(context, i) ??
+                          DecoratedBox(
+                            decoration: BoxDecoration(
+                              color:
+                                  context.auraColors.getColorOrNull(
+                                    widget.colorVariant,
+                                  ) ??
+                                  context.auraColors.primary,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
                       size: Size.square(itemSize),
                     ),
                   ),
@@ -142,22 +152,6 @@ class _AuraLoadingCircleState extends State<AuraLoadingCircle>
           }),
         ),
         size: Size.square(widget.size),
-      ),
-    );
-  }
-
-  Widget _itemBuilder(int index) {
-    final itemBuilder = widget.itemBuilder;
-    if (itemBuilder != null) {
-      return itemBuilder(context, index);
-    }
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color:
-            context.auraColors.getColorOrNull(widget.colorVariant) ??
-            context.auraColors.primary,
-        shape: BoxShape.circle,
       ),
     );
   }

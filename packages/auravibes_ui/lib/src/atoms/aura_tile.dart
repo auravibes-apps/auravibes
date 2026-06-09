@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: UI tokens and layout use fixed design values.
-// ignore_for_file: avoid-returning-widgets
-// Required: Existing helper builders return widgets.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // Required: Existing test and UI helpers keep compact return flow.
@@ -62,6 +60,47 @@ class AuraTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
     final auraTheme = context.auraTheme;
+    final loadingColor = _getLoadingColor(auraColors);
+    final leading = this.leading;
+    final trailing = this.trailing;
+    final tileChild = child;
+    final isChildEmpty =
+        tileChild is SizedBox && tileChild.width == 0 && tileChild.height == 0;
+    final Widget content;
+    if (isLoading) {
+      content = Center(
+        child: SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(loadingColor),
+            strokeWidth: 2,
+          ),
+        ),
+      );
+    } else if (isChildEmpty && leading != null && trailing == null) {
+      content = Center(child: leading);
+    } else {
+      content = Row(
+        children: [
+          if (leading != null) ...[
+            leading,
+            SizedBox(width: auraTheme.spacing.sm),
+          ],
+          Flexible(
+            fit: .tight,
+            child: DefaultTextStyle(
+              style: _getTextStyle(auraColors, auraTheme.typography),
+              child: child,
+            ),
+          ),
+          if (trailing != null) ...[
+            SizedBox(width: auraTheme.spacing.sm),
+            trailing,
+          ],
+        ],
+      );
+    }
 
     return SizedBox(
       width: double.infinity,
@@ -76,63 +115,13 @@ class AuraTile extends StatelessWidget {
               borderRadius: BorderRadius.circular(auraTheme.borderRadius.lg),
               boxShadow: _getBoxShadow(),
             ),
-            child: _buildContent(auraColors, auraTheme),
+            child: content,
             duration: auraTheme.animation.normal,
           ),
           onTap: enabled && !isLoading ? onTap : null,
           borderRadius: BorderRadius.circular(auraTheme.borderRadius.lg),
         ),
       ),
-    );
-  }
-
-  Widget _buildContent(AuraColorScheme colors, AuraTheme theme) {
-    final leading = this.leading;
-    final trailing = this.trailing;
-
-    if (isLoading) {
-      return Center(
-        child: SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(
-              _getLoadingColor(colors),
-            ),
-            strokeWidth: 2,
-          ),
-        ),
-      );
-    }
-
-    // Check if child is effectively empty (like SizedBox.shrink().).
-    final tileChild = child;
-    final isChildEmpty =
-        tileChild is SizedBox && tileChild.width == 0 && tileChild.height == 0;
-
-    if (isChildEmpty && leading != null && trailing == null) {
-      // Icon-only case: center the leading icon.
-      return Center(child: leading);
-    }
-
-    return Row(
-      children: [
-        if (leading != null) ...[
-          leading,
-          SizedBox(width: theme.spacing.sm),
-        ],
-        Flexible(
-          fit: .tight,
-          child: DefaultTextStyle(
-            style: _getTextStyle(colors, theme.typography),
-            child: child,
-          ),
-        ),
-        if (trailing != null) ...[
-          SizedBox(width: theme.spacing.sm),
-          trailing,
-        ],
-      ],
     );
   }
 

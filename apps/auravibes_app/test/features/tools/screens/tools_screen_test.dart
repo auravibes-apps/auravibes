@@ -34,7 +34,7 @@ void main() {
     testWidgets('renders ToolsScreen', (tester) async {
       await tester.runAsync(() async {
         await tester.pumpWidget(
-          testableApp(
+          TestableApp(
             child: Theme(
               data: ThemeData(extensions: [AuraTheme.light]),
               child: const ToolsScreen(workspaceId: 'test-ws'),
@@ -59,7 +59,7 @@ void main() {
     testWidgets('back button pops ToolsScreen route', (tester) async {
       await tester.runAsync(() async {
         await tester.pumpWidget(
-          testableApp(
+          TestableApp(
             child: Navigator(
               pages: [
                 const MaterialPage<void>(child: Placeholder()),

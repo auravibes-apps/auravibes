@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: UI tokens and layout use fixed design values.
-// ignore_for_file: avoid-returning-widgets
-// Required: Existing helper builders return widgets.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // Required: Existing test and UI helpers keep compact return flow.
@@ -145,35 +143,32 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
 
   void _unfocus() => _requiredFocusNode.unfocus();
 
-  Widget _getDisplayText() {
-    final value = widget.value;
-    if (value == null) {
-      final placeholder = widget.placeholder;
-      if (placeholder != null) {
-        return AuraText(
-          child: placeholder,
-          color: AuraColorVariant.onSurfaceVariant,
-        );
-      }
-
-      return const Text('');
-    }
-
-    final selectedOption = widget.options.firstWhere(
-      (option) => option.value == value,
-      orElse: () => AuraDropdownOption<T>(
-        value: value,
-        child: const Text(''),
-      ),
-    );
-
-    return selectedOption.child ?? const Text('');
-  }
-
   @override
   Widget build(BuildContext context) {
     final hasError = widget.error != null;
     final state = hasError ? AuraFieldState.error : AuraFieldState.normal;
+    final value = widget.value;
+    final selectedOption = value == null
+        ? null
+        : widget.options.firstWhere(
+            (option) => option.value == value,
+            orElse: () => AuraDropdownOption<T>(
+              value: value,
+              child: const Text(''),
+            ),
+          );
+    final placeholder = widget.placeholder;
+    final Widget displayText;
+    if (value != null) {
+      displayText = selectedOption?.child ?? const Text('');
+    } else if (placeholder != null) {
+      displayText = AuraText(
+        child: placeholder,
+        color: AuraColorVariant.onSurfaceVariant,
+      );
+    } else {
+      displayText = const Text('');
+    }
 
     return FocusScope(
       child: Focus(
@@ -209,7 +204,7 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
                 ),
                 child: Row(
                   children: [
-                    Expanded(child: AuraText(child: _getDisplayText())),
+                    Expanded(child: AuraText(child: displayText)),
                     const SizedBox(width: DesignSpacing.sm),
                     AuraIcon(
                       _isDropdownOpen

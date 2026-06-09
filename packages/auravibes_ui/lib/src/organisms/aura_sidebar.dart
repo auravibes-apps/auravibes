@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: UI tokens and layout use fixed design values.
-// ignore_for_file: avoid-returning-widgets
-// Required: Existing helper builders return widgets.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // Required: Existing test and UI helpers keep compact return flow.
@@ -58,6 +56,44 @@ class AuraSidebar extends StatelessWidget {
   Widget build(BuildContext context) {
     final header = this.header;
     final footer = this.footer;
+    final navigation = Column(
+      children: List.generate(navigationItems.length, (currentIndex) {
+        final item = navigationItems[currentIndex];
+        if (item.footer) return null;
+
+        return AuraPadding(
+          child: _AuraSidebarItem(
+            label: isExpanded ? item.label : const SizedBox.shrink(),
+            icon: item.icon,
+            onTap: () => onNavigationTap(currentIndex),
+            selected: currentIndex == selectedIndex,
+          ),
+          padding: const .symmetric(
+            horizontal: .sm,
+            vertical: .xs,
+          ),
+        );
+      }).whereType<Widget>().toList(),
+    );
+    final footerNavigation = Column(
+      children: List.generate(navigationItems.length, (currentIndex) {
+        final item = navigationItems[currentIndex];
+        if (!item.footer) return null;
+
+        return AuraPadding(
+          child: _AuraSidebarItem(
+            label: isExpanded ? item.label : const SizedBox.shrink(),
+            icon: item.icon,
+            onTap: () => onNavigationTap(currentIndex),
+            selected: currentIndex == selectedIndex,
+          ),
+          padding: const .symmetric(
+            horizontal: .sm,
+            vertical: .xs,
+          ),
+        );
+      }).whereType<Widget>().toList(),
+    );
 
     return Container(
       decoration: BoxDecoration(
@@ -79,13 +115,13 @@ class AuraSidebar extends StatelessWidget {
       child: Column(
         children: [
           if (header != null)
-            _buildHeaderSection(header)
+            header
           else
             SizedBox(height: context.auraTheme.spacing.lg),
           Expanded(
             child: ListView(
               children: [
-                _buildNavigationItems(),
+                navigation,
                 ?middleSection,
               ],
             ),
@@ -93,47 +129,16 @@ class AuraSidebar extends StatelessWidget {
           SafeArea(
             top: false,
             right: false,
-            child: _buildNavigationItems(footer: true),
+            child: footerNavigation,
           ),
 
-          if (footer != null) _buildFooterSection(context, footer),
+          if (footer != null)
+            Padding(
+              padding: EdgeInsets.all(context.auraTheme.spacing.sm),
+              child: footer,
+            ),
         ],
       ),
-    );
-  }
-
-  Widget _buildHeaderSection(Widget header) {
-    return header;
-  }
-
-  Widget _buildNavigationItems({
-    bool footer = false,
-  }) {
-    return Column(
-      children: List.generate(navigationItems.length, (currentIndex) {
-        final item = navigationItems[currentIndex];
-        if (item.footer != footer) return null;
-
-        return AuraPadding(
-          child: _AuraSidebarItem(
-            label: isExpanded ? item.label : const SizedBox.shrink(),
-            icon: item.icon,
-            onTap: () => onNavigationTap(currentIndex),
-            selected: currentIndex == selectedIndex,
-          ),
-          padding: const .symmetric(
-            horizontal: .sm,
-            vertical: .xs,
-          ),
-        );
-      }).whereType<Widget>().toList(),
-    );
-  }
-
-  Widget _buildFooterSection(BuildContext context, Widget footer) {
-    return Padding(
-      padding: EdgeInsets.all(context.auraTheme.spacing.sm),
-      child: footer,
     );
   }
 }

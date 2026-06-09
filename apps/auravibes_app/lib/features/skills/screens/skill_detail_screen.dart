@@ -74,9 +74,77 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
     final userSkillDetail = currentDetail != null && currentDetail.isUserSkill
         ? currentDetail
         : null;
+    final child = detailAsync == null
+        ? _SkillDetailForm(
+            detail: null,
+            workspaceId: widget.workspaceId,
+            titleController: _titleController,
+            descriptionController: _descriptionController,
+            contentController: _contentController,
+            credentialDefinitionId: _credentialDefinitionId,
+            isCredentialOptional: _isCredentialOptional,
+            isEnabled: _isEnabled,
+            isSaving: _isSaving,
+            onCredentialDefinitionChanged: _setCredentialDefinition,
+            onCredentialOptionalChanged: (value) =>
+                setState(() => _isCredentialOptional = value),
+            onEnabledChanged: (value) => setState(() => _isEnabled = value),
+            onSave: () => _save(context),
+          )
+        : switch (detailAsync) {
+            AsyncData(value: null) => const Center(
+              child: TextLocale(LocaleKeys.skills_screen_not_found),
+            ),
+            AsyncData(value: final detail?) => () {
+              _initializeForm(context, detail);
+
+              return _SkillDetailForm(
+                detail: detail,
+                workspaceId: widget.workspaceId,
+                titleController: _titleController,
+                descriptionController: _descriptionController,
+                contentController: _contentController,
+                credentialDefinitionId: _credentialDefinitionId,
+                isCredentialOptional: _isCredentialOptional,
+                isEnabled: _isEnabled,
+                isSaving: _isSaving,
+                onCredentialDefinitionChanged: _setCredentialDefinition,
+                onCredentialOptionalChanged: (value) =>
+                    setState(() => _isCredentialOptional = value),
+                onEnabledChanged: (value) => setState(() => _isEnabled = value),
+                onSave: () => _save(context),
+              );
+            }(),
+            AsyncLoading() when currentDetail != null => () {
+              _initializeForm(context, currentDetail);
+
+              return _SkillDetailForm(
+                detail: currentDetail,
+                workspaceId: widget.workspaceId,
+                titleController: _titleController,
+                descriptionController: _descriptionController,
+                contentController: _contentController,
+                credentialDefinitionId: _credentialDefinitionId,
+                isCredentialOptional: _isCredentialOptional,
+                isEnabled: _isEnabled,
+                isSaving: _isSaving,
+                onCredentialDefinitionChanged: _setCredentialDefinition,
+                onCredentialOptionalChanged: (value) =>
+                    setState(() => _isCredentialOptional = value),
+                onEnabledChanged: (value) => setState(() => _isEnabled = value),
+                onSave: () => _save(context),
+              );
+            }(),
+            AsyncLoading() => const Center(
+              child: AuraSpinner(),
+            ),
+            AsyncError() => const Center(
+              child: TextLocale(LocaleKeys.skills_screen_load_error),
+            ),
+          };
 
     return AuraScreen(
-      child: _buildBody(context, detailAsync, currentDetail),
+      child: child,
       appBar: AuraAppBar(
         title: TextLocale(
           _isCreate
@@ -113,215 +181,6 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
         ),
       ),
     );
-  }
-
-  Widget _buildBody(
-    BuildContext context,
-    AsyncValue<SkillDetail?>? detailAsync,
-    SkillDetail? currentDetail,
-  ) {
-    if (detailAsync == null) {
-      return _buildForm(context, null);
-    }
-
-    return switch (detailAsync) {
-      AsyncData(:final value) => _buildLoadedBody(context, value),
-      AsyncLoading() when currentDetail != null => _buildForm(
-        context,
-        currentDetail,
-      ),
-      AsyncLoading() => const Center(
-        child: AuraSpinner(),
-      ),
-      AsyncError() => const Center(
-        child: TextLocale(LocaleKeys.skills_screen_load_error),
-      ),
-    };
-  }
-
-  Widget _buildLoadedBody(BuildContext context, SkillDetail? detail) {
-    if (detail == null) {
-      return const Center(
-        child: TextLocale(LocaleKeys.skills_screen_not_found),
-      );
-    }
-
-    return _buildForm(context, detail);
-  }
-
-  Widget _buildForm(BuildContext context, SkillDetail? detail) {
-    _initializeForm(context, detail);
-
-    final isReadOnly = detail != null && !detail.isUserSkill;
-
-    return ListView(
-      padding: const EdgeInsets.all(12),
-      children: [
-        _buildFormCard(context, detail, isReadOnly),
-        ..._buildToolSections(detail),
-      ],
-    );
-  }
-
-  Widget _buildFormCard(
-    BuildContext context,
-    SkillDetail? detail,
-    bool isReadOnly,
-  ) {
-    return AuraCard(
-      child: AuraColumn(
-        children: [
-          ..._buildReadOnlyFields(detail, isReadOnly),
-          _buildTitleInput(context, isReadOnly),
-          _buildDescriptionInput(context, isReadOnly),
-          _buildContentInput(context, isReadOnly),
-          _buildEnabledToggle(isReadOnly),
-          ..._buildCredentialFields(detail, isReadOnly),
-          ..._buildSaveActions(context, isReadOnly),
-        ],
-        spacing: AuraSpacing.md,
-        crossAxisAlignment: CrossAxisAlignment.start,
-      ),
-    );
-  }
-
-  List<Widget> _buildReadOnlyFields(SkillDetail? detail, bool isReadOnly) {
-    return [
-      if (isReadOnly)
-        const AuraText(
-          child: TextLocale(LocaleKeys.skills_screen_app_read_only),
-          color: AuraColorVariant.onSurfaceVariant,
-        ),
-      if (detail != null)
-        _ReadOnlyField(
-          labelKey: LocaleKeys.skills_screen_slug_label,
-          value: detail.slug,
-        ),
-    ];
-  }
-
-  Widget _buildTitleInput(BuildContext context, bool isReadOnly) {
-    return AuraInput(
-      controller: _titleController,
-      label: Text(
-        LocaleKeys.skills_screen_title_label.tr(context: context),
-      ),
-      enabled: !isReadOnly,
-    );
-  }
-
-  Widget _buildDescriptionInput(BuildContext context, bool isReadOnly) {
-    return AuraInput(
-      controller: _descriptionController,
-      label: Text(
-        LocaleKeys.skills_screen_description_label.tr(context: context),
-      ),
-      enabled: !isReadOnly,
-    );
-  }
-
-  Widget _buildContentInput(BuildContext context, bool isReadOnly) {
-    return AuraInput(
-      controller: _contentController,
-      label: Text(
-        LocaleKeys.skills_screen_content_label.tr(context: context),
-      ),
-      enabled: !isReadOnly,
-      minLines: 8,
-      maxLines: 16,
-    );
-  }
-
-  Widget _buildEnabledToggle(bool isReadOnly) {
-    return AuraRow(
-      children: [
-        AuraSwitch(
-          value: _isEnabled,
-          onChanged: isReadOnly
-              ? null
-              : (value) => setState(() => _isEnabled = value),
-          disabled: isReadOnly,
-        ),
-        const Expanded(
-          child: AuraText(
-            child: TextLocale(LocaleKeys.skills_screen_enabled_label),
-          ),
-        ),
-      ],
-      spacing: AuraSpacing.md,
-    );
-  }
-
-  List<Widget> _buildCredentialFields(SkillDetail? detail, bool isReadOnly) {
-    final canEdit = _isCreate || !isReadOnly;
-    final credentialDefinitionId = _credentialDefinitionId;
-
-    return [
-      if (canEdit)
-        _CredentialDefinitionSelector(
-          workspaceId: widget.workspaceId,
-          value: _credentialDefinitionId,
-          onChanged: _setCredentialDefinition,
-        ),
-      if (canEdit && _credentialDefinitionId != null)
-        AuraCheckboxListTile(
-          value: _isCredentialOptional,
-          onChanged: (value) {
-            setState(() => _isCredentialOptional = value);
-          },
-          title: const TextLocale(
-            LocaleKeys.skills_screen_credential_optional_label,
-          ),
-          subtitle: const TextLocale(
-            LocaleKeys.skills_screen_credential_optional_hint,
-          ),
-        ),
-      if (detail != null && credentialDefinitionId != null)
-        _SkillCredentialsHint(
-          workspaceId: widget.workspaceId,
-          credentialDefinitionId: credentialDefinitionId,
-          isCredentialOptional: _isCredentialOptional,
-        ),
-    ];
-  }
-
-  List<Widget> _buildSaveActions(BuildContext context, bool isReadOnly) {
-    final canSave = _isCreate || !isReadOnly;
-
-    return [
-      if (canSave)
-        Align(
-          alignment: Alignment.centerRight,
-          child: AuraButton(
-            onPressed: () => _save(context),
-            child: TextLocale(
-              _isCreate
-                  ? LocaleKeys.skills_screen_create
-                  : LocaleKeys.skills_screen_save,
-            ),
-            disabled: _isSaving,
-          ),
-        ),
-    ];
-  }
-
-  List<Widget> _buildToolSections(SkillDetail? detail) {
-    if (detail == null) return const [];
-    if (detail.isUserSkill) {
-      return [
-        const SizedBox(height: 12),
-        _SkillToolsCard(
-          workspaceId: widget.workspaceId,
-          skillId: detail.id,
-        ),
-      ];
-    }
-    if (detail.appTools.isEmpty) return const [];
-
-    return [
-      const SizedBox(height: 12),
-      _AppSkillToolsCard(tools: detail.appTools),
-    ];
   }
 
   void _setCredentialDefinition(String? value) {
@@ -459,6 +318,161 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
     ref.invalidate(workspaceSkillsProvider(widget.workspaceId));
     if (!context.mounted) return;
     Navigator.of(context).pop();
+  }
+}
+
+class _SkillDetailForm extends StatelessWidget {
+  const _SkillDetailForm({
+    required this.detail,
+    required this.workspaceId,
+    required this.titleController,
+    required this.descriptionController,
+    required this.contentController,
+    required this.credentialDefinitionId,
+    required this.isCredentialOptional,
+    required this.isEnabled,
+    required this.isSaving,
+    required this.onCredentialDefinitionChanged,
+    required this.onCredentialOptionalChanged,
+    required this.onEnabledChanged,
+    required this.onSave,
+  });
+
+  final SkillDetail? detail;
+  final String workspaceId;
+  final TextEditingController titleController;
+  final TextEditingController descriptionController;
+  final TextEditingController contentController;
+  final String? credentialDefinitionId;
+  final bool isCredentialOptional;
+  final bool isEnabled;
+  final bool isSaving;
+  final ValueChanged<String?> onCredentialDefinitionChanged;
+  final ValueChanged<bool> onCredentialOptionalChanged;
+  final ValueChanged<bool> onEnabledChanged;
+  final VoidCallback onSave;
+
+  @override
+  Widget build(BuildContext context) {
+    final detail = this.detail;
+    final isCreate = detail == null;
+    final isReadOnly = detail != null && !detail.isUserSkill;
+    final canEdit = isCreate || !isReadOnly;
+    final canSave = isCreate || !isReadOnly;
+    final credentialDefinitionId = this.credentialDefinitionId;
+
+    return ListView(
+      padding: const EdgeInsets.all(12),
+      children: [
+        AuraCard(
+          child: AuraColumn(
+            children: [
+              if (isReadOnly)
+                const AuraText(
+                  child: TextLocale(LocaleKeys.skills_screen_app_read_only),
+                  color: AuraColorVariant.onSurfaceVariant,
+                ),
+              if (detail != null)
+                _ReadOnlyField(
+                  labelKey: LocaleKeys.skills_screen_slug_label,
+                  value: detail.slug,
+                ),
+              AuraInput(
+                controller: titleController,
+                label: Text(
+                  LocaleKeys.skills_screen_title_label.tr(context: context),
+                ),
+                enabled: !isReadOnly,
+              ),
+              AuraInput(
+                controller: descriptionController,
+                label: Text(
+                  LocaleKeys.skills_screen_description_label.tr(
+                    context: context,
+                  ),
+                ),
+                enabled: !isReadOnly,
+              ),
+              AuraInput(
+                controller: contentController,
+                label: Text(
+                  LocaleKeys.skills_screen_content_label.tr(context: context),
+                ),
+                enabled: !isReadOnly,
+                minLines: 8,
+                maxLines: 16,
+              ),
+              AuraRow(
+                children: [
+                  AuraSwitch(
+                    value: isEnabled,
+                    onChanged: isReadOnly ? null : onEnabledChanged,
+                    disabled: isReadOnly,
+                  ),
+                  const Expanded(
+                    child: AuraText(
+                      child: TextLocale(LocaleKeys.skills_screen_enabled_label),
+                    ),
+                  ),
+                ],
+                spacing: AuraSpacing.md,
+              ),
+              if (canEdit)
+                _CredentialDefinitionSelector(
+                  workspaceId: workspaceId,
+                  value: credentialDefinitionId,
+                  onChanged: onCredentialDefinitionChanged,
+                ),
+              if (canEdit && credentialDefinitionId != null)
+                AuraCheckboxListTile(
+                  value: isCredentialOptional,
+                  onChanged: onCredentialOptionalChanged,
+                  title: const TextLocale(
+                    LocaleKeys.skills_screen_credential_optional_label,
+                  ),
+                  subtitle: const TextLocale(
+                    LocaleKeys.skills_screen_credential_optional_hint,
+                  ),
+                ),
+              if (detail != null && credentialDefinitionId != null)
+                _SkillCredentialsHint(
+                  workspaceId: workspaceId,
+                  credentialDefinitionId: credentialDefinitionId,
+                  isCredentialOptional: isCredentialOptional,
+                ),
+              if (canSave)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: AuraButton(
+                    onPressed: onSave,
+                    child: TextLocale(
+                      isCreate
+                          ? LocaleKeys.skills_screen_create
+                          : LocaleKeys.skills_screen_save,
+                    ),
+                    disabled: isSaving,
+                  ),
+                ),
+            ],
+            spacing: AuraSpacing.md,
+            crossAxisAlignment: CrossAxisAlignment.start,
+          ),
+        ),
+        if (detail != null && detail.isUserSkill) ...[
+          const SizedBox(height: 12),
+          _SkillToolsCard(
+            workspaceId: workspaceId,
+            skillId: detail.id,
+          ),
+        ],
+        if (detail != null &&
+            !detail.isUserSkill &&
+            detail.appTools.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _AppSkillToolsCard(tools: detail.appTools),
+        ],
+      ],
+    );
   }
 }
 
@@ -788,7 +802,11 @@ class _SkillCredentialsHint extends ConsumerWidget {
       (definition: AsyncData(value: null), credentials: _) =>
         const SizedBox.shrink(),
       (definition: AsyncData(), credentials: AsyncData(:final value)) =>
-        _buildLoadedCredentialsHint(context, value),
+        _LoadedCredentialsHint(
+          credentials: value,
+          isCredentialOptional: isCredentialOptional,
+          onCreateCredential: () => _openCredentialCreate(context),
+        ),
       (definition: AsyncLoading(), credentials: _) ||
       (definition: _, credentials: AsyncLoading()) => const AuraSpinner(
         size: AuraSpinnerSize.small,
@@ -799,56 +817,6 @@ class _SkillCredentialsHint extends ConsumerWidget {
         color: AuraColorVariant.error,
       ),
     };
-  }
-
-  Widget _buildLoadedCredentialsHint(
-    BuildContext context,
-    List<SkillCredentialEntity> credentials,
-  ) {
-    if (credentials.isEmpty) {
-      return _buildMissingCredentialHint(context);
-    }
-
-    final countKey = credentials.length == 1
-        ? LocaleKeys.skill_credentials_configured_count_one
-        : LocaleKeys.skill_credentials_configured_count_other;
-
-    return AuraText(
-      child: Text(
-        countKey.tr(
-          args: ['${credentials.length}'],
-          context: context,
-        ),
-      ),
-      color: AuraColorVariant.onSurfaceVariant,
-    );
-  }
-
-  Widget _buildMissingCredentialHint(BuildContext context) {
-    final hintKey = isCredentialOptional
-        ? LocaleKeys.skill_credentials_optional_missing_hint
-        : LocaleKeys.skill_credentials_missing_hint;
-    final color = isCredentialOptional
-        ? AuraColorVariant.onSurfaceVariant
-        : AuraColorVariant.error;
-
-    return Row(
-      children: [
-        Expanded(
-          child: AuraText(
-            child: TextLocale(hintKey),
-            color: color,
-          ),
-        ),
-        AuraButton(
-          onPressed: () => _openCredentialCreate(context),
-          child: const TextLocale(
-            LocaleKeys.skill_credentials_add_title,
-          ),
-          size: AuraButtonSize.small,
-        ),
-      ],
-    );
   }
 
   Future<void> _openCredentialCreate(BuildContext context) async {
@@ -901,6 +869,80 @@ class _SkillCredentialsHint extends ConsumerWidget {
         workspaceId,
         credentialDefinitionId,
       ),
+    );
+  }
+}
+
+class _LoadedCredentialsHint extends StatelessWidget {
+  const _LoadedCredentialsHint({
+    required this.credentials,
+    required this.isCredentialOptional,
+    required this.onCreateCredential,
+  });
+
+  final List<SkillCredentialEntity> credentials;
+  final bool isCredentialOptional;
+  final VoidCallback onCreateCredential;
+
+  @override
+  Widget build(BuildContext context) {
+    if (credentials.isEmpty) {
+      return _MissingCredentialHint(
+        isCredentialOptional: isCredentialOptional,
+        onCreateCredential: onCreateCredential,
+      );
+    }
+
+    final countKey = credentials.length == 1
+        ? LocaleKeys.skill_credentials_configured_count_one
+        : LocaleKeys.skill_credentials_configured_count_other;
+
+    return AuraText(
+      child: Text(
+        countKey.tr(
+          args: ['${credentials.length}'],
+          context: context,
+        ),
+      ),
+      color: AuraColorVariant.onSurfaceVariant,
+    );
+  }
+}
+
+class _MissingCredentialHint extends StatelessWidget {
+  const _MissingCredentialHint({
+    required this.isCredentialOptional,
+    required this.onCreateCredential,
+  });
+
+  final bool isCredentialOptional;
+  final VoidCallback onCreateCredential;
+
+  @override
+  Widget build(BuildContext context) {
+    final hintKey = isCredentialOptional
+        ? LocaleKeys.skill_credentials_optional_missing_hint
+        : LocaleKeys.skill_credentials_missing_hint;
+    final color = isCredentialOptional
+        ? AuraColorVariant.onSurfaceVariant
+        : AuraColorVariant.error;
+
+    return Row(
+      children: [
+        Expanded(
+          child: AuraText(
+            child: TextLocale(hintKey),
+            color: color,
+          ),
+        ),
+        AuraButton(
+          onPressed: onCreateCredential,
+          child: const TextLocale(
+            LocaleKeys.skill_credentials_add_title,
+          ),
+          size: AuraButtonSize.small,
+        ),
+      ],
     );
   }
 }

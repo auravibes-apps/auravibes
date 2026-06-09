@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: avoid-returning-widgets
-// Required: Existing helper builders return widgets.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // Required: Existing test and UI helpers keep compact return flow.
@@ -39,12 +37,21 @@ class WorkspaceManagementScreen extends HookConsumerWidget {
 
     return AuraScreen(
       child: switch (workspacesAsync) {
-        AsyncData(:final value) => _buildBody(context, ref, value, modeState),
-        AsyncLoading(:final value?) => _buildBody(
-          context,
-          ref,
-          value,
-          modeState,
+        AsyncData(:final value) => _WorkspaceManagementBody(
+          workspaces: value,
+          modeState: modeState,
+          activeWorkspaceId: workspaceId,
+          onCreateWorkspace: _createWorkspace,
+          onEditWorkspace: _editWorkspace,
+          onDeleteWorkspace: _confirmDelete,
+        ),
+        AsyncLoading(:final value?) => _WorkspaceManagementBody(
+          workspaces: value,
+          modeState: modeState,
+          activeWorkspaceId: workspaceId,
+          onCreateWorkspace: _createWorkspace,
+          onEditWorkspace: _editWorkspace,
+          onDeleteWorkspace: _confirmDelete,
         ),
         AsyncLoading() => const Center(child: CircularProgressIndicator()),
         AsyncError() => const Center(
@@ -61,42 +68,6 @@ class WorkspaceManagementScreen extends HookConsumerWidget {
         ),
       ),
     );
-  }
-
-  Widget _buildBody(
-    BuildContext context,
-    WidgetRef ref,
-    List<WorkspaceEntity> workspaces,
-    WorkspaceManagementState modeState,
-  ) {
-    final mode = modeState.mode;
-
-    return mode == ManagementMode.create
-        ? _CreateWorkspaceForm(
-            onCancel: () => ref
-                .read(workspaceManagementModeProvider.notifier)
-                .setMode(ManagementMode.list),
-            onSubmit: (name) => _createWorkspace(context, ref, name),
-          )
-        : _WorkspaceList(
-            workspaces: workspaces,
-            activeWorkspaceId: workspaceId,
-            onEdit: (workspace) => ref
-                .read(workspaceManagementModeProvider.notifier)
-                .setMode(
-                  ManagementMode.edit,
-                  editingWorkspace: workspace,
-                ),
-            onDelete: (id) => _confirmDelete(context, ref, id, workspaces),
-            onStartCreate: () => ref
-                .read(workspaceManagementModeProvider.notifier)
-                .setMode(ManagementMode.create),
-            onSaveEdit: (id, name) => _editWorkspace(context, ref, id, name),
-            onCancelEdit: () => ref
-                .read(workspaceManagementModeProvider.notifier)
-                .clearEditing(),
-            editingWorkspace: modeState.editingWorkspace,
-          );
   }
 
   Future<void> _createWorkspace(
@@ -213,6 +184,69 @@ class WorkspaceManagementScreen extends HookConsumerWidget {
     final _ = ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
+  }
+}
+
+class _WorkspaceManagementBody extends ConsumerWidget {
+  const _WorkspaceManagementBody({
+    required this.workspaces,
+    required this.modeState,
+    required this.activeWorkspaceId,
+    required this.onCreateWorkspace,
+    required this.onEditWorkspace,
+    required this.onDeleteWorkspace,
+  });
+
+  final List<WorkspaceEntity> workspaces;
+  final WorkspaceManagementState modeState;
+  final String activeWorkspaceId;
+  final Future<void> Function(BuildContext context, WidgetRef ref, String name)
+  onCreateWorkspace;
+  final Future<void> Function(
+    BuildContext context,
+    WidgetRef ref,
+    String id,
+    String name,
+  )
+  onEditWorkspace;
+  final Future<void> Function(
+    BuildContext context,
+    WidgetRef ref,
+    String id,
+    List<WorkspaceEntity> workspaces,
+  )
+  onDeleteWorkspace;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final mode = modeState.mode;
+
+    return mode == ManagementMode.create
+        ? _CreateWorkspaceForm(
+            onCancel: () => ref
+                .read(workspaceManagementModeProvider.notifier)
+                .setMode(ManagementMode.list),
+            onSubmit: (name) => onCreateWorkspace(context, ref, name),
+          )
+        : _WorkspaceList(
+            workspaces: workspaces,
+            activeWorkspaceId: activeWorkspaceId,
+            onEdit: (workspace) => ref
+                .read(workspaceManagementModeProvider.notifier)
+                .setMode(
+                  ManagementMode.edit,
+                  editingWorkspace: workspace,
+                ),
+            onDelete: (id) => onDeleteWorkspace(context, ref, id, workspaces),
+            onStartCreate: () => ref
+                .read(workspaceManagementModeProvider.notifier)
+                .setMode(ManagementMode.create),
+            onSaveEdit: (id, name) => onEditWorkspace(context, ref, id, name),
+            onCancelEdit: () => ref
+                .read(workspaceManagementModeProvider.notifier)
+                .clearEditing(),
+            editingWorkspace: modeState.editingWorkspace,
+          );
   }
 }
 

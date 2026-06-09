@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-returning-widgets
-// Required: Existing helper builders return widgets.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // Required: Existing test and UI helpers keep compact return flow.
@@ -34,7 +32,7 @@ class ChatListWidget extends ConsumerWidget {
     return switch (chatListAsync) {
       AsyncData(value: final chats) => () {
         if (chats.isEmpty) {
-          return _buildEmptyState();
+          return const _ChatListEmptyState();
         }
 
         return ListView.separated(
@@ -56,8 +54,13 @@ class ChatListWidget extends ConsumerWidget {
       ),
     };
   }
+}
 
-  Widget _buildEmptyState() {
+class _ChatListEmptyState extends StatelessWidget {
+  const _ChatListEmptyState();
+
+  @override
+  Widget build(BuildContext context) {
     return const Center(
       child: Padding(
         padding: EdgeInsets.all(32),

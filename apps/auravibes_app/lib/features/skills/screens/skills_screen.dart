@@ -1,6 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Existing UI spacing uses small numeric values.
-// ignore_for_file: avoid-returning-widgets
 // Required: Local builders keep this small screen readable.
 // ignore_for_file: prefer-single-widget-per-file
 // Required: Feature widgets keep closely related private widgets together.
@@ -30,8 +29,20 @@ class SkillsScreen extends ConsumerWidget {
 
     return AuraScreen(
       child: switch (skillsAsync) {
-        AsyncData(:final value) => _buildBody(ref, value),
-        AsyncLoading(:final value?) => _buildBody(ref, value),
+        AsyncData(:final value) => _SkillsScreenBody(
+          skills: value,
+          onOpenSkill: _openSkill,
+          onDeleteSkill: _confirmDeleteSkill,
+          onSkillEnabledChanged: (ref, skill, change) =>
+              _setSkillEnabled(ref, skill, change.isEnabled),
+        ),
+        AsyncLoading(:final value?) => _SkillsScreenBody(
+          skills: value,
+          onOpenSkill: _openSkill,
+          onDeleteSkill: _confirmDeleteSkill,
+          onSkillEnabledChanged: (ref, skill, change) =>
+              _setSkillEnabled(ref, skill, change.isEnabled),
+        ),
         AsyncLoading() => const Center(child: AuraSpinner()),
         AsyncError() => const Center(
           child: AuraText(
@@ -53,44 +64,6 @@ class SkillsScreen extends ConsumerWidget {
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-    );
-  }
-
-  Widget _buildBody(WidgetRef ref, List<WorkspaceSkill> skills) {
-    if (skills.isEmpty) {
-      return const Center(
-        child: AuraColumn(
-          children: [
-            Icon(Icons.psychology_alt_outlined, size: 48),
-            AuraText(
-              child: TextLocale(LocaleKeys.skills_screen_empty_title),
-              style: AuraTextStyle.heading4,
-            ),
-            AuraText(
-              child: TextLocale(LocaleKeys.skills_screen_empty_subtitle),
-              textAlign: TextAlign.center,
-              color: AuraColorVariant.onSurfaceVariant,
-            ),
-          ],
-          mainAxisSize: MainAxisSize.min,
-        ),
-      );
-    }
-
-    return ListView.separated(
-      padding: const EdgeInsets.all(8),
-      itemBuilder: (context, index) {
-        final skill = skills[index];
-
-        return _SkillTile(
-          skill: skill,
-          onOpen: () => _openSkill(context, skill.id),
-          onDelete: () => _confirmDeleteSkill(context, ref, skill),
-          onChanged: (value) => _setSkillEnabled(ref, skill, value),
-        );
-      },
-      separatorBuilder: (_, _) => const SizedBox(height: 8),
-      itemCount: skills.length,
     );
   }
 
@@ -166,6 +139,70 @@ class SkillsScreen extends ConsumerWidget {
     final usecase = ref.read(deleteSkillUsecaseProvider);
     final _ = await usecase.call(skill.id);
     ref.invalidate(workspaceSkillsProvider(workspaceId));
+  }
+}
+
+class _SkillsScreenBody extends ConsumerWidget {
+  const _SkillsScreenBody({
+    required this.skills,
+    required this.onOpenSkill,
+    required this.onDeleteSkill,
+    required this.onSkillEnabledChanged,
+  });
+
+  final List<WorkspaceSkill> skills;
+  final Future<void> Function(BuildContext context, String skillId) onOpenSkill;
+  final Future<void> Function(
+    BuildContext context,
+    WidgetRef ref,
+    WorkspaceSkill skill,
+  )
+  onDeleteSkill;
+  final Future<void> Function(
+    WidgetRef ref,
+    WorkspaceSkill skill,
+    ({bool isEnabled}) change,
+  )
+  onSkillEnabledChanged;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (skills.isEmpty) {
+      return const Center(
+        child: AuraColumn(
+          children: [
+            Icon(Icons.psychology_alt_outlined, size: 48),
+            AuraText(
+              child: TextLocale(LocaleKeys.skills_screen_empty_title),
+              style: AuraTextStyle.heading4,
+            ),
+            AuraText(
+              child: TextLocale(LocaleKeys.skills_screen_empty_subtitle),
+              textAlign: TextAlign.center,
+              color: AuraColorVariant.onSurfaceVariant,
+            ),
+          ],
+          mainAxisSize: MainAxisSize.min,
+        ),
+      );
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.all(8),
+      itemBuilder: (context, index) {
+        final skill = skills[index];
+
+        return _SkillTile(
+          skill: skill,
+          onOpen: () => onOpenSkill(context, skill.id),
+          onDelete: () => onDeleteSkill(context, ref, skill),
+          onChanged: (value) =>
+              onSkillEnabledChanged(ref, skill, (isEnabled: value)),
+        );
+      },
+      separatorBuilder: (_, _) => const SizedBox(height: 8),
+      itemCount: skills.length,
+    );
   }
 }
 

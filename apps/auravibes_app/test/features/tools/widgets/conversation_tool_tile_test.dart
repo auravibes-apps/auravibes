@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-returning-widgets
-// Required: Widget tests use helpers that build widgets under test.
 
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
@@ -40,32 +38,40 @@ class _MockConversationToolsNotifier extends ConversationToolsNotifier {
   }) async => states;
 }
 
-Widget _buildSubject({
-  required ConversationToolState toolState,
-  String? conversationId,
-}) {
-  return testableApp(
-    child: Theme(
-      data: ThemeData(extensions: [AuraTheme.light]),
-      child: Material(
-        child: SingleChildScrollView(
-          child: ConversationToolTile(
-            toolState: toolState,
-            workspaceId: _workspaceId,
-            conversationId: conversationId,
+class _Subject extends StatelessWidget {
+  const _Subject({
+    required this.toolState,
+    this.conversationId,
+  });
+
+  final ConversationToolState toolState;
+  final String? conversationId;
+
+  @override
+  Widget build(BuildContext context) {
+    return TestableApp(
+      child: Theme(
+        data: ThemeData(extensions: [AuraTheme.light]),
+        child: Material(
+          child: SingleChildScrollView(
+            child: ConversationToolTile(
+              toolState: toolState,
+              workspaceId: _workspaceId,
+              conversationId: conversationId,
+            ),
           ),
         ),
       ),
-    ),
-    overrides: [
-      conversationToolsProvider(
-        workspaceId: _workspaceId,
-        conversationId: conversationId,
-      ).overrideWith(
-        () => _MockConversationToolsNotifier([toolState]),
-      ),
-    ],
-  );
+      overrides: [
+        conversationToolsProvider(
+          workspaceId: _workspaceId,
+          conversationId: conversationId,
+        ).overrideWith(
+          () => _MockConversationToolsNotifier([toolState]),
+        ),
+      ],
+    );
+  }
 }
 
 Future<void> _pumpSubject(
@@ -75,7 +81,7 @@ Future<void> _pumpSubject(
 }) async {
   await tester.runAsync(() async {
     await tester.pumpWidget(
-      _buildSubject(toolState: toolState, conversationId: conversationId),
+      _Subject(toolState: toolState, conversationId: conversationId),
     );
   });
   final _ = await tester.pumpAndSettle();

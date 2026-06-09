@@ -81,7 +81,35 @@ class _ServiceConnectionCreateScreenState
               },
             ),
           ),
-          Expanded(child: _buildSelectedForm()),
+          Expanded(
+            child: switch (_type) {
+              ServiceConnectionCreateType.modelProvider => Padding(
+                padding: const EdgeInsets.all(12),
+                child: AddModelProviderWidget(
+                  workspaceId: widget.workspaceId,
+                  onCreated: () => unawaited(_closeAfterSave()),
+                  showHeader: false,
+                ),
+              ),
+              ServiceConnectionCreateType.skillCredential => _CredentialForm(
+                workspaceId: widget.workspaceId,
+                selectedDefinitionId: _definitionId,
+                nameController: _nameController,
+                attributeControllers: _attributeControllers,
+                isSaving: _isSaving,
+                onNameChanged: (_) => setState(() {
+                  final _ = Object();
+                }),
+                onDefinitionChanged: (value) {
+                  setState(() {
+                    _definitionId = value;
+                    _resetAttributeControllers();
+                  });
+                },
+                onSave: () => unawaited(_saveSkillCredential()),
+              ),
+            },
+          ),
         ],
       ),
       appBar: AuraAppBar(
@@ -92,36 +120,6 @@ class _ServiceConnectionCreateScreenState
         ),
       ),
     );
-  }
-
-  Widget _buildSelectedForm() {
-    return switch (_type) {
-      ServiceConnectionCreateType.modelProvider => Padding(
-        padding: const EdgeInsets.all(12),
-        child: AddModelProviderWidget(
-          workspaceId: widget.workspaceId,
-          onCreated: () => unawaited(_closeAfterSave()),
-          showHeader: false,
-        ),
-      ),
-      ServiceConnectionCreateType.skillCredential => _CredentialForm(
-        workspaceId: widget.workspaceId,
-        selectedDefinitionId: _definitionId,
-        nameController: _nameController,
-        attributeControllers: _attributeControllers,
-        isSaving: _isSaving,
-        onNameChanged: (_) => setState(() {
-          final _ = Object();
-        }),
-        onDefinitionChanged: (value) {
-          setState(() {
-            _definitionId = value;
-            _resetAttributeControllers();
-          });
-        },
-        onSave: () => unawaited(_saveSkillCredential()),
-      ),
-    };
   }
 
   Future<void> _saveSkillCredential() async {
@@ -310,22 +308,55 @@ class _CredentialForm extends ConsumerWidget {
     );
 
     return switch (definitionsAsync) {
-      AsyncData(:final value) => _buildForm(
-        context,
-        value,
+      AsyncData(:final value) => _CredentialFormContent(
+        definitions: value,
+        selectedDefinitionId: selectedDefinitionId,
+        nameController: nameController,
+        attributeControllers: attributeControllers,
+        isSaving: isSaving,
+        onNameChanged: onNameChanged,
+        onDefinitionChanged: onDefinitionChanged,
+        onSave: onSave,
       ),
-      AsyncLoading(value: final value?, hasValue: true) => _buildForm(
-        context,
-        value,
-      ),
+      AsyncLoading(value: final value?, hasValue: true) =>
+        _CredentialFormContent(
+          definitions: value,
+          selectedDefinitionId: selectedDefinitionId,
+          nameController: nameController,
+          attributeControllers: attributeControllers,
+          isSaving: isSaving,
+          onNameChanged: onNameChanged,
+          onDefinitionChanged: onDefinitionChanged,
+          onSave: onSave,
+        ),
       _ => const Center(child: AuraSpinner()),
     };
   }
+}
 
-  Widget _buildForm(
-    BuildContext context,
-    List<SkillCredentialDefinitionEntity> definitions,
-  ) {
+class _CredentialFormContent extends StatelessWidget {
+  const _CredentialFormContent({
+    required this.definitions,
+    required this.selectedDefinitionId,
+    required this.nameController,
+    required this.attributeControllers,
+    required this.isSaving,
+    required this.onNameChanged,
+    required this.onDefinitionChanged,
+    required this.onSave,
+  });
+
+  final List<SkillCredentialDefinitionEntity> definitions;
+  final String? selectedDefinitionId;
+  final TextEditingController nameController;
+  final Map<String, TextEditingController> attributeControllers;
+  final bool isSaving;
+  final ValueChanged<String> onNameChanged;
+  final ValueChanged<String?> onDefinitionChanged;
+  final VoidCallback onSave;
+
+  @override
+  Widget build(BuildContext context) {
     final selectedDefinition = definitions
         .where((definition) => definition.id == selectedDefinitionId)
         .firstOrNull;

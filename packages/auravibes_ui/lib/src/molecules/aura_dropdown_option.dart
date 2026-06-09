@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: UI tokens and layout use fixed design values.
-// ignore_for_file: avoid-returning-widgets
-// Required: Existing helper builders return widgets.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // Required: Existing test and UI helpers keep compact return flow.
@@ -60,6 +58,7 @@ class AuraDropdownOption<T> extends StatelessWidget {
     final auraColors = context.auraColors;
     final leading = this.leading;
     final trailing = this.trailing;
+    final child = this.child;
 
     Widget result = AuraPressable(
       child: Container(
@@ -77,7 +76,18 @@ class AuraDropdownOption<T> extends StatelessWidget {
               const SizedBox(width: DesignSpacing.sm),
             ],
             Expanded(
-              child: child ?? _buildDefaultLabel(context),
+              child:
+                  child ??
+                  AuraText(
+                    child: Text(
+                      value.toString(),
+                      style: TextStyle(
+                        color: isEnabled
+                            ? auraColors.onSurface
+                            : auraColors.onSurface.withValues(alpha: 0.6),
+                      ),
+                    ),
+                  ),
             ),
             if (trailing != null) ...[
               const SizedBox(width: DesignSpacing.sm),
@@ -105,21 +115,6 @@ class AuraDropdownOption<T> extends StatelessWidget {
     }
 
     return result;
-  }
-
-  Widget _buildDefaultLabel(BuildContext context) {
-    final auraColors = context.auraColors;
-
-    return AuraText(
-      child: Text(
-        value.toString(),
-        style: TextStyle(
-          color: isEnabled
-              ? auraColors.onSurface
-              : auraColors.onSurface.withValues(alpha: 0.6),
-        ),
-      ),
-    );
   }
 
   Color _getBackgroundColor(AuraColorScheme colors) {

@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-returning-widgets
-// Required: Widgetbook stories use helper functions that return widgets.
 // ignore_for_file: prefer-moving-to-variable
 // Required: Existing code repeats lookups where extraction adds noise.
 // ignore_for_file: prefer-single-widget-per-file

@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-returning-widgets
-// Required: Widget tests use helpers that build widgets under test.
 // ignore_for_file: prefer-moving-to-variable
 // Required: Tests repeat finders and fixture lookups for clarity.
 // ignore_for_file: prefer-static-class
@@ -19,31 +17,38 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 const _wsId = 'ws1';
 
-Widget _buildSubject(List<Object> overrides) {
-  return EasyLocalization(
-    child: ProviderScope(
-      overrides: overrides.cast(),
-      child: Builder(
-        builder: (context) {
-          return MaterialApp(
-            home: Theme(
-              data: ThemeData(extensions: [AuraTheme.light]),
-              child: const Scaffold(body: SizedBox.shrink()),
-            ),
-            locale: context.locale,
-            localizationsDelegates: context.localizationDelegates,
-            supportedLocales: context.supportedLocales,
-          );
-        },
+class _Subject extends StatelessWidget {
+  const _Subject({required this.overrides});
+
+  final List<Object> overrides;
+
+  @override
+  Widget build(BuildContext context) {
+    return EasyLocalization(
+      child: ProviderScope(
+        overrides: overrides.cast(),
+        child: Builder(
+          builder: (context) {
+            return MaterialApp(
+              home: Theme(
+                data: ThemeData(extensions: [AuraTheme.light]),
+                child: const Scaffold(body: SizedBox.shrink()),
+              ),
+              locale: context.locale,
+              localizationsDelegates: context.localizationDelegates,
+              supportedLocales: context.supportedLocales,
+            );
+          },
+        ),
       ),
-    ),
-    supportedLocales: const [Locale('en')],
-    path: 'assets/i18n',
-    fallbackLocale: const Locale('en'),
-    startLocale: const Locale('en'),
-    useOnlyLangCode: true,
-    useFallbackTranslations: true,
-  );
+      supportedLocales: const [Locale('en')],
+      path: 'assets/i18n',
+      fallbackLocale: const Locale('en'),
+      startLocale: const Locale('en'),
+      useOnlyLangCode: true,
+      useFallbackTranslations: true,
+    );
+  }
 }
 
 Future<void> _pumpAndInit(WidgetTester tester, Widget widget) async {
@@ -100,7 +105,7 @@ void main() {
 
   group('AddToolModal', () {
     testWidgets('show opens a dialog', (tester) async {
-      await _pumpAndInit(tester, _buildSubject(_dataOverride()));
+      await _pumpAndInit(tester, _Subject(overrides: _dataOverride()));
       await _showDialog(tester);
 
       expect(find.byType(Dialog), findsOneWidget);
@@ -108,21 +113,21 @@ void main() {
     });
 
     testWidgets('renders search input', (tester) async {
-      await _pumpAndInit(tester, _buildSubject(_dataOverride()));
+      await _pumpAndInit(tester, _Subject(overrides: _dataOverride()));
       await _showDialog(tester);
 
       expect(find.byType(AuraInput), findsOneWidget);
     });
 
     testWidgets('renders close button', (tester) async {
-      await _pumpAndInit(tester, _buildSubject(_dataOverride()));
+      await _pumpAndInit(tester, _Subject(overrides: _dataOverride()));
       await _showDialog(tester);
 
       expect(find.byIcon(Icons.close), findsOneWidget);
     });
 
     testWidgets('close button dismisses dialog', (tester) async {
-      await _pumpAndInit(tester, _buildSubject(_dataOverride()));
+      await _pumpAndInit(tester, _Subject(overrides: _dataOverride()));
       await _showDialog(tester);
 
       await tester.tap(find.byIcon(Icons.close));
@@ -136,11 +141,13 @@ void main() {
 
       await _pumpAndInit(
         tester,
-        _buildSubject([
-          availableToolsToAddProvider.overrideWith(
-            (ref, arg) => completer.future,
-          ),
-        ]),
+        _Subject(
+          overrides: [
+            availableToolsToAddProvider.overrideWith(
+              (ref, arg) => completer.future,
+            ),
+          ],
+        ),
       );
       await _showDialog(tester);
 
@@ -150,14 +157,14 @@ void main() {
     });
 
     testWidgets('shows tools when data loaded', (tester) async {
-      await _pumpAndInit(tester, _buildSubject(_dataOverride()));
+      await _pumpAndInit(tester, _Subject(overrides: _dataOverride()));
       await _showDialog(tester);
 
       expect(find.byType(AuraTile), findsOneWidget);
     });
 
     testWidgets('shows empty state when no tools available', (tester) async {
-      await _pumpAndInit(tester, _buildSubject(_dataOverride([])));
+      await _pumpAndInit(tester, _Subject(overrides: _dataOverride([])));
       await _showDialog(tester);
 
       expect(find.byIcon(Icons.check_circle_outline), findsOneWidget);
@@ -166,7 +173,7 @@ void main() {
     testWidgets('shows search empty state when query has no matches', (
       tester,
     ) async {
-      await _pumpAndInit(tester, _buildSubject(_dataOverride()));
+      await _pumpAndInit(tester, _Subject(overrides: _dataOverride()));
       await _showDialog(tester);
 
       await tester.enterText(find.byType(AuraInput), 'not-found');
@@ -180,10 +187,12 @@ void main() {
 
       await _pumpAndInit(
         tester,
-        _buildSubject([
-          ..._dataOverride(),
-          workspaceToolsProvider(_wsId).overrideWith(() => notifier),
-        ]),
+        _Subject(
+          overrides: [
+            ..._dataOverride(),
+            workspaceToolsProvider(_wsId).overrideWith(() => notifier),
+          ],
+        ),
       );
       await _showDialog(tester);
 
@@ -198,11 +207,13 @@ void main() {
     testWidgets('shows error widget when error', (tester) async {
       await _pumpAndInit(
         tester,
-        _buildSubject([
-          availableToolsToAddProvider.overrideWith(
-            (ref, arg) => Future.error('test error'),
-          ),
-        ]),
+        _Subject(
+          overrides: [
+            availableToolsToAddProvider.overrideWith(
+              (ref, arg) => Future.error('test error'),
+            ),
+          ],
+        ),
       );
       await _showDialog(tester);
       final _ = await tester.pumpAndSettle();

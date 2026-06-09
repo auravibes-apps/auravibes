@@ -3,8 +3,6 @@
 // ignore_for_file: prefer-static-class
 // Required: Tests keep fixture helpers and fakes top-level.
 
-// ignore_for_file: avoid-returning-widgets
-// Required: Widget tests use helpers that build widgets under test.
 
 import 'dart:async';
 
@@ -16,15 +14,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Test helper to create a widget with Aura theme.
-Widget wrapWithAuraTheme(Widget child) {
-  return MaterialApp(
-    home: Scaffold(
-      body: child,
-    ),
-    theme: ThemeData(
-      extensions: [AuraTheme.light],
-    ),
-  );
+class AuraThemeWrapper extends StatelessWidget {
+  /// Creates an [AuraThemeWrapper].
+  const AuraThemeWrapper({required this.child, super.key});
+
+  /// The widget under test.
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        body: child,
+      ),
+      theme: ThemeData(
+        extensions: [AuraTheme.light],
+      ),
+    );
+  }
 }
 
 /// Finds an [AuraButton] whose child is a [Text] widget with [label].
@@ -52,8 +59,8 @@ void main() {
   group('AuraConfirmDialog', () {
     testWidgets('renders with required parameters', (tester) async {
       await tester.pumpWidget(
-        wrapWithAuraTheme(
-          const AuraConfirmDialog(
+        const AuraThemeWrapper(
+          child: AuraConfirmDialog(
             title: Text('Confirm Action'),
             message: Text('Are you sure you want to proceed?'),
             confirmLabel: Text('Confirm'),
@@ -68,8 +75,8 @@ void main() {
 
     testWidgets('displays confirm and cancel buttons', (tester) async {
       await tester.pumpWidget(
-        wrapWithAuraTheme(
-          const AuraConfirmDialog(
+        const AuraThemeWrapper(
+          child: AuraConfirmDialog(
             title: Text('Delete Item'),
             message: Text('This action cannot be undone.'),
             confirmLabel: Text('Confirm'),
@@ -87,8 +94,8 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        wrapWithAuraTheme(
-          const AuraConfirmDialog(
+        const AuraThemeWrapper(
+          child: AuraConfirmDialog(
             title: Text('Delete'),
             message: Text('Are you sure?'),
             confirmLabel: Text('Confirm'),
@@ -108,8 +115,8 @@ void main() {
 
     testWidgets('uses custom labels when provided', (tester) async {
       await tester.pumpWidget(
-        wrapWithAuraTheme(
-          const AuraConfirmDialog(
+        const AuraThemeWrapper(
+          child: AuraConfirmDialog(
             title: Text('Custom Title'),
             message: Text('Custom message'),
             confirmLabel: Text('Yes'),
@@ -124,8 +131,8 @@ void main() {
 
     testWidgets('applies custom colorVariant when provided', (tester) async {
       await tester.pumpWidget(
-        wrapWithAuraTheme(
-          const AuraConfirmDialog(
+        const AuraThemeWrapper(
+          child: AuraConfirmDialog(
             title: Text('Warning'),
             message: Text('Proceed with caution'),
             confirmLabel: Text('Confirm'),
@@ -144,8 +151,8 @@ void main() {
       var confirmCalled = false;
 
       await tester.pumpWidget(
-        wrapWithAuraTheme(
-          AuraConfirmDialog(
+        AuraThemeWrapper(
+          child: AuraConfirmDialog(
             title: const Text('Dialog Title'),
             message: const Text('Message'),
             confirmLabel: const Text('Confirm'),
@@ -169,8 +176,8 @@ void main() {
       var cancelCalled = false;
 
       await tester.pumpWidget(
-        wrapWithAuraTheme(
-          AuraConfirmDialog(
+        AuraThemeWrapper(
+          child: AuraConfirmDialog(
             title: const Text('Dialog Title'),
             message: const Text('Message'),
             confirmLabel: const Text('Confirm'),
@@ -192,8 +199,8 @@ void main() {
   group('AuraAlertDialog', () {
     testWidgets('renders with required parameters', (tester) async {
       await tester.pumpWidget(
-        wrapWithAuraTheme(
-          const AuraAlertDialog(
+        const AuraThemeWrapper(
+          child: AuraAlertDialog(
             title: Text('Alert'),
             message: Text('Something happened.'),
             dismissLabel: Text('OK'),
@@ -207,8 +214,8 @@ void main() {
 
     testWidgets('displays dismiss button with default label', (tester) async {
       await tester.pumpWidget(
-        wrapWithAuraTheme(
-          const AuraAlertDialog(
+        const AuraThemeWrapper(
+          child: AuraAlertDialog(
             title: Text('Alert'),
             message: Text('Message'),
             dismissLabel: Text('OK'),
@@ -221,8 +228,8 @@ void main() {
 
     testWidgets('uses custom dismiss label when provided', (tester) async {
       await tester.pumpWidget(
-        wrapWithAuraTheme(
-          const AuraAlertDialog(
+        const AuraThemeWrapper(
+          child: AuraAlertDialog(
             title: Text('Alert'),
             message: Text('Message'),
             dismissLabel: Text('Got it'),
@@ -239,8 +246,8 @@ void main() {
       bool? dialogResult;
 
       await tester.pumpWidget(
-        wrapWithAuraTheme(
-          Builder(
+        AuraThemeWrapper(
+          child: Builder(
             builder: (context) => TextButton(
               onPressed: runDialogAction(() async {
                 dialogResult = await showAuraConfirmDialog(
@@ -277,8 +284,8 @@ void main() {
       bool? dialogResult;
 
       await tester.pumpWidget(
-        wrapWithAuraTheme(
-          Builder(
+        AuraThemeWrapper(
+          child: Builder(
             builder: (context) => TextButton(
               onPressed: runDialogAction(() async {
                 dialogResult = await showAuraConfirmDialog(
@@ -312,8 +319,8 @@ void main() {
   group('showAuraAlertDialog', () {
     testWidgets('shows dialog and dismisses on button tap', (tester) async {
       await tester.pumpWidget(
-        wrapWithAuraTheme(
-          Builder(
+        AuraThemeWrapper(
+          child: Builder(
             builder: (context) => TextButton(
               onPressed: runDialogAction(() async {
                 await showAuraAlertDialog(
@@ -343,8 +350,8 @@ void main() {
 
     testWidgets('does not dismiss when tapping outside dialog', (tester) async {
       await tester.pumpWidget(
-        wrapWithAuraTheme(
-          Builder(
+        AuraThemeWrapper(
+          child: Builder(
             builder: (context) => TextButton(
               onPressed: runDialogAction(() async {
                 await showAuraAlertDialog(
@@ -384,8 +391,8 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        wrapWithAuraTheme(
-          Builder(
+        AuraThemeWrapper(
+          child: Builder(
             builder: (context) => TextButton(
               onPressed: runDialogAction(() async {
                 final _ = await showAuraConfirmDialog(
@@ -412,8 +419,8 @@ void main() {
 
     testWidgets('showAuraAlertDialog does NOT use AlertDialog', (tester) async {
       await tester.pumpWidget(
-        wrapWithAuraTheme(
-          Builder(
+        AuraThemeWrapper(
+          child: Builder(
             builder: (context) => TextButton(
               onPressed: runDialogAction(() async {
                 await showAuraAlertDialog(
@@ -444,8 +451,8 @@ void main() {
       bool? result;
 
       await tester.pumpWidget(
-        wrapWithAuraTheme(
-          Builder(
+        AuraThemeWrapper(
+          child: Builder(
             builder: (context) => TextButton(
               onPressed: runDialogAction(() async {
                 result = await showAuraConfirmDialog(
@@ -476,8 +483,8 @@ void main() {
       bool? result;
 
       await tester.pumpWidget(
-        wrapWithAuraTheme(
-          Builder(
+        AuraThemeWrapper(
+          child: Builder(
             builder: (context) => TextButton(
               onPressed: runDialogAction(() async {
                 result = await showAuraConfirmDialog(
@@ -510,8 +517,8 @@ void main() {
         bool? result;
 
         await tester.pumpWidget(
-          wrapWithAuraTheme(
-            Builder(
+          AuraThemeWrapper(
+            child: Builder(
               builder: (context) => TextButton(
                 onPressed: runDialogAction(() async {
                   result = await showAuraConfirmDialog(

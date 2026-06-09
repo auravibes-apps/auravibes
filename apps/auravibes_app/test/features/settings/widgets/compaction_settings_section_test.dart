@@ -55,7 +55,7 @@ void main() {
   });
 
   Widget buildSubject() {
-    return testableApp(
+    return TestableApp(
       child: Theme(
         data: ThemeData(extensions: [AuraTheme.light]),
         child: const Scaffold(

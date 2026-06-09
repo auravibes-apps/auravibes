@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
-// ignore_for_file: avoid-returning-widgets
-// Required: Widget tests use helpers that build widgets under test.
 // ignore_for_file: scoped_providers_should_specify_dependencies
 // Required: widget tests override scoped providers directly.
 // ignore_for_file: member-ordering
@@ -68,28 +66,35 @@ class _MockGroupedNotifier extends GroupedToolsNotifier {
   Future<List<ToolsGroupWithTools>> build(String workspaceId) async => groups;
 }
 
-Widget _buildSubject(Widget child) {
-  return EasyLocalization(
-    child: TestProviderScope(
-      overrides: [
-        groupedToolsProvider(
-          _workspaceId,
-        ).overrideWith(() => _MockGroupedNotifier([])),
-      ],
-      child: MaterialApp(
-        home: Theme(
-          data: ThemeData(extensions: [AuraTheme.light]),
-          child: Material(child: child),
+class _Subject extends StatelessWidget {
+  const _Subject({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return EasyLocalization(
+      child: TestProviderScope(
+        overrides: [
+          groupedToolsProvider(
+            _workspaceId,
+          ).overrideWith(() => _MockGroupedNotifier([])),
+        ],
+        child: MaterialApp(
+          home: Theme(
+            data: ThemeData(extensions: [AuraTheme.light]),
+            child: Material(child: child),
+          ),
         ),
       ),
-    ),
-    supportedLocales: const [Locale('en')],
-    path: 'assets/i18n',
-    fallbackLocale: const Locale('en'),
-    startLocale: const Locale('en'),
-    useOnlyLangCode: true,
-    useFallbackTranslations: true,
-  );
+      supportedLocales: const [Locale('en')],
+      path: 'assets/i18n',
+      fallbackLocale: const Locale('en'),
+      startLocale: const Locale('en'),
+      useOnlyLangCode: true,
+      useFallbackTranslations: true,
+    );
+  }
 }
 
 void main() {
@@ -100,8 +105,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ToolsGroupCard(
+      _Subject(
+        child: ToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
         ),
@@ -122,8 +127,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ToolsGroupCard(
+      _Subject(
+        child: ToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
         ),
@@ -144,8 +149,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ToolsGroupCard(
+      _Subject(
+        child: ToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
         ),
@@ -166,8 +171,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ToolsGroupCard(
+      _Subject(
+        child: ToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
         ),
@@ -185,8 +190,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ToolsGroupCard(
+      _Subject(
+        child: ToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
         ),
@@ -204,8 +209,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ToolsGroupCard(
+      _Subject(
+        child: ToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
         ),
@@ -228,8 +233,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ToolsGroupCard(
+      _Subject(
+        child: ToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
         ),
@@ -255,8 +260,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ToolsGroupCard(
+      _Subject(
+        child: ToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
         ),
@@ -279,8 +284,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ToolsGroupCard(
+      _Subject(
+        child: ToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
         ),
@@ -316,8 +321,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ToolsGroupCard(
+      _Subject(
+        child: ToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
         ),
@@ -339,8 +344,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ToolsGroupCard(
+      _Subject(
+        child: ToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
         ),
@@ -375,8 +380,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ToolsGroupCard(
+      _Subject(
+        child: ToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
         ),
@@ -410,8 +415,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ToolsGroupCard(
+      _Subject(
+        child: ToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
         ),
@@ -430,8 +435,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ToolsGroupCard(
+      _Subject(
+        child: ToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
         ),
@@ -464,8 +469,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ToolsGroupCard(
+      _Subject(
+        child: ToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
         ),
@@ -499,8 +504,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ToolsGroupCard(
+      _Subject(
+        child: ToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
         ),
@@ -523,8 +528,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ToolsGroupCard(
+      _Subject(
+        child: ToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
         ),
@@ -545,8 +550,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ToolsGroupCard(
+      _Subject(
+        child: ToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
         ),
@@ -564,8 +569,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ToolsGroupCard(
+      _Subject(
+        child: ToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
         ),
@@ -608,8 +613,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ToolsGroupCard(
+      _Subject(
+        child: ToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
         ),
@@ -651,8 +656,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ToolsGroupCard(
+      _Subject(
+        child: ToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
         ),
@@ -688,8 +693,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ToolsGroupCard(
+      _Subject(
+        child: ToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
         ),
@@ -715,8 +720,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ToolsGroupCard(
+      _Subject(
+        child: ToolsGroupCard(
           groupWithTools: groupWithTools,
           workspaceId: _workspaceId,
         ),

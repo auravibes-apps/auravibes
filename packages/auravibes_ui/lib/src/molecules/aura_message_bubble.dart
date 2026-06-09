@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: UI tokens and layout use fixed design values.
-// ignore_for_file: avoid-returning-widgets
-// Required: Existing helper builders return widgets.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 
@@ -81,10 +79,21 @@ class AuraMessageBubble extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildContent(auraColors),
+                    _AuraMessageBubbleContent(
+                      content: content,
+                      contentType: contentType,
+                      textColor: isUser
+                          ? auraColors.onPrimary
+                          : auraColors.onSurface,
+                    ),
                     if (timestamp != null) ...[
                       const SizedBox(height: DesignSpacing.xs),
-                      _buildTimestamp(auraColors, timestamp),
+                      _AuraMessageBubbleTimestamp(
+                        timestamp: timestamp,
+                        textColor: isUser
+                            ? auraColors.onPrimary.withValues(alpha: 0.7)
+                            : auraColors.onSurfaceVariant,
+                      ),
                     ],
                   ],
                 ),
@@ -136,9 +145,35 @@ class AuraMessageBubble extends StatelessWidget {
     );
   }
 
-  Widget _buildContent(AuraColorScheme auraColors) {
-    final textColor = isUser ? auraColors.onPrimary : auraColors.onSurface;
+  static String _formatTimestamp(DateTime timestamp) {
+    final now = DateTime.now();
+    final difference = now.difference(timestamp);
 
+    if (difference.inMinutes < 1) {
+      return 'Just now';
+    } else if (difference.inHours < 1) {
+      return '${difference.inMinutes}m ago';
+    } else if (difference.inDays < 1) {
+      return '${difference.inHours}h ago';
+    } else {
+      return '${timestamp.day}/${timestamp.month}/${timestamp.year}';
+    }
+  }
+}
+
+class _AuraMessageBubbleContent extends StatelessWidget {
+  const _AuraMessageBubbleContent({
+    required this.content,
+    required this.contentType,
+    required this.textColor,
+  });
+
+  final String content;
+  final AuraMessageContentType contentType;
+  final Color textColor;
+
+  @override
+  Widget build(BuildContext context) {
     return switch (contentType) {
       AuraMessageContentType.text => GptMarkdown(
         content,
@@ -201,35 +236,27 @@ class AuraMessageBubble extends StatelessWidget {
       ),
     };
   }
+}
 
-  Widget _buildTimestamp(AuraColorScheme auraColors, DateTime timestamp) {
-    final textColor = isUser
-        ? auraColors.onPrimary.withValues(alpha: 0.7)
-        : auraColors.onSurfaceVariant;
+class _AuraMessageBubbleTimestamp extends StatelessWidget {
+  const _AuraMessageBubbleTimestamp({
+    required this.timestamp,
+    required this.textColor,
+  });
 
+  final DateTime timestamp;
+  final Color textColor;
+
+  @override
+  Widget build(BuildContext context) {
     return Text(
-      _formatTimestamp(timestamp),
+      AuraMessageBubble._formatTimestamp(timestamp),
       style: TextStyle(
         color: textColor,
         fontSize: DesignTypography.fontSizeXs,
         fontFamily: DesignTypography.bodyFontFamily,
       ),
     );
-  }
-
-  String _formatTimestamp(DateTime timestamp) {
-    final now = DateTime.now();
-    final difference = now.difference(timestamp);
-
-    if (difference.inMinutes < 1) {
-      return 'Just now';
-    } else if (difference.inHours < 1) {
-      return '${difference.inMinutes}m ago';
-    } else if (difference.inDays < 1) {
-      return '${difference.inHours}h ago';
-    } else {
-      return '${timestamp.day}/${timestamp.month}/${timestamp.year}';
-    }
   }
 }
 

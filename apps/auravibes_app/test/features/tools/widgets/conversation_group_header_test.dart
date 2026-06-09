@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-returning-widgets
-// Required: Widget tests use helpers that build widgets under test.
 
 // ignore_for_file: prefer-static-class
 // Required: Tests keep fixture helpers and fakes top-level.
@@ -67,21 +65,28 @@ McpServerEntity _mcpServer({String id = 'mcp-1'}) {
   );
 }
 
-Widget _buildSubject(Widget child) {
-  return EasyLocalization(
-    child: MaterialApp(
-      home: Theme(
-        data: ThemeData(extensions: [AuraTheme.light]),
-        child: Material(child: child),
+class _Subject extends StatelessWidget {
+  const _Subject({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return EasyLocalization(
+      child: MaterialApp(
+        home: Theme(
+          data: ThemeData(extensions: [AuraTheme.light]),
+          child: Material(child: child),
+        ),
       ),
-    ),
-    supportedLocales: const [Locale('en')],
-    path: 'assets/i18n',
-    fallbackLocale: const Locale('en'),
-    startLocale: const Locale('en'),
-    useOnlyLangCode: true,
-    useFallbackTranslations: true,
-  );
+      supportedLocales: const [Locale('en')],
+      path: 'assets/i18n',
+      fallbackLocale: const Locale('en'),
+      startLocale: const Locale('en'),
+      useOnlyLangCode: true,
+      useFallbackTranslations: true,
+    );
+  }
 }
 
 void main() {
@@ -92,8 +97,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ConversationGroupHeader(
+      _Subject(
+        child: ConversationGroupHeader(
           groupWithTools: groupWithTools,
           isExpanded: false,
           onToggleExpand: () {
@@ -114,8 +119,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ConversationGroupHeader(
+      _Subject(
+        child: ConversationGroupHeader(
           groupWithTools: groupWithTools,
           isExpanded: false,
           onToggleExpand: () {
@@ -139,8 +144,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ConversationGroupHeader(
+      _Subject(
+        child: ConversationGroupHeader(
           groupWithTools: groupWithTools,
           isExpanded: false,
           onToggleExpand: () {
@@ -161,8 +166,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ConversationGroupHeader(
+      _Subject(
+        child: ConversationGroupHeader(
           groupWithTools: groupWithTools,
           isExpanded: false,
           onToggleExpand: () {
@@ -200,8 +205,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ConversationGroupHeader(
+      _Subject(
+        child: ConversationGroupHeader(
           groupWithTools: groupWithTools,
           isExpanded: false,
           onToggleExpand: () {
@@ -236,8 +241,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ConversationGroupHeader(
+      _Subject(
+        child: ConversationGroupHeader(
           groupWithTools: groupWithTools,
           isExpanded: false,
           onToggleExpand: () {
@@ -272,8 +277,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ConversationGroupHeader(
+      _Subject(
+        child: ConversationGroupHeader(
           groupWithTools: groupWithTools,
           isExpanded: false,
           onToggleExpand: () {
@@ -312,8 +317,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ConversationGroupHeader(
+      _Subject(
+        child: ConversationGroupHeader(
           groupWithTools: groupWithTools,
           isExpanded: false,
           onToggleExpand: () {
@@ -347,8 +352,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ConversationGroupHeader(
+      _Subject(
+        child: ConversationGroupHeader(
           groupWithTools: groupWithTools,
           isExpanded: false,
           onToggleExpand: () {
@@ -369,8 +374,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ConversationGroupHeader(
+      _Subject(
+        child: ConversationGroupHeader(
           groupWithTools: groupWithTools,
           isExpanded: false,
           onToggleExpand: () {
@@ -395,8 +400,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildSubject(
-        ConversationGroupHeader(
+      _Subject(
+        child: ConversationGroupHeader(
           groupWithTools: groupWithTools,
           isExpanded: false,
           onToggleExpand: () {

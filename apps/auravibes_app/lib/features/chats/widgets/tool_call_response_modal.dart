@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: avoid-returning-widgets
-// Required: Existing helper builders return widgets.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: prefer-moving-to-variable
@@ -60,7 +58,7 @@ class ToolCallResponseModal extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             // Header with tool name and close button.
-            _buildHeader(context),
+            _ToolCallResponseModalHeader(toolName: toolName),
 
             // Scrollable markdown content.
             Flexible(
@@ -78,14 +76,21 @@ class ToolCallResponseModal extends StatelessWidget {
             ),
 
             // Footer with close button.
-            _buildFooter(context),
+            const _ToolCallResponseModalFooter(),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildHeader(BuildContext context) {
+class _ToolCallResponseModalHeader extends StatelessWidget {
+  const _ToolCallResponseModalHeader({required this.toolName});
+
+  final String toolName;
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.all(context.auraTheme.spacing.md),
       decoration: BoxDecoration(
@@ -119,8 +124,13 @@ class ToolCallResponseModal extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildFooter(BuildContext context) {
+class _ToolCallResponseModalFooter extends StatelessWidget {
+  const _ToolCallResponseModalFooter();
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.all(context.auraTheme.spacing.md),
       decoration: BoxDecoration(

@@ -99,8 +99,8 @@ void main() {
 
     testWidgets('renders validation error and hint', (tester) async {
       await tester.pumpWidget(
-        testableApp(
-          child: const Scaffold(
+        const TestableApp(
+          child: Scaffold(
             body: EnhancedModelInput(
               workspaceId: 'ws-1',
               fieldType: ModelInputFieldType.name,

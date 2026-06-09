@@ -21,6 +21,10 @@ plugins:
       avoid-passing-async-when-sync-expected: true
       avoid-redundant-async: true
       avoid-redundant-async-on-load: true
+      avoid-returning-widgets:
+        ignored-annotations:
+          # Widgetbook generator requires annotated top-level widget factories.
+          - UseCase
       avoid-shrink-wrap-in-lists: true
       avoid-substring: true
       avoid-throw-in-catch-block: true

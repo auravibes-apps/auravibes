@@ -50,7 +50,7 @@ void main() {
     testWidgets('renders ToolsManagementModal', (tester) async {
       await tester.runAsync(() async {
         await tester.pumpWidget(
-          testableApp(
+          TestableApp(
             child: Theme(
               data: ThemeData(extensions: [AuraTheme.light]),
               child: const ToolsManagementModal(workspaceId: 'ws-1'),

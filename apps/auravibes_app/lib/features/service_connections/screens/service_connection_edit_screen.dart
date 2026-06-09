@@ -306,13 +306,13 @@ class _SkillCredentialEditForm extends StatelessWidget {
                 onChanged: (_) => onChanged(),
               ),
               for (final entry in attributes.entries)
-                _buildAttributeInput(
+                _SkillCredentialAttributeInput(
                   entry,
-                  state,
-                  secretControllers,
-                  nonSecretControllers,
-                  clearedSecrets,
-                  onChanged,
+                  editState: state,
+                  secretControllers: secretControllers,
+                  nonSecretControllers: nonSecretControllers,
+                  clearedSecrets: clearedSecrets,
+                  onChanged: onChanged,
                 ),
               Align(
                 alignment: Alignment.centerRight,
@@ -331,20 +331,32 @@ class _SkillCredentialEditForm extends StatelessWidget {
       ],
     );
   }
+}
 
-  Widget _buildAttributeInput(
-    MapEntry<String, SkillCredentialAttributeDefinition> entry,
-    _SkillCredentialEditState state,
-    Map<String, TextEditingController> secretControllers,
-    Map<String, TextEditingController> nonSecretControllers,
-    Set<String> clearedSecrets,
-    VoidCallback onChanged,
-  ) {
+class _SkillCredentialAttributeInput extends StatelessWidget {
+  const _SkillCredentialAttributeInput(
+    this.entry, {
+    required this.editState,
+    required this.secretControllers,
+    required this.nonSecretControllers,
+    required this.clearedSecrets,
+    required this.onChanged,
+  });
+
+  final MapEntry<String, SkillCredentialAttributeDefinition> entry;
+  final _SkillCredentialEditState editState;
+  final Map<String, TextEditingController> secretControllers;
+  final Map<String, TextEditingController> nonSecretControllers;
+  final Set<String> clearedSecrets;
+  final VoidCallback onChanged;
+
+  @override
+  Widget build(BuildContext context) {
     if (entry.value.secret) {
       return _SecretAttributeInput(
         name: entry.key,
         definition: entry.value,
-        state: state.credential.secretAttributes[entry.key],
+        state: editState.credential.secretAttributes[entry.key],
         controller: secretControllers[entry.key]!,
         clearedSecrets: clearedSecrets,
         onChanged: onChanged,

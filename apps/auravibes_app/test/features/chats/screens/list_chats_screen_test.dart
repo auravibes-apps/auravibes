@@ -27,7 +27,7 @@ void main() {
     testWidgets('renders ChatsListScreen', (tester) async {
       await tester.runAsync(() async {
         await tester.pumpWidget(
-          testableApp(
+          TestableApp(
             child: Theme(
               data: ThemeData(extensions: [AuraTheme.light]),
               child: const ChatsListScreen(workspaceId: 'test-ws'),

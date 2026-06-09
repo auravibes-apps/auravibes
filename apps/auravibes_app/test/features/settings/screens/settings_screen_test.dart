@@ -64,7 +64,7 @@ void main() {
     testWidgets('renders SettingsScreen', (tester) async {
       await tester.runAsync(() async {
         await tester.pumpWidget(
-          testableApp(
+          TestableApp(
             child: Theme(
               data: ThemeData(extensions: [AuraTheme.light]),
               child: const SettingsScreen(workspaceId: 'test-ws'),
@@ -82,7 +82,7 @@ void main() {
     testWidgets('tapping theme tile shows radio group dialog', (tester) async {
       await tester.runAsync(() async {
         await tester.pumpWidget(
-          testableApp(
+          TestableApp(
             child: Theme(
               data: ThemeData(extensions: [AuraTheme.light]),
               child: const SettingsScreen(workspaceId: 'test-ws'),

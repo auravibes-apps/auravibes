@@ -72,7 +72,7 @@ void main() {
     testWidgets('renders NewChatScreen', (tester) async {
       await tester.runAsync(() async {
         await tester.pumpWidget(
-          testableApp(
+          TestableApp(
             child: Theme(
               data: ThemeData(extensions: [AuraTheme.light]),
               child: const NewChatScreen(workspaceId: 'test-ws'),
@@ -99,7 +99,7 @@ void main() {
     ) async {
       await tester.runAsync(() async {
         await tester.pumpWidget(
-          testableApp(
+          TestableApp(
             child: Theme(
               data: ThemeData(extensions: [AuraTheme.light]),
               child: const NewChatScreen(workspaceId: 'test-ws'),

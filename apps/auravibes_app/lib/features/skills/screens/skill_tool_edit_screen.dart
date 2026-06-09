@@ -79,13 +79,122 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
     final skillHasCredentialDefinition =
         skillDetailAsync.value?.credentialDefinitionId != null;
 
+    final Widget child;
+    if (toolAsync == null) {
+      _initializeCreateForm();
+      child = _SkillToolForm(
+        tool: null,
+        titleController: _titleController,
+        descriptionController: _descriptionController,
+        urlController: _urlController,
+        bodyController: _bodyController,
+        queryFields: _queryFields,
+        inputFields: _inputFields,
+        method: _method,
+        bodyFormat: _bodyFormat,
+        requiresCredential: _requiresCredential,
+        isEnabled: _isEnabled,
+        isSaving: _isSaving,
+        skillHasCredentialDefinition: skillHasCredentialDefinition,
+        onMethodChanged: (value) => setState(() => _method = value),
+        onAddQueryField: () =>
+            setState(() => _queryFields.add(_KeyValueField())),
+        onRemoveQueryField: _removeQueryField,
+        onBodyFormatChanged: (value) => setState(() => _bodyFormat = value),
+        onAddInputField: () => setState(() => _inputFields.add(_InputField())),
+        onRemoveInputField: _removeInputField,
+        onInputChanged: () => setState(() {
+          final _ = Object();
+        }),
+        onRequiresCredentialChanged: (value) =>
+            setState(() => _requiresCredential = value),
+        onEnabledChanged: (value) => setState(() => _isEnabled = value),
+        onSave: () => _save(context),
+      );
+    } else {
+      child = switch (toolAsync) {
+        AsyncData(value: null) => const Center(
+          child: TextLocale(LocaleKeys.skills_tool_not_found),
+        ),
+        AsyncData(value: final tool?) => () {
+          _initializeFromTool(tool);
+
+          return _SkillToolForm(
+            tool: tool,
+            titleController: _titleController,
+            descriptionController: _descriptionController,
+            urlController: _urlController,
+            bodyController: _bodyController,
+            queryFields: _queryFields,
+            inputFields: _inputFields,
+            method: _method,
+            bodyFormat: _bodyFormat,
+            requiresCredential: _requiresCredential,
+            isEnabled: _isEnabled,
+            isSaving: _isSaving,
+            skillHasCredentialDefinition: skillHasCredentialDefinition,
+            onMethodChanged: (value) => setState(() => _method = value),
+            onAddQueryField: () =>
+                setState(() => _queryFields.add(_KeyValueField())),
+            onRemoveQueryField: _removeQueryField,
+            onBodyFormatChanged: (value) => setState(() => _bodyFormat = value),
+            onAddInputField: () =>
+                setState(() => _inputFields.add(_InputField())),
+            onRemoveInputField: _removeInputField,
+            onInputChanged: () => setState(() {
+              final _ = Object();
+            }),
+            onRequiresCredentialChanged: (value) =>
+                setState(() => _requiresCredential = value),
+            onEnabledChanged: (value) => setState(() => _isEnabled = value),
+            onSave: () => _save(context),
+          );
+        }(),
+        AsyncLoading() when currentTool != null => () {
+          _initializeFromTool(currentTool);
+
+          return _SkillToolForm(
+            tool: currentTool,
+            titleController: _titleController,
+            descriptionController: _descriptionController,
+            urlController: _urlController,
+            bodyController: _bodyController,
+            queryFields: _queryFields,
+            inputFields: _inputFields,
+            method: _method,
+            bodyFormat: _bodyFormat,
+            requiresCredential: _requiresCredential,
+            isEnabled: _isEnabled,
+            isSaving: _isSaving,
+            skillHasCredentialDefinition: skillHasCredentialDefinition,
+            onMethodChanged: (value) => setState(() => _method = value),
+            onAddQueryField: () =>
+                setState(() => _queryFields.add(_KeyValueField())),
+            onRemoveQueryField: _removeQueryField,
+            onBodyFormatChanged: (value) => setState(() => _bodyFormat = value),
+            onAddInputField: () =>
+                setState(() => _inputFields.add(_InputField())),
+            onRemoveInputField: _removeInputField,
+            onInputChanged: () => setState(() {
+              final _ = Object();
+            }),
+            onRequiresCredentialChanged: (value) =>
+                setState(() => _requiresCredential = value),
+            onEnabledChanged: (value) => setState(() => _isEnabled = value),
+            onSave: () => _save(context),
+          );
+        }(),
+        AsyncLoading() => const Center(
+          child: AuraSpinner(),
+        ),
+        AsyncError() => const Center(
+          child: TextLocale(LocaleKeys.skills_tool_load_error),
+        ),
+      };
+    }
+
     return AuraScreen(
-      child: _buildBody(
-        context,
-        toolAsync,
-        currentTool,
-        skillHasCredentialDefinition,
-      ),
+      child: child,
       appBar: AuraAppBar(
         title: TextLocale(
           _isCreate
@@ -107,220 +216,30 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
     );
   }
 
-  Widget _buildBody(
-    BuildContext context,
-    AsyncValue<SkillTemplateToolEntity?>? toolAsync,
-    SkillTemplateToolEntity? currentTool,
-    bool skillHasCredentialDefinition,
-  ) {
-    if (toolAsync == null) {
-      return _buildForm(context, null, skillHasCredentialDefinition);
-    }
-
-    return switch (toolAsync) {
-      AsyncData(:final value) => _buildLoadedBody(
-        context,
-        value,
-        skillHasCredentialDefinition,
-      ),
-      AsyncLoading() when currentTool != null => _buildForm(
-        context,
-        currentTool,
-        skillHasCredentialDefinition,
-      ),
-      AsyncLoading() => const Center(
-        child: AuraSpinner(),
-      ),
-      AsyncError() => const Center(
-        child: TextLocale(LocaleKeys.skills_tool_load_error),
-      ),
-    };
-  }
-
-  Widget _buildLoadedBody(
-    BuildContext context,
-    SkillTemplateToolEntity? tool,
-    bool skillHasCredentialDefinition,
-  ) {
-    if (tool == null) {
-      return const Center(
-        child: TextLocale(LocaleKeys.skills_tool_not_found),
-      );
-    }
-
-    return _buildForm(context, tool, skillHasCredentialDefinition);
-  }
-
-  Widget _buildForm(
-    BuildContext context,
-    SkillTemplateToolEntity? tool,
-    bool skillHasCredentialDefinition,
-  ) {
-    if (tool != null && !_initialized) {
-      _initializeFromTool(tool);
-    } else if (tool == null && !_initialized) {
+  void _initializeCreateForm() {
+    if (!_initialized) {
       _inputFields.add(_InputField());
       _initialized = true;
     }
+  }
 
-    return ListView(
-      padding: const EdgeInsets.all(12),
-      children: [
-        AuraCard(
-          child: AuraColumn(
-            children: [
-              if (tool != null)
-                _ReadOnlyField(
-                  labelKey: LocaleKeys.skills_screen_slug_label,
-                  value: tool.slug,
-                ),
-              AuraInput(
-                controller: _titleController,
-                label: Text(
-                  LocaleKeys.skills_screen_title_label.tr(context: context),
-                ),
-              ),
-              AuraInput(
-                controller: _descriptionController,
-                placeholder: Text(
-                  LocaleKeys.skills_tool_description_hint.tr(context: context),
-                ),
-                label: Text(
-                  LocaleKeys.skills_tool_description_label.tr(context: context),
-                ),
-                minLines: 2,
-                maxLines: 4,
-              ),
-              AuraInput(
-                controller: _urlController,
-                placeholder: Text(
-                  LocaleKeys.skills_tool_url_hint.tr(context: context),
-                ),
-                label: Text(
-                  LocaleKeys.skills_tool_url_label.tr(context: context),
-                ),
-              ),
-              AuraDropdownSelector<UrlRequestMethod>(
-                options: [
-                  for (final method in UrlRequestMethod.values)
-                    AuraDropdownOption(
-                      value: method,
-                      child: Text(method.value),
-                    ),
-                ],
-                value: _method,
-                onChanged: (value) {
-                  if (value != null) setState(() => _method = value);
-                },
-                label: Text(
-                  LocaleKeys.skills_tool_method_label.tr(context: context),
-                ),
-              ),
-              _QueryFieldsSection(
-                fields: _queryFields,
-                onAdd: () => setState(() => _queryFields.add(_KeyValueField())),
-                onRemove: (field) => setState(() {
-                  final _ = _queryFields.remove(field);
-                  field.dispose();
-                }),
-              ),
-              AuraDropdownSelector<SkillUrlTemplateBodyFormat>(
-                options: [
-                  AuraDropdownOption(
-                    value: SkillUrlTemplateBodyFormat.json,
-                    child: Text(
-                      LocaleKeys.skills_tool_body_format_json.tr(
-                        context: context,
-                      ),
-                    ),
-                  ),
-                  AuraDropdownOption(
-                    value: SkillUrlTemplateBodyFormat.text,
-                    child: Text(
-                      LocaleKeys.skills_tool_body_format_text.tr(
-                        context: context,
-                      ),
-                    ),
-                  ),
-                ],
-                value: _bodyFormat,
-                onChanged: (value) {
-                  if (value == null) return;
-                  setState(() => _bodyFormat = value);
-                },
-                label: Text(
-                  LocaleKeys.skills_tool_body_format_label.tr(context: context),
-                ),
-              ),
-              AuraInput(
-                controller: _bodyController,
-                placeholder: Text(
-                  LocaleKeys.skills_tool_body_hint.tr(context: context),
-                ),
-                label: Text(
-                  LocaleKeys.skills_tool_body_label.tr(context: context),
-                ),
-                minLines: 5,
-                maxLines: 12,
-              ),
-              _InputFieldsSection(
-                fields: _inputFields,
-                onAdd: () => setState(() => _inputFields.add(_InputField())),
-                onRemove: (field) => setState(() {
-                  final _ = _inputFields.remove(field);
-                  field.dispose();
-                }),
-                onChanged: () => setState(() {
-                  final _ = Object();
-                }),
-              ),
-              if (skillHasCredentialDefinition)
-                AuraCheckboxListTile(
-                  value: _requiresCredential,
-                  onChanged: (value) {
-                    setState(() => _requiresCredential = value);
-                  },
-                  title: const TextLocale(
-                    LocaleKeys.skills_tool_requires_credential_label,
-                  ),
-                  subtitle: const TextLocale(
-                    LocaleKeys.skills_tool_requires_credential_hint,
-                  ),
-                ),
-              AuraRow(
-                children: [
-                  AuraSwitch(
-                    value: _isEnabled,
-                    onChanged: (value) => setState(() => _isEnabled = value),
-                  ),
-                  const Expanded(
-                    child: AuraText(
-                      child: TextLocale(
-                        LocaleKeys.skills_screen_enabled_label,
-                      ),
-                    ),
-                  ),
-                ],
-                spacing: AuraSpacing.md,
-              ),
-              Align(
-                alignment: Alignment.centerRight,
-                child: AuraButton(
-                  onPressed: () => _save(context),
-                  child: const TextLocale(LocaleKeys.skills_screen_save),
-                  disabled: _isSaving,
-                ),
-              ),
-            ],
-            spacing: AuraSpacing.lg,
-            crossAxisAlignment: CrossAxisAlignment.start,
-          ),
-        ),
-      ],
-    );
+  void _removeQueryField(_KeyValueField field) {
+    setState(() {
+      final _ = _queryFields.remove(field);
+      field.dispose();
+    });
+  }
+
+  void _removeInputField(_InputField field) {
+    setState(() {
+      final _ = _inputFields.remove(field);
+      field.dispose();
+    });
   }
 
   void _initializeFromTool(SkillTemplateToolEntity tool) {
+    if (_initialized) return;
+
     _titleController.text = tool.title;
     _descriptionController.text = tool.description;
     _requiresCredential = tool.requiresCredential;
@@ -472,6 +391,209 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
     }
 
     return jsonEncode(inputs);
+  }
+}
+
+class _SkillToolForm extends StatelessWidget {
+  const _SkillToolForm({
+    required this.tool,
+    required this.titleController,
+    required this.descriptionController,
+    required this.urlController,
+    required this.bodyController,
+    required this.queryFields,
+    required this.inputFields,
+    required this.method,
+    required this.bodyFormat,
+    required this.requiresCredential,
+    required this.isEnabled,
+    required this.isSaving,
+    required this.skillHasCredentialDefinition,
+    required this.onMethodChanged,
+    required this.onAddQueryField,
+    required this.onRemoveQueryField,
+    required this.onBodyFormatChanged,
+    required this.onAddInputField,
+    required this.onRemoveInputField,
+    required this.onInputChanged,
+    required this.onRequiresCredentialChanged,
+    required this.onEnabledChanged,
+    required this.onSave,
+  });
+
+  final SkillTemplateToolEntity? tool;
+  final TextEditingController titleController;
+  final TextEditingController descriptionController;
+  final TextEditingController urlController;
+  final TextEditingController bodyController;
+  final List<_KeyValueField> queryFields;
+  final List<_InputField> inputFields;
+  final UrlRequestMethod method;
+  final SkillUrlTemplateBodyFormat bodyFormat;
+  final bool requiresCredential;
+  final bool isEnabled;
+  final bool isSaving;
+  final bool skillHasCredentialDefinition;
+  final ValueChanged<UrlRequestMethod> onMethodChanged;
+  final VoidCallback onAddQueryField;
+  final ValueChanged<_KeyValueField> onRemoveQueryField;
+  final ValueChanged<SkillUrlTemplateBodyFormat> onBodyFormatChanged;
+  final VoidCallback onAddInputField;
+  final ValueChanged<_InputField> onRemoveInputField;
+  final VoidCallback onInputChanged;
+  final ValueChanged<bool> onRequiresCredentialChanged;
+  final ValueChanged<bool> onEnabledChanged;
+  final VoidCallback onSave;
+
+  @override
+  Widget build(BuildContext context) {
+    final tool = this.tool;
+
+    return ListView(
+      padding: const EdgeInsets.all(12),
+      children: [
+        AuraCard(
+          child: AuraColumn(
+            children: [
+              if (tool != null)
+                _ReadOnlyField(
+                  labelKey: LocaleKeys.skills_screen_slug_label,
+                  value: tool.slug,
+                ),
+              AuraInput(
+                controller: titleController,
+                label: Text(
+                  LocaleKeys.skills_screen_title_label.tr(context: context),
+                ),
+              ),
+              AuraInput(
+                controller: descriptionController,
+                placeholder: Text(
+                  LocaleKeys.skills_tool_description_hint.tr(context: context),
+                ),
+                label: Text(
+                  LocaleKeys.skills_tool_description_label.tr(context: context),
+                ),
+                minLines: 2,
+                maxLines: 4,
+              ),
+              AuraInput(
+                controller: urlController,
+                placeholder: Text(
+                  LocaleKeys.skills_tool_url_hint.tr(context: context),
+                ),
+                label: Text(
+                  LocaleKeys.skills_tool_url_label.tr(context: context),
+                ),
+              ),
+              AuraDropdownSelector<UrlRequestMethod>(
+                options: [
+                  for (final method in UrlRequestMethod.values)
+                    AuraDropdownOption(
+                      value: method,
+                      child: Text(method.value),
+                    ),
+                ],
+                value: method,
+                onChanged: (value) {
+                  if (value != null) onMethodChanged(value);
+                },
+                label: Text(
+                  LocaleKeys.skills_tool_method_label.tr(context: context),
+                ),
+              ),
+              _QueryFieldsSection(
+                fields: queryFields,
+                onAdd: onAddQueryField,
+                onRemove: onRemoveQueryField,
+              ),
+              AuraDropdownSelector<SkillUrlTemplateBodyFormat>(
+                options: [
+                  AuraDropdownOption(
+                    value: SkillUrlTemplateBodyFormat.json,
+                    child: Text(
+                      LocaleKeys.skills_tool_body_format_json.tr(
+                        context: context,
+                      ),
+                    ),
+                  ),
+                  AuraDropdownOption(
+                    value: SkillUrlTemplateBodyFormat.text,
+                    child: Text(
+                      LocaleKeys.skills_tool_body_format_text.tr(
+                        context: context,
+                      ),
+                    ),
+                  ),
+                ],
+                value: bodyFormat,
+                onChanged: (value) {
+                  if (value == null) return;
+                  onBodyFormatChanged(value);
+                },
+                label: Text(
+                  LocaleKeys.skills_tool_body_format_label.tr(context: context),
+                ),
+              ),
+              AuraInput(
+                controller: bodyController,
+                placeholder: Text(
+                  LocaleKeys.skills_tool_body_hint.tr(context: context),
+                ),
+                label: Text(
+                  LocaleKeys.skills_tool_body_label.tr(context: context),
+                ),
+                minLines: 5,
+                maxLines: 12,
+              ),
+              _InputFieldsSection(
+                fields: inputFields,
+                onAdd: onAddInputField,
+                onRemove: onRemoveInputField,
+                onChanged: onInputChanged,
+              ),
+              if (skillHasCredentialDefinition)
+                AuraCheckboxListTile(
+                  value: requiresCredential,
+                  onChanged: onRequiresCredentialChanged,
+                  title: const TextLocale(
+                    LocaleKeys.skills_tool_requires_credential_label,
+                  ),
+                  subtitle: const TextLocale(
+                    LocaleKeys.skills_tool_requires_credential_hint,
+                  ),
+                ),
+              AuraRow(
+                children: [
+                  AuraSwitch(
+                    value: isEnabled,
+                    onChanged: onEnabledChanged,
+                  ),
+                  const Expanded(
+                    child: AuraText(
+                      child: TextLocale(
+                        LocaleKeys.skills_screen_enabled_label,
+                      ),
+                    ),
+                  ),
+                ],
+                spacing: AuraSpacing.md,
+              ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: AuraButton(
+                  onPressed: onSave,
+                  child: const TextLocale(LocaleKeys.skills_screen_save),
+                  disabled: isSaving,
+                ),
+              ),
+            ],
+            spacing: AuraSpacing.lg,
+            crossAxisAlignment: CrossAxisAlignment.start,
+          ),
+        ),
+      ],
+    );
   }
 }
 

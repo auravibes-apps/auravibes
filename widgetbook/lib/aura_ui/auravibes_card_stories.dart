@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-returning-widgets
-// Required: Widgetbook stories use helper functions that return widgets.
 
 // Required: Widgetbook stories use intentional no-op callbacks.
 // ignore_for_file: prefer-static-class

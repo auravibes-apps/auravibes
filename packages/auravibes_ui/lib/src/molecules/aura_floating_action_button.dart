@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: UI tokens and layout use fixed design values.
-// ignore_for_file: avoid-returning-widgets
-// Required: Existing helper builders return widgets.
 // ignore_for_file: member-ordering
 // Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: prefer-moving-to-variable
@@ -83,8 +81,32 @@ class AuraFloatingActionButton extends StatelessWidget {
 
     Widget fab = FloatingActionButton(
       child: isExtended && text != null
-          ? _buildExtendedContent(auraColors, text)
-          : _buildRegularContent(),
+          ? Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AuraIcon(
+                  icon,
+                  color: foregroundColor ?? AuraColorVariant.onPrimary,
+                ),
+                const SizedBox(width: DesignSpacing.sm),
+                AuraText(
+                  child: Text(
+                    text,
+                    style: TextStyle(
+                      color:
+                          auraColors.getColorOrNull(foregroundColor) ??
+                          auraColors.onPrimary,
+                      fontWeight: DesignTypography.fontWeightMedium,
+                    ),
+                  ),
+                ),
+              ],
+            )
+          : AuraIcon(
+              icon,
+              size: _getIconSize(),
+              color: foregroundColor ?? AuraColorVariant.onPrimary,
+            ),
       foregroundColor:
           auraColors.getColorOrNull(foregroundColor) ?? auraColors.onPrimary,
       backgroundColor:
@@ -106,7 +128,11 @@ class AuraFloatingActionButton extends StatelessWidget {
         width: _getFABSize(),
         height: _getFABSize(),
         child: FloatingActionButton(
-          child: _buildRegularContent(),
+          child: AuraIcon(
+            icon,
+            size: _getIconSize(),
+            color: foregroundColor ?? AuraColorVariant.onPrimary,
+          ),
           foregroundColor:
               auraColors.getColorOrNull(foregroundColor) ??
               auraColors.onPrimary,
@@ -174,38 +200,6 @@ class AuraFloatingActionButton extends StatelessWidget {
     }
 
     return fab;
-  }
-
-  Widget _buildRegularContent() {
-    return AuraIcon(
-      icon,
-      size: _getIconSize(),
-      color: foregroundColor ?? AuraColorVariant.onPrimary,
-    );
-  }
-
-  Widget _buildExtendedContent(AuraColorScheme auraColors, String text) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        AuraIcon(
-          icon,
-          color: foregroundColor ?? AuraColorVariant.onPrimary,
-        ),
-        const SizedBox(width: DesignSpacing.sm),
-        AuraText(
-          child: Text(
-            text,
-            style: TextStyle(
-              color:
-                  auraColors.getColorOrNull(foregroundColor) ??
-                  auraColors.onPrimary,
-              fontWeight: DesignTypography.fontWeightMedium,
-            ),
-          ),
-        ),
-      ],
-    );
   }
 
   double _getFABSize() {
