@@ -6,6 +6,7 @@ plugins:
     diagnostics:
       always-remove-listener: true
       arguments-ordering: true
+      avoid-cascade-after-if-null: true
       avoid-double-slash-imports: true
       avoid-duplicate-exports: true
       avoid-border-all: true
