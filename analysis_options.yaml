@@ -105,6 +105,10 @@ plugins:
           - x
           - y
           - z
+      prefer-correct-test-file-name:
+        include:
+          - test/**
+          - "**/test/**"
       prefer-correct-edge-insets-constructor: true
       prefer-first-or-null: true
       prefer-immediate-return: true
