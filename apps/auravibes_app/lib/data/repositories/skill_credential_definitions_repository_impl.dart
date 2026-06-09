@@ -1,5 +1,3 @@
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/skill_credential_definitions_dao.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';

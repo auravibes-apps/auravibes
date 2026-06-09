@@ -1,5 +1,3 @@
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';

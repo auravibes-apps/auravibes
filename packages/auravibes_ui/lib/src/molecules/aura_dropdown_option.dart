@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: UI tokens and layout use fixed design values.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
 // Required: Existing test and UI helpers keep compact return flow.
 
 import 'package:auravibes_ui/src/atoms/aura_icon.dart';

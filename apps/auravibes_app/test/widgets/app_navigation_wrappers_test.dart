@@ -3,8 +3,6 @@
 // ignore_for_file: scoped_providers_should_specify_dependencies
 // Required: widget tests override scoped providers directly.
 
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
 // Required: Existing test and UI helpers keep compact return flow.
 
 import 'dart:async';

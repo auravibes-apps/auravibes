@@ -1,7 +1,6 @@
 // Required: Tests keep compact return flow.
 // ignore_for_file: no-magic-number
 // Required: Tests use protocol numeric fixtures.
-// ignore_for_file: member-ordering
 // Required: Test fakes keep related fields near constructors.
 // ignore_for_file: prefer-static-class
 // Required: Tests keep helper functions and fakes top-level.

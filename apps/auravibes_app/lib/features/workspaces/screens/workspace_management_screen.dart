@@ -1,7 +1,5 @@
 // ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-single-widget-per-file
 // Required: Feature widgets keep closely related private widgets together.

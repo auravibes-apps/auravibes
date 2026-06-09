@@ -1,8 +1,6 @@
 // ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures and dimensions.
 
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: prefer-static-class
 // Required: Tests keep fixture helpers and fakes top-level.

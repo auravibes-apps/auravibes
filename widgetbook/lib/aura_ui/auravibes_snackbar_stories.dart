@@ -2,8 +2,6 @@
 // Required: Widgetbook stories use fixed example sizes.
 
 // Required: Widgetbook stories use intentional no-op callbacks.
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
 // ignore_for_file: prefer-extracting-callbacks
 // Required: Stories keep callbacks inline for readability.
 // ignore_for_file: prefer-static-class

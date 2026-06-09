@@ -1,5 +1,3 @@
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
 import 'package:auravibes_ui/src/tokens/tokens.dart';
 import 'package:flutter/widgets.dart';
 

@@ -1,5 +1,3 @@
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 

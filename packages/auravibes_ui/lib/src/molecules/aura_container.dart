@@ -1,5 +1,3 @@
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
 
 import 'package:auravibes_ui/src/atoms/aura_edge_insets_geometry.dart'
     show AuraEdgeInsetsGeometry, AuraPadding;

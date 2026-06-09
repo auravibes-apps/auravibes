@@ -43,6 +43,38 @@ plugins:
         ignored-patterns:
           - ^coverage:.*
       list-all-equatable-fields: true
+      member-ordering:
+        order:
+          - public-static-const-fields
+          - private-static-const-fields
+          - public-static-final-fields
+          - private-static-final-fields
+          - constructors
+          - public-fields
+          - private-fields
+          - public-getters
+          - private-getters
+          - public-setters
+          - private-setters
+          - public-methods
+          - private-methods
+        widgets-order:
+          - public-static-const-fields
+          - private-static-const-fields
+          - public-static-final-fields
+          - private-static-final-fields
+          - constructors
+          - public-fields
+          - private-fields
+          - public-getters
+          - private-getters
+          - public-setters
+          - private-setters
+          - init-state-method
+          - dispose-method
+          - public-methods
+          - build-method
+          - private-methods
       missing-test-assertion: true
       no-blank-line-before-single-return: true
       no-empty-block: true

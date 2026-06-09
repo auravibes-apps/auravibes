@@ -1,8 +1,6 @@
 // ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
 // ignore_for_file: cascade_invocations
-// ignore_for_file: member-ordering
-// Required: Existing declaration order groups related UI and model members.
 // Required: Existing test and UI helpers keep compact return flow.
 // StringBuffer.write returns void, making cascades meaningless.
 // The _processTable method's for-loop bodies separate consecutive

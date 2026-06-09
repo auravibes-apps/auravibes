@@ -1,4 +1,3 @@
-// ignore_for_file: member-ordering
 // Required: DTO fields stay grouped with their constructors.
 // Required: Parser helpers keep compact return flow.
 // ignore_for_file: no-magic-number
