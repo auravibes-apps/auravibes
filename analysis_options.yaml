@@ -24,6 +24,7 @@ plugins:
       avoid-shrink-wrap-in-lists: true
       avoid-substring: true
       avoid-throw-in-catch-block: true
+      avoid-unnecessary-type-assertions: true
       avoid-unnecessary-setstate: true
       avoid-double-slash-imports: true
       avoid-duplicate-exports: true
