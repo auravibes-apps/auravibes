@@ -14,13 +14,13 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ToolsGroupEntity {
 
-/// Unique ID of this tools group record in the database
- String get id;/// ID of the workspace this tools group belongs to
- String get workspaceId;/// Name of the tools group
- String get name;/// Whether the tools group is enabled for this workspace
- bool get isEnabled;/// Permission mode for tools in this group
- PermissionAccess get permissions;/// Timestamp when this group was created
- DateTime get createdAt;/// Timestamp when this group was last updated
+/// Unique ID of this tools group record in the database.
+ String get id;/// ID of the workspace this tools group belongs to.
+ String get workspaceId;/// Name of the tools group.
+ String get name;/// Whether the tools group is enabled for this workspace.
+ bool get isEnabled;/// Permission mode for tools in this group.
+ PermissionAccess get permissions;/// Timestamp when this group was created.
+ DateTime get createdAt;/// Timestamp when this group was last updated.
  DateTime get updatedAt;/// Optional reference to the MCP server this group belongs to.
 /// If set, this group represents tools from an MCP server.
  String? get mcpServerId;
@@ -225,19 +225,19 @@ class _ToolsGroupEntity extends ToolsGroupEntity {
   const _ToolsGroupEntity({required this.id, required this.workspaceId, required this.name, required this.isEnabled, required this.permissions, required this.createdAt, required this.updatedAt, this.mcpServerId}): super._();
   
 
-/// Unique ID of this tools group record in the database
+/// Unique ID of this tools group record in the database.
 @override final  String id;
-/// ID of the workspace this tools group belongs to
+/// ID of the workspace this tools group belongs to.
 @override final  String workspaceId;
-/// Name of the tools group
+/// Name of the tools group.
 @override final  String name;
-/// Whether the tools group is enabled for this workspace
+/// Whether the tools group is enabled for this workspace.
 @override final  bool isEnabled;
-/// Permission mode for tools in this group
+/// Permission mode for tools in this group.
 @override final  PermissionAccess permissions;
-/// Timestamp when this group was created
+/// Timestamp when this group was created.
 @override final  DateTime createdAt;
-/// Timestamp when this group was last updated
+/// Timestamp when this group was last updated.
 @override final  DateTime updatedAt;
 /// Optional reference to the MCP server this group belongs to.
 /// If set, this group represents tools from an MCP server.
@@ -310,10 +310,10 @@ as String?,
 /// @nodoc
 mixin _$ToolsGroupToCreate {
 
-/// Name of the tools group
- String get name;/// Whether the tools group should be enabled (defaults to true)
- bool get isEnabled;/// Permission mode for tools in this group (defaults to ask)
- PermissionAccess get permissions;/// Optional reference to the MCP server this group belongs to
+/// Name of the tools group.
+ String get name;/// Whether the tools group should be enabled (defaults to true).
+ bool get isEnabled;/// Permission mode for tools in this group (defaults to ask).
+ PermissionAccess get permissions;/// Optional reference to the MCP server this group belongs to.
  String? get mcpServerId;
 /// Create a copy of ToolsGroupToCreate
 /// with the given fields replaced by the non-null parameter values.
@@ -512,13 +512,13 @@ class _ToolsGroupToCreate extends ToolsGroupToCreate {
   const _ToolsGroupToCreate({required this.name, this.isEnabled = true, this.permissions = PermissionAccess.ask, this.mcpServerId}): super._();
   
 
-/// Name of the tools group
+/// Name of the tools group.
 @override final  String name;
-/// Whether the tools group should be enabled (defaults to true)
+/// Whether the tools group should be enabled (defaults to true).
 @override@JsonKey() final  bool isEnabled;
-/// Permission mode for tools in this group (defaults to ask)
+/// Permission mode for tools in this group (defaults to ask).
 @override@JsonKey() final  PermissionAccess permissions;
-/// Optional reference to the MCP server this group belongs to
+/// Optional reference to the MCP server this group belongs to.
 @override final  String? mcpServerId;
 
 /// Create a copy of ToolsGroupToCreate

@@ -15,10 +15,10 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ApiModelProviderEntity {
 
-/// Unique identifier for the provider
- String get id;/// Human-readable name of the provider
- String get name; ModelProvidersType? get type;/// API endpoint URL for the provider
- String? get url;/// Documentation URL for the provider
+/// Unique identifier for the provider.
+ String get id;/// Human-readable name of the provider.
+ String get name; ModelProvidersType? get type;/// API endpoint URL for the provider.
+ String? get url;/// Documentation URL for the provider.
  String? get doc;
 /// Create a copy of ApiModelProviderEntity
 /// with the given fields replaced by the non-null parameter values.
@@ -220,14 +220,14 @@ class _ApiModelProviderEntity extends ApiModelProviderEntity {
   const _ApiModelProviderEntity({required this.id, required this.name, required this.type, this.url, this.doc}): super._();
   factory _ApiModelProviderEntity.fromJson(Map<String, dynamic> json) => _$ApiModelProviderEntityFromJson(json);
 
-/// Unique identifier for the provider
+/// Unique identifier for the provider.
 @override final  String id;
-/// Human-readable name of the provider
+/// Human-readable name of the provider.
 @override final  String name;
 @override final  ModelProvidersType? type;
-/// API endpoint URL for the provider
+/// API endpoint URL for the provider.
 @override final  String? url;
-/// Documentation URL for the provider
+/// Documentation URL for the provider.
 @override final  String? doc;
 
 /// Create a copy of ApiModelProviderEntity

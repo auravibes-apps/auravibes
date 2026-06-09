@@ -14,13 +14,13 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ConversationEntity {
 
-/// Unique identifier for the conversation
- String get id;/// Human-readable title of the conversation
- String get title;/// ID of the workspace this conversation belongs to
- String get workspaceId;/// Whether this conversation is pinned
- bool get isPinned;/// Timestamp when the conversation was created
- DateTime get createdAt;/// Timestamp when the conversation was last updated
- DateTime get updatedAt;/// ID of the AI model used for this conversation
+/// Unique identifier for the conversation.
+ String get id;/// Human-readable title of the conversation.
+ String get title;/// ID of the workspace this conversation belongs to.
+ String get workspaceId;/// Whether this conversation is pinned.
+ bool get isPinned;/// Timestamp when the conversation was created.
+ DateTime get createdAt;/// Timestamp when the conversation was last updated.
+ DateTime get updatedAt;/// ID of the AI model used for this conversation.
  String? get modelId;
 /// Create a copy of ConversationEntity
 /// with the given fields replaced by the non-null parameter values.
@@ -222,19 +222,19 @@ class _ConversationEntity extends ConversationEntity {
   const _ConversationEntity({required this.id, required this.title, required this.workspaceId, required this.isPinned, required this.createdAt, required this.updatedAt, this.modelId}): super._();
   
 
-/// Unique identifier for the conversation
+/// Unique identifier for the conversation.
 @override final  String id;
-/// Human-readable title of the conversation
+/// Human-readable title of the conversation.
 @override final  String title;
-/// ID of the workspace this conversation belongs to
+/// ID of the workspace this conversation belongs to.
 @override final  String workspaceId;
-/// Whether this conversation is pinned
+/// Whether this conversation is pinned.
 @override final  bool isPinned;
-/// Timestamp when the conversation was created
+/// Timestamp when the conversation was created.
 @override final  DateTime createdAt;
-/// Timestamp when the conversation was last updated
+/// Timestamp when the conversation was last updated.
 @override final  DateTime updatedAt;
-/// ID of the AI model used for this conversation
+/// ID of the AI model used for this conversation.
 @override final  String? modelId;
 
 /// Create a copy of ConversationEntity
@@ -303,10 +303,10 @@ as String?,
 /// @nodoc
 mixin _$ConversationToCreate {
 
-/// Human-readable title of the conversation
- String get title;/// ID of the workspace this conversation belongs to
- String get workspaceId;/// ID of the AI model used for this conversation
- String? get modelId;/// Whether this conversation is pinned
+/// Human-readable title of the conversation.
+ String get title;/// ID of the workspace this conversation belongs to.
+ String get workspaceId;/// ID of the AI model used for this conversation.
+ String? get modelId;/// Whether this conversation is pinned.
  bool? get isPinned;
 /// Create a copy of ConversationToCreate
 /// with the given fields replaced by the non-null parameter values.
@@ -505,13 +505,13 @@ class _ConversationToCreate extends ConversationToCreate {
   const _ConversationToCreate({required this.title, required this.workspaceId, this.modelId, this.isPinned}): super._();
   
 
-/// Human-readable title of the conversation
+/// Human-readable title of the conversation.
 @override final  String title;
-/// ID of the workspace this conversation belongs to
+/// ID of the workspace this conversation belongs to.
 @override final  String workspaceId;
-/// ID of the AI model used for this conversation
+/// ID of the AI model used for this conversation.
 @override final  String? modelId;
-/// Whether this conversation is pinned
+/// Whether this conversation is pinned.
 @override final  bool? isPinned;
 
 /// Create a copy of ConversationToCreate
@@ -577,9 +577,9 @@ as bool?,
 /// @nodoc
 mixin _$ConversationPatch {
 
-/// Human-readable title of the conversation
- String? get title;/// ID of the AI model used for this conversation
- String? get modelId;/// Whether this conversation is pinned
+/// Human-readable title of the conversation.
+ String? get title;/// ID of the AI model used for this conversation.
+ String? get modelId;/// Whether this conversation is pinned.
  bool? get isPinned;
 /// Create a copy of ConversationPatch
 /// with the given fields replaced by the non-null parameter values.
@@ -777,11 +777,11 @@ class _ConversationPatch extends ConversationPatch {
   const _ConversationPatch({this.title, this.modelId, this.isPinned}): super._();
   
 
-/// Human-readable title of the conversation
+/// Human-readable title of the conversation.
 @override final  String? title;
-/// ID of the AI model used for this conversation
+/// ID of the AI model used for this conversation.
 @override final  String? modelId;
-/// Whether this conversation is pinned
+/// Whether this conversation is pinned.
 @override final  bool? isPinned;
 
 /// Create a copy of ConversationPatch

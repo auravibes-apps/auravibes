@@ -8,15 +8,15 @@ part of 'mcp_form_state.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Notifier for managing MCP form state
+/// Notifier for managing MCP form state.
 
 @ProviderFor(McpFormNotifier)
 final mcpFormProvider = McpFormNotifierFamily._();
 
-/// Notifier for managing MCP form state
+/// Notifier for managing MCP form state.
 final class McpFormNotifierProvider
     extends $NotifierProvider<McpFormNotifier, McpFormState> {
-  /// Notifier for managing MCP form state
+  /// Notifier for managing MCP form state.
   McpFormNotifierProvider._({
     required McpFormNotifierFamily super.from,
     required String super.argument,
@@ -63,7 +63,7 @@ final class McpFormNotifierProvider
 
 String _$mcpFormNotifierHash() => r'4cca563b1565d644c929df8cbddd00fb1bf6bb0b';
 
-/// Notifier for managing MCP form state
+/// Notifier for managing MCP form state.
 
 final class McpFormNotifierFamily extends $Family
     with
@@ -83,7 +83,7 @@ final class McpFormNotifierFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// Notifier for managing MCP form state
+  /// Notifier for managing MCP form state.
 
   McpFormNotifierProvider call(String workspaceId) =>
       McpFormNotifierProvider._(argument: workspaceId, from: this);
@@ -92,7 +92,7 @@ final class McpFormNotifierFamily extends $Family
   String toString() => r'mcpFormProvider';
 }
 
-/// Notifier for managing MCP form state
+/// Notifier for managing MCP form state.
 
 abstract class _$McpFormNotifier extends $Notifier<McpFormState> {
   late final _$args = ref.$arg as String;

@@ -200,17 +200,17 @@ abstract class _$ConversationToolsNotifier
   }
 }
 
-/// Provider to get context-aware tools for chat
+/// Provider to get context-aware tools for chat.
 /// (conversation -> workspace -> app defaults)
 
 @ProviderFor(ContextAwareToolsNotifier)
 final contextAwareToolsProvider = ContextAwareToolsNotifierFamily._();
 
-/// Provider to get context-aware tools for chat
+/// Provider to get context-aware tools for chat.
 /// (conversation -> workspace -> app defaults)
 final class ContextAwareToolsNotifierProvider
     extends $AsyncNotifierProvider<ContextAwareToolsNotifier, List<String>> {
-  /// Provider to get context-aware tools for chat
+  /// Provider to get context-aware tools for chat.
   /// (conversation -> workspace -> app defaults)
   ContextAwareToolsNotifierProvider._({
     required ContextAwareToolsNotifierFamily super.from,
@@ -252,7 +252,7 @@ final class ContextAwareToolsNotifierProvider
 String _$contextAwareToolsNotifierHash() =>
     r'337c7c2e7681b7ee676f15e4f8189f5fbb1635b1';
 
-/// Provider to get context-aware tools for chat
+/// Provider to get context-aware tools for chat.
 /// (conversation -> workspace -> app defaults)
 
 final class ContextAwareToolsNotifierFamily extends $Family
@@ -273,7 +273,7 @@ final class ContextAwareToolsNotifierFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// Provider to get context-aware tools for chat
+  /// Provider to get context-aware tools for chat.
   /// (conversation -> workspace -> app defaults)
 
   ContextAwareToolsNotifierProvider call({
@@ -288,7 +288,7 @@ final class ContextAwareToolsNotifierFamily extends $Family
   String toString() => r'contextAwareToolsProvider';
 }
 
-/// Provider to get context-aware tools for chat
+/// Provider to get context-aware tools for chat.
 /// (conversation -> workspace -> app defaults)
 
 abstract class _$ContextAwareToolsNotifier
