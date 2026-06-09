@@ -1,5 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:flutter_test/flutter_test.dart';
 

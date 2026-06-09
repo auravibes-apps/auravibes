@@ -1,4 +1,3 @@
-// ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
 // ignore_for_file: cascade_invocations
 // Required: Existing test and UI helpers keep compact return flow.

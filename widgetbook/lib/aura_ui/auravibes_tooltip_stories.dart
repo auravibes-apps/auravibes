@@ -1,4 +1,3 @@
-// ignore_for_file: no-magic-number
 // Required: Widgetbook stories use fixed example sizes.
 
 // Required: Widgetbook stories use intentional no-op callbacks.

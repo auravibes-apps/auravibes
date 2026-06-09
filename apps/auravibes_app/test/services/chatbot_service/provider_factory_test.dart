@@ -1,5 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: prefer-moving-to-variable
 // Required: Tests repeat generation config lookups for readability.
 // ignore_for_file: prefer-static-class

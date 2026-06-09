@@ -107,6 +107,8 @@ plugins:
           - toolIdentifier
           - top
       no-equal-then-else: true
+      no-magic-number:
+        allow-only-once: true
       no-object-declaration: true
       newline-before-return: true
       avoid-unnecessary-setstate: true

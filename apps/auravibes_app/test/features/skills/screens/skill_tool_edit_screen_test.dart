@@ -1,4 +1,3 @@
-// ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures.
 import 'dart:convert';
 

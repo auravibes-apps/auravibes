@@ -1,4 +1,3 @@
-// ignore_for_file: no-magic-number
 // Required: Widgetbook stories use fixed example sizes.
 // ignore_for_file: prefer-moving-to-variable
 // Required: Existing code repeats lookups where extraction adds noise.

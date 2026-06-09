@@ -1,5 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
 import 'package:auravibes_ui/src/colors/value_color.dart';
 import 'package:auravibes_ui/src/colors/vector.dart';
 import 'package:flutter/material.dart';

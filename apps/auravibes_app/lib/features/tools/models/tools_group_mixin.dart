@@ -1,4 +1,3 @@
-// ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';

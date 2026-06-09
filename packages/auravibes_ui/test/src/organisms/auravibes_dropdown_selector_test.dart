@@ -1,5 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
 
 import 'package:auravibes_ui/src/molecules/aura_dropdown_option.dart';
 import 'package:auravibes_ui/src/organisms/aura_dropdown_selector.dart';

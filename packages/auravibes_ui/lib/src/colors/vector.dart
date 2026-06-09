@@ -1,5 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: UI tokens and layout use fixed design values.
 // ignore_for_file: prefer-static-class
 // Required: UI package exposes top-level helpers and constants.
 import 'dart:math';

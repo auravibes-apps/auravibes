@@ -1,4 +1,3 @@
-// ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
 import 'package:auravibes_app/data/database/drift/daos/api_model_providers_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/api_models_dao.dart';

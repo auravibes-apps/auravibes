@@ -1,5 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: UI tokens and layout use fixed design values.
 import 'dart:ui';
 
 import 'package:auravibes_ui/src/atoms/atoms.dart';

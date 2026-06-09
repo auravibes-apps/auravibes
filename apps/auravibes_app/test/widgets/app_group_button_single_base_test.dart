@@ -1,5 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
 
 import 'package:auravibes_app/widgets/app_group_button_single_base.dart';
 import 'package:auravibes_ui/ui.dart';

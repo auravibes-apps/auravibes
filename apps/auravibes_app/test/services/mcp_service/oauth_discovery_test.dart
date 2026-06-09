@@ -1,5 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
 // Required: Existing test and UI helpers keep compact return flow.
 
 import 'dart:convert';

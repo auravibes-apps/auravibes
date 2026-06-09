@@ -1,5 +1,4 @@
 // Required: Tests keep compact return flow.
-// ignore_for_file: no-magic-number
 // Required: Tests use protocol numeric fixtures.
 // Required: Test fakes keep related fields near constructors.
 // ignore_for_file: prefer-static-class

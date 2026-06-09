@@ -1,5 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: cascade_invocations
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';

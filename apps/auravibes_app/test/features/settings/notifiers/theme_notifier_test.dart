@@ -1,5 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
 
 import 'package:auravibes_app/features/settings/notifiers/app_theme.dart';
 import 'package:flutter/material.dart';

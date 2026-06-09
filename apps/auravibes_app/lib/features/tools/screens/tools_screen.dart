@@ -1,4 +1,3 @@
-// ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
 // Required: Existing argument values intentionally repeat.
 // ignore_for_file: prefer-extracting-callbacks

@@ -1,4 +1,3 @@
-// ignore_for_file: no-magic-number
 // Required: Existing UI spacing uses small numeric values.
 import 'dart:convert';
 

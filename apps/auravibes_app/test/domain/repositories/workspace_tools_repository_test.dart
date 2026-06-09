@@ -1,5 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
 // ignore_for_file: cascade_invocations
 
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';

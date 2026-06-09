@@ -1,4 +1,3 @@
-// ignore_for_file: no-magic-number
 // Required: Existing UI spacing uses small numeric values.
 import 'package:auravibes_app/features/skills/providers/skill_credential_definitions_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';

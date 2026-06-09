@@ -1,4 +1,3 @@
-// ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
 import 'package:auravibes_app/features/chats/widgets/tool_call_response_modal.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';

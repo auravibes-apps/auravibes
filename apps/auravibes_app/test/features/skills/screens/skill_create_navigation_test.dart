@@ -1,4 +1,3 @@
-// ignore_for_file: no-magic-number
 // Required: Tests use numeric fixtures.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository_impl.dart';

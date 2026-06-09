@@ -1,4 +1,3 @@
-// ignore_for_file: no-magic-number
 // Required: Existing thresholds and limits use numeric values.
 import 'package:freezed_annotation/freezed_annotation.dart';
 

@@ -1,4 +1,3 @@
-// ignore_for_file: no-magic-number
 // Required: Existing UI spacing uses small numeric values.
 // Required: Local builders keep this small screen readable.
 // ignore_for_file: prefer-single-widget-per-file

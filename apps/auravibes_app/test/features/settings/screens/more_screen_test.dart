@@ -1,5 +1,3 @@
-// ignore_for_file: no-magic-number
-// Required: Tests use numeric fixtures and dimensions.
 import 'package:auravibes_app/features/settings/screens/more_screen.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:easy_localization/easy_localization.dart';
