@@ -27,6 +27,7 @@ class AuraFloatingActionButton extends StatelessWidget {
     this.size = AuraFABSize.regular,
     this.backgroundColor,
     this.foregroundColor,
+    this.heroTag = const ValueKey<String>('aura_floating_action_button'),
     this.semanticLabel,
     this.tooltip,
   }) : text = null;
@@ -39,6 +40,7 @@ class AuraFloatingActionButton extends StatelessWidget {
     super.key,
     this.backgroundColor,
     this.foregroundColor,
+    this.heroTag = const ValueKey<String>('aura_floating_action_button'),
     this.semanticLabel,
     this.tooltip,
   }) : size = AuraFABSize.extended;
@@ -62,6 +64,11 @@ class AuraFloatingActionButton extends StatelessWidget {
   /// If null, uses the primary contrast color.
   final AuraColorVariant? foregroundColor;
 
+  /// The tag used for the FAB hero animation.
+  ///
+  /// Set to null to disable hero animations when multiple FABs are present.
+  final LocalKey? heroTag;
+
   /// A semantic label for the FAB for accessibility.
   final String? semanticLabel;
 
@@ -82,6 +89,7 @@ class AuraFloatingActionButton extends StatelessWidget {
           auraColors.getColorOrNull(foregroundColor) ?? auraColors.onPrimary,
       backgroundColor:
           auraColors.getColorOrNull(backgroundColor) ?? auraColors.primary,
+      heroTag: heroTag,
       elevation: _getElevation(),
       focusElevation: _getFocusElevation(),
       hoverElevation: _getHoverElevation(),
@@ -104,6 +112,7 @@ class AuraFloatingActionButton extends StatelessWidget {
               auraColors.onPrimary,
           backgroundColor:
               auraColors.getColorOrNull(backgroundColor) ?? auraColors.primary,
+          heroTag: heroTag,
           elevation: _getElevation(),
           focusElevation: _getFocusElevation(),
           hoverElevation: _getHoverElevation(),
@@ -122,6 +131,7 @@ class AuraFloatingActionButton extends StatelessWidget {
             auraColors.getColorOrNull(foregroundColor) ?? auraColors.onPrimary,
         backgroundColor:
             auraColors.getColorOrNull(backgroundColor) ?? auraColors.primary,
+        heroTag: heroTag,
         elevation: _getElevation(),
         focusElevation: _getFocusElevation(),
         hoverElevation: _getHoverElevation(),

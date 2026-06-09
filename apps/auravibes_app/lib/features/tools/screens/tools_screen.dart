@@ -103,6 +103,7 @@ class ToolsScreen extends ConsumerWidget {
               onPressed: () =>
                   AddToolModal.show(context, workspaceId: workspaceId),
               icon: Icons.add,
+              heroTag: const ValueKey<String>('tools_add_tool_fab'),
               tooltip: LocaleKeys.tools_screen_add_tool_tooltip.tr(
                 context: context,
               ),
