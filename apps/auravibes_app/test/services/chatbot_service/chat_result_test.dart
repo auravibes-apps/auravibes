@@ -102,6 +102,26 @@ void main() {
       expect(res.entityTools.length, 1);
       expect(res.entityTools.firstOrNull?.id, 'call-1');
       expect(res.entityTools.firstOrNull?.name, 'getWeather');
+      expect(res.entityTools.firstOrNull?.argumentsRaw, '{"city":"Boston"}');
+    });
+
+    test('extracts map tool call arguments as JSON', () {
+      final toolRequestPart = ToolRequestPart(
+        toolRequest: ToolRequest(
+          ref: 'call-1',
+          name: 'getWeather',
+          input: const {'city': 'Boston'},
+        ),
+      );
+      final res = ChatResult<ChatMessage>(
+        output: ChatMessage(
+          role: ChatMessageRole.model,
+          parts: [toolRequestPart],
+        ),
+      );
+
+      expect(res.entityTools.firstOrNull?.argumentsRaw, '{"city":"Boston"}');
+      expect(res.entityTools.firstOrNull?.arguments, {'city': 'Boston'});
     });
   });
 }
