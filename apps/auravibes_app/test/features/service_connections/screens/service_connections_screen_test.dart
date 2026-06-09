@@ -1,4 +1,5 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository_impl.dart';
 import 'package:auravibes_app/data/repositories/skill_credentials_repository_impl.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository_impl.dart';
@@ -27,7 +28,8 @@ void main() {
     await EasyLocalization.ensureInitialized();
   });
 
-  testWidgets('deletes skill credential from row menu', (tester) async {
+  testWidgets('deletes service connections from row menu', (tester) async {
+    _addWidgetTearDown(tester);
     final database = AppDatabase(
       connection: DatabaseConnection(NativeDatabase.memory()),
     );
@@ -122,6 +124,42 @@ void main() {
       find.textContaining('Credential definition not found'),
       findsOneWidget,
     );
+    final connection = await database.modelConnectionsDao.insertModelConnection(
+      ServiceConnectionsCompanion.insert(
+        name: 'OpenAI Main',
+        serviceId: 'openai',
+        kind: ServiceConnectionKindTable.modelProvider,
+        authenticationType: ServiceAuthenticationTypeTable.apiKey,
+        encryptedAuthValue: const Value('encrypted-key'),
+        keySuffix: const Value('et-key'),
+        workspaceId: workspace.id,
+      ),
+    );
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.text('OpenAI Main'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.more_vert).first);
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete'));
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.text('Delete model provider'), findsOneWidget);
+    expect(
+      find.text(
+        'Delete provider "OpenAI Main"? This action cannot be undone.',
+      ),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Delete').last);
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.text('OpenAI Main'), findsNothing);
+    final deleted = await database.modelConnectionsDao.getModelConnectionById(
+      connection.id,
+    );
+    expect(deleted, equals(null));
+
+    await _unmountScreen(tester);
   });
 }
 
@@ -130,10 +168,6 @@ Future<void> _pumpScreen(
   ProviderContainer container,
   String workspaceId,
 ) {
-  addTearDown(() async {
-    await tester.pumpWidget(const SizedBox.shrink());
-  });
-
   return tester.pumpWidget(
     EasyLocalization(
       key: UniqueKey(),
@@ -158,6 +192,17 @@ Future<void> _pumpScreen(
       useFallbackTranslations: true,
     ),
   );
+}
+
+void _addWidgetTearDown(WidgetTester tester) {
+  addTearDown(() async {
+    await _unmountScreen(tester);
+  });
+}
+
+Future<void> _unmountScreen(WidgetTester tester) async {
+  await tester.pumpWidget(const SizedBox.shrink());
+  final _ = await tester.pumpAndSettle();
 }
 
 class _FakeSecretKeyManager extends SecretKeyManager {

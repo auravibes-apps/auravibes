@@ -87,6 +87,12 @@ abstract class LocaleKeys {
       'service_connections.delete_credential_confirm';
   static const service_connections_delete_credential_error =
       'service_connections.delete_credential_error';
+  static const service_connections_delete_model_provider_title =
+      'service_connections.delete_model_provider_title';
+  static const service_connections_delete_model_provider_confirm =
+      'service_connections.delete_model_provider_confirm';
+  static const service_connections_delete_model_provider_error =
+      'service_connections.delete_model_provider_error';
   static const service_connections_missing_credential_definition =
       'service_connections.missing_credential_definition';
   static const service_connections_type_model_provider =

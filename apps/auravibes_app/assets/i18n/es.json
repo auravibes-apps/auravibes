@@ -69,6 +69,9 @@
     "delete_credential_title": "Eliminar credencial de habilidad",
     "delete_credential_confirm": "¿Eliminar la credencial \"{name}\"? Esta acción no se puede deshacer.",
     "delete_credential_error": "No se pudo eliminar la credencial de habilidad",
+    "delete_model_provider_title": "Eliminar proveedor de modelo",
+    "delete_model_provider_confirm": "¿Eliminar el proveedor \"{name}\"? Esta acción no se puede deshacer.",
+    "delete_model_provider_error": "No se pudo eliminar el proveedor de modelo",
     "missing_credential_definition": "No se encontró la definición de credencial",
     "type": {
       "model_provider": "Proveedor de Modelo",
