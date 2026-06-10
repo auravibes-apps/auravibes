@@ -75,7 +75,31 @@
     "missing_credential_definition": "Credential definition not found",
     "type": {
       "model_provider": "Model Provider",
-      "skill_credential": "Skill Credential"
+      "skill_credential": "Skill Credential",
+      "mcp_server": "MCP"
+    },
+    "status": {
+      "connected": "Connected",
+      "expiring_soon": "Expiring soon",
+      "needs_reauth": "Needs reconnect",
+      "failed": "Failed",
+      "unknown": "Unknown"
+    },
+    "metadata": {
+      "issuer": "Issuer",
+      "client_id": "Client ID",
+      "scopes": "Scopes",
+      "expires_at": "Expires",
+      "last_refreshed_at": "Last refreshed",
+      "last_auth_error": "Last auth error"
+    },
+    "action": {
+      "reconnect": "Reconnect",
+      "refresh_token": "Refresh token",
+      "reconnect_success": "MCP server reconnected",
+      "reconnect_error": "Unable to reconnect MCP server",
+      "refresh_success": "OAuth token refreshed",
+      "refresh_error": "Unable to refresh OAuth token"
     },
     "create": {
       "type_label": "Connection type"

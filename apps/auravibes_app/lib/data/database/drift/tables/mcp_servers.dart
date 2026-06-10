@@ -1,5 +1,7 @@
-// Required: Existing helpers remain top-level for local feature use.
+// coverage:ignore-file
+// Required: Drift table definitions are schema declarations.
 
+import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/data/database/drift/tables/table_mixin.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspaces.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
@@ -13,26 +15,12 @@ transportTypeConverter = TypeConverter.json2(
   toJson: (column) => column.toJson(),
 );
 
-final JsonTypeConverter2<McpAuthenticationType, String, Object?>
-authenticationTypeConverter = TypeConverter.json2(
-  fromJson: _authenticationTypeFromJson,
-  toJson: (column) => column.toJson(),
-);
-
 McpTransportType _transportTypeFromJson(Object? json) {
   if (json is! Map<Object?, Object?>) {
     throw const FormatException('Invalid MCP transport type JSON.');
   }
 
   return McpTransportType.fromJson(Map<String, dynamic>.from(json));
-}
-
-McpAuthenticationType _authenticationTypeFromJson(Object? json) {
-  if (json is! Map<Object?, Object?>) {
-    throw const FormatException('Invalid MCP authentication type JSON.');
-  }
-
-  return McpAuthenticationType.fromJson(Map<String, dynamic>.from(json));
 }
 
 /// Database table for storing MCP (Model Context Protocol) server
@@ -58,9 +46,12 @@ class McpServers extends Table with TableMixin {
   /// Transport type: 'sse' or 'streamable_http.'.
   TextColumn get transport => text().map(transportTypeConverter)();
 
-  /// Authentication type: 'none', 'oauth', or 'bearer_token.'.
-  TextColumn get authenticationType =>
-      text().map(authenticationTypeConverter)();
+  /// Optional credential record used to authenticate this MCP server.
+  TextColumn get serviceConnectionId => text().nullable().references(
+    ServiceConnections,
+    #id,
+    onDelete: KeyAction.setNull,
+  )();
 
   /// Optional description of what this MCP server provides.
   TextColumn get description => text().nullable()();

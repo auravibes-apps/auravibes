@@ -190,8 +190,11 @@ abstract class McpServerToCreate with _$McpServerToCreate {
     /// Transport type used for communication.
     required McpTransportType transport,
 
-    /// Authentication type for the MCP server.
+    /// Transient authentication config used only while connecting.
     required McpAuthenticationType authenticationType,
+
+    /// Optional credential record used to authenticate this MCP server.
+    String? serviceConnectionId,
 
     /// Optional description of what this MCP server provides.
     String? description,
@@ -232,7 +235,7 @@ abstract class McpServerEntity extends McpServerToCreate
     /// Transport type used for communication.
     required McpTransportType transport,
 
-    /// Authentication type for the MCP server.
+    /// Transient authentication config used only while connecting.
     required McpAuthenticationType authenticationType,
 
     /// Timestamp when this configuration was created.
@@ -240,6 +243,9 @@ abstract class McpServerEntity extends McpServerToCreate
 
     /// Timestamp when this configuration was last updated.
     required DateTime updatedAt,
+
+    /// Optional credential record used to authenticate this MCP server.
+    String? serviceConnectionId,
 
     /// Optional description of what this MCP server provides.
     String? description,

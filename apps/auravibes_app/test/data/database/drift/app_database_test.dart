@@ -1,5 +1,6 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
+import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
@@ -95,6 +96,57 @@ void _createVersionThreeSchema(sqlite.Database database) {
     ..execute('PRAGMA user_version = 3');
 }
 
+void _createVersionSevenMcpSchema(sqlite.Database database) {
+  database
+    ..execute('''
+      CREATE TABLE workspaces (
+        id TEXT NOT NULL PRIMARY KEY,
+        created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+        updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
+        name TEXT NOT NULL,
+        type TEXT NOT NULL
+      )
+    ''')
+    ..execute('''
+      CREATE TABLE service_connections (
+        id TEXT NOT NULL PRIMARY KEY,
+        created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+        updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
+        name TEXT NOT NULL,
+        service_id TEXT NOT NULL,
+        kind TEXT NOT NULL,
+        authentication_type TEXT NOT NULL,
+        url TEXT,
+        encrypted_auth_value TEXT,
+        key_suffix TEXT,
+        metadata_json TEXT,
+        workspace_id TEXT NOT NULL REFERENCES workspaces (id) ON DELETE CASCADE,
+        is_enabled INTEGER NOT NULL DEFAULT 1
+      )
+    ''')
+    ..execute('''
+      CREATE TABLE mcp_servers (
+        id TEXT NOT NULL PRIMARY KEY,
+        created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+        updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
+        workspace_id TEXT NOT NULL REFERENCES workspaces (id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        url TEXT NOT NULL,
+        transport TEXT NOT NULL,
+        authentication_type TEXT NOT NULL,
+        description TEXT,
+        is_enabled INTEGER NOT NULL DEFAULT 1
+      )
+    ''')
+    ..execute(
+      '''
+      INSERT INTO workspaces (id, name, type)
+      VALUES ('ws-1', 'WS', 'local')
+      ''',
+    )
+    ..execute('PRAGMA user_version = 7');
+}
+
 final class _DatabaseFixture {
   _DatabaseFixture(this.createConnection);
 
@@ -129,7 +181,7 @@ void main() {
     });
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 7);
+      expect(fixture.database.schemaVersion, 8);
     });
 
     test('creates successfully with in-memory connection', () {
@@ -223,8 +275,8 @@ void main() {
       expect(strategy, isNotNull);
     });
 
-    test('schemaVersion is 7', () {
-      expect(fixture.database.schemaVersion, 7);
+    test('schemaVersion is 8', () {
+      expect(fixture.database.schemaVersion, 8);
     });
 
     test(
@@ -289,6 +341,41 @@ void main() {
               ),
             );
         expect(insertedSelectionId, isA<int>());
+      },
+    );
+
+    test(
+      'migration from v7 drops old MCP authentication type column',
+      () async {
+        await fixture.close();
+        final rawDatabase = sqlite.sqlite3.openInMemory();
+        _createVersionSevenMcpSchema(rawDatabase);
+
+        final migratedDatabase = AppDatabase(
+          connection: NativeDatabase.opened(rawDatabase),
+        );
+        fixture.database = migratedDatabase;
+
+        final columns = await migratedDatabase
+            .customSelect('PRAGMA table_info(mcp_servers)')
+            .get();
+        final columnNames = columns
+            .map((row) => row.read<String>('name'))
+            .toSet();
+        expect(columnNames, isNot(contains('authentication_type')));
+        expect(columnNames, contains('service_connection_id'));
+
+        final inserted = await migratedDatabase
+            .into(migratedDatabase.mcpServers)
+            .insert(
+              McpServersCompanion.insert(
+                workspaceId: 'ws-1',
+                name: 'Notion',
+                url: 'https://mcp.notion.com/mcp',
+                transport: const McpTransportTypeStreamableHttp(),
+              ),
+            );
+        expect(inserted, isA<int>());
       },
     );
 

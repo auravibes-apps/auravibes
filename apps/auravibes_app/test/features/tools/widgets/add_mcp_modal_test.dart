@@ -36,6 +36,20 @@ class _SuccessfulMcpFormNotifier extends McpFormNotifier {
   Future<bool> submit() async => true;
 }
 
+class _ErrorMcpFormNotifier extends McpFormNotifier {
+  @override
+  McpFormState build(String workspaceId) {
+    return const McpFormState(
+      errorMessage:
+          'OAuth discovery failed. OAuth discovery failed. OAuth '
+          'discovery failed. OAuth discovery failed. OAuth discovery failed. '
+          'OAuth discovery failed. OAuth discovery failed. OAuth discovery '
+          'failed. OAuth discovery failed. OAuth discovery failed. OAuth '
+          'discovery failed. OAuth discovery failed.',
+    );
+  }
+}
+
 const _wsId = 'ws1';
 
 class _Subject extends StatelessWidget {
@@ -208,6 +222,53 @@ void main() {
       await _showDialog(tester);
 
       expect(find.byType(AuraLoadingOverlay), findsOneWidget);
+    });
+
+    testWidgets('long error message remains scrollable', (tester) async {
+      tester.view.physicalSize = const Size(500, 700);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await _pumpAndInit(
+        tester,
+        EasyLocalization(
+          child: TestProviderScope(
+            overrides: [
+              mcpConnectionProvider.overrideWith(
+                _FakeMcpConnectionNotifier.new,
+              ),
+              // ignore: deprecated_member_use - Required to override generated provider.
+              mcpFormProvider.overrideWith(_ErrorMcpFormNotifier.new),
+            ],
+            child: Portal(
+              child: Builder(
+                builder: (context) {
+                  return MaterialApp(
+                    home: Theme(
+                      data: ThemeData(extensions: [AuraTheme.light]),
+                      child: const Scaffold(body: SizedBox.shrink()),
+                    ),
+                    locale: context.locale,
+                    localizationsDelegates: context.localizationDelegates,
+                    supportedLocales: context.supportedLocales,
+                  );
+                },
+              ),
+            ),
+          ),
+          supportedLocales: const [Locale('en')],
+          path: 'assets/i18n',
+          fallbackLocale: const Locale('en'),
+          startLocale: const Locale('en'),
+          useOnlyLangCode: true,
+          useFallbackTranslations: true,
+        ),
+      );
+      await _showDialog(tester);
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(SingleChildScrollView), findsOneWidget);
     });
 
     testWidgets('save shows success message and closes dialog', (tester) async {

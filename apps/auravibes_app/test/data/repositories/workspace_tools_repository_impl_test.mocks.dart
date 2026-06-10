@@ -72,97 +72,103 @@ class _Fake$WorkspacesTable_6 extends _i1.SmartFake
     : super(parent, parentInvocation);
 }
 
-class _Fake$McpServersTable_7 extends _i1.SmartFake
+class _Fake$ServiceConnectionsTable_7 extends _i1.SmartFake
+    implements _i2.$ServiceConnectionsTable {
+  _Fake$ServiceConnectionsTable_7(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
+class _Fake$McpServersTable_8 extends _i1.SmartFake
     implements _i2.$McpServersTable {
-  _Fake$McpServersTable_7(Object parent, Invocation parentInvocation)
+  _Fake$McpServersTable_8(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _Fake$ToolsGroupsTable_8 extends _i1.SmartFake
+class _Fake$ToolsGroupsTable_9 extends _i1.SmartFake
     implements _i2.$ToolsGroupsTable {
-  _Fake$ToolsGroupsTable_8(Object parent, Invocation parentInvocation)
+  _Fake$ToolsGroupsTable_9(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _Fake$ToolsTable_9 extends _i1.SmartFake implements _i2.$ToolsTable {
-  _Fake$ToolsTable_9(Object parent, Invocation parentInvocation)
+class _Fake$ToolsTable_10 extends _i1.SmartFake implements _i2.$ToolsTable {
+  _Fake$ToolsTable_10(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeWorkspaceToolsDaoManager_10 extends _i1.SmartFake
+class _FakeWorkspaceToolsDaoManager_11 extends _i1.SmartFake
     implements _i5.WorkspaceToolsDaoManager {
-  _FakeWorkspaceToolsDaoManager_10(Object parent, Invocation parentInvocation)
+  _FakeWorkspaceToolsDaoManager_11(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeToolsTable_11 extends _i1.SmartFake implements _i2.ToolsTable {
-  _FakeToolsTable_11(Object parent, Invocation parentInvocation)
+class _FakeToolsTable_12 extends _i1.SmartFake implements _i2.ToolsTable {
+  _FakeToolsTable_12(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeFuture_12<T1> extends _i1.SmartFake implements _i6.Future<T1> {
-  _FakeFuture_12(Object parent, Invocation parentInvocation)
+class _FakeFuture_13<T1> extends _i1.SmartFake implements _i6.Future<T1> {
+  _FakeFuture_13(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeInsertStatement_13<T1 extends _i3.Table, D1> extends _i1.SmartFake
+class _FakeInsertStatement_14<T1 extends _i3.Table, D1> extends _i1.SmartFake
     implements _i3.InsertStatement<T1, D1> {
-  _FakeInsertStatement_13(Object parent, Invocation parentInvocation)
+  _FakeInsertStatement_14(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeUpdateStatement_14<T extends _i3.Table, D> extends _i1.SmartFake
+class _FakeUpdateStatement_15<T extends _i3.Table, D> extends _i1.SmartFake
     implements _i3.UpdateStatement<T, D> {
-  _FakeUpdateStatement_14(Object parent, Invocation parentInvocation)
+  _FakeUpdateStatement_15(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeSimpleSelectStatement_15<T1 extends _i3.HasResultSet, D>
+class _FakeSimpleSelectStatement_16<T1 extends _i3.HasResultSet, D>
     extends _i1.SmartFake
     implements _i3.SimpleSelectStatement<T1, D> {
-  _FakeSimpleSelectStatement_15(Object parent, Invocation parentInvocation)
+  _FakeSimpleSelectStatement_16(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeJoinedSelectStatement_16<FirstT extends _i3.HasResultSet, FirstD>
+class _FakeJoinedSelectStatement_17<FirstT extends _i3.HasResultSet, FirstD>
     extends _i1.SmartFake
     implements _i3.JoinedSelectStatement<FirstT, FirstD> {
-  _FakeJoinedSelectStatement_16(Object parent, Invocation parentInvocation)
+  _FakeJoinedSelectStatement_17(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeBaseSelectStatement_17<Row> extends _i1.SmartFake
+class _FakeBaseSelectStatement_18<Row> extends _i1.SmartFake
     implements _i3.BaseSelectStatement<Row> {
-  _FakeBaseSelectStatement_17(Object parent, Invocation parentInvocation)
+  _FakeBaseSelectStatement_18(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeDeleteStatement_18<T1 extends _i3.Table, D1> extends _i1.SmartFake
+class _FakeDeleteStatement_19<T1 extends _i3.Table, D1> extends _i1.SmartFake
     implements _i3.DeleteStatement<T1, D1> {
-  _FakeDeleteStatement_18(Object parent, Invocation parentInvocation)
+  _FakeDeleteStatement_19(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeSelectable_19<T> extends _i1.SmartFake implements _i3.Selectable<T> {
-  _FakeSelectable_19(Object parent, Invocation parentInvocation)
+class _FakeSelectable_20<T> extends _i1.SmartFake implements _i3.Selectable<T> {
+  _FakeSelectable_20(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeGenerationContext_20 extends _i1.SmartFake
+class _FakeGenerationContext_21 extends _i1.SmartFake
     implements _i3.GenerationContext {
-  _FakeGenerationContext_20(Object parent, Invocation parentInvocation)
+  _FakeGenerationContext_21(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeWorkspaceDaoManager_21 extends _i1.SmartFake
+class _FakeWorkspaceDaoManager_22 extends _i1.SmartFake
     implements _i7.WorkspaceDaoManager {
-  _FakeWorkspaceDaoManager_21(Object parent, Invocation parentInvocation)
+  _FakeWorkspaceDaoManager_22(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeWorkspacesTable_22 extends _i1.SmartFake
+class _FakeWorkspacesTable_23 extends _i1.SmartFake
     implements _i2.WorkspacesTable {
-  _FakeWorkspacesTable_22(Object parent, Invocation parentInvocation)
+  _FakeWorkspacesTable_23(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
@@ -291,14 +297,29 @@ class MockWorkspaceToolsDao extends _i1.Mock implements _i5.WorkspaceToolsDao {
           as _i2.$WorkspacesTable);
 
   @override
+  _i2.$ServiceConnectionsTable get serviceConnections =>
+      (super.noSuchMethod(
+            Invocation.getter(#serviceConnections),
+            returnValue: _Fake$ServiceConnectionsTable_7(
+              this,
+              Invocation.getter(#serviceConnections),
+            ),
+            returnValueForMissingStub: _Fake$ServiceConnectionsTable_7(
+              this,
+              Invocation.getter(#serviceConnections),
+            ),
+          )
+          as _i2.$ServiceConnectionsTable);
+
+  @override
   _i2.$McpServersTable get mcpServers =>
       (super.noSuchMethod(
             Invocation.getter(#mcpServers),
-            returnValue: _Fake$McpServersTable_7(
+            returnValue: _Fake$McpServersTable_8(
               this,
               Invocation.getter(#mcpServers),
             ),
-            returnValueForMissingStub: _Fake$McpServersTable_7(
+            returnValueForMissingStub: _Fake$McpServersTable_8(
               this,
               Invocation.getter(#mcpServers),
             ),
@@ -309,11 +330,11 @@ class MockWorkspaceToolsDao extends _i1.Mock implements _i5.WorkspaceToolsDao {
   _i2.$ToolsGroupsTable get toolsGroups =>
       (super.noSuchMethod(
             Invocation.getter(#toolsGroups),
-            returnValue: _Fake$ToolsGroupsTable_8(
+            returnValue: _Fake$ToolsGroupsTable_9(
               this,
               Invocation.getter(#toolsGroups),
             ),
-            returnValueForMissingStub: _Fake$ToolsGroupsTable_8(
+            returnValueForMissingStub: _Fake$ToolsGroupsTable_9(
               this,
               Invocation.getter(#toolsGroups),
             ),
@@ -324,8 +345,8 @@ class MockWorkspaceToolsDao extends _i1.Mock implements _i5.WorkspaceToolsDao {
   _i2.$ToolsTable get tools =>
       (super.noSuchMethod(
             Invocation.getter(#tools),
-            returnValue: _Fake$ToolsTable_9(this, Invocation.getter(#tools)),
-            returnValueForMissingStub: _Fake$ToolsTable_9(
+            returnValue: _Fake$ToolsTable_10(this, Invocation.getter(#tools)),
+            returnValueForMissingStub: _Fake$ToolsTable_10(
               this,
               Invocation.getter(#tools),
             ),
@@ -336,11 +357,11 @@ class MockWorkspaceToolsDao extends _i1.Mock implements _i5.WorkspaceToolsDao {
   _i5.WorkspaceToolsDaoManager get managers =>
       (super.noSuchMethod(
             Invocation.getter(#managers),
-            returnValue: _FakeWorkspaceToolsDaoManager_10(
+            returnValue: _FakeWorkspaceToolsDaoManager_11(
               this,
               Invocation.getter(#managers),
             ),
-            returnValueForMissingStub: _FakeWorkspaceToolsDaoManager_10(
+            returnValueForMissingStub: _FakeWorkspaceToolsDaoManager_11(
               this,
               Invocation.getter(#managers),
             ),
@@ -384,7 +405,7 @@ class MockWorkspaceToolsDao extends _i1.Mock implements _i5.WorkspaceToolsDao {
               {#isEnabled: isEnabled},
             ),
             returnValue: _i6.Future<_i2.ToolsTable>.value(
-              _FakeToolsTable_11(
+              _FakeToolsTable_12(
                 this,
                 Invocation.method(
                   #setWorkspaceToolEnabled,
@@ -394,7 +415,7 @@ class MockWorkspaceToolsDao extends _i1.Mock implements _i5.WorkspaceToolsDao {
               ),
             ),
             returnValueForMissingStub: _i6.Future<_i2.ToolsTable>.value(
-              _FakeToolsTable_11(
+              _FakeToolsTable_12(
                 this,
                 Invocation.method(
                   #setWorkspaceToolEnabled,
@@ -418,7 +439,7 @@ class MockWorkspaceToolsDao extends _i1.Mock implements _i5.WorkspaceToolsDao {
               {#isEnabled: isEnabled},
             ),
             returnValue: _i6.Future<_i2.ToolsTable>.value(
-              _FakeToolsTable_11(
+              _FakeToolsTable_12(
                 this,
                 Invocation.method(
                   #setWorkspaceToolEnabledById,
@@ -428,7 +449,7 @@ class MockWorkspaceToolsDao extends _i1.Mock implements _i5.WorkspaceToolsDao {
               ),
             ),
             returnValueForMissingStub: _i6.Future<_i2.ToolsTable>.value(
-              _FakeToolsTable_11(
+              _FakeToolsTable_12(
                 this,
                 Invocation.method(
                   #setWorkspaceToolEnabledById,
@@ -615,7 +636,7 @@ class MockWorkspaceToolsDao extends _i1.Mock implements _i5.WorkspaceToolsDao {
               {#permission: permission},
             ),
             returnValue: _i6.Future<_i2.ToolsTable>.value(
-              _FakeToolsTable_11(
+              _FakeToolsTable_12(
                 this,
                 Invocation.method(
                   #setWorkspaceToolPermission,
@@ -625,7 +646,7 @@ class MockWorkspaceToolsDao extends _i1.Mock implements _i5.WorkspaceToolsDao {
               ),
             ),
             returnValueForMissingStub: _i6.Future<_i2.ToolsTable>.value(
-              _FakeToolsTable_11(
+              _FakeToolsTable_12(
                 this,
                 Invocation.method(
                   #setWorkspaceToolPermission,
@@ -732,7 +753,7 @@ class MockWorkspaceToolsDao extends _i1.Mock implements _i5.WorkspaceToolsDao {
                   ),
                   (T v) => _i6.Future<T>.value(v),
                 ) ??
-                _FakeFuture_12<T>(this, Invocation.method(#doWhenOpened, [fn])),
+                _FakeFuture_13<T>(this, Invocation.method(#doWhenOpened, [fn])),
             returnValueForMissingStub:
                 _i8.ifNotNull(
                   _i8.dummyValueOrNull<T>(
@@ -741,7 +762,7 @@ class MockWorkspaceToolsDao extends _i1.Mock implements _i5.WorkspaceToolsDao {
                   ),
                   (T v) => _i6.Future<T>.value(v),
                 ) ??
-                _FakeFuture_12<T>(this, Invocation.method(#doWhenOpened, [fn])),
+                _FakeFuture_13<T>(this, Invocation.method(#doWhenOpened, [fn])),
           )
           as _i6.Future<T>);
 
@@ -751,11 +772,11 @@ class MockWorkspaceToolsDao extends _i1.Mock implements _i5.WorkspaceToolsDao {
   ) =>
       (super.noSuchMethod(
             Invocation.method(#into, [table]),
-            returnValue: _FakeInsertStatement_13<T, D>(
+            returnValue: _FakeInsertStatement_14<T, D>(
               this,
               Invocation.method(#into, [table]),
             ),
-            returnValueForMissingStub: _FakeInsertStatement_13<T, D>(
+            returnValueForMissingStub: _FakeInsertStatement_14<T, D>(
               this,
               Invocation.method(#into, [table]),
             ),
@@ -768,11 +789,11 @@ class MockWorkspaceToolsDao extends _i1.Mock implements _i5.WorkspaceToolsDao {
   ) =>
       (super.noSuchMethod(
             Invocation.method(#update, [table]),
-            returnValue: _FakeUpdateStatement_14<Tbl, R>(
+            returnValue: _FakeUpdateStatement_15<Tbl, R>(
               this,
               Invocation.method(#update, [table]),
             ),
-            returnValueForMissingStub: _FakeUpdateStatement_14<Tbl, R>(
+            returnValueForMissingStub: _FakeUpdateStatement_15<Tbl, R>(
               this,
               Invocation.method(#update, [table]),
             ),
@@ -786,11 +807,11 @@ class MockWorkspaceToolsDao extends _i1.Mock implements _i5.WorkspaceToolsDao {
   }) =>
       (super.noSuchMethod(
             Invocation.method(#select, [table], {#distinct: distinct}),
-            returnValue: _FakeSimpleSelectStatement_15<T, R>(
+            returnValue: _FakeSimpleSelectStatement_16<T, R>(
               this,
               Invocation.method(#select, [table], {#distinct: distinct}),
             ),
-            returnValueForMissingStub: _FakeSimpleSelectStatement_15<T, R>(
+            returnValueForMissingStub: _FakeSimpleSelectStatement_16<T, R>(
               this,
               Invocation.method(#select, [table], {#distinct: distinct}),
             ),
@@ -804,11 +825,11 @@ class MockWorkspaceToolsDao extends _i1.Mock implements _i5.WorkspaceToolsDao {
   }) =>
       (super.noSuchMethod(
             Invocation.method(#selectOnly, [table], {#distinct: distinct}),
-            returnValue: _FakeJoinedSelectStatement_16<T, R>(
+            returnValue: _FakeJoinedSelectStatement_17<T, R>(
               this,
               Invocation.method(#selectOnly, [table], {#distinct: distinct}),
             ),
-            returnValueForMissingStub: _FakeJoinedSelectStatement_16<T, R>(
+            returnValueForMissingStub: _FakeJoinedSelectStatement_17<T, R>(
               this,
               Invocation.method(#selectOnly, [table], {#distinct: distinct}),
             ),
@@ -821,12 +842,12 @@ class MockWorkspaceToolsDao extends _i1.Mock implements _i5.WorkspaceToolsDao {
   ) =>
       (super.noSuchMethod(
             Invocation.method(#selectExpressions, [columns]),
-            returnValue: _FakeBaseSelectStatement_17<_i3.TypedResult>(
+            returnValue: _FakeBaseSelectStatement_18<_i3.TypedResult>(
               this,
               Invocation.method(#selectExpressions, [columns]),
             ),
             returnValueForMissingStub:
-                _FakeBaseSelectStatement_17<_i3.TypedResult>(
+                _FakeBaseSelectStatement_18<_i3.TypedResult>(
                   this,
                   Invocation.method(#selectExpressions, [columns]),
                 ),
@@ -839,11 +860,11 @@ class MockWorkspaceToolsDao extends _i1.Mock implements _i5.WorkspaceToolsDao {
   ) =>
       (super.noSuchMethod(
             Invocation.method(#delete, [table]),
-            returnValue: _FakeDeleteStatement_18<T, D>(
+            returnValue: _FakeDeleteStatement_19<T, D>(
               this,
               Invocation.method(#delete, [table]),
             ),
-            returnValueForMissingStub: _FakeDeleteStatement_18<T, D>(
+            returnValueForMissingStub: _FakeDeleteStatement_19<T, D>(
               this,
               Invocation.method(#delete, [table]),
             ),
@@ -925,7 +946,7 @@ class MockWorkspaceToolsDao extends _i1.Mock implements _i5.WorkspaceToolsDao {
               [query],
               {#variables: variables, #readsFrom: readsFrom},
             ),
-            returnValue: _FakeSelectable_19<_i3.QueryRow>(
+            returnValue: _FakeSelectable_20<_i3.QueryRow>(
               this,
               Invocation.method(
                 #customSelect,
@@ -933,7 +954,7 @@ class MockWorkspaceToolsDao extends _i1.Mock implements _i5.WorkspaceToolsDao {
                 {#variables: variables, #readsFrom: readsFrom},
               ),
             ),
-            returnValueForMissingStub: _FakeSelectable_19<_i3.QueryRow>(
+            returnValueForMissingStub: _FakeSelectable_20<_i3.QueryRow>(
               this,
               Invocation.method(
                 #customSelect,
@@ -956,7 +977,7 @@ class MockWorkspaceToolsDao extends _i1.Mock implements _i5.WorkspaceToolsDao {
               [query],
               {#variables: variables, #readsFrom: readsFrom},
             ),
-            returnValue: _FakeSelectable_19<_i3.QueryRow>(
+            returnValue: _FakeSelectable_20<_i3.QueryRow>(
               this,
               Invocation.method(
                 #customSelectQuery,
@@ -964,7 +985,7 @@ class MockWorkspaceToolsDao extends _i1.Mock implements _i5.WorkspaceToolsDao {
                 {#variables: variables, #readsFrom: readsFrom},
               ),
             ),
-            returnValueForMissingStub: _FakeSelectable_19<_i3.QueryRow>(
+            returnValueForMissingStub: _FakeSelectable_20<_i3.QueryRow>(
               this,
               Invocation.method(
                 #customSelectQuery,
@@ -1007,7 +1028,7 @@ class MockWorkspaceToolsDao extends _i1.Mock implements _i5.WorkspaceToolsDao {
                   ),
                   (T v) => _i6.Future<T>.value(v),
                 ) ??
-                _FakeFuture_12<T>(
+                _FakeFuture_13<T>(
                   this,
                   Invocation.method(
                     #transaction,
@@ -1027,7 +1048,7 @@ class MockWorkspaceToolsDao extends _i1.Mock implements _i5.WorkspaceToolsDao {
                   ),
                   (T v) => _i6.Future<T>.value(v),
                 ) ??
-                _FakeFuture_12<T>(
+                _FakeFuture_13<T>(
                   this,
                   Invocation.method(
                     #transaction,
@@ -1050,7 +1071,7 @@ class MockWorkspaceToolsDao extends _i1.Mock implements _i5.WorkspaceToolsDao {
                   ),
                   (T v) => _i6.Future<T>.value(v),
                 ) ??
-                _FakeFuture_12<T>(
+                _FakeFuture_13<T>(
                   this,
                   Invocation.method(#exclusively, [action]),
                 ),
@@ -1062,7 +1083,7 @@ class MockWorkspaceToolsDao extends _i1.Mock implements _i5.WorkspaceToolsDao {
                   ),
                   (T v) => _i6.Future<T>.value(v),
                 ) ??
-                _FakeFuture_12<T>(
+                _FakeFuture_13<T>(
                   this,
                   Invocation.method(#exclusively, [action]),
                 ),
@@ -1101,7 +1122,7 @@ class MockWorkspaceToolsDao extends _i1.Mock implements _i5.WorkspaceToolsDao {
                   ),
                   (T v) => _i6.Future<T>.value(v),
                 ) ??
-                _FakeFuture_12<T>(
+                _FakeFuture_13<T>(
                   this,
                   Invocation.method(
                     #runWithInterceptor,
@@ -1121,7 +1142,7 @@ class MockWorkspaceToolsDao extends _i1.Mock implements _i5.WorkspaceToolsDao {
                   ),
                   (T v) => _i6.Future<T>.value(v),
                 ) ??
-                _FakeFuture_12<T>(
+                _FakeFuture_13<T>(
                   this,
                   Invocation.method(
                     #runWithInterceptor,
@@ -1144,7 +1165,7 @@ class MockWorkspaceToolsDao extends _i1.Mock implements _i5.WorkspaceToolsDao {
               [component],
               {#hasMultipleTables: hasMultipleTables, #startIndex: startIndex},
             ),
-            returnValue: _FakeGenerationContext_20(
+            returnValue: _FakeGenerationContext_21(
               this,
               Invocation.method(
                 #$write,
@@ -1155,7 +1176,7 @@ class MockWorkspaceToolsDao extends _i1.Mock implements _i5.WorkspaceToolsDao {
                 },
               ),
             ),
-            returnValueForMissingStub: _FakeGenerationContext_20(
+            returnValueForMissingStub: _FakeGenerationContext_21(
               this,
               Invocation.method(
                 #$write,
@@ -1181,7 +1202,7 @@ class MockWorkspaceToolsDao extends _i1.Mock implements _i5.WorkspaceToolsDao {
               [table, insertable],
               {#startIndex: startIndex},
             ),
-            returnValue: _FakeGenerationContext_20(
+            returnValue: _FakeGenerationContext_21(
               this,
               Invocation.method(
                 #$writeInsertable,
@@ -1189,7 +1210,7 @@ class MockWorkspaceToolsDao extends _i1.Mock implements _i5.WorkspaceToolsDao {
                 {#startIndex: startIndex},
               ),
             ),
-            returnValueForMissingStub: _FakeGenerationContext_20(
+            returnValueForMissingStub: _FakeGenerationContext_21(
               this,
               Invocation.method(
                 #$writeInsertable,
@@ -1353,11 +1374,11 @@ class MockWorkspaceDao extends _i1.Mock implements _i7.WorkspaceDao {
   _i7.WorkspaceDaoManager get managers =>
       (super.noSuchMethod(
             Invocation.getter(#managers),
-            returnValue: _FakeWorkspaceDaoManager_21(
+            returnValue: _FakeWorkspaceDaoManager_22(
               this,
               Invocation.getter(#managers),
             ),
-            returnValueForMissingStub: _FakeWorkspaceDaoManager_21(
+            returnValueForMissingStub: _FakeWorkspaceDaoManager_22(
               this,
               Invocation.getter(#managers),
             ),
@@ -1420,13 +1441,13 @@ class MockWorkspaceDao extends _i1.Mock implements _i7.WorkspaceDao {
       (super.noSuchMethod(
             Invocation.method(#insertWorkspace, [workspace]),
             returnValue: _i6.Future<_i2.WorkspacesTable>.value(
-              _FakeWorkspacesTable_22(
+              _FakeWorkspacesTable_23(
                 this,
                 Invocation.method(#insertWorkspace, [workspace]),
               ),
             ),
             returnValueForMissingStub: _i6.Future<_i2.WorkspacesTable>.value(
-              _FakeWorkspacesTable_22(
+              _FakeWorkspacesTable_23(
                 this,
                 Invocation.method(#insertWorkspace, [workspace]),
               ),
@@ -1569,7 +1590,7 @@ class MockWorkspaceDao extends _i1.Mock implements _i7.WorkspaceDao {
                   ),
                   (T v) => _i6.Future<T>.value(v),
                 ) ??
-                _FakeFuture_12<T>(this, Invocation.method(#doWhenOpened, [fn])),
+                _FakeFuture_13<T>(this, Invocation.method(#doWhenOpened, [fn])),
             returnValueForMissingStub:
                 _i8.ifNotNull(
                   _i8.dummyValueOrNull<T>(
@@ -1578,7 +1599,7 @@ class MockWorkspaceDao extends _i1.Mock implements _i7.WorkspaceDao {
                   ),
                   (T v) => _i6.Future<T>.value(v),
                 ) ??
-                _FakeFuture_12<T>(this, Invocation.method(#doWhenOpened, [fn])),
+                _FakeFuture_13<T>(this, Invocation.method(#doWhenOpened, [fn])),
           )
           as _i6.Future<T>);
 
@@ -1588,11 +1609,11 @@ class MockWorkspaceDao extends _i1.Mock implements _i7.WorkspaceDao {
   ) =>
       (super.noSuchMethod(
             Invocation.method(#into, [table]),
-            returnValue: _FakeInsertStatement_13<T, D>(
+            returnValue: _FakeInsertStatement_14<T, D>(
               this,
               Invocation.method(#into, [table]),
             ),
-            returnValueForMissingStub: _FakeInsertStatement_13<T, D>(
+            returnValueForMissingStub: _FakeInsertStatement_14<T, D>(
               this,
               Invocation.method(#into, [table]),
             ),
@@ -1605,11 +1626,11 @@ class MockWorkspaceDao extends _i1.Mock implements _i7.WorkspaceDao {
   ) =>
       (super.noSuchMethod(
             Invocation.method(#update, [table]),
-            returnValue: _FakeUpdateStatement_14<Tbl, R>(
+            returnValue: _FakeUpdateStatement_15<Tbl, R>(
               this,
               Invocation.method(#update, [table]),
             ),
-            returnValueForMissingStub: _FakeUpdateStatement_14<Tbl, R>(
+            returnValueForMissingStub: _FakeUpdateStatement_15<Tbl, R>(
               this,
               Invocation.method(#update, [table]),
             ),
@@ -1623,11 +1644,11 @@ class MockWorkspaceDao extends _i1.Mock implements _i7.WorkspaceDao {
   }) =>
       (super.noSuchMethod(
             Invocation.method(#select, [table], {#distinct: distinct}),
-            returnValue: _FakeSimpleSelectStatement_15<T, R>(
+            returnValue: _FakeSimpleSelectStatement_16<T, R>(
               this,
               Invocation.method(#select, [table], {#distinct: distinct}),
             ),
-            returnValueForMissingStub: _FakeSimpleSelectStatement_15<T, R>(
+            returnValueForMissingStub: _FakeSimpleSelectStatement_16<T, R>(
               this,
               Invocation.method(#select, [table], {#distinct: distinct}),
             ),
@@ -1641,11 +1662,11 @@ class MockWorkspaceDao extends _i1.Mock implements _i7.WorkspaceDao {
   }) =>
       (super.noSuchMethod(
             Invocation.method(#selectOnly, [table], {#distinct: distinct}),
-            returnValue: _FakeJoinedSelectStatement_16<T, R>(
+            returnValue: _FakeJoinedSelectStatement_17<T, R>(
               this,
               Invocation.method(#selectOnly, [table], {#distinct: distinct}),
             ),
-            returnValueForMissingStub: _FakeJoinedSelectStatement_16<T, R>(
+            returnValueForMissingStub: _FakeJoinedSelectStatement_17<T, R>(
               this,
               Invocation.method(#selectOnly, [table], {#distinct: distinct}),
             ),
@@ -1658,12 +1679,12 @@ class MockWorkspaceDao extends _i1.Mock implements _i7.WorkspaceDao {
   ) =>
       (super.noSuchMethod(
             Invocation.method(#selectExpressions, [columns]),
-            returnValue: _FakeBaseSelectStatement_17<_i3.TypedResult>(
+            returnValue: _FakeBaseSelectStatement_18<_i3.TypedResult>(
               this,
               Invocation.method(#selectExpressions, [columns]),
             ),
             returnValueForMissingStub:
-                _FakeBaseSelectStatement_17<_i3.TypedResult>(
+                _FakeBaseSelectStatement_18<_i3.TypedResult>(
                   this,
                   Invocation.method(#selectExpressions, [columns]),
                 ),
@@ -1676,11 +1697,11 @@ class MockWorkspaceDao extends _i1.Mock implements _i7.WorkspaceDao {
   ) =>
       (super.noSuchMethod(
             Invocation.method(#delete, [table]),
-            returnValue: _FakeDeleteStatement_18<T, D>(
+            returnValue: _FakeDeleteStatement_19<T, D>(
               this,
               Invocation.method(#delete, [table]),
             ),
-            returnValueForMissingStub: _FakeDeleteStatement_18<T, D>(
+            returnValueForMissingStub: _FakeDeleteStatement_19<T, D>(
               this,
               Invocation.method(#delete, [table]),
             ),
@@ -1762,7 +1783,7 @@ class MockWorkspaceDao extends _i1.Mock implements _i7.WorkspaceDao {
               [query],
               {#variables: variables, #readsFrom: readsFrom},
             ),
-            returnValue: _FakeSelectable_19<_i3.QueryRow>(
+            returnValue: _FakeSelectable_20<_i3.QueryRow>(
               this,
               Invocation.method(
                 #customSelect,
@@ -1770,7 +1791,7 @@ class MockWorkspaceDao extends _i1.Mock implements _i7.WorkspaceDao {
                 {#variables: variables, #readsFrom: readsFrom},
               ),
             ),
-            returnValueForMissingStub: _FakeSelectable_19<_i3.QueryRow>(
+            returnValueForMissingStub: _FakeSelectable_20<_i3.QueryRow>(
               this,
               Invocation.method(
                 #customSelect,
@@ -1793,7 +1814,7 @@ class MockWorkspaceDao extends _i1.Mock implements _i7.WorkspaceDao {
               [query],
               {#variables: variables, #readsFrom: readsFrom},
             ),
-            returnValue: _FakeSelectable_19<_i3.QueryRow>(
+            returnValue: _FakeSelectable_20<_i3.QueryRow>(
               this,
               Invocation.method(
                 #customSelectQuery,
@@ -1801,7 +1822,7 @@ class MockWorkspaceDao extends _i1.Mock implements _i7.WorkspaceDao {
                 {#variables: variables, #readsFrom: readsFrom},
               ),
             ),
-            returnValueForMissingStub: _FakeSelectable_19<_i3.QueryRow>(
+            returnValueForMissingStub: _FakeSelectable_20<_i3.QueryRow>(
               this,
               Invocation.method(
                 #customSelectQuery,
@@ -1844,7 +1865,7 @@ class MockWorkspaceDao extends _i1.Mock implements _i7.WorkspaceDao {
                   ),
                   (T v) => _i6.Future<T>.value(v),
                 ) ??
-                _FakeFuture_12<T>(
+                _FakeFuture_13<T>(
                   this,
                   Invocation.method(
                     #transaction,
@@ -1864,7 +1885,7 @@ class MockWorkspaceDao extends _i1.Mock implements _i7.WorkspaceDao {
                   ),
                   (T v) => _i6.Future<T>.value(v),
                 ) ??
-                _FakeFuture_12<T>(
+                _FakeFuture_13<T>(
                   this,
                   Invocation.method(
                     #transaction,
@@ -1887,7 +1908,7 @@ class MockWorkspaceDao extends _i1.Mock implements _i7.WorkspaceDao {
                   ),
                   (T v) => _i6.Future<T>.value(v),
                 ) ??
-                _FakeFuture_12<T>(
+                _FakeFuture_13<T>(
                   this,
                   Invocation.method(#exclusively, [action]),
                 ),
@@ -1899,7 +1920,7 @@ class MockWorkspaceDao extends _i1.Mock implements _i7.WorkspaceDao {
                   ),
                   (T v) => _i6.Future<T>.value(v),
                 ) ??
-                _FakeFuture_12<T>(
+                _FakeFuture_13<T>(
                   this,
                   Invocation.method(#exclusively, [action]),
                 ),
@@ -1938,7 +1959,7 @@ class MockWorkspaceDao extends _i1.Mock implements _i7.WorkspaceDao {
                   ),
                   (T v) => _i6.Future<T>.value(v),
                 ) ??
-                _FakeFuture_12<T>(
+                _FakeFuture_13<T>(
                   this,
                   Invocation.method(
                     #runWithInterceptor,
@@ -1958,7 +1979,7 @@ class MockWorkspaceDao extends _i1.Mock implements _i7.WorkspaceDao {
                   ),
                   (T v) => _i6.Future<T>.value(v),
                 ) ??
-                _FakeFuture_12<T>(
+                _FakeFuture_13<T>(
                   this,
                   Invocation.method(
                     #runWithInterceptor,
@@ -1981,7 +2002,7 @@ class MockWorkspaceDao extends _i1.Mock implements _i7.WorkspaceDao {
               [component],
               {#hasMultipleTables: hasMultipleTables, #startIndex: startIndex},
             ),
-            returnValue: _FakeGenerationContext_20(
+            returnValue: _FakeGenerationContext_21(
               this,
               Invocation.method(
                 #$write,
@@ -1992,7 +2013,7 @@ class MockWorkspaceDao extends _i1.Mock implements _i7.WorkspaceDao {
                 },
               ),
             ),
-            returnValueForMissingStub: _FakeGenerationContext_20(
+            returnValueForMissingStub: _FakeGenerationContext_21(
               this,
               Invocation.method(
                 #$write,
@@ -2018,7 +2039,7 @@ class MockWorkspaceDao extends _i1.Mock implements _i7.WorkspaceDao {
               [table, insertable],
               {#startIndex: startIndex},
             ),
-            returnValue: _FakeGenerationContext_20(
+            returnValue: _FakeGenerationContext_21(
               this,
               Invocation.method(
                 #$writeInsertable,
@@ -2026,7 +2047,7 @@ class MockWorkspaceDao extends _i1.Mock implements _i7.WorkspaceDao {
                 {#startIndex: startIndex},
               ),
             ),
-            returnValueForMissingStub: _FakeGenerationContext_20(
+            returnValueForMissingStub: _FakeGenerationContext_21(
               this,
               Invocation.method(
                 #$writeInsertable,

@@ -34,6 +34,7 @@ import 'package:auravibes_app/data/database/drift/tables/tools_groups.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_compaction_settings.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_model_selections.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspaces.dart';
+import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
@@ -99,7 +100,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// Database schema version.
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   /// Migration logic for database schema upgrades.
   @override
@@ -108,71 +109,129 @@ class AppDatabase extends _$AppDatabase {
       onCreate: (m) async {
         await m.createAll();
       },
-      onUpgrade: (m, from, to) async {
-        if (from < 2) {
-          await m.createTable(workspaceCompactionSettings);
-        }
-        if (from < 3) {
-          await m.addColumn(apiModels, apiModels.supportsReasoning);
-        }
-        if (from < 4) {
-          await m.createTable(serviceConnections);
-          await customStatement(
-            '''
-            INSERT INTO service_connections (
-              id,
-              created_at,
-              updated_at,
-              name,
-              service_id,
-              kind,
-              authentication_type,
-              url,
-              encrypted_auth_value,
-              key_suffix,
-              metadata_json,
-              workspace_id,
-              is_enabled
-            )
-            SELECT
-              id,
-              created_at,
-              updated_at,
-              name,
-              model_id,
-              'modelProvider',
-              'apiKey',
-              url,
-              key_value,
-              key_suffix,
-              NULL,
-              workspace_id,
-              1
-            FROM model_connections
-            ''',
-          );
-          await m.alterTable(TableMigration(workspaceModelSelections));
-          await m.deleteTable('model_connections');
-        }
-        if (from < 5) {
-          await m.createTable(skillCredentialDefinitions);
-          await m.createTable(skills);
-          await m.createTable(skillTemplateTools);
-          await m.createTable(conversationSkills);
-          await m.createTable(appSkillWorkspaceSettings);
-        }
-        if (from >= 5 && from < 6) {
-          await m.addColumn(skillTemplateTools, skillTemplateTools.description);
-        }
-        if (from >= 5 && from < 7) {
-          await m.addColumn(skills, skills.isCredentialOptional);
-          await m.addColumn(
-            skillTemplateTools,
-            skillTemplateTools.requiresCredential,
-          );
-        }
-      },
+      onUpgrade: (m, from, _) => _upgrade(m, from),
     );
+  }
+
+  Future<void> _upgrade(Migrator m, int from) async {
+    if (from < 2) {
+      await m.createTable(workspaceCompactionSettings);
+    }
+    if (from < 3) {
+      await m.addColumn(apiModels, apiModels.supportsReasoning);
+    }
+    if (from < 4) {
+      await _migrateModelConnectionsToServiceConnections(m);
+    }
+    if (from < 5) {
+      await _createSkillTables(m);
+    }
+    if (from >= 5 && from < 6) {
+      await m.addColumn(skillTemplateTools, skillTemplateTools.description);
+    }
+    if (from >= 5 && from < 7) {
+      await _addSkillCredentialColumns(m);
+    }
+    if (from >= 4 && from < 8) {
+      await _addServiceConnectionLifecycleColumns(m);
+    }
+
+    await _addMcpServiceConnectionColumnIfNeeded(m, from);
+  }
+
+  Future<void> _migrateModelConnectionsToServiceConnections(Migrator m) async {
+    await m.createTable(serviceConnections);
+    await customStatement(
+      '''
+      INSERT INTO service_connections (
+        id,
+        created_at,
+        updated_at,
+        name,
+        service_id,
+        kind,
+        authentication_type,
+        url,
+        encrypted_auth_value,
+        key_suffix,
+        metadata_json,
+        workspace_id,
+        is_enabled
+      )
+      SELECT
+        id,
+        created_at,
+        updated_at,
+        name,
+        model_id,
+        'modelProvider',
+        'apiKey',
+        url,
+        key_value,
+        key_suffix,
+        NULL,
+        workspace_id,
+        1
+      FROM model_connections
+      ''',
+    );
+    await m.alterTable(TableMigration(workspaceModelSelections));
+    await m.deleteTable('model_connections');
+  }
+
+  Future<void> _createSkillTables(Migrator m) async {
+    await m.createTable(skillCredentialDefinitions);
+    await m.createTable(skills);
+    await m.createTable(skillTemplateTools);
+    await m.createTable(conversationSkills);
+    await m.createTable(appSkillWorkspaceSettings);
+  }
+
+  Future<void> _addSkillCredentialColumns(Migrator m) async {
+    await m.addColumn(skills, skills.isCredentialOptional);
+    await m.addColumn(
+      skillTemplateTools,
+      skillTemplateTools.requiresCredential,
+    );
+  }
+
+  Future<void> _addServiceConnectionLifecycleColumns(Migrator m) async {
+    await m.addColumn(serviceConnections, serviceConnections.authStatus);
+    await m.addColumn(serviceConnections, serviceConnections.expiresAt);
+    await m.addColumn(
+      serviceConnections,
+      serviceConnections.lastRefreshedAt,
+    );
+    await m.addColumn(
+      serviceConnections,
+      serviceConnections.lastAuthError,
+    );
+  }
+
+  Future<void> _addMcpServiceConnectionColumnIfNeeded(
+    Migrator m,
+    int from,
+  ) async {
+    if (from >= 8) return;
+    if (!await _tableExists('mcp_servers')) return;
+
+    await m.alterTable(
+      TableMigration(
+        mcpServers,
+        newColumns: [mcpServers.serviceConnectionId],
+      ),
+    );
+  }
+
+  Future<bool> _tableExists(String name) async {
+    final row = await customSelect(
+      '''
+      SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?
+      ''',
+      variables: [Variable.withString(name)],
+    ).getSingleOrNull();
+
+    return row != null;
   }
 
   /// Creates a database connection using drift_flutter.

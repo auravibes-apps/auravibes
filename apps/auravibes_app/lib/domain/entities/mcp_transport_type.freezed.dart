@@ -942,8 +942,9 @@ mixin _$McpServerToCreate {
 /// User-friendly name for the MCP server.
  String get name;/// URL endpoint for the MCP server.
  String get url;/// Transport type used for communication.
- McpTransportType get transport;/// Authentication type for the MCP server.
- McpAuthenticationType get authenticationType;/// Optional description of what this MCP server provides.
+ McpTransportType get transport;/// Transient authentication config used only while connecting.
+ McpAuthenticationType get authenticationType;/// Optional credential record used to authenticate this MCP server.
+ String? get serviceConnectionId;/// Optional description of what this MCP server provides.
  String? get description;
 /// Create a copy of McpServerToCreate
 /// with the given fields replaced by the non-null parameter values.
@@ -955,16 +956,16 @@ $McpServerToCreateCopyWith<McpServerToCreate> get copyWith => _$McpServerToCreat
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is McpServerToCreate&&(identical(other.name, name) || other.name == name)&&(identical(other.url, url) || other.url == url)&&(identical(other.transport, transport) || other.transport == transport)&&(identical(other.authenticationType, authenticationType) || other.authenticationType == authenticationType)&&(identical(other.description, description) || other.description == description));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is McpServerToCreate&&(identical(other.name, name) || other.name == name)&&(identical(other.url, url) || other.url == url)&&(identical(other.transport, transport) || other.transport == transport)&&(identical(other.authenticationType, authenticationType) || other.authenticationType == authenticationType)&&(identical(other.serviceConnectionId, serviceConnectionId) || other.serviceConnectionId == serviceConnectionId)&&(identical(other.description, description) || other.description == description));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,url,transport,authenticationType,description);
+int get hashCode => Object.hash(runtimeType,name,url,transport,authenticationType,serviceConnectionId,description);
 
 @override
 String toString() {
-  return 'McpServerToCreate(name: $name, url: $url, transport: $transport, authenticationType: $authenticationType, description: $description)';
+  return 'McpServerToCreate(name: $name, url: $url, transport: $transport, authenticationType: $authenticationType, serviceConnectionId: $serviceConnectionId, description: $description)';
 }
 
 
@@ -975,7 +976,7 @@ abstract mixin class $McpServerToCreateCopyWith<$Res>  {
   factory $McpServerToCreateCopyWith(McpServerToCreate value, $Res Function(McpServerToCreate) _then) = _$McpServerToCreateCopyWithImpl;
 @useResult
 $Res call({
- String name, String url, McpTransportType transport, McpAuthenticationType authenticationType, String? description
+ String name, String url, McpTransportType transport, McpAuthenticationType authenticationType, String? serviceConnectionId, String? description
 });
 
 
@@ -992,13 +993,14 @@ class _$McpServerToCreateCopyWithImpl<$Res>
 
 /// Create a copy of McpServerToCreate
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? url = null,Object? transport = null,Object? authenticationType = null,Object? description = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? url = null,Object? transport = null,Object? authenticationType = null,Object? serviceConnectionId = freezed,Object? description = freezed,}) {
   return _then(_self.copyWith(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,url: null == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
 as String,transport: null == transport ? _self.transport : transport // ignore: cast_nullable_to_non_nullable
 as McpTransportType,authenticationType: null == authenticationType ? _self.authenticationType : authenticationType // ignore: cast_nullable_to_non_nullable
-as McpAuthenticationType,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
+as McpAuthenticationType,serviceConnectionId: freezed == serviceConnectionId ? _self.serviceConnectionId : serviceConnectionId // ignore: cast_nullable_to_non_nullable
+as String?,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -1093,10 +1095,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String name,  String url,  McpTransportType transport,  McpAuthenticationType authenticationType,  String? description)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String name,  String url,  McpTransportType transport,  McpAuthenticationType authenticationType,  String? serviceConnectionId,  String? description)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _McpServerToCreate() when $default != null:
-return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_that.description);case _:
+return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_that.serviceConnectionId,_that.description);case _:
   return orElse();
 
 }
@@ -1114,10 +1116,10 @@ return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String name,  String url,  McpTransportType transport,  McpAuthenticationType authenticationType,  String? description)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String name,  String url,  McpTransportType transport,  McpAuthenticationType authenticationType,  String? serviceConnectionId,  String? description)  $default,) {final _that = this;
 switch (_that) {
 case _McpServerToCreate():
-return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_that.description);case _:
+return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_that.serviceConnectionId,_that.description);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1134,10 +1136,10 @@ return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String name,  String url,  McpTransportType transport,  McpAuthenticationType authenticationType,  String? description)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String name,  String url,  McpTransportType transport,  McpAuthenticationType authenticationType,  String? serviceConnectionId,  String? description)?  $default,) {final _that = this;
 switch (_that) {
 case _McpServerToCreate() when $default != null:
-return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_that.description);case _:
+return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_that.serviceConnectionId,_that.description);case _:
   return null;
 
 }
@@ -1149,7 +1151,7 @@ return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_t
 
 
 class _McpServerToCreate extends McpServerToCreate {
-  const _McpServerToCreate({required this.name, required this.url, required this.transport, required this.authenticationType, this.description}): super._();
+  const _McpServerToCreate({required this.name, required this.url, required this.transport, required this.authenticationType, this.serviceConnectionId, this.description}): super._();
   
 
 /// User-friendly name for the MCP server.
@@ -1158,8 +1160,10 @@ class _McpServerToCreate extends McpServerToCreate {
 @override final  String url;
 /// Transport type used for communication.
 @override final  McpTransportType transport;
-/// Authentication type for the MCP server.
+/// Transient authentication config used only while connecting.
 @override final  McpAuthenticationType authenticationType;
+/// Optional credential record used to authenticate this MCP server.
+@override final  String? serviceConnectionId;
 /// Optional description of what this MCP server provides.
 @override final  String? description;
 
@@ -1173,16 +1177,16 @@ _$McpServerToCreateCopyWith<_McpServerToCreate> get copyWith => __$McpServerToCr
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _McpServerToCreate&&(identical(other.name, name) || other.name == name)&&(identical(other.url, url) || other.url == url)&&(identical(other.transport, transport) || other.transport == transport)&&(identical(other.authenticationType, authenticationType) || other.authenticationType == authenticationType)&&(identical(other.description, description) || other.description == description));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _McpServerToCreate&&(identical(other.name, name) || other.name == name)&&(identical(other.url, url) || other.url == url)&&(identical(other.transport, transport) || other.transport == transport)&&(identical(other.authenticationType, authenticationType) || other.authenticationType == authenticationType)&&(identical(other.serviceConnectionId, serviceConnectionId) || other.serviceConnectionId == serviceConnectionId)&&(identical(other.description, description) || other.description == description));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,url,transport,authenticationType,description);
+int get hashCode => Object.hash(runtimeType,name,url,transport,authenticationType,serviceConnectionId,description);
 
 @override
 String toString() {
-  return 'McpServerToCreate(name: $name, url: $url, transport: $transport, authenticationType: $authenticationType, description: $description)';
+  return 'McpServerToCreate(name: $name, url: $url, transport: $transport, authenticationType: $authenticationType, serviceConnectionId: $serviceConnectionId, description: $description)';
 }
 
 
@@ -1193,7 +1197,7 @@ abstract mixin class _$McpServerToCreateCopyWith<$Res> implements $McpServerToCr
   factory _$McpServerToCreateCopyWith(_McpServerToCreate value, $Res Function(_McpServerToCreate) _then) = __$McpServerToCreateCopyWithImpl;
 @override @useResult
 $Res call({
- String name, String url, McpTransportType transport, McpAuthenticationType authenticationType, String? description
+ String name, String url, McpTransportType transport, McpAuthenticationType authenticationType, String? serviceConnectionId, String? description
 });
 
 
@@ -1210,13 +1214,14 @@ class __$McpServerToCreateCopyWithImpl<$Res>
 
 /// Create a copy of McpServerToCreate
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? name = null,Object? url = null,Object? transport = null,Object? authenticationType = null,Object? description = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? name = null,Object? url = null,Object? transport = null,Object? authenticationType = null,Object? serviceConnectionId = freezed,Object? description = freezed,}) {
   return _then(_McpServerToCreate(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,url: null == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
 as String,transport: null == transport ? _self.transport : transport // ignore: cast_nullable_to_non_nullable
 as McpTransportType,authenticationType: null == authenticationType ? _self.authenticationType : authenticationType // ignore: cast_nullable_to_non_nullable
-as McpAuthenticationType,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
+as McpAuthenticationType,serviceConnectionId: freezed == serviceConnectionId ? _self.serviceConnectionId : serviceConnectionId // ignore: cast_nullable_to_non_nullable
+as String?,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -1241,10 +1246,11 @@ mixin _$McpServerEntity {
  String get workspaceId;/// User-friendly name for the MCP server.
  String get name;/// URL endpoint for the MCP server.
  String get url;/// Transport type used for communication.
- McpTransportType get transport;/// Authentication type for the MCP server.
+ McpTransportType get transport;/// Transient authentication config used only while connecting.
  McpAuthenticationType get authenticationType;/// Timestamp when this configuration was created.
  DateTime get createdAt;/// Timestamp when this configuration was last updated.
- DateTime get updatedAt;/// Optional description of what this MCP server provides.
+ DateTime get updatedAt;/// Optional credential record used to authenticate this MCP server.
+ String? get serviceConnectionId;/// Optional description of what this MCP server provides.
  String? get description;/// Whether the MCP server is enabled.
  bool get isEnabled;
 /// Create a copy of McpServerEntity
@@ -1257,16 +1263,16 @@ $McpServerEntityCopyWith<McpServerEntity> get copyWith => _$McpServerEntityCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is McpServerEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.name, name) || other.name == name)&&(identical(other.url, url) || other.url == url)&&(identical(other.transport, transport) || other.transport == transport)&&(identical(other.authenticationType, authenticationType) || other.authenticationType == authenticationType)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.description, description) || other.description == description)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is McpServerEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.name, name) || other.name == name)&&(identical(other.url, url) || other.url == url)&&(identical(other.transport, transport) || other.transport == transport)&&(identical(other.authenticationType, authenticationType) || other.authenticationType == authenticationType)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.serviceConnectionId, serviceConnectionId) || other.serviceConnectionId == serviceConnectionId)&&(identical(other.description, description) || other.description == description)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,workspaceId,name,url,transport,authenticationType,createdAt,updatedAt,description,isEnabled);
+int get hashCode => Object.hash(runtimeType,id,workspaceId,name,url,transport,authenticationType,createdAt,updatedAt,serviceConnectionId,description,isEnabled);
 
 @override
 String toString() {
-  return 'McpServerEntity(id: $id, workspaceId: $workspaceId, name: $name, url: $url, transport: $transport, authenticationType: $authenticationType, createdAt: $createdAt, updatedAt: $updatedAt, description: $description, isEnabled: $isEnabled)';
+  return 'McpServerEntity(id: $id, workspaceId: $workspaceId, name: $name, url: $url, transport: $transport, authenticationType: $authenticationType, createdAt: $createdAt, updatedAt: $updatedAt, serviceConnectionId: $serviceConnectionId, description: $description, isEnabled: $isEnabled)';
 }
 
 
@@ -1277,7 +1283,7 @@ abstract mixin class $McpServerEntityCopyWith<$Res> implements $McpServerToCreat
   factory $McpServerEntityCopyWith(McpServerEntity value, $Res Function(McpServerEntity) _then) = _$McpServerEntityCopyWithImpl;
 @useResult
 $Res call({
- String id, String workspaceId, String name, String url, McpTransportType transport, McpAuthenticationType authenticationType, DateTime createdAt, DateTime updatedAt, String? description, bool isEnabled
+ String id, String workspaceId, String name, String url, McpTransportType transport, McpAuthenticationType authenticationType, DateTime createdAt, DateTime updatedAt, String? serviceConnectionId, String? description, bool isEnabled
 });
 
 
@@ -1294,7 +1300,7 @@ class _$McpServerEntityCopyWithImpl<$Res>
 
 /// Create a copy of McpServerEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? workspaceId = null,Object? name = null,Object? url = null,Object? transport = null,Object? authenticationType = null,Object? createdAt = null,Object? updatedAt = null,Object? description = freezed,Object? isEnabled = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? workspaceId = null,Object? name = null,Object? url = null,Object? transport = null,Object? authenticationType = null,Object? createdAt = null,Object? updatedAt = null,Object? serviceConnectionId = freezed,Object? description = freezed,Object? isEnabled = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,workspaceId: null == workspaceId ? _self.workspaceId : workspaceId // ignore: cast_nullable_to_non_nullable
@@ -1304,7 +1310,8 @@ as String,transport: null == transport ? _self.transport : transport // ignore: 
 as McpTransportType,authenticationType: null == authenticationType ? _self.authenticationType : authenticationType // ignore: cast_nullable_to_non_nullable
 as McpAuthenticationType,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
-as DateTime,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
+as DateTime,serviceConnectionId: freezed == serviceConnectionId ? _self.serviceConnectionId : serviceConnectionId // ignore: cast_nullable_to_non_nullable
+as String?,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String?,isEnabled: null == isEnabled ? _self.isEnabled : isEnabled // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
@@ -1400,10 +1407,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String workspaceId,  String name,  String url,  McpTransportType transport,  McpAuthenticationType authenticationType,  DateTime createdAt,  DateTime updatedAt,  String? description,  bool isEnabled)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String workspaceId,  String name,  String url,  McpTransportType transport,  McpAuthenticationType authenticationType,  DateTime createdAt,  DateTime updatedAt,  String? serviceConnectionId,  String? description,  bool isEnabled)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _McpServerEntity() when $default != null:
-return $default(_that.id,_that.workspaceId,_that.name,_that.url,_that.transport,_that.authenticationType,_that.createdAt,_that.updatedAt,_that.description,_that.isEnabled);case _:
+return $default(_that.id,_that.workspaceId,_that.name,_that.url,_that.transport,_that.authenticationType,_that.createdAt,_that.updatedAt,_that.serviceConnectionId,_that.description,_that.isEnabled);case _:
   return orElse();
 
 }
@@ -1421,10 +1428,10 @@ return $default(_that.id,_that.workspaceId,_that.name,_that.url,_that.transport,
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String workspaceId,  String name,  String url,  McpTransportType transport,  McpAuthenticationType authenticationType,  DateTime createdAt,  DateTime updatedAt,  String? description,  bool isEnabled)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String workspaceId,  String name,  String url,  McpTransportType transport,  McpAuthenticationType authenticationType,  DateTime createdAt,  DateTime updatedAt,  String? serviceConnectionId,  String? description,  bool isEnabled)  $default,) {final _that = this;
 switch (_that) {
 case _McpServerEntity():
-return $default(_that.id,_that.workspaceId,_that.name,_that.url,_that.transport,_that.authenticationType,_that.createdAt,_that.updatedAt,_that.description,_that.isEnabled);case _:
+return $default(_that.id,_that.workspaceId,_that.name,_that.url,_that.transport,_that.authenticationType,_that.createdAt,_that.updatedAt,_that.serviceConnectionId,_that.description,_that.isEnabled);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1441,10 +1448,10 @@ return $default(_that.id,_that.workspaceId,_that.name,_that.url,_that.transport,
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String workspaceId,  String name,  String url,  McpTransportType transport,  McpAuthenticationType authenticationType,  DateTime createdAt,  DateTime updatedAt,  String? description,  bool isEnabled)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String workspaceId,  String name,  String url,  McpTransportType transport,  McpAuthenticationType authenticationType,  DateTime createdAt,  DateTime updatedAt,  String? serviceConnectionId,  String? description,  bool isEnabled)?  $default,) {final _that = this;
 switch (_that) {
 case _McpServerEntity() when $default != null:
-return $default(_that.id,_that.workspaceId,_that.name,_that.url,_that.transport,_that.authenticationType,_that.createdAt,_that.updatedAt,_that.description,_that.isEnabled);case _:
+return $default(_that.id,_that.workspaceId,_that.name,_that.url,_that.transport,_that.authenticationType,_that.createdAt,_that.updatedAt,_that.serviceConnectionId,_that.description,_that.isEnabled);case _:
   return null;
 
 }
@@ -1456,7 +1463,7 @@ return $default(_that.id,_that.workspaceId,_that.name,_that.url,_that.transport,
 
 
 class _McpServerEntity extends McpServerEntity {
-  const _McpServerEntity({required this.id, required this.workspaceId, required this.name, required this.url, required this.transport, required this.authenticationType, required this.createdAt, required this.updatedAt, this.description, this.isEnabled = true}): super._();
+  const _McpServerEntity({required this.id, required this.workspaceId, required this.name, required this.url, required this.transport, required this.authenticationType, required this.createdAt, required this.updatedAt, this.serviceConnectionId, this.description, this.isEnabled = true}): super._();
   
 
 /// Unique ID of this MCP server record in the database.
@@ -1469,12 +1476,14 @@ class _McpServerEntity extends McpServerEntity {
 @override final  String url;
 /// Transport type used for communication.
 @override final  McpTransportType transport;
-/// Authentication type for the MCP server.
+/// Transient authentication config used only while connecting.
 @override final  McpAuthenticationType authenticationType;
 /// Timestamp when this configuration was created.
 @override final  DateTime createdAt;
 /// Timestamp when this configuration was last updated.
 @override final  DateTime updatedAt;
+/// Optional credential record used to authenticate this MCP server.
+@override final  String? serviceConnectionId;
 /// Optional description of what this MCP server provides.
 @override final  String? description;
 /// Whether the MCP server is enabled.
@@ -1490,16 +1499,16 @@ _$McpServerEntityCopyWith<_McpServerEntity> get copyWith => __$McpServerEntityCo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _McpServerEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.name, name) || other.name == name)&&(identical(other.url, url) || other.url == url)&&(identical(other.transport, transport) || other.transport == transport)&&(identical(other.authenticationType, authenticationType) || other.authenticationType == authenticationType)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.description, description) || other.description == description)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _McpServerEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.name, name) || other.name == name)&&(identical(other.url, url) || other.url == url)&&(identical(other.transport, transport) || other.transport == transport)&&(identical(other.authenticationType, authenticationType) || other.authenticationType == authenticationType)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.serviceConnectionId, serviceConnectionId) || other.serviceConnectionId == serviceConnectionId)&&(identical(other.description, description) || other.description == description)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,workspaceId,name,url,transport,authenticationType,createdAt,updatedAt,description,isEnabled);
+int get hashCode => Object.hash(runtimeType,id,workspaceId,name,url,transport,authenticationType,createdAt,updatedAt,serviceConnectionId,description,isEnabled);
 
 @override
 String toString() {
-  return 'McpServerEntity(id: $id, workspaceId: $workspaceId, name: $name, url: $url, transport: $transport, authenticationType: $authenticationType, createdAt: $createdAt, updatedAt: $updatedAt, description: $description, isEnabled: $isEnabled)';
+  return 'McpServerEntity(id: $id, workspaceId: $workspaceId, name: $name, url: $url, transport: $transport, authenticationType: $authenticationType, createdAt: $createdAt, updatedAt: $updatedAt, serviceConnectionId: $serviceConnectionId, description: $description, isEnabled: $isEnabled)';
 }
 
 
@@ -1510,7 +1519,7 @@ abstract mixin class _$McpServerEntityCopyWith<$Res> implements $McpServerEntity
   factory _$McpServerEntityCopyWith(_McpServerEntity value, $Res Function(_McpServerEntity) _then) = __$McpServerEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String workspaceId, String name, String url, McpTransportType transport, McpAuthenticationType authenticationType, DateTime createdAt, DateTime updatedAt, String? description, bool isEnabled
+ String id, String workspaceId, String name, String url, McpTransportType transport, McpAuthenticationType authenticationType, DateTime createdAt, DateTime updatedAt, String? serviceConnectionId, String? description, bool isEnabled
 });
 
 
@@ -1527,7 +1536,7 @@ class __$McpServerEntityCopyWithImpl<$Res>
 
 /// Create a copy of McpServerEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? workspaceId = null,Object? name = null,Object? url = null,Object? transport = null,Object? authenticationType = null,Object? createdAt = null,Object? updatedAt = null,Object? description = freezed,Object? isEnabled = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? workspaceId = null,Object? name = null,Object? url = null,Object? transport = null,Object? authenticationType = null,Object? createdAt = null,Object? updatedAt = null,Object? serviceConnectionId = freezed,Object? description = freezed,Object? isEnabled = null,}) {
   return _then(_McpServerEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,workspaceId: null == workspaceId ? _self.workspaceId : workspaceId // ignore: cast_nullable_to_non_nullable
@@ -1537,7 +1546,8 @@ as String,transport: null == transport ? _self.transport : transport // ignore: 
 as McpTransportType,authenticationType: null == authenticationType ? _self.authenticationType : authenticationType // ignore: cast_nullable_to_non_nullable
 as McpAuthenticationType,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
-as DateTime,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
+as DateTime,serviceConnectionId: freezed == serviceConnectionId ? _self.serviceConnectionId : serviceConnectionId // ignore: cast_nullable_to_non_nullable
+as String?,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String?,isEnabled: null == isEnabled ? _self.isEnabled : isEnabled // ignore: cast_nullable_to_non_nullable
 as bool,
   ));

@@ -3,6 +3,7 @@
 // (See api_models.dart).
 import 'package:auravibes_app/data/database/drift/tables/table_mixin.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspaces.dart';
+import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
 import 'package:drift/drift.dart';
 
 @DataClassName('ServiceConnectionTable')
@@ -29,6 +30,15 @@ class ServiceConnections extends Table with TableMixin {
 
   /// Non-secret service-specific JSON config.
   TextColumn get metadataJson => text().nullable()();
+
+  TextColumn get authStatus =>
+      textEnum<ServiceConnectionAuthStatus>().nullable()();
+
+  DateTimeColumn get expiresAt => dateTime().nullable()();
+
+  DateTimeColumn get lastRefreshedAt => dateTime().nullable()();
+
+  TextColumn get lastAuthError => text().nullable()();
 
   TextColumn get workspaceId => text().references(
     Workspaces,

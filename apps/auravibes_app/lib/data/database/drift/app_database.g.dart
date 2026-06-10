@@ -550,6 +550,55 @@ class $ServiceConnectionsTable extends ServiceConnections
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  @override
+  late final GeneratedColumnWithTypeConverter<
+    ServiceConnectionAuthStatus?,
+    String
+  >
+  authStatus =
+      GeneratedColumn<String>(
+        'auth_status',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      ).withConverter<ServiceConnectionAuthStatus?>(
+        $ServiceConnectionsTable.$converterauthStatusn,
+      );
+  static const VerificationMeta _expiresAtMeta = const VerificationMeta(
+    'expiresAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> expiresAt = GeneratedColumn<DateTime>(
+    'expires_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lastRefreshedAtMeta = const VerificationMeta(
+    'lastRefreshedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastRefreshedAt =
+      GeneratedColumn<DateTime>(
+        'last_refreshed_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _lastAuthErrorMeta = const VerificationMeta(
+    'lastAuthError',
+  );
+  @override
+  late final GeneratedColumn<String> lastAuthError = GeneratedColumn<String>(
+    'last_auth_error',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _workspaceIdMeta = const VerificationMeta(
     'workspaceId',
   );
@@ -592,6 +641,10 @@ class $ServiceConnectionsTable extends ServiceConnections
     encryptedAuthValue,
     keySuffix,
     metadataJson,
+    authStatus,
+    expiresAt,
+    lastRefreshedAt,
+    lastAuthError,
     workspaceId,
     isEnabled,
   ];
@@ -665,6 +718,30 @@ class $ServiceConnectionsTable extends ServiceConnections
         metadataJson.isAcceptableOrUnknown(
           data['metadata_json']!,
           _metadataJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('expires_at')) {
+      context.handle(
+        _expiresAtMeta,
+        expiresAt.isAcceptableOrUnknown(data['expires_at']!, _expiresAtMeta),
+      );
+    }
+    if (data.containsKey('last_refreshed_at')) {
+      context.handle(
+        _lastRefreshedAtMeta,
+        lastRefreshedAt.isAcceptableOrUnknown(
+          data['last_refreshed_at']!,
+          _lastRefreshedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_auth_error')) {
+      context.handle(
+        _lastAuthErrorMeta,
+        lastAuthError.isAcceptableOrUnknown(
+          data['last_auth_error']!,
+          _lastAuthErrorMeta,
         ),
       );
     }
@@ -743,6 +820,24 @@ class $ServiceConnectionsTable extends ServiceConnections
         DriftSqlType.string,
         data['${effectivePrefix}metadata_json'],
       ),
+      authStatus: $ServiceConnectionsTable.$converterauthStatusn.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}auth_status'],
+        ),
+      ),
+      expiresAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}expires_at'],
+      ),
+      lastRefreshedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_refreshed_at'],
+      ),
+      lastAuthError: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_auth_error'],
+      ),
       workspaceId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}workspace_id'],
@@ -768,6 +863,12 @@ class $ServiceConnectionsTable extends ServiceConnections
       const EnumNameConverter<ServiceAuthenticationTypeTable>(
         ServiceAuthenticationTypeTable.values,
       );
+  static JsonTypeConverter2<ServiceConnectionAuthStatus, String, String>
+  $converterauthStatus = const EnumNameConverter<ServiceConnectionAuthStatus>(
+    ServiceConnectionAuthStatus.values,
+  );
+  static JsonTypeConverter2<ServiceConnectionAuthStatus?, String?, String?>
+  $converterauthStatusn = JsonTypeConverter2.asNullable($converterauthStatus);
 }
 
 class ServiceConnectionTable extends DataClass
@@ -800,6 +901,10 @@ class ServiceConnectionTable extends DataClass
 
   /// Non-secret service-specific JSON config.
   final String? metadataJson;
+  final ServiceConnectionAuthStatus? authStatus;
+  final DateTime? expiresAt;
+  final DateTime? lastRefreshedAt;
+  final String? lastAuthError;
   final String workspaceId;
   final bool isEnabled;
   const ServiceConnectionTable({
@@ -814,6 +919,10 @@ class ServiceConnectionTable extends DataClass
     this.encryptedAuthValue,
     this.keySuffix,
     this.metadataJson,
+    this.authStatus,
+    this.expiresAt,
+    this.lastRefreshedAt,
+    this.lastAuthError,
     required this.workspaceId,
     required this.isEnabled,
   });
@@ -849,6 +958,20 @@ class ServiceConnectionTable extends DataClass
     if (!nullToAbsent || metadataJson != null) {
       map['metadata_json'] = Variable<String>(metadataJson);
     }
+    if (!nullToAbsent || authStatus != null) {
+      map['auth_status'] = Variable<String>(
+        $ServiceConnectionsTable.$converterauthStatusn.toSql(authStatus),
+      );
+    }
+    if (!nullToAbsent || expiresAt != null) {
+      map['expires_at'] = Variable<DateTime>(expiresAt);
+    }
+    if (!nullToAbsent || lastRefreshedAt != null) {
+      map['last_refreshed_at'] = Variable<DateTime>(lastRefreshedAt);
+    }
+    if (!nullToAbsent || lastAuthError != null) {
+      map['last_auth_error'] = Variable<String>(lastAuthError);
+    }
     map['workspace_id'] = Variable<String>(workspaceId);
     map['is_enabled'] = Variable<bool>(isEnabled);
     return map;
@@ -873,6 +996,18 @@ class ServiceConnectionTable extends DataClass
       metadataJson: metadataJson == null && nullToAbsent
           ? const Value.absent()
           : Value(metadataJson),
+      authStatus: authStatus == null && nullToAbsent
+          ? const Value.absent()
+          : Value(authStatus),
+      expiresAt: expiresAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(expiresAt),
+      lastRefreshedAt: lastRefreshedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastRefreshedAt),
+      lastAuthError: lastAuthError == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastAuthError),
       workspaceId: Value(workspaceId),
       isEnabled: Value(isEnabled),
     );
@@ -900,6 +1035,12 @@ class ServiceConnectionTable extends DataClass
       ),
       keySuffix: serializer.fromJson<String?>(json['keySuffix']),
       metadataJson: serializer.fromJson<String?>(json['metadataJson']),
+      authStatus: $ServiceConnectionsTable.$converterauthStatusn.fromJson(
+        serializer.fromJson<String?>(json['authStatus']),
+      ),
+      expiresAt: serializer.fromJson<DateTime?>(json['expiresAt']),
+      lastRefreshedAt: serializer.fromJson<DateTime?>(json['lastRefreshedAt']),
+      lastAuthError: serializer.fromJson<String?>(json['lastAuthError']),
       workspaceId: serializer.fromJson<String>(json['workspaceId']),
       isEnabled: serializer.fromJson<bool>(json['isEnabled']),
     );
@@ -925,6 +1066,12 @@ class ServiceConnectionTable extends DataClass
       'encryptedAuthValue': serializer.toJson<String?>(encryptedAuthValue),
       'keySuffix': serializer.toJson<String?>(keySuffix),
       'metadataJson': serializer.toJson<String?>(metadataJson),
+      'authStatus': serializer.toJson<String?>(
+        $ServiceConnectionsTable.$converterauthStatusn.toJson(authStatus),
+      ),
+      'expiresAt': serializer.toJson<DateTime?>(expiresAt),
+      'lastRefreshedAt': serializer.toJson<DateTime?>(lastRefreshedAt),
+      'lastAuthError': serializer.toJson<String?>(lastAuthError),
       'workspaceId': serializer.toJson<String>(workspaceId),
       'isEnabled': serializer.toJson<bool>(isEnabled),
     };
@@ -942,6 +1089,10 @@ class ServiceConnectionTable extends DataClass
     Value<String?> encryptedAuthValue = const Value.absent(),
     Value<String?> keySuffix = const Value.absent(),
     Value<String?> metadataJson = const Value.absent(),
+    Value<ServiceConnectionAuthStatus?> authStatus = const Value.absent(),
+    Value<DateTime?> expiresAt = const Value.absent(),
+    Value<DateTime?> lastRefreshedAt = const Value.absent(),
+    Value<String?> lastAuthError = const Value.absent(),
     String? workspaceId,
     bool? isEnabled,
   }) => ServiceConnectionTable(
@@ -958,6 +1109,14 @@ class ServiceConnectionTable extends DataClass
         : this.encryptedAuthValue,
     keySuffix: keySuffix.present ? keySuffix.value : this.keySuffix,
     metadataJson: metadataJson.present ? metadataJson.value : this.metadataJson,
+    authStatus: authStatus.present ? authStatus.value : this.authStatus,
+    expiresAt: expiresAt.present ? expiresAt.value : this.expiresAt,
+    lastRefreshedAt: lastRefreshedAt.present
+        ? lastRefreshedAt.value
+        : this.lastRefreshedAt,
+    lastAuthError: lastAuthError.present
+        ? lastAuthError.value
+        : this.lastAuthError,
     workspaceId: workspaceId ?? this.workspaceId,
     isEnabled: isEnabled ?? this.isEnabled,
   );
@@ -980,6 +1139,16 @@ class ServiceConnectionTable extends DataClass
       metadataJson: data.metadataJson.present
           ? data.metadataJson.value
           : this.metadataJson,
+      authStatus: data.authStatus.present
+          ? data.authStatus.value
+          : this.authStatus,
+      expiresAt: data.expiresAt.present ? data.expiresAt.value : this.expiresAt,
+      lastRefreshedAt: data.lastRefreshedAt.present
+          ? data.lastRefreshedAt.value
+          : this.lastRefreshedAt,
+      lastAuthError: data.lastAuthError.present
+          ? data.lastAuthError.value
+          : this.lastAuthError,
       workspaceId: data.workspaceId.present
           ? data.workspaceId.value
           : this.workspaceId,
@@ -1001,6 +1170,10 @@ class ServiceConnectionTable extends DataClass
           ..write('encryptedAuthValue: $encryptedAuthValue, ')
           ..write('keySuffix: $keySuffix, ')
           ..write('metadataJson: $metadataJson, ')
+          ..write('authStatus: $authStatus, ')
+          ..write('expiresAt: $expiresAt, ')
+          ..write('lastRefreshedAt: $lastRefreshedAt, ')
+          ..write('lastAuthError: $lastAuthError, ')
           ..write('workspaceId: $workspaceId, ')
           ..write('isEnabled: $isEnabled')
           ..write(')'))
@@ -1020,6 +1193,10 @@ class ServiceConnectionTable extends DataClass
     encryptedAuthValue,
     keySuffix,
     metadataJson,
+    authStatus,
+    expiresAt,
+    lastRefreshedAt,
+    lastAuthError,
     workspaceId,
     isEnabled,
   );
@@ -1038,6 +1215,10 @@ class ServiceConnectionTable extends DataClass
           other.encryptedAuthValue == this.encryptedAuthValue &&
           other.keySuffix == this.keySuffix &&
           other.metadataJson == this.metadataJson &&
+          other.authStatus == this.authStatus &&
+          other.expiresAt == this.expiresAt &&
+          other.lastRefreshedAt == this.lastRefreshedAt &&
+          other.lastAuthError == this.lastAuthError &&
           other.workspaceId == this.workspaceId &&
           other.isEnabled == this.isEnabled);
 }
@@ -1055,6 +1236,10 @@ class ServiceConnectionsCompanion
   final Value<String?> encryptedAuthValue;
   final Value<String?> keySuffix;
   final Value<String?> metadataJson;
+  final Value<ServiceConnectionAuthStatus?> authStatus;
+  final Value<DateTime?> expiresAt;
+  final Value<DateTime?> lastRefreshedAt;
+  final Value<String?> lastAuthError;
   final Value<String> workspaceId;
   final Value<bool> isEnabled;
   final Value<int> rowid;
@@ -1070,6 +1255,10 @@ class ServiceConnectionsCompanion
     this.encryptedAuthValue = const Value.absent(),
     this.keySuffix = const Value.absent(),
     this.metadataJson = const Value.absent(),
+    this.authStatus = const Value.absent(),
+    this.expiresAt = const Value.absent(),
+    this.lastRefreshedAt = const Value.absent(),
+    this.lastAuthError = const Value.absent(),
     this.workspaceId = const Value.absent(),
     this.isEnabled = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -1086,6 +1275,10 @@ class ServiceConnectionsCompanion
     this.encryptedAuthValue = const Value.absent(),
     this.keySuffix = const Value.absent(),
     this.metadataJson = const Value.absent(),
+    this.authStatus = const Value.absent(),
+    this.expiresAt = const Value.absent(),
+    this.lastRefreshedAt = const Value.absent(),
+    this.lastAuthError = const Value.absent(),
     required String workspaceId,
     this.isEnabled = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -1106,6 +1299,10 @@ class ServiceConnectionsCompanion
     Expression<String>? encryptedAuthValue,
     Expression<String>? keySuffix,
     Expression<String>? metadataJson,
+    Expression<String>? authStatus,
+    Expression<DateTime>? expiresAt,
+    Expression<DateTime>? lastRefreshedAt,
+    Expression<String>? lastAuthError,
     Expression<String>? workspaceId,
     Expression<bool>? isEnabled,
     Expression<int>? rowid,
@@ -1123,6 +1320,10 @@ class ServiceConnectionsCompanion
         'encrypted_auth_value': encryptedAuthValue,
       if (keySuffix != null) 'key_suffix': keySuffix,
       if (metadataJson != null) 'metadata_json': metadataJson,
+      if (authStatus != null) 'auth_status': authStatus,
+      if (expiresAt != null) 'expires_at': expiresAt,
+      if (lastRefreshedAt != null) 'last_refreshed_at': lastRefreshedAt,
+      if (lastAuthError != null) 'last_auth_error': lastAuthError,
       if (workspaceId != null) 'workspace_id': workspaceId,
       if (isEnabled != null) 'is_enabled': isEnabled,
       if (rowid != null) 'rowid': rowid,
@@ -1141,6 +1342,10 @@ class ServiceConnectionsCompanion
     Value<String?>? encryptedAuthValue,
     Value<String?>? keySuffix,
     Value<String?>? metadataJson,
+    Value<ServiceConnectionAuthStatus?>? authStatus,
+    Value<DateTime?>? expiresAt,
+    Value<DateTime?>? lastRefreshedAt,
+    Value<String?>? lastAuthError,
     Value<String>? workspaceId,
     Value<bool>? isEnabled,
     Value<int>? rowid,
@@ -1157,6 +1362,10 @@ class ServiceConnectionsCompanion
       encryptedAuthValue: encryptedAuthValue ?? this.encryptedAuthValue,
       keySuffix: keySuffix ?? this.keySuffix,
       metadataJson: metadataJson ?? this.metadataJson,
+      authStatus: authStatus ?? this.authStatus,
+      expiresAt: expiresAt ?? this.expiresAt,
+      lastRefreshedAt: lastRefreshedAt ?? this.lastRefreshedAt,
+      lastAuthError: lastAuthError ?? this.lastAuthError,
       workspaceId: workspaceId ?? this.workspaceId,
       isEnabled: isEnabled ?? this.isEnabled,
       rowid: rowid ?? this.rowid,
@@ -1205,6 +1414,20 @@ class ServiceConnectionsCompanion
     if (metadataJson.present) {
       map['metadata_json'] = Variable<String>(metadataJson.value);
     }
+    if (authStatus.present) {
+      map['auth_status'] = Variable<String>(
+        $ServiceConnectionsTable.$converterauthStatusn.toSql(authStatus.value),
+      );
+    }
+    if (expiresAt.present) {
+      map['expires_at'] = Variable<DateTime>(expiresAt.value);
+    }
+    if (lastRefreshedAt.present) {
+      map['last_refreshed_at'] = Variable<DateTime>(lastRefreshedAt.value);
+    }
+    if (lastAuthError.present) {
+      map['last_auth_error'] = Variable<String>(lastAuthError.value);
+    }
     if (workspaceId.present) {
       map['workspace_id'] = Variable<String>(workspaceId.value);
     }
@@ -1231,6 +1454,10 @@ class ServiceConnectionsCompanion
           ..write('encryptedAuthValue: $encryptedAuthValue, ')
           ..write('keySuffix: $keySuffix, ')
           ..write('metadataJson: $metadataJson, ')
+          ..write('authStatus: $authStatus, ')
+          ..write('expiresAt: $expiresAt, ')
+          ..write('lastRefreshedAt: $lastRefreshedAt, ')
+          ..write('lastAuthError: $lastAuthError, ')
           ..write('workspaceId: $workspaceId, ')
           ..write('isEnabled: $isEnabled, ')
           ..write('rowid: $rowid')
@@ -3911,17 +4138,19 @@ class $McpServersTable extends McpServers
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   ).withConverter<McpTransportType>($McpServersTable.$convertertransport);
+  static const VerificationMeta _serviceConnectionIdMeta =
+      const VerificationMeta('serviceConnectionId');
   @override
-  late final GeneratedColumnWithTypeConverter<McpAuthenticationType, String>
-  authenticationType =
+  late final GeneratedColumn<String> serviceConnectionId =
       GeneratedColumn<String>(
-        'authentication_type',
+        'service_connection_id',
         aliasedName,
-        false,
+        true,
         type: DriftSqlType.string,
-        requiredDuringInsert: true,
-      ).withConverter<McpAuthenticationType>(
-        $McpServersTable.$converterauthenticationType,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES service_connections (id) ON DELETE SET NULL',
+        ),
       );
   static const VerificationMeta _descriptionMeta = const VerificationMeta(
     'description',
@@ -3958,7 +4187,7 @@ class $McpServersTable extends McpServers
     name,
     url,
     transport,
-    authenticationType,
+    serviceConnectionId,
     description,
     isEnabled,
   ];
@@ -4016,6 +4245,15 @@ class $McpServersTable extends McpServers
     } else if (isInserting) {
       context.missing(_urlMeta);
     }
+    if (data.containsKey('service_connection_id')) {
+      context.handle(
+        _serviceConnectionIdMeta,
+        serviceConnectionId.isAcceptableOrUnknown(
+          data['service_connection_id']!,
+          _serviceConnectionIdMeta,
+        ),
+      );
+    }
     if (data.containsKey('description')) {
       context.handle(
         _descriptionMeta,
@@ -4070,11 +4308,9 @@ class $McpServersTable extends McpServers
           data['${effectivePrefix}transport'],
         )!,
       ),
-      authenticationType: $McpServersTable.$converterauthenticationType.fromSql(
-        attachedDatabase.typeMapping.read(
-          DriftSqlType.string,
-          data['${effectivePrefix}authentication_type'],
-        )!,
+      serviceConnectionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}service_connection_id'],
       ),
       description: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -4094,8 +4330,6 @@ class $McpServersTable extends McpServers
 
   static JsonTypeConverter2<McpTransportType, String, Object?>
   $convertertransport = transportTypeConverter;
-  static JsonTypeConverter2<McpAuthenticationType, String, Object?>
-  $converterauthenticationType = authenticationTypeConverter;
 }
 
 class McpServersTable extends DataClass implements Insertable<McpServersTable> {
@@ -4120,8 +4354,8 @@ class McpServersTable extends DataClass implements Insertable<McpServersTable> {
   /// Transport type: 'sse' or 'streamable_http.'.
   final McpTransportType transport;
 
-  /// Authentication type: 'none', 'oauth', or 'bearer_token.'.
-  final McpAuthenticationType authenticationType;
+  /// Optional credential record used to authenticate this MCP server.
+  final String? serviceConnectionId;
 
   /// Optional description of what this MCP server provides.
   final String? description;
@@ -4136,7 +4370,7 @@ class McpServersTable extends DataClass implements Insertable<McpServersTable> {
     required this.name,
     required this.url,
     required this.transport,
-    required this.authenticationType,
+    this.serviceConnectionId,
     this.description,
     required this.isEnabled,
   });
@@ -4154,10 +4388,8 @@ class McpServersTable extends DataClass implements Insertable<McpServersTable> {
         $McpServersTable.$convertertransport.toSql(transport),
       );
     }
-    {
-      map['authentication_type'] = Variable<String>(
-        $McpServersTable.$converterauthenticationType.toSql(authenticationType),
-      );
+    if (!nullToAbsent || serviceConnectionId != null) {
+      map['service_connection_id'] = Variable<String>(serviceConnectionId);
     }
     if (!nullToAbsent || description != null) {
       map['description'] = Variable<String>(description);
@@ -4175,7 +4407,9 @@ class McpServersTable extends DataClass implements Insertable<McpServersTable> {
       name: Value(name),
       url: Value(url),
       transport: Value(transport),
-      authenticationType: Value(authenticationType),
+      serviceConnectionId: serviceConnectionId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(serviceConnectionId),
       description: description == null && nullToAbsent
           ? const Value.absent()
           : Value(description),
@@ -4198,8 +4432,9 @@ class McpServersTable extends DataClass implements Insertable<McpServersTable> {
       transport: $McpServersTable.$convertertransport.fromJson(
         serializer.fromJson<Object?>(json['transport']),
       ),
-      authenticationType: $McpServersTable.$converterauthenticationType
-          .fromJson(serializer.fromJson<Object?>(json['authenticationType'])),
+      serviceConnectionId: serializer.fromJson<String?>(
+        json['serviceConnectionId'],
+      ),
       description: serializer.fromJson<String?>(json['description']),
       isEnabled: serializer.fromJson<bool>(json['isEnabled']),
     );
@@ -4217,11 +4452,7 @@ class McpServersTable extends DataClass implements Insertable<McpServersTable> {
       'transport': serializer.toJson<Object?>(
         $McpServersTable.$convertertransport.toJson(transport),
       ),
-      'authenticationType': serializer.toJson<Object?>(
-        $McpServersTable.$converterauthenticationType.toJson(
-          authenticationType,
-        ),
-      ),
+      'serviceConnectionId': serializer.toJson<String?>(serviceConnectionId),
       'description': serializer.toJson<String?>(description),
       'isEnabled': serializer.toJson<bool>(isEnabled),
     };
@@ -4235,7 +4466,7 @@ class McpServersTable extends DataClass implements Insertable<McpServersTable> {
     String? name,
     String? url,
     McpTransportType? transport,
-    McpAuthenticationType? authenticationType,
+    Value<String?> serviceConnectionId = const Value.absent(),
     Value<String?> description = const Value.absent(),
     bool? isEnabled,
   }) => McpServersTable(
@@ -4246,7 +4477,9 @@ class McpServersTable extends DataClass implements Insertable<McpServersTable> {
     name: name ?? this.name,
     url: url ?? this.url,
     transport: transport ?? this.transport,
-    authenticationType: authenticationType ?? this.authenticationType,
+    serviceConnectionId: serviceConnectionId.present
+        ? serviceConnectionId.value
+        : this.serviceConnectionId,
     description: description.present ? description.value : this.description,
     isEnabled: isEnabled ?? this.isEnabled,
   );
@@ -4261,9 +4494,9 @@ class McpServersTable extends DataClass implements Insertable<McpServersTable> {
       name: data.name.present ? data.name.value : this.name,
       url: data.url.present ? data.url.value : this.url,
       transport: data.transport.present ? data.transport.value : this.transport,
-      authenticationType: data.authenticationType.present
-          ? data.authenticationType.value
-          : this.authenticationType,
+      serviceConnectionId: data.serviceConnectionId.present
+          ? data.serviceConnectionId.value
+          : this.serviceConnectionId,
       description: data.description.present
           ? data.description.value
           : this.description,
@@ -4281,7 +4514,7 @@ class McpServersTable extends DataClass implements Insertable<McpServersTable> {
           ..write('name: $name, ')
           ..write('url: $url, ')
           ..write('transport: $transport, ')
-          ..write('authenticationType: $authenticationType, ')
+          ..write('serviceConnectionId: $serviceConnectionId, ')
           ..write('description: $description, ')
           ..write('isEnabled: $isEnabled')
           ..write(')'))
@@ -4297,7 +4530,7 @@ class McpServersTable extends DataClass implements Insertable<McpServersTable> {
     name,
     url,
     transport,
-    authenticationType,
+    serviceConnectionId,
     description,
     isEnabled,
   );
@@ -4312,7 +4545,7 @@ class McpServersTable extends DataClass implements Insertable<McpServersTable> {
           other.name == this.name &&
           other.url == this.url &&
           other.transport == this.transport &&
-          other.authenticationType == this.authenticationType &&
+          other.serviceConnectionId == this.serviceConnectionId &&
           other.description == this.description &&
           other.isEnabled == this.isEnabled);
 }
@@ -4325,7 +4558,7 @@ class McpServersCompanion extends UpdateCompanion<McpServersTable> {
   final Value<String> name;
   final Value<String> url;
   final Value<McpTransportType> transport;
-  final Value<McpAuthenticationType> authenticationType;
+  final Value<String?> serviceConnectionId;
   final Value<String?> description;
   final Value<bool> isEnabled;
   final Value<int> rowid;
@@ -4337,7 +4570,7 @@ class McpServersCompanion extends UpdateCompanion<McpServersTable> {
     this.name = const Value.absent(),
     this.url = const Value.absent(),
     this.transport = const Value.absent(),
-    this.authenticationType = const Value.absent(),
+    this.serviceConnectionId = const Value.absent(),
     this.description = const Value.absent(),
     this.isEnabled = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -4350,15 +4583,14 @@ class McpServersCompanion extends UpdateCompanion<McpServersTable> {
     required String name,
     required String url,
     required McpTransportType transport,
-    required McpAuthenticationType authenticationType,
+    this.serviceConnectionId = const Value.absent(),
     this.description = const Value.absent(),
     this.isEnabled = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : workspaceId = Value(workspaceId),
        name = Value(name),
        url = Value(url),
-       transport = Value(transport),
-       authenticationType = Value(authenticationType);
+       transport = Value(transport);
   static Insertable<McpServersTable> custom({
     Expression<String>? id,
     Expression<DateTime>? createdAt,
@@ -4367,7 +4599,7 @@ class McpServersCompanion extends UpdateCompanion<McpServersTable> {
     Expression<String>? name,
     Expression<String>? url,
     Expression<String>? transport,
-    Expression<String>? authenticationType,
+    Expression<String>? serviceConnectionId,
     Expression<String>? description,
     Expression<bool>? isEnabled,
     Expression<int>? rowid,
@@ -4380,7 +4612,8 @@ class McpServersCompanion extends UpdateCompanion<McpServersTable> {
       if (name != null) 'name': name,
       if (url != null) 'url': url,
       if (transport != null) 'transport': transport,
-      if (authenticationType != null) 'authentication_type': authenticationType,
+      if (serviceConnectionId != null)
+        'service_connection_id': serviceConnectionId,
       if (description != null) 'description': description,
       if (isEnabled != null) 'is_enabled': isEnabled,
       if (rowid != null) 'rowid': rowid,
@@ -4395,7 +4628,7 @@ class McpServersCompanion extends UpdateCompanion<McpServersTable> {
     Value<String>? name,
     Value<String>? url,
     Value<McpTransportType>? transport,
-    Value<McpAuthenticationType>? authenticationType,
+    Value<String?>? serviceConnectionId,
     Value<String?>? description,
     Value<bool>? isEnabled,
     Value<int>? rowid,
@@ -4408,7 +4641,7 @@ class McpServersCompanion extends UpdateCompanion<McpServersTable> {
       name: name ?? this.name,
       url: url ?? this.url,
       transport: transport ?? this.transport,
-      authenticationType: authenticationType ?? this.authenticationType,
+      serviceConnectionId: serviceConnectionId ?? this.serviceConnectionId,
       description: description ?? this.description,
       isEnabled: isEnabled ?? this.isEnabled,
       rowid: rowid ?? this.rowid,
@@ -4441,11 +4674,9 @@ class McpServersCompanion extends UpdateCompanion<McpServersTable> {
         $McpServersTable.$convertertransport.toSql(transport.value),
       );
     }
-    if (authenticationType.present) {
-      map['authentication_type'] = Variable<String>(
-        $McpServersTable.$converterauthenticationType.toSql(
-          authenticationType.value,
-        ),
+    if (serviceConnectionId.present) {
+      map['service_connection_id'] = Variable<String>(
+        serviceConnectionId.value,
       );
     }
     if (description.present) {
@@ -4470,7 +4701,7 @@ class McpServersCompanion extends UpdateCompanion<McpServersTable> {
           ..write('name: $name, ')
           ..write('url: $url, ')
           ..write('transport: $transport, ')
-          ..write('authenticationType: $authenticationType, ')
+          ..write('serviceConnectionId: $serviceConnectionId, ')
           ..write('description: $description, ')
           ..write('isEnabled: $isEnabled, ')
           ..write('rowid: $rowid')
@@ -9971,6 +10202,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
+        'service_connections',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('mcp_servers', kind: UpdateKind.update)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
         'workspaces',
         limitUpdateKind: UpdateKind.delete,
       ),
@@ -11237,6 +11475,10 @@ typedef $$ServiceConnectionsTableCreateCompanionBuilder =
       Value<String?> encryptedAuthValue,
       Value<String?> keySuffix,
       Value<String?> metadataJson,
+      Value<ServiceConnectionAuthStatus?> authStatus,
+      Value<DateTime?> expiresAt,
+      Value<DateTime?> lastRefreshedAt,
+      Value<String?> lastAuthError,
       required String workspaceId,
       Value<bool> isEnabled,
       Value<int> rowid,
@@ -11254,6 +11496,10 @@ typedef $$ServiceConnectionsTableUpdateCompanionBuilder =
       Value<String?> encryptedAuthValue,
       Value<String?> keySuffix,
       Value<String?> metadataJson,
+      Value<ServiceConnectionAuthStatus?> authStatus,
+      Value<DateTime?> expiresAt,
+      Value<DateTime?> lastRefreshedAt,
+      Value<String?> lastAuthError,
       Value<String> workspaceId,
       Value<bool> isEnabled,
       Value<int> rowid,
@@ -11320,6 +11566,26 @@ final class $$ServiceConnectionsTableReferences
     final cache = $_typedResult.readTableOrNull(
       _workspaceModelSelectionsRefsTable($_db),
     );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$McpServersTable, List<McpServersTable>>
+  _mcpServersRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.mcpServers,
+    aliasName: $_aliasNameGenerator(
+      db.serviceConnections.id,
+      db.mcpServers.serviceConnectionId,
+    ),
+  );
+
+  $$McpServersTableProcessedTableManager get mcpServersRefs {
+    final manager = $$McpServersTableTableManager($_db, $_db.mcpServers).filter(
+      (f) => f.serviceConnectionId.id.sqlEquals($_itemColumn<String>('id')!),
+    );
+
+    final cache = $_typedResult.readTableOrNull(_mcpServersRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -11400,6 +11666,31 @@ class $$ServiceConnectionsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnWithTypeConverterFilters<
+    ServiceConnectionAuthStatus?,
+    ServiceConnectionAuthStatus,
+    String
+  >
+  get authStatus => $composableBuilder(
+    column: $table.authStatus,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<DateTime> get expiresAt => $composableBuilder(
+    column: $table.expiresAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastRefreshedAt => $composableBuilder(
+    column: $table.lastRefreshedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lastAuthError => $composableBuilder(
+    column: $table.lastAuthError,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<bool> get isEnabled => $composableBuilder(
     column: $table.isEnabled,
     builder: (column) => ColumnFilters(column),
@@ -11452,6 +11743,31 @@ class $$ServiceConnectionsTableFilterComposer
                     $removeJoinBuilderFromRootComposer,
               ),
         );
+    return f(composer);
+  }
+
+  Expression<bool> mcpServersRefs(
+    Expression<bool> Function($$McpServersTableFilterComposer f) f,
+  ) {
+    final $$McpServersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.mcpServers,
+      getReferencedColumn: (t) => t.serviceConnectionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$McpServersTableFilterComposer(
+            $db: $db,
+            $table: $db.mcpServers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
     return f(composer);
   }
 }
@@ -11517,6 +11833,26 @@ class $$ServiceConnectionsTableOrderingComposer
 
   ColumnOrderings<String> get metadataJson => $composableBuilder(
     column: $table.metadataJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get authStatus => $composableBuilder(
+    column: $table.authStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get expiresAt => $composableBuilder(
+    column: $table.expiresAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastRefreshedAt => $composableBuilder(
+    column: $table.lastRefreshedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lastAuthError => $composableBuilder(
+    column: $table.lastAuthError,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -11599,6 +11935,25 @@ class $$ServiceConnectionsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumnWithTypeConverter<ServiceConnectionAuthStatus?, String>
+  get authStatus => $composableBuilder(
+    column: $table.authStatus,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get expiresAt =>
+      $composableBuilder(column: $table.expiresAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastRefreshedAt => $composableBuilder(
+    column: $table.lastRefreshedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get lastAuthError => $composableBuilder(
+    column: $table.lastAuthError,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<bool> get isEnabled =>
       $composableBuilder(column: $table.isEnabled, builder: (column) => column);
 
@@ -11651,6 +12006,31 @@ class $$ServiceConnectionsTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> mcpServersRefs<T extends Object>(
+    Expression<T> Function($$McpServersTableAnnotationComposer a) f,
+  ) {
+    final $$McpServersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.mcpServers,
+      getReferencedColumn: (t) => t.serviceConnectionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$McpServersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.mcpServers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$ServiceConnectionsTableTableManager
@@ -11669,6 +12049,7 @@ class $$ServiceConnectionsTableTableManager
           PrefetchHooks Function({
             bool workspaceId,
             bool workspaceModelSelectionsRefs,
+            bool mcpServersRefs,
           })
         > {
   $$ServiceConnectionsTableTableManager(
@@ -11701,6 +12082,11 @@ class $$ServiceConnectionsTableTableManager
                 Value<String?> encryptedAuthValue = const Value.absent(),
                 Value<String?> keySuffix = const Value.absent(),
                 Value<String?> metadataJson = const Value.absent(),
+                Value<ServiceConnectionAuthStatus?> authStatus =
+                    const Value.absent(),
+                Value<DateTime?> expiresAt = const Value.absent(),
+                Value<DateTime?> lastRefreshedAt = const Value.absent(),
+                Value<String?> lastAuthError = const Value.absent(),
                 Value<String> workspaceId = const Value.absent(),
                 Value<bool> isEnabled = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -11716,6 +12102,10 @@ class $$ServiceConnectionsTableTableManager
                 encryptedAuthValue: encryptedAuthValue,
                 keySuffix: keySuffix,
                 metadataJson: metadataJson,
+                authStatus: authStatus,
+                expiresAt: expiresAt,
+                lastRefreshedAt: lastRefreshedAt,
+                lastAuthError: lastAuthError,
                 workspaceId: workspaceId,
                 isEnabled: isEnabled,
                 rowid: rowid,
@@ -11733,6 +12123,11 @@ class $$ServiceConnectionsTableTableManager
                 Value<String?> encryptedAuthValue = const Value.absent(),
                 Value<String?> keySuffix = const Value.absent(),
                 Value<String?> metadataJson = const Value.absent(),
+                Value<ServiceConnectionAuthStatus?> authStatus =
+                    const Value.absent(),
+                Value<DateTime?> expiresAt = const Value.absent(),
+                Value<DateTime?> lastRefreshedAt = const Value.absent(),
+                Value<String?> lastAuthError = const Value.absent(),
                 required String workspaceId,
                 Value<bool> isEnabled = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -11748,6 +12143,10 @@ class $$ServiceConnectionsTableTableManager
                 encryptedAuthValue: encryptedAuthValue,
                 keySuffix: keySuffix,
                 metadataJson: metadataJson,
+                authStatus: authStatus,
+                expiresAt: expiresAt,
+                lastRefreshedAt: lastRefreshedAt,
+                lastAuthError: lastAuthError,
                 workspaceId: workspaceId,
                 isEnabled: isEnabled,
                 rowid: rowid,
@@ -11761,12 +12160,17 @@ class $$ServiceConnectionsTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({workspaceId = false, workspaceModelSelectionsRefs = false}) {
+              ({
+                workspaceId = false,
+                workspaceModelSelectionsRefs = false,
+                mcpServersRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (workspaceModelSelectionsRefs)
                       db.workspaceModelSelections,
+                    if (mcpServersRefs) db.mcpServers,
                   ],
                   addJoins:
                       <
@@ -11825,6 +12229,27 @@ class $$ServiceConnectionsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (mcpServersRefs)
+                        await $_getPrefetchedData<
+                          ServiceConnectionTable,
+                          $ServiceConnectionsTable,
+                          McpServersTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ServiceConnectionsTableReferences
+                              ._mcpServersRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ServiceConnectionsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).mcpServersRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.serviceConnectionId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -11848,6 +12273,7 @@ typedef $$ServiceConnectionsTableProcessedTableManager =
       PrefetchHooks Function({
         bool workspaceId,
         bool workspaceModelSelectionsRefs,
+        bool mcpServersRefs,
       })
     >;
 typedef $$ApiModelProvidersTableCreateCompanionBuilder =
@@ -14499,7 +14925,7 @@ typedef $$McpServersTableCreateCompanionBuilder =
       required String name,
       required String url,
       required McpTransportType transport,
-      required McpAuthenticationType authenticationType,
+      Value<String?> serviceConnectionId,
       Value<String?> description,
       Value<bool> isEnabled,
       Value<int> rowid,
@@ -14513,7 +14939,7 @@ typedef $$McpServersTableUpdateCompanionBuilder =
       Value<String> name,
       Value<String> url,
       Value<McpTransportType> transport,
-      Value<McpAuthenticationType> authenticationType,
+      Value<String?> serviceConnectionId,
       Value<String?> description,
       Value<bool> isEnabled,
       Value<int> rowid,
@@ -14536,6 +14962,28 @@ final class $$McpServersTableReferences
       $_db.workspaces,
     ).filter((f) => f.id.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_workspaceIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $ServiceConnectionsTable _serviceConnectionIdTable(_$AppDatabase db) =>
+      db.serviceConnections.createAlias(
+        $_aliasNameGenerator(
+          db.mcpServers.serviceConnectionId,
+          db.serviceConnections.id,
+        ),
+      );
+
+  $$ServiceConnectionsTableProcessedTableManager? get serviceConnectionId {
+    final $_column = $_itemColumn<String>('service_connection_id');
+    if ($_column == null) return null;
+    final manager = $$ServiceConnectionsTableTableManager(
+      $_db,
+      $_db.serviceConnections,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_serviceConnectionIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
@@ -14604,16 +15052,6 @@ class $$McpServersTableFilterComposer
     builder: (column) => ColumnWithTypeConverterFilters(column),
   );
 
-  ColumnWithTypeConverterFilters<
-    McpAuthenticationType,
-    McpAuthenticationType,
-    String
-  >
-  get authenticationType => $composableBuilder(
-    column: $table.authenticationType,
-    builder: (column) => ColumnWithTypeConverterFilters(column),
-  );
-
   ColumnFilters<String> get description => $composableBuilder(
     column: $table.description,
     builder: (column) => ColumnFilters(column),
@@ -14638,6 +15076,29 @@ class $$McpServersTableFilterComposer
           }) => $$WorkspacesTableFilterComposer(
             $db: $db,
             $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ServiceConnectionsTableFilterComposer get serviceConnectionId {
+    final $$ServiceConnectionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.serviceConnectionId,
+      referencedTable: $db.serviceConnections,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ServiceConnectionsTableFilterComposer(
+            $db: $db,
+            $table: $db.serviceConnections,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -14712,11 +15173,6 @@ class $$McpServersTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get authenticationType => $composableBuilder(
-    column: $table.authenticationType,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<String> get description => $composableBuilder(
     column: $table.description,
     builder: (column) => ColumnOrderings(column),
@@ -14741,6 +15197,29 @@ class $$McpServersTableOrderingComposer
           }) => $$WorkspacesTableOrderingComposer(
             $db: $db,
             $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ServiceConnectionsTableOrderingComposer get serviceConnectionId {
+    final $$ServiceConnectionsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.serviceConnectionId,
+      referencedTable: $db.serviceConnections,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ServiceConnectionsTableOrderingComposer(
+            $db: $db,
+            $table: $db.serviceConnections,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -14778,12 +15257,6 @@ class $$McpServersTableAnnotationComposer
   GeneratedColumnWithTypeConverter<McpTransportType, String> get transport =>
       $composableBuilder(column: $table.transport, builder: (column) => column);
 
-  GeneratedColumnWithTypeConverter<McpAuthenticationType, String>
-  get authenticationType => $composableBuilder(
-    column: $table.authenticationType,
-    builder: (column) => column,
-  );
-
   GeneratedColumn<String> get description => $composableBuilder(
     column: $table.description,
     builder: (column) => column,
@@ -14812,6 +15285,30 @@ class $$McpServersTableAnnotationComposer
                 $removeJoinBuilderFromRootComposer,
           ),
     );
+    return composer;
+  }
+
+  $$ServiceConnectionsTableAnnotationComposer get serviceConnectionId {
+    final $$ServiceConnectionsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.serviceConnectionId,
+          referencedTable: $db.serviceConnections,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ServiceConnectionsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.serviceConnections,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
     return composer;
   }
 
@@ -14854,7 +15351,11 @@ class $$McpServersTableTableManager
           $$McpServersTableUpdateCompanionBuilder,
           (McpServersTable, $$McpServersTableReferences),
           McpServersTable,
-          PrefetchHooks Function({bool workspaceId, bool toolsGroupsRefs})
+          PrefetchHooks Function({
+            bool workspaceId,
+            bool serviceConnectionId,
+            bool toolsGroupsRefs,
+          })
         > {
   $$McpServersTableTableManager(_$AppDatabase db, $McpServersTable table)
     : super(
@@ -14876,8 +15377,7 @@ class $$McpServersTableTableManager
                 Value<String> name = const Value.absent(),
                 Value<String> url = const Value.absent(),
                 Value<McpTransportType> transport = const Value.absent(),
-                Value<McpAuthenticationType> authenticationType =
-                    const Value.absent(),
+                Value<String?> serviceConnectionId = const Value.absent(),
                 Value<String?> description = const Value.absent(),
                 Value<bool> isEnabled = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -14889,7 +15389,7 @@ class $$McpServersTableTableManager
                 name: name,
                 url: url,
                 transport: transport,
-                authenticationType: authenticationType,
+                serviceConnectionId: serviceConnectionId,
                 description: description,
                 isEnabled: isEnabled,
                 rowid: rowid,
@@ -14903,7 +15403,7 @@ class $$McpServersTableTableManager
                 required String name,
                 required String url,
                 required McpTransportType transport,
-                required McpAuthenticationType authenticationType,
+                Value<String?> serviceConnectionId = const Value.absent(),
                 Value<String?> description = const Value.absent(),
                 Value<bool> isEnabled = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -14915,7 +15415,7 @@ class $$McpServersTableTableManager
                 name: name,
                 url: url,
                 transport: transport,
-                authenticationType: authenticationType,
+                serviceConnectionId: serviceConnectionId,
                 description: description,
                 isEnabled: isEnabled,
                 rowid: rowid,
@@ -14929,7 +15429,11 @@ class $$McpServersTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({workspaceId = false, toolsGroupsRefs = false}) {
+              ({
+                workspaceId = false,
+                serviceConnectionId = false,
+                toolsGroupsRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
@@ -14961,6 +15465,20 @@ class $$McpServersTableTableManager
                                     referencedColumn:
                                         $$McpServersTableReferences
                                             ._workspaceIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (serviceConnectionId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.serviceConnectionId,
+                                    referencedTable: $$McpServersTableReferences
+                                        ._serviceConnectionIdTable(db),
+                                    referencedColumn:
+                                        $$McpServersTableReferences
+                                            ._serviceConnectionIdTable(db)
                                             .id,
                                   )
                                   as T;
@@ -15011,7 +15529,11 @@ typedef $$McpServersTableProcessedTableManager =
       $$McpServersTableUpdateCompanionBuilder,
       (McpServersTable, $$McpServersTableReferences),
       McpServersTable,
-      PrefetchHooks Function({bool workspaceId, bool toolsGroupsRefs})
+      PrefetchHooks Function({
+        bool workspaceId,
+        bool serviceConnectionId,
+        bool toolsGroupsRefs,
+      })
     >;
 typedef $$ToolsGroupsTableCreateCompanionBuilder =
     ToolsGroupsCompanion Function({

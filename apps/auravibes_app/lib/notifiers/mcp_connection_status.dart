@@ -7,13 +7,15 @@ import 'dart:async';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
+import 'package:auravibes_app/domain/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/domain/usecases/tools/mcp/build_mcp_server_to_create_use_case.dart';
+import 'package:auravibes_app/features/service_connections/providers/service_connection_repository_provider.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
-import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_manager_client.dart';
 import 'package:auravibes_app/services/mcp_service/o_auth_authenticate.dart';
+import 'package:auravibes_app/services/oauth_credential_service.dart';
 import 'package:collection/collection.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:logging/logging.dart';
@@ -162,6 +164,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
   McpManagerService? _mcpManagerService;
   var _isDisposed = false;
   var _lastKnownState = const <McpConnectionState>[];
+  final _tokenSubscriptions = <String, StreamSubscription<OAuthTokenEntity>>{};
 
   McpManagerService get _requiredMcpManagerService {
     final mcpManagerService = _mcpManagerService;
@@ -219,26 +222,57 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
           serverToCreate,
         );
 
-    final client = await _requiredMcpManagerService.connectMcp(serverInfo);
-
-    final mcpTools = await _requiredMcpManagerService.getTools(client);
-
-    final repository = ref.read(mcpServersRepositoryProvider);
-    final savedServer = await repository.addMcpServerWithTools(
-      workspaceId: workspaceId,
-      serverToCreate: serverInfo.copyWith(
-        authenticationType: await serverInfo.authenticationType.copyCryptor(
-          ref.read(encryptionServiceProvider).encrypt,
-        ),
-      ),
-      tools: mcpTools,
+    final serviceConnectionRepository = ref.read(
+      serviceConnectionRepositoryProvider,
     );
+    final serviceConnectionId = await serviceConnectionRepository
+        .createMcpServiceConnection(
+          workspaceId: workspaceId,
+          profile: McpServiceConnectionProfile(
+            name: serverInfo.name,
+            authenticationType: serverInfo.authenticationType,
+          ),
+        );
+    final serverForPersistence = serverInfo.copyWith(
+      serviceConnectionId: serviceConnectionId,
+    );
+
+    McpManagerClient? client;
+    var mcpTools = const <McpToolInfo>[];
+    McpServerEntity savedServer;
+    try {
+      client = await _requiredMcpManagerService.connectMcp(serverInfo);
+
+      mcpTools = await _requiredMcpManagerService.getTools(client);
+
+      final repository = ref.read(mcpServersRepositoryProvider);
+      savedServer = await repository.addMcpServerWithTools(
+        workspaceId: workspaceId,
+        serverToCreate: serverForPersistence,
+        tools: mcpTools,
+      );
+    } on Object {
+      if (client != null) {
+        _requiredMcpManagerService.disconnect(client);
+      }
+      if (serviceConnectionId != null) {
+        await serviceConnectionRepository.deleteOwnedMcpCredential(
+          serviceConnectionId,
+        );
+      }
+      rethrow;
+    }
 
     if (_isDisposed) {
       _requiredMcpManagerService.disconnect(client);
 
       return;
     }
+    _listenTokenUpdates(
+      serverId: savedServer.id,
+      serviceConnectionId: serviceConnectionId,
+      client: client,
+    );
 
     _setState([
       ...state,
@@ -266,6 +300,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
     final connection = state.firstWhereOrNull((c) => c.server.id == serverId);
 
     if (connection != null) {
+      unawaited(_tokenSubscriptions.remove(serverId)?.cancel());
       _requiredMcpManagerService.disconnect(connection.client);
     }
 
@@ -285,6 +320,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
   Future<void> reconnectMcpServer(String serverId) async {
     final connection = state.where((c) => c.server.id == serverId).firstOrNull;
     if (connection != null) {
+      unawaited(_tokenSubscriptions.remove(serverId)?.cancel());
       _requiredMcpManagerService.disconnect(connection.client);
       await _connectToMcp(connection.server);
 
@@ -306,6 +342,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
     if (index == -1) return;
 
     final connection = state[index];
+    unawaited(_tokenSubscriptions.remove(serverId)?.cancel());
     _requiredMcpManagerService.disconnect(connection.client);
 
     _setState([
@@ -481,13 +518,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
           continue;
         }
 
-        await _connectToMcp(
-          server.copyWith(
-            authenticationType: await server.authenticationType.copyCryptor(
-              ref.read(encryptionServiceProvider).decrypt,
-            ),
-          ),
-        );
+        await _connectToMcp(server);
       }
     } on Exception catch (e, stackTrace) {
       _logger.warning(
@@ -534,7 +565,15 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
 
     McpManagerClient? connectedClient;
     try {
-      connectedClient = await _requiredMcpManagerService.connectMcp(server);
+      final authenticationType = await ref
+          .read(oauthCredentialServiceProvider)
+          .resolveMcpAuthentication(server.serviceConnectionId);
+      final serverToConnect = server.copyWith(
+        authenticationType: authenticationType,
+      );
+      connectedClient = await _requiredMcpManagerService.connectMcp(
+        serverToConnect,
+      );
 
       final mcpTools = await _requiredMcpManagerService.getTools(
         connectedClient,
@@ -542,6 +581,11 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
       if (_isDisposed) {
         return;
       }
+      _listenTokenUpdates(
+        serverId: server.id,
+        serviceConnectionId: server.serviceConnectionId,
+        client: connectedClient,
+      );
 
       // Update state with connected client and tools.
       _updateConnectionState(
@@ -606,6 +650,10 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
     for (final connection in _lastKnownState) {
       _requiredMcpManagerService.disconnect(connection.client);
     }
+    for (final subscription in _tokenSubscriptions.values) {
+      unawaited(subscription.cancel());
+    }
+    _tokenSubscriptions.clear();
   }
 
   void _setState(List<McpConnectionState> nextState) {
@@ -641,6 +689,26 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
         stackTrace,
       );
     }
+  }
+
+  void _listenTokenUpdates({
+    required String serverId,
+    required String? serviceConnectionId,
+    required McpManagerClient client,
+  }) {
+    final tokenUpdates = client.onTokenUpdate;
+    if (serviceConnectionId == null || tokenUpdates == null) return;
+    unawaited(_tokenSubscriptions.remove(serverId)?.cancel());
+    _tokenSubscriptions[serverId] = tokenUpdates.listen((token) {
+      unawaited(
+        ref
+            .read(oauthCredentialServiceProvider)
+            .persistOAuthTokenUpdate(
+              serviceConnectionId: serviceConnectionId,
+              token: token,
+            ),
+      );
+    });
   }
 }
 

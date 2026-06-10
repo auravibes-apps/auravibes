@@ -32,6 +32,7 @@ abstract class McpServersRepository {
   /// This will cascade delete:
   /// - The ToolsGroup linked to this MCP server
   /// - All Tools belonging to that group
+  /// - The linked service connection credential when present
   ///
   /// [serverId] The ID of the MCP server to delete.
   /// Returns true if the server was deleted, false if not found.

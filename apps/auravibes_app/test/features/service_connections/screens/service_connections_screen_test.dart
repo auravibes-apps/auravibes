@@ -3,6 +3,8 @@ import 'package:auravibes_app/data/database/drift/tables/service_connections.dar
 import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository_impl.dart';
 import 'package:auravibes_app/data/repositories/skill_credentials_repository_impl.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository_impl.dart';
+import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
+import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
@@ -75,7 +77,7 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     expect(find.text('Main Token'), findsOneWidget);
-    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.tap(find.byIcon(Icons.more_vert).first);
     final _ = await tester.pumpAndSettle();
     await tester.tap(find.text('Delete'));
     final _ = await tester.pumpAndSettle();
@@ -158,6 +160,55 @@ void main() {
       connection.id,
     );
     expect(deleted, equals(null));
+    final credential = await database
+        .into(database.serviceConnections)
+        .insertReturning(
+          ServiceConnectionsCompanion.insert(
+            name: 'Notion OAuth',
+            serviceId: 'notion-mcp',
+            kind: ServiceConnectionKindTable.mcpServer,
+            authenticationType: ServiceAuthenticationTypeTable.oauth2,
+            encryptedAuthValue: const Value(
+              '{"access_token":"secret-token"}',
+            ),
+            metadataJson: Value(
+              ServiceConnectionAuthCodec.encodeMetadata(
+                const ServiceConnectionMetadata(
+                  clientId: 'notion-client-id',
+                  issuer: 'https://api.notion.com',
+                  scopes: ['read', 'write'],
+                ),
+              ),
+            ),
+            authStatus: const Value(ServiceConnectionAuthStatus.needsReauth),
+            workspaceId: workspace.id,
+          ),
+        );
+    final _ = await database.mcpServersDao.insertMcpServer(
+      McpServersCompanion.insert(
+        workspaceId: workspace.id,
+        name: 'Notion',
+        url: 'https://mcp.notion.com/mcp',
+        transport: const McpTransportTypeStreamableHttp(),
+        serviceConnectionId: Value(credential.id),
+      ),
+    );
+
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.text('Notion'), findsOneWidget);
+    expect(find.textContaining('MCP - oauth2/Needs reconnect'), findsOneWidget);
+    expect(find.textContaining('mcp.notion.com'), findsOneWidget);
+    expect(find.textContaining('notion-client-id'), findsOneWidget);
+    expect(find.textContaining('read, write'), findsOneWidget);
+    expect(find.textContaining('secret-token'), findsNothing);
+
+    await tester.tap(find.byIcon(Icons.more_vert).first);
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.text('Reconnect'), findsOneWidget);
+    expect(find.text('Refresh token'), findsOneWidget);
+    expect(find.text('Delete'), findsNothing);
 
     await _unmountScreen(tester);
   });

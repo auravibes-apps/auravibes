@@ -2,6 +2,7 @@
 // Required: Tests keep helper functions top-level.
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
+import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/services/chatbot_service/provider_factory.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
@@ -58,6 +59,17 @@ void main() {
     test('creates Genkit for openai provider', () async {
       final config = makeConfig(type: ModelProvidersType.openai);
       final ai = await factory.createGenkit(config);
+
+      expect(ai, isA<Genkit>());
+    });
+
+    test('creates Genkit with legacy plaintext API key', () async {
+      final legacyFactory = ProviderFactory(
+        encryptionService: _FakeEncryptionService('legacy-api-key'),
+      );
+      final config = makeConfig(type: ModelProvidersType.openai);
+
+      final ai = await legacyFactory.createGenkit(config);
 
       expect(ai, isA<Genkit>());
     });
@@ -262,10 +274,19 @@ Map<String, dynamic>? _generationConfigJson(Object? config) {
 }
 
 class _FakeEncryptionService extends EncryptionService {
-  _FakeEncryptionService() : super(_FakeSecretKeyManager());
+  _FakeEncryptionService([this._decrypted]) : super(_FakeSecretKeyManager());
+
+  final String? _decrypted;
 
   @override
-  Future<String> decrypt(String _) async => 'test-api-key';
+  Future<String> decrypt(String _) async {
+    final decrypted = _decrypted;
+    if (decrypted != null) return decrypted;
+
+    return ServiceConnectionAuthCodec.encodeSecret(
+      const ServiceConnectionSecretApiKey(apiKey: 'test-api-key'),
+    );
+  }
 }
 
 class _FakeSecretKeyManager extends SecretKeyManager {
