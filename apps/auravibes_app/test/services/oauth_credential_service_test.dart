@@ -12,7 +12,7 @@ import 'package:auravibes_app/services/oauth_credential_service.dart';
 import 'package:auravibes_app/services/secret_key_manager.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:dio/dio.dart';
-import 'package:drift/drift.dart';
+import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -217,6 +217,267 @@ void main() {
       expect(secret.refreshToken, 'stable-refresh');
     });
 
+    test(
+      'resolveMcpAuthentication handles empty and disabled credentials',
+      () async {
+        final fixture = await createFixture();
+        addTearDown(fixture.close);
+        final service = OAuthCredentialService(
+          fixture.serviceConnectionRepository,
+        );
+        final credentialId = await fixture.serviceConnectionRepository
+            .createMcpServiceConnection(
+              workspaceId: fixture.workspaceId,
+              profile: const McpServiceConnectionProfile(
+                name: 'Server',
+                authenticationType: McpAuthenticationType.bearerToken(
+                  bearerToken: 'plain-bearer',
+                ),
+              ),
+            );
+        if (credentialId == null) fail('Bearer credential was not created.');
+        final _ =
+            await (fixture.database.update(
+              fixture.database.serviceConnections,
+            )..where((tbl) => tbl.id.equals(credentialId))).write(
+              const ServiceConnectionsCompanion(isEnabled: Value(false)),
+            );
+
+        final empty = await service.resolveMcpAuthentication('');
+        final disabled = await service.resolveMcpAuthentication(credentialId);
+
+        expect(empty, isA<McpAuthenticationTypeNone>());
+        expect(disabled, isA<McpAuthenticationTypeNone>());
+      },
+    );
+
+    test('resolveMcpAuthentication returns bearer token auth', () async {
+      final fixture = await createFixture();
+      addTearDown(fixture.close);
+      final service = OAuthCredentialService(
+        fixture.serviceConnectionRepository,
+      );
+      final credentialId = await fixture.serviceConnectionRepository
+          .createMcpServiceConnection(
+            workspaceId: fixture.workspaceId,
+            profile: const McpServiceConnectionProfile(
+              name: 'Server',
+              authenticationType: McpAuthenticationType.bearerToken(
+                bearerToken: 'plain-bearer',
+              ),
+            ),
+          );
+      if (credentialId == null) fail('Bearer credential was not created.');
+
+      final auth = await service.resolveMcpAuthentication(credentialId);
+
+      expect(auth, isA<McpAuthenticationTypeBearerToken>());
+      expect(
+        (auth as McpAuthenticationTypeBearerToken).bearerToken,
+        'plain-bearer',
+      );
+    });
+
+    test(
+      'resolveMcpAuthentication returns OAuth auth without refreshing',
+      () async {
+        final fixture = await createFixture();
+        addTearDown(fixture.close);
+        final service = OAuthCredentialService(
+          fixture.serviceConnectionRepository,
+        );
+        final credentialId = await fixture.serviceConnectionRepository
+            .createMcpServiceConnection(
+              workspaceId: fixture.workspaceId,
+              profile: McpServiceConnectionProfile(
+                name: 'Server',
+                authenticationType: McpAuthenticationType.oauth(
+                  token: OAuthTokenEntity(
+                    accessToken: 'access-token',
+                    issuedAt: DateTime.now(),
+                    refreshToken: 'refresh-token',
+                    expiresIn: 3600,
+                  ),
+                  clientId: 'client-id',
+                  authorizationEndpoint: 'https://auth.example/authorize',
+                  tokenEndpoint: 'https://auth.example/token',
+                ),
+              ),
+            );
+        if (credentialId == null) fail('OAuth credential was not created.');
+
+        final auth = await service.resolveMcpAuthentication(credentialId);
+
+        expect(auth, isA<McpAuthenticationTypeOAuth>());
+        final oauth = auth as McpAuthenticationTypeOAuth;
+        expect(oauth.token.accessToken, 'access-token');
+        expect(oauth.clientId, 'client-id');
+        expect(oauth.authorizationEndpoint, 'https://auth.example/authorize');
+        expect(oauth.tokenEndpoint, 'https://auth.example/token');
+      },
+    );
+
+    test('getValidAccessToken returns non-expired token', () async {
+      final fixture = await createFixture();
+      addTearDown(fixture.close);
+      final service = OAuthCredentialService(
+        fixture.serviceConnectionRepository,
+      );
+      final credentialId = await fixture.serviceConnectionRepository
+          .createMcpServiceConnection(
+            workspaceId: fixture.workspaceId,
+            profile: McpServiceConnectionProfile(
+              name: 'Server',
+              authenticationType: McpAuthenticationType.oauth(
+                token: OAuthTokenEntity(
+                  accessToken: 'access-token',
+                  issuedAt: DateTime.now(),
+                  refreshToken: 'refresh-token',
+                  expiresIn: 3600,
+                ),
+                clientId: 'client-id',
+                authorizationEndpoint: 'https://auth.example/authorize',
+                tokenEndpoint: 'https://auth.example/token',
+              ),
+            ),
+          );
+      if (credentialId == null) fail('OAuth credential was not created.');
+
+      final accessToken = await service.getValidAccessToken(credentialId);
+
+      expect(accessToken, 'access-token');
+    });
+
+    test('forceRefresh marks reauth when refresh config is missing', () async {
+      final fixture = await createFixture();
+      addTearDown(fixture.close);
+      final service = OAuthCredentialService(
+        fixture.serviceConnectionRepository,
+      );
+      final credentialId = await _insertOAuthCredential(
+        fixture,
+        secret: const ServiceConnectionSecretOAuth2(accessToken: 'access'),
+        metadata: const ServiceConnectionMetadata(),
+        expiresAt: DateTime.now().subtract(const Duration(minutes: 1)),
+      );
+
+      await expectLater(
+        service.forceRefresh(credentialId),
+        throwsA(isA<FormatException>()),
+      );
+
+      final row = await (fixture.database.select(
+        fixture.database.serviceConnections,
+      )..where((tbl) => tbl.id.equals(credentialId))).getSingle();
+      expect(row.authStatus, ServiceConnectionAuthStatus.needsReauth);
+      expect(row.lastAuthError, 'Missing OAuth refresh configuration.');
+    });
+
+    test(
+      'forceRefresh marks reauth when provider rejects refresh token',
+      () async {
+        final dio = Dio()
+          ..httpClientAdapter = _FakeHttpClientAdapter(
+            onFetch: (_) async {
+              return ResponseBody.fromString(
+                jsonEncode({'error': 'invalid_grant'}),
+                400,
+                headers: {
+                  Headers.contentTypeHeader: [Headers.jsonContentType],
+                },
+              );
+            },
+          );
+        final fixture = await createFixture();
+        addTearDown(fixture.close);
+        final service = OAuthCredentialService(
+          fixture.serviceConnectionRepository,
+          dio: dio,
+        );
+        final credentialId = await _insertOAuthCredential(
+          fixture,
+          secret: const ServiceConnectionSecretOAuth2(
+            accessToken: 'access',
+            refreshToken: 'refresh',
+          ),
+          metadata: const ServiceConnectionMetadata(
+            tokenEndpoint: 'https://auth.example/token',
+          ),
+          expiresAt: DateTime.now().subtract(const Duration(minutes: 1)),
+        );
+
+        await expectLater(
+          service.forceRefresh(credentialId),
+          throwsA(isA<DioException>()),
+        );
+
+        final row = await (fixture.database.select(
+          fixture.database.serviceConnections,
+        )..where((tbl) => tbl.id.equals(credentialId))).getSingle();
+        expect(row.authStatus, ServiceConnectionAuthStatus.needsReauth);
+        expect(row.lastAuthError, 'OAuth refresh token was rejected.');
+      },
+    );
+
+    test(
+      'forceRefresh rethrows provider errors without marking reauth',
+      () async {
+        final dio = Dio()
+          ..httpClientAdapter = _FakeHttpClientAdapter(
+            onFetch: (_) async {
+              return ResponseBody.fromString(
+                jsonEncode({'error': 'temporarily_unavailable'}),
+                503,
+                headers: {
+                  Headers.contentTypeHeader: [Headers.jsonContentType],
+                },
+              );
+            },
+          );
+        final fixture = await createFixture();
+        addTearDown(fixture.close);
+        final service = OAuthCredentialService(
+          fixture.serviceConnectionRepository,
+          dio: dio,
+        );
+        final credentialId = await _insertOAuthCredential(
+          fixture,
+          secret: const ServiceConnectionSecretOAuth2(
+            accessToken: 'access',
+            refreshToken: 'refresh',
+          ),
+          metadata: const ServiceConnectionMetadata(
+            tokenEndpoint: 'https://auth.example/token',
+          ),
+          expiresAt: DateTime.now().subtract(const Duration(minutes: 1)),
+        );
+
+        await expectLater(
+          service.forceRefresh(credentialId),
+          throwsA(isA<DioException>()),
+        );
+
+        final row = await (fixture.database.select(
+          fixture.database.serviceConnections,
+        )..where((tbl) => tbl.id.equals(credentialId))).getSingle();
+        expect(row.authStatus, isNull);
+        expect(row.lastAuthError, isNull);
+      },
+    );
+
+    test('getValidAccessToken throws when connection is missing', () async {
+      final fixture = await createFixture();
+      addTearDown(fixture.close);
+      final service = OAuthCredentialService(
+        fixture.serviceConnectionRepository,
+      );
+
+      await expectLater(
+        service.getValidAccessToken('missing'),
+        throwsA(isA<StateError>()),
+      );
+    });
+
     test('deleteMcpServiceConnection removes only MCP credentials', () async {
       final fixture = await createFixture();
       addTearDown(fixture.close);
@@ -258,6 +519,35 @@ void main() {
       expect(rows.map((row) => row.id), [modelCredential.id]);
     });
   });
+}
+
+Future<String> _insertOAuthCredential(
+  _Fixture fixture, {
+  required ServiceConnectionSecretOAuth2 secret,
+  required ServiceConnectionMetadata metadata,
+  DateTime? expiresAt,
+}) async {
+  final encrypted = await fixture.encryption.encrypt(
+    ServiceConnectionAuthCodec.encodeSecret(secret),
+  );
+  final row = await fixture.database
+      .into(fixture.database.serviceConnections)
+      .insertReturning(
+        ServiceConnectionsCompanion.insert(
+          name: 'OAuth',
+          serviceId: 'oauth',
+          kind: ServiceConnectionKindTable.mcpServer,
+          authenticationType: ServiceAuthenticationTypeTable.oauth2,
+          encryptedAuthValue: Value(encrypted),
+          metadataJson: Value(
+            ServiceConnectionAuthCodec.encodeMetadata(metadata),
+          ),
+          expiresAt: Value(expiresAt),
+          workspaceId: fixture.workspaceId,
+        ),
+      );
+
+  return row.id;
 }
 
 class _Fixture {

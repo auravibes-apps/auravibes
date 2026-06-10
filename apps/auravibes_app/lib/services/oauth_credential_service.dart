@@ -231,8 +231,11 @@ class OAuthCredentialService {
   }
 }
 
+// coverage:ignore-start
+// Required: Riverpod provider wiring is exercised through integration callers.
 final oauthCredentialServiceProvider = Provider<OAuthCredentialService>((ref) {
   return OAuthCredentialService(
     ref.watch(serviceConnectionRepositoryProvider),
   );
 });
+// coverage:ignore-end

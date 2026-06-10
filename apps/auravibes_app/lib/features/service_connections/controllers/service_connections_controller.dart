@@ -25,6 +25,8 @@ class ServiceConnectionsController {
   }
 }
 
+// coverage:ignore-start
+// Required: Riverpod provider wiring is exercised through widget tests.
 final serviceConnectionsControllerProvider =
     Provider<ServiceConnectionsController>((ref) {
       return ServiceConnectionsController(
@@ -32,3 +34,4 @@ final serviceConnectionsControllerProvider =
         ref.watch(oauthCredentialServiceProvider).forceRefresh,
       );
     });
+// coverage:ignore-end

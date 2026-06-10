@@ -144,6 +144,38 @@ void main() {
         );
       },
     );
+
+    test('maps MCP auth error metadata and failed status', () async {
+      final fixture = await _createFixture();
+      addTearDown(fixture.close);
+      await _insertMcpCredential(
+        fixture,
+        metadataJson: ServiceConnectionAuthCodec.encodeMetadata(
+          const ServiceConnectionMetadata(clientId: 'client-id'),
+        ),
+        expiresAt: DateTime(2026, 1, 1, 12, 30),
+        lastRefreshedAt: DateTime(2026, 1, 1, 11),
+        lastAuthError: 'Refresh failed',
+        authStatus: ServiceConnectionAuthStatus.failed,
+      );
+      final usecase = _createUsecase(
+        fixture,
+        now: () => DateTime(2026, 1, 1, 12),
+      );
+
+      final items = await usecase(fixture.workspace.id).first;
+
+      final mcpItem = items.single;
+      expect(mcpItem.displayStatus, ServiceConnectionDisplayStatus.failed);
+      expect(
+        mcpItem.metadataValues.map((value) => value.key),
+        containsAll([
+          ServiceConnectionMetadataKey.expiresAt,
+          ServiceConnectionMetadataKey.lastRefreshedAt,
+          ServiceConnectionMetadataKey.lastAuthError,
+        ]),
+      );
+    });
   });
 }
 
@@ -169,6 +201,9 @@ Future<void> _insertMcpCredential(
   _Fixture fixture, {
   String? metadataJson,
   DateTime? expiresAt,
+  DateTime? lastRefreshedAt,
+  String? lastAuthError,
+  ServiceConnectionAuthStatus? authStatus,
 }) async {
   final credential = await fixture.database
       .into(fixture.database.serviceConnections)
@@ -180,7 +215,10 @@ Future<void> _insertMcpCredential(
           authenticationType: ServiceAuthenticationTypeTable.oauth2,
           encryptedAuthValue: const Value('encrypted-token'),
           metadataJson: Value(metadataJson),
+          authStatus: Value(authStatus),
           expiresAt: Value(expiresAt),
+          lastRefreshedAt: Value(lastRefreshedAt),
+          lastAuthError: Value(lastAuthError),
           workspaceId: fixture.workspace.id,
         ),
       );
