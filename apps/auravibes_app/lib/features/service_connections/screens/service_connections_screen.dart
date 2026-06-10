@@ -3,6 +3,7 @@
 import 'dart:async';
 
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
+import 'package:auravibes_app/features/service_connections/controllers/service_connections_controller.dart';
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
@@ -127,6 +128,10 @@ class _ConnectionTile extends ConsumerWidget {
               child: Text(_subtitle(context)),
               color: AuraColorVariant.onSurfaceVariant,
             ),
+            if (connection.kind == ServiceConnectionListItemKind.mcpServer)
+              _ConnectionStatusBadge(status: connection.displayStatus),
+            if (connection.metadataValues.isNotEmpty)
+              _ConnectionMetadata(values: connection.metadataValues),
           ],
           spacing: AuraSpacing.xs,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -139,20 +144,38 @@ class _ConnectionTile extends ConsumerWidget {
             onPressed: menuController.toggle,
           ),
           items: [
-            AuraPopupMenuItem(
-              title: const TextLocale(LocaleKeys.common_edit),
-              onTap: () => context.push<bool>(
-                '/workspaces/${connection.workspaceId}/more/'
-                'service-connections/${connection.id}',
+            if (connection.canReconnect)
+              AuraPopupMenuItem(
+                title: const TextLocale(
+                  LocaleKeys.service_connections_action_reconnect,
+                ),
+                onTap: () => _reconnectMcpServer(context, ref),
+                leading: const AuraIcon(Icons.refresh_outlined),
               ),
-              leading: const AuraIcon(Icons.edit_outlined),
-            ),
-            AuraPopupMenuItem(
-              title: const TextLocale(LocaleKeys.common_delete),
-              onTap: () => _confirmDelete(context, ref),
-              leading: const AuraIcon(Icons.delete_outline),
-              variant: AuraTileVariant.error,
-            ),
+            if (connection.canRefresh)
+              AuraPopupMenuItem(
+                title: const TextLocale(
+                  LocaleKeys.service_connections_action_refresh_token,
+                ),
+                onTap: () => _refreshToken(context, ref),
+                leading: const AuraIcon(Icons.sync_outlined),
+              ),
+            if (connection.kind != ServiceConnectionListItemKind.mcpServer)
+              AuraPopupMenuItem(
+                title: const TextLocale(LocaleKeys.common_edit),
+                onTap: () => context.push<bool>(
+                  '/workspaces/${connection.workspaceId}/more/'
+                  'service-connections/${connection.id}',
+                ),
+                leading: const AuraIcon(Icons.edit_outlined),
+              ),
+            if (connection.kind != ServiceConnectionListItemKind.mcpServer)
+              AuraPopupMenuItem(
+                title: const TextLocale(LocaleKeys.common_delete),
+                onTap: () => _confirmDelete(context, ref),
+                leading: const AuraIcon(Icons.delete_outline),
+                variant: AuraTileVariant.error,
+              ),
           ],
           controller: menuController,
         ),
@@ -164,6 +187,7 @@ class _ConnectionTile extends ConsumerWidget {
     return switch (connection.kind) {
       ServiceConnectionListItemKind.modelProvider => Icons.memory_outlined,
       ServiceConnectionListItemKind.skillCredential => Icons.key_outlined,
+      ServiceConnectionListItemKind.mcpServer => Icons.hub_outlined,
     };
   }
 
@@ -175,7 +199,14 @@ class _ConnectionTile extends ConsumerWidget {
         LocaleKeys.service_connections_type_skill_credential.tr(
           context: context,
         ),
+      ServiceConnectionListItemKind.mcpServer =>
+        LocaleKeys.service_connections_type_mcp_server.tr(context: context),
     };
+    if (connection.kind == ServiceConnectionListItemKind.mcpServer) {
+      return '$kind - ${connection.authenticationType ?? 'unknown'}/'
+          '${_statusLabel(context, connection.displayStatus)} - '
+          '${_serviceName(context)}';
+    }
     final suffix = connection.keySuffix;
     if (suffix == null || suffix.isEmpty) {
       return '$kind - ${_serviceName(context)}';
@@ -202,12 +233,18 @@ class _ConnectionTile extends ConsumerWidget {
         LocaleKeys.service_connections_delete_model_provider_title,
       ServiceConnectionListItemKind.skillCredential =>
         LocaleKeys.service_connections_delete_credential_title,
+      ServiceConnectionListItemKind.mcpServer => throw StateError(
+        'MCP credentials cannot be deleted from this screen.',
+      ),
     };
     final confirmKey = switch (connection.kind) {
       ServiceConnectionListItemKind.modelProvider =>
         LocaleKeys.service_connections_delete_model_provider_confirm,
       ServiceConnectionListItemKind.skillCredential =>
         LocaleKeys.service_connections_delete_credential_confirm,
+      ServiceConnectionListItemKind.mcpServer => throw StateError(
+        'MCP credentials cannot be deleted from this screen.',
+      ),
     };
     _logger.info(
       'debug:service connection delete confirmation opened '
@@ -255,6 +292,10 @@ class _ConnectionTile extends ConsumerWidget {
           await ref
               .read(skillCredentialsRepositoryProvider)
               .deleteCredential(connection.id);
+        case ServiceConnectionListItemKind.mcpServer:
+          throw StateError(
+            'MCP credentials cannot be deleted from this screen.',
+          );
       }
       _logger.info(
         'debug:service connection delete completed '
@@ -275,6 +316,8 @@ class _ConnectionTile extends ConsumerWidget {
           LocaleKeys.service_connections_delete_model_provider_error,
         ServiceConnectionListItemKind.skillCredential =>
           LocaleKeys.service_connections_delete_credential_error,
+        ServiceConnectionListItemKind.mcpServer =>
+          LocaleKeys.service_connections_action_reconnect_error,
       };
       final _ = showAuraSnackBar(
         context: context,
@@ -283,4 +326,188 @@ class _ConnectionTile extends ConsumerWidget {
       );
     }
   }
+
+  Future<void> _reconnectMcpServer(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final serverId = connection.mcpServerId;
+    if (serverId == null) return;
+
+    try {
+      await ref
+          .read(serviceConnectionsControllerProvider)
+          .reconnectMcpServer(
+            serverId,
+          );
+      if (!context.mounted) return;
+      final _ = showAuraSnackBar(
+        context: context,
+        content: const TextLocale(
+          LocaleKeys.service_connections_action_reconnect_success,
+        ),
+      );
+    } on Object catch (error, stackTrace) {
+      _logger.severe(
+        'debug:mcp service connection reconnect failed '
+        'workspace=${connection.workspaceId} connectionId=${connection.id} '
+        'serverId=$serverId',
+        error,
+        stackTrace,
+      );
+      if (!context.mounted) return;
+      final _ = showAuraSnackBar(
+        context: context,
+        content: const TextLocale(
+          LocaleKeys.service_connections_action_reconnect_error,
+        ),
+        variant: AuraSnackBarVariant.error,
+      );
+    }
+  }
+
+  Future<void> _refreshToken(BuildContext context, WidgetRef ref) async {
+    final serverId = connection.mcpServerId;
+    if (serverId == null) return;
+
+    try {
+      await ref
+          .read(serviceConnectionsControllerProvider)
+          .refreshMcpCredential(
+            connectionId: connection.id,
+            mcpServerId: serverId,
+          );
+      if (!context.mounted) return;
+      final _ = showAuraSnackBar(
+        context: context,
+        content: const TextLocale(
+          LocaleKeys.service_connections_action_refresh_success,
+        ),
+      );
+    } on Object catch (error, stackTrace) {
+      _logger.severe(
+        'debug:mcp service connection token refresh failed '
+        'workspace=${connection.workspaceId} connectionId=${connection.id} '
+        'serverId=$serverId',
+        error,
+        stackTrace,
+      );
+      if (!context.mounted) return;
+      final _ = showAuraSnackBar(
+        context: context,
+        content: const TextLocale(
+          LocaleKeys.service_connections_action_refresh_error,
+        ),
+        variant: AuraSnackBarVariant.error,
+      );
+    }
+  }
+}
+
+class _ConnectionStatusBadge extends StatelessWidget {
+  const _ConnectionStatusBadge({required this.status});
+
+  final ServiceConnectionDisplayStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+      decoration: BoxDecoration(
+        color: _color(context).withValues(alpha: 0.12),
+        borderRadius: const BorderRadius.all(Radius.circular(6)),
+      ),
+      child: Text(
+        _statusLabel(context, status),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: _color(context),
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  Color _color(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return switch (status) {
+      ServiceConnectionDisplayStatus.connected => colors.primary,
+      ServiceConnectionDisplayStatus.expiringSoon => colors.tertiary,
+      ServiceConnectionDisplayStatus.needsReauth => colors.error,
+      ServiceConnectionDisplayStatus.failed => colors.error,
+      ServiceConnectionDisplayStatus.unknown => colors.outline,
+    };
+  }
+}
+
+class _ConnectionMetadata extends StatelessWidget {
+  const _ConnectionMetadata({required this.values});
+
+  final List<ServiceConnectionMetadataValue> values;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      children: values.map((value) {
+        return Container(
+          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            borderRadius: const BorderRadius.all(Radius.circular(6)),
+          ),
+          constraints: const BoxConstraints(maxWidth: 520),
+          child: Text(
+            '${_metadataLabel(context, value.key)}: ${value.value}',
+            style: Theme.of(context).textTheme.labelSmall,
+            overflow: TextOverflow.ellipsis,
+            maxLines: 2,
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
+
+String _statusLabel(
+  BuildContext context,
+  ServiceConnectionDisplayStatus status,
+) {
+  final key = switch (status) {
+    ServiceConnectionDisplayStatus.connected =>
+      LocaleKeys.service_connections_status_connected,
+    ServiceConnectionDisplayStatus.expiringSoon =>
+      LocaleKeys.service_connections_status_expiring_soon,
+    ServiceConnectionDisplayStatus.needsReauth =>
+      LocaleKeys.service_connections_status_needs_reauth,
+    ServiceConnectionDisplayStatus.failed =>
+      LocaleKeys.service_connections_status_failed,
+    ServiceConnectionDisplayStatus.unknown =>
+      LocaleKeys.service_connections_status_unknown,
+  };
+
+  return key.tr(context: context);
+}
+
+String _metadataLabel(
+  BuildContext context,
+  ServiceConnectionMetadataKey key,
+) {
+  final localeKey = switch (key) {
+    ServiceConnectionMetadataKey.issuer =>
+      LocaleKeys.service_connections_metadata_issuer,
+    ServiceConnectionMetadataKey.clientId =>
+      LocaleKeys.service_connections_metadata_client_id,
+    ServiceConnectionMetadataKey.scopes =>
+      LocaleKeys.service_connections_metadata_scopes,
+    ServiceConnectionMetadataKey.expiresAt =>
+      LocaleKeys.service_connections_metadata_expires_at,
+    ServiceConnectionMetadataKey.lastRefreshedAt =>
+      LocaleKeys.service_connections_metadata_last_refreshed_at,
+    ServiceConnectionMetadataKey.lastAuthError =>
+      LocaleKeys.service_connections_metadata_last_auth_error,
+  };
+
+  return localeKey.tr(context: context);
 }

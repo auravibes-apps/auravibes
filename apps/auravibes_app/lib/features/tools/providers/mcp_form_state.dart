@@ -3,10 +3,13 @@
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:logging/logging.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'mcp_form_state.freezed.dart';
 part 'mcp_form_state.g.dart';
+
+final _logger = Logger('mcp_form');
 
 /// State for the MCP form.
 @freezed
@@ -150,6 +153,11 @@ class McpFormNotifier extends _$McpFormNotifier {
 
   /// Set error message.
   void setError(String message) {
+    _logger.warning(
+      'MCP form error workspace=$_workspaceId '
+      'transport=${state.transport.name} '
+      'auth=${state.authenticationType.name}: $message',
+    );
     state = state.copyWith(errorMessage: message);
   }
 
@@ -185,7 +193,14 @@ class McpFormNotifier extends _$McpFormNotifier {
       setSubmitting(value: false);
 
       return true;
-    } on Exception catch (e) {
+    } on Exception catch (e, s) {
+      _logger.severe(
+        'MCP form submit failed workspace=$_workspaceId '
+        'transport=${state.transport.name} '
+        'auth=${state.authenticationType.name}',
+        e,
+        s,
+      );
       setError('Error: $e');
       setSubmitting(value: false);
 

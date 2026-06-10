@@ -99,6 +99,42 @@ abstract class LocaleKeys {
       'service_connections.type.model_provider';
   static const service_connections_type_skill_credential =
       'service_connections.type.skill_credential';
+  static const service_connections_type_mcp_server =
+      'service_connections.type.mcp_server';
+  static const service_connections_status_connected =
+      'service_connections.status.connected';
+  static const service_connections_status_expiring_soon =
+      'service_connections.status.expiring_soon';
+  static const service_connections_status_needs_reauth =
+      'service_connections.status.needs_reauth';
+  static const service_connections_status_failed =
+      'service_connections.status.failed';
+  static const service_connections_status_unknown =
+      'service_connections.status.unknown';
+  static const service_connections_metadata_issuer =
+      'service_connections.metadata.issuer';
+  static const service_connections_metadata_client_id =
+      'service_connections.metadata.client_id';
+  static const service_connections_metadata_scopes =
+      'service_connections.metadata.scopes';
+  static const service_connections_metadata_expires_at =
+      'service_connections.metadata.expires_at';
+  static const service_connections_metadata_last_refreshed_at =
+      'service_connections.metadata.last_refreshed_at';
+  static const service_connections_metadata_last_auth_error =
+      'service_connections.metadata.last_auth_error';
+  static const service_connections_action_reconnect =
+      'service_connections.action.reconnect';
+  static const service_connections_action_refresh_token =
+      'service_connections.action.refresh_token';
+  static const service_connections_action_reconnect_success =
+      'service_connections.action.reconnect_success';
+  static const service_connections_action_reconnect_error =
+      'service_connections.action.reconnect_error';
+  static const service_connections_action_refresh_success =
+      'service_connections.action.refresh_success';
+  static const service_connections_action_refresh_error =
+      'service_connections.action.refresh_error';
   static const service_connections_create_type_label =
       'service_connections.create.type_label';
   static const chats_screens_chats_list_title =

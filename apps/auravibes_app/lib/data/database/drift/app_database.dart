@@ -34,6 +34,7 @@ import 'package:auravibes_app/data/database/drift/tables/tools_groups.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_compaction_settings.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_model_selections.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspaces.dart';
+import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
@@ -99,7 +100,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// Database schema version.
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   /// Migration logic for database schema upgrades.
   @override
@@ -171,8 +172,41 @@ class AppDatabase extends _$AppDatabase {
             skillTemplateTools.requiresCredential,
           );
         }
+        if (from >= 4 && from < 8) {
+          await m.addColumn(serviceConnections, serviceConnections.authStatus);
+          await m.addColumn(serviceConnections, serviceConnections.expiresAt);
+          await m.addColumn(
+            serviceConnections,
+            serviceConnections.lastRefreshedAt,
+          );
+          await m.addColumn(
+            serviceConnections,
+            serviceConnections.lastAuthError,
+          );
+        }
+        if (from < 8) {
+          if (await _tableExists('mcp_servers')) {
+            await m.alterTable(
+              TableMigration(
+                mcpServers,
+                newColumns: [mcpServers.serviceConnectionId],
+              ),
+            );
+          }
+        }
       },
     );
+  }
+
+  Future<bool> _tableExists(String name) async {
+    final row = await customSelect(
+      '''
+      SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?
+      ''',
+      variables: [Variable.withString(name)],
+    ).getSingleOrNull();
+
+    return row != null;
   }
 
   /// Creates a database connection using drift_flutter.

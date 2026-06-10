@@ -1,12 +1,10 @@
-import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
-import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
-import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
+import 'package:auravibes_app/features/service_connections/usecases/watch_service_connection_list_items_usecase.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
+import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:hooks_riverpod/misc.dart';
-import 'package:rxdart/rxdart.dart';
 
 final StreamProviderFamily<List<ServiceConnectionListItem>, String>
 serviceConnectionsProvider =
@@ -14,45 +12,15 @@ serviceConnectionsProvider =
       ref,
       workspaceId,
     ) {
-      final modelConnectionRepository = ref.watch(
-        modelConnectionRepositoryProvider,
-      );
-      final credentialDefinitionsRepository = ref.watch(
-        skillCredentialDefinitionsRepositoryProvider,
-      );
-      final credentialsRepository = ref.watch(
-        skillCredentialsRepositoryProvider,
-      );
-
-      return Rx.combineLatest3(
-        modelConnectionRepository.watchModelConnections(
-          ModelConnectionFilter(workspaces: [workspaceId]),
+      final usecase = WatchServiceConnectionListItemsUsecase(
+        ref.watch(appDatabaseProvider),
+        ref.watch(modelConnectionRepositoryProvider),
+        ref.watch(
+          skillCredentialDefinitionsRepositoryProvider,
         ),
-        credentialDefinitionsRepository.watchDefinitions(workspaceId),
-        credentialsRepository.watchCredentialsForWorkspace(workspaceId),
-        _buildItems,
+        ref.watch(skillCredentialsRepositoryProvider),
+        DateTime.now,
       );
+
+      return usecase(workspaceId);
     });
-
-List<ServiceConnectionListItem> _buildItems(
-  List<ModelConnectionEntity> modelConnections,
-  List<SkillCredentialDefinitionEntity> definitions,
-  List<SkillCredentialEntity> credentials,
-) {
-  final definitionsById = {
-    for (final definition in definitions) definition.id: definition,
-  };
-  final skillCredentialItems = credentials.map((credential) {
-    final definition = definitionsById[credential.credentialDefinitionId];
-
-    return ServiceConnectionListItem.fromSkillCredential(
-      credential: credential,
-      definition: definition,
-    );
-  });
-
-  return [
-    ...modelConnections.map(ServiceConnectionListItem.fromModelConnection),
-    ...skillCredentialItems,
-  ]..sort((a, b) => a.name.compareTo(b.name));
-}

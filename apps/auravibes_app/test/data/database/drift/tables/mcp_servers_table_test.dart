@@ -274,7 +274,6 @@ void main() {
               name: 'Test Server',
               url: 'https://example.com',
               transport: const McpTransportTypeSSE(),
-              authenticationType: const McpAuthenticationTypeNone(),
             ),
           );
       final row = await (fixture.database.select(
@@ -307,10 +306,10 @@ void main() {
           'id',
           'workspace_id',
           'name',
-          'url',
-          'transport',
-          'authentication_type',
-          'description',
+            'url',
+            'transport',
+            'service_connection_id',
+            'description',
           'is_enabled',
           'created_at',
           'updated_at',

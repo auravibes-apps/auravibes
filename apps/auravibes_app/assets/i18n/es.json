@@ -75,7 +75,31 @@
     "missing_credential_definition": "No se encontró la definición de credencial",
     "type": {
       "model_provider": "Proveedor de Modelo",
-      "skill_credential": "Credencial de Habilidad"
+      "skill_credential": "Credencial de Habilidad",
+      "mcp_server": "MCP"
+    },
+    "status": {
+      "connected": "Conectado",
+      "expiring_soon": "Expira pronto",
+      "needs_reauth": "Necesita reconexión",
+      "failed": "Falló",
+      "unknown": "Desconocido"
+    },
+    "metadata": {
+      "issuer": "Emisor",
+      "client_id": "ID de cliente",
+      "scopes": "Permisos",
+      "expires_at": "Expira",
+      "last_refreshed_at": "Última actualización",
+      "last_auth_error": "Último error de autenticación"
+    },
+    "action": {
+      "reconnect": "Reconectar",
+      "refresh_token": "Actualizar token",
+      "reconnect_success": "Servidor MCP reconectado",
+      "reconnect_error": "No se pudo reconectar el servidor MCP",
+      "refresh_success": "Token OAuth actualizado",
+      "refresh_error": "No se pudo actualizar el token OAuth"
     },
     "create": {
       "type_label": "Tipo de conexión"

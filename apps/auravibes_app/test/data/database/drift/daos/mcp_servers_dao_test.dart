@@ -29,7 +29,6 @@ McpServersCompanion _testServer({
     name: name,
     url: url,
     transport: const McpTransportTypeSSE(),
-    authenticationType: const McpAuthenticationType.none(),
     isEnabled: Value(isEnabled),
   );
 }

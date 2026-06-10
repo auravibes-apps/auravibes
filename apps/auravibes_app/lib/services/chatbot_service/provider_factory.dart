@@ -1,4 +1,5 @@
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
+import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_genkit_openai_compat/auravibes_genkit_openai_compat.dart';
@@ -19,7 +20,13 @@ class ProviderFactory {
     WorkspaceModelSelectionWithConnectionEntity config,
   ) async {
     final encrypted = config.modelConnection.key;
-    final apiKey = await encryptionService.decrypt(encrypted);
+    final secret = ServiceConnectionAuthCodec.decodeSecret(
+      await encryptionService.decrypt(encrypted),
+    );
+    if (secret is! ServiceConnectionSecretApiKey) {
+      throw const FormatException('Model connection is not an API key.');
+    }
+    final apiKey = secret.apiKey;
     final type = config.modelsProvider.type;
     final connectionUrl = config.modelConnection.url;
     final baseUrl = connectionUrl ?? config.modelsProvider.url;

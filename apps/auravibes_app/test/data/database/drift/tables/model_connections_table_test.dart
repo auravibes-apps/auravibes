@@ -66,14 +66,18 @@ void main() {
           'encrypted_auth_value',
           'key_suffix',
           'metadata_json',
+          'auth_status',
+          'expires_at',
+          'last_refreshed_at',
+          'last_auth_error',
           'workspace_id',
           'is_enabled',
         ]),
       );
     });
 
-    test('has 13 columns', () {
-      expect(columns.length, 13);
+    test('has 17 columns', () {
+      expect(columns.length, 17);
     });
 
     test('name is not null', () {
@@ -150,6 +154,10 @@ void main() {
       expect(table.encryptedAuthValue, isNotNull);
       expect(table.keySuffix, isNotNull);
       expect(table.metadataJson, isNotNull);
+      expect(table.authStatus, isNotNull);
+      expect(table.expiresAt, isNotNull);
+      expect(table.lastRefreshedAt, isNotNull);
+      expect(table.lastAuthError, isNotNull);
       expect(table.workspaceId, isNotNull);
       expect(table.isEnabled, isNotNull);
     });
@@ -164,13 +172,17 @@ void main() {
       expect(table.encryptedAuthValue.name, 'encrypted_auth_value');
       expect(table.keySuffix.name, 'key_suffix');
       expect(table.metadataJson.name, 'metadata_json');
+      expect(table.authStatus.name, 'auth_status');
+      expect(table.expiresAt.name, 'expires_at');
+      expect(table.lastRefreshedAt.name, 'last_refreshed_at');
+      expect(table.lastAuthError.name, 'last_auth_error');
       expect(table.workspaceId.name, 'workspace_id');
       expect(table.isEnabled.name, 'is_enabled');
     });
 
     test(r'$columns returns all columns including TableMixin', () {
       final table = fixture.database.serviceConnections;
-      expect(table.$columns.length, 13);
+      expect(table.$columns.length, 17);
     });
 
     test('table name is service_connections', () {

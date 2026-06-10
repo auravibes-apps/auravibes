@@ -53,9 +53,6 @@ class AddMcpModal extends HookConsumerWidget {
             // Header with close button.
             const _AddMcpModalHeader(),
 
-            // Error message.
-            _ErrorBanner(workspaceId: workspaceId),
-
             // Scrollable form content.
             Flexible(
               child: SingleChildScrollView(
@@ -64,6 +61,9 @@ class AddMcpModal extends HookConsumerWidget {
                   children: [
                     AuraColumn(
                       children: [
+                        // Error message.
+                        _ErrorBanner(workspaceId: workspaceId),
+
                         // Name field (required).
                         _NameInput(workspaceId: workspaceId),
 

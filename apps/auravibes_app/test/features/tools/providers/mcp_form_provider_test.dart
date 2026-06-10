@@ -2,6 +2,7 @@ import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_form_state.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:logging/logging.dart';
 import 'package:riverpod/riverpod.dart';
 
 class _FakeMcpConnectionNotifier extends McpConnectionNotifier {
@@ -11,6 +12,16 @@ class _FakeMcpConnectionNotifier extends McpConnectionNotifier {
     required String workspaceId,
   }) async {
     final _ = Object();
+  }
+}
+
+class _FailingMcpConnectionNotifier extends McpConnectionNotifier {
+  @override
+  Future<void> addMcpServer(
+    McpServerFormToCreate serverToCreate, {
+    required String workspaceId,
+  }) async {
+    throw Exception('connect failed');
   }
 }
 
@@ -313,6 +324,34 @@ void main() {
       );
     });
 
+    test('submit logs validation errors', () async {
+      final records = <LogRecord>[];
+      final subscription = Logger.root.onRecord.listen(records.add);
+      addTearDown(subscription.cancel);
+      final previousLevel = Logger.root.level;
+      Logger.root.level = Level.ALL;
+      addTearDown(() {
+        Logger.root.level = previousLevel;
+      });
+
+      final result = await readNotifier().submit();
+
+      expect(result, isFalse);
+      expect(
+        records,
+        contains(
+          isA<LogRecord>()
+              .having((record) => record.loggerName, 'loggerName', 'mcp_form')
+              .having((record) => record.level, 'level', Level.WARNING)
+              .having(
+                (record) => record.message,
+                'message',
+                contains('MCP form error workspace=ws1'),
+              ),
+        ),
+      );
+    });
+
     test('submit returns true when valid', () async {
       readNotifier()
         ..setName('Test')
@@ -325,6 +364,45 @@ void main() {
         readContainer().read(mcpFormProvider('ws1')).isSubmitting,
         isFalse,
       );
+    });
+
+    test('submit logs connection exception with stack trace', () async {
+      readContainer().dispose();
+      final failingContainer = ProviderContainer(
+        overrides: [
+          mcpConnectionProvider.overrideWith(
+            _FailingMcpConnectionNotifier.new,
+          ),
+        ],
+      );
+      container = failingContainer;
+      notifier = failingContainer.read(mcpFormProvider('ws1').notifier);
+
+      final records = <LogRecord>[];
+      final subscription = Logger.root.onRecord.listen(records.add);
+      addTearDown(subscription.cancel);
+      final previousLevel = Logger.root.level;
+      Logger.root.level = Level.ALL;
+      addTearDown(() {
+        Logger.root.level = previousLevel;
+      });
+
+      readNotifier()
+        ..setName('Test')
+        ..setUrl('https://example.com')
+        ..setAuthenticationType(McpAuthenticationTypeOptions.none);
+
+      final result = await readNotifier().submit();
+
+      expect(result, isFalse);
+      final record = records.firstWhere(
+        (record) =>
+            record.loggerName == 'mcp_form' &&
+            record.level == Level.SEVERE &&
+            record.message.contains('MCP form submit failed workspace=ws1'),
+      );
+      expect(record.error.toString(), contains('connect failed'));
+      expect(record.stackTrace, isNotNull);
     });
   });
 }

@@ -2,6 +2,7 @@
 // Required: Tests keep helper functions top-level.
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
+import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/services/chatbot_service/provider_factory.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
@@ -265,7 +266,11 @@ class _FakeEncryptionService extends EncryptionService {
   _FakeEncryptionService() : super(_FakeSecretKeyManager());
 
   @override
-  Future<String> decrypt(String _) async => 'test-api-key';
+  Future<String> decrypt(String _) async {
+    return ServiceConnectionAuthCodec.encodeSecret(
+      const ServiceConnectionSecretApiKey(apiKey: 'test-api-key'),
+    );
+  }
 }
 
 class _FakeSecretKeyManager extends SecretKeyManager {

@@ -68,81 +68,87 @@ class _Fake$WorkspacesTable_6 extends _i1.SmartFake
     : super(parent, parentInvocation);
 }
 
-class _Fake$McpServersTable_7 extends _i1.SmartFake
+class _Fake$ServiceConnectionsTable_7 extends _i1.SmartFake
+    implements _i2.$ServiceConnectionsTable {
+  _Fake$ServiceConnectionsTable_7(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
+class _Fake$McpServersTable_8 extends _i1.SmartFake
     implements _i2.$McpServersTable {
-  _Fake$McpServersTable_7(Object parent, Invocation parentInvocation)
+  _Fake$McpServersTable_8(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _Fake$ToolsGroupsTable_8 extends _i1.SmartFake
+class _Fake$ToolsGroupsTable_9 extends _i1.SmartFake
     implements _i2.$ToolsGroupsTable {
-  _Fake$ToolsGroupsTable_8(Object parent, Invocation parentInvocation)
+  _Fake$ToolsGroupsTable_9(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeToolsGroupsDaoManager_9 extends _i1.SmartFake
+class _FakeToolsGroupsDaoManager_10 extends _i1.SmartFake
     implements _i5.ToolsGroupsDaoManager {
-  _FakeToolsGroupsDaoManager_9(Object parent, Invocation parentInvocation)
+  _FakeToolsGroupsDaoManager_10(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeToolsGroupsTable_10 extends _i1.SmartFake
+class _FakeToolsGroupsTable_11 extends _i1.SmartFake
     implements _i2.ToolsGroupsTable {
-  _FakeToolsGroupsTable_10(Object parent, Invocation parentInvocation)
+  _FakeToolsGroupsTable_11(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeFuture_11<T1> extends _i1.SmartFake implements _i6.Future<T1> {
-  _FakeFuture_11(Object parent, Invocation parentInvocation)
+class _FakeFuture_12<T1> extends _i1.SmartFake implements _i6.Future<T1> {
+  _FakeFuture_12(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeInsertStatement_12<T1 extends _i3.Table, D1> extends _i1.SmartFake
+class _FakeInsertStatement_13<T1 extends _i3.Table, D1> extends _i1.SmartFake
     implements _i3.InsertStatement<T1, D1> {
-  _FakeInsertStatement_12(Object parent, Invocation parentInvocation)
+  _FakeInsertStatement_13(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeUpdateStatement_13<T extends _i3.Table, D> extends _i1.SmartFake
+class _FakeUpdateStatement_14<T extends _i3.Table, D> extends _i1.SmartFake
     implements _i3.UpdateStatement<T, D> {
-  _FakeUpdateStatement_13(Object parent, Invocation parentInvocation)
+  _FakeUpdateStatement_14(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeSimpleSelectStatement_14<T1 extends _i3.HasResultSet, D>
+class _FakeSimpleSelectStatement_15<T1 extends _i3.HasResultSet, D>
     extends _i1.SmartFake
     implements _i3.SimpleSelectStatement<T1, D> {
-  _FakeSimpleSelectStatement_14(Object parent, Invocation parentInvocation)
+  _FakeSimpleSelectStatement_15(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeJoinedSelectStatement_15<FirstT extends _i3.HasResultSet, FirstD>
+class _FakeJoinedSelectStatement_16<FirstT extends _i3.HasResultSet, FirstD>
     extends _i1.SmartFake
     implements _i3.JoinedSelectStatement<FirstT, FirstD> {
-  _FakeJoinedSelectStatement_15(Object parent, Invocation parentInvocation)
+  _FakeJoinedSelectStatement_16(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeBaseSelectStatement_16<Row> extends _i1.SmartFake
+class _FakeBaseSelectStatement_17<Row> extends _i1.SmartFake
     implements _i3.BaseSelectStatement<Row> {
-  _FakeBaseSelectStatement_16(Object parent, Invocation parentInvocation)
+  _FakeBaseSelectStatement_17(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeDeleteStatement_17<T1 extends _i3.Table, D1> extends _i1.SmartFake
+class _FakeDeleteStatement_18<T1 extends _i3.Table, D1> extends _i1.SmartFake
     implements _i3.DeleteStatement<T1, D1> {
-  _FakeDeleteStatement_17(Object parent, Invocation parentInvocation)
+  _FakeDeleteStatement_18(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeSelectable_18<T> extends _i1.SmartFake implements _i3.Selectable<T> {
-  _FakeSelectable_18(Object parent, Invocation parentInvocation)
+class _FakeSelectable_19<T> extends _i1.SmartFake implements _i3.Selectable<T> {
+  _FakeSelectable_19(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeGenerationContext_19 extends _i1.SmartFake
+class _FakeGenerationContext_20 extends _i1.SmartFake
     implements _i3.GenerationContext {
-  _FakeGenerationContext_19(Object parent, Invocation parentInvocation)
+  _FakeGenerationContext_20(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
@@ -271,14 +277,29 @@ class MockToolsGroupsDao extends _i1.Mock implements _i5.ToolsGroupsDao {
           as _i2.$WorkspacesTable);
 
   @override
+  _i2.$ServiceConnectionsTable get serviceConnections =>
+      (super.noSuchMethod(
+            Invocation.getter(#serviceConnections),
+            returnValue: _Fake$ServiceConnectionsTable_7(
+              this,
+              Invocation.getter(#serviceConnections),
+            ),
+            returnValueForMissingStub: _Fake$ServiceConnectionsTable_7(
+              this,
+              Invocation.getter(#serviceConnections),
+            ),
+          )
+          as _i2.$ServiceConnectionsTable);
+
+  @override
   _i2.$McpServersTable get mcpServers =>
       (super.noSuchMethod(
             Invocation.getter(#mcpServers),
-            returnValue: _Fake$McpServersTable_7(
+            returnValue: _Fake$McpServersTable_8(
               this,
               Invocation.getter(#mcpServers),
             ),
-            returnValueForMissingStub: _Fake$McpServersTable_7(
+            returnValueForMissingStub: _Fake$McpServersTable_8(
               this,
               Invocation.getter(#mcpServers),
             ),
@@ -289,11 +310,11 @@ class MockToolsGroupsDao extends _i1.Mock implements _i5.ToolsGroupsDao {
   _i2.$ToolsGroupsTable get toolsGroups =>
       (super.noSuchMethod(
             Invocation.getter(#toolsGroups),
-            returnValue: _Fake$ToolsGroupsTable_8(
+            returnValue: _Fake$ToolsGroupsTable_9(
               this,
               Invocation.getter(#toolsGroups),
             ),
-            returnValueForMissingStub: _Fake$ToolsGroupsTable_8(
+            returnValueForMissingStub: _Fake$ToolsGroupsTable_9(
               this,
               Invocation.getter(#toolsGroups),
             ),
@@ -304,11 +325,11 @@ class MockToolsGroupsDao extends _i1.Mock implements _i5.ToolsGroupsDao {
   _i5.ToolsGroupsDaoManager get managers =>
       (super.noSuchMethod(
             Invocation.getter(#managers),
-            returnValue: _FakeToolsGroupsDaoManager_9(
+            returnValue: _FakeToolsGroupsDaoManager_10(
               this,
               Invocation.getter(#managers),
             ),
-            returnValueForMissingStub: _FakeToolsGroupsDaoManager_9(
+            returnValueForMissingStub: _FakeToolsGroupsDaoManager_10(
               this,
               Invocation.getter(#managers),
             ),
@@ -322,13 +343,13 @@ class MockToolsGroupsDao extends _i1.Mock implements _i5.ToolsGroupsDao {
       (super.noSuchMethod(
             Invocation.method(#insertToolsGroup, [companion]),
             returnValue: _i6.Future<_i2.ToolsGroupsTable>.value(
-              _FakeToolsGroupsTable_10(
+              _FakeToolsGroupsTable_11(
                 this,
                 Invocation.method(#insertToolsGroup, [companion]),
               ),
             ),
             returnValueForMissingStub: _i6.Future<_i2.ToolsGroupsTable>.value(
-              _FakeToolsGroupsTable_10(
+              _FakeToolsGroupsTable_11(
                 this,
                 Invocation.method(#insertToolsGroup, [companion]),
               ),
@@ -463,7 +484,7 @@ class MockToolsGroupsDao extends _i1.Mock implements _i5.ToolsGroupsDao {
                   ),
                   (T v) => _i6.Future<T>.value(v),
                 ) ??
-                _FakeFuture_11<T>(this, Invocation.method(#doWhenOpened, [fn])),
+                _FakeFuture_12<T>(this, Invocation.method(#doWhenOpened, [fn])),
             returnValueForMissingStub:
                 _i7.ifNotNull(
                   _i7.dummyValueOrNull<T>(
@@ -472,7 +493,7 @@ class MockToolsGroupsDao extends _i1.Mock implements _i5.ToolsGroupsDao {
                   ),
                   (T v) => _i6.Future<T>.value(v),
                 ) ??
-                _FakeFuture_11<T>(this, Invocation.method(#doWhenOpened, [fn])),
+                _FakeFuture_12<T>(this, Invocation.method(#doWhenOpened, [fn])),
           )
           as _i6.Future<T>);
 
@@ -482,11 +503,11 @@ class MockToolsGroupsDao extends _i1.Mock implements _i5.ToolsGroupsDao {
   ) =>
       (super.noSuchMethod(
             Invocation.method(#into, [table]),
-            returnValue: _FakeInsertStatement_12<T, D>(
+            returnValue: _FakeInsertStatement_13<T, D>(
               this,
               Invocation.method(#into, [table]),
             ),
-            returnValueForMissingStub: _FakeInsertStatement_12<T, D>(
+            returnValueForMissingStub: _FakeInsertStatement_13<T, D>(
               this,
               Invocation.method(#into, [table]),
             ),
@@ -499,11 +520,11 @@ class MockToolsGroupsDao extends _i1.Mock implements _i5.ToolsGroupsDao {
   ) =>
       (super.noSuchMethod(
             Invocation.method(#update, [table]),
-            returnValue: _FakeUpdateStatement_13<Tbl, R>(
+            returnValue: _FakeUpdateStatement_14<Tbl, R>(
               this,
               Invocation.method(#update, [table]),
             ),
-            returnValueForMissingStub: _FakeUpdateStatement_13<Tbl, R>(
+            returnValueForMissingStub: _FakeUpdateStatement_14<Tbl, R>(
               this,
               Invocation.method(#update, [table]),
             ),
@@ -517,11 +538,11 @@ class MockToolsGroupsDao extends _i1.Mock implements _i5.ToolsGroupsDao {
   }) =>
       (super.noSuchMethod(
             Invocation.method(#select, [table], {#distinct: distinct}),
-            returnValue: _FakeSimpleSelectStatement_14<T, R>(
+            returnValue: _FakeSimpleSelectStatement_15<T, R>(
               this,
               Invocation.method(#select, [table], {#distinct: distinct}),
             ),
-            returnValueForMissingStub: _FakeSimpleSelectStatement_14<T, R>(
+            returnValueForMissingStub: _FakeSimpleSelectStatement_15<T, R>(
               this,
               Invocation.method(#select, [table], {#distinct: distinct}),
             ),
@@ -535,11 +556,11 @@ class MockToolsGroupsDao extends _i1.Mock implements _i5.ToolsGroupsDao {
   }) =>
       (super.noSuchMethod(
             Invocation.method(#selectOnly, [table], {#distinct: distinct}),
-            returnValue: _FakeJoinedSelectStatement_15<T, R>(
+            returnValue: _FakeJoinedSelectStatement_16<T, R>(
               this,
               Invocation.method(#selectOnly, [table], {#distinct: distinct}),
             ),
-            returnValueForMissingStub: _FakeJoinedSelectStatement_15<T, R>(
+            returnValueForMissingStub: _FakeJoinedSelectStatement_16<T, R>(
               this,
               Invocation.method(#selectOnly, [table], {#distinct: distinct}),
             ),
@@ -552,12 +573,12 @@ class MockToolsGroupsDao extends _i1.Mock implements _i5.ToolsGroupsDao {
   ) =>
       (super.noSuchMethod(
             Invocation.method(#selectExpressions, [columns]),
-            returnValue: _FakeBaseSelectStatement_16<_i3.TypedResult>(
+            returnValue: _FakeBaseSelectStatement_17<_i3.TypedResult>(
               this,
               Invocation.method(#selectExpressions, [columns]),
             ),
             returnValueForMissingStub:
-                _FakeBaseSelectStatement_16<_i3.TypedResult>(
+                _FakeBaseSelectStatement_17<_i3.TypedResult>(
                   this,
                   Invocation.method(#selectExpressions, [columns]),
                 ),
@@ -570,11 +591,11 @@ class MockToolsGroupsDao extends _i1.Mock implements _i5.ToolsGroupsDao {
   ) =>
       (super.noSuchMethod(
             Invocation.method(#delete, [table]),
-            returnValue: _FakeDeleteStatement_17<T, D>(
+            returnValue: _FakeDeleteStatement_18<T, D>(
               this,
               Invocation.method(#delete, [table]),
             ),
-            returnValueForMissingStub: _FakeDeleteStatement_17<T, D>(
+            returnValueForMissingStub: _FakeDeleteStatement_18<T, D>(
               this,
               Invocation.method(#delete, [table]),
             ),
@@ -656,7 +677,7 @@ class MockToolsGroupsDao extends _i1.Mock implements _i5.ToolsGroupsDao {
               [query],
               {#variables: variables, #readsFrom: readsFrom},
             ),
-            returnValue: _FakeSelectable_18<_i3.QueryRow>(
+            returnValue: _FakeSelectable_19<_i3.QueryRow>(
               this,
               Invocation.method(
                 #customSelect,
@@ -664,7 +685,7 @@ class MockToolsGroupsDao extends _i1.Mock implements _i5.ToolsGroupsDao {
                 {#variables: variables, #readsFrom: readsFrom},
               ),
             ),
-            returnValueForMissingStub: _FakeSelectable_18<_i3.QueryRow>(
+            returnValueForMissingStub: _FakeSelectable_19<_i3.QueryRow>(
               this,
               Invocation.method(
                 #customSelect,
@@ -687,7 +708,7 @@ class MockToolsGroupsDao extends _i1.Mock implements _i5.ToolsGroupsDao {
               [query],
               {#variables: variables, #readsFrom: readsFrom},
             ),
-            returnValue: _FakeSelectable_18<_i3.QueryRow>(
+            returnValue: _FakeSelectable_19<_i3.QueryRow>(
               this,
               Invocation.method(
                 #customSelectQuery,
@@ -695,7 +716,7 @@ class MockToolsGroupsDao extends _i1.Mock implements _i5.ToolsGroupsDao {
                 {#variables: variables, #readsFrom: readsFrom},
               ),
             ),
-            returnValueForMissingStub: _FakeSelectable_18<_i3.QueryRow>(
+            returnValueForMissingStub: _FakeSelectable_19<_i3.QueryRow>(
               this,
               Invocation.method(
                 #customSelectQuery,
@@ -738,7 +759,7 @@ class MockToolsGroupsDao extends _i1.Mock implements _i5.ToolsGroupsDao {
                   ),
                   (T v) => _i6.Future<T>.value(v),
                 ) ??
-                _FakeFuture_11<T>(
+                _FakeFuture_12<T>(
                   this,
                   Invocation.method(
                     #transaction,
@@ -758,7 +779,7 @@ class MockToolsGroupsDao extends _i1.Mock implements _i5.ToolsGroupsDao {
                   ),
                   (T v) => _i6.Future<T>.value(v),
                 ) ??
-                _FakeFuture_11<T>(
+                _FakeFuture_12<T>(
                   this,
                   Invocation.method(
                     #transaction,
@@ -781,7 +802,7 @@ class MockToolsGroupsDao extends _i1.Mock implements _i5.ToolsGroupsDao {
                   ),
                   (T v) => _i6.Future<T>.value(v),
                 ) ??
-                _FakeFuture_11<T>(
+                _FakeFuture_12<T>(
                   this,
                   Invocation.method(#exclusively, [action]),
                 ),
@@ -793,7 +814,7 @@ class MockToolsGroupsDao extends _i1.Mock implements _i5.ToolsGroupsDao {
                   ),
                   (T v) => _i6.Future<T>.value(v),
                 ) ??
-                _FakeFuture_11<T>(
+                _FakeFuture_12<T>(
                   this,
                   Invocation.method(#exclusively, [action]),
                 ),
@@ -832,7 +853,7 @@ class MockToolsGroupsDao extends _i1.Mock implements _i5.ToolsGroupsDao {
                   ),
                   (T v) => _i6.Future<T>.value(v),
                 ) ??
-                _FakeFuture_11<T>(
+                _FakeFuture_12<T>(
                   this,
                   Invocation.method(
                     #runWithInterceptor,
@@ -852,7 +873,7 @@ class MockToolsGroupsDao extends _i1.Mock implements _i5.ToolsGroupsDao {
                   ),
                   (T v) => _i6.Future<T>.value(v),
                 ) ??
-                _FakeFuture_11<T>(
+                _FakeFuture_12<T>(
                   this,
                   Invocation.method(
                     #runWithInterceptor,
@@ -875,7 +896,7 @@ class MockToolsGroupsDao extends _i1.Mock implements _i5.ToolsGroupsDao {
               [component],
               {#hasMultipleTables: hasMultipleTables, #startIndex: startIndex},
             ),
-            returnValue: _FakeGenerationContext_19(
+            returnValue: _FakeGenerationContext_20(
               this,
               Invocation.method(
                 #$write,
@@ -886,7 +907,7 @@ class MockToolsGroupsDao extends _i1.Mock implements _i5.ToolsGroupsDao {
                 },
               ),
             ),
-            returnValueForMissingStub: _FakeGenerationContext_19(
+            returnValueForMissingStub: _FakeGenerationContext_20(
               this,
               Invocation.method(
                 #$write,
@@ -912,7 +933,7 @@ class MockToolsGroupsDao extends _i1.Mock implements _i5.ToolsGroupsDao {
               [table, insertable],
               {#startIndex: startIndex},
             ),
-            returnValue: _FakeGenerationContext_19(
+            returnValue: _FakeGenerationContext_20(
               this,
               Invocation.method(
                 #$writeInsertable,
@@ -920,7 +941,7 @@ class MockToolsGroupsDao extends _i1.Mock implements _i5.ToolsGroupsDao {
                 {#startIndex: startIndex},
               ),
             ),
-            returnValueForMissingStub: _FakeGenerationContext_19(
+            returnValueForMissingStub: _FakeGenerationContext_20(
               this,
               Invocation.method(
                 #$writeInsertable,

@@ -54,7 +54,6 @@ void main() {
         name: name,
         url: 'http://localhost:3000',
         transport: const McpTransportTypeSSE(),
-        authenticationType: const McpAuthenticationType.none(),
         description: 'A test server',
         isEnabled: true,
       );

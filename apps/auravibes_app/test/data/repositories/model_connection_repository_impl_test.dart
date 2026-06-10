@@ -6,6 +6,7 @@ import 'package:auravibes_app/data/database/drift/tables/model_providers_table_t
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/data/repositories/model_connection_repository_impl.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
+import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
@@ -70,6 +71,15 @@ void main() {
     });
 
     final now = DateTime(2026);
+    final testKeyPayload = ServiceConnectionAuthCodec.encodeSecret(
+      const ServiceConnectionSecretApiKey(apiKey: 'sk-test-api-key-123456'),
+    );
+    final newKeyPayload = ServiceConnectionAuthCodec.encodeSecret(
+      const ServiceConnectionSecretApiKey(apiKey: 'new-api-key-123456'),
+    );
+    final existingKeyPayload = ServiceConnectionAuthCodec.encodeSecret(
+      const ServiceConnectionSecretApiKey(apiKey: 'plain-existing-key'),
+    );
 
     const providerRow = ApiModelProvidersTable(
       id: 'openai',
@@ -146,7 +156,7 @@ void main() {
             mockProvidersDao.getProviderById('openai'),
           ).thenAnswer((_) async => providerRow);
           when(
-            mockEncryptionService.encrypt('sk-test-api-key-123456'),
+            mockEncryptionService.encrypt(testKeyPayload),
           ).thenAnswer((_) async => 'encrypted-key');
           when(
             mockModelProviderServices.getWorkspaceModelSelections(any),
@@ -171,7 +181,7 @@ void main() {
           mockProvidersDao.getProviderById('openai'),
         ).thenAnswer((_) async => providerRow);
         when(
-          mockEncryptionService.encrypt('sk-test-api-key-123456'),
+          mockEncryptionService.encrypt(testKeyPayload),
         ).thenAnswer((_) async => 'encrypted-key');
         when(
           mockModelProviderServices.getWorkspaceModelSelections(any),
@@ -252,7 +262,7 @@ void main() {
         ).thenAnswer((_) async => providerRow);
         when(
           mockEncryptionService.decrypt('encrypted-key'),
-        ).thenAnswer((_) async => 'plain-existing-key');
+        ).thenAnswer((_) async => existingKeyPayload);
         when(
           mockModelProviderServices.getWorkspaceModelSelections(any),
         ).thenAnswer((_) async => const []);
@@ -288,7 +298,7 @@ void main() {
           mockProvidersDao.getProviderById('openai'),
         ).thenAnswer((_) async => providerRow);
         when(
-          mockEncryptionService.encrypt('new-api-key-123456'),
+          mockEncryptionService.encrypt(newKeyPayload),
         ).thenAnswer((_) async => 'encrypted-new-key');
         when(
           mockModelProviderServices.getWorkspaceModelSelections(any),
@@ -306,7 +316,7 @@ void main() {
         expect(result.keySuffix, '123456');
         final _ = verifyNever(mockEncryptionService.decrypt(any));
         final _ = verify(
-          mockEncryptionService.encrypt('new-api-key-123456'),
+          mockEncryptionService.encrypt(newKeyPayload),
         ).called(1);
       });
 
@@ -323,7 +333,7 @@ void main() {
         ).thenAnswer((_) async => providerRow);
         when(
           mockEncryptionService.decrypt('encrypted-key'),
-        ).thenAnswer((_) async => 'plain-existing-key');
+        ).thenAnswer((_) async => existingKeyPayload);
         when(
           mockModelProviderServices.getWorkspaceModelSelections(any),
         ).thenAnswer((_) async => const []);

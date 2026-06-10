@@ -43,7 +43,7 @@ class McpServersRepositoryImpl implements McpServersRepository {
             name: serverToCreate.name,
             url: serverToCreate.url,
             transport: serverToCreate.transport,
-            authenticationType: serverToCreate.authenticationType,
+            serviceConnectionId: Value(serverToCreate.serviceConnectionId),
             description: Value(serverToCreate.description),
           ),
         );
@@ -239,9 +239,10 @@ class McpServersRepositoryImpl implements McpServersRepository {
       name: table.name,
       url: table.url,
       transport: table.transport,
-      authenticationType: table.authenticationType,
+      authenticationType: const McpAuthenticationTypeNone(),
       createdAt: table.createdAt,
       updatedAt: table.updatedAt,
+      serviceConnectionId: table.serviceConnectionId,
       description: table.description,
       isEnabled: table.isEnabled,
     );

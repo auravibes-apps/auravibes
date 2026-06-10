@@ -2,6 +2,7 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
+import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
@@ -45,9 +46,10 @@ class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
     // Extract last 6 characters for display.
     final keySuffix = modelConnection.key.lastCharacters(6);
 
-    // Store API key encrypted.
     final encryptedApiKey = await _encryptionService.encrypt(
-      modelConnection.key,
+      ServiceConnectionAuthCodec.encodeSecret(
+        ServiceConnectionSecretApiKey(apiKey: modelConnection.key),
+      ),
     );
 
     // Validate API key with model provider.
@@ -140,11 +142,13 @@ class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
     }
     final keyForValidation =
         key ??
-        await _encryptionService.decrypt(
-          existingEncryptedKey ??
-              (throw const ModelConnectionException(
-                'Model connection has no API key',
-              )),
+        _decodeApiKey(
+          await _encryptionService.decrypt(
+            existingEncryptedKey ??
+                (throw const ModelConnectionException(
+                  'Model connection has no API key',
+                )),
+          ),
         );
     final hasUrlUpdate = modelConnection.url != null;
     var nextUrl = existing.url;
@@ -166,7 +170,11 @@ class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
 
     final encryptedKey = key == null
         ? existing.encryptedAuthValue
-        : await _encryptionService.encrypt(key);
+        : await _encryptionService.encrypt(
+            ServiceConnectionAuthCodec.encodeSecret(
+              ServiceConnectionSecretApiKey(apiKey: key),
+            ),
+          );
     final keySuffix = key == null ? existing.keySuffix : _keySuffix(key);
     final updated = await _database.modelConnectionsDao.updateModelConnection(
       modelConnectionId,
@@ -234,6 +242,15 @@ class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
 
   String _keySuffix(String key) {
     return key.lastCharacters(6);
+  }
+
+  String _decodeApiKey(String decrypted) {
+    final secret = ServiceConnectionAuthCodec.decodeSecret(decrypted);
+    if (secret is ServiceConnectionSecretApiKey) {
+      return secret.apiKey;
+    }
+
+    throw const ModelConnectionException('Invalid model API key payload');
   }
 
   ModelConnectionEntity _modelProviderTableToEntity(

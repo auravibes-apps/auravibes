@@ -138,7 +138,6 @@ void main() {
           name: 'MCP',
           url: 'http://localhost',
           transport: const McpTransportTypeSSE(),
-          authenticationType: const McpAuthenticationType.none(),
         ),
       );
       final _ = await fixture.database.toolsGroupsDao.insertToolsGroup(

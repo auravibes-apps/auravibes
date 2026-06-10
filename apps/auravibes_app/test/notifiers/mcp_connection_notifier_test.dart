@@ -3,13 +3,19 @@
 // ignore_for_file: cascade_invocations
 import 'dart:async';
 
+import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 import 'package:auravibes_app/domain/repositories/mcp_servers_repository.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
+import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
+import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_manager_client.dart';
+import 'package:auravibes_app/services/secret_key_manager.dart';
+import 'package:drift/drift.dart' hide isNotNull, isNull;
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:logging/logging.dart';
 import 'package:riverpod/riverpod.dart';
@@ -182,15 +188,28 @@ void main() {
   group('McpConnectionNotifier', () {
     var mcpServersRepository = _FakeMcpServersRepository();
     var mcpManagerService = McpManagerService();
+    AppDatabase? database;
     var container = ProviderContainer();
+
+    AppDatabase getDatabase() =>
+        database ?? fail('Expected test database to be initialized');
 
     setUp(() {
       mcpServersRepository = _FakeMcpServersRepository();
       mcpManagerService = McpManagerService();
+      final testDatabase = AppDatabase(
+        connection: DatabaseConnection(NativeDatabase.memory()),
+      );
+      database = testDatabase;
+      addTearDown(testDatabase.close);
       container = ProviderContainer(
         overrides: [
+          appDatabaseProvider.overrideWithValue(getDatabase()),
           mcpServersRepositoryProvider.overrideWithValue(mcpServersRepository),
           mcpManagerServiceProvider.overrideWithValue(mcpManagerService),
+          encryptionServiceProvider.overrideWithValue(
+            _FakeEncryptionService(),
+          ),
         ],
       );
     });
@@ -543,8 +562,12 @@ void main() {
       final fakeService = _FailingMcpManagerService();
       final testContainer = ProviderContainer(
         overrides: [
+          appDatabaseProvider.overrideWithValue(getDatabase()),
           mcpServersRepositoryProvider.overrideWithValue(mcpServersRepository),
           mcpManagerServiceProvider.overrideWithValue(fakeService),
+          encryptionServiceProvider.overrideWithValue(
+            _FakeEncryptionService(),
+          ),
         ],
       );
       addTearDown(testContainer.dispose);
@@ -569,8 +592,12 @@ void main() {
       final fakeService = _FailingMcpManagerService();
       final testContainer = ProviderContainer(
         overrides: [
+          appDatabaseProvider.overrideWithValue(getDatabase()),
           mcpServersRepositoryProvider.overrideWithValue(mcpServersRepository),
           mcpManagerServiceProvider.overrideWithValue(fakeService),
+          encryptionServiceProvider.overrideWithValue(
+            _FakeEncryptionService(),
+          ),
         ],
       );
       addTearDown(testContainer.dispose);
@@ -663,9 +690,13 @@ void main() {
       mcpServersRepository.enabledServersError = expectedError;
       final testContainer = ProviderContainer(
         overrides: [
+          appDatabaseProvider.overrideWithValue(getDatabase()),
           currentRouteWorkspaceIdProvider.overrideWithValue('workspace-1'),
           mcpServersRepositoryProvider.overrideWithValue(mcpServersRepository),
           mcpManagerServiceProvider.overrideWithValue(mcpManagerService),
+          encryptionServiceProvider.overrideWithValue(
+            _FakeEncryptionService(),
+          ),
         ],
       );
       addTearDown(testContainer.dispose);
@@ -700,9 +731,13 @@ void main() {
         ..syncToolsError = expectedError;
       final testContainer = ProviderContainer(
         overrides: [
+          appDatabaseProvider.overrideWithValue(getDatabase()),
           mcpServersRepositoryProvider.overrideWithValue(mcpServersRepository),
           mcpManagerServiceProvider.overrideWithValue(
             _SuccessfulMcpManagerService(),
+          ),
+          encryptionServiceProvider.overrideWithValue(
+            _FakeEncryptionService(),
           ),
         ],
       );
@@ -779,6 +814,16 @@ class _FakeMcpServersRepository implements McpServersRepository {
       throw error;
     }
   }
+}
+
+final class _FakeEncryptionService extends EncryptionService {
+  _FakeEncryptionService() : super(SecretKeyManager());
+
+  @override
+  Future<String> decrypt(String encryptedBase64) async => encryptedBase64;
+
+  @override
+  Future<String> encrypt(String plaintext) async => plaintext;
 }
 
 class _FailingMcpManagerService extends McpManagerService {
