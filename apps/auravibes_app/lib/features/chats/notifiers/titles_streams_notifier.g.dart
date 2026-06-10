@@ -48,7 +48,7 @@ abstract class _$TitlesStreamsNotifier extends $Notifier<Map<String, String>> {
   Map<String, String> build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref = this.ref as $Ref<Map<String, String>, Map<String, String>>;
     final element =
         ref.element
@@ -58,6 +58,6 @@ abstract class _$TitlesStreamsNotifier extends $Notifier<Map<String, String>> {
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }

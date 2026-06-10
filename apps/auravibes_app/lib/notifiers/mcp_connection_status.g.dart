@@ -118,7 +118,7 @@ abstract class _$McpConnectionNotifier
   List<McpConnectionState> build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref =
         this.ref as $Ref<List<McpConnectionState>, List<McpConnectionState>>;
     final element =
@@ -129,7 +129,7 @@ abstract class _$McpConnectionNotifier
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }
 

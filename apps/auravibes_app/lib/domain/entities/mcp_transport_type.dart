@@ -203,6 +203,7 @@ abstract class McpServerToCreate with _$McpServerToCreate {
         .toLowerCase()
         .replaceAll(RegExp('[^a-z0-9]+'), '-')
         .replaceAll(RegExp(r'^-+|-+$'), '');
+
     return slug.isEmpty ? 'server' : slug;
   }
 }
