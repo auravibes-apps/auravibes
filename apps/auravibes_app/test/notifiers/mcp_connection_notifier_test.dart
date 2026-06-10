@@ -441,6 +441,28 @@ void main() {
       );
     });
 
+    test('getToolSpec returns tool spec for ready server tool', () {
+      final notifier = container.read(mcpConnectionProvider.notifier)
+        ..state = [
+          McpConnectionState(
+            server: _server,
+            status: McpConnectionStatus.connected,
+            client: _FakeMcpManagerClient(),
+            tools: const [_toolInfo],
+          ),
+        ];
+
+      final spec = notifier.getToolSpec(
+        mcpServerId: 'server-1',
+        toolName: 'sum',
+      );
+
+      expect(spec, isNotNull);
+      expect(spec?.name, 'mcp_server-1_test-server_sum');
+      expect(spec?.description, 'Sum numbers');
+      expect(spec?.inputJsonSchema, isEmpty);
+    });
+
     test('disconnectMcpServer sets disconnected and clears client', () {
       final notifier = container.read(mcpConnectionProvider.notifier)
         ..state = [
@@ -668,6 +690,91 @@ void main() {
       expect(state, isEmpty);
     });
 
+    test(
+      'addMcpServer persists credential, server, tools, and state',
+      () async {
+        final fakeService = _SuccessfulMcpManagerService();
+        final testContainer = ProviderContainer(
+          overrides: [
+            appDatabaseProvider.overrideWithValue(getDatabase()),
+            mcpServersRepositoryProvider.overrideWithValue(
+              mcpServersRepository,
+            ),
+            mcpManagerServiceProvider.overrideWithValue(fakeService),
+            encryptionServiceProvider.overrideWithValue(
+              _FakeEncryptionService(),
+            ),
+          ],
+        );
+        addTearDown(testContainer.dispose);
+
+        await testContainer
+            .read(mcpConnectionProvider.notifier)
+            .addMcpServer(
+              const McpServerFormToCreate(
+                name: 'Bearer MCP',
+                url: 'https://example.com',
+                transport: McpTransportTypeSSE(),
+                authenticationType: McpAuthenticationTypeOptions.bearerToken,
+                bearerToken: 'test-token',
+              ),
+              workspaceId: 'workspace-1',
+            );
+
+        final state = testContainer.read(mcpConnectionProvider);
+        expect(state, hasLength(1));
+        expect(state.firstOrNull?.status, McpConnectionStatus.connected);
+        expect(state.firstOrNull?.tools, const [_toolInfo]);
+        expect(mcpServersRepository.addedServers, hasLength(1));
+        expect(
+          mcpServersRepository.addedServers.single.serviceConnectionId,
+          isNotEmpty,
+        );
+        expect(fakeService.connectedServers.single.serviceConnectionId, isNull);
+      },
+    );
+
+    test('addMcpServer cleans up credential when persistence fails', () async {
+      mcpServersRepository.addServerError = Exception('insert failed');
+      final testContainer = ProviderContainer(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(getDatabase()),
+          mcpServersRepositoryProvider.overrideWithValue(mcpServersRepository),
+          mcpManagerServiceProvider.overrideWithValue(
+            _SuccessfulMcpManagerService(),
+          ),
+          encryptionServiceProvider.overrideWithValue(
+            _FakeEncryptionService(),
+          ),
+        ],
+      );
+      addTearDown(testContainer.dispose);
+
+      await expectLater(
+        testContainer
+            .read(mcpConnectionProvider.notifier)
+            .addMcpServer(
+              const McpServerFormToCreate(
+                name: 'Bearer MCP',
+                url: 'https://example.com',
+                transport: McpTransportTypeSSE(),
+                authenticationType: McpAuthenticationTypeOptions.bearerToken,
+                bearerToken: 'test-token',
+              ),
+              workspaceId: 'workspace-1',
+            ),
+        throwsA(isA<Exception>()),
+      );
+
+      final credentials = await getDatabase()
+          .select(
+            getDatabase().serviceConnections,
+          )
+          .get();
+      expect(credentials, isEmpty);
+      expect(testContainer.read(mcpConnectionProvider), isEmpty);
+    });
+
     test('disconnectMcpServer for missing server is no-op', () {
       final notifier = container.read(mcpConnectionProvider.notifier);
       notifier.disconnectMcpServer('nonexistent');
@@ -758,11 +865,96 @@ void main() {
       expect(record.error, same(expectedError));
       expect(record.stackTrace, isNotNull);
     });
+
+    test('callTool returns service result for connected server tool', () async {
+      final fakeService = _SuccessfulMcpManagerService();
+      final testContainer = ProviderContainer(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(getDatabase()),
+          mcpServersRepositoryProvider.overrideWithValue(mcpServersRepository),
+          mcpManagerServiceProvider.overrideWithValue(fakeService),
+          encryptionServiceProvider.overrideWithValue(
+            _FakeEncryptionService(),
+          ),
+        ],
+      );
+      addTearDown(testContainer.dispose);
+      final client = _FakeMcpManagerClient();
+      final notifier = testContainer.read(mcpConnectionProvider.notifier)
+        ..state = [
+          McpConnectionState(
+            server: _server,
+            status: McpConnectionStatus.connected,
+            client: client,
+            tools: const [_toolInfo],
+          ),
+        ];
+
+      final result = await notifier.callTool(
+        mcpServerId: 'server-1',
+        toolIdentifier: 'sum',
+        arguments: const {'a': 1, 'b': 2},
+      );
+
+      expect(result, 'tool result');
+      expect(fakeService.calledToolIdentifiers, ['sum']);
+    });
+
+    test('token updates are persisted for added MCP credential', () async {
+      final tokenController = StreamController<OAuthTokenEntity>();
+      addTearDown(tokenController.close);
+      final fakeService = _SuccessfulMcpManagerService(
+        client: _FakeMcpManagerClient(tokenUpdates: tokenController.stream),
+      );
+      final testContainer = ProviderContainer(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(getDatabase()),
+          mcpServersRepositoryProvider.overrideWithValue(mcpServersRepository),
+          mcpManagerServiceProvider.overrideWithValue(fakeService),
+          encryptionServiceProvider.overrideWithValue(
+            _FakeEncryptionService(),
+          ),
+        ],
+      );
+      addTearDown(testContainer.dispose);
+
+      await testContainer
+          .read(mcpConnectionProvider.notifier)
+          .addMcpServer(
+            const McpServerFormToCreate(
+              name: 'Bearer MCP',
+              url: 'https://example.com',
+              transport: McpTransportTypeSSE(),
+              authenticationType: McpAuthenticationTypeOptions.bearerToken,
+              bearerToken: 'test-token',
+            ),
+            workspaceId: 'workspace-1',
+          );
+      tokenController.add(
+        OAuthTokenEntity(
+          accessToken: 'updated-access-token',
+          issuedAt: DateTime(2026, 1, 2),
+          expiresIn: 3600,
+        ),
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      final credentials = await getDatabase()
+          .select(
+            getDatabase().serviceConnections,
+          )
+          .get();
+      expect(credentials, hasLength(1));
+      expect(credentials.single.keySuffix, '-token');
+      expect(credentials.single.lastRefreshedAt, DateTime(2026, 1, 2));
+    });
   });
 }
 
 class _FakeMcpServersRepository implements McpServersRepository {
   List<String> deletedIds = [];
+  List<McpServerToCreate> addedServers = [];
+  Exception? addServerError;
   Exception? enabledServersError;
   Exception? syncToolsError;
   McpServerEntity? serverById;
@@ -772,8 +964,25 @@ class _FakeMcpServersRepository implements McpServersRepository {
     required String workspaceId,
     required McpServerToCreate serverToCreate,
     required List<McpToolInfo> tools,
-  }) {
-    throw UnimplementedError();
+  }) async {
+    if (addServerError case final error?) {
+      throw error;
+    }
+
+    addedServers.add(serverToCreate);
+
+    return McpServerEntity(
+      id: 'server-${addedServers.length}',
+      workspaceId: workspaceId,
+      name: serverToCreate.name,
+      url: serverToCreate.url,
+      transport: serverToCreate.transport,
+      authenticationType: serverToCreate.authenticationType,
+      createdAt: DateTime(2026),
+      updatedAt: DateTime(2026),
+      serviceConnectionId: serverToCreate.serviceConnectionId,
+      description: serverToCreate.description,
+    );
   }
 
   @override
@@ -834,9 +1043,19 @@ class _FailingMcpManagerService extends McpManagerService {
 }
 
 class _SuccessfulMcpManagerService extends McpManagerService {
+  _SuccessfulMcpManagerService({
+    _FakeMcpManagerClient? client,
+  }) : _client = client ?? _FakeMcpManagerClient();
+
+  final _FakeMcpManagerClient _client;
+  final connectedServers = <McpServerToCreate>[];
+  final calledToolIdentifiers = <String>[];
+
   @override
   Future<McpManagerClient> connectMcp(McpServerToCreate serverInfo) async {
-    return _FakeMcpManagerClient();
+    connectedServers.add(serverInfo);
+
+    return _client;
   }
 
   @override
@@ -848,9 +1067,28 @@ class _SuccessfulMcpManagerService extends McpManagerService {
   Future<List<McpToolInfo>> getTools(McpManagerClient client) async {
     return const [_toolInfo];
   }
+
+  @override
+  Future<String> callToolString(
+    McpManagerClient client, {
+    required String toolIdentifier,
+    required Map<String, dynamic> arguments,
+  }) async {
+    calledToolIdentifiers.add(toolIdentifier);
+
+    return 'tool result';
+  }
 }
 
 class _FakeMcpManagerClient implements McpManagerClient {
+  _FakeMcpManagerClient({
+    Stream<OAuthTokenEntity>? tokenUpdates,
+  }) : this._(tokenUpdates);
+
+  _FakeMcpManagerClient._(this._tokenUpdates);
+
+  final Stream<OAuthTokenEntity>? _tokenUpdates;
+
   @override
-  Stream<OAuthTokenEntity>? get onTokenUpdate => null;
+  Stream<OAuthTokenEntity>? get onTokenUpdate => _tokenUpdates;
 }
