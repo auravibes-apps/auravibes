@@ -40,7 +40,8 @@ class _ErrorMcpFormNotifier extends McpFormNotifier {
   @override
   McpFormState build(String workspaceId) {
     return const McpFormState(
-      errorMessage: 'OAuth discovery failed. OAuth discovery failed. OAuth '
+      errorMessage:
+          'OAuth discovery failed. OAuth discovery failed. OAuth '
           'discovery failed. OAuth discovery failed. OAuth discovery failed. '
           'OAuth discovery failed. OAuth discovery failed. OAuth discovery '
           'failed. OAuth discovery failed. OAuth discovery failed. OAuth '
