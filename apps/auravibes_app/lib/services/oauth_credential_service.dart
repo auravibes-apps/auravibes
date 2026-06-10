@@ -121,11 +121,11 @@ class OAuthCredentialService {
 
   Future<void> markReauthRequired(
     String serviceConnectionId, {
-    String? error,
+    String error = '',
   }) async {
     await _serviceConnectionRepository.markReauthRequired(
       serviceConnectionId,
-      error: error,
+      error: error.isEmpty ? null : error,
     );
   }
 

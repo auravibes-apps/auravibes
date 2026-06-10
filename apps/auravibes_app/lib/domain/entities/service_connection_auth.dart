@@ -189,7 +189,7 @@ class ServiceConnectionAuthCodec {
   static OAuthTokenEntity tokenFromSecret({
     required ServiceConnectionSecretOAuth2 secret,
     required DateTime issuedAt,
-    required int? expiresIn,
+    required int expiresIn,
     required List<String> scopes,
   }) {
     return OAuthTokenEntity(
