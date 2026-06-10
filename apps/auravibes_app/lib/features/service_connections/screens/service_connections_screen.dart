@@ -17,6 +17,8 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:logging/logging.dart';
 
 final _logger = Logger('service_connections_screen');
+const _mcpCredentialsDeleteError =
+    'MCP credentials cannot be deleted from this screen.';
 
 class ServiceConnectionsScreen extends ConsumerWidget {
   const ServiceConnectionsScreen({required this.workspaceId, super.key});
@@ -234,7 +236,7 @@ class _ConnectionTile extends ConsumerWidget {
       ServiceConnectionListItemKind.skillCredential =>
         LocaleKeys.service_connections_delete_credential_title,
       ServiceConnectionListItemKind.mcpServer => throw StateError(
-        'MCP credentials cannot be deleted from this screen.',
+        _mcpCredentialsDeleteError,
       ),
     };
     final confirmKey = switch (connection.kind) {
@@ -243,7 +245,7 @@ class _ConnectionTile extends ConsumerWidget {
       ServiceConnectionListItemKind.skillCredential =>
         LocaleKeys.service_connections_delete_credential_confirm,
       ServiceConnectionListItemKind.mcpServer => throw StateError(
-        'MCP credentials cannot be deleted from this screen.',
+        _mcpCredentialsDeleteError,
       ),
     };
     _logger.info(
@@ -293,9 +295,7 @@ class _ConnectionTile extends ConsumerWidget {
               .read(skillCredentialsRepositoryProvider)
               .deleteCredential(connection.id);
         case ServiceConnectionListItemKind.mcpServer:
-          throw StateError(
-            'MCP credentials cannot be deleted from this screen.',
-          );
+          throw StateError(_mcpCredentialsDeleteError);
       }
       _logger.info(
         'debug:service connection delete completed '
