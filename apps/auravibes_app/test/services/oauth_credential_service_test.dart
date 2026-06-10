@@ -89,7 +89,9 @@ void main() {
           ServiceAuthenticationTypeTable.bearerToken,
         );
         expect(secret, isA<ServiceConnectionSecretBearerToken>());
-        expect('$secret', isNot(contains('plain-bearer')));
+        final bearer = secret as ServiceConnectionSecretBearerToken;
+        expect(bearer.bearerToken, 'plain-bearer');
+        expect(encrypted, isNot(contains('plain-bearer')));
       },
     );
 

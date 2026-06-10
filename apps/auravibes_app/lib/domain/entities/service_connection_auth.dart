@@ -15,16 +15,20 @@ sealed class ServiceConnectionSecret {
   factory ServiceConnectionSecret.fromJson(Map<String, dynamic> json) {
     return switch (json['type']) {
       'apiKey' => ServiceConnectionSecretApiKey(
-        apiKey: json['api_key'] as String? ?? '',
+        apiKey: _requiredSecretValue(json, 'api_key', 'apiKey'),
       ),
       'bearerToken' => ServiceConnectionSecretBearerToken(
-        bearerToken: json['bearer_token'] as String? ?? '',
+        bearerToken: _requiredSecretValue(
+          json,
+          'bearer_token',
+          'bearerToken',
+        ),
       ),
       'oauth2' => ServiceConnectionSecretOAuth2(
-        accessToken: json['access_token'] as String? ?? '',
-        refreshToken: json['refresh_token'] as String?,
-        idToken: json['id_token'] as String?,
-        clientSecret: json['client_secret'] as String?,
+        accessToken: _requiredSecretValue(json, 'access_token', 'oauth2'),
+        refreshToken: _stringOrNull(json['refresh_token']),
+        idToken: _stringOrNull(json['id_token']),
+        clientSecret: _stringOrNull(json['client_secret']),
       ),
       _ => throw FormatException(
         'Unsupported service credential secret type: ${json['type']}',
@@ -106,18 +110,18 @@ class ServiceConnectionMetadata {
 
   factory ServiceConnectionMetadata.fromJson(Map<String, dynamic> json) {
     return ServiceConnectionMetadata(
-      clientId: json['client_id'] as String?,
-      issuer: json['issuer'] as String?,
-      authorizationEndpoint: json['authorization_endpoint'] as String?,
-      tokenEndpoint: json['token_endpoint'] as String?,
+      clientId: _stringOrNull(json['client_id']),
+      issuer: _stringOrNull(json['issuer']),
+      authorizationEndpoint: _stringOrNull(json['authorization_endpoint']),
+      tokenEndpoint: _stringOrNull(json['token_endpoint']),
       scopes: switch (json['scopes']) {
         final List<dynamic> values => values.map((value) => '$value').toList(),
         final String value when value.isNotEmpty => value.split(' '),
         _ => const [],
       },
-      accountId: json['account_id'] as String?,
-      tenantId: json['tenant_id'] as String?,
-      provider: json['provider'] as String?,
+      accountId: _stringOrNull(json['account_id']),
+      tenantId: _stringOrNull(json['tenant_id']),
+      provider: _stringOrNull(json['provider']),
       flags: switch (json['flags']) {
         final Map<String, dynamic> flags => flags,
         _ => const {},
@@ -200,4 +204,19 @@ class ServiceConnectionAuthCodec {
       scopes: scopes,
     );
   }
+}
+
+String _requiredSecretValue(
+  Map<String, dynamic> json,
+  String field,
+  String secretType,
+) {
+  final value = json[field];
+  if (value is String && value.isNotEmpty) return value;
+
+  throw FormatException('Missing $field in $secretType secret');
+}
+
+String? _stringOrNull(Object? value) {
+  return value is String ? value : null;
 }

@@ -286,6 +286,43 @@ void main() {
         ).called(1);
       });
 
+      test(
+        'accepts legacy plaintext encrypted key when key is unchanged',
+        () async {
+          final updatedRow = connectionRow.copyWith(name: 'Renamed Connection');
+          when(
+            mockConnectionsDao.getModelConnectionById('conn-1'),
+          ).thenAnswer((_) async => connectionRow);
+          when(
+            mockProvidersDao.getProviderById('openai'),
+          ).thenAnswer((_) async => providerRow);
+          when(
+            mockEncryptionService.decrypt('encrypted-key'),
+          ).thenAnswer((_) async => 'legacy-api-key');
+          when(
+            mockModelProviderServices.getWorkspaceModelSelections(any),
+          ).thenAnswer((_) async => const []);
+          when(
+            mockConnectionsDao.updateModelConnection('conn-1', any),
+          ).thenAnswer((_) async => updatedRow);
+
+          final result = await repository.updateModelConnection(
+            'conn-1',
+            const ModelConnectionToUpdate(name: 'Renamed Connection'),
+          );
+
+          expect(result.name, 'Renamed Connection');
+          final provider =
+              verify(
+                    mockModelProviderServices.getWorkspaceModelSelections(
+                      captureAny,
+                    ),
+                  ).captured.single
+                  as ModelProvider;
+          expect(provider.key, 'legacy-api-key');
+        },
+      );
+
       test('encrypts replacement key', () async {
         final updatedRow = connectionRow.copyWith(
           encryptedAuthValue: const Value('encrypted-new-key'),

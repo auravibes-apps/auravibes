@@ -3,10 +3,12 @@ import 'package:auravibes_app/data/database/drift/daos/mcp_servers_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/tools_groups_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_tools_dao.dart';
 import 'package:auravibes_app/data/database/drift/tables/mcp_servers.dart';
+import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools_groups.dart';
 import 'package:auravibes_app/data/repositories/mcp_servers_repository_impl.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
+import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 import 'package:auravibes_app/domain/repositories/mcp_servers_repository.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
@@ -43,8 +45,9 @@ void main() {
 
     McpServersTable createServerRow({
       String id = 'mcp-1',
-      String workspaceId = 'ws-1',
       String name = 'Test Server',
+      String? serviceConnectionId,
+      String workspaceId = 'ws-1',
     }) {
       return McpServersTable(
         id: id,
@@ -54,6 +57,7 @@ void main() {
         name: name,
         url: 'http://localhost:3000',
         transport: const McpTransportTypeSSE(),
+        serviceConnectionId: serviceConnectionId,
         description: 'A test server',
         isEnabled: true,
       );
@@ -177,6 +181,9 @@ void main() {
     group('deleteMcpServer', () {
       test('returns true when deleted', () async {
         when(
+          fixture.mockMcpServersDao.getMcpServerById('mcp-1'),
+        ).thenAnswer((_) async => createServerRow());
+        when(
           fixture.mockMcpServersDao.deleteMcpServer('mcp-1'),
         ).thenAnswer((_) async => true);
 
@@ -187,15 +194,63 @@ void main() {
 
       test('returns false when not found', () async {
         when(
-          fixture.mockMcpServersDao.deleteMcpServer('nonexistent'),
-        ).thenAnswer((_) async => false);
+          fixture.mockMcpServersDao.getMcpServerById('nonexistent'),
+        ).thenAnswer((_) async => null);
 
         final result = await fixture.repository.deleteMcpServer('nonexistent');
 
         expect(result, false);
+        final _ = verifyNever(fixture.mockMcpServersDao.deleteMcpServer(any));
       });
 
+      test(
+        'deletes linked service connection when server is deleted',
+        () async {
+          final _ = await fixture.database
+              .into(fixture.database.workspaces)
+              .insert(
+                WorkspacesCompanion.insert(
+                  id: const Value('ws-1'),
+                  name: 'Workspace',
+                  type: WorkspaceType.local,
+                ),
+              );
+          final _ = await fixture.database
+              .into(fixture.database.serviceConnections)
+              .insert(
+                ServiceConnectionsCompanion.insert(
+                  id: const Value('service-1'),
+                  name: 'MCP Credential',
+                  serviceId: 'mcp:test-server',
+                  kind: ServiceConnectionKindTable.mcpServer,
+                  authenticationType:
+                      ServiceAuthenticationTypeTable.bearerToken,
+                  workspaceId: 'ws-1',
+                ),
+              );
+          when(
+            fixture.mockMcpServersDao.getMcpServerById('mcp-1'),
+          ).thenAnswer(
+            (_) async => createServerRow(serviceConnectionId: 'service-1'),
+          );
+          when(
+            fixture.mockMcpServersDao.deleteMcpServer('mcp-1'),
+          ).thenAnswer((_) async => true);
+
+          final result = await fixture.repository.deleteMcpServer('mcp-1');
+
+          final rows = await fixture.database
+              .select(fixture.database.serviceConnections)
+              .get();
+          expect(result, true);
+          expect(rows, isEmpty);
+        },
+      );
+
       test('throws McpServersException on failure', () async {
+        when(
+          fixture.mockMcpServersDao.getMcpServerById('mcp-1'),
+        ).thenAnswer((_) async => createServerRow());
         when(
           fixture.mockMcpServersDao.deleteMcpServer('mcp-1'),
         ).thenThrow(Exception('DB error'));

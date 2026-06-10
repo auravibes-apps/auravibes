@@ -100,6 +100,7 @@ void main() {
 
       final mcpItem = items.single;
       expect(mcpItem.name, 'Notion');
+      expect(mcpItem.displayStatus, ServiceConnectionDisplayStatus.failed);
       expect(mcpItem.metadataValues, isEmpty);
     });
 

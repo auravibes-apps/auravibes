@@ -20,9 +20,13 @@ class ProviderFactory {
     WorkspaceModelSelectionWithConnectionEntity config,
   ) async {
     final encrypted = config.modelConnection.key;
-    final secret = ServiceConnectionAuthCodec.decodeSecret(
-      await encryptionService.decrypt(encrypted),
-    );
+    final decrypted = await encryptionService.decrypt(encrypted);
+    ServiceConnectionSecret secret;
+    try {
+      secret = ServiceConnectionAuthCodec.decodeSecret(decrypted);
+    } on FormatException {
+      secret = ServiceConnectionSecretApiKey(apiKey: decrypted);
+    }
     if (secret is! ServiceConnectionSecretApiKey) {
       throw const FormatException('Model connection is not an API key.');
     }

@@ -142,7 +142,7 @@ void main() {
       final names = columns.map((r) => r.read<String>('name')).toSet();
       expect(
         names,
-        containsAll([
+        {
           'id',
           'workspace_id',
           'name',
@@ -153,7 +153,7 @@ void main() {
           'is_enabled',
           'created_at',
           'updated_at',
-        ]),
+        },
       );
     });
 

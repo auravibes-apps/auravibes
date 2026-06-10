@@ -12,7 +12,15 @@ class OAuthCredentialService {
   OAuthCredentialService(
     this._serviceConnectionRepository, {
     Dio? dio,
-  }) : _dio = dio ?? Dio();
+  }) : _dio =
+           dio ??
+           Dio(
+             BaseOptions(
+               connectTimeout: const Duration(seconds: 10),
+               receiveTimeout: const Duration(seconds: 20),
+               sendTimeout: const Duration(seconds: 10),
+             ),
+           );
 
   final ServiceConnectionRepository _serviceConnectionRepository;
   final Dio _dio;

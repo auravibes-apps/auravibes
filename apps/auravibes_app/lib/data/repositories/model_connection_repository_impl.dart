@@ -245,7 +245,13 @@ class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
   }
 
   String _decodeApiKey(String decrypted) {
-    final secret = ServiceConnectionAuthCodec.decodeSecret(decrypted);
+    ServiceConnectionSecret secret;
+    try {
+      secret = ServiceConnectionAuthCodec.decodeSecret(decrypted);
+    } on FormatException {
+      return decrypted;
+    }
+
     if (secret is ServiceConnectionSecretApiKey) {
       return secret.apiKey;
     }

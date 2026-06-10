@@ -86,7 +86,7 @@ class WatchServiceConnectionListItemsUsecase {
   ServiceConnectionListItem _mcpCredentialItem(TypedResult row) {
     final server = row.readTable(_database.mcpServers);
     final credential = row.readTable(_database.serviceConnections);
-    final metadata = _decodeMetadata(credential);
+    final metadataResult = _decodeMetadata(credential);
 
     return ServiceConnectionListItem.fromMcpCredential(
       id: credential.id,
@@ -100,17 +100,25 @@ class WatchServiceConnectionListItemsUsecase {
       expiresAt: credential.expiresAt,
       lastRefreshedAt: credential.lastRefreshedAt,
       lastAuthError: credential.lastAuthError,
-      metadata: metadata,
+      metadata: metadataResult.metadata,
       canRefresh:
           credential.authenticationType ==
           ServiceAuthenticationTypeTable.oauth2,
       now: _now(),
+      hasMetadataError: metadataResult.hasError,
     );
   }
 
-  ServiceConnectionMetadata _decodeMetadata(ServiceConnectionTable credential) {
+  ({ServiceConnectionMetadata metadata, bool hasError}) _decodeMetadata(
+    ServiceConnectionTable credential,
+  ) {
     try {
-      return ServiceConnectionAuthCodec.decodeMetadata(credential.metadataJson);
+      return (
+        metadata: ServiceConnectionAuthCodec.decodeMetadata(
+          credential.metadataJson,
+        ),
+        hasError: false,
+      );
     } on Object catch (error, stackTrace) {
       _logger.warning(
         'Invalid service connection metadata '
@@ -119,7 +127,7 @@ class WatchServiceConnectionListItemsUsecase {
         stackTrace,
       );
 
-      return const ServiceConnectionMetadata();
+      return (metadata: const ServiceConnectionMetadata(), hasError: true);
     }
   }
 }

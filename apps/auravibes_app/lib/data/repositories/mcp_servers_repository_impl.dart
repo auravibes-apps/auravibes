@@ -91,8 +91,23 @@ class McpServersRepositoryImpl implements McpServersRepository {
   @override
   Future<bool> deleteMcpServer(String serverId) async {
     try {
-      // The cascade delete will handle ToolsGroup and Tools.
-      return await _mcpServersDao.deleteMcpServer(serverId);
+      return await _database.transaction(() async {
+        final server = await _mcpServersDao.getMcpServerById(serverId);
+        if (server == null) return false;
+
+        // The cascade delete will handle ToolsGroup and Tools.
+        final deleted = await _mcpServersDao.deleteMcpServer(serverId);
+        final serviceConnectionId = server.serviceConnectionId;
+        if (deleted && serviceConnectionId != null) {
+          final _ =
+              await (_database.delete(_database.serviceConnections)..where(
+                    (tbl) => tbl.id.equals(serviceConnectionId),
+                  ))
+                  .go();
+        }
+
+        return deleted;
+      });
     } on Exception catch (e, stackTrace) {
       Error.throwWithStackTrace(
         McpServersException(

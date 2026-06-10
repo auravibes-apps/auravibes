@@ -85,6 +85,7 @@ class ServiceConnectionListItem {
     required ServiceConnectionMetadata metadata,
     required bool canRefresh,
     required DateTime now,
+    required bool hasMetadataError,
   }) {
     return ServiceConnectionListItem(
       id: id,
@@ -101,6 +102,7 @@ class ServiceConnectionListItem {
         expiresAt: expiresAt,
         lastAuthError: lastAuthError,
         isEnabled: isEnabled,
+        hasMetadataError: hasMetadataError,
         now: now,
       ),
       expiresAt: expiresAt,
@@ -164,17 +166,23 @@ class ServiceConnectionMetadataValue {
   final String value;
 }
 
+// Keep the warning window short so reconnect prompts appear only when a token
+// is close enough to expiry that a failed refresh would affect the user soon.
+const _expiryWarningThreshold = Duration(minutes: 5);
+
 ServiceConnectionDisplayStatus _displayStatus({
   required ServiceConnectionAuthStatus? authStatus,
   required DateTime? expiresAt,
   required String? lastAuthError,
   required bool isEnabled,
+  required bool hasMetadataError,
   required DateTime now,
 }) {
   return switch (authStatus) {
     ServiceConnectionAuthStatus.needsReauth =>
       ServiceConnectionDisplayStatus.needsReauth,
     ServiceConnectionAuthStatus.failed => ServiceConnectionDisplayStatus.failed,
+    _ when hasMetadataError => ServiceConnectionDisplayStatus.failed,
     _ when _expiresSoon(expiresAt, now) =>
       ServiceConnectionDisplayStatus.expiringSoon,
     _ when isEnabled && (lastAuthError == null || lastAuthError.isEmpty) =>
@@ -186,7 +194,7 @@ ServiceConnectionDisplayStatus _displayStatus({
 bool _expiresSoon(DateTime? expiresAt, DateTime now) {
   if (expiresAt == null) return false;
 
-  return expiresAt.isBefore(now.add(const Duration(minutes: 5)));
+  return expiresAt.isBefore(now.add(_expiryWarningThreshold));
 }
 
 List<ServiceConnectionMetadataValue> _metadataValues({

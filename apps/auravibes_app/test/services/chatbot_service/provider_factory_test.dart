@@ -63,6 +63,17 @@ void main() {
       expect(ai, isA<Genkit>());
     });
 
+    test('creates Genkit with legacy plaintext API key', () async {
+      final legacyFactory = ProviderFactory(
+        encryptionService: _FakeEncryptionService('legacy-api-key'),
+      );
+      final config = makeConfig(type: ModelProvidersType.openai);
+
+      final ai = await legacyFactory.createGenkit(config);
+
+      expect(ai, isA<Genkit>());
+    });
+
     test('creates Genkit for anthropic provider', () async {
       final config = makeConfig(
         type: ModelProvidersType.anthropic,
@@ -263,10 +274,15 @@ Map<String, dynamic>? _generationConfigJson(Object? config) {
 }
 
 class _FakeEncryptionService extends EncryptionService {
-  _FakeEncryptionService() : super(_FakeSecretKeyManager());
+  _FakeEncryptionService([this._decrypted]) : super(_FakeSecretKeyManager());
+
+  final String? _decrypted;
 
   @override
   Future<String> decrypt(String _) async {
+    final decrypted = _decrypted;
+    if (decrypted != null) return decrypted;
+
     return ServiceConnectionAuthCodec.encodeSecret(
       const ServiceConnectionSecretApiKey(apiKey: 'test-api-key'),
     );
