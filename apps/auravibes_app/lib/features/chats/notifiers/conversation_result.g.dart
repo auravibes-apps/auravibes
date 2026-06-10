@@ -92,7 +92,7 @@ abstract class _$ConversationChatNotifier
   FutureOr<ConversationResult> build(String workspaceId);
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref =
         this.ref as $Ref<AsyncValue<ConversationResult>, ConversationResult>;
     final element =
@@ -103,6 +103,6 @@ abstract class _$ConversationChatNotifier
               Object?,
               Object?
             >;
-    element.handleCreate(ref, () => build(_$args));
+    return element.handleCreate(ref, () => build(_$args));
   }
 }

@@ -172,7 +172,7 @@ abstract class _$ConversationToolsNotifier
   });
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref =
         this.ref
             as $Ref<
@@ -190,7 +190,7 @@ abstract class _$ConversationToolsNotifier
               Object?,
               Object?
             >;
-    element.handleCreate(
+    return element.handleCreate(
       ref,
       () => build(
         workspaceId: _$args.workspaceId,
@@ -303,7 +303,7 @@ abstract class _$ContextAwareToolsNotifier
   });
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref = this.ref as $Ref<AsyncValue<List<String>>, List<String>>;
     final element =
         ref.element
@@ -313,7 +313,7 @@ abstract class _$ContextAwareToolsNotifier
               Object?,
               Object?
             >;
-    element.handleCreate(
+    return element.handleCreate(
       ref,
       () => build(
         conversationId: _$args.conversationId,
@@ -450,7 +450,7 @@ abstract class _$ContextAwareToolEntitiesNotifier
   });
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref =
         this.ref
             as $Ref<
@@ -468,7 +468,7 @@ abstract class _$ContextAwareToolEntitiesNotifier
               Object?,
               Object?
             >;
-    element.handleCreate(
+    return element.handleCreate(
       ref,
       () => build(
         conversationId: _$args.conversationId,

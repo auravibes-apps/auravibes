@@ -101,7 +101,7 @@ abstract class _$McpFormNotifier extends $Notifier<McpFormState> {
   McpFormState build(String workspaceId);
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref = this.ref as $Ref<McpFormState, McpFormState>;
     final element =
         ref.element
@@ -111,6 +111,6 @@ abstract class _$McpFormNotifier extends $Notifier<McpFormState> {
               Object?,
               Object?
             >;
-    element.handleCreate(ref, () => build(_$args));
+    return element.handleCreate(ref, () => build(_$args));
   }
 }

@@ -166,7 +166,7 @@ abstract class _$GroupedConversationToolsNotifier
   });
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref =
         this.ref
             as $Ref<
@@ -184,7 +184,7 @@ abstract class _$GroupedConversationToolsNotifier
               Object?,
               Object?
             >;
-    element.handleCreate(
+    return element.handleCreate(
       ref,
       () => build(
         workspaceId: _$args.workspaceId,

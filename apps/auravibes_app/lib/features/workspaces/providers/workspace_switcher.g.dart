@@ -76,7 +76,7 @@ abstract class _$WorkspaceSwitcher extends $Notifier<WorkspaceSwitchState> {
   WorkspaceSwitchState build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref = this.ref as $Ref<WorkspaceSwitchState, WorkspaceSwitchState>;
     final element =
         ref.element
@@ -86,6 +86,6 @@ abstract class _$WorkspaceSwitcher extends $Notifier<WorkspaceSwitchState> {
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }

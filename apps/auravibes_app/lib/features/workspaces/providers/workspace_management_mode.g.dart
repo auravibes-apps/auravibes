@@ -67,7 +67,7 @@ abstract class _$WorkspaceManagementMode
   WorkspaceManagementState build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref =
         this.ref as $Ref<WorkspaceManagementState, WorkspaceManagementState>;
     final element =
@@ -78,6 +78,6 @@ abstract class _$WorkspaceManagementMode
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }
