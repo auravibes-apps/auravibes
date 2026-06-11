@@ -11,7 +11,7 @@
       "program": "lib/main.dart"
     },
     {
-      "name": "dev Debug (DB prefix)",
+      "name": "dev Debug (DB hash source)",
       "request": "launch",
       "type": "dart",
       "flutterMode": "debug",
@@ -19,7 +19,7 @@
       "toolArgs": [
         "--flavor",
         "dev",
-        "--dart-define=DB_PREFIX=${workspaceFolderBasename}_"
+        "--dart-define=DB_HASH_SOURCE=${workspaceFolder}"
       ],
       "program": "lib/main.dart"
     },

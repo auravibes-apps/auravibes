@@ -12,9 +12,9 @@ Future<SharedPreferences> sharedPreferences(Ref _) =>
 
 @Riverpod(keepAlive: true)
 AppDatabase appDatabase(Ref _) {
-  const dbPrefix = String.fromEnvironment('DB_PREFIX');
+  const dbHashSource = String.fromEnvironment('DB_HASH_SOURCE');
 
   return AppDatabase(
-    dbPrefix: dbPrefix.isNotEmpty ? dbPrefix : null,
+    dbHashSource: dbHashSource.isNotEmpty ? dbHashSource : null,
   );
 }

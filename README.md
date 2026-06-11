@@ -139,8 +139,8 @@ The app supports two flavors: **dev** (development) and **prod** (production).
 The project includes pre-configured launch configurations in `.vscode/launch.json`:
 
 - **dev Debug**: Development flavor, debug mode
-- **dev Debug (DB prefix)**: Development flavor, debug mode with a
-  workspace-folder database prefix for isolated worktrees
+- **dev Debug (DB hash source)**: Development flavor, debug mode with a
+  full workspace path hash for isolated worktree databases
 - **Widgetbook**: UI component catalog, debug mode
 
 #### Using Command Line
