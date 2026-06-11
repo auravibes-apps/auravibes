@@ -61,6 +61,39 @@ void main() {
   });
 
   group('appDatabaseProvider', () {
+    test('databaseNameForHashSource returns default name for empty source', () {
+      expect(AppDatabase.databaseNameForHashSource(null), 'auravibes_app');
+      expect(AppDatabase.databaseNameForHashSource(''), 'auravibes_app');
+    });
+
+    test('databaseNameForHashSource returns stable name for same source', () {
+      const source = '/Users/test/worktrees/one/auravibes';
+
+      expect(
+        AppDatabase.databaseNameForHashSource(source),
+        AppDatabase.databaseNameForHashSource(source),
+      );
+    });
+
+    test('databaseNameForHashSource separates same basename paths', () {
+      final first = AppDatabase.databaseNameForHashSource(
+        '/Users/test/worktrees/one/auravibes',
+      );
+      final second = AppDatabase.databaseNameForHashSource(
+        '/private/tmp/worktrees/two/auravibes',
+      );
+
+      expect(first, isNot(second));
+    });
+
+    test('databaseNameForHashSource returns safe database name', () {
+      final name = AppDatabase.databaseNameForHashSource(
+        '/Users/test/worktrees/one/auravibes with spaces',
+      );
+
+      expect(name, matches(RegExp(r'^auravibes_app_[0-9a-f]{16}$')));
+    });
+
     test('returns an AppDatabase instance', () {
       final db = AppDatabase(connection: _testConnection());
       final container = ProviderContainer(
