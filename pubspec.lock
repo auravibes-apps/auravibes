@@ -681,10 +681,10 @@ packages:
     dependency: transitive
     description:
       name: genkit
-      sha256: "9c779d5922349d713c4164f78a190ac9d2d123944908b4fcd1434bc39a737035"
+      sha256: "31a98b360873f033ceab41921072c2a20eadb621ddc3223851a92f051f2cc0da"
       url: "https://pub.dev"
     source: hosted
-    version: "0.14.0"
+    version: "0.14.1"
   genkit_anthropic:
     dependency: transitive
     description:
