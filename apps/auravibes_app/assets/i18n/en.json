@@ -9,6 +9,31 @@
     "prompts": "Prompts",
     "more": "More"
   },
+  "intro_flow": {
+    "welcome": {
+      "title": "Welcome to AuraVibes",
+      "body": "Create a workspace first, then keep chats, tools, skills, and connections organized inside it."
+    },
+    "workspace_context": {
+      "title": "Workspaces keep context separate",
+      "body": "Use one workspace for each client, project, or area of work so history and settings stay focused."
+    },
+    "workspace": {
+      "title": "Name your workspace",
+      "body": "This becomes the home for your first chats and AI setup.",
+      "name_label": "Workspace name",
+      "name_helper": "Use 3 to 20 characters.",
+      "create": "Create workspace"
+    },
+    "ready": {
+      "title": "Ready to start",
+      "body": "Connect an AI provider now, or skip and configure service connections, tools, skills, and credentials from More later."
+    },
+    "continue": "Continue",
+    "back": "Back",
+    "connect_primary": "Connect AI",
+    "connect_skip": "Skip for now"
+  },
   "models_screens": {
     "select_provider": "Select Provider",
     "select_model": "Select Model",

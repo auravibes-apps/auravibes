@@ -267,23 +267,9 @@ class AppDatabase extends _$AppDatabase {
 
   /// Initializes the database with default data.
   ///
-  /// This method can be called to populate the database with
-  /// initial data when the app first starts.
+  /// Workspaces are intentionally user-created during first-run onboarding.
   Future<void> initializeWithDefaults() async {
-    // Check if workspaces table is empty.
-    final workspaceCountResult = await customSelect(
-      'SELECT COUNT(*) as count FROM workspaces',
-    ).getSingle();
-    final workspaceCount = workspaceCountResult.read<int>('count');
-
-    if (workspaceCount == 0) {
-      final _ = await into(workspaces).insert(
-        WorkspacesCompanion.insert(
-          name: 'Default Workspace',
-          type: WorkspaceType.local,
-        ),
-      );
-    }
+    return;
   }
 
   /// Performs database maintenance operations.
