@@ -689,10 +689,10 @@ packages:
     dependency: transitive
     description:
       name: genkit_anthropic
-      sha256: "23827f719d4915ba5166deb05fa50b82f228c64d4890bd6648c6495a3035a75f"
+      sha256: "626787a9c5e6f8758027ad6476dc4f86f3ad2983cfd5ad873292987e703c6829"
       url: "https://pub.dev"
     source: hosted
-    version: "0.2.8"
+    version: "0.2.9"
   genkit_openai:
     dependency: transitive
     description:
