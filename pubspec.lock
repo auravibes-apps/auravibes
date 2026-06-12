@@ -681,10 +681,10 @@ packages:
     dependency: transitive
     description:
       name: genkit
-      sha256: "9c779d5922349d713c4164f78a190ac9d2d123944908b4fcd1434bc39a737035"
+      sha256: "31a98b360873f033ceab41921072c2a20eadb621ddc3223851a92f051f2cc0da"
       url: "https://pub.dev"
     source: hosted
-    version: "0.14.0"
+    version: "0.14.1"
   genkit_anthropic:
     dependency: transitive
     description:
@@ -697,10 +697,10 @@ packages:
     dependency: transitive
     description:
       name: genkit_openai
-      sha256: "08821d24626372c32e5072d721bd4b784e7874d01bba5f0d5c91947b53ca543b"
+      sha256: "4d8d0c8991be309b2c25f905ced67398821e7b996eb5d96836c047bb3b4b3736"
       url: "https://pub.dev"
     source: hosted
-    version: "0.3.3"
+    version: "0.3.4"
   glob:
     dependency: transitive
     description:
@@ -1876,4 +1876,4 @@ packages:
     version: "2.1.0"
 sdks:
   dart: ">=3.12.0 <4.0.0"
-  flutter: ">=3.44.0 <4.0.0"
+  flutter: ">=3.44.0"
