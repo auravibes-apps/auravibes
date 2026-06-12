@@ -10346,10 +10346,7 @@ final class $$WorkspacesTableReferences
   _serviceConnectionsRefsTable(_$AppDatabase db) =>
       MultiTypedResultKey.fromTable(
         db.serviceConnections,
-        aliasName: $_aliasNameGenerator(
-          db.workspaces.id,
-          db.serviceConnections.workspaceId,
-        ),
+        aliasName: 'workspaces__id__service_connections__workspace_id',
       );
 
   $$ServiceConnectionsTableProcessedTableManager get serviceConnectionsRefs {
@@ -10369,10 +10366,7 @@ final class $$WorkspacesTableReferences
   static MultiTypedResultKey<$ConversationsTable, List<ConversationsTable>>
   _conversationsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.conversations,
-    aliasName: $_aliasNameGenerator(
-      db.workspaces.id,
-      db.conversations.workspaceId,
-    ),
+    aliasName: 'workspaces__id__conversations__workspace_id',
   );
 
   $$ConversationsTableProcessedTableManager get conversationsRefs {
@@ -10390,10 +10384,7 @@ final class $$WorkspacesTableReferences
   static MultiTypedResultKey<$McpServersTable, List<McpServersTable>>
   _mcpServersRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.mcpServers,
-    aliasName: $_aliasNameGenerator(
-      db.workspaces.id,
-      db.mcpServers.workspaceId,
-    ),
+    aliasName: 'workspaces__id__mcp_servers__workspace_id',
   );
 
   $$McpServersTableProcessedTableManager get mcpServersRefs {
@@ -10411,10 +10402,7 @@ final class $$WorkspacesTableReferences
   static MultiTypedResultKey<$ToolsGroupsTable, List<ToolsGroupsTable>>
   _toolsGroupsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.toolsGroups,
-    aliasName: $_aliasNameGenerator(
-      db.workspaces.id,
-      db.toolsGroups.workspaceId,
-    ),
+    aliasName: 'workspaces__id__tools_groups__workspace_id',
   );
 
   $$ToolsGroupsTableProcessedTableManager get toolsGroupsRefs {
@@ -10433,7 +10421,7 @@ final class $$WorkspacesTableReferences
     _$AppDatabase db,
   ) => MultiTypedResultKey.fromTable(
     db.tools,
-    aliasName: $_aliasNameGenerator(db.workspaces.id, db.tools.workspaceId),
+    aliasName: 'workspaces__id__tools__workspace_id',
   );
 
   $$ToolsTableProcessedTableManager get toolsRefs {
@@ -10455,10 +10443,8 @@ final class $$WorkspacesTableReferences
   _workspaceCompactionSettingsRefsTable(_$AppDatabase db) =>
       MultiTypedResultKey.fromTable(
         db.workspaceCompactionSettings,
-        aliasName: $_aliasNameGenerator(
-          db.workspaces.id,
-          db.workspaceCompactionSettings.workspaceId,
-        ),
+        aliasName:
+            'workspaces__id__workspace_compaction_settings__workspace_id',
       );
 
   $$WorkspaceCompactionSettingsTableProcessedTableManager
@@ -10483,10 +10469,7 @@ final class $$WorkspacesTableReferences
   _skillCredentialDefinitionsRefsTable(_$AppDatabase db) =>
       MultiTypedResultKey.fromTable(
         db.skillCredentialDefinitions,
-        aliasName: $_aliasNameGenerator(
-          db.workspaces.id,
-          db.skillCredentialDefinitions.workspaceId,
-        ),
+        aliasName: 'workspaces__id__skill_credential_definitions__workspace_id',
       );
 
   $$SkillCredentialDefinitionsTableProcessedTableManager
@@ -10508,7 +10491,7 @@ final class $$WorkspacesTableReferences
     _$AppDatabase db,
   ) => MultiTypedResultKey.fromTable(
     db.skills,
-    aliasName: $_aliasNameGenerator(db.workspaces.id, db.skills.workspaceId),
+    aliasName: 'workspaces__id__skills__workspace_id',
   );
 
   $$SkillsTableProcessedTableManager get skillsRefs {
@@ -10530,10 +10513,7 @@ final class $$WorkspacesTableReferences
   _appSkillWorkspaceSettingsRefsTable(_$AppDatabase db) =>
       MultiTypedResultKey.fromTable(
         db.appSkillWorkspaceSettings,
-        aliasName: $_aliasNameGenerator(
-          db.workspaces.id,
-          db.appSkillWorkspaceSettings.workspaceId,
-        ),
+        aliasName: 'workspaces__id__app_skill_workspace_settings__workspace_id',
       );
 
   $$AppSkillWorkspaceSettingsTableProcessedTableManager
@@ -11518,13 +11498,8 @@ final class $$ServiceConnectionsTableReferences
     super.$_typedResult,
   );
 
-  static $WorkspacesTable _workspaceIdTable(_$AppDatabase db) =>
-      db.workspaces.createAlias(
-        $_aliasNameGenerator(
-          db.serviceConnections.workspaceId,
-          db.workspaces.id,
-        ),
-      );
+  static $WorkspacesTable _workspaceIdTable(_$AppDatabase db) => db.workspaces
+      .createAlias('service_connections__workspace_id__workspaces__id');
 
   $$WorkspacesTableProcessedTableManager get workspaceId {
     final $_column = $_itemColumn<String>('workspace_id')!;
@@ -11544,14 +11519,13 @@ final class $$ServiceConnectionsTableReferences
     $WorkspaceModelSelectionsTable,
     List<WorkspaceModelSelectionTable>
   >
-  _workspaceModelSelectionsRefsTable(_$AppDatabase db) =>
-      MultiTypedResultKey.fromTable(
-        db.workspaceModelSelections,
-        aliasName: $_aliasNameGenerator(
-          db.serviceConnections.id,
-          db.workspaceModelSelections.modelConnectionId,
-        ),
-      );
+  _workspaceModelSelectionsRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.workspaceModelSelections,
+    aliasName:
+        'service_connections__id__workspace_model_selections__model_connection_id',
+  );
 
   $$WorkspaceModelSelectionsTableProcessedTableManager
   get workspaceModelSelectionsRefs {
@@ -11574,10 +11548,7 @@ final class $$ServiceConnectionsTableReferences
   static MultiTypedResultKey<$McpServersTable, List<McpServersTable>>
   _mcpServersRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.mcpServers,
-    aliasName: $_aliasNameGenerator(
-      db.serviceConnections.id,
-      db.mcpServers.serviceConnectionId,
-    ),
+    aliasName: 'service_connections__id__mcp_servers__service_connection_id',
   );
 
   $$McpServersTableProcessedTableManager get mcpServersRefs {
@@ -12315,10 +12286,8 @@ final class $$ApiModelProvidersTableReferences
   _workspaceModelSelectionsRefsTable(_$AppDatabase db) =>
       MultiTypedResultKey.fromTable(
         db.workspaceModelSelections,
-        aliasName: $_aliasNameGenerator(
-          db.apiModelProviders.id,
-          db.workspaceModelSelections.modelId,
-        ),
+        aliasName:
+            'api_model_providers__id__workspace_model_selections__model_id',
       );
 
   $$WorkspaceModelSelectionsTableProcessedTableManager
@@ -12339,10 +12308,7 @@ final class $$ApiModelProvidersTableReferences
   static MultiTypedResultKey<$ApiModelsTable, List<ApiModelsTable>>
   _apiModelsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.apiModels,
-    aliasName: $_aliasNameGenerator(
-      db.apiModelProviders.id,
-      db.apiModels.modelProvider,
-    ),
+    aliasName: 'api_model_providers__id__api_models__model_provider',
   );
 
   $$ApiModelsTableProcessedTableManager get apiModelsRefs {
@@ -12749,10 +12715,7 @@ final class $$WorkspaceModelSelectionsTableReferences
 
   static $ApiModelProvidersTable _modelIdTable(_$AppDatabase db) =>
       db.apiModelProviders.createAlias(
-        $_aliasNameGenerator(
-          db.workspaceModelSelections.modelId,
-          db.apiModelProviders.id,
-        ),
+        'workspace_model_selections__model_id__api_model_providers__id',
       );
 
   $$ApiModelProvidersTableProcessedTableManager get modelId {
@@ -12769,13 +12732,11 @@ final class $$WorkspaceModelSelectionsTableReferences
     );
   }
 
-  static $ServiceConnectionsTable _modelConnectionIdTable(_$AppDatabase db) =>
-      db.serviceConnections.createAlias(
-        $_aliasNameGenerator(
-          db.workspaceModelSelections.modelConnectionId,
-          db.serviceConnections.id,
-        ),
-      );
+  static $ServiceConnectionsTable _modelConnectionIdTable(
+    _$AppDatabase db,
+  ) => db.serviceConnections.createAlias(
+    'workspace_model_selections__model_connection_id__service_connections__id',
+  );
 
   $$ServiceConnectionsTableProcessedTableManager get modelConnectionId {
     final $_column = $_itemColumn<String>('model_connection_id')!;
@@ -12794,10 +12755,7 @@ final class $$WorkspaceModelSelectionsTableReferences
   static MultiTypedResultKey<$ConversationsTable, List<ConversationsTable>>
   _conversationsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.conversations,
-    aliasName: $_aliasNameGenerator(
-      db.workspaceModelSelections.id,
-      db.conversations.modelId,
-    ),
+    aliasName: 'workspace_model_selections__id__conversations__model_id',
   );
 
   $$ConversationsTableProcessedTableManager get conversationsRefs {
@@ -13303,13 +13261,9 @@ final class $$ApiModelsTableReferences
     extends BaseReferences<_$AppDatabase, $ApiModelsTable, ApiModelsTable> {
   $$ApiModelsTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
-  static $ApiModelProvidersTable _modelProviderTable(_$AppDatabase db) =>
-      db.apiModelProviders.createAlias(
-        $_aliasNameGenerator(
-          db.apiModels.modelProvider,
-          db.apiModelProviders.id,
-        ),
-      );
+  static $ApiModelProvidersTable _modelProviderTable(_$AppDatabase db) => db
+      .apiModelProviders
+      .createAlias('api_models__model_provider__api_model_providers__id');
 
   $$ApiModelProvidersTableProcessedTableManager get modelProvider {
     final $_column = $_itemColumn<String>('model_provider')!;
@@ -13775,9 +13729,7 @@ final class $$ConversationsTableReferences
   );
 
   static $WorkspacesTable _workspaceIdTable(_$AppDatabase db) =>
-      db.workspaces.createAlias(
-        $_aliasNameGenerator(db.conversations.workspaceId, db.workspaces.id),
-      );
+      db.workspaces.createAlias('conversations__workspace_id__workspaces__id');
 
   $$WorkspacesTableProcessedTableManager get workspaceId {
     final $_column = $_itemColumn<String>('workspace_id')!;
@@ -13793,13 +13745,9 @@ final class $$ConversationsTableReferences
     );
   }
 
-  static $WorkspaceModelSelectionsTable _modelIdTable(_$AppDatabase db) =>
-      db.workspaceModelSelections.createAlias(
-        $_aliasNameGenerator(
-          db.conversations.modelId,
-          db.workspaceModelSelections.id,
-        ),
-      );
+  static $WorkspaceModelSelectionsTable _modelIdTable(_$AppDatabase db) => db
+      .workspaceModelSelections
+      .createAlias('conversations__model_id__workspace_model_selections__id');
 
   $$WorkspaceModelSelectionsTableProcessedTableManager? get modelId {
     final $_column = $_itemColumn<String>('model_id');
@@ -13818,10 +13766,7 @@ final class $$ConversationsTableReferences
   static MultiTypedResultKey<$MessagesTable, List<MessagesTable>>
   _messagesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.messages,
-    aliasName: $_aliasNameGenerator(
-      db.conversations.id,
-      db.messages.conversationId,
-    ),
+    aliasName: 'conversations__id__messages__conversation_id',
   );
 
   $$MessagesTableProcessedTableManager get messagesRefs {
@@ -13843,10 +13788,7 @@ final class $$ConversationsTableReferences
   _conversationToolsRefsTable(_$AppDatabase db) =>
       MultiTypedResultKey.fromTable(
         db.conversationTools,
-        aliasName: $_aliasNameGenerator(
-          db.conversations.id,
-          db.conversationTools.conversationId,
-        ),
+        aliasName: 'conversations__id__conversation_tools__conversation_id',
       );
 
   $$ConversationToolsTableProcessedTableManager get conversationToolsRefs {
@@ -13870,10 +13812,7 @@ final class $$ConversationsTableReferences
   _conversationSkillsRefsTable(_$AppDatabase db) =>
       MultiTypedResultKey.fromTable(
         db.conversationSkills,
-        aliasName: $_aliasNameGenerator(
-          db.conversations.id,
-          db.conversationSkills.conversationId,
-        ),
+        aliasName: 'conversations__id__conversation_skills__conversation_id',
       );
 
   $$ConversationSkillsTableProcessedTableManager get conversationSkillsRefs {
@@ -14547,10 +14486,9 @@ final class $$MessagesTableReferences
     extends BaseReferences<_$AppDatabase, $MessagesTable, MessagesTable> {
   $$MessagesTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
-  static $ConversationsTable _conversationIdTable(_$AppDatabase db) =>
-      db.conversations.createAlias(
-        $_aliasNameGenerator(db.messages.conversationId, db.conversations.id),
-      );
+  static $ConversationsTable _conversationIdTable(_$AppDatabase db) => db
+      .conversations
+      .createAlias('messages__conversation_id__conversations__id');
 
   $$ConversationsTableProcessedTableManager get conversationId {
     final $_column = $_itemColumn<String>('conversation_id')!;
@@ -14950,9 +14888,7 @@ final class $$McpServersTableReferences
   $$McpServersTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
   static $WorkspacesTable _workspaceIdTable(_$AppDatabase db) =>
-      db.workspaces.createAlias(
-        $_aliasNameGenerator(db.mcpServers.workspaceId, db.workspaces.id),
-      );
+      db.workspaces.createAlias('mcp_servers__workspace_id__workspaces__id');
 
   $$WorkspacesTableProcessedTableManager get workspaceId {
     final $_column = $_itemColumn<String>('workspace_id')!;
@@ -14970,10 +14906,7 @@ final class $$McpServersTableReferences
 
   static $ServiceConnectionsTable _serviceConnectionIdTable(_$AppDatabase db) =>
       db.serviceConnections.createAlias(
-        $_aliasNameGenerator(
-          db.mcpServers.serviceConnectionId,
-          db.serviceConnections.id,
-        ),
+        'mcp_servers__service_connection_id__service_connections__id',
       );
 
   $$ServiceConnectionsTableProcessedTableManager? get serviceConnectionId {
@@ -14993,10 +14926,7 @@ final class $$McpServersTableReferences
   static MultiTypedResultKey<$ToolsGroupsTable, List<ToolsGroupsTable>>
   _toolsGroupsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.toolsGroups,
-    aliasName: $_aliasNameGenerator(
-      db.mcpServers.id,
-      db.toolsGroups.mcpServerId,
-    ),
+    aliasName: 'mcp_servers__id__tools_groups__mcp_server_id',
   );
 
   $$ToolsGroupsTableProcessedTableManager get toolsGroupsRefs {
@@ -15565,9 +15495,7 @@ final class $$ToolsGroupsTableReferences
   $$ToolsGroupsTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
   static $WorkspacesTable _workspaceIdTable(_$AppDatabase db) =>
-      db.workspaces.createAlias(
-        $_aliasNameGenerator(db.toolsGroups.workspaceId, db.workspaces.id),
-      );
+      db.workspaces.createAlias('tools_groups__workspace_id__workspaces__id');
 
   $$WorkspacesTableProcessedTableManager get workspaceId {
     final $_column = $_itemColumn<String>('workspace_id')!;
@@ -15584,9 +15512,7 @@ final class $$ToolsGroupsTableReferences
   }
 
   static $McpServersTable _mcpServerIdTable(_$AppDatabase db) =>
-      db.mcpServers.createAlias(
-        $_aliasNameGenerator(db.toolsGroups.mcpServerId, db.mcpServers.id),
-      );
+      db.mcpServers.createAlias('tools_groups__mcp_server_id__mcp_servers__id');
 
   $$McpServersTableProcessedTableManager? get mcpServerId {
     final $_column = $_itemColumn<String>('mcp_server_id');
@@ -15606,10 +15532,7 @@ final class $$ToolsGroupsTableReferences
     _$AppDatabase db,
   ) => MultiTypedResultKey.fromTable(
     db.tools,
-    aliasName: $_aliasNameGenerator(
-      db.toolsGroups.id,
-      db.tools.workspaceToolsGroupId,
-    ),
+    aliasName: 'tools_groups__id__tools__workspace_tools_group_id',
   );
 
   $$ToolsTableProcessedTableManager get toolsRefs {
@@ -16149,9 +16072,7 @@ final class $$ToolsTableReferences
   $$ToolsTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
   static $WorkspacesTable _workspaceIdTable(_$AppDatabase db) =>
-      db.workspaces.createAlias(
-        $_aliasNameGenerator(db.tools.workspaceId, db.workspaces.id),
-      );
+      db.workspaces.createAlias('tools__workspace_id__workspaces__id');
 
   $$WorkspacesTableProcessedTableManager get workspaceId {
     final $_column = $_itemColumn<String>('workspace_id')!;
@@ -16167,10 +16088,9 @@ final class $$ToolsTableReferences
     );
   }
 
-  static $ToolsGroupsTable _workspaceToolsGroupIdTable(_$AppDatabase db) =>
-      db.toolsGroups.createAlias(
-        $_aliasNameGenerator(db.tools.workspaceToolsGroupId, db.toolsGroups.id),
-      );
+  static $ToolsGroupsTable _workspaceToolsGroupIdTable(_$AppDatabase db) => db
+      .toolsGroups
+      .createAlias('tools__workspace_tools_group_id__tools_groups__id');
 
   $$ToolsGroupsTableProcessedTableManager? get workspaceToolsGroupId {
     final $_column = $_itemColumn<String>('workspace_tools_group_id');
@@ -16195,10 +16115,7 @@ final class $$ToolsTableReferences
   _conversationToolsRefsTable(_$AppDatabase db) =>
       MultiTypedResultKey.fromTable(
         db.conversationTools,
-        aliasName: $_aliasNameGenerator(
-          db.tools.id,
-          db.conversationTools.toolId,
-        ),
+        aliasName: 'tools__id__conversation_tools__tool_id',
       );
 
   $$ConversationToolsTableProcessedTableManager get conversationToolsRefs {
@@ -16830,13 +16747,9 @@ final class $$ConversationToolsTableReferences
     super.$_typedResult,
   );
 
-  static $ConversationsTable _conversationIdTable(_$AppDatabase db) =>
-      db.conversations.createAlias(
-        $_aliasNameGenerator(
-          db.conversationTools.conversationId,
-          db.conversations.id,
-        ),
-      );
+  static $ConversationsTable _conversationIdTable(_$AppDatabase db) => db
+      .conversations
+      .createAlias('conversation_tools__conversation_id__conversations__id');
 
   $$ConversationsTableProcessedTableManager get conversationId {
     final $_column = $_itemColumn<String>('conversation_id')!;
@@ -16852,9 +16765,8 @@ final class $$ConversationToolsTableReferences
     );
   }
 
-  static $ToolsTable _toolIdTable(_$AppDatabase db) => db.tools.createAlias(
-    $_aliasNameGenerator(db.conversationTools.toolId, db.tools.id),
-  );
+  static $ToolsTable _toolIdTable(_$AppDatabase db) =>
+      db.tools.createAlias('conversation_tools__tool_id__tools__id');
 
   $$ToolsTableProcessedTableManager get toolId {
     final $_column = $_itemColumn<String>('tool_id')!;
@@ -17301,10 +17213,7 @@ final class $$WorkspaceCompactionSettingsTableReferences
 
   static $WorkspacesTable _workspaceIdTable(_$AppDatabase db) =>
       db.workspaces.createAlias(
-        $_aliasNameGenerator(
-          db.workspaceCompactionSettings.workspaceId,
-          db.workspaces.id,
-        ),
+        'workspace_compaction_settings__workspace_id__workspaces__id',
       );
 
   $$WorkspacesTableProcessedTableManager get workspaceId {
@@ -17695,10 +17604,7 @@ final class $$SkillCredentialDefinitionsTableReferences
 
   static $WorkspacesTable _workspaceIdTable(_$AppDatabase db) =>
       db.workspaces.createAlias(
-        $_aliasNameGenerator(
-          db.skillCredentialDefinitions.workspaceId,
-          db.workspaces.id,
-        ),
+        'skill_credential_definitions__workspace_id__workspaces__id',
       );
 
   $$WorkspacesTableProcessedTableManager get workspaceId {
@@ -17719,10 +17625,8 @@ final class $$SkillCredentialDefinitionsTableReferences
     _$AppDatabase db,
   ) => MultiTypedResultKey.fromTable(
     db.skills,
-    aliasName: $_aliasNameGenerator(
-      db.skillCredentialDefinitions.id,
-      db.skills.credentialDefinitionId,
-    ),
+    aliasName:
+        'skill_credential_definitions__id__skills__credential_definition_id',
   );
 
   $$SkillsTableProcessedTableManager get skillsRefs {
@@ -18181,9 +18085,7 @@ final class $$SkillsTableReferences
   $$SkillsTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
   static $WorkspacesTable _workspaceIdTable(_$AppDatabase db) =>
-      db.workspaces.createAlias(
-        $_aliasNameGenerator(db.skills.workspaceId, db.workspaces.id),
-      );
+      db.workspaces.createAlias('skills__workspace_id__workspaces__id');
 
   $$WorkspacesTableProcessedTableManager get workspaceId {
     final $_column = $_itemColumn<String>('workspace_id')!;
@@ -18202,10 +18104,7 @@ final class $$SkillsTableReferences
   static $SkillCredentialDefinitionsTable _credentialDefinitionIdTable(
     _$AppDatabase db,
   ) => db.skillCredentialDefinitions.createAlias(
-    $_aliasNameGenerator(
-      db.skills.credentialDefinitionId,
-      db.skillCredentialDefinitions.id,
-    ),
+    'skills__credential_definition_id__skill_credential_definitions__id',
   );
 
   $$SkillCredentialDefinitionsTableProcessedTableManager?
@@ -18232,10 +18131,7 @@ final class $$SkillsTableReferences
   _skillTemplateToolsRefsTable(_$AppDatabase db) =>
       MultiTypedResultKey.fromTable(
         db.skillTemplateTools,
-        aliasName: $_aliasNameGenerator(
-          db.skills.id,
-          db.skillTemplateTools.skillId,
-        ),
+        aliasName: 'skills__id__skill_template_tools__skill_id',
       );
 
   $$SkillTemplateToolsTableProcessedTableManager get skillTemplateToolsRefs {
@@ -18259,10 +18155,7 @@ final class $$SkillsTableReferences
   _conversationSkillsRefsTable(_$AppDatabase db) =>
       MultiTypedResultKey.fromTable(
         db.conversationSkills,
-        aliasName: $_aliasNameGenerator(
-          db.skills.id,
-          db.conversationSkills.workspaceSkillId,
-        ),
+        aliasName: 'skills__id__conversation_skills__workspace_skill_id',
       );
 
   $$ConversationSkillsTableProcessedTableManager get conversationSkillsRefs {
@@ -18982,9 +18875,8 @@ final class $$SkillTemplateToolsTableReferences
     super.$_typedResult,
   );
 
-  static $SkillsTable _skillIdTable(_$AppDatabase db) => db.skills.createAlias(
-    $_aliasNameGenerator(db.skillTemplateTools.skillId, db.skills.id),
-  );
+  static $SkillsTable _skillIdTable(_$AppDatabase db) =>
+      db.skills.createAlias('skill_template_tools__skill_id__skills__id');
 
   $$SkillsTableProcessedTableManager get skillId {
     final $_column = $_itemColumn<String>('skill_id')!;
@@ -19456,13 +19348,9 @@ final class $$ConversationSkillsTableReferences
     super.$_typedResult,
   );
 
-  static $ConversationsTable _conversationIdTable(_$AppDatabase db) =>
-      db.conversations.createAlias(
-        $_aliasNameGenerator(
-          db.conversationSkills.conversationId,
-          db.conversations.id,
-        ),
-      );
+  static $ConversationsTable _conversationIdTable(_$AppDatabase db) => db
+      .conversations
+      .createAlias('conversation_skills__conversation_id__conversations__id');
 
   $$ConversationsTableProcessedTableManager get conversationId {
     final $_column = $_itemColumn<String>('conversation_id')!;
@@ -19478,13 +19366,8 @@ final class $$ConversationSkillsTableReferences
     );
   }
 
-  static $SkillsTable _workspaceSkillIdTable(_$AppDatabase db) =>
-      db.skills.createAlias(
-        $_aliasNameGenerator(
-          db.conversationSkills.workspaceSkillId,
-          db.skills.id,
-        ),
-      );
+  static $SkillsTable _workspaceSkillIdTable(_$AppDatabase db) => db.skills
+      .createAlias('conversation_skills__workspace_skill_id__skills__id');
 
   $$SkillsTableProcessedTableManager? get workspaceSkillId {
     final $_column = $_itemColumn<String>('workspace_skill_id');
@@ -19928,10 +19811,7 @@ final class $$AppSkillWorkspaceSettingsTableReferences
 
   static $WorkspacesTable _workspaceIdTable(_$AppDatabase db) =>
       db.workspaces.createAlias(
-        $_aliasNameGenerator(
-          db.appSkillWorkspaceSettings.workspaceId,
-          db.workspaces.id,
-        ),
+        'app_skill_workspace_settings__workspace_id__workspaces__id',
       );
 
   $$WorkspacesTableProcessedTableManager get workspaceId {
