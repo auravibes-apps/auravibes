@@ -152,9 +152,8 @@ class ApiProviderDto {
   /// Creates an ApiProviderDto from JSON.
   factory ApiProviderDto.fromJson(
     Map<String, dynamic> json, {
-    ApiModelProviderEntity? modelProvider,
+    required ApiModelProviderEntity modelProvider,
   }) {
-    final provider = modelProvider ?? ApiModelProviderEntity.fromJson(json);
     final modelsData = json['models'] as Map<String, dynamic>? ?? {};
 
     final models = modelsData.entries
@@ -164,11 +163,11 @@ class ApiProviderDto {
           },
         )
         .nonNulls
-        .map((e) => ApiModelEntity.fromJson(provider.id, e))
+        .map((e) => ApiModelEntity.fromJson(modelProvider.id, e))
         .toList();
 
     return ApiProviderDto(
-      modelProvider: provider,
+      modelProvider: modelProvider,
       models: models,
     );
   }

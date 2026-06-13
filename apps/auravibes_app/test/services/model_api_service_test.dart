@@ -95,6 +95,13 @@ Dio _createDioWithError() {
   return dio;
 }
 
+ApiProviderDto _providerDtoFromJson(Map<String, dynamic> json) {
+  return ApiProviderDto.fromJson(
+    json,
+    modelProvider: ApiModelProviderEntity.fromJson(json),
+  );
+}
+
 void main() {
   group('ModelApiService', () {
     var dio = Dio(BaseOptions(baseUrl: 'https://models.dev'));
@@ -263,7 +270,7 @@ void main() {
           },
         };
 
-        final dto = ApiProviderDto.fromJson(json);
+        final dto = _providerDtoFromJson(json);
 
         expect(dto.modelProvider.id, 'openai');
         expect(dto.modelProvider.name, 'OpenAI');
@@ -278,7 +285,7 @@ void main() {
           'models': <String, dynamic>{},
         };
 
-        final dto = ApiProviderDto.fromJson(json);
+        final dto = _providerDtoFromJson(json);
 
         expect(dto.models, isEmpty);
       });
@@ -289,7 +296,7 @@ void main() {
           'name': 'Test',
         };
 
-        final dto = ApiProviderDto.fromJson(json);
+        final dto = _providerDtoFromJson(json);
 
         expect(dto.models, isEmpty);
       });
@@ -315,7 +322,7 @@ void main() {
           },
         };
 
-        final dto = ApiProviderDto.fromJson(json);
+        final dto = _providerDtoFromJson(json);
         expect(dto.models, hasLength(1));
         expect(dto.models.first.id, 'model-b');
       });
@@ -346,7 +353,7 @@ void main() {
           },
         };
 
-        final dto = ApiProviderDto.fromJson(json);
+        final dto = _providerDtoFromJson(json);
         expect(dto.models, hasLength(2));
       });
     });
