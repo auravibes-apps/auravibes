@@ -4,17 +4,17 @@ import 'dart:async';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/repositories/workspace_repository.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connection_create_screen.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_management_mode.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/usecases/create_workspace_use_case.dart';
+import 'package:auravibes_app/features/workspaces/usecases/validate_workspace_name_use_case.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:riverpod/experimental/mutation.dart';
 
 class IntroScreen extends ConsumerStatefulWidget {
   const IntroScreen({super.key});
@@ -25,7 +25,7 @@ class IntroScreen extends ConsumerStatefulWidget {
 
 class _IntroScreenState extends ConsumerState<IntroScreen> {
   final _workspaceNameController = TextEditingController();
-  var _slideIndex = 0;
+  _IntroSlide _slide = _IntroSlide.welcome;
   WorkspaceEntity? _createdWorkspace;
   String? _workspaceErrorText;
   bool _isCreatingWorkspace = false;
@@ -50,13 +50,13 @@ class _IntroScreenState extends ConsumerState<IntroScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _ProgressIndicator(activeIndex: _slideIndex),
+                  _ProgressIndicator(activeSlide: _slide),
                   const Spacer(),
                   _SlideContent(
                     titleKey: _titleKey,
                     bodyKey: _bodyKey,
                   ),
-                  if (_slideIndex == 2) ...[
+                  if (_slide == _IntroSlide.workspaceName) ...[
                     const SizedBox(height: 24),
                     AuraInput(
                       controller: _workspaceNameController,
@@ -80,7 +80,7 @@ class _IntroScreenState extends ConsumerState<IntroScreen> {
                   ],
                   const Spacer(),
                   _SlideActions(
-                    slideIndex: _slideIndex,
+                    slide: _slide,
                     isCreatingWorkspace: _isCreatingWorkspace,
                     onBack: _back,
                     onContinue: _continue,
@@ -98,31 +98,35 @@ class _IntroScreenState extends ConsumerState<IntroScreen> {
   }
 
   String get _titleKey {
-    return switch (_slideIndex) {
-      0 => LocaleKeys.intro_flow_welcome_title,
-      1 => LocaleKeys.intro_flow_workspace_context_title,
-      2 => LocaleKeys.intro_flow_workspace_title,
-      _ => LocaleKeys.intro_flow_ready_title,
+    return switch (_slide) {
+      _IntroSlide.welcome => LocaleKeys.intro_flow_welcome_title,
+      _IntroSlide.workspaceContext =>
+        LocaleKeys.intro_flow_workspace_context_title,
+      _IntroSlide.workspaceName => LocaleKeys.intro_flow_workspace_title,
+      _IntroSlide.ready => LocaleKeys.intro_flow_ready_title,
     };
   }
 
   String get _bodyKey {
-    return switch (_slideIndex) {
-      0 => LocaleKeys.intro_flow_welcome_body,
-      1 => LocaleKeys.intro_flow_workspace_context_body,
-      2 => LocaleKeys.intro_flow_workspace_body,
-      _ => LocaleKeys.intro_flow_ready_body,
+    return switch (_slide) {
+      _IntroSlide.welcome => LocaleKeys.intro_flow_welcome_body,
+      _IntroSlide.workspaceContext =>
+        LocaleKeys.intro_flow_workspace_context_body,
+      _IntroSlide.workspaceName => LocaleKeys.intro_flow_workspace_body,
+      _IntroSlide.ready => LocaleKeys.intro_flow_ready_body,
     };
   }
 
   void _continue() {
-    if (_slideIndex >= 3) return;
-    setState(() => _slideIndex += 1);
+    final next = _slide.next;
+    if (next == null) return;
+    setState(() => _slide = next);
   }
 
   void _back() {
-    if (_slideIndex == 0 || _slideIndex == 3) return;
-    setState(() => _slideIndex -= 1);
+    final previous = _slide.previous;
+    if (previous == null) return;
+    setState(() => _slide = previous);
   }
 
   Future<void> _createWorkspace() async {
@@ -133,16 +137,17 @@ class _IntroScreenState extends ConsumerState<IntroScreen> {
       _workspaceErrorText = null;
     });
 
-    WorkspaceEntity? createdWorkspace;
     try {
-      final _ = await createWorkspaceMutation.run(ref, (transaction) async {
-        final usecase = ref.read(createWorkspaceUseCaseProvider);
-        final workspace = await usecase.call(
-          name: _workspaceNameController.text,
-        );
-        createdWorkspace = workspace;
-
-        return workspace;
+      final usecase = ref.read(createWorkspaceUseCaseProvider);
+      final createdWorkspace = await usecase.call(
+        name: _workspaceNameController.text,
+      );
+      if (!mounted) return;
+      ref.invalidate(allWorkspacesProvider);
+      setState(() {
+        _createdWorkspace = createdWorkspace;
+        _slide = _IntroSlide.ready;
+        _isCreatingWorkspace = false;
       });
     } on Object catch (error) {
       if (!mounted) return;
@@ -153,28 +158,6 @@ class _IntroScreenState extends ConsumerState<IntroScreen> {
 
       return;
     }
-
-    if (!mounted) return;
-
-    final mutationState = ref.read(createWorkspaceMutation);
-    switch (mutationState) {
-      case MutationSuccess():
-        final workspace = createdWorkspace;
-        if (workspace == null) return;
-        ref.invalidate(allWorkspacesProvider);
-        setState(() {
-          _createdWorkspace = workspace;
-          _slideIndex = 3;
-          _isCreatingWorkspace = false;
-        });
-      case MutationError(:final error):
-        setState(() {
-          _workspaceErrorText = _workspaceErrorMessage(error);
-          _isCreatingWorkspace = false;
-        });
-      case _:
-        setState(() => _isCreatingWorkspace = false);
-    }
   }
 
   String _workspaceErrorMessage(Object error) {
@@ -183,8 +166,8 @@ class _IntroScreenState extends ConsumerState<IntroScreen> {
       if (localizationKey != null) {
         return localizationKey.tr(
           namedArgs: {
-            'min': '3',
-            'max': '20',
+            'min': '${ValidateWorkspaceNameUseCase.minLength}',
+            'max': '${ValidateWorkspaceNameUseCase.maxLength}',
           },
         );
       }
@@ -212,8 +195,29 @@ class _IntroScreenState extends ConsumerState<IntroScreen> {
   }
 }
 
+enum _IntroSlide {
+  welcome,
+  workspaceContext,
+  workspaceName,
+  ready;
+
+  static const count = 4;
+
+  _IntroSlide? get next {
+    if (this == ready) return null;
+
+    return values[index + 1];
+  }
+
+  _IntroSlide? get previous {
+    if (this == welcome || this == ready) return null;
+
+    return values[index - 1];
+  }
+}
+
 String _newChatLocation(String workspaceId) {
-  return '/workspaces/${Uri.encodeComponent(workspaceId)}/chat/new';
+  return NewChatRoute(workspaceId: workspaceId).location;
 }
 
 String _serviceConnectionCreateLocation(String workspaceId) {
@@ -222,9 +226,9 @@ String _serviceConnectionCreateLocation(String workspaceId) {
 }
 
 class _ProgressIndicator extends StatelessWidget {
-  const _ProgressIndicator({required this.activeIndex});
+  const _ProgressIndicator({required this.activeSlide});
 
-  final int activeIndex;
+  final _IntroSlide activeSlide;
 
   @override
   Widget build(BuildContext context) {
@@ -232,13 +236,15 @@ class _ProgressIndicator extends StatelessWidget {
 
     return Row(
       children: [
-        for (var index = 0; index < 4; index++)
+        for (var index = 0; index < _IntroSlide.count; index++)
           Expanded(
             child: Padding(
-              padding: EdgeInsets.only(right: index == 3 ? 0 : 8),
+              padding: EdgeInsets.only(
+                right: index == _IntroSlide.count - 1 ? 0 : 8,
+              ),
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  color: index <= activeIndex
+                  color: index <= activeSlide.index
                       ? auraColors.primary
                       : auraColors.surfaceVariant,
                   borderRadius: const BorderRadius.all(Radius.circular(4)),
@@ -276,7 +282,7 @@ class _SlideContent extends StatelessWidget {
 
 class _SlideActions extends StatelessWidget {
   const _SlideActions({
-    required this.slideIndex,
+    required this.slide,
     required this.isCreatingWorkspace,
     required this.onBack,
     required this.onContinue,
@@ -285,7 +291,7 @@ class _SlideActions extends StatelessWidget {
     required this.onSkipAi,
   });
 
-  final int slideIndex;
+  final _IntroSlide slide;
   final bool isCreatingWorkspace;
   final VoidCallback onBack;
   final VoidCallback onContinue;
@@ -297,7 +303,8 @@ class _SlideActions extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        if (slideIndex > 0 && slideIndex < 3)
+        if (slide == _IntroSlide.workspaceContext ||
+            slide == _IntroSlide.workspaceName)
           Expanded(
             child: AuraButton(
               onPressed: onBack,
@@ -306,10 +313,12 @@ class _SlideActions extends StatelessWidget {
               variant: AuraButtonVariant.outlined,
             ),
           ),
-        if (slideIndex > 0 && slideIndex < 3) const SizedBox(width: 8),
+        if (slide == _IntroSlide.workspaceContext ||
+            slide == _IntroSlide.workspaceName)
+          const SizedBox(width: 8),
         Expanded(
-          child: switch (slideIndex) {
-            2 => AuraButton(
+          child: switch (slide) {
+            _IntroSlide.workspaceName => AuraButton(
               onPressed: onCreateWorkspace,
               child: const TextLocale(
                 LocaleKeys.intro_flow_workspace_create,
@@ -317,19 +326,19 @@ class _SlideActions extends StatelessWidget {
               key: const Key('intro_create_workspace_button'),
               isLoading: isCreatingWorkspace,
             ),
-            3 => AuraButton(
+            _IntroSlide.ready => AuraButton(
               onPressed: onConnectAi,
               child: const TextLocale(LocaleKeys.intro_flow_connect_primary),
               key: const Key('intro_connect_ai_button'),
             ),
-            _ => AuraButton(
+            _IntroSlide.welcome || _IntroSlide.workspaceContext => AuraButton(
               onPressed: onContinue,
               child: const TextLocale(LocaleKeys.intro_flow_continue),
               key: const Key('intro_continue_button'),
             ),
           },
         ),
-        if (slideIndex == 3) ...[
+        if (slide == _IntroSlide.ready) ...[
           const SizedBox(width: 8),
           Expanded(
             child: AuraButton(

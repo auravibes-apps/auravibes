@@ -17,7 +17,7 @@ void main() {
     await EasyLocalization.ensureInitialized();
   });
 
-  testWidgets('creates workspace and skips AI setup to new chat', (
+  testWidgets('creates workspace and routes skip and AI setup actions', (
     tester,
   ) async {
     final fixture = _IntroFixture();
@@ -56,10 +56,20 @@ void main() {
 
     await tester.tap(find.byKey(_skipAiKey));
     await _pumpUntilFound(tester, find.textContaining('new chat:'));
+
+    fixture.router.go('/intro');
+    await _createWorkspace(tester, 'Connect');
+    await tester.tap(find.byKey(_connectAiKey));
+    await _pumpUntilFound(
+      tester,
+      find.text('service connection: modelProvider'),
+    );
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 }
 
 const _continueKey = Key('intro_continue_button');
+const _connectAiKey = Key('intro_connect_ai_button');
 const _createWorkspaceKey = Key('intro_create_workspace_button');
 const _skipAiKey = Key('intro_skip_ai_button');
 
@@ -69,12 +79,26 @@ Future<void> _pumpFrame(WidgetTester tester) async {
 }
 
 Future<void> _pumpUntilFound(WidgetTester tester, Finder finder) async {
-  for (var attempt = 0; attempt < 10; attempt++) {
+  for (var attempt = 0; attempt < 20; attempt++) {
     await _pumpFrame(tester);
     if (finder.evaluate().isNotEmpty) return;
   }
 
   expect(finder, findsOneWidget);
+}
+
+Future<void> _createWorkspace(WidgetTester tester, String name) async {
+  await _pumpUntilFound(tester, find.byKey(_continueKey));
+  expect(find.text('Welcome to AuraVibes'), findsOneWidget);
+
+  await tester.tap(find.byKey(_continueKey));
+  await _pumpUntilFound(tester, find.byKey(_continueKey));
+  await tester.tap(find.byKey(_continueKey));
+  await _pumpUntilFound(tester, find.byKey(_createWorkspaceKey));
+
+  await tester.enterText(find.byType(TextField), name);
+  await tester.tap(find.byKey(_createWorkspaceKey));
+  await _pumpUntilFound(tester, find.text('Ready to start'));
 }
 
 class _IntroFixture {

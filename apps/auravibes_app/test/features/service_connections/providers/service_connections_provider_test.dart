@@ -62,10 +62,13 @@ void main() {
         addTearDown(modelRepository.dispose);
         addTearDown(definitionRepository.dispose);
         addTearDown(credentialRepository.dispose);
+        final database = _inMemoryDatabase();
+        addTearDown(database.close);
         final container = _container(
           modelRepository: modelRepository,
           definitionRepository: definitionRepository,
           credentialRepository: credentialRepository,
+          database: database,
         );
         addTearDown(container.dispose);
         final firstEmission = Completer<List<ServiceConnectionListItem>>();
@@ -117,10 +120,13 @@ void main() {
       addTearDown(modelRepository.dispose);
       addTearDown(definitionRepository.dispose);
       addTearDown(credentialRepository.dispose);
+      final database = _inMemoryDatabase();
+      addTearDown(database.close);
       final container = _container(
         modelRepository: modelRepository,
         definitionRepository: definitionRepository,
         credentialRepository: credentialRepository,
+        database: database,
       );
       addTearDown(container.dispose);
       final secondEmission = Completer<List<ServiceConnectionListItem>>();
@@ -165,11 +171,11 @@ ProviderContainer _container({
   required ModelConnectionRepository modelRepository,
   required SkillCredentialDefinitionsRepository definitionRepository,
   required SkillCredentialsRepository credentialRepository,
-  AppDatabase? database,
+  required AppDatabase database,
 }) {
   return ProviderContainer(
     overrides: [
-      appDatabaseProvider.overrideWithValue(database ?? _inMemoryDatabase()),
+      appDatabaseProvider.overrideWithValue(database),
       modelConnectionRepositoryProvider.overrideWithValue(modelRepository),
       skillCredentialDefinitionsRepositoryProvider.overrideWithValue(
         definitionRepository,

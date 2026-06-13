@@ -94,6 +94,7 @@ String? matchWorkspaceId(Uri uri) {
   return pathSegments[1];
 }
 
+@visibleForTesting
 String? resolveWorkspaceRedirect(
   Uri currentUri,
   List<WorkspaceEntity> workspaces,
