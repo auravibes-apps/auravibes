@@ -1,3 +1,5 @@
+import 'package:auravibes_app/domain/entities/workspace_entity.dart';
+import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -78,6 +80,44 @@ void main() {
         ),
         'ws-first',
       );
+    });
+  });
+
+  group('resolveWorkspaceRedirect', () {
+    test('redirects root to intro when no workspace exists', () {
+      final result = resolveWorkspaceRedirect(Uri.parse('/'), const []);
+
+      expect(result, '/intro');
+    });
+
+    test('keeps intro when no workspace exists', () {
+      final result = resolveWorkspaceRedirect(Uri.parse('/intro'), const []);
+
+      expect(result, isNull);
+    });
+
+    test('redirects legacy path to intro when no workspace exists', () {
+      final result = resolveWorkspaceRedirect(Uri.parse('/chats'), const []);
+
+      expect(result, '/intro');
+    });
+
+    test('redirects intro to first workspace when workspace exists', () {
+      final result = resolveWorkspaceRedirect(
+        Uri.parse('/intro'),
+        [_workspace('ws-1')],
+      );
+
+      expect(result, '/workspaces/ws-1/chat/new');
+    });
+
+    test('redirects invalid workspace to first workspace when one exists', () {
+      final result = resolveWorkspaceRedirect(
+        Uri.parse('/workspaces/missing/chat/new'),
+        [_workspace('ws-1')],
+      );
+
+      expect(result, '/workspaces/ws-1/chat/new');
     });
   });
 
@@ -291,4 +331,14 @@ void main() {
       );
     });
   });
+}
+
+WorkspaceEntity _workspace(String id) {
+  return WorkspaceEntity(
+    id: id,
+    name: 'Workspace',
+    type: WorkspaceType.local,
+    createdAt: DateTime(2026),
+    updatedAt: DateTime(2026),
+  );
 }

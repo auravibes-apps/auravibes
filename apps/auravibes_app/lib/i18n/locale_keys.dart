@@ -11,6 +11,25 @@ abstract class LocaleKeys {
   static const menu_agents = 'menu.agents';
   static const menu_prompts = 'menu.prompts';
   static const menu_more = 'menu.more';
+  static const intro_flow_welcome_title = 'intro_flow.welcome.title';
+  static const intro_flow_welcome_body = 'intro_flow.welcome.body';
+  static const intro_flow_workspace_context_title =
+      'intro_flow.workspace_context.title';
+  static const intro_flow_workspace_context_body =
+      'intro_flow.workspace_context.body';
+  static const intro_flow_workspace_title = 'intro_flow.workspace.title';
+  static const intro_flow_workspace_body = 'intro_flow.workspace.body';
+  static const intro_flow_workspace_name_label =
+      'intro_flow.workspace.name_label';
+  static const intro_flow_workspace_name_helper =
+      'intro_flow.workspace.name_helper';
+  static const intro_flow_workspace_create = 'intro_flow.workspace.create';
+  static const intro_flow_ready_title = 'intro_flow.ready.title';
+  static const intro_flow_ready_body = 'intro_flow.ready.body';
+  static const intro_flow_continue = 'intro_flow.continue';
+  static const intro_flow_back = 'intro_flow.back';
+  static const intro_flow_connect_primary = 'intro_flow.connect_primary';
+  static const intro_flow_connect_skip = 'intro_flow.connect_skip';
   static const models_screens_select_provider =
       'models_screens.select_provider';
   static const models_screens_select_model = 'models_screens.select_model';
@@ -376,10 +395,6 @@ abstract class LocaleKeys {
       'skill_credentials.optional_missing_hint';
   static const skill_credentials_configured_count =
       'skill_credentials.configured_count';
-  static const skill_credentials_configured_count_one =
-      'skill_credentials.configured_count.one';
-  static const skill_credentials_configured_count_other =
-      'skill_credentials.configured_count.other';
   static const app_skills_skills_manager_title =
       'app_skills.skills_manager.title';
   static const app_skills_skills_manager_description =

@@ -9,6 +9,31 @@
     "prompts": "Prompts",
     "more": "Más"
   },
+  "intro_flow": {
+    "welcome": {
+      "title": "Bienvenido a AuraVibes",
+      "body": "Crea primero un espacio de trabajo y luego organiza chats, herramientas, habilidades y conexiones dentro de él."
+    },
+    "workspace_context": {
+      "title": "Los espacios separan el contexto",
+      "body": "Usa un espacio por cliente, proyecto o área de trabajo para mantener el historial y la configuración enfocados."
+    },
+    "workspace": {
+      "title": "Nombra tu espacio",
+      "body": "Este será el hogar de tus primeros chats y configuración de IA.",
+      "name_label": "Nombre del espacio",
+      "name_helper": "Usa de 3 a 20 caracteres.",
+      "create": "Crear espacio"
+    },
+    "ready": {
+      "title": "Listo para empezar",
+      "body": "Conecta un proveedor de IA ahora, o salta este paso y configura conexiones, herramientas, habilidades y credenciales desde Más después."
+    },
+    "continue": "Continuar",
+    "back": "Atrás",
+    "connect_primary": "Conectar IA",
+    "connect_skip": "Saltar por ahora"
+  },
   "models_screens": {
     "select_provider": "Seleccionar Proveedor",
     "select_model": "Seleccionar Modelo",
