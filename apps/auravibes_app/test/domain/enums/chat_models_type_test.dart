@@ -15,12 +15,17 @@ void main() {
       test('google has value google', () {
         expect(CredentialsModelType.google.value, 'google');
       });
+
+      test('openrouter has value openrouter', () {
+        expect(CredentialsModelType.openrouter.value, 'openrouter');
+      });
     });
 
     group('toString', () {
       test('returns the value', () {
         expect(CredentialsModelType.openai.toString(), 'openai');
         expect(CredentialsModelType.anthropic.toString(), 'anthropic');
+        expect(CredentialsModelType.openrouter.toString(), 'openrouter');
       });
     });
 
@@ -39,6 +44,13 @@ void main() {
         );
       });
 
+      test('creates openrouter from string', () {
+        expect(
+          CredentialsModelType.fromString('openrouter'),
+          CredentialsModelType.openrouter,
+        );
+      });
+
       test('is case-insensitive', () {
         expect(
           CredentialsModelType.fromString('OPENAI'),
@@ -47,6 +59,10 @@ void main() {
         expect(
           CredentialsModelType.fromString('Anthropic'),
           CredentialsModelType.anthropic,
+        );
+        expect(
+          CredentialsModelType.fromString('OpenRouter'),
+          CredentialsModelType.openrouter,
         );
       });
 

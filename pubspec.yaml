@@ -6,6 +6,7 @@ environment:
 workspace:
   - apps/auravibes_app
   - packages/auravibes_genkit_openai_compat
+  - packages/auravibes_genkit_openrouter
   - packages/auravibes_ui
   - widgetbook
 
@@ -37,21 +38,21 @@ melos:
       run: dart fix --apply
 
     unused:files:
-      run: dart run dart_code_linter:metrics check-unused-files --monorepo --exclude='{**/*.g.dart,**/*.freezed.dart,**/.dart_tool/**.dart,packages/auravibes_genkit_openai_compat/lib/auravibes_genkit_openai_compat.dart,packages/auravibes_genkit_openai_compat/lib/src/openai_compat_reasoning.dart}' apps/auravibes_app/lib packages/auravibes_genkit_openai_compat/lib packages/auravibes_ui/lib
+      run: dart run dart_code_linter:metrics check-unused-files --monorepo --exclude='{**/*.g.dart,**/*.freezed.dart,**/.dart_tool/**.dart,packages/auravibes_genkit_openai_compat/lib/auravibes_genkit_openai_compat.dart,packages/auravibes_genkit_openai_compat/lib/src/openai_compat_reasoning.dart,packages/auravibes_genkit_openrouter/lib/auravibes_genkit_openrouter.dart,packages/auravibes_genkit_openrouter/lib/src/openrouter.dart}' apps/auravibes_app/lib packages/auravibes_genkit_openai_compat/lib packages/auravibes_genkit_openrouter/lib packages/auravibes_ui/lib
       description: Fail when unused Dart files are detected
 
     dcl:analyze:
-      run: dart run dart_code_linter:metrics analyze apps/auravibes_app/lib apps/auravibes_app/test packages/auravibes_genkit_openai_compat/lib packages/auravibes_genkit_openai_compat/test packages/auravibes_ui/lib packages/auravibes_ui/test widgetbook/lib --set-exit-on-violation-level=noted
+      run: dart run dart_code_linter:metrics analyze apps/auravibes_app/lib apps/auravibes_app/test packages/auravibes_genkit_openai_compat/lib packages/auravibes_genkit_openai_compat/test packages/auravibes_genkit_openrouter/lib packages/auravibes_genkit_openrouter/test packages/auravibes_ui/lib packages/auravibes_ui/test widgetbook/lib --set-exit-on-violation-level=noted
       description: Run legacy Dart Code Linter rule analysis manually
 
     unused:code:
-      run: dart run dart_code_linter:metrics check-unused-code --monorepo apps/auravibes_app/lib packages/auravibes_genkit_openai_compat/lib packages/auravibes_ui/lib
+      run: dart run dart_code_linter:metrics check-unused-code --monorepo apps/auravibes_app/lib packages/auravibes_genkit_openai_compat/lib packages/auravibes_genkit_openrouter/lib packages/auravibes_ui/lib
       description: Fail when production unused declarations are detected
 
     unnecessary:nullable:
       # Excluded callbacks use null as behavior: fallback close flow and
       # Flutter-style disabled icon buttons.
-      run: dart run dart_code_linter:metrics check-unnecessary-nullable --monorepo --exclude='{apps/auravibes_app/lib/features/models/widgets/add_model_provider_widget.dart,packages/auravibes_ui/lib/src/atoms/aura_icon.dart}' apps/auravibes_app/lib packages/auravibes_genkit_openai_compat/lib packages/auravibes_ui/lib
+      run: dart run dart_code_linter:metrics check-unnecessary-nullable --monorepo --exclude='{apps/auravibes_app/lib/features/models/widgets/add_model_provider_widget.dart,packages/auravibes_ui/lib/src/atoms/aura_icon.dart}' apps/auravibes_app/lib packages/auravibes_genkit_openai_compat/lib packages/auravibes_genkit_openrouter/lib packages/auravibes_ui/lib
       description: Fail when unnecessary nullable parameters are detected
 
     format:check:

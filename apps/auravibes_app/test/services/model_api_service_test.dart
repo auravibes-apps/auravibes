@@ -434,6 +434,7 @@ void main() {
           'openai': <String, dynamic>{
             'id': 'openai',
             'name': 'OpenAI',
+            'npm': '@ai-sdk/openai-compatible',
             'models': <String, dynamic>{},
           },
         });
@@ -451,6 +452,7 @@ void main() {
           'openai': <String, dynamic>{
             'id': 'openai',
             'name': 'OpenAI',
+            'npm': '@ai-sdk/openai-compatible',
             'models': <String, dynamic>{
               'gpt-4': <String, dynamic>{
                 'id': 'gpt-4',
@@ -466,6 +468,7 @@ void main() {
           'anthropic': <String, dynamic>{
             'id': 'anthropic',
             'name': 'Anthropic',
+            'npm': '@ai-sdk/anthropic',
             'models': <String, dynamic>{},
           },
         });
@@ -475,6 +478,78 @@ void main() {
         expect(result.providers, hasLength(2));
         expect(result.modelCount, 1);
         expect(result.providerCount, 2);
+
+        dio.close();
+      });
+
+      test('filters unsupported providers and their models', () async {
+        final dio = _createDioWithResponse({
+          'openrouter': <String, dynamic>{
+            'id': 'openrouter',
+            'name': 'OpenRouter',
+            'npm': '@openrouter/ai-sdk-provider',
+            'models': <String, dynamic>{
+              'anthropic/claude-sonnet-4': <String, dynamic>{
+                'id': 'anthropic/claude-sonnet-4',
+                'name': 'Claude Sonnet 4',
+                'limit': <String, dynamic>{
+                  'context': 200000,
+                  'output': 64000,
+                },
+                'modalities': <String, dynamic>{
+                  'input': ['text'],
+                  'output': ['text'],
+                },
+              },
+            },
+          },
+          'gateway': <String, dynamic>{
+            'id': 'gateway',
+            'name': 'Gateway',
+            'npm': '@ai-sdk/gateway',
+            'models': <String, dynamic>{
+              'unsupported-model': <String, dynamic>{
+                'id': 'unsupported-model',
+                'name': 'Unsupported Model',
+                'limit': <String, dynamic>{'context': 1, 'output': 1},
+                'modalities': <String, dynamic>{
+                  'input': ['text'],
+                  'output': ['text'],
+                },
+              },
+            },
+          },
+        });
+        final service = ModelApiService(dio: dio);
+
+        final result = await service.fetchAllModels();
+
+        expect(result.providers, hasLength(1));
+        expect(
+          result.providers.single.modelProvider.type,
+          ModelProvidersType.openrouter,
+        );
+        expect(result.allModels, hasLength(1));
+        expect(result.allModels.single.modelProvider, 'openrouter');
+
+        dio.close();
+      });
+
+      test('skips unsupported providers before parsing models', () async {
+        final dio = _createDioWithResponse({
+          'gateway': <String, dynamic>{
+            'id': 'gateway',
+            'name': 'Gateway',
+            'npm': '@ai-sdk/gateway',
+            'models': 'unexpected-shape',
+          },
+        });
+        final service = ModelApiService(dio: dio);
+
+        final result = await service.fetchAllModels();
+
+        expect(result.providers, isEmpty);
+        expect(result.allModels, isEmpty);
 
         dio.close();
       });

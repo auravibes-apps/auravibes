@@ -286,6 +286,48 @@ void main() {
           ModelProvidersType.anthropic,
         );
       });
+
+      test('maps openrouter type correctly', () async {
+        final withConnection = WorkspaceModelSelectionWithConnection(
+          model: WorkspaceModelSelectionTable(
+            id: 'sel-1',
+            createdAt: now,
+            updatedAt: now,
+            modelId: 'anthropic/claude-sonnet-4',
+            modelConnectionId: 'conn-1',
+          ),
+          modelConnection: ServiceConnectionTable(
+            id: 'conn-1',
+            createdAt: now,
+            updatedAt: now,
+            name: 'Conn',
+            serviceId: 'openrouter',
+            kind: ServiceConnectionKindTable.modelProvider,
+            authenticationType: ServiceAuthenticationTypeTable.apiKey,
+            encryptedAuthValue: 'key',
+            workspaceId: 'ws-1',
+            isEnabled: true,
+          ),
+          modelProvider: const ApiModelProvidersTable(
+            id: 'openrouter',
+            name: 'OpenRouter',
+            type: ModelProvidersTableType.openrouter,
+          ),
+        );
+
+        when(
+          mockDao.getWorkspaceModelSelectionById('sel-1'),
+        ).thenAnswer((_) async => withConnection);
+
+        final result = await repository.getWorkspaceModelSelectionById('sel-1');
+
+        expect(
+          (result ?? fail('Expected result to be non-null'))
+              .modelsProvider
+              .type,
+          ModelProvidersType.openrouter,
+        );
+      });
     });
   });
 }

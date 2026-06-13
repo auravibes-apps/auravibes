@@ -8,6 +8,7 @@ import 'package:auravibes_app/data/repositories/model_connection_repository_impl
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
+import 'package:auravibes_app/domain/enums/credentials_model_type.dart';
 import 'package:auravibes_app/domain/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/model_provider_services/model_provider.dart';
@@ -218,6 +219,77 @@ void main() {
         verify(mockConnectionsDao.insertModelConnection(any)).called(1);
         verify(mockSelectionsDao.insertWorkspaceModelSelections(any)).called(1);
       });
+
+      test(
+        'creates openrouter connection with openrouter validation',
+        () async {
+          const openRouterProvider = ApiModelProvidersTable(
+            id: 'openrouter',
+            name: 'OpenRouter',
+            type: ModelProvidersTableType.openrouter,
+            url: 'https://openrouter.ai/api/v1',
+          );
+          final openRouterConnectionRow = ServiceConnectionTable(
+            id: 'conn-1',
+            createdAt: now,
+            updatedAt: now,
+            name: 'OpenRouter Connection',
+            serviceId: 'openrouter',
+            kind: ServiceConnectionKindTable.modelProvider,
+            authenticationType: ServiceAuthenticationTypeTable.apiKey,
+            encryptedAuthValue: 'encrypted-key',
+            keySuffix: '123456',
+            workspaceId: 'ws-1',
+            isEnabled: true,
+          );
+          when(
+            mockProvidersDao.getProviderById('openrouter'),
+          ).thenAnswer((_) async => openRouterProvider);
+          when(
+            mockEncryptionService.encrypt(testKeyPayload),
+          ).thenAnswer((_) async => 'encrypted-key');
+          when(
+            mockModelProviderServices.getWorkspaceModelSelections(any),
+          ).thenAnswer(
+            (_) async => [
+              const WorkspaceModelSelectionToCreate(
+                modelId: 'anthropic/claude-sonnet-4',
+                modelConnectionId: '',
+              ),
+            ],
+          );
+          when(
+            mockConnectionsDao.insertModelConnection(any),
+          ).thenAnswer((_) async => openRouterConnectionRow);
+          when(
+            mockSelectionsDao.insertWorkspaceModelSelections(any),
+          ).thenAnswer((
+            _,
+          ) async {
+            return;
+          });
+
+          const toCreate = ModelConnectionToCreate(
+            name: 'Test',
+            key: 'sk-test-api-key-123456',
+            workspaceId: 'ws-1',
+            modelId: 'openrouter',
+          );
+
+          final result = await repository.createModelConnection(toCreate);
+          final capturedProvider =
+              verify(
+                    mockModelProviderServices.getWorkspaceModelSelections(
+                      captureAny,
+                    ),
+                  ).captured.single
+                  as ModelProvider;
+
+          expect(result.modelId, 'openrouter');
+          expect(capturedProvider.type, CredentialsModelType.openrouter);
+          expect(capturedProvider.url, 'https://openrouter.ai/api/v1');
+        },
+      );
     });
 
     group('getModelConnections', () {

@@ -119,6 +119,7 @@ class WorkspaceModelSelectionRepositoryImpl
     return switch (type) {
       .openai => .openai,
       .anthropic => .anthropic,
+      .openrouter => .openrouter,
     };
   }
 }

@@ -8,7 +8,8 @@ part 'model_providers_type.g.dart';
 
 enum ModelProvidersType {
   openai('openai'),
-  anthropic('anthropic');
+  anthropic('anthropic'),
+  openrouter('openrouter');
 
   const ModelProvidersType(this.value);
   final String value;
@@ -55,6 +56,8 @@ abstract class ApiModelProviderEntity with _$ApiModelProviderEntity {
         return ModelProvidersType.openai;
       case '@ai-sdk/anthropic':
         return ModelProvidersType.anthropic;
+      case '@openrouter/ai-sdk-provider':
+        return ModelProvidersType.openrouter;
     }
 
     return null;

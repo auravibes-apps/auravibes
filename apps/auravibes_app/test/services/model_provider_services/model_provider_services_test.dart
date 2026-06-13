@@ -47,6 +47,15 @@ void main() {
       expect(provider.type.value, 'anthropic');
     });
 
+    test('openrouter type has correct value', () {
+      const provider = ModelProvider(
+        type: CredentialsModelType.openrouter,
+        key: 'key',
+      );
+
+      expect(provider.type.value, 'openrouter');
+    });
+
     test('is const constructable', () {
       const provider = ModelProvider(
         type: CredentialsModelType.openai,
@@ -75,6 +84,13 @@ void main() {
       );
     });
 
+    test('fromString returns openrouter for "openrouter"', () {
+      expect(
+        CredentialsModelType.fromString('openrouter'),
+        CredentialsModelType.openrouter,
+      );
+    });
+
     test('fromString is case-insensitive', () {
       expect(
         CredentialsModelType.fromString('OpenAI'),
@@ -83,6 +99,10 @@ void main() {
       expect(
         CredentialsModelType.fromString('ANTHROPIC'),
         CredentialsModelType.anthropic,
+      );
+      expect(
+        CredentialsModelType.fromString('OpenRouter'),
+        CredentialsModelType.openrouter,
       );
     });
 
@@ -103,11 +123,13 @@ void main() {
     test('toString returns value', () {
       expect(CredentialsModelType.openai.toString(), 'openai');
       expect(CredentialsModelType.anthropic.toString(), 'anthropic');
+      expect(CredentialsModelType.openrouter.toString(), 'openrouter');
     });
 
     test('value property returns correct string', () {
       expect(CredentialsModelType.openai.value, 'openai');
       expect(CredentialsModelType.anthropic.value, 'anthropic');
+      expect(CredentialsModelType.openrouter.value, 'openrouter');
     });
   });
 
@@ -183,6 +205,78 @@ void main() {
       expect((result ?? fail('Expected result to be non-null')).length, 1);
       expect(result.firstOrNull?.modelId, 'gpt-4');
     });
+
+    test(
+      'getWorkspaceModelSelections with openrouter returns models',
+      () async {
+        nock('https://openrouter.ai').get('/api/v1/key').reply(200, {
+          'data': {'label': 'test-key'},
+        });
+
+        nock('https://openrouter.ai').get('/api/v1/models').reply(200, {
+          'data': [
+            {
+              'id': 'anthropic/claude-sonnet-4',
+              'name': 'Claude Sonnet 4',
+              'context_length': 200000,
+            },
+          ],
+        });
+
+        final service = ModelProviderServices();
+        final result = await service.getWorkspaceModelSelections(
+          const ModelProvider(
+            type: CredentialsModelType.openrouter,
+            key: 'test-key',
+          ),
+        );
+        expect(result, isNotNull);
+        expect((result ?? fail('Expected result to be non-null')).length, 1);
+        expect(result.firstOrNull?.modelId, 'anthropic/claude-sonnet-4');
+      },
+    );
+
+    test(
+      'getWorkspaceModelSelections with openrouter returns null on bad key',
+      () async {
+        nock('https://openrouter.ai').get('/api/v1/key').reply(401, {
+          'error': {'message': 'Unauthorized'},
+        });
+
+        final service = ModelProviderServices();
+        final result = await service.getWorkspaceModelSelections(
+          const ModelProvider(
+            type: CredentialsModelType.openrouter,
+            key: 'bad-key',
+          ),
+        );
+
+        expect(result, isNull);
+      },
+    );
+
+    test(
+      'getWorkspaceModelSelections with openrouter returns null on API error',
+      () async {
+        nock('https://openrouter.ai').get('/api/v1/key').reply(200, {
+          'data': {'label': 'test-key'},
+        });
+
+        nock('https://openrouter.ai').get('/api/v1/models').reply(500, {
+          'error': {'message': 'Server error'},
+        });
+
+        final service = ModelProviderServices();
+        final result = await service.getWorkspaceModelSelections(
+          const ModelProvider(
+            type: CredentialsModelType.openrouter,
+            key: 'test-key',
+          ),
+        );
+
+        expect(result, isNull);
+      },
+    );
 
     test('anthropic models pagination', () async {
       nock('https://api.anthropic.com').get('/v1/models')

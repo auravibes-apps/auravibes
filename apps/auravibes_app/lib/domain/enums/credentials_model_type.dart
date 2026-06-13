@@ -2,6 +2,7 @@
 enum CredentialsModelType {
   openai('openai'),
   anthropic('anthropic'),
+  openrouter('openrouter'),
   google('google');
 
   /// Creates a new CredentialsModelType with the given string value.
@@ -16,6 +17,8 @@ enum CredentialsModelType {
         return CredentialsModelType.openai;
       case 'anthropic':
         return CredentialsModelType.anthropic;
+      case 'openrouter':
+        return CredentialsModelType.openrouter;
       case 'google':
         return CredentialsModelType.google;
       default:
