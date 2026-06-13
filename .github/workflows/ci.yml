@@ -196,6 +196,10 @@ jobs:
             package: packages/auravibes_genkit_openai_compat
             targets: test
             source_prefix: packages/auravibes_genkit_openai_compat
+          - id: openrouter
+            package: packages/auravibes_genkit_openrouter
+            targets: test
+            source_prefix: packages/auravibes_genkit_openrouter
           - id: app-core-data-domain
             package: apps/auravibes_app
             targets: test/core test/data test/domain test/flavors_test.dart

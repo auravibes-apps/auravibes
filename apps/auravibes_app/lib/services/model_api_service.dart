@@ -106,7 +106,8 @@ class ModelApiService {
           return e.value as Map<String, dynamic>?;
         })
         .nonNulls
-        .map(ApiProviderDto.fromJson)
+        .map(_supportedProviderFromJson)
+        .nonNulls
         .toList();
 
     return ModelApiResponse(providers: providers);
@@ -116,6 +117,13 @@ class ModelApiService {
   void dispose() {
     _dio.close();
   }
+}
+
+ApiProviderDto? _supportedProviderFromJson(Map<String, dynamic> json) {
+  final modelProvider = ApiModelProviderEntity.fromJson(json);
+  if (modelProvider.type == null) return null;
+
+  return ApiProviderDto.fromJson(json, modelProvider: modelProvider);
 }
 
 /// Data class representing the API response.
@@ -142,8 +150,10 @@ class ApiProviderDto {
   ApiProviderDto({required this.modelProvider, required this.models});
 
   /// Creates an ApiProviderDto from JSON.
-  factory ApiProviderDto.fromJson(Map<String, dynamic> json) {
-    final modelProvider = ApiModelProviderEntity.fromJson(json);
+  factory ApiProviderDto.fromJson(
+    Map<String, dynamic> json, {
+    required ApiModelProviderEntity modelProvider,
+  }) {
     final modelsData = json['models'] as Map<String, dynamic>? ?? {};
 
     final models = modelsData.entries

@@ -69,6 +69,13 @@ void main() {
       );
     });
 
+    test('fromString returns openrouter', () {
+      expect(
+        ModelProvidersTableType.fromString('openrouter'),
+        ModelProvidersTableType.openrouter,
+      );
+    });
+
     test('fromString handles empty string', () {
       expect(ModelProvidersTableType.fromString(''), isNull);
     });
@@ -81,6 +88,10 @@ void main() {
       expect(ModelProvidersTableType.anthropic.value, 'anthropic');
     });
 
+    test('openrouter value', () {
+      expect(ModelProvidersTableType.openrouter.value, 'openrouter');
+    });
+
     test('openai toString', () {
       expect(ModelProvidersTableType.openai.toString(), 'openai');
     });
@@ -89,8 +100,12 @@ void main() {
       expect(ModelProvidersTableType.anthropic.toString(), 'anthropic');
     });
 
-    test('has exactly two values', () {
-      expect(ModelProvidersTableType.values, hasLength(2));
+    test('openrouter toString', () {
+      expect(ModelProvidersTableType.openrouter.toString(), 'openrouter');
+    });
+
+    test('has exactly three values', () {
+      expect(ModelProvidersTableType.values, hasLength(3));
     });
   });
 
@@ -207,6 +222,24 @@ void main() {
       expect(rows.firstOrNull?.type, ModelProvidersTableType.openai);
       expect(rows.firstOrNull?.url, 'https://api.test.com');
       expect(rows.firstOrNull?.doc, 'Test docs');
+    });
+
+    test('can insert openrouter provider', () async {
+      final _ = await fixture.database
+          .into(fixture.database.apiModelProviders)
+          .insert(
+            ApiModelProvidersCompanion.insert(
+              id: 'openrouter',
+              name: 'OpenRouter',
+              type: const Value(ModelProvidersTableType.openrouter),
+              url: const Value('https://openrouter.ai/api/v1'),
+            ),
+          );
+
+      final rows = await fixture.database.apiModelProvidersDao
+          .getAllProviders();
+      expect(rows.firstOrNull?.type, ModelProvidersTableType.openrouter);
+      expect(rows.firstOrNull?.url, 'https://openrouter.ai/api/v1');
     });
 
     test('can insert multiple providers', () async {

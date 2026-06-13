@@ -4,7 +4,8 @@ import 'package:drift/drift.dart';
 
 enum ModelProvidersTableType {
   openai('openai'),
-  anthropic('anthropic');
+  anthropic('anthropic'),
+  openrouter('openrouter');
 
   /// Creates a new CredentialsModelType with the given string value.
   const ModelProvidersTableType(this.value);

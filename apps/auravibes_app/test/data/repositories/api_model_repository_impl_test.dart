@@ -82,6 +82,25 @@ void main() {
         expect(result, hasLength(1));
         expect(result.single.id, 'openai');
       });
+
+      test('returns openrouter providers', () async {
+        const openRouterRow = ApiModelProvidersTable(
+          id: 'openrouter',
+          name: 'OpenRouter',
+          type: ModelProvidersTableType.openrouter,
+          url: 'https://openrouter.ai/api/v1',
+        );
+        when(
+          fixture.mockProvidersDao.getProvidersByType('openrouter'),
+        ).thenAnswer((_) async => [openRouterRow]);
+
+        final result = await fixture.repository.getProvidersByType(
+          'openrouter',
+        );
+
+        expect(result, hasLength(1));
+        expect(result.single.type, ModelProvidersType.openrouter);
+      });
     });
 
     group('getAllModels', () {
@@ -271,6 +290,21 @@ void main() {
         final result = await fixture.repository.getAllProviders();
 
         expect(result.firstOrNull?.type, ModelProvidersType.anthropic);
+      });
+
+      test('maps openrouter type correctly', () async {
+        const openRouterRow = ApiModelProvidersTable(
+          id: 'openrouter',
+          name: 'OpenRouter',
+          type: ModelProvidersTableType.openrouter,
+        );
+        when(
+          fixture.mockProvidersDao.getAllProviders(),
+        ).thenAnswer((_) async => [openRouterRow]);
+
+        final result = await fixture.repository.getAllProviders();
+
+        expect(result.firstOrNull?.type, ModelProvidersType.openrouter);
       });
     });
   });
