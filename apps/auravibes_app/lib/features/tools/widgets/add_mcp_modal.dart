@@ -10,6 +10,7 @@ import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 /// Modal for adding new MCP (Model Context Protocol) servers to the workspace.
@@ -430,19 +431,23 @@ class _AuthenticationSelector extends ConsumerWidget {
   }
 }
 
-class _NameInput extends ConsumerWidget {
+class _NameInput extends HookConsumerWidget {
   const _NameInput({required this.workspaceId});
 
   final String workspaceId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return AuraInput(
-      initialValue: ref.watch(
+    final controller = useTextEditingController(
+      text: ref.watch(
         mcpFormProvider(workspaceId).select(
           (value) => value.name,
         ),
       ),
+    );
+
+    return AuraInput(
+      controller: controller,
       placeholder: const TextLocale(
         LocaleKeys.mcp_modal_fields_name_placeholder,
       ),
@@ -456,19 +461,23 @@ class _NameInput extends ConsumerWidget {
   }
 }
 
-class _DescriptionInput extends ConsumerWidget {
+class _DescriptionInput extends HookConsumerWidget {
   const _DescriptionInput({required this.workspaceId});
 
   final String workspaceId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return AuraInput(
-      initialValue: ref.watch(
+    final controller = useTextEditingController(
+      text: ref.watch(
         mcpFormProvider(workspaceId).select(
           (value) => value.description,
         ),
       ),
+    );
+
+    return AuraInput(
+      controller: controller,
       placeholder: const TextLocale(
         LocaleKeys.mcp_modal_fields_description_placeholder,
       ),
@@ -482,19 +491,23 @@ class _DescriptionInput extends ConsumerWidget {
   }
 }
 
-class _UrlInput extends ConsumerWidget {
+class _UrlInput extends HookConsumerWidget {
   const _UrlInput({required this.workspaceId});
 
   final String workspaceId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return AuraInput(
-      initialValue: ref.watch(
+    final controller = useTextEditingController(
+      text: ref.watch(
         mcpFormProvider(workspaceId).select(
           (value) => value.url,
         ),
       ),
+    );
+
+    return AuraInput(
+      controller: controller,
       placeholder: const TextLocale(
         LocaleKeys.mcp_modal_fields_url_placeholder,
       ),
@@ -509,19 +522,23 @@ class _UrlInput extends ConsumerWidget {
   }
 }
 
-class _BearerTokenField extends ConsumerWidget {
+class _BearerTokenField extends HookConsumerWidget {
   const _BearerTokenField({required this.workspaceId});
 
   final String workspaceId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return AuraInput(
-      initialValue: ref.watch(
+    final controller = useTextEditingController(
+      text: ref.watch(
         mcpFormProvider(workspaceId).select(
           (value) => value.bearerToken,
         ),
       ),
+    );
+
+    return AuraInput(
+      controller: controller,
       placeholder: const TextLocale(
         LocaleKeys.mcp_modal_fields_bearer_token_placeholder,
       ),
