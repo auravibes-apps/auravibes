@@ -179,6 +179,9 @@ class ChatCompletionsProvider<T extends Object> extends GenkitPlugin {
       }
 
       final completion = accumulator.toChatCompletion();
+      if (completion.choices.isEmpty) {
+        throw GenkitException('Model returned no choices.');
+      }
       final choice = completion.choices.first;
 
       return ModelResponse(
