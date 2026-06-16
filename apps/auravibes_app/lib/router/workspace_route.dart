@@ -3,6 +3,7 @@
 import 'package:auravibes_app/features/chats/screens/chat_conversation_screen.dart';
 import 'package:auravibes_app/features/chats/screens/chats_list_screen.dart';
 import 'package:auravibes_app/features/chats/screens/new_chat_screen.dart';
+import 'package:auravibes_app/features/intro/screens/intro_screen.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connection_create_screen.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connection_edit_screen.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connections_screen.dart';
@@ -21,10 +22,21 @@ import 'package:go_router/go_router.dart';
 
 part 'workspace_route.g.dart';
 
+const introPath = '/intro';
 const workspacePathPrefix = '/workspaces';
 
 final GlobalKey<NavigatorState> shellNavigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
+
+@TypedGoRoute<IntroRoute>(path: introPath)
+class IntroRoute extends GoRouteData with $IntroRoute {
+  const IntroRoute();
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) {
+    return const IntroScreen();
+  }
+}
 
 @TypedGoRoute<WorkspaceRoute>(
   path: '$workspacePathPrefix/:workspaceId',

@@ -6,7 +6,30 @@ part of 'workspace_route.dart';
 // GoRouterGenerator
 // **************************************************************************
 
-List<RouteBase> get $appRoutes => [$workspaceRoute];
+List<RouteBase> get $appRoutes => [$introRoute, $workspaceRoute];
+
+RouteBase get $introRoute =>
+    GoRouteData.$route(path: '/intro', factory: $IntroRoute._fromState);
+
+mixin $IntroRoute on GoRouteData {
+  static IntroRoute _fromState(GoRouterState state) => const IntroRoute();
+
+  @override
+  String get location => GoRouteData.$location('/intro');
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
 
 RouteBase get $workspaceRoute => GoRouteData.$route(
   path: '/workspaces/:workspaceId',

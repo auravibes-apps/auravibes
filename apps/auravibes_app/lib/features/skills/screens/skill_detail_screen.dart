@@ -917,13 +917,10 @@ class _LoadedCredentialsHint extends StatelessWidget {
       );
     }
 
-    final countKey = credentials.length == 1
-        ? LocaleKeys.skill_credentials_configured_count_one
-        : LocaleKeys.skill_credentials_configured_count_other;
-
     return AuraText(
       child: Text(
-        countKey.tr(
+        LocaleKeys.skill_credentials_configured_count.plural(
+          credentials.length,
           args: ['${credentials.length}'],
           context: context,
         ),

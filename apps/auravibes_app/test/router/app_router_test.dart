@@ -10,6 +10,12 @@ void main() {
     });
   });
 
+  group('IntroRoute', () {
+    test('location is /intro', () {
+      expect(const IntroRoute().location, '/intro');
+    });
+  });
+
   group('WorkspaceRoute', () {
     test('constructor stores workspaceId', () {
       final route = WorkspaceRoute(workspaceId: 'ws-1');
