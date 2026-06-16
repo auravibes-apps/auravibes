@@ -1,7 +1,8 @@
+// Required: Private workspace package API mirrors existing provider surface.
+// ignore_for_file: public_member_api_docs
 // Required: DTO fields stay grouped with their constructors.
 // Required: Parser helpers keep compact return flow.
 // Required: Protocol parsing uses fixed SSE and JSON offsets.
-// Required: Genkit plugin API exposes top-level helpers.
 
 import 'dart:async';
 import 'dart:convert';
@@ -9,137 +10,59 @@ import 'dart:convert';
 import 'package:genkit/plugin.dart';
 import 'package:http/http.dart' as http;
 
-const openRouter = OpenRouterPluginHandle();
+typedef ChatCompletionsApiKeyProvider = FutureOr<String> Function();
+typedef ChatCompletionsOptionsParser<T extends Object> =
+    T Function(Map<String, dynamic>? json);
+typedef ChatCompletionsExtraBodyBuilder<T extends Object> =
+    Map<String, dynamic> Function(T options);
+typedef ChatCompletionsModelResolver<T extends Object> =
+    String Function(String modelName, T options);
 
-typedef OpenRouterApiKeyProvider = FutureOr<String> Function();
-
-class OpenRouterModelDefinition {
-  const OpenRouterModelDefinition({required this.name, this.info});
+class ChatCompletionsModelDefinition {
+  const ChatCompletionsModelDefinition({required this.name, this.info});
 
   final String name;
   final ModelInfo? info;
 }
 
-class OpenRouterPluginHandle {
-  const OpenRouterPluginHandle();
-
-  GenkitPlugin call({
-    String name = 'openrouter',
-    String baseUrl = 'https://openrouter.ai/api/v1',
-    String? apiKey,
-    OpenRouterApiKeyProvider? apiKeyProvider,
-    List<OpenRouterModelDefinition> models = const [],
-    Map<String, String>? headers,
-    http.Client? httpClient,
-  }) {
-    return OpenRouterPlugin(
-      name: name,
-      baseUrl: baseUrl,
-      apiKey: apiKey,
-      apiKeyProvider: apiKeyProvider,
-      models: models,
-      headers: headers,
-      httpClient: httpClient,
-    );
-  }
-
-  ModelRef<OpenRouterOptions> model(
-    String name, {
-    String namespace = 'openrouter',
-  }) {
-    return modelRef('$namespace/$name');
-  }
-}
-
-class OpenRouterOptions {
-  OpenRouterOptions({
-    this.temperature,
-    this.topP,
-    this.maxTokens,
-    this.stop,
-    this.presencePenalty,
-    this.frequencyPenalty,
-    this.seed,
-    this.user,
-    this.reasoning,
-  });
-
-  factory OpenRouterOptions.fromJson(Map<String, dynamic>? json) {
-    if (json == null) return OpenRouterOptions();
-
-    return OpenRouterOptions(
-      temperature: (json['temperature'] as num?)?.toDouble(),
-      topP: (json['topP'] as num?)?.toDouble(),
-      maxTokens: json['maxTokens'] as int?,
-      stop: (json['stop'] as List?)?.cast<String>(),
-      presencePenalty: (json['presencePenalty'] as num?)?.toDouble(),
-      frequencyPenalty: (json['frequencyPenalty'] as num?)?.toDouble(),
-      seed: json['seed'] as int?,
-      user: json['user'] as String?,
-      reasoning: json['reasoning'] is Map<String, dynamic>
-          ? OpenRouterReasoningConfig.fromJson(
-              json['reasoning'] as Map<String, dynamic>,
-            )
-          : null,
-    );
-  }
-
-  final double? temperature;
-  final double? topP;
-  final int? maxTokens;
-  final List<String>? stop;
-  final double? presencePenalty;
-  final double? frequencyPenalty;
-  final int? seed;
-  final String? user;
-  final OpenRouterReasoningConfig? reasoning;
-
-  Map<String, dynamic> toJson() => {
-    'temperature': ?temperature,
-    'topP': ?topP,
-    'maxTokens': ?maxTokens,
-    'stop': ?stop,
-    'presencePenalty': ?presencePenalty,
-    'frequencyPenalty': ?frequencyPenalty,
-    'seed': ?seed,
-    'user': ?user,
-    'reasoning': ?reasoning?.toJson(),
-  };
-}
-
-class OpenRouterReasoningConfig {
-  const OpenRouterReasoningConfig({this.maxTokens});
-
-  factory OpenRouterReasoningConfig.fromJson(Map<String, dynamic> json) {
-    return OpenRouterReasoningConfig(
-      maxTokens: json['max_tokens'] as int?,
-    );
-  }
-
-  final int? maxTokens;
-
-  Map<String, dynamic> toJson() => {
-    'max_tokens': ?maxTokens,
-  };
-}
-
-class OpenRouterPlugin extends GenkitPlugin {
-  OpenRouterPlugin({
-    required String name,
+class ChatCompletionsProviderConfig<T extends Object> {
+  const ChatCompletionsProviderConfig({
+    required this.name,
     required this.baseUrl,
+    required this.errorLabel,
+    required this.parseOptions,
+    required this.extraBody,
+    this.resolveModel,
     this.apiKey,
     this.apiKeyProvider,
     this.models = const [],
     this.headers,
     this.httpClient,
-  }) : _name = name {
-    if (name.isEmpty || name.contains('/')) {
+  });
+
+  final String name;
+  final String baseUrl;
+  final String errorLabel;
+  final ChatCompletionsOptionsParser<T> parseOptions;
+  final ChatCompletionsExtraBodyBuilder<T> extraBody;
+  final ChatCompletionsModelResolver<T>? resolveModel;
+  final String? apiKey;
+  final ChatCompletionsApiKeyProvider? apiKeyProvider;
+  final List<ChatCompletionsModelDefinition> models;
+  final Map<String, String>? headers;
+  final http.Client? httpClient;
+}
+
+class ChatCompletionsProvider<T extends Object> extends GenkitPlugin {
+  ChatCompletionsProvider(this.config) {
+    if (config.name.isEmpty || config.name.contains('/')) {
       throw GenkitException(
-        'Plugin name must be non-empty and must not contain "/". Got: "$name"',
+        'Plugin name must be non-empty and must not contain "/". '
+        'Got: "${config.name}"',
         status: StatusCodes.INVALID_ARGUMENT,
       );
     }
-    if (apiKey != null && apiKeyProvider != null) {
+    if (config.apiKey != null && config.apiKeyProvider != null) {
       throw GenkitException(
         'Provide either apiKey or apiKeyProvider, not both.',
         status: StatusCodes.INVALID_ARGUMENT,
@@ -147,21 +70,15 @@ class OpenRouterPlugin extends GenkitPlugin {
     }
   }
 
-  final String _name;
-  final String? apiKey;
-  final OpenRouterApiKeyProvider? apiKeyProvider;
-  final String baseUrl;
-  final List<OpenRouterModelDefinition> models;
-  final Map<String, String>? headers;
-  final http.Client? httpClient;
+  final ChatCompletionsProviderConfig<T> config;
 
   @override
-  String get name => _name;
+  String get name => config.name;
 
   @override
   Future<List<Action<dynamic, dynamic, dynamic, dynamic>>> init() async {
     return [
-      for (final model in models) _createModel(model.name, model.info),
+      for (final model in config.models) _createModel(model.name, model.info),
     ];
   }
 
@@ -177,13 +94,13 @@ class OpenRouterPlugin extends GenkitPlugin {
 
   Model<dynamic> _createModel(String modelName, ModelInfo? info) {
     return Model<dynamic>(
-      name: '$_name/$modelName',
+      name: '${config.name}/$modelName',
       fn: (req, ctx) async {
         if (req == null) {
           throw ArgumentError.notNull('req');
         }
         final request = req;
-        final options = OpenRouterOptions.fromJson(request.config);
+        final options = config.parseOptions(request.config);
         final body = _buildRequestBody(
           modelName: modelName,
           request: request,
@@ -215,18 +132,14 @@ class OpenRouterPlugin extends GenkitPlugin {
     void Function(ModelResponseChunk) sendChunk,
   ) async {
     final request = await _request(body);
-    final client = httpClient ?? http.Client();
+    final client = config.httpClient ?? http.Client();
     try {
       final response = await client.send(request);
       final accumulator = _StreamAccumulator();
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
         final responseBody = await response.stream.bytesToString();
-        throw GenkitException(
-          'OpenRouter API error: $responseBody',
-          status: StatusCodes.fromHttpStatus(response.statusCode),
-          details: responseBody,
-        );
+        _throwIfRawError(response.statusCode, responseBody);
       }
 
       await for (final line
@@ -246,41 +159,33 @@ class OpenRouterPlugin extends GenkitPlugin {
 
       return accumulator.toResponse();
     } finally {
-      if (httpClient == null) client.close();
+      if (config.httpClient == null) client.close();
     }
   }
 
   Map<String, dynamic> _buildRequestBody({
     required String modelName,
     required ModelRequest request,
-    required OpenRouterOptions options,
+    required T options,
     required bool stream,
   }) {
     return {
-      'model': modelName,
+      'model': config.resolveModel?.call(modelName, options) ?? modelName,
       'messages': request.messages.expand(_messageToJson).toList(),
       'stream': stream,
       if (stream) 'stream_options': {'include_usage': true},
       'tools': ?request.tools?.map(_toolToJson).toList(),
-      'temperature': ?options.temperature,
-      'top_p': ?options.topP,
-      'max_tokens': ?options.maxTokens,
-      'stop': ?options.stop,
-      'presence_penalty': ?options.presencePenalty,
-      'frequency_penalty': ?options.frequencyPenalty,
-      'seed': ?options.seed,
-      'user': ?options.user,
-      'reasoning': ?options.reasoning?.toJson(),
+      ...config.extraBody(options),
     };
   }
 
   Future<http.Response> _send(Map<String, dynamic> body) async {
     final request = await _request(body);
-    final client = httpClient ?? http.Client();
+    final client = config.httpClient ?? http.Client();
     try {
       return http.Response.fromStream(await client.send(request));
     } finally {
-      if (httpClient == null) client.close();
+      if (config.httpClient == null) client.close();
     }
   }
 
@@ -297,22 +202,32 @@ class OpenRouterPlugin extends GenkitPlugin {
       ..headers.addAll({
         'authorization': 'Bearer ${key.trim()}',
         'content-type': 'application/json',
-        ...?headers,
+        ...?config.headers,
       })
       ..body = jsonEncode(body);
   }
 
   Uri _chatCompletionsUri() {
-    final normalized = baseUrl.replaceFirst(RegExp(r'/$'), '');
+    final normalized = config.baseUrl.replaceFirst(RegExp(r'/$'), '');
 
     return Uri.parse('$normalized/chat/completions');
   }
 
   Future<String?> _resolveApiKey() async {
-    final provider = apiKeyProvider;
+    final provider = config.apiKeyProvider;
     if (provider != null) return provider();
 
-    return apiKey;
+    return config.apiKey;
+  }
+
+  void _throwIfRawError(int statusCode, String body) {
+    if (statusCode >= 200 && statusCode < 300) return;
+
+    throw GenkitException(
+      '${config.errorLabel} API error: $body',
+      status: StatusCodes.fromHttpStatus(statusCode),
+      details: body,
+    );
   }
 }
 
@@ -477,16 +392,6 @@ FinishReason _finishReason(String? reason) {
     'tool_calls' => FinishReason.stop,
     _ => FinishReason.unknown,
   };
-}
-
-void _throwIfRawError(int statusCode, String body) {
-  if (statusCode >= 200 && statusCode < 300) return;
-
-  throw GenkitException(
-    'OpenRouter API error: $body',
-    status: StatusCodes.fromHttpStatus(statusCode),
-    details: body,
-  );
 }
 
 class _StreamAccumulator {

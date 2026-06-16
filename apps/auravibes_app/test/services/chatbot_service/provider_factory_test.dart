@@ -7,8 +7,7 @@ import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.d
 import 'package:auravibes_app/services/chatbot_service/provider_factory.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/secret_key_manager.dart';
-import 'package:auravibes_genkit_openai_compat/auravibes_genkit_openai_compat.dart';
-import 'package:auravibes_genkit_openrouter/auravibes_genkit_openrouter.dart';
+import 'package:auravibes_genkit_providers/auravibes_genkit_providers.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genkit/genkit.dart';

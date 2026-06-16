@@ -5,7 +5,7 @@
 
 import 'dart:convert';
 
-import 'package:auravibes_genkit_openai_compat/auravibes_genkit_openai_compat.dart';
+import 'package:auravibes_genkit_providers/auravibes_genkit_providers.dart';
 import 'package:genkit/genkit.dart';
 import 'package:http/http.dart' as http;
 import 'package:test/test.dart';

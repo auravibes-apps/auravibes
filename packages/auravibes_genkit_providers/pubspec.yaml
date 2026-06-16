@@ -1,5 +1,5 @@
-name: auravibes_genkit_openai_compat
-description: OpenAI-compatible Genkit provider with reasoning support.
+name: auravibes_genkit_providers
+description: Custom Genkit providers for AuraVibes.
 version: 0.0.1
 publish_to: none
 resolution: workspace

@@ -1,6 +1,0 @@
-include: ../../analysis_options.yaml
-
-analyzer:
-  errors:
-    # Required: package is internal and its small public API is self-describing.
-    public_member_api_docs: ignore
