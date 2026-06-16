@@ -74,6 +74,7 @@ void registerTestFallbackValues() {
   registerFallbackValue(_FakeWorkspaceModelSelectionToCreate());
   registerFallbackValue(_FakeWorkspaceModelSelectionWithConnectionEntity());
   registerFallbackValue(_FakeWorkspaceToolToCreate());
+  registerFallbackValue(<WorkspaceModelSelectionsCompanion>[]);
 }
 
 class _FakeAgentIterationContext extends Fake

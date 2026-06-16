@@ -324,7 +324,7 @@ void main() {
         );
 
         when(
-          mockDao.getWorkspaceModelSelectionById('sel-1'),
+          () => mockDao.getWorkspaceModelSelectionById('sel-1'),
         ).thenAnswer((_) async => withConnection);
 
         final result = await repository.getWorkspaceModelSelectionById('sel-1');

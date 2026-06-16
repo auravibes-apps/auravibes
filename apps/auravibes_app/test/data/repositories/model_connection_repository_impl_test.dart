@@ -240,13 +240,15 @@ void main() {
             isEnabled: true,
           );
           when(
-            mockProvidersDao.getProviderById('openrouter'),
+            () => mockProvidersDao.getProviderById('openrouter'),
           ).thenAnswer((_) async => openRouterProvider);
           when(
-            mockEncryptionService.encrypt(testKeyPayload),
+            () => mockEncryptionService.encrypt(testKeyPayload),
           ).thenAnswer((_) async => 'encrypted-key');
           when(
-            mockModelProviderServices.getWorkspaceModelSelections(any),
+            () => mockModelProviderServices.getWorkspaceModelSelections(
+              any<ModelProvider>(),
+            ),
           ).thenAnswer(
             (_) async => [
               const WorkspaceModelSelectionToCreate(
@@ -256,10 +258,14 @@ void main() {
             ],
           );
           when(
-            mockConnectionsDao.insertModelConnection(any),
+            () => mockConnectionsDao.insertModelConnection(
+              any<ServiceConnectionsCompanion>(),
+            ),
           ).thenAnswer((_) async => openRouterConnectionRow);
           when(
-            mockSelectionsDao.insertWorkspaceModelSelections(any),
+            () => mockSelectionsDao.insertWorkspaceModelSelections(
+              any<List<WorkspaceModelSelectionsCompanion>>(),
+            ),
           ).thenAnswer((
             _,
           ) async {
@@ -276,8 +282,8 @@ void main() {
           final result = await repository.createModelConnection(toCreate);
           final capturedProvider =
               verify(
-                    mockModelProviderServices.getWorkspaceModelSelections(
-                      captureAny,
+                    () => mockModelProviderServices.getWorkspaceModelSelections(
+                      captureAny<ModelProvider>(),
                     ),
                   ).captured.single
                   as ModelProvider;
