@@ -9,6 +9,9 @@ void main() {
     test('anthropic has value anthropic', () {
       expect(ModelProvidersType.anthropic.value, 'anthropic');
     });
+    test('openrouter has value openrouter', () {
+      expect(ModelProvidersType.openrouter.value, 'openrouter');
+    });
   });
 
   group('ApiModelProviderEntity.fromJson', () {
@@ -38,6 +41,18 @@ void main() {
       };
       final provider = ApiModelProviderEntity.fromJson(json);
       expect(provider.type, ModelProvidersType.anthropic);
+    });
+
+    test('parses openrouter provider', () {
+      final json = <String, dynamic>{
+        'id': 'openrouter',
+        'name': 'OpenRouter',
+        'npm': '@openrouter/ai-sdk-provider',
+        'api': 'https://openrouter.ai/api/v1',
+      };
+      final provider = ApiModelProviderEntity.fromJson(json);
+      expect(provider.type, ModelProvidersType.openrouter);
+      expect(provider.url, 'https://openrouter.ai/api/v1');
     });
 
     test('returns null type for unknown npm', () {

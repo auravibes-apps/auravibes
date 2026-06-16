@@ -140,6 +140,7 @@ class ApiModelRepositoryImpl implements ApiModelRepository {
     return switch (type) {
       .openai => .openai,
       .anthropic => .anthropic,
+      .openrouter => .openrouter,
     };
   }
 
@@ -149,6 +150,7 @@ class ApiModelRepositoryImpl implements ApiModelRepository {
     return switch (type) {
       .openai => .openai,
       .anthropic => .anthropic,
+      .openrouter => .openrouter,
     };
   }
 

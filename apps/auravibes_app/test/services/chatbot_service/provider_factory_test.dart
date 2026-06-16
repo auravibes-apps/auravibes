@@ -7,7 +7,7 @@ import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.d
 import 'package:auravibes_app/services/chatbot_service/provider_factory.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/secret_key_manager.dart';
-import 'package:auravibes_genkit_openai_compat/auravibes_genkit_openai_compat.dart';
+import 'package:auravibes_genkit_providers/auravibes_genkit_providers.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genkit/genkit.dart';
@@ -84,6 +84,19 @@ void main() {
       expect(ai, isA<Genkit>());
     });
 
+    test('creates Genkit for openrouter provider', () async {
+      final config = makeConfig(
+        type: ModelProvidersType.openrouter,
+        modelId: 'anthropic/claude-sonnet-4',
+        providerId: 'openrouter',
+        providerName: 'OpenRouter',
+        providerUrl: 'https://openrouter.ai/api/v1',
+      );
+      final ai = await factory.createGenkit(config);
+
+      expect(ai, isA<Genkit>());
+    });
+
     test('resolves model reference for openai provider', () {
       final config = makeConfig(type: ModelProvidersType.openai);
       final ref = factory.getModelReference(config);
@@ -99,6 +112,16 @@ void main() {
       final ref = factory.getModelReference(config);
 
       expect(ref.name, 'anthropic/claude-sonnet-4-0');
+    });
+
+    test('resolves model reference for openrouter provider', () {
+      final config = makeConfig(
+        type: ModelProvidersType.openrouter,
+        modelId: 'anthropic/claude-sonnet-4',
+      );
+      final ref = factory.getModelReference(config);
+
+      expect(ref.name, 'openrouter/anthropic/claude-sonnet-4');
     });
 
     test('uses typed anthropic model reference for anthropic provider', () {
@@ -267,6 +290,7 @@ Map<String, dynamic>? _generationConfigJson(Object? config) {
   return switch (config) {
     AnthropicOptions() => config.toJson(),
     OpenAICompatReasoningOptions() => config.toJson(),
+    OpenRouterOptions() => config.toJson(),
     Map<String, dynamic>() => config,
     null => null,
     _ => throw StateError('Unexpected generation config: $config'),

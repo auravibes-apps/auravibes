@@ -192,10 +192,10 @@ jobs:
             package: packages/auravibes_ui
             targets: test
             source_prefix: packages/auravibes_ui
-          - id: openai-compat
-            package: packages/auravibes_genkit_openai_compat
+          - id: custom-providers
+            package: packages/auravibes_genkit_providers
             targets: test
-            source_prefix: packages/auravibes_genkit_openai_compat
+            source_prefix: packages/auravibes_genkit_providers
           - id: app-core-data-domain
             package: apps/auravibes_app
             targets: test/core test/data test/domain test/flavors_test.dart

@@ -29,4 +29,5 @@ Map<String, dynamic> _$ApiModelProviderEntityToJson(
 const _$ModelProvidersTypeEnumMap = {
   ModelProvidersType.openai: 'openai',
   ModelProvidersType.anthropic: 'anthropic',
+  ModelProvidersType.openrouter: 'openrouter',
 };

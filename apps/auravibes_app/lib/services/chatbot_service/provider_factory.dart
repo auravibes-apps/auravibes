@@ -2,7 +2,7 @@ import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
-import 'package:auravibes_genkit_openai_compat/auravibes_genkit_openai_compat.dart';
+import 'package:auravibes_genkit_providers/auravibes_genkit_providers.dart';
 import 'package:genkit/genkit.dart';
 import 'package:genkit_anthropic/genkit_anthropic.dart';
 import 'package:genkit_openai/genkit_openai.dart';
@@ -41,6 +41,16 @@ class ProviderFactory {
       plugins: [
         if (shouldUseAnthropic)
           anthropic(apiKey: apiKey, baseUrl: baseUrl)
+        else if (type == ModelProvidersType.openrouter)
+          openRouter(
+            apiKey: apiKey,
+            baseUrl: baseUrl ?? 'https://openrouter.ai/api/v1',
+            models: [
+              OpenRouterModelDefinition(
+                name: config.workspaceModelSelection.modelId,
+              ),
+            ],
+          )
         else if (shouldUseReasoningOpenAI && baseUrl != null)
           openAICompatReasoning(
             name: _openAIReasoningNamespace,
@@ -70,6 +80,10 @@ class ProviderFactory {
 
     if (_shouldUseAnthropic(type, connectionUrl)) {
       return anthropic.model(modelId);
+    }
+
+    if (type == ModelProvidersType.openrouter) {
+      return openRouter.model(modelId);
     }
 
     if (_shouldUseOpenAICompatReasoning(config)) {
