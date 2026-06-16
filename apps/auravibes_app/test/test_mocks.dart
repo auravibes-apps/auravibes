@@ -1,3 +1,4 @@
+import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/api_model_providers_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/api_models_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/conversation_dao.dart';
@@ -54,16 +55,20 @@ void registerTestFallbackValues() {
 
   registerFallbackValue(_FakeAgentIterationContext());
   registerFallbackValue(_FakeConversationPatch());
+  registerFallbackValue(_FakeConversationsCompanion());
   registerFallbackValue(_FakeConversationToCreate());
+  registerFallbackValue(_FakeMcpServersCompanion());
   registerFallbackValue(_FakeMcpServerToCreate());
   registerFallbackValue(_FakeMessagePatch());
   registerFallbackValue(_FakeMessageToCreate());
   registerFallbackValue(_FakeModelConnectionFilter());
+  registerFallbackValue(_FakeServiceConnectionsCompanion());
   registerFallbackValue(_FakeModelConnectionToCreate());
   registerFallbackValue(_FakeModelConnectionToUpdate());
   registerFallbackValue(_FakeResolvedTool());
   registerFallbackValue(_FakeModelProvider());
   registerFallbackValue(StackTrace.current);
+  registerFallbackValue(_FakeToolsGroupsCompanion());
   registerFallbackValue(_FakeToolsGroupToCreate());
   registerFallbackValue(_FakeWorkspaceModelSelectionFilter());
   registerFallbackValue(_FakeWorkspaceModelSelectionToCreate());
@@ -76,7 +81,12 @@ class _FakeAgentIterationContext extends Fake
 
 class _FakeConversationPatch extends Fake implements ConversationPatch {}
 
+class _FakeConversationsCompanion extends Fake
+    implements ConversationsCompanion {}
+
 class _FakeConversationToCreate extends Fake implements ConversationToCreate {}
+
+class _FakeMcpServersCompanion extends Fake implements McpServersCompanion {}
 
 class _FakeMcpServerToCreate extends Fake implements McpServerToCreate {}
 
@@ -87,6 +97,9 @@ class _FakeMessageToCreate extends Fake implements MessageToCreate {}
 class _FakeModelConnectionFilter extends Fake
     implements ModelConnectionFilter {}
 
+class _FakeServiceConnectionsCompanion extends Fake
+    implements ServiceConnectionsCompanion {}
+
 class _FakeModelConnectionToCreate extends Fake
     implements ModelConnectionToCreate {}
 
@@ -96,6 +109,8 @@ class _FakeModelConnectionToUpdate extends Fake
 class _FakeModelProvider extends Fake implements ModelProvider {}
 
 class _FakeResolvedTool extends Fake implements ResolvedTool {}
+
+class _FakeToolsGroupsCompanion extends Fake implements ToolsGroupsCompanion {}
 
 class _FakeToolsGroupToCreate extends Fake implements ToolsGroupToCreate {}
 

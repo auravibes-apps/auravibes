@@ -1026,6 +1026,12 @@ class _RunAgentIterationUsecaseFixture {
       conversationRateLimitRetryRuntimeProvider,
     );
 
+    when(
+      () => maybeAutoCompactConversationUsecase.call(
+        conversationId: any(named: 'conversationId'),
+      ),
+    ).thenAnswer((_) => Future<void>.value());
+
     return _RunAgentIterationUsecaseFixture._(
       continueAgentUsecase: continueAgentUsecase,
       runAllowedToolsUsecase: runAllowedToolsUsecase,

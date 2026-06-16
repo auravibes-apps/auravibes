@@ -584,6 +584,25 @@ class _WorkspaceToolsRepositoryFixture {
     _mockWorkspaceDao = workspaceDao;
     _database = database;
     _repository = WorkspaceToolsRepositoryImpl(database);
+
+    when(() => toolsDao.getWorkspaceTools(any())).thenAnswer((_) async => []);
+    when(
+      () => toolsDao.setWorkspaceToolEnabled(
+        any(),
+        any(),
+        isEnabled: any(named: 'isEnabled'),
+      ),
+    ).thenAnswer(
+      (invocation) async => ToolsTable(
+        id: 'native-tool',
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
+        workspaceId: invocation.positionalArguments.first as String,
+        toolId: invocation.positionalArguments.skip(1).first as String,
+        isEnabled: invocation.namedArguments[#isEnabled] as bool,
+        permissions: PermissionAccess.ask,
+      ),
+    );
   }
 
   Future<void> dispose() async {
