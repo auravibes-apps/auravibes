@@ -1,20 +1,19 @@
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
-import 'package:auravibes_app/domain/repositories/message_repository.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_send_queue_runtime.dart';
 import 'package:auravibes_app/features/chats/usecases/stop_conversation_usecase.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/annotations.dart';
-import 'package:mockito/mockito.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
 
-import 'stop_conversation_usecase_test.mocks.dart';
+import '../../../test_mocks.dart';
 
-@GenerateMocks([MessageRepository])
 void main() {
+  setUpAll(registerTestFallbackValues);
+
   group('StopConversationUsecase', () {
     final fixture = _StopConversationFixture();
 
@@ -52,10 +51,12 @@ void main() {
         );
 
         when(
-          fixture.messageRepository.getMessagesByConversation('conversation-1'),
+          () => fixture.messageRepository.getMessagesByConversation(
+            'conversation-1',
+          ),
         ).thenAnswer((_) async => [message]);
         when(
-          fixture.messageRepository.patchMessage('assistant-1', any),
+          () => fixture.messageRepository.patchMessage('assistant-1', any()),
         ).thenAnswer((_) async => message);
 
         await fixture.usecase.call(conversationId: 'conversation-1');
@@ -74,9 +75,9 @@ void main() {
         );
         final patch =
             verify(
-                  fixture.messageRepository.patchMessage(
+                  () => fixture.messageRepository.patchMessage(
                     'assistant-1',
-                    captureAny,
+                    captureAny(),
                   ),
                 ).captured.single
                 as MessagePatch;

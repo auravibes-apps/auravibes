@@ -3,18 +3,17 @@
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
-import 'package:auravibes_app/domain/repositories/message_repository.dart';
 import 'package:auravibes_app/features/tools/usecases/load_latest_message_tool_calls_result.dart';
 import 'package:auravibes_app/services/tools/native_tool_type.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/annotations.dart';
-import 'package:mockito/mockito.dart';
+import 'package:mocktail/mocktail.dart';
 
-import 'load_latest_message_tool_calls_usecase_test.mocks.dart';
+import '../../../test_mocks.dart';
 
-@GenerateMocks([MessageRepository])
 void main() {
+  setUpAll(registerTestFallbackValues);
+
   group('LoadLatestMessageToolCallsUsecase', () {
     var messageRepository = MockMessageRepository();
     var usecase = LoadLatestMessageToolCallsUsecase(
@@ -35,7 +34,7 @@ void main() {
       'from latest assistant message',
       () async {
         when(
-          messageRepository.getMessagesByConversation('conversation-1'),
+          () => messageRepository.getMessagesByConversation('conversation-1'),
         ).thenAnswer(
           (_) async => [
             _message(
@@ -80,7 +79,7 @@ void main() {
       'returns empty result when latest assistant message has no tool calls',
       () async {
         when(
-          messageRepository.getMessagesByConversation('conversation-2'),
+          () => messageRepository.getMessagesByConversation('conversation-2'),
         ).thenAnswer(
           (_) async => [
             _message(id: 'assistant-2'),
@@ -100,7 +99,7 @@ void main() {
       'ResolvedTool with valid tableId',
       () async {
         when(
-          messageRepository.getMessagesByConversation('conversation-1'),
+          () => messageRepository.getMessagesByConversation('conversation-1'),
         ).thenAnswer(
           (_) async => [
             _message(id: 'user-1', isUser: true),
@@ -137,7 +136,7 @@ void main() {
       'a previously-failed tool in the same turn window',
       () async {
         when(
-          messageRepository.getMessagesByConversation('conversation-1'),
+          () => messageRepository.getMessagesByConversation('conversation-1'),
         ).thenAnswer(
           (_) async => [
             _message(id: 'user-1', isUser: true),

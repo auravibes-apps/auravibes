@@ -1,5 +1,4 @@
 ignore:
   - riverpod_lint
   - state_notifier
-exclude:
-  - "test/**/*.mocks.dart"
+exclude: []

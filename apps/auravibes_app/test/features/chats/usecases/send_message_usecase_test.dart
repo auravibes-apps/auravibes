@@ -1,26 +1,20 @@
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
-import 'package:auravibes_app/domain/repositories/message_repository.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_send_queue_runtime.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_context.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_decision.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
-import 'package:auravibes_app/features/chats/usecases/run_agent_iteration_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/annotations.dart';
-import 'package:mockito/mockito.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
 
-import 'send_message_usecase_test.mocks.dart';
+import '../../../test_mocks.dart';
 
-@GenerateMocks([
-  RunAgentIterationUsecase,
-  MessageRepository,
-  GetConversationBusyStateUsecase,
-])
 void main() {
+  setUpAll(registerTestFallbackValues);
+
   group('SendMessageUsecase', () {
     var fixture = _SendMessageUsecaseFixture.create();
 
@@ -28,7 +22,7 @@ void main() {
       fixture.dispose();
       fixture = _SendMessageUsecaseFixture.create();
 
-      when(fixture.messageRepository.createMessage(any)).thenAnswer(
+      when(() => fixture.messageRepository.createMessage(any())).thenAnswer(
         (_) async => MessageEntity(
           id: 'user-1',
           conversationId: 'conversation-1',
@@ -41,14 +35,14 @@ void main() {
         ),
       );
       when(
-        fixture.runAgentIterationUsecase.call(
-          conversationId: anyNamed('conversationId'),
-          context: anyNamed('context'),
+        () => fixture.runAgentIterationUsecase.call(
+          conversationId: any(named: 'conversationId'),
+          context: any(named: 'context'),
         ),
       ).thenAnswer((_) async => AgentIterationDecision.done);
       when(
-        fixture.getConversationBusyStateUsecase.call(
-          conversationId: anyNamed('conversationId'),
+        () => fixture.getConversationBusyStateUsecase.call(
+          conversationId: any(named: 'conversationId'),
         ),
       ).thenAnswer(
         (_) async => const ConversationBusyState(
@@ -70,7 +64,7 @@ void main() {
 
       expect(
         () => verify(
-          fixture.runAgentIterationUsecase.call(
+          () => fixture.runAgentIterationUsecase.call(
             conversationId: 'conversation-1',
             context: const AgentIterationContext(
               origin: AgentIterationOrigin.userMessage,
@@ -86,7 +80,7 @@ void main() {
       'queues the draft instead of persisting when the conversation is busy',
       () async {
         when(
-          fixture.getConversationBusyStateUsecase.call(
+          () => fixture.getConversationBusyStateUsecase.call(
             conversationId: 'conversation-1',
           ),
         ).thenAnswer(
@@ -101,11 +95,13 @@ void main() {
           content: 'Queued hello',
         );
 
-        final _ = verifyNever(fixture.messageRepository.createMessage(any));
         final _ = verifyNever(
-          fixture.runAgentIterationUsecase.call(
-            conversationId: anyNamed('conversationId'),
-            context: anyNamed('context'),
+          () => fixture.messageRepository.createMessage(any()),
+        );
+        final _ = verifyNever(
+          () => fixture.runAgentIterationUsecase.call(
+            conversationId: any(named: 'conversationId'),
+            context: any(named: 'context'),
           ),
         );
         expect(

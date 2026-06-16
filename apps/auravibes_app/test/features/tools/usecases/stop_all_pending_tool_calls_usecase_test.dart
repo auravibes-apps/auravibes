@@ -1,16 +1,15 @@
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
-import 'package:auravibes_app/domain/repositories/message_repository.dart';
 import 'package:auravibes_app/features/tools/usecases/stop_all_pending_tool_calls_usecase.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/annotations.dart';
-import 'package:mockito/mockito.dart';
+import 'package:mocktail/mocktail.dart';
 
-import 'stop_all_pending_tool_calls_usecase_test.mocks.dart';
+import '../../../test_mocks.dart';
 
-@GenerateMocks([MessageRepository])
 void main() {
+  setUpAll(registerTestFallbackValues);
+
   group('StopAllPendingToolCallsUsecase', () {
     test('updates only pending tool calls to stoppedByUser', () async {
       final messageRepository = MockMessageRepository();
@@ -45,10 +44,10 @@ void main() {
         ),
       );
 
-      when(messageRepository.getMessageById('message-1')).thenAnswer(
+      when(() => messageRepository.getMessageById('message-1')).thenAnswer(
         (_) async => message,
       );
-      when(messageRepository.patchMessage('message-1', any)).thenAnswer(
+      when(() => messageRepository.patchMessage('message-1', any())).thenAnswer(
         (_) async => message,
       );
 
@@ -60,7 +59,7 @@ void main() {
 
       final updated =
           verify(
-                messageRepository.patchMessage('message-1', captureAny),
+                () => messageRepository.patchMessage('message-1', captureAny()),
               ).captured.single
               as MessagePatch;
       final toolCalls = updated.metadata?.toolCalls;

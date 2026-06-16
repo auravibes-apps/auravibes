@@ -6,14 +6,14 @@ import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_no
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/annotations.dart';
-import 'package:mockito/mockito.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
 
-import 'get_conversation_busy_state_usecase_test.mocks.dart';
+import '../../../test_mocks.dart';
 
-@GenerateMocks([MessageRepository])
 void main() {
+  setUpAll(registerTestFallbackValues);
+
   group('GetConversationBusyStateUsecase', () {
     var messageRepository = MockMessageRepository();
     var container = ProviderContainer();
@@ -30,7 +30,7 @@ void main() {
         container: container,
       );
 
-      when(messageRepository.getMessagesByConversation(any)).thenAnswer(
+      when(() => messageRepository.getMessagesByConversation(any())).thenAnswer(
         (_) async => const [],
       );
     });
@@ -57,7 +57,7 @@ void main() {
       'returns busy when the latest assistant message has pending tools',
       () async {
         when(
-          messageRepository.getMessagesByConversation('conversation-1'),
+          () => messageRepository.getMessagesByConversation('conversation-1'),
         ).thenAnswer(
           (_) async => [
             _message(
@@ -88,7 +88,7 @@ void main() {
       'returns not busy when there is no stream and no pending tools',
       () async {
         when(
-          messageRepository.getMessagesByConversation('conversation-1'),
+          () => messageRepository.getMessagesByConversation('conversation-1'),
         ).thenAnswer(
           (_) async => [
             _message(

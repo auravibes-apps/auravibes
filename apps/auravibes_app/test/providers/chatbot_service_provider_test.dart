@@ -7,8 +7,10 @@ import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/secret_key_manager.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
+
+import '../test_mocks.dart';
 
 class _FakeModelConnectionRepository implements ModelConnectionRepository {
   @override
@@ -56,6 +58,8 @@ class _FakeModelConnectionRepository implements ModelConnectionRepository {
 class _MockFlutterSecureStorage extends Mock implements FlutterSecureStorage {}
 
 void main() {
+  setUpAll(registerTestFallbackValues);
+
   group('chatbotServiceProvider', () {
     test('returns a ChatbotService instance', () {
       final fakeRepo = _FakeModelConnectionRepository();

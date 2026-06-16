@@ -3,17 +3,16 @@
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
-import 'package:auravibes_app/domain/repositories/message_repository.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_decision.dart';
 import 'package:auravibes_app/features/tools/usecases/get_agent_iteration_decision_usecase.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/annotations.dart';
-import 'package:mockito/mockito.dart';
+import 'package:mocktail/mocktail.dart';
 
-import 'get_agent_iteration_decision_usecase_test.mocks.dart';
+import '../../../test_mocks.dart';
 
-@GenerateMocks([MessageRepository])
 void main() {
+  setUpAll(registerTestFallbackValues);
+
   group('GetAgentIterationDecisionUsecase', () {
     var messageRepository = MockMessageRepository();
     var usecase = GetAgentIterationDecisionUsecase(
@@ -27,30 +26,33 @@ void main() {
       );
     });
 
-    test('returns waitForToolApproval when any tool call is pending', () async {
-      when(messageRepository.getMessageById('message-1')).thenAnswer(
-        (_) async => _message(
-          metadata: const MessageMetadataEntity(
-            toolCalls: [
-              MessageToolCallEntity(
-                id: 'pending-tool',
-                name: 'built_in_calc_calculator',
-                argumentsRaw: '{}',
-              ),
-            ],
+    test(
+      'returns waitForToolApproval when any() tool call is pending',
+      () async {
+        when(() => messageRepository.getMessageById('message-1')).thenAnswer(
+          (_) async => _message(
+            metadata: const MessageMetadataEntity(
+              toolCalls: [
+                MessageToolCallEntity(
+                  id: 'pending-tool',
+                  name: 'built_in_calc_calculator',
+                  argumentsRaw: '{}',
+                ),
+              ],
+            ),
           ),
-        ),
-      );
+        );
 
-      final result = await usecase.call(messageId: 'message-1');
+        final result = await usecase.call(messageId: 'message-1');
 
-      expect(result, AgentIterationDecision.waitForToolApproval);
-    });
+        expect(result, AgentIterationDecision.waitForToolApproval);
+      },
+    );
 
     test(
       'returns continueIteration when all tool calls are resolved',
       () async {
-        when(messageRepository.getMessageById('message-2')).thenAnswer(
+        when(() => messageRepository.getMessageById('message-2')).thenAnswer(
           (_) async => _message(
             metadata: const MessageMetadataEntity(
               toolCalls: [
@@ -72,7 +74,7 @@ void main() {
     );
 
     test('returns done when a tool status stops the agent loop', () async {
-      when(messageRepository.getMessageById('message-3')).thenAnswer(
+      when(() => messageRepository.getMessageById('message-3')).thenAnswer(
         (_) async => _message(
           metadata: const MessageMetadataEntity(
             toolCalls: [

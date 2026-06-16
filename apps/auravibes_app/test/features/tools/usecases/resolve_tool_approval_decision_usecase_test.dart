@@ -2,25 +2,18 @@ import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
-import 'package:auravibes_app/domain/repositories/conversation_tools_repository.dart';
-import 'package:auravibes_app/domain/repositories/tools_groups_repository.dart';
-import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/native_tool_type.dart';
 import 'package:auravibes_app/services/tools/user_tool_type.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/annotations.dart';
-import 'package:mockito/mockito.dart';
+import 'package:mocktail/mocktail.dart';
 
-import 'resolve_tool_approval_decision_usecase_test.mocks.dart';
+import '../../../test_mocks.dart';
 
-@GenerateMocks([
-  ConversationToolsRepository,
-  ToolsGroupsRepository,
-  WorkspaceToolsRepository,
-])
 void main() {
+  setUpAll(registerTestFallbackValues);
+
   group('ResolveToolApprovalDecisionUsecase', () {
     final fixture = _ResolveToolApprovalDecisionFixture();
 
@@ -37,7 +30,7 @@ void main() {
         );
 
         when(
-          conversationToolsRepository.checkToolPermission(
+          () => conversationToolsRepository.checkToolPermission(
             conversationId: 'conv-1',
             workspaceId: 'ws-1',
             toolId: 'calculator',
@@ -70,7 +63,7 @@ void main() {
           );
 
           when(
-            conversationToolsRepository.checkToolPermission(
+            () => conversationToolsRepository.checkToolPermission(
               conversationId: 'conv-1',
               workspaceId: 'ws-1',
               toolId: 'calculator',
@@ -103,7 +96,7 @@ void main() {
         );
 
         when(
-          conversationToolsRepository.checkToolPermission(
+          () => conversationToolsRepository.checkToolPermission(
             conversationId: 'conv-1',
             workspaceId: 'ws-1',
             toolId: 'url',
@@ -138,7 +131,7 @@ void main() {
           );
 
           when(
-            toolsGroupsRepository.getToolsGroupByMcpServerId('server-1'),
+            () => toolsGroupsRepository.getToolsGroupByMcpServerId('server-1'),
           ).thenAnswer(
             (_) async => ToolsGroupEntity(
               id: 'group-1',
@@ -152,7 +145,7 @@ void main() {
             ),
           );
           when(
-            workspaceToolsRepository.getWorkspaceToolByToolName(
+            () => workspaceToolsRepository.getWorkspaceToolByToolName(
               toolGroupId: 'group-1',
               toolName: 'sum',
             ),
@@ -169,7 +162,7 @@ void main() {
             ),
           );
           when(
-            conversationToolsRepository.checkToolPermission(
+            () => conversationToolsRepository.checkToolPermission(
               conversationId: 'conv-1',
               workspaceId: 'ws-1',
               toolId: 'workspace-tool-1',
@@ -199,7 +192,7 @@ void main() {
         );
 
         when(
-          toolsGroupsRepository.getToolsGroupByMcpServerId('server-1'),
+          () => toolsGroupsRepository.getToolsGroupByMcpServerId('server-1'),
         ).thenAnswer((_) async => null);
 
         final decision = await usecase(
@@ -224,7 +217,7 @@ void main() {
         );
 
         when(
-          toolsGroupsRepository.getToolsGroupByMcpServerId('server-1'),
+          () => toolsGroupsRepository.getToolsGroupByMcpServerId('server-1'),
         ).thenAnswer(
           (_) async => ToolsGroupEntity(
             id: 'group-1',
@@ -238,7 +231,7 @@ void main() {
           ),
         );
         when(
-          workspaceToolsRepository.getWorkspaceToolByToolName(
+          () => workspaceToolsRepository.getWorkspaceToolByToolName(
             toolGroupId: 'group-1',
             toolName: 'sum',
           ),
@@ -266,7 +259,7 @@ void main() {
         );
 
         when(
-          conversationToolsRepository.checkToolPermission(
+          () => conversationToolsRepository.checkToolPermission(
             conversationId: 'conv-1',
             workspaceId: 'ws-1',
             toolId: 'calculator',
