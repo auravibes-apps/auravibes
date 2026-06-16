@@ -44,6 +44,7 @@ import 'package:auravibes_app/features/skills/usecases/update_skill_usecase.dart
 import 'package:auravibes_app/features/skills/usecases/validate_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/validate_skill_title_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/run_resolved_tool_usecase.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/secret_key_manager.dart';
@@ -233,7 +234,19 @@ void main() {
             content: 'Invalid title',
           ),
         ),
-        throwsA(isA<SkillTitleValidationException>()),
+        throwsA(
+          isA<SkillTitleValidationException>()
+              .having(
+                (error) => error.message,
+                'message',
+                'Skill title can only contain letters, numbers, and spaces',
+              )
+              .having(
+                (error) => error.localizationKey,
+                'localizationKey',
+                LocaleKeys.skills_screen_error_title_invalid,
+              ),
+        ),
       );
       await expectLater(
         createSkillUsecase.call(
