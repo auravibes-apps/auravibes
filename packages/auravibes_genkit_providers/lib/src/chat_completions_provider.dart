@@ -9,6 +9,7 @@ import 'dart:convert';
 
 import 'package:genkit/plugin.dart';
 import 'package:http/http.dart' as http;
+import 'package:openai_dart/openai_dart.dart' as sdk;
 
 typedef ChatCompletionsApiKeyProvider = FutureOr<String> Function();
 typedef ChatCompletionsOptionsParser<T extends Object> =
@@ -125,8 +126,18 @@ class ChatCompletionsProvider<T extends Object> extends GenkitPlugin {
     _throwIfRawError(response.statusCode, response.body);
 
     final json = jsonDecode(response.body) as Map<String, dynamic>;
+    final completion = sdk.ChatCompletion.fromJson(json);
+    if (completion.choices.isEmpty) {
+      throw GenkitException('Model returned no choices.');
+    }
+    final choice = completion.choices.first;
 
-    return _modelResponseFromJson(json);
+    return ModelResponse(
+      message: _messageFromAssistant(choice.message),
+      finishReason: _mapFinishReason(choice.finishReason),
+      usage: _toUsage(completion.usage),
+      raw: json,
+    );
   }
 
   Future<ModelResponse> _stream(
@@ -141,7 +152,7 @@ class ChatCompletionsProvider<T extends Object> extends GenkitPlugin {
           .timeout(
             config.requestTimeout,
           );
-      final accumulator = _StreamAccumulator();
+      final accumulator = sdk.ChatStreamAccumulator();
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
         final responseBody = await response.stream.bytesToString();
@@ -156,14 +167,26 @@ class ChatCompletionsProvider<T extends Object> extends GenkitPlugin {
         final data = line.replaceFirst('data:', '').trim();
         if (data.isEmpty || data == '[DONE]') continue;
 
-        final chunk = jsonDecode(data) as Map<String, dynamic>;
-        final parts = accumulator.addChunk(chunk);
+        final event = sdk.ChatStreamEvent.fromJson(
+          jsonDecode(data) as Map<String, dynamic>,
+        );
+        accumulator.add(event);
+
+        final parts = _partsFromEvent(event);
         if (parts.isNotEmpty) {
           sendChunk(ModelResponseChunk(index: 0, content: parts));
         }
       }
 
-      return accumulator.toResponse();
+      final completion = accumulator.toChatCompletion();
+      final choice = completion.choices.first;
+
+      return ModelResponse(
+        message: _messageFromAssistant(choice.message),
+        finishReason: _mapFinishReason(choice.finishReason),
+        usage: _toUsage(completion.usage),
+        raw: completion.toJson(),
+      );
     } finally {
       if (config.httpClient == null) client.close();
     }
@@ -333,160 +356,81 @@ Map<String, dynamic> _toolToJson(ToolDefinition tool) {
   };
 }
 
-ModelResponse _modelResponseFromJson(Map<String, dynamic> json) {
-  final choices = json['choices'] as List? ?? const [];
-  if (choices.isEmpty) throw GenkitException('Model returned no choices.');
-  final choice = choices.firstOrNull as Map<String, dynamic>;
-  final message = choice['message'] as Map<String, dynamic>? ?? const {};
-
-  return ModelResponse(
-    message: _messageFromJson(message),
-    finishReason: _finishReason(choice['finish_reason'] as String?),
-    usage: _usageFromJson(json['usage'] as Map<String, dynamic>?),
-    raw: json,
-  );
-}
-
-Message _messageFromJson(Map<String, dynamic> message) {
+Message _messageFromAssistant(sdk.AssistantMessage message) {
   final parts = <Part>[];
-  final reasoning = message['reasoning_content'] ?? message['reasoning'];
-  if (reasoning is String && reasoning.isNotEmpty) {
+
+  final reasoning = message.reasoningContent ?? message.reasoning;
+  if (reasoning != null && reasoning.isNotEmpty) {
     parts.add(ReasoningPart(reasoning: reasoning));
   }
 
-  final content = message['content'];
-  if (content is String && content.isNotEmpty) {
+  final content = message.content;
+  if (content != null && content.isNotEmpty) {
     parts.add(TextPart(text: content));
   }
 
-  final toolCalls = message['tool_calls'] as List? ?? const [];
-  for (final toolCall in toolCalls.cast<Map<String, dynamic>>()) {
-    parts.add(_toolRequestFromJson(toolCall));
+  final toolCalls = message.toolCalls;
+  if (toolCalls != null) {
+    for (final toolCall in toolCalls) {
+      parts.add(_toolRequestFromToolCall(toolCall));
+    }
   }
 
   return Message(role: Role.model, content: parts);
 }
 
-ToolRequestPart _toolRequestFromJson(Map<String, dynamic> toolCall) {
-  final function = toolCall['function'] as Map<String, dynamic>? ?? const {};
-  final arguments = function['arguments'];
+ToolRequestPart _toolRequestFromToolCall(sdk.ToolCall toolCall) {
+  final arguments = toolCall.function.arguments;
 
   return ToolRequestPart(
     toolRequest: ToolRequest(
-      ref: toolCall['id'] as String?,
-      name: function['name'] as String? ?? '',
-      input: arguments is String && arguments.isNotEmpty
+      ref: toolCall.id,
+      name: toolCall.function.name,
+      input: arguments.isNotEmpty
           ? jsonDecode(arguments) as Map<String, dynamic>?
           : null,
     ),
   );
 }
 
-GenerationUsage? _usageFromJson(Map<String, dynamic>? usage) {
-  if (usage == null) return null;
+List<Part> _partsFromEvent(sdk.ChatStreamEvent event) {
+  final delta = event.choices?.firstOrNull?.delta;
+  if (delta == null) return const [];
 
-  return GenerationUsage(
-    inputTokens: (usage['prompt_tokens'] as num?)?.toDouble(),
-    outputTokens: (usage['completion_tokens'] as num?)?.toDouble(),
-    totalTokens: (usage['total_tokens'] as num?)?.toDouble(),
-  );
+  final parts = <Part>[];
+  final reasoning = delta.reasoningContent ?? delta.reasoning;
+  if (reasoning != null && reasoning.isNotEmpty) {
+    parts.add(ReasoningPart(reasoning: reasoning));
+  }
+
+  final content = delta.content;
+  if (content != null && content.isNotEmpty) {
+    parts.add(TextPart(text: content));
+  }
+
+  return parts;
 }
 
-FinishReason _finishReason(String? reason) {
+FinishReason _mapFinishReason(sdk.FinishReason? reason) {
+  if (reason == null) return FinishReason.unknown;
+
   return switch (reason) {
-    'stop' => FinishReason.stop,
-    'length' => FinishReason.length,
-    'content_filter' => FinishReason.blocked,
-    'tool_calls' => FinishReason.stop,
-    _ => FinishReason.unknown,
+    sdk.FinishReason.stop ||
+    sdk.FinishReason.toolCalls ||
+    sdk.FinishReason.functionCall =>
+      FinishReason.stop,
+    sdk.FinishReason.length => FinishReason.length,
+    sdk.FinishReason.contentFilter => FinishReason.blocked,
+    sdk.FinishReason.unknown => FinishReason.unknown,
   };
 }
 
-class _StreamAccumulator {
-  final StringBuffer _text = StringBuffer();
-  final StringBuffer _reasoning = StringBuffer();
-  final Map<int, _ToolCallDelta> _toolCalls = {};
-  FinishReason _finishReasonValue = FinishReason.unknown;
-  GenerationUsage? _usage;
+GenerationUsage? _toUsage(sdk.Usage? usage) {
+  if (usage == null) return null;
 
-  List<Part> addChunk(Map<String, dynamic> chunk) {
-    _usage = _usageFromJson(chunk['usage'] as Map<String, dynamic>?) ?? _usage;
-
-    final choices = chunk['choices'] as List? ?? const [];
-    if (choices.isEmpty) return const [];
-    final choice = choices.firstOrNull as Map<String, dynamic>;
-    final finishReason = choice['finish_reason'] as String?;
-    if (finishReason != null) _finishReasonValue = _finishReason(finishReason);
-
-    final delta = choice['delta'] as Map<String, dynamic>? ?? const {};
-    final parts = <Part>[];
-
-    final reasoning = delta['reasoning_content'] ?? delta['reasoning'];
-    if (reasoning is String && reasoning.isNotEmpty) {
-      _reasoning.write(reasoning);
-      parts.add(ReasoningPart(reasoning: reasoning));
-    }
-
-    final content = delta['content'];
-    if (content is String && content.isNotEmpty) {
-      _text.write(content);
-      parts.add(TextPart(text: content));
-    }
-
-    final toolCalls = delta['tool_calls'] as List? ?? const [];
-    toolCalls.cast<Map<String, dynamic>>().forEach(_addToolCallDelta);
-
-    return parts;
-  }
-
-  ModelResponse toResponse() {
-    final parts = <Part>[];
-    if (_reasoning.isNotEmpty) {
-      parts.add(ReasoningPart(reasoning: _reasoning.toString()));
-    }
-    if (_text.isNotEmpty) parts.add(TextPart(text: _text.toString()));
-    parts.addAll(_toolCalls.values.map((delta) => delta.toPart()));
-
-    return ModelResponse(
-      message: Message(role: Role.model, content: parts),
-      finishReason: _finishReasonValue,
-      usage: _usage,
-    );
-  }
-
-  void _addToolCallDelta(Map<String, dynamic> toolCall) {
-    final index = toolCall['index'] as int? ?? _toolCalls.length;
-    final delta = _toolCalls.putIfAbsent(index, _ToolCallDelta.new);
-    final function = toolCall['function'] as Map<String, dynamic>?;
-    if (function == null) {
-      delta.id ??= toolCall['id'] as String?;
-
-      return;
-    }
-
-    delta
-      ..id ??= toolCall['id'] as String?
-      ..name ??= function['name'] as String?
-      ..arguments.write(function['arguments'] as String? ?? '');
-  }
-}
-
-class _ToolCallDelta {
-  String? id;
-  String? name;
-  final StringBuffer arguments = StringBuffer();
-
-  ToolRequestPart toPart() {
-    final rawArguments = arguments.toString();
-
-    return ToolRequestPart(
-      toolRequest: ToolRequest(
-        ref: id,
-        name: name ?? '',
-        input: rawArguments.isNotEmpty
-            ? jsonDecode(rawArguments) as Map<String, dynamic>?
-            : null,
-      ),
-    );
-  }
+  return GenerationUsage(
+    inputTokens: usage.promptTokens.toDouble(),
+    outputTokens: usage.completionTokens?.toDouble(),
+    totalTokens: usage.totalTokens.toDouble(),
+  );
 }
