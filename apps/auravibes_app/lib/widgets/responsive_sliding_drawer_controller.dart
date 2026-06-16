@@ -64,28 +64,6 @@ class ResponsiveSlidingDrawer extends StatefulWidget {
     required this.body,
     required this.isDarkMode,
     required this.controller,
-    this.animationDuration = const Duration(milliseconds: 250),
-    this.openRatio = 0.8,
-    this.desktopOpenRatio = 0.3,
-    this.desktopMinDrawerWidth = 150.0,
-    this.desktopMaxDrawerWidth = 400.0,
-    this.swipeVelocityThreshold = 500.0,
-    this.dragPercentageThreshold = 0.3,
-    this.onAnimationComplete,
-    this.onFinishedOpening,
-    this.onFinishedClosing,
-    this.onStartedOpening,
-    this.onStartedClosing,
-    this.dividerWidth = 5.0,
-    this.centerDivider = true,
-    this.desktopDragAreaWidth = 10.0,
-    this.scrimColorLightMode = Colors.black,
-    this.scrimColorDarkMode = Colors.white,
-    this.scrimColorOpacityLightMode = 0.36,
-    this.scrimColorOpacityDarkMode = 0.38,
-    this.scrimGradientStartOpacityLightMode = 0.14,
-    this.scrimGradientStartOpacityDarkMode = 0.2,
-    this.scrimGradientWidth = 16.0,
     super.key,
   });
 
@@ -95,93 +73,9 @@ class ResponsiveSlidingDrawer extends StatefulWidget {
   /// The main content widget that will be displayed alongside the drawer.
   final Widget body;
 
-  /// The duration for the opening and closing animations of the drawer.
-  final Duration animationDuration;
-
-  /// The ratio of the screen width that the drawer should occupy when open
-  /// on mobile devices. Defaults to 0.80 (80% of screen width).
-  final double openRatio;
-
-  /// The ratio of the screen width that the drawer should occupy when open
-  /// on desktop devices. Defaults to 0.3 (30% of screen width).
-  final double desktopOpenRatio;
-
-  /// The minimum width the drawer can be resized to on desktop devices.
-  final double desktopMinDrawerWidth;
-
-  /// The maximum width the drawer can be resized to on desktop devices.
-  final double desktopMaxDrawerWidth;
-
-  /// The minimum swipe velocity required to trigger opening or closing
-  /// the drawer.
-  final double swipeVelocityThreshold;
-
-  /// The percentage of the drawer width that needs to be dragged to trigger
-  /// opening or closing after the drag ends.
-  final double dragPercentageThreshold;
-
-  /// A callback function that is invoked when the drawer finishes its opening
-  /// or closing animation. Provides a boolean value indicating whether the
-  /// drawer is now open (true) or closed (false).
-  final void Function({required bool isOpen})? onAnimationComplete;
-
-  /// Callback invoked when the drawer has fully finished opening.
-  final VoidCallback? onFinishedOpening;
-
-  /// Callback invoked when the drawer has fully finished closing.
-  final VoidCallback? onFinishedClosing;
-
-  /// Callback invoked when the drawer starts its opening animation or drag.
-  final VoidCallback? onStartedOpening;
-
-  /// Callback invoked when the drawer starts its closing animation or drag.
-  final VoidCallback? onStartedClosing;
-
-  /// The width of the draggable divider used for resizing on desktop.
-  final double dividerWidth;
-
-  /// Whether the desktop resize divider should be centered over the edge or
-  /// placed entirely outside the drawer. If true, the divider is centered (half
-  /// inside, half outside the drawer bounds). If false, the divider is placed
-  /// entirely to the right of the drawer.
-  final bool centerDivider;
-
   /// An optional controller to programmatically open, close, or toggle the
   /// drawer state.
   final ResponsiveSlidingDrawerController controller;
-
-  /// The width of the invisible area on the edge of the screen (or drawer edge
-  /// when open) that triggers the drag gesture on desktop.
-  final double desktopDragAreaWidth;
-
-  /// The color of the scrim overlay that appears over the body when the drawer
-  /// is open in light mode. This color will be adjusted with a dynamic opacity
-  /// value to create an overlay over the main content.
-  final Color scrimColorLightMode;
-
-  /// The color of the scrim overlay that appears over the body when the drawer
-  /// is open in dark mode. This color will be adjusted with a dynamic opacity
-  /// value to create an overlay over the main content.
-  final Color scrimColorDarkMode;
-
-  /// The maximum opacity of the scrim overlay in light mode when the drawer is
-  /// fully open.
-  final double scrimColorOpacityLightMode;
-
-  /// The maximum opacity of the scrim overlay in dark mode when the drawer is
-  /// fully open.
-  final double scrimColorOpacityDarkMode;
-
-  /// The starting opacity of the gradient applied to the edge of the scrim
-  /// overlay in light mode. This creates a subtle shadow effect.
-  final double scrimGradientStartOpacityLightMode;
-
-  /// The starting opacity of the gradient applied to the edge of the scrim
-  /// overlay in dark mode. This creates a subtle shadow effect.
-  final double scrimGradientStartOpacityDarkMode;
-
-  /// The width of the gradient applied to the edge of the scrim overlay.
-  final double scrimGradientWidth;
 
   /// A boolean flag indicating whether the application is currently in dark
   /// mode. This determines which scrim color and opacity settings are used.
@@ -194,6 +88,23 @@ class ResponsiveSlidingDrawer extends StatefulWidget {
 
 class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
     with SingleTickerProviderStateMixin {
+  static const _animationDuration = Duration(milliseconds: 250);
+  static const _openRatio = 0.8;
+  static const _desktopOpenRatio = 0.3;
+  static const _desktopMinDrawerWidth = 150.0;
+  static const _desktopMaxDrawerWidth = 400.0;
+  static const _swipeVelocityThreshold = 500.0;
+  static const _dragPercentageThreshold = 0.3;
+  static const _dividerWidth = 5.0;
+  static const _desktopDragAreaWidth = 10.0;
+  static const Color _scrimColorLightMode = Colors.black;
+  static const Color _scrimColorDarkMode = Colors.white;
+  static const _scrimColorOpacityLightMode = 0.36;
+  static const _scrimColorOpacityDarkMode = 0.38;
+  static const _scrimGradientStartOpacityLightMode = 0.14;
+  static const _scrimGradientStartOpacityDarkMode = 0.2;
+  static const _scrimGradientWidth = 16.0;
+
   AnimationController? _controller;
   double? _desktopDrawerWidth;
   double _resizeOvershoot = 0;
@@ -204,8 +115,6 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
 
   bool? _dragStartedWhenOpen;
   _DrawerDragDirection? _dragDirection;
-
-  bool _hasStartedDragCallback = false;
 
   bool get isDesktop => MediaQuery.sizeOf(context).width >= 600;
 
@@ -232,7 +141,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
     super.initState();
     _isOpen = false; // Initially closed.
     _controller = AnimationController(
-      duration: widget.animationDuration,
+      duration: _animationDuration,
       vsync: this,
     );
     _controller?.addListener(_handleControllerTick);
@@ -257,10 +166,10 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
     super.didChangeDependencies();
     if (isDesktop) {
       final screenWidth = MediaQuery.sizeOf(context).width;
-      _desktopDrawerWidth ??= widget.desktopOpenRatio * screenWidth;
+      _desktopDrawerWidth ??= _desktopOpenRatio * screenWidth;
       _desktopDrawerWidth = _requiredDesktopDrawerWidth.clamp(
-        widget.desktopMinDrawerWidth,
-        widget.desktopMaxDrawerWidth,
+        _desktopMinDrawerWidth,
+        _desktopMaxDrawerWidth,
       );
     }
   }
@@ -276,7 +185,6 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
   void _handleDragStart(DragStartDetails _) {
     _dragStartedWhenOpen = _isOpen;
     _dragDirection = null;
-    _hasStartedDragCallback = false;
   }
 
   void _handleDragUpdate(DragUpdateDetails details) {
@@ -287,16 +195,8 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
     if (_dragDirection == null) {
       if (_dragStartedWhenOpen == false && primaryDelta > 0) {
         _dragDirection = _DrawerDragDirection.opening;
-        if (!_hasStartedDragCallback) {
-          widget.onStartedOpening?.call();
-          _hasStartedDragCallback = true;
-        }
       } else if ((_dragStartedWhenOpen ?? false) && primaryDelta < 0) {
         _dragDirection = _DrawerDragDirection.closing;
-        if (!_hasStartedDragCallback) {
-          widget.onStartedClosing?.call();
-          _hasStartedDragCallback = true;
-        }
       } else {
         return;
       }
@@ -309,14 +209,14 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
   void _handleDragEnd(DragEndDetails details) {
     if (_isResizing || _dragDirection == null) return;
     final velocity = details.velocity.pixelsPerSecond.dx;
-    if (velocity.abs() >= widget.swipeVelocityThreshold) {
+    if (velocity.abs() >= _swipeVelocityThreshold) {
       if (velocity > 0) {
         _openDrawer();
       } else {
         _closeDrawer();
       }
     } else {
-      if (_requiredController.value >= widget.dragPercentageThreshold) {
+      if (_requiredController.value >= _dragPercentageThreshold) {
         _openDrawer();
       } else {
         _closeDrawer();
@@ -324,47 +224,31 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
     }
     _dragStartedWhenOpen = null;
     _dragDirection = null;
-    _hasStartedDragCallback = false;
   }
 
   void _openDrawer() {
-    if (_dragDirection == null) {
-      widget.onStartedOpening?.call();
-    }
     if (_requiredController.value >= 1.0 - 0.001) {
       _isOpen = true;
-      widget.onAnimationComplete?.call(isOpen: true);
-      widget.onFinishedOpening?.call();
 
       return;
     }
-    _requiredController.animateTo(1, duration: widget.animationDuration).then((
+    _requiredController.animateTo(1, duration: _animationDuration).then((
       _,
     ) {
       _isOpen = true;
-      widget.onAnimationComplete?.call(isOpen: true);
-      widget.onFinishedOpening?.call();
     });
   }
 
   void _closeDrawer() {
-    // Only call onStartedClosing if not already triggered by a drag.
-    if (_dragDirection == null) {
-      widget.onStartedClosing?.call();
-    }
     if (_requiredController.value <= 0.0 + 0.001) {
       _isOpen = false;
-      widget.onAnimationComplete?.call(isOpen: false);
-      widget.onFinishedClosing?.call();
 
       return;
     }
-    _requiredController.animateTo(0, duration: widget.animationDuration).then((
+    _requiredController.animateTo(0, duration: _animationDuration).then((
       _,
     ) {
       _isOpen = false;
-      widget.onAnimationComplete?.call(isOpen: false);
-      widget.onFinishedClosing?.call();
     });
   }
 
@@ -372,8 +256,8 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
     final screenWidth = MediaQuery.sizeOf(context).width;
 
     return isDesktop
-        ? (_desktopDrawerWidth ?? (widget.desktopOpenRatio * screenWidth))
-        : widget.openRatio * screenWidth;
+        ? (_desktopDrawerWidth ?? (_desktopOpenRatio * screenWidth))
+        : _openRatio * screenWidth;
   }
 
   void _handleDividerPanUpdate(DragUpdateDetails details) {
@@ -396,8 +280,8 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
 
     if (_resizeOvershoot == 0.0) {
       _desktopDrawerWidth = (_requiredDesktopDrawerWidth + delta).clamp(
-        widget.desktopMinDrawerWidth,
-        widget.desktopMaxDrawerWidth,
+        _desktopMinDrawerWidth,
+        _desktopMaxDrawerWidth,
       );
 
       return;
@@ -407,13 +291,11 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
   }
 
   bool _isResizeBeyondMax(double delta) {
-    return _requiredDesktopDrawerWidth >= widget.desktopMaxDrawerWidth &&
-        delta > 0;
+    return _requiredDesktopDrawerWidth >= _desktopMaxDrawerWidth && delta > 0;
   }
 
   bool _isResizeBeyondMin(double delta) {
-    return _requiredDesktopDrawerWidth <= widget.desktopMinDrawerWidth &&
-        delta < 0;
+    return _requiredDesktopDrawerWidth <= _desktopMinDrawerWidth && delta < 0;
   }
 
   void _applyOvershootRecovery(double delta) {
@@ -437,15 +319,15 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
     _desktopDrawerWidth =
         (_requiredDesktopDrawerWidth + (delta > 0 ? remaining : -remaining))
             .clamp(
-              widget.desktopMinDrawerWidth,
-              widget.desktopMaxDrawerWidth,
+              _desktopMinDrawerWidth,
+              _desktopMaxDrawerWidth,
             );
   }
 
   void _clampDesktopDrawerWidth() {
     _desktopDrawerWidth = _requiredDesktopDrawerWidth.clamp(
-      widget.desktopMinDrawerWidth,
-      widget.desktopMaxDrawerWidth,
+      _desktopMinDrawerWidth,
+      _desktopMaxDrawerWidth,
     );
   }
 
@@ -525,7 +407,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
       left: _requiredController.value < 0.5 ? 0 : drawerWidth,
       top: 0,
       bottom: 0,
-      width: widget.desktopDragAreaWidth,
+      width: _desktopDragAreaWidth,
       child: GestureDetector(
         onHorizontalDragStart: _handleDragStart,
         onHorizontalDragUpdate: _handleDragUpdate,
@@ -537,12 +419,10 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
 
   Widget _buildDesktopDivider(double drawerWidth) {
     return Positioned(
-      left: widget.centerDivider
-          ? drawerWidth - widget.dividerWidth / 2
-          : drawerWidth,
+      left: drawerWidth - _dividerWidth / 2,
       top: 0,
       bottom: 0,
-      width: widget.dividerWidth,
+      width: _dividerWidth,
       child: MouseRegion(
         onEnter: (_) => setState(() => _isHoveringDivider = true),
         onExit: (_) => setState(() => _isHoveringDivider = false),
@@ -646,7 +526,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
           left: 0,
           top: 0,
           bottom: 0,
-          width: widget.scrimGradientWidth,
+          width: _scrimGradientWidth,
           child: IgnorePointer(
             child: Container(
               decoration: BoxDecoration(
@@ -703,21 +583,19 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
   }
 
   Color get _scrimColor {
-    return widget.isDarkMode
-        ? widget.scrimColorDarkMode
-        : widget.scrimColorLightMode;
+    return widget.isDarkMode ? _scrimColorDarkMode : _scrimColorLightMode;
   }
 
   double get _scrimOpacity {
     return widget.isDarkMode
-        ? widget.scrimColorOpacityDarkMode
-        : widget.scrimColorOpacityLightMode;
+        ? _scrimColorOpacityDarkMode
+        : _scrimColorOpacityLightMode;
   }
 
   double get _gradientStartOpacity {
     return widget.isDarkMode
-        ? widget.scrimGradientStartOpacityDarkMode
-        : widget.scrimGradientStartOpacityLightMode;
+        ? _scrimGradientStartOpacityDarkMode
+        : _scrimGradientStartOpacityLightMode;
   }
 
   List<Color> get _scrimGradientColors {
