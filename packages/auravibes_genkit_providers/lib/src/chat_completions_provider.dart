@@ -38,6 +38,7 @@ class ChatCompletionsProviderConfig<T extends Object> {
     this.models = const [],
     this.headers,
     this.httpClient,
+    this.requestTimeout = const Duration(seconds: 30),
   });
 
   final String name;
@@ -51,6 +52,7 @@ class ChatCompletionsProviderConfig<T extends Object> {
   final List<ChatCompletionsModelDefinition> models;
   final Map<String, String>? headers;
   final http.Client? httpClient;
+  final Duration requestTimeout;
 }
 
 class ChatCompletionsProvider<T extends Object> extends GenkitPlugin {
@@ -134,7 +136,11 @@ class ChatCompletionsProvider<T extends Object> extends GenkitPlugin {
     final request = await _request(body);
     final client = config.httpClient ?? http.Client();
     try {
-      final response = await client.send(request);
+      final response = await client
+          .send(request)
+          .timeout(
+            config.requestTimeout,
+          );
       final accumulator = _StreamAccumulator();
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -183,7 +189,9 @@ class ChatCompletionsProvider<T extends Object> extends GenkitPlugin {
     final request = await _request(body);
     final client = config.httpClient ?? http.Client();
     try {
-      return http.Response.fromStream(await client.send(request));
+      return http.Response.fromStream(
+        await client.send(request).timeout(config.requestTimeout),
+      );
     } finally {
       if (config.httpClient == null) client.close();
     }

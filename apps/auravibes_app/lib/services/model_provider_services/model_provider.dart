@@ -74,40 +74,56 @@ class ModelProviderServices {
 
 Future<bool> _validateOpenRouterKey(ModelProvider provider) async {
   final url = provider.url ?? 'https://openrouter.ai/api/v1';
-  final request = await http.get(
-    Uri.parse('${url.replaceFirst(RegExp(r'/$'), '')}/key'),
-    headers: <String, String>{
-      'authorization': 'Bearer ${provider.key}',
-      'accept': 'application/json',
-    },
-  );
+  try {
+    final request = await http
+        .get(
+          Uri.parse('${url.replaceFirst(RegExp(r'/$'), '')}/key'),
+          headers: <String, String>{
+            'authorization': 'Bearer ${provider.key}',
+            'accept': 'application/json',
+          },
+        )
+        .timeout(const Duration(seconds: 10));
 
-  return request.statusCode >= 200 && request.statusCode < 300;
+    return request.statusCode >= 200 && request.statusCode < 300;
+  } on Exception {
+    return false;
+  }
 }
 
 Future<List<String>?> _openRouterModels(ModelProvider provider) async {
   final url = provider.url ?? 'https://openrouter.ai/api/v1';
-  final request = await http.get(
-    Uri.parse('${url.replaceFirst(RegExp(r'/$'), '')}/models'),
-    headers: <String, String>{
-      'authorization': 'Bearer ${provider.key}',
-      'accept': 'application/json',
-    },
-  );
-  if (request.statusCode < 200 || request.statusCode >= 300) return null;
+  try {
+    final request = await http
+        .get(
+          Uri.parse('${url.replaceFirst(RegExp(r'/$'), '')}/models'),
+          headers: <String, String>{
+            'authorization': 'Bearer ${provider.key}',
+            'accept': 'application/json',
+          },
+        )
+        .timeout(const Duration(seconds: 10));
+    if (request.statusCode < 200 || request.statusCode >= 300) return null;
 
-  final json = jsonDecode(request.body) as Map<String, dynamic>;
-  final data = json['data'];
-  if (data is! List) return null;
+    final json = jsonDecode(request.body);
+    if (json is! Map<String, dynamic>) return null;
 
-  return data
-      .map((model) {
-        if (model is! Map<String, dynamic>) return null;
+    final data = json['data'];
+    if (data is! List) return null;
 
-        return model['id'] as String?;
-      })
-      .nonNulls
-      .toList();
+    return data
+        .map((model) {
+          if (model is! Map<String, dynamic>) return null;
+
+          final id = model['id'];
+
+          return id is String ? id : null;
+        })
+        .nonNulls
+        .toList();
+  } on Exception {
+    return null;
+  }
 }
 
 Future<List<AntropicResponseModelsItem>> _anthopicAllModels(

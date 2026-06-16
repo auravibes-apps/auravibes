@@ -11,13 +11,7 @@ import 'package:http/http.dart' as http;
 const openRouter = OpenRouterPluginHandle();
 
 typedef OpenRouterApiKeyProvider = FutureOr<String> Function();
-
-class OpenRouterModelDefinition {
-  const OpenRouterModelDefinition({required this.name, this.info});
-
-  final String name;
-  final ModelInfo? info;
-}
+typedef OpenRouterModelDefinition = ChatCompletionsModelDefinition;
 
 class OpenRouterPluginHandle {
   const OpenRouterPluginHandle();

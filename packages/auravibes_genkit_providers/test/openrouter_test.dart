@@ -3,9 +3,11 @@
 // Required: Test fakes keep related fields near constructors.
 // Required: Tests keep helper functions and fakes top-level.
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:auravibes_genkit_providers/auravibes_genkit_providers.dart';
+import 'package:auravibes_genkit_providers/src/chat_completions_provider.dart';
 import 'package:genkit/genkit.dart';
 import 'package:http/http.dart' as http;
 import 'package:test/test.dart';
@@ -351,6 +353,61 @@ void main() {
       throwsA(isA<GenkitException>()),
     );
   });
+
+  test('times out when non-streaming request does not respond', () {
+    final ai = Genkit(
+      plugins: [_timeoutProvider()],
+    );
+
+    expect(
+      () => ai.generate<OpenRouterOptions, Object?>(
+        model: openRouter.model('anthropic/claude-sonnet-4'),
+        messages: [
+          Message(
+            role: Role.user,
+            content: [TextPart(text: 'Hi')],
+          ),
+        ],
+      ),
+      throwsA(isA<TimeoutException>()),
+    );
+  });
+
+  test('times out when streaming request does not respond', () {
+    final ai = Genkit(
+      plugins: [_timeoutProvider()],
+    );
+
+    final stream = ai.generateStream<OpenRouterOptions, Object?>(
+      model: openRouter.model('anthropic/claude-sonnet-4'),
+      messages: [
+        Message(
+          role: Role.user,
+          content: [TextPart(text: 'Hi')],
+        ),
+      ],
+    );
+
+    expect(stream.onResult, throwsA(isA<TimeoutException>()));
+  });
+}
+
+ChatCompletionsProvider<OpenRouterOptions> _timeoutProvider() {
+  return ChatCompletionsProvider<OpenRouterOptions>(
+    ChatCompletionsProviderConfig(
+      name: 'openrouter',
+      baseUrl: 'https://openrouter.ai/api/v1',
+      errorLabel: 'OpenRouter',
+      parseOptions: OpenRouterOptions.fromJson,
+      extraBody: (_) => const {},
+      apiKey: 'key',
+      models: const [
+        ChatCompletionsModelDefinition(name: 'anthropic/claude-sonnet-4'),
+      ],
+      httpClient: _NeverRespondingClient(),
+      requestTimeout: const Duration(milliseconds: 1),
+    ),
+  );
 }
 
 Future<Map<String, Object?>> _readBody(http.BaseRequest request) async {
@@ -378,5 +435,12 @@ class _FakeClient extends http.BaseClient {
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) {
     return handler(request);
+  }
+}
+
+class _NeverRespondingClient extends http.BaseClient {
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) {
+    return Completer<http.StreamedResponse>().future;
   }
 }

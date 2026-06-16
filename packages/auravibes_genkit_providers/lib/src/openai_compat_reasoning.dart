@@ -11,13 +11,7 @@ import 'package:http/http.dart' as http;
 const openAICompatReasoning = OpenAICompatReasoningPluginHandle();
 
 typedef OpenAICompatApiKeyProvider = FutureOr<String> Function();
-
-class OpenAICompatModelDefinition {
-  const OpenAICompatModelDefinition({required this.name, this.info});
-
-  final String name;
-  final ModelInfo? info;
-}
+typedef OpenAICompatModelDefinition = ChatCompletionsModelDefinition;
 
 class OpenAICompatReasoningPluginHandle {
   const OpenAICompatReasoningPluginHandle();

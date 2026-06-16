@@ -278,6 +278,30 @@ void main() {
       },
     );
 
+    test(
+      'getWorkspaceModelSelections with openrouter returns null on malformed '
+      'models response',
+      () async {
+        nock('https://openrouter.ai').get('/api/v1/key').reply(200, {
+          'data': {'label': 'test-key'},
+        });
+
+        nock(
+          'https://openrouter.ai',
+        ).get('/api/v1/models').reply(200, 'not json');
+
+        final service = ModelProviderServices();
+        final result = await service.getWorkspaceModelSelections(
+          const ModelProvider(
+            type: CredentialsModelType.openrouter,
+            key: 'test-key',
+          ),
+        );
+
+        expect(result, isNull);
+      },
+    );
+
     test('anthropic models pagination', () async {
       nock('https://api.anthropic.com').get('/v1/models')
         ..query({'limit': '1000', 'after_id': 'page1-id'})
