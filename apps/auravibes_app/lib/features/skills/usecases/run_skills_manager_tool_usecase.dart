@@ -34,7 +34,6 @@ class RunSkillsManagerToolUsecase {
     this._createSkillCredentialDefinitionUsecase,
     this._updateSkillCredentialDefinitionUsecase,
     this._deleteSkillCredentialDefinitionUsecase,
-    this._generateSlug,
   );
 
   final SkillsRepository _skillsRepository;
@@ -53,8 +52,6 @@ class RunSkillsManagerToolUsecase {
   _updateSkillCredentialDefinitionUsecase;
   final DeleteSkillCredentialDefinitionUsecase
   _deleteSkillCredentialDefinitionUsecase;
-  final GenerateSkillSlugUsecase _generateSlug;
-
   Future<Object> call({
     required String workspaceId,
     required String toolSlug,
@@ -236,7 +233,7 @@ class RunSkillsManagerToolUsecase {
       _requiredString(arguments, 'skillSlug'),
     );
     final title = _requiredString(arguments, 'title');
-    final slug = _generateSlug.call(title);
+    final slug = generateSkillSlug(title);
     final duplicate = await _skillTemplateToolsRepository.getToolBySlug(
       skill.id,
       slug,
@@ -335,7 +332,7 @@ class RunSkillsManagerToolUsecase {
     Map<String, dynamic> arguments,
   ) async {
     final title = _requiredString(arguments, 'title');
-    final slug = _generateSlug.call(title);
+    final slug = generateSkillSlug(title);
     final duplicate = await _skillCredentialDefinitionsRepository
         .getDefinitionBySlug(workspaceId, slug);
     if (duplicate != null) {
@@ -587,6 +584,5 @@ final runSkillsManagerToolUsecaseProvider =
         ref.watch(
           deleteSkillCredentialDefinitionUsecaseProvider,
         ),
-        ref.watch(generateSkillSlugUsecaseProvider),
       );
     });

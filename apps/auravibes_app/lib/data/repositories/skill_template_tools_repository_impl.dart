@@ -11,8 +11,6 @@ class SkillTemplateToolsRepositoryImpl implements SkillTemplateToolsRepository {
     : _dao = database.skillTemplateToolsDao;
 
   final SkillTemplateToolsDao _dao;
-  final GenerateSkillSlugUsecase _generateSlug =
-      const GenerateSkillSlugUsecase();
 
   @override
   Future<List<SkillTemplateToolEntity>> getSkillTools(String skillId) async {
@@ -51,7 +49,7 @@ class SkillTemplateToolsRepositoryImpl implements SkillTemplateToolsRepository {
         templateType: Value(_mapTypeToTable(tool.templateType)),
         title: Value(tool.title.trim()),
         description: Value(tool.description.trim()),
-        slug: Value(_generateSlug.call(tool.title)),
+        slug: Value(generateSkillSlug(tool.title)),
         templateJson: Value(tool.templateJson),
         inputsJson: Value(tool.inputsJson),
         requiresCredential: Value(tool.requiresCredential),

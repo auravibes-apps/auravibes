@@ -222,6 +222,8 @@
     "save_error": "Unable to save skill",
     "not_found": "Skill not found",
     "load_error": "Error loading skills",
+    "error_title_required": "Skill title is required",
+    "error_title_invalid": "Skill title can only contain letters, numbers, and spaces",
     "empty_title": "No skills available",
     "empty_subtitle": "Create a skill to make it available in conversations",
     "app_read_only": "App skills are built in and can only be enabled or disabled for this workspace.",
