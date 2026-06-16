@@ -319,7 +319,11 @@ void main() {
       controller.open();
       final _ = await tester.pumpAndSettle();
 
-      await tester.tapAt(const Offset(390, 400));
+      final scrim = find.byWidgetPredicate(
+        (widget) => widget is GestureDetector && widget.child is Stack,
+      );
+      final scrimRect = tester.getRect(scrim);
+      await tester.tapAt(Offset(scrimRect.left + 1, scrimRect.center.dy));
       final _ = await tester.pumpAndSettle();
 
       expect(find.text('Drawer'), findsOneWidget);
