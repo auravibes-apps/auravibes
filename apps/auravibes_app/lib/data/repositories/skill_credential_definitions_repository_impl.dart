@@ -11,8 +11,6 @@ class SkillCredentialDefinitionsRepositoryImpl
     : _dao = database.skillCredentialDefinitionsDao;
 
   final SkillCredentialDefinitionsDao _dao;
-  final GenerateSkillSlugUsecase _generateSlug =
-      const GenerateSkillSlugUsecase();
 
   @override
   Future<List<SkillCredentialDefinitionEntity>> getDefinitions(
@@ -64,7 +62,7 @@ class SkillCredentialDefinitionsRepositoryImpl
       SkillCredentialDefinitionsCompanion(
         workspaceId: Value(workspaceId),
         title: Value(definition.title.trim()),
-        slug: Value(_generateSlug.call(definition.title)),
+        slug: Value(generateSkillSlug(definition.title)),
         attributesJson: Value(definition.attributesJson),
       ),
     );

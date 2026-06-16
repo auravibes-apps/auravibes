@@ -32,7 +32,6 @@ import 'package:auravibes_app/features/skills/usecases/delete_skill_credential_d
 import 'package:auravibes_app/features/skills/usecases/delete_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/delete_skill_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/duplicate_skill_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/generate_skill_slug_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/load_conversation_skill_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/resolve_skill_url_template_usecase.dart';
@@ -80,15 +79,8 @@ void main() {
     var appSkillSettingsRepository = AppSkillWorkspaceSettingsRepositoryImpl(
       database,
     );
-    var createSkillUsecase = CreateSkillUsecase(
-      skillsRepository,
-      const GenerateSkillSlugUsecase(),
-      const ValidateSkillTitleUsecase(),
-    );
-    var updateSkillUsecase = UpdateSkillUsecase(
-      skillsRepository,
-      const ValidateSkillTitleUsecase(),
-    );
+    var createSkillUsecase = CreateSkillUsecase(skillsRepository);
+    var updateSkillUsecase = UpdateSkillUsecase(skillsRepository);
     var listAvailableSkillsUsecase = ListAvailableSkillsUsecase(
       skillsRepository,
       conversationSkillsRepository,
@@ -115,15 +107,8 @@ void main() {
       appSkillSettingsRepository = AppSkillWorkspaceSettingsRepositoryImpl(
         database,
       );
-      createSkillUsecase = CreateSkillUsecase(
-        skillsRepository,
-        const GenerateSkillSlugUsecase(),
-        const ValidateSkillTitleUsecase(),
-      );
-      updateSkillUsecase = UpdateSkillUsecase(
-        skillsRepository,
-        const ValidateSkillTitleUsecase(),
-      );
+      createSkillUsecase = CreateSkillUsecase(skillsRepository);
+      updateSkillUsecase = UpdateSkillUsecase(skillsRepository);
       listAvailableSkillsUsecase = ListAvailableSkillsUsecase(
         skillsRepository,
         conversationSkillsRepository,
@@ -184,18 +169,13 @@ void main() {
         DeleteSkillTemplateToolUsecase(toolsRepository),
         CreateSkillCredentialDefinitionUsecase(
           skillCredentialDefinitionsRepository,
-          generateSkillSlugUsecase: const GenerateSkillSlugUsecase(),
-          validateSkillTitleUsecase: const ValidateSkillTitleUsecase(),
         ),
         UpdateSkillCredentialDefinitionUsecase(
           skillCredentialDefinitionsRepository,
-          generateSkillSlugUsecase: const GenerateSkillSlugUsecase(),
-          validateSkillTitleUsecase: const ValidateSkillTitleUsecase(),
         ),
         DeleteSkillCredentialDefinitionUsecase(
           skillCredentialDefinitionsRepository,
         ),
-        const GenerateSkillSlugUsecase(),
       );
     }
 

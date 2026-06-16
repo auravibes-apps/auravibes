@@ -7,25 +7,21 @@ import 'package:riverpod/riverpod.dart';
 
 class CreateSkillCredentialDefinitionUsecase {
   const CreateSkillCredentialDefinitionUsecase(
-    this._skillCredentialDefinitionsRepository, {
-    required this.generateSkillSlugUsecase,
-    required this.validateSkillTitleUsecase,
-  });
+    this._skillCredentialDefinitionsRepository,
+  );
 
   final SkillCredentialDefinitionsRepository
   _skillCredentialDefinitionsRepository;
-  final GenerateSkillSlugUsecase generateSkillSlugUsecase;
-  final ValidateSkillTitleUsecase validateSkillTitleUsecase;
 
   Future<SkillCredentialDefinitionEntity> call(
     String workspaceId,
     SkillCredentialDefinitionToCreate definition,
   ) async {
-    validateSkillTitleUsecase.call(definition.title);
+    validateSkillTitle(definition.title);
     final _ = SkillCredentialAttributeDefinition.parseMap(
       definition.attributesJson,
     );
-    final slug = generateSkillSlugUsecase.call(definition.title);
+    final slug = generateSkillSlug(definition.title);
     final existing = await _skillCredentialDefinitionsRepository
         .getDefinitionBySlug(workspaceId, slug);
     if (existing != null) {
@@ -45,7 +41,5 @@ final createSkillCredentialDefinitionUsecaseProvider =
     Provider<CreateSkillCredentialDefinitionUsecase>((ref) {
       return CreateSkillCredentialDefinitionUsecase(
         ref.watch(skillCredentialDefinitionsRepositoryProvider),
-        generateSkillSlugUsecase: ref.watch(generateSkillSlugUsecaseProvider),
-        validateSkillTitleUsecase: ref.watch(validateSkillTitleUsecaseProvider),
       );
     });

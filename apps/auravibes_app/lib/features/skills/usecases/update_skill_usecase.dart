@@ -5,18 +5,14 @@ import 'package:auravibes_app/features/skills/usecases/validate_skill_title_usec
 import 'package:riverpod/riverpod.dart';
 
 class UpdateSkillUsecase {
-  const UpdateSkillUsecase(
-    this._skillsRepository,
-    this._validateSkillTitleUsecase,
-  );
+  const UpdateSkillUsecase(this._skillsRepository);
 
   final SkillsRepository _skillsRepository;
-  final ValidateSkillTitleUsecase _validateSkillTitleUsecase;
 
   Future<SkillEntity> call(String skillId, SkillToUpdate skill) async {
     final title = skill.title;
     if (title != null) {
-      _validateSkillTitleUsecase.call(title);
+      validateSkillTitle(title);
       final existingSkill = await _skillsRepository.getSkillById(skillId);
       if (existingSkill == null) {
         throw StateError('Skill not found: $skillId');
@@ -38,8 +34,5 @@ class UpdateSkillUsecase {
 }
 
 final updateSkillUsecaseProvider = Provider<UpdateSkillUsecase>((ref) {
-  return UpdateSkillUsecase(
-    ref.watch(skillsRepositoryProvider),
-    ref.watch(validateSkillTitleUsecaseProvider),
-  );
+  return UpdateSkillUsecase(ref.watch(skillsRepositoryProvider));
 });
