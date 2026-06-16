@@ -420,8 +420,7 @@ FinishReason _mapFinishReason(sdk.FinishReason? reason) {
   return switch (reason) {
     sdk.FinishReason.stop ||
     sdk.FinishReason.toolCalls ||
-    sdk.FinishReason.functionCall =>
-      FinishReason.stop,
+    sdk.FinishReason.functionCall => FinishReason.stop,
     sdk.FinishReason.length => FinishReason.length,
     sdk.FinishReason.contentFilter => FinishReason.blocked,
     sdk.FinishReason.unknown => FinishReason.unknown,
