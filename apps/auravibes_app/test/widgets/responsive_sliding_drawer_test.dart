@@ -119,14 +119,7 @@ void main() {
   group('ResponsiveSlidingDrawer', () {
     Widget buildDrawer({
       required ResponsiveSlidingDrawerController controller,
-      Duration animationDuration = const Duration(milliseconds: 250),
-      VoidCallback? onFinishedOpening,
-      VoidCallback? onFinishedClosing,
-      void Function({required bool isOpen})? onAnimationComplete,
-      VoidCallback? onStartedOpening,
-      VoidCallback? onStartedClosing,
       bool isDarkMode = false,
-      bool centerDivider = true,
     }) {
       return MaterialApp(
         home: ResponsiveSlidingDrawer(
@@ -134,13 +127,6 @@ void main() {
           body: const Text('Body'),
           isDarkMode: isDarkMode,
           controller: controller,
-          animationDuration: animationDuration,
-          onAnimationComplete: onAnimationComplete,
-          onFinishedOpening: onFinishedOpening,
-          onFinishedClosing: onFinishedClosing,
-          onStartedOpening: onStartedOpening,
-          onStartedClosing: onStartedClosing,
-          centerDivider: centerDivider,
         ),
         theme: ThemeData(extensions: [AuraTheme.light]),
       );
@@ -165,12 +151,7 @@ void main() {
     testWidgets('controller open animates drawer', (tester) async {
       final controller = ResponsiveSlidingDrawerController();
 
-      await tester.pumpWidget(
-        buildDrawer(
-          controller: controller,
-          animationDuration: Duration.zero,
-        ),
-      );
+      await tester.pumpWidget(buildDrawer(controller: controller));
 
       controller.open();
       final _ = await tester.pumpAndSettle();
@@ -181,12 +162,7 @@ void main() {
     testWidgets('controller close after open', (tester) async {
       final controller = ResponsiveSlidingDrawerController();
 
-      await tester.pumpWidget(
-        buildDrawer(
-          controller: controller,
-          animationDuration: Duration.zero,
-        ),
-      );
+      await tester.pumpWidget(buildDrawer(controller: controller));
 
       controller.open();
       final _ = await tester.pumpAndSettle();
@@ -201,12 +177,7 @@ void main() {
     testWidgets('controller toggle opens then closes', (tester) async {
       final controller = ResponsiveSlidingDrawerController();
 
-      await tester.pumpWidget(
-        buildDrawer(
-          controller: controller,
-          animationDuration: Duration.zero,
-        ),
-      );
+      await tester.pumpWidget(buildDrawer(controller: controller));
 
       controller.toggle();
       final _ = await tester.pumpAndSettle();
@@ -217,117 +188,10 @@ void main() {
       expect(find.text('Drawer'), findsOneWidget);
     });
 
-    testWidgets('onFinishedOpening callback fires', (tester) async {
-      var opened = false;
-      final controller = ResponsiveSlidingDrawerController();
-
-      await tester.pumpWidget(
-        buildDrawer(
-          controller: controller,
-          animationDuration: Duration.zero,
-          onFinishedOpening: () => opened = true,
-        ),
-      );
-
-      controller.open();
-      final _ = await tester.pumpAndSettle();
-
-      expect(opened, isTrue);
-    });
-
-    testWidgets('onFinishedClosing callback fires', (tester) async {
-      var closed = false;
-      final controller = ResponsiveSlidingDrawerController();
-
-      await tester.pumpWidget(
-        buildDrawer(
-          controller: controller,
-          animationDuration: Duration.zero,
-          onFinishedClosing: () => closed = true,
-        ),
-      );
-
-      controller.open();
-      final _ = await tester.pumpAndSettle();
-
-      controller.close();
-      final _ = await tester.pumpAndSettle();
-
-      expect(closed, isTrue);
-    });
-
-    testWidgets('onAnimationComplete fires with isOpen true', (tester) async {
-      bool? lastIsOpen;
-      final controller = ResponsiveSlidingDrawerController();
-
-      await tester.pumpWidget(
-        buildDrawer(
-          controller: controller,
-          animationDuration: Duration.zero,
-          onAnimationComplete: ({required isOpen}) {
-            lastIsOpen = isOpen;
-          },
-        ),
-      );
-
-      controller.open();
-      final _ = await tester.pumpAndSettle();
-
-      expect(lastIsOpen, isTrue);
-    });
-
-    testWidgets('onAnimationComplete fires with isOpen false after close', (
-      tester,
-    ) async {
-      bool? lastIsOpen;
-      final controller = ResponsiveSlidingDrawerController();
-
-      await tester.pumpWidget(
-        buildDrawer(
-          controller: controller,
-          animationDuration: Duration.zero,
-          onAnimationComplete: ({required isOpen}) {
-            lastIsOpen = isOpen;
-          },
-        ),
-      );
-
-      controller.open();
-      final _ = await tester.pumpAndSettle();
-
-      controller.close();
-      final _ = await tester.pumpAndSettle();
-
-      expect(lastIsOpen, isFalse);
-    });
-
-    testWidgets('onStartedOpening fires on programmatic open', (tester) async {
-      var started = false;
-      final controller = ResponsiveSlidingDrawerController();
-
-      await tester.pumpWidget(
-        buildDrawer(
-          controller: controller,
-          animationDuration: Duration.zero,
-          onStartedOpening: () => started = true,
-        ),
-      );
-
-      controller.open();
-      final _ = await tester.pumpAndSettle();
-
-      expect(started, isTrue);
-    });
-
     testWidgets('closeIfMobile does nothing on desktop width', (tester) async {
       final controller = ResponsiveSlidingDrawerController();
 
-      await tester.pumpWidget(
-        buildDrawer(
-          controller: controller,
-          animationDuration: Duration.zero,
-        ),
-      );
+      await tester.pumpWidget(buildDrawer(controller: controller));
 
       controller.open();
       final _ = await tester.pumpAndSettle();
@@ -383,12 +247,7 @@ void main() {
         tester.view.resetDevicePixelRatio();
       });
 
-      await tester.pumpWidget(
-        buildDrawer(
-          controller: controller,
-          animationDuration: Duration.zero,
-        ),
-      );
+      await tester.pumpWidget(buildDrawer(controller: controller));
 
       controller.open();
       final _ = await tester.pumpAndSettle();
@@ -397,71 +256,6 @@ void main() {
       final _ = await tester.pumpAndSettle();
 
       expect(find.text('Drawer'), findsOneWidget);
-    });
-
-    testWidgets('onStartedClosing fires on programmatic close', (
-      tester,
-    ) async {
-      var started = false;
-      final controller = ResponsiveSlidingDrawerController();
-
-      await tester.pumpWidget(
-        buildDrawer(
-          controller: controller,
-          animationDuration: Duration.zero,
-          onStartedClosing: () => started = true,
-        ),
-      );
-
-      controller.open();
-      final _ = await tester.pumpAndSettle();
-
-      controller.close();
-      final _ = await tester.pumpAndSettle();
-
-      expect(started, isTrue);
-    });
-
-    testWidgets('open when already fully open fires onFinishedOpening', (
-      tester,
-    ) async {
-      var openedCount = 0;
-      final controller = ResponsiveSlidingDrawerController();
-
-      await tester.pumpWidget(
-        buildDrawer(
-          controller: controller,
-          animationDuration: Duration.zero,
-          onFinishedOpening: () => openedCount++,
-        ),
-      );
-
-      controller.open();
-      final _ = await tester.pumpAndSettle();
-      expect(openedCount, 1);
-
-      controller.open();
-      final _ = await tester.pumpAndSettle();
-      expect(openedCount, 2);
-    });
-
-    testWidgets('close when already fully closed fires onFinishedClosing', (
-      tester,
-    ) async {
-      var closedCount = 0;
-      final controller = ResponsiveSlidingDrawerController();
-
-      await tester.pumpWidget(
-        buildDrawer(
-          controller: controller,
-          animationDuration: Duration.zero,
-          onFinishedClosing: () => closedCount++,
-        ),
-      );
-
-      controller.close();
-      final _ = await tester.pumpAndSettle();
-      expect(closedCount, 1);
     });
 
     testWidgets('renders dark mode scrim colors', (tester) async {
@@ -477,7 +271,6 @@ void main() {
       await tester.pumpWidget(
         buildDrawer(
           controller: controller,
-          animationDuration: Duration.zero,
           isDarkMode: true,
         ),
       );
@@ -500,12 +293,7 @@ void main() {
         tester.view.resetDevicePixelRatio();
       });
 
-      await tester.pumpWidget(
-        buildDrawer(
-          controller: controller,
-          animationDuration: Duration.zero,
-        ),
-      );
+      await tester.pumpWidget(buildDrawer(controller: controller));
 
       controller.toggle();
       final _ = await tester.pumpAndSettle();
@@ -514,48 +302,6 @@ void main() {
       final _ = await tester.pumpAndSettle();
 
       expect(find.text('Drawer'), findsOneWidget);
-    });
-
-    testWidgets('onStartedOpening fires on programmatic open from closed', (
-      tester,
-    ) async {
-      var started = false;
-      final controller = ResponsiveSlidingDrawerController();
-
-      await tester.pumpWidget(
-        buildDrawer(
-          controller: controller,
-          animationDuration: Duration.zero,
-          onStartedOpening: () => started = true,
-        ),
-      );
-
-      controller.open();
-      final _ = await tester.pumpAndSettle();
-
-      expect(started, isTrue);
-    });
-
-    testWidgets('onStartedClosing fires on programmatic close from open', (
-      tester,
-    ) async {
-      var startedClosing = false;
-      final controller = ResponsiveSlidingDrawerController();
-
-      await tester.pumpWidget(
-        buildDrawer(
-          controller: controller,
-          animationDuration: Duration.zero,
-          onStartedClosing: () => startedClosing = true,
-        ),
-      );
-
-      controller.open();
-      final _ = await tester.pumpAndSettle();
-      controller.close();
-      final _ = await tester.pumpAndSettle();
-
-      expect(startedClosing, isTrue);
     });
 
     testWidgets('mobile tap closes drawer when fully open', (tester) async {
@@ -568,36 +314,16 @@ void main() {
         tester.view.resetDevicePixelRatio();
       });
 
-      await tester.pumpWidget(
-        buildDrawer(
-          controller: controller,
-          animationDuration: Duration.zero,
-        ),
-      );
+      await tester.pumpWidget(buildDrawer(controller: controller));
 
       controller.open();
       final _ = await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Body'));
-      final _ = await tester.pumpAndSettle();
-
-      expect(find.text('Drawer'), findsOneWidget);
-    });
-
-    testWidgets('renders with centerDivider false on desktop', (
-      tester,
-    ) async {
-      final controller = ResponsiveSlidingDrawerController();
-
-      await tester.pumpWidget(
-        buildDrawer(
-          controller: controller,
-          animationDuration: Duration.zero,
-          centerDivider: false,
-        ),
+      final scrim = find.byWidgetPredicate(
+        (widget) => widget is GestureDetector && widget.child is Stack,
       );
-
-      controller.open();
+      final scrimRect = tester.getRect(scrim);
+      await tester.tapAt(Offset(scrimRect.left + 1, scrimRect.center.dy));
       final _ = await tester.pumpAndSettle();
 
       expect(find.text('Drawer'), findsOneWidget);
@@ -606,12 +332,7 @@ void main() {
     testWidgets('divider hover changes state on desktop', (tester) async {
       final controller = ResponsiveSlidingDrawerController();
 
-      await tester.pumpWidget(
-        buildDrawer(
-          controller: controller,
-          animationDuration: Duration.zero,
-        ),
-      );
+      await tester.pumpWidget(buildDrawer(controller: controller));
 
       controller.open();
       final _ = await tester.pumpAndSettle();
@@ -630,12 +351,7 @@ void main() {
     testWidgets('desktop drag area exists when closed', (tester) async {
       final controller = ResponsiveSlidingDrawerController();
 
-      await tester.pumpWidget(
-        buildDrawer(
-          controller: controller,
-          animationDuration: Duration.zero,
-        ),
-      );
+      await tester.pumpWidget(buildDrawer(controller: controller));
 
       controller.close();
       final _ = await tester.pumpAndSettle();

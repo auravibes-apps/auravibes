@@ -272,6 +272,10 @@ abstract class LocaleKeys {
   static const skills_screen_save_error = 'skills_screen.save_error';
   static const skills_screen_not_found = 'skills_screen.not_found';
   static const skills_screen_load_error = 'skills_screen.load_error';
+  static const skills_screen_error_title_required =
+      'skills_screen.error_title_required';
+  static const skills_screen_error_title_invalid =
+      'skills_screen.error_title_invalid';
   static const skills_screen_empty_title = 'skills_screen.empty_title';
   static const skills_screen_empty_subtitle = 'skills_screen.empty_subtitle';
   static const skills_screen_app_read_only = 'skills_screen.app_read_only';

@@ -4,17 +4,16 @@ import 'package:auravibes_app/data/repositories/conversation_tools_repository_im
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
 import 'package:auravibes_app/domain/repositories/conversation_tools_repository.dart';
-import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/annotations.dart';
-import 'package:mockito/mockito.dart';
+import 'package:mocktail/mocktail.dart';
 
-import 'conversation_tools_repository_impl_test.mocks.dart';
+import '../../test_mocks.dart';
 
-@GenerateMocks([WorkspaceToolsRepository])
 void main() {
+  setUpAll(registerTestFallbackValues);
+
   group('ConversationToolsRepositoryImpl - checkToolPermission', () {
     final fixture = _ConversationToolsRepositoryFixture();
 
@@ -29,7 +28,7 @@ void main() {
     test('returns notConfigured when tool is not in workspace', () async {
       // Arrange.
       when(
-        fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
+        () => fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
           testWorkspaceId,
           testToolId,
         ),
@@ -51,7 +50,7 @@ void main() {
       () async {
         // Arrange.
         when(
-          fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
+          () => fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
             testWorkspaceId,
             testToolId,
           ),
@@ -84,7 +83,7 @@ void main() {
       () async {
         // Arrange.
         when(
-          fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
+          () => fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
             testWorkspaceId,
             testToolId,
           ),
@@ -117,7 +116,7 @@ void main() {
       () async {
         // Arrange.
         when(
-          fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
+          () => fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
             testWorkspaceId,
             testToolId,
           ),
@@ -150,7 +149,7 @@ void main() {
       () async {
         // Arrange: workspace allows, but conversation disables.
         when(
-          fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
+          () => fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
             testWorkspaceId,
             testToolId,
           ),
@@ -192,7 +191,7 @@ void main() {
       () async {
         // Arrange: workspace grants, but conversation requires confirmation.
         when(
-          fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
+          () => fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
             testWorkspaceId,
             testToolId,
           ),
@@ -234,7 +233,7 @@ void main() {
       () async {
         // Arrange: workspace asks, but conversation grants.
         when(
-          fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
+          () => fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
             testWorkspaceId,
             testToolId,
           ),
@@ -587,7 +586,7 @@ void main() {
       'returns true when workspace enabled and no conversation override',
       () async {
         when(
-          fixture.mockWorkspaceToolsRepository.isWorkspaceToolEnabled(
+          () => fixture.mockWorkspaceToolsRepository.isWorkspaceToolEnabled(
             'ws-1',
             'tool-1',
           ),
@@ -604,7 +603,7 @@ void main() {
 
     test('returns false when workspace disabled', () async {
       when(
-        fixture.mockWorkspaceToolsRepository.isWorkspaceToolEnabled(
+        () => fixture.mockWorkspaceToolsRepository.isWorkspaceToolEnabled(
           'ws-1',
           'tool-1',
         ),
@@ -622,7 +621,7 @@ void main() {
       'returns false when workspace enabled but conversation disabled',
       () async {
         when(
-          fixture.mockWorkspaceToolsRepository.isWorkspaceToolEnabled(
+          () => fixture.mockWorkspaceToolsRepository.isWorkspaceToolEnabled(
             'ws-1',
             'tool-1',
           ),
@@ -655,7 +654,9 @@ void main() {
 
     test('returns all workspace tools when no disabled matches', () async {
       when(
-        fixture.mockWorkspaceToolsRepository.getEnabledWorkspaceTools('ws-1'),
+        () => fixture.mockWorkspaceToolsRepository.getEnabledWorkspaceTools(
+          'ws-1',
+        ),
       ).thenAnswer(
         (_) async => [
           WorkspaceToolEntity(
@@ -696,7 +697,9 @@ void main() {
 
     test('filters out disabled tools by workspace tool id', () async {
       when(
-        fixture.mockWorkspaceToolsRepository.getEnabledWorkspaceTools('ws-1'),
+        () => fixture.mockWorkspaceToolsRepository.getEnabledWorkspaceTools(
+          'ws-1',
+        ),
       ).thenAnswer(
         (_) async => [
           WorkspaceToolEntity(
@@ -721,7 +724,9 @@ void main() {
 
     test('returns empty when no workspace tools', () async {
       when(
-        fixture.mockWorkspaceToolsRepository.getEnabledWorkspaceTools('ws-1'),
+        () => fixture.mockWorkspaceToolsRepository.getEnabledWorkspaceTools(
+          'ws-1',
+        ),
       ).thenAnswer((_) async => []);
 
       final result = await fixture.repository.getAvailableToolsForConversation(
@@ -750,7 +755,9 @@ void main() {
         updatedAt: DateTime(2026),
       );
       when(
-        fixture.mockWorkspaceToolsRepository.getEnabledWorkspaceTools('ws-1'),
+        () => fixture.mockWorkspaceToolsRepository.getEnabledWorkspaceTools(
+          'ws-1',
+        ),
       ).thenAnswer((_) async => [wsTool]);
 
       final _ = await fixture.database.conversationToolsDao
@@ -780,7 +787,9 @@ void main() {
         updatedAt: DateTime(2026),
       );
       when(
-        fixture.mockWorkspaceToolsRepository.getEnabledWorkspaceTools('ws-1'),
+        () => fixture.mockWorkspaceToolsRepository.getEnabledWorkspaceTools(
+          'ws-1',
+        ),
       ).thenAnswer((_) async => [wsTool]);
 
       final result = await fixture.repository
@@ -850,7 +859,9 @@ void main() {
 
     test('returns empty list when no workspace tools', () async {
       when(
-        fixture.mockWorkspaceToolsRepository.getEnabledWorkspaceTools(any),
+        () => fixture.mockWorkspaceToolsRepository.getEnabledWorkspaceTools(
+          any(),
+        ),
       ).thenAnswer((_) async => []);
 
       final tools = await fixture.repository.getEnabledConversationTools(
@@ -863,7 +874,9 @@ void main() {
       'returns enabled tools filtered by disabled conversation tools',
       () async {
         when(
-          fixture.mockWorkspaceToolsRepository.getEnabledWorkspaceTools(any),
+          () => fixture.mockWorkspaceToolsRepository.getEnabledWorkspaceTools(
+            any(),
+          ),
         ).thenAnswer(
           (_) async => [
             WorkspaceToolEntity(

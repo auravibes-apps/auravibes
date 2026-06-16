@@ -1,14 +1,13 @@
-import 'package:auravibes_app/domain/repositories/api_model_repository.dart';
 import 'package:auravibes_app/services/model_api_service.dart';
 import 'package:auravibes_app/services/model_sync_service.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/annotations.dart';
-import 'package:mockito/mockito.dart';
+import 'package:mocktail/mocktail.dart';
 
-import 'model_sync_service_test.mocks.dart';
+import '../test_mocks.dart';
 
-@GenerateMocks([ApiModelRepository, ModelApiService])
 void main() {
+  setUpAll(registerTestFallbackValues);
+
   group('ModelSyncResult', () {
     test('totalChanges sums all change counts', () {
       final result = ModelSyncResult(
@@ -197,7 +196,7 @@ void main() {
     });
 
     test('performFullSync returns failure when API not accessible', () async {
-      when(apiService.getApiStatus()).thenAnswer(
+      when(() => apiService.getApiStatus()).thenAnswer(
         (_) async => ModelApiStatus(
           isAccessible: false,
           lastChecked: DateTime(2026),
@@ -213,7 +212,9 @@ void main() {
     });
 
     test('performFullSync returns failure on exception', () async {
-      when(apiService.getApiStatus()).thenThrow(Exception('Network error'));
+      when(
+        () => apiService.getApiStatus(),
+      ).thenThrow(Exception('Network error'));
 
       final result = await service.performFullSync();
 
@@ -223,20 +224,24 @@ void main() {
     });
 
     test('performFullSync succeeds with accessible API', () async {
-      when(apiService.getApiStatus()).thenAnswer(
+      when(() => apiService.getApiStatus()).thenAnswer(
         (_) async => ModelApiStatus(
           isAccessible: true,
           lastChecked: DateTime(2026),
         ),
       );
-      when(apiService.fetchAllModels()).thenAnswer(
+      when(() => apiService.fetchAllModels()).thenAnswer(
         (_) async => ModelApiResponse(providers: []),
       );
-      when(repository.getAllProviders()).thenAnswer((_) async => []);
-      when(repository.getAllModels()).thenAnswer((_) async => []);
-      when(repository.deleteAllData()).thenAnswer((_) async => 0);
-      when(repository.batchUpsertProviders(any)).thenAnswer((_) async => []);
-      when(repository.batchUpsertModels(any)).thenAnswer((_) async => []);
+      when(() => repository.getAllProviders()).thenAnswer((_) async => []);
+      when(() => repository.getAllModels()).thenAnswer((_) async => []);
+      when(() => repository.deleteAllData()).thenAnswer((_) async => 0);
+      when(
+        () => repository.batchUpsertProviders(any()),
+      ).thenAnswer((_) async => []);
+      when(
+        () => repository.batchUpsertModels(any()),
+      ).thenAnswer((_) async => []);
 
       final result = await service.performFullSync();
 
@@ -246,13 +251,15 @@ void main() {
     });
 
     test('performFullSync handles sync operation exception', () async {
-      when(apiService.getApiStatus()).thenAnswer(
+      when(() => apiService.getApiStatus()).thenAnswer(
         (_) async => ModelApiStatus(
           isAccessible: true,
           lastChecked: DateTime(2026),
         ),
       );
-      when(apiService.fetchAllModels()).thenThrow(Exception('Parse error'));
+      when(
+        () => apiService.fetchAllModels(),
+      ).thenThrow(Exception('Parse error'));
 
       final result = await service.performFullSync();
 
@@ -261,7 +268,10 @@ void main() {
 
     test('dispose calls apiService dispose', () {
       service.dispose();
-      expect(() => verify(apiService.dispose()).called(1), returnsNormally);
+      expect(
+        () => verify(() => apiService.dispose()).called(1),
+        returnsNormally,
+      );
     });
   });
 }

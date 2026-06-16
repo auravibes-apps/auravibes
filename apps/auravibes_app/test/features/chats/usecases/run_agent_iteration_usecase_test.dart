@@ -3,8 +3,6 @@
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
-import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
-import 'package:auravibes_app/domain/repositories/message_repository.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_send_queue_runtime.dart';
@@ -14,22 +12,15 @@ import 'package:auravibes_app/features/chats/usecases/agent_iteration_decision.d
 import 'package:auravibes_app/features/chats/usecases/continue_agent_result.dart';
 import 'package:auravibes_app/features/chats/usecases/maybe_auto_compact_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/run_agent_iteration_usecase.dart';
-import 'package:auravibes_app/features/tools/usecases/run_allowed_tools_usecase.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/annotations.dart';
-import 'package:mockito/mockito.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
 
-import 'run_agent_iteration_usecase_test.mocks.dart';
+import '../../../test_mocks.dart';
 
-@GenerateMocks([
-  ContinueAgentUsecase,
-  RunAllowedToolsUsecase,
-  ConversationRepository,
-  MessageRepository,
-  MaybeAutoCompactConversationUsecase,
-])
 void main() {
+  setUpAll(registerTestFallbackValues);
+
   group('RunAgentIterationUsecase', () {
     var fixture = _RunAgentIterationUsecaseFixture();
 
@@ -37,7 +28,9 @@ void main() {
       fixture = _RunAgentIterationUsecaseFixture();
 
       when(
-        fixture.conversationRepository.getConversationById('conversation-1'),
+        () => fixture.conversationRepository.getConversationById(
+          'conversation-1',
+        ),
       ).thenAnswer(
         (_) async => ConversationEntity(
           id: 'conversation-1',
@@ -49,7 +42,7 @@ void main() {
         ),
       );
 
-      when(fixture.messageRepository.createMessage(any)).thenAnswer(
+      when(() => fixture.messageRepository.createMessage(any())).thenAnswer(
         (_) async => MessageEntity(
           id: 'queued-user-1',
           conversationId: 'conversation-1',
@@ -69,7 +62,7 @@ void main() {
 
     test('returns done when the agent response has no tool calls', () async {
       when(
-        fixture.continueAgentUsecase.call(
+        () => fixture.continueAgentUsecase.call(
           conversationId: 'conversation-1',
           context: const AgentIterationContext(
             origin: AgentIterationOrigin.userMessage,
@@ -93,16 +86,16 @@ void main() {
 
       expect(result, AgentIterationDecision.done);
       final _ = verifyNever(
-        fixture.runAllowedToolsUsecase.call(
-          conversationId: anyNamed('conversationId'),
-          workspaceId: anyNamed('workspaceId'),
+        () => fixture.runAllowedToolsUsecase.call(
+          conversationId: any(named: 'conversationId'),
+          workspaceId: any(named: 'workspaceId'),
         ),
       );
     });
 
     test('forwards the iteration context to every continuation call', () async {
       when(
-        fixture.continueAgentUsecase.call(
+        () => fixture.continueAgentUsecase.call(
           conversationId: 'conversation-1',
           context: const AgentIterationContext(
             origin: AgentIterationOrigin.userMessage,
@@ -126,7 +119,7 @@ void main() {
 
       expect(
         () => verify(
-          fixture.continueAgentUsecase.call(
+          () => fixture.continueAgentUsecase.call(
             conversationId: 'conversation-1',
             context: const AgentIterationContext(
               origin: AgentIterationOrigin.userMessage,
@@ -143,9 +136,9 @@ void main() {
       () async {
         var callCount = 0;
         when(
-          fixture.continueAgentUsecase.call(
+          () => fixture.continueAgentUsecase.call(
             conversationId: 'conversation-1',
-            context: anyNamed('context'),
+            context: any(named: 'context'),
           ),
         ).thenAnswer((invocation) async {
           final context =
@@ -197,7 +190,7 @@ void main() {
 
         expect(result, AgentIterationDecision.done);
         expect(callCount, 2);
-        verify(fixture.messageRepository.createMessage(any)).called(1);
+        verify(() => fixture.messageRepository.createMessage(any())).called(1);
         expect(
           fixture.container
               .read(conversationSendQueueProvider.notifier)
@@ -212,9 +205,9 @@ void main() {
       () async {
         var callCount = 0;
         when(
-          fixture.continueAgentUsecase.call(
+          () => fixture.continueAgentUsecase.call(
             conversationId: 'conversation-1',
-            context: anyNamed('context'),
+            context: any(named: 'context'),
           ),
         ).thenAnswer((invocation) async {
           final context =
@@ -245,7 +238,7 @@ void main() {
           );
         });
         when(
-          fixture.runAllowedToolsUsecase.call(
+          () => fixture.runAllowedToolsUsecase.call(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
           ),
@@ -261,13 +254,13 @@ void main() {
 
         expect(result, AgentIterationDecision.done);
         verify(
-          fixture.continueAgentUsecase.call(
+          () => fixture.continueAgentUsecase.call(
             conversationId: 'conversation-1',
-            context: anyNamed('context'),
+            context: any(named: 'context'),
           ),
         ).called(2);
         verify(
-          fixture.runAllowedToolsUsecase.call(
+          () => fixture.runAllowedToolsUsecase.call(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
           ),
@@ -278,9 +271,9 @@ void main() {
     test('waits and retries when the model hits a rate limit', () async {
       var callCount = 0;
       when(
-        fixture.continueAgentUsecase.call(
+        () => fixture.continueAgentUsecase.call(
           conversationId: 'conversation-1',
-          context: anyNamed('context'),
+          context: any(named: 'context'),
         ),
       ).thenAnswer((_) async {
         callCount += 1;
@@ -306,15 +299,15 @@ void main() {
       expect(callCount, 2);
       expect(fixture.rateLimitRetryRuntime.retryAt('conversation-1'), isNull);
       verify(
-        fixture.continueAgentUsecase.call(
+        () => fixture.continueAgentUsecase.call(
           conversationId: 'conversation-1',
-          context: anyNamed('context'),
+          context: any(named: 'context'),
         ),
       ).called(2);
       final _ = verifyNever(
-        fixture.runAllowedToolsUsecase.call(
-          conversationId: anyNamed('conversationId'),
-          workspaceId: anyNamed('workspaceId'),
+        () => fixture.runAllowedToolsUsecase.call(
+          conversationId: any(named: 'conversationId'),
+          workspaceId: any(named: 'workspaceId'),
         ),
       );
     });
@@ -350,9 +343,9 @@ void main() {
 
       var callCount = 0;
       when(
-        fixture.continueAgentUsecase.call(
+        () => fixture.continueAgentUsecase.call(
           conversationId: 'conversation-1',
-          context: anyNamed('context'),
+          context: any(named: 'context'),
         ),
       ).thenAnswer((_) async {
         callCount += 1;
@@ -391,9 +384,9 @@ void main() {
       () async {
         var callCount = 0;
         when(
-          fixture.continueAgentUsecase.call(
+          () => fixture.continueAgentUsecase.call(
             conversationId: 'conversation-1',
-            context: anyNamed('context'),
+            context: any(named: 'context'),
           ),
         ).thenAnswer((_) async {
           callCount += 1;
@@ -404,7 +397,7 @@ void main() {
           );
         });
         when(
-          fixture.runAllowedToolsUsecase.call(
+          () => fixture.runAllowedToolsUsecase.call(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
           ),
@@ -437,9 +430,9 @@ void main() {
           isNull,
         );
         verify(
-          fixture.continueAgentUsecase.call(
+          () => fixture.continueAgentUsecase.call(
             conversationId: 'conversation-1',
-            context: anyNamed('context'),
+            context: any(named: 'context'),
           ),
         ).called(1);
       },
@@ -455,7 +448,7 @@ void main() {
               content: 'Queued follow-up',
             );
         when(
-          fixture.messageRepository.createMessage(any),
+          () => fixture.messageRepository.createMessage(any()),
         ).thenAnswer((_) async {
           fixture.agentCancellationRuntime.requestStop('conversation-1');
 
@@ -470,7 +463,9 @@ void main() {
             updatedAt: DateTime(2025),
           );
         });
-        when(fixture.messageRepository.patchMessage(any, any)).thenAnswer(
+        when(
+          () => fixture.messageRepository.patchMessage(any(), any()),
+        ).thenAnswer(
           (_) async => MessageEntity(
             id: 'queued-user-1',
             conversationId: 'conversation-1',
@@ -493,13 +488,16 @@ void main() {
 
         expect(result, AgentIterationDecision.done);
         final _ = verifyNever(
-          fixture.continueAgentUsecase.call(
-            conversationId: anyNamed('conversationId'),
-            context: anyNamed('context'),
+          () => fixture.continueAgentUsecase.call(
+            conversationId: any(named: 'conversationId'),
+            context: any(named: 'context'),
           ),
         );
         final capturedPatches = verify(
-          fixture.messageRepository.patchMessage(captureAny, captureAny),
+          () => fixture.messageRepository.patchMessage(
+            captureAny(),
+            captureAny(),
+          ),
         ).captured;
         expect(capturedPatches.whereType<String>(), [
           'user-1',
@@ -518,7 +516,7 @@ void main() {
       'returns the tool decision when execution must pause for approval',
       () async {
         when(
-          fixture.continueAgentUsecase.call(
+          () => fixture.continueAgentUsecase.call(
             conversationId: 'conversation-1',
             context: const AgentIterationContext(
               origin: AgentIterationOrigin.userMessage,
@@ -532,7 +530,7 @@ void main() {
           ),
         );
         when(
-          fixture.runAllowedToolsUsecase.call(
+          () => fixture.runAllowedToolsUsecase.call(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
           ),
@@ -561,7 +559,7 @@ void main() {
             );
 
         when(
-          fixture.continueAgentUsecase.call(
+          () => fixture.continueAgentUsecase.call(
             conversationId: 'conversation-1',
             context: const AgentIterationContext(
               origin: AgentIterationOrigin.userMessage,
@@ -584,9 +582,9 @@ void main() {
         );
 
         expect(result, AgentIterationDecision.done);
-        verify(fixture.messageRepository.createMessage(any)).called(1);
+        verify(() => fixture.messageRepository.createMessage(any())).called(1);
         verify(
-          fixture.continueAgentUsecase.call(
+          () => fixture.continueAgentUsecase.call(
             conversationId: 'conversation-1',
             context: const AgentIterationContext(
               origin: AgentIterationOrigin.userMessage,
@@ -608,9 +606,9 @@ void main() {
       () async {
         var callCount = 0;
         when(
-          fixture.continueAgentUsecase.call(
+          () => fixture.continueAgentUsecase.call(
             conversationId: 'conversation-1',
-            context: anyNamed('context'),
+            context: any(named: 'context'),
           ),
         ).thenAnswer((invocation) async {
           final ctx =
@@ -637,7 +635,7 @@ void main() {
           );
         });
         when(
-          fixture.runAllowedToolsUsecase.call(
+          () => fixture.runAllowedToolsUsecase.call(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
           ),
@@ -661,7 +659,7 @@ void main() {
         );
 
         expect(result, AgentIterationDecision.done);
-        verify(fixture.messageRepository.createMessage(any)).called(1);
+        verify(() => fixture.messageRepository.createMessage(any())).called(1);
         expect(callCount, 2);
         expect(
           fixture.container
@@ -690,9 +688,9 @@ void main() {
 
         var callCount = 0;
         when(
-          fixture.continueAgentUsecase.call(
+          () => fixture.continueAgentUsecase.call(
             conversationId: 'conversation-1',
-            context: anyNamed('context'),
+            context: any(named: 'context'),
           ),
         ).thenAnswer((invocation) async {
           final context =
@@ -715,7 +713,7 @@ void main() {
 
         var createdCount = 0;
         when(
-          fixture.messageRepository.createMessage(any),
+          () => fixture.messageRepository.createMessage(any()),
         ).thenAnswer((_) async {
           createdCount += 1;
 
@@ -741,7 +739,7 @@ void main() {
 
         expect(result, AgentIterationDecision.done);
         expect(callCount, 1);
-        verify(fixture.messageRepository.createMessage(any)).called(2);
+        verify(() => fixture.messageRepository.createMessage(any())).called(2);
         expect(
           fixture.container
               .read(conversationSendQueueProvider.notifier)
@@ -756,9 +754,9 @@ void main() {
         'triggers auto compaction before the first AI call',
         () async {
           when(
-            fixture.continueAgentUsecase.call(
+            () => fixture.continueAgentUsecase.call(
               conversationId: 'conversation-1',
-              context: anyNamed('context'),
+              context: any(named: 'context'),
             ),
           ).thenAnswer(
             (_) async => const ContinueAgentResult(
@@ -777,12 +775,12 @@ void main() {
 
           expect(
             () => verifyInOrder([
-              fixture.maybeAutoCompactConversationUsecase.call(
+              () => fixture.maybeAutoCompactConversationUsecase.call(
                 conversationId: 'conversation-1',
               ),
-              fixture.continueAgentUsecase.call(
+              () => fixture.continueAgentUsecase.call(
                 conversationId: 'conversation-1',
-                context: anyNamed('context'),
+                context: any(named: 'context'),
               ),
             ]),
             returnsNormally,
@@ -795,9 +793,9 @@ void main() {
         () async {
           var callCount = 0;
           when(
-            fixture.continueAgentUsecase.call(
+            () => fixture.continueAgentUsecase.call(
               conversationId: 'conversation-1',
-              context: anyNamed('context'),
+              context: any(named: 'context'),
             ),
           ).thenAnswer((_) async {
             callCount += 1;
@@ -814,7 +812,7 @@ void main() {
             );
           });
           when(
-            fixture.runAllowedToolsUsecase.call(
+            () => fixture.runAllowedToolsUsecase.call(
               conversationId: 'conversation-1',
               workspaceId: 'workspace-1',
             ),
@@ -832,7 +830,7 @@ void main() {
 
           expect(
             () => verify(
-              fixture.maybeAutoCompactConversationUsecase.call(
+              () => fixture.maybeAutoCompactConversationUsecase.call(
                 conversationId: 'conversation-1',
               ),
             ).called(2),
@@ -845,7 +843,7 @@ void main() {
         'propagates compaction failure to stop agent loop',
         () async {
           when(
-            fixture.maybeAutoCompactConversationUsecase.call(
+            () => fixture.maybeAutoCompactConversationUsecase.call(
               conversationId: 'conversation-1',
             ),
           ).thenThrow(Exception('compaction error'));
@@ -862,9 +860,9 @@ void main() {
           );
           expect(
             () => verifyNever(
-              fixture.continueAgentUsecase.call(
-                conversationId: anyNamed('conversationId'),
-                context: anyNamed('context'),
+              () => fixture.continueAgentUsecase.call(
+                conversationId: any(named: 'conversationId'),
+                context: any(named: 'context'),
               ),
             ),
             returnsNormally,
@@ -883,9 +881,9 @@ void main() {
               );
 
           when(
-            fixture.continueAgentUsecase.call(
+            () => fixture.continueAgentUsecase.call(
               conversationId: 'conversation-1',
-              context: anyNamed('context'),
+              context: any(named: 'context'),
             ),
           ).thenAnswer(
             (_) async => const ContinueAgentResult(
@@ -904,13 +902,13 @@ void main() {
 
           expect(
             () => verifyInOrder([
-              fixture.messageRepository.createMessage(any),
-              fixture.maybeAutoCompactConversationUsecase.call(
+              () => fixture.messageRepository.createMessage(any()),
+              () => fixture.maybeAutoCompactConversationUsecase.call(
                 conversationId: 'conversation-1',
               ),
-              fixture.continueAgentUsecase.call(
+              () => fixture.continueAgentUsecase.call(
                 conversationId: 'conversation-1',
-                context: anyNamed('context'),
+                context: any(named: 'context'),
               ),
             ]),
             returnsNormally,
@@ -928,7 +926,7 @@ void main() {
                 content: 'Queued follow-up',
               );
           when(
-            fixture.messageRepository.createMessage(any),
+            () => fixture.messageRepository.createMessage(any()),
           ).thenAnswer((_) async {
             fixture.agentCancellationRuntime.requestStop('conversation-1');
 
@@ -943,7 +941,9 @@ void main() {
               updatedAt: DateTime(2025),
             );
           });
-          when(fixture.messageRepository.patchMessage(any, any)).thenAnswer(
+          when(
+            () => fixture.messageRepository.patchMessage(any(), any()),
+          ).thenAnswer(
             (_) async => MessageEntity(
               id: 'queued-user-1',
               conversationId: 'conversation-1',
@@ -965,18 +965,21 @@ void main() {
           );
 
           final _ = verifyNever(
-            fixture.maybeAutoCompactConversationUsecase.call(
+            () => fixture.maybeAutoCompactConversationUsecase.call(
               conversationId: 'conversation-1',
             ),
           );
           final _ = verifyNever(
-            fixture.continueAgentUsecase.call(
+            () => fixture.continueAgentUsecase.call(
               conversationId: 'conversation-1',
-              context: anyNamed('context'),
+              context: any(named: 'context'),
             ),
           );
           final capturedPatches = verify(
-            fixture.messageRepository.patchMessage(captureAny, captureAny),
+            () => fixture.messageRepository.patchMessage(
+              captureAny(),
+              captureAny(),
+            ),
           ).captured;
           expect(capturedPatches.whereType<String>(), [
             'user-1',
@@ -1022,6 +1025,12 @@ class _RunAgentIterationUsecaseFixture {
     final rateLimitRetryRuntime = container.read(
       conversationRateLimitRetryRuntimeProvider,
     );
+
+    when(
+      () => maybeAutoCompactConversationUsecase.call(
+        conversationId: any(named: 'conversationId'),
+      ),
+    ).thenAnswer((_) => Future<void>.value());
 
     return _RunAgentIterationUsecaseFixture._(
       continueAgentUsecase: continueAgentUsecase,

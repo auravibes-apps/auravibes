@@ -10,8 +10,6 @@ class SkillsRepositoryImpl implements SkillsRepository {
   SkillsRepositoryImpl(AppDatabase database) : _dao = database.skillsDao;
 
   final SkillsDao _dao;
-  final GenerateSkillSlugUsecase _generateSlug =
-      const GenerateSkillSlugUsecase();
 
   @override
   Future<List<SkillEntity>> getWorkspaceSkills(String workspaceId) async {
@@ -55,7 +53,7 @@ class SkillsRepositoryImpl implements SkillsRepository {
         source: const Value(SkillSourceTable.user),
         kind: Value(_mapKindToTable(skill.kind)),
         title: Value(skill.title.trim()),
-        slug: Value(_generateSlug.call(skill.title)),
+        slug: Value(generateSkillSlug(skill.title)),
         description: Value(skill.description),
         content: Value(skill.content),
         credentialDefinitionId: Value(skill.credentialDefinitionId),

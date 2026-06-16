@@ -6,18 +6,12 @@ import 'package:auravibes_app/features/skills/usecases/validate_skill_title_usec
 import 'package:riverpod/riverpod.dart';
 
 class CreateSkillUsecase {
-  const CreateSkillUsecase(
-    this._skillsRepository,
-    this._generateSkillSlugUsecase,
-    this._validateSkillTitleUsecase,
-  );
+  const CreateSkillUsecase(this._skillsRepository);
 
   final SkillsRepository _skillsRepository;
-  final GenerateSkillSlugUsecase _generateSkillSlugUsecase;
-  final ValidateSkillTitleUsecase _validateSkillTitleUsecase;
 
   Future<SkillEntity> call(String workspaceId, SkillToCreate skill) async {
-    _validateSkillTitleUsecase.call(skill.title);
+    validateSkillTitle(skill.title);
     final existingTitle = await _skillsRepository.getSkillByTitle(
       workspaceId,
       skill.title.trim(),
@@ -28,7 +22,7 @@ class CreateSkillUsecase {
       );
     }
 
-    final slug = _generateSkillSlugUsecase.call(skill.title);
+    final slug = generateSkillSlug(skill.title);
     final existingSlug = await _skillsRepository.getSkillBySlug(
       workspaceId,
       slug,
@@ -44,9 +38,5 @@ class CreateSkillUsecase {
 }
 
 final createSkillUsecaseProvider = Provider<CreateSkillUsecase>((ref) {
-  return CreateSkillUsecase(
-    ref.watch(skillsRepositoryProvider),
-    ref.watch(generateSkillSlugUsecaseProvider),
-    ref.watch(validateSkillTitleUsecaseProvider),
-  );
+  return CreateSkillUsecase(ref.watch(skillsRepositoryProvider));
 });

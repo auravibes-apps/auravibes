@@ -9,12 +9,10 @@ class DuplicateSkillTemplateToolUsecase {
   const DuplicateSkillTemplateToolUsecase(
     this._skillTemplateToolsRepository, {
     required this.createSkillTemplateToolUsecase,
-    required this.generateSkillSlugUsecase,
   });
 
   final SkillTemplateToolsRepository _skillTemplateToolsRepository;
   final CreateSkillTemplateToolUsecase createSkillTemplateToolUsecase;
-  final GenerateSkillSlugUsecase generateSkillSlugUsecase;
 
   Future<SkillTemplateToolEntity> call(String toolId) async {
     final tool = await _skillTemplateToolsRepository.getToolById(toolId);
@@ -45,7 +43,7 @@ class DuplicateSkillTemplateToolUsecase {
           : '${tool.title} Copy $suffix';
       final existing = await _skillTemplateToolsRepository.getToolBySlug(
         tool.skillId,
-        generateSkillSlugUsecase.call(title),
+        generateSkillSlug(title),
       );
       if (existing == null) return title;
       suffix += 1;
@@ -60,6 +58,5 @@ final duplicateSkillTemplateToolUsecaseProvider =
         createSkillTemplateToolUsecase: ref.watch(
           createSkillTemplateToolUsecaseProvider,
         ),
-        generateSkillSlugUsecase: ref.watch(generateSkillSlugUsecaseProvider),
       );
     });

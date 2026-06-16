@@ -222,6 +222,8 @@
     "save_error": "No se pudo guardar la habilidad",
     "not_found": "Habilidad no encontrada",
     "load_error": "Error al cargar habilidades",
+    "error_title_required": "El título de la habilidad es obligatorio",
+    "error_title_invalid": "El título de la habilidad solo puede contener letras, números y espacios",
     "empty_title": "No hay habilidades disponibles",
     "empty_subtitle": "Crea una habilidad para hacerla disponible en conversaciones",
     "app_read_only": "Las habilidades de la app vienen integradas y solo se pueden activar o desactivar para este espacio de trabajo.",
