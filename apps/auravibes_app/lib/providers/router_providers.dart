@@ -1,6 +1,7 @@
 // Required: Existing thresholds and limits use numeric values.
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
+import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/utils/change_notifier_with_code_gen_extension.dart';
@@ -27,8 +28,6 @@ final routerProvider = Provider<GoRouter>(
     return GoRouter(
       routes: $appRoutes,
       redirect: (context, state) async {
-        final currentUri = state.uri;
-        final workspaceMatch = matchWorkspaceId(currentUri);
         final workspaces = await ref
             .read(workspaceRepositoryProvider)
             .getAllWorkspaces()
@@ -43,27 +42,8 @@ final routerProvider = Provider<GoRouter>(
                 return [];
               },
             );
-        final firstWorkspaceId = workspaces.firstOrNull?.id;
 
-        if (firstWorkspaceId == null) {
-          // No workspaces exist yet; let navigation proceed.
-          // The UI should handle this case with an empty state.
-          return null;
-        }
-
-        if (workspaceMatch == null) {
-          return _mapLegacyRoute(
-                currentUri,
-                fallbackWorkspaceId: firstWorkspaceId,
-              ) ??
-              NewChatRoute(workspaceId: firstWorkspaceId).location;
-        }
-
-        if (workspaces.any((workspace) => workspace.id == workspaceMatch)) {
-          return null;
-        }
-
-        return NewChatRoute(workspaceId: firstWorkspaceId).location;
+        return resolveWorkspaceRedirect(state.uri, workspaces);
       },
       initialLocation: '/',
       observers: [
@@ -112,6 +92,41 @@ String? matchWorkspaceId(Uri uri) {
   }
 
   return pathSegments[1];
+}
+
+@visibleForTesting
+String? resolveWorkspaceRedirect(
+  Uri currentUri,
+  List<WorkspaceEntity> workspaces,
+) {
+  final workspaceMatch = matchWorkspaceId(currentUri);
+  final firstWorkspaceId = workspaces.firstOrNull?.id;
+
+  if (firstWorkspaceId == null) {
+    if (currentUri.path == introPath) {
+      return null;
+    }
+
+    return introPath;
+  }
+
+  if (currentUri.path == introPath) {
+    return NewChatRoute(workspaceId: firstWorkspaceId).location;
+  }
+
+  if (workspaceMatch == null) {
+    return _mapLegacyRoute(
+          currentUri,
+          fallbackWorkspaceId: firstWorkspaceId,
+        ) ??
+        NewChatRoute(workspaceId: firstWorkspaceId).location;
+  }
+
+  if (workspaces.any((workspace) => workspace.id == workspaceMatch)) {
+    return null;
+  }
+
+  return NewChatRoute(workspaceId: firstWorkspaceId).location;
 }
 
 String? _mapLegacyRoute(Uri uri, {required String fallbackWorkspaceId}) {

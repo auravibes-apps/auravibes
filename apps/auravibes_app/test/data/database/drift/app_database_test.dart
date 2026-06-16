@@ -188,30 +188,20 @@ void main() {
       expect(fixture.database, isNotNull);
     });
 
-    test(
-      'initializeWithDefaults inserts default workspace when empty',
-      () async {
-        await fixture.database.initializeWithDefaults();
+    test('initializeWithDefaults leaves workspace list empty', () async {
+      await fixture.database.initializeWithDefaults();
 
-        final workspaces = await fixture.database.workspaceDao
-            .getAllWorkspaces();
-        expect(workspaces, hasLength(1));
-        expect(workspaces.firstOrNull?.name, 'Default Workspace');
-        expect(workspaces.firstOrNull?.type, WorkspaceType.local);
-      },
-    );
+      final workspaces = await fixture.database.workspaceDao.getAllWorkspaces();
+      expect(workspaces, isEmpty);
+    });
 
-    test(
-      'initializeWithDefaults does not duplicate default workspace',
-      () async {
-        await fixture.database.initializeWithDefaults();
-        await fixture.database.initializeWithDefaults();
+    test('initializeWithDefaults remains idempotent', () async {
+      await fixture.database.initializeWithDefaults();
+      await fixture.database.initializeWithDefaults();
 
-        final workspaces = await fixture.database.workspaceDao
-            .getAllWorkspaces();
-        expect(workspaces, hasLength(1));
-      },
-    );
+      final workspaces = await fixture.database.workspaceDao.getAllWorkspaces();
+      expect(workspaces, isEmpty);
+    });
 
     test('performMaintenance completes without error', () async {
       await expectLater(fixture.database.performMaintenance(), completes);
@@ -223,7 +213,7 @@ void main() {
       final stats = await fixture.database.getDatabaseStats();
 
       expect(stats, contains('workspaceCount'));
-      expect(stats['workspaceCount'], 1);
+      expect(stats['workspaceCount'], 0);
       expect(stats, contains('pageCount'));
       expect(stats, contains('pageSize'));
       expect(stats, contains('approximateSizeBytes'));
@@ -490,7 +480,7 @@ void main() {
       final db2 = AppDatabase(connection: createTestConnection());
       await db2.initializeWithDefaults();
       final workspaces = await db2.workspaceDao.getAllWorkspaces();
-      expect(workspaces, hasLength(1));
+      expect(workspaces, isEmpty);
       await db2.close();
     });
   });

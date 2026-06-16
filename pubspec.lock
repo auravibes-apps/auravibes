@@ -413,18 +413,18 @@ packages:
     dependency: transitive
     description:
       name: drift
-      sha256: "8033500116b24398fba0cca0369cc31678cd627c01e41753a61186911cea743e"
+      sha256: "6cc0b623c0e83f7080524d8396e9301b1d78b9c66a4fdceeb0f798211303254c"
       url: "https://pub.dev"
     source: hosted
-    version: "2.33.0"
+    version: "2.34.0"
   drift_dev:
     dependency: transitive
     description:
       name: drift_dev
-      sha256: b3dd5b75e30522a91da8abda9f5bb17230cb038097f6d15fa75d42bb563428aa
+      sha256: "9cfff1576b49725da0d32c040651a41ae195e8c4af8d8da301593e41d7abc2f7"
       url: "https://pub.dev"
     source: hosted
-    version: "2.33.0"
+    version: "2.34.0"
   drift_flutter:
     dependency: transitive
     description:
@@ -681,26 +681,26 @@ packages:
     dependency: transitive
     description:
       name: genkit
-      sha256: "9c779d5922349d713c4164f78a190ac9d2d123944908b4fcd1434bc39a737035"
+      sha256: "31a98b360873f033ceab41921072c2a20eadb621ddc3223851a92f051f2cc0da"
       url: "https://pub.dev"
     source: hosted
-    version: "0.14.0"
+    version: "0.14.1"
   genkit_anthropic:
     dependency: transitive
     description:
       name: genkit_anthropic
-      sha256: "23827f719d4915ba5166deb05fa50b82f228c64d4890bd6648c6495a3035a75f"
+      sha256: "626787a9c5e6f8758027ad6476dc4f86f3ad2983cfd5ad873292987e703c6829"
       url: "https://pub.dev"
     source: hosted
-    version: "0.2.8"
+    version: "0.2.9"
   genkit_openai:
     dependency: transitive
     description:
       name: genkit_openai
-      sha256: "08821d24626372c32e5072d721bd4b784e7874d01bba5f0d5c91947b53ca543b"
+      sha256: "4d8d0c8991be309b2c25f905ced67398821e7b996eb5d96836c047bb3b4b3736"
       url: "https://pub.dev"
     source: hosted
-    version: "0.3.3"
+    version: "0.3.4"
   glob:
     dependency: transitive
     description:
