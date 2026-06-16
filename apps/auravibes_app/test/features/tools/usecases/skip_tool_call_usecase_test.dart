@@ -1,17 +1,15 @@
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
-import 'package:auravibes_app/domain/repositories/message_repository.dart';
-import 'package:auravibes_app/features/chats/usecases/resume_conversation_if_ready_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/skip_tool_call_usecase.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/annotations.dart';
-import 'package:mockito/mockito.dart';
+import 'package:mocktail/mocktail.dart';
 
-import 'skip_tool_call_usecase_test.mocks.dart';
+import '../../../test_mocks.dart';
 
-@GenerateMocks([MessageRepository, ResumeConversationIfReadyUsecase])
 void main() {
+  setUpAll(registerTestFallbackValues);
+
   group('SkipToolCallUsecase', () {
     var messageRepository = MockMessageRepository();
     var resumeConversationIfReadyUsecase =
@@ -52,15 +50,15 @@ void main() {
         resumeConversationIfReadyUsecase: resumeConversationIfReadyUsecase,
       );
 
-      when(messageRepository.getMessageById(messageId)).thenAnswer(
+      when(() => messageRepository.getMessageById(messageId)).thenAnswer(
         (_) async => message,
       );
-      when(messageRepository.patchMessage(messageId, any)).thenAnswer(
+      when(() => messageRepository.patchMessage(messageId, any())).thenAnswer(
         (_) async => message,
       );
       when(
-        resumeConversationIfReadyUsecase.call(
-          messageId: anyNamed('messageId'),
+        () => resumeConversationIfReadyUsecase.call(
+          messageId: any(named: 'messageId'),
         ),
       ).thenAnswer((_) {
         return Future<void>.value();
@@ -72,7 +70,7 @@ void main() {
 
       final update =
           verify(
-                messageRepository.patchMessage(messageId, captureAny),
+                () => messageRepository.patchMessage(messageId, captureAny()),
               ).captured.single
               as MessagePatch;
       expect(
@@ -81,12 +79,12 @@ void main() {
       );
 
       verify(
-        resumeConversationIfReadyUsecase.call(messageId: messageId),
+        () => resumeConversationIfReadyUsecase.call(messageId: messageId),
       ).called(1);
     });
 
     test('does not resume when message not found', () async {
-      when(messageRepository.getMessageById(messageId)).thenAnswer(
+      when(() => messageRepository.getMessageById(messageId)).thenAnswer(
         (_) async => null,
       );
 
@@ -94,14 +92,14 @@ void main() {
 
       expect(
         () => verifyNever(
-          messageRepository.patchMessage(any, any),
+          () => messageRepository.patchMessage(any(), any()),
         ),
         returnsNormally,
       );
       expect(
         () => verifyNever(
-          resumeConversationIfReadyUsecase.call(
-            messageId: anyNamed('messageId'),
+          () => resumeConversationIfReadyUsecase.call(
+            messageId: any(named: 'messageId'),
           ),
         ),
         returnsNormally,

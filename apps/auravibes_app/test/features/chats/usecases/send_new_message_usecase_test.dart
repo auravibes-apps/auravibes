@@ -2,17 +2,11 @@ import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
-import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
-import 'package:auravibes_app/domain/repositories/workspace_model_selection_repository.dart';
-import 'package:auravibes_app/features/chats/usecases/generate_title_usecase.dart';
-import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/send_new_message_usecase.dart';
-import 'package:auravibes_app/services/monitoring_service.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/annotations.dart';
-import 'package:mockito/mockito.dart';
+import 'package:mocktail/mocktail.dart';
 
-import 'send_new_message_usecase_test.mocks.dart';
+import '../../../test_mocks.dart';
 
 class _SendNewMessageUsecaseFixture {
   MockConversationRepository? _conversationRepo;
@@ -66,25 +60,33 @@ class _SendNewMessageUsecaseFixture {
     );
 
     when(
-      workspaceModelSelectionRepo.getWorkspaceModelSelectionById(
-        any,
+      () => workspaceModelSelectionRepo.getWorkspaceModelSelectionById(
+        any(),
       ),
     ).thenAnswer((_) async => modelSelection);
 
-    when(conversationRepo.createConversation(any)).thenAnswer(
+    when(() => conversationRepo.createConversation(any())).thenAnswer(
       (_) async => newConversation,
     );
+    when(
+      () => sendMessageUsecase.call(
+        conversationId: any(named: 'conversationId'),
+        content: any(named: 'content'),
+      ),
+    ).thenAnswer((_) => Future<void>.value());
+    when(
+      () => generateTitleUsecase.call(
+        conversationId: any(named: 'conversationId'),
+        firstMessage: any(named: 'firstMessage'),
+        workspaceModelSelection: any(named: 'workspaceModelSelection'),
+      ),
+    ).thenAnswer((_) => Future<void>.value());
   }
 }
 
-@GenerateMocks([
-  ConversationRepository,
-  WorkspaceModelSelectionRepository,
-  SendMessageUsecase,
-  GenerateTitleUsecase,
-  MonitoringService,
-])
 void main() {
+  setUpAll(registerTestFallbackValues);
+
   group('SendNewMessageUsecase', () {
     final fixture = _SendNewMessageUsecaseFixture();
 
@@ -137,12 +139,15 @@ void main() {
       );
 
       expect(result.id, 'conv-1');
-      verify(fixture.conversationRepo.createConversation(any)).called(1);
+      verify(
+        () => fixture.conversationRepo.createConversation(any()),
+      ).called(1);
     });
 
     test('throws when model selection not found', () {
       when(
-        fixture.workspaceModelSelectionRepo.getWorkspaceModelSelectionById(any),
+        () => fixture.workspaceModelSelectionRepo
+            .getWorkspaceModelSelectionById(any()),
       ).thenAnswer((_) async => null);
 
       expect(
@@ -164,7 +169,7 @@ void main() {
 
       expect(
         () => verify(
-          fixture.generateTitleUsecase.call(
+          () => fixture.generateTitleUsecase.call(
             conversationId: 'conv-1',
             firstMessage: 'Hello',
             workspaceModelSelection: modelSelection,
@@ -183,7 +188,7 @@ void main() {
 
       expect(
         () => verify(
-          fixture.sendMessageUsecase.call(
+          () => fixture.sendMessageUsecase.call(
             conversationId: 'conv-1',
             content: 'Hello',
           ),
@@ -194,9 +199,9 @@ void main() {
 
     test('tracks error when sendMessage fails', () async {
       when(
-        fixture.sendMessageUsecase.call(
-          conversationId: anyNamed('conversationId'),
-          content: anyNamed('content'),
+        () => fixture.sendMessageUsecase.call(
+          conversationId: any(named: 'conversationId'),
+          content: any(named: 'content'),
         ),
       ).thenAnswer((_) async => throw Exception('Send failed'));
 
@@ -211,10 +216,10 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 100));
 
       verify(
-        fixture.monitoringService.trackError(
-          any,
-          error: anyNamed('error'),
-          stackTrace: anyNamed('stackTrace'),
+        () => fixture.monitoringService.trackError(
+          any(),
+          error: any(named: 'error'),
+          stackTrace: any(named: 'stackTrace'),
         ),
       ).called(1);
     });
@@ -227,7 +232,7 @@ void main() {
       );
 
       final captured = verify(
-        fixture.conversationRepo.createConversation(captureAny),
+        () => fixture.conversationRepo.createConversation(captureAny()),
       ).captured;
       expect(captured, isNotEmpty);
     });
@@ -241,9 +246,10 @@ void main() {
 
       expect(
         () => verify(
-          fixture.workspaceModelSelectionRepo.getWorkspaceModelSelectionById(
-            'model-sel-1',
-          ),
+          () => fixture.workspaceModelSelectionRepo
+              .getWorkspaceModelSelectionById(
+                'model-sel-1',
+              ),
         ).called(1),
         returnsNormally,
       );
@@ -251,7 +257,8 @@ void main() {
 
     test('exception message contains correct text', () async {
       when(
-        fixture.workspaceModelSelectionRepo.getWorkspaceModelSelectionById(any),
+        () => fixture.workspaceModelSelectionRepo
+            .getWorkspaceModelSelectionById(any()),
       ).thenAnswer((_) async => null);
 
       try {

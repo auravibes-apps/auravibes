@@ -7,30 +7,18 @@ import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/domain/enums/tool_grant_level.dart';
-import 'package:auravibes_app/domain/repositories/conversation_tools_repository.dart';
-import 'package:auravibes_app/domain/repositories/message_repository.dart';
-import 'package:auravibes_app/domain/repositories/tools_groups_repository.dart';
-import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
-import 'package:auravibes_app/features/chats/usecases/resume_conversation_if_ready_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/approve_tool_call_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/run_resolved_tool_usecase.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/annotations.dart';
-import 'package:mockito/mockito.dart';
+import 'package:mocktail/mocktail.dart';
 
-import 'approve_tool_call_usecase_test.mocks.dart';
+import '../../../test_mocks.dart';
 
-@GenerateMocks([
-  MessageRepository,
-  ConversationToolsRepository,
-  ToolsGroupsRepository,
-  WorkspaceToolsRepository,
-  ToolResolverService,
-  ResumeConversationIfReadyUsecase,
-])
 void main() {
+  setUpAll(registerTestFallbackValues);
+
   group('ApproveToolCallUsecase', () {
     var messageRepository = MockMessageRepository();
     var conversationToolsRepository = MockConversationToolsRepository();
@@ -129,14 +117,16 @@ void main() {
         agentCancellationRuntime: agentCancellationRuntime,
       );
 
-      when(messageRepository.getMessageById(messageId)).thenAnswer(
+      when(() => messageRepository.getMessageById(messageId)).thenAnswer(
         (_) async => message,
       );
-      when(messageRepository.patchMessage(messageId, any)).thenAnswer(
+      when(() => messageRepository.patchMessage(messageId, any())).thenAnswer(
         (_) async => message,
       );
       when(
-        resumeConversationIfReadyUsecase.call(messageId: anyNamed('messageId')),
+        () => resumeConversationIfReadyUsecase.call(
+          messageId: any(named: 'messageId'),
+        ),
       ).thenAnswer((_) {
         return Future<void>.value();
       });
@@ -144,7 +134,7 @@ void main() {
 
     test('marks tool as not found when resolution fails', () async {
       when(
-        toolResolverService.resolveTool('built_in_calc_calculator'),
+        () => toolResolverService.resolveTool('built_in_calc_calculator'),
       ).thenReturn(null);
 
       await usecase.call(
@@ -155,7 +145,7 @@ void main() {
 
       final update =
           verify(
-                messageRepository.patchMessage(messageId, captureAny),
+                () => messageRepository.patchMessage(messageId, captureAny()),
               ).captured.single
               as MessagePatch;
       expect(
@@ -164,7 +154,7 @@ void main() {
       );
 
       verify(
-        resumeConversationIfReadyUsecase.call(messageId: messageId),
+        () => resumeConversationIfReadyUsecase.call(messageId: messageId),
       ).called(1);
     });
 
@@ -188,11 +178,11 @@ void main() {
             ) ??
             fail('Expected tool to resolve');
 
-        when(messageRepository.getMessageById(messageId)).thenAnswer(
+        when(() => messageRepository.getMessageById(messageId)).thenAnswer(
           (_) async => mcpMessage,
         );
         when(
-          toolResolverService.resolveTool('mcp_server-1_calc_sum'),
+          () => toolResolverService.resolveTool('mcp_server-1_calc_sum'),
         ).thenReturn(resolvedTool);
 
         await usecase.call(
@@ -207,7 +197,7 @@ void main() {
 
         final update =
             verify(
-                  messageRepository.patchMessage(messageId, captureAny),
+                  () => messageRepository.patchMessage(messageId, captureAny()),
                 ).captured.single
                 as MessagePatch;
         expect(update.metadata?.toolCalls.single.responseRaw, 'mcp result');
@@ -224,10 +214,10 @@ void main() {
             fail('Expected tool to resolve');
 
         when(
-          toolResolverService.resolveTool('built_in_calc_calculator'),
+          () => toolResolverService.resolveTool('built_in_calc_calculator'),
         ).thenReturn(resolvedTool);
         when(
-          conversationToolsRepository.setConversationToolPermission(
+          () => conversationToolsRepository.setConversationToolPermission(
             'conversation-1',
             'calc',
             permissionMode: ToolPermissionMode.alwaysAllow,
@@ -241,7 +231,7 @@ void main() {
         );
 
         verify(
-          conversationToolsRepository.setConversationToolPermission(
+          () => conversationToolsRepository.setConversationToolPermission(
             'conversation-1',
             'calc',
             permissionMode: ToolPermissionMode.alwaysAllow,
@@ -250,7 +240,7 @@ void main() {
 
         final update =
             verify(
-                  messageRepository.patchMessage(messageId, captureAny),
+                  () => messageRepository.patchMessage(messageId, captureAny()),
                 ).captured.single
                 as MessagePatch;
         final updatedToolCall = update.metadata?.toolCalls.single;
@@ -258,7 +248,7 @@ void main() {
         expect(updatedToolCall?.responseRaw, '2.0');
 
         verify(
-          resumeConversationIfReadyUsecase.call(messageId: messageId),
+          () => resumeConversationIfReadyUsecase.call(messageId: messageId),
         ).called(1);
       },
     );
@@ -283,11 +273,11 @@ void main() {
             ) ??
             fail('Expected tool to resolve');
 
-        when(messageRepository.getMessageById(messageId)).thenAnswer(
+        when(() => messageRepository.getMessageById(messageId)).thenAnswer(
           (_) async => badMessage,
         );
         when(
-          toolResolverService.resolveTool('built_in_calc_calculator'),
+          () => toolResolverService.resolveTool('built_in_calc_calculator'),
         ).thenReturn(resolvedTool);
 
         await usecase.call(
@@ -298,7 +288,7 @@ void main() {
 
         final update =
             verify(
-                  messageRepository.patchMessage(messageId, captureAny),
+                  () => messageRepository.patchMessage(messageId, captureAny()),
                 ).captured.single
                 as MessagePatch;
         expect(
@@ -348,25 +338,25 @@ void main() {
           workspaceToolsGroupId: 'group-1',
         );
 
-        when(messageRepository.getMessageById(messageId)).thenAnswer(
+        when(() => messageRepository.getMessageById(messageId)).thenAnswer(
           (_) async => mcpMessage,
         );
         when(
-          toolResolverService.resolveTool('mcp_server-1_calc_sum'),
+          () => toolResolverService.resolveTool('mcp_server-1_calc_sum'),
         ).thenReturn(
           resolvedTool,
         );
         when(
-          toolsGroupsRepository.getToolsGroupByMcpServerId('server-1'),
+          () => toolsGroupsRepository.getToolsGroupByMcpServerId('server-1'),
         ).thenAnswer((_) async => group);
         when(
-          workspaceToolsRepository.getWorkspaceToolByToolName(
+          () => workspaceToolsRepository.getWorkspaceToolByToolName(
             toolGroupId: 'group-1',
             toolName: 'sum',
           ),
         ).thenAnswer((_) async => workspaceTool);
         when(
-          conversationToolsRepository.setConversationToolPermission(
+          () => conversationToolsRepository.setConversationToolPermission(
             'conversation-1',
             'workspace-tool-1',
             permissionMode: ToolPermissionMode.alwaysAllow,
@@ -380,7 +370,7 @@ void main() {
         );
 
         verify(
-          conversationToolsRepository.setConversationToolPermission(
+          () => conversationToolsRepository.setConversationToolPermission(
             'conversation-1',
             'workspace-tool-1',
             permissionMode: ToolPermissionMode.alwaysAllow,

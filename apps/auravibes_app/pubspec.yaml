@@ -68,15 +68,10 @@ dev_dependencies:
   freezed: 3.2.6-dev.1
   go_router_builder: ^4.3.0
   json_serializable: ^6.14.0
-  mockito: ^5.6.3
   mocktail: ^1.0.4
   nock: ^1.2.3
   riverpod_generator: 4.0.4
   sqlite3: ^3.3.2
-dependency_validator:
-  exclude:
-    - "test/**/*.mocks.dart"
-
 dependency_overrides:
   # Pin to 0.2.0: 0.3.0 Package.swift declares iOS 12 but uses CryptoKit (iOS 13+)
   flutter_secure_storage_darwin: 0.2.0

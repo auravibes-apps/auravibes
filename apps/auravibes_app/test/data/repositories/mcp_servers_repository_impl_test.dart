@@ -14,17 +14,13 @@ import 'package:auravibes_app/domain/repositories/mcp_servers_repository.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/annotations.dart';
-import 'package:mockito/mockito.dart';
+import 'package:mocktail/mocktail.dart';
 
-import 'mcp_servers_repository_impl_test.mocks.dart';
+import '../../test_mocks.dart';
 
-@GenerateNiceMocks([
-  MockSpec<McpServersDao>(),
-  MockSpec<ToolsGroupsDao>(),
-  MockSpec<WorkspaceToolsDao>(),
-])
 void main() {
+  setUpAll(registerTestFallbackValues);
+
   group('McpServersRepositoryImpl', () {
     final initialFixture = _McpServersRepositoryFixture();
     var fixture = initialFixture;
@@ -86,12 +82,14 @@ void main() {
         final groupRow = createGroupRow(mcpServerId: 'mcp-1');
 
         when(
-          fixture.mockMcpServersDao.insertMcpServer(any),
+          () => fixture.mockMcpServersDao.insertMcpServer(any()),
         ).thenAnswer((_) async => serverRow);
         when(
-          fixture.mockToolsGroupsDao.insertToolsGroup(any),
+          () => fixture.mockToolsGroupsDao.insertToolsGroup(any()),
         ).thenAnswer((_) async => groupRow);
-        when(fixture.mockWorkspaceToolsDao.insertToolsBatch(any)).thenAnswer((
+        when(
+          () => fixture.mockWorkspaceToolsDao.insertToolsBatch(any()),
+        ).thenAnswer((
           _,
         ) async {
           return;
@@ -120,9 +118,15 @@ void main() {
 
         expect(result.id, 'mcp-1');
         expect(result.name, 'Test Server');
-        verify(fixture.mockMcpServersDao.insertMcpServer(any)).called(1);
-        verify(fixture.mockToolsGroupsDao.insertToolsGroup(any)).called(1);
-        verify(fixture.mockWorkspaceToolsDao.insertToolsBatch(any)).called(1);
+        verify(
+          () => fixture.mockMcpServersDao.insertMcpServer(any()),
+        ).called(1);
+        verify(
+          () => fixture.mockToolsGroupsDao.insertToolsGroup(any()),
+        ).called(1);
+        verify(
+          () => fixture.mockWorkspaceToolsDao.insertToolsBatch(any()),
+        ).called(1);
       });
 
       test('creates server with empty tools list', () async {
@@ -130,10 +134,10 @@ void main() {
         final groupRow = createGroupRow(mcpServerId: 'mcp-1');
 
         when(
-          fixture.mockMcpServersDao.insertMcpServer(any),
+          () => fixture.mockMcpServersDao.insertMcpServer(any()),
         ).thenAnswer((_) async => serverRow);
         when(
-          fixture.mockToolsGroupsDao.insertToolsGroup(any),
+          () => fixture.mockToolsGroupsDao.insertToolsGroup(any()),
         ).thenAnswer((_) async => groupRow);
 
         const serverToCreate = McpServerToCreate(
@@ -151,13 +155,13 @@ void main() {
 
         expect(result.id, 'mcp-1');
         final _ = verifyNever(
-          fixture.mockWorkspaceToolsDao.insertToolsBatch(any),
+          () => fixture.mockWorkspaceToolsDao.insertToolsBatch(any()),
         );
       });
 
       test('throws McpServersException on dao failure', () async {
         when(
-          fixture.mockMcpServersDao.insertMcpServer(any),
+          () => fixture.mockMcpServersDao.insertMcpServer(any()),
         ).thenThrow(Exception('DB error'));
 
         const serverToCreate = McpServerToCreate(
@@ -181,10 +185,10 @@ void main() {
     group('deleteMcpServer', () {
       test('returns true when deleted', () async {
         when(
-          fixture.mockMcpServersDao.getMcpServerById('mcp-1'),
+          () => fixture.mockMcpServersDao.getMcpServerById('mcp-1'),
         ).thenAnswer((_) async => createServerRow());
         when(
-          fixture.mockMcpServersDao.deleteMcpServer('mcp-1'),
+          () => fixture.mockMcpServersDao.deleteMcpServer('mcp-1'),
         ).thenAnswer((_) async => true);
 
         final result = await fixture.repository.deleteMcpServer('mcp-1');
@@ -194,13 +198,15 @@ void main() {
 
       test('returns false when not found', () async {
         when(
-          fixture.mockMcpServersDao.getMcpServerById('nonexistent'),
+          () => fixture.mockMcpServersDao.getMcpServerById('nonexistent'),
         ).thenAnswer((_) async => null);
 
         final result = await fixture.repository.deleteMcpServer('nonexistent');
 
         expect(result, false);
-        final _ = verifyNever(fixture.mockMcpServersDao.deleteMcpServer(any));
+        final _ = verifyNever(
+          () => fixture.mockMcpServersDao.deleteMcpServer(any()),
+        );
       });
 
       test(
@@ -229,12 +235,12 @@ void main() {
                 ),
               );
           when(
-            fixture.mockMcpServersDao.getMcpServerById('mcp-1'),
+            () => fixture.mockMcpServersDao.getMcpServerById('mcp-1'),
           ).thenAnswer(
             (_) async => createServerRow(serviceConnectionId: 'service-1'),
           );
           when(
-            fixture.mockMcpServersDao.deleteMcpServer('mcp-1'),
+            () => fixture.mockMcpServersDao.deleteMcpServer('mcp-1'),
           ).thenAnswer((_) async => true);
 
           final result = await fixture.repository.deleteMcpServer('mcp-1');
@@ -249,10 +255,10 @@ void main() {
 
       test('throws McpServersException on failure', () async {
         when(
-          fixture.mockMcpServersDao.getMcpServerById('mcp-1'),
+          () => fixture.mockMcpServersDao.getMcpServerById('mcp-1'),
         ).thenAnswer((_) async => createServerRow());
         when(
-          fixture.mockMcpServersDao.deleteMcpServer('mcp-1'),
+          () => fixture.mockMcpServersDao.deleteMcpServer('mcp-1'),
         ).thenThrow(Exception('DB error'));
 
         await expectLater(
@@ -276,18 +282,20 @@ void main() {
         );
 
         when(
-          fixture.mockToolsGroupsDao.getToolsGroupByMcpServerId('mcp-1'),
+          () => fixture.mockToolsGroupsDao.getToolsGroupByMcpServerId('mcp-1'),
         ).thenAnswer((_) async => groupRow);
         when(
-          fixture.mockWorkspaceToolsDao.getToolsByGroupId('g1'),
+          () => fixture.mockWorkspaceToolsDao.getToolsByGroupId('g1'),
         ).thenAnswer((_) async => [existingTool]);
-        when(fixture.mockWorkspaceToolsDao.insertToolsBatch(any)).thenAnswer((
+        when(
+          () => fixture.mockWorkspaceToolsDao.insertToolsBatch(any()),
+        ).thenAnswer((
           _,
         ) async {
           return;
         });
         when(
-          fixture.mockWorkspaceToolsDao.deleteWorkspaceToolById('t1'),
+          () => fixture.mockWorkspaceToolsDao.deleteWorkspaceToolById('t1'),
         ).thenAnswer((_) async => true);
 
         await fixture.repository.syncMcpTools(
@@ -303,13 +311,13 @@ void main() {
 
         expect(
           () => verify(
-            fixture.mockWorkspaceToolsDao.insertToolsBatch(any),
+            () => fixture.mockWorkspaceToolsDao.insertToolsBatch(any()),
           ).called(1),
           returnsNormally,
         );
         expect(
           () => verify(
-            fixture.mockWorkspaceToolsDao.deleteWorkspaceToolById('t1'),
+            () => fixture.mockWorkspaceToolsDao.deleteWorkspaceToolById('t1'),
           ).called(1),
           returnsNormally,
         );
@@ -317,7 +325,9 @@ void main() {
 
       test('throws McpServerNotFoundException when group missing', () async {
         when(
-          fixture.mockToolsGroupsDao.getToolsGroupByMcpServerId('nonexistent'),
+          () => fixture.mockToolsGroupsDao.getToolsGroupByMcpServerId(
+            'nonexistent',
+          ),
         ).thenAnswer((_) async => null);
 
         await expectLater(
@@ -342,10 +352,10 @@ void main() {
         );
 
         when(
-          fixture.mockToolsGroupsDao.getToolsGroupByMcpServerId('mcp-1'),
+          () => fixture.mockToolsGroupsDao.getToolsGroupByMcpServerId('mcp-1'),
         ).thenAnswer((_) async => groupRow);
         when(
-          fixture.mockWorkspaceToolsDao.getToolsByGroupId('g1'),
+          () => fixture.mockWorkspaceToolsDao.getToolsByGroupId('g1'),
         ).thenAnswer((_) async => [existingTool]);
 
         await fixture.repository.syncMcpTools(
@@ -361,13 +371,13 @@ void main() {
 
         expect(
           () => verifyNever(
-            fixture.mockWorkspaceToolsDao.insertToolsBatch(any),
+            () => fixture.mockWorkspaceToolsDao.insertToolsBatch(any()),
           ),
           returnsNormally,
         );
         expect(
           () => verifyNever(
-            fixture.mockWorkspaceToolsDao.deleteWorkspaceToolById(any),
+            () => fixture.mockWorkspaceToolsDao.deleteWorkspaceToolById(any()),
           ),
           returnsNormally,
         );
@@ -377,7 +387,7 @@ void main() {
     group('getMcpServersForWorkspace', () {
       test('returns mapped entities', () async {
         when(
-          fixture.mockMcpServersDao.getMcpServersForWorkspace('ws-1'),
+          () => fixture.mockMcpServersDao.getMcpServersForWorkspace('ws-1'),
         ).thenAnswer((_) async => [createServerRow()]);
 
         final result = await fixture.repository.getMcpServersForWorkspace(
@@ -392,7 +402,7 @@ void main() {
 
       test('throws McpServersException on failure', () async {
         when(
-          fixture.mockMcpServersDao.getMcpServersForWorkspace('ws-1'),
+          () => fixture.mockMcpServersDao.getMcpServersForWorkspace('ws-1'),
         ).thenThrow(Exception('DB error'));
 
         await expectLater(
@@ -405,7 +415,9 @@ void main() {
     group('getEnabledMcpServersForWorkspace', () {
       test('returns enabled servers', () async {
         when(
-          fixture.mockMcpServersDao.getEnabledMcpServersForWorkspace('ws-1'),
+          () => fixture.mockMcpServersDao.getEnabledMcpServersForWorkspace(
+            'ws-1',
+          ),
         ).thenAnswer((_) async => [createServerRow()]);
 
         final result = await fixture.repository
@@ -420,7 +432,7 @@ void main() {
     group('getMcpServerById', () {
       test('returns entity when found', () async {
         when(
-          fixture.mockMcpServersDao.getMcpServerById('mcp-1'),
+          () => fixture.mockMcpServersDao.getMcpServerById('mcp-1'),
         ).thenAnswer((_) async => createServerRow());
 
         final result = await fixture.repository.getMcpServerById('mcp-1');
@@ -431,7 +443,7 @@ void main() {
 
       test('returns null when not found', () async {
         when(
-          fixture.mockMcpServersDao.getMcpServerById('nonexistent'),
+          () => fixture.mockMcpServersDao.getMcpServerById('nonexistent'),
         ).thenAnswer((_) async => null);
 
         final result = await fixture.repository.getMcpServerById('nonexistent');

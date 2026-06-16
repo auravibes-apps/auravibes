@@ -9,13 +9,13 @@ import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/annotations.dart';
-import 'package:mockito/mockito.dart';
+import 'package:mocktail/mocktail.dart';
 
-import 'conversation_repository_impl_test.mocks.dart';
+import '../../test_mocks.dart';
 
-@GenerateNiceMocks([MockSpec<ConversationDao>()])
 void main() {
+  setUpAll(registerTestFallbackValues);
+
   group('ConversationRepositoryImpl', () {
     var mockDao = MockConversationDao();
     var database = _TestAppDatabase(mockDao);
@@ -59,9 +59,9 @@ void main() {
         addTearDown(controller.close);
 
         when(
-          mockDao.watchConversationsByWorkspace(
+          () => mockDao.watchConversationsByWorkspace(
             'ws-1',
-            limit: anyNamed('limit'),
+            limit: any(named: 'limit'),
           ),
         ).thenAnswer((_) => controller.stream);
 
@@ -80,7 +80,7 @@ void main() {
         addTearDown(controller.close);
 
         when(
-          mockDao.watchConversationsByWorkspace('ws-1', limit: 5),
+          () => mockDao.watchConversationsByWorkspace('ws-1', limit: 5),
         ).thenAnswer((_) => controller.stream);
 
         final _ = await repository
@@ -89,7 +89,7 @@ void main() {
 
         expect(
           () => verify(
-            mockDao.watchConversationsByWorkspace('ws-1', limit: 5),
+            () => mockDao.watchConversationsByWorkspace('ws-1', limit: 5),
           ).called(1),
           returnsNormally,
         );
@@ -103,7 +103,7 @@ void main() {
         addTearDown(controller.close);
 
         when(
-          mockDao.watchConversationById('conv-1'),
+          () => mockDao.watchConversationById('conv-1'),
         ).thenAnswer((_) => controller.stream);
 
         final result = await repository.watchConversationById('conv-1').first;
@@ -118,7 +118,7 @@ void main() {
         addTearDown(controller.close);
 
         when(
-          mockDao.watchConversationById('nonexistent'),
+          () => mockDao.watchConversationById('nonexistent'),
         ).thenAnswer((_) => controller.stream);
 
         final result = await repository
@@ -132,7 +132,7 @@ void main() {
     group('getConversationById', () {
       test('returns entity when found', () async {
         when(
-          mockDao.getConversationById('conv-1'),
+          () => mockDao.getConversationById('conv-1'),
         ).thenAnswer((_) async => createConversationRow());
 
         final result = await repository.getConversationById('conv-1');
@@ -146,7 +146,7 @@ void main() {
 
       test('returns null when not found', () async {
         when(
-          mockDao.getConversationById('nonexistent'),
+          () => mockDao.getConversationById('nonexistent'),
         ).thenAnswer((_) async => null);
 
         final result = await repository.getConversationById('nonexistent');
@@ -172,7 +172,7 @@ void main() {
         );
 
         when(
-          mockDao.insertConversation(any),
+          () => mockDao.insertConversation(any()),
         ).thenAnswer((_) async => createdRow);
 
         final result = await repository.createConversation(toCreate);
@@ -180,7 +180,7 @@ void main() {
         expect(result.id, 'new-conv');
         expect(result.title, 'New Chat');
         expect(result.isPinned, true);
-        verify(mockDao.insertConversation(any)).called(1);
+        verify(() => mockDao.insertConversation(any())).called(1);
       });
 
       test('throws on empty title', () async {
@@ -218,7 +218,7 @@ void main() {
           repository.createConversation(toCreate),
           throwsA(isA<ConversationValidationException>()),
         );
-        final _ = verifyNever(mockDao.insertConversation(any));
+        final _ = verifyNever(() => mockDao.insertConversation(any()));
       });
     });
 
@@ -234,14 +234,14 @@ void main() {
         );
 
         when(
-          mockDao.getConversationById('conv-1'),
+          () => mockDao.getConversationById('conv-1'),
         ).thenAnswer((_) async => createConversationRow());
         when(
-          mockDao.patchConversation('conv-1', any),
+          () => mockDao.patchConversation('conv-1', any()),
         ).thenAnswer((_) async => true);
 
         when(
-          mockDao.getConversationById('conv-1'),
+          () => mockDao.getConversationById('conv-1'),
         ).thenAnswer((_) async => updatedRow);
 
         const patch = ConversationPatch(title: 'Updated Title', isPinned: true);
@@ -255,7 +255,7 @@ void main() {
         'throws ConversationNotFoundException when conversation missing',
         () async {
           when(
-            mockDao.getConversationById('nonexistent'),
+            () => mockDao.getConversationById('nonexistent'),
           ).thenAnswer((_) async => null);
 
           const patch = ConversationPatch(title: 'Updated');
@@ -269,10 +269,10 @@ void main() {
 
       test('throws ConversationException when update fails', () async {
         when(
-          mockDao.getConversationById('conv-1'),
+          () => mockDao.getConversationById('conv-1'),
         ).thenAnswer((_) async => createConversationRow());
         when(
-          mockDao.patchConversation('conv-1', any),
+          () => mockDao.patchConversation('conv-1', any()),
         ).thenAnswer((_) async => false);
 
         const patch = ConversationPatch(title: 'Updated');
@@ -305,27 +305,27 @@ void main() {
     group('deleteConversation', () {
       test('returns true when deleted', () async {
         when(
-          mockDao.getConversationById('conv-1'),
+          () => mockDao.getConversationById('conv-1'),
         ).thenAnswer((_) async => createConversationRow());
         when(
-          mockDao.deleteConversation('conv-1'),
+          () => mockDao.deleteConversation('conv-1'),
         ).thenAnswer((_) async => true);
 
         final result = await repository.deleteConversation('conv-1');
 
         expect(result, true);
-        verify(mockDao.deleteConversation('conv-1')).called(1);
+        verify(() => mockDao.deleteConversation('conv-1')).called(1);
       });
 
       test('returns false when not found', () async {
         when(
-          mockDao.getConversationById('nonexistent'),
+          () => mockDao.getConversationById('nonexistent'),
         ).thenAnswer((_) async => null);
 
         final result = await repository.deleteConversation('nonexistent');
 
         expect(result, false);
-        final _ = verifyNever(mockDao.deleteConversation(any));
+        final _ = verifyNever(() => mockDao.deleteConversation(any()));
       });
     });
   });

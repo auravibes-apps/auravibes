@@ -4,23 +4,16 @@ import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
-import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/usecases/generate_title_usecase.dart';
-import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
-import 'package:auravibes_app/services/monitoring_service.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/annotations.dart';
-import 'package:mockito/mockito.dart';
+import 'package:mocktail/mocktail.dart';
 
-import 'generate_title_usecase_test.mocks.dart';
+import '../../../test_mocks.dart';
 
-@GenerateMocks([
-  ConversationRepository,
-  ChatbotService,
-  MonitoringService,
-])
 void main() {
+  setUpAll(registerTestFallbackValues);
+
   group('GenerateTitleUsecase', () {
     var conversationRepo = MockConversationRepository();
     var chatbotService = MockChatbotService();
@@ -83,7 +76,7 @@ void main() {
         monitoringService: monitoringService,
       );
 
-      when(conversationRepo.patchConversation(any, any)).thenAnswer(
+      when(() => conversationRepo.patchConversation(any(), any())).thenAnswer(
         (_) async => ConversationEntity(
           id: 'conv-1',
           title: 'Patched',
@@ -104,7 +97,7 @@ void main() {
 
     test('calls chatbotService.streamTitle with correct args', () async {
       final controller = StreamController<String>();
-      when(chatbotService.streamTitle(any, any)).thenAnswer(
+      when(() => chatbotService.streamTitle(any(), any())).thenAnswer(
         (_) => controller.stream,
       );
 
@@ -116,7 +109,7 @@ void main() {
 
       expect(
         () => verify(
-          chatbotService.streamTitle(modelSelection, 'Hello'),
+          () => chatbotService.streamTitle(modelSelection, 'Hello'),
         ).called(1),
         returnsNormally,
       );
@@ -143,7 +136,7 @@ void main() {
         );
 
         final controller = StreamController<String>();
-        when(chatbotService.streamTitle(any, any)).thenAnswer(
+        when(() => chatbotService.streamTitle(any(), any())).thenAnswer(
           (_) => controller.stream,
         );
 
@@ -177,7 +170,7 @@ void main() {
       );
 
       final controller = StreamController<String>();
-      when(chatbotService.streamTitle(any, any)).thenAnswer(
+      when(() => chatbotService.streamTitle(any(), any())).thenAnswer(
         (_) => controller.stream,
       );
 
@@ -198,7 +191,7 @@ void main() {
 
     test('patches conversation with streamed titles', () async {
       final controller = StreamController<String>();
-      when(chatbotService.streamTitle(any, any)).thenAnswer(
+      when(() => chatbotService.streamTitle(any(), any())).thenAnswer(
         (_) => controller.stream,
       );
 
@@ -214,14 +207,16 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 100));
 
       expect(
-        () => verify(conversationRepo.patchConversation(any, any)).called(1),
+        () => verify(
+          () => conversationRepo.patchConversation(any(), any()),
+        ).called(1),
         returnsNormally,
       );
     });
 
     test('patches with latest title when multiple titles emitted', () async {
       final controller = StreamController<String>();
-      when(chatbotService.streamTitle(any, any)).thenAnswer(
+      when(() => chatbotService.streamTitle(any(), any())).thenAnswer(
         (_) => controller.stream,
       );
 
@@ -239,7 +234,7 @@ void main() {
 
       expect(
         () => verify(
-          conversationRepo.patchConversation(any, any),
+          () => conversationRepo.patchConversation(any(), any()),
         ).called(greaterThanOrEqualTo(1)),
         returnsNormally,
       );
@@ -247,7 +242,7 @@ void main() {
 
     test('works with empty first message', () async {
       final controller = StreamController<String>();
-      when(chatbotService.streamTitle(any, any)).thenAnswer(
+      when(() => chatbotService.streamTitle(any(), any())).thenAnswer(
         (_) => controller.stream,
       );
 
@@ -258,7 +253,9 @@ void main() {
       );
 
       expect(
-        () => verify(chatbotService.streamTitle(modelSelection, '')).called(1),
+        () => verify(
+          () => chatbotService.streamTitle(modelSelection, ''),
+        ).called(1),
         returnsNormally,
       );
       final _ = await controller.close();
@@ -266,7 +263,7 @@ void main() {
 
     test('tracks error via monitoringService when stream fails', () async {
       final controller = StreamController<String>();
-      when(chatbotService.streamTitle(any, any)).thenAnswer(
+      when(() => chatbotService.streamTitle(any(), any())).thenAnswer(
         (_) => controller.stream,
       );
 
@@ -283,10 +280,10 @@ void main() {
 
       expect(
         () => verifyNever(
-          monitoringService.trackError(
-            any,
-            error: anyNamed('error'),
-            stackTrace: anyNamed('stackTrace'),
+          () => monitoringService.trackError(
+            any(),
+            error: any(named: 'error'),
+            stackTrace: any(named: 'stackTrace'),
           ),
         ),
         returnsNormally,
@@ -309,7 +306,7 @@ void main() {
       );
 
       final controller = StreamController<String>();
-      when(chatbotService.streamTitle(any, any)).thenAnswer(
+      when(() => chatbotService.streamTitle(any(), any())).thenAnswer(
         (_) => controller.stream,
       );
 
@@ -327,7 +324,7 @@ void main() {
 
     test('coalescing save patches final title to repo', () async {
       final controller = StreamController<String>();
-      when(chatbotService.streamTitle(any, any)).thenAnswer(
+      when(() => chatbotService.streamTitle(any(), any())).thenAnswer(
         (_) => controller.stream,
       );
 
@@ -344,10 +341,10 @@ void main() {
 
       expect(
         () => verify(
-          conversationRepo.patchConversation(
+          () => conversationRepo.patchConversation(
             'conv-final',
-            argThat(
-              isA<ConversationPatch>().having(
+            any(
+              that: isA<ConversationPatch>().having(
                 (p) => p.title,
                 'title',
                 'Final Title',

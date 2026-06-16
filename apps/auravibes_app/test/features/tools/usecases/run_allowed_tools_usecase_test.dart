@@ -4,10 +4,8 @@ import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
-import 'package:auravibes_app/domain/repositories/message_repository.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_decision.dart';
-import 'package:auravibes_app/features/tools/usecases/get_agent_iteration_decision_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/load_latest_message_tool_calls_result.dart';
 import 'package:auravibes_app/features/tools/usecases/run_allowed_tools_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/run_resolved_tool_usecase.dart';
@@ -16,18 +14,13 @@ import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/native_tool_type.dart';
 import 'package:auravibes_app/services/tools/user_tool_type.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/annotations.dart';
-import 'package:mockito/mockito.dart';
+import 'package:mocktail/mocktail.dart';
 
-import 'run_allowed_tools_usecase_test.mocks.dart';
+import '../../../test_mocks.dart';
 
-@GenerateMocks([
-  LoadLatestMessageToolCallsUsecase,
-  MessageRepository,
-  ResolveToolApprovalDecisionUsecase,
-  GetAgentIterationDecisionUsecase,
-])
 void main() {
+  setUpAll(registerTestFallbackValues);
+
   group('RunAllowedToolsUsecase', () {
     var loadLatestMessageToolCallsUsecase =
         MockLoadLatestMessageToolCallsUsecase();
@@ -126,7 +119,7 @@ void main() {
       );
 
       when(
-        loadLatestMessageToolCallsUsecase.call(
+        () => loadLatestMessageToolCallsUsecase.call(
           conversationId: 'conversation-1',
         ),
       ).thenAnswer(
@@ -138,11 +131,11 @@ void main() {
           previouslyFailedToolCallIds: const [],
         ),
       );
-      when(messageRepository.getMessageById('message-1')).thenAnswer(
+      when(() => messageRepository.getMessageById('message-1')).thenAnswer(
         (_) async => mcpMessage,
       );
       when(
-        resolveToolApprovalDecision(
+        () => resolveToolApprovalDecision(
           conversationId: 'conversation-1',
           workspaceId: 'workspace-1',
           toolCallId: 'tool-1',
@@ -156,10 +149,10 @@ void main() {
         ),
       );
       when(
-        messageRepository.patchMessage('message-1', any),
+        () => messageRepository.patchMessage('message-1', any()),
       ).thenAnswer((_) async => mcpMessage);
       when(
-        getAgentIterationDecisionUsecase.call(messageId: 'message-1'),
+        () => getAgentIterationDecisionUsecase.call(messageId: 'message-1'),
       ).thenAnswer((_) async => AgentIterationDecision.continueIteration);
 
       final result = await usecase.call(
@@ -175,7 +168,7 @@ void main() {
 
     test('returns done when there are no tool calls to process', () async {
       when(
-        loadLatestMessageToolCallsUsecase.call(
+        () => loadLatestMessageToolCallsUsecase.call(
           conversationId: 'conversation-1',
         ),
       ).thenAnswer(
@@ -195,11 +188,11 @@ void main() {
 
       expect(result, AgentIterationDecision.done);
       final _ = verifyNever(
-        resolveToolApprovalDecision(
-          conversationId: anyNamed('conversationId'),
-          workspaceId: anyNamed('workspaceId'),
-          toolCallId: anyNamed('toolCallId'),
-          resolvedTool: anyNamed('resolvedTool'),
+        () => resolveToolApprovalDecision(
+          conversationId: any(named: 'conversationId'),
+          workspaceId: any(named: 'workspaceId'),
+          toolCallId: any(named: 'toolCallId'),
+          resolvedTool: any(named: 'resolvedTool'),
         ),
       );
     });
@@ -218,7 +211,7 @@ void main() {
         );
 
         when(
-          loadLatestMessageToolCallsUsecase.call(
+          () => loadLatestMessageToolCallsUsecase.call(
             conversationId: 'conversation-1',
           ),
         ).thenAnswer(
@@ -231,7 +224,7 @@ void main() {
           ),
         );
         when(
-          resolveToolApprovalDecision(
+          () => resolveToolApprovalDecision(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
             toolCallId: 'tool-1',
@@ -252,7 +245,7 @@ void main() {
 
         expect(result, AgentIterationDecision.waitForToolApproval);
         final _ = verifyNever(
-          messageRepository.patchMessage(any, any),
+          () => messageRepository.patchMessage(any(), any()),
         );
       },
     );
@@ -272,7 +265,7 @@ void main() {
         );
 
         when(
-          loadLatestMessageToolCallsUsecase.call(
+          () => loadLatestMessageToolCallsUsecase.call(
             conversationId: 'conversation-1',
           ),
         ).thenAnswer(
@@ -284,11 +277,11 @@ void main() {
             previouslyFailedToolCallIds: const [],
           ),
         );
-        when(messageRepository.getMessageById('message-1')).thenAnswer(
+        when(() => messageRepository.getMessageById('message-1')).thenAnswer(
           (_) async => toolMessage,
         );
         when(
-          resolveToolApprovalDecision(
+          () => resolveToolApprovalDecision(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
             toolCallId: 'tool-1',
@@ -302,10 +295,10 @@ void main() {
           ),
         );
         when(
-          messageRepository.patchMessage('message-1', any),
+          () => messageRepository.patchMessage('message-1', any()),
         ).thenAnswer((_) async => toolMessage);
         when(
-          getAgentIterationDecisionUsecase.call(messageId: 'message-1'),
+          () => getAgentIterationDecisionUsecase.call(messageId: 'message-1'),
         ).thenAnswer((_) async => AgentIterationDecision.continueIteration);
 
         final result = await usecase.call(
@@ -316,7 +309,8 @@ void main() {
         expect(result, AgentIterationDecision.continueIteration);
         final update =
             verify(
-                  messageRepository.patchMessage('message-1', captureAny),
+                  () =>
+                      messageRepository.patchMessage('message-1', captureAny()),
                 ).captured.single
                 as MessagePatch;
         final updatedToolCalls = update.metadata?.toolCalls;
@@ -390,7 +384,7 @@ void main() {
         );
 
         when(
-          loadLatestMessageToolCallsUsecase.call(
+          () => loadLatestMessageToolCallsUsecase.call(
             conversationId: 'conversation-1',
           ),
         ).thenAnswer(
@@ -402,11 +396,11 @@ void main() {
             previouslyFailedToolCallIds: const [],
           ),
         );
-        when(messageRepository.getMessageById('message-1')).thenAnswer(
+        when(() => messageRepository.getMessageById('message-1')).thenAnswer(
           (_) async => multiToolMessage,
         );
         when(
-          resolveToolApprovalDecision(
+          () => resolveToolApprovalDecision(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
             toolCallId: 'tool-1',
@@ -420,7 +414,7 @@ void main() {
           ),
         );
         when(
-          resolveToolApprovalDecision(
+          () => resolveToolApprovalDecision(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
             toolCallId: 'tool-2',
@@ -434,10 +428,10 @@ void main() {
           ),
         );
         when(
-          messageRepository.patchMessage('message-1', any),
+          () => messageRepository.patchMessage('message-1', any()),
         ).thenAnswer((_) async => multiToolMessage);
         when(
-          getAgentIterationDecisionUsecase.call(messageId: 'message-1'),
+          () => getAgentIterationDecisionUsecase.call(messageId: 'message-1'),
         ).thenAnswer((_) async => AgentIterationDecision.continueIteration);
 
         final result = await usecase.call(
@@ -448,7 +442,8 @@ void main() {
         expect(result, AgentIterationDecision.continueIteration);
         final update =
             verify(
-                  messageRepository.patchMessage('message-1', captureAny),
+                  () =>
+                      messageRepository.patchMessage('message-1', captureAny()),
                 ).captured.single
                 as MessagePatch;
         final updatedToolCalls = update.metadata?.toolCalls;
@@ -512,7 +507,7 @@ void main() {
         );
 
         when(
-          loadLatestMessageToolCallsUsecase.call(
+          () => loadLatestMessageToolCallsUsecase.call(
             conversationId: 'conversation-1',
           ),
         ).thenAnswer(
@@ -524,11 +519,11 @@ void main() {
             previouslyFailedToolCallIds: const [],
           ),
         );
-        when(messageRepository.getMessageById('message-1')).thenAnswer(
+        when(() => messageRepository.getMessageById('message-1')).thenAnswer(
           (_) async => mixedMessage,
         );
         when(
-          resolveToolApprovalDecision(
+          () => resolveToolApprovalDecision(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
             toolCallId: 'tool-good',
@@ -542,7 +537,7 @@ void main() {
           ),
         );
         when(
-          resolveToolApprovalDecision(
+          () => resolveToolApprovalDecision(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
             toolCallId: 'tool-bad',
@@ -556,10 +551,10 @@ void main() {
           ),
         );
         when(
-          messageRepository.patchMessage('message-1', any),
+          () => messageRepository.patchMessage('message-1', any()),
         ).thenAnswer((_) async => mixedMessage);
         when(
-          getAgentIterationDecisionUsecase.call(messageId: 'message-1'),
+          () => getAgentIterationDecisionUsecase.call(messageId: 'message-1'),
         ).thenAnswer((_) async => AgentIterationDecision.continueIteration);
 
         final result = await usecase.call(
@@ -570,7 +565,8 @@ void main() {
         expect(result, AgentIterationDecision.continueIteration);
         final update =
             verify(
-                  messageRepository.patchMessage('message-1', captureAny),
+                  () =>
+                      messageRepository.patchMessage('message-1', captureAny()),
                 ).captured.single
                 as MessagePatch;
         final updatedToolCalls = update.metadata?.toolCalls;
@@ -652,7 +648,7 @@ void main() {
         );
 
         when(
-          loadLatestMessageToolCallsUsecase.call(
+          () => loadLatestMessageToolCallsUsecase.call(
             conversationId: 'conversation-1',
           ),
         ).thenAnswer(
@@ -664,11 +660,11 @@ void main() {
             previouslyFailedToolCallIds: const [],
           ),
         );
-        when(messageRepository.getMessageById('message-1')).thenAnswer(
+        when(() => messageRepository.getMessageById('message-1')).thenAnswer(
           (_) async => mixedPermMessage,
         );
         when(
-          resolveToolApprovalDecision(
+          () => resolveToolApprovalDecision(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
             toolCallId: 'tool-granted',
@@ -682,7 +678,7 @@ void main() {
           ),
         );
         when(
-          resolveToolApprovalDecision(
+          () => resolveToolApprovalDecision(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
             toolCallId: 'tool-pending',
@@ -696,7 +692,7 @@ void main() {
           ),
         );
         when(
-          resolveToolApprovalDecision(
+          () => resolveToolApprovalDecision(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
             toolCallId: 'tool-disabled',
@@ -710,7 +706,7 @@ void main() {
           ),
         );
         when(
-          messageRepository.patchMessage('message-1', any),
+          () => messageRepository.patchMessage('message-1', any()),
         ).thenAnswer((_) async => mixedPermMessage);
 
         final result = await usecase.call(
@@ -721,7 +717,8 @@ void main() {
         expect(result, AgentIterationDecision.waitForToolApproval);
         final update =
             verify(
-                  messageRepository.patchMessage('message-1', captureAny),
+                  () =>
+                      messageRepository.patchMessage('message-1', captureAny()),
                 ).captured.single
                 as MessagePatch;
         final updatedToolCalls = update.metadata?.toolCalls;
@@ -770,7 +767,7 @@ void main() {
         );
 
         when(
-          loadLatestMessageToolCallsUsecase.call(
+          () => loadLatestMessageToolCallsUsecase.call(
             conversationId: 'conversation-1',
           ),
         ).thenAnswer(
@@ -783,7 +780,7 @@ void main() {
           ),
         );
         when(
-          resolveToolApprovalDecision(
+          () => resolveToolApprovalDecision(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
             toolCallId: 'tool-1',
@@ -797,7 +794,7 @@ void main() {
           ),
         );
         when(
-          resolveToolApprovalDecision(
+          () => resolveToolApprovalDecision(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
             toolCallId: 'tool-2',
@@ -818,7 +815,7 @@ void main() {
 
         expect(result, AgentIterationDecision.waitForToolApproval);
         final _ = verifyNever(
-          messageRepository.patchMessage(any, any),
+          () => messageRepository.patchMessage(any(), any()),
         );
       },
     );
@@ -895,7 +892,7 @@ void main() {
         );
 
         when(
-          loadLatestMessageToolCallsUsecase.call(
+          () => loadLatestMessageToolCallsUsecase.call(
             conversationId: 'conversation-1',
           ),
         ).thenAnswer(
@@ -908,7 +905,7 @@ void main() {
           ),
         );
         when(
-          resolveToolApprovalDecision(
+          () => resolveToolApprovalDecision(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
             toolCallId: 'native-tool-1',
@@ -929,7 +926,7 @@ void main() {
 
         expect(result, AgentIterationDecision.waitForToolApproval);
         verify(
-          resolveToolApprovalDecision(
+          () => resolveToolApprovalDecision(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
             toolCallId: 'native-tool-1',
@@ -937,7 +934,7 @@ void main() {
           ),
         ).called(1);
         final _ = verifyNever(
-          messageRepository.patchMessage(any, any),
+          () => messageRepository.patchMessage(any(), any()),
         );
       },
     );
@@ -976,7 +973,7 @@ void main() {
         );
 
         when(
-          loadLatestMessageToolCallsUsecase.call(
+          () => loadLatestMessageToolCallsUsecase.call(
             conversationId: 'conversation-1',
           ),
         ).thenAnswer(
@@ -989,7 +986,7 @@ void main() {
           ),
         );
         when(
-          resolveToolApprovalDecision(
+          () => resolveToolApprovalDecision(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
             toolCallId: 'native-tool-1',
@@ -1002,14 +999,14 @@ void main() {
             permissionTableId: 'url',
           ),
         );
-        when(messageRepository.getMessageById('message-1')).thenAnswer(
+        when(() => messageRepository.getMessageById('message-1')).thenAnswer(
           (_) async => nativeMessage,
         );
         when(
-          messageRepository.patchMessage('message-1', any),
+          () => messageRepository.patchMessage('message-1', any()),
         ).thenAnswer((_) async => nativeMessage);
         when(
-          getAgentIterationDecisionUsecase.call(messageId: 'message-1'),
+          () => getAgentIterationDecisionUsecase.call(messageId: 'message-1'),
         ).thenAnswer((_) async => AgentIterationDecision.continueIteration);
 
         final result = await usecase.call(
@@ -1020,7 +1017,8 @@ void main() {
         expect(result, AgentIterationDecision.continueIteration);
         final update =
             verify(
-                  messageRepository.patchMessage('message-1', captureAny),
+                  () =>
+                      messageRepository.patchMessage('message-1', captureAny()),
                 ).captured.single
                 as MessagePatch;
         final updatedToolCalls = update.metadata?.toolCalls;
@@ -1068,7 +1066,7 @@ void main() {
         );
 
         when(
-          loadLatestMessageToolCallsUsecase.call(
+          () => loadLatestMessageToolCallsUsecase.call(
             conversationId: 'conversation-1',
           ),
         ).thenAnswer(
@@ -1081,7 +1079,7 @@ void main() {
           ),
         );
         when(
-          resolveToolApprovalDecision(
+          () => resolveToolApprovalDecision(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
             toolCallId: 'native-tool-1',
@@ -1093,14 +1091,14 @@ void main() {
             permissionResult: ToolPermissionResult.notConfigured,
           ),
         );
-        when(messageRepository.getMessageById('message-1')).thenAnswer(
+        when(() => messageRepository.getMessageById('message-1')).thenAnswer(
           (_) async => nativeMessage,
         );
         when(
-          messageRepository.patchMessage('message-1', any),
+          () => messageRepository.patchMessage('message-1', any()),
         ).thenAnswer((_) async => nativeMessage);
         when(
-          getAgentIterationDecisionUsecase.call(messageId: 'message-1'),
+          () => getAgentIterationDecisionUsecase.call(messageId: 'message-1'),
         ).thenAnswer((_) async => AgentIterationDecision.done);
 
         final result = await usecase.call(
@@ -1111,7 +1109,8 @@ void main() {
         expect(result, AgentIterationDecision.done);
         final update =
             verify(
-                  messageRepository.patchMessage('message-1', captureAny),
+                  () =>
+                      messageRepository.patchMessage('message-1', captureAny()),
                 ).captured.single
                 as MessagePatch;
         final updatedToolCalls = update.metadata?.toolCalls;
@@ -1159,7 +1158,7 @@ void main() {
         );
 
         when(
-          loadLatestMessageToolCallsUsecase.call(
+          () => loadLatestMessageToolCallsUsecase.call(
             conversationId: 'conversation-1',
           ),
         ).thenAnswer(
@@ -1172,7 +1171,7 @@ void main() {
           ),
         );
         when(
-          resolveToolApprovalDecision(
+          () => resolveToolApprovalDecision(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
             toolCallId: 'native-tool-1',
@@ -1184,14 +1183,14 @@ void main() {
             permissionResult: ToolPermissionResult.notConfigured,
           ),
         );
-        when(messageRepository.getMessageById('message-1')).thenAnswer(
+        when(() => messageRepository.getMessageById('message-1')).thenAnswer(
           (_) async => nativeMessage,
         );
         when(
-          messageRepository.patchMessage('message-1', any),
+          () => messageRepository.patchMessage('message-1', any()),
         ).thenAnswer((_) async => nativeMessage);
         when(
-          getAgentIterationDecisionUsecase.call(messageId: 'message-1'),
+          () => getAgentIterationDecisionUsecase.call(messageId: 'message-1'),
         ).thenAnswer((_) async => AgentIterationDecision.done);
 
         final _ = await usecase.call(
@@ -1201,7 +1200,8 @@ void main() {
 
         final update =
             verify(
-                  messageRepository.patchMessage('message-1', captureAny),
+                  () =>
+                      messageRepository.patchMessage('message-1', captureAny()),
                 ).captured.single
                 as MessagePatch;
         final tc = update.metadata?.toolCalls.firstWhere(
@@ -1245,7 +1245,7 @@ void main() {
         );
 
         when(
-          loadLatestMessageToolCallsUsecase.call(
+          () => loadLatestMessageToolCallsUsecase.call(
             conversationId: 'conversation-1',
           ),
         ).thenAnswer(
@@ -1258,7 +1258,7 @@ void main() {
           ),
         );
         when(
-          resolveToolApprovalDecision(
+          () => resolveToolApprovalDecision(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
             toolCallId: 'native-tool-1',
@@ -1271,14 +1271,14 @@ void main() {
             permissionTableId: 'url',
           ),
         );
-        when(messageRepository.getMessageById('message-1')).thenAnswer(
+        when(() => messageRepository.getMessageById('message-1')).thenAnswer(
           (_) async => nativeMessage,
         );
         when(
-          messageRepository.patchMessage('message-1', any),
+          () => messageRepository.patchMessage('message-1', any()),
         ).thenAnswer((_) async => nativeMessage);
         when(
-          getAgentIterationDecisionUsecase.call(messageId: 'message-1'),
+          () => getAgentIterationDecisionUsecase.call(messageId: 'message-1'),
         ).thenAnswer((_) async => AgentIterationDecision.done);
 
         final _ = await usecase.call(
@@ -1288,7 +1288,8 @@ void main() {
 
         final update =
             verify(
-                  messageRepository.patchMessage('message-1', captureAny),
+                  () =>
+                      messageRepository.patchMessage('message-1', captureAny()),
                 ).captured.single
                 as MessagePatch;
         final tc = update.metadata?.toolCalls.firstWhere(
@@ -1395,7 +1396,7 @@ void main() {
         );
 
         when(
-          loadLatestMessageToolCallsUsecase.call(
+          () => loadLatestMessageToolCallsUsecase.call(
             conversationId: 'conversation-1',
           ),
         ).thenAnswer(
@@ -1407,11 +1408,11 @@ void main() {
             previouslyFailedToolCallIds: const ['failed-tool'],
           ),
         );
-        when(messageRepository.getMessageById('message-1')).thenAnswer(
+        when(() => messageRepository.getMessageById('message-1')).thenAnswer(
           (_) async => failedMessage,
         );
         when(
-          resolveToolApprovalDecision(
+          () => resolveToolApprovalDecision(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
             toolCallId: 'tool-1',
@@ -1425,10 +1426,10 @@ void main() {
           ),
         );
         when(
-          messageRepository.patchMessage('message-1', any),
+          () => messageRepository.patchMessage('message-1', any()),
         ).thenAnswer((_) async => failedMessage);
         when(
-          getAgentIterationDecisionUsecase.call(messageId: 'message-1'),
+          () => getAgentIterationDecisionUsecase.call(messageId: 'message-1'),
         ).thenAnswer((_) async => AgentIterationDecision.continueIteration);
 
         final result = await usecase.call(
@@ -1439,7 +1440,8 @@ void main() {
         expect(result, AgentIterationDecision.continueIteration);
         final update =
             verify(
-                  messageRepository.patchMessage('message-1', captureAny),
+                  () =>
+                      messageRepository.patchMessage('message-1', captureAny()),
                 ).captured.single
                 as MessagePatch;
         final updatedToolCalls = update.metadata?.toolCalls;
@@ -1490,7 +1492,7 @@ void main() {
         );
 
         when(
-          loadLatestMessageToolCallsUsecase.call(
+          () => loadLatestMessageToolCallsUsecase.call(
             conversationId: 'conversation-1',
           ),
         ).thenAnswer(
@@ -1502,11 +1504,11 @@ void main() {
             previouslyFailedToolCallIds: const [],
           ),
         );
-        when(messageRepository.getMessageById('message-1')).thenAnswer(
+        when(() => messageRepository.getMessageById('message-1')).thenAnswer(
           (_) async => cancelMessage,
         );
         when(
-          messageRepository.patchMessage('message-1', any),
+          () => messageRepository.patchMessage('message-1', any()),
         ).thenAnswer((_) async => cancelMessage);
 
         agentCancellationRuntime.requestStop('conversation-1');
@@ -1554,7 +1556,7 @@ void main() {
         );
 
         when(
-          loadLatestMessageToolCallsUsecase.call(
+          () => loadLatestMessageToolCallsUsecase.call(
             conversationId: 'conversation-1',
           ),
         ).thenAnswer(
@@ -1566,11 +1568,11 @@ void main() {
             previouslyFailedToolCallIds: const [],
           ),
         );
-        when(messageRepository.getMessageById('message-1')).thenAnswer(
+        when(() => messageRepository.getMessageById('message-1')).thenAnswer(
           (_) async => disabledMessage,
         );
         when(
-          resolveToolApprovalDecision(
+          () => resolveToolApprovalDecision(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
             toolCallId: 'tool-1',
@@ -1584,10 +1586,10 @@ void main() {
           ),
         );
         when(
-          messageRepository.patchMessage('message-1', any),
+          () => messageRepository.patchMessage('message-1', any()),
         ).thenAnswer((_) async => disabledMessage);
         when(
-          getAgentIterationDecisionUsecase.call(messageId: 'message-1'),
+          () => getAgentIterationDecisionUsecase.call(messageId: 'message-1'),
         ).thenAnswer((_) async => AgentIterationDecision.done);
 
         final result = await usecase.call(
@@ -1598,7 +1600,8 @@ void main() {
         expect(result, AgentIterationDecision.done);
         final update =
             verify(
-                  messageRepository.patchMessage('message-1', captureAny),
+                  () =>
+                      messageRepository.patchMessage('message-1', captureAny()),
                 ).captured.single
                 as MessagePatch;
         final tc = update.metadata?.toolCalls.first;
@@ -1621,7 +1624,7 @@ void main() {
         );
 
         when(
-          loadLatestMessageToolCallsUsecase.call(
+          () => loadLatestMessageToolCallsUsecase.call(
             conversationId: 'conversation-1',
           ),
         ).thenAnswer(
@@ -1633,11 +1636,11 @@ void main() {
             previouslyFailedToolCallIds: const [],
           ),
         );
-        when(messageRepository.getMessageById('message-1')).thenAnswer(
+        when(() => messageRepository.getMessageById('message-1')).thenAnswer(
           (_) async => null,
         );
         when(
-          resolveToolApprovalDecision(
+          () => resolveToolApprovalDecision(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
             toolCallId: 'tool-1',
@@ -1651,7 +1654,7 @@ void main() {
           ),
         );
         when(
-          getAgentIterationDecisionUsecase.call(messageId: 'message-1'),
+          () => getAgentIterationDecisionUsecase.call(messageId: 'message-1'),
         ).thenAnswer((_) async => AgentIterationDecision.continueIteration);
 
         final result = await usecase.call(
@@ -1661,7 +1664,7 @@ void main() {
 
         expect(result, AgentIterationDecision.continueIteration);
         final _ = verifyNever(
-          messageRepository.patchMessage(any, any),
+          () => messageRepository.patchMessage(any(), any()),
         );
       },
     );

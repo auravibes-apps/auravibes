@@ -8,13 +8,13 @@ import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/annotations.dart';
-import 'package:mockito/mockito.dart';
+import 'package:mocktail/mocktail.dart';
 
-import 'api_model_repository_impl_test.mocks.dart';
+import '../../test_mocks.dart';
 
-@GenerateNiceMocks([MockSpec<ApiModelProvidersDao>(), MockSpec<ApiModelsDao>()])
 void main() {
+  setUpAll(registerTestFallbackValues);
+
   group('ApiModelRepositoryImpl', () {
     final fixture = _ApiModelRepositoryFixture();
 
@@ -47,7 +47,7 @@ void main() {
     group('getAllProviders', () {
       test('returns mapped provider entities', () async {
         when(
-          fixture.mockProvidersDao.getAllProviders(),
+          () => fixture.mockProvidersDao.getAllProviders(),
         ).thenAnswer((_) async => [providerRow]);
 
         final result = await fixture.repository.getAllProviders();
@@ -62,7 +62,7 @@ void main() {
 
       test('returns empty list when no providers', () async {
         when(
-          fixture.mockProvidersDao.getAllProviders(),
+          () => fixture.mockProvidersDao.getAllProviders(),
         ).thenAnswer((_) async => []);
 
         final result = await fixture.repository.getAllProviders();
@@ -74,7 +74,7 @@ void main() {
     group('getProvidersByType', () {
       test('returns filtered providers', () async {
         when(
-          fixture.mockProvidersDao.getProvidersByType('openai'),
+          () => fixture.mockProvidersDao.getProvidersByType('openai'),
         ).thenAnswer((_) async => [providerRow]);
 
         final result = await fixture.repository.getProvidersByType('openai');
@@ -87,7 +87,7 @@ void main() {
     group('getAllModels', () {
       test('returns mapped model entities', () async {
         when(
-          fixture.mockModelsDao.getAllModels(),
+          () => fixture.mockModelsDao.getAllModels(),
         ).thenAnswer((_) async => [modelRow]);
 
         final result = await fixture.repository.getAllModels();
@@ -110,7 +110,7 @@ void main() {
     group('getModelByProviderAndModelId', () {
       test('returns model when found', () async {
         when(
-          fixture.mockModelsDao.getModelByProviderAndModelId(
+          () => fixture.mockModelsDao.getModelByProviderAndModelId(
             'openai',
             'gpt-4',
           ),
@@ -127,7 +127,7 @@ void main() {
 
       test('returns null when not found', () async {
         when(
-          fixture.mockModelsDao.getModelByProviderAndModelId(
+          () => fixture.mockModelsDao.getModelByProviderAndModelId(
             'openai',
             'unknown',
           ),
@@ -145,7 +145,7 @@ void main() {
     group('getModelsByProvider', () {
       test('returns models for provider', () async {
         when(
-          fixture.mockModelsDao.getModelsByProvider('openai'),
+          () => fixture.mockModelsDao.getModelsByProvider('openai'),
         ).thenAnswer((_) async => [modelRow]);
 
         final result = await fixture.repository.getModelsByProvider('openai');
@@ -166,14 +166,16 @@ void main() {
         );
 
         when(
-          fixture.mockProvidersDao.batchUpsertProviders(any),
+          () => fixture.mockProvidersDao.batchUpsertProviders(any()),
         ).thenAnswer((_) async => [providerRow]);
 
         final result = await fixture.repository.batchUpsertProviders([entity]);
 
         expect(result, hasLength(1));
         expect(result.firstOrNull?.id, 'openai');
-        verify(fixture.mockProvidersDao.batchUpsertProviders(any)).called(1);
+        verify(
+          () => fixture.mockProvidersDao.batchUpsertProviders(any()),
+        ).called(1);
       });
     });
 
@@ -190,19 +192,19 @@ void main() {
         );
 
         when(
-          fixture.mockModelsDao.batchUpsertModels(any),
+          () => fixture.mockModelsDao.batchUpsertModels(any()),
         ).thenAnswer((_) async => [modelRow]);
 
         final result = await fixture.repository.batchUpsertModels([entity]);
 
         expect(result, hasLength(1));
         expect(result.firstOrNull?.id, 'gpt-4');
-        verify(fixture.mockModelsDao.batchUpsertModels(any)).called(1);
+        verify(() => fixture.mockModelsDao.batchUpsertModels(any())).called(1);
       });
 
       test('filters null entities from input', () async {
         when(
-          fixture.mockModelsDao.batchUpsertModels(any),
+          () => fixture.mockModelsDao.batchUpsertModels(any()),
         ).thenAnswer((_) async => []);
 
         final _ = await fixture.repository.batchUpsertModels([
@@ -219,7 +221,7 @@ void main() {
 
         final captured =
             verify(
-                  fixture.mockModelsDao.batchUpsertModels(captureAny),
+                  () => fixture.mockModelsDao.batchUpsertModels(captureAny()),
                 ).captured.single
                 as List;
         expect(captured, hasLength(1));
@@ -229,17 +231,17 @@ void main() {
     group('deleteAllData', () {
       test('returns sum of deleted models and providers', () async {
         when(
-          fixture.mockModelsDao.deleteAllModels(),
+          () => fixture.mockModelsDao.deleteAllModels(),
         ).thenAnswer((_) async => 5);
         when(
-          fixture.mockProvidersDao.deleteAllProviders(),
+          () => fixture.mockProvidersDao.deleteAllProviders(),
         ).thenAnswer((_) async => 3);
 
         final result = await fixture.repository.deleteAllData();
 
         expect(result, 8);
-        verify(fixture.mockModelsDao.deleteAllModels()).called(1);
-        verify(fixture.mockProvidersDao.deleteAllProviders()).called(1);
+        verify(() => fixture.mockModelsDao.deleteAllModels()).called(1);
+        verify(() => fixture.mockProvidersDao.deleteAllProviders()).called(1);
       });
     });
 
@@ -250,7 +252,7 @@ void main() {
           name: 'Test',
         );
         when(
-          fixture.mockProvidersDao.getAllProviders(),
+          () => fixture.mockProvidersDao.getAllProviders(),
         ).thenAnswer((_) async => [rowWithTypeNull]);
 
         final result = await fixture.repository.getAllProviders();
@@ -265,7 +267,7 @@ void main() {
           type: ModelProvidersTableType.anthropic,
         );
         when(
-          fixture.mockProvidersDao.getAllProviders(),
+          () => fixture.mockProvidersDao.getAllProviders(),
         ).thenAnswer((_) async => [anthropicRow]);
 
         final result = await fixture.repository.getAllProviders();

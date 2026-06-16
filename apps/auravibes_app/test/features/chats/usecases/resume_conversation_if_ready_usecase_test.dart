@@ -1,26 +1,17 @@
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
-import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
-import 'package:auravibes_app/domain/repositories/message_repository.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_context.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_decision.dart';
 import 'package:auravibes_app/features/chats/usecases/resume_conversation_if_ready_usecase.dart';
-import 'package:auravibes_app/features/chats/usecases/run_agent_iteration_usecase.dart';
-import 'package:auravibes_app/features/tools/usecases/run_allowed_tools_usecase.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/annotations.dart';
-import 'package:mockito/mockito.dart';
+import 'package:mocktail/mocktail.dart';
 
-import 'resume_conversation_if_ready_usecase_test.mocks.dart';
+import '../../../test_mocks.dart';
 
-@GenerateMocks([
-  MessageRepository,
-  ConversationRepository,
-  RunAllowedToolsUsecase,
-  RunAgentIterationUsecase,
-])
 void main() {
+  setUpAll(registerTestFallbackValues);
+
   group('ResumeConversationIfReadyUsecase', () {
     var messageRepository = MockMessageRepository();
     var conversationRepository = MockConversationRepository();
@@ -72,21 +63,23 @@ void main() {
     });
 
     test('returns early when message not found', () async {
-      when(messageRepository.getMessageById(messageId)).thenAnswer(
+      when(() => messageRepository.getMessageById(messageId)).thenAnswer(
         (_) async => null,
       );
 
       await expectLater(usecase.call(messageId: messageId), completes);
 
       expect(
-        () => verifyNever(conversationRepository.getConversationById(any)),
+        () => verifyNever(
+          () => conversationRepository.getConversationById(any()),
+        ),
         returnsNormally,
       );
       expect(
         () => verifyNever(
-          runAllowedToolsUsecase.call(
-            conversationId: anyNamed('conversationId'),
-            workspaceId: anyNamed('workspaceId'),
+          () => runAllowedToolsUsecase.call(
+            conversationId: any(named: 'conversationId'),
+            workspaceId: any(named: 'workspaceId'),
           ),
         ),
         returnsNormally,
@@ -94,20 +87,20 @@ void main() {
     });
 
     test('returns early when conversation not found', () async {
-      when(messageRepository.getMessageById(messageId)).thenAnswer(
+      when(() => messageRepository.getMessageById(messageId)).thenAnswer(
         (_) async => message,
       );
       when(
-        conversationRepository.getConversationById(conversationId),
+        () => conversationRepository.getConversationById(conversationId),
       ).thenAnswer((_) async => null);
 
       await expectLater(usecase.call(messageId: messageId), completes);
 
       expect(
         () => verifyNever(
-          runAllowedToolsUsecase.call(
-            conversationId: anyNamed('conversationId'),
-            workspaceId: anyNamed('workspaceId'),
+          () => runAllowedToolsUsecase.call(
+            conversationId: any(named: 'conversationId'),
+            workspaceId: any(named: 'workspaceId'),
           ),
         ),
         returnsNormally,
@@ -115,14 +108,14 @@ void main() {
     });
 
     test('returns early when decision is not continueIteration', () async {
-      when(messageRepository.getMessageById(messageId)).thenAnswer(
+      when(() => messageRepository.getMessageById(messageId)).thenAnswer(
         (_) async => message,
       );
       when(
-        conversationRepository.getConversationById(conversationId),
+        () => conversationRepository.getConversationById(conversationId),
       ).thenAnswer((_) async => conversation);
       when(
-        runAllowedToolsUsecase.call(
+        () => runAllowedToolsUsecase.call(
           conversationId: conversationId,
           workspaceId: workspaceId,
         ),
@@ -132,9 +125,9 @@ void main() {
 
       expect(
         () => verifyNever(
-          runAgentIterationUsecase.call(
-            conversationId: anyNamed('conversationId'),
-            context: anyNamed('context'),
+          () => runAgentIterationUsecase.call(
+            conversationId: any(named: 'conversationId'),
+            context: any(named: 'context'),
           ),
         ),
         returnsNormally,
@@ -142,22 +135,22 @@ void main() {
     });
 
     test('invokes RunAgentIterationUsecase on continueIteration', () async {
-      when(messageRepository.getMessageById(messageId)).thenAnswer(
+      when(() => messageRepository.getMessageById(messageId)).thenAnswer(
         (_) async => message,
       );
       when(
-        conversationRepository.getConversationById(conversationId),
+        () => conversationRepository.getConversationById(conversationId),
       ).thenAnswer((_) async => conversation);
       when(
-        runAllowedToolsUsecase.call(
+        () => runAllowedToolsUsecase.call(
           conversationId: conversationId,
           workspaceId: workspaceId,
         ),
       ).thenAnswer((_) async => AgentIterationDecision.continueIteration);
       when(
-        runAgentIterationUsecase.call(
-          conversationId: anyNamed('conversationId'),
-          context: anyNamed('context'),
+        () => runAgentIterationUsecase.call(
+          conversationId: any(named: 'conversationId'),
+          context: any(named: 'context'),
         ),
       ).thenAnswer((_) async => AgentIterationDecision.done);
 
@@ -165,7 +158,7 @@ void main() {
 
       expect(
         () => verify(
-          runAgentIterationUsecase.call(
+          () => runAgentIterationUsecase.call(
             conversationId: conversationId,
             context: const AgentIterationContext(
               origin: AgentIterationOrigin.toolResume,
@@ -177,47 +170,48 @@ void main() {
     });
 
     test('fetches message by correct messageId', () async {
-      when(messageRepository.getMessageById(messageId)).thenAnswer(
+      when(() => messageRepository.getMessageById(messageId)).thenAnswer(
         (_) async => null,
       );
 
       await usecase.call(messageId: messageId);
 
       expect(
-        () => verify(messageRepository.getMessageById(messageId)).called(1),
+        () =>
+            verify(() => messageRepository.getMessageById(messageId)).called(1),
         returnsNormally,
       );
     });
 
     test('fetches conversation using message conversationId', () async {
-      when(messageRepository.getMessageById(messageId)).thenAnswer(
+      when(() => messageRepository.getMessageById(messageId)).thenAnswer(
         (_) async => message,
       );
       when(
-        conversationRepository.getConversationById(conversationId),
+        () => conversationRepository.getConversationById(conversationId),
       ).thenAnswer((_) async => null);
 
       await usecase.call(messageId: messageId);
 
       expect(
         () => verify(
-          conversationRepository.getConversationById(conversationId),
+          () => conversationRepository.getConversationById(conversationId),
         ).called(1),
         returnsNormally,
       );
     });
 
     test('passes correct workspaceId to runAllowedTools', () async {
-      when(messageRepository.getMessageById(messageId)).thenAnswer(
+      when(() => messageRepository.getMessageById(messageId)).thenAnswer(
         (_) async => message,
       );
       when(
-        conversationRepository.getConversationById(conversationId),
+        () => conversationRepository.getConversationById(conversationId),
       ).thenAnswer((_) async => conversation);
       when(
-        runAllowedToolsUsecase.call(
-          conversationId: anyNamed('conversationId'),
-          workspaceId: anyNamed('workspaceId'),
+        () => runAllowedToolsUsecase.call(
+          conversationId: any(named: 'conversationId'),
+          workspaceId: any(named: 'workspaceId'),
         ),
       ).thenAnswer((_) async => AgentIterationDecision.waitForToolApproval);
 
@@ -225,7 +219,7 @@ void main() {
 
       expect(
         () => verify(
-          runAllowedToolsUsecase.call(
+          () => runAllowedToolsUsecase.call(
             conversationId: conversationId,
             workspaceId: workspaceId,
           ),

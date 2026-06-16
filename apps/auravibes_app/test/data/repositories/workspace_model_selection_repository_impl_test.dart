@@ -8,13 +8,13 @@ import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.d
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/annotations.dart';
-import 'package:mockito/mockito.dart';
+import 'package:mocktail/mocktail.dart';
 
-import 'workspace_model_selection_repository_impl_test.mocks.dart';
+import '../../test_mocks.dart';
 
-@GenerateNiceMocks([MockSpec<WorkspaceModelSelectionsDao>()])
 void main() {
+  setUpAll(registerTestFallbackValues);
+
   group('WorkspaceModelSelectionRepositoryImpl', () {
     var mockDao = MockWorkspaceModelSelectionsDao();
     var database = _TestAppDatabase(mockDao);
@@ -35,7 +35,9 @@ void main() {
 
     group('createWorkspaceModelSelections', () {
       test('delegates to dao with companions', () async {
-        when(mockDao.insertWorkspaceModelSelections(any)).thenAnswer((_) async {
+        when(() => mockDao.insertWorkspaceModelSelections(any())).thenAnswer((
+          _,
+        ) async {
           return;
         });
 
@@ -53,20 +55,26 @@ void main() {
         await repository.createWorkspaceModelSelections(selections);
 
         expect(
-          () => verify(mockDao.insertWorkspaceModelSelections(any)).called(1),
+          () => verify(
+            () => mockDao.insertWorkspaceModelSelections(any()),
+          ).called(1),
           returnsNormally,
         );
       });
 
       test('handles empty list', () async {
-        when(mockDao.insertWorkspaceModelSelections(any)).thenAnswer((_) async {
+        when(() => mockDao.insertWorkspaceModelSelections(any())).thenAnswer((
+          _,
+        ) async {
           return;
         });
 
         await repository.createWorkspaceModelSelections([]);
 
         expect(
-          () => verify(mockDao.insertWorkspaceModelSelections(any)).called(1),
+          () => verify(
+            () => mockDao.insertWorkspaceModelSelections(any()),
+          ).called(1),
           returnsNormally,
         );
       });
@@ -111,8 +119,8 @@ void main() {
         );
 
         when(
-          mockDao.getAllWorkspaceModelSelectionsByWorkspace(
-            workspaceIds: anyNamed('workspaceIds'),
+          () => mockDao.getAllWorkspaceModelSelectionsByWorkspace(
+            workspaceIds: any(named: 'workspaceIds'),
           ),
         ).thenAnswer((_) async => [withConnection]);
 
@@ -134,8 +142,8 @@ void main() {
 
       test('handles null workspaces filter', () async {
         when(
-          mockDao.getAllWorkspaceModelSelectionsByWorkspace(
-            workspaceIds: anyNamed('workspaceIds'),
+          () => mockDao.getAllWorkspaceModelSelectionsByWorkspace(
+            workspaceIds: any(named: 'workspaceIds'),
           ),
         ).thenAnswer((_) async => []);
 
@@ -175,7 +183,7 @@ void main() {
         );
 
         when(
-          mockDao.getWorkspaceModelSelectionById('sel-1'),
+          () => mockDao.getWorkspaceModelSelectionById('sel-1'),
         ).thenAnswer((_) async => withConnection);
 
         final result = await repository.getWorkspaceModelSelectionById('sel-1');
@@ -192,7 +200,7 @@ void main() {
 
       test('returns null when not found', () async {
         when(
-          mockDao.getWorkspaceModelSelectionById('nonexistent'),
+          () => mockDao.getWorkspaceModelSelectionById('nonexistent'),
         ).thenAnswer((_) async => null);
 
         final result = await repository.getWorkspaceModelSelectionById(
@@ -232,7 +240,7 @@ void main() {
         );
 
         when(
-          mockDao.getWorkspaceModelSelectionById('sel-1'),
+          () => mockDao.getWorkspaceModelSelectionById('sel-1'),
         ).thenAnswer((_) async => withConnection);
 
         final result = await repository.getWorkspaceModelSelectionById('sel-1');
@@ -274,7 +282,7 @@ void main() {
         );
 
         when(
-          mockDao.getWorkspaceModelSelectionById('sel-1'),
+          () => mockDao.getWorkspaceModelSelectionById('sel-1'),
         ).thenAnswer((_) async => withConnection);
 
         final result = await repository.getWorkspaceModelSelectionById('sel-1');

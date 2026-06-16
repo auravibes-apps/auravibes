@@ -1,15 +1,14 @@
 import 'dart:convert';
 
 import 'package:auravibes_app/services/secret_key_manager.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/annotations.dart';
-import 'package:mockito/mockito.dart';
+import 'package:mocktail/mocktail.dart';
 
-@GenerateNiceMocks([MockSpec<FlutterSecureStorage>()])
-import 'secret_manager_service_test.mocks.dart';
+import '../test_mocks.dart';
 
 void main() {
+  setUpAll(registerTestFallbackValues);
+
   group('SecretKeyManager', () {
     var mockStorage = MockFlutterSecureStorage();
     var manager = SecretKeyManager(secureStorage: mockStorage);
@@ -21,10 +20,13 @@ void main() {
 
     test('clearCache resets cached key', () async {
       when(
-        mockStorage.read(key: anyNamed('key')),
+        () => mockStorage.read(key: any(named: 'key')),
       ).thenAnswer((_) async => null);
       when(
-        mockStorage.write(key: anyNamed('key'), value: anyNamed('value')),
+        () => mockStorage.write(
+          key: any(named: 'key'),
+          value: any(named: 'value'),
+        ),
       ).thenAnswer((_) {
         return Future<void>.value();
       });
@@ -33,13 +35,13 @@ void main() {
       manager.clearCache();
 
       expect(
-        () => verifyNever(mockStorage.delete(key: anyNamed('key'))),
+        () => verifyNever(() => mockStorage.delete(key: any(named: 'key'))),
         returnsNormally,
       );
     });
 
     test('deleteKey removes from storage and clears cache', () async {
-      when(mockStorage.delete(key: anyNamed('key'))).thenAnswer((_) {
+      when(() => mockStorage.delete(key: any(named: 'key'))).thenAnswer((_) {
         return Future<void>.value();
       });
 
@@ -47,7 +49,7 @@ void main() {
 
       expect(
         () => verify(
-          mockStorage.delete(key: 'app_encryption_secret_key'),
+          () => mockStorage.delete(key: 'app_encryption_secret_key'),
         ).called(1),
         returnsNormally,
       );
@@ -55,10 +57,13 @@ void main() {
 
     test('getOrCreateSecretKey returns cached key on second call', () async {
       when(
-        mockStorage.read(key: anyNamed('key')),
+        () => mockStorage.read(key: any(named: 'key')),
       ).thenAnswer((_) async => null);
       when(
-        mockStorage.write(key: anyNamed('key'), value: anyNamed('value')),
+        () => mockStorage.write(
+          key: any(named: 'key'),
+          value: any(named: 'value'),
+        ),
       ).thenAnswer((_) {
         return Future<void>.value();
       });
@@ -67,7 +72,9 @@ void main() {
       final key2 = await manager.getOrCreateSecretKey();
 
       expect(identical(key1, key2), true);
-      verify(mockStorage.read(key: 'app_encryption_secret_key')).called(1);
+      verify(
+        () => mockStorage.read(key: 'app_encryption_secret_key'),
+      ).called(1);
     });
 
     test('getOrCreateSecretKey loads existing key from storage', () async {
@@ -75,18 +82,20 @@ void main() {
         List<int>.generate(32, (i) => i),
       );
       when(
-        mockStorage.read(key: anyNamed('key')),
+        () => mockStorage.read(key: any(named: 'key')),
       ).thenAnswer((_) async => existingKeyBase64);
 
       final key = await manager.getOrCreateSecretKey();
       final bytes = await key.extractBytes();
 
       expect(bytes, hasLength(32));
-      verify(mockStorage.read(key: 'app_encryption_secret_key')).called(1);
+      verify(
+        () => mockStorage.read(key: 'app_encryption_secret_key'),
+      ).called(1);
       final _ = verifyNever(
-        mockStorage.write(
-          key: anyNamed('key'),
-          value: anyNamed('value'),
+        () => mockStorage.write(
+          key: any(named: 'key'),
+          value: any(named: 'value'),
         ),
       );
     });
@@ -95,10 +104,13 @@ void main() {
       'getOrCreateSecretKey generates and saves new key when none exists',
       () async {
         when(
-          mockStorage.read(key: anyNamed('key')),
+          () => mockStorage.read(key: any(named: 'key')),
         ).thenAnswer((_) async => null);
         when(
-          mockStorage.write(key: anyNamed('key'), value: anyNamed('value')),
+          () => mockStorage.write(
+            key: any(named: 'key'),
+            value: any(named: 'value'),
+          ),
         ).thenAnswer((_) {
           return Future<void>.value();
         });
@@ -108,9 +120,9 @@ void main() {
 
         expect(bytes, hasLength(32));
         verify(
-          mockStorage.write(
+          () => mockStorage.write(
             key: 'app_encryption_secret_key',
-            value: anyNamed('value'),
+            value: any(named: 'value'),
           ),
         ).called(1);
       },
