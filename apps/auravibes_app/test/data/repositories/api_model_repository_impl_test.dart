@@ -91,7 +91,7 @@ void main() {
           url: 'https://openrouter.ai/api/v1',
         );
         when(
-          fixture.mockProvidersDao.getProvidersByType('openrouter'),
+          () => fixture.mockProvidersDao.getProvidersByType('openrouter'),
         ).thenAnswer((_) async => [openRouterRow]);
 
         final result = await fixture.repository.getProvidersByType(
@@ -301,7 +301,7 @@ void main() {
           type: ModelProvidersTableType.openrouter,
         );
         when(
-          fixture.mockProvidersDao.getAllProviders(),
+          () => fixture.mockProvidersDao.getAllProviders(),
         ).thenAnswer((_) async => [openRouterRow]);
 
         final result = await fixture.repository.getAllProviders();
