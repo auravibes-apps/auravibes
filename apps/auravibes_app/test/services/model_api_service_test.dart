@@ -489,7 +489,7 @@ void main() {
         dio.close();
       });
 
-      test('filters unsupported providers and their models', () async {
+      test('stores unsupported providers and their models', () async {
         final dio = _createDioWithResponse({
           'openrouter': <String, dynamic>{
             'id': 'openrouter',
@@ -531,18 +531,21 @@ void main() {
 
         final result = await service.fetchAllModels();
 
-        expect(result.providers, hasLength(1));
+        expect(result.providers, hasLength(2));
         expect(
-          result.providers.single.modelProvider.type,
-          ModelProvidersType.openrouter,
+          result.providers.map((p) => p.modelProvider.id),
+          containsAll(['openrouter', 'gateway']),
         );
-        expect(result.allModels, hasLength(1));
-        expect(result.allModels.single.modelProvider, 'openrouter');
+        expect(result.allModels, hasLength(2));
+        expect(
+          result.allModels.map((m) => m.modelProvider),
+          containsAll(['openrouter', 'gateway']),
+        );
 
         dio.close();
       });
 
-      test('skips unsupported providers before parsing models', () async {
+      test('skips invalid model entries while storing provider', () async {
         final dio = _createDioWithResponse({
           'gateway': <String, dynamic>{
             'id': 'gateway',
@@ -555,7 +558,8 @@ void main() {
 
         final result = await service.fetchAllModels();
 
-        expect(result.providers, isEmpty);
+        expect(result.providers, hasLength(1));
+        expect(result.providers.single.modelProvider.id, 'gateway');
         expect(result.allModels, isEmpty);
 
         dio.close();

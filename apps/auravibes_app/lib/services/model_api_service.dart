@@ -170,12 +170,20 @@ class ApiProviderDto {
     required ApiModelProviderEntity modelProvider,
     Set<String>? canonicalModelIds,
   }) {
-    final modelsData = json['models'] as Map<String, dynamic>? ?? {};
+    final rawModelsData = json['models'];
+    final modelsData = rawModelsData is Map<String, dynamic>
+        ? rawModelsData
+        : <String, dynamic>{};
 
     final models = modelsData.entries
         .map(
           (e) {
-            return e.value as Map<String, dynamic>?;
+            final modelJson = e.value;
+            if (modelJson is! Map<String, dynamic>) {
+              return null;
+            }
+
+            return modelJson;
           },
         )
         .nonNulls

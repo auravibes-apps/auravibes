@@ -112,7 +112,7 @@ void main() {
         const ApiModelProviderEntity(
           id: 'openai',
           name: 'OpenAI',
-          type: null,
+          type: ModelProvidersType.openai,
         ),
       ];
       final container = ProviderContainer(
@@ -125,8 +125,10 @@ void main() {
       addTearDown(container.dispose);
 
       final result = await container.read(apiModelProvidersProvider.future);
-      expect(result, hasLength(1));
-      expect(result.firstOrNull?.id, 'openai');
+      expect(result.map((provider) => provider.id), [
+        'openai-codex',
+        'openai',
+      ]);
     });
   });
 

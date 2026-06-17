@@ -198,7 +198,7 @@ final class ApiModelProvidersProvider
   }
 }
 
-String _$apiModelProvidersHash() => r'b71504d9b13c745674a8a8e41ba01596102db8ca';
+String _$apiModelProvidersHash() => r'c62de10d3312202537298693457e9a9e0a02f292';
 
 @ProviderFor(getAllModels)
 final getAllModelsProvider = GetAllModelsProvider._();

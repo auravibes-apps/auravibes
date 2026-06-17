@@ -68,7 +68,7 @@ final class ListWorkspaceModelSelectionsProvider
 }
 
 String _$listWorkspaceModelSelectionsHash() =>
-    r'7bc70d9ecd55c4ee864ef0bbd625172720cb4359';
+    r'12eb2c369e63cca6d01bb725f2939574fe7a7f73';
 
 final class ListWorkspaceModelSelectionsFamily extends $Family
     with

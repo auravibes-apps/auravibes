@@ -37,7 +37,7 @@ melos:
       run: dart fix --apply
 
     unused:files:
-      run: dart run dart_code_linter:metrics check-unused-files --monorepo --exclude='{**/*.g.dart,**/*.freezed.dart,**/.dart_tool/**.dart,packages/auravibes_genkit_providers/lib/auravibes_genkit_providers.dart,packages/auravibes_genkit_providers/lib/src/openai_compat_reasoning.dart,packages/auravibes_genkit_providers/lib/src/openrouter.dart,packages/auravibes_genkit_providers/lib/src/chat_completions_provider.dart}' apps/auravibes_app/lib packages/auravibes_genkit_providers/lib packages/auravibes_ui/lib
+      run: dart run dart_code_linter:metrics check-unused-files --monorepo --exclude='{**/*.g.dart,**/*.freezed.dart,**/.dart_tool/**.dart,packages/auravibes_genkit_providers/lib/auravibes_genkit_providers.dart,packages/auravibes_genkit_providers/lib/src/openai_codex.dart,packages/auravibes_genkit_providers/lib/src/openai_compat_reasoning.dart,packages/auravibes_genkit_providers/lib/src/openrouter.dart,packages/auravibes_genkit_providers/lib/src/chat_completions_provider.dart}' apps/auravibes_app/lib packages/auravibes_genkit_providers/lib packages/auravibes_ui/lib
       description: Fail when unused Dart files are detected
 
     dcl:analyze:
