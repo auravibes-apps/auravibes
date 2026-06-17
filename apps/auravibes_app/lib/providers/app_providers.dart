@@ -1,5 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
+import 'package:auravibes_app/app_env_config.dart';
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -12,7 +13,7 @@ Future<SharedPreferences> sharedPreferences(Ref _) =>
 
 @Riverpod(keepAlive: true)
 AppDatabase appDatabase(Ref _) {
-  const dbHashSource = String.fromEnvironment('DB_HASH_SOURCE');
+  const dbHashSource = AppEnvConfig.dbHashSource;
 
   return AppDatabase(
     dbHashSource: dbHashSource.isNotEmpty ? dbHashSource : null,

@@ -87,7 +87,7 @@ class ServiceConnectionRepositoryImpl implements ServiceConnectionRepository {
     final secret = ServiceConnectionSecretOAuth2(
       accessToken: token.accessToken,
       refreshToken: token.refreshToken ?? existingOAuth?.refreshToken,
-      idToken: existingOAuth?.idToken,
+      idToken: token.idToken ?? existingOAuth?.idToken,
       clientSecret: existingOAuth?.clientSecret,
     );
     final _ =
@@ -181,6 +181,7 @@ class ServiceConnectionRepositoryImpl implements ServiceConnectionRepository {
     final secret = ServiceConnectionSecretOAuth2(
       accessToken: token.accessToken,
       refreshToken: token.refreshToken,
+      idToken: token.idToken,
     );
     final row = await _database
         .into(_database.serviceConnections)

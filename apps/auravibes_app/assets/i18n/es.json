@@ -52,6 +52,9 @@
       "open_button": "Agregar Proveedor",
       "title": "Agregar Proveedor de Modelo",
       "create_button": "Crear Proveedor",
+      "connect_browser": "Conectar con navegador",
+      "use_device_code": "Usar código de dispositivo",
+      "device_code_instruction": "Abre esta URL e ingresa el código.",
       "sections": {
         "advanced": "Avanzado"
       },
@@ -78,7 +81,10 @@
         "no_icon": "Sin ícono"
       },
       "errors": {
-        "unknown": "Ocurrió un error desconocido"
+        "unknown": "Ocurrió un error desconocido",
+        "oauth_profile_not_found": "Perfil OAuth no encontrado: {}",
+        "oauth_client_id_missing": "El ID de cliente OAuth no está configurado para {}",
+        "openai_catalog_unavailable": "El catálogo de modelos de OpenAI no está disponible. Reintenta después de sincronizar modelos."
       }
     }
   },

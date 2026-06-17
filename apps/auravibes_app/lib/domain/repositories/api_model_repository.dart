@@ -15,6 +15,8 @@ abstract class ApiModelRepository {
   /// Returns a list of all providers ordered by their name.
   Future<List<ApiModelProviderEntity>> getAllProviders();
 
+  Stream<List<ApiModelProviderEntity>> watchAllProviders();
+
   /// Retrieves providers filtered by their type.
   ///
   /// [type] The type of providers to retrieve.
@@ -43,6 +45,8 @@ abstract class ApiModelRepository {
   /// [providerId] Provider ID to filter by.
   /// Returns a list of models ordered by model name.
   Future<List<ApiModelEntity>> getModelsByProvider(String providerId);
+
+  Stream<List<ApiModelEntity>> watchModelsByProvider(String providerId);
 
   // Batch operations for synchronization.
 

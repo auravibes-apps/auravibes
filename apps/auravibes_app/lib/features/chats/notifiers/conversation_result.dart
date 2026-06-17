@@ -46,6 +46,8 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
   }
 
   Future<void> setModel(String? modelId) async {
+    if (modelId == null) return;
+
     final result = state.value;
     if (result is! ConversationFound) return;
 

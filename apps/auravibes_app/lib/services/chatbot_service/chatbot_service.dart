@@ -6,6 +6,7 @@ import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.d
 import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:auravibes_app/services/chatbot_service/provider_factory.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
+import 'package:auravibes_app/services/oauth_credential_service.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:genkit/genkit.dart' hide FinishReason;
 import 'package:schemantic/schemantic.dart';
@@ -16,10 +17,15 @@ final _anthropicSafeToolCallIdChar = RegExp('[a-zA-Z0-9_-]');
 class ChatbotService {
   ChatbotService({
     required this.encryptionService,
+    OAuthCredentialService? oauthCredentialService,
     ProviderFactory? providerFactory,
   }) : _providerFactory =
            providerFactory ??
-           ProviderFactory(encryptionService: encryptionService);
+           ProviderFactory(
+             encryptionService: encryptionService,
+             resolveOAuthAccessToken:
+                 oauthCredentialService?.getValidAccessToken,
+           );
 
   EncryptionService encryptionService;
   final ProviderFactory _providerFactory;
@@ -28,8 +34,12 @@ class ChatbotService {
     WorkspaceModelSelectionWithConnectionEntity chatProvider,
     List<ChatMessage> history, {
     List<ToolSpec>? tools,
+    String? sessionId,
   }) async* {
-    final ai = await _providerFactory.createGenkit(chatProvider);
+    final ai = await _providerFactory.createGenkit(
+      chatProvider,
+      sessionId: sessionId,
+    );
     final model = _providerFactory.getModelReference(chatProvider);
     final config = _providerFactory.getGenerationConfig<Object?>(chatProvider);
 

@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$AddModelProviderModel {
 
- String? get name; String? get modelId; String? get key; String? get url;
+ String? get name; String? get modelId; String? get key; String? get url; ModelProviderAuthMode get authMode;
 /// Create a copy of AddModelProviderModel
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $AddModelProviderModelCopyWith<AddModelProviderModel> get copyWith => _$AddModel
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AddModelProviderModel&&(identical(other.name, name) || other.name == name)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.key, key) || other.key == key)&&(identical(other.url, url) || other.url == url));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AddModelProviderModel&&(identical(other.name, name) || other.name == name)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.key, key) || other.key == key)&&(identical(other.url, url) || other.url == url)&&(identical(other.authMode, authMode) || other.authMode == authMode));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,modelId,key,url);
+int get hashCode => Object.hash(runtimeType,name,modelId,key,url,authMode);
 
 @override
 String toString() {
-  return 'AddModelProviderModel(name: $name, modelId: $modelId, key: $key, url: $url)';
+  return 'AddModelProviderModel(name: $name, modelId: $modelId, key: $key, url: $url, authMode: $authMode)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $AddModelProviderModelCopyWith<$Res>  {
   factory $AddModelProviderModelCopyWith(AddModelProviderModel value, $Res Function(AddModelProviderModel) _then) = _$AddModelProviderModelCopyWithImpl;
 @useResult
 $Res call({
- String? name, String? modelId, String? key, String? url
+ String? name, String? modelId, String? key, String? url, ModelProviderAuthMode authMode
 });
 
 
@@ -62,13 +62,14 @@ class _$AddModelProviderModelCopyWithImpl<$Res>
 
 /// Create a copy of AddModelProviderModel
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? name = freezed,Object? modelId = freezed,Object? key = freezed,Object? url = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? name = freezed,Object? modelId = freezed,Object? key = freezed,Object? url = freezed,Object? authMode = null,}) {
   return _then(_self.copyWith(
 name: freezed == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String?,modelId: freezed == modelId ? _self.modelId : modelId // ignore: cast_nullable_to_non_nullable
 as String?,key: freezed == key ? _self.key : key // ignore: cast_nullable_to_non_nullable
 as String?,url: freezed == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,authMode: null == authMode ? _self.authMode : authMode // ignore: cast_nullable_to_non_nullable
+as ModelProviderAuthMode,
   ));
 }
 
@@ -153,10 +154,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? name,  String? modelId,  String? key,  String? url)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? name,  String? modelId,  String? key,  String? url,  ModelProviderAuthMode authMode)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _AddModelProviderModel() when $default != null:
-return $default(_that.name,_that.modelId,_that.key,_that.url);case _:
+return $default(_that.name,_that.modelId,_that.key,_that.url,_that.authMode);case _:
   return orElse();
 
 }
@@ -174,10 +175,10 @@ return $default(_that.name,_that.modelId,_that.key,_that.url);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? name,  String? modelId,  String? key,  String? url)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? name,  String? modelId,  String? key,  String? url,  ModelProviderAuthMode authMode)  $default,) {final _that = this;
 switch (_that) {
 case _AddModelProviderModel():
-return $default(_that.name,_that.modelId,_that.key,_that.url);case _:
+return $default(_that.name,_that.modelId,_that.key,_that.url,_that.authMode);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -194,10 +195,10 @@ return $default(_that.name,_that.modelId,_that.key,_that.url);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? name,  String? modelId,  String? key,  String? url)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? name,  String? modelId,  String? key,  String? url,  ModelProviderAuthMode authMode)?  $default,) {final _that = this;
 switch (_that) {
 case _AddModelProviderModel() when $default != null:
-return $default(_that.name,_that.modelId,_that.key,_that.url);case _:
+return $default(_that.name,_that.modelId,_that.key,_that.url,_that.authMode);case _:
   return null;
 
 }
@@ -209,13 +210,14 @@ return $default(_that.name,_that.modelId,_that.key,_that.url);case _:
 
 
 class _AddModelProviderModel extends AddModelProviderModel {
-  const _AddModelProviderModel({this.name, this.modelId, this.key, this.url}): super._();
+  const _AddModelProviderModel({this.name, this.modelId, this.key, this.url, this.authMode = ModelProviderAuthMode.apiKey}): super._();
   
 
 @override final  String? name;
 @override final  String? modelId;
 @override final  String? key;
 @override final  String? url;
+@override@JsonKey() final  ModelProviderAuthMode authMode;
 
 /// Create a copy of AddModelProviderModel
 /// with the given fields replaced by the non-null parameter values.
@@ -227,16 +229,16 @@ _$AddModelProviderModelCopyWith<_AddModelProviderModel> get copyWith => __$AddMo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AddModelProviderModel&&(identical(other.name, name) || other.name == name)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.key, key) || other.key == key)&&(identical(other.url, url) || other.url == url));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AddModelProviderModel&&(identical(other.name, name) || other.name == name)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.key, key) || other.key == key)&&(identical(other.url, url) || other.url == url)&&(identical(other.authMode, authMode) || other.authMode == authMode));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,modelId,key,url);
+int get hashCode => Object.hash(runtimeType,name,modelId,key,url,authMode);
 
 @override
 String toString() {
-  return 'AddModelProviderModel(name: $name, modelId: $modelId, key: $key, url: $url)';
+  return 'AddModelProviderModel(name: $name, modelId: $modelId, key: $key, url: $url, authMode: $authMode)';
 }
 
 
@@ -247,7 +249,7 @@ abstract mixin class _$AddModelProviderModelCopyWith<$Res> implements $AddModelP
   factory _$AddModelProviderModelCopyWith(_AddModelProviderModel value, $Res Function(_AddModelProviderModel) _then) = __$AddModelProviderModelCopyWithImpl;
 @override @useResult
 $Res call({
- String? name, String? modelId, String? key, String? url
+ String? name, String? modelId, String? key, String? url, ModelProviderAuthMode authMode
 });
 
 
@@ -264,13 +266,14 @@ class __$AddModelProviderModelCopyWithImpl<$Res>
 
 /// Create a copy of AddModelProviderModel
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? name = freezed,Object? modelId = freezed,Object? key = freezed,Object? url = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? name = freezed,Object? modelId = freezed,Object? key = freezed,Object? url = freezed,Object? authMode = null,}) {
   return _then(_AddModelProviderModel(
 name: freezed == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String?,modelId: freezed == modelId ? _self.modelId : modelId // ignore: cast_nullable_to_non_nullable
 as String?,key: freezed == key ? _self.key : key // ignore: cast_nullable_to_non_nullable
 as String?,url: freezed == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,authMode: null == authMode ? _self.authMode : authMode // ignore: cast_nullable_to_non_nullable
+as ModelProviderAuthMode,
   ));
 }
 

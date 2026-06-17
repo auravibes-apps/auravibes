@@ -103,7 +103,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// Database schema version.
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 12;
 
   /// Migration logic for database schema upgrades.
   @override
@@ -120,9 +120,8 @@ class AppDatabase extends _$AppDatabase {
     if (from < 2) {
       await m.createTable(workspaceCompactionSettings);
     }
-    if (from < 3) {
-      await m.addColumn(apiModels, apiModels.supportsReasoning);
-    }
+    final hasApiModels = await _tableExists('api_models');
+    await _ensureApiModelTables(m, from, hasApiModels);
     if (from < 4) {
       await _migrateModelConnectionsToServiceConnections(m);
     }
@@ -138,8 +137,48 @@ class AppDatabase extends _$AppDatabase {
     if (from >= 4 && from < 8) {
       await _addServiceConnectionLifecycleColumns(m);
     }
+    await _addApiModelFeatureColumns(m, from, hasApiModels);
 
     await _addMcpServiceConnectionColumnIfNeeded(m, from);
+  }
+
+  Future<void> _ensureApiModelTables(
+    Migrator m,
+    int from,
+    bool hasApiModels,
+  ) async {
+    if (!await _tableExists('api_model_providers')) {
+      await m.createTable(apiModelProviders);
+    }
+    if (!hasApiModels) {
+      await m.createTable(apiModels);
+
+      return;
+    }
+    if (from < 3) {
+      await m.addColumn(apiModels, apiModels.supportsReasoning);
+    }
+  }
+
+  Future<void> _addApiModelFeatureColumns(
+    Migrator m,
+    int from,
+    bool hasApiModels,
+  ) async {
+    if (!hasApiModels) return;
+
+    if (hasApiModels && from < 9) {
+      await m.addColumn(apiModels, apiModels.isCanonical);
+    }
+    if (hasApiModels && from < 10) {
+      await m.addColumn(apiModels, apiModels.family);
+    }
+    if (hasApiModels && from < 11) {
+      await m.addColumn(apiModels, apiModels.supportsPriorityMode);
+    }
+    if (hasApiModels && from < 12) {
+      await m.addColumn(apiModels, apiModels.supportsToolCalls);
+    }
   }
 
   Future<void> _migrateModelConnectionsToServiceConnections(Migrator m) async {

@@ -16,6 +16,7 @@ abstract class WorkspaceModelSelectionEntity
     required String modelConnectionId,
     String? modelName,
     @Default(false) bool supportsReasoning,
+    @Default(true) bool supportsToolCalls,
   }) = _WorkspaceModelSelectionEntity;
 }
 
