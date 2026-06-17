@@ -40,6 +40,7 @@ void main() {
       supportsReasoning: false,
       isCanonical: true,
       supportsPriorityMode: false,
+      supportsToolCalls: false,
       costInput: 30,
       costOutput: 60,
       limitContext: 128000,

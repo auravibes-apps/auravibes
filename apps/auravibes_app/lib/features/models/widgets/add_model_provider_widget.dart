@@ -384,6 +384,7 @@ class _CreateButton extends HookConsumerWidget {
       ),
     );
     final disabled = isSubmitting || !isValid;
+
     return Column(
       children: [
         const _ErrorBanner(),

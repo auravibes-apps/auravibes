@@ -115,6 +115,7 @@ void main() {
             supportsReasoning: false,
             isCanonical: true,
             supportsPriorityMode: false,
+            supportsToolCalls: false,
             limitContext: 128000,
             limitOutput: 4096,
           ),
