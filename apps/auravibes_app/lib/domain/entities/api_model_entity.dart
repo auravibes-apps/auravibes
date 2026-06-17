@@ -82,10 +82,11 @@ abstract class ApiModelEntity with _$ApiModelEntity {
       costOutput: cost?.get<num?>('output')?.toDouble(),
       openWeights: json.get('open_weights'),
       supportsReasoning: json.get<bool?>('reasoning') ?? false,
-      isCanonical: canonicalModelIds.isEmpty ||
+      isCanonical:
+          canonicalModelIds.isEmpty ||
           canonicalModelIds.contains(
-              '$modelProvider/${json.get<String>('id')}',
-            ),
+            '$modelProvider/${json.get<String>('id')}',
+          ),
       supportsPriorityMode: _supportsPriorityMode(json),
       supportsToolCalls: json.get<bool?>('tool_call') ?? false,
     );
