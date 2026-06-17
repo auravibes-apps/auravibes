@@ -49,9 +49,9 @@ melos:
       description: Fail when production unused declarations are detected
 
     unnecessary:nullable:
-      # Excluded callbacks use null as behavior: fallback close flow and
-      # Flutter-style disabled icon buttons.
-      run: dart run dart_code_linter:metrics check-unnecessary-nullable --monorepo --exclude='{apps/auravibes_app/lib/features/models/widgets/add_model_provider_widget.dart,packages/auravibes_ui/lib/src/atoms/aura_icon.dart}' apps/auravibes_app/lib packages/auravibes_genkit_providers/lib packages/auravibes_ui/lib
+      # Excluded callbacks/entities use null as behavior: fallback close flow,
+      # Flutter-style disabled icon buttons, and patch fields.
+      run: dart run dart_code_linter:metrics check-unnecessary-nullable --monorepo --exclude='{apps/auravibes_app/lib/domain/entities/conversation_entity.dart,apps/auravibes_app/lib/features/models/widgets/add_model_provider_widget.dart,packages/auravibes_ui/lib/src/atoms/aura_icon.dart}' apps/auravibes_app/lib packages/auravibes_genkit_providers/lib packages/auravibes_ui/lib
       description: Fail when unnecessary nullable parameters are detected
 
     format:check:

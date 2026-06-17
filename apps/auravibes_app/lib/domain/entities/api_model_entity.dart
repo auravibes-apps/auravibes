@@ -62,7 +62,7 @@ abstract class ApiModelEntity with _$ApiModelEntity {
   factory ApiModelEntity.fromJson(
     String modelProvider,
     Map<String, dynamic> json, [
-    Set<String>? canonicalModelIds,
+    Set<String> canonicalModelIds = const {},
   ]) {
     final cost = json.get<Map<String, dynamic>?>('cost');
     final limit = json.get<Map<String, dynamic>>('limit');
@@ -82,11 +82,10 @@ abstract class ApiModelEntity with _$ApiModelEntity {
       costOutput: cost?.get<num?>('output')?.toDouble(),
       openWeights: json.get('open_weights'),
       supportsReasoning: json.get<bool?>('reasoning') ?? false,
-      isCanonical:
-          canonicalModelIds?.contains(
-            '$modelProvider/${json.get<String>('id')}',
-          ) ??
-          true,
+      isCanonical: canonicalModelIds.isEmpty ||
+          canonicalModelIds.contains(
+              '$modelProvider/${json.get<String>('id')}',
+            ),
       supportsPriorityMode: _supportsPriorityMode(json),
       supportsToolCalls: json.get<bool?>('tool_call') ?? false,
     );

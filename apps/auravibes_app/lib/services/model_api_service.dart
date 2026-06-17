@@ -168,7 +168,7 @@ class ApiProviderDto {
   factory ApiProviderDto.fromJson(
     Map<String, dynamic> json, {
     required ApiModelProviderEntity modelProvider,
-    Set<String>? canonicalModelIds,
+    Set<String> canonicalModelIds = const {},
   }) {
     final rawModelsData = json['models'];
     final modelsData = rawModelsData is Map<String, dynamic>
