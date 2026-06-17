@@ -2,6 +2,7 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing code repeats lookups where extraction adds noise.
 // Required: Existing helpers remain top-level for local feature use.
+import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'add_model_provider_model.freezed.dart';
@@ -23,6 +24,7 @@ abstract class AddModelProviderModel with _$AddModelProviderModel {
     String? modelId,
     String? key,
     String? url,
+    @Default(ModelProviderAuthMode.apiKey) ModelProviderAuthMode authMode,
   }) = _AddModelProviderModel;
   const AddModelProviderModel._();
 
@@ -87,10 +89,11 @@ abstract class AddModelProviderModel with _$AddModelProviderModel {
   }
 
   bool isValid() {
-    return (validateKey() ??
-            validateName() ??
-            validateModelId() ??
-            validateUrl()) ==
+    final keyError = authMode == ModelProviderAuthMode.apiKey
+        ? validateKey()
+        : null;
+
+    return (keyError ?? validateName() ?? validateModelId() ?? validateUrl()) ==
         null;
   }
 }

@@ -9,6 +9,7 @@ import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
+import 'package:auravibes_app/domain/repositories/api_model_repository.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/repositories/workspace_model_selection_repository.dart';
@@ -17,6 +18,7 @@ import 'package:auravibes_app/features/chats/providers/conversation_repository_p
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_context.dart';
 import 'package:auravibes_app/features/chats/usecases/select_prompt_messages_usecase.dart';
+import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
 import 'package:auravibes_app/features/skills/usecases/build_skill_context_messages_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
@@ -24,6 +26,7 @@ import 'package:auravibes_app/providers/chatbot_service_provider.dart';
 import 'package:auravibes_app/services/chatbot_service/build_prompt_chat_messages.dart';
 import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
+import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:auravibes_app/services/monitoring_service.dart';
 import 'package:auravibes_app/utils/coalescing_save_extension.dart';
 import 'package:auravibes_app/utils/encode.dart';
@@ -81,7 +84,8 @@ class ContinueAgentUsecase {
     required this.agentCancellationRuntime,
     required this.monitoringService,
     required this.selectPromptMessagesUsecase,
-    this.buildSkillContextMessagesUsecase,
+    required this.apiModelRepository,
+    required this.buildSkillContextMessagesUsecase,
   });
 
   final ChatbotService chatbotService;
@@ -94,7 +98,8 @@ class ContinueAgentUsecase {
   final AgentCancellationRuntime agentCancellationRuntime;
   final MonitoringService monitoringService;
   final SelectPromptMessagesUsecase selectPromptMessagesUsecase;
-  final BuildSkillContextMessagesUsecase? buildSkillContextMessagesUsecase;
+  final ApiModelRepository apiModelRepository;
+  final BuildSkillContextMessagesUsecase buildSkillContextMessagesUsecase;
 
   Future<ContinueAgentResult> call({
     required String conversationId,
@@ -105,12 +110,10 @@ class ContinueAgentUsecase {
     final conversation = await _loadConversation(conversationId);
     final foundModel = await _loadSelectedModel(conversation);
     final messages = await _selectPromptMessages(conversationId);
-    final skillContextMessages =
-        await buildSkillContextMessagesUsecase?.call(
-          conversationId: conversationId,
-          workspaceId: conversation.workspaceId,
-        ) ??
-        const <ChatMessage>[];
+    final skillContextMessages = await buildSkillContextMessagesUsecase.call(
+      conversationId: conversationId,
+      workspaceId: conversation.workspaceId,
+    );
     final tools = await loadConversationToolSpecsUsecase.call(
       conversationId: conversationId,
       workspaceId: conversation.workspaceId,
@@ -150,15 +153,44 @@ class ContinueAgentUsecase {
     if (foundModel == null) {
       throw Exception('Selected model not found');
     }
-    final selectedModel = foundModel.workspaceModelSelection;
+    final projectedModel = await _withCodexCatalogModel(foundModel);
+    final selectedModel = projectedModel.workspaceModelSelection;
     _logger.info(
       'debug:model loaded '
       'modelId=${selectedModel.modelId} '
       'provider=${foundModel.modelsProvider.type} '
-      'supportsReasoning=${selectedModel.supportsReasoning}',
+      'supportsReasoning=${selectedModel.supportsReasoning} '
+      'supportsToolCalls=${selectedModel.supportsToolCalls}',
     );
 
-    return foundModel;
+    return projectedModel;
+  }
+
+  Future<WorkspaceModelSelectionWithConnectionEntity> _withCodexCatalogModel(
+    WorkspaceModelSelectionWithConnectionEntity model,
+  ) async {
+    if (!isOpenAICodexProvider(model.modelConnection.modelId)) {
+      return model;
+    }
+    final openAIModel = await apiModelRepository.getModelByProviderAndModelId(
+      'openai',
+      model.workspaceModelSelection.modelId,
+    );
+    if (openAIModel == null) {
+      throw Exception('OpenAI model catalog is unavailable');
+    }
+    if (!openAIModel.isCodexRuntimeModel) {
+      throw Exception('Selected Codex model is not supported');
+    }
+
+    return model.copyWith(
+      workspaceModelSelection: model.workspaceModelSelection.copyWith(
+        modelName: openAIModel.name,
+        supportsReasoning: openAIModel.supportsReasoning,
+        supportsToolCalls:
+            openAIModel.supportsToolCalls && openAIModel.supportsPriorityMode,
+      ),
+    );
   }
 
   Future<ContinueAgentResult> _continueWithValidatedInput({
@@ -173,10 +205,14 @@ class ContinueAgentUsecase {
       ...skillContextMessages,
       ...const BuildPromptChatMessages()(messages),
     ];
+    final disablesTools =
+        isOpenAICodexProvider(foundModel.modelConnection.modelId) &&
+        !foundModel.workspaceModelSelection.supportsToolCalls;
+    final enabledTools = disablesTools ? const <ToolSpec>[] : tools;
     _logger.info(
       'debug:prompt ready conversation=$conversationId '
       'messages=${messages.length} chatHistory=${chatHistory.length} '
-      'tools=${tools.length}',
+      'tools=${enabledTools.length}',
     );
     assert(
       () {
@@ -214,7 +250,12 @@ class ContinueAgentUsecase {
       state.stage = 'send_message';
       _logger.info('debug:send stream start conversation=$conversationId');
       final responseStream = chatbotService
-          .sendMessage(foundModel, chatHistory, tools: tools)
+          .sendMessage(
+            foundModel,
+            chatHistory,
+            tools: enabledTools,
+            sessionId: conversationId,
+          )
           .doOnError((error, stackTrace) {
             monitoringService.trackError(
               'Error in continue agent stream',
@@ -724,6 +765,7 @@ final continueAgentUsecaseProvider = Provider<ContinueAgentUsecase>((ref) {
     agentCancellationRuntime: ref.watch(agentCancellationRuntimeProvider),
     monitoringService: ref.watch(monitoringServiceProvider),
     selectPromptMessagesUsecase: ref.watch(selectPromptMessagesUsecaseProvider),
+    apiModelRepository: ref.watch(apiModelRepositoryProvider),
     buildSkillContextMessagesUsecase: ref.watch(
       buildSkillContextMessagesUsecaseProvider,
     ),

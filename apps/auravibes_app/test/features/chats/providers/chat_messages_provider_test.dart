@@ -512,7 +512,20 @@ class _FakeApiModelRepository implements ApiModelRepository {
   }
 
   @override
+  Stream<List<ApiModelEntity>> watchModelsByProvider(String providerId) {
+    return Stream.value([
+      for (final model in models)
+        if (model.modelProvider == providerId) model,
+    ]);
+  }
+
+  @override
   Future<List<ApiModelProviderEntity>> getAllProviders() {
+    throw UnimplementedError();
+  }
+
+  @override
+  Stream<List<ApiModelProviderEntity>> watchAllProviders() {
     throw UnimplementedError();
   }
 

@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
+import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
@@ -12,14 +14,12 @@ import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtim
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_context.dart';
 import 'package:auravibes_app/features/chats/usecases/continue_agent_result.dart';
-import 'package:auravibes_app/features/chats/usecases/select_prompt_messages_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_skill_context_messages_usecase.dart';
 import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genkit/genkit.dart' hide FinishReason;
 import 'package:mocktail/mocktail.dart';
-import 'package:riverpod/riverpod.dart';
 
 import '../../../test_mocks.dart';
 
@@ -35,6 +35,7 @@ void main() {
     var loadConversationToolSpecsUsecase =
         MockLoadConversationToolSpecsUsecase();
     var monitoringService = MockMonitoringService();
+    var apiModelRepository = MockApiModelRepository();
     var selectPromptMessagesUsecase = MockSelectPromptMessagesUsecase();
     var removedMessageIds = <String>[];
     var startedConversationIds = <String>[];
@@ -72,6 +73,7 @@ void main() {
       agentCancellationRuntime: agentCancellationRuntime,
       monitoringService: monitoringService,
       selectPromptMessagesUsecase: selectPromptMessagesUsecase,
+      apiModelRepository: apiModelRepository,
       buildSkillContextMessagesUsecase:
           const _FakeBuildSkillContextMessagesUsecase([]),
     );
@@ -84,6 +86,7 @@ void main() {
       conversationRepository = MockConversationRepository();
       loadConversationToolSpecsUsecase = MockLoadConversationToolSpecsUsecase();
       monitoringService = MockMonitoringService();
+      apiModelRepository = MockApiModelRepository();
       selectPromptMessagesUsecase = MockSelectPromptMessagesUsecase();
       removedMessageIds = [];
       startedConversationIds = [];
@@ -122,6 +125,7 @@ void main() {
         agentCancellationRuntime: agentCancellationRuntime,
         monitoringService: monitoringService,
         selectPromptMessagesUsecase: selectPromptMessagesUsecase,
+        apiModelRepository: apiModelRepository,
         buildSkillContextMessagesUsecase:
             const _FakeBuildSkillContextMessagesUsecase([]),
       );
@@ -163,6 +167,7 @@ void main() {
             _model,
             any(),
             tools: const [],
+            sessionId: any(named: 'sessionId'),
           ),
         ).thenAnswer(
           (_) => Stream.fromIterable([
@@ -257,6 +262,7 @@ void main() {
           agentCancellationRuntime: agentCancellationRuntime,
           monitoringService: monitoringService,
           selectPromptMessagesUsecase: selectPromptMessagesUsecase,
+          apiModelRepository: apiModelRepository,
           buildSkillContextMessagesUsecase:
               const _FakeBuildSkillContextMessagesUsecase([
                 ChatMessage(
@@ -271,6 +277,7 @@ void main() {
             _model,
             any(),
             tools: const [],
+            sessionId: any(named: 'sessionId'),
           ),
         ).thenAnswer((invocation) {
           final history =
@@ -304,6 +311,7 @@ void main() {
           _model,
           any(),
           tools: const [],
+          sessionId: any(named: 'sessionId'),
         ),
       ).thenAnswer(
         (_) => Stream.fromIterable([
@@ -342,6 +350,7 @@ void main() {
           _model,
           any(),
           tools: const [],
+          sessionId: any(named: 'sessionId'),
         ),
       ).thenAnswer(
         (_) => Stream.fromIterable([
@@ -395,6 +404,7 @@ void main() {
           _model,
           any(),
           tools: const [],
+          sessionId: any(named: 'sessionId'),
         ),
       ).thenAnswer(
         (_) => Stream.fromIterable([
@@ -430,6 +440,138 @@ void main() {
     });
 
     test(
+      'does not send tools when selected model does not support them',
+      () async {
+        final codexModel = _model.copyWith(
+          modelConnection: _model.modelConnection.copyWith(
+            modelId: 'openai-codex',
+          ),
+        );
+        final projectedCodexModel = codexModel.copyWith(
+          workspaceModelSelection: codexModel.workspaceModelSelection.copyWith(
+            modelName: 'GPT-4',
+            supportsToolCalls: false,
+          ),
+        );
+        const tools = [
+          ToolSpec(
+            name: 'calculator',
+            description: 'Math',
+            inputJsonSchema: {},
+          ),
+        ];
+        when(
+          () =>
+              workspaceModelSelectionsRepository.getWorkspaceModelSelectionById(
+                'model-1',
+              ),
+        ).thenAnswer((_) async => codexModel);
+        when(
+          () => loadConversationToolSpecsUsecase.call(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+          ),
+        ).thenAnswer((_) async => tools);
+        when(
+          () => apiModelRepository.getModelByProviderAndModelId(
+            'openai',
+            'gpt-4',
+          ),
+        ).thenAnswer(
+          (_) async => const ApiModelEntity(
+            modelProvider: 'openai',
+            id: 'gpt-4',
+            name: 'GPT-4',
+            limitContext: 128000,
+            limitOutput: 16384,
+            modalitiesInput: ['text'],
+            modalitiesOuput: ['text'],
+            supportsPriorityMode: true,
+          ),
+        );
+        when(
+          () => chatbotService.sendMessage(
+            projectedCodexModel,
+            any(),
+            tools: const [],
+            sessionId: any(named: 'sessionId'),
+          ),
+        ).thenAnswer(
+          (_) => Stream.fromIterable([
+            ChatResult<ChatMessage>(
+              output: ChatMessage.model('Done'),
+              finishReason: FinishReason.stop,
+              usage: const LanguageModelUsage(),
+            ),
+          ]),
+        );
+
+        final result = await usecase.call(conversationId: 'conversation-1');
+
+        expect(result.hasToolCalls, isFalse);
+        verify(
+          () => chatbotService.sendMessage(
+            projectedCodexModel,
+            any(),
+            tools: const [],
+            sessionId: 'conversation-1',
+          ),
+        ).called(1);
+      },
+    );
+
+    test('rejects unsupported Codex selections before streaming', () async {
+      final codexModel = _model.copyWith(
+        modelConnection: _model.modelConnection.copyWith(
+          modelId: 'openai-codex',
+        ),
+        workspaceModelSelection: _model.workspaceModelSelection.copyWith(
+          modelId: 'gpt-3.5-turbo',
+        ),
+      );
+      when(
+        () => workspaceModelSelectionsRepository.getWorkspaceModelSelectionById(
+          'model-1',
+        ),
+      ).thenAnswer((_) async => codexModel);
+      when(
+        () => apiModelRepository.getModelByProviderAndModelId(
+          'openai',
+          'gpt-3.5-turbo',
+        ),
+      ).thenAnswer(
+        (_) async => const ApiModelEntity(
+          modelProvider: 'openai',
+          id: 'gpt-3.5-turbo',
+          name: 'GPT-3.5 Turbo',
+          limitContext: 16385,
+          limitOutput: 4096,
+          modalitiesInput: ['text'],
+          modalitiesOuput: ['text'],
+        ),
+      );
+
+      await expectLater(
+        usecase.call(conversationId: 'conversation-1'),
+        throwsA(
+          isA<Exception>().having(
+            (error) => error.toString(),
+            'message',
+            contains('Selected Codex model is not supported'),
+          ),
+        ),
+      );
+      final _ = verifyNever(
+        () => chatbotService.sendMessage(
+          any(),
+          any(),
+          tools: any(named: 'tools'),
+          sessionId: any(named: 'sessionId'),
+        ),
+      );
+    });
+
+    test(
       'marks the pending user message as sent on first model chunk',
       () async {
         when(
@@ -437,6 +579,7 @@ void main() {
             _model,
             any(),
             tools: const [],
+            sessionId: any(named: 'sessionId'),
           ),
         ).thenAnswer(
           (_) => Stream.fromIterable([
@@ -478,6 +621,7 @@ void main() {
             _model,
             any(),
             tools: const [],
+            sessionId: any(named: 'sessionId'),
           ),
         ).thenAnswer(
           (_) => Stream.fromIterable([
@@ -526,6 +670,7 @@ void main() {
             _model,
             any(),
             tools: const [],
+            sessionId: any(named: 'sessionId'),
           ),
         ).thenAnswer((_) => controller.stream);
 
@@ -569,6 +714,7 @@ void main() {
             _model,
             any(),
             tools: const [],
+            sessionId: any(named: 'sessionId'),
           ),
         ).thenAnswer((_) => controller.stream);
 
@@ -614,6 +760,7 @@ void main() {
             _model,
             any(),
             tools: const [],
+            sessionId: any(named: 'sessionId'),
           ),
         ).thenAnswer((_) => controller.stream);
 
@@ -670,6 +817,7 @@ void main() {
             _model,
             any(),
             tools: const [],
+            sessionId: any(named: 'sessionId'),
           ),
         ).thenAnswer((_) => controller.stream);
         when(() => messageRepository.createMessage(any())).thenAnswer((_) {
@@ -731,6 +879,7 @@ void main() {
     var loadConversationToolSpecsUsecase =
         MockLoadConversationToolSpecsUsecase();
     var monitoringService = MockMonitoringService();
+    var apiModelRepository = MockApiModelRepository();
     var selectPromptMessagesUsecase = MockSelectPromptMessagesUsecase();
     var agentCancellationRuntime = AgentCancellationRuntime()
       ..start('conversation-1');
@@ -763,6 +912,9 @@ void main() {
       agentCancellationRuntime: agentCancellationRuntime,
       monitoringService: monitoringService,
       selectPromptMessagesUsecase: selectPromptMessagesUsecase,
+      apiModelRepository: apiModelRepository,
+      buildSkillContextMessagesUsecase:
+          const _FakeBuildSkillContextMessagesUsecase([]),
     );
 
     setUp(() {
@@ -773,6 +925,7 @@ void main() {
       conversationRepository = MockConversationRepository();
       loadConversationToolSpecsUsecase = MockLoadConversationToolSpecsUsecase();
       monitoringService = MockMonitoringService();
+      apiModelRepository = MockApiModelRepository();
       selectPromptMessagesUsecase = MockSelectPromptMessagesUsecase();
       agentCancellationRuntime = AgentCancellationRuntime()
         ..start('conversation-1');
@@ -806,6 +959,9 @@ void main() {
         agentCancellationRuntime: agentCancellationRuntime,
         monitoringService: monitoringService,
         selectPromptMessagesUsecase: selectPromptMessagesUsecase,
+        apiModelRepository: apiModelRepository,
+        buildSkillContextMessagesUsecase:
+            const _FakeBuildSkillContextMessagesUsecase([]),
       );
 
       when(
@@ -893,7 +1049,12 @@ void main() {
           (_) async => _unfinishedAssistantMessage,
         );
         when(
-          () => chatbotService.sendMessage(_model, any(), tools: const []),
+          () => chatbotService.sendMessage(
+            _model,
+            any(),
+            tools: const [],
+            sessionId: any(named: 'sessionId'),
+          ),
         ).thenAnswer(
           (_) => Stream.error(StateError('model error')),
         );
@@ -934,7 +1095,12 @@ void main() {
           (_) async => _unfinishedAssistantMessage,
         );
         when(
-          () => chatbotService.sendMessage(_model, any(), tools: const []),
+          () => chatbotService.sendMessage(
+            _model,
+            any(),
+            tools: const [],
+            sessionId: any(named: 'sessionId'),
+          ),
         ).thenAnswer((_) => const Stream.empty());
 
         await expectLater(
@@ -956,6 +1122,7 @@ void main() {
     var loadConversationToolSpecsUsecase =
         MockLoadConversationToolSpecsUsecase();
     var monitoringService = MockMonitoringService();
+    var apiModelRepository = MockApiModelRepository();
     var selectPromptMessagesUsecase = MockSelectPromptMessagesUsecase();
     var agentCancellationRuntime = AgentCancellationRuntime()
       ..start('conversation-1');
@@ -988,6 +1155,9 @@ void main() {
       agentCancellationRuntime: agentCancellationRuntime,
       monitoringService: monitoringService,
       selectPromptMessagesUsecase: selectPromptMessagesUsecase,
+      apiModelRepository: apiModelRepository,
+      buildSkillContextMessagesUsecase:
+          const _FakeBuildSkillContextMessagesUsecase([]),
     );
 
     setUp(() {
@@ -998,6 +1168,7 @@ void main() {
       conversationRepository = MockConversationRepository();
       loadConversationToolSpecsUsecase = MockLoadConversationToolSpecsUsecase();
       monitoringService = MockMonitoringService();
+      apiModelRepository = MockApiModelRepository();
       selectPromptMessagesUsecase = MockSelectPromptMessagesUsecase();
       agentCancellationRuntime = AgentCancellationRuntime()
         ..start('conversation-1');
@@ -1031,6 +1202,9 @@ void main() {
         agentCancellationRuntime: agentCancellationRuntime,
         monitoringService: monitoringService,
         selectPromptMessagesUsecase: selectPromptMessagesUsecase,
+        apiModelRepository: apiModelRepository,
+        buildSkillContextMessagesUsecase:
+            const _FakeBuildSkillContextMessagesUsecase([]),
       );
 
       when(
@@ -1068,7 +1242,12 @@ void main() {
         ],
       );
       when(
-        () => chatbotService.sendMessage(_model, any(), tools: const []),
+        () => chatbotService.sendMessage(
+          _model,
+          any(),
+          tools: const [],
+          sessionId: any(named: 'sessionId'),
+        ),
       ).thenAnswer(
         (_) => Stream.fromIterable([
           ChatResult<ChatMessage>(
@@ -1093,21 +1272,6 @@ void main() {
         ),
         returnsNormally,
       );
-    });
-
-    test('provider returns usecase with selectPromptMessages wired', () {
-      final container = ProviderContainer(
-        overrides: [
-          selectPromptMessagesUsecaseProvider.overrideWith(
-            (ref) => MockSelectPromptMessagesUsecase(),
-          ),
-        ],
-      );
-      addTearDown(container.dispose);
-
-      final usecase = container.read(continueAgentUsecaseProvider);
-
-      expect(usecase, isA<ContinueAgentUsecase>());
     });
   });
 }

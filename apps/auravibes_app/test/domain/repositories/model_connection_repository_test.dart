@@ -117,9 +117,9 @@ void main() {
       final repo = _StubModelConnectionRepository();
       const toCreate = ModelConnectionToCreate(
         name: 'Anthropic',
-        key: 'sk-ant-test',
         workspaceId: 'ws-1',
         modelId: 'claude-3',
+        key: 'sk-ant-test',
         url: 'https://api.anthropic.com',
       );
 

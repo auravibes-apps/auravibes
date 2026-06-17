@@ -68,6 +68,7 @@ abstract class OAuthTokenModel with _$OAuthTokenModel {
   const factory OAuthTokenModel({
     required String accessToken,
     String? refreshToken,
+    String? idToken,
     int? expiresIn,
     String? tokenType,
     String? scope,
@@ -82,6 +83,7 @@ abstract class OAuthTokenModel with _$OAuthTokenModel {
       accessToken: accessToken,
       issuedAt: DateTime.now(),
       refreshToken: refreshToken,
+      idToken: idToken,
       expiresIn: expiresIn,
       tokenType: tokenType,
       scopes: scope?.split(' '),
@@ -95,6 +97,7 @@ abstract class OAuthTokenEntity with _$OAuthTokenEntity {
     required String accessToken,
     required DateTime issuedAt,
     String? refreshToken,
+    String? idToken,
     int? expiresIn,
     String? tokenType,
     List<String>? scopes,
@@ -127,11 +130,13 @@ abstract class OAuthTokenEntity with _$OAuthTokenEntity {
     Future<String> Function(String) encryptor,
   ) async {
     final refreshToken = this.refreshToken;
+    final idToken = this.idToken;
 
     return OAuthTokenEntity(
       accessToken: await encryptor(accessToken),
       issuedAt: issuedAt,
       refreshToken: refreshToken != null ? await encryptor(refreshToken) : null,
+      idToken: idToken != null ? await encryptor(idToken) : null,
       expiresIn: expiresIn,
       tokenType: tokenType,
       scopes: scopes,

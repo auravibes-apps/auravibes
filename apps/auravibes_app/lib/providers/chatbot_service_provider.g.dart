@@ -55,4 +55,4 @@ final class ChatbotServiceProvider
   }
 }
 
-String _$chatbotServiceHash() => r'284af70fc514b2a2a1dd27a367df63860c0c8f48';
+String _$chatbotServiceHash() => r'7d0b8de59eb6bffcf69f8dbee5be35b57fcb8606';

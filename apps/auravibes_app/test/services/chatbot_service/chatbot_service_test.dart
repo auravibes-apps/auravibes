@@ -572,8 +572,9 @@ class _FakeProviderFactory extends ProviderFactory {
 
   @override
   Future<genkit.Genkit> createGenkit(
-    WorkspaceModelSelectionWithConnectionEntity config,
-  ) async {
+    WorkspaceModelSelectionWithConnectionEntity config, {
+    String? sessionId,
+  }) async {
     return genkit.Genkit(isDevEnv: false)..defineModel(
       name: 'test/model',
       fn: (input, context) async {

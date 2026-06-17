@@ -216,6 +216,50 @@ void main() {
       sub.close();
     });
 
+    test('setModel ignores null model id', () async {
+      final patched = <ConversationPatch>[];
+
+      final container = ProviderContainer(
+        overrides: [
+          conversationSelectedProvider.overrideWith((ref) => 'conv-1'),
+          conversationByIdStreamProvider.overrideWith(
+            (ref, conversationId) => Stream.value(conversation),
+          ),
+          conversationRepositoryProvider.overrideWithValue(
+            _FakeConversationRepository(
+              onPatch: (id, patch) {
+                patched.add(patch);
+
+                return conversation;
+              },
+            ),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final completer = Completer<AsyncValue<ConversationResult>>();
+      final sub = container.listen<AsyncValue<ConversationResult>>(
+        conversationChatProvider('ws-1'),
+        (_, next) {
+          if (next is AsyncData<ConversationResult>) {
+            completer.complete(next);
+          }
+        },
+        fireImmediately: true,
+      );
+
+      final _ = await completer.future;
+
+      await container
+          .read(conversationChatProvider('ws-1').notifier)
+          .setModel(null);
+
+      expect(patched, isEmpty);
+
+      sub.close();
+    });
+
     test('setModel does nothing when ConversationNotFound', () async {
       final container = ProviderContainer(
         overrides: [

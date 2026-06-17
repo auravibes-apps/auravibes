@@ -27,6 +27,13 @@ class ApiModelRepositoryImpl implements ApiModelRepository {
   }
 
   @override
+  Stream<List<ApiModelProviderEntity>> watchAllProviders() {
+    return _database.apiModelProvidersDao.watchAllProviders().map(
+      (providers) => providers.map(_mapToProviderEntity).toList(),
+    );
+  }
+
+  @override
   Future<List<ApiModelProviderEntity>> getProvidersByType(String type) async {
     final providerTables = await _database.apiModelProvidersDao
         .getProvidersByType(type);
@@ -62,6 +69,15 @@ class ApiModelRepositoryImpl implements ApiModelRepository {
     );
 
     return modelTables.map(_mapToModelEntity).toList();
+  }
+
+  @override
+  Stream<List<ApiModelEntity>> watchModelsByProvider(String providerId) {
+    return _database.apiModelsDao
+        .watchModelsByProvider(providerId)
+        .map(
+          (models) => models.map(_mapToModelEntity).toList(),
+        );
   }
 
   // Batch operations.
@@ -164,11 +180,15 @@ class ApiModelRepositoryImpl implements ApiModelRepository {
       limitOutput: modelTable.limitOutput,
       modalitiesInput: modelTable.modalitiesInput ?? [],
       modalitiesOuput: modelTable.modalitiesOuput ?? [],
+      family: modelTable.family,
       costInput: modelTable.costInput,
       costCacheRead: modelTable.costCacheRead,
       costOutput: modelTable.costOutput,
       openWeights: modelTable.openWeights,
       supportsReasoning: modelTable.supportsReasoning,
+      isCanonical: modelTable.isCanonical,
+      supportsPriorityMode: modelTable.supportsPriorityMode,
+      supportsToolCalls: modelTable.supportsToolCalls,
     );
   }
 
@@ -179,10 +199,14 @@ class ApiModelRepositoryImpl implements ApiModelRepository {
       modelProvider: .new(entity.modelProvider),
       id: .new(entity.id),
       name: .new(entity.name),
+      family: .new(entity.family),
       modalitiesInput: .new(entity.modalitiesInput),
       modalitiesOuput: .new(entity.modalitiesOuput),
       openWeights: .new(entity.openWeights),
       supportsReasoning: .new(entity.supportsReasoning),
+      isCanonical: .new(entity.isCanonical),
+      supportsPriorityMode: .new(entity.supportsPriorityMode),
+      supportsToolCalls: .new(entity.supportsToolCalls),
       costInput: .new(entity.costInput),
       costOutput: .new(entity.costOutput),
       costCacheRead: .new(entity.costCacheRead),
