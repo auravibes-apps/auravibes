@@ -159,6 +159,102 @@ void main() {
       ),
     );
   });
+
+  test('parses nested output text', () async {
+    final ai = Genkit(
+      plugins: [
+        OpenAICodexProvider(
+          accessTokenProvider: () => 'oauth-token',
+          httpClient: _FakeClient((request) async {
+            return _jsonResponse({
+              'status': 'incomplete',
+              'output': [
+                {
+                  'content': [
+                    {'text': 'Hello '},
+                    {'output_text': 'there'},
+                  ],
+                },
+              ],
+            });
+          }),
+        ),
+      ],
+    );
+
+    final response = await ai.generate<Object?, Object?>(
+      model: openAICodexModel('gpt-5.5'),
+      messages: [
+        Message(
+          role: Role.user,
+          content: [TextPart(text: 'Hi')],
+        ),
+      ],
+    );
+
+    expect(response.text, 'Hello there');
+    expect(response.finishReason, FinishReason.length);
+  });
+
+  test('streams failed events as Genkit errors', () {
+    final ai = Genkit(
+      plugins: [
+        OpenAICodexProvider(
+          accessTokenProvider: () => 'oauth-token',
+          httpClient: _FakeClient((request) async {
+            return http.StreamedResponse(
+              Stream.fromIterable([
+                utf8.encode(
+                  'data: ${jsonEncode({
+                    'type': 'response.failed',
+                    'error': {'message': 'bad'},
+                  })}\n\n',
+                ),
+              ]),
+              200,
+            );
+          }),
+        ),
+      ],
+    );
+
+    expect(
+      () async {
+        final stream = ai.generateStream<Object?, Object?>(
+          model: openAICodexModel('gpt-5.5'),
+          messages: [
+            Message(
+              role: Role.user,
+              content: [TextPart(text: 'Hi')],
+            ),
+          ],
+        );
+        await stream.drain<void>();
+      },
+      throwsA(isA<GenkitException>()),
+    );
+  });
+
+  test('rejects missing OAuth token', () {
+    final ai = Genkit(
+      plugins: [
+        OpenAICodexProvider(accessTokenProvider: () => '  '),
+      ],
+    );
+
+    expect(
+      () => ai.generate<Object?, Object?>(
+        model: openAICodexModel('gpt-5.5'),
+        messages: [
+          Message(
+            role: Role.user,
+            content: [TextPart(text: 'Hi')],
+          ),
+        ],
+      ),
+      throwsA(isA<GenkitException>()),
+    );
+  });
 }
 
 Future<Map<String, dynamic>> _readBody(http.BaseRequest request) async {

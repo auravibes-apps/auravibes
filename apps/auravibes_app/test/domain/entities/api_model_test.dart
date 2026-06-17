@@ -202,6 +202,25 @@ void main() {
       expect(model.supportsToolCalls, isTrue);
     });
 
+    test('fromJson marks non-canonical model aliases', () {
+      final model = ApiModelEntity.fromJson(
+        'openai',
+        {
+          'id': 'gpt-5.1-codex',
+          'name': 'GPT-5.1 Codex',
+          'limit': {'context': 400000, 'output': 128000},
+          'modalities': {
+            'input': ['text'],
+            'output': ['text'],
+          },
+        },
+        {'openai/gpt-5.5'},
+      );
+
+      expect(model.isCanonical, isFalse);
+      expect(model.isTextGenerationModel, isFalse);
+    });
+
     test('contextCategory returns correct categories', () {
       expect(modelWith(2000).contextCategory, 'Small');
       expect(modelWith(8000).contextCategory, 'Medium');

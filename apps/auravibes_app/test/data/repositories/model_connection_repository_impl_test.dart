@@ -5,11 +5,13 @@ import 'package:auravibes_app/data/database/drift/daos/workspace_model_selection
 import 'package:auravibes_app/data/database/drift/tables/model_providers_table_type.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/data/repositories/model_connection_repository_impl.dart';
+import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/enums/credentials_model_type.dart';
 import 'package:auravibes_app/domain/repositories/model_connection_repository.dart';
+import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:auravibes_app/services/model_provider_services/model_provider.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
@@ -215,6 +217,84 @@ void main() {
         verify(
           () => mockSelectionsDao.insertWorkspaceModelSelections(any()),
         ).called(1);
+      });
+
+      test('creates OAuth connection with supplied model ids', () async {
+        final issuedAt = DateTime(2026);
+        final oauthRow = ServiceConnectionTable(
+          id: 'conn-oauth',
+          createdAt: now,
+          updatedAt: now,
+          name: 'Codex',
+          serviceId: openAICodexProviderId,
+          kind: ServiceConnectionKindTable.modelProvider,
+          authenticationType: ServiceAuthenticationTypeTable.oauth2,
+          encryptedAuthValue: 'encrypted-token',
+          keySuffix: 'access',
+          metadataJson: ServiceConnectionAuthCodec.encodeMetadata(
+            const ServiceConnectionMetadata(accountId: 'account-1'),
+          ),
+          workspaceId: 'ws-1',
+          isEnabled: true,
+        );
+        when(
+          () => mockEncryptionService.encrypt(any()),
+        ).thenAnswer((_) async => 'encrypted-token');
+        when(
+          () => mockConnectionsDao.insertModelConnection(any()),
+        ).thenAnswer((_) async => oauthRow);
+        when(
+          () => mockSelectionsDao.insertWorkspaceModelSelections(any()),
+        ).thenAnswer((
+          _,
+        ) async {
+          return;
+        });
+
+        final result = await repository.createModelConnection(
+          ModelConnectionToCreate(
+            name: 'Codex',
+            workspaceId: 'ws-1',
+            modelId: openAICodexProviderId,
+            authMode: ModelProviderAuthMode.oauth2,
+            oauthToken: OAuthTokenEntity(
+              accessToken: 'codex-access',
+              issuedAt: issuedAt,
+              refreshToken: 'codex-refresh',
+              idToken: 'codex-id',
+              expiresIn: 3600,
+            ),
+            oauthMetadata: const ServiceConnectionMetadata(
+              accountId: 'account-1',
+            ),
+            modelIds: const ['gpt-5.5', 'gpt-5.3-codex-spark'],
+          ),
+        );
+
+        final connection =
+            verify(
+                  () => mockConnectionsDao.insertModelConnection(captureAny()),
+                ).captured.single
+                as ServiceConnectionsCompanion;
+        final selections =
+            verify(
+                  () => mockSelectionsDao.insertWorkspaceModelSelections(
+                    captureAny(),
+                  ),
+                ).captured.single
+                as List<WorkspaceModelSelectionsCompanion>;
+
+        expect(result.id, 'conn-oauth');
+        expect(connection.serviceId.value, openAICodexProviderId);
+        expect(
+          connection.authenticationType.value,
+          ServiceAuthenticationTypeTable.oauth2,
+        );
+        expect(connection.metadataJson.value, contains('account-1'));
+        expect(selections.map((selection) => selection.modelId.value), [
+          'gpt-5.5',
+          'gpt-5.3-codex-spark',
+        ]);
       });
 
       test(
