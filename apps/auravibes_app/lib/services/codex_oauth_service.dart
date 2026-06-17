@@ -39,7 +39,7 @@ class CodexOAuthService {
     final state = _randomUrlSafe(32);
     final server = await _bindServer();
     final port = server.port;
-    final redirectUri = 'http://localhost:$port/auth/callback';
+    final redirectUri = 'http://127.0.0.1:$port/auth/callback';
     final codeCompleter = Completer<String>();
 
     unawaited(
@@ -158,7 +158,7 @@ class CodexOAuthService {
     if (claims == null) return null;
 
     final nested = claims['https://api.openai.com/auth'];
-    if (nested is Map<String, Object?>) {
+    if (nested is Map) {
       final accountId = nested['chatgpt_account_id'];
       if (accountId is String && accountId.isNotEmpty) return accountId;
     }
@@ -266,7 +266,7 @@ class CodexOAuthService {
       if (status != HttpStatus.forbidden && status != HttpStatus.notFound) {
         throw Exception('Device auth failed with status $status');
       }
-      await Future<void>.delayed(interval);
+      await _delayDevicePoll(interval, isCancelled);
     }
 
     throw TimeoutException('Device auth timed out after 15 minutes');
@@ -334,6 +334,24 @@ class CodexOAuthService {
     }
 
     return const Duration(seconds: 5);
+  }
+
+  Future<void> _delayDevicePoll(
+    Duration interval,
+    bool Function()? isCancelled,
+  ) async {
+    final deadline = DateTime.now().add(interval);
+    while (DateTime.now().isBefore(deadline)) {
+      if (isCancelled?.call() ?? false) {
+        throw const CodexOAuthCanceledException();
+      }
+      final remaining = deadline.difference(DateTime.now());
+      await Future<void>.delayed(
+        remaining < const Duration(milliseconds: 250)
+            ? remaining
+            : const Duration(milliseconds: 250),
+      );
+    }
   }
 }
 

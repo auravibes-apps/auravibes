@@ -100,7 +100,7 @@ class WorkspaceModelSelectionRepositoryImpl
         modelConnectionId: withProvider.model.modelConnectionId,
         modelName: withProvider.apiModel?.name,
         supportsReasoning: withProvider.apiModel?.supportsReasoning ?? false,
-        supportsToolCalls: withProvider.apiModel?.supportsToolCalls ?? true,
+        supportsToolCalls: withProvider.apiModel?.supportsToolCalls ?? false,
       ),
       modelConnection: ModelConnectionEntity(
         id: withProvider.modelConnection.id,

@@ -25,6 +25,10 @@ abstract class ModelConnectionEntity with _$ModelConnectionEntity {
 
 @freezed
 abstract class ModelConnectionToCreate with _$ModelConnectionToCreate {
+  @Assert(
+    'authMode == ModelProviderAuthMode.oauth2 || key != ""',
+    'API-key connections require a non-empty key.',
+  )
   const factory ModelConnectionToCreate({
     required String name,
     required String workspaceId,

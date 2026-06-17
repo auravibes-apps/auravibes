@@ -74,23 +74,17 @@ class AddModelProviderWidget extends HookConsumerWidget {
     final codexDeviceCode = useState<CodexDeviceCode?>(null);
     final codexDeviceCodeCancelled = useRef(false);
 
-    final hasModel = ref.watch(
+    final selectedState = ref.watch(
       addModelProviderStateProvider(workspaceId).select(
-        (value) => value.modelId != null,
+        (value) => (
+          hasModel: value.modelId != null,
+          authMode: value.authMode,
+          modelId: value.modelId,
+        ),
       ),
     );
-    final authMode = ref.watch(
-      addModelProviderStateProvider(workspaceId).select(
-        (value) => value.authMode,
-      ),
-    );
-    final selectedModelId = ref.watch(
-      addModelProviderStateProvider(workspaceId).select(
-        (value) => value.modelId,
-      ),
-    );
-    final isOAuth = authMode == ModelProviderAuthMode.oauth2;
-    final isCodex = isOpenAICodexProvider(selectedModelId);
+    final isOAuth = selectedState.authMode == ModelProviderAuthMode.oauth2;
+    final isCodex = isOpenAICodexProvider(selectedState.modelId);
     final isDesktop =
         !kIsWeb &&
         const {
@@ -99,7 +93,7 @@ class AddModelProviderWidget extends HookConsumerWidget {
           TargetPlatform.windows,
         }.contains(defaultTargetPlatform);
 
-    if (!hasModel) {
+    if (!selectedState.hasModel) {
       return _SelectModelProvider(workspaceId: workspaceId);
     }
 

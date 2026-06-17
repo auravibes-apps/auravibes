@@ -50,15 +50,22 @@ class ModelApiService {
   ///
   /// Returns a [ModelApiResponse] containing providers and models data.
   Future<ModelApiResponse> fetchAllModels() async {
-    final [apiResponse, modelsResponse] = await Future.wait([
-      _dio.get<Map<String, dynamic>>('/api.json'),
-      _dio.get<Map<String, dynamic>>('/models.json'),
-    ]);
+    final apiResponse = await _dio.get<Map<String, dynamic>>('/api.json');
 
     return _parseDioResponse(
       apiResponse,
-      _canonicalModelIds(modelsResponse),
+      await _fetchCanonicalModelIds(),
     );
+  }
+
+  Future<Set<String>> _fetchCanonicalModelIds() async {
+    try {
+      return _canonicalModelIds(
+        await _dio.get<Map<String, dynamic>>('/models.json'),
+      );
+    } on Exception {
+      return {};
+    }
   }
 
   /// Gets API status and basic information.
@@ -104,13 +111,11 @@ class ModelApiService {
     // Parse providers.
     final providersData = jsonData;
 
-    final providers = providersData.entries
-        .map((e) {
-          return e.value as Map<String, dynamic>?;
-        })
-        .nonNulls
-        .map((json) => _providerFromJson(json, canonicalModelIds))
-        .toList();
+    final providers = <ApiProviderDto>[];
+    for (final value in providersData.values) {
+      if (value is! Map<String, dynamic>) continue;
+      providers.add(_providerFromJson(value, canonicalModelIds));
+    }
 
     return ModelApiResponse(providers: providers);
   }

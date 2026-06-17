@@ -513,7 +513,7 @@ return $default(_that.name,_that.workspaceId,_that.modelId,_that.authMode,_that.
 
 
 class _ModelConnectionToCreate implements ModelConnectionToCreate {
-  const _ModelConnectionToCreate({required this.name, required this.workspaceId, required this.modelId, this.authMode = ModelProviderAuthMode.apiKey, this.key = '', this.url, this.oauthToken, this.oauthMetadata, final  List<String> modelIds = const []}): _modelIds = modelIds;
+  const _ModelConnectionToCreate({required this.name, required this.workspaceId, required this.modelId, this.authMode = ModelProviderAuthMode.apiKey, this.key = '', this.url, this.oauthToken, this.oauthMetadata, final  List<String> modelIds = const []}): assert(authMode == ModelProviderAuthMode.oauth2 || key != "", 'API-key connections require a non-empty key.'),_modelIds = modelIds;
   
 
 @override final  String name;

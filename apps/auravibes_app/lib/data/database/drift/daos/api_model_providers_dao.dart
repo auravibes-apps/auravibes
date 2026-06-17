@@ -7,7 +7,7 @@ import 'package:drift/drift.dart';
 part 'api_model_providers_dao.g.dart';
 
 // Define popular providers in priority order (top 10).
-final List<String> popularProviders = [
+const List<String> popularProviders = [
   'openai',
   'anthropic',
   'groq',
@@ -54,6 +54,12 @@ class ApiModelProvidersDao extends DatabaseAccessor<AppDatabase>
 
     // Sort providers: popular ones first in defined order, then alphabetically.
     return allProviders.sorted(_sortProviders);
+  }
+
+  Stream<List<ApiModelProvidersTable>> watchAllProviders() {
+    return select(apiModelProviders).watch().map(
+      (providers) => providers.sorted(_sortProviders),
+    );
   }
 
   /// Retrieves a provider by its ID.

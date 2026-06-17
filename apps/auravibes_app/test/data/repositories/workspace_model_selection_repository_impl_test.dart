@@ -134,6 +134,10 @@ void main() {
         expect(result.firstOrNull?.workspaceModelSelection.id, 'sel-1');
         expect(result.firstOrNull?.workspaceModelSelection.modelId, 'openai');
         expect(result.firstOrNull?.workspaceModelSelection.modelName, 'GPT-4');
+        expect(
+          result.firstOrNull?.workspaceModelSelection.supportsToolCalls,
+          false,
+        );
         expect(result.firstOrNull?.modelConnection.id, 'conn-1');
         expect(result.firstOrNull?.modelConnection.name, 'My Connection');
         expect(result.firstOrNull?.modelsProvider.id, 'openai');

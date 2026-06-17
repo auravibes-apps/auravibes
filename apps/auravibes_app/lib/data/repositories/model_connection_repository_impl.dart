@@ -50,8 +50,8 @@ class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
     if (modelType == null) {
       throw ModelConnectionNoTypeException(modelConnection.modelId);
     }
-    final key = modelConnection.key;
-    if (key.trim().isEmpty) {
+    final key = modelConnection.key.trim();
+    if (key.isEmpty) {
       throw const ModelConnectionException(_missingApiKeyMessage);
     }
 
@@ -280,7 +280,7 @@ class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
   static String? _nextConnectionUrl(String? url) {
     final updatedUrl = url?.trim();
 
-    return updatedUrl?.isEmpty == true ? null : url;
+    return updatedUrl?.isEmpty == true ? null : updatedUrl;
   }
 
   @override

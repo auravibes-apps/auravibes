@@ -7,9 +7,11 @@ import 'package:auravibes_app/domain/repositories/model_connection_repository.da
 import 'package:auravibes_app/features/models/models/add_model_provider_model.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/services/codex_oauth_service.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:collection/collection.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:logging/logging.dart';
 import 'package:riverpod/experimental/mutation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -128,11 +130,15 @@ class AddModelProviderState extends _$AddModelProviderState {
     bool Function()? isCodexDeviceCodeCancelled,
   ) async {
     if (!isOpenAICodexProvider(modelId)) {
-      throw ModelConnectionException('OAuth profile not found: $modelId');
+      throw ModelConnectionException(
+        LocaleKeys.models_screens_add_provider_errors_oauth_profile_not_found
+            .tr(args: [modelId]),
+      );
     }
     if (openAICodexClientId.isEmpty) {
-      throw const ModelConnectionException(
-        'OAuth client ID is not configured for $openAICodexDisplayName',
+      throw ModelConnectionException(
+        LocaleKeys.models_screens_add_provider_errors_oauth_client_id_missing
+            .tr(args: [openAICodexDisplayName]),
       );
     }
     final modelIds = await _codexRuntimeModelIds();
@@ -176,8 +182,9 @@ class AddModelProviderState extends _$AddModelProviderState {
         .map((model) => model.id)
         .toList();
     if (modelIds.isEmpty) {
-      throw const ModelConnectionException(
-        'OpenAI model catalog is unavailable. Retry after model sync.',
+      throw ModelConnectionException(
+        LocaleKeys.models_screens_add_provider_errors_openai_catalog_unavailable
+            .tr(),
       );
     }
 

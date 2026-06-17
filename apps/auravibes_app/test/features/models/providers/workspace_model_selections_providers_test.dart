@@ -26,6 +26,11 @@ class _FakeApiModelRepository implements ApiModelRepository {
   Future<List<ApiModelProviderEntity>> getAllProviders() async => providers;
 
   @override
+  Stream<List<ApiModelProviderEntity>> watchAllProviders() {
+    return Stream.value(providers);
+  }
+
+  @override
   Future<List<ApiModelEntity>> getAllModels() async => models;
 
   @override
@@ -41,6 +46,13 @@ class _FakeApiModelRepository implements ApiModelRepository {
   @override
   Future<List<ApiModelEntity>> getModelsByProvider(String providerId) async {
     return models.where((model) => model.modelProvider == providerId).toList();
+  }
+
+  @override
+  Stream<List<ApiModelEntity>> watchModelsByProvider(String providerId) {
+    return Stream.value(
+      models.where((model) => model.modelProvider == providerId).toList(),
+    );
   }
 
   @override

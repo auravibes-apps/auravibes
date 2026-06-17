@@ -92,6 +92,12 @@ abstract class LocaleKeys {
       'models_screens.add_provider.search.no_icon';
   static const models_screens_add_provider_errors_unknown =
       'models_screens.add_provider.errors.unknown';
+  static const models_screens_add_provider_errors_oauth_profile_not_found =
+      'models_screens.add_provider.errors.oauth_profile_not_found';
+  static const models_screens_add_provider_errors_oauth_client_id_missing =
+      'models_screens.add_provider.errors.oauth_client_id_missing';
+  static const models_screens_add_provider_errors_openai_catalog_unavailable =
+      'models_screens.add_provider.errors.openai_catalog_unavailable';
   static const service_connections_title = 'service_connections.title';
   static const service_connections_create_title =
       'service_connections.create_title';

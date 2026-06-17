@@ -126,6 +126,9 @@ void main() {
         expect(result.firstOrNull?.costOutput, 60);
         expect(result.firstOrNull?.openWeights, false);
         expect(result.firstOrNull?.supportsReasoning, false);
+        expect(result.firstOrNull?.isCanonical, true);
+        expect(result.firstOrNull?.supportsPriorityMode, false);
+        expect(result.firstOrNull?.supportsToolCalls, false);
       });
     });
 

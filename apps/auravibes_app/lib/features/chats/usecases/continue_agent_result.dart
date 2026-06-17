@@ -84,8 +84,8 @@ class ContinueAgentUsecase {
     required this.agentCancellationRuntime,
     required this.monitoringService,
     required this.selectPromptMessagesUsecase,
-    this.apiModelRepository,
-    this.buildSkillContextMessagesUsecase,
+    required this.apiModelRepository,
+    required this.buildSkillContextMessagesUsecase,
   });
 
   final ChatbotService chatbotService;
@@ -98,8 +98,8 @@ class ContinueAgentUsecase {
   final AgentCancellationRuntime agentCancellationRuntime;
   final MonitoringService monitoringService;
   final SelectPromptMessagesUsecase selectPromptMessagesUsecase;
-  final ApiModelRepository? apiModelRepository;
-  final BuildSkillContextMessagesUsecase? buildSkillContextMessagesUsecase;
+  final ApiModelRepository apiModelRepository;
+  final BuildSkillContextMessagesUsecase buildSkillContextMessagesUsecase;
 
   Future<ContinueAgentResult> call({
     required String conversationId,
@@ -110,12 +110,10 @@ class ContinueAgentUsecase {
     final conversation = await _loadConversation(conversationId);
     final foundModel = await _loadSelectedModel(conversation);
     final messages = await _selectPromptMessages(conversationId);
-    final skillContextMessages =
-        await buildSkillContextMessagesUsecase?.call(
-          conversationId: conversationId,
-          workspaceId: conversation.workspaceId,
-        ) ??
-        const <ChatMessage>[];
+    final skillContextMessages = await buildSkillContextMessagesUsecase.call(
+      conversationId: conversationId,
+      workspaceId: conversation.workspaceId,
+    );
     final tools = await loadConversationToolSpecsUsecase.call(
       conversationId: conversationId,
       workspaceId: conversation.workspaceId,
@@ -174,7 +172,7 @@ class ContinueAgentUsecase {
     if (!isOpenAICodexProvider(model.modelConnection.modelId)) {
       return model;
     }
-    final openAIModel = await apiModelRepository?.getModelByProviderAndModelId(
+    final openAIModel = await apiModelRepository.getModelByProviderAndModelId(
       'openai',
       model.workspaceModelSelection.modelId,
     );

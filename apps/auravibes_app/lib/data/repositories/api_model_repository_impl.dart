@@ -27,6 +27,13 @@ class ApiModelRepositoryImpl implements ApiModelRepository {
   }
 
   @override
+  Stream<List<ApiModelProviderEntity>> watchAllProviders() {
+    return _database.apiModelProvidersDao.watchAllProviders().map(
+      (providers) => providers.map(_mapToProviderEntity).toList(),
+    );
+  }
+
+  @override
   Future<List<ApiModelProviderEntity>> getProvidersByType(String type) async {
     final providerTables = await _database.apiModelProvidersDao
         .getProvidersByType(type);
@@ -62,6 +69,15 @@ class ApiModelRepositoryImpl implements ApiModelRepository {
     );
 
     return modelTables.map(_mapToModelEntity).toList();
+  }
+
+  @override
+  Stream<List<ApiModelEntity>> watchModelsByProvider(String providerId) {
+    return _database.apiModelsDao
+        .watchModelsByProvider(providerId)
+        .map(
+          (models) => models.map(_mapToModelEntity).toList(),
+        );
   }
 
   // Batch operations.

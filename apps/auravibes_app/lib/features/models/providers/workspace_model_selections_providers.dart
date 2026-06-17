@@ -23,41 +23,112 @@ listWorkspaceModelSelections(
   );
   final apiModelRepository = ref.watch(apiModelRepositoryProvider);
 
-  return workspaceModelSelectionRepository
-      .watchWorkspaceModelSelections(
-        WorkspaceModelSelectionFilter(workspaces: [workspaceId]),
-      )
-      .asyncMap((models) async {
-        final providers = await apiModelRepository.getAllProviders();
-        final openAIProvider = providers.firstWhereOrNull(
-          (provider) => provider.id == 'openai',
-        );
-        if (openAIProvider == null) {
-          return models
-              .where(
-                (model) =>
-                    model.modelConnection.modelId != openAICodexProviderId,
-              )
-              .toList();
-        }
+  return _projectWorkspaceModelSelections(
+    selections: workspaceModelSelectionRepository.watchWorkspaceModelSelections(
+      WorkspaceModelSelectionFilter(workspaces: [workspaceId]),
+    ),
+    providers: apiModelRepository.watchAllProviders(),
+    openAIModels: apiModelRepository.watchModelsByProvider('openai'),
+  );
+}
 
-        final openAIModels = await apiModelRepository.getModelsByProvider(
-          'openai',
-        );
-        final openAIModelsById = {
-          for (final model in openAIModels)
-            if (model.isCodexRuntimeModel) model.id: model,
-        };
+Stream<List<WorkspaceModelSelectionWithConnectionEntity>>
+_projectWorkspaceModelSelections({
+  required Stream<List<WorkspaceModelSelectionWithConnectionEntity>> selections,
+  required Stream<List<ApiModelProviderEntity>> providers,
+  required Stream<List<ApiModelEntity>> openAIModels,
+}) {
+  final controller =
+      StreamController<List<WorkspaceModelSelectionWithConnectionEntity>>();
+  List<WorkspaceModelSelectionWithConnectionEntity>? latestSelections;
+  List<ApiModelProviderEntity>? latestProviders;
+  List<ApiModelEntity>? latestOpenAIModels;
+  final subscriptions = <StreamSubscription<dynamic>>[];
 
-        return [
-          for (final model in models)
-            if (model.modelConnection.modelId != openAICodexProviderId)
-              model
-            else if (openAIModelsById[model.workspaceModelSelection.modelId]
-                case final openAIModel?)
-              _withCodexProjection(model, openAIProvider, openAIModel),
-        ];
-      });
+  void emit() {
+    final selections = latestSelections;
+    final providers = latestProviders;
+    final openAIModels = latestOpenAIModels;
+    if (selections == null || providers == null || openAIModels == null) {
+      return;
+    }
+    controller.add(_withCodexProjections(selections, providers, openAIModels));
+  }
+
+  controller
+    ..onListen = () {
+      subscriptions
+        ..add(
+          selections.listen(
+            (value) {
+              latestSelections = value;
+              emit();
+            },
+            onError: controller.addError,
+          ),
+        )
+        ..add(
+          providers.listen(
+            (value) {
+              latestProviders = value;
+              emit();
+            },
+            onError: controller.addError,
+          ),
+        )
+        ..add(
+          openAIModels.listen(
+            (value) {
+              latestOpenAIModels = value;
+              emit();
+            },
+            onError: controller.addError,
+          ),
+        );
+    }
+    ..onCancel = () async {
+      for (final subscription in subscriptions) {
+        await subscription.cancel();
+      }
+    };
+
+  return controller.stream;
+}
+
+List<WorkspaceModelSelectionWithConnectionEntity> _withCodexProjections(
+  List<WorkspaceModelSelectionWithConnectionEntity> models,
+  List<ApiModelProviderEntity> providers,
+  List<ApiModelEntity> openAIModels,
+) {
+  final hasCodexSelections = models.any(
+    (model) => model.modelConnection.modelId == openAICodexProviderId,
+  );
+  if (!hasCodexSelections) return models;
+
+  final openAIProvider = providers.firstWhereOrNull(
+    (provider) => provider.id == 'openai',
+  );
+  if (openAIProvider == null) {
+    return models
+        .where(
+          (model) => model.modelConnection.modelId != openAICodexProviderId,
+        )
+        .toList();
+  }
+
+  final openAIModelsById = {
+    for (final model in openAIModels)
+      if (model.isCodexRuntimeModel) model.id: model,
+  };
+
+  return [
+    for (final model in models)
+      if (model.modelConnection.modelId != openAICodexProviderId)
+        model
+      else if (openAIModelsById[model.workspaceModelSelection.modelId]
+          case final openAIModel?)
+        _withCodexProjection(model, openAIProvider, openAIModel),
+  ];
 }
 
 WorkspaceModelSelectionWithConnectionEntity _withCodexProjection(
