@@ -10,6 +10,7 @@ _OAuthTokenModel _$OAuthTokenModelFromJson(Map<String, dynamic> json) =>
     _OAuthTokenModel(
       accessToken: json['access_token'] as String,
       refreshToken: json['refresh_token'] as String?,
+      idToken: json['id_token'] as String?,
       expiresIn: (json['expires_in'] as num?)?.toInt(),
       tokenType: json['token_type'] as String?,
       scope: json['scope'] as String?,
@@ -19,6 +20,7 @@ Map<String, dynamic> _$OAuthTokenModelToJson(_OAuthTokenModel instance) =>
     <String, dynamic>{
       'access_token': instance.accessToken,
       'refresh_token': instance.refreshToken,
+      'id_token': instance.idToken,
       'expires_in': instance.expiresIn,
       'token_type': instance.tokenType,
       'scope': instance.scope,
@@ -29,6 +31,7 @@ _OAuthTokenEntity _$OAuthTokenEntityFromJson(Map<String, dynamic> json) =>
       accessToken: json['accessToken'] as String,
       issuedAt: DateTime.parse(json['issuedAt'] as String),
       refreshToken: json['refreshToken'] as String?,
+      idToken: json['idToken'] as String?,
       expiresIn: (json['expiresIn'] as num?)?.toInt(),
       tokenType: json['tokenType'] as String?,
       scopes: (json['scopes'] as List<dynamic>?)
@@ -41,6 +44,7 @@ Map<String, dynamic> _$OAuthTokenEntityToJson(_OAuthTokenEntity instance) =>
       'accessToken': instance.accessToken,
       'issuedAt': instance.issuedAt.toIso8601String(),
       'refreshToken': instance.refreshToken,
+      'idToken': instance.idToken,
       'expiresIn': instance.expiresIn,
       'tokenType': instance.tokenType,
       'scopes': instance.scopes,

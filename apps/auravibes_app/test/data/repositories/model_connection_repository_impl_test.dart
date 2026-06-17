@@ -106,9 +106,9 @@ void main() {
 
           const toCreate = ModelConnectionToCreate(
             name: 'Test',
-            key: 'sk-test-api-key-123456',
             workspaceId: 'ws-1',
             modelId: 'openai',
+            key: 'sk-test-api-key-123456',
           );
 
           await expectLater(
@@ -131,9 +131,9 @@ void main() {
 
           const toCreate = ModelConnectionToCreate(
             name: 'Test',
-            key: 'sk-test-api-key-123456',
             workspaceId: 'ws-1',
             modelId: 'openai',
+            key: 'sk-test-api-key-123456',
           );
 
           await expectLater(
@@ -158,9 +158,9 @@ void main() {
 
           const toCreate = ModelConnectionToCreate(
             name: 'Test',
-            key: 'sk-test-api-key-123456',
             workspaceId: 'ws-1',
             modelId: 'openai',
+            key: 'sk-test-api-key-123456',
           );
 
           await expectLater(
@@ -200,9 +200,9 @@ void main() {
 
         const toCreate = ModelConnectionToCreate(
           name: 'Test',
-          key: 'sk-test-api-key-123456',
           workspaceId: 'ws-1',
           modelId: 'openai',
+          key: 'sk-test-api-key-123456',
         );
 
         final result = await repository.createModelConnection(toCreate);
@@ -274,9 +274,9 @@ void main() {
 
           const toCreate = ModelConnectionToCreate(
             name: 'Test',
-            key: 'sk-test-api-key-123456',
             workspaceId: 'ws-1',
             modelId: 'openrouter',
+            key: 'sk-test-api-key-123456',
           );
 
           final result = await repository.createModelConnection(toCreate);

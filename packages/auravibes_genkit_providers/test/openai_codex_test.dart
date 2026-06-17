@@ -1,0 +1,181 @@
+// Required: Tests keep compact return flow.
+// Required: Test fakes keep related fields near constructors.
+
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:auravibes_genkit_providers/auravibes_genkit_providers.dart';
+import 'package:genkit/genkit.dart';
+import 'package:http/http.dart' as http;
+import 'package:test/test.dart';
+
+void main() {
+  test('posts to Codex responses endpoint with OAuth headers', () async {
+    Uri? capturedUri;
+    Map<String, String>? capturedHeaders;
+    Map<String, dynamic>? capturedBody;
+    final client = _FakeClient((request) async {
+      capturedUri = request.url;
+      capturedHeaders = request.headers;
+      capturedBody = await _readBody(request);
+
+      return _jsonResponse({
+        'status': 'completed',
+        'output_text': 'Answer.',
+        'usage': {
+          'input_tokens': 3,
+          'output_tokens': 4,
+          'total_tokens': 7,
+        },
+      });
+    });
+    final ai = Genkit(
+      plugins: [
+        OpenAICodexProvider(
+          accessTokenProvider: () => 'oauth-token',
+          accountId: 'account-1',
+          sessionId: 'session-1',
+          models: const ['gpt-5.5'],
+          httpClient: client,
+        ),
+      ],
+    );
+
+    final response = await ai.generate<Object?, Object?>(
+      model: openAICodexModel('gpt-5.5'),
+      messages: [
+        Message(role: Role.user, content: [TextPart(text: 'Hi')]),
+      ],
+    );
+
+    expect(
+      capturedUri,
+      Uri.parse('https://chatgpt.com/backend-api/codex/responses'),
+    );
+    expect(capturedHeaders?['authorization'], 'Bearer oauth-token');
+    expect(capturedHeaders?['ChatGPT-Account-Id'], 'account-1');
+    expect(capturedHeaders?['session-id'], 'session-1');
+    expect(capturedHeaders?['originator'], 'auravibes');
+    expect(capturedHeaders?['user-agent'], 'AuraVibes');
+    expect(capturedBody?['model'], 'gpt-5.5');
+    expect(capturedBody?['input'], [
+      {'role': 'user', 'content': 'Hi'},
+    ]);
+    expect(capturedBody?['instructions'], isNotEmpty);
+    expect(capturedBody?['store'], false);
+    expect(capturedBody?['reasoning'], {'effort': 'medium', 'summary': 'auto'});
+    expect(capturedBody?['text'], {'verbosity': 'low'});
+    expect(capturedBody?['include'], ['reasoning.encrypted_content']);
+    expect(response.text, 'Answer.');
+    expect(response.usage?.totalTokens, 7);
+  });
+
+  test('streams Responses text deltas', () async {
+    final client = _FakeClient((request) async {
+      return http.StreamedResponse(
+        Stream.fromIterable([
+          utf8.encode(
+            'data: {"type":"response.output_text.delta","delta":"Hel"}\n\n',
+          ),
+          utf8.encode(
+            'data: {"type":"response.output_text.delta","delta":"lo"}\n\n',
+          ),
+          utf8.encode(
+            'data: ${jsonEncode({
+              'type': 'response.completed',
+              'response': {
+                'usage': {
+                  'input_tokens': 1,
+                  'output_tokens': 2,
+                  'total_tokens': 3,
+                },
+              },
+            })}\n\n',
+          ),
+          utf8.encode('data: [DONE]\n\n'),
+        ]),
+        200,
+      );
+    });
+    final ai = Genkit(
+      plugins: [
+        OpenAICodexProvider(
+          accessTokenProvider: () => 'oauth-token',
+          models: const ['gpt-5.5'],
+          httpClient: client,
+        ),
+      ],
+    );
+
+    final stream = ai.generateStream<Object?, Object?>(
+      model: openAICodexModel('gpt-5.5'),
+      messages: [
+        Message(role: Role.user, content: [TextPart(text: 'Hi')]),
+      ],
+    );
+
+    final chunks = await stream.toList();
+    final result = await stream.onResult;
+
+    expect(chunks.map((chunk) => chunk.text).join(), 'Hello');
+    expect(result.text, 'Hello');
+    expect(result.usage?.totalTokens, 3);
+  });
+
+  test('preserves backend error body', () {
+    final ai = Genkit(
+      plugins: [
+        OpenAICodexProvider(
+          accessTokenProvider: () => 'oauth-token',
+          httpClient: _FakeClient((request) async {
+            return _jsonResponse({'error': 'bad'}, statusCode: 403);
+          }),
+        ),
+      ],
+    );
+
+    expect(
+      () => ai.generate<Object?, Object?>(
+        model: openAICodexModel('gpt-5.5'),
+        messages: [
+          Message(role: Role.user, content: [TextPart(text: 'Hi')]),
+        ],
+      ),
+      throwsA(
+        isA<GenkitException>().having(
+          (error) => error.details,
+          'details',
+          contains('bad'),
+        ),
+      ),
+    );
+  });
+}
+
+Future<Map<String, dynamic>> _readBody(http.BaseRequest request) async {
+  return jsonDecode(await request.finalize().bytesToString())
+      as Map<String, dynamic>;
+}
+
+http.StreamedResponse _jsonResponse(
+  Map<String, Object?> body, {
+  int statusCode = 200,
+}) {
+  return http.StreamedResponse(
+    Stream.value(utf8.encode(jsonEncode(body))),
+    statusCode,
+    headers: {'content-type': 'application/json'},
+  );
+}
+
+class _FakeClient extends http.BaseClient {
+  _FakeClient(this.handler);
+
+  final Future<http.StreamedResponse> Function(http.BaseRequest request)
+  handler;
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) {
+    return handler(request);
+  }
+}

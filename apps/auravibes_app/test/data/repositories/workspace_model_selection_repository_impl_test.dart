@@ -113,6 +113,8 @@ void main() {
             id: 'openai',
             name: 'GPT-4',
             supportsReasoning: false,
+            isCanonical: true,
+            supportsPriorityMode: false,
             limitContext: 128000,
             limitOutput: 4096,
           ),

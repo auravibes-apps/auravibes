@@ -66,6 +66,22 @@ void main() {
       expect(model.supportsReasoning, isFalse);
     });
 
+    test('parses priority mode support flag', () {
+      final model = ApiModelEntity.fromJson('openai', {
+        ...baseJson,
+        'experimental': {
+          'modes': {
+            'fast': {
+              'provider': {
+                'body': {'service_tier': 'priority'},
+              },
+            },
+          },
+        },
+      });
+      expect(model.supportsPriorityMode, isTrue);
+    });
+
     test('handles missing cost with nullable types', () {
       final json = <String, dynamic>{
         'id': 'free-model',
@@ -134,6 +150,56 @@ void main() {
     test('hasVeryLargeContext > 1M', () {
       expect(modelWith(1000000).hasVeryLargeContext, isFalse);
       expect(modelWith(1000001).hasVeryLargeContext, isTrue);
+    });
+
+    test('isCodexRuntimeModel only allows supported Codex backend models', () {
+      const canonical = ApiModelEntity(
+        modelProvider: 'openai',
+        id: 'gpt-5.5',
+        name: 'GPT-5.5',
+        limitContext: 400000,
+        limitOutput: 128000,
+        modalitiesInput: ['text'],
+        modalitiesOuput: ['text'],
+        family: 'gpt-5.5',
+        supportsPriorityMode: true,
+      );
+      final alias = canonical.copyWith(
+        id: 'gpt-5.1-codex',
+        supportsPriorityMode: false,
+        family: 'gpt-5.5',
+      );
+      final oldModel = canonical.copyWith(
+        id: 'gpt-3.5-turbo',
+        supportsPriorityMode: false,
+        family: 'gpt',
+      );
+      final codexSpark = canonical.copyWith(
+        id: 'gpt-5.3-codex-spark',
+        supportsPriorityMode: false,
+        family: 'gpt-codex-spark',
+        isCanonical: false,
+      );
+
+      expect(canonical.isCodexRuntimeModel, isTrue);
+      expect(codexSpark.isCodexRuntimeModel, isTrue);
+      expect(alias.isCodexRuntimeModel, isFalse);
+      expect(oldModel.isCodexRuntimeModel, isFalse);
+    });
+
+    test('fromJson maps models.dev tool_call support', () {
+      final model = ApiModelEntity.fromJson('openai', {
+        'id': 'gpt-5.5',
+        'name': 'GPT-5.5',
+        'limit': {'context': 400000, 'output': 128000},
+        'modalities': {
+          'input': ['text'],
+          'output': ['text'],
+        },
+        'tool_call': true,
+      });
+
+      expect(model.supportsToolCalls, isTrue);
     });
 
     test('contextCategory returns correct categories', () {

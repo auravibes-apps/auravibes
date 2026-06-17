@@ -52,6 +52,9 @@
       "open_button": "Agregar Proveedor",
       "title": "Agregar Proveedor de Modelo",
       "create_button": "Crear Proveedor",
+      "connect_browser": "Conectar con navegador",
+      "use_device_code": "Usar código de dispositivo",
+      "device_code_instruction": "Abre esta URL e ingresa el código.",
       "sections": {
         "advanced": "Avanzado"
       },

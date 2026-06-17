@@ -1,13 +1,72 @@
 import 'dart:async';
 
+import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
+import 'package:auravibes_app/domain/repositories/api_model_repository.dart';
 import 'package:auravibes_app/domain/repositories/workspace_model_selection_repository.dart';
+import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
+import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
+
+class _FakeApiModelRepository implements ApiModelRepository {
+  const _FakeApiModelRepository({
+    this.providers = const [],
+    this.models = const [],
+  });
+
+  final List<ApiModelProviderEntity> providers;
+  final List<ApiModelEntity> models;
+
+  @override
+  Future<List<ApiModelProviderEntity>> getAllProviders() async => providers;
+
+  @override
+  Future<List<ApiModelEntity>> getAllModels() async => models;
+
+  @override
+  Future<ApiModelEntity?> getModelByProviderAndModelId(
+    String providerId,
+    String modelId,
+  ) async {
+    return models
+        .where((model) {
+          return model.modelProvider == providerId && model.id == modelId;
+        })
+        .firstOrNull;
+  }
+
+  @override
+  Future<List<ApiModelEntity>> getModelsByProvider(String providerId) async {
+    return models.where((model) => model.modelProvider == providerId).toList();
+  }
+
+  @override
+  Future<List<ApiModelProviderEntity>> getProvidersByType(String type) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<List<ApiModelProviderEntity>> batchUpsertProviders(
+    List<ApiModelProviderEntity> providers,
+  ) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<List<ApiModelEntity>> batchUpsertModels(List<ApiModelEntity> models) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<int> deleteAllData() {
+    throw UnimplementedError();
+  }
+}
 
 class _FakeWorkspaceModelSelectionRepository
     implements WorkspaceModelSelectionRepository {
@@ -53,6 +112,7 @@ WorkspaceModelSelectionWithConnectionEntity _makeSelection({
   required String providerId,
   required String providerName,
   String? modelId,
+  String? connectionProviderId,
 }) {
   final now = DateTime(2026);
 
@@ -68,7 +128,7 @@ WorkspaceModelSelectionWithConnectionEntity _makeSelection({
       id: modelConnectionId,
       name: modelConnectionName,
       key: 'key',
-      modelId: modelId ?? 'model-$selectionId',
+      modelId: connectionProviderId ?? modelId ?? 'model-$selectionId',
       createdAt: now,
       updatedAt: now,
       workspaceId: 'ws-1',
@@ -114,6 +174,9 @@ void main() {
         overrides: [
           workspaceModelSelectionRepositoryProvider.overrideWithValue(
             _FakeWorkspaceModelSelectionRepository(selections),
+          ),
+          apiModelRepositoryProvider.overrideWithValue(
+            const _FakeApiModelRepository(),
           ),
         ],
       );
@@ -191,6 +254,9 @@ void main() {
           workspaceModelSelectionRepositoryProvider.overrideWithValue(
             _FakeWorkspaceModelSelectionRepository([], controller.stream),
           ),
+          apiModelRepositoryProvider.overrideWithValue(
+            const _FakeApiModelRepository(),
+          ),
         ],
       );
       addTearDown(container.dispose);
@@ -219,6 +285,85 @@ void main() {
 
       controller.add([initialSelection, updatedSelection]);
       expect(await secondEmission.future, hasLength(2));
+    });
+
+    test('filters unsupported Codex selections while loading models', () async {
+      final selections = [
+        _makeSelection(
+          selectionId: 'sel-codex-ok',
+          modelConnectionId: 'conn-codex',
+          modelConnectionName: 'Codex',
+          providerId: 'openai',
+          providerName: 'OpenAI',
+          modelId: 'gpt-5.5',
+          connectionProviderId: openAICodexProviderId,
+        ),
+        _makeSelection(
+          selectionId: 'sel-codex-old',
+          modelConnectionId: 'conn-codex',
+          modelConnectionName: 'Codex',
+          providerId: 'openai',
+          providerName: 'OpenAI',
+          modelId: 'gpt-3.5-turbo',
+          connectionProviderId: openAICodexProviderId,
+        ),
+      ];
+      const openAIProvider = ApiModelProviderEntity(
+        id: 'openai',
+        name: 'OpenAI',
+        type: ModelProvidersType.openai,
+      );
+      const openAIModels = [
+        ApiModelEntity(
+          modelProvider: 'openai',
+          id: 'gpt-5.5',
+          name: 'GPT-5.5',
+          limitContext: 1050000,
+          limitOutput: 128000,
+          modalitiesInput: ['text'],
+          modalitiesOuput: ['text'],
+          supportsPriorityMode: true,
+        ),
+        ApiModelEntity(
+          modelProvider: 'openai',
+          id: 'gpt-3.5-turbo',
+          name: 'GPT-3.5 Turbo',
+          limitContext: 16385,
+          limitOutput: 4096,
+          modalitiesInput: ['text'],
+          modalitiesOuput: ['text'],
+        ),
+      ];
+      final container = ProviderContainer(
+        overrides: [
+          workspaceModelSelectionRepositoryProvider.overrideWithValue(
+            _FakeWorkspaceModelSelectionRepository(selections),
+          ),
+          apiModelRepositoryProvider.overrideWithValue(
+            const _FakeApiModelRepository(
+              providers: [openAIProvider],
+              models: openAIModels,
+            ),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final provider = listWorkspaceModelSelectionsProvider(
+        workspaceId: 'ws-1',
+      );
+      final subscription = container.listen(provider, (_, _) {
+        final _ = Object();
+      });
+      addTearDown(subscription.close);
+
+      final result = await container.read(provider.future);
+
+      expect(
+        result.map((model) => model.workspaceModelSelection.modelId),
+        ['gpt-5.5'],
+      );
+      expect(result.single.modelsProvider.id, 'openai-codex');
     });
   });
 
@@ -254,6 +399,9 @@ void main() {
         overrides: [
           workspaceModelSelectionRepositoryProvider.overrideWithValue(
             _FakeWorkspaceModelSelectionRepository(selections),
+          ),
+          apiModelRepositoryProvider.overrideWithValue(
+            const _FakeApiModelRepository(),
           ),
         ],
       );
@@ -296,6 +444,9 @@ void main() {
         overrides: [
           workspaceModelSelectionRepositoryProvider.overrideWithValue(
             _FakeWorkspaceModelSelectionRepository(selections),
+          ),
+          apiModelRepositoryProvider.overrideWithValue(
+            const _FakeApiModelRepository(),
           ),
         ],
       );
@@ -343,6 +494,9 @@ void main() {
           overrides: [
             workspaceModelSelectionRepositoryProvider.overrideWithValue(
               _FakeWorkspaceModelSelectionRepository(selections),
+            ),
+            apiModelRepositoryProvider.overrideWithValue(
+              const _FakeApiModelRepository(),
             ),
           ],
         );
@@ -401,6 +555,9 @@ void main() {
             workspaceModelSelectionRepositoryProvider.overrideWithValue(
               _FakeWorkspaceModelSelectionRepository(selections),
             ),
+            apiModelRepositoryProvider.overrideWithValue(
+              const _FakeApiModelRepository(),
+            ),
           ],
         );
         addTearDown(container.dispose);
@@ -427,6 +584,9 @@ void main() {
         overrides: [
           workspaceModelSelectionRepositoryProvider.overrideWithValue(
             _FakeWorkspaceModelSelectionRepository(),
+          ),
+          apiModelRepositoryProvider.overrideWithValue(
+            const _FakeApiModelRepository(),
           ),
         ],
       );

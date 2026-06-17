@@ -2,10 +2,13 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_model_selection_with_connection.dart';
 import 'package:auravibes_app/data/database/drift/tables/model_providers_table_type.dart';
+import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
+import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/repositories/workspace_model_selection_repository.dart';
+import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 
 /// Implementation of the [WorkspaceModelSelectionRepository] interface.
 ///
@@ -52,8 +55,9 @@ class WorkspaceModelSelectionRepositoryImpl
           workspaceIds: filter.workspaces,
         )
         .map(
-          (tableResults) =>
-              tableResults.map(_withProviderTableToEntity).toList(),
+          (tableResults) => tableResults
+              .map(_withProviderTableToEntity)
+              .toList(),
         );
   }
 
@@ -82,6 +86,12 @@ class WorkspaceModelSelectionRepositoryImpl
   WorkspaceModelSelectionWithConnectionEntity _withProviderTableToEntity(
     WorkspaceModelSelectionWithConnection withProvider,
   ) {
+    final modelProvider = withProvider.modelProvider;
+    final isCodex = isOpenAICodexProvider(
+      withProvider.modelConnection.serviceId,
+    );
+    final providerType = _mapToTypeTable(modelProvider?.type);
+
     return WorkspaceModelSelectionWithConnectionEntity(
       workspaceModelSelection: WorkspaceModelSelectionEntity(
         id: withProvider.model.id,
@@ -91,6 +101,7 @@ class WorkspaceModelSelectionRepositoryImpl
         modelConnectionId: withProvider.model.modelConnectionId,
         modelName: withProvider.apiModel?.name,
         supportsReasoning: withProvider.apiModel?.supportsReasoning ?? false,
+        supportsToolCalls: withProvider.apiModel?.supportsToolCalls ?? true,
       ),
       modelConnection: ModelConnectionEntity(
         id: withProvider.modelConnection.id,
@@ -100,17 +111,31 @@ class WorkspaceModelSelectionRepositoryImpl
         createdAt: withProvider.modelConnection.createdAt,
         updatedAt: withProvider.modelConnection.updatedAt,
         workspaceId: withProvider.modelConnection.workspaceId,
+        authMode: _authMode(withProvider.modelConnection.authenticationType),
         url: withProvider.modelConnection.url,
         keySuffix: withProvider.modelConnection.keySuffix,
+        oauthMetadata: ServiceConnectionAuthCodec.decodeMetadata(
+          withProvider.modelConnection.metadataJson,
+        ),
       ),
       modelsProvider: ApiModelProviderEntity(
-        id: withProvider.modelProvider.id,
-        name: withProvider.modelProvider.name,
-        type: _mapToTypeTable(withProvider.modelProvider.type),
-        url: withProvider.modelProvider.url,
-        doc: withProvider.modelProvider.doc,
+        id: modelProvider?.id ?? withProvider.modelConnection.serviceId,
+        name:
+            modelProvider?.name ??
+            (isCodex ? openAICodexDisplayName : null) ??
+            withProvider.modelConnection.serviceId,
+        type: providerType ?? (isCodex ? ModelProvidersType.openai : null),
+        url: modelProvider?.url ?? '',
+        doc: modelProvider?.doc ?? '',
       ),
     );
+  }
+
+  ModelProviderAuthMode _authMode(ServiceAuthenticationTypeTable type) {
+    return switch (type) {
+      ServiceAuthenticationTypeTable.oauth2 => ModelProviderAuthMode.oauth2,
+      _ => ModelProviderAuthMode.apiKey,
+    };
   }
 
   ModelProvidersType? _mapToTypeTable(ModelProvidersTableType? type) {

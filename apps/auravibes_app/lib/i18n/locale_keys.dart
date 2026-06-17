@@ -58,6 +58,12 @@ abstract class LocaleKeys {
       'models_screens.add_provider.title';
   static const models_screens_add_provider_create_button =
       'models_screens.add_provider.create_button';
+  static const models_screens_add_provider_connect_browser =
+      'models_screens.add_provider.connect_browser';
+  static const models_screens_add_provider_use_device_code =
+      'models_screens.add_provider.use_device_code';
+  static const models_screens_add_provider_device_code_instruction =
+      'models_screens.add_provider.device_code_instruction';
   static const models_screens_add_provider_sections_advanced =
       'models_screens.add_provider.sections.advanced';
   static const models_screens_add_provider_fields_name_label =

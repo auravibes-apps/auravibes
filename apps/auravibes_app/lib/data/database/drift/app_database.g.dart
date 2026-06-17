@@ -2257,6 +2257,15 @@ class $ApiModelsTable extends ApiModels
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _familyMeta = const VerificationMeta('family');
+  @override
+  late final GeneratedColumn<String> family = GeneratedColumn<String>(
+    'family',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   late final GeneratedColumnWithTypeConverter<List<String>?, String>
   modalitiesInput = GeneratedColumn<String>(
@@ -2301,6 +2310,50 @@ class $ApiModelsTable extends ApiModels
     requiredDuringInsert: false,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
       'CHECK ("supports_reasoning" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _isCanonicalMeta = const VerificationMeta(
+    'isCanonical',
+  );
+  @override
+  late final GeneratedColumn<bool> isCanonical = GeneratedColumn<bool>(
+    'is_canonical',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_canonical" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _supportsPriorityModeMeta =
+      const VerificationMeta('supportsPriorityMode');
+  @override
+  late final GeneratedColumn<bool> supportsPriorityMode = GeneratedColumn<bool>(
+    'supports_priority_mode',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("supports_priority_mode" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _supportsToolCallsMeta = const VerificationMeta(
+    'supportsToolCalls',
+  );
+  @override
+  late final GeneratedColumn<bool> supportsToolCalls = GeneratedColumn<bool>(
+    'supports_tool_calls',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("supports_tool_calls" IN (0, 1))',
     ),
     defaultValue: const Constant(false),
   );
@@ -2364,10 +2417,14 @@ class $ApiModelsTable extends ApiModels
     modelProvider,
     id,
     name,
+    family,
     modalitiesInput,
     modalitiesOuput,
     openWeights,
     supportsReasoning,
+    isCanonical,
+    supportsPriorityMode,
+    supportsToolCalls,
     costInput,
     costOutput,
     costCacheRead,
@@ -2410,6 +2467,12 @@ class $ApiModelsTable extends ApiModels
     } else if (isInserting) {
       context.missing(_nameMeta);
     }
+    if (data.containsKey('family')) {
+      context.handle(
+        _familyMeta,
+        family.isAcceptableOrUnknown(data['family']!, _familyMeta),
+      );
+    }
     if (data.containsKey('open_weights')) {
       context.handle(
         _openWeightsMeta,
@@ -2425,6 +2488,33 @@ class $ApiModelsTable extends ApiModels
         supportsReasoning.isAcceptableOrUnknown(
           data['supports_reasoning']!,
           _supportsReasoningMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_canonical')) {
+      context.handle(
+        _isCanonicalMeta,
+        isCanonical.isAcceptableOrUnknown(
+          data['is_canonical']!,
+          _isCanonicalMeta,
+        ),
+      );
+    }
+    if (data.containsKey('supports_priority_mode')) {
+      context.handle(
+        _supportsPriorityModeMeta,
+        supportsPriorityMode.isAcceptableOrUnknown(
+          data['supports_priority_mode']!,
+          _supportsPriorityModeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('supports_tool_calls')) {
+      context.handle(
+        _supportsToolCallsMeta,
+        supportsToolCalls.isAcceptableOrUnknown(
+          data['supports_tool_calls']!,
+          _supportsToolCallsMeta,
         ),
       );
     }
@@ -2492,6 +2582,10 @@ class $ApiModelsTable extends ApiModels
         DriftSqlType.string,
         data['${effectivePrefix}name'],
       )!,
+      family: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}family'],
+      ),
       modalitiesInput: $ApiModelsTable.$convertermodalitiesInputn.fromSql(
         attachedDatabase.typeMapping.read(
           DriftSqlType.string,
@@ -2511,6 +2605,18 @@ class $ApiModelsTable extends ApiModels
       supportsReasoning: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}supports_reasoning'],
+      )!,
+      isCanonical: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_canonical'],
+      )!,
+      supportsPriorityMode: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}supports_priority_mode'],
+      )!,
+      supportsToolCalls: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}supports_tool_calls'],
       )!,
       costInput: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
@@ -2560,6 +2666,7 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
 
   /// Human-readable name of the model.
   final String name;
+  final String? family;
 
   /// Type of chat model (local or remote).
   /// Stored as string to handle enum conversion
@@ -2567,6 +2674,9 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
   final List<String>? modalitiesOuput;
   final bool? openWeights;
   final bool supportsReasoning;
+  final bool isCanonical;
+  final bool supportsPriorityMode;
+  final bool supportsToolCalls;
   final double? costInput;
   final double? costOutput;
   final double? costCacheRead;
@@ -2576,10 +2686,14 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
     required this.modelProvider,
     required this.id,
     required this.name,
+    this.family,
     this.modalitiesInput,
     this.modalitiesOuput,
     this.openWeights,
     required this.supportsReasoning,
+    required this.isCanonical,
+    required this.supportsPriorityMode,
+    required this.supportsToolCalls,
     this.costInput,
     this.costOutput,
     this.costCacheRead,
@@ -2592,6 +2706,9 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
     map['model_provider'] = Variable<String>(modelProvider);
     map['id'] = Variable<String>(id);
     map['name'] = Variable<String>(name);
+    if (!nullToAbsent || family != null) {
+      map['family'] = Variable<String>(family);
+    }
     if (!nullToAbsent || modalitiesInput != null) {
       map['modalities_input'] = Variable<String>(
         $ApiModelsTable.$convertermodalitiesInputn.toSql(modalitiesInput),
@@ -2606,6 +2723,9 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
       map['open_weights'] = Variable<bool>(openWeights);
     }
     map['supports_reasoning'] = Variable<bool>(supportsReasoning);
+    map['is_canonical'] = Variable<bool>(isCanonical);
+    map['supports_priority_mode'] = Variable<bool>(supportsPriorityMode);
+    map['supports_tool_calls'] = Variable<bool>(supportsToolCalls);
     if (!nullToAbsent || costInput != null) {
       map['cost_input'] = Variable<double>(costInput);
     }
@@ -2625,6 +2745,9 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
       modelProvider: Value(modelProvider),
       id: Value(id),
       name: Value(name),
+      family: family == null && nullToAbsent
+          ? const Value.absent()
+          : Value(family),
       modalitiesInput: modalitiesInput == null && nullToAbsent
           ? const Value.absent()
           : Value(modalitiesInput),
@@ -2635,6 +2758,9 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
           ? const Value.absent()
           : Value(openWeights),
       supportsReasoning: Value(supportsReasoning),
+      isCanonical: Value(isCanonical),
+      supportsPriorityMode: Value(supportsPriorityMode),
+      supportsToolCalls: Value(supportsToolCalls),
       costInput: costInput == null && nullToAbsent
           ? const Value.absent()
           : Value(costInput),
@@ -2658,6 +2784,7 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
       modelProvider: serializer.fromJson<String>(json['modelProvider']),
       id: serializer.fromJson<String>(json['id']),
       name: serializer.fromJson<String>(json['name']),
+      family: serializer.fromJson<String?>(json['family']),
       modalitiesInput: $ApiModelsTable.$convertermodalitiesInputn.fromJson(
         serializer.fromJson<Object?>(json['modalitiesInput']),
       ),
@@ -2666,6 +2793,11 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
       ),
       openWeights: serializer.fromJson<bool?>(json['openWeights']),
       supportsReasoning: serializer.fromJson<bool>(json['supportsReasoning']),
+      isCanonical: serializer.fromJson<bool>(json['isCanonical']),
+      supportsPriorityMode: serializer.fromJson<bool>(
+        json['supportsPriorityMode'],
+      ),
+      supportsToolCalls: serializer.fromJson<bool>(json['supportsToolCalls']),
       costInput: serializer.fromJson<double?>(json['costInput']),
       costOutput: serializer.fromJson<double?>(json['costOutput']),
       costCacheRead: serializer.fromJson<double?>(json['costCacheRead']),
@@ -2680,6 +2812,7 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
       'modelProvider': serializer.toJson<String>(modelProvider),
       'id': serializer.toJson<String>(id),
       'name': serializer.toJson<String>(name),
+      'family': serializer.toJson<String?>(family),
       'modalitiesInput': serializer.toJson<Object?>(
         $ApiModelsTable.$convertermodalitiesInputn.toJson(modalitiesInput),
       ),
@@ -2688,6 +2821,9 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
       ),
       'openWeights': serializer.toJson<bool?>(openWeights),
       'supportsReasoning': serializer.toJson<bool>(supportsReasoning),
+      'isCanonical': serializer.toJson<bool>(isCanonical),
+      'supportsPriorityMode': serializer.toJson<bool>(supportsPriorityMode),
+      'supportsToolCalls': serializer.toJson<bool>(supportsToolCalls),
       'costInput': serializer.toJson<double?>(costInput),
       'costOutput': serializer.toJson<double?>(costOutput),
       'costCacheRead': serializer.toJson<double?>(costCacheRead),
@@ -2700,10 +2836,14 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
     String? modelProvider,
     String? id,
     String? name,
+    Value<String?> family = const Value.absent(),
     Value<List<String>?> modalitiesInput = const Value.absent(),
     Value<List<String>?> modalitiesOuput = const Value.absent(),
     Value<bool?> openWeights = const Value.absent(),
     bool? supportsReasoning,
+    bool? isCanonical,
+    bool? supportsPriorityMode,
+    bool? supportsToolCalls,
     Value<double?> costInput = const Value.absent(),
     Value<double?> costOutput = const Value.absent(),
     Value<double?> costCacheRead = const Value.absent(),
@@ -2713,6 +2853,7 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
     modelProvider: modelProvider ?? this.modelProvider,
     id: id ?? this.id,
     name: name ?? this.name,
+    family: family.present ? family.value : this.family,
     modalitiesInput: modalitiesInput.present
         ? modalitiesInput.value
         : this.modalitiesInput,
@@ -2721,6 +2862,9 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
         : this.modalitiesOuput,
     openWeights: openWeights.present ? openWeights.value : this.openWeights,
     supportsReasoning: supportsReasoning ?? this.supportsReasoning,
+    isCanonical: isCanonical ?? this.isCanonical,
+    supportsPriorityMode: supportsPriorityMode ?? this.supportsPriorityMode,
+    supportsToolCalls: supportsToolCalls ?? this.supportsToolCalls,
     costInput: costInput.present ? costInput.value : this.costInput,
     costOutput: costOutput.present ? costOutput.value : this.costOutput,
     costCacheRead: costCacheRead.present
@@ -2736,6 +2880,7 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
           : this.modelProvider,
       id: data.id.present ? data.id.value : this.id,
       name: data.name.present ? data.name.value : this.name,
+      family: data.family.present ? data.family.value : this.family,
       modalitiesInput: data.modalitiesInput.present
           ? data.modalitiesInput.value
           : this.modalitiesInput,
@@ -2748,6 +2893,15 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
       supportsReasoning: data.supportsReasoning.present
           ? data.supportsReasoning.value
           : this.supportsReasoning,
+      isCanonical: data.isCanonical.present
+          ? data.isCanonical.value
+          : this.isCanonical,
+      supportsPriorityMode: data.supportsPriorityMode.present
+          ? data.supportsPriorityMode.value
+          : this.supportsPriorityMode,
+      supportsToolCalls: data.supportsToolCalls.present
+          ? data.supportsToolCalls.value
+          : this.supportsToolCalls,
       costInput: data.costInput.present ? data.costInput.value : this.costInput,
       costOutput: data.costOutput.present
           ? data.costOutput.value
@@ -2770,10 +2924,14 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
           ..write('modelProvider: $modelProvider, ')
           ..write('id: $id, ')
           ..write('name: $name, ')
+          ..write('family: $family, ')
           ..write('modalitiesInput: $modalitiesInput, ')
           ..write('modalitiesOuput: $modalitiesOuput, ')
           ..write('openWeights: $openWeights, ')
           ..write('supportsReasoning: $supportsReasoning, ')
+          ..write('isCanonical: $isCanonical, ')
+          ..write('supportsPriorityMode: $supportsPriorityMode, ')
+          ..write('supportsToolCalls: $supportsToolCalls, ')
           ..write('costInput: $costInput, ')
           ..write('costOutput: $costOutput, ')
           ..write('costCacheRead: $costCacheRead, ')
@@ -2788,10 +2946,14 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
     modelProvider,
     id,
     name,
+    family,
     modalitiesInput,
     modalitiesOuput,
     openWeights,
     supportsReasoning,
+    isCanonical,
+    supportsPriorityMode,
+    supportsToolCalls,
     costInput,
     costOutput,
     costCacheRead,
@@ -2805,10 +2967,14 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
           other.modelProvider == this.modelProvider &&
           other.id == this.id &&
           other.name == this.name &&
+          other.family == this.family &&
           other.modalitiesInput == this.modalitiesInput &&
           other.modalitiesOuput == this.modalitiesOuput &&
           other.openWeights == this.openWeights &&
           other.supportsReasoning == this.supportsReasoning &&
+          other.isCanonical == this.isCanonical &&
+          other.supportsPriorityMode == this.supportsPriorityMode &&
+          other.supportsToolCalls == this.supportsToolCalls &&
           other.costInput == this.costInput &&
           other.costOutput == this.costOutput &&
           other.costCacheRead == this.costCacheRead &&
@@ -2820,10 +2986,14 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
   final Value<String> modelProvider;
   final Value<String> id;
   final Value<String> name;
+  final Value<String?> family;
   final Value<List<String>?> modalitiesInput;
   final Value<List<String>?> modalitiesOuput;
   final Value<bool?> openWeights;
   final Value<bool> supportsReasoning;
+  final Value<bool> isCanonical;
+  final Value<bool> supportsPriorityMode;
+  final Value<bool> supportsToolCalls;
   final Value<double?> costInput;
   final Value<double?> costOutput;
   final Value<double?> costCacheRead;
@@ -2834,10 +3004,14 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
     this.modelProvider = const Value.absent(),
     this.id = const Value.absent(),
     this.name = const Value.absent(),
+    this.family = const Value.absent(),
     this.modalitiesInput = const Value.absent(),
     this.modalitiesOuput = const Value.absent(),
     this.openWeights = const Value.absent(),
     this.supportsReasoning = const Value.absent(),
+    this.isCanonical = const Value.absent(),
+    this.supportsPriorityMode = const Value.absent(),
+    this.supportsToolCalls = const Value.absent(),
     this.costInput = const Value.absent(),
     this.costOutput = const Value.absent(),
     this.costCacheRead = const Value.absent(),
@@ -2849,10 +3023,14 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
     required String modelProvider,
     required String id,
     required String name,
+    this.family = const Value.absent(),
     this.modalitiesInput = const Value.absent(),
     this.modalitiesOuput = const Value.absent(),
     this.openWeights = const Value.absent(),
     this.supportsReasoning = const Value.absent(),
+    this.isCanonical = const Value.absent(),
+    this.supportsPriorityMode = const Value.absent(),
+    this.supportsToolCalls = const Value.absent(),
     this.costInput = const Value.absent(),
     this.costOutput = const Value.absent(),
     this.costCacheRead = const Value.absent(),
@@ -2868,10 +3046,14 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
     Expression<String>? modelProvider,
     Expression<String>? id,
     Expression<String>? name,
+    Expression<String>? family,
     Expression<String>? modalitiesInput,
     Expression<String>? modalitiesOuput,
     Expression<bool>? openWeights,
     Expression<bool>? supportsReasoning,
+    Expression<bool>? isCanonical,
+    Expression<bool>? supportsPriorityMode,
+    Expression<bool>? supportsToolCalls,
     Expression<double>? costInput,
     Expression<double>? costOutput,
     Expression<double>? costCacheRead,
@@ -2883,10 +3065,15 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
       if (modelProvider != null) 'model_provider': modelProvider,
       if (id != null) 'id': id,
       if (name != null) 'name': name,
+      if (family != null) 'family': family,
       if (modalitiesInput != null) 'modalities_input': modalitiesInput,
       if (modalitiesOuput != null) 'modalities_ouput': modalitiesOuput,
       if (openWeights != null) 'open_weights': openWeights,
       if (supportsReasoning != null) 'supports_reasoning': supportsReasoning,
+      if (isCanonical != null) 'is_canonical': isCanonical,
+      if (supportsPriorityMode != null)
+        'supports_priority_mode': supportsPriorityMode,
+      if (supportsToolCalls != null) 'supports_tool_calls': supportsToolCalls,
       if (costInput != null) 'cost_input': costInput,
       if (costOutput != null) 'cost_output': costOutput,
       if (costCacheRead != null) 'cost_cache_read': costCacheRead,
@@ -2900,10 +3087,14 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
     Value<String>? modelProvider,
     Value<String>? id,
     Value<String>? name,
+    Value<String?>? family,
     Value<List<String>?>? modalitiesInput,
     Value<List<String>?>? modalitiesOuput,
     Value<bool?>? openWeights,
     Value<bool>? supportsReasoning,
+    Value<bool>? isCanonical,
+    Value<bool>? supportsPriorityMode,
+    Value<bool>? supportsToolCalls,
     Value<double?>? costInput,
     Value<double?>? costOutput,
     Value<double?>? costCacheRead,
@@ -2915,10 +3106,14 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
       modelProvider: modelProvider ?? this.modelProvider,
       id: id ?? this.id,
       name: name ?? this.name,
+      family: family ?? this.family,
       modalitiesInput: modalitiesInput ?? this.modalitiesInput,
       modalitiesOuput: modalitiesOuput ?? this.modalitiesOuput,
       openWeights: openWeights ?? this.openWeights,
       supportsReasoning: supportsReasoning ?? this.supportsReasoning,
+      isCanonical: isCanonical ?? this.isCanonical,
+      supportsPriorityMode: supportsPriorityMode ?? this.supportsPriorityMode,
+      supportsToolCalls: supportsToolCalls ?? this.supportsToolCalls,
       costInput: costInput ?? this.costInput,
       costOutput: costOutput ?? this.costOutput,
       costCacheRead: costCacheRead ?? this.costCacheRead,
@@ -2940,6 +3135,9 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
     if (name.present) {
       map['name'] = Variable<String>(name.value);
     }
+    if (family.present) {
+      map['family'] = Variable<String>(family.value);
+    }
     if (modalitiesInput.present) {
       map['modalities_input'] = Variable<String>(
         $ApiModelsTable.$convertermodalitiesInputn.toSql(modalitiesInput.value),
@@ -2955,6 +3153,17 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
     }
     if (supportsReasoning.present) {
       map['supports_reasoning'] = Variable<bool>(supportsReasoning.value);
+    }
+    if (isCanonical.present) {
+      map['is_canonical'] = Variable<bool>(isCanonical.value);
+    }
+    if (supportsPriorityMode.present) {
+      map['supports_priority_mode'] = Variable<bool>(
+        supportsPriorityMode.value,
+      );
+    }
+    if (supportsToolCalls.present) {
+      map['supports_tool_calls'] = Variable<bool>(supportsToolCalls.value);
     }
     if (costInput.present) {
       map['cost_input'] = Variable<double>(costInput.value);
@@ -2983,10 +3192,14 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
           ..write('modelProvider: $modelProvider, ')
           ..write('id: $id, ')
           ..write('name: $name, ')
+          ..write('family: $family, ')
           ..write('modalitiesInput: $modalitiesInput, ')
           ..write('modalitiesOuput: $modalitiesOuput, ')
           ..write('openWeights: $openWeights, ')
           ..write('supportsReasoning: $supportsReasoning, ')
+          ..write('isCanonical: $isCanonical, ')
+          ..write('supportsPriorityMode: $supportsPriorityMode, ')
+          ..write('supportsToolCalls: $supportsToolCalls, ')
           ..write('costInput: $costInput, ')
           ..write('costOutput: $costOutput, ')
           ..write('costCacheRead: $costCacheRead, ')
@@ -13229,10 +13442,14 @@ typedef $$ApiModelsTableCreateCompanionBuilder =
       required String modelProvider,
       required String id,
       required String name,
+      Value<String?> family,
       Value<List<String>?> modalitiesInput,
       Value<List<String>?> modalitiesOuput,
       Value<bool?> openWeights,
       Value<bool> supportsReasoning,
+      Value<bool> isCanonical,
+      Value<bool> supportsPriorityMode,
+      Value<bool> supportsToolCalls,
       Value<double?> costInput,
       Value<double?> costOutput,
       Value<double?> costCacheRead,
@@ -13245,10 +13462,14 @@ typedef $$ApiModelsTableUpdateCompanionBuilder =
       Value<String> modelProvider,
       Value<String> id,
       Value<String> name,
+      Value<String?> family,
       Value<List<String>?> modalitiesInput,
       Value<List<String>?> modalitiesOuput,
       Value<bool?> openWeights,
       Value<bool> supportsReasoning,
+      Value<bool> isCanonical,
+      Value<bool> supportsPriorityMode,
+      Value<bool> supportsToolCalls,
       Value<double?> costInput,
       Value<double?> costOutput,
       Value<double?> costCacheRead,
@@ -13299,6 +13520,11 @@ class $$ApiModelsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get family => $composableBuilder(
+    column: $table.family,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnWithTypeConverterFilters<List<String>?, List<String>, String>
   get modalitiesInput => $composableBuilder(
     column: $table.modalitiesInput,
@@ -13318,6 +13544,21 @@ class $$ApiModelsTableFilterComposer
 
   ColumnFilters<bool> get supportsReasoning => $composableBuilder(
     column: $table.supportsReasoning,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isCanonical => $composableBuilder(
+    column: $table.isCanonical,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get supportsPriorityMode => $composableBuilder(
+    column: $table.supportsPriorityMode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get supportsToolCalls => $composableBuilder(
+    column: $table.supportsToolCalls,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -13389,6 +13630,11 @@ class $$ApiModelsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get family => $composableBuilder(
+    column: $table.family,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get modalitiesInput => $composableBuilder(
     column: $table.modalitiesInput,
     builder: (column) => ColumnOrderings(column),
@@ -13406,6 +13652,21 @@ class $$ApiModelsTableOrderingComposer
 
   ColumnOrderings<bool> get supportsReasoning => $composableBuilder(
     column: $table.supportsReasoning,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isCanonical => $composableBuilder(
+    column: $table.isCanonical,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get supportsPriorityMode => $composableBuilder(
+    column: $table.supportsPriorityMode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get supportsToolCalls => $composableBuilder(
+    column: $table.supportsToolCalls,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -13473,6 +13734,9 @@ class $$ApiModelsTableAnnotationComposer
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
 
+  GeneratedColumn<String> get family =>
+      $composableBuilder(column: $table.family, builder: (column) => column);
+
   GeneratedColumnWithTypeConverter<List<String>?, String> get modalitiesInput =>
       $composableBuilder(
         column: $table.modalitiesInput,
@@ -13492,6 +13756,21 @@ class $$ApiModelsTableAnnotationComposer
 
   GeneratedColumn<bool> get supportsReasoning => $composableBuilder(
     column: $table.supportsReasoning,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isCanonical => $composableBuilder(
+    column: $table.isCanonical,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get supportsPriorityMode => $composableBuilder(
+    column: $table.supportsPriorityMode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get supportsToolCalls => $composableBuilder(
+    column: $table.supportsToolCalls,
     builder: (column) => column,
   );
 
@@ -13574,10 +13853,14 @@ class $$ApiModelsTableTableManager
                 Value<String> modelProvider = const Value.absent(),
                 Value<String> id = const Value.absent(),
                 Value<String> name = const Value.absent(),
+                Value<String?> family = const Value.absent(),
                 Value<List<String>?> modalitiesInput = const Value.absent(),
                 Value<List<String>?> modalitiesOuput = const Value.absent(),
                 Value<bool?> openWeights = const Value.absent(),
                 Value<bool> supportsReasoning = const Value.absent(),
+                Value<bool> isCanonical = const Value.absent(),
+                Value<bool> supportsPriorityMode = const Value.absent(),
+                Value<bool> supportsToolCalls = const Value.absent(),
                 Value<double?> costInput = const Value.absent(),
                 Value<double?> costOutput = const Value.absent(),
                 Value<double?> costCacheRead = const Value.absent(),
@@ -13588,10 +13871,14 @@ class $$ApiModelsTableTableManager
                 modelProvider: modelProvider,
                 id: id,
                 name: name,
+                family: family,
                 modalitiesInput: modalitiesInput,
                 modalitiesOuput: modalitiesOuput,
                 openWeights: openWeights,
                 supportsReasoning: supportsReasoning,
+                isCanonical: isCanonical,
+                supportsPriorityMode: supportsPriorityMode,
+                supportsToolCalls: supportsToolCalls,
                 costInput: costInput,
                 costOutput: costOutput,
                 costCacheRead: costCacheRead,
@@ -13604,10 +13891,14 @@ class $$ApiModelsTableTableManager
                 required String modelProvider,
                 required String id,
                 required String name,
+                Value<String?> family = const Value.absent(),
                 Value<List<String>?> modalitiesInput = const Value.absent(),
                 Value<List<String>?> modalitiesOuput = const Value.absent(),
                 Value<bool?> openWeights = const Value.absent(),
                 Value<bool> supportsReasoning = const Value.absent(),
+                Value<bool> isCanonical = const Value.absent(),
+                Value<bool> supportsPriorityMode = const Value.absent(),
+                Value<bool> supportsToolCalls = const Value.absent(),
                 Value<double?> costInput = const Value.absent(),
                 Value<double?> costOutput = const Value.absent(),
                 Value<double?> costCacheRead = const Value.absent(),
@@ -13618,10 +13909,14 @@ class $$ApiModelsTableTableManager
                 modelProvider: modelProvider,
                 id: id,
                 name: name,
+                family: family,
                 modalitiesInput: modalitiesInput,
                 modalitiesOuput: modalitiesOuput,
                 openWeights: openWeights,
                 supportsReasoning: supportsReasoning,
+                isCanonical: isCanonical,
+                supportsPriorityMode: supportsPriorityMode,
+                supportsToolCalls: supportsToolCalls,
                 costInput: costInput,
                 costOutput: costOutput,
                 costCacheRead: costCacheRead,

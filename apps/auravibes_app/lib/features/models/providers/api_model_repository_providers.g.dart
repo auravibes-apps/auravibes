@@ -79,7 +79,7 @@ final class ModelApiServiceProvider
         argument: null,
         retry: null,
         name: r'modelApiServiceProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -106,7 +106,7 @@ final class ModelApiServiceProvider
   }
 }
 
-String _$modelApiServiceHash() => r'a248c4da513fe5e9d8379a5c922027e51f194b38';
+String _$modelApiServiceHash() => r'8152e674cf24bdc7b0dd3ee6901003c690bfc690';
 
 /// Provider for the model sync service.
 
@@ -130,7 +130,7 @@ final class ModelSyncServiceProvider
         argument: null,
         retry: null,
         name: r'modelSyncServiceProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -157,7 +157,7 @@ final class ModelSyncServiceProvider
   }
 }
 
-String _$modelSyncServiceHash() => r'9dca60fd70a80ac02195ba080a65f5f2eedc3a02';
+String _$modelSyncServiceHash() => r'57b2ccea98627b6353bdf46e072db3b2a59be4a3';
 
 @ProviderFor(apiModelProviders)
 final apiModelProvidersProvider = ApiModelProvidersProvider._();
@@ -198,7 +198,7 @@ final class ApiModelProvidersProvider
   }
 }
 
-String _$apiModelProvidersHash() => r'23a8b4262aed02572dd3bfd82ee0e1126265e1e4';
+String _$apiModelProvidersHash() => r'b71504d9b13c745674a8a8e41ba01596102db8ca';
 
 @ProviderFor(getAllModels)
 final getAllModelsProvider = GetAllModelsProvider._();

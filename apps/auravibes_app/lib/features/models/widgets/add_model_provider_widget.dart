@@ -10,9 +10,13 @@ import 'package:auravibes_app/features/models/providers/api_model_repository_pro
 import 'package:auravibes_app/features/models/widgets/enhanced_model_input.dart';
 import 'package:auravibes_app/features/models/widgets/model_logo.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/services/codex_oauth_service.dart';
+import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -36,12 +40,22 @@ class AddModelProviderWidget extends HookConsumerWidget {
   static const String noModelsFoundKey =
       LocaleKeys.models_screens_add_provider_search_no_models_found;
 
-  void _submitForm(BuildContext context, WidgetRef ref) {
+  void _submitForm(
+    BuildContext context,
+    WidgetRef ref, {
+    CodexOAuthMethod? codexOAuthMethod,
+    void Function(CodexDeviceCode deviceCode)? onCodexDeviceCode,
+    bool Function()? isCodexDeviceCodeCancelled,
+  }) {
     addCredentialsModelMutationProvider.run(ref, (transaction) async {
       final notifier = transaction.get(
         addModelProviderStateProvider(workspaceId).notifier,
       );
-      final created = await notifier.addModelProvider();
+      final created = await notifier.addModelProvider(
+        codexOAuthMethod: codexOAuthMethod,
+        onCodexDeviceCode: onCodexDeviceCode,
+        isCodexDeviceCodeCancelled: isCodexDeviceCodeCancelled,
+      );
       if (context.mounted && created != null) {
         final onCreated = this.onCreated;
         if (onCreated != null) {
@@ -57,12 +71,33 @@ class AddModelProviderWidget extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final scrollController = useScrollController();
     final formKey = useMemoized(GlobalKey<FormState>.new, []);
+    final codexDeviceCode = useState<CodexDeviceCode?>(null);
+    final codexDeviceCodeCancelled = useRef(false);
 
     final hasModel = ref.watch(
       addModelProviderStateProvider(workspaceId).select(
         (value) => value.modelId != null,
       ),
     );
+    final authMode = ref.watch(
+      addModelProviderStateProvider(workspaceId).select(
+        (value) => value.authMode,
+      ),
+    );
+    final selectedModelId = ref.watch(
+      addModelProviderStateProvider(workspaceId).select(
+        (value) => value.modelId,
+      ),
+    );
+    final isOAuth = authMode == ModelProviderAuthMode.oauth2;
+    final isCodex = isOpenAICodexProvider(selectedModelId);
+    final isDesktop =
+        !kIsWeb &&
+        const {
+          TargetPlatform.macOS,
+          TargetPlatform.linux,
+          TargetPlatform.windows,
+        }.contains(defaultTargetPlatform);
 
     if (!hasModel) {
       return _SelectModelProvider(workspaceId: workspaceId);
@@ -91,19 +126,58 @@ class AddModelProviderWidget extends HookConsumerWidget {
                     fieldType: ModelInputFieldType.name,
                     // OnSubmitted: keyFocusNode.requestFocus,.
                   ),
-                  EnhancedModelInput(
-                    workspaceId: workspaceId,
-                    fieldType: ModelInputFieldType.key,
-                  ),
+                  if (!isOAuth) ...[
+                    EnhancedModelInput(
+                      workspaceId: workspaceId,
+                      fieldType: ModelInputFieldType.key,
+                    ),
+                    SizedBox(height: context.auraTheme.spacing.xl),
+                    _ApiConfigSection(
+                      workspaceId: workspaceId,
+                      onSubmit: () => _submitForm(context, ref),
+                    ),
+                  ],
                   SizedBox(height: context.auraTheme.spacing.xl),
-                  _ApiConfigSection(
-                    workspaceId: workspaceId,
-                    onSubmit: () => _submitForm(context, ref),
-                  ),
-                  SizedBox(height: context.auraTheme.spacing.xl),
+                  if (codexDeviceCode.value case final deviceCode?) ...[
+                    _CodexDeviceCodePanel(
+                      deviceCode: deviceCode,
+                      onCancel: () {
+                        codexDeviceCodeCancelled.value = true;
+                        codexDeviceCode.value = null;
+                      },
+                    ),
+                    SizedBox(height: context.auraTheme.spacing.xl),
+                  ],
                   _CreateButton(
                     workspaceId: workspaceId,
                     onSubmit: () => _submitForm(context, ref),
+                    isCodex: isCodex,
+                    isDesktop: isDesktop,
+                    onCodexBrowserSubmit: () {
+                      codexDeviceCodeCancelled.value = false;
+                      codexDeviceCode.value = null;
+                      _submitForm(
+                        context,
+                        ref,
+                        codexOAuthMethod: CodexOAuthMethod.browser,
+                      );
+                    },
+                    onCodexDeviceSubmit: () {
+                      codexDeviceCodeCancelled.value = false;
+                      codexDeviceCode.value = null;
+                      _submitForm(
+                        context,
+                        ref,
+                        codexOAuthMethod: CodexOAuthMethod.deviceCode,
+                        onCodexDeviceCode: (deviceCode) {
+                          if (context.mounted) {
+                            codexDeviceCode.value = deviceCode;
+                          }
+                        },
+                        isCodexDeviceCodeCancelled: () =>
+                            codexDeviceCodeCancelled.value,
+                      );
+                    },
                   ),
                 ],
               ),
@@ -280,10 +354,21 @@ class _ErrorBanner extends ConsumerWidget {
 
 /// Create button with loading state.
 class _CreateButton extends HookConsumerWidget {
-  const _CreateButton({required this.workspaceId, required this.onSubmit});
+  const _CreateButton({
+    required this.workspaceId,
+    required this.onSubmit,
+    required this.isCodex,
+    required this.isDesktop,
+    required this.onCodexBrowserSubmit,
+    required this.onCodexDeviceSubmit,
+  });
 
   final String workspaceId;
   final VoidCallback onSubmit;
+  final bool isCodex;
+  final bool isDesktop;
+  final VoidCallback onCodexBrowserSubmit;
+  final VoidCallback onCodexDeviceSubmit;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -298,21 +383,77 @@ class _CreateButton extends HookConsumerWidget {
         (value) => value.isValid(),
       ),
     );
-
+    final disabled = isSubmitting || !isValid;
     return Column(
       children: [
         const _ErrorBanner(),
+        if (isCodex && isDesktop) ...[
+          AuraButton(
+            onPressed: onCodexBrowserSubmit,
+            child: const TextLocale(
+              LocaleKeys.models_screens_add_provider_connect_browser,
+            ),
+            size: AuraButtonSize.large,
+            isLoading: isSubmitting,
+            isFullWidth: true,
+            disabled: disabled,
+          ),
+          SizedBox(height: context.auraTheme.spacing.md),
+        ],
         AuraButton(
-          onPressed: onSubmit,
-          child: const TextLocale(
-            LocaleKeys.models_screens_add_provider_create_button,
+          onPressed: isCodex ? onCodexDeviceSubmit : onSubmit,
+          child: TextLocale(
+            isCodex
+                ? LocaleKeys.models_screens_add_provider_use_device_code
+                : LocaleKeys.models_screens_add_provider_create_button,
           ),
           size: AuraButtonSize.large,
           isLoading: isSubmitting,
           isFullWidth: true,
-          disabled: isSubmitting || !isValid,
+          disabled: disabled,
         ),
       ],
+    );
+  }
+}
+
+class _CodexDeviceCodePanel extends StatelessWidget {
+  const _CodexDeviceCodePanel({
+    required this.deviceCode,
+    required this.onCancel,
+  });
+
+  final CodexDeviceCode deviceCode;
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    return AuraCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const AuraText(
+            child: TextLocale(
+              LocaleKeys.models_screens_add_provider_device_code_instruction,
+            ),
+            style: AuraTextStyle.bodyLarge,
+          ),
+          SizedBox(height: context.auraTheme.spacing.sm),
+          SelectableText(deviceCode.verificationUrl),
+          SizedBox(height: context.auraTheme.spacing.sm),
+          AuraText(
+            child: Text(deviceCode.userCode),
+            style: AuraTextStyle.heading5,
+            color: AuraColorVariant.primary,
+          ),
+          SizedBox(height: context.auraTheme.spacing.md),
+          AuraButton(
+            onPressed: onCancel,
+            child: const TextLocale(LocaleKeys.common_cancel),
+            size: AuraButtonSize.small,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -405,6 +546,7 @@ class _SelectModelProvider extends HookConsumerWidget {
               : ListView.builder(
                   itemBuilder: (context, index) {
                     final model = filteredModels[index];
+                    final isOAuthProvider = isOpenAICodexProvider(model.id);
 
                     return AuraCard(
                       child: Row(
@@ -416,6 +558,14 @@ class _SelectModelProvider extends HookConsumerWidget {
                           AuraText(
                             child: Text(model.name),
                           ),
+                          if (isOAuthProvider)
+                            const AuraText(
+                              child: TextLocale(
+                                LocaleKeys.mcp_modal_auth_oauth,
+                              ),
+                              style: AuraTextStyle.bodySmall,
+                              color: AuraColorVariant.primary,
+                            ),
                         ],
                       ),
                       onTap: () {
@@ -455,9 +605,15 @@ class _SelectedModelHeader extends HookConsumerWidget {
       return const SizedBox.shrink();
     }
 
-    final selectedModel = models.firstWhere(
+    final selectedModel = models.firstWhereOrNull(
       (model) => model.id == selectedModelId,
     );
+    final selectedModelName =
+        selectedModel?.name ??
+        (isOpenAICodexProvider(selectedModelId)
+            ? openAICodexDisplayName
+            : null);
+    if (selectedModelName == null) return const SizedBox.shrink();
 
     return Row(
       children: [
@@ -470,13 +626,13 @@ class _SelectedModelHeader extends HookConsumerWidget {
         ),
         SizedBox(width: context.auraTheme.spacing.md),
         ModelLogo(
-          modelId: selectedModel.id,
+          modelId: selectedModel?.id ?? openAICodexProviderId,
           height: 24,
         ),
         SizedBox(width: context.auraTheme.spacing.md),
         Expanded(
           child: AuraText(
-            child: Text(selectedModel.name),
+            child: Text(selectedModelName),
             style: AuraTextStyle.bodyLarge,
           ),
         ),

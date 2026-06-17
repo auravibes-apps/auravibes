@@ -38,6 +38,8 @@ void main() {
       modalitiesOuput: ['text'],
       openWeights: false,
       supportsReasoning: false,
+      isCanonical: true,
+      supportsPriorityMode: false,
       costInput: 30,
       costOutput: 60,
       limitContext: 128000,

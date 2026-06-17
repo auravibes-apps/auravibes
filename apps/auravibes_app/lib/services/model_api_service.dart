@@ -50,12 +50,14 @@ class ModelApiService {
   ///
   /// Returns a [ModelApiResponse] containing providers and models data.
   Future<ModelApiResponse> fetchAllModels() async {
-    final response = await _dio.get<Map<String, dynamic>>(
-      '/api.json',
-    );
+    final [apiResponse, modelsResponse] = await Future.wait([
+      _dio.get<Map<String, dynamic>>('/api.json'),
+      _dio.get<Map<String, dynamic>>('/models.json'),
+    ]);
 
     return _parseDioResponse(
-      response,
+      apiResponse,
+      _canonicalModelIds(modelsResponse),
     );
   }
 
@@ -90,6 +92,7 @@ class ModelApiService {
   /// Returns a [ModelApiResponse] with the parsed data.
   ModelApiResponse _parseDioResponse(
     Response<Map<String, dynamic>> response,
+    Set<String> canonicalModelIds,
   ) {
     final jsonData = response.data;
     if (response.statusCode != 200 || jsonData == null) {
@@ -106,8 +109,7 @@ class ModelApiService {
           return e.value as Map<String, dynamic>?;
         })
         .nonNulls
-        .map(_supportedProviderFromJson)
-        .nonNulls
+        .map((json) => _providerFromJson(json, canonicalModelIds))
         .toList();
 
     return ModelApiResponse(providers: providers);
@@ -119,11 +121,24 @@ class ModelApiService {
   }
 }
 
-ApiProviderDto? _supportedProviderFromJson(Map<String, dynamic> json) {
-  final modelProvider = ApiModelProviderEntity.fromJson(json);
-  if (modelProvider.type == null) return null;
+Set<String> _canonicalModelIds(Response<Map<String, dynamic>> response) {
+  final jsonData = response.data;
+  if (response.statusCode != 200 || jsonData == null) return {};
 
-  return ApiProviderDto.fromJson(json, modelProvider: modelProvider);
+  return jsonData.keys.toSet();
+}
+
+ApiProviderDto _providerFromJson(
+  Map<String, dynamic> json,
+  Set<String> canonicalModelIds,
+) {
+  final modelProvider = ApiModelProviderEntity.fromJson(json);
+
+  return ApiProviderDto.fromJson(
+    json,
+    modelProvider: modelProvider,
+    canonicalModelIds: canonicalModelIds,
+  );
 }
 
 /// Data class representing the API response.
@@ -153,6 +168,7 @@ class ApiProviderDto {
   factory ApiProviderDto.fromJson(
     Map<String, dynamic> json, {
     required ApiModelProviderEntity modelProvider,
+    Set<String>? canonicalModelIds,
   }) {
     final modelsData = json['models'] as Map<String, dynamic>? ?? {};
 
@@ -163,7 +179,11 @@ class ApiProviderDto {
           },
         )
         .nonNulls
-        .map((e) => ApiModelEntity.fromJson(modelProvider.id, e))
+        .map((e) => ApiModelEntity.fromJson(
+              modelProvider.id,
+              e,
+              canonicalModelIds,
+            ))
         .toList();
 
     return ApiProviderDto(

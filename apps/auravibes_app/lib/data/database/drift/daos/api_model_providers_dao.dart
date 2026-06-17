@@ -7,16 +7,12 @@ import 'package:drift/drift.dart';
 part 'api_model_providers_dao.g.dart';
 
 // Define popular providers in priority order (top 10).
-final popularProviders = [
+final List<String> popularProviders = [
   'openai',
   'anthropic',
-  'google',
-  'google-vertex',
-  'azure',
   'groq',
   'xai',
   'togetherai',
-  'huggingface',
   'deepseek',
 ];
 

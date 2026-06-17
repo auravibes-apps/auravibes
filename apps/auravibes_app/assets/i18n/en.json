@@ -52,6 +52,9 @@
       "open_button": "Add Provider",
       "title": "Add Model Provider",
       "create_button": "Create Provider",
+      "connect_browser": "Connect with browser",
+      "use_device_code": "Use device code",
+      "device_code_instruction": "Open this URL and enter the code.",
       "sections": {
         "advanced": "Advanced"
       },

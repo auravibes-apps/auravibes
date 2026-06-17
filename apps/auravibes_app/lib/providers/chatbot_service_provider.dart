@@ -1,6 +1,7 @@
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
+import 'package:auravibes_app/services/oauth_credential_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'chatbot_service_provider.g.dart';
@@ -13,5 +14,6 @@ ChatbotService chatbotService(
 ) {
   return ChatbotService(
     encryptionService: ref.watch(encryptionServiceProvider),
+    oauthCredentialService: ref.watch(oauthCredentialServiceProvider),
   );
 }
