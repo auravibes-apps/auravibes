@@ -50,11 +50,12 @@ class ModelApiService {
   ///
   /// Returns a [ModelApiResponse] containing providers and models data.
   Future<ModelApiResponse> fetchAllModels() async {
-    final apiResponse = await _dio.get<Map<String, dynamic>>('/api.json');
+    final apiResponseFuture = _dio.get<Map<String, dynamic>>('/api.json');
+    final canonicalModelIdsFuture = _fetchCanonicalModelIds();
 
     return _parseDioResponse(
-      apiResponse,
-      await _fetchCanonicalModelIds(),
+      await apiResponseFuture,
+      await canonicalModelIdsFuture,
     );
   }
 
