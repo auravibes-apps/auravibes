@@ -33,11 +33,9 @@ class _FakeApiModelRepository implements ApiModelRepository {
     String providerId,
     String modelId,
   ) async {
-    return models
-        .where((model) {
-          return model.modelProvider == providerId && model.id == modelId;
-        })
-        .firstOrNull;
+    return models.where((model) {
+      return model.modelProvider == providerId && model.id == modelId;
+    }).firstOrNull;
   }
 
   @override

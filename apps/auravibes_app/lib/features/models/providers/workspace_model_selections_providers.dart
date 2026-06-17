@@ -23,38 +23,41 @@ listWorkspaceModelSelections(
   );
   final apiModelRepository = ref.watch(apiModelRepositoryProvider);
 
-  return workspaceModelSelectionRepository.watchWorkspaceModelSelections(
-    WorkspaceModelSelectionFilter(workspaces: [workspaceId]),
-  ).asyncMap((models) async {
-    final providers = await apiModelRepository.getAllProviders();
-    final openAIProvider = providers.firstWhereOrNull(
-      (provider) => provider.id == 'openai',
-    );
-    if (openAIProvider == null) {
-      return models
-          .where(
-            (model) => model.modelConnection.modelId != openAICodexProviderId,
-          )
-          .toList();
-    }
+  return workspaceModelSelectionRepository
+      .watchWorkspaceModelSelections(
+        WorkspaceModelSelectionFilter(workspaces: [workspaceId]),
+      )
+      .asyncMap((models) async {
+        final providers = await apiModelRepository.getAllProviders();
+        final openAIProvider = providers.firstWhereOrNull(
+          (provider) => provider.id == 'openai',
+        );
+        if (openAIProvider == null) {
+          return models
+              .where(
+                (model) =>
+                    model.modelConnection.modelId != openAICodexProviderId,
+              )
+              .toList();
+        }
 
-    final openAIModels = await apiModelRepository.getModelsByProvider(
-      'openai',
-    );
-    final openAIModelsById = {
-      for (final model in openAIModels)
-        if (model.isCodexRuntimeModel) model.id: model,
-    };
+        final openAIModels = await apiModelRepository.getModelsByProvider(
+          'openai',
+        );
+        final openAIModelsById = {
+          for (final model in openAIModels)
+            if (model.isCodexRuntimeModel) model.id: model,
+        };
 
-    return [
-      for (final model in models)
-        if (model.modelConnection.modelId != openAICodexProviderId)
-          model
-        else if (openAIModelsById[model.workspaceModelSelection.modelId]
-            case final openAIModel?)
-          _withCodexProjection(model, openAIProvider, openAIModel),
-    ];
-  });
+        return [
+          for (final model in models)
+            if (model.modelConnection.modelId != openAICodexProviderId)
+              model
+            else if (openAIModelsById[model.workspaceModelSelection.modelId]
+                case final openAIModel?)
+              _withCodexProjection(model, openAIProvider, openAIModel),
+        ];
+      });
 }
 
 WorkspaceModelSelectionWithConnectionEntity _withCodexProjection(

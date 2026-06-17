@@ -61,11 +61,9 @@ abstract class ApiModelEntity with _$ApiModelEntity {
 
   factory ApiModelEntity.fromJson(
     String modelProvider,
-    Map<String, dynamic> json,
-    [
+    Map<String, dynamic> json, [
     Set<String>? canonicalModelIds,
-  ]
-  ) {
+  ]) {
     final cost = json.get<Map<String, dynamic>?>('cost');
     final limit = json.get<Map<String, dynamic>>('limit');
     final modalities = json.get<Map<String, dynamic>>('modalities');

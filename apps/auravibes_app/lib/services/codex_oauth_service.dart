@@ -30,8 +30,7 @@ class CodexOAuthService {
   static const fallbackPort = 1457;
   static const deviceCallback = 'https://auth.openai.com/deviceauth/callback';
 
-  Future<OAuthTokenEntity> authenticateWithBrowser(
-  ) async {
+  Future<OAuthTokenEntity> authenticateWithBrowser() async {
     final pkce = _generatePkce();
     final state = _randomUrlSafe(32);
     final server = await _bindServer();
@@ -69,8 +68,7 @@ class CodexOAuthService {
     }
   }
 
-  Future<OAuthTokenEntity> authenticateWithDeviceCode(
-    {
+  Future<OAuthTokenEntity> authenticateWithDeviceCode({
     void Function(CodexDeviceCode deviceCode)? onDeviceCode,
     bool Function()? isCancelled,
   }) async {

@@ -55,9 +55,8 @@ class WorkspaceModelSelectionRepositoryImpl
           workspaceIds: filter.workspaces,
         )
         .map(
-          (tableResults) => tableResults
-              .map(_withProviderTableToEntity)
-              .toList(),
+          (tableResults) =>
+              tableResults.map(_withProviderTableToEntity).toList(),
         );
   }
 

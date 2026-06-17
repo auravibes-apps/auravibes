@@ -44,7 +44,10 @@ void main() {
     final response = await ai.generate<Object?, Object?>(
       model: openAICodexModel('gpt-5.5'),
       messages: [
-        Message(role: Role.user, content: [TextPart(text: 'Hi')]),
+        Message(
+          role: Role.user,
+          content: [TextPart(text: 'Hi')],
+        ),
       ],
     );
 
@@ -110,7 +113,10 @@ void main() {
     final stream = ai.generateStream<Object?, Object?>(
       model: openAICodexModel('gpt-5.5'),
       messages: [
-        Message(role: Role.user, content: [TextPart(text: 'Hi')]),
+        Message(
+          role: Role.user,
+          content: [TextPart(text: 'Hi')],
+        ),
       ],
     );
 
@@ -138,7 +144,10 @@ void main() {
       () => ai.generate<Object?, Object?>(
         model: openAICodexModel('gpt-5.5'),
         messages: [
-          Message(role: Role.user, content: [TextPart(text: 'Hi')]),
+          Message(
+            role: Role.user,
+            content: [TextPart(text: 'Hi')],
+          ),
         ],
       ),
       throwsA(

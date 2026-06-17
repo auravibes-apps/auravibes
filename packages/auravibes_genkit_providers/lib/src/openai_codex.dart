@@ -84,7 +84,9 @@ class OpenAICodexProvider extends GenkitPlugin {
     final request = await _request(body);
     final client = httpClient ?? http.Client();
     try {
-      final response = await client.send(request).timeout(
+      final response = await client
+          .send(request)
+          .timeout(
             requestTimeout,
           );
       final accumulator = _CodexStreamAccumulator();
@@ -165,8 +167,7 @@ class OpenAICodexProvider extends GenkitPlugin {
         'user-agent': 'AuraVibes',
         if (accountId != null && accountId.isNotEmpty)
           'ChatGPT-Account-Id': accountId,
-        if (sessionId != null && sessionId.isNotEmpty)
-          'session-id': sessionId,
+        if (sessionId != null && sessionId.isNotEmpty) 'session-id': sessionId,
       })
       ..body = jsonEncode(body);
   }
@@ -357,7 +358,11 @@ class _CodexStreamAccumulator {
     if (type == 'response.output_item.done') {
       final item = event['item'] as Map<String, dynamic>?;
       if (item?['type'] == 'function_call') {
-        _tools.addAll(_toolRequestsFromResponse({'output': [item]}));
+        _tools.addAll(
+          _toolRequestsFromResponse({
+            'output': [item],
+          }),
+        );
       }
 
       return const [];

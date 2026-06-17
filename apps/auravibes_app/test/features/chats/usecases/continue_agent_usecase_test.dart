@@ -310,7 +310,7 @@ void main() {
           _model,
           any(),
           tools: const [],
-            sessionId: any(named: 'sessionId'),
+          sessionId: any(named: 'sessionId'),
         ),
       ).thenAnswer(
         (_) => Stream.fromIterable([
@@ -349,7 +349,7 @@ void main() {
           _model,
           any(),
           tools: const [],
-            sessionId: any(named: 'sessionId'),
+          sessionId: any(named: 'sessionId'),
         ),
       ).thenAnswer(
         (_) => Stream.fromIterable([
@@ -403,7 +403,7 @@ void main() {
           _model,
           any(),
           tools: const [],
-            sessionId: any(named: 'sessionId'),
+          sessionId: any(named: 'sessionId'),
         ),
       ).thenAnswer(
         (_) => Stream.fromIterable([
@@ -1226,11 +1226,11 @@ void main() {
       );
       when(
         () => chatbotService.sendMessage(
-            _model,
-            any(),
-            tools: const [],
-            sessionId: any(named: 'sessionId'),
-          ),
+          _model,
+          any(),
+          tools: const [],
+          sessionId: any(named: 'sessionId'),
+        ),
       ).thenAnswer(
         (_) => Stream.fromIterable([
           ChatResult<ChatMessage>(
@@ -1256,7 +1256,6 @@ void main() {
         returnsNormally,
       );
     });
-
   });
 }
 

@@ -179,11 +179,13 @@ class ApiProviderDto {
           },
         )
         .nonNulls
-        .map((e) => ApiModelEntity.fromJson(
-              modelProvider.id,
-              e,
-              canonicalModelIds,
-            ))
+        .map(
+          (e) => ApiModelEntity.fromJson(
+            modelProvider.id,
+            e,
+            canonicalModelIds,
+          ),
+        )
         .toList();
 
     return ApiProviderDto(

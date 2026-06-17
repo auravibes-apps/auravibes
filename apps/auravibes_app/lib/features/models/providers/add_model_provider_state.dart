@@ -109,11 +109,11 @@ class AddModelProviderState extends _$AddModelProviderState {
           );
         }
         final token = switch (codexOAuthMethod) {
-          CodexOAuthMethod.deviceCode => await CodexOAuthService()
-              .authenticateWithDeviceCode(
-                onDeviceCode: onCodexDeviceCode,
-                isCancelled: isCodexDeviceCodeCancelled,
-              ),
+          CodexOAuthMethod.deviceCode =>
+            await CodexOAuthService().authenticateWithDeviceCode(
+              onDeviceCode: onCodexDeviceCode,
+              isCancelled: isCodexDeviceCodeCancelled,
+            ),
           _ => await CodexOAuthService().authenticateWithBrowser(),
         };
 

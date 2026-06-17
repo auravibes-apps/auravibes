@@ -20,8 +20,7 @@ class ProviderFactory {
   final Future<String> Function(String id)? resolveOAuthAccessToken;
 
   Future<Genkit> createGenkit(
-    WorkspaceModelSelectionWithConnectionEntity config,
-    {
+    WorkspaceModelSelectionWithConnectionEntity config, {
     String? sessionId,
   }) async {
     final apiKey = await _resolveCredential(config);
