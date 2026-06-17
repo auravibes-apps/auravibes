@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
@@ -28,6 +29,33 @@ void main() {
       expect(uri.queryParameters['code_challenge'], 'challenge');
       expect(uri.queryParameters['state'], 'state');
       expect(uri.queryParameters['originator'], 'auravibes');
+    });
+
+    test('authenticates with browser callback', () async {
+      final dio = Dio()
+        ..httpClientAdapter = _FakeHttpClientAdapter(
+          onFetch: (_) async => _json({'access_token': 'access'}),
+        );
+
+      final token = await CodexOAuthService(
+        dio: dio,
+        openBrowser: (uri) async {
+          final redirectUri = Uri.parse(uri.queryParameters['redirect_uri']!);
+          final callbackUri = redirectUri.replace(
+            queryParameters: {
+              'state': uri.queryParameters['state'],
+              'code': 'browser-code',
+            },
+          );
+          final client = HttpClient();
+          addTearDown(client.close);
+          final request = await client.getUrl(callbackUri);
+          final response = await request.close();
+          final _ = await response.drain<void>();
+        },
+      ).authenticateWithBrowser();
+
+      expect(token.accessToken, 'access');
     });
 
     test('exchanges code response into OAuth token', () async {
@@ -97,6 +125,40 @@ void main() {
 
       expect(shownCode?.verificationUrl, '$openAICodexIssuer/codex/device');
       expect(shownCode?.userCode, 'ABCD-EFGH');
+      expect(token.accessToken, 'access');
+    });
+
+    test('keeps polling while device code is pending', () async {
+      var tokenPolls = 0;
+      final dio = Dio()
+        ..httpClientAdapter = _FakeHttpClientAdapter(
+          onFetch: (options) async {
+            if (options.uri.path.endsWith('/usercode')) {
+              return _json({
+                'device_auth_id': 'device-1',
+                'user_code': 'ABCD-EFGH',
+                'interval': 0,
+              });
+            }
+            if (options.uri.path.endsWith('/deviceauth/token')) {
+              tokenPolls++;
+              if (tokenPolls == 1) return _json({}, HttpStatus.forbidden);
+
+              return _json({
+                'authorization_code': 'auth-code',
+                'code_verifier': 'verifier',
+              });
+            }
+
+            return _json({'access_token': 'access'});
+          },
+        );
+
+      final token = await CodexOAuthService(
+        dio: dio,
+      ).authenticateWithDeviceCode();
+
+      expect(tokenPolls, 2);
       expect(token.accessToken, 'access');
     });
 

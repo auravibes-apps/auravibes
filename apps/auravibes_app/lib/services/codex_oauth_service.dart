@@ -22,13 +22,17 @@ class CodexDeviceCode {
 }
 
 class CodexOAuthService {
-  CodexOAuthService({Dio? dio}) : _dio = dio ?? Dio();
+  CodexOAuthService({Dio? dio, Future<void> Function(Uri uri)? openBrowser})
+    : _dio = dio ?? Dio(),
+      _openBrowser = openBrowser ?? _openSystemBrowser;
 
   final Dio _dio;
+  final Future<void> Function(Uri uri) _openBrowser;
 
   static const defaultPort = 1455;
   static const fallbackPort = 1457;
   static const deviceCallback = 'https://auth.openai.com/deviceauth/callback';
+  static const _jsonContentType = 'application/json';
 
   Future<OAuthTokenEntity> authenticateWithBrowser() async {
     final pkce = _generatePkce();
@@ -76,7 +80,7 @@ class CodexOAuthService {
       '$openAICodexIssuer/api/accounts/deviceauth/usercode',
       data: {'client_id': openAICodexClientId},
       options: Options(
-        headers: const {'Content-Type': 'application/json'},
+        headers: const {'Content-Type': _jsonContentType},
         responseType: ResponseType.json,
       ),
     );
@@ -178,42 +182,60 @@ class CodexOAuthService {
     required Completer<String> completer,
   }) async {
     await for (final request in server) {
-      final uri = request.uri;
-      if (uri.path != '/auth/callback') {
-        request.response.statusCode = HttpStatus.notFound;
-        final _ = await request.response.close();
-        continue;
-      }
-
-      final error = uri.queryParameters['error'];
-      if (error != null) {
-        final description = uri.queryParameters['error_description'];
-        if (!completer.isCompleted) {
-          completer.completeError(Exception(description ?? error));
-        }
-        await _writeHtml(request, _errorHtml(description ?? error));
-        break;
-      }
-      if (uri.queryParameters['state'] != state) {
-        if (!completer.isCompleted) {
-          completer.completeError(Exception('OAuth state mismatch'));
-        }
-        await _writeHtml(request, _errorHtml('OAuth state mismatch'));
-        break;
-      }
-      final code = uri.queryParameters['code'];
-      if (code == null || code.isEmpty) {
-        if (!completer.isCompleted) {
-          completer.completeError(Exception('OAuth code not found'));
-        }
-        await _writeHtml(request, _errorHtml('OAuth code not found'));
-        break;
-      }
-
-      completer.complete(code);
-      await _writeHtml(request, _successHtml);
-      break;
+      if (await _handleBrowserCallback(request, state, completer)) break;
     }
+  }
+
+  Future<bool> _handleBrowserCallback(
+    HttpRequest request,
+    String state,
+    Completer<String> completer,
+  ) async {
+    final uri = request.uri;
+    if (uri.path != '/auth/callback') {
+      request.response.statusCode = HttpStatus.notFound;
+      final _ = await request.response.close();
+
+      return false;
+    }
+
+    final error = uri.queryParameters['error'];
+    if (error != null) {
+      await _failBrowserCallback(
+        request,
+        completer,
+        uri.queryParameters['error_description'] ?? error,
+      );
+
+      return true;
+    }
+    if (uri.queryParameters['state'] != state) {
+      await _failBrowserCallback(request, completer, 'OAuth state mismatch');
+
+      return true;
+    }
+    final code = uri.queryParameters['code'];
+    if (code == null || code.isEmpty) {
+      await _failBrowserCallback(request, completer, 'OAuth code not found');
+
+      return true;
+    }
+
+    completer.complete(code);
+    await _writeHtml(request, _successHtml);
+
+    return true;
+  }
+
+  Future<void> _failBrowserCallback(
+    HttpRequest request,
+    Completer<String> completer,
+    String message,
+  ) async {
+    if (!completer.isCompleted) {
+      completer.completeError(Exception(message));
+    }
+    await _writeHtml(request, _errorHtml(message));
   }
 
   Future<Map<String, dynamic>> _pollDeviceToken({
@@ -234,7 +256,7 @@ class CodexOAuthService {
           'user_code': userCode,
         },
         options: Options(
-          headers: const {'Content-Type': 'application/json'},
+          headers: const {'Content-Type': _jsonContentType},
           responseType: ResponseType.json,
           validateStatus: (_) => true,
         ),
@@ -250,7 +272,7 @@ class CodexOAuthService {
     throw TimeoutException('Device auth timed out after 15 minutes');
   }
 
-  Future<void> _openBrowser(Uri uri) async {
+  static Future<void> _openSystemBrowser(Uri uri) async {
     if (Platform.isMacOS) {
       final _ = await Process.run('open', [uri.toString()]);
 

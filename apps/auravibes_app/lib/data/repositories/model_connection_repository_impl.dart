@@ -29,6 +29,7 @@ class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
   final AppDatabase _database;
   final EncryptionService _encryptionService;
   final ModelProviderServices _modelProviderServices;
+  static const _missingApiKeyMessage = 'Model connection has no API key';
 
   @override
   Future<ModelConnectionEntity> createModelConnection(
@@ -51,7 +52,7 @@ class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
     }
     final key = modelConnection.key;
     if (key.trim().isEmpty) {
-      throw const ModelConnectionException('Model connection has no API key');
+      throw const ModelConnectionException(_missingApiKeyMessage);
     }
 
     // Extract last 6 characters for display.
@@ -223,7 +224,7 @@ class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
     final existingEncryptedKey = existing.encryptedAuthValue;
     if (key == null &&
         (existingEncryptedKey == null || existingEncryptedKey.isEmpty)) {
-      throw const ModelConnectionException('Model connection has no API key');
+      throw const ModelConnectionException(_missingApiKeyMessage);
     }
     final keyForValidation =
         key ??
@@ -231,17 +232,14 @@ class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
           await _encryptionService.decrypt(
             existingEncryptedKey ??
                 (throw const ModelConnectionException(
-                  'Model connection has no API key',
+                  _missingApiKeyMessage,
                 )),
           ),
         );
     final hasUrlUpdate = modelConnection.url != null;
-    var nextUrl = existing.url;
-    if (hasUrlUpdate) {
-      final url = modelConnection.url;
-      final updatedUrl = url?.trim();
-      nextUrl = updatedUrl?.isEmpty == true ? null : url;
-    }
+    final nextUrl = hasUrlUpdate
+        ? _nextConnectionUrl(modelConnection.url)
+        : existing.url;
     final models = await _modelProviderServices.getWorkspaceModelSelections(
       ModelProvider(
         type: .fromString(modelType.value),
@@ -277,6 +275,12 @@ class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
     }
 
     return _modelProviderTableToEntity(updated);
+  }
+
+  static String? _nextConnectionUrl(String? url) {
+    final updatedUrl = url?.trim();
+
+    return updatedUrl?.isEmpty == true ? null : url;
   }
 
   @override

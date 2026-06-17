@@ -121,14 +121,7 @@ class AppDatabase extends _$AppDatabase {
       await m.createTable(workspaceCompactionSettings);
     }
     final hasApiModels = await _tableExists('api_models');
-    if (!await _tableExists('api_model_providers')) {
-      await m.createTable(apiModelProviders);
-    }
-    if (!hasApiModels) {
-      await m.createTable(apiModels);
-    } else if (from < 3) {
-      await m.addColumn(apiModels, apiModels.supportsReasoning);
-    }
+    await _ensureApiModelTables(m, from, hasApiModels);
     if (from < 4) {
       await _migrateModelConnectionsToServiceConnections(m);
     }
@@ -144,6 +137,36 @@ class AppDatabase extends _$AppDatabase {
     if (from >= 4 && from < 8) {
       await _addServiceConnectionLifecycleColumns(m);
     }
+    await _addApiModelFeatureColumns(m, from, hasApiModels);
+
+    await _addMcpServiceConnectionColumnIfNeeded(m, from);
+  }
+
+  Future<void> _ensureApiModelTables(
+    Migrator m,
+    int from,
+    bool hasApiModels,
+  ) async {
+    if (!await _tableExists('api_model_providers')) {
+      await m.createTable(apiModelProviders);
+    }
+    if (!hasApiModels) {
+      await m.createTable(apiModels);
+
+      return;
+    }
+    if (from < 3) {
+      await m.addColumn(apiModels, apiModels.supportsReasoning);
+    }
+  }
+
+  Future<void> _addApiModelFeatureColumns(
+    Migrator m,
+    int from,
+    bool hasApiModels,
+  ) async {
+    if (!hasApiModels) return;
+
     if (hasApiModels && from < 9) {
       await m.addColumn(apiModels, apiModels.isCanonical);
     }
@@ -156,8 +179,6 @@ class AppDatabase extends _$AppDatabase {
     if (hasApiModels && from < 12) {
       await m.addColumn(apiModels, apiModels.supportsToolCalls);
     }
-
-    await _addMcpServiceConnectionColumnIfNeeded(m, from);
   }
 
   Future<void> _migrateModelConnectionsToServiceConnections(Migrator m) async {

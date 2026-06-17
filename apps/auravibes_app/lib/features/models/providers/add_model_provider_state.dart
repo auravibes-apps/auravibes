@@ -88,54 +88,14 @@ class AddModelProviderState extends _$AddModelProviderState {
       final repo = ref.read(modelConnectionRepositoryProvider);
       final authMode = state.authMode;
       if (authMode == ModelProviderAuthMode.oauth2) {
-        if (!isOpenAICodexProvider(modelId)) {
-          throw ModelConnectionException('OAuth profile not found: $modelId');
-        }
-        if (openAICodexClientId.isEmpty) {
-          throw const ModelConnectionException(
-            'OAuth client ID is not configured for $openAICodexDisplayName',
-          );
-        }
-        final openAIModels = await ref
-            .read(apiModelRepositoryProvider)
-            .getModelsByProvider('openai');
-        final modelIds = openAIModels
-            .where((model) => model.isCodexRuntimeModel)
-            .map((model) => model.id)
-            .toList();
-        if (modelIds.isEmpty) {
-          throw const ModelConnectionException(
-            'OpenAI model catalog is unavailable. Retry after model sync.',
-          );
-        }
-        final token = switch (codexOAuthMethod) {
-          CodexOAuthMethod.deviceCode =>
-            await CodexOAuthService().authenticateWithDeviceCode(
-              onDeviceCode: onCodexDeviceCode,
-              isCancelled: isCodexDeviceCodeCancelled,
-            ),
-          _ => await CodexOAuthService().authenticateWithBrowser(),
-        };
-
-        return await repo.createModelConnection(
-          ModelConnectionToCreate(
-            name: name,
-            workspaceId: _workspaceId,
-            modelId: modelId,
-            authMode: authMode,
-            url: state.url,
-            oauthToken: token,
-            oauthMetadata: ServiceConnectionMetadata(
-              clientId: openAICodexClientId,
-              issuer: openAICodexIssuer,
-              authorizationEndpoint: openAICodexAuthorizationEndpoint,
-              tokenEndpoint: openAICodexTokenEndpoint,
-              scopes: openAICodexScopes,
-              accountId: CodexOAuthService.accountIdFromToken(token),
-              provider: openAICodexProviderId,
-            ),
-            modelIds: modelIds,
-          ),
+        return await _addOAuthModelProvider(
+          repo,
+          name,
+          modelId,
+          authMode,
+          codexOAuthMethod,
+          onCodexDeviceCode,
+          isCodexDeviceCodeCancelled,
         );
       }
 
@@ -156,6 +116,72 @@ class AddModelProviderState extends _$AddModelProviderState {
       _log.severe('addModelProvider error', e, s);
       rethrow;
     }
+  }
+
+  Future<ModelConnectionEntity> _addOAuthModelProvider(
+    ModelConnectionRepository repo,
+    String name,
+    String modelId,
+    ModelProviderAuthMode authMode,
+    CodexOAuthMethod? codexOAuthMethod,
+    void Function(CodexDeviceCode deviceCode)? onCodexDeviceCode,
+    bool Function()? isCodexDeviceCodeCancelled,
+  ) async {
+    if (!isOpenAICodexProvider(modelId)) {
+      throw ModelConnectionException('OAuth profile not found: $modelId');
+    }
+    if (openAICodexClientId.isEmpty) {
+      throw const ModelConnectionException(
+        'OAuth client ID is not configured for $openAICodexDisplayName',
+      );
+    }
+    final modelIds = await _codexRuntimeModelIds();
+    final token = switch (codexOAuthMethod) {
+      CodexOAuthMethod.deviceCode =>
+        await CodexOAuthService().authenticateWithDeviceCode(
+          onDeviceCode: onCodexDeviceCode,
+          isCancelled: isCodexDeviceCodeCancelled,
+        ),
+      _ => await CodexOAuthService().authenticateWithBrowser(),
+    };
+
+    return repo.createModelConnection(
+      ModelConnectionToCreate(
+        name: name,
+        workspaceId: _workspaceId,
+        modelId: modelId,
+        authMode: authMode,
+        url: state.url,
+        oauthToken: token,
+        oauthMetadata: ServiceConnectionMetadata(
+          clientId: openAICodexClientId,
+          issuer: openAICodexIssuer,
+          authorizationEndpoint: openAICodexAuthorizationEndpoint,
+          tokenEndpoint: openAICodexTokenEndpoint,
+          scopes: openAICodexScopes,
+          accountId: CodexOAuthService.accountIdFromToken(token),
+          provider: openAICodexProviderId,
+        ),
+        modelIds: modelIds,
+      ),
+    );
+  }
+
+  Future<List<String>> _codexRuntimeModelIds() async {
+    final openAIModels = await ref
+        .read(apiModelRepositoryProvider)
+        .getModelsByProvider('openai');
+    final modelIds = openAIModels
+        .where((model) => model.isCodexRuntimeModel)
+        .map((model) => model.id)
+        .toList();
+    if (modelIds.isEmpty) {
+      throw const ModelConnectionException(
+        'OpenAI model catalog is unavailable. Retry after model sync.',
+      );
+    }
+
+    return modelIds;
   }
 }
 
