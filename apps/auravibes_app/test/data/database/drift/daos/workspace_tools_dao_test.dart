@@ -356,6 +356,22 @@ void main() {
       expect(updated.permissions, equals(PermissionAccess.granted));
     });
 
+    test('updateToolMetadata updates description and schema', () async {
+      final created = await seedTool(toolId: 'metadata');
+      await fixture.database.workspaceToolsDao.updateToolMetadata(
+        id: created.id,
+        description: 'Updated description',
+        inputSchema: '{"type":"object"}',
+      );
+
+      final updated = await fixture.database.workspaceToolsDao.getWorkspaceTool(
+        workspaceId,
+        created.id,
+      );
+      expect(updated?.description, equals('Updated description'));
+      expect(updated?.inputSchema, equals('{"type":"object"}'));
+    });
+
     test('deleteToolsByGroupId removes tools in group', () async {
       final group = await fixture.database.toolsGroupsDao.insertToolsGroup(
         ToolsGroupsCompanion.insert(

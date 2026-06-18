@@ -186,8 +186,8 @@ class WorkspaceToolsDao extends DatabaseAccessor<AppDatabase>
 
   Future<void> updateToolMetadata({
     required String id,
-    required String? description,
-    required String? inputSchema,
+    required String description,
+    required String inputSchema,
   }) => (update(tools)..where((tbl) => tbl.id.equals(id))).write(
     ToolsCompanion(
       updatedAt: Value(DateTime.now()),
