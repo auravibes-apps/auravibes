@@ -134,21 +134,23 @@ void main() {
           )).single;
       final _ = await fixture.database.workspaceToolsDao
           .setWorkspaceToolEnabledById(
-        created.id,
-        isEnabled: false,
-      );
+            created.id,
+            isEnabled: false,
+          );
       final _ = await fixture.database.workspaceToolsDao
           .setWorkspaceToolPermission(
-        created.id,
-        permission: PermissionAccess.granted,
-      );
+            created.id,
+            permission: PermissionAccess.granted,
+          );
 
       const updatedSpec = ToolSpec(
         name: 'skill__user__example__search',
         description: 'Search updated records',
         inputJsonSchema: {
           'type': 'object',
-          'properties': {'query': {'type': 'string'}},
+          'properties': {
+            'query': {'type': 'string'},
+          },
         },
       );
       stubSpecs(template: [updatedSpec]);
