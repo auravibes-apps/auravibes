@@ -1,5 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/domain/models/mcp_connection_view_status.dart';
+import 'package:auravibes_app/features/skills/usecases/sync_skill_tool_permissions_usecase.dart';
 import 'package:auravibes_app/features/tools/models/conversation_tools_group_with_tools.dart';
 import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
@@ -27,6 +28,16 @@ class GroupedConversationToolsNotifier
     required String workspaceId,
     String? conversationId,
   }) async {
+    final convId = conversationId;
+    if (convId != null && convId.isNotEmpty) {
+      await ref
+          .watch(syncSkillToolPermissionsUsecaseProvider)
+          .call(
+            conversationId: convId,
+            workspaceId: workspaceId,
+          );
+    }
+
     // Get all conversation tool states.
     final conversationTools = await ref.watch(
       conversationToolsProvider(

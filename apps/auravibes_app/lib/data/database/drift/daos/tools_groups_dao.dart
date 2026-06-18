@@ -57,6 +57,21 @@ class ToolsGroupsDao extends DatabaseAccessor<AppDatabase>
   Future<ToolsGroupsTable?> getToolsGroupById(String id) =>
       (select(toolsGroups)..where((t) => t.id.equals(id))).getSingleOrNull();
 
+  /// Get a non-MCP tools group by workspace and name.
+  Future<ToolsGroupsTable?> getToolsGroupByName({
+    required String workspaceId,
+    required String name,
+  }) =>
+      (select(toolsGroups)
+            ..where(
+              (t) =>
+                  t.workspaceId.equals(workspaceId) &
+                  t.name.equals(name) &
+                  t.mcpServerId.isNull(),
+            )
+            ..limit(1))
+          .getSingleOrNull();
+
   /// Update the enabled status of a tools group.
   ///
   /// Returns true if a row was updated.

@@ -227,11 +227,6 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
       conversationId,
     );
 
-    // Extract tool types from workspace enabled tools.
-    final workspaceEnabledToolTypes = workspaceEnabledTools
-        .map((tool) => tool.toolId)
-        .toList();
-
     // Extract tool types from disabled tools.
     final disabledToolTypes = conversationTools
         .where((tool) => !tool.isEnabled)
@@ -239,8 +234,9 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
         .toSet();
 
     // Available tools = workspace enabled tools - disabled tools.
-    return workspaceEnabledToolTypes
-        .where((toolType) => !disabledToolTypes.contains(toolType))
+    return workspaceEnabledTools
+        .where((tool) => !disabledToolTypes.contains(tool.id))
+        .map((tool) => tool.toolId)
         .toList();
   }
 
@@ -266,7 +262,7 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
 
     // Available tools = workspace enabled tools - disabled tools.
     return workspaceEnabledTools
-        .where((tool) => !disabledToolTypes.contains(tool.toolId))
+        .where((tool) => !disabledToolTypes.contains(tool.id))
         .toList();
   }
 

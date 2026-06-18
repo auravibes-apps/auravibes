@@ -2,6 +2,7 @@ import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/services/tools/native_tool_type.dart';
 import 'package:auravibes_app/services/tools/user_tool_type.dart';
+import 'package:auravibes_app/utils/tool_name_formatter.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:flutter/material.dart';
 
@@ -77,6 +78,11 @@ extension WorkspaceToolEntityWidgets on WorkspaceToolEntity {
 
     if (native != null) {
       return native.getNameWidget();
+    }
+
+    final skillDisplayName = ToolNameFormatter.formatSkillDisplayName(toolId);
+    if (skillDisplayName != null) {
+      return Text(skillDisplayName);
     }
 
     return Text(toolId);

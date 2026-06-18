@@ -5,17 +5,15 @@ import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/domain/enums/tool_grant_level.dart';
+import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
-import 'package:auravibes_app/domain/repositories/tools_groups_repository.dart';
-import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/resume_conversation_if_ready_usecase.dart';
 import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.dart';
-import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
-import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/usecases/run_resolved_tool_usecase.dart';
+import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
 import 'package:auravibes_app/utils/encode.dart';
@@ -27,20 +25,20 @@ final _logger = Logger('approve_tool_call_usecase');
 class ApproveToolCallUsecase {
   const ApproveToolCallUsecase({
     required this._messageRepository,
+    required this._conversationRepository,
     required this._conversationToolsRepository,
-    required this._toolsGroupsRepository,
-    required this._workspaceToolsRepository,
     required this._toolResolverService,
+    required this._resolveToolApprovalDecisionUsecase,
     required this._resumeConversationIfReadyUsecase,
     required this._runResolvedToolUsecase,
     required this._agentCancellationRuntime,
   });
 
   final MessageRepository _messageRepository;
+  final ConversationRepository _conversationRepository;
   final ConversationToolsRepository _conversationToolsRepository;
-  final ToolsGroupsRepository _toolsGroupsRepository;
-  final WorkspaceToolsRepository _workspaceToolsRepository;
   final ToolResolverService _toolResolverService;
+  final ResolveToolApprovalDecisionUsecase _resolveToolApprovalDecisionUsecase;
   final ResumeConversationIfReadyUsecase _resumeConversationIfReadyUsecase;
   final RunResolvedToolUsecase _runResolvedToolUsecase;
   final AgentCancellationRuntime _agentCancellationRuntime;
@@ -71,7 +69,16 @@ class ApproveToolCallUsecase {
     }
 
     if (level == ToolGrantLevel.conversation) {
-      final permissionTableId = await _resolvePermissionTableId(resolvedTool);
+      final conversation = await _conversationRepository.getConversationById(
+        message.conversationId,
+      );
+      final permissionTableId = conversation == null
+          ? null
+          : await _resolveToolApprovalDecisionUsecase.resolvePermissionTableId(
+              conversationId: message.conversationId,
+              workspaceId: conversation.workspaceId,
+              resolvedTool: resolvedTool,
+            );
       if (permissionTableId != null) {
         final _ = await _conversationToolsRepository
             .setConversationToolPermission(
@@ -185,26 +192,6 @@ class ApproveToolCallUsecase {
       ),
     );
   }
-
-  Future<String?> _resolvePermissionTableId(ResolvedTool resolvedTool) async {
-    final mcpServerId = resolvedTool.mcpServerId;
-    if (mcpServerId == null) {
-      return resolvedTool.tableId;
-    }
-
-    final toolGroup = await _toolsGroupsRepository.getToolsGroupByMcpServerId(
-      mcpServerId,
-    );
-    if (toolGroup == null) return null;
-
-    final workspaceTool = await _workspaceToolsRepository
-        .getWorkspaceToolByToolName(
-          toolGroupId: toolGroup.id,
-          toolName: resolvedTool.toolIdentifier,
-        );
-
-    return workspaceTool?.id;
-  }
 }
 
 class _ExecutionResult {
@@ -217,10 +204,12 @@ class _ExecutionResult {
 final approveToolCallUsecaseProvider = Provider<ApproveToolCallUsecase>((ref) {
   return ApproveToolCallUsecase(
     messageRepository: ref.watch(messageRepositoryProvider),
+    conversationRepository: ref.watch(conversationRepositoryProvider),
     conversationToolsRepository: ref.watch(conversationToolsRepositoryProvider),
-    toolsGroupsRepository: ref.watch(toolsGroupsRepositoryProvider),
-    workspaceToolsRepository: ref.watch(workspaceToolsRepositoryProvider),
     toolResolverService: ToolResolverService(),
+    resolveToolApprovalDecisionUsecase: ref.watch(
+      resolveToolApprovalDecisionUsecaseProvider,
+    ),
     resumeConversationIfReadyUsecase: ref.watch(
       resumeConversationIfReadyUsecaseProvider,
     ),

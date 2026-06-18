@@ -130,6 +130,14 @@ void main() {
       final result = ToolNameFormatter.formatDisplayName(parsed);
       expect(result, 'Raw Name');
     });
+
+    test('formats skill display name', () {
+      final parsed = ToolNameFormatter.parse(
+        'skill__user__research_tools__search_web',
+      );
+      final result = ToolNameFormatter.formatDisplayName(parsed);
+      expect(result, 'Research Tools: Search Web');
+    });
   });
 
   group('ParsedToolId.when', () {

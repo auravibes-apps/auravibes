@@ -90,6 +90,26 @@ class ToolNameFormatter {
     return create(tableId: tableId, toolIdentifier: toolIdentifier);
   }
 
+  static ({String source, String skillSlug, String toolSlug})?
+  parseSkillToolName(String compositeId) {
+    return switch (compositeId.split('__')) {
+      ['skill', final source, final skillSlug, final toolSlug]
+          when (source == 'user' || source == 'app') &&
+              skillSlug.isNotEmpty &&
+              toolSlug.isNotEmpty =>
+        (source: source, skillSlug: skillSlug, toolSlug: toolSlug),
+      _ => null,
+    };
+  }
+
+  static String? formatSkillDisplayName(String compositeId) {
+    final parsed = parseSkillToolName(compositeId);
+    if (parsed == null) return null;
+
+    return '${parsed.skillSlug.toHumanReadable()}: '
+        '${parsed.toolSlug.toHumanReadable()}';
+  }
+
   /// Formats a tool display name using the parsed ID and optional server name.
   ///
   /// For MCP tools, uses the format: `<serverName>: <Tool Name>`
@@ -115,8 +135,7 @@ class ToolNameFormatter {
         return toolIdentifier.toHumanReadable();
       },
       unknown: (rawName) {
-        // Best effort: try to make it readable.
-        return rawName.toHumanReadable();
+        return formatSkillDisplayName(rawName) ?? rawName.toHumanReadable();
       },
     );
   }

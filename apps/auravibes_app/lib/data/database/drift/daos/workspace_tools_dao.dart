@@ -184,6 +184,18 @@ class WorkspaceToolsDao extends DatabaseAccessor<AppDatabase>
             ]))
           .getSingleOrNull();
 
+  Future<void> updateToolMetadata({
+    required String id,
+    required String? description,
+    required String? inputSchema,
+  }) => (update(tools)..where((tbl) => tbl.id.equals(id))).write(
+    ToolsCompanion(
+      updatedAt: Value(DateTime.now()),
+      description: Value(description),
+      inputSchema: Value(inputSchema),
+    ),
+  );
+
   Future<bool> isWorkspaceToolEnabled(String workspaceId, String id) async {
     final result =
         await (selectOnly(tools)

@@ -162,6 +162,37 @@ void main() {
       expect(find.textContaining('query'), findsOneWidget);
     });
 
+    testWidgets('shows URL request summary from native tool input', (
+      tester,
+    ) async {
+      const toolCall = MessageToolCallEntity(
+        id: 'tc-1',
+        name: 'native_1_url',
+        argumentsRaw:
+            r'{"input":"{\"url\":\"https://example.com/api/items\",'
+            r'\"method\":\"post\",'
+            r'\"headers\":{\"Authorization\":\"Bearer secret-token\"}}"}',
+      );
+      final pendingCalls = [
+        const PendingToolCall(toolCall: toolCall, messageId: 'msg-1'),
+      ];
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          overrides: [
+            pendingToolCallsProvider.overrideWith((ref) => pendingCalls),
+          ],
+        ),
+      );
+
+      expect(find.textContaining('"method": "POST"'), findsOneWidget);
+      expect(find.textContaining('"host": "example.com"'), findsOneWidget);
+      expect(find.textContaining('"path": "/api/items"'), findsOneWidget);
+      expect(find.textContaining('Authorization'), findsNothing);
+      expect(find.textContaining('secret-token'), findsNothing);
+    });
+
     testWidgets('renders confirmation buttons', (tester) async {
       final pendingCalls = [_createPendingToolCall()];
       await pumpAndInit(
