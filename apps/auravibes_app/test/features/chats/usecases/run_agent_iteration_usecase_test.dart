@@ -1,5 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
+import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
@@ -12,6 +13,9 @@ import 'package:auravibes_app/features/chats/usecases/agent_iteration_decision.d
 import 'package:auravibes_app/features/chats/usecases/continue_agent_result.dart';
 import 'package:auravibes_app/features/chats/usecases/maybe_auto_compact_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/run_agent_iteration_usecase.dart';
+import 'package:auravibes_app/providers/app_providers.dart';
+import 'package:drift/drift.dart' show DatabaseConnection;
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
@@ -996,13 +1000,18 @@ void main() {
     });
 
     test('provider returns usecase with maybeAutoCompact wired', () {
+      final database = AppDatabase(
+        connection: DatabaseConnection(NativeDatabase.memory()),
+      );
       final container = ProviderContainer(
         overrides: [
+          appDatabaseProvider.overrideWithValue(database),
           maybeAutoCompactConversationUsecaseProvider.overrideWith(
             (ref) => MockMaybeAutoCompactConversationUsecase(),
           ),
         ],
       );
+      addTearDown(database.close);
       addTearDown(container.dispose);
 
       final usecase = container.read(runAgentIterationUsecaseProvider);
