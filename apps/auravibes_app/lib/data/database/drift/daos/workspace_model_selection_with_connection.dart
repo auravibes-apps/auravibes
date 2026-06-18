@@ -10,13 +10,13 @@ class WorkspaceModelSelectionWithConnection {
   WorkspaceModelSelectionWithConnection({
     required this.model,
     required this.modelConnection,
-    required this.modelProvider,
+    this.modelProvider,
     this.apiModel,
   });
 
   final WorkspaceModelSelectionTable model;
   final ServiceConnectionTable modelConnection;
-  final ApiModelProvidersTable modelProvider;
+  final ApiModelProvidersTable? modelProvider;
   final ApiModelsTable? apiModel;
 }
 
@@ -79,7 +79,7 @@ class WorkspaceModelSelectionsDao extends DatabaseAccessor<AppDatabase>
           workspaceModelSelections.modelConnectionId,
         ),
       ),
-      innerJoin(
+      leftOuterJoin(
         apiModelProviders,
         apiModelProviders.id.equalsExp(serviceConnections.serviceId),
       ),
@@ -107,7 +107,7 @@ class WorkspaceModelSelectionsDao extends DatabaseAccessor<AppDatabase>
       WorkspaceModelSelectionWithConnection(
         model: row.readTable(workspaceModelSelections),
         modelConnection: row.readTable(serviceConnections),
-        modelProvider: row.readTable(apiModelProviders),
+        modelProvider: row.readTableOrNull(apiModelProviders),
         apiModel: row.readTableOrNull(apiModels),
       );
 }

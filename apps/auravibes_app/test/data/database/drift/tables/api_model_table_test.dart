@@ -80,6 +80,7 @@ void main() {
           'model_provider',
           'id',
           'name',
+          'family',
           'modalities_input',
           'modalities_ouput',
           'open_weights',
@@ -89,12 +90,15 @@ void main() {
           'limit_context',
           'limit_output',
           'supports_reasoning',
+          'is_canonical',
+          'supports_priority_mode',
+          'supports_tool_calls',
         ]),
       );
     });
 
-    test('has 12 columns', () {
-      expect(columns.length, 12);
+    test('has 16 columns', () {
+      expect(columns.length, 16);
     });
 
     test('composite primary key on id and model_provider', () {
@@ -194,6 +198,7 @@ void main() {
       expect(table.modelProvider.name, 'model_provider');
       expect(table.id.name, 'id');
       expect(table.name.name, 'name');
+      expect(table.family.name, 'family');
       expect(table.modalitiesInput.name, 'modalities_input');
       expect(table.modalitiesOuput.name, 'modalities_ouput');
       expect(table.openWeights.name, 'open_weights');
@@ -203,11 +208,14 @@ void main() {
       expect(table.limitContext.name, 'limit_context');
       expect(table.limitOutput.name, 'limit_output');
       expect(table.supportsReasoning.name, 'supports_reasoning');
+      expect(table.isCanonical.name, 'is_canonical');
+      expect(table.supportsPriorityMode.name, 'supports_priority_mode');
+      expect(table.supportsToolCalls.name, 'supports_tool_calls');
     });
 
-    test(r'$columns returns all 12 columns', () {
+    test(r'$columns returns all 16 columns', () {
       final table = fixture.database.apiModels;
-      expect(table.$columns.length, 12);
+      expect(table.$columns.length, 16);
     });
 
     test('table name is api_models', () {

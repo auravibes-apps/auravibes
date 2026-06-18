@@ -9,7 +9,12 @@ import 'package:auravibes_app/services/mcp_service/o_auth_discovery_result.dart'
 import 'package:auravibes_app/utils/map_exception.dart';
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
+
+class OAuthAuthenticationCanceledException implements Exception {
+  const OAuthAuthenticationCanceledException();
+}
 
 class OAuthAuthenticate {
   OAuthAuthenticate({
@@ -89,10 +94,7 @@ class OAuthAuthenticate {
       codeChallenge: codeChallenge,
     );
 
-    final result = await FlutterWebAuth2.authenticate(
-      url: uri.toString(),
-      callbackUrlScheme: callbackUrlScheme,
-    );
+    final result = await _authenticateInBrowser(uri);
 
     final code = validateGetCode(
       urlResult: result,
@@ -105,6 +107,24 @@ class OAuthAuthenticate {
       codeVerifier: codeVerifier,
       redirectUrl: redirectUrl,
     );
+  }
+
+  Future<String> _authenticateInBrowser(Uri uri) async {
+    try {
+      return await FlutterWebAuth2.authenticate(
+        url: uri.toString(),
+        callbackUrlScheme: callbackUrlScheme,
+      );
+    } on PlatformException catch (e, stackTrace) {
+      if (e.code == 'CANCELED') {
+        Error.throwWithStackTrace(
+          const OAuthAuthenticationCanceledException(),
+          stackTrace,
+        );
+      }
+
+      rethrow;
+    }
   }
 
   static Uri buildAuthorizationUri({
@@ -173,6 +193,7 @@ class OAuthAuthenticate {
           'client_id': clientId,
       },
       options: Options(
+        headers: const {'Accept': 'application/json'},
         responseType: ResponseType.json,
         contentType: Headers.formUrlEncodedContentType,
       ),

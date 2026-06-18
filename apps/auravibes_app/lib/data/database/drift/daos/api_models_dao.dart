@@ -50,6 +50,13 @@ class ApiModelsDao extends DatabaseAccessor<AppDatabase>
         .get();
   }
 
+  Stream<List<ApiModelsTable>> watchModelsByProvider(String providerId) {
+    return (select(apiModels)
+          ..where((t) => t.modelProvider.equals(providerId))
+          ..orderBy([(t) => OrderingTerm(expression: t.name)]))
+        .watch();
+  }
+
   /// Inserts a new model into the database.
   ///
   /// Returns the inserted model.

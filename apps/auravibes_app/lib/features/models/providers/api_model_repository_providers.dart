@@ -8,7 +8,9 @@ import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/repositories/api_model_repository.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/services/model_api_service.dart';
+import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:auravibes_app/services/model_sync_service.dart';
+import 'package:collection/collection.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'api_model_repository_providers.g.dart';
@@ -22,13 +24,13 @@ ApiModelRepository apiModelRepository(Ref ref) {
 }
 
 /// Provider for the model API service.
-@riverpod
+@Riverpod(keepAlive: true)
 ModelApiService modelApiService(Ref _) {
   return ModelApiService();
 }
 
 /// Provider for the model sync service.
-@riverpod
+@Riverpod(keepAlive: true)
 ModelSyncService modelSyncService(Ref ref) {
   final repository = ref.watch(apiModelRepositoryProvider);
   final apiService = ref.watch(modelApiServiceProvider);
@@ -51,8 +53,30 @@ ModelSyncService modelSyncService(Ref ref) {
 }
 
 @riverpod
-Future<List<ApiModelProviderEntity>> apiModelProviders(Ref ref) {
-  return ref.watch(apiModelRepositoryProvider).getAllProviders();
+Future<List<ApiModelProviderEntity>> apiModelProviders(Ref ref) async {
+  final providers = await ref
+      .watch(apiModelRepositoryProvider)
+      .getAllProviders();
+  final realProviders = providers
+      .where((p) => !isOpenAICodexProvider(p.id) && p.type != null)
+      .toList();
+  final openAIProvider = realProviders.firstWhereOrNull(
+    (provider) => provider.id == 'openai',
+  );
+  if (openAIProvider == null || openAICodexClientId.isEmpty) {
+    return realProviders;
+  }
+
+  return [
+    ApiModelProviderEntity(
+      id: openAICodexProviderId,
+      name: openAICodexDisplayName,
+      type: .openai,
+      url: openAIProvider.url,
+      doc: openAIProvider.doc,
+    ),
+    ...realProviders,
+  ];
 }
 
 @Riverpod(keepAlive: true)

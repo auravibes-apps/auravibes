@@ -105,7 +105,6 @@ class ServiceConnectionMetadata {
     this.accountId,
     this.tenantId,
     this.provider,
-    this.flags = const {},
   });
 
   factory ServiceConnectionMetadata.fromJson(Map<String, dynamic> json) {
@@ -122,10 +121,6 @@ class ServiceConnectionMetadata {
       accountId: _stringOrNull(json['account_id']),
       tenantId: _stringOrNull(json['tenant_id']),
       provider: _stringOrNull(json['provider']),
-      flags: switch (json['flags']) {
-        final Map<String, dynamic> flags => flags,
-        _ => const {},
-      },
     );
   }
 
@@ -137,7 +132,6 @@ class ServiceConnectionMetadata {
   final String? accountId;
   final String? tenantId;
   final String? provider;
-  final Map<String, dynamic> flags;
 
   Map<String, dynamic> toJson() {
     return {
@@ -150,7 +144,6 @@ class ServiceConnectionMetadata {
       if (accountId != null) 'account_id': accountId,
       if (tenantId != null) 'tenant_id': tenantId,
       if (provider != null) 'provider': provider,
-      if (flags.isNotEmpty) 'flags': flags,
     };
   }
 
@@ -200,6 +193,7 @@ class ServiceConnectionAuthCodec {
       accessToken: secret.accessToken,
       issuedAt: issuedAt,
       refreshToken: secret.refreshToken,
+      idToken: secret.idToken,
       expiresIn: expiresIn,
       scopes: scopes,
     );

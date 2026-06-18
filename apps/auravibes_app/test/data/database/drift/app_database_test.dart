@@ -181,7 +181,7 @@ void main() {
     });
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 8);
+      expect(fixture.database.schemaVersion, 12);
     });
 
     test('creates successfully with in-memory connection', () {
@@ -265,8 +265,8 @@ void main() {
       expect(strategy, isNotNull);
     });
 
-    test('schemaVersion is 8', () {
-      expect(fixture.database.schemaVersion, 8);
+    test('schemaVersion is 12', () {
+      expect(fixture.database.schemaVersion, 12);
     });
 
     test(

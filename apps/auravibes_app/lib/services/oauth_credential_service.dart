@@ -213,6 +213,7 @@ class OAuthCredentialService {
       accessToken: accessToken,
       issuedAt: DateTime.now(),
       refreshToken: data['refresh_token'] as String? ?? previousRefreshToken,
+      idToken: data['id_token'] as String?,
       expiresIn: data['expires_in'] as int?,
       tokenType: data['token_type'] as String?,
       scopes: switch (data['scope']) {

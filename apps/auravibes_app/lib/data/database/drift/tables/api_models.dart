@@ -20,6 +20,8 @@ class ApiModels extends Table {
   /// Human-readable name of the model.
   TextColumn get name => text()();
 
+  TextColumn get family => text().nullable()();
+
   /// Type of chat model (local or remote).
   /// Stored as string to handle enum conversion
 
@@ -31,6 +33,14 @@ class ApiModels extends Table {
   BoolColumn get openWeights => boolean().nullable()();
 
   BoolColumn get supportsReasoning =>
+      boolean().withDefault(const Constant(false))();
+
+  BoolColumn get isCanonical => boolean().withDefault(const Constant(true))();
+
+  BoolColumn get supportsPriorityMode =>
+      boolean().withDefault(const Constant(false))();
+
+  BoolColumn get supportsToolCalls =>
       boolean().withDefault(const Constant(false))();
 
   // Cost.

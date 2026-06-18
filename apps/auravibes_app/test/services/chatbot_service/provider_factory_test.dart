@@ -6,6 +6,7 @@ import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/services/chatbot_service/provider_factory.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
+import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:auravibes_app/services/secret_key_manager.dart';
 import 'package:auravibes_genkit_providers/auravibes_genkit_providers.dart';
 import 'package:cryptography/cryptography.dart';
@@ -26,6 +27,8 @@ void main() {
       String? providerUrl,
       String providerId = 'p1',
       String providerName = 'TestProvider',
+      String? connectionModelId,
+      ModelProviderAuthMode authMode = ModelProviderAuthMode.apiKey,
       bool supportsReasoning = false,
     }) {
       return WorkspaceModelSelectionWithConnectionEntity(
@@ -41,10 +44,11 @@ void main() {
           id: 'mc1',
           name: 'Test',
           key: 'encrypted-key',
-          modelId: modelId,
+          modelId: connectionModelId ?? modelId,
           createdAt: DateTime(2025),
           updatedAt: DateTime(2025),
           workspaceId: 'w1',
+          authMode: authMode,
           url: connectionUrl,
         ),
         modelsProvider: ApiModelProviderEntity(
@@ -61,6 +65,34 @@ void main() {
       final ai = await factory.createGenkit(config);
 
       expect(ai, isA<Genkit>());
+    });
+
+    test('creates Genkit for Codex OAuth without model discovery', () async {
+      final oauthFactory = ProviderFactory(
+        encryptionService: _FakeEncryptionService(),
+        resolveOAuthAccessToken: (_) async => 'oauth-token',
+      );
+      final config = makeConfig(
+        type: ModelProvidersType.openai,
+        connectionModelId: openAICodexProviderId,
+        authMode: ModelProviderAuthMode.oauth2,
+      );
+
+      final ai = await oauthFactory.createGenkit(config);
+
+      expect(ai, isA<Genkit>());
+    });
+
+    test('resolves Codex OAuth model reference with Codex namespace', () {
+      final config = makeConfig(
+        type: ModelProvidersType.openai,
+        connectionModelId: openAICodexProviderId,
+        authMode: ModelProviderAuthMode.oauth2,
+      );
+
+      final ref = factory.getModelReference(config);
+
+      expect(ref.name, 'openai_codex/gpt-4o');
     });
 
     test('creates Genkit with legacy plaintext API key', () async {

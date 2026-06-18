@@ -113,6 +113,9 @@ void main() {
             id: 'openai',
             name: 'GPT-4',
             supportsReasoning: false,
+            isCanonical: true,
+            supportsPriorityMode: false,
+            supportsToolCalls: false,
             limitContext: 128000,
             limitOutput: 4096,
           ),
@@ -131,6 +134,10 @@ void main() {
         expect(result.firstOrNull?.workspaceModelSelection.id, 'sel-1');
         expect(result.firstOrNull?.workspaceModelSelection.modelId, 'openai');
         expect(result.firstOrNull?.workspaceModelSelection.modelName, 'GPT-4');
+        expect(
+          result.firstOrNull?.workspaceModelSelection.supportsToolCalls,
+          false,
+        );
         expect(result.firstOrNull?.modelConnection.id, 'conn-1');
         expect(result.firstOrNull?.modelConnection.name, 'My Connection');
         expect(result.firstOrNull?.modelsProvider.id, 'openai');

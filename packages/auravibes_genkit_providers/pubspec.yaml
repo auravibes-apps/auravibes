@@ -10,6 +10,7 @@ environment:
 dependencies:
   genkit: ^0.14.1
   http: ^1.6.0
+  openai_dart: ^5.0.0
 
 dev_dependencies:
   test: ^1.28.0
