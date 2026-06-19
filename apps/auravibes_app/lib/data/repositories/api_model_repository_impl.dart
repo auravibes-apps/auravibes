@@ -123,6 +123,30 @@ class ApiModelRepositoryImpl implements ApiModelRepository {
     return deletedModels + deletedProviders;
   }
 
+  @override
+  Future<void> replaceAllData({
+    required List<ApiModelProviderEntity> providers,
+    required List<ApiModelEntity> models,
+  }) async {
+    final providerCompanions = providers
+        .map(_modelProviderEntityToCompanion)
+        .toList();
+    final modelCompanions = models.map(_mapEntityToCompanion).nonNulls.toList();
+
+    // Single transaction: a failure in any step rolls back the deletes, so a
+    // transient upsert error can't leave the data source empty.
+    // Order mirrors deleteAllData: models reference providers (no cascade), so
+    // models must be deleted before providers, and providers inserted first.
+    await _database.transaction(() async {
+      final _ = await _database.apiModelsDao.deleteAllModels();
+      final _ = await _database.apiModelProvidersDao.deleteAllProviders();
+      final _ = await _database.apiModelProvidersDao.batchUpsertProviders(
+        providerCompanions,
+      );
+      final _ = await _database.apiModelsDao.batchUpsertModels(modelCompanions);
+    });
+  }
+
   // Helper methods.
 
   /// Maps a database table record to a domain entity.

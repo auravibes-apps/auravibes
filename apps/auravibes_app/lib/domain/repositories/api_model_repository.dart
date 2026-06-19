@@ -71,4 +71,16 @@ abstract class ApiModelRepository {
   /// This is typically used during full resynchronization operations.
   /// Returns the number of deleted items (providers + models).
   Future<int> deleteAllData();
+
+  /// Atomically replaces all providers and models in a single transaction.
+  ///
+  /// Deletes all existing data, then inserts [providers] and [models]. If any
+  /// step fails the transaction is rolled back, preserving the previous
+  /// dataset instead of leaving the data source empty until the next sync.
+  /// Used by full resynchronization to avoid silent data loss on transient
+  /// upsert failures.
+  Future<void> replaceAllData({
+    required List<ApiModelProviderEntity> providers,
+    required List<ApiModelEntity> models,
+  });
 }

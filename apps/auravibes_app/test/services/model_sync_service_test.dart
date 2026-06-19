@@ -234,20 +234,42 @@ void main() {
         (_) async => ModelApiResponse(providers: []),
       );
       when(() => repository.getAllProviders()).thenAnswer((_) async => []);
-      when(() => repository.getAllModels()).thenAnswer((_) async => []);
-      when(() => repository.deleteAllData()).thenAnswer((_) async => 0);
       when(
-        () => repository.batchUpsertProviders(any()),
-      ).thenAnswer((_) async => []);
-      when(
-        () => repository.batchUpsertModels(any()),
-      ).thenAnswer((_) async => []);
+        () => repository.replaceAllData(
+          providers: any(named: 'providers'),
+          models: any(named: 'models'),
+        ),
+      ).thenAnswer((_) => Future<void>.value());
 
       final result = await service.performFullSync();
 
       expect(result.isSuccess, isTrue);
       expect(result.fullSync, isTrue);
       expect(result.duration, isNotNull);
+    });
+
+    test('performFullSync returns failure when atomic replace fails', () async {
+      when(() => apiService.getApiStatus()).thenAnswer(
+        (_) async => ModelApiStatus(
+          isAccessible: true,
+          lastChecked: DateTime(2026),
+        ),
+      );
+      when(() => apiService.fetchAllModels()).thenAnswer(
+        (_) async => ModelApiResponse(providers: []),
+      );
+      when(() => repository.getAllProviders()).thenAnswer((_) async => []);
+      when(
+        () => repository.replaceAllData(
+          providers: any(named: 'providers'),
+          models: any(named: 'models'),
+        ),
+      ).thenThrow(Exception('upsert failed'));
+
+      final result = await service.performFullSync();
+
+      expect(result.isSuccess, isFalse);
+      expect(result.errors.first, contains('Sync operation failed'));
     });
 
     test('performFullSync handles sync operation exception', () async {

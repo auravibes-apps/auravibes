@@ -270,6 +270,63 @@ void main() {
       });
     });
 
+    group('replaceAllData', () {
+      test('deletes then upserts in FK-safe order', () async {
+        when(
+          () => fixture.mockModelsDao.deleteAllModels(),
+        ).thenAnswer((_) async => 0);
+        when(
+          () => fixture.mockProvidersDao.deleteAllProviders(),
+        ).thenAnswer((_) async => 0);
+        when(
+          () => fixture.mockProvidersDao.batchUpsertProviders(any()),
+        ).thenAnswer((_) async => [providerRow]);
+        when(
+          () => fixture.mockModelsDao.batchUpsertModels(any()),
+        ).thenAnswer((_) async => [modelRow]);
+
+        await expectLater(
+          fixture.repository.replaceAllData(
+            providers: const [],
+            models: const [],
+          ),
+          completes,
+        );
+
+        // Models reference providers with no cascade, so models must be
+        // deleted before providers and inserted after them.
+        final _ = verifyInOrder([
+          () => fixture.mockModelsDao.deleteAllModels(),
+          () => fixture.mockProvidersDao.deleteAllProviders(),
+          () => fixture.mockProvidersDao.batchUpsertProviders(any()),
+          () => fixture.mockModelsDao.batchUpsertModels(any()),
+        ]);
+      });
+
+      test('propagates failures so the transaction rolls back', () async {
+        when(
+          () => fixture.mockModelsDao.deleteAllModels(),
+        ).thenAnswer((_) async => 0);
+        when(
+          () => fixture.mockProvidersDao.deleteAllProviders(),
+        ).thenAnswer((_) async => 0);
+        when(
+          () => fixture.mockProvidersDao.batchUpsertProviders(any()),
+        ).thenAnswer((_) async => []);
+        when(
+          () => fixture.mockModelsDao.batchUpsertModels(any()),
+        ).thenThrow(Exception('upsert failed'));
+
+        await expectLater(
+          fixture.repository.replaceAllData(
+            providers: const [],
+            models: const [],
+          ),
+          throwsA(isA<Exception>()),
+        );
+      });
+    });
+
     group('type mapping', () {
       test('maps null type from table correctly', () async {
         const rowWithTypeNull = ApiModelProvidersTable(

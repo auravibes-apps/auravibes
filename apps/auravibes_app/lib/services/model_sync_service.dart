@@ -102,20 +102,27 @@ class ModelSyncService {
 
       // Sync providers (clear and replace for full sync).
       if (fullSync) {
-        final _ = await repository.deleteAllData();
+        // Atomic replace: clear + insert run in one transaction so a transient
+        // failure rolls back to the previous dataset instead of wiping it.
+        await repository.replaceAllData(
+          providers: apiProviderEntities,
+          models: apiModelEntities,
+        );
         providersRemoved = localProviders.length;
+        providersAdded = apiProviderEntities.length;
+        modelsAdded = apiModelEntities.length;
+      } else {
+        // Batch insert providers and models.
+        final insertedProviders = await repository.batchUpsertProviders(
+          apiProviderEntities,
+        );
+        final insertedModels = await repository.batchUpsertModels(
+          apiModelEntities,
+        );
+
+        providersAdded = insertedProviders.length;
+        modelsAdded = insertedModels.length;
       }
-
-      // Batch insert providers and models.
-      final insertedProviders = await repository.batchUpsertProviders(
-        apiProviderEntities,
-      );
-      final insertedModels = await repository.batchUpsertModels(
-        apiModelEntities,
-      );
-
-      providersAdded = insertedProviders.length;
-      modelsAdded = insertedModels.length;
 
       return ModelSyncResult(
         isSuccess: true,
