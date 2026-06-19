@@ -9,6 +9,7 @@ import 'package:auravibes_app/domain/models/mcp_connection_view_status.dart';
 import 'package:auravibes_app/domain/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/domain/repositories/tools_groups_repository.dart';
 import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dart';
+import 'package:auravibes_app/features/skills/usecases/sync_skill_tool_permissions_usecase.dart';
 import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_conversation_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
@@ -16,6 +17,8 @@ import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
+
+import '../../../test_mocks.dart';
 
 void main() {
   group('GroupedConversationToolsNotifier', () {
@@ -257,6 +260,9 @@ class _GroupedConversationToolsFixture {
         ),
         conversationToolsRepositoryProvider.overrideWithValue(
           conversationToolsRepository,
+        ),
+        syncSkillToolPermissionsUsecaseProvider.overrideWithValue(
+          NoopSyncSkillToolPermissionsUsecase(),
         ),
         mcpConnectionProvider.overrideWith(() => mcpNotifier),
       ],

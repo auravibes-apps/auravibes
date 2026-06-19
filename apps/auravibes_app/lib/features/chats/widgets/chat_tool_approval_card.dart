@@ -3,6 +3,7 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing code repeats lookups where extraction adds noise.
 // Required: Feature widgets keep closely related private widgets together.
+import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
@@ -13,6 +14,7 @@ import 'package:auravibes_app/features/tools/usecases/approve_tool_call_usecase.
 import 'package:auravibes_app/features/tools/usecases/skip_tool_call_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/stop_all_pending_tool_calls_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
 import 'package:auravibes_app/utils/try_decode_tool_metadata.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -130,6 +132,7 @@ class _ApprovalCardContent extends ConsumerWidget {
           ),
           _ToolCallInfo(
             displayName: displayName,
+            toolName: toolCall.name,
             argumentsRaw: toolCall.argumentsRaw,
           ),
           _ConfirmationButtons(
@@ -240,16 +243,21 @@ class _NavButton extends StatelessWidget {
 class _ToolCallInfo extends StatelessWidget {
   const _ToolCallInfo({
     required this.displayName,
+    required this.toolName,
     required this.argumentsRaw,
   });
 
   final String displayName;
+  final String toolName;
   final String argumentsRaw;
 
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
-    final decodedArgs = tryDecodeToolMetadata(argumentsRaw);
+    final decodedArgs = _approvalArgumentsPreview(
+      toolName: toolName,
+      argumentsRaw: argumentsRaw,
+    );
 
     return Container(
       padding: EdgeInsets.all(context.auraTheme.spacing.sm),
@@ -285,6 +293,100 @@ class _ToolCallInfo extends StatelessWidget {
       ),
     );
   }
+}
+
+const JsonEncoder _approvalArgumentsEncoder = JsonEncoder.withIndent('  ');
+const _redactedValue = '****';
+const _sensitiveKeyParts = [
+  'auth',
+  'credential',
+  'secret',
+  'token',
+  'password',
+  'key',
+  'apikey',
+  'api_key',
+];
+
+String? _approvalArgumentsPreview({
+  required String toolName,
+  required String argumentsRaw,
+}) {
+  Object? decoded;
+  try {
+    decoded = jsonDecode(argumentsRaw);
+  } on Exception catch (_) {
+    return tryDecodeToolMetadata(argumentsRaw);
+  }
+
+  final urlSummary = _urlRequestSummary(decoded);
+  final preview = <String, Object?>{
+    if (urlSummary == null) 'arguments': _redactCredentialValues(decoded),
+  };
+  final skillTool = ToolNameFormatter.parseSkillToolName(toolName);
+  if (skillTool != null) {
+    preview['skill'] = {
+      'source': skillTool.source,
+      'skill': skillTool.skillSlug.toHumanReadable(),
+      'tool': skillTool.toolSlug.toHumanReadable(),
+    };
+  }
+  if (urlSummary != null) {
+    preview['request'] = urlSummary;
+  }
+
+  return _approvalArgumentsEncoder.convert(preview);
+}
+
+Object? _redactCredentialValues(Object? value) {
+  if (value is List) {
+    return value.map(_redactCredentialValues).toList();
+  }
+
+  if (value is Map) {
+    return {
+      for (final entry in value.entries)
+        entry.key: _isSensitiveKey(entry.key)
+            ? _redactedValue
+            : _redactCredentialValues(entry.value),
+    };
+  }
+
+  return value;
+}
+
+bool _isSensitiveKey(Object? key) {
+  final normalized = key.toString().toLowerCase();
+
+  return normalized == 'authorization' ||
+      _sensitiveKeyParts.any(normalized.contains);
+}
+
+Map<String, String>? _urlRequestSummary(Object? arguments) {
+  if (arguments is! Map) return null;
+
+  var request = arguments;
+  final input = arguments['input'];
+  if (arguments['url'] is! String && input is String) {
+    try {
+      final decodedInput = jsonDecode(input);
+      if (decodedInput is Map) request = decodedInput;
+    } on Exception catch (_) {}
+  }
+
+  final url = request['url'];
+  if (url is! String) return null;
+
+  final uri = Uri.tryParse(url);
+  if (uri == null || uri.host.isEmpty) return null;
+
+  final method = request['method'];
+
+  return {
+    'method': method is String ? method.toUpperCase() : 'GET',
+    'host': uri.host,
+    'path': uri.path.isEmpty ? '/' : uri.path,
+  };
 }
 
 class _ConfirmationButtons extends ConsumerWidget {

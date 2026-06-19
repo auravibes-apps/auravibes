@@ -269,6 +269,33 @@ void main() {
         expect(result, ToolPermissionResult.granted);
       },
     );
+
+    test('accepts workspace tool row id for grouped tools', () async {
+      when(
+        () => fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
+          testWorkspaceId,
+          'workspace-tool-id',
+        ),
+      ).thenAnswer(
+        (_) async => WorkspaceToolEntity(
+          id: 'workspace-tool-id',
+          workspaceId: testWorkspaceId,
+          toolId: 'load_skill',
+          isEnabled: true,
+          permissionMode: ToolPermissionMode.alwaysAsk,
+          createdAt: DateTime(2026),
+          updatedAt: DateTime(2026),
+        ),
+      );
+
+      final result = await fixture.repository.checkToolPermission(
+        conversationId: testConversationId,
+        workspaceId: testWorkspaceId,
+        toolId: 'workspace-tool-id',
+      );
+
+      expect(result, ToolPermissionResult.needsConfirmation);
+    });
   });
 
   group('getConversationTools', () {
@@ -652,7 +679,7 @@ void main() {
 
     tearDown(fixture.tearDown);
 
-    test('returns all workspace tools when no disabled matches', () async {
+    test('filters out disabled tools by workspace tool id', () async {
       when(
         () => fixture.mockWorkspaceToolsRepository.getEnabledWorkspaceTools(
           'ws-1',
@@ -692,10 +719,10 @@ void main() {
         'conv-1',
         'ws-1',
       );
-      expect(result, hasLength(2));
+      expect(result, ['write_file']);
     });
 
-    test('filters out disabled tools by workspace tool id', () async {
+    test('returns all workspace tools when no overrides', () async {
       when(
         () => fixture.mockWorkspaceToolsRepository.getEnabledWorkspaceTools(
           'ws-1',
@@ -744,7 +771,7 @@ void main() {
 
     tearDown(fixture.tearDown);
 
-    test('returns all entities when disabled tool id does not match', () async {
+    test('filters out disabled entities by workspace tool id', () async {
       final wsTool = WorkspaceToolEntity(
         id: 'tool-1',
         workspaceId: 'ws-1',
@@ -773,7 +800,7 @@ void main() {
             'conv-1',
             'ws-1',
           );
-      expect(result, hasLength(1));
+      expect(result, isEmpty);
     });
 
     test('returns all workspace entities when no overrides', () async {

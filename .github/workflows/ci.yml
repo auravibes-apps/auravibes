@@ -210,7 +210,7 @@ jobs:
             source_prefix: apps/auravibes_app
           - id: app-features-other
             package: apps/auravibes_app
-            targets: test/features/models test/features/service_connections test/features/settings test/features/workspaces
+            targets: test/features/models test/features/service_connections test/features/settings test/features/skills/usecases test/features/workspaces
             source_prefix: apps/auravibes_app
           - id: app-services-routing
             package: apps/auravibes_app

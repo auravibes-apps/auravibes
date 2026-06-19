@@ -133,4 +133,15 @@ class ResolvedTool {
   bool get isSkillNative => type == ResolvedToolType.skillNative;
 
   bool get isSkillTemplate => type == ResolvedToolType.skillTemplate;
+
+  String get fullName {
+    if (isSkillTemplate) {
+      return 'skill__user__${skillSlug}__$toolIdentifier';
+    }
+    if (isSkillNative) {
+      return 'skill__app__${skillSlug}__$toolIdentifier';
+    }
+
+    return toolIdentifier;
+  }
 }
