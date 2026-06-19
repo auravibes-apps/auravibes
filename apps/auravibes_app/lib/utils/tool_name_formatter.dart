@@ -121,23 +121,17 @@ class ToolNameFormatter {
     ParsedToolId parsedId, {
     String? mcpServerName,
   }) {
-    return parsedId.when(
-      mcp: (mcpServerId, slugName, toolIdentifier) {
-        final serverDisplayName = mcpServerName ?? slugName.toHumanReadable();
-        final toolDisplayName = toolIdentifier.toHumanReadable();
-
-        return '$serverDisplayName: $toolDisplayName';
-      },
-      builtIn: (tableId, toolIdentifier) {
-        return toolIdentifier.toHumanReadable();
-      },
-      native: (tableId, toolIdentifier) {
-        return toolIdentifier.toHumanReadable();
-      },
-      unknown: (rawName) {
-        return formatSkillDisplayName(rawName) ?? rawName.toHumanReadable();
-      },
-    );
+    return switch (parsedId) {
+      McpParsedToolId(:final slugName, :final toolIdentifier) =>
+        '${mcpServerName ?? slugName.toHumanReadable()}: '
+            '${toolIdentifier.toHumanReadable()}',
+      BuiltInParsedToolId(:final toolIdentifier) =>
+        toolIdentifier.toHumanReadable(),
+      NativeParsedToolId(:final toolIdentifier) =>
+        toolIdentifier.toHumanReadable(),
+      UnknownParsedToolId(:final rawName) =>
+        formatSkillDisplayName(rawName) ?? rawName.toHumanReadable(),
+    };
   }
 }
 
@@ -169,19 +163,6 @@ sealed class ParsedToolId {
     required String rawName,
   }) = UnknownParsedToolId;
 
-  /// Pattern matches on the parsed tool ID type.
-  T when<T>({
-    required T Function(
-      String mcpServerId,
-      String slugName,
-      String toolIdentifier,
-    )
-    mcp,
-    required T Function(String tableId, String toolIdentifier) builtIn,
-    required T Function(String tableId, String toolIdentifier) native,
-    required T Function(String rawName) unknown,
-  });
-
   /// Returns the MCP server ID if this is an MCP tool, null otherwise.
   String? get mcpServerId;
 }
@@ -202,19 +183,6 @@ final class McpParsedToolId extends ParsedToolId {
 
   /// The original tool name from the MCP server.
   final String toolIdentifier;
-
-  @override
-  T when<T>({
-    required T Function(
-      String mcpServerId,
-      String slugName,
-      String toolIdentifier,
-    )
-    mcp,
-    required T Function(String tableId, String toolIdentifier) builtIn,
-    required T Function(String tableId, String toolIdentifier) native,
-    required T Function(String rawName) unknown,
-  }) => mcp(mcpServerId, slugName, toolIdentifier);
 }
 
 /// Parsed built-in tool ID.
@@ -232,19 +200,6 @@ final class BuiltInParsedToolId extends ParsedToolId {
 
   @override
   String? get mcpServerId => null;
-
-  @override
-  T when<T>({
-    required T Function(
-      String mcpServerId,
-      String slugName,
-      String toolIdentifier,
-    )
-    mcp,
-    required T Function(String tableId, String toolIdentifier) builtIn,
-    required T Function(String tableId, String toolIdentifier) native,
-    required T Function(String rawName) unknown,
-  }) => builtIn(tableId, toolIdentifier);
 }
 
 /// Parsed native tool ID.
@@ -262,19 +217,6 @@ final class NativeParsedToolId extends ParsedToolId {
 
   @override
   String? get mcpServerId => null;
-
-  @override
-  T when<T>({
-    required T Function(
-      String mcpServerId,
-      String slugName,
-      String toolIdentifier,
-    )
-    mcp,
-    required T Function(String tableId, String toolIdentifier) builtIn,
-    required T Function(String tableId, String toolIdentifier) native,
-    required T Function(String rawName) unknown,
-  }) => native(tableId, toolIdentifier);
 }
 
 /// Fallback for unknown tool ID format.
@@ -286,17 +228,4 @@ final class UnknownParsedToolId extends ParsedToolId {
 
   @override
   String? get mcpServerId => null;
-
-  @override
-  T when<T>({
-    required T Function(
-      String mcpServerId,
-      String slugName,
-      String toolIdentifier,
-    )
-    mcp,
-    required T Function(String tableId, String toolIdentifier) builtIn,
-    required T Function(String tableId, String toolIdentifier) native,
-    required T Function(String rawName) unknown,
-  }) => unknown(rawName);
 }
