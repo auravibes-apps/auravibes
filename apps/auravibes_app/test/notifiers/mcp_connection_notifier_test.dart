@@ -242,14 +242,6 @@ void main() {
       );
     });
 
-    test('getMcpConnectionTimeout returns 10 seconds', () {
-      final notifier = container.read(mcpConnectionProvider.notifier);
-      expect(
-        notifier.getMcpConnectionTimeout(),
-        const Duration(seconds: 10),
-      );
-    });
-
     test(
       'waitForConnectionsReady returns immediately for empty list',
       () async {

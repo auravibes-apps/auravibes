@@ -16,6 +16,7 @@ import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_manager_client.dart';
 import 'package:auravibes_app/services/mcp_service/o_auth_authenticate.dart';
 import 'package:auravibes_app/services/oauth_credential_service.dart';
+import 'package:auravibes_app/utils/tool_name_formatter.dart';
 import 'package:collection/collection.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:logging/logging.dart';
@@ -25,6 +26,8 @@ part 'mcp_connection_status.freezed.dart';
 part 'mcp_connection_status.g.dart';
 
 final _logger = Logger('McpConnectionNotifier');
+
+const Duration _mcpConnectionTimeout = Duration(seconds: 10);
 
 // ============================================================.
 // MCP Connection Status.
@@ -114,26 +117,13 @@ class McpToolIdComponents {
   final String toolIdentifier;
 
   static McpToolIdComponents? fromComposite(String compositeId) {
-    final match = RegExp(r'^mcp_([^_]+)_([^_]+)_(.+)$').firstMatch(
-      compositeId,
-    );
-    if (match == null) return null;
-
-    final mcpServerId = match.group(1);
-    final slugName = match.group(2);
-    final toolIdentifier = match.group(3);
-    if (mcpServerId == null || slugName == null || toolIdentifier == null) {
-      return null;
-    }
-
-    if (mcpServerId.isEmpty || slugName.isEmpty || toolIdentifier.isEmpty) {
-      return null;
-    }
+    final parsed = ToolNameFormatter.parse(compositeId);
+    if (parsed is! McpParsedToolId) return null;
 
     return McpToolIdComponents(
-      mcpServerId: mcpServerId,
-      slugName: slugName,
-      toolIdentifier: toolIdentifier,
+      mcpServerId: parsed.mcpServerId,
+      slugName: parsed.slugName,
+      toolIdentifier: parsed.toolIdentifier,
     );
   }
 }
@@ -161,24 +151,22 @@ class McpToolIdComponents {
 /// See [McpToolIdComponents] for parsing composite IDs.
 @Riverpod(keepAlive: true)
 class McpConnectionNotifier extends _$McpConnectionNotifier {
-  McpManagerService? _mcpManagerService;
+  McpManagerService _mcpManagerService = McpManagerService();
   var _isDisposed = false;
   var _lastKnownState = const <McpConnectionState>[];
   final _tokenSubscriptions = <String, StreamSubscription<OAuthTokenEntity>>{};
-
-  McpManagerService get _requiredMcpManagerService {
-    final mcpManagerService = _mcpManagerService;
-    if (mcpManagerService == null) {
-      throw StateError('_mcpManagerService is not initialized');
-    }
-
-    return mcpManagerService;
-  }
+  StreamController<List<McpConnectionState>> _stateController =
+      StreamController<List<McpConnectionState>>.broadcast(sync: true);
 
   @override
   List<McpConnectionState> build() {
     _isDisposed = false;
     _lastKnownState = const [];
+    if (_stateController.isClosed) {
+      _stateController = StreamController<List<McpConnectionState>>.broadcast(
+        sync: true,
+      );
+    }
     _mcpManagerService = ref.watch(mcpManagerServiceProvider);
     ref
       ..onDispose(_onDispose)
@@ -241,9 +229,9 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
     var mcpTools = const <McpToolInfo>[];
     McpServerEntity savedServer;
     try {
-      client = await _requiredMcpManagerService.connectMcp(serverInfo);
+      client = await _mcpManagerService.connectMcp(serverInfo);
 
-      mcpTools = await _requiredMcpManagerService.getTools(client);
+      mcpTools = await _mcpManagerService.getTools(client);
 
       final repository = ref.read(mcpServersRepositoryProvider);
       savedServer = await repository.addMcpServerWithTools(
@@ -253,7 +241,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
       );
     } on Object {
       if (client != null) {
-        _requiredMcpManagerService.disconnect(client);
+        _mcpManagerService.disconnect(client);
       }
       if (serviceConnectionId != null) {
         await serviceConnectionRepository.deleteOwnedMcpCredential(
@@ -264,7 +252,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
     }
 
     if (_isDisposed) {
-      _requiredMcpManagerService.disconnect(client);
+      _mcpManagerService.disconnect(client);
 
       return;
     }
@@ -301,7 +289,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
 
     if (connection != null) {
       unawaited(_tokenSubscriptions.remove(serverId)?.cancel());
-      _requiredMcpManagerService.disconnect(connection.client);
+      _mcpManagerService.disconnect(connection.client);
     }
 
     // Remove from state.
@@ -321,7 +309,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
     final connection = state.where((c) => c.server.id == serverId).firstOrNull;
     if (connection != null) {
       unawaited(_tokenSubscriptions.remove(serverId)?.cancel());
-      _requiredMcpManagerService.disconnect(connection.client);
+      _mcpManagerService.disconnect(connection.client);
       await _connectToMcp(connection.server);
 
       return;
@@ -343,7 +331,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
 
     final connection = state[index];
     unawaited(_tokenSubscriptions.remove(serverId)?.cancel());
-    _requiredMcpManagerService.disconnect(connection.client);
+    _mcpManagerService.disconnect(connection.client);
 
     _setState([
       ...state.sublist(0, index),
@@ -382,58 +370,34 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
     return toolInfo._spec(connection.server);
   }
 
-  /// Get the timeout duration for waiting for MCP connections.
-  ///
-  /// Currently returns a default of 10 seconds.
-  Duration getMcpConnectionTimeout() {
-    return const Duration(seconds: 10);
-  }
-
   /// Returns a Future that completes when the specified MCP servers have
   /// finished their connection attempts (status is connected, error,
   /// or disconnected - not connecting).
   ///
   /// [mcpServerIds] - List of MCP server IDs to wait for.
   ///   If empty, returns immediately.
-  /// [timeout] - Maximum time to wait. If null, uses [getMcpConnectionTimeout].
+  /// [timeout] - Maximum time to wait. If null, uses [_mcpConnectionTimeout].
   ///
   /// Returns normally after all connections resolve OR timeout is reached.
   Future<void> waitForConnectionsReady({
     required List<String> mcpServerIds,
     Duration? timeout,
   }) async {
-    final effectiveTimeout = timeout ?? getMcpConnectionTimeout();
+    final effectiveTimeout = timeout ?? _mcpConnectionTimeout;
     if (mcpServerIds.isEmpty || effectiveTimeout <= Duration.zero) {
       return;
     }
 
-    final mcpServerIdSet = mcpServerIds.toSet();
+    final ids = mcpServerIds.toSet();
+    bool ready(List<McpConnectionState> connections) => !connections
+        .where((c) => ids.contains(c.server.id))
+        .any((c) => c.status == McpConnectionStatus.connecting);
 
-    bool isStillConnecting() {
-      return state
-          .where((connection) => mcpServerIdSet.contains(connection.server.id))
-          .any(
-            (connection) => connection.status == McpConnectionStatus.connecting,
-          );
-    }
+    if (ready(state)) return;
 
-    if (!isStillConnecting()) {
-      return;
-    }
-
-    final stopwatch = Stopwatch()..start();
-    const pollInterval = Duration(milliseconds: 100);
-    while (isStillConnecting() && stopwatch.elapsed < effectiveTimeout) {
-      final remaining = effectiveTimeout - stopwatch.elapsed;
-      if (remaining <= Duration.zero) {
-        break;
-      }
-
-      await Future<void>.delayed(
-        remaining < pollInterval ? remaining : pollInterval,
-      );
-    }
-    stopwatch.stop();
+    final _ = await _stateController.stream
+        .firstWhere(ready, orElse: () => const [])
+        .timeout(effectiveTimeout, onTimeout: () => const []);
   }
 
   /// Get the list of MCP connection states that are currently connecting
@@ -481,7 +445,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
       throw Exception('MCP server not connected: $mcpServerId');
     }
 
-    return _requiredMcpManagerService.callToolString(
+    return _mcpManagerService.callToolString(
       client,
       toolIdentifier: toolIdentifier,
       arguments: arguments,
@@ -571,11 +535,11 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
       final serverToConnect = server.copyWith(
         authenticationType: authenticationType,
       );
-      connectedClient = await _requiredMcpManagerService.connectMcp(
+      connectedClient = await _mcpManagerService.connectMcp(
         serverToConnect,
       );
 
-      final mcpTools = await _requiredMcpManagerService.getTools(
+      final mcpTools = await _mcpManagerService.getTools(
         connectedClient,
       );
       if (_isDisposed) {
@@ -614,7 +578,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
       );
     } finally {
       if (connectedClient != null) {
-        _requiredMcpManagerService.disconnect(connectedClient);
+        _mcpManagerService.disconnect(connectedClient);
       }
     }
   }
@@ -643,12 +607,13 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
   void _onDispose() {
     _isDisposed = true;
     _disposeAllConnections();
+    unawaited(_stateController.close());
   }
 
   /// Dispose all active connections.
   void _disposeAllConnections() {
     for (final connection in _lastKnownState) {
-      _requiredMcpManagerService.disconnect(connection.client);
+      _mcpManagerService.disconnect(connection.client);
     }
     for (final subscription in _tokenSubscriptions.values) {
       unawaited(subscription.cancel());
@@ -659,6 +624,12 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
   void _setState(List<McpConnectionState> nextState) {
     _lastKnownState = nextState;
     state = nextState;
+  }
+
+  @override
+  set state(List<McpConnectionState> value) {
+    super.state = value;
+    if (!_stateController.isClosed) _stateController.add(value);
   }
 
   // ============================================================.
