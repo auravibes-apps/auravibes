@@ -62,14 +62,12 @@ class ToolsGroupsDao extends DatabaseAccessor<AppDatabase>
     required String workspaceId,
     required String name,
   }) =>
-      (select(toolsGroups)
-            ..where(
-              (t) =>
-                  t.workspaceId.equals(workspaceId) &
-                  t.name.equals(name) &
-                  t.mcpServerId.isNull(),
-            )
-            ..limit(1))
+      (select(toolsGroups)..where(
+            (t) =>
+                t.workspaceId.equals(workspaceId) &
+                t.name.equals(name) &
+                t.mcpServerId.isNull(),
+          ))
           .getSingleOrNull();
 
   /// Update the enabled status of a tools group.

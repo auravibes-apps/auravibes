@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
+import 'package:auravibes_app/features/skills/constants/skill_tool_permission_constants.dart';
 import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_skill_template_tool_specs_usecase.dart';
@@ -9,7 +10,8 @@ import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:drift/drift.dart';
 import 'package:riverpod/riverpod.dart';
 
-const skillToolsGroupName = 'Skills';
+export 'package:auravibes_app/features/skills/constants/skill_tool_permission_constants.dart'
+    show skillToolsGroupName;
 
 class SyncSkillToolPermissionsUsecase {
   const SyncSkillToolPermissionsUsecase({
@@ -28,6 +30,16 @@ class SyncSkillToolPermissionsUsecase {
     required String conversationId,
     required String workspaceId,
   }) async {
+    final _ = await _syncTools(
+      conversationId: conversationId,
+      workspaceId: workspaceId,
+    );
+  }
+
+  Future<List<ToolsTable>> _syncTools({
+    required String conversationId,
+    required String workspaceId,
+  }) async {
     final specs = [
       ...await buildDynamicSkillToolSpecs.call(
         conversationId: conversationId,
@@ -42,14 +54,14 @@ class SyncSkillToolPermissionsUsecase {
         workspaceId: workspaceId,
       ),
     ];
-    await database.transaction(() async {
+
+    return database.transaction(() async {
       final group = await _ensureSkillToolsGroup(workspaceId);
       final existing = await database.workspaceToolsDao.getToolsByGroupId(
         group.id,
       );
       final existingByName = {for (final tool in existing) tool.toolId: tool};
-      final currentNames = specs.map((spec) => spec.name).toSet();
-
+      var insertedTool = false;
       for (final spec in specs) {
         final existingTool = existingByName[spec.name];
         final inputSchema = jsonEncode(spec.inputJsonSchema);
@@ -65,6 +77,12 @@ class SyncSkillToolPermissionsUsecase {
               permissions: const Value(PermissionAccess.ask),
             ),
           ]);
+          insertedTool = true;
+          continue;
+        }
+
+        if (existingTool.description == spec.description &&
+            existingTool.inputSchema == inputSchema) {
           continue;
         }
 
@@ -75,13 +93,11 @@ class SyncSkillToolPermissionsUsecase {
         );
       }
 
-      for (final existingTool in existing) {
-        if (!currentNames.contains(existingTool.toolId)) {
-          final _ = await database.workspaceToolsDao.deleteWorkspaceToolById(
-            existingTool.id,
-          );
-        }
+      if (insertedTool) {
+        return database.workspaceToolsDao.getToolsByGroupId(group.id);
       }
+
+      return existing;
     });
   }
 
@@ -90,19 +106,13 @@ class SyncSkillToolPermissionsUsecase {
     required String workspaceId,
     required String toolName,
   }) async {
-    await call(conversationId: conversationId, workspaceId: workspaceId);
-    final group = await database.toolsGroupsDao.getToolsGroupByName(
+    final tools = await _syncTools(
+      conversationId: conversationId,
       workspaceId: workspaceId,
-      name: skillToolsGroupName,
     );
-    if (group == null) return null;
+    final toolsByName = {for (final tool in tools) tool.toolId: tool};
 
-    final tools = await database.workspaceToolsDao.getToolsByGroupId(group.id);
-    for (final tool in tools) {
-      if (tool.toolId == toolName) return tool.id;
-    }
-
-    return null;
+    return toolsByName[toolName]?.id;
   }
 
   Future<ToolsGroupsTable> _ensureSkillToolsGroup(String workspaceId) async {

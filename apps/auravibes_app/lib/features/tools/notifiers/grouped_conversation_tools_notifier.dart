@@ -31,7 +31,7 @@ class GroupedConversationToolsNotifier
     final convId = conversationId;
     if (convId != null && convId.isNotEmpty) {
       await ref
-          .watch(syncSkillToolPermissionsUsecaseProvider)
+          .read(syncSkillToolPermissionsUsecaseProvider)
           .call(
             conversationId: convId,
             workspaceId: workspaceId,

@@ -193,6 +193,34 @@ void main() {
       expect(find.textContaining('secret-token'), findsNothing);
     });
 
+    testWidgets('redacts broad sensitive argument keys', (tester) async {
+      const toolCall = MessageToolCallEntity(
+        id: 'tc-1',
+        name: 'skill__user__github__create_issue',
+        argumentsRaw:
+            '{"auth_header":"Bearer secret-token", '
+            '"private_key":"secret-key", '
+            '"query":"visible"}',
+      );
+      final pendingCalls = [
+        const PendingToolCall(toolCall: toolCall, messageId: 'msg-1'),
+      ];
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          overrides: [
+            pendingToolCallsProvider.overrideWith((ref) => pendingCalls),
+          ],
+        ),
+      );
+
+      expect(find.textContaining('secret-token'), findsNothing);
+      expect(find.textContaining('secret-key'), findsNothing);
+      expect(find.textContaining('****'), findsOneWidget);
+      expect(find.textContaining('visible'), findsOneWidget);
+    });
+
     testWidgets('renders confirmation buttons', (tester) async {
       final pendingCalls = [_createPendingToolCall()];
       await pumpAndInit(

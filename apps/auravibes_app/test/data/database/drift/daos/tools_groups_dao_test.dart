@@ -91,6 +91,48 @@ void main() {
       expect(found, isNull);
     });
 
+    test('getToolsGroupByName returns non-MCP group by name', () async {
+      final created = await fixture.database.toolsGroupsDao.insertToolsGroup(
+        ToolsGroupsCompanion.insert(
+          workspaceId: workspaceId,
+          name: 'Skills',
+          permissions: PermissionAccess.ask,
+        ),
+      );
+
+      final found = await fixture.database.toolsGroupsDao.getToolsGroupByName(
+        workspaceId: workspaceId,
+        name: 'Skills',
+      );
+
+      expect(found?.id, created.id);
+    });
+
+    test('getToolsGroupByName surfaces duplicate non-MCP groups', () async {
+      final _ = await fixture.database.toolsGroupsDao.insertToolsGroup(
+        ToolsGroupsCompanion.insert(
+          workspaceId: workspaceId,
+          name: 'Skills',
+          permissions: PermissionAccess.ask,
+        ),
+      );
+      final _ = await fixture.database.toolsGroupsDao.insertToolsGroup(
+        ToolsGroupsCompanion.insert(
+          workspaceId: workspaceId,
+          name: 'Skills',
+          permissions: PermissionAccess.ask,
+        ),
+      );
+
+      expect(
+        () => fixture.database.toolsGroupsDao.getToolsGroupByName(
+          workspaceId: workspaceId,
+          name: 'Skills',
+        ),
+        throwsStateError,
+      );
+    });
+
     test('getToolsGroupsForWorkspace returns groups for workspace', () async {
       final _ = await fixture.database.toolsGroupsDao.insertToolsGroup(
         ToolsGroupsCompanion.insert(

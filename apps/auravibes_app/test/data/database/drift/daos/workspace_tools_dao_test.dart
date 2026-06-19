@@ -372,6 +372,17 @@ void main() {
       expect(updated?.inputSchema, equals('{"type":"object"}'));
     });
 
+    test('updateToolMetadata throws when tool id is missing', () {
+      expect(
+        () => fixture.database.workspaceToolsDao.updateToolMetadata(
+          id: 'missing',
+          description: 'Updated description',
+          inputSchema: '{"type":"object"}',
+        ),
+        throwsStateError,
+      );
+    });
+
     test('deleteToolsByGroupId removes tools in group', () async {
       final group = await fixture.database.toolsGroupsDao.insertToolsGroup(
         ToolsGroupsCompanion.insert(

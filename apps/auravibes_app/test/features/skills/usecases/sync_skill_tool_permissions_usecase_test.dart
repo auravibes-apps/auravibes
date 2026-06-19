@@ -170,7 +170,40 @@ void main() {
       expect(updated.permissions, PermissionAccess.granted);
     });
 
-    test('removes stale skill tool rows', () async {
+    test('does not update unchanged metadata', () async {
+      const spec = ToolSpec(
+        name: 'skill__user__example__search',
+        description: 'Search records',
+        inputJsonSchema: {'type': 'object'},
+      );
+      stubSpecs(template: [spec]);
+      await fixture.usecase.call(
+        conversationId: 'conversation-id',
+        workspaceId: fixture.workspaceId,
+      );
+      final group = await fixture.database.toolsGroupsDao.getToolsGroupByName(
+        workspaceId: fixture.workspaceId,
+        name: skillToolsGroupName,
+      );
+      final groupId = group?.id ?? fail('Expected skills group');
+      final created =
+          (await fixture.database.workspaceToolsDao.getToolsByGroupId(
+            groupId,
+          )).single;
+
+      await fixture.usecase.call(
+        conversationId: 'conversation-id',
+        workspaceId: fixture.workspaceId,
+      );
+
+      final unchanged =
+          (await fixture.database.workspaceToolsDao.getToolsByGroupId(
+            groupId,
+          )).single;
+      expect(unchanged.updatedAt, created.updatedAt);
+    });
+
+    test('keeps stale skill tool rows', () async {
       const staleSpec = ToolSpec(
         name: 'skill__app__skills_manager__create_user_skill',
         description: 'Create skill',
@@ -195,7 +228,8 @@ void main() {
       final tools = await fixture.database.workspaceToolsDao.getToolsByGroupId(
         group?.id ?? fail('Expected skills group'),
       );
-      expect(tools, isEmpty);
+      expect(tools, hasLength(1));
+      expect(tools.single.toolId, staleSpec.name);
     });
 
     test('permissionTableIdFor returns matching row id', () async {

@@ -296,12 +296,14 @@ class _ToolCallInfo extends StatelessWidget {
 }
 
 const JsonEncoder _approvalArgumentsEncoder = JsonEncoder.withIndent('  ');
-const _redactedValue = '[redacted]';
+const _redactedValue = '****';
 const _sensitiveKeyParts = [
+  'auth',
   'credential',
   'secret',
   'token',
   'password',
+  'key',
   'apikey',
   'api_key',
 ];

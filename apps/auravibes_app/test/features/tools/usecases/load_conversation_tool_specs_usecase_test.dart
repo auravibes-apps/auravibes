@@ -12,6 +12,7 @@ import 'package:auravibes_app/features/skills/usecases/list_available_skills_use
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 
 import '../../../test_mocks.dart';
 
@@ -96,6 +97,8 @@ class _CapturingRepo extends ConversationToolsRepository {
 
 void main() {
   group('LoadConversationToolSpecsUsecase', () {
+    setUpAll(registerTestFallbackValues);
+
     test('returns empty list when no tools', () async {
       final usecase = LoadConversationToolSpecsUsecase(
         conversationToolsRepository: _FakeConversationToolsRepository([]),
@@ -111,6 +114,39 @@ void main() {
       );
       expect(result, isEmpty);
     });
+
+    test(
+      'calls syncSkillToolPermissionsUsecase before loading specs',
+      () async {
+        final syncUsecase = MockSyncSkillToolPermissionsUsecase();
+        when(
+          () => syncUsecase.call(
+            conversationId: 'conv-1',
+            workspaceId: 'ws-1',
+          ),
+        ).thenAnswer((_) => Future<void>.value());
+        final usecase = LoadConversationToolSpecsUsecase(
+          conversationToolsRepository: _FakeConversationToolsRepository([]),
+          buildCombinedToolSpecsUseCase: _FakeBuildCombinedToolSpecsUseCase([]),
+          buildDynamicSkillToolSpecsUsecase:
+              _FakeBuildDynamicSkillToolSpecsUsecase([]),
+          syncSkillToolPermissionsUsecase: syncUsecase,
+        );
+
+        final result = await usecase(
+          conversationId: 'conv-1',
+          workspaceId: 'ws-1',
+        );
+
+        expect(result, isEmpty);
+        verify(
+          () => syncUsecase.call(
+            conversationId: 'conv-1',
+            workspaceId: 'ws-1',
+          ),
+        ).called(1);
+      },
+    );
 
     test('returns tool specs from build combined usecase', () async {
       final specs = [
