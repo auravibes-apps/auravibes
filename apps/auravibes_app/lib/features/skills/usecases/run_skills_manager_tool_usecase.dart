@@ -11,9 +11,6 @@ import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_to
 import 'package:auravibes_app/features/skills/usecases/create_skill_credential_definition_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/delete_skill_credential_definition_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/delete_skill_template_tool_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/delete_skill_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/generate_skill_slug_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/update_skill_credential_definition_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/update_skill_template_tool_usecase.dart';
@@ -27,13 +24,10 @@ class RunSkillsManagerToolUsecase {
     this._skillCredentialDefinitionsRepository,
     this._createSkillUsecase,
     this._updateSkillUsecase,
-    this._deleteSkillUsecase,
     this._createSkillTemplateToolUsecase,
     this._updateSkillTemplateToolUsecase,
-    this._deleteSkillTemplateToolUsecase,
     this._createSkillCredentialDefinitionUsecase,
     this._updateSkillCredentialDefinitionUsecase,
-    this._deleteSkillCredentialDefinitionUsecase,
   );
 
   final SkillsRepository _skillsRepository;
@@ -42,16 +36,12 @@ class RunSkillsManagerToolUsecase {
   _skillCredentialDefinitionsRepository;
   final CreateSkillUsecase _createSkillUsecase;
   final UpdateSkillUsecase _updateSkillUsecase;
-  final DeleteSkillUsecase _deleteSkillUsecase;
   final CreateSkillTemplateToolUsecase _createSkillTemplateToolUsecase;
   final UpdateSkillTemplateToolUsecase _updateSkillTemplateToolUsecase;
-  final DeleteSkillTemplateToolUsecase _deleteSkillTemplateToolUsecase;
   final CreateSkillCredentialDefinitionUsecase
   _createSkillCredentialDefinitionUsecase;
   final UpdateSkillCredentialDefinitionUsecase
   _updateSkillCredentialDefinitionUsecase;
-  final DeleteSkillCredentialDefinitionUsecase
-  _deleteSkillCredentialDefinitionUsecase;
   Future<Object> call({
     required String workspaceId,
     required String toolSlug,
@@ -190,7 +180,7 @@ class RunSkillsManagerToolUsecase {
       workspaceId,
       _requiredString(arguments, 'skillSlug'),
     );
-    final deleted = await _deleteSkillUsecase.call(skill.id);
+    final deleted = await _skillsRepository.deleteSkill(skill.id);
 
     return {
       'status': deleted ? 'deleted' : 'not_deleted',
@@ -293,7 +283,7 @@ class RunSkillsManagerToolUsecase {
     Map<String, dynamic> arguments,
   ) async {
     final tool = await _getSkillTemplateTool(workspaceId, arguments);
-    final deleted = await _deleteSkillTemplateToolUsecase.call(tool.id);
+    final deleted = await _skillTemplateToolsRepository.deleteTool(tool.id);
 
     return {
       'status': deleted ? 'deleted' : 'not_deleted',
@@ -378,9 +368,8 @@ class RunSkillsManagerToolUsecase {
       workspaceId,
       _requiredString(arguments, 'definitionSlug'),
     );
-    final deleted = await _deleteSkillCredentialDefinitionUsecase.call(
-      definition.id,
-    );
+    final deleted = await _skillCredentialDefinitionsRepository
+        .deleteDefinition(definition.id);
 
     return {
       'status': deleted ? 'deleted' : 'not_deleted',
@@ -571,18 +560,13 @@ final runSkillsManagerToolUsecaseProvider =
         ref.watch(skillCredentialDefinitionsRepositoryProvider),
         ref.watch(createSkillUsecaseProvider),
         ref.watch(updateSkillUsecaseProvider),
-        ref.watch(deleteSkillUsecaseProvider),
         ref.watch(createSkillTemplateToolUsecaseProvider),
         ref.watch(updateSkillTemplateToolUsecaseProvider),
-        ref.watch(deleteSkillTemplateToolUsecaseProvider),
         ref.watch(
           createSkillCredentialDefinitionUsecaseProvider,
         ),
         ref.watch(
           updateSkillCredentialDefinitionUsecaseProvider,
-        ),
-        ref.watch(
-          deleteSkillCredentialDefinitionUsecaseProvider,
         ),
       );
     });

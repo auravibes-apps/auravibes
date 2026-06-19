@@ -10,11 +10,10 @@ import 'package:auravibes_app/features/skills/models/skill_detail.dart';
 import 'package:auravibes_app/features/skills/providers/skill_credential_definitions_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_credentials_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_detail_provider.dart';
+import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/providers/skill_template_tools_provider.dart';
 import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/delete_skill_template_tool_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/delete_skill_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/duplicate_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/duplicate_skill_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/update_skill_usecase.dart';
@@ -294,8 +293,7 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
       ),
     );
     if (shouldDelete != true) return;
-    final usecase = ref.read(deleteSkillUsecaseProvider);
-    final _ = await usecase.call(detail.id);
+    final _ = await ref.read(skillsRepositoryProvider).deleteSkill(detail.id);
     ref.invalidate(workspaceSkillsProvider(widget.workspaceId));
     if (!context.mounted) return;
     Navigator.of(context).pop();
@@ -651,8 +649,9 @@ class _SkillToolsCard extends ConsumerWidget {
       ),
     );
     if (shouldDelete != true) return;
-    final usecase = ref.read(deleteSkillTemplateToolUsecaseProvider);
-    final _ = await usecase.call(tool.id);
+    final _ = await ref
+        .read(skillTemplateToolsRepositoryProvider)
+        .deleteTool(tool.id);
     ref.invalidate(skillTemplateToolsProvider(skillId));
   }
 }

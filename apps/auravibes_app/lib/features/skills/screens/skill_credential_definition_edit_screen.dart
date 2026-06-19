@@ -3,8 +3,8 @@ import 'dart:convert';
 
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/features/skills/providers/skill_credential_definitions_provider.dart';
+import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_credential_definition_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/delete_skill_credential_definition_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/update_skill_credential_definition_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -278,10 +278,9 @@ class _SkillCredentialDefinitionEditScreenState
 
     setState(() => _isSaving = true);
     try {
-      final usecase = ref.read(
-        deleteSkillCredentialDefinitionUsecaseProvider,
-      );
-      final _ = await usecase.call(definitionId);
+      final _ = await ref
+          .read(skillCredentialDefinitionsRepositoryProvider)
+          .deleteDefinition(definitionId);
       ref.invalidate(skillCredentialDefinitionsProvider(widget.workspaceId));
       if (!context.mounted) return;
       Navigator.of(context).pop();
