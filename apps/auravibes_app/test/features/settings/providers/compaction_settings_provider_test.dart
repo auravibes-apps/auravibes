@@ -3,7 +3,6 @@ import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/domain/repositories/workspace_compaction_settings_repository.dart';
 import 'package:auravibes_app/features/settings/providers/compaction_settings_provider.dart';
 import 'package:auravibes_app/features/settings/providers/workspace_compaction_settings_repository_provider.dart';
-import 'package:auravibes_app/features/settings/usecases/reset_workspace_compaction_settings_usecase.dart';
 import 'package:auravibes_app/features/settings/usecases/save_workspace_compaction_settings_usecase.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -324,34 +323,6 @@ void main() {
           );
 
       expect(result.usagePercentageThreshold, 100);
-    });
-  });
-
-  group('ResetWorkspaceCompactionSettingsUsecase', () {
-    final fixture = _CompactionSettingsProviderFixture();
-
-    setUp(fixture.setUp);
-
-    tearDown(fixture.dispose);
-
-    test('calls repository reset', () async {
-      final mockRepository = fixture.mockRepository;
-      final container = fixture.container;
-      when(
-        () => mockRepository.resetOverrides(testWorkspaceId),
-      ).thenAnswer((_) async => CompactionSettings.defaults);
-
-      final _ =
-          await container.read(resetWorkspaceCompactionSettingsUsecaseProvider)(
-            workspaceId: testWorkspaceId,
-          );
-
-      expect(
-        () => verify(
-          () => mockRepository.resetOverrides(testWorkspaceId),
-        ).called(1),
-        returnsNormally,
-      );
     });
   });
 }

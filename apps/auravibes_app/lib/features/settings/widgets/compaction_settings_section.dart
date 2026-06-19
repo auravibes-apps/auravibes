@@ -6,7 +6,7 @@ import 'dart:async';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/features/settings/providers/compaction_settings_provider.dart';
-import 'package:auravibes_app/features/settings/usecases/reset_workspace_compaction_settings_usecase.dart';
+import 'package:auravibes_app/features/settings/providers/workspace_compaction_settings_repository_provider.dart';
 import 'package:auravibes_app/features/settings/usecases/save_workspace_compaction_settings_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -218,9 +218,9 @@ class _CompactionSettingsSectionState
 
   Future<void> _resetDefaults() async {
     try {
-      final _ = await ref.read(resetWorkspaceCompactionSettingsUsecaseProvider)(
-        workspaceId: widget.workspaceId,
-      );
+      final _ = await ref
+          .read(workspaceCompactionSettingsRepositoryProvider)
+          .resetOverrides(widget.workspaceId);
     } on Exception {
       if (mounted) {
         final _ = ScaffoldMessenger.of(context).showSnackBar(

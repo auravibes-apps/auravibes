@@ -28,9 +28,6 @@ import 'package:auravibes_app/features/skills/usecases/check_skill_credential_re
 import 'package:auravibes_app/features/skills/usecases/create_skill_credential_definition_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/delete_skill_credential_definition_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/delete_skill_template_tool_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/delete_skill_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/duplicate_skill_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/load_conversation_skill_usecase.dart';
@@ -164,17 +161,12 @@ void main() {
         skillCredentialDefinitionsRepository,
         createSkillUsecase,
         updateSkillUsecase,
-        DeleteSkillUsecase(skillsRepository),
         createTemplateToolUsecase(),
         updateTemplateToolUsecase(),
-        DeleteSkillTemplateToolUsecase(toolsRepository),
         CreateSkillCredentialDefinitionUsecase(
           skillCredentialDefinitionsRepository,
         ),
         UpdateSkillCredentialDefinitionUsecase(
-          skillCredentialDefinitionsRepository,
-        ),
-        DeleteSkillCredentialDefinitionUsecase(
           skillCredentialDefinitionsRepository,
         ),
       );

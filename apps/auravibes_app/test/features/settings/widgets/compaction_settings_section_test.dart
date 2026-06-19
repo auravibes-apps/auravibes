@@ -3,8 +3,9 @@ import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
+import 'package:auravibes_app/domain/repositories/workspace_compaction_settings_repository.dart';
 import 'package:auravibes_app/features/settings/providers/compaction_settings_provider.dart';
-import 'package:auravibes_app/features/settings/usecases/reset_workspace_compaction_settings_usecase.dart';
+import 'package:auravibes_app/features/settings/providers/workspace_compaction_settings_repository_provider.dart';
 import 'package:auravibes_app/features/settings/usecases/save_workspace_compaction_settings_usecase.dart';
 import 'package:auravibes_app/features/settings/widgets/compaction_settings_section.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -19,19 +20,20 @@ import '../../../helpers/test_app.dart';
 class MockSaveUsecase extends Mock
     implements SaveWorkspaceCompactionSettingsUsecase {}
 
-class MockResetUsecase extends Mock
-    implements ResetWorkspaceCompactionSettingsUsecase {}
+class MockCompactionSettingsRepository extends Mock
+    implements WorkspaceCompactionSettingsRepository {}
 
 void main() {
   const testWorkspaceId = 'test-ws';
 
   MockSaveUsecase? mockSave;
-  MockResetUsecase? mockReset;
+  MockCompactionSettingsRepository? mockRepository;
   StreamController<CompactionSettings>? settingsController;
   MockSaveUsecase readMockSave() =>
       mockSave ?? fail('MockSaveUsecase not initialized');
-  MockResetUsecase readMockReset() =>
-      mockReset ?? fail('MockResetUsecase not initialized');
+  MockCompactionSettingsRepository readMockRepository() =>
+      mockRepository ??
+      fail('MockCompactionSettingsRepository not initialized');
   StreamController<CompactionSettings> readSettingsController() =>
       settingsController ?? fail('Settings stream not initialized');
 
@@ -41,7 +43,7 @@ void main() {
 
   setUp(() {
     mockSave = MockSaveUsecase();
-    mockReset = MockResetUsecase();
+    mockRepository = MockCompactionSettingsRepository();
     settingsController = StreamController<CompactionSettings>.broadcast();
   });
 
@@ -68,8 +70,8 @@ void main() {
         saveWorkspaceCompactionSettingsUsecaseProvider.overrideWith(
           (ref) => readMockSave(),
         ),
-        resetWorkspaceCompactionSettingsUsecaseProvider.overrideWith(
-          (ref) => readMockReset(),
+        workspaceCompactionSettingsRepositoryProvider.overrideWith(
+          (ref) => readMockRepository(),
         ),
       ],
     );
@@ -205,7 +207,7 @@ void main() {
   group('_resetDefaults', () {
     testWidgets('calls reset usecase even when it fails', (tester) async {
       when(
-        () => readMockReset()(workspaceId: testWorkspaceId),
+        () => readMockRepository().resetOverrides(testWorkspaceId),
       ).thenThrow(Exception('DB error'));
 
       readSettingsController().add(CompactionSettings.defaults);
@@ -223,7 +225,7 @@ void main() {
 
       expect(
         () => verify(
-          () => readMockReset()(workspaceId: testWorkspaceId),
+          () => readMockRepository().resetOverrides(testWorkspaceId),
         ).called(1),
         returnsNormally,
       );
@@ -231,7 +233,7 @@ void main() {
 
     testWidgets('resets form fields on success', (tester) async {
       when(
-        () => readMockReset()(workspaceId: testWorkspaceId),
+        () => readMockRepository().resetOverrides(testWorkspaceId),
       ).thenAnswer((_) async => CompactionSettings.defaults);
 
       readSettingsController().add(CompactionSettings.defaults);
@@ -247,7 +249,9 @@ void main() {
       );
       await tester.pump();
 
-      verify(() => readMockReset()(workspaceId: testWorkspaceId)).called(1);
+      verify(
+        () => readMockRepository().resetOverrides(testWorkspaceId),
+      ).called(1);
 
       final textFields = find.byType(TextField);
       final usageField = tester.widget<TextField>(textFields.first);
