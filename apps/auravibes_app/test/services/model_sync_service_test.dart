@@ -26,13 +26,16 @@ void main() {
     });
 
     test('performFullSync syncs fetched models to repository', () async {
-      when(() => apiService.fetchAllModels())
-          .thenAnswer((_) async => ModelApiResponse(providers: []));
+      when(
+        () => apiService.fetchAllModels(),
+      ).thenAnswer((_) async => ModelApiResponse(providers: []));
       when(() => repository.deleteAllData()).thenAnswer((_) async => 0);
-      when(() => repository.batchUpsertProviders(any()))
-          .thenAnswer((_) async => []);
-      when(() => repository.batchUpsertModels(any()))
-          .thenAnswer((_) async => []);
+      when(
+        () => repository.batchUpsertProviders(any()),
+      ).thenAnswer((_) async => []);
+      when(
+        () => repository.batchUpsertModels(any()),
+      ).thenAnswer((_) async => []);
 
       await expectLater(service.performFullSync(), completes);
 
@@ -42,8 +45,9 @@ void main() {
     });
 
     test('performFullSync swallows fetch errors and skips sync', () async {
-      when(() => apiService.fetchAllModels())
-          .thenThrow(Exception('Network error'));
+      when(
+        () => apiService.fetchAllModels(),
+      ).thenThrow(Exception('Network error'));
 
       await expectLater(service.performFullSync(), completes);
 
@@ -51,10 +55,10 @@ void main() {
     });
 
     test('performFullSync swallows repository errors', () async {
-      when(() => apiService.fetchAllModels())
-          .thenAnswer((_) async => ModelApiResponse(providers: []));
-      when(() => repository.deleteAllData())
-          .thenThrow(Exception('DB error'));
+      when(
+        () => apiService.fetchAllModels(),
+      ).thenAnswer((_) async => ModelApiResponse(providers: []));
+      when(() => repository.deleteAllData()).thenThrow(Exception('DB error'));
 
       await expectLater(service.performFullSync(), completes);
 
