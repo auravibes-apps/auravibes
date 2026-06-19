@@ -379,6 +379,9 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
   /// [timeout] - Maximum time to wait. If null, uses [_mcpConnectionTimeout].
   ///
   /// Returns normally after all connections resolve OR timeout is reached.
+  ///
+  /// Also completes if this notifier is disposed (the state stream closes),
+  /// so callers do not hang waiting on a torn-down notifier.
   Future<void> waitForConnectionsReady({
     required List<String> mcpServerIds,
     Duration? timeout,
