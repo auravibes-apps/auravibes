@@ -130,51 +130,13 @@ void main() {
       final result = ToolNameFormatter.formatDisplayName(parsed);
       expect(result, 'Raw Name');
     });
-  });
 
-  group('ParsedToolId.when', () {
-    test('dispatches to mcp callback', () {
-      final parsed = ToolNameFormatter.parse('mcp_42_s_tool');
-      final result = parsed.when(
-        mcp: (id, slug, tool) => 'mcp:$id:$slug:$tool',
-        builtIn: (id, tool) => 'builtIn:$id:$tool',
-        native: (id, tool) => 'native:$id:$tool',
-        unknown: (raw) => 'unknown:$raw',
+    test('formats skill display name', () {
+      final parsed = ToolNameFormatter.parse(
+        'skill__user__research_tools__search_web',
       );
-      expect(result, 'mcp:42:s:tool');
-    });
-
-    test('dispatches to builtIn callback', () {
-      final parsed = ToolNameFormatter.parse('built_in_456_calc');
-      final result = parsed.when(
-        mcp: (id, slug, tool) => 'mcp:$id:$slug:$tool',
-        builtIn: (id, tool) => 'builtIn:$id:$tool',
-        native: (id, tool) => 'native:$id:$tool',
-        unknown: (raw) => 'unknown:$raw',
-      );
-      expect(result, 'builtIn:456:calc');
-    });
-
-    test('dispatches to native callback', () {
-      final parsed = ToolNameFormatter.parse('native_789_url_tool');
-      final result = parsed.when(
-        mcp: (id, slug, tool) => 'mcp:$id:$slug:$tool',
-        builtIn: (id, tool) => 'builtIn:$id:$tool',
-        native: (id, tool) => 'native:$id:$tool',
-        unknown: (raw) => 'unknown:$raw',
-      );
-      expect(result, 'native:789:url_tool');
-    });
-
-    test('dispatches to unknown callback', () {
-      final parsed = ToolNameFormatter.parse('raw');
-      final result = parsed.when(
-        mcp: (id, slug, tool) => 'mcp:$id:$slug:$tool',
-        builtIn: (id, tool) => 'builtIn:$id:$tool',
-        native: (id, tool) => 'native:$id:$tool',
-        unknown: (raw) => 'unknown:$raw',
-      );
-      expect(result, 'unknown:raw');
+      final result = ToolNameFormatter.formatDisplayName(parsed);
+      expect(result, 'Research Tools: Search Web');
     });
   });
 }

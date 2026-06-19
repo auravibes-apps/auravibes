@@ -90,6 +90,26 @@ class ToolNameFormatter {
     return create(tableId: tableId, toolIdentifier: toolIdentifier);
   }
 
+  static ({String source, String skillSlug, String toolSlug})?
+  parseSkillToolName(String compositeId) {
+    return switch (compositeId.split('__')) {
+      ['skill', final source, final skillSlug, final toolSlug]
+          when (source == 'user' || source == 'app') &&
+              skillSlug.isNotEmpty &&
+              toolSlug.isNotEmpty =>
+        (source: source, skillSlug: skillSlug, toolSlug: toolSlug),
+      _ => null,
+    };
+  }
+
+  static String? formatSkillDisplayName(String compositeId) {
+    final parsed = parseSkillToolName(compositeId);
+    if (parsed == null) return null;
+
+    return '${parsed.skillSlug.toHumanReadable()}: '
+        '${parsed.toolSlug.toHumanReadable()}';
+  }
+
   /// Formats a tool display name using the parsed ID and optional server name.
   ///
   /// For MCP tools, uses the format: `<serverName>: <Tool Name>`
@@ -101,24 +121,17 @@ class ToolNameFormatter {
     ParsedToolId parsedId, {
     String? mcpServerName,
   }) {
-    return parsedId.when(
-      mcp: (mcpServerId, slugName, toolIdentifier) {
-        final serverDisplayName = mcpServerName ?? slugName.toHumanReadable();
-        final toolDisplayName = toolIdentifier.toHumanReadable();
-
-        return '$serverDisplayName: $toolDisplayName';
-      },
-      builtIn: (tableId, toolIdentifier) {
-        return toolIdentifier.toHumanReadable();
-      },
-      native: (tableId, toolIdentifier) {
-        return toolIdentifier.toHumanReadable();
-      },
-      unknown: (rawName) {
-        // Best effort: try to make it readable.
-        return rawName.toHumanReadable();
-      },
-    );
+    return switch (parsedId) {
+      McpParsedToolId(:final slugName, :final toolIdentifier) =>
+        '${mcpServerName ?? slugName.toHumanReadable()}: '
+            '${toolIdentifier.toHumanReadable()}',
+      BuiltInParsedToolId(:final toolIdentifier) =>
+        toolIdentifier.toHumanReadable(),
+      NativeParsedToolId(:final toolIdentifier) =>
+        toolIdentifier.toHumanReadable(),
+      UnknownParsedToolId(:final rawName) =>
+        formatSkillDisplayName(rawName) ?? rawName.toHumanReadable(),
+    };
   }
 }
 
@@ -150,19 +163,6 @@ sealed class ParsedToolId {
     required String rawName,
   }) = UnknownParsedToolId;
 
-  /// Pattern matches on the parsed tool ID type.
-  T when<T>({
-    required T Function(
-      String mcpServerId,
-      String slugName,
-      String toolIdentifier,
-    )
-    mcp,
-    required T Function(String tableId, String toolIdentifier) builtIn,
-    required T Function(String tableId, String toolIdentifier) native,
-    required T Function(String rawName) unknown,
-  });
-
   /// Returns the MCP server ID if this is an MCP tool, null otherwise.
   String? get mcpServerId;
 }
@@ -183,19 +183,6 @@ final class McpParsedToolId extends ParsedToolId {
 
   /// The original tool name from the MCP server.
   final String toolIdentifier;
-
-  @override
-  T when<T>({
-    required T Function(
-      String mcpServerId,
-      String slugName,
-      String toolIdentifier,
-    )
-    mcp,
-    required T Function(String tableId, String toolIdentifier) builtIn,
-    required T Function(String tableId, String toolIdentifier) native,
-    required T Function(String rawName) unknown,
-  }) => mcp(mcpServerId, slugName, toolIdentifier);
 }
 
 /// Parsed built-in tool ID.
@@ -213,19 +200,6 @@ final class BuiltInParsedToolId extends ParsedToolId {
 
   @override
   String? get mcpServerId => null;
-
-  @override
-  T when<T>({
-    required T Function(
-      String mcpServerId,
-      String slugName,
-      String toolIdentifier,
-    )
-    mcp,
-    required T Function(String tableId, String toolIdentifier) builtIn,
-    required T Function(String tableId, String toolIdentifier) native,
-    required T Function(String rawName) unknown,
-  }) => builtIn(tableId, toolIdentifier);
 }
 
 /// Parsed native tool ID.
@@ -243,19 +217,6 @@ final class NativeParsedToolId extends ParsedToolId {
 
   @override
   String? get mcpServerId => null;
-
-  @override
-  T when<T>({
-    required T Function(
-      String mcpServerId,
-      String slugName,
-      String toolIdentifier,
-    )
-    mcp,
-    required T Function(String tableId, String toolIdentifier) builtIn,
-    required T Function(String tableId, String toolIdentifier) native,
-    required T Function(String rawName) unknown,
-  }) => native(tableId, toolIdentifier);
 }
 
 /// Fallback for unknown tool ID format.
@@ -267,17 +228,4 @@ final class UnknownParsedToolId extends ParsedToolId {
 
   @override
   String? get mcpServerId => null;
-
-  @override
-  T when<T>({
-    required T Function(
-      String mcpServerId,
-      String slugName,
-      String toolIdentifier,
-    )
-    mcp,
-    required T Function(String tableId, String toolIdentifier) builtIn,
-    required T Function(String tableId, String toolIdentifier) native,
-    required T Function(String rawName) unknown,
-  }) => unknown(rawName);
 }

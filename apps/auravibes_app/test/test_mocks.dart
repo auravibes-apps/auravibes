@@ -33,6 +33,7 @@ import 'package:auravibes_app/features/chats/usecases/resume_conversation_if_rea
 import 'package:auravibes_app/features/chats/usecases/run_agent_iteration_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/select_prompt_messages_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
+import 'package:auravibes_app/features/skills/usecases/sync_skill_tool_permissions_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/get_agent_iteration_decision_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/load_latest_message_tool_calls_result.dart';
@@ -198,6 +199,25 @@ class MockRunAllowedToolsUsecase extends Mock
 
 class MockSelectPromptMessagesUsecase extends Mock
     implements SelectPromptMessagesUsecase {}
+
+class MockSyncSkillToolPermissionsUsecase extends Mock
+    implements SyncSkillToolPermissionsUsecase {}
+
+class NoopSyncSkillToolPermissionsUsecase extends Fake
+    implements SyncSkillToolPermissionsUsecase {
+  @override
+  Future<void> call({
+    required String conversationId,
+    required String workspaceId,
+  }) => Future<void>.value();
+
+  @override
+  Future<String?> permissionTableIdFor({
+    required String conversationId,
+    required String workspaceId,
+    required String toolName,
+  }) async => null;
+}
 
 class MockSendMessageUsecase extends Mock implements SendMessageUsecase {}
 

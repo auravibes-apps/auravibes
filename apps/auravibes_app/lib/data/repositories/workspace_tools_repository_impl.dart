@@ -39,7 +39,9 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
     String toolId,
   ) async {
     await _ensureNativeTools(workspaceId);
-    final result = await _dao.getWorkspaceToolByToolId(workspaceId, toolId);
+    final result =
+        await _dao.getWorkspaceToolByToolId(workspaceId, toolId) ??
+        await _dao.getWorkspaceTool(workspaceId, toolId);
     if (result == null) return null;
 
     return _tableToEntity(result);

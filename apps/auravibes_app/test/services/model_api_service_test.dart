@@ -1,6 +1,5 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
-import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/services/model_api_service.dart';
 import 'package:dio/dio.dart';
@@ -94,45 +93,6 @@ Dio _createDioWithNon200({int statusCode = 500}) {
   return dio;
 }
 
-Dio _createDioWithHeadResponse({int statusCode = 200}) {
-  final dio = Dio(BaseOptions(baseUrl: 'https://models.dev'));
-  dio.interceptors.add(
-    InterceptorsWrapper(
-      onRequest: (options, handler) {
-        if (options.method == 'HEAD') {
-          handler.resolve(
-            Response(
-              requestOptions: options,
-              statusCode: statusCode,
-            ),
-          );
-        } else {
-          handler.next(options);
-        }
-      },
-    ),
-  );
-
-  return dio;
-}
-
-Dio _createDioWithError() {
-  final dio = Dio(BaseOptions(baseUrl: 'https://models.dev'));
-  dio.interceptors.add(
-    InterceptorsWrapper(
-      onRequest: (options, handler) => handler.reject(
-        DioException(
-          requestOptions: options,
-          type: DioExceptionType.connectionError,
-          error: Exception('Connection refused'),
-        ),
-      ),
-    ),
-  );
-
-  return dio;
-}
-
 ApiProviderDto _providerDtoFromJson(Map<String, dynamic> json) {
   return ApiProviderDto.fromJson(
     json,
@@ -165,124 +125,6 @@ void main() {
       final customService = ModelApiService(dio: customDio);
       expect(customService, isNotNull);
       customService.dispose();
-    });
-
-    group('ModelApiResponse', () {
-      test('allModels returns models from all providers', () {
-        final response = ModelApiResponse(
-          providers: [
-            ApiProviderDto(
-              modelProvider: const ApiModelProviderEntity(
-                id: 'openai',
-                name: 'OpenAI',
-                type: ModelProvidersType.openai,
-              ),
-              models: [
-                const ApiModelEntity(
-                  modelProvider: 'openai',
-                  id: 'gpt-4',
-                  name: 'GPT-4',
-                  limitContext: 128000,
-                  limitOutput: 4096,
-                  modalitiesInput: [],
-                  modalitiesOuput: [],
-                ),
-              ],
-            ),
-            ApiProviderDto(
-              modelProvider: const ApiModelProviderEntity(
-                id: 'anthropic',
-                name: 'Anthropic',
-                type: ModelProvidersType.anthropic,
-              ),
-              models: [
-                const ApiModelEntity(
-                  modelProvider: 'anthropic',
-                  id: 'claude-3',
-                  name: 'Claude 3',
-                  limitContext: 200000,
-                  limitOutput: 4096,
-                  modalitiesInput: [],
-                  modalitiesOuput: [],
-                ),
-              ],
-            ),
-          ],
-        );
-
-        expect(response.allModels, hasLength(2));
-        expect(response.allModels.first.id, 'gpt-4');
-        expect(response.allModels[1].id, 'claude-3');
-      });
-
-      test('providerCount returns correct count', () {
-        final response = ModelApiResponse(
-          providers: [
-            ApiProviderDto(
-              modelProvider: const ApiModelProviderEntity(
-                id: 'openai',
-                name: 'OpenAI',
-                type: null,
-              ),
-              models: [],
-            ),
-            ApiProviderDto(
-              modelProvider: const ApiModelProviderEntity(
-                id: 'anthropic',
-                name: 'Anthropic',
-                type: null,
-              ),
-              models: [],
-            ),
-          ],
-        );
-
-        expect(response.providerCount, 2);
-      });
-
-      test('modelCount returns total models', () {
-        final response = ModelApiResponse(
-          providers: [
-            ApiProviderDto(
-              modelProvider: const ApiModelProviderEntity(
-                id: 'openai',
-                name: 'OpenAI',
-                type: null,
-              ),
-              models: [
-                const ApiModelEntity(
-                  modelProvider: 'openai',
-                  id: 'gpt-4',
-                  name: 'GPT-4',
-                  limitContext: 128000,
-                  limitOutput: 4096,
-                  modalitiesInput: [],
-                  modalitiesOuput: [],
-                ),
-                const ApiModelEntity(
-                  modelProvider: 'openai',
-                  id: 'gpt-3.5',
-                  name: 'GPT-3.5',
-                  limitContext: 16000,
-                  limitOutput: 4096,
-                  modalitiesInput: [],
-                  modalitiesOuput: [],
-                ),
-              ],
-            ),
-          ],
-        );
-
-        expect(response.modelCount, 2);
-      });
-
-      test('empty providers returns empty models', () {
-        final response = ModelApiResponse(providers: []);
-
-        expect(response.allModels, isEmpty);
-        expect(response.providerCount, 0);
-        expect(response.modelCount, 0);
-      });
     });
 
     group('ApiProviderDto', () {
@@ -396,83 +238,6 @@ void main() {
       });
     });
 
-    group('ModelApiStatus', () {
-      test('statusMessage returns accessible with response time', () {
-        final status = ModelApiStatus(
-          isAccessible: true,
-          lastChecked: DateTime(2025),
-          statusCode: 200,
-          responseTime: const Duration(milliseconds: 150),
-        );
-
-        expect(status.statusMessage, 'Accessible (150ms)');
-      });
-
-      test('statusMessage returns accessible with zero response time', () {
-        final status = ModelApiStatus(
-          isAccessible: true,
-          lastChecked: DateTime(2025),
-        );
-
-        expect(status.statusMessage, 'Accessible (0ms)');
-      });
-
-      test('statusMessage returns error message when not accessible', () {
-        final status = ModelApiStatus(
-          isAccessible: false,
-          lastChecked: DateTime(2025),
-          error: 'Connection refused',
-        );
-
-        expect(status.statusMessage, 'Connection refused');
-      });
-
-      test('statusMessage returns unknown error when no error message', () {
-        final status = ModelApiStatus(
-          isAccessible: false,
-          lastChecked: DateTime(2025),
-        );
-
-        expect(status.statusMessage, 'Unknown error');
-      });
-
-      test('statusCode is stored correctly', () {
-        final status = ModelApiStatus(
-          isAccessible: true,
-          lastChecked: DateTime(2025),
-          statusCode: 200,
-        );
-        expect(status.statusCode, 200);
-      });
-
-      test('error is stored correctly', () {
-        final status = ModelApiStatus(
-          isAccessible: false,
-          lastChecked: DateTime(2025),
-          error: 'timeout',
-        );
-        expect(status.error, 'timeout');
-      });
-
-      test('responseTime is stored correctly', () {
-        final status = ModelApiStatus(
-          isAccessible: true,
-          lastChecked: DateTime(2025),
-          responseTime: const Duration(milliseconds: 250),
-        );
-        expect(status.responseTime, const Duration(milliseconds: 250));
-      });
-
-      test('lastChecked is stored correctly', () {
-        final now = DateTime(2025, 6, 15);
-        final status = ModelApiStatus(
-          isAccessible: true,
-          lastChecked: now,
-        );
-        expect(status.lastChecked, now);
-      });
-    });
-
     group('fetchAllModels', () {
       test('parses successful response with providers', () async {
         final dio = _createDioWithEndpointResponses(
@@ -529,9 +294,11 @@ void main() {
 
         final result = await service.fetchAllModels();
         expect(result.providers, hasLength(2));
-        expect(result.modelCount, 1);
-        expect(result.providerCount, 2);
-        expect(result.allModels.single.isCanonical, true);
+        final openai = result.providers.firstWhere(
+          (p) => p.modelProvider.id == 'openai',
+        );
+        expect(openai.models, hasLength(1));
+        expect(openai.models.single.isCanonical, isTrue);
 
         dio.close();
       });
@@ -567,7 +334,8 @@ void main() {
         final result = await service.fetchAllModels();
 
         expect(result.providers, hasLength(1));
-        expect(result.allModels.single.isCanonical, true);
+        final models = result.providers.expand((p) => p.models);
+        expect(models.single.isCanonical, isTrue);
 
         dio.close();
       });
@@ -643,9 +411,10 @@ void main() {
           result.providers.map((p) => p.modelProvider.id),
           containsAll(['openrouter', 'gateway']),
         );
-        expect(result.allModels, hasLength(2));
+        final models = result.providers.expand((p) => p.models).toList();
+        expect(models, hasLength(2));
         expect(
-          result.allModels.map((m) => m.modelProvider),
+          models.map((m) => m.modelProvider),
           containsAll(['openrouter', 'gateway']),
         );
 
@@ -669,7 +438,7 @@ void main() {
 
         expect(result.providers, hasLength(1));
         expect(result.providers.single.modelProvider.id, 'gateway');
-        expect(result.allModels, isEmpty);
+        expect(result.providers.expand((p) => p.models), isEmpty);
 
         dio.close();
       });
@@ -711,68 +480,6 @@ void main() {
       });
     });
 
-    group('getApiStatus', () {
-      test('returns accessible on 200', () async {
-        final dio = _createDioWithHeadResponse();
-        final service = ModelApiService(dio: dio);
-
-        final status = await service.getApiStatus();
-        expect(status.isAccessible, isTrue);
-        expect(status.statusCode, 200);
-
-        dio.close();
-      });
-
-      test('returns not accessible on non-200', () async {
-        final dio = _createDioWithHeadResponse(statusCode: 503);
-        final service = ModelApiService(dio: dio);
-
-        final status = await service.getApiStatus();
-        expect(status.isAccessible, isFalse);
-        expect(status.statusCode, 503);
-
-        dio.close();
-      });
-
-      test('returns not accessible on connection error', () async {
-        final dio = _createDioWithError();
-        final service = ModelApiService(dio: dio);
-
-        final status = await service.getApiStatus();
-        expect(status.isAccessible, isFalse);
-        expect(status.error, isNotNull);
-        expect(status.statusCode, isNull);
-
-        dio.close();
-      });
-
-      test('responseTime is set on success', () async {
-        final dio = _createDioWithHeadResponse();
-        final service = ModelApiService(dio: dio);
-
-        final status = await service.getApiStatus();
-        expect(status.responseTime, isNotNull);
-        expect(
-          (status.responseTime ??
-                  fail('Expected status.responseTime to be non-null'))
-              .inMilliseconds,
-          greaterThanOrEqualTo(0),
-        );
-
-        dio.close();
-      });
-
-      test('lastChecked is set on success', () async {
-        final dio = _createDioWithHeadResponse();
-        final service = ModelApiService(dio: dio);
-
-        final status = await service.getApiStatus();
-        expect(status.lastChecked, isNotNull);
-
-        dio.close();
-      });
-    });
-
     test('dispose closes dio', () {
       expect(() => service.dispose(), returnsNormally);
     });
@@ -780,64 +487,6 @@ void main() {
     test('dispose can be called multiple times', () {
       service.dispose();
       expect(() => service.dispose(), returnsNormally);
-    });
-
-    group('ModelApiResponse additional', () {
-      test('allModels flattens across providers correctly', () {
-        final response = ModelApiResponse(
-          providers: [
-            ApiProviderDto(
-              modelProvider: const ApiModelProviderEntity(
-                id: 'a',
-                name: 'A',
-                type: null,
-              ),
-              models: [
-                const ApiModelEntity(
-                  modelProvider: 'a',
-                  id: 'm1',
-                  name: 'M1',
-                  limitContext: 1,
-                  limitOutput: 1,
-                  modalitiesInput: [],
-                  modalitiesOuput: [],
-                ),
-                const ApiModelEntity(
-                  modelProvider: 'a',
-                  id: 'm2',
-                  name: 'M2',
-                  limitContext: 1,
-                  limitOutput: 1,
-                  modalitiesInput: [],
-                  modalitiesOuput: [],
-                ),
-              ],
-            ),
-            ApiProviderDto(
-              modelProvider: const ApiModelProviderEntity(
-                id: 'b',
-                name: 'B',
-                type: null,
-              ),
-              models: [
-                const ApiModelEntity(
-                  modelProvider: 'b',
-                  id: 'm3',
-                  name: 'M3',
-                  limitContext: 1,
-                  limitOutput: 1,
-                  modalitiesInput: [],
-                  modalitiesOuput: [],
-                ),
-              ],
-            ),
-          ],
-        );
-
-        expect(response.allModels, hasLength(3));
-        expect(response.modelCount, 3);
-        expect(response.providerCount, 2);
-      });
     });
   });
 }

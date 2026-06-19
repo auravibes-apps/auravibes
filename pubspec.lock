@@ -317,10 +317,10 @@ packages:
     dependency: "direct dev"
     description:
       name: dart_code_linter
-      sha256: "09f044466459d2514839266fc1e570e8749a4f79537185dcf62eead86ba8b05b"
+      sha256: a4649ee1c604dfb7ce25fd427179cdba37dbfdfdabcd8b52b9211c6b460a8e91
       url: "https://pub.dev"
     source: hosted
-    version: "4.1.4"
+    version: "4.1.5"
   dart_style:
     dependency: transitive
     description:
@@ -1510,10 +1510,10 @@ packages:
     dependency: transitive
     description:
       name: sqlite3
-      sha256: "9488c7d2cdb1091c91cacf7e207cff81b28bff8e366f042bad3afe7d34afe189"
+      sha256: "37356bcb56ce0d9404d602c41e4bdb7765e7e9732a3e47adb3d98c556a6abdad"
       url: "https://pub.dev"
     source: hosted
-    version: "3.3.2"
+    version: "3.3.3"
   sqlite3_flutter_libs:
     dependency: transitive
     description:
@@ -1742,10 +1742,10 @@ packages:
     dependency: "direct dev"
     description:
       name: very_good_analysis
-      sha256: d1cb1d66a5aae2c702d68caca6c8347306d35e728fd94555fa21fa0448a972e0
+      sha256: "481af67ab5877af20325251dc215a4ebac7666a1c8cf09198ffd457bc612b33d"
       url: "https://pub.dev"
     source: hosted
-    version: "10.2.0"
+    version: "10.3.0"
   vm_service:
     dependency: transitive
     description:

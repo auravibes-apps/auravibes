@@ -8,12 +8,13 @@ import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
-import 'package:auravibes_app/features/chats/usecases/manual_compaction_result.dart';
+import 'package:auravibes_app/features/chats/usecases/compact_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/stop_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
@@ -397,18 +398,21 @@ Future<void> _manualCompact(
   WidgetRef ref,
   String conversationId,
 ) async {
-  final result = await ref.read(manualCompactConversationUsecaseProvider)(
-    conversationId,
-  );
-  if (!context.mounted) return;
+  try {
+    final _ = await ref.read(compactConversationUsecaseProvider)(
+      conversationId: conversationId,
+      trigger: CompactionTrigger.manual,
+    );
+    if (!context.mounted) return;
 
-  if (result.success) {
     final _ = ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(LocaleKeys.compaction_manual_success.tr()),
       ),
     );
-  } else if (result.error != null) {
+  } on CompactionException {
+    if (!context.mounted) return;
+
     final _ = ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(LocaleKeys.compaction_manual_failure.tr()),

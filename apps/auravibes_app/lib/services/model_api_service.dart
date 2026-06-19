@@ -69,31 +69,6 @@ class ModelApiService {
     }
   }
 
-  /// Gets API status and basic information.
-  ///
-  /// Returns a [ModelApiStatus] with API health information.
-  Future<ModelApiStatus> getApiStatus() async {
-    try {
-      final startTime = DateTime.now();
-      final response = await _dio.head<void>('/api.json');
-      final endTime = DateTime.now();
-      final responseTime = endTime.difference(startTime);
-
-      return ModelApiStatus(
-        isAccessible: response.statusCode == 200,
-        lastChecked: DateTime.now(),
-        statusCode: response.statusCode,
-        responseTime: responseTime,
-      );
-    } on Exception catch (e) {
-      return ModelApiStatus(
-        isAccessible: false,
-        lastChecked: DateTime.now(),
-        error: e.toString(),
-      );
-    }
-  }
-
   /// Parses the Dio response into a ModelApiResponse.
   ///
   /// [response] The Dio response to parse.
@@ -153,17 +128,6 @@ class ModelApiResponse {
 
   /// List of providers with their models.
   final List<ApiProviderDto> providers;
-
-  /// Gets all models from all providers.
-  List<ApiModelEntity> get allModels {
-    return providers.expand((provider) => provider.models).toList();
-  }
-
-  /// Gets the total count of providers.
-  int get providerCount => providers.length;
-
-  /// Gets the total count of models.
-  int get modelCount => allModels.length;
 }
 
 /// Data class representing an API provider.
@@ -212,41 +176,4 @@ class ApiProviderDto {
 
   /// Provider name.
   final ApiModelProviderEntity modelProvider;
-}
-
-/// Data class representing API status information.
-class ModelApiStatus {
-  ModelApiStatus({
-    required this.isAccessible,
-    required this.lastChecked,
-    this.statusCode,
-    this.responseTime,
-    this.error,
-  });
-
-  /// Whether the API is accessible.
-  final bool isAccessible;
-
-  /// HTTP status code from the last check.
-  final int? statusCode;
-
-  /// Response time from the last check.
-  final Duration? responseTime;
-
-  /// When the status was last checked.
-  final DateTime lastChecked;
-
-  /// Error message if the check failed.
-  final String? error;
-
-  /// Returns a human-readable status message.
-  String get statusMessage {
-    if (isAccessible) {
-      final responseTimeMs = responseTime?.inMilliseconds ?? 0;
-
-      return 'Accessible (${responseTimeMs}ms)';
-    } else {
-      return error ?? 'Unknown error';
-    }
-  }
 }

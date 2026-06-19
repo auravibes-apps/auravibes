@@ -12,6 +12,9 @@ import 'package:auravibes_app/features/skills/usecases/list_available_skills_use
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+
+import '../../../test_mocks.dart';
 
 class _FakeConversationToolsRepository extends ConversationToolsRepository {
   _FakeConversationToolsRepository(this._tools);
@@ -94,12 +97,15 @@ class _CapturingRepo extends ConversationToolsRepository {
 
 void main() {
   group('LoadConversationToolSpecsUsecase', () {
+    setUpAll(registerTestFallbackValues);
+
     test('returns empty list when no tools', () async {
       final usecase = LoadConversationToolSpecsUsecase(
         conversationToolsRepository: _FakeConversationToolsRepository([]),
         buildCombinedToolSpecsUseCase: _FakeBuildCombinedToolSpecsUseCase([]),
         buildDynamicSkillToolSpecsUsecase:
             _FakeBuildDynamicSkillToolSpecsUsecase([]),
+        syncSkillToolPermissionsUsecase: NoopSyncSkillToolPermissionsUsecase(),
       );
 
       final result = await usecase(
@@ -108,6 +114,39 @@ void main() {
       );
       expect(result, isEmpty);
     });
+
+    test(
+      'calls syncSkillToolPermissionsUsecase before loading specs',
+      () async {
+        final syncUsecase = MockSyncSkillToolPermissionsUsecase();
+        when(
+          () => syncUsecase.call(
+            conversationId: 'conv-1',
+            workspaceId: 'ws-1',
+          ),
+        ).thenAnswer((_) => Future<void>.value());
+        final usecase = LoadConversationToolSpecsUsecase(
+          conversationToolsRepository: _FakeConversationToolsRepository([]),
+          buildCombinedToolSpecsUseCase: _FakeBuildCombinedToolSpecsUseCase([]),
+          buildDynamicSkillToolSpecsUsecase:
+              _FakeBuildDynamicSkillToolSpecsUsecase([]),
+          syncSkillToolPermissionsUsecase: syncUsecase,
+        );
+
+        final result = await usecase(
+          conversationId: 'conv-1',
+          workspaceId: 'ws-1',
+        );
+
+        expect(result, isEmpty);
+        verify(
+          () => syncUsecase.call(
+            conversationId: 'conv-1',
+            workspaceId: 'ws-1',
+          ),
+        ).called(1);
+      },
+    );
 
     test('returns tool specs from build combined usecase', () async {
       final specs = [
@@ -125,6 +164,7 @@ void main() {
         ),
         buildDynamicSkillToolSpecsUsecase:
             _FakeBuildDynamicSkillToolSpecsUsecase([]),
+        syncSkillToolPermissionsUsecase: NoopSyncSkillToolPermissionsUsecase(),
       );
 
       final result = await usecase(
@@ -153,6 +193,7 @@ void main() {
         buildCombinedToolSpecsUseCase: _FakeBuildCombinedToolSpecsUseCase([]),
         buildDynamicSkillToolSpecsUsecase:
             _FakeBuildDynamicSkillToolSpecsUsecase([]),
+        syncSkillToolPermissionsUsecase: NoopSyncSkillToolPermissionsUsecase(),
       );
 
       final _ = await usecase(
@@ -178,6 +219,7 @@ void main() {
         ),
         buildDynamicSkillToolSpecsUsecase:
             _FakeBuildDynamicSkillToolSpecsUsecase([]),
+        syncSkillToolPermissionsUsecase: NoopSyncSkillToolPermissionsUsecase(),
       );
 
       final result = await usecase(
@@ -195,6 +237,7 @@ void main() {
         buildCombinedToolSpecsUseCase: buildUseCase,
         buildDynamicSkillToolSpecsUsecase:
             _FakeBuildDynamicSkillToolSpecsUsecase([]),
+        syncSkillToolPermissionsUsecase: NoopSyncSkillToolPermissionsUsecase(),
       );
       expect(
         usecase,
@@ -229,6 +272,7 @@ void main() {
         buildCombinedToolSpecsUseCase: buildUseCase,
         buildDynamicSkillToolSpecsUsecase:
             _FakeBuildDynamicSkillToolSpecsUsecase([]),
+        syncSkillToolPermissionsUsecase: NoopSyncSkillToolPermissionsUsecase(),
       );
 
       final _ = await usecase(conversationId: 'conv-1', workspaceId: 'ws-1');
@@ -261,10 +305,32 @@ void main() {
       ];
 
       final usecase = LoadConversationToolSpecsUsecase(
-        conversationToolsRepository: _FakeConversationToolsRepository([]),
+        conversationToolsRepository: _FakeConversationToolsRepository([
+          WorkspaceToolEntity(
+            id: 'load-tool-id',
+            workspaceId: 'ws-1',
+            toolId: loadSkillToolName,
+            isEnabled: true,
+            permissionMode: ToolPermissionMode.alwaysAsk,
+            createdAt: DateTime(2026),
+            updatedAt: DateTime(2026),
+            workspaceToolsGroupId: 'skills-group',
+          ),
+          WorkspaceToolEntity(
+            id: 'unload-tool-id',
+            workspaceId: 'ws-1',
+            toolId: unloadSkillToolName,
+            isEnabled: true,
+            permissionMode: ToolPermissionMode.alwaysAsk,
+            createdAt: DateTime(2026),
+            updatedAt: DateTime(2026),
+            workspaceToolsGroupId: 'skills-group',
+          ),
+        ]),
         buildCombinedToolSpecsUseCase: _FakeBuildCombinedToolSpecsUseCase([]),
         buildDynamicSkillToolSpecsUsecase:
             _FakeBuildDynamicSkillToolSpecsUsecase(skillSpecs),
+        syncSkillToolPermissionsUsecase: NoopSyncSkillToolPermissionsUsecase(),
       );
 
       final result = await usecase(
@@ -276,6 +342,47 @@ void main() {
         loadSkillToolName,
         unloadSkillToolName,
       ]);
+    });
+
+    test('omits dynamic skill specs disabled in conversation state', () async {
+      final skillSpecs = [
+        const ToolSpec(
+          name: loadSkillToolName,
+          description: 'load skill',
+          inputJsonSchema: {},
+        ),
+        const ToolSpec(
+          name: unloadSkillToolName,
+          description: 'unload skill',
+          inputJsonSchema: {},
+        ),
+      ];
+
+      final usecase = LoadConversationToolSpecsUsecase(
+        conversationToolsRepository: _FakeConversationToolsRepository([
+          WorkspaceToolEntity(
+            id: 'load-tool-id',
+            workspaceId: 'ws-1',
+            toolId: loadSkillToolName,
+            isEnabled: true,
+            permissionMode: ToolPermissionMode.alwaysAsk,
+            createdAt: DateTime(2026),
+            updatedAt: DateTime(2026),
+            workspaceToolsGroupId: 'skills-group',
+          ),
+        ]),
+        buildCombinedToolSpecsUseCase: _FakeBuildCombinedToolSpecsUseCase([]),
+        buildDynamicSkillToolSpecsUsecase:
+            _FakeBuildDynamicSkillToolSpecsUsecase(skillSpecs),
+        syncSkillToolPermissionsUsecase: NoopSyncSkillToolPermissionsUsecase(),
+      );
+
+      final result = await usecase(
+        conversationId: 'conv-1',
+        workspaceId: 'ws-1',
+      );
+
+      expect(result.map((spec) => spec.name), [loadSkillToolName]);
     });
   });
 }
