@@ -184,6 +184,28 @@ class WorkspaceToolsDao extends DatabaseAccessor<AppDatabase>
             ]))
           .getSingleOrNull();
 
+  Future<void> updateToolMetadata({
+    required String id,
+    required String description,
+    required String inputSchema,
+  }) async {
+    final updatedCount =
+        await (update(
+          tools,
+        )..where((tbl) => tbl.id.equals(id))).write(
+          ToolsCompanion(
+            updatedAt: Value(DateTime.now()),
+            description: Value(description),
+            inputSchema: Value(inputSchema),
+          ),
+        );
+    if (updatedCount != 1) {
+      throw StateError(
+        'Expected to update exactly one tool row for id=$id, got $updatedCount',
+      );
+    }
+  }
+
   Future<bool> isWorkspaceToolEnabled(String workspaceId, String id) async {
     final result =
         await (selectOnly(tools)

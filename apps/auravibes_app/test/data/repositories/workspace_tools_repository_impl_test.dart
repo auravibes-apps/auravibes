@@ -115,6 +115,9 @@ void main() {
           () =>
               fixture.mockToolsDao.getWorkspaceToolByToolId('ws-1', 'unknown'),
         ).thenAnswer((_) async => null);
+        when(
+          () => fixture.mockToolsDao.getWorkspaceTool('ws-1', 'unknown'),
+        ).thenAnswer((_) async => null);
 
         final result = await fixture.repository.getWorkspaceTool(
           'ws-1',
@@ -122,6 +125,35 @@ void main() {
         );
 
         expect(result, isNull);
+      });
+
+      test('falls back to row id for grouped tools', () async {
+        when(
+          () => fixture.mockToolsDao.getWorkspaceToolByToolId(
+            'ws-1',
+            'workspace-tool-id',
+          ),
+        ).thenAnswer((_) async => null);
+        when(
+          () => fixture.mockToolsDao.getWorkspaceTool(
+            'ws-1',
+            'workspace-tool-id',
+          ),
+        ).thenAnswer(
+          (_) async => createToolRow(
+            id: 'workspace-tool-id',
+            toolId: 'load_skill',
+            workspaceToolsGroupId: 'skills-group',
+          ),
+        );
+
+        final result = await fixture.repository.getWorkspaceTool(
+          'ws-1',
+          'workspace-tool-id',
+        );
+
+        expect(result?.id, 'workspace-tool-id');
+        expect(result?.toolId, 'load_skill');
       });
     });
 

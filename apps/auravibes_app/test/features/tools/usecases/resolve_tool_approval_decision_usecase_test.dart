@@ -2,6 +2,7 @@ import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
+import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/native_tool_type.dart';
@@ -33,7 +34,7 @@ void main() {
           () => conversationToolsRepository.checkToolPermission(
             conversationId: 'conv-1',
             workspaceId: 'ws-1',
-            toolId: 'calculator',
+            toolId: 'calc',
           ),
         ).thenAnswer((_) async => ToolPermissionResult.granted);
 
@@ -46,7 +47,7 @@ void main() {
 
         expect(decision.toolCallId, 'tc-1');
         expect(decision.permissionResult, ToolPermissionResult.granted);
-        expect(decision.permissionTableId, 'calculator');
+        expect(decision.permissionTableId, 'calc');
         expect(decision.needsConfirmation, isFalse);
       });
 
@@ -66,7 +67,7 @@ void main() {
             () => conversationToolsRepository.checkToolPermission(
               conversationId: 'conv-1',
               workspaceId: 'ws-1',
-              toolId: 'calculator',
+              toolId: 'calc',
             ),
           ).thenAnswer((_) async => ToolPermissionResult.needsConfirmation);
 
@@ -87,7 +88,7 @@ void main() {
     });
 
     group('native tools', () {
-      test('returns granted for native tool using toolIdentifier', () async {
+      test('returns granted for native tool using table id', () async {
         final conversationToolsRepository = fixture.conversationToolsRepository;
         final usecase = fixture.usecase;
         final resolvedTool = ResolvedTool.native(
@@ -99,7 +100,7 @@ void main() {
           () => conversationToolsRepository.checkToolPermission(
             conversationId: 'conv-1',
             workspaceId: 'ws-1',
-            toolId: 'url',
+            toolId: 'native-1',
           ),
         ).thenAnswer((_) async => ToolPermissionResult.granted);
 
@@ -111,8 +112,103 @@ void main() {
         );
 
         expect(decision.permissionResult, ToolPermissionResult.granted);
-        expect(decision.permissionTableId, 'url');
+        expect(decision.permissionTableId, 'native-1');
       });
+    });
+
+    group('skill tools', () {
+      test(
+        'returns needsConfirmation by default for skill control tool',
+        () async {
+          final conversationToolsRepository =
+              fixture.conversationToolsRepository;
+          final syncSkillToolPermissionsUsecase =
+              MockSyncSkillToolPermissionsUsecase();
+          when(
+            () => syncSkillToolPermissionsUsecase.permissionTableIdFor(
+              conversationId: 'conv-1',
+              workspaceId: 'ws-1',
+              toolName: loadSkillToolName,
+            ),
+          ).thenAnswer((_) async => 'skill-tool-1');
+          final usecase = ResolveToolApprovalDecisionUsecase(
+            conversationToolsRepository: conversationToolsRepository,
+            toolsGroupsRepository: fixture.toolsGroupsRepository,
+            workspaceToolsRepository: fixture.workspaceToolsRepository,
+            syncSkillToolPermissionsUsecase: syncSkillToolPermissionsUsecase,
+          );
+
+          when(
+            () => conversationToolsRepository.checkToolPermission(
+              conversationId: 'conv-1',
+              workspaceId: 'ws-1',
+              toolId: 'skill-tool-1',
+            ),
+          ).thenAnswer(
+            (_) async => ToolPermissionResult.needsConfirmation,
+          );
+
+          final decision = await usecase(
+            conversationId: 'conv-1',
+            workspaceId: 'ws-1',
+            toolCallId: 'tc-1',
+            resolvedTool: ResolvedTool.skillControl(
+              toolIdentifier: loadSkillToolName,
+            ),
+          );
+
+          expect(
+            decision.permissionResult,
+            ToolPermissionResult.needsConfirmation,
+          );
+          expect(decision.permissionTableId, 'skill-tool-1');
+        },
+      );
+
+      test(
+        'returns granted for conversation-allowed skill template tool',
+        () async {
+          final conversationToolsRepository =
+              fixture.conversationToolsRepository;
+          final syncSkillToolPermissionsUsecase =
+              MockSyncSkillToolPermissionsUsecase();
+          when(
+            () => syncSkillToolPermissionsUsecase.permissionTableIdFor(
+              conversationId: 'conv-1',
+              workspaceId: 'ws-1',
+              toolName: 'skill__user__research__search_web',
+            ),
+          ).thenAnswer((_) async => 'skill-tool-2');
+          final usecase = ResolveToolApprovalDecisionUsecase(
+            conversationToolsRepository: conversationToolsRepository,
+            toolsGroupsRepository: fixture.toolsGroupsRepository,
+            workspaceToolsRepository: fixture.workspaceToolsRepository,
+            syncSkillToolPermissionsUsecase: syncSkillToolPermissionsUsecase,
+          );
+
+          when(
+            () => conversationToolsRepository.checkToolPermission(
+              conversationId: 'conv-1',
+              workspaceId: 'ws-1',
+              toolId: 'skill-tool-2',
+            ),
+          ).thenAnswer((_) async => ToolPermissionResult.granted);
+
+          final decision = await usecase(
+            conversationId: 'conv-1',
+            workspaceId: 'ws-1',
+            toolCallId: 'tc-1',
+            resolvedTool: ResolvedTool.skillTemplate(
+              tableId: 'search_web',
+              skillSlug: 'research',
+              toolIdentifier: 'search_web',
+            ),
+          );
+
+          expect(decision.permissionResult, ToolPermissionResult.granted);
+          expect(decision.permissionTableId, 'skill-tool-2');
+        },
+      );
     });
 
     group('MCP tools', () {
@@ -262,7 +358,7 @@ void main() {
           () => conversationToolsRepository.checkToolPermission(
             conversationId: 'conv-1',
             workspaceId: 'ws-1',
-            toolId: 'calculator',
+            toolId: 'calc',
           ),
         ).thenAnswer(
           (_) async => ToolPermissionResult.disabledInConversation,

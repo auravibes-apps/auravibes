@@ -1,9 +1,8 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
-import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
+import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
-import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/domain/enums/tool_grant_level.dart';
@@ -21,9 +20,10 @@ void main() {
 
   group('ApproveToolCallUsecase', () {
     var messageRepository = MockMessageRepository();
+    var conversationRepository = MockConversationRepository();
     var conversationToolsRepository = MockConversationToolsRepository();
-    var toolsGroupsRepository = MockToolsGroupsRepository();
-    var workspaceToolsRepository = MockWorkspaceToolsRepository();
+    var resolveToolApprovalDecisionUsecase =
+        MockResolveToolApprovalDecisionUsecase();
     var toolResolverService = MockToolResolverService();
     var resumeConversationIfReadyUsecase =
         MockResumeConversationIfReadyUsecase();
@@ -34,10 +34,10 @@ void main() {
     Map<String, dynamic>? calledMcpArguments;
     var usecase = ApproveToolCallUsecase(
       messageRepository: messageRepository,
+      conversationRepository: conversationRepository,
       conversationToolsRepository: conversationToolsRepository,
-      toolsGroupsRepository: toolsGroupsRepository,
-      workspaceToolsRepository: workspaceToolsRepository,
       toolResolverService: toolResolverService,
+      resolveToolApprovalDecisionUsecase: resolveToolApprovalDecisionUsecase,
       resumeConversationIfReadyUsecase: resumeConversationIfReadyUsecase,
       runResolvedToolUsecase: RunResolvedToolUsecase(
         agentCancellationRuntime: agentCancellationRuntime,
@@ -81,9 +81,10 @@ void main() {
 
     setUp(() {
       messageRepository = MockMessageRepository();
+      conversationRepository = MockConversationRepository();
       conversationToolsRepository = MockConversationToolsRepository();
-      toolsGroupsRepository = MockToolsGroupsRepository();
-      workspaceToolsRepository = MockWorkspaceToolsRepository();
+      resolveToolApprovalDecisionUsecase =
+          MockResolveToolApprovalDecisionUsecase();
       toolResolverService = MockToolResolverService();
       resumeConversationIfReadyUsecase = MockResumeConversationIfReadyUsecase();
       agentCancellationRuntime = AgentCancellationRuntime()
@@ -94,10 +95,10 @@ void main() {
 
       usecase = ApproveToolCallUsecase(
         messageRepository: messageRepository,
+        conversationRepository: conversationRepository,
         conversationToolsRepository: conversationToolsRepository,
-        toolsGroupsRepository: toolsGroupsRepository,
-        workspaceToolsRepository: workspaceToolsRepository,
         toolResolverService: toolResolverService,
+        resolveToolApprovalDecisionUsecase: resolveToolApprovalDecisionUsecase,
         resumeConversationIfReadyUsecase: resumeConversationIfReadyUsecase,
         runResolvedToolUsecase: RunResolvedToolUsecase(
           agentCancellationRuntime: agentCancellationRuntime,
@@ -217,6 +218,16 @@ void main() {
           () => toolResolverService.resolveTool('built_in_calc_calculator'),
         ).thenReturn(resolvedTool);
         when(
+          () => conversationRepository.getConversationById('conversation-1'),
+        ).thenAnswer((_) async => _conversation);
+        when(
+          () => resolveToolApprovalDecisionUsecase.resolvePermissionTableId(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+            resolvedTool: resolvedTool,
+          ),
+        ).thenAnswer((_) async => 'calc');
+        when(
           () => conversationToolsRepository.setConversationToolPermission(
             'conversation-1',
             'calc',
@@ -317,26 +328,6 @@ void main() {
               'mcp_server-1_calc_sum',
             ) ??
             fail('Expected tool to resolve');
-        final group = ToolsGroupEntity(
-          id: 'group-1',
-          workspaceId: 'workspace-1',
-          name: 'Group',
-          isEnabled: true,
-          permissions: PermissionAccess.ask,
-          createdAt: DateTime(2026),
-          updatedAt: DateTime(2026),
-          mcpServerId: 'server-1',
-        );
-        final workspaceTool = WorkspaceToolEntity(
-          id: 'workspace-tool-1',
-          workspaceId: 'workspace-1',
-          toolId: 'sum',
-          isEnabled: true,
-          permissionMode: ToolPermissionMode.alwaysAsk,
-          createdAt: DateTime(2026),
-          updatedAt: DateTime(2026),
-          workspaceToolsGroupId: 'group-1',
-        );
 
         when(() => messageRepository.getMessageById(messageId)).thenAnswer(
           (_) async => mcpMessage,
@@ -347,14 +338,15 @@ void main() {
           resolvedTool,
         );
         when(
-          () => toolsGroupsRepository.getToolsGroupByMcpServerId('server-1'),
-        ).thenAnswer((_) async => group);
+          () => conversationRepository.getConversationById('conversation-1'),
+        ).thenAnswer((_) async => _conversation);
         when(
-          () => workspaceToolsRepository.getWorkspaceToolByToolName(
-            toolGroupId: 'group-1',
-            toolName: 'sum',
+          () => resolveToolApprovalDecisionUsecase.resolvePermissionTableId(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+            resolvedTool: resolvedTool,
           ),
-        ).thenAnswer((_) async => workspaceTool);
+        ).thenAnswer((_) async => 'workspace-tool-1');
         when(
           () => conversationToolsRepository.setConversationToolPermission(
             'conversation-1',
@@ -380,3 +372,12 @@ void main() {
     );
   });
 }
+
+final _conversation = ConversationEntity(
+  id: 'conversation-1',
+  title: 'Conversation',
+  workspaceId: 'workspace-1',
+  isPinned: false,
+  createdAt: DateTime(2026),
+  updatedAt: DateTime(2026),
+);

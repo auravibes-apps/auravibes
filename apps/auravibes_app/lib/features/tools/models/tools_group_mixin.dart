@@ -2,6 +2,7 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 import 'package:auravibes_app/domain/models/mcp_connection_view_status.dart';
+import 'package:auravibes_app/features/skills/constants/skill_tool_permission_constants.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
@@ -19,7 +20,13 @@ mixin ToolsGroupMixin {
   bool get isMcpGroup => group?.isMcpGroup ?? false;
 
   String? get localizedDisplayNameKey {
-    if (!isDefaultGroup) return null;
+    if (!isDefaultGroup) {
+      if (group?.name == skillToolsGroupName) {
+        return LocaleKeys.more_screen_skills_title;
+      }
+
+      return null;
+    }
 
     return switch (defaultGroupType) {
       .native => LocaleKeys.tools_screen_native_group,
