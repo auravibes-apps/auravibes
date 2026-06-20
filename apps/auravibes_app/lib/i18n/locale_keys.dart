@@ -11,6 +11,10 @@ abstract class LocaleKeys {
   static const menu_agents = 'menu.agents';
   static const menu_prompts = 'menu.prompts';
   static const menu_more = 'menu.more';
+  static const navigation_drawer_resize_handle_tooltip =
+      'navigation_drawer.resize_handle_tooltip';
+  static const navigation_drawer_resize_handle_hint =
+      'navigation_drawer.resize_handle_hint';
   static const intro_flow_welcome_title = 'intro_flow.welcome.title';
   static const intro_flow_welcome_body = 'intro_flow.welcome.body';
   static const intro_flow_workspace_context_title =
@@ -174,6 +178,10 @@ abstract class LocaleKeys {
       'chats_screens.chats_list.title';
   static const chats_screens_chats_list_add_chat =
       'chats_screens.chats_list.add_chat';
+  static const chats_screens_new_chat_starting =
+      'chats_screens.new_chat.starting';
+  static const chats_screens_new_chat_no_model_selected =
+      'chats_screens.new_chat.no_model_selected';
   static const chats_screens_chat_conversation_select_model_selctor =
       'chats_screens.chat_conversation.select_model_selctor';
   static const chats_screens_chat_conversation_message_placeholder =
@@ -475,6 +483,8 @@ abstract class LocaleKeys {
   static const common_close_dialog = 'common.close_dialog';
   static const common_reload = 'common.reload';
   static const common_show_more = 'common.show_more';
+  static const common_error_title = 'common.error_title';
+  static const common_error_message = 'common.error_message';
   static const tools_names_calculator_name = 'tools_names.calculator.name';
   static const tools_names_calculator_description =
       'tools_names.calculator.description';

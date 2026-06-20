@@ -12,7 +12,7 @@ class AuraScreen extends StatelessWidget {
   const AuraScreen({
     required this.child,
     this.appBar,
-    this.variant = AuraScreenVariation.aurora,
+    this.variant = AuraScreenVariation.standard,
     this.padding,
     super.key,
   });
@@ -54,10 +54,7 @@ class AuraScreen extends StatelessWidget {
     }
 
     content = switch (variant) {
-      AuraScreenVariation.standard => ColoredBox(
-        color: context.auraColors.background,
-        child: content,
-      ),
+      AuraScreenVariation.standard => content,
       AuraScreenVariation.aurora => Stack(
         children: [
           const _AuroraBackground(),
@@ -71,6 +68,7 @@ class AuraScreen extends StatelessWidget {
       body: Portal(
         child: content,
       ),
+      backgroundColor: context.auraColors.background,
       extendBodyBehindAppBar: true,
     );
   }

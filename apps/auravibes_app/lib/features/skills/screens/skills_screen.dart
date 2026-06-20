@@ -29,6 +29,7 @@ class SkillsScreen extends ConsumerWidget {
       child: switch (skillsAsync) {
         AsyncData(:final value) => _SkillsScreenBody(
           skills: value,
+          onCreateSkill: _openCreateSkill,
           onOpenSkill: _openSkill,
           onDeleteSkill: _confirmDeleteSkill,
           onSkillEnabledChanged: (ref, skill, change) =>
@@ -36,6 +37,7 @@ class SkillsScreen extends ConsumerWidget {
         ),
         AsyncLoading(:final value?) => _SkillsScreenBody(
           skills: value,
+          onCreateSkill: _openCreateSkill,
           onOpenSkill: _openSkill,
           onDeleteSkill: _confirmDeleteSkill,
           onSkillEnabledChanged: (ref, skill, change) =>
@@ -142,12 +144,14 @@ class SkillsScreen extends ConsumerWidget {
 class _SkillsScreenBody extends ConsumerWidget {
   const _SkillsScreenBody({
     required this.skills,
+    required this.onCreateSkill,
     required this.onOpenSkill,
     required this.onDeleteSkill,
     required this.onSkillEnabledChanged,
   });
 
   final List<WorkspaceSkill> skills;
+  final Future<void> Function(BuildContext context) onCreateSkill;
   final Future<void> Function(BuildContext context, String skillId) onOpenSkill;
   final Future<void> Function(
     BuildContext context,
@@ -165,18 +169,22 @@ class _SkillsScreenBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (skills.isEmpty) {
-      return const Center(
+      return Center(
         child: AuraColumn(
           children: [
-            Icon(Icons.psychology_alt_outlined, size: 48),
-            AuraText(
+            const Icon(Icons.psychology_alt_outlined, size: 48),
+            const AuraText(
               child: TextLocale(LocaleKeys.skills_screen_empty_title),
               style: AuraTextStyle.heading4,
             ),
-            AuraText(
+            const AuraText(
               child: TextLocale(LocaleKeys.skills_screen_empty_subtitle),
               textAlign: TextAlign.center,
               color: AuraColorVariant.onSurfaceVariant,
+            ),
+            AuraButton(
+              onPressed: () => unawaited(onCreateSkill(context)),
+              child: const TextLocale(LocaleKeys.skills_screen_create),
             ),
           ],
           mainAxisSize: MainAxisSize.min,
@@ -317,8 +325,21 @@ class _SkillChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final auraColors = context.auraColors;
+    final chipTextStyle = auraResolveTextStyle(
+      style: AuraTextStyle.caption,
+      colors: auraColors,
+    ).copyWith(color: auraColors.onSurfaceVariant);
+
     return Chip(
-      label: Text(label),
+      label: Text(label, style: chipTextStyle),
+      side: BorderSide(color: auraColors.outline),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(
+          Radius.circular(DesignBorderRadius.lg),
+        ),
+      ),
+      backgroundColor: auraColors.surfaceVariant,
       visualDensity: VisualDensity.compact,
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
     );

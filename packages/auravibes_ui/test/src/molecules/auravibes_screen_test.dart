@@ -30,6 +30,7 @@ void main() {
         MaterialApp(
           home: const AuraScreen(
             child: SizedBox(),
+            // ignore: avoid_redundant_argument_values - Required to cover explicit standard variant separately from default behavior.
             variant: AuraScreenVariation.standard,
           ),
           theme: ThemeData(
@@ -40,8 +41,8 @@ void main() {
         ),
       );
 
-      expect(find.byType(Scaffold), findsOneWidget);
-      expect(find.byType(ColoredBox), findsWidgets);
+      final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
+      expect(scaffold.backgroundColor, AuraTheme.light.colors.background);
       expect(find.byType(BackdropFilter), findsNothing);
     });
 
@@ -52,6 +53,7 @@ void main() {
         MaterialApp(
           home: const AuraScreen(
             child: SizedBox(),
+            variant: AuraScreenVariation.aurora,
           ),
           theme: ThemeData(
             extensions: [
@@ -110,7 +112,7 @@ void main() {
       expect(find.byType(AuraPadding), findsOneWidget);
     });
 
-    testWidgets('uses aurora variant by default', (tester) async {
+    testWidgets('uses standard variant by default', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: const AuraScreen(
@@ -124,8 +126,9 @@ void main() {
         ),
       );
 
-      expect(find.byType(Stack), findsWidgets);
-      expect(find.byType(BackdropFilter), findsOneWidget);
+      final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
+      expect(scaffold.backgroundColor, AuraTheme.light.colors.background);
+      expect(find.byType(BackdropFilter), findsNothing);
     });
 
     testWidgets('renders AuraAppBar with leading widget', (tester) async {

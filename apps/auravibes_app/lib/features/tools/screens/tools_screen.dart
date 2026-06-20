@@ -54,31 +54,22 @@ class ToolsScreen extends ConsumerWidget {
                       ),
                       Row(
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 6,
-                              horizontal: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.green[100],
-                              borderRadius: const BorderRadius.all(
-                                Radius.circular(20),
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
+                          AuraBadge(
+                            child: AuraRow(
                               children: [
                                 Icon(
                                   Icons.check_circle,
                                   size: 16,
-                                  color: Colors.green[700],
+                                  color: context.auraColors.onSuccess,
                                 ),
-                                const SizedBox(width: 4),
                                 ToolCountEnabledWidget(
                                   workspaceId: workspaceId,
                                 ),
                               ],
+                              spacing: AuraSpacing.xs,
+                              mainAxisSize: MainAxisSize.min,
                             ),
+                            variant: AuraBadgeVariant.success,
                           ),
                         ],
                       ),

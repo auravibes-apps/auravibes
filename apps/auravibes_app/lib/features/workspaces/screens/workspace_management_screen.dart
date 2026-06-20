@@ -123,29 +123,19 @@ class WorkspaceManagementScreen extends HookConsumerWidget {
   ) async {
     final workspace = workspaces.firstWhereOrNull((w) => w.id == id);
     if (workspace == null) return;
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showAuraConfirmDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const TextLocale(LocaleKeys.workspace_management_delete_title),
-        content: Text(
-          LocaleKeys.workspace_management_delete_confirm.tr(
-            namedArgs: {'name': workspace.name},
-          ),
+      title: const TextLocale(LocaleKeys.workspace_management_delete_title),
+      message: Text(
+        LocaleKeys.workspace_management_delete_confirm.tr(
+          namedArgs: {'name': workspace.name},
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const TextLocale(LocaleKeys.common_cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const TextLocale(
-              LocaleKeys.common_delete,
-              style: TextStyle(color: Colors.red),
-            ),
-          ),
-        ],
       ),
+      actions: const AuraConfirmDialogActions(
+        confirmLabel: TextLocale(LocaleKeys.common_delete),
+        cancelLabel: TextLocale(LocaleKeys.common_cancel),
+      ),
+      isDestructive: true,
     );
 
     if (confirmed == true && context.mounted) {
@@ -177,8 +167,10 @@ class WorkspaceManagementScreen extends HookConsumerWidget {
       debugPrint('Workspace management unexpected error: $error');
     }
 
-    final _ = ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
+    final _ = showAuraSnackBar(
+      context: context,
+      content: Text(message),
+      variant: AuraSnackBarVariant.error,
     );
   }
 }

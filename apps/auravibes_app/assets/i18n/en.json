@@ -9,6 +9,10 @@
     "prompts": "Prompts",
     "more": "More"
   },
+  "navigation_drawer": {
+    "resize_handle_tooltip": "Resize navigation drawer",
+    "resize_handle_hint": "Drag horizontally to change the drawer width"
+  },
   "intro_flow": {
     "welcome": {
       "title": "Welcome to AuraVibes",
@@ -141,6 +145,10 @@
     "chats_list": {
       "title": "Chats",
       "add_chat": "Add Chat"
+    },
+    "new_chat": {
+      "starting": "Starting conversation...",
+      "no_model_selected": "Select a model to enable messaging."
     },
     "chat_conversation": {
       "select_model_selctor": "Select Model",
@@ -395,7 +403,9 @@
     "close": "Close",
     "close_dialog": "Close dialog",
     "reload": "Reload",
-    "show_more": "Show more"
+    "show_more": "Show more",
+    "error_title": "Something went wrong",
+    "error_message": "Try again or reopen this screen."
   },
   "tools_names": {
     "calculator": {

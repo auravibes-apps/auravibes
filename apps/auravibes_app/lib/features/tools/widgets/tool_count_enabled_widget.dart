@@ -5,7 +5,6 @@ import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/app_error_widget.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart' show Colors;
 import 'package:flutter/widgets.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -30,7 +29,7 @@ class ToolCountEnabledWidget extends ConsumerWidget {
       AsyncData(value: final count) => Text(
         LocaleKeys.tools_screen_enabled_count.plural(count),
         style: TextStyle(
-          color: Colors.green[700],
+          color: context.auraColors.onSuccess,
           fontSize: 14,
           fontWeight: FontWeight.w500,
         ),
