@@ -29,11 +29,23 @@ class ServiceConnectionsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final connectionsAsync = ref.watch(serviceConnectionsProvider(workspaceId));
 
+    void openCreateConnection() {
+      unawaited(
+        context.push<bool>(
+          '/workspaces/$workspaceId/more/service-connections/new',
+        ),
+      );
+    }
+
     return AuraScreen(
       child: switch (connectionsAsync) {
-        AsyncData(:final value) => _ConnectionsList(connections: value),
+        AsyncData(:final value) => _ConnectionsList(
+          connections: value,
+          onAddConnection: openCreateConnection,
+        ),
         AsyncLoading(value: final value?, hasValue: true) => _ConnectionsList(
           connections: value,
+          onAddConnection: openCreateConnection,
         ),
         AsyncLoading() => const Center(child: AuraSpinner()),
         AsyncError() => const Center(
@@ -48,13 +60,7 @@ class ServiceConnectionsScreen extends ConsumerWidget {
         actions: [
           AuraIconButton(
             icon: Icons.add,
-            onPressed: () {
-              unawaited(
-                context.push<bool>(
-                  '/workspaces/$workspaceId/more/service-connections/new',
-                ),
-              );
-            },
+            onPressed: openCreateConnection,
             tooltip: LocaleKeys.service_connections_add.tr(context: context),
           ),
         ],
@@ -68,29 +74,37 @@ class ServiceConnectionsScreen extends ConsumerWidget {
 }
 
 class _ConnectionsList extends StatelessWidget {
-  const _ConnectionsList({required this.connections});
+  const _ConnectionsList({
+    required this.connections,
+    required this.onAddConnection,
+  });
 
   final List<ServiceConnectionListItem> connections;
+  final VoidCallback onAddConnection;
 
   @override
   Widget build(BuildContext context) {
     if (connections.isEmpty) {
-      return const Center(
+      return Center(
         child: AuraColumn(
           children: [
-            AuraIcon(
+            const AuraIcon(
               Icons.hub_outlined,
               size: AuraIconSize.extraLarge,
               color: AuraColorVariant.onSurfaceVariant,
             ),
-            AuraText(
+            const AuraText(
               child: TextLocale(LocaleKeys.service_connections_empty_title),
               style: AuraTextStyle.heading3,
             ),
-            AuraText(
+            const AuraText(
               child: TextLocale(LocaleKeys.service_connections_empty_subtitle),
               textAlign: TextAlign.center,
               color: AuraColorVariant.onSurfaceVariant,
+            ),
+            AuraButton(
+              onPressed: onAddConnection,
+              child: const TextLocale(LocaleKeys.service_connections_add),
             ),
           ],
           mainAxisAlignment: MainAxisAlignment.center,

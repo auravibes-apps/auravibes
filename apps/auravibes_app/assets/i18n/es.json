@@ -141,6 +141,10 @@
       "title": "Chats",
       "add_chat": "Agregar Chat"
     },
+    "new_chat": {
+      "starting": "Iniciando conversación...",
+      "no_model_selected": "Selecciona un modelo para habilitar mensajes."
+    },
     "chat_conversation": {
       "select_model_selctor": "Selecionar Modelo",
       "message_placeholder": "Escribe tu mensaje...",

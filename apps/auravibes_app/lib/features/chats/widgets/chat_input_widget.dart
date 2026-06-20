@@ -14,6 +14,7 @@ class ChatInputWidget extends HookConsumerWidget {
     required this.onSendMessage,
     required this.onToolsPress,
     this.onSkillsPress,
+    this.disabledHint,
     this.disabled = false,
     this.isBusy = false,
     this.onStop,
@@ -27,6 +28,7 @@ class ChatInputWidget extends HookConsumerWidget {
   final void Function(String message) onSendMessage;
   final VoidCallback onToolsPress;
   final VoidCallback? onSkillsPress;
+  final Widget? disabledHint;
   final VoidCallback? onStop;
   final VoidCallback? onCompact;
   final bool isCompacting;
@@ -90,7 +92,30 @@ class ChatInputWidget extends HookConsumerWidget {
                 ),
               ),
 
-            const Spacer(),
+            if (disabledHint case final Widget disabledHint)
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: AuraText(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const AuraIcon(
+                          Icons.info_outline,
+                          size: AuraIconSize.small,
+                          color: AuraColorVariant.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 6),
+                        Flexible(child: disabledHint),
+                      ],
+                    ),
+                    style: AuraTextStyle.bodySmall,
+                    color: AuraColorVariant.onSurfaceVariant,
+                  ),
+                ),
+              )
+            else
+              const Spacer(),
 
             if (compact != null)
               Padding(

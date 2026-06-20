@@ -172,6 +172,10 @@ abstract class LocaleKeys {
       'chats_screens.chats_list.title';
   static const chats_screens_chats_list_add_chat =
       'chats_screens.chats_list.add_chat';
+  static const chats_screens_new_chat_starting =
+      'chats_screens.new_chat.starting';
+  static const chats_screens_new_chat_no_model_selected =
+      'chats_screens.new_chat.no_model_selected';
   static const chats_screens_chat_conversation_select_model_selctor =
       'chats_screens.chat_conversation.select_model_selctor';
   static const chats_screens_chat_conversation_message_placeholder =
