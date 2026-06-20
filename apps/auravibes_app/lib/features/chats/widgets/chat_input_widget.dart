@@ -53,9 +53,22 @@ class ChatInputWidget extends HookConsumerWidget {
 
     final compact = onCompact;
     final stop = onStop;
+    final stopButton = stop == null
+        ? null
+        : Tooltip(
+            message: LocaleKeys.chats_screens_chat_conversation_stop_generation
+                .tr(),
+            child: AuraButton(
+              onPressed: stop,
+              child: const AuraIcon(Icons.stop_rounded),
+              variant: AuraButtonVariant.outlined,
+              colorVariant: AuraColorVariant.error,
+              size: AuraButtonSize.small,
+            ),
+          );
 
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
       child: AuraInput(
         controller: controller,
         placeholder: const TextLocale(
@@ -68,29 +81,32 @@ class ChatInputWidget extends HookConsumerWidget {
         },
         footer: Row(
           children: [
-            // Tools button - always show, modal will handle availability.
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: AuraButton(
-                onPressed: onToolsPress,
-                child: const AuraIcon(Icons.build_circle_outlined),
-                variant: AuraButtonVariant.secondary,
-                size: AuraButtonSize.small,
-              ),
-            ),
-            if (onSkillsPress case final onSkillsPress?)
-              Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: Tooltip(
-                  message: LocaleKeys.skills_selector_title.tr(),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Tooltip(
+                  message: LocaleKeys.menu_tools.tr(),
                   child: AuraButton(
-                    onPressed: onSkillsPress,
-                    child: const AuraIcon(Icons.psychology_alt_outlined),
+                    onPressed: onToolsPress,
+                    child: const AuraIcon(Icons.build_circle_outlined),
                     variant: AuraButtonVariant.secondary,
                     size: AuraButtonSize.small,
                   ),
                 ),
-              ),
+                if (onSkillsPress case final onSkillsPress?) ...[
+                  const SizedBox(width: DesignSpacing.xs),
+                  Tooltip(
+                    message: LocaleKeys.skills_selector_title.tr(),
+                    child: AuraButton(
+                      onPressed: onSkillsPress,
+                      child: const AuraIcon(Icons.psychology_alt_outlined),
+                      variant: AuraButtonVariant.secondary,
+                      size: AuraButtonSize.small,
+                    ),
+                  ),
+                ],
+              ],
+            ),
 
             if (disabledHint case final Widget disabledHint)
               Expanded(
@@ -117,46 +133,41 @@ class ChatInputWidget extends HookConsumerWidget {
             else
               const Spacer(),
 
-            if (compact != null)
-              Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: Tooltip(
-                  message: LocaleKeys.compaction_manual_button_tooltip.tr(),
-                  child: AuraButton(
-                    onPressed: compact,
-                    child: isCompacting
-                        ? const AuraSpinner(size: AuraSpinnerSize.small)
-                        : const AuraIcon(Icons.compress_outlined),
-                    variant: AuraButtonVariant.secondary,
-                    size: AuraButtonSize.small,
-                    disabled: disabled || isBusy || isCompacting,
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (compact != null) ...[
+                  Tooltip(
+                    message: LocaleKeys.compaction_manual_button_tooltip.tr(),
+                    child: AuraButton(
+                      onPressed: compact,
+                      child: isCompacting
+                          ? const AuraSpinner(size: AuraSpinnerSize.small)
+                          : const AuraIcon(Icons.compress_outlined),
+                      variant: AuraButtonVariant.secondary,
+                      size: AuraButtonSize.small,
+                      disabled: disabled || isBusy || isCompacting,
+                    ),
                   ),
-                ),
-              ),
-
-            if (isBusy && stop != null)
-              Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: Tooltip(
-                  message: LocaleKeys
-                      .chats_screens_chat_conversation_stop_generation
-                      .tr(),
-                  child: AuraButton(
-                    onPressed: stop,
-                    child: const AuraIcon(Icons.stop_rounded),
-                    variant: AuraButtonVariant.outlined,
-                    colorVariant: AuraColorVariant.error,
-                    size: AuraButtonSize.small,
+                  const SizedBox(width: DesignSpacing.xs),
+                ],
+                if (stopButton != null) ...[
+                  Visibility(
+                    child: stopButton,
+                    visible: isBusy,
+                    maintainState: true,
+                    maintainAnimation: true,
+                    maintainSize: true,
                   ),
+                  const SizedBox(width: DesignSpacing.xs),
+                ],
+                AuraButton(
+                  onPressed: sendMessage,
+                  child: const AuraIcon(Icons.arrow_upward),
+                  size: AuraButtonSize.small,
+                  disabled: isEmpty || disabled,
                 ),
-              ),
-
-            // Send button.
-            AuraButton(
-              onPressed: sendMessage,
-              child: const AuraIcon(Icons.arrow_upward),
-              size: AuraButtonSize.small,
-              disabled: isEmpty || disabled,
+              ],
             ),
           ],
         ),

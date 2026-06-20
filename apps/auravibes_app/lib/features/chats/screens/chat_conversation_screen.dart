@@ -167,18 +167,16 @@ class _ChatConversationScreen extends HookConsumerWidget {
     return AuraScreen(
       child: AuraColumn(
         children: [
-          const ConversationContextUsagePill(),
-          SelectWorkspaceModelSelectionWidget(
+          _ChatControlsBar(
             workspaceId: workspaceId,
-            selectWorkspaceModelSelectionId: (modelId) {
+            workspaceModelSelectionId: conversation.modelId,
+            onModelSelected: (modelId) {
               unawaited(
                 ref
                     .read(conversationChatProvider(workspaceId).notifier)
                     .setModel(modelId),
               );
             },
-            onProviderChanged: (_) => Object(),
-            workspaceModelSelectionId: conversation.modelId,
           ),
           Expanded(child: _ChatList(pendingToolCalls: pendingCalls)),
           const McpConnectingIndicator(),
@@ -211,6 +209,62 @@ class _ChatConversationScreen extends HookConsumerWidget {
       ),
     );
   }
+}
+
+@Dependencies([contextUsage])
+class _ChatControlsBar extends StatelessWidget {
+  const _ChatControlsBar({
+    required this.workspaceId,
+    required this.workspaceModelSelectionId,
+    required this.onModelSelected,
+  });
+
+  final String workspaceId;
+  final String? workspaceModelSelectionId;
+  final ValueChanged<String?> onModelSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final auraColors = context.auraColors;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: auraColors.surfaceVariant,
+        border: Border(
+          bottom: BorderSide(color: auraColors.outlineVariant),
+        ),
+      ),
+      child: SafeArea(
+        top: false,
+        bottom: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.only(
+                top: DesignSpacing.sm,
+                right: DesignSpacing.sm,
+              ),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: ConversationContextUsagePill(),
+              ),
+            ),
+            SelectWorkspaceModelSelectionWidget(
+              workspaceId: workspaceId,
+              selectWorkspaceModelSelectionId: onModelSelected,
+              onProviderChanged: _ignoreProviderChange,
+              workspaceModelSelectionId: workspaceModelSelectionId,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+void _ignoreProviderChange(String? _) {
+  return;
 }
 
 class _RateLimitRetryIndicator extends StatefulWidget {
