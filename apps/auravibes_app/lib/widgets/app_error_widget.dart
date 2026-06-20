@@ -29,7 +29,6 @@ class AppErrorWidget<T extends Object> extends StatelessWidget {
             const AuraText(
               child: _AppErrorText(
                 LocaleKeys.common_error_title,
-                maxLines: 2,
               ),
               style: AuraTextStyle.heading6,
               textAlign: TextAlign.center,
@@ -37,7 +36,6 @@ class AppErrorWidget<T extends Object> extends StatelessWidget {
             const AuraText(
               child: _AppErrorText(
                 LocaleKeys.common_error_message,
-                maxLines: 2,
               ),
               textAlign: TextAlign.center,
               color: AuraColorVariant.onSurfaceVariant,
@@ -53,17 +51,16 @@ class AppErrorWidget<T extends Object> extends StatelessWidget {
 }
 
 class _AppErrorText extends StatelessWidget {
-  const _AppErrorText(this.localeKey, {this.maxLines});
+  const _AppErrorText(this.localeKey);
 
   final String localeKey;
-  final int? maxLines;
 
   @override
   Widget build(BuildContext context) {
     return Text(
       _translate(context),
       overflow: TextOverflow.ellipsis,
-      maxLines: maxLines,
+      maxLines: 2,
     );
   }
 
