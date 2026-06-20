@@ -423,7 +423,7 @@ void main() {
                       (ref) async => const <MessageEntity>[],
                     ),
                     chatMessageIdsProvider.overrideWith(
-                      (ref) => MessageIdList.empty,
+                      (ref) => const <String>[],
                     ),
                     contextUsageProvider.overrideWith(
                       (ref) => ContextUsageData.compute(
@@ -507,7 +507,7 @@ void main() {
                     (ref) async => const <MessageEntity>[],
                   ),
                   chatMessageIdsProvider.overrideWith(
-                    (ref) => MessageIdList.empty,
+                    (ref) => const <String>[],
                   ),
                   contextUsageProvider.overrideWith(
                     (ref) => ContextUsageData.compute(
@@ -605,7 +605,7 @@ void main() {
                     (ref) async => const <MessageEntity>[],
                   ),
                   chatMessageIdsProvider.overrideWith(
-                    (ref) => MessageIdList.empty,
+                    (ref) => const <String>[],
                   ),
                   contextUsageProvider.overrideWith(
                     (ref) => ContextUsageData.compute(

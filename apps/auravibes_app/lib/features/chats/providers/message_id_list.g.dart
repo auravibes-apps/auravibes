@@ -182,7 +182,7 @@ final class ChatMessageIdsProvider
   }
 }
 
-String _$chatMessageIdsHash() => r'a12618af2a572a40f192e0330c0f39a582a9f30b';
+String _$chatMessageIdsHash() => r'dfedf0e1df5aeb77d07223a3ff3eff1f62a239dc';
 
 @ProviderFor(messageConversationById)
 final messageConversationByIdProvider = MessageConversationByIdFamily._();
@@ -507,62 +507,6 @@ final class ConversationCompactionExecutionStateProvider
 
 String _$conversationCompactionExecutionStateHash() =>
     r'4c9ceb397968d65fffdf98fa866da936210dd803';
-
-/// Provides the pending MCP server IDs for the current conversation.
-///
-/// Returns a list of MCP server IDs that are being waited on for connection,
-/// or an empty list if not waiting.
-
-@ProviderFor(pendingMcpConnections)
-final pendingMcpConnectionsProvider = PendingMcpConnectionsProvider._();
-
-/// Provides the pending MCP server IDs for the current conversation.
-///
-/// Returns a list of MCP server IDs that are being waited on for connection,
-/// or an empty list if not waiting.
-
-final class PendingMcpConnectionsProvider
-    extends $FunctionalProvider<List<String>, List<String>, List<String>>
-    with $Provider<List<String>> {
-  /// Provides the pending MCP server IDs for the current conversation.
-  ///
-  /// Returns a list of MCP server IDs that are being waited on for connection,
-  /// or an empty list if not waiting.
-  PendingMcpConnectionsProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'pendingMcpConnectionsProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$pendingMcpConnectionsHash();
-
-  @$internal
-  @override
-  $ProviderElement<List<String>> $createElement($ProviderPointer pointer) =>
-      $ProviderElement(pointer);
-
-  @override
-  List<String> create(Ref ref) {
-    return pendingMcpConnections(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(List<String> value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<List<String>>(value),
-    );
-  }
-}
-
-String _$pendingMcpConnectionsHash() =>
-    r'038e4875079a75087bc6653526176de5b8b68e0a';
 
 @ProviderFor(conversationUsedTokens)
 final conversationUsedTokensProvider = ConversationUsedTokensProvider._();
