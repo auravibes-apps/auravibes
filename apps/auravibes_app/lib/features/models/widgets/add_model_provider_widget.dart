@@ -617,8 +617,9 @@ class _SelectedModelHeader extends HookConsumerWidget {
           onPressed: () {
             addModelProvider.setModel(null);
           },
-          semanticLabel:
-              LocaleKeys.models_screens_add_provider_back_to_selection.tr(),
+          semanticLabel: LocaleKeys
+              .models_screens_add_provider_back_to_selection
+              .tr(),
         ),
         SizedBox(width: context.auraTheme.spacing.md),
         ModelLogo(
