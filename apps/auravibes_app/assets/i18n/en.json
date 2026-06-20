@@ -89,9 +89,9 @@
     }
   },
   "service_connections": {
-    "title": "Service Connections",
-    "create_title": "New Service Connection",
-    "edit_title": "Edit Service Connection",
+    "title": "Connections",
+    "create_title": "New Connection",
+    "edit_title": "Edit Connection",
     "add": "Add connection",
     "load_error": "Unable to load service connections",
     "save_error": "Unable to save service connection",
@@ -294,9 +294,9 @@
     "add_input": "Add input"
   },
   "skill_credentials_definitions": {
-    "title": "Skill Credential Definitions",
-    "create_title": "New Credential Definition",
-    "edit_title": "Edit Credential Definition",
+    "title": "Credentials",
+    "create_title": "New Credential",
+    "edit_title": "Edit Credential",
     "empty": "No credential definitions",
     "error": "Error loading credential definitions",
     "not_found": "Credential definition not found",

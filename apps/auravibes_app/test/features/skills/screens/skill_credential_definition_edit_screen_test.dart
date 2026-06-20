@@ -74,7 +74,7 @@ void main() {
     );
     final _ = await tester.pumpAndSettle();
 
-    expect(find.text('New Credential Definition'), findsOneWidget);
+    expect(find.text('New Credential'), findsOneWidget);
     expect(find.text('Attributes JSON'), findsNothing);
     expect(find.text('Add attribute'), findsOneWidget);
     expect(find.text('Secret'), findsOneWidget);

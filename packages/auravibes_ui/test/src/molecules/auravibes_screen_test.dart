@@ -88,6 +88,14 @@ void main() {
       expect(find.text(titleText), findsOneWidget);
       expect(find.byType(AuraAppBar), findsOneWidget);
       expect(find.byType(AppBar), findsOneWidget);
+      final title = tester.widget<AuraText>(
+        find.descendant(
+          of: find.byType(AppBar),
+          matching: find.byType(AuraText),
+        ),
+      );
+
+      expect(title.style, AuraTextStyle.heading5);
     });
 
     testWidgets('applies padding when provided', (tester) async {

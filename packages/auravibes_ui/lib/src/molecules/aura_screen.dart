@@ -107,9 +107,14 @@ class AuraAppBar extends StatelessWidget implements PreferredSizeWidget {
       leading: leading,
       title: title == null
           ? null
-          : AuraText(
-              child: title,
-              style: AuraTextStyle.heading3,
+          : DefaultTextStyle.merge(
+              softWrap: false,
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+              child: AuraText(
+                child: title,
+                style: AuraTextStyle.heading5,
+              ),
             ),
       actions: actions,
       bottom: bottom,

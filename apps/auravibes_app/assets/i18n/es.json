@@ -89,9 +89,9 @@
     }
   },
   "service_connections": {
-    "title": "Conexiones de Servicio",
-    "create_title": "Nueva Conexión de Servicio",
-    "edit_title": "Editar Conexión de Servicio",
+    "title": "Conexiones",
+    "create_title": "Nueva Conexión",
+    "edit_title": "Editar Conexión",
     "add": "Agregar conexión",
     "load_error": "No se pudieron cargar las conexiones de servicio",
     "save_error": "No se pudo guardar la conexión de servicio",
@@ -294,9 +294,9 @@
     "add_input": "Agregar entrada"
   },
   "skill_credentials_definitions": {
-    "title": "Definiciones de Credenciales de Habilidades",
-    "create_title": "Nueva Definición de Credencial",
-    "edit_title": "Editar Definición de Credencial",
+    "title": "Credenciales",
+    "create_title": "Nueva Credencial",
+    "edit_title": "Editar Credencial",
     "empty": "No hay definiciones de credenciales",
     "error": "Error al cargar definiciones de credenciales",
     "not_found": "Definición de credencial no encontrada",
