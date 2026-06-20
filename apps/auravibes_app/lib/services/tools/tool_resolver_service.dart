@@ -115,8 +115,9 @@ class ToolResolverService {
   /// Note: Tool names must match pattern ^[a-zA-Z0-9_-]{1,128}$
   /// so we use underscores as separators instead of colons.
   static _ToolIdComponents? _parseToolId(String compositeId, String prefix) {
-    final match = RegExp('^${RegExp.escape(prefix)}([^_]+)_(.+)\$')
-        .firstMatch(compositeId);
+    final match = RegExp(
+      '^${RegExp.escape(prefix)}([^_]+)_(.+)\$',
+    ).firstMatch(compositeId);
     if (match == null) return null;
 
     final tableId = match.group(1);
