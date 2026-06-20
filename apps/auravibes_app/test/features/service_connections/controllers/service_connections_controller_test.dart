@@ -1,6 +1,9 @@
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/features/service_connections/controllers/service_connections_controller.dart';
+import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
+import 'package:auravibes_app/features/service_connections/usecases/delete_service_connection_usecase.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 
 void main() {
   group('ServiceConnectionsController', () {
@@ -16,6 +19,7 @@ void main() {
           accessToken: 'access',
           issuedAt: DateTime(2026),
         ),
+        MockDeleteServiceConnectionUsecase(),
       );
 
       await controller.reconnectMcpServer('server-1');
@@ -39,6 +43,7 @@ void main() {
             issuedAt: DateTime(2026),
           );
         },
+        MockDeleteServiceConnectionUsecase(),
       );
 
       await controller.refreshMcpCredential(
@@ -48,5 +53,41 @@ void main() {
 
       expect(calls, ['refresh:connection-1', 'reconnect:server-1']);
     });
+
+    test('deleteConnection delegates delete usecase', () async {
+      final deleteUsecase = MockDeleteServiceConnectionUsecase();
+      when(
+        () => deleteUsecase(
+          connectionId: 'connection-1',
+          kind: ServiceConnectionListItemKind.skillCredential,
+        ),
+      ).thenAnswer((_) => Future<void>.value());
+      final controller = ServiceConnectionsController(
+        (_) => Future<void>.value(),
+        (_) async => OAuthTokenEntity(
+          accessToken: 'access',
+          issuedAt: DateTime(2026),
+        ),
+        deleteUsecase,
+      );
+
+      await expectLater(
+        controller.deleteConnection(
+          connectionId: 'connection-1',
+          kind: ServiceConnectionListItemKind.skillCredential,
+        ),
+        completes,
+      );
+
+      verify(
+        () => deleteUsecase(
+          connectionId: 'connection-1',
+          kind: ServiceConnectionListItemKind.skillCredential,
+        ),
+      ).called(1);
+    });
   });
 }
+
+class MockDeleteServiceConnectionUsecase extends Mock
+    implements DeleteServiceConnectionUsecase {}

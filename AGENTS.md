@@ -40,22 +40,8 @@ fvm dart run melos list                  # List all packages
 
 ### Dependency Management
 
-**IMPORTANT**: Always use these commands instead of manually editing pubspec.yaml files.
+**IMPORTANT**: avoid packages version 'any' in `pubspec.yaml`. Always specify version constraints.
 
-```bash
-# Add runtime dependencies
-fvm flutter pub add package_name
-
-# Add development dependencies
-fvm flutter pub add dev:package_name
-
-# Add dependencies with version constraints
-fvm flutter pub add package_name:^1.0.0
-
-# Examples:
-fvm flutter pub add riverpod dio flutter_markdown
-fvm flutter pub add dev:build_runner dev:json_serializable
-```
 
 ### Quality & Testing
 
