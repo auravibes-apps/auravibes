@@ -115,16 +115,17 @@ final class UrlTool extends NativeToolEntity<String, String> {
 
     final metaForBudget = meta(truncated: true);
     final metaBytes = utf8.encode(metaForBudget).length;
-    final metaLineCount =
-        const LineSplitter().convert(metaForBudget).length;
+    final metaLineCount = const LineSplitter().convert(metaForBudget).length;
     final body = _truncate(
       transformed.body,
       maxBytes: (_maxToolOutputBytes - metaBytes).clamp(
         0,
         _maxToolOutputBytes,
       ),
-      maxLines:
-          (_maxToolOutputLines - metaLineCount).clamp(0, _maxToolOutputLines),
+      maxLines: (_maxToolOutputLines - metaLineCount).clamp(
+        0,
+        _maxToolOutputLines,
+      ),
     );
     final truncated =
         transformed.truncated || !identical(body, transformed.body);
@@ -158,8 +159,9 @@ final class UrlTool extends NativeToolEntity<String, String> {
     var truncated = false;
 
     final lines = result.split('\n');
-    final contentLines =
-        result.endsWith('\n') ? lines.length - 1 : lines.length;
+    final contentLines = result.endsWith('\n')
+        ? lines.length - 1
+        : lines.length;
     if (contentLines > maxLines) {
       result = lines.sublist(0, maxLines).join('\n');
       truncated = true;
