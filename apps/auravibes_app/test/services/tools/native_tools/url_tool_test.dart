@@ -561,6 +561,9 @@ void main() {
 
         final resultBytes = utf8.encode(result).length;
         expect(resultBytes, lessThanOrEqualTo(50 * 1024));
+
+        final resultLines = const LineSplitter().convert(result).length;
+        expect(resultLines, lessThanOrEqualTo(2000));
       });
 
       test('marks format as truncated', () async {
