@@ -11,6 +11,7 @@ import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -79,21 +80,21 @@ class NewChatScreen extends ConsumerWidget {
             selectedProviderId: state.providerId,
           ),
           Expanded(
-            child: Stack(
-              children: [
-                Center(
-                  child: ChatInputWidget(
-                    onSendMessage: handleSendMessage,
-                    onToolsPress: onToolsPress,
-                    disabled: state.isLoading || state.modelId == null,
-                  ),
+            child: AuraLoadingOverlay(
+              isLoading: state.isLoading,
+              child: Center(
+                child: ChatInputWidget(
+                  onSendMessage: handleSendMessage,
+                  onToolsPress: onToolsPress,
+                  disabledHint: state.modelId == null
+                      ? const TextLocale(
+                          LocaleKeys.chats_screens_new_chat_no_model_selected,
+                        )
+                      : null,
+                  disabled: state.isLoading || state.modelId == null,
                 ),
-                if (state.isLoading)
-                  ColoredBox(
-                    color: Colors.black.withValues(alpha: 0.3),
-                    child: const Center(child: CircularProgressIndicator()),
-                  ),
-              ],
+              ),
+              message: LocaleKeys.chats_screens_new_chat_starting.tr(),
             ),
           ),
         ],

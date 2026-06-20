@@ -29,7 +29,7 @@ class ChatListWidget extends ConsumerWidget {
     return switch (chatListAsync) {
       AsyncData(value: final chats) => () {
         if (chats.isEmpty) {
-          return const _ChatListEmptyState();
+          return _ChatListEmptyState(workspaceId: workspaceId);
         }
 
         return ListView.separated(
@@ -54,35 +54,46 @@ class ChatListWidget extends ConsumerWidget {
 }
 
 class _ChatListEmptyState extends StatelessWidget {
-  const _ChatListEmptyState();
+  const _ChatListEmptyState({required this.workspaceId});
+
+  final String workspaceId;
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    return Center(
       child: Padding(
-        padding: EdgeInsets.all(32),
+        padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            AuraIcon(
+            const AuraIcon(
               Icons.chat_outlined,
               size: AuraIconSize.extraLarge,
               color: AuraColorVariant.onSurfaceVariant,
             ),
-            SizedBox(height: 16),
-            AuraText(
+            const SizedBox(height: 16),
+            const AuraText(
               child: TextLocale(
                 LocaleKeys.home_screen_conversation_states_no_chats_yet,
               ),
               style: AuraTextStyle.heading3,
             ),
-            SizedBox(height: 8),
-            AuraText(
+            const SizedBox(height: 8),
+            const AuraText(
               child: TextLocale(
                 LocaleKeys
                     .home_screen_conversation_states_start_first_conversation,
               ),
               textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            AuraButton(
+              onPressed: () {
+                NewChatRoute(workspaceId: workspaceId).go(context);
+              },
+              child: const TextLocale(
+                LocaleKeys.home_screen_actions_start_new_chat,
+              ),
             ),
           ],
         ),
