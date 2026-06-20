@@ -3,9 +3,9 @@
 import 'dart:async';
 
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
-import 'package:auravibes_app/features/service_connections/controllers/service_connections_controller.dart';
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
+import 'package:auravibes_app/features/service_connections/usecases/service_connections_action_usecase.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -351,7 +351,7 @@ class _ConnectionTile extends ConsumerWidget {
 
     try {
       await ref
-          .read(serviceConnectionsControllerProvider)
+          .read(serviceConnectionsActionUsecaseProvider)
           .reconnectMcpServer(
             serverId,
           );
@@ -387,7 +387,7 @@ class _ConnectionTile extends ConsumerWidget {
 
     try {
       await ref
-          .read(serviceConnectionsControllerProvider)
+          .read(serviceConnectionsActionUsecaseProvider)
           .refreshMcpCredential(
             connectionId: connection.id,
             mcpServerId: serverId,

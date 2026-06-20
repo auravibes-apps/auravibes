@@ -1,12 +1,12 @@
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
-import 'package:auravibes_app/features/service_connections/controllers/service_connections_controller.dart';
+import 'package:auravibes_app/features/service_connections/usecases/service_connections_action_usecase.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('ServiceConnectionsController', () {
+  group('ServiceConnectionsActionUsecase', () {
     test('reconnectMcpServer delegates reconnect', () async {
       final calls = <String>[];
-      final controller = ServiceConnectionsController(
+      final usecase = ServiceConnectionsActionUsecase(
         (serverId) {
           calls.add('reconnect:$serverId');
 
@@ -18,14 +18,14 @@ void main() {
         ),
       );
 
-      await controller.reconnectMcpServer('server-1');
+      await usecase.reconnectMcpServer('server-1');
 
       expect(calls, ['reconnect:server-1']);
     });
 
     test('refreshMcpCredential refreshes before reconnecting', () async {
       final calls = <String>[];
-      final controller = ServiceConnectionsController(
+      final usecase = ServiceConnectionsActionUsecase(
         (serverId) {
           calls.add('reconnect:$serverId');
 
@@ -41,7 +41,7 @@ void main() {
         },
       );
 
-      await controller.refreshMcpCredential(
+      await usecase.refreshMcpCredential(
         connectionId: 'connection-1',
         mcpServerId: 'server-1',
       );
