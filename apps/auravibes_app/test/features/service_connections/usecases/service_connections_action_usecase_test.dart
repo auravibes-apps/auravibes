@@ -1,15 +1,15 @@
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
-import 'package:auravibes_app/features/service_connections/controllers/service_connections_controller.dart';
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
 import 'package:auravibes_app/features/service_connections/usecases/delete_service_connection_usecase.dart';
+import 'package:auravibes_app/features/service_connections/usecases/service_connections_action_usecase.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 void main() {
-  group('ServiceConnectionsController', () {
+  group('ServiceConnectionsActionUsecase', () {
     test('reconnectMcpServer delegates reconnect', () async {
       final calls = <String>[];
-      final controller = ServiceConnectionsController(
+      final usecase = ServiceConnectionsActionUsecase(
         (serverId) {
           calls.add('reconnect:$serverId');
 
@@ -22,14 +22,14 @@ void main() {
         MockDeleteServiceConnectionUsecase(),
       );
 
-      await controller.reconnectMcpServer('server-1');
+      await usecase.reconnectMcpServer('server-1');
 
       expect(calls, ['reconnect:server-1']);
     });
 
     test('refreshMcpCredential refreshes before reconnecting', () async {
       final calls = <String>[];
-      final controller = ServiceConnectionsController(
+      final usecase = ServiceConnectionsActionUsecase(
         (serverId) {
           calls.add('reconnect:$serverId');
 
@@ -46,7 +46,7 @@ void main() {
         MockDeleteServiceConnectionUsecase(),
       );
 
-      await controller.refreshMcpCredential(
+      await usecase.refreshMcpCredential(
         connectionId: 'connection-1',
         mcpServerId: 'server-1',
       );
@@ -62,7 +62,7 @@ void main() {
           kind: ServiceConnectionListItemKind.skillCredential,
         ),
       ).thenAnswer((_) => Future<void>.value());
-      final controller = ServiceConnectionsController(
+      final usecase = ServiceConnectionsActionUsecase(
         (_) => Future<void>.value(),
         (_) async => OAuthTokenEntity(
           accessToken: 'access',
@@ -72,7 +72,7 @@ void main() {
       );
 
       await expectLater(
-        controller.deleteConnection(
+        usecase.deleteConnection(
           connectionId: 'connection-1',
           kind: ServiceConnectionListItemKind.skillCredential,
         ),

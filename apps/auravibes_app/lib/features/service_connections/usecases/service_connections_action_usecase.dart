@@ -5,8 +5,8 @@ import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:auravibes_app/services/oauth_credential_service.dart';
 import 'package:riverpod/riverpod.dart';
 
-class ServiceConnectionsController {
-  const ServiceConnectionsController(
+class ServiceConnectionsActionUsecase {
+  const ServiceConnectionsActionUsecase(
     this._reconnectMcpServer,
     this._forceRefresh,
     this._deleteServiceConnection,
@@ -38,9 +38,9 @@ class ServiceConnectionsController {
 
 // coverage:ignore-start
 // Required: Riverpod provider wiring is exercised through widget tests.
-final serviceConnectionsControllerProvider =
-    Provider<ServiceConnectionsController>((ref) {
-      return ServiceConnectionsController(
+final serviceConnectionsActionUsecaseProvider =
+    Provider<ServiceConnectionsActionUsecase>((ref) {
+      return ServiceConnectionsActionUsecase(
         ref.watch(mcpConnectionProvider.notifier).reconnectMcpServer,
         ref.watch(oauthCredentialServiceProvider).forceRefresh,
         ref.watch(deleteServiceConnectionUsecaseProvider),
