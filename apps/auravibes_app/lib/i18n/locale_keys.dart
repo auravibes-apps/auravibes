@@ -477,6 +477,8 @@ abstract class LocaleKeys {
   static const common_confirm = 'common.confirm';
   static const common_close = 'common.close';
   static const common_show_more = 'common.show_more';
+  static const common_error_title = 'common.error_title';
+  static const common_error_message = 'common.error_message';
   static const tools_names_calculator_name = 'tools_names.calculator.name';
   static const tools_names_calculator_description =
       'tools_names.calculator.description';

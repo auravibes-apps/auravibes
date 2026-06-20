@@ -398,7 +398,9 @@
     "delete": "Delete",
     "confirm": "Confirm",
     "close": "Close",
-    "show_more": "Show more"
+    "show_more": "Show more",
+    "error_title": "Something went wrong",
+    "error_message": "Try again or reopen this screen."
   },
   "tools_names": {
     "calculator": {

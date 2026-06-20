@@ -398,7 +398,9 @@
     "delete": "Borrar",
     "confirm": "Confirmar",
     "close": "Cerrar",
-    "show_more": "Ver más"
+    "show_more": "Ver más",
+    "error_title": "Algo salió mal",
+    "error_message": "Intenta de nuevo o vuelve a abrir esta pantalla."
   },
   "tools_names": {
     "calculator": {
