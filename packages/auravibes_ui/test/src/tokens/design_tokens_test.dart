@@ -21,13 +21,46 @@ void main() {
 
   group('DesignColors', () {
     test('has expected color constants', () {
-      expect(DesignColors.primaryBase, const Color(0xFF2563EB));
-      expect(DesignColors.primaryLight, const Color(0xFF60A5FA));
-      expect(DesignColors.primaryDark, const Color(0xFF1E40AF));
+      expect(DesignColors.primaryBase, const Color(0xFF0F766E));
+      expect(DesignColors.primaryLight, const Color(0xFF5EEAD4));
+      expect(DesignColors.primaryDark, const Color(0xFF134E4A));
       expect(DesignColors.primaryContrast, const Color(0xFFFFFFFF));
-      expect(DesignColors.secondaryBase, const Color(0xFFEC4899));
-      expect(DesignColors.accentBase, const Color(0xFF8B5CF6));
+      expect(DesignColors.secondaryBase, const Color(0xFFBE123C));
+      expect(DesignColors.secondaryLight, const Color(0xFFFDA4AF));
+      expect(DesignColors.secondaryDark, const Color(0xFF881337));
+      expect(DesignColors.accentBase, const Color(0xFFB45309));
+      expect(DesignColors.accentLight, const Color(0xFFFBBF24));
+      expect(DesignColors.accentDark, const Color(0xFF78350F));
       expect(DesignColors.transparent, const Color(0x00000000));
+    });
+
+    test('brand colors keep readable contrast against foreground tokens', () {
+      final lightBrandColors = <Color>[
+        DesignColors.primaryBase,
+        DesignColors.secondaryBase,
+        DesignColors.accentBase,
+      ];
+      final darkBrandColors = <Color>[
+        DesignColors.primaryLight,
+        DesignColors.secondaryLight,
+        DesignColors.accentLight,
+      ];
+
+      for (final color in lightBrandColors) {
+        expect(
+          color.computeLuminance(),
+          lessThan(0.1833),
+          reason: '$color must keep 4.5:1 contrast with white foregrounds.',
+        );
+      }
+
+      for (final color in darkBrandColors) {
+        expect(
+          color.computeLuminance(),
+          greaterThan(0.175),
+          reason: '$color must keep 4.5:1 contrast with black foregrounds.',
+        );
+      }
     });
 
     test('has expected neutral colors', () {
