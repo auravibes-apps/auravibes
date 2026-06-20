@@ -22,7 +22,8 @@
 ## Verification
 
 - Run the smallest focused test or check that proves the change.
-- Use `validate:quick` before claiming done for shared behavior, app logic, generated-code drift, or broad refactors.
+- Use `validate:quick` before claiming done for shared behavior, app logic, or broad refactors.
+- For generated-code drift, run the relevant generator and verify `git diff --check` plus a clean generated diff.
 - For CI static-analysis parity, also run dependency validation and import sorting.
 - Docs-only changes can use `git diff --check`.
 - If verification cannot run, say why and name the command that should run next.

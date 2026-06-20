@@ -11,7 +11,7 @@
 - Usecases live in `features/<feature>/usecases/` unless they are truly cross-feature domain usecases.
 - Do not add new root `domain/usecases/` entries unless the usecase coordinates multiple features or shared app domain behavior.
 - Notifiers own runtime state only. Business rules and orchestration move to usecases.
-- Riverpod mutable state classes use the `*Notifier` suffix and live in `notifiers/`; migrate legacy `*Controller` naming when touching that area.
+- Prefer `*Notifier` naming for Riverpod mutable state classes; place new or migrated notifiers in `notifiers/` unless nearby existing feature structure uses `providers/`.
 - Plain providers expose repositories, services, usecases, computed read-only values, or runtime adapters.
 - Widgets render state and forward user events. They do not call repositories, Drift DAOs, or services directly.
 - Repositories own persistence and data-source coordination.
