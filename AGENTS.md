@@ -40,7 +40,7 @@ fvm dart run melos list                  # List all packages
 
 ### Dependency Management
 
-**IMPORTANT**: avoid packages version 'any' in `pubspec.yaml`. Always specify version constraints.
+**IMPORTANT**: Avoid the dependency constraint `any` in `pubspec.yaml`. Always specify version constraints.
 
 
 ### Quality & Testing

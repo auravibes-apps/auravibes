@@ -62,7 +62,7 @@ void main() {
       ).called(1);
     });
 
-    test('rejects MCP credential delete requests', () {
+    test('rejects MCP server delete requests', () {
       final modelRepository = _MockModelConnectionRepository();
       final credentialsRepository = _MockSkillCredentialsRepository();
       final usecase = DeleteServiceConnectionUsecase(
@@ -75,7 +75,13 @@ void main() {
           connectionId: 'mcp-credential-1',
           kind: ServiceConnectionListItemKind.mcpServer,
         ),
-        throwsStateError,
+        throwsA(
+          isA<StateError>().having(
+            (error) => error.message,
+            'message',
+            'MCP server service connections cannot be deleted by this action.',
+          ),
+        ),
       );
       final _ = verifyNever(() => modelRepository.deleteModelConnection(any()));
       final _ = verifyNever(

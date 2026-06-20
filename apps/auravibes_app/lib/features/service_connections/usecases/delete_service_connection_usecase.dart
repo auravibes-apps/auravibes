@@ -24,7 +24,7 @@ class DeleteServiceConnectionUsecase {
       ServiceConnectionListItemKind.skillCredential =>
         skillCredentialsRepository.deleteCredential(connectionId),
       ServiceConnectionListItemKind.mcpServer => throw StateError(
-        'MCP credentials cannot be deleted from this screen.',
+        'MCP server service connections cannot be deleted by this action.',
       ),
     };
   }
