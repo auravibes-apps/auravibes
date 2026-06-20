@@ -186,8 +186,8 @@ class AuraBadge extends StatelessWidget {
     };
   }
 
-  // ponytail: each helper is invoked only for the variant that routes to it
-  // (soft/outlined), so the variant switches were dead code over every branch.
+  // Each helper is reached only from its own variant branch (soft/outlined),
+  // so it ignores `variant` and returns the single value that arm produced.
   Color _getSoftBackgroundColor(AuraColorScheme colors) {
     return colors.primary.withValues(alpha: 0.1);
   }
