@@ -683,7 +683,9 @@ class _AppSkillToolsCard extends StatelessWidget {
                   AuraBadge.text(
                     child: Text(
                       tool.slug,
-                      style: const TextStyle(fontFamily: 'monospace'),
+                      style: const TextStyle(
+                        fontFamily: DesignTypography.monoFontFamily,
+                      ),
                     ),
                     variant: AuraBadgeVariant.outlined,
                     size: AuraBadgeSize.small,

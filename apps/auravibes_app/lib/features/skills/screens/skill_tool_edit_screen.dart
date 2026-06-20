@@ -712,53 +712,41 @@ class _InputFieldsSection extends StatelessWidget {
                   ),
                 ),
                 AuraDropdownSelector<String>(
-                  options: [
+                  options: const [
                     AuraDropdownOption(
                       value: 'string',
-                      child: Text(
-                        LocaleKeys.skills_tool_input_type_string.tr(
-                          context: context,
-                        ),
+                      child: TextLocale(
+                        LocaleKeys.skills_tool_input_type_string,
                       ),
                     ),
                     AuraDropdownOption(
                       value: 'number',
-                      child: Text(
-                        LocaleKeys.skills_tool_input_type_number.tr(
-                          context: context,
-                        ),
+                      child: TextLocale(
+                        LocaleKeys.skills_tool_input_type_number,
                       ),
                     ),
                     AuraDropdownOption(
                       value: 'integer',
-                      child: Text(
-                        LocaleKeys.skills_tool_input_type_integer.tr(
-                          context: context,
-                        ),
+                      child: TextLocale(
+                        LocaleKeys.skills_tool_input_type_integer,
                       ),
                     ),
                     AuraDropdownOption(
                       value: 'boolean',
-                      child: Text(
-                        LocaleKeys.skills_tool_input_type_boolean.tr(
-                          context: context,
-                        ),
+                      child: TextLocale(
+                        LocaleKeys.skills_tool_input_type_boolean,
                       ),
                     ),
                     AuraDropdownOption(
                       value: 'object',
-                      child: Text(
-                        LocaleKeys.skills_tool_input_type_object.tr(
-                          context: context,
-                        ),
+                      child: TextLocale(
+                        LocaleKeys.skills_tool_input_type_object,
                       ),
                     ),
                     AuraDropdownOption(
                       value: 'array',
-                      child: Text(
-                        LocaleKeys.skills_tool_input_type_array.tr(
-                          context: context,
-                        ),
+                      child: TextLocale(
+                        LocaleKeys.skills_tool_input_type_array,
                       ),
                     ),
                   ],
