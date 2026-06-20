@@ -105,7 +105,6 @@ class AuraTile extends StatelessWidget {
             padding: _getPadding(auraTheme.spacing),
             decoration: BoxDecoration(
               color: _getBackgroundColor(auraColors),
-              border: _getBorder(auraColors),
               borderRadius: BorderRadius.circular(auraTheme.borderRadius.lg),
               boxShadow: _getBoxShadow(),
             ),
@@ -124,26 +123,11 @@ class AuraTile extends StatelessWidget {
 
     return switch (variant) {
       AuraTileVariant.primary => colors.primary,
-      AuraTileVariant.secondary => colors.secondary,
       AuraTileVariant.surface => colors.surface,
-      AuraTileVariant.outlined => Colors.transparent,
       AuraTileVariant.ghost => Colors.transparent,
       AuraTileVariant.selected => colors.primary.withValues(alpha: 0.1),
-      AuraTileVariant.success => colors.success,
-      AuraTileVariant.warning => colors.warning,
       AuraTileVariant.error => colors.error,
-      AuraTileVariant.info => colors.info,
     };
-  }
-
-  Border? _getBorder(AuraColorScheme colors) {
-    if (variant == AuraTileVariant.outlined) {
-      return Border.all(
-        color: enabled ? colors.outline : colors.outlineVariant,
-      );
-    }
-
-    return null;
   }
 
   List<BoxShadow> _getBoxShadow() {
@@ -157,15 +141,10 @@ class AuraTile extends StatelessWidget {
   Color _getLoadingColor(AuraColorScheme colors) {
     return switch (variant) {
       AuraTileVariant.primary => colors.onPrimary,
-      AuraTileVariant.secondary => colors.onSecondary,
       AuraTileVariant.surface => colors.onSurface,
-      AuraTileVariant.outlined => colors.primary,
       AuraTileVariant.ghost => colors.primary,
       AuraTileVariant.selected => colors.primary,
-      AuraTileVariant.success => colors.onSuccess,
-      AuraTileVariant.warning => colors.onWarning,
       AuraTileVariant.error => colors.onError,
-      AuraTileVariant.info => colors.onInfo,
     };
   }
 
@@ -189,15 +168,10 @@ class AuraTile extends StatelessWidget {
         ? colors.onSurfaceVariant
         : switch (variant) {
             AuraTileVariant.primary => colors.onPrimary,
-            AuraTileVariant.secondary => colors.onSecondary,
             AuraTileVariant.surface => colors.onSurface,
-            AuraTileVariant.outlined => colors.onSurface,
             AuraTileVariant.ghost => colors.primary,
             AuraTileVariant.selected => colors.primary,
-            AuraTileVariant.success => colors.onSuccess,
-            AuraTileVariant.warning => colors.onWarning,
             AuraTileVariant.error => colors.onError,
-            AuraTileVariant.info => colors.onInfo,
           };
 
     return TextStyle(
@@ -231,14 +205,8 @@ enum AuraTileVariant {
   /// A filled tile with primary color background.
   primary,
 
-  /// A filled tile with secondary color background.
-  secondary,
-
   /// A tile with surface background and subtle shadow.
   surface,
-
-  /// A tile with transparent background and border.
-  outlined,
 
   /// A tile with transparent background and no border.
   ghost,
@@ -247,17 +215,8 @@ enum AuraTileVariant {
   /// Used for selection states in navigation lists.
   selected,
 
-  /// A tile with success color background.
-  success,
-
-  /// A tile with warning color background.
-  warning,
-
   /// A tile with error color background.
   error,
-
-  /// A tile with info color background.
-  info,
 }
 
 /// The size of a [AuraTile].
