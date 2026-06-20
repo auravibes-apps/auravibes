@@ -367,7 +367,13 @@
     "stop_all": "Detener todo"
   },
   "tool_approval": {
-    "pending_count": "Aprobación de herramienta {} de {}"
+    "pending_count": "Aprobación de herramienta {} de {}",
+    "errors": {
+      "approve_once": "No se pudo aprobar esta llamada de herramienta.",
+      "approve_conversation": "No se pudo aprobar esta llamada de herramienta para la conversación.",
+      "skip": "No se pudo omitir esta llamada de herramienta.",
+      "stop_all": "No se pudieron detener las llamadas de herramienta pendientes."
+    }
   },
   "tool_call_status": {
     "success": "Completado",

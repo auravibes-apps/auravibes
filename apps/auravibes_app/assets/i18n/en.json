@@ -367,7 +367,13 @@
     "stop_all": "Stop All"
   },
   "tool_approval": {
-    "pending_count": "Tool approval {} of {}"
+    "pending_count": "Tool approval {} of {}",
+    "errors": {
+      "approve_once": "Could not approve this tool call.",
+      "approve_conversation": "Could not approve this tool call for the conversation.",
+      "skip": "Could not skip this tool call.",
+      "stop_all": "Could not stop pending tool calls."
+    }
   },
   "tool_call_status": {
     "success": "Completed",
