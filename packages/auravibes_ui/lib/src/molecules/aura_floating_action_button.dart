@@ -69,112 +69,64 @@ class AuraFloatingActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
-    final isExtended = size == AuraFABSize.extended;
-    final text = this.text;
-
-    Widget fab = FloatingActionButton(
-      child: isExtended && text != null
-          ? Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                AuraIcon(
-                  icon,
-                  color: foregroundColor ?? AuraColorVariant.onPrimary,
-                ),
-                const SizedBox(width: DesignSpacing.sm),
-                AuraText(
-                  child: Text(
-                    text,
-                    style: TextStyle(
-                      color:
-                          auraColors.getColorOrNull(foregroundColor) ??
-                          auraColors.onPrimary,
-                      fontWeight: DesignTypography.fontWeightMedium,
-                    ),
-                  ),
-                ),
-              ],
-            )
-          : AuraIcon(
-              icon,
-              size: _getIconSize(),
-              color: foregroundColor ?? AuraColorVariant.onPrimary,
-            ),
-      foregroundColor:
-          auraColors.getColorOrNull(foregroundColor) ?? auraColors.onPrimary,
-      backgroundColor:
-          auraColors.getColorOrNull(backgroundColor) ?? auraColors.primary,
-      heroTag: heroTag,
-      elevation: _getElevation(),
-      focusElevation: _getFocusElevation(),
-      hoverElevation: _getHoverElevation(),
-      highlightElevation: _getHighlightElevation(),
-      onPressed: onPressed,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(_getBorderRadius()),
-      ),
+    final labelText = text;
+    final isExtended = size == AuraFABSize.extended && labelText != null;
+    final resolvedBackground =
+        auraColors.getColorOrNull(backgroundColor) ?? auraColors.primary;
+    final resolvedForeground =
+        auraColors.getColorOrNull(foregroundColor) ?? auraColors.onPrimary;
+    final shape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(_getBorderRadius()),
     );
 
-    // Override size for mini and large variants.
-    if (size == AuraFABSize.mini || size == AuraFABSize.large) {
-      fab = SizedBox(
-        width: _getFABSize(),
-        height: _getFABSize(),
-        child: FloatingActionButton(
-          child: AuraIcon(
-            icon,
-            size: _getIconSize(),
-            color: foregroundColor ?? AuraColorVariant.onPrimary,
-          ),
-          foregroundColor:
-              auraColors.getColorOrNull(foregroundColor) ??
-              auraColors.onPrimary,
-          backgroundColor:
-              auraColors.getColorOrNull(backgroundColor) ?? auraColors.primary,
-          heroTag: heroTag,
-          elevation: _getElevation(),
-          focusElevation: _getFocusElevation(),
-          hoverElevation: _getHoverElevation(),
-          highlightElevation: _getHighlightElevation(),
-          onPressed: onPressed,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(_getBorderRadius()),
-          ),
-        ),
-      );
-    }
-
-    if (isExtended && text != null) {
+    Widget fab;
+    if (isExtended) {
       fab = FloatingActionButton.extended(
-        foregroundColor:
-            auraColors.getColorOrNull(foregroundColor) ?? auraColors.onPrimary,
-        backgroundColor:
-            auraColors.getColorOrNull(backgroundColor) ?? auraColors.primary,
+        foregroundColor: resolvedForeground,
+        backgroundColor: resolvedBackground,
         heroTag: heroTag,
         elevation: _getElevation(),
         focusElevation: _getFocusElevation(),
         hoverElevation: _getHoverElevation(),
         highlightElevation: _getHighlightElevation(),
         onPressed: onPressed,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(_getBorderRadius()),
-        ),
-        icon: AuraIcon(
-          icon,
-          color: foregroundColor,
-        ),
+        shape: shape,
+        icon: AuraIcon(icon, color: foregroundColor),
         label: AuraText(
           child: Text(
-            text,
+            labelText,
             style: TextStyle(
-              color:
-                  auraColors.getColorOrNull(foregroundColor) ??
-                  auraColors.onPrimary,
+              color: resolvedForeground,
               fontWeight: DesignTypography.fontWeightMedium,
             ),
           ),
         ),
       );
+    } else {
+      fab = FloatingActionButton(
+        child: AuraIcon(
+          icon,
+          size: _getIconSize(),
+          color: foregroundColor ?? AuraColorVariant.onPrimary,
+        ),
+        foregroundColor: resolvedForeground,
+        backgroundColor: resolvedBackground,
+        heroTag: heroTag,
+        elevation: _getElevation(),
+        focusElevation: _getFocusElevation(),
+        hoverElevation: _getHoverElevation(),
+        highlightElevation: _getHighlightElevation(),
+        onPressed: onPressed,
+        shape: shape,
+      );
+
+      if (size == AuraFABSize.mini || size == AuraFABSize.large) {
+        fab = SizedBox(
+          width: _getFABSize(),
+          height: _getFABSize(),
+          child: fab,
+        );
+      }
     }
 
     if (tooltip != null) {
