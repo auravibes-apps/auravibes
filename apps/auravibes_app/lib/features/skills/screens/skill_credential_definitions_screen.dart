@@ -56,6 +56,7 @@ class SkillCredentialDefinitionsScreen extends ConsumerWidget {
                         leading: const AuraIcon(Icons.key_outlined),
                         trailing: const AuraIcon(Icons.chevron_right),
                       ),
+                      style: AuraCardStyle.border,
                     );
                   },
                   separatorBuilder: (_, _) => const SizedBox(height: 8),

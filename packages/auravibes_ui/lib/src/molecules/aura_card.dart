@@ -57,8 +57,8 @@ class AuraCard extends StatelessWidget {
       shadows = [DesignShadows.glass];
     } else if (isBorder) {
       backgroundColor = _getDefaultBackgroundColor(auraColors);
-      border = Border.all(
-        color: Colors.black.withValues(alpha: 0.06),
+      border = Border.fromBorderSide(
+        BorderSide(color: auraColors.outlineVariant),
       );
       shadows = const [];
     } else {
@@ -67,12 +67,12 @@ class AuraCard extends StatelessWidget {
       border = null;
       shadows = [
         BoxShadow(
-          color: Colors.black.withValues(alpha: 0.06),
+          color: auraColors.shadow.withValues(alpha: 0.06),
           offset: const Offset(0, 12),
           blurRadius: 28,
         ),
         BoxShadow(
-          color: Colors.black.withValues(alpha: 0.02),
+          color: auraColors.shadow.withValues(alpha: 0.02),
           offset: const Offset(0, 1),
           blurRadius: 4,
         ),

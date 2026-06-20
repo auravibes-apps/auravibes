@@ -74,6 +74,7 @@ class ToolsGroupCard extends HookConsumerWidget {
           ],
           crossAxisAlignment: CrossAxisAlignment.start,
         ),
+        style: AuraCardStyle.border,
       ),
     );
   }

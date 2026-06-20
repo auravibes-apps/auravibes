@@ -285,6 +285,7 @@ class _SkillTile extends StatelessWidget {
         ),
       ),
       onTap: onOpen,
+      style: AuraCardStyle.border,
     );
   }
 

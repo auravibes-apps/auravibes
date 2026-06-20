@@ -81,6 +81,7 @@ class ConversationToolsGroupCard extends HookConsumerWidget {
           ],
           crossAxisAlignment: CrossAxisAlignment.start,
         ),
+        style: AuraCardStyle.border,
       ),
     );
   }
