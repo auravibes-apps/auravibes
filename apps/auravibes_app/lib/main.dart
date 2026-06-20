@@ -113,6 +113,10 @@ ThemeData _auraMaterialTheme(AuraTheme auraTheme, Brightness brightness) {
     onInverseSurface: colors.surface,
     inversePrimary: colors.primaryVariant,
     surfaceTint: colors.primary,
+    // ignore: deprecated_member_use - Required for legacy Material fallbacks.
+    background: colors.background,
+    // ignore: deprecated_member_use - Required for legacy Material fallbacks.
+    onBackground: colors.onBackground,
   );
 
   return ThemeData(
@@ -140,7 +144,7 @@ ThemeData _auraMaterialTheme(AuraTheme auraTheme, Brightness brightness) {
       ),
       labelStyle: textTheme.labelMedium?.copyWith(color: colors.onSurface),
       secondaryLabelStyle: textTheme.labelMedium?.copyWith(
-        color: colors.onPrimary,
+        color: colors.onSecondary,
       ),
       brightness: brightness,
     ),
@@ -188,17 +192,14 @@ ThemeData _auraMaterialTheme(AuraTheme auraTheme, Brightness brightness) {
 TextTheme _auraTextTheme(AuraTheme auraTheme, Brightness brightness) {
   final typography = auraTheme.typography;
   final colors = auraTheme.colors;
-  final textColor = brightness == Brightness.dark
-      ? colors.onSurface
-      : colors.onBackground;
   final baseTheme = brightness == Brightness.dark
       ? Typography.material2021().white
       : Typography.material2021().black;
 
   return baseTheme
       .apply(
-        bodyColor: textColor,
-        displayColor: textColor,
+        bodyColor: colors.onSurface,
+        displayColor: colors.onSurface,
         fontFamily: typography.fontFamily,
       )
       .copyWith(
