@@ -344,20 +344,4 @@ void main() {
       expect(ex.cause, cause);
     });
   });
-
-  group('MessageDuplicateException', () {
-    test('contains id in message', () {
-      const ex = MessageDuplicateException('m-99');
-      expect(ex, isA<MessageException>());
-      expect(ex.messageId, 'm-99');
-      expect(ex.toString(), contains('m-99'));
-      expect(ex.toString(), contains('already exists'));
-    });
-
-    test('includes cause when provided', () {
-      final cause = Exception('unique constraint');
-      final ex = MessageDuplicateException('m-1', cause);
-      expect(ex.cause, cause);
-    });
-  });
 }

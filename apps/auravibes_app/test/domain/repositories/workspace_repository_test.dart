@@ -290,20 +290,4 @@ void main() {
       expect(ex.cause, cause);
     });
   });
-
-  group('WorkspaceDuplicateException', () {
-    test('contains id in message', () {
-      const ex = WorkspaceDuplicateException('ws-99');
-      expect(ex, isA<WorkspaceException>());
-      expect(ex.workspaceId, 'ws-99');
-      expect(ex.toString(), contains('ws-99'));
-      expect(ex.toString(), contains('already exists'));
-    });
-
-    test('includes cause when provided', () {
-      final cause = Exception('unique constraint');
-      final ex = WorkspaceDuplicateException('ws-1', cause: cause);
-      expect(ex.cause, cause);
-    });
-  });
 }

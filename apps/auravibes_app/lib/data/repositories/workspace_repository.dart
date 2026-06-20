@@ -255,19 +255,6 @@ class WorkspaceNotFoundException extends WorkspaceException {
   final String workspaceId;
 }
 
-/// Exception thrown when attempting to create a duplicate workspace.
-class WorkspaceDuplicateException extends WorkspaceException {
-  /// Creates a new WorkspaceDuplicateException.
-  const WorkspaceDuplicateException(this.workspaceId, {super.cause})
-    : super(
-        'Workspace with ID "$workspaceId" already exists',
-        localizationKey: LocaleKeys.workspace_management_error_duplicate,
-      );
-
-  /// ID of the duplicate workspace.
-  final String workspaceId;
-}
-
 /// Exception thrown when attempting to delete the last remaining workspace.
 class WorkspaceDeleteLastException extends WorkspaceException {
   /// Creates a new WorkspaceDeleteLastException.

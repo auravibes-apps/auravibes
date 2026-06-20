@@ -344,13 +344,3 @@ class MessageNotFoundException extends MessageException {
   /// ID of the message that was not found.
   final String messageId;
 }
-
-/// Exception thrown when attempting to create a duplicate message.
-class MessageDuplicateException extends MessageException {
-  /// Creates a new MessageDuplicateException.
-  const MessageDuplicateException(this.messageId, [Exception? cause])
-    : super('Message with ID "$messageId" already exists', cause);
-
-  /// ID of the duplicate message.
-  final String messageId;
-}
