@@ -613,6 +613,9 @@ void main() {
         expect(result, contains('[truncated:'));
         expect(result, contains('Line 0'));
         expect(result, isNot(contains('Line 2499')));
+
+        final lineCount = const LineSplitter().convert(result).length;
+        expect(lineCount, lessThanOrEqualTo(2000));
       });
 
       test('truncates total output when metadata exceeds cap', () async {

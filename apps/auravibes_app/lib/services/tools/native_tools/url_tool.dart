@@ -147,7 +147,6 @@ final class UrlTool extends NativeToolEntity<String, String> {
   static const int _maxToolOutputLines = 2000;
   static const int _truncationNoteReserve = 55;
 
-  // Counts UTF-8 bytes only when a byte cap is required; rune count otherwise.
   String _truncate(
     String text, {
     required int maxBytes,
@@ -155,27 +154,25 @@ final class UrlTool extends NativeToolEntity<String, String> {
   }) {
     if (maxBytes <= 0) return text.isEmpty ? text : '';
 
-    var result = text;
-    var truncated = false;
+    final originalBytes = utf8.encode(text).length;
+    final parts = text.split('\n');
+    final originalLines = text.endsWith('\n') ? parts.length - 1 : parts.length;
 
-    final lines = result.split('\n');
-    final contentLines = result.endsWith('\n')
-        ? lines.length - 1
-        : lines.length;
-    if (contentLines > maxLines) {
-      result = lines.sublist(0, maxLines).join('\n');
-      truncated = true;
+    if (originalBytes <= maxBytes && originalLines <= maxLines) return text;
+
+    // Reserve one line + note bytes for the "... [truncated]" marker so the
+    // returned value never exceeds maxBytes / maxLines.
+    final lineCap = (maxLines - 1).clamp(0, maxLines);
+    final byteCap = (maxBytes - _truncationNoteReserve).clamp(0, maxBytes);
+
+    var result = originalLines > lineCap
+        ? parts.sublist(0, lineCap).join('\n')
+        : text;
+    if (utf8.encode(result).length > byteCap) {
+      result = _truncateUtf8(result, byteCap);
     }
 
-    final contentCap = (maxBytes - _truncationNoteReserve).clamp(0, maxBytes);
-    if (utf8.encode(result).length > contentCap) {
-      result = _truncateUtf8(result, contentCap);
-      truncated = true;
-    }
-
-    if (!truncated) return text;
-
-    final omitted = utf8.encode(text).length - utf8.encode(result).length;
+    final omitted = originalBytes - utf8.encode(result).length;
     final combined = '$result\n... [truncated: $omitted bytes omitted]';
 
     return utf8.encode(combined).length > maxBytes
