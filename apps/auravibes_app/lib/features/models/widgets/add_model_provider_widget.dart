@@ -3,8 +3,8 @@
 // Required: UI callbacks stay local to their widgets.
 // Required: Existing code repeats lookups where extraction adds noise.
 // Required: Feature widgets keep closely related private widgets together.
+import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
-import 'package:auravibes_app/domain/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/features/models/providers/add_model_provider_state.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/widgets/enhanced_model_input.dart';

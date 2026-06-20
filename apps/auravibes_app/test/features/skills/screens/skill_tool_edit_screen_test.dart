@@ -2,9 +2,9 @@
 import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/data/repositories/skill_template_tools_repository_impl.dart';
-import 'package:auravibes_app/data/repositories/skills_repository_impl.dart';
-import 'package:auravibes_app/data/repositories/workspace_repository_impl.dart';
+import 'package:auravibes_app/data/repositories/skill_template_tools_repository.dart';
+import 'package:auravibes_app/data/repositories/skills_repository.dart';
+import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
@@ -32,7 +32,7 @@ void main() {
       overrides: [appDatabaseProvider.overrideWithValue(database)],
     );
     addTearDown(container.dispose);
-    final workspace = await WorkspaceRepositoryImpl(database).createWorkspace(
+    final workspace = await WorkspaceRepository(database).createWorkspace(
       const WorkspaceToCreate(
         name: 'Test Workspace',
         type: WorkspaceType.local,
@@ -49,7 +49,7 @@ void main() {
             }),
           ),
         );
-    final skill = await SkillsRepositoryImpl(database).createSkill(
+    final skill = await SkillsRepository(database).createSkill(
       workspace.id,
       SkillToCreate(
         kind: SkillKind.template,
@@ -144,7 +144,7 @@ void main() {
     await tester.tap(find.byIcon(Icons.save_outlined));
     final _ = await tester.pumpAndSettle();
 
-    final tool = await SkillTemplateToolsRepositoryImpl(
+    final tool = await SkillTemplateToolsRepository(
       database,
     ).getToolBySlug(skill.id, 'find_company');
     final templateJson = (tool ?? fail('tool missing')).templateJson;

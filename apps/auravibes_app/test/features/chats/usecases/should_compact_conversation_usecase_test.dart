@@ -1,9 +1,9 @@
+import 'package:auravibes_app/data/repositories/message_repository.dart';
+import 'package:auravibes_app/data/repositories/workspace_compaction_settings_repository.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
-import 'package:auravibes_app/domain/repositories/message_repository.dart';
-import 'package:auravibes_app/domain/repositories/workspace_compaction_settings_repository.dart';
 import 'package:auravibes_app/features/chats/usecases/should_compact_conversation_usecase.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';

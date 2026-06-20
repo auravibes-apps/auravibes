@@ -5,15 +5,15 @@
 
 import 'dart:async';
 
+import 'package:auravibes_app/data/repositories/conversation_tools_repository.dart';
+import 'package:auravibes_app/data/repositories/message_repository.dart';
+import 'package:auravibes_app/data/repositories/tools_groups_repository.dart';
+import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
-import 'package:auravibes_app/domain/repositories/conversation_tools_repository.dart';
-import 'package:auravibes_app/domain/repositories/message_repository.dart';
-import 'package:auravibes_app/domain/repositories/tools_groups_repository.dart';
-import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/features/chats/notifiers/messages_streaming_state.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';

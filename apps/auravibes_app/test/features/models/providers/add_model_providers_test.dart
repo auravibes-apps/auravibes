@@ -1,8 +1,8 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: cascade_invocations
+import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
-import 'package:auravibes_app/domain/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/features/models/providers/add_model_provider_state.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';

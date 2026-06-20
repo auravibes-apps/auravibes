@@ -1,9 +1,9 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
-import 'package:auravibes_app/data/repositories/model_connection_repository_impl.dart';
-import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository_impl.dart';
-import 'package:auravibes_app/data/repositories/skill_credentials_repository_impl.dart';
-import 'package:auravibes_app/data/repositories/workspace_repository_impl.dart';
+import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
+import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository.dart';
+import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
+import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
@@ -25,7 +25,7 @@ void main() {
       final fixture = await _createFixture();
       addTearDown(fixture.close);
       final definition =
-          await SkillCredentialDefinitionsRepositoryImpl(
+          await SkillCredentialDefinitionsRepository(
             fixture.database,
           ).createDefinition(
             fixture.workspace.id,
@@ -35,7 +35,7 @@ void main() {
             ),
           );
       final _ =
-          await SkillCredentialsRepositoryImpl(
+          await SkillCredentialsRepository(
             database: fixture.database,
             encryptionService: fixture.encryptionService,
           ).createCredential(
@@ -184,7 +184,7 @@ Future<_Fixture> _createFixture() async {
   final database = AppDatabase(
     connection: DatabaseConnection(NativeDatabase.memory()),
   );
-  final workspace = await WorkspaceRepositoryImpl(database).createWorkspace(
+  final workspace = await WorkspaceRepository(database).createWorkspace(
     const WorkspaceToCreate(
       name: 'Workspace',
       type: WorkspaceType.local,
@@ -240,12 +240,12 @@ WatchServiceConnectionListItemsUsecase _createUsecase(
 }) {
   return WatchServiceConnectionListItemsUsecase(
     fixture.database,
-    ModelConnectionRepositoryImpl(
+    ModelConnectionRepository(
       database: fixture.database,
       encryptionService: fixture.encryptionService,
     ),
-    SkillCredentialDefinitionsRepositoryImpl(fixture.database),
-    SkillCredentialsRepositoryImpl(
+    SkillCredentialDefinitionsRepository(fixture.database),
+    SkillCredentialsRepository(
       database: fixture.database,
       encryptionService: fixture.encryptionService,
     ),

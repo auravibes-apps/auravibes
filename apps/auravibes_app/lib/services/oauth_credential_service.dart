@@ -1,9 +1,9 @@
 import 'dart:async';
 
+import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
 import 'package:auravibes_app/domain/entities/service_connection_entity.dart';
-import 'package:auravibes_app/domain/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connection_repository_provider.dart';
 import 'package:dio/dio.dart';
 import 'package:riverpod/riverpod.dart';

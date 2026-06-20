@@ -1,8 +1,8 @@
 // Required: Existing helpers remain top-level for local feature use.
+import 'package:auravibes_app/data/repositories/conversation_tools_repository.dart';
+import 'package:auravibes_app/data/repositories/tools_groups_repository.dart';
+import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
-import 'package:auravibes_app/domain/repositories/conversation_tools_repository.dart';
-import 'package:auravibes_app/domain/repositories/tools_groups_repository.dart';
-import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/features/skills/usecases/sync_skill_tool_permissions_usecase.dart';
 import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';

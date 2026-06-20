@@ -59,4 +59,4 @@ final class McpServersRepositoryProvider
 }
 
 String _$mcpServersRepositoryHash() =>
-    r'bee4c8c1c586891c5843ba456c8315984bca173a';
+    r'2b2804672c2de4ba861893605544c1a9513a93d1';

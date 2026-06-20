@@ -2,9 +2,8 @@
 // Required: Existing code repeats lookups where extraction adds noise.
 // Required: Existing helpers remain top-level for local feature use.
 
-import 'package:auravibes_app/data/repositories/tools_groups_repository_impl.dart';
+import 'package:auravibes_app/data/repositories/tools_groups_repository.dart';
 import 'package:auravibes_app/domain/models/mcp_connection_view_status.dart';
-import 'package:auravibes_app/domain/repositories/tools_groups_repository.dart';
 import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/usecases/build_grouped_tools_view_use_case.dart';
@@ -19,7 +18,7 @@ part 'grouped_tools_notifier.g.dart';
 ToolsGroupsRepository toolsGroupsRepository(Ref ref) {
   final appDatabase = ref.watch(appDatabaseProvider);
 
-  return ToolsGroupsRepositoryImpl(appDatabase);
+  return ToolsGroupsRepository(appDatabase);
 }
 
 /// Provider that groups tools by their workspaceToolsGroupId.

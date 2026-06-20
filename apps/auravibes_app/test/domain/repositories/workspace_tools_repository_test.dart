@@ -1,7 +1,7 @@
 // ignore_for_file: cascade_invocations
 
+import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
-import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _StubWorkspaceToolsRepository implements WorkspaceToolsRepository {

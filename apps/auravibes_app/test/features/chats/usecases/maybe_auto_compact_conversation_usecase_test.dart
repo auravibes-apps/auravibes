@@ -1,12 +1,12 @@
+import 'package:auravibes_app/data/repositories/api_model_repository.dart';
+import 'package:auravibes_app/data/repositories/conversation_repository.dart';
+import 'package:auravibes_app/data/repositories/workspace_model_selection_repository.dart';
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
-import 'package:auravibes_app/domain/repositories/api_model_repository.dart';
-import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
-import 'package:auravibes_app/domain/repositories/workspace_model_selection_repository.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/compact_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/maybe_auto_compact_conversation_usecase.dart';

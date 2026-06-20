@@ -1,6 +1,6 @@
+import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
+import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
-import 'package:auravibes_app/domain/repositories/model_connection_repository.dart';
-import 'package:auravibes_app/domain/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
 import 'package:auravibes_app/providers/chatbot_service_provider.dart';
 import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';

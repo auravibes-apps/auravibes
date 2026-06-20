@@ -1,6 +1,6 @@
+import 'package:auravibes_app/data/repositories/workspace_compaction_settings_repository.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
-import 'package:auravibes_app/domain/repositories/workspace_compaction_settings_repository.dart';
 import 'package:auravibes_app/features/settings/providers/compaction_settings_provider.dart';
 import 'package:auravibes_app/features/settings/providers/workspace_compaction_settings_repository_provider.dart';
 import 'package:auravibes_app/features/settings/usecases/save_workspace_compaction_settings_usecase.dart';

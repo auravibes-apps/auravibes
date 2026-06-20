@@ -2,10 +2,9 @@
 // Required: Existing helpers remain top-level for local feature use.
 import 'dart:async';
 
-import 'package:auravibes_app/data/repositories/api_model_repository_impl.dart';
+import 'package:auravibes_app/data/repositories/api_model_repository.dart';
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
-import 'package:auravibes_app/domain/repositories/api_model_repository.dart';
 import 'package:auravibes_app/features/models/usecases/sync_api_models_usecase.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/services/model_api_service.dart';
@@ -21,7 +20,7 @@ part 'api_model_repository_providers.g.dart';
 ApiModelRepository apiModelRepository(Ref ref) {
   final appDatabase = ref.watch(appDatabaseProvider);
 
-  return ApiModelRepositoryImpl(appDatabase);
+  return ApiModelRepository(appDatabase);
 }
 
 /// Provider for the model API service.

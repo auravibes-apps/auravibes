@@ -1,8 +1,8 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
 // ignore_for_file: cascade_invocations
+import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
-import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _StubConversationRepository implements ConversationRepository {

@@ -3,22 +3,20 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/model_providers_table_type.dart';
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
-import 'package:auravibes_app/domain/repositories/api_model_repository.dart';
 
 /// Implementation of the [ApiModelRepository] interface.
 ///
 /// This class provides a concrete implementation of API model and provider
 /// data operations using the Drift database. It handles the mapping between
 /// domain entities and database records, and provides proper error handling.
-class ApiModelRepositoryImpl implements ApiModelRepository {
-  ApiModelRepositoryImpl(this._database);
+class ApiModelRepository {
+  ApiModelRepository(this._database);
 
   /// The database instance for API model operations.
   final AppDatabase _database;
 
   // Provider operations.
 
-  @override
   Future<List<ApiModelProviderEntity>> getAllProviders() async {
     final providerTables = await _database.apiModelProvidersDao
         .getAllProviders();
@@ -26,14 +24,12 @@ class ApiModelRepositoryImpl implements ApiModelRepository {
     return providerTables.map(_mapToProviderEntity).toList();
   }
 
-  @override
   Stream<List<ApiModelProviderEntity>> watchAllProviders() {
     return _database.apiModelProvidersDao.watchAllProviders().map(
       (providers) => providers.map(_mapToProviderEntity).toList(),
     );
   }
 
-  @override
   Future<List<ApiModelProviderEntity>> getProvidersByType(String type) async {
     final providerTables = await _database.apiModelProvidersDao
         .getProvidersByType(type);
@@ -43,14 +39,12 @@ class ApiModelRepositoryImpl implements ApiModelRepository {
 
   // Model operations.
 
-  @override
   Future<List<ApiModelEntity>> getAllModels() async {
     final modelTables = await _database.apiModelsDao.getAllModels();
 
     return modelTables.map(_mapToModelEntity).toList();
   }
 
-  @override
   Future<ApiModelEntity?> getModelByProviderAndModelId(
     String providerId,
     String modelId,
@@ -62,7 +56,6 @@ class ApiModelRepositoryImpl implements ApiModelRepository {
     return _mapToModelEntity(modelTable);
   }
 
-  @override
   Future<List<ApiModelEntity>> getModelsByProvider(String providerId) async {
     final modelTables = await _database.apiModelsDao.getModelsByProvider(
       providerId,
@@ -71,7 +64,6 @@ class ApiModelRepositoryImpl implements ApiModelRepository {
     return modelTables.map(_mapToModelEntity).toList();
   }
 
-  @override
   Stream<List<ApiModelEntity>> watchModelsByProvider(String providerId) {
     return _database.apiModelsDao
         .watchModelsByProvider(providerId)
@@ -82,7 +74,6 @@ class ApiModelRepositoryImpl implements ApiModelRepository {
 
   // Batch operations.
 
-  @override
   Future<List<ApiModelProviderEntity>> batchUpsertProviders(
     List<ApiModelProviderEntity> providers,
   ) async {
@@ -99,7 +90,6 @@ class ApiModelRepositoryImpl implements ApiModelRepository {
     ];
   }
 
-  @override
   Future<List<ApiModelEntity>> batchUpsertModels(
     List<ApiModelEntity> models,
   ) async {
@@ -114,7 +104,6 @@ class ApiModelRepositoryImpl implements ApiModelRepository {
     ];
   }
 
-  @override
   Future<int> deleteAllData() async {
     final deletedModels = await _database.apiModelsDao.deleteAllModels();
     final deletedProviders = await _database.apiModelProvidersDao
@@ -123,7 +112,6 @@ class ApiModelRepositoryImpl implements ApiModelRepository {
     return deletedModels + deletedProviders;
   }
 
-  @override
   Future<void> replaceAllData({
     required List<ApiModelProviderEntity> providers,
     required List<ApiModelEntity> models,

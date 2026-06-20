@@ -55,7 +55,7 @@ final class ModelConnectionRepositoryProvider
 }
 
 String _$modelConnectionRepositoryHash() =>
-    r'9e0622cccf9d569f65eb69c5330548e208218d5a';
+    r'882ded231d9782dd106cde3deb1c6ca7ca0a272e';
 
 @ProviderFor(workspaceModelSelectionRepository)
 final workspaceModelSelectionRepositoryProvider =
@@ -107,4 +107,4 @@ final class WorkspaceModelSelectionRepositoryProvider
 }
 
 String _$workspaceModelSelectionRepositoryHash() =>
-    r'5274806b03671cc09e859a635dc8a4c1d9166bd8';
+    r'0e998f680ea45ff30e08f09d07d00eada808ee04';

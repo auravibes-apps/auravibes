@@ -5,7 +5,6 @@ import 'package:auravibes_app/data/database/drift/daos/skill_credentials_dao.dar
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
-import 'package:auravibes_app/domain/repositories/skill_credentials_repository.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:drift/drift.dart';
@@ -13,8 +12,8 @@ import 'package:logging/logging.dart';
 
 final _logger = Logger('repository:skill_credentials');
 
-class SkillCredentialsRepositoryImpl implements SkillCredentialsRepository {
-  SkillCredentialsRepositoryImpl({
+class SkillCredentialsRepository {
+  SkillCredentialsRepository({
     required AppDatabase database,
     required this._encryptionService,
   }) : _database = database,
@@ -25,7 +24,6 @@ class SkillCredentialsRepositoryImpl implements SkillCredentialsRepository {
   final SkillCredentialsDao _dao;
   final EncryptionService _encryptionService;
 
-  @override
   Future<List<SkillCredentialEntity>> getCredentialsForDefinition({
     required String workspaceId,
     required String credentialDefinitionId,
@@ -38,7 +36,6 @@ class SkillCredentialsRepositoryImpl implements SkillCredentialsRepository {
     return Future.wait(rows.map(_tableToEntity));
   }
 
-  @override
   Stream<List<SkillCredentialEntity>> watchCredentialsForWorkspace(
     String workspaceId,
   ) {
@@ -49,7 +46,6 @@ class SkillCredentialsRepositoryImpl implements SkillCredentialsRepository {
         );
   }
 
-  @override
   Future<SkillCredentialEntity?> getCredentialById(String credentialId) async {
     final row = await _dao.getCredentialById(credentialId);
     if (row == null) return null;
@@ -57,7 +53,6 @@ class SkillCredentialsRepositoryImpl implements SkillCredentialsRepository {
     return _tableToEntity(row);
   }
 
-  @override
   Future<SkillCredentialForEdit?> getCredentialForEdit(
     String credentialId,
   ) async {
@@ -88,7 +83,6 @@ class SkillCredentialsRepositoryImpl implements SkillCredentialsRepository {
     );
   }
 
-  @override
   Future<SkillCredentialEntity> createCredential(
     String workspaceId,
     SkillCredentialToCreate credential,
@@ -122,7 +116,6 @@ class SkillCredentialsRepositoryImpl implements SkillCredentialsRepository {
     return _tableToEntity(row);
   }
 
-  @override
   Future<SkillCredentialEntity> updateCredential(
     String credentialId,
     SkillCredentialToUpdate credential,
@@ -169,7 +162,6 @@ class SkillCredentialsRepositoryImpl implements SkillCredentialsRepository {
     return _tableToEntity(updated);
   }
 
-  @override
   Future<void> deleteCredential(String credentialId) async {
     _logger.info(
       'debug:skill credential delete start credentialId=$credentialId',

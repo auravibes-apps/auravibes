@@ -6,11 +6,10 @@ import 'package:auravibes_app/data/database/drift/tables/mcp_servers.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools_groups.dart';
-import 'package:auravibes_app/data/repositories/mcp_servers_repository_impl.dart';
+import 'package:auravibes_app/data/repositories/mcp_servers_repository.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
-import 'package:auravibes_app/domain/repositories/mcp_servers_repository.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -21,7 +20,7 @@ import '../../test_mocks.dart';
 void main() {
   setUpAll(registerTestFallbackValues);
 
-  group('McpServersRepositoryImpl', () {
+  group('McpServersRepository', () {
     final initialFixture = _McpServersRepositoryFixture();
     var fixture = initialFixture;
 
@@ -470,7 +469,7 @@ class _McpServersRepositoryFixture {
       mockToolsGroupsDao: toolsGroupsDao,
       mockWorkspaceToolsDao: workspaceToolsDao,
       database: database,
-      repository: McpServersRepositoryImpl(database),
+      repository: McpServersRepository(database),
     );
   }
 
@@ -486,7 +485,7 @@ class _McpServersRepositoryFixture {
   final MockToolsGroupsDao mockToolsGroupsDao;
   final MockWorkspaceToolsDao mockWorkspaceToolsDao;
   final _TestAppDatabase database;
-  final McpServersRepositoryImpl repository;
+  final McpServersRepository repository;
 }
 
 class _TestAppDatabase extends AppDatabase {

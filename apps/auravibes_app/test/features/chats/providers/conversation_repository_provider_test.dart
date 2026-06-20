@@ -1,6 +1,6 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
-import 'package:auravibes_app/domain/repositories/message_repository.dart';
+import 'package:auravibes_app/data/repositories/conversation_repository.dart';
+import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:drift/drift.dart';

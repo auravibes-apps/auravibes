@@ -7,7 +7,6 @@ import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
-import 'package:auravibes_app/domain/repositories/workspace_model_selection_repository.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 
 /// Implementation of the [WorkspaceModelSelectionRepository] interface.
@@ -16,12 +15,10 @@ import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 /// data operations using the Drift database. It handles the mapping between
 /// domain entities and database records, and provides proper error handling
 /// using exceptions.
-class WorkspaceModelSelectionRepositoryImpl
-    implements WorkspaceModelSelectionRepository {
-  WorkspaceModelSelectionRepositoryImpl(this._database);
+class WorkspaceModelSelectionRepository {
+  WorkspaceModelSelectionRepository(this._database);
   final AppDatabase _database;
 
-  @override
   Future<void> createWorkspaceModelSelections(
     List<WorkspaceModelSelectionToCreate> workspaceModelSelections,
   ) async {
@@ -32,7 +29,6 @@ class WorkspaceModelSelectionRepositoryImpl
     );
   }
 
-  @override
   Future<List<WorkspaceModelSelectionWithConnectionEntity>>
   getWorkspaceModelSelections(
     WorkspaceModelSelectionFilter filter,
@@ -45,7 +41,6 @@ class WorkspaceModelSelectionRepositoryImpl
     return tableResults.map(_withProviderTableToEntity).toList();
   }
 
-  @override
   Stream<List<WorkspaceModelSelectionWithConnectionEntity>>
   watchWorkspaceModelSelections(
     WorkspaceModelSelectionFilter filter,
@@ -60,7 +55,6 @@ class WorkspaceModelSelectionRepositoryImpl
         );
   }
 
-  @override
   Future<WorkspaceModelSelectionWithConnectionEntity?>
   getWorkspaceModelSelectionById(
     String id,
