@@ -8,7 +8,7 @@ import 'package:dio/dio.dart';
 /// Service for interacting with the models.dev API.
 ///
 /// This service handles fetching model and provider data from the external API,
-/// parsing responses, and handling network errors and retries.
+/// parsing responses, and handling network errors.
 class ModelApiService {
   ModelApiService({Dio? dio}) : _dio = dio ?? _createDefaultDio();
 
