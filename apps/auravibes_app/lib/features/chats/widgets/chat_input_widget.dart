@@ -51,6 +51,19 @@ class ChatInputWidget extends HookConsumerWidget {
 
     final compact = onCompact;
     final stop = onStop;
+    final stopButton = stop == null
+        ? null
+        : Tooltip(
+            message: LocaleKeys.chats_screens_chat_conversation_stop_generation
+                .tr(),
+            child: AuraButton(
+              onPressed: stop,
+              child: const AuraIcon(Icons.stop_rounded),
+              variant: AuraButtonVariant.outlined,
+              colorVariant: AuraColorVariant.error,
+              size: AuraButtonSize.small,
+            ),
+          );
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
@@ -113,25 +126,14 @@ class ChatInputWidget extends HookConsumerWidget {
                   ),
                   const SizedBox(width: DesignSpacing.xs),
                 ],
-                if (stop != null) ...[
-                  if (isBusy)
-                    Tooltip(
-                      message: LocaleKeys
-                          .chats_screens_chat_conversation_stop_generation
-                          .tr(),
-                      child: AuraButton(
-                        onPressed: stop,
-                        child: const AuraIcon(Icons.stop_rounded),
-                        variant: AuraButtonVariant.outlined,
-                        colorVariant: AuraColorVariant.error,
-                        size: AuraButtonSize.small,
-                      ),
-                    )
-                  else
-                    const SizedBox(
-                      width: 36,
-                      height: 28,
-                    ),
+                if (stopButton != null) ...[
+                  Visibility(
+                    child: stopButton,
+                    visible: isBusy,
+                    maintainState: true,
+                    maintainAnimation: true,
+                    maintainSize: true,
+                  ),
                   const SizedBox(width: DesignSpacing.xs),
                 ],
                 AuraButton(

@@ -118,7 +118,9 @@ void main() {
     expect(find.byIcon(Icons.stop_rounded), findsOneWidget);
   });
 
-  testWidgets('hides stop button when isBusy is false', (tester) async {
+  testWidgets('does not expose stop button when isBusy is false', (
+    tester,
+  ) async {
     await pumpAndInit(
       tester,
       buildSubject(
@@ -131,7 +133,7 @@ void main() {
       ),
     );
 
-    expect(find.byIcon(Icons.stop_rounded), findsNothing);
+    expect(find.byIcon(Icons.stop_rounded).hitTestable(), findsNothing);
   });
 
   testWidgets('hides stop button when onStop is null', (tester) async {

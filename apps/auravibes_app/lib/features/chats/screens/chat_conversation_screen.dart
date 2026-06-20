@@ -253,7 +253,7 @@ class _ChatControlsBar extends StatelessWidget {
             SelectWorkspaceModelSelectionWidget(
               workspaceId: workspaceId,
               selectWorkspaceModelSelectionId: onModelSelected,
-              onProviderChanged: (_) => Object(),
+              onProviderChanged: _ignoreProviderChange,
               workspaceModelSelectionId: workspaceModelSelectionId,
             ),
           ],
@@ -261,6 +261,10 @@ class _ChatControlsBar extends StatelessWidget {
       ),
     );
   }
+}
+
+void _ignoreProviderChange(String? _) {
+  return;
 }
 
 class _RateLimitRetryIndicator extends StatefulWidget {
