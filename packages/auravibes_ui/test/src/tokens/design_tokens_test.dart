@@ -34,19 +34,19 @@ void main() {
       expect(DesignColors.transparent, const Color(0x00000000));
     });
 
-    test('brand colors keep readable contrast against foreground tokens', () {
-      final lightBrandColors = <Color>[
+    test('brand colors contrast with their theme foregrounds', () {
+      final colorsWithWhiteForeground = <Color>[
         DesignColors.primaryBase,
         DesignColors.secondaryBase,
         DesignColors.accentBase,
       ];
-      final darkBrandColors = <Color>[
+      final colorsWithBlackForeground = <Color>[
         DesignColors.primaryLight,
         DesignColors.secondaryLight,
         DesignColors.accentLight,
       ];
 
-      for (final color in lightBrandColors) {
+      for (final color in colorsWithWhiteForeground) {
         expect(
           color.computeLuminance(),
           lessThan(0.1833),
@@ -54,7 +54,7 @@ void main() {
         );
       }
 
-      for (final color in darkBrandColors) {
+      for (final color in colorsWithBlackForeground) {
         expect(
           color.computeLuminance(),
           greaterThan(0.175),
