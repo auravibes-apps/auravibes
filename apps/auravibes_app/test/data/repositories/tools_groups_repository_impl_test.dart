@@ -2,7 +2,7 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/tools_groups_dao.dart';
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools_groups.dart';
-import 'package:auravibes_app/data/repositories/tools_groups_repository_impl.dart';
+import 'package:auravibes_app/data/repositories/tools_groups_repository.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -13,16 +13,16 @@ import '../../test_mocks.dart';
 void main() {
   setUpAll(registerTestFallbackValues);
 
-  group('ToolsGroupsRepositoryImpl', () {
+  group('ToolsGroupsRepository', () {
     var mockDao = MockToolsGroupsDao();
     var database = _TestAppDatabase(mockDao);
-    var repository = ToolsGroupsRepositoryImpl(database);
+    var repository = ToolsGroupsRepository(database);
 
     tearDown(() async {
       await database.close();
       mockDao = MockToolsGroupsDao();
       database = _TestAppDatabase(mockDao);
-      repository = ToolsGroupsRepositoryImpl(database);
+      repository = ToolsGroupsRepository(database);
     });
 
     tearDownAll(() async {

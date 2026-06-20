@@ -1,8 +1,8 @@
 // ignore_for_file: cascade_invocations
 // Required: Existing test and UI helpers keep compact return flow.
+import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
-import 'package:auravibes_app/domain/repositories/workspace_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _StubWorkspaceRepository implements WorkspaceRepository {

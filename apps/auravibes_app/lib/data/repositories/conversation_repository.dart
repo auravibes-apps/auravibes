@@ -3,7 +3,6 @@
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
-import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:drift/drift.dart';
 
 const _conversationTitleEmpty = 'Conversation title cannot be empty';
@@ -11,12 +10,11 @@ const _modelIdEmpty = 'Model ID cannot be empty';
 const _unknownValidationError = 'Unknown validation error';
 const _workspaceIdEmpty = 'Workspace ID cannot be empty';
 
-class ConversationRepositoryImpl implements ConversationRepository {
-  ConversationRepositoryImpl(this._database);
+class ConversationRepository {
+  ConversationRepository(this._database);
 
   final AppDatabase _database;
 
-  @override
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
     int? limit,
@@ -26,14 +24,12 @@ class ConversationRepositoryImpl implements ConversationRepository {
         .map((rows) => rows.map(_mapToConversation).toList());
   }
 
-  @override
   Stream<ConversationEntity?> watchConversationById(String id) {
     return _database.conversationDao
         .watchConversationById(id)
         .map((row) => row != null ? _mapToConversation(row) : null);
   }
 
-  @override
   Future<ConversationEntity?> getConversationById(String id) async {
     final conversationTable = await _database.conversationDao
         .getConversationById(id);
@@ -43,7 +39,6 @@ class ConversationRepositoryImpl implements ConversationRepository {
         : null;
   }
 
-  @override
   Future<ConversationEntity> createConversation(
     ConversationToCreate conversation,
   ) async {
@@ -56,7 +51,6 @@ class ConversationRepositoryImpl implements ConversationRepository {
     return _mapToConversation(createdConversation);
   }
 
-  @override
   Future<ConversationEntity> patchConversation(
     String id,
     ConversationPatch conversation,
@@ -93,7 +87,6 @@ class ConversationRepositoryImpl implements ConversationRepository {
     return _mapToConversation(updatedConversation);
   }
 
-  @override
   Future<bool> deleteConversation(String id) async {
     if (!await _conversationExists(id)) return false;
 
@@ -179,4 +172,29 @@ class ConversationRepositoryImpl implements ConversationRepository {
       isPinned: Value.absentIfNull(conversation.isPinned),
     );
   }
+}
+
+class ConversationException implements Exception {
+  const ConversationException(this.message, [this.cause]);
+
+  final String message;
+  final Exception? cause;
+
+  @override
+  String toString() {
+    final causedBy = ' (Caused by: $cause)';
+
+    return 'ConversationException: $message${cause != null ? causedBy : ''}';
+  }
+}
+
+class ConversationValidationException extends ConversationException {
+  const ConversationValidationException(super.message, [super.cause]);
+}
+
+class ConversationNotFoundException extends ConversationException {
+  const ConversationNotFoundException(this.conversationId, [Exception? cause])
+    : super('Conversation with ID "$conversationId" not found', cause);
+
+  final String conversationId;
 }

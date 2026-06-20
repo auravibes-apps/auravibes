@@ -1,8 +1,8 @@
 // ignore_for_file: cascade_invocations
 // Required: Existing test and UI helpers keep compact return flow.
+import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
-import 'package:auravibes_app/domain/repositories/message_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _StubMessageRepository implements MessageRepository {

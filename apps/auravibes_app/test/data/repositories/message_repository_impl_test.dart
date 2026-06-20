@@ -4,19 +4,18 @@ import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/message_dao.dart';
-import 'package:auravibes_app/data/repositories/message_repository_impl.dart';
+import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
-import 'package:auravibes_app/domain/repositories/message_repository.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('MessageRepositoryImpl.watchMessagesByConversation', () {
+  group('MessageRepository.watchMessagesByConversation', () {
     final initialDatabase = _TestAppDatabase((_) => const Stream.empty());
     var database = initialDatabase;
-    var repository = MessageRepositoryImpl(database);
+    var repository = MessageRepository(database);
 
     tearDown(() async {
       await database.close();
@@ -33,7 +32,7 @@ void main() {
           _messageRow(id: 'message-2', content: 'hi', isUser: false),
         ]),
       );
-      repository = MessageRepositoryImpl(database);
+      repository = MessageRepository(database);
 
       final messages = await repository
           .watchMessagesByConversation('conversation-1')
@@ -53,7 +52,7 @@ void main() {
       database = _TestAppDatabase(
         (_) => Stream<List<MessagesTable>>.error(failure),
       );
-      repository = MessageRepositoryImpl(database);
+      repository = MessageRepository(database);
 
       await expectLater(
         repository.watchMessagesByConversation('conversation-1'),
@@ -74,7 +73,7 @@ void main() {
       database = _TestAppDatabase(
         (_) => Stream<List<MessagesTable>>.error(failure),
       );
-      repository = MessageRepositoryImpl(database);
+      repository = MessageRepository(database);
 
       await expectLater(
         repository.watchMessagesByConversation('conversation-1'),
@@ -88,7 +87,7 @@ void main() {
         database = _TestAppDatabase(
           (_) => Stream.value(_ThrowingMessagesList()),
         );
-        repository = MessageRepositoryImpl(database);
+        repository = MessageRepository(database);
 
         final errorCompleter = Completer<Object>();
         final stackTraceCompleter = Completer<StackTrace>();
@@ -121,18 +120,18 @@ void main() {
     );
   });
 
-  group('MessageRepositoryImpl with real database', () {
+  group('MessageRepository with real database', () {
     final initialDatabase = AppDatabase(
       connection: DatabaseConnection(NativeDatabase.memory()),
     );
     var database = initialDatabase;
-    var repository = MessageRepositoryImpl(database);
+    var repository = MessageRepository(database);
 
     setUp(() {
       database = AppDatabase(
         connection: DatabaseConnection(NativeDatabase.memory()),
       );
-      repository = MessageRepositoryImpl(database);
+      repository = MessageRepository(database);
     });
 
     tearDown(() async {

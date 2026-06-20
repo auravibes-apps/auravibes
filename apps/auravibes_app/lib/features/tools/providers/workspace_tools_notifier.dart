@@ -1,8 +1,7 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
-import 'package:auravibes_app/data/repositories/workspace_tools_repository_impl.dart';
+import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
-import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/services/tools/tool_service.dart';
 import 'package:auravibes_app/services/tools/user_tool_type.dart';
@@ -15,7 +14,7 @@ part 'workspace_tools_notifier.g.dart';
 WorkspaceToolsRepository workspaceToolsRepository(Ref ref) {
   final appDatabase = ref.watch(appDatabaseProvider);
 
-  return WorkspaceToolsRepositoryImpl(appDatabase);
+  return WorkspaceToolsRepository(appDatabase);
 }
 
 @Riverpod(dependencies: [])

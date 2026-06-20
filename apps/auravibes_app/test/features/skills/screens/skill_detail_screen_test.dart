@@ -1,8 +1,8 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository_impl.dart';
-import 'package:auravibes_app/data/repositories/skill_credentials_repository_impl.dart';
-import 'package:auravibes_app/data/repositories/skills_repository_impl.dart';
-import 'package:auravibes_app/data/repositories/workspace_repository_impl.dart';
+import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository.dart';
+import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
+import 'package:auravibes_app/data/repositories/skills_repository.dart';
+import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
@@ -84,7 +84,7 @@ void main() {
     );
     addTearDown(appSkillContainer.dispose);
     final appSkillWorkspace =
-        await WorkspaceRepositoryImpl(
+        await WorkspaceRepository(
           appSkillDatabase,
         ).createWorkspace(
           const WorkspaceToCreate(
@@ -107,7 +107,7 @@ void main() {
     );
     addTearDown(selectedCredentialContainer.dispose);
     final selectedCredentialWorkspace =
-        await WorkspaceRepositoryImpl(
+        await WorkspaceRepository(
           selectedCredentialDatabase,
         ).createWorkspace(
           const WorkspaceToCreate(
@@ -116,7 +116,7 @@ void main() {
           ),
         );
     final definition =
-        await SkillCredentialDefinitionsRepositoryImpl(
+        await SkillCredentialDefinitionsRepository(
           selectedCredentialDatabase,
         ).createDefinition(
           selectedCredentialWorkspace.id,
@@ -126,7 +126,7 @@ void main() {
           ),
         );
     final skillWithDefinition =
-        await SkillsRepositoryImpl(
+        await SkillsRepository(
           selectedCredentialDatabase,
         ).createSkill(
           selectedCredentialWorkspace.id,
@@ -139,7 +139,7 @@ void main() {
           ),
         );
     final _ =
-        await SkillCredentialsRepositoryImpl(
+        await SkillCredentialsRepository(
           database: selectedCredentialDatabase,
           encryptionService: selectedEncryptionService,
         ).createCredential(
@@ -151,7 +151,7 @@ void main() {
           ),
         );
     final optionalDefinition =
-        await SkillCredentialDefinitionsRepositoryImpl(
+        await SkillCredentialDefinitionsRepository(
           selectedCredentialDatabase,
         ).createDefinition(
           selectedCredentialWorkspace.id,
@@ -161,7 +161,7 @@ void main() {
           ),
         );
     final optionalSkill =
-        await SkillsRepositoryImpl(
+        await SkillsRepository(
           selectedCredentialDatabase,
         ).createSkill(
           selectedCredentialWorkspace.id,
@@ -185,7 +185,7 @@ void main() {
     );
     addTearDown(staleCredentialContainer.dispose);
     final staleCredentialWorkspace =
-        await WorkspaceRepositoryImpl(
+        await WorkspaceRepository(
           staleCredentialDatabase,
         ).createWorkspace(
           const WorkspaceToCreate(
@@ -194,7 +194,7 @@ void main() {
           ),
         );
     final skillWithStaleDefinition =
-        await SkillsRepositoryImpl(
+        await SkillsRepository(
           staleCredentialDatabase,
         ).createSkill(
           staleCredentialWorkspace.id,
@@ -251,7 +251,7 @@ void main() {
 
     expect(find.text('TheCatAPI Key'), findsOneWidget);
     expect(find.text('1 credential configured'), findsOneWidget);
-    expect(find.text('Credential definition not found'), findsNothing);
+    expect(find.text('Credential not found'), findsNothing);
 
     fixture.value = _SkillDetailScreenFixture(
       container: selectedCredentialContainer,
@@ -285,7 +285,7 @@ void main() {
     await tester.drag(find.byType(Scrollable).first, const Offset(0, -600));
     final _ = await tester.pumpAndSettle();
 
-    expect(find.text('Credential definition not found'), findsOneWidget);
+    expect(find.text('Credential not found'), findsOneWidget);
     expect(
       find.text('This skill needs a credential before it can be loaded.'),
       findsNothing,

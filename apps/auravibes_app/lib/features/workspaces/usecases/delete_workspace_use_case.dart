@@ -1,4 +1,4 @@
-import 'package:auravibes_app/domain/repositories/workspace_repository.dart';
+import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 

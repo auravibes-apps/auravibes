@@ -1,18 +1,15 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/skill_credential_definitions_dao.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
-import 'package:auravibes_app/domain/repositories/skill_credential_definitions_repository.dart';
 import 'package:auravibes_app/features/skills/usecases/generate_skill_slug_usecase.dart';
 import 'package:drift/drift.dart';
 
-class SkillCredentialDefinitionsRepositoryImpl
-    implements SkillCredentialDefinitionsRepository {
-  SkillCredentialDefinitionsRepositoryImpl(AppDatabase database)
+class SkillCredentialDefinitionsRepository {
+  SkillCredentialDefinitionsRepository(AppDatabase database)
     : _dao = database.skillCredentialDefinitionsDao;
 
   final SkillCredentialDefinitionsDao _dao;
 
-  @override
   Future<List<SkillCredentialDefinitionEntity>> getDefinitions(
     String workspaceId,
   ) async {
@@ -21,7 +18,6 @@ class SkillCredentialDefinitionsRepositoryImpl
     return rows.map(_tableToEntity).toList();
   }
 
-  @override
   Stream<List<SkillCredentialDefinitionEntity>> watchDefinitions(
     String workspaceId,
   ) {
@@ -32,7 +28,6 @@ class SkillCredentialDefinitionsRepositoryImpl
         );
   }
 
-  @override
   Future<SkillCredentialDefinitionEntity?> getDefinitionById(
     String definitionId,
   ) async {
@@ -42,7 +37,6 @@ class SkillCredentialDefinitionsRepositoryImpl
     return _tableToEntity(row);
   }
 
-  @override
   Future<SkillCredentialDefinitionEntity?> getDefinitionBySlug(
     String workspaceId,
     String slug,
@@ -53,7 +47,6 @@ class SkillCredentialDefinitionsRepositoryImpl
     return _tableToEntity(row);
   }
 
-  @override
   Future<SkillCredentialDefinitionEntity> createDefinition(
     String workspaceId,
     SkillCredentialDefinitionToCreate definition,
@@ -70,7 +63,6 @@ class SkillCredentialDefinitionsRepositoryImpl
     return _tableToEntity(table);
   }
 
-  @override
   Future<SkillCredentialDefinitionEntity> updateDefinition(
     String definitionId,
     SkillCredentialDefinitionToUpdate definition,
@@ -90,7 +82,6 @@ class SkillCredentialDefinitionsRepositoryImpl
     return _tableToEntity(table);
   }
 
-  @override
   Future<bool> deleteDefinition(String definitionId) =>
       _dao.deleteDefinition(definitionId);
 

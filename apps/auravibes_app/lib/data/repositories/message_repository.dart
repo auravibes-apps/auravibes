@@ -6,7 +6,6 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/enums/messages_table_type.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
-import 'package:auravibes_app/domain/repositories/message_repository.dart';
 import 'package:auravibes_app/utils/encode.dart';
 import 'package:drift/drift.dart';
 
@@ -15,13 +14,12 @@ import 'package:drift/drift.dart';
 /// This class provides a concrete implementation of message data operations
 /// using Drift database. It handles the mapping between domain entities
 /// and database records, and provides proper error handling using exceptions.
-class MessageRepositoryImpl implements MessageRepository {
-  MessageRepositoryImpl(this._database);
+class MessageRepository {
+  MessageRepository(this._database);
 
   /// The database instance for message operations.
   final AppDatabase _database;
 
-  @override
   Future<List<MessageEntity>> getMessagesByConversation(
     String conversationId,
   ) async {
@@ -32,7 +30,6 @@ class MessageRepositoryImpl implements MessageRepository {
     return messageTables.map(_mapToMessage).toList();
   }
 
-  @override
   Stream<List<MessageEntity>> watchMessagesByConversation(
     String conversationId,
   ) {
@@ -75,7 +72,6 @@ class MessageRepositoryImpl implements MessageRepository {
         );
   }
 
-  @override
   Future<List<MessageEntity>> getMessagesByConversationPaginated(
     String conversationId,
     int limit,
@@ -87,7 +83,6 @@ class MessageRepositoryImpl implements MessageRepository {
     return messageTables.map(_mapToMessage).toList();
   }
 
-  @override
   Future<List<MessageEntity>> getMessagesByType(
     String conversationId,
     MessageType messageType,
@@ -100,7 +95,6 @@ class MessageRepositoryImpl implements MessageRepository {
     return messageTables.map(_mapToMessage).toList();
   }
 
-  @override
   Future<List<MessageEntity>> getUserMessages(String conversationId) async {
     final messageTables = await _database.messageDao.getUserMessages(
       conversationId,
@@ -109,7 +103,6 @@ class MessageRepositoryImpl implements MessageRepository {
     return messageTables.map(_mapToMessage).toList();
   }
 
-  @override
   Future<List<MessageEntity>> getSystemMessages(String conversationId) async {
     final messageTables = await _database.messageDao.getSystemMessages(
       conversationId,
@@ -118,14 +111,12 @@ class MessageRepositoryImpl implements MessageRepository {
     return messageTables.map(_mapToMessage).toList();
   }
 
-  @override
   Future<MessageEntity?> getMessageById(String id) async {
     final messageTable = await _database.messageDao.getMessageById(id);
 
     return messageTable != null ? _mapToMessage(messageTable) : null;
   }
 
-  @override
   Future<MessageEntity> createMessage(MessageToCreate message) async {
     // Validate message before creating.
     if (!await validateMessage(message)) {
@@ -140,7 +131,6 @@ class MessageRepositoryImpl implements MessageRepository {
     return _mapToMessage(createdMessage);
   }
 
-  @override
   Future<MessageEntity> patchMessage(
     String id,
     MessagePatch message,
@@ -160,7 +150,6 @@ class MessageRepositoryImpl implements MessageRepository {
     return _mapToMessage(updatedMessage);
   }
 
-  @override
   Future<bool> deleteMessage(String id) async {
     // Check if message exists.
     if (!await messageExists(id)) {
@@ -170,12 +159,10 @@ class MessageRepositoryImpl implements MessageRepository {
     return _database.messageDao.deleteMessage(id);
   }
 
-  @override
   Future<bool> messageExists(String id) async {
     return _database.messageDao.messageExists(id);
   }
 
-  @override
   Future<List<MessageEntity>> getMessagesByStatus(
     String conversationId,
     MessageStatus status,
@@ -188,12 +175,10 @@ class MessageRepositoryImpl implements MessageRepository {
     return messageTables.map(_mapToMessage).toList();
   }
 
-  @override
   Future<int> getMessageCountByConversation(String conversationId) async {
     return _database.messageDao.getMessageCountByConversation(conversationId);
   }
 
-  @override
   Future<bool> validateMessage(MessageToCreate message) async {
     if (!message.isValid) {
       throw MessageValidationException(_getValidationErrorToCreate(message));
@@ -202,7 +187,6 @@ class MessageRepositoryImpl implements MessageRepository {
     return true;
   }
 
-  @override
   Future<MessageEntity?> getLatestCompactionSummary(
     String conversationId,
   ) async {
@@ -319,4 +303,54 @@ class MessageRepositoryImpl implements MessageRepository {
       MessageType.system => MessagesTableType.system,
     };
   }
+}
+
+/// Base exception for message-related operations.
+class MessageException implements Exception {
+  // Cause is optional because not all domain failures wrap an exception.
+  // ignore: unnecessary-nullable
+  /// Creates a new MessageException.
+  const MessageException(
+    this.message, [
+    this.cause,
+  ]);
+
+  /// Error message describing the exception.
+  final String message;
+
+  /// Optional original exception that caused this exception.
+  final Exception? cause;
+
+  @override
+  String toString() {
+    final causedBy = cause != null ? ' (Caused by: $cause)' : '';
+
+    return 'MessageException: $message$causedBy';
+  }
+}
+
+/// Exception thrown when message validation fails.
+class MessageValidationException extends MessageException {
+  /// Creates a new MessageValidationException.
+  const MessageValidationException(super.message, [super.cause]);
+}
+
+/// Exception thrown when a message is not found.
+class MessageNotFoundException extends MessageException {
+  /// Creates a new MessageNotFoundException.
+  const MessageNotFoundException(this.messageId, [Exception? cause])
+    : super('Message with ID "$messageId" not found', cause);
+
+  /// ID of the message that was not found.
+  final String messageId;
+}
+
+/// Exception thrown when attempting to create a duplicate message.
+class MessageDuplicateException extends MessageException {
+  /// Creates a new MessageDuplicateException.
+  const MessageDuplicateException(this.messageId, [Exception? cause])
+    : super('Message with ID "$messageId" already exists', cause);
+
+  /// ID of the duplicate message.
+  final String messageId;
 }

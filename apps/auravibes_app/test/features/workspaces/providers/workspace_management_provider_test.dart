@@ -5,9 +5,9 @@
 // (E.g. find.text().findsOneWidget) which triggers cascade_invocations lint.
 // Not applicable in test assertions.
 
+import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
-import 'package:auravibes_app/domain/repositories/workspace_repository.dart';
 import 'package:auravibes_app/features/workspaces/models/management_mode.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_management_mode.dart';
 import 'package:auravibes_app/features/workspaces/usecases/usecases.dart';

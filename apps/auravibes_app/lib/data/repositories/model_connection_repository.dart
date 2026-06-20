@@ -5,7 +5,6 @@ import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
-import 'package:auravibes_app/domain/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:auravibes_app/services/model_provider_services/model_provider.dart';
@@ -18,8 +17,8 @@ import 'package:drift/drift.dart';
 /// operations using the Drift database. It handles the mapping between domain
 /// entities and database records, and provides proper error handling using
 /// exceptions.
-class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
-  ModelConnectionRepositoryImpl({
+class ModelConnectionRepository {
+  ModelConnectionRepository({
     required this._database,
     required this._encryptionService,
     ModelProviderServices? modelProviderServices,
@@ -31,7 +30,6 @@ class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
   final ModelProviderServices _modelProviderServices;
   static const _missingApiKeyMessage = 'Model connection has no API key';
 
-  @override
   Future<ModelConnectionEntity> createModelConnection(
     ModelConnectionToCreate modelConnection,
   ) async {
@@ -169,7 +167,6 @@ class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
     return _modelProviderTableToEntity(createdModelConnection);
   }
 
-  @override
   Future<ModelConnectionForEdit?> getModelConnectionForEdit(
     String modelConnectionId,
   ) async {
@@ -189,7 +186,6 @@ class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
     );
   }
 
-  @override
   Future<ModelConnectionEntity> updateModelConnection(
     String modelConnectionId,
     ModelConnectionToUpdate modelConnection,
@@ -283,7 +279,6 @@ class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
     return updatedUrl?.isEmpty == true ? null : updatedUrl;
   }
 
-  @override
   Future<List<ModelConnectionEntity>> getModelConnections(
     ModelConnectionFilter filter,
   ) async {
@@ -296,7 +291,6 @@ class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
     return modelConnections.map(_modelProviderTableToEntity).toList();
   }
 
-  @override
   Stream<List<ModelConnectionEntity>> watchModelConnections(
     ModelConnectionFilter filter,
   ) {
@@ -388,7 +382,6 @@ class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
     );
   }
 
-  @override
   Future<void> deleteModelConnection(String modelConnectionId) async {
     // Verify the model connection exists before attempting deletion.
     final modelConnection = await _database.modelConnectionsDao
@@ -406,4 +399,47 @@ class ModelConnectionRepositoryImpl implements ModelConnectionRepository {
       modelConnectionId,
     );
   }
+}
+
+/// Base exception for model connection-related operations.
+class ModelConnectionException implements Exception {
+  /// Creates a new ModelConnectionException.
+  const ModelConnectionException(this.message, [this.cause]);
+
+  /// Error message describing the exception.
+  final String message;
+
+  /// Optional original exception that caused this exception.
+  final Exception? cause;
+
+  @override
+  String toString() {
+    final causedBy = cause != null ? ' (Caused by: $cause)' : '';
+
+    return 'ModelConnectionException: $message$causedBy';
+  }
+}
+
+/// Exception thrown when a model connection has no models.
+class ModelConnectionNoModelsException extends ModelConnectionException {
+  /// Creates a new ModelConnectionNoModelsException.
+  const ModelConnectionNoModelsException(this.modelId, [Exception? cause])
+    : super('ModelProvider with type "$modelId" not found models', cause);
+
+  /// ID of the workspaceModelSelection that was not found.
+  final String modelId;
+}
+
+class ModelConnectionModelNotFoundException extends ModelConnectionException {
+  const ModelConnectionModelNotFoundException(this.modelId, [Exception? cause])
+    : super('ModelProvider with id "$modelId" not found', cause);
+
+  final String modelId;
+}
+
+class ModelConnectionNoTypeException extends ModelConnectionException {
+  const ModelConnectionNoTypeException(this.modelId, [Exception? cause])
+    : super('ModelProvider with id "$modelId" has no type', cause);
+
+  final String modelId;
 }
