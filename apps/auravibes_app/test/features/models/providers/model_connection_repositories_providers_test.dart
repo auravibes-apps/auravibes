@@ -57,27 +57,6 @@ void main() {
 
       final result = container.read(modelConnectionRepositoryProvider);
       expect(result, isA<ModelConnectionRepository>());
-      expect(result, isA<ModelConnectionRepository>());
-    });
-  });
-
-  group('workspaceModelSelectionRepositoryProvider', () {
-    test('returns WorkspaceModelSelectionRepository instance', () {
-      final container = ProviderContainer(
-        overrides: [
-          appDatabaseProvider.overrideWithValue(
-            AppDatabase(connection: _testConnection()),
-          ),
-          encryptionServiceProvider.overrideWithValue(
-            _FakeEncryptionService(),
-          ),
-        ],
-      );
-      addTearDown(container.dispose);
-
-      final result = container.read(modelConnectionRepositoryProvider);
-      expect(result, isA<ModelConnectionRepository>());
-      expect(result, isA<ModelConnectionRepository>());
     });
   });
 
@@ -95,7 +74,6 @@ void main() {
       final result = container.read(
         workspaceModelSelectionRepositoryProvider,
       );
-      expect(result, isA<WorkspaceModelSelectionRepository>());
       expect(result, isA<WorkspaceModelSelectionRepository>());
     });
   });
