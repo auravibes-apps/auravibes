@@ -340,6 +340,8 @@ abstract class LocaleKeys {
   static const skills_tool_query_hint = 'skills_tool.query_hint';
   static const skills_tool_query_key_label = 'skills_tool.query_key_label';
   static const skills_tool_query_value_label = 'skills_tool.query_value_label';
+  static const skills_tool_query_value_placeholder =
+      'skills_tool.query_value_placeholder';
   static const skills_tool_add_query = 'skills_tool.add_query';
   static const skills_tool_body_format_label = 'skills_tool.body_format_label';
   static const skills_tool_body_format_json = 'skills_tool.body_format_json';
@@ -350,7 +352,17 @@ abstract class LocaleKeys {
       'skills_tool.inputs_section_title';
   static const skills_tool_inputs_hint = 'skills_tool.inputs_hint';
   static const skills_tool_input_name_label = 'skills_tool.input_name_label';
+  static const skills_tool_input_name_placeholder =
+      'skills_tool.input_name_placeholder';
   static const skills_tool_input_type_label = 'skills_tool.input_type_label';
+  static const skills_tool_input_type_string = 'skills_tool.input_type_string';
+  static const skills_tool_input_type_number = 'skills_tool.input_type_number';
+  static const skills_tool_input_type_integer =
+      'skills_tool.input_type_integer';
+  static const skills_tool_input_type_boolean =
+      'skills_tool.input_type_boolean';
+  static const skills_tool_input_type_object = 'skills_tool.input_type_object';
+  static const skills_tool_input_type_array = 'skills_tool.input_type_array';
   static const skills_tool_input_description_label =
       'skills_tool.input_description_label';
   static const skills_tool_input_description_hint =
