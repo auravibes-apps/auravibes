@@ -18,26 +18,33 @@ class AppErrorWidget<T extends Object> extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(16),
         child: AuraColumn(
           children: [
             const AuraIcon(
               Icons.error_outline,
-              size: AuraIconSize.extraLarge,
+              size: AuraIconSize.large,
               color: AuraColorVariant.error,
             ),
             const AuraText(
-              child: _AppErrorText(LocaleKeys.common_error_title),
+              child: _AppErrorText(
+                LocaleKeys.common_error_title,
+                maxLines: 2,
+              ),
               style: AuraTextStyle.heading6,
               textAlign: TextAlign.center,
             ),
             const AuraText(
-              child: _AppErrorText(LocaleKeys.common_error_message),
+              child: _AppErrorText(
+                LocaleKeys.common_error_message,
+                maxLines: 2,
+              ),
               textAlign: TextAlign.center,
               color: AuraColorVariant.onSurfaceVariant,
             ),
             ?action,
           ],
+          spacing: AuraSpacing.sm,
           mainAxisSize: MainAxisSize.min,
         ),
       ),
@@ -46,13 +53,18 @@ class AppErrorWidget<T extends Object> extends StatelessWidget {
 }
 
 class _AppErrorText extends StatelessWidget {
-  const _AppErrorText(this.localeKey);
+  const _AppErrorText(this.localeKey, {this.maxLines});
 
   final String localeKey;
+  final int? maxLines;
 
   @override
   Widget build(BuildContext context) {
-    return Text(_translate(context));
+    return Text(
+      _translate(context),
+      overflow: TextOverflow.ellipsis,
+      maxLines: maxLines,
+    );
   }
 
   String _translate(BuildContext context) {
