@@ -94,6 +94,7 @@ class _IntroScreenState extends ConsumerState<IntroScreen> {
           ),
         ),
       ),
+      variant: AuraScreenVariation.aurora,
     );
   }
 
