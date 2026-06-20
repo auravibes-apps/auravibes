@@ -4,6 +4,7 @@
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/widgets/delete_conversation_confirm_dialog.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/presentation/shared/formatters/relative_time_formatter.dart';
@@ -110,36 +111,12 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
   }
 
   Future<void> _handleDelete(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          LocaleKeys.chats_screens_chat_conversation_delete_title.tr(),
-        ),
-        content: Text(
-          LocaleKeys.chats_screens_chat_conversation_delete_confirm.tr(),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const TextLocale(LocaleKeys.common_cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
-            ),
-            child: const TextLocale(LocaleKeys.common_delete),
-          ),
-        ],
-      ),
-    );
+    final confirmed = await showDeleteConversationConfirmDialog(context);
+    if (!confirmed) return;
 
-    if (confirmed ?? false) {
-      final _ = await ref
-          .read(conversationRepositoryProvider)
-          .deleteConversation(widget.chat.id);
-    }
+    final _ = await ref
+        .read(conversationRepositoryProvider)
+        .deleteConversation(widget.chat.id);
   }
 
   @override
