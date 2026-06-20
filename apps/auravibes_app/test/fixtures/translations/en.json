@@ -8,6 +8,10 @@
     "agents": "Agents",
     "prompts": "Prompts"
   },
+  "navigation_drawer": {
+    "resize_handle_tooltip": "Resize navigation drawer",
+    "resize_handle_hint": "Drag horizontally to change the drawer width"
+  },
   "models_screens": {
     "add_provider": {
       "search_no_icon": "No icon"

@@ -1,8 +1,10 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
 // ignore_for_file: cascade_invocations
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/responsive_sliding_drawer_controller.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -121,20 +123,54 @@ void main() {
       required ResponsiveSlidingDrawerController controller,
       bool isDarkMode = false,
     }) {
-      return MaterialApp(
-        home: ResponsiveSlidingDrawer(
-          drawer: const Text('Drawer'),
-          body: const Text('Body'),
-          isDarkMode: isDarkMode,
-          controller: controller,
+      return EasyLocalization(
+        child: Builder(
+          builder: (context) {
+            return MaterialApp(
+              home: ResponsiveSlidingDrawer(
+                drawer: const Text('Drawer'),
+                body: const Text('Body'),
+                isDarkMode: isDarkMode,
+                controller: controller,
+              ),
+              theme: ThemeData(extensions: [AuraTheme.light]),
+              locale: context.locale,
+              localizationsDelegates: context.localizationDelegates,
+              supportedLocales: context.supportedLocales,
+            );
+          },
         ),
-        theme: ThemeData(extensions: [AuraTheme.light]),
+        supportedLocales: const [Locale('en')],
+        path: 'assets/i18n',
+        fallbackLocale: const Locale('en'),
+        startLocale: const Locale('en'),
+        useOnlyLangCode: true,
+        useFallbackTranslations: true,
       );
+    }
+
+    Future<void> pumpDrawer(
+      WidgetTester tester, {
+      required ResponsiveSlidingDrawerController controller,
+      bool isDarkMode = false,
+    }) async {
+      await tester.runAsync(() async {
+        await tester.pumpWidget(
+          buildDrawer(
+            controller: controller,
+            isDarkMode: isDarkMode,
+          ),
+        );
+      });
+      await tester.pump();
+      await tester.pump();
+      await tester.pump();
+      final _ = await tester.pumpAndSettle();
     }
 
     testWidgets('renders drawer and body widgets', (tester) async {
       final controller = ResponsiveSlidingDrawerController();
-      await tester.pumpWidget(buildDrawer(controller: controller));
+      await pumpDrawer(tester, controller: controller);
 
       expect(find.text('Drawer'), findsOneWidget);
       expect(find.text('Body'), findsOneWidget);
@@ -143,7 +179,7 @@ void main() {
     testWidgets('controller attaches and reports isDesktop', (tester) async {
       final controller = ResponsiveSlidingDrawerController();
 
-      await tester.pumpWidget(buildDrawer(controller: controller));
+      await pumpDrawer(tester, controller: controller);
 
       expect(controller.isDesktop, isTrue);
     });
@@ -151,7 +187,7 @@ void main() {
     testWidgets('controller open animates drawer', (tester) async {
       final controller = ResponsiveSlidingDrawerController();
 
-      await tester.pumpWidget(buildDrawer(controller: controller));
+      await pumpDrawer(tester, controller: controller);
 
       controller.open();
       final _ = await tester.pumpAndSettle();
@@ -162,7 +198,7 @@ void main() {
     testWidgets('controller close after open', (tester) async {
       final controller = ResponsiveSlidingDrawerController();
 
-      await tester.pumpWidget(buildDrawer(controller: controller));
+      await pumpDrawer(tester, controller: controller);
 
       controller.open();
       final _ = await tester.pumpAndSettle();
@@ -177,7 +213,7 @@ void main() {
     testWidgets('controller toggle opens then closes', (tester) async {
       final controller = ResponsiveSlidingDrawerController();
 
-      await tester.pumpWidget(buildDrawer(controller: controller));
+      await pumpDrawer(tester, controller: controller);
 
       controller.toggle();
       final _ = await tester.pumpAndSettle();
@@ -191,7 +227,7 @@ void main() {
     testWidgets('closeIfMobile does nothing on desktop width', (tester) async {
       final controller = ResponsiveSlidingDrawerController();
 
-      await tester.pumpWidget(buildDrawer(controller: controller));
+      await pumpDrawer(tester, controller: controller);
 
       controller.open();
       final _ = await tester.pumpAndSettle();
@@ -206,10 +242,10 @@ void main() {
       final controller1 = ResponsiveSlidingDrawerController();
       final controller2 = ResponsiveSlidingDrawerController();
 
-      await tester.pumpWidget(buildDrawer(controller: controller1));
+      await pumpDrawer(tester, controller: controller1);
       expect(controller1.isDesktop, isTrue);
 
-      await tester.pumpWidget(buildDrawer(controller: controller2));
+      await pumpDrawer(tester, controller: controller2);
       expect(controller2.isDesktop, isTrue);
       expect(controller1.isDesktop, isFalse);
     });
@@ -217,7 +253,7 @@ void main() {
     testWidgets('uses desktop layout when width >= 600', (tester) async {
       final controller = ResponsiveSlidingDrawerController();
 
-      await tester.pumpWidget(buildDrawer(controller: controller));
+      await pumpDrawer(tester, controller: controller);
 
       expect(controller.isDesktop, isTrue);
     });
@@ -232,7 +268,7 @@ void main() {
         tester.view.resetDevicePixelRatio();
       });
 
-      await tester.pumpWidget(buildDrawer(controller: controller));
+      await pumpDrawer(tester, controller: controller);
 
       expect(controller.isDesktop, isFalse);
     });
@@ -247,7 +283,7 @@ void main() {
         tester.view.resetDevicePixelRatio();
       });
 
-      await tester.pumpWidget(buildDrawer(controller: controller));
+      await pumpDrawer(tester, controller: controller);
 
       controller.open();
       final _ = await tester.pumpAndSettle();
@@ -268,12 +304,7 @@ void main() {
         tester.view.resetDevicePixelRatio();
       });
 
-      await tester.pumpWidget(
-        buildDrawer(
-          controller: controller,
-          isDarkMode: true,
-        ),
-      );
+      await pumpDrawer(tester, controller: controller, isDarkMode: true);
 
       controller.open();
       final _ = await tester.pumpAndSettle();
@@ -293,7 +324,7 @@ void main() {
         tester.view.resetDevicePixelRatio();
       });
 
-      await tester.pumpWidget(buildDrawer(controller: controller));
+      await pumpDrawer(tester, controller: controller);
 
       controller.toggle();
       final _ = await tester.pumpAndSettle();
@@ -314,7 +345,7 @@ void main() {
         tester.view.resetDevicePixelRatio();
       });
 
-      await tester.pumpWidget(buildDrawer(controller: controller));
+      await pumpDrawer(tester, controller: controller);
 
       controller.open();
       final _ = await tester.pumpAndSettle();
@@ -332,7 +363,7 @@ void main() {
     testWidgets('divider hover changes state on desktop', (tester) async {
       final controller = ResponsiveSlidingDrawerController();
 
-      await tester.pumpWidget(buildDrawer(controller: controller));
+      await pumpDrawer(tester, controller: controller);
 
       controller.open();
       final _ = await tester.pumpAndSettle();
@@ -348,10 +379,39 @@ void main() {
       expect(find.text('Drawer'), findsOneWidget);
     });
 
+    testWidgets('desktop divider has visible affordance and semantics', (
+      tester,
+    ) async {
+      final controller = ResponsiveSlidingDrawerController();
+
+      await pumpDrawer(tester, controller: controller);
+
+      controller.open();
+      final _ = await tester.pumpAndSettle();
+      final tooltip = LocaleKeys.navigation_drawer_resize_handle_tooltip.tr();
+
+      expect(
+        find.byTooltip(tooltip),
+        findsOneWidget,
+      );
+      expect(
+        find.bySemanticsLabel(tooltip),
+        findsOneWidget,
+      );
+
+      final opacity = tester.widget<AnimatedOpacity>(
+        find.descendant(
+          of: find.byTooltip(tooltip),
+          matching: find.byType(AnimatedOpacity),
+        ),
+      );
+      expect(opacity.opacity, greaterThan(0));
+    });
+
     testWidgets('desktop drag area exists when closed', (tester) async {
       final controller = ResponsiveSlidingDrawerController();
 
-      await tester.pumpWidget(buildDrawer(controller: controller));
+      await pumpDrawer(tester, controller: controller);
 
       controller.close();
       final _ = await tester.pumpAndSettle();

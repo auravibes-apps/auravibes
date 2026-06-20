@@ -9,6 +9,10 @@
     "prompts": "Prompts",
     "more": "Más"
   },
+  "navigation_drawer": {
+    "resize_handle_tooltip": "Redimensionar panel de navegación",
+    "resize_handle_hint": "Arrastra horizontalmente para cambiar el ancho del panel"
+  },
   "intro_flow": {
     "welcome": {
       "title": "Bienvenido a AuraVibes",
