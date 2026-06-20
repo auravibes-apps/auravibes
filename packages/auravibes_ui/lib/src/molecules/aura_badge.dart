@@ -229,90 +229,6 @@ class AuraBadge extends StatelessWidget {
   }
 }
 
-/// A specialized badge component that can be positioned relative to another
-/// widget.
-///
-/// This is commonly used for notification badges on icons or avatars.
-class AuraPositionedBadge extends StatelessWidget {
-  /// Creates a positioned Aura badge.
-  const AuraPositionedBadge({
-    required this.child,
-    required this.badge,
-    super.key,
-    this.position = AuraBadgePosition.topRight,
-    this.offset,
-  });
-
-  /// The widget to position the badge relative to.
-  final Widget child;
-
-  /// The badge to display.
-  final AuraBadge badge;
-
-  /// The position of the badge relative to the child.
-  final AuraBadgePosition position;
-
-  /// Optional offset to fine-tune the badge position.
-  final Offset? offset;
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        child,
-        Positioned(
-          left: _getLeft(),
-          top: _getTop(),
-          right: _getRight(),
-          bottom: _getBottom(),
-          child: badge,
-        ),
-      ],
-    );
-  }
-
-  double? _getTop() {
-    final baseOffset = offset?.dy ?? 0;
-
-    return switch (position) {
-      AuraBadgePosition.topLeft ||
-      AuraBadgePosition.topRight => -8.0 + baseOffset,
-      AuraBadgePosition.bottomLeft || AuraBadgePosition.bottomRight => null,
-    };
-  }
-
-  double? _getRight() {
-    final baseOffset = offset?.dx ?? 0;
-
-    return switch (position) {
-      AuraBadgePosition.topRight ||
-      AuraBadgePosition.bottomRight => -8.0 + baseOffset,
-      AuraBadgePosition.topLeft || AuraBadgePosition.bottomLeft => null,
-    };
-  }
-
-  double? _getBottom() {
-    final baseOffset = offset?.dy ?? 0;
-
-    return switch (position) {
-      AuraBadgePosition.bottomLeft ||
-      AuraBadgePosition.bottomRight => -8.0 + baseOffset,
-      AuraBadgePosition.topLeft || AuraBadgePosition.topRight => null,
-    };
-  }
-
-  double? _getLeft() {
-    final baseOffset = offset?.dx ?? 0;
-
-    return switch (position) {
-      AuraBadgePosition.topLeft ||
-      AuraBadgePosition.bottomLeft => -8.0 + baseOffset,
-      AuraBadgePosition.topRight || AuraBadgePosition.bottomRight => null,
-    };
-  }
-}
-
 /// The visual variant of a [AuraBadge].
 enum AuraBadgeVariant {
   /// Primary color badge.
@@ -353,19 +269,4 @@ enum AuraBadgeSize {
 
   /// Large badge.
   large,
-}
-
-/// The position of a [AuraPositionedBadge].
-enum AuraBadgePosition {
-  /// Top-left corner.
-  topLeft,
-
-  /// Top-right corner.
-  topRight,
-
-  /// Bottom-left corner.
-  bottomLeft,
-
-  /// Bottom-right corner.
-  bottomRight,
 }
