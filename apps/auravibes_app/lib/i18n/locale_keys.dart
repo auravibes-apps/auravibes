@@ -11,6 +11,10 @@ abstract class LocaleKeys {
   static const menu_agents = 'menu.agents';
   static const menu_prompts = 'menu.prompts';
   static const menu_more = 'menu.more';
+  static const navigation_drawer_resize_handle_tooltip =
+      'navigation_drawer.resize_handle_tooltip';
+  static const navigation_drawer_resize_handle_hint =
+      'navigation_drawer.resize_handle_hint';
   static const intro_flow_welcome_title = 'intro_flow.welcome.title';
   static const intro_flow_welcome_body = 'intro_flow.welcome.body';
   static const intro_flow_workspace_context_title =

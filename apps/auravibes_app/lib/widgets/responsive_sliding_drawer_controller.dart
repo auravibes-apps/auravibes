@@ -5,7 +5,9 @@
 // Required: Existing code repeats lookups where extraction adds noise.
 // Required: Feature widgets keep closely related private widgets together.
 
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 enum _DrawerDragDirection { opening, closing }
@@ -100,9 +102,6 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
   static const _dividerVisibleWidth = 4.0;
   static const _dividerIdleOpacity = 0.45;
   static const _desktopDragAreaWidth = 10.0;
-  static const _resizeHandleTooltip = 'Resize navigation drawer';
-  static const _resizeHandleHint =
-      'Drag horizontally to change the drawer width';
   static const Color _scrimColorLightMode = Colors.black;
   static const Color _scrimColorDarkMode = Colors.white;
   static const _scrimColorOpacityLightMode = 0.36;
@@ -428,6 +427,12 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
     final dividerColor = isDividerActive
         ? context.auraColors.primary
         : context.auraColors.outlineVariant;
+    final resizeHandleTooltip = LocaleKeys
+        .navigation_drawer_resize_handle_tooltip
+        .tr(context: context);
+    final resizeHandleHint = LocaleKeys.navigation_drawer_resize_handle_hint.tr(
+      context: context,
+    );
 
     return Positioned(
       left: drawerWidth - _dividerWidth / 2,
@@ -439,30 +444,33 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
         onExit: (_) => setState(() => _isHoveringDivider = false),
         cursor: SystemMouseCursors.resizeColumn,
         child: Tooltip(
-          message: _resizeHandleTooltip,
+          message: resizeHandleTooltip,
           child: Semantics(
-            child: Center(
-              child: AnimatedOpacity(
-                child: GestureDetector(
-                  child: Container(
-                    color: dividerColor,
-                    width: _dividerVisibleWidth,
-                    height: double.infinity,
+            child: AnimatedOpacity(
+              child: GestureDetector(
+                child: SizedBox(
+                  width: _dividerWidth,
+                  child: Center(
+                    child: Container(
+                      color: dividerColor,
+                      width: _dividerVisibleWidth,
+                      height: double.infinity,
+                    ),
                   ),
-                  onPanStart: (_) => _setResizing(true),
-                  onPanUpdate: _handleDividerPanUpdate,
-                  onPanEnd: (_) => _setResizing(false),
-                  onPanCancel: () => _setResizing(false),
-                  behavior: HitTestBehavior.opaque,
                 ),
-                opacity: (isDividerActive || _resizeOvershoot != 0.0)
-                    ? 1.0
-                    : _dividerIdleOpacity,
-                duration: const Duration(milliseconds: 200),
+                onPanStart: (_) => _setResizing(true),
+                onPanUpdate: _handleDividerPanUpdate,
+                onPanEnd: (_) => _setResizing(false),
+                onPanCancel: () => _setResizing(false),
+                behavior: HitTestBehavior.opaque,
               ),
+              opacity: (isDividerActive || _resizeOvershoot != 0.0)
+                  ? 1.0
+                  : _dividerIdleOpacity,
+              duration: const Duration(milliseconds: 200),
             ),
-            label: _resizeHandleTooltip,
-            hint: _resizeHandleHint,
+            label: resizeHandleTooltip,
+            hint: resizeHandleHint,
           ),
         ),
       ),

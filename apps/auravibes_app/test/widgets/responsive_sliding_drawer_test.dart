@@ -1,8 +1,10 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
 // ignore_for_file: cascade_invocations
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/responsive_sliding_drawer_controller.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -121,14 +123,29 @@ void main() {
       required ResponsiveSlidingDrawerController controller,
       bool isDarkMode = false,
     }) {
-      return MaterialApp(
-        home: ResponsiveSlidingDrawer(
-          drawer: const Text('Drawer'),
-          body: const Text('Body'),
-          isDarkMode: isDarkMode,
-          controller: controller,
+      return EasyLocalization(
+        child: Builder(
+          builder: (context) {
+            return MaterialApp(
+              home: ResponsiveSlidingDrawer(
+                drawer: const Text('Drawer'),
+                body: const Text('Body'),
+                isDarkMode: isDarkMode,
+                controller: controller,
+              ),
+              theme: ThemeData(extensions: [AuraTheme.light]),
+              locale: context.locale,
+              localizationsDelegates: context.localizationDelegates,
+              supportedLocales: context.supportedLocales,
+            );
+          },
         ),
-        theme: ThemeData(extensions: [AuraTheme.light]),
+        supportedLocales: const [Locale('en')],
+        path: 'assets/i18n',
+        fallbackLocale: const Locale('en'),
+        startLocale: const Locale('en'),
+        useOnlyLangCode: true,
+        useFallbackTranslations: true,
       );
     }
 
@@ -137,12 +154,17 @@ void main() {
       required ResponsiveSlidingDrawerController controller,
       bool isDarkMode = false,
     }) async {
-      await tester.pumpWidget(
-        buildDrawer(
-          controller: controller,
-          isDarkMode: isDarkMode,
-        ),
-      );
+      await tester.runAsync(() async {
+        await tester.pumpWidget(
+          buildDrawer(
+            controller: controller,
+            isDarkMode: isDarkMode,
+          ),
+        );
+      });
+      await tester.pump();
+      await tester.pump();
+      await tester.pump();
       final _ = await tester.pumpAndSettle();
     }
 
@@ -366,19 +388,20 @@ void main() {
 
       controller.open();
       final _ = await tester.pumpAndSettle();
+      final tooltip = LocaleKeys.navigation_drawer_resize_handle_tooltip.tr();
 
       expect(
-        find.byTooltip('Resize navigation drawer'),
+        find.byTooltip(tooltip),
         findsOneWidget,
       );
       expect(
-        find.bySemanticsLabel('Resize navigation drawer'),
+        find.bySemanticsLabel(tooltip),
         findsOneWidget,
       );
 
       final opacity = tester.widget<AnimatedOpacity>(
         find.descendant(
-          of: find.byTooltip('Resize navigation drawer'),
+          of: find.byTooltip(tooltip),
           matching: find.byType(AnimatedOpacity),
         ),
       );
