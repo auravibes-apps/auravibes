@@ -67,17 +67,8 @@ class MyApp extends ConsumerWidget {
           child: child ?? const SizedBox.shrink(),
         ),
         title: AppFlavorConfig.title,
-        theme: ThemeData(
-          extensions: [
-            AuraTheme.light,
-          ],
-        ),
-        darkTheme: ThemeData(
-          extensions: [
-            AuraTheme.dark,
-          ],
-          colorScheme: const ColorScheme.dark(),
-        ),
+        theme: _auraMaterialTheme(AuraTheme.light, Brightness.light),
+        darkTheme: _auraMaterialTheme(AuraTheme.dark, Brightness.dark),
         themeMode: themeMode,
         locale: context.locale,
         localizationsDelegates: context.localizationDelegates,
@@ -86,4 +77,186 @@ class MyApp extends ConsumerWidget {
       ),
     );
   }
+}
+
+ThemeData _auraMaterialTheme(AuraTheme auraTheme, Brightness brightness) {
+  final colors = auraTheme.colors;
+  final typography = auraTheme.typography;
+  final textTheme = _auraTextTheme(auraTheme, brightness);
+  final colorScheme = ColorScheme(
+    brightness: brightness,
+    primary: colors.primary,
+    onPrimary: colors.onPrimary,
+    primaryContainer: colors.primaryVariant,
+    onPrimaryContainer: colors.onPrimary,
+    secondary: colors.secondary,
+    onSecondary: colors.onSecondary,
+    secondaryContainer: colors.secondaryVariant,
+    onSecondaryContainer: colors.onSecondary,
+    tertiary: colors.info,
+    onTertiary: colors.onInfo,
+    error: colors.error,
+    onError: colors.onError,
+    surface: colors.surface,
+    onSurface: colors.onSurface,
+    surfaceDim: colors.background,
+    surfaceBright: colors.surfaceVariant,
+    surfaceContainer: colors.surface,
+    surfaceContainerHigh: colors.surfaceVariant,
+    surfaceContainerHighest: colors.surfaceVariant,
+    onSurfaceVariant: colors.onSurfaceVariant,
+    outline: colors.outline,
+    outlineVariant: colors.outlineVariant,
+    shadow: colors.shadow,
+    scrim: colors.scrim,
+    inverseSurface: colors.onSurface,
+    onInverseSurface: colors.surface,
+    inversePrimary: colors.primaryVariant,
+    surfaceTint: colors.primary,
+    // ignore: deprecated_member_use - Required for legacy Material fallbacks.
+    background: colors.background,
+    // ignore: deprecated_member_use - Required for legacy Material fallbacks.
+    onBackground: colors.onBackground,
+  );
+
+  return ThemeData(
+    extensions: [auraTheme],
+    useMaterial3: true,
+    colorScheme: colorScheme,
+    brightness: brightness,
+    scaffoldBackgroundColor: colors.background,
+    fontFamily: typography.fontFamily,
+    iconTheme: IconThemeData(color: colors.onSurfaceVariant),
+    primaryTextTheme: textTheme,
+    textTheme: textTheme,
+    chipTheme: ChipThemeData(
+      backgroundColor: colors.surfaceVariant,
+      disabledColor: colors.outlineVariant,
+      selectedColor: colors.primary,
+      secondarySelectedColor: colors.secondary,
+      padding: EdgeInsets.symmetric(
+        vertical: auraTheme.spacing.xs,
+        horizontal: auraTheme.spacing.sm,
+      ),
+      shape: RoundedRectangleBorder(
+        side: BorderSide(color: colors.outlineVariant),
+        borderRadius: BorderRadius.circular(auraTheme.borderRadius.full),
+      ),
+      labelStyle: textTheme.labelMedium?.copyWith(color: colors.onSurface),
+      secondaryLabelStyle: textTheme.labelMedium?.copyWith(
+        color: colors.onSecondary,
+      ),
+      brightness: brightness,
+    ),
+    dialogTheme: DialogThemeData(
+      backgroundColor: colors.surface,
+      shadowColor: colors.shadow,
+      surfaceTintColor: colors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(auraTheme.borderRadius.xl),
+      ),
+      iconColor: colors.primary,
+      titleTextStyle: textTheme.titleLarge?.copyWith(color: colors.onSurface),
+      contentTextStyle: textTheme.bodyMedium?.copyWith(
+        color: colors.onSurfaceVariant,
+      ),
+      barrierColor: colors.scrim,
+    ),
+    iconButtonTheme: IconButtonThemeData(
+      style: IconButton.styleFrom(
+        foregroundColor: colors.onSurfaceVariant,
+        disabledForegroundColor: colors.outline,
+        hoverColor: colors.surfaceVariant,
+        focusColor: colors.surfaceVariant,
+        highlightColor: colors.outlineVariant,
+      ),
+    ),
+    progressIndicatorTheme: ProgressIndicatorThemeData(
+      color: colors.primary,
+      linearTrackColor: colors.outlineVariant,
+      circularTrackColor: colors.outlineVariant,
+    ),
+    snackBarTheme: SnackBarThemeData(
+      backgroundColor: colors.onSurface,
+      actionTextColor: colors.primary,
+      disabledActionTextColor: colors.outline,
+      contentTextStyle: textTheme.bodyMedium?.copyWith(color: colors.surface),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(auraTheme.borderRadius.lg),
+      ),
+      behavior: SnackBarBehavior.floating,
+    ),
+  );
+}
+
+TextTheme _auraTextTheme(AuraTheme auraTheme, Brightness brightness) {
+  final typography = auraTheme.typography;
+  final colors = auraTheme.colors;
+  final baseTheme = brightness == Brightness.dark
+      ? Typography.material2021().white
+      : Typography.material2021().black;
+
+  return baseTheme
+      .apply(
+        bodyColor: colors.onSurface,
+        displayColor: colors.onSurface,
+        fontFamily: typography.fontFamily,
+      )
+      .copyWith(
+        displayLarge: _auraTextStyle(auraTheme, typography.sizes.xl5),
+        displayMedium: _auraTextStyle(auraTheme, typography.sizes.xl4),
+        displaySmall: _auraTextStyle(auraTheme, typography.sizes.xl3),
+        headlineLarge: _auraTextStyle(auraTheme, typography.sizes.xl3),
+        headlineMedium: _auraTextStyle(auraTheme, typography.sizes.xl2),
+        headlineSmall: _auraTextStyle(auraTheme, typography.sizes.xl),
+        titleLarge: _auraTextStyle(
+          auraTheme,
+          typography.sizes.lg,
+          fontWeight: typography.weights.semibold,
+        ),
+        titleMedium: _auraTextStyle(
+          auraTheme,
+          typography.sizes.base,
+          fontWeight: typography.weights.medium,
+        ),
+        titleSmall: _auraTextStyle(
+          auraTheme,
+          typography.sizes.sm,
+          fontWeight: typography.weights.medium,
+        ),
+        bodyLarge: _auraTextStyle(auraTheme, typography.sizes.base),
+        bodyMedium: _auraTextStyle(auraTheme, typography.sizes.sm),
+        bodySmall: _auraTextStyle(auraTheme, typography.sizes.xs),
+        labelLarge: _auraTextStyle(
+          auraTheme,
+          typography.sizes.sm,
+          fontWeight: typography.weights.medium,
+        ),
+        labelMedium: _auraTextStyle(
+          auraTheme,
+          typography.sizes.xs,
+          fontWeight: typography.weights.medium,
+        ),
+        labelSmall: _auraTextStyle(
+          auraTheme,
+          typography.sizes.xs,
+          fontWeight: typography.weights.medium,
+        ),
+      );
+}
+
+TextStyle _auraTextStyle(
+  AuraTheme auraTheme,
+  double fontSize, {
+  FontWeight? fontWeight,
+}) {
+  final typography = auraTheme.typography;
+
+  return TextStyle(
+    color: auraTheme.colors.onSurface,
+    fontSize: fontSize,
+    fontWeight: fontWeight ?? typography.weights.regular,
+    letterSpacing: typography.letterSpacings.normal,
+    fontFamily: typography.fontFamily,
+  );
 }
