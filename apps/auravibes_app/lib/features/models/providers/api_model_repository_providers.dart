@@ -6,6 +6,7 @@ import 'package:auravibes_app/data/repositories/api_model_repository_impl.dart';
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/repositories/api_model_repository.dart';
+import 'package:auravibes_app/features/models/usecases/sync_api_models_usecase.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/services/model_api_service.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
@@ -34,10 +35,13 @@ ModelApiService modelApiService(Ref _) {
 ModelSyncService modelSyncService(Ref ref) {
   final repository = ref.watch(apiModelRepositoryProvider);
   final apiService = ref.watch(modelApiServiceProvider);
-
-  final service = ModelSyncService(
+  final syncApiModelsUseCase = SyncApiModelsUseCase(
     repository: repository,
     apiService: apiService,
+  );
+
+  final service = ModelSyncService(
+    syncApiModelsUseCase: syncApiModelsUseCase,
   )..performFullSync();
 
   final timer = Timer.periodic(
