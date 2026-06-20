@@ -4,6 +4,7 @@
 
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
+import 'package:auravibes_app/features/chats/providers/compaction_execution_runtime_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -162,6 +163,46 @@ void main() {
       expect(state?.status, CompactionExecutionStatus.running);
       expect(state?.trigger, CompactionTrigger.auto);
     });
+
+    test('compactionExecutionRuntimeProvider wraps notifier methods', () {
+      final runtime = container.read(compactionExecutionRuntimeProvider);
+
+      runtime.markRunning(
+        CompactionExecutionState(
+          conversationId: 'conv-1',
+          trigger: CompactionTrigger.auto,
+          startedAt: DateTime.now(),
+          status: CompactionExecutionStatus.running,
+        ),
+      );
+
+      expect(
+        container.read(compactionExecutionProvider)['conv-1']?.status,
+        CompactionExecutionStatus.running,
+      );
+
+      runtime.markSuccess('conv-1');
+      expect(
+        container.read(compactionExecutionProvider)['conv-1']?.status,
+        CompactionExecutionStatus.success,
+      );
+
+      runtime.markRunning(
+        CompactionExecutionState(
+          conversationId: 'conv-1',
+          trigger: CompactionTrigger.manual,
+          startedAt: DateTime.now(),
+          status: CompactionExecutionStatus.running,
+        ),
+      );
+      runtime.markFailure('conv-1');
+
+      expect(
+        container.read(compactionExecutionProvider)['conv-1']?.status,
+        CompactionExecutionStatus.failure,
+      );
+    });
+
     test('onDispose cancels pending timers without crashing', () {
       final notifier = container.read(compactionExecutionProvider.notifier);
 

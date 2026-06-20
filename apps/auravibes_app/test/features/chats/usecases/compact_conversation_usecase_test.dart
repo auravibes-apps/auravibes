@@ -12,9 +12,12 @@ import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/repositories/workspace_model_selection_repository.dart';
-import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
+import 'package:auravibes_app/features/chats/providers/compaction_execution_runtime_provider.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/compact_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/select_compaction_range_usecase.dart';
+import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
+import 'package:auravibes_app/providers/chatbot_service_provider.dart';
 import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -71,7 +74,7 @@ class _CompactConversationFixture {
     final container = ProviderContainer();
     _container = container;
     final compactionExecution = container.read(
-      compactionExecutionProvider.notifier,
+      compactionExecutionRuntimeProvider,
     );
     _usecase = CompactConversationUsecase(
       messageRepository: mockMessageRepo,
@@ -165,6 +168,29 @@ void main() {
   }
 
   group('CompactConversationUsecase manual', () {
+    test('provider wires runtime adapter dependency', () {
+      final container = ProviderContainer(
+        overrides: [
+          messageRepositoryProvider.overrideWithValue(fixture.mockMessageRepo),
+          conversationRepositoryProvider.overrideWithValue(
+            fixture.mockConversationRepo,
+          ),
+          workspaceModelSelectionRepositoryProvider.overrideWithValue(
+            fixture.mockModelSelectionRepo,
+          ),
+          chatbotServiceProvider.overrideWithValue(fixture.mockChatbotService),
+          selectCompactionRangeUsecaseProvider.overrideWithValue(
+            const SelectCompactionRangeUsecase(),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final usecase = container.read(compactConversationUsecaseProvider);
+
+      expect(usecase.compactionExecution, isA<CompactionExecutionRuntime>());
+    });
+
     test('manual trigger succeeds below auto thresholds', () async {
       final messages = [
         _makeMessage(),

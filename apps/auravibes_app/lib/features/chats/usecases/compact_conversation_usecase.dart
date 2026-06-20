@@ -10,7 +10,7 @@ import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/repositories/workspace_model_selection_repository.dart';
-import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
+import 'package:auravibes_app/features/chats/providers/compaction_execution_runtime_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/select_compaction_range_usecase.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
@@ -36,7 +36,7 @@ class CompactConversationUsecase {
   final WorkspaceModelSelectionRepository workspaceModelSelectionsRepository;
   final ChatbotService chatbotService;
   final SelectCompactionRangeUsecase selectCompactionRangeUsecase;
-  final CompactionExecution compactionExecution;
+  final CompactionExecutionRuntime compactionExecution;
 
   static const String _failureMessageKey =
       LocaleKeys.compaction_errors_auto_blocked;
@@ -237,7 +237,7 @@ final compactConversationUsecaseProvider = Provider<CompactConversationUsecase>(
       selectCompactionRangeUsecase: ref.watch(
         selectCompactionRangeUsecaseProvider,
       ),
-      compactionExecution: ref.watch(compactionExecutionProvider.notifier),
+      compactionExecution: ref.watch(compactionExecutionRuntimeProvider),
     );
   },
 );
