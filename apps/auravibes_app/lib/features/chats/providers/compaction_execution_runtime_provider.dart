@@ -1,8 +1,8 @@
-// Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:riverpod/riverpod.dart';
 
+/// Runtime adapter for compaction execution notifier state changes.
 class CompactionExecutionRuntime {
   const CompactionExecutionRuntime({
     required this.markRunning,
