@@ -5,18 +5,8 @@ import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/native_tool_type.dart';
 import 'package:auravibes_app/services/tools/user_tool_type.dart';
 
-class _BuiltInToolIdComponents {
-  const _BuiltInToolIdComponents({
-    required this.tableId,
-    required this.toolIdentifier,
-  });
-
-  final String tableId;
-  final String toolIdentifier;
-}
-
-class _NativeToolIdComponents {
-  const _NativeToolIdComponents({
+class _ToolIdComponents {
+  const _ToolIdComponents({
     required this.tableId,
     required this.toolIdentifier,
   });
@@ -90,7 +80,7 @@ class ToolResolverService {
       );
     }
 
-    final builtInTool = _parseBuiltInToolId(compositeToolName);
+    final builtInTool = _parseToolId(compositeToolName, 'built_in_');
 
     if (builtInTool != null) {
       final toolType = UserToolType.fromValue(builtInTool.toolIdentifier);
@@ -103,7 +93,7 @@ class ToolResolverService {
       }
     }
 
-    final nativeTool = _parseNativeToolId(compositeToolName);
+    final nativeTool = _parseToolId(compositeToolName, 'native_');
     if (nativeTool != null) {
       final toolType = NativeToolType.fromValue(nativeTool.toolIdentifier);
       if (toolType != null) {
@@ -117,15 +107,16 @@ class ToolResolverService {
     return null;
   }
 
-  /// Parses a built-in tool composite ID.
+  /// Parses a `<prefix><table_id>_<tool_identifier>` composite ID.
   ///
-  /// Format: `built_in_<table_id>_<tool_identifier>`
+  /// Used for built-in (`built_in_`) and native (`native_`) tool IDs.
   /// Returns null if the format is invalid.
   ///
   /// Note: Tool names must match pattern ^[a-zA-Z0-9_-]{1,128}$
   /// so we use underscores as separators instead of colons.
-  static _BuiltInToolIdComponents? _parseBuiltInToolId(String compositeId) {
-    final match = RegExp(r'^built_in_([^_]+)_(.+)$').firstMatch(compositeId);
+  static _ToolIdComponents? _parseToolId(String compositeId, String prefix) {
+    final match = RegExp('^${RegExp.escape(prefix)}([^_]+)_(.+)\$')
+        .firstMatch(compositeId);
     if (match == null) return null;
 
     final tableId = match.group(1);
@@ -136,25 +127,7 @@ class ToolResolverService {
       return null;
     }
 
-    return _BuiltInToolIdComponents(
-      tableId: tableId,
-      toolIdentifier: toolIdentifier,
-    );
-  }
-
-  static _NativeToolIdComponents? _parseNativeToolId(String compositeId) {
-    final match = RegExp(r'^native_([^_]+)_(.+)$').firstMatch(compositeId);
-    if (match == null) return null;
-
-    final tableId = match.group(1);
-    final toolIdentifier = match.group(2);
-    if (tableId == null || toolIdentifier == null) return null;
-
-    if (tableId.isEmpty || toolIdentifier.isEmpty) {
-      return null;
-    }
-
-    return _NativeToolIdComponents(
+    return _ToolIdComponents(
       tableId: tableId,
       toolIdentifier: toolIdentifier,
     );
