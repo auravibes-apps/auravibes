@@ -74,6 +74,14 @@ class _FakeApiModelRepository implements ApiModelRepository {
   Future<int> deleteAllData() {
     throw UnimplementedError();
   }
+
+  @override
+  Future<void> replaceAllData({
+    required List<ApiModelProviderEntity> providers,
+    required List<ApiModelEntity> models,
+  }) {
+    throw UnimplementedError();
+  }
 }
 
 void main() {

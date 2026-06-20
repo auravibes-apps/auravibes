@@ -66,6 +66,14 @@ abstract class ApiModelRepository {
   /// Returns the list of inserted/updated models.
   Future<List<ApiModelEntity>> batchUpsertModels(List<ApiModelEntity> models);
 
+  /// Atomically replaces all model provider and model data.
+  ///
+  /// Keeps the previous snapshot if any delete or upsert fails.
+  Future<void> replaceAllData({
+    required List<ApiModelProviderEntity> providers,
+    required List<ApiModelEntity> models,
+  });
+
   /// Deletes all providers and models from the data source.
   ///
   /// This is typically used during full resynchronization operations.
