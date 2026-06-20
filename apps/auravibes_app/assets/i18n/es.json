@@ -55,6 +55,7 @@
     "add_provider": {
       "open_button": "Agregar Proveedor",
       "title": "Agregar Proveedor de Modelo",
+      "back_to_selection": "Volver a la selección de modelo",
       "create_button": "Crear Proveedor",
       "connect_browser": "Conectar con navegador",
       "use_device_code": "Usar código de dispositivo",
@@ -222,7 +223,9 @@
     "delete_mcp_title": "Eliminar Servidor MCP",
     "delete_mcp_confirm": "Esto eliminará el servidor MCP y todas sus herramientas. ¿Continuar?",
     "no_tools_in_group": "No hay herramientas disponibles",
-    "disabled_in_workspace": "Desactivada en espacio de trabajo"
+    "disabled_in_workspace": "Desactivada en espacio de trabajo",
+    "manage_title": "Gestionar herramientas",
+    "load_error": "Error al cargar herramientas: {}"
   },
   "skills_screen": {
     "title": "Habilidades del Espacio de Trabajo",
@@ -406,6 +409,8 @@
     "delete": "Borrar",
     "confirm": "Confirmar",
     "close": "Cerrar",
+    "close_dialog": "Cerrar diálogo",
+    "reload": "Recargar",
     "show_more": "Ver más",
     "error_title": "Algo salió mal",
     "error_message": "Intenta de nuevo o vuelve a abrir esta pantalla."

@@ -55,6 +55,7 @@
     "add_provider": {
       "open_button": "Add Provider",
       "title": "Add Model Provider",
+      "back_to_selection": "Back to model selection",
       "create_button": "Create Provider",
       "connect_browser": "Connect with browser",
       "use_device_code": "Use device code",
@@ -222,7 +223,9 @@
     "delete_mcp_title": "Delete MCP Server",
     "delete_mcp_confirm": "This will remove the MCP server and all its tools. Continue?",
     "no_tools_in_group": "No tools available",
-    "disabled_in_workspace": "Disabled in workspace"
+    "disabled_in_workspace": "Disabled in workspace",
+    "manage_title": "Manage Tools",
+    "load_error": "Error loading tools: {}"
   },
   "skills_screen": {
     "title": "Workspace Skills",
@@ -406,6 +409,8 @@
     "delete": "Delete",
     "confirm": "Confirm",
     "close": "Close",
+    "close_dialog": "Close dialog",
+    "reload": "Reload",
     "show_more": "Show more",
     "error_title": "Something went wrong",
     "error_message": "Try again or reopen this screen."
