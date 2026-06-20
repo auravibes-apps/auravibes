@@ -56,6 +56,8 @@ abstract class LocaleKeys {
       'models_screens.add_provider.open_button';
   static const models_screens_add_provider_title =
       'models_screens.add_provider.title';
+  static const models_screens_add_provider_back_to_selection =
+      'models_screens.add_provider.back_to_selection';
   static const models_screens_add_provider_create_button =
       'models_screens.add_provider.create_button';
   static const models_screens_add_provider_connect_browser =
@@ -273,6 +275,8 @@ abstract class LocaleKeys {
       'tools_screen.no_tools_in_group';
   static const tools_screen_disabled_in_workspace =
       'tools_screen.disabled_in_workspace';
+  static const tools_screen_manage_title = 'tools_screen.manage_title';
+  static const tools_screen_load_error = 'tools_screen.load_error';
   static const skills_screen_title = 'skills_screen.title';
   static const skills_screen_detail_title = 'skills_screen.detail_title';
   static const skills_screen_create_title = 'skills_screen.create_title';
@@ -468,6 +472,8 @@ abstract class LocaleKeys {
   static const common_delete = 'common.delete';
   static const common_confirm = 'common.confirm';
   static const common_close = 'common.close';
+  static const common_close_dialog = 'common.close_dialog';
+  static const common_reload = 'common.reload';
   static const common_show_more = 'common.show_more';
   static const tools_names_calculator_name = 'tools_names.calculator.name';
   static const tools_names_calculator_description =

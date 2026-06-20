@@ -206,7 +206,7 @@ class _ModalHeader extends StatelessWidget {
           AuraIconButton(
             icon: Icons.close,
             onPressed: onClose,
-            semanticLabel: 'Close dialog',
+            semanticLabel: LocaleKeys.common_close_dialog.tr(),
           ),
         ],
       ),
@@ -487,7 +487,7 @@ class _SelectModelProvider extends HookConsumerWidget {
     if (models == null) {
       return AuraButton(
         onPressed: () => ref.invalidate(apiModelProvidersProvider),
-        child: const AuraText(child: Text('reload')),
+        child: const TextLocale(LocaleKeys.common_reload),
       );
     }
 
@@ -617,7 +617,8 @@ class _SelectedModelHeader extends HookConsumerWidget {
           onPressed: () {
             addModelProvider.setModel(null);
           },
-          semanticLabel: 'Back to model selection',
+          semanticLabel:
+              LocaleKeys.models_screens_add_provider_back_to_selection.tr(),
         ),
         SizedBox(width: context.auraTheme.spacing.md),
         ModelLogo(

@@ -4,7 +4,10 @@ import 'package:auravibes_app/features/tools/models/conversation_tools_group_wit
 import 'package:auravibes_app/features/tools/notifiers/grouped_conversation_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/widgets/conversation_tools_group_card.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_empty_state.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -62,16 +65,15 @@ class ToolsManagementModal extends ConsumerWidget {
               child: Row(
                 children: [
                   const AuraText(
-                    child: Text('Manage Tools'),
+                    child: TextLocale(LocaleKeys.tools_screen_manage_title),
                     style: AuraTextStyle.heading6,
                   ),
                   const Spacer(),
-                  IconButton(
+                  AuraIconButton(
+                    icon: Icons.close,
                     onPressed: () => Navigator.of(context).pop(),
-                    style: IconButton.styleFrom(
-                      foregroundColor: context.auraColors.onSurfaceVariant,
-                    ),
-                    icon: const AuraIcon(Icons.close),
+                    color: AuraColorVariant.onSurfaceVariant,
+                    semanticLabel: LocaleKeys.common_close_dialog.tr(),
                   ),
                 ],
               ),
@@ -88,7 +90,10 @@ class ToolsManagementModal extends ConsumerWidget {
                 ),
                 AsyncError(:final error) => Center(
                   child: AuraText(
-                    child: Text('Error loading tools: $error'),
+                    child: TextLocale(
+                      LocaleKeys.tools_screen_load_error,
+                      args: [error.toString()],
+                    ),
                     color: AuraColorVariant.error,
                   ),
                 ),
