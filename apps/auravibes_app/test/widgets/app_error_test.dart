@@ -19,9 +19,13 @@ void main() {
       ),
     );
 
-    expect(find.text('Error loading models: $error'), findsOneWidget);
-    expect(find.byType(AppErrorWidget<String>), findsOneWidget);
-    expect(find.byType(AuraText), findsOneWidget);
+    expect(find.text('Error loading models: $error'), findsNothing);
+    expect(find.byIcon(Icons.error_outline), findsOneWidget);
+    expect(
+      find.byWidgetPredicate((widget) => widget is AppErrorWidget),
+      findsOneWidget,
+    );
+    expect(find.byType(AuraText), findsNWidgets(2));
   });
 
   testWidgets('renders different error types', (tester) async {
@@ -37,6 +41,27 @@ void main() {
       ),
     );
 
-    expect(find.text('Error loading models: 42'), findsOneWidget);
+    expect(find.text('Error loading models: 42'), findsNothing);
+    expect(
+      find.byWidgetPredicate((widget) => widget is AppErrorWidget),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('renders optional action', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: AppErrorWidget(
+            error: StateError('failed'),
+            stackTrace: StackTrace.empty,
+            action: const Text('Retry'),
+          ),
+        ),
+        theme: ThemeData(extensions: [AuraTheme.light]),
+      ),
+    );
+
+    expect(find.text('Retry'), findsOneWidget);
   });
 }
