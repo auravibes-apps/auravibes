@@ -47,13 +47,13 @@ class DesignColors {
   // Primary colors.
 
   /// Main primary color for primary actions and branding.
-  static const Color primaryBase = Color(0xFF2563EB);
+  static const Color primaryBase = Color(0xFF0F766E);
 
   /// Lighter shade of primary color for hover states and highlights.
-  static const Color primaryLight = Color(0xFF60A5FA);
+  static const Color primaryLight = Color(0xFF5EEAD4);
 
   /// Darker shade of primary color for pressed states and emphasis.
-  static const Color primaryDark = Color(0xFF1E40AF);
+  static const Color primaryDark = Color(0xFF134E4A);
 
   /// Contrast color for text and icons on primary backgrounds.
   static const Color primaryContrast = Color(0xFFFFFFFF);
@@ -61,13 +61,13 @@ class DesignColors {
   // Secondary colors.
 
   /// Main secondary color for secondary actions and accents.
-  static const Color secondaryBase = Color(0xFFEC4899);
+  static const Color secondaryBase = Color(0xFFBE123C);
 
   /// Lighter shade of secondary color for hover states.
-  static const Color secondaryLight = Color(0xFFF472B6);
+  static const Color secondaryLight = Color(0xFFFDA4AF);
 
   /// Darker shade of secondary color for pressed states.
-  static const Color secondaryDark = Color(0xFFBE185D);
+  static const Color secondaryDark = Color(0xFF881337);
 
   /// Contrast color for text and icons on secondary backgrounds.
   static const Color secondaryContrast = Color(0xFFFFFFFF);
@@ -75,13 +75,13 @@ class DesignColors {
   // Accent colors.
 
   /// Main accent color for special highlights and features.
-  static const Color accentBase = Color(0xFF8B5CF6);
+  static const Color accentBase = Color(0xFFB45309);
 
   /// Lighter shade of accent color for hover states.
-  static const Color accentLight = Color(0xFFA78BFA);
+  static const Color accentLight = Color(0xFFFBBF24);
 
   /// Darker shade of accent color for pressed states.
-  static const Color accentDark = Color(0xFF6D28D9);
+  static const Color accentDark = Color(0xFF78350F);
 
   /// Contrast color for text and icons on accent backgrounds.
   static const Color accentContrast = Color(0xFFFFFFFF);

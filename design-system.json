@@ -22,21 +22,21 @@
   },
   "colors": {
     "primary": {
-      "base": "#2563EB",
-      "light": "#60A5FA",
-      "dark": "#1E40AF",
+      "base": "#0F766E",
+      "light": "#5EEAD4",
+      "dark": "#134E4A",
       "contrast": "#FFFFFF"
     },
     "secondary": {
-      "base": "#EC4899",
-      "light": "#F472B6",
-      "dark": "#BE185D",
+      "base": "#BE123C",
+      "light": "#FDA4AF",
+      "dark": "#881337",
       "contrast": "#FFFFFF"
     },
     "accent": {
-      "base": "#8B5CF6",
-      "light": "#A78BFA",
-      "dark": "#6D28D9",
+      "base": "#B45309",
+      "light": "#FBBF24",
+      "dark": "#78350F",
       "contrast": "#FFFFFF"
     },
     "neutral": {
@@ -58,9 +58,9 @@
       "info": "#3B82F6"
     },
     "gradients": {
-      "primary": "linear-gradient(135deg, #2563EB 0%, #60A5FA 100%)",
-      "secondary": "linear-gradient(135deg, #EC4899 0%, #F472B6 100%)",
-      "accent": "linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)"
+      "primary": "linear-gradient(135deg, #0F766E 0%, #5EEAD4 100%)",
+      "secondary": "linear-gradient(135deg, #BE123C 0%, #FDA4AF 100%)",
+      "accent": "linear-gradient(135deg, #B45309 0%, #FBBF24 100%)"
     }
   },
   "typography": {
@@ -240,7 +240,7 @@
         "background": "white",
         "focus": {
           "borderColor": "primary.base",
-          "shadow": "0 0 0 3px rgba(37, 99, 235, 0.1)"
+          "shadow": "0 0 0 3px rgba(15, 118, 110, 0.1)"
         }
       },
       "sizes": {
