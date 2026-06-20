@@ -182,6 +182,7 @@ class _ConnectionTile extends ConsumerWidget {
           controller: menuController,
         ),
       ),
+      style: AuraCardStyle.border,
     );
   }
 

@@ -228,6 +228,7 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
           chatId: widget.chat.id,
         ).go(context);
       },
+      style: AuraCardStyle.border,
     );
   }
 }
