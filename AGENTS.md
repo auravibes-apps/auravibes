@@ -48,6 +48,7 @@
 ## Dependencies
 
 - Add dependencies with `fvm flutter pub add ...` from the target package.
+- Avoid the dependency constraint `any` in `pubspec.yaml`; always specify version constraints.
 - Do not manually edit dependency blocks unless fixing lockfile or generated constraint drift.
 
 ## Generated Files

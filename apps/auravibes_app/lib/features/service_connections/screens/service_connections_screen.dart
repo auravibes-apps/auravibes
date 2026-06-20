@@ -2,11 +2,9 @@
 
 import 'dart:async';
 
-import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/service_connections/usecases/service_connections_action_usecase.dart';
-import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -300,18 +298,9 @@ class _ConnectionTile extends ConsumerWidget {
         'workspace=${connection.workspaceId} connectionId=${connection.id} '
         'kind=${connection.kind.name}',
       );
-      switch (connection.kind) {
-        case ServiceConnectionListItemKind.modelProvider:
-          await ref
-              .read(modelConnectionRepositoryProvider)
-              .deleteModelConnection(connection.id);
-        case ServiceConnectionListItemKind.skillCredential:
-          await ref
-              .read(skillCredentialsRepositoryProvider)
-              .deleteCredential(connection.id);
-        case ServiceConnectionListItemKind.mcpServer:
-          throw StateError(_mcpCredentialsDeleteError);
-      }
+      await ref
+          .read(serviceConnectionsActionUsecaseProvider)
+          .deleteConnection(connectionId: connection.id, kind: connection.kind);
       _logger.info(
         'debug:service connection delete completed '
         'workspace=${connection.workspaceId} connectionId=${connection.id} '
