@@ -1,7 +1,5 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
-import 'dart:collection';
-
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
@@ -45,37 +43,9 @@ Future<List<MessageEntity>> chatMessages(Ref ref) {
 @Riverpod(dependencies: [chatMessages])
 List<String> chatMessageIds(Ref ref) {
   final messages = ref.watch(chatMessagesProvider).value;
-  if (messages == null || messages.isEmpty) return MessageIdList.empty;
+  if (messages == null || messages.isEmpty) return const <String>[];
 
-  return MessageIdList(messages.map((m) => m.id));
-}
-
-@immutable
-class MessageIdList extends ListBase<String> {
-  MessageIdList(Iterable<String> ids) : _ids = List.unmodifiable(ids);
-  const MessageIdList._(this._ids);
-  static const MessageIdList empty = MessageIdList._(<String>[]);
-  final List<String> _ids;
-
-  @override
-  int get length => _ids.length;
-  @override
-  set length(int newLength) =>
-      throw UnsupportedError('MessageIdList is immutable');
-  @override
-  String operator [](int index) => _ids[index];
-  @override
-  void operator []=(int index, String value) =>
-      throw UnsupportedError('MessageIdList is immutable');
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is MessageIdList &&
-          const DeepCollectionEquality().equals(_ids, other._ids);
-
-  @override
-  int get hashCode => const DeepCollectionEquality().hash(_ids);
+  return List<String>.unmodifiable(messages.map((m) => m.id));
 }
 
 @Riverpod(dependencies: [chatMessages])
@@ -184,18 +154,6 @@ CompactionExecutionState? conversationCompactionExecutionState(Ref ref) {
   final conversationId = ref.watch(conversationSelectedProvider);
 
   return ref.watch(compactionExecutionStateProvider(conversationId));
-}
-
-/// Provides the pending MCP server IDs for the current conversation.
-///
-/// Returns a list of MCP server IDs that are being waited on for connection,
-/// or an empty list if not waiting.
-@riverpod
-List<String> pendingMcpConnections(Ref _) {
-  // The current streaming state only exposes the last `ChatResult`, and it no
-  // longer carries pending MCP server IDs. Until that runtime state is modeled
-  // explicitly again, there is no reliable source for this indicator.
-  return const <String>[];
 }
 
 class PendingToolCall {
