@@ -561,6 +561,9 @@ void main() {
 
         final resultBytes = utf8.encode(result).length;
         expect(resultBytes, lessThanOrEqualTo(50 * 1024));
+
+        final resultLines = const LineSplitter().convert(result).length;
+        expect(resultLines, lessThanOrEqualTo(2000));
       });
 
       test('marks format as truncated', () async {
@@ -610,6 +613,9 @@ void main() {
         expect(result, contains('[truncated:'));
         expect(result, contains('Line 0'));
         expect(result, isNot(contains('Line 2499')));
+
+        final lineCount = const LineSplitter().convert(result).length;
+        expect(lineCount, lessThanOrEqualTo(2000));
       });
 
       test('truncates total output when metadata exceeds cap', () async {
