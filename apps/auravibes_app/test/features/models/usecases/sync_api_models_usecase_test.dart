@@ -29,19 +29,21 @@ void main() {
       when(
         () => apiService.fetchAllModels(),
       ).thenAnswer((_) async => ModelApiResponse(providers: []));
-      when(() => repository.deleteAllData()).thenAnswer((_) async => 0);
       when(
-        () => repository.batchUpsertProviders(any()),
-      ).thenAnswer((_) async => []);
-      when(
-        () => repository.batchUpsertModels(any()),
-      ).thenAnswer((_) async => []);
+        () => repository.replaceAllData(
+          providers: any(named: 'providers'),
+          models: any(named: 'models'),
+        ),
+      ).thenAnswer((_) => Future<void>.value());
 
       await expectLater(useCase(), completes);
 
-      verify(() => repository.deleteAllData()).called(1);
-      verify(() => repository.batchUpsertProviders(any())).called(1);
-      verify(() => repository.batchUpsertModels(any())).called(1);
+      verify(
+        () => repository.replaceAllData(
+          providers: any(named: 'providers'),
+          models: any(named: 'models'),
+        ),
+      ).called(1);
     });
 
     test('stops before repository writes when fetch fails', () async {
@@ -51,18 +53,33 @@ void main() {
 
       await expectLater(useCase(), throwsA(isA<Exception>()));
 
-      final _ = verifyNever(() => repository.deleteAllData());
+      final _ = verifyNever(
+        () => repository.replaceAllData(
+          providers: any(named: 'providers'),
+          models: any(named: 'models'),
+        ),
+      );
     });
 
-    test('stops remaining writes when repository delete fails', () async {
+    test('forwards atomic write failures', () async {
       when(
         () => apiService.fetchAllModels(),
       ).thenAnswer((_) async => ModelApiResponse(providers: []));
-      when(() => repository.deleteAllData()).thenThrow(Exception('DB error'));
+      when(
+        () => repository.replaceAllData(
+          providers: any(named: 'providers'),
+          models: any(named: 'models'),
+        ),
+      ).thenThrow(Exception('DB error'));
 
       await expectLater(useCase(), throwsA(isA<Exception>()));
 
-      final _ = verifyNever(() => repository.batchUpsertProviders(any()));
+      verify(
+        () => repository.replaceAllData(
+          providers: any(named: 'providers'),
+          models: any(named: 'models'),
+        ),
+      ).called(1);
     });
   });
 }

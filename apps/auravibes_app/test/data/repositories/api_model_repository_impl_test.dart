@@ -270,6 +270,56 @@ void main() {
       });
     });
 
+    group('replaceAllData', () {
+      test('runs delete and upserts in a transaction', () async {
+        when(
+          () => fixture.mockModelsDao.deleteAllModels(),
+        ).thenAnswer((_) async => 5);
+        when(
+          () => fixture.mockProvidersDao.deleteAllProviders(),
+        ).thenAnswer((_) async => 3);
+        when(
+          () => fixture.mockProvidersDao.batchUpsertProviders(any()),
+        ).thenAnswer((_) async => [providerRow]);
+        when(
+          () => fixture.mockModelsDao.batchUpsertModels(any()),
+        ).thenThrow(Exception('DB error'));
+
+        await expectLater(
+          fixture.repository.replaceAllData(
+            providers: const [
+              ApiModelProviderEntity(
+                id: 'openai',
+                name: 'OpenAI',
+                type: ModelProvidersType.openai,
+                url: 'https://api.openai.com',
+              ),
+            ],
+            models: const [
+              ApiModelEntity(
+                modelProvider: 'openai',
+                id: 'gpt-4',
+                name: 'GPT-4',
+                limitContext: 128000,
+                limitOutput: 4096,
+                modalitiesInput: [],
+                modalitiesOuput: [],
+              ),
+            ],
+          ),
+          throwsA(anything),
+        );
+
+        expect(fixture.database.transactionCount, 1);
+        verify(() => fixture.mockModelsDao.deleteAllModels()).called(1);
+        verify(() => fixture.mockProvidersDao.deleteAllProviders()).called(1);
+        verify(
+          () => fixture.mockProvidersDao.batchUpsertProviders(any()),
+        ).called(1);
+        verify(() => fixture.mockModelsDao.batchUpsertModels(any())).called(1);
+      });
+    });
+
     group('type mapping', () {
       test('maps null type from table correctly', () async {
         const rowWithTypeNull = ApiModelProvidersTable(
@@ -359,10 +409,21 @@ class _TestAppDatabase extends AppDatabase {
     : super(connection: DatabaseConnection(NativeDatabase.memory()));
   final ApiModelProvidersDao _providersDao;
   final ApiModelsDao _modelsDao;
+  int transactionCount = 0;
 
   @override
   ApiModelProvidersDao get apiModelProvidersDao => _providersDao;
 
   @override
   ApiModelsDao get apiModelsDao => _modelsDao;
+
+  @override
+  Future<T> transaction<T>(
+    Future<T> Function() action, {
+    bool requireNew = false,
+  }) {
+    transactionCount += 1;
+
+    return super.transaction(action, requireNew: requireNew);
+  }
 }

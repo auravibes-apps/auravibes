@@ -21,8 +21,9 @@ class SyncApiModelsUseCase {
         .map((e) => e.models)
         .flattenedToList;
 
-    final _ = await repository.deleteAllData();
-    final _ = await repository.batchUpsertProviders(apiProviderEntities);
-    final _ = await repository.batchUpsertModels(apiModelEntities);
+    await repository.replaceAllData(
+      providers: apiProviderEntities,
+      models: apiModelEntities,
+    );
   }
 }
