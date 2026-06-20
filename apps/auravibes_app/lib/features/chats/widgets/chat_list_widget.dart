@@ -7,8 +7,8 @@ import 'package:auravibes_app/features/chats/providers/conversation_repository_p
 import 'package:auravibes_app/features/chats/widgets/delete_conversation_confirm_dialog.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
-import 'package:auravibes_app/presentation/shared/formatters/relative_time_formatter.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/utils/relative_time_formatter.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -172,7 +172,7 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
                 const SizedBox(height: 4),
                 AuraText(
                   child: Text(
-                    formatRelativeTime(widget.chat.updatedAt),
+                    const RelativeTimeFormatter().format(widget.chat.updatedAt),
                     overflow: TextOverflow.ellipsis,
                   ),
                   style: AuraTextStyle.bodySmall,
