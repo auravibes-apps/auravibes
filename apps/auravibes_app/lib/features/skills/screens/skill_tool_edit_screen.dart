@@ -635,7 +635,9 @@ class _QueryFieldsSection extends StatelessWidget {
               Expanded(
                 child: AuraInput(
                   controller: field.valueController,
-                  placeholder: const Text('{input:search}'),
+                  placeholder: const TextLocale(
+                    LocaleKeys.skills_tool_query_value_placeholder,
+                  ),
                   label: Text(
                     LocaleKeys.skills_tool_query_value_label.tr(
                       context: context,
@@ -700,7 +702,9 @@ class _InputFieldsSection extends StatelessWidget {
               children: [
                 AuraInput(
                   controller: field.nameController,
-                  placeholder: const Text('company_id'),
+                  placeholder: const TextLocale(
+                    LocaleKeys.skills_tool_input_name_placeholder,
+                  ),
                   label: Text(
                     LocaleKeys.skills_tool_input_name_label.tr(
                       context: context,
@@ -708,19 +712,55 @@ class _InputFieldsSection extends StatelessWidget {
                   ),
                 ),
                 AuraDropdownSelector<String>(
-                  options: const [
-                    AuraDropdownOption(value: 'string', child: Text('String')),
-                    AuraDropdownOption(value: 'number', child: Text('Number')),
+                  options: [
+                    AuraDropdownOption(
+                      value: 'string',
+                      child: Text(
+                        LocaleKeys.skills_tool_input_type_string.tr(
+                          context: context,
+                        ),
+                      ),
+                    ),
+                    AuraDropdownOption(
+                      value: 'number',
+                      child: Text(
+                        LocaleKeys.skills_tool_input_type_number.tr(
+                          context: context,
+                        ),
+                      ),
+                    ),
                     AuraDropdownOption(
                       value: 'integer',
-                      child: Text('Integer'),
+                      child: Text(
+                        LocaleKeys.skills_tool_input_type_integer.tr(
+                          context: context,
+                        ),
+                      ),
                     ),
                     AuraDropdownOption(
                       value: 'boolean',
-                      child: Text('Boolean'),
+                      child: Text(
+                        LocaleKeys.skills_tool_input_type_boolean.tr(
+                          context: context,
+                        ),
+                      ),
                     ),
-                    AuraDropdownOption(value: 'object', child: Text('Object')),
-                    AuraDropdownOption(value: 'array', child: Text('Array')),
+                    AuraDropdownOption(
+                      value: 'object',
+                      child: Text(
+                        LocaleKeys.skills_tool_input_type_object.tr(
+                          context: context,
+                        ),
+                      ),
+                    ),
+                    AuraDropdownOption(
+                      value: 'array',
+                      child: Text(
+                        LocaleKeys.skills_tool_input_type_array.tr(
+                          context: context,
+                        ),
+                      ),
+                    ),
                   ],
                   value: field.type,
                   onChanged: (value) {

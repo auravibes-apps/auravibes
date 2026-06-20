@@ -680,13 +680,18 @@ class _AppSkillToolsCard extends StatelessWidget {
                       final titleKey => TextLocale(titleKey),
                     },
                   ),
+                  AuraBadge.text(
+                    child: Text(
+                      tool.slug,
+                      style: const TextStyle(fontFamily: 'monospace'),
+                    ),
+                    variant: AuraBadgeVariant.outlined,
+                    size: AuraBadgeSize.small,
+                  ),
                   AuraText(
                     child: switch (tool.descriptionKey) {
-                      null => Text('${tool.slug}\n${tool.description}'),
-                      final descriptionKey => Text(
-                        '${tool.slug}\n'
-                        '${descriptionKey.tr(context: context)}',
-                      ),
+                      null => Text(tool.description),
+                      final descriptionKey => TextLocale(descriptionKey),
                     },
                     color: AuraColorVariant.onSurfaceVariant,
                   ),
