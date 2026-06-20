@@ -467,6 +467,12 @@ abstract class LocaleKeys {
   static const tool_confirmation_skip = 'tool_confirmation.skip';
   static const tool_confirmation_stop_all = 'tool_confirmation.stop_all';
   static const tool_approval_pending_count = 'tool_approval.pending_count';
+  static const tool_approval_errors_approve_once =
+      'tool_approval.errors.approve_once';
+  static const tool_approval_errors_approve_conversation =
+      'tool_approval.errors.approve_conversation';
+  static const tool_approval_errors_skip = 'tool_approval.errors.skip';
+  static const tool_approval_errors_stop_all = 'tool_approval.errors.stop_all';
   static const tool_call_status_success = 'tool_call_status.success';
   static const tool_call_status_skipped_by_user =
       'tool_call_status.skipped_by_user';

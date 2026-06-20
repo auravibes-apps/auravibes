@@ -458,7 +458,7 @@ class _ConfirmationButtons extends ConsumerWidget {
   Future<void> _onAllowOnce(WidgetRef ref, BuildContext context) async {
     await _runAction(
       context,
-      errorMessage: 'Failed to approve tool call.',
+      errorMessageKey: LocaleKeys.tool_approval_errors_approve_once,
       action: () {
         return ref
             .read(approveToolCallUsecaseProvider)
@@ -477,7 +477,7 @@ class _ConfirmationButtons extends ConsumerWidget {
   ) async {
     await _runAction(
       context,
-      errorMessage: 'Failed to approve tool call for this conversation.',
+      errorMessageKey: LocaleKeys.tool_approval_errors_approve_conversation,
       action: () {
         return ref
             .read(approveToolCallUsecaseProvider)
@@ -493,7 +493,7 @@ class _ConfirmationButtons extends ConsumerWidget {
   Future<void> _onSkip(WidgetRef ref, BuildContext context) async {
     await _runAction(
       context,
-      errorMessage: 'Failed to skip tool call.',
+      errorMessageKey: LocaleKeys.tool_approval_errors_skip,
       action: () {
         return ref
             .read(skipToolCallUsecaseProvider)
@@ -508,7 +508,7 @@ class _ConfirmationButtons extends ConsumerWidget {
   Future<void> _onStopAll(WidgetRef ref, BuildContext context) async {
     await _runAction(
       context,
-      errorMessage: 'Failed to stop pending tool calls.',
+      errorMessageKey: LocaleKeys.tool_approval_errors_stop_all,
       action: () {
         return ref
             .read(stopAllPendingToolCallsUsecaseProvider)
@@ -521,7 +521,7 @@ class _ConfirmationButtons extends ConsumerWidget {
 
   Future<void> _runAction(
     BuildContext context, {
-    required String errorMessage,
+    required String errorMessageKey,
     required Future<void> Function() action,
   }) async {
     try {
@@ -529,8 +529,10 @@ class _ConfirmationButtons extends ConsumerWidget {
     } on Exception catch (error) {
       debugPrint('Tool approval action failed: $error');
       if (!context.mounted) return;
-      final _ = ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$errorMessage $error')),
+      final _ = showAuraSnackBar(
+        context: context,
+        content: TextLocale(errorMessageKey),
+        variant: AuraSnackBarVariant.error,
       );
     }
   }
