@@ -327,7 +327,9 @@ class _SkillChip extends StatelessWidget {
       label: Text(label, style: chipTextStyle),
       side: BorderSide(color: auraColors.outline),
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(8)),
+        borderRadius: BorderRadius.all(
+          Radius.circular(DesignBorderRadius.lg),
+        ),
       ),
       backgroundColor: auraColors.surfaceVariant,
       visualDensity: VisualDensity.compact,
