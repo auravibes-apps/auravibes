@@ -531,7 +531,7 @@ class _ConfirmationButtons extends ConsumerWidget {
       if (!context.mounted) return;
       final _ = showAuraSnackBar(
         context: context,
-        content: Text(errorMessageKey.tr()),
+        content: TextLocale(errorMessageKey),
         variant: AuraSnackBarVariant.error,
       );
     }
