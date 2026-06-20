@@ -70,7 +70,6 @@ class AuraFloatingActionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
     final labelText = text;
-    final isExtended = size == AuraFABSize.extended && labelText != null;
     final resolvedBackground =
         auraColors.getColorOrNull(backgroundColor) ?? auraColors.primary;
     final resolvedForeground =
@@ -80,7 +79,7 @@ class AuraFloatingActionButton extends StatelessWidget {
     );
 
     Widget fab;
-    if (isExtended) {
+    if (size == AuraFABSize.extended && labelText != null) {
       fab = FloatingActionButton.extended(
         foregroundColor: resolvedForeground,
         backgroundColor: resolvedBackground,
