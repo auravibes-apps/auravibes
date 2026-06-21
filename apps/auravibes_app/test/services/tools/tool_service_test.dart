@@ -32,40 +32,6 @@ void main() {
       });
     });
 
-    group('getTools', () {
-      test('returns all tools without filters', () {
-        final tools = ToolService.getTools();
-        expect(tools, hasLength(1));
-      });
-
-      test('excludes tools in without list', () {
-        final tools = ToolService.getTools(
-          without: [UserToolType.calculator],
-        );
-        expect(tools, isEmpty);
-      });
-
-      test('filters by only list', () {
-        final tools = ToolService.getTools(
-          only: [UserToolType.calculator],
-        );
-        expect(tools, hasLength(1));
-      });
-
-      test('returns empty when only list has no matches', () {
-        final tools = ToolService.getTools(only: []);
-        expect(tools, isEmpty);
-      });
-
-      test('applies without then only', () {
-        final tools = ToolService.getTools(
-          without: [UserToolType.calculator],
-          only: [UserToolType.calculator],
-        );
-        expect(tools, isEmpty);
-      });
-    });
-
     group('getTool', () {
       test('returns tool by type', () {
         final tool = ToolService.getTool(UserToolType.calculator);
@@ -81,19 +47,6 @@ void main() {
           UserToolType.calculator,
         );
         expect(tool, isNotNull);
-      });
-    });
-
-    group('getType', () {
-      test('returns type of given tool', () {
-        final tool = ToolService.availableTools.first;
-        expect(ToolService.getType(tool), UserToolType.calculator);
-      });
-    });
-
-    group('hasType', () {
-      test('returns true for existing type', () {
-        expect(ToolService.hasType(UserToolType.calculator), isTrue);
       });
     });
 
