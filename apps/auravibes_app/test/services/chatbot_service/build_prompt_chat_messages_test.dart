@@ -60,8 +60,15 @@ void main() {
 
       final resultMessage = result[2];
       expect(resultMessage.role.name, 'tool');
-      expect(resultMessage.toolResults, hasLength(1));
-      expect(resultMessage.toolResults.single.callId, 'tool-1');
+      expect(resultMessage.parts.whereType<ToolResponsePart>(), hasLength(1));
+      expect(
+        resultMessage.parts
+            .whereType<ToolResponsePart>()
+            .single
+            .toolResponse
+            .ref,
+        'tool-1',
+      );
     });
 
     test('groups resolved tool responses in one user message', () {
@@ -104,11 +111,13 @@ void main() {
 
       final resultMessage = result.last;
       expect(resultMessage.role.name, 'tool');
-      expect(resultMessage.toolResults, hasLength(2));
-      expect(resultMessage.toolResults.map((part) => part.callId), [
-        'tool-1',
-        'tool-2',
-      ]);
+      expect(resultMessage.parts.whereType<ToolResponsePart>(), hasLength(2));
+      expect(
+        resultMessage.parts.whereType<ToolResponsePart>().map(
+          (part) => part.toolResponse.ref,
+        ),
+        ['tool-1', 'tool-2'],
+      );
     });
 
     test(
@@ -141,10 +150,17 @@ void main() {
 
         expect(result, hasLength(2));
         final resultMessage = result[1];
-        expect(resultMessage.toolResults, hasLength(1));
+        expect(
+          resultMessage.parts.whereType<ToolResponsePart>(),
+          hasLength(1),
+        );
         expect(resultMessage.role.name, 'tool');
         expect(
-          resultMessage.toolResults.single.result,
+          resultMessage.parts
+              .whereType<ToolResponsePart>()
+              .single
+              .toolResponse
+              .output,
           ToolCallResultStatus.toolNotFound.toResponseString(),
         );
       },
