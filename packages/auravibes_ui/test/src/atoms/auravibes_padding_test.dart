@@ -8,10 +8,10 @@ void main() {
   group('AuraEdgeInsetsGeometry', () {
     test('only constructor sets individual sides', () {
       const padding = AuraEdgeInsetsGeometry.only(
-        left: AuraSpacing.sm,
-        top: AuraSpacing.md,
-        right: AuraSpacing.lg,
-        bottom: AuraSpacing.xl,
+        left: .sm,
+        top: .md,
+        right: .lg,
+        bottom: .xl,
       );
       expect(padding.left, AuraSpacing.sm);
       expect(padding.top, AuraSpacing.md);
@@ -20,7 +20,7 @@ void main() {
     });
 
     test('horizontal constructor sets left and right', () {
-      const padding = AuraEdgeInsetsGeometry.horizontal(AuraSpacing.md);
+      const padding = AuraEdgeInsetsGeometry.horizontal(.md);
       expect(padding.left, AuraSpacing.md);
       expect(padding.right, AuraSpacing.md);
       expect(padding.top, AuraSpacing.none);
@@ -28,7 +28,7 @@ void main() {
     });
 
     test('vertical constructor sets top and bottom', () {
-      const padding = AuraEdgeInsetsGeometry.vertical(AuraSpacing.md);
+      const padding = AuraEdgeInsetsGeometry.vertical(.md);
       expect(padding.top, AuraSpacing.md);
       expect(padding.bottom, AuraSpacing.md);
       expect(padding.left, AuraSpacing.none);
@@ -45,8 +45,8 @@ void main() {
 
     test('symmetric constructor sets horizontal and vertical', () {
       const padding = AuraEdgeInsetsGeometry.symmetric(
-        horizontal: AuraSpacing.sm,
-        vertical: AuraSpacing.md,
+        horizontal: .sm,
+        vertical: .md,
       );
       expect(padding.left, AuraSpacing.sm);
       expect(padding.right, AuraSpacing.sm);
@@ -141,10 +141,10 @@ void main() {
       expect(find.text('Large Padded'), findsOneWidget);
       final paddingWidget = tester.widget<Padding>(find.byType(Padding));
       final edgeInsets = paddingWidget.padding as EdgeInsets;
-      expect(edgeInsets.left, AuraTheme.light.spacing.lg);
-      expect(edgeInsets.top, AuraTheme.light.spacing.lg);
-      expect(edgeInsets.right, AuraTheme.light.spacing.lg);
-      expect(edgeInsets.bottom, AuraTheme.light.spacing.lg);
+      expect(edgeInsets.left, 24);
+      expect(edgeInsets.top, 24);
+      expect(edgeInsets.right, 24);
+      expect(edgeInsets.bottom, 24);
     });
 
     testWidgets('applies correct padding values through context', (
@@ -164,10 +164,10 @@ void main() {
 
       final paddingWidget = tester.widget<Padding>(find.byType(Padding));
       final edgeInsets = paddingWidget.padding as EdgeInsets;
-      expect(edgeInsets.left, AuraTheme.light.spacing.md);
-      expect(edgeInsets.top, AuraTheme.light.spacing.md);
-      expect(edgeInsets.right, AuraTheme.light.spacing.md);
-      expect(edgeInsets.bottom, AuraTheme.light.spacing.md);
+      expect(edgeInsets.left, 16);
+      expect(edgeInsets.top, 16);
+      expect(edgeInsets.right, 16);
+      expect(edgeInsets.bottom, 16);
     });
   });
 }

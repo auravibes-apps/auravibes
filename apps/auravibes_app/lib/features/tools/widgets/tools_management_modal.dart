@@ -38,9 +38,11 @@ class ToolsManagementModal extends ConsumerWidget {
     );
 
     return Dialog(
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.all(
-          Radius.circular(DesignBorderRadius.xl),
+          Radius.circular(
+            context.auraTheme.fromBorderRadius(.xl),
+          ),
         ),
       ),
       child: Container(
@@ -54,7 +56,9 @@ class ToolsManagementModal extends ConsumerWidget {
           children: [
             // Header with close button.
             Container(
-              padding: const EdgeInsets.all(DesignSpacing.md),
+              padding: EdgeInsets.all(
+                context.auraTheme.fromSpacing(.md),
+              ),
               decoration: BoxDecoration(
                 border: Border(
                   bottom: BorderSide(
@@ -101,7 +105,7 @@ class ToolsManagementModal extends ConsumerWidget {
             ),
 
             // Bottom padding.
-            const SizedBox(height: DesignSpacing.md),
+            const AuraSizedBox(height: .md),
           ],
         ),
       ),
@@ -128,7 +132,9 @@ class _GroupedToolsList extends StatelessWidget {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(DesignSpacing.md),
+      padding: EdgeInsets.all(
+        context.auraTheme.fromSpacing(.md),
+      ),
       itemBuilder: (context, index) {
         final group = groups[index];
 

@@ -94,7 +94,6 @@ class _ApprovalCardContent extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final auraColors = context.auraColors;
-    final spacing = context.auraTheme.spacing;
     final toolCall = current.toolCall;
 
     final displayNameAsync = ref.watch(
@@ -108,18 +107,24 @@ class _ApprovalCardContent extends ConsumerWidget {
     );
 
     return Container(
-      padding: EdgeInsets.all(spacing.md),
+      padding: EdgeInsets.all(
+        context.auraTheme.fromSpacing(.md),
+      ),
       decoration: BoxDecoration(
         color: auraColors.warning.withValues(alpha: 0.08),
         border: Border.all(
           color: auraColors.warning.withValues(alpha: 0.3),
         ),
-        borderRadius: BorderRadius.circular(
-          context.auraTheme.borderRadius.lg,
+        borderRadius: BorderRadius.all(
+          Radius.circular(
+            context.auraTheme.fromBorderRadius(.lg),
+          ),
         ),
       ),
       width: double.infinity,
-      margin: EdgeInsets.all(spacing.md),
+      margin: EdgeInsets.all(
+        context.auraTheme.fromSpacing(.md),
+      ),
       child: AuraColumn(
         children: [
           _NavigationHeader(
@@ -140,7 +145,7 @@ class _ApprovalCardContent extends ConsumerWidget {
             messageId: current.messageId,
           ),
         ],
-        spacing: AuraSpacing.sm,
+        spacing: .sm,
       ),
     );
   }
@@ -174,7 +179,7 @@ class _NavigationHeader extends StatelessWidget {
           size: 16,
           color: auraColors.warning,
         ),
-        SizedBox(width: context.auraTheme.spacing.xs),
+        const AuraSizedBox(width: .xs),
         Expanded(
           child: Text(
             LocaleKeys.tool_approval_pending_count.tr(
@@ -182,7 +187,7 @@ class _NavigationHeader extends StatelessWidget {
             ),
             style: TextStyle(
               color: auraColors.onSurface,
-              fontSize: DesignTypography.fontSizeSm,
+              fontSize: context.auraTheme.typography.fontSizeSm,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -191,7 +196,7 @@ class _NavigationHeader extends StatelessWidget {
           icon: Icons.chevron_left,
           onPressed: hasPrev ? onPrev : null,
         ),
-        SizedBox(width: context.auraTheme.spacing.xs),
+        const AuraSizedBox(width: .xs),
         _NavButton(
           icon: Icons.chevron_right,
           onPressed: hasNext ? onNext : null,
@@ -260,10 +265,16 @@ class _ToolCallInfo extends StatelessWidget {
     );
 
     return Container(
-      padding: EdgeInsets.all(context.auraTheme.spacing.sm),
+      padding: EdgeInsets.all(
+        context.auraTheme.fromSpacing(.sm),
+      ),
       decoration: BoxDecoration(
         color: auraColors.surfaceVariant.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(context.auraTheme.borderRadius.sm),
+        borderRadius: BorderRadius.all(
+          Radius.circular(
+            context.auraTheme.fromBorderRadius(.sm),
+          ),
+        ),
       ),
       width: double.infinity,
       child: Column(
@@ -273,17 +284,17 @@ class _ToolCallInfo extends StatelessWidget {
             displayName,
             style: TextStyle(
               color: auraColors.onSurface,
-              fontSize: DesignTypography.fontSizeSm,
+              fontSize: context.auraTheme.typography.fontSizeSm,
               fontWeight: FontWeight.bold,
             ),
           ),
           if (decodedArgs != null) ...[
-            SizedBox(height: context.auraTheme.spacing.xs),
+            const AuraSizedBox(height: .xs),
             Text(
               decodedArgs,
               style: TextStyle(
                 color: auraColors.onSurfaceVariant,
-                fontSize: DesignTypography.fontSizeXs,
+                fontSize: context.auraTheme.typography.fontSizeXs,
               ),
               overflow: TextOverflow.ellipsis,
               maxLines: 3,
@@ -451,7 +462,7 @@ class _ConfirmationButtons extends ConsumerWidget {
           ],
         ),
       ],
-      spacing: AuraSpacing.sm,
+      spacing: .sm,
     );
   }
 

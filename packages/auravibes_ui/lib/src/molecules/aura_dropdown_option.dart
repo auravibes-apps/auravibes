@@ -2,6 +2,7 @@
 
 import 'package:auravibes_ui/src/atoms/aura_icon.dart';
 import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
+import 'package:auravibes_ui/src/atoms/aura_sized_box.dart';
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
@@ -58,9 +59,9 @@ class AuraDropdownOption<T> extends StatelessWidget {
 
     Widget result = AuraPressable(
       child: Container(
-        padding: const EdgeInsets.symmetric(
-          vertical: DesignSpacing.sm,
-          horizontal: DesignSpacing.md,
+        padding: EdgeInsets.symmetric(
+          vertical: context.auraTheme.fromSpacing(.sm),
+          horizontal: context.auraTheme.fromSpacing(.md),
         ),
         decoration: BoxDecoration(
           color: _getBackgroundColor(auraColors),
@@ -69,7 +70,7 @@ class AuraDropdownOption<T> extends StatelessWidget {
           children: [
             if (leading != null) ...[
               leading,
-              const SizedBox(width: DesignSpacing.sm),
+              const AuraSizedBox(width: .sm),
             ],
             Expanded(
               child:
@@ -86,10 +87,10 @@ class AuraDropdownOption<T> extends StatelessWidget {
                   ),
             ),
             if (trailing != null) ...[
-              const SizedBox(width: DesignSpacing.sm),
+              const AuraSizedBox(width: .sm),
               trailing,
             ] else if (isSelected) ...[
-              const SizedBox(width: DesignSpacing.sm),
+              const AuraSizedBox(width: .sm),
               const AuraIcon(
                 Icons.check,
                 size: AuraIconSize.small,

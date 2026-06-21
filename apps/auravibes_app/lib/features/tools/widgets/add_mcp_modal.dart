@@ -34,7 +34,11 @@ class AddMcpModal extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Dialog(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(context.auraTheme.borderRadius.xl),
+        borderRadius: BorderRadius.all(
+          Radius.circular(
+            context.auraTheme.fromBorderRadius(.xl),
+          ),
+        ),
       ),
       child: Container(
         width: MediaQuery.sizeOf(context).width * 0.9,
@@ -51,7 +55,9 @@ class AddMcpModal extends ConsumerWidget {
             // Scrollable form content.
             Flexible(
               child: SingleChildScrollView(
-                padding: EdgeInsets.all(context.auraTheme.spacing.md),
+                padding: EdgeInsets.all(
+                  context.auraTheme.fromSpacing(.md),
+                ),
                 child: Stack(
                   children: [
                     AuraColumn(
@@ -94,7 +100,7 @@ class AddMcpModal extends ConsumerWidget {
                           ),
                         ),
                       ],
-                      spacing: AuraSpacing.md,
+                      spacing: .md,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                     ),
                     _LoadingOverlay(workspaceId: workspaceId),
@@ -118,7 +124,9 @@ class _AddMcpModalHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(context.auraTheme.spacing.md),
+      padding: EdgeInsets.all(
+        context.auraTheme.fromSpacing(.md),
+      ),
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
@@ -195,8 +203,8 @@ class _ErrorBanner extends ConsumerWidget {
 
     return Container(
       padding: EdgeInsets.symmetric(
-        vertical: context.auraTheme.spacing.sm,
-        horizontal: context.auraTheme.spacing.md,
+        vertical: context.auraTheme.fromSpacing(.sm),
+        horizontal: context.auraTheme.fromSpacing(.md),
       ),
       color: context.auraColors.error.withValues(alpha: 0.1),
       child: Row(
@@ -206,7 +214,7 @@ class _ErrorBanner extends ConsumerWidget {
             size: AuraIconSize.small,
             color: AuraColorVariant.error,
           ),
-          SizedBox(width: context.auraTheme.spacing.sm),
+          const AuraSizedBox(width: .sm),
           Expanded(
             child: Text(
               errorMessage,
@@ -233,7 +241,9 @@ class _Footer extends ConsumerWidget {
     );
 
     return Container(
-      padding: EdgeInsets.all(context.auraTheme.spacing.md),
+      padding: EdgeInsets.all(
+        context.auraTheme.fromSpacing(.md),
+      ),
       decoration: BoxDecoration(
         border: Border(
           top: BorderSide(
@@ -250,7 +260,7 @@ class _Footer extends ConsumerWidget {
               variant: AuraButtonVariant.outlined,
             ),
           ),
-          SizedBox(width: context.auraTheme.spacing.sm),
+          const AuraSizedBox(width: .sm),
           Expanded(
             child: AuraButton(
               onPressed: () => unawaited(_submit(context, ref, workspaceId)),
@@ -323,7 +333,7 @@ class _TransportSelector extends ConsumerWidget {
           ),
         ),
       ],
-      spacing: AuraSpacing.xs,
+      spacing: .xs,
       crossAxisAlignment: CrossAxisAlignment.start,
     );
   }
@@ -356,7 +366,7 @@ class _Http2Toggle extends ConsumerWidget {
                 color: AuraColorVariant.onSurfaceVariant,
               ),
             ],
-            spacing: AuraSpacing.none,
+            spacing: .none,
             crossAxisAlignment: CrossAxisAlignment.start,
           ),
         ),
@@ -414,7 +424,7 @@ class _AuthenticationSelector extends ConsumerWidget {
           ),
         ),
       ],
-      spacing: AuraSpacing.xs,
+      spacing: .xs,
       crossAxisAlignment: CrossAxisAlignment.start,
     );
   }

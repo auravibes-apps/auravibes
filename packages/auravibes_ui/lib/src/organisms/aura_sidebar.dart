@@ -108,10 +108,7 @@ class AuraSidebar extends StatelessWidget {
       width: isExpanded ? 280 : 80,
       child: Column(
         children: [
-          if (header != null)
-            header
-          else
-            SizedBox(height: context.auraTheme.spacing.lg),
+          if (header != null) header else const AuraSizedBox(height: .lg),
           Expanded(
             child: ListView(
               children: [
@@ -128,7 +125,9 @@ class AuraSidebar extends StatelessWidget {
 
           if (footer != null)
             Padding(
-              padding: EdgeInsets.all(context.auraTheme.spacing.sm),
+              padding: EdgeInsets.all(
+                context.auraTheme.fromSpacing(.sm),
+              ),
               child: footer,
             ),
         ],
@@ -190,7 +189,11 @@ class _AuraSidebarItem extends StatelessWidget {
       color: colors.primary.withValues(alpha: 0.8),
       decoration: BoxDecoration(
         color: selected ? colors.primary.withValues(alpha: 0.1) : null,
-        borderRadius: BorderRadius.circular(context.auraTheme.borderRadius.xl),
+        borderRadius: BorderRadius.all(
+          Radius.circular(
+            context.auraTheme.fromBorderRadius(.xl),
+          ),
+        ),
       ),
       onPressed: onTap,
     );

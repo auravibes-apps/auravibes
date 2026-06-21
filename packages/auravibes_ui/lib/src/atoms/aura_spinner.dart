@@ -112,16 +112,20 @@ class AuraLoadingOverlay extends StatelessWidget {
     }
 
     final auraColors = context.auraColors;
+    final auraTheme = context.auraTheme;
+    final typography = auraTheme.typography;
     final message = this.message;
     final overlay = ColoredBox(
       color: backgroundColor ?? auraColors.scrim,
       child: Center(
         child: Container(
-          padding: const EdgeInsets.all(DesignSpacing.xl),
+          padding: EdgeInsets.all(auraTheme.fromSpacing(.xl)),
           decoration: BoxDecoration(
             color: auraColors.surface,
-            borderRadius: const BorderRadius.all(
-              Radius.circular(DesignBorderRadius.lg),
+            borderRadius: BorderRadius.all(
+              Radius.circular(
+                auraTheme.fromBorderRadius(.lg),
+              ),
             ),
             boxShadow: const [DesignShadows.lg],
           ),
@@ -134,14 +138,14 @@ class AuraLoadingOverlay extends StatelessWidget {
                       size: spinnerSize,
                       color: spinnerColor,
                     ),
-                    const SizedBox(height: DesignSpacing.md),
+                    SizedBox(height: auraTheme.fromSpacing(.md)),
                     Text(
                       message,
                       style: TextStyle(
                         color: auraColors.onSurfaceVariant,
-                        fontSize: DesignTypography.fontSizeLg,
-                        fontWeight: DesignTypography.fontWeightRegular,
-                        fontFamily: DesignTypography.bodyFontFamily,
+                        fontSize: typography.fontSizeLg,
+                        fontWeight: typography.fontWeightRegular,
+                        fontFamily: typography.bodyFontFamily,
                       ),
                       textAlign: TextAlign.center,
                     ),

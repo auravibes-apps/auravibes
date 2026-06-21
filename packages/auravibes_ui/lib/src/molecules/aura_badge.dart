@@ -90,7 +90,7 @@ class AuraBadge extends StatelessWidget {
     final auraColors = context.auraColors;
 
     Widget badge = Container(
-      padding: _getPadding(),
+      padding: _getPadding(spacing: context.auraTheme.spacing),
       decoration: BoxDecoration(
         color: _getBackgroundColor(auraColors),
         border: variant == AuraBadgeVariant.outlined
@@ -98,12 +98,14 @@ class AuraBadge extends StatelessWidget {
                 color: _getBorderColor(auraColors),
               )
             : null,
-        borderRadius: BorderRadius.circular(_getBorderRadius()),
+        borderRadius: BorderRadius.circular(
+          context.auraTheme.fromBorderRadius(_getBorderRadius()),
+        ),
       ),
       child: DefaultTextStyle(
         style: TextStyle(
           color: _getForegroundColor(auraColors),
-          fontWeight: DesignTypography.fontWeightMedium,
+          fontWeight: context.auraTheme.typography.fontWeightMedium,
         ),
         child: child,
       ),
@@ -119,28 +121,28 @@ class AuraBadge extends StatelessWidget {
     return badge;
   }
 
-  EdgeInsets _getPadding() {
+  EdgeInsets _getPadding({required AuraSpacingScale spacing}) {
     return switch (size) {
-      AuraBadgeSize.small => const EdgeInsets.symmetric(
+      AuraBadgeSize.small => EdgeInsets.symmetric(
         vertical: 2,
-        horizontal: DesignSpacing.xs,
+        horizontal: spacing.xs,
       ),
-      AuraBadgeSize.medium => const EdgeInsets.symmetric(
-        vertical: DesignSpacing.xs,
-        horizontal: DesignSpacing.sm,
+      AuraBadgeSize.medium => EdgeInsets.symmetric(
+        vertical: spacing.xs,
+        horizontal: spacing.sm,
       ),
-      AuraBadgeSize.large => const EdgeInsets.symmetric(
-        vertical: DesignSpacing.xs,
-        horizontal: DesignSpacing.sm,
+      AuraBadgeSize.large => EdgeInsets.symmetric(
+        vertical: spacing.xs,
+        horizontal: spacing.sm,
       ),
     };
   }
 
-  double _getBorderRadius() {
+  AuraBorderRadius _getBorderRadius() {
     return switch (size) {
-      AuraBadgeSize.small => DesignBorderRadius.sm,
-      AuraBadgeSize.medium => DesignBorderRadius.sm,
-      AuraBadgeSize.large => DesignBorderRadius.md,
+      AuraBadgeSize.small => .sm,
+      AuraBadgeSize.medium => .sm,
+      AuraBadgeSize.large => .md,
     };
   }
 

@@ -108,7 +108,9 @@ class _ToolCallResponsePreviewState extends State<ToolCallResponsePreview> {
         // Show more button (only if content exceeds max lines).
         if (_exceedsMaxLines)
           Padding(
-            padding: EdgeInsets.only(top: context.auraTheme.spacing.xs),
+            padding: EdgeInsets.only(
+              top: context.auraTheme.fromSpacing(.xs),
+            ),
             child: AuraButton(
               onPressed: _showFullContent,
               child: const AuraRow(
@@ -120,7 +122,7 @@ class _ToolCallResponsePreviewState extends State<ToolCallResponsePreview> {
                     color: AuraColorVariant.primary,
                   ),
                 ],
-                spacing: AuraSpacing.xs,
+                spacing: .xs,
                 mainAxisSize: MainAxisSize.min,
               ),
               variant: AuraButtonVariant.ghost,

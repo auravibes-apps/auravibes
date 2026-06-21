@@ -1,4 +1,5 @@
 import 'package:auravibes_ui/src/atoms/aura_message_status.dart';
+import 'package:auravibes_ui/src/atoms/aura_sized_box.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
@@ -59,9 +60,13 @@ class AuraMessageBubble extends StatelessWidget {
             maxWidth: maxWidth ?? MediaQuery.sizeOf(context).width * 0.75,
           ),
           margin: EdgeInsets.only(
-            left: isUser ? DesignSpacing.xl : DesignSpacing.md,
-            right: isUser ? DesignSpacing.md : DesignSpacing.xl,
-            bottom: DesignSpacing.sm,
+            left: context.auraTheme.fromSpacing(
+              isUser ? .xl : .md,
+            ),
+            right: context.auraTheme.fromSpacing(
+              isUser ? .md : .xl,
+            ),
+            bottom: context.auraTheme.fromSpacing(.sm),
           ),
           child: Column(
             crossAxisAlignment: isUser
@@ -69,8 +74,15 @@ class AuraMessageBubble extends StatelessWidget {
                 : CrossAxisAlignment.start,
             children: [
               Container(
-                padding: _getPadding(),
-                decoration: _getDecoration(auraColors),
+                padding: _getPadding(
+                  spacing: context.auraTheme.spacing,
+                ),
+                decoration: _getDecoration(
+                  auraColors,
+                  borderRadius: context.auraTheme.fromBorderRadius(
+                    .xl,
+                  ),
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -82,7 +94,7 @@ class AuraMessageBubble extends StatelessWidget {
                           : auraColors.onSurface,
                     ),
                     if (timestamp != null) ...[
-                      const SizedBox(height: DesignSpacing.xs),
+                      const AuraSizedBox(height: .xs),
                       _AuraMessageBubbleTimestamp(
                         timestamp: timestamp,
                         textColor: isUser
@@ -94,7 +106,9 @@ class AuraMessageBubble extends StatelessWidget {
                 ),
               ),
               if (status != AuraMessageDeliveryStatus.sent) ...[
-                const SizedBox(height: DesignSpacing.xs / 2),
+                SizedBox(
+                  height: context.auraTheme.fromSpacing(.xs) / 2,
+                ),
                 AuraMessageStatus(
                   status: status,
                 ),
@@ -108,18 +122,21 @@ class AuraMessageBubble extends StatelessWidget {
     );
   }
 
-  EdgeInsets _getPadding() {
+  EdgeInsets _getPadding({required AuraSpacingScale spacing}) {
     return switch (contentType) {
-      AuraMessageContentType.text => const EdgeInsets.symmetric(
-        vertical: DesignSpacing.sm,
-        horizontal: DesignSpacing.md,
+      AuraMessageContentType.text => EdgeInsets.symmetric(
+        vertical: spacing.sm,
+        horizontal: spacing.md,
       ),
-      AuraMessageContentType.image => const EdgeInsets.all(DesignSpacing.xs),
-      AuraMessageContentType.file => const EdgeInsets.all(DesignSpacing.sm),
+      AuraMessageContentType.image => EdgeInsets.all(spacing.xs),
+      AuraMessageContentType.file => EdgeInsets.all(spacing.sm),
     };
   }
 
-  BoxDecoration _getDecoration(AuraColorScheme auraColors) {
+  BoxDecoration _getDecoration(
+    AuraColorScheme auraColors, {
+    required double borderRadius,
+  }) {
     final baseColor = isUser ? auraColors.primary : auraColors.surfaceVariant;
 
     final errorColor = status == AuraMessageDeliveryStatus.error
@@ -131,8 +148,8 @@ class AuraMessageBubble extends StatelessWidget {
       border: status == AuraMessageDeliveryStatus.error
           ? Border.fromBorderSide(BorderSide(color: auraColors.error))
           : null,
-      borderRadius: const BorderRadius.all(
-        Radius.circular(DesignBorderRadius.xl),
+      borderRadius: BorderRadius.all(
+        Radius.circular(borderRadius),
       ),
       boxShadow: [
         if (status != AuraMessageDeliveryStatus.error) DesignShadows.sm,
@@ -169,25 +186,31 @@ class _AuraMessageBubbleContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final typography = context.auraTheme.typography;
+
     return switch (contentType) {
       AuraMessageContentType.text => GptMarkdown(
         content,
         key: ValueKey(content),
         style: TextStyle(
           color: textColor,
-          fontSize: DesignTypography.fontSizeBase,
-          height: DesignTypography.lineHeightBase,
-          fontFamily: DesignTypography.bodyFontFamily,
+          fontSize: typography.fontSizeBase,
+          height: typography.lineHeightBase,
+          fontFamily: typography.bodyFontFamily,
         ),
       ),
       AuraMessageContentType.image => ClipRRect(
-        borderRadius: const BorderRadius.all(
-          Radius.circular(DesignBorderRadius.md),
+        borderRadius: BorderRadius.all(
+          Radius.circular(
+            context.auraTheme.fromBorderRadius(.md),
+          ),
         ),
         child: Image.network(
           content,
           errorBuilder: (context, error, stackTrace) => Container(
-            padding: const EdgeInsets.all(DesignSpacing.md),
+            padding: EdgeInsets.all(
+              context.auraTheme.fromSpacing(.md),
+            ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -196,7 +219,7 @@ class _AuraMessageBubbleContent extends StatelessWidget {
                   size: 20,
                   color: textColor,
                 ),
-                const SizedBox(width: DesignSpacing.sm),
+                const AuraSizedBox(width: .sm),
                 Text(
                   'Failed to load image',
                   style: TextStyle(color: textColor),
@@ -215,14 +238,14 @@ class _AuraMessageBubbleContent extends StatelessWidget {
             size: 20,
             color: textColor,
           ),
-          const SizedBox(width: DesignSpacing.sm),
+          const AuraSizedBox(width: .sm),
           Flexible(
             child: Text(
               content,
               style: TextStyle(
                 color: textColor,
-                fontSize: DesignTypography.fontSizeBase,
-                fontFamily: DesignTypography.bodyFontFamily,
+                fontSize: typography.fontSizeBase,
+                fontFamily: typography.bodyFontFamily,
               ),
               overflow: TextOverflow.ellipsis,
             ),
@@ -244,12 +267,14 @@ class _AuraMessageBubbleTimestamp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final typography = context.auraTheme.typography;
+
     return Text(
       AuraMessageBubble._formatTimestamp(timestamp),
       style: TextStyle(
         color: textColor,
-        fontSize: DesignTypography.fontSizeXs,
-        fontFamily: DesignTypography.bodyFontFamily,
+        fontSize: typography.fontSizeXs,
+        fontFamily: typography.bodyFontFamily,
       ),
     );
   }

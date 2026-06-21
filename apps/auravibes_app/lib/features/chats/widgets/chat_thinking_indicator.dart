@@ -9,14 +9,16 @@ class ChatThinkingIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: DesignSpacing.md),
+      padding: EdgeInsets.symmetric(
+        horizontal: context.auraTheme.fromSpacing(.md),
+      ),
       child: Row(
         children: [
           const AuraTypingIndicator(
             size: AuraTypingIndicatorSize.small,
             showContainer: false,
           ),
-          SizedBox(width: context.auraTheme.spacing.sm),
+          const AuraSizedBox(width: .sm),
           Flexible(
             child: AuraText(
               child: Text(

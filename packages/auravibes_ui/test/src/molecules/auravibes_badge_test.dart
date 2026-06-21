@@ -1,5 +1,6 @@
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/molecules/aura_badge.dart';
+import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -118,9 +119,9 @@ void main() {
       final container = tester.widget<Container>(find.byType(Container));
       expect(
         container.padding,
-        const EdgeInsets.symmetric(
+        EdgeInsets.symmetric(
           vertical: 2,
-          horizontal: DesignSpacing.xs,
+          horizontal: AuraTheme.light.spacing.xs,
         ),
       );
     });
@@ -139,9 +140,9 @@ void main() {
       final container = tester.widget<Container>(find.byType(Container));
       expect(
         container.padding,
-        const EdgeInsets.symmetric(
-          vertical: DesignSpacing.xs,
-          horizontal: DesignSpacing.sm,
+        EdgeInsets.symmetric(
+          vertical: AuraTheme.light.spacing.xs,
+          horizontal: AuraTheme.light.spacing.sm,
         ),
       );
     });

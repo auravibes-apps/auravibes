@@ -83,7 +83,7 @@ class WidgetbookApp extends StatelessWidget {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           textStyle: GoogleFonts.inter(
-            fontWeight: DesignTypography.fontWeightMedium,
+            fontWeight: AuraTheme.light.typography.fontWeightMedium,
           ),
         ),
       ),
@@ -112,7 +112,7 @@ class WidgetbookApp extends StatelessWidget {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           textStyle: GoogleFonts.inter(
-            fontWeight: DesignTypography.fontWeightMedium,
+            fontWeight: AuraTheme.dark.typography.fontWeightMedium,
           ),
         ),
       ),

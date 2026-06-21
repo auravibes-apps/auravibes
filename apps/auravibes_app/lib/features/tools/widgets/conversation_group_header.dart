@@ -81,7 +81,7 @@ class ConversationGroupHeader extends StatelessWidget {
         AuraRow(
           children: [
             _GroupIcon(groupWithTools: groupWithTools),
-            SizedBox(width: context.auraTheme.spacing.sm),
+            const AuraSizedBox(width: .sm),
             Expanded(
               child: AuraColumn(
                 children: [
@@ -105,7 +105,7 @@ class ConversationGroupHeader extends StatelessWidget {
                     color: AuraColorVariant.onSurfaceVariant,
                   ),
                 ],
-                spacing: AuraSpacing.xs,
+                spacing: .xs,
                 crossAxisAlignment: CrossAxisAlignment.start,
               ),
             ),
@@ -118,7 +118,7 @@ class ConversationGroupHeader extends StatelessWidget {
           ],
         ),
       ],
-      spacing: AuraSpacing.sm,
+      spacing: .sm,
       crossAxisAlignment: CrossAxisAlignment.start,
     );
   }
@@ -140,8 +140,10 @@ class _GroupIcon extends StatelessWidget {
         color: hasEnabledTools
             ? context.auraColors.primary.withValues(alpha: 0.1)
             : context.auraColors.surfaceVariant,
-        borderRadius: BorderRadius.circular(
-          context.auraTheme.borderRadius.md,
+        borderRadius: BorderRadius.all(
+          Radius.circular(
+            context.auraTheme.fromBorderRadius(.md),
+          ),
         ),
       ),
       width: 40,
@@ -226,7 +228,7 @@ class _ErrorBadge extends StatelessWidget {
                 ),
                 Text(LocaleKeys.tools_screen_mcp_error.tr()),
               ],
-              spacing: AuraSpacing.xs,
+              spacing: .xs,
               mainAxisSize: MainAxisSize.min,
             ),
             variant: AuraBadgeVariant.error,
@@ -284,7 +286,7 @@ class _DisconnectedBadge extends StatelessWidget {
             ),
           ),
       ],
-      spacing: AuraSpacing.xs,
+      spacing: .xs,
       mainAxisSize: MainAxisSize.min,
     );
   }

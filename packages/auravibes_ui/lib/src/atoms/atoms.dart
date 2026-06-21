@@ -22,6 +22,7 @@ export 'aura_icon.dart';
 export 'aura_message_status.dart';
 export 'aura_pressable.dart' show AuraPressable;
 export 'aura_selectable_text.dart';
+export 'aura_sized_box.dart';
 export 'aura_spinner.dart'
     show AuraLoadingOverlay, AuraSpinner, AuraSpinnerSize;
 export 'aura_text.dart';

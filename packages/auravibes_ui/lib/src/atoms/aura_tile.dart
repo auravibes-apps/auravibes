@@ -1,5 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
+import 'package:auravibes_ui/src/atoms/aura_sized_box.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
@@ -79,17 +80,20 @@ class AuraTile extends StatelessWidget {
         children: [
           if (leading != null) ...[
             leading,
-            SizedBox(width: auraTheme.spacing.sm),
+            const AuraSizedBox(width: .sm),
           ],
           Flexible(
             fit: .tight,
             child: DefaultTextStyle(
-              style: _getTextStyle(auraColors, auraTheme.typography),
+              style: _getTextStyle(
+                auraColors,
+                typography: context.auraTheme.typography,
+              ),
               child: child,
             ),
           ),
           if (trailing != null) ...[
-            SizedBox(width: auraTheme.spacing.sm),
+            const AuraSizedBox(width: .sm),
             trailing,
           ],
         ],
@@ -102,17 +106,25 @@ class AuraTile extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           child: AnimatedContainer(
-            padding: _getPadding(auraTheme.spacing),
+            padding: _getPadding(spacing: context.auraTheme.spacing),
             decoration: BoxDecoration(
               color: _getBackgroundColor(auraColors),
-              borderRadius: BorderRadius.circular(auraTheme.borderRadius.lg),
+              borderRadius: BorderRadius.all(
+                Radius.circular(
+                  context.auraTheme.fromBorderRadius(.lg),
+                ),
+              ),
               boxShadow: _getBoxShadow(),
             ),
             child: content,
             duration: auraTheme.animation.normal,
           ),
           onTap: enabled && !isLoading ? onTap : null,
-          borderRadius: BorderRadius.circular(auraTheme.borderRadius.lg),
+          borderRadius: BorderRadius.all(
+            Radius.circular(
+              context.auraTheme.fromBorderRadius(.lg),
+            ),
+          ),
         ),
       ),
     );
@@ -149,19 +161,19 @@ class AuraTile extends StatelessWidget {
   }
 
   TextStyle _getTextStyle(
-    AuraColorScheme colors,
-    AuraTypographyTheme typography,
-  ) {
+    AuraColorScheme colors, {
+    required AuraTypographyScale typography,
+  }) {
     final fontSize = switch (size) {
-      AuraTileSize.small => typography.sizes.sm,
-      AuraTileSize.medium => typography.sizes.base,
-      AuraTileSize.large => typography.sizes.lg,
+      AuraTileSize.small => typography.fontSizeSm,
+      AuraTileSize.medium => typography.fontSizeBase,
+      AuraTileSize.large => typography.fontSizeLg,
     };
 
     final fontWeight = switch (size) {
-      AuraTileSize.small => typography.weights.medium,
-      AuraTileSize.medium => typography.weights.medium,
-      AuraTileSize.large => typography.weights.semibold,
+      AuraTileSize.small => typography.fontWeightMedium,
+      AuraTileSize.medium => typography.fontWeightMedium,
+      AuraTileSize.large => typography.fontWeightSemibold,
     };
 
     final textColor = !enabled
@@ -178,11 +190,11 @@ class AuraTile extends StatelessWidget {
       color: textColor,
       fontSize: fontSize,
       fontWeight: fontWeight,
-      height: typography.lineHeights.base,
+      height: typography.lineHeightBase,
     );
   }
 
-  EdgeInsets _getPadding(AuraSpacingTheme spacing) {
+  EdgeInsets _getPadding({required AuraSpacingScale spacing}) {
     return switch (size) {
       AuraTileSize.small => EdgeInsets.symmetric(
         vertical: spacing.sm,

@@ -21,7 +21,9 @@ class ConversationContextUsagePill extends ConsumerWidget {
     final auraColors = context.auraColors;
 
     return Padding(
-      padding: const EdgeInsets.only(right: DesignSpacing.sm),
+      padding: EdgeInsets.only(
+        right: context.auraTheme.fromSpacing(.sm),
+      ),
       child: AuraTooltip(
         message: tooltip,
         child: Semantics(
@@ -36,8 +38,12 @@ class ConversationContextUsagePill extends ConsumerWidget {
                 SizedBox(
                   width: 26,
                   child: ClipRRect(
-                    borderRadius: const BorderRadius.all(
-                      Radius.circular(DesignBorderRadius.full),
+                    borderRadius: BorderRadius.all(
+                      Radius.circular(
+                        context.auraTheme.fromBorderRadius(
+                          .full,
+                        ),
+                      ),
                     ),
                     child: LinearProgressIndicator(
                       value: data.progress.clamp(0.0, 1.0),
@@ -60,15 +66,17 @@ class ConversationContextUsagePill extends ConsumerWidget {
                   size: AuraBadgeSize.small,
                 ),
               ],
-              spacing: AuraSpacing.xs,
+              spacing: .xs,
               mainAxisSize: MainAxisSize.min,
             ),
             padding: const AuraEdgeInsetsGeometry.symmetric(
-              horizontal: AuraSpacing.sm,
-              vertical: AuraSpacing.xs,
+              horizontal: .sm,
+              vertical: .xs,
             ),
             backgroundColor: AuraColorVariant.surfaceVariant,
-            borderRadius: context.auraTheme.borderRadius.full,
+            borderRadius: context.auraTheme.fromBorderRadius(
+              .full,
+            ),
             border: Border.fromBorderSide(
               BorderSide(color: auraColors.outlineVariant),
             ),

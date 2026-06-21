@@ -40,7 +40,7 @@ class ToolItemRow extends HookConsumerWidget {
 
     return Padding(
       padding: EdgeInsets.symmetric(
-        vertical: context.auraTheme.spacing.xs,
+        vertical: context.auraTheme.fromSpacing(.xs),
       ),
       child: AuraColumn(
         children: [
@@ -51,8 +51,10 @@ class ToolItemRow extends HookConsumerWidget {
                   color: isEnabled
                       ? context.auraColors.primary.withValues(alpha: 0.1)
                       : context.auraColors.surfaceVariant,
-                  borderRadius: BorderRadius.circular(
-                    context.auraTheme.borderRadius.sm,
+                  borderRadius: BorderRadius.all(
+                    Radius.circular(
+                      context.auraTheme.fromBorderRadius(.sm),
+                    ),
                   ),
                 ),
                 width: 36,
@@ -66,7 +68,7 @@ class ToolItemRow extends HookConsumerWidget {
                   ),
                 ),
               ),
-              SizedBox(width: context.auraTheme.spacing.sm),
+              const AuraSizedBox(width: .sm),
               Expanded(
                 child: AuraColumn(
                   children: [
@@ -81,7 +83,7 @@ class ToolItemRow extends HookConsumerWidget {
                       color: AuraColorVariant.onSurfaceVariant,
                     ),
                   ],
-                  spacing: AuraSpacing.xs,
+                  spacing: .xs,
                   crossAxisAlignment: CrossAxisAlignment.start,
                 ),
               ),
@@ -113,8 +115,8 @@ class ToolItemRow extends HookConsumerWidget {
           if (isExpanded.value)
             Padding(
               padding: EdgeInsets.only(
-                left: 36 + context.auraTheme.spacing.sm,
-                top: context.auraTheme.spacing.sm,
+                left: 36 + context.auraTheme.fromSpacing(.sm),
+                top: context.auraTheme.fromSpacing(.sm),
               ),
               child: _ToolOptions(
                 tool: tool,
@@ -209,7 +211,7 @@ class _ToolOptions extends HookConsumerWidget {
             ),
           ),
       ],
-      spacing: AuraSpacing.sm,
+      spacing: .sm,
       crossAxisAlignment: CrossAxisAlignment.start,
     );
   }
