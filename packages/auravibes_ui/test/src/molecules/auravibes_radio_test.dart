@@ -15,16 +15,19 @@ void main() {
       expect(option.value, 'test');
       expect(option.label, isA<Text>());
       expect(option.subtitle, isNull);
+      expect(option.disabled, isFalse);
     });
 
-    test('creates option with subtitle', () {
+    test('creates option with subtitle and disabled state', () {
       const option = AuraRadioOption<String>(
         value: 'test',
         label: Text('Test Label'),
         subtitle: Text('Subtitle'),
+        disabled: true,
       );
 
       expect(option.subtitle, isA<Text>());
+      expect(option.disabled, isTrue);
     });
   });
 

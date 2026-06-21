@@ -70,6 +70,7 @@ class AuraRadioOption<T> {
     required this.value,
     required this.label,
     this.subtitle,
+    this.disabled = false,
   });
 
   /// The value this option represents.
@@ -80,6 +81,9 @@ class AuraRadioOption<T> {
 
   /// Optional subtitle displayed below the label.
   final Widget? subtitle;
+
+  /// Whether this option is disabled.
+  final bool disabled;
 }
 
 /// An individual radio button that communicates with its parent group.

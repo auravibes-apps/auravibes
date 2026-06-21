@@ -177,6 +177,7 @@ class _AuraRadioOptions<T> extends StatelessWidget {
           groupValue: value,
           onChanged: onChanged,
           colorVariant: colorVariant,
+          disabled: option.disabled,
         ),
         const AuraSizedBox(width: .sm),
         Flexible(child: option.label),
@@ -186,7 +187,7 @@ class _AuraRadioOptions<T> extends StatelessWidget {
 
   VoidCallback? _buildOptionTap(AuraRadioOption<T> option) {
     final onChanged = this.onChanged;
-    if (onChanged == null) return null;
+    if (onChanged == null || option.disabled) return null;
 
     return () => onChanged(option.value);
   }

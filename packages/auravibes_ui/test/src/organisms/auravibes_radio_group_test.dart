@@ -221,6 +221,42 @@ void main() {
       );
       expect(radio.colorVariant, AuraColorVariant.secondary);
     });
+
+    testWidgets('does not call onChanged for disabled option', (
+      tester,
+    ) async {
+      String? selectedValue;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AuraRadioGroup<String>(
+              value: null,
+              onChanged: (value) => selectedValue = value,
+              options: const [
+                AuraRadioOption(
+                  value: 'option1',
+                  label: Text('Option 1'),
+                  disabled: true,
+                ),
+              ],
+            ),
+          ),
+          theme: ThemeData(
+            extensions: [AuraTheme.light],
+          ),
+        ),
+      );
+
+      await tester.tap(find.byType(AuraRadio<String>));
+      final _ = await tester.pumpAndSettle();
+
+      final radio = tester.widget<AuraRadio<String>>(
+        find.byType(AuraRadio<String>),
+      );
+      expect(radio.disabled, isTrue);
+      expect(selectedValue, isNull);
+    });
   });
 
   group('AuraRadioListTile', () {
