@@ -3,6 +3,7 @@
 import 'package:auravibes_ui/src/molecules/aura_checkbox.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -23,6 +24,7 @@ void main() {
       );
 
       expect(find.byType(Checkbox), findsNothing);
+      expect(find.byType(FocusableActionDetector), findsOneWidget);
       expect(find.byType(GestureDetector), findsOneWidget);
     });
 
@@ -48,6 +50,34 @@ void main() {
 
       expect(selectedValue, isTrue);
     });
+
+    testWidgets(
+      'calls onChanged with toggled value when activated by keyboard',
+      (
+        tester,
+      ) async {
+        bool? selectedValue;
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: AuraCheckbox(
+                value: false,
+                onChanged: (value) => selectedValue = value,
+              ),
+            ),
+            theme: ThemeData(extensions: [AuraTheme.light]),
+          ),
+        );
+
+        expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+        await tester.pump();
+        expect(await tester.sendKeyEvent(LogicalKeyboardKey.space), isTrue);
+        expect(await tester.pumpAndSettle(), greaterThanOrEqualTo(1));
+
+        expect(selectedValue, isTrue);
+      },
+    );
 
     testWidgets('does not call onChanged when disabled', (tester) async {
       bool? selectedValue;
@@ -92,7 +122,7 @@ void main() {
 
       expect(find.text('Optional'), findsOneWidget);
       expect(find.text('Can be omitted'), findsOneWidget);
-      expect(find.byType(AuraCheckbox), findsOneWidget);
+      expect(find.byType(FocusableActionDetector), findsOneWidget);
     });
 
     testWidgets('calls onChanged when row is tapped', (tester) async {
@@ -113,6 +143,32 @@ void main() {
 
       await tester.tap(find.byType(AuraCheckboxListTile));
       final _ = await tester.pumpAndSettle();
+
+      expect(selectedValue, isTrue);
+    });
+
+    testWidgets('calls onChanged when row is activated by keyboard', (
+      tester,
+    ) async {
+      bool? selectedValue;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AuraCheckboxListTile(
+              value: false,
+              onChanged: (value) => selectedValue = value,
+              title: const Text('Optional'),
+            ),
+          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
+        ),
+      );
+
+      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+      await tester.pump();
+      expect(await tester.sendKeyEvent(LogicalKeyboardKey.enter), isTrue);
+      expect(await tester.pumpAndSettle(), greaterThanOrEqualTo(1));
 
       expect(selectedValue, isTrue);
     });

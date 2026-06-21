@@ -1,5 +1,6 @@
 import 'package:auravibes_ui/src/atoms/aura_icon.dart';
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
+import 'package:auravibes_ui/src/atoms/aura_tooltip.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
@@ -130,8 +131,9 @@ class AuraFloatingActionButton extends StatelessWidget {
       }
     }
 
+    final tooltip = this.tooltip;
     if (tooltip != null) {
-      fab = Tooltip(
+      fab = AuraTooltip(
         message: tooltip,
         child: fab,
       );

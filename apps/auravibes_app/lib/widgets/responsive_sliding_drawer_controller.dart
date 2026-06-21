@@ -443,7 +443,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
         onEnter: (_) => setState(() => _isHoveringDivider = true),
         onExit: (_) => setState(() => _isHoveringDivider = false),
         cursor: SystemMouseCursors.resizeColumn,
-        child: Tooltip(
+        child: AuraTooltip(
           message: resizeHandleTooltip,
           child: Semantics(
             child: AnimatedOpacity(

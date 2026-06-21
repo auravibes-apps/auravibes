@@ -1,4 +1,5 @@
 // Required: UI components keep related private widgets together.
+import 'package:auravibes_ui/src/atoms/aura_tooltip.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart'
     show AuraBorderRadius, AuraColorVariant;
@@ -156,8 +157,9 @@ class AuraIconButton extends StatelessWidget {
       ),
     );
 
+    final tooltip = this.tooltip;
     if (tooltip != null) {
-      button = Tooltip(
+      button = AuraTooltip(
         message: tooltip,
         child: button,
       );
