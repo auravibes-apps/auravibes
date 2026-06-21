@@ -5,7 +5,6 @@ import 'package:auravibes_app/features/chats/notifiers/new_chat_state.dart';
 import 'package:auravibes_app/features/chats/usecases/generate_title_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/send_new_message_usecase.dart';
-import 'package:auravibes_app/services/monitoring_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -196,9 +195,6 @@ class _FakeSendNewMessageUsecase implements SendNewMessageUsecase {
   GenerateTitleUsecase get generateTitleUsecase => throw UnimplementedError();
 
   @override
-  MonitoringService get monitoringService => throw UnimplementedError();
-
-  @override
   Future<ConversationEntity> call({
     required String workspaceId,
     required String firstMessage,
@@ -228,9 +224,6 @@ class _ErrorSendNewMessageUsecase implements SendNewMessageUsecase {
 
   @override
   GenerateTitleUsecase get generateTitleUsecase => throw UnimplementedError();
-
-  @override
-  MonitoringService get monitoringService => throw UnimplementedError();
 
   @override
   Future<ConversationEntity> call({

@@ -42,7 +42,6 @@ import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/model_api_service.dart';
 import 'package:auravibes_app/services/model_provider_services/model_provider.dart';
-import 'package:auravibes_app/services/monitoring_service.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -178,8 +177,6 @@ class MockModelApiService extends Mock implements ModelApiService {}
 class MockModelConnectionsDao extends Mock implements ModelConnectionsDao {}
 
 class MockModelProviderServices extends Mock implements ModelProviderServices {}
-
-class MockMonitoringService extends Mock implements MonitoringService {}
 
 class MockResolveToolApprovalDecisionUsecase extends Mock
     implements ResolveToolApprovalDecisionUsecase {}

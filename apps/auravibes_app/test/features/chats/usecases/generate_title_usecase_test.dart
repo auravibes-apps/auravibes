@@ -25,12 +25,10 @@ void main() {
         final _ = Object();
       },
     );
-    var monitoringService = MockMonitoringService();
     var usecase = GenerateTitleUsecase(
       conversationRepo: conversationRepo,
       chatbotService: chatbotService,
       titlesStreamingRuntime: titlesStreamingRuntime,
-      monitoringService: monitoringService,
     );
 
     final modelSelection = WorkspaceModelSelectionWithConnectionEntity(
@@ -68,12 +66,10 @@ void main() {
           final _ = Object();
         },
       );
-      monitoringService = MockMonitoringService();
       usecase = GenerateTitleUsecase(
         conversationRepo: conversationRepo,
         chatbotService: chatbotService,
         titlesStreamingRuntime: titlesStreamingRuntime,
-        monitoringService: monitoringService,
       );
 
       when(() => conversationRepo.patchConversation(any(), any())).thenAnswer(
@@ -85,13 +81,6 @@ void main() {
           createdAt: DateTime(2026),
           updatedAt: DateTime(2026),
         ),
-      );
-      monitoringService = MockMonitoringService();
-      usecase = GenerateTitleUsecase(
-        conversationRepo: conversationRepo,
-        chatbotService: chatbotService,
-        titlesStreamingRuntime: titlesStreamingRuntime,
-        monitoringService: monitoringService,
       );
     });
 
@@ -132,7 +121,6 @@ void main() {
           conversationRepo: conversationRepo,
           chatbotService: chatbotService,
           titlesStreamingRuntime: runtime,
-          monitoringService: monitoringService,
         );
 
         final controller = StreamController<String>();
@@ -166,7 +154,6 @@ void main() {
         conversationRepo: conversationRepo,
         chatbotService: chatbotService,
         titlesStreamingRuntime: runtime,
-        monitoringService: monitoringService,
       );
 
       final controller = StreamController<String>();
@@ -261,35 +248,6 @@ void main() {
       final _ = await controller.close();
     });
 
-    test('tracks error via monitoringService when stream fails', () async {
-      final controller = StreamController<String>();
-      when(() => chatbotService.streamTitle(any(), any())).thenAnswer(
-        (_) => controller.stream,
-      );
-
-      usecase.call(
-        conversationId: 'conv-err',
-        firstMessage: 'Hello',
-        workspaceModelSelection: modelSelection,
-      );
-
-      controller.add('Partial');
-      await Future<void>.delayed(const Duration(milliseconds: 10));
-      final _ = await controller.close();
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-
-      expect(
-        () => verifyNever(
-          () => monitoringService.trackError(
-            any(),
-            error: any(named: 'error'),
-            stackTrace: any(named: 'stackTrace'),
-          ),
-        ),
-        returnsNormally,
-      );
-    });
-
     test('removeTitle called when stream completes without error', () async {
       final removedIds = <String>[];
       final runtime = TitlesStreamingRuntime(
@@ -302,7 +260,6 @@ void main() {
         conversationRepo: conversationRepo,
         chatbotService: chatbotService,
         titlesStreamingRuntime: runtime,
-        monitoringService: monitoringService,
       );
 
       final controller = StreamController<String>();

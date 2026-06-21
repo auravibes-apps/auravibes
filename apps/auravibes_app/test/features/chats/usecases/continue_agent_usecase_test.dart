@@ -34,7 +34,6 @@ void main() {
     var conversationRepository = MockConversationRepository();
     var loadConversationToolSpecsUsecase =
         MockLoadConversationToolSpecsUsecase();
-    var monitoringService = MockMonitoringService();
     var apiModelRepository = MockApiModelRepository();
     var selectPromptMessagesUsecase = MockSelectPromptMessagesUsecase();
     var removedMessageIds = <String>[];
@@ -71,7 +70,6 @@ void main() {
         remove: removedConversationIds.add,
       ),
       agentCancellationRuntime: agentCancellationRuntime,
-      monitoringService: monitoringService,
       selectPromptMessagesUsecase: selectPromptMessagesUsecase,
       apiModelRepository: apiModelRepository,
       buildSkillContextMessagesUsecase:
@@ -85,7 +83,6 @@ void main() {
           MockWorkspaceModelSelectionRepository();
       conversationRepository = MockConversationRepository();
       loadConversationToolSpecsUsecase = MockLoadConversationToolSpecsUsecase();
-      monitoringService = MockMonitoringService();
       apiModelRepository = MockApiModelRepository();
       selectPromptMessagesUsecase = MockSelectPromptMessagesUsecase();
       removedMessageIds = [];
@@ -123,7 +120,6 @@ void main() {
           remove: removedConversationIds.add,
         ),
         agentCancellationRuntime: agentCancellationRuntime,
-        monitoringService: monitoringService,
         selectPromptMessagesUsecase: selectPromptMessagesUsecase,
         apiModelRepository: apiModelRepository,
         buildSkillContextMessagesUsecase:
@@ -260,7 +256,6 @@ void main() {
             remove: removedConversationIds.add,
           ),
           agentCancellationRuntime: agentCancellationRuntime,
-          monitoringService: monitoringService,
           selectPromptMessagesUsecase: selectPromptMessagesUsecase,
           apiModelRepository: apiModelRepository,
           buildSkillContextMessagesUsecase:
@@ -877,7 +872,6 @@ void main() {
     var conversationRepository = MockConversationRepository();
     var loadConversationToolSpecsUsecase =
         MockLoadConversationToolSpecsUsecase();
-    var monitoringService = MockMonitoringService();
     var apiModelRepository = MockApiModelRepository();
     var selectPromptMessagesUsecase = MockSelectPromptMessagesUsecase();
     var agentCancellationRuntime = AgentCancellationRuntime()
@@ -909,7 +903,6 @@ void main() {
         },
       ),
       agentCancellationRuntime: agentCancellationRuntime,
-      monitoringService: monitoringService,
       selectPromptMessagesUsecase: selectPromptMessagesUsecase,
       apiModelRepository: apiModelRepository,
       buildSkillContextMessagesUsecase:
@@ -923,7 +916,6 @@ void main() {
           MockWorkspaceModelSelectionRepository();
       conversationRepository = MockConversationRepository();
       loadConversationToolSpecsUsecase = MockLoadConversationToolSpecsUsecase();
-      monitoringService = MockMonitoringService();
       apiModelRepository = MockApiModelRepository();
       selectPromptMessagesUsecase = MockSelectPromptMessagesUsecase();
       agentCancellationRuntime = AgentCancellationRuntime()
@@ -956,7 +948,6 @@ void main() {
           },
         ),
         agentCancellationRuntime: agentCancellationRuntime,
-        monitoringService: monitoringService,
         selectPromptMessagesUsecase: selectPromptMessagesUsecase,
         apiModelRepository: apiModelRepository,
         buildSkillContextMessagesUsecase:
@@ -1120,7 +1111,6 @@ void main() {
     var conversationRepository = MockConversationRepository();
     var loadConversationToolSpecsUsecase =
         MockLoadConversationToolSpecsUsecase();
-    var monitoringService = MockMonitoringService();
     var apiModelRepository = MockApiModelRepository();
     var selectPromptMessagesUsecase = MockSelectPromptMessagesUsecase();
     var agentCancellationRuntime = AgentCancellationRuntime()
@@ -1152,7 +1142,6 @@ void main() {
         },
       ),
       agentCancellationRuntime: agentCancellationRuntime,
-      monitoringService: monitoringService,
       selectPromptMessagesUsecase: selectPromptMessagesUsecase,
       apiModelRepository: apiModelRepository,
       buildSkillContextMessagesUsecase:
@@ -1166,7 +1155,6 @@ void main() {
           MockWorkspaceModelSelectionRepository();
       conversationRepository = MockConversationRepository();
       loadConversationToolSpecsUsecase = MockLoadConversationToolSpecsUsecase();
-      monitoringService = MockMonitoringService();
       apiModelRepository = MockApiModelRepository();
       selectPromptMessagesUsecase = MockSelectPromptMessagesUsecase();
       agentCancellationRuntime = AgentCancellationRuntime()
@@ -1199,7 +1187,6 @@ void main() {
           },
         ),
         agentCancellationRuntime: agentCancellationRuntime,
-        monitoringService: monitoringService,
         selectPromptMessagesUsecase: selectPromptMessagesUsecase,
         apiModelRepository: apiModelRepository,
         buildSkillContextMessagesUsecase:

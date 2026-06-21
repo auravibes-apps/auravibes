@@ -5,8 +5,8 @@ import 'package:auravibes_app/features/chats/providers/conversation_repository_p
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/providers/chatbot_service_provider.dart';
 import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
-import 'package:auravibes_app/services/monitoring_service.dart';
 import 'package:auravibes_app/utils/coalescing_save_extension.dart';
+import 'package:auravibes_app/utils/monitoring.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:rxdart/rxdart.dart';
 
@@ -15,13 +15,11 @@ class GenerateTitleUsecase {
     required this.conversationRepo,
     required this.chatbotService,
     required this.titlesStreamingRuntime,
-    required this.monitoringService,
   });
 
   final ConversationRepository conversationRepo;
   final ChatbotService chatbotService;
   final TitlesStreamingRuntime titlesStreamingRuntime;
-  final MonitoringService monitoringService;
   void call({
     required String conversationId,
     required String firstMessage,
@@ -35,7 +33,7 @@ class GenerateTitleUsecase {
     );
 
     final sharedStream = stream.doOnError((error, stackTrace) {
-      monitoringService.trackError(
+      trackError(
         'Error streaming title',
         error: error,
         stackTrace: stackTrace,
@@ -70,7 +68,6 @@ final generateTitleUsecaseProvider = Provider<GenerateTitleUsecase>(
       conversationRepo: ref.watch(conversationRepositoryProvider),
       chatbotService: ref.watch(chatbotServiceProvider),
       titlesStreamingRuntime: ref.watch(titlesStreamingRuntimeProvider),
-      monitoringService: ref.watch(monitoringServiceProvider),
     );
   },
 );

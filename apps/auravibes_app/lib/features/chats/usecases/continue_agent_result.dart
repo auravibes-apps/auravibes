@@ -27,9 +27,9 @@ import 'package:auravibes_app/services/chatbot_service/build_prompt_chat_message
 import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
-import 'package:auravibes_app/services/monitoring_service.dart';
 import 'package:auravibes_app/utils/coalescing_save_extension.dart';
 import 'package:auravibes_app/utils/encode.dart';
+import 'package:auravibes_app/utils/monitoring.dart';
 import 'package:logging/logging.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:rxdart/rxdart.dart';
@@ -82,7 +82,6 @@ class ContinueAgentUsecase {
     required this.messagesStreamingRuntime,
     required this.conversationStreamingRuntime,
     required this.agentCancellationRuntime,
-    required this.monitoringService,
     required this.selectPromptMessagesUsecase,
     required this.apiModelRepository,
     required this.buildSkillContextMessagesUsecase,
@@ -96,7 +95,6 @@ class ContinueAgentUsecase {
   final MessagesStreamingRuntime messagesStreamingRuntime;
   final ConversationStreamingRuntime conversationStreamingRuntime;
   final AgentCancellationRuntime agentCancellationRuntime;
-  final MonitoringService monitoringService;
   final SelectPromptMessagesUsecase selectPromptMessagesUsecase;
   final ApiModelRepository apiModelRepository;
   final BuildSkillContextMessagesUsecase buildSkillContextMessagesUsecase;
@@ -257,7 +255,7 @@ class ContinueAgentUsecase {
             sessionId: conversationId,
           )
           .doOnError((error, stackTrace) {
-            monitoringService.trackError(
+            trackError(
               'Error in continue agent stream',
               error: error,
               stackTrace: stackTrace,
@@ -521,7 +519,7 @@ class ContinueAgentUsecase {
         'debug:stream error during cancellation '
         'conversation=${state.conversationId} chunks=${state.chunkCount}',
       );
-      monitoringService.trackError(
+      trackError(
         'Stream error during cancellation',
         error: error,
         stackTrace: stackTrace,
@@ -692,7 +690,7 @@ class ContinueAgentUsecase {
         );
       }
     } on Object catch (cleanupError, cleanupStackTrace) {
-      monitoringService.trackError(
+      trackError(
         'Failed to persist pending user error state',
         error: cleanupError,
         stackTrace: cleanupStackTrace,
@@ -707,7 +705,7 @@ class ContinueAgentUsecase {
         const .new(status: .error),
       );
     } on Object catch (cleanupError, cleanupStackTrace) {
-      monitoringService.trackError(
+      trackError(
         'Failed to persist assistant error state',
         error: cleanupError,
         stackTrace: cleanupStackTrace,
@@ -763,7 +761,6 @@ final continueAgentUsecaseProvider = Provider<ContinueAgentUsecase>((ref) {
       conversationStreamingRuntimeProvider,
     ),
     agentCancellationRuntime: ref.watch(agentCancellationRuntimeProvider),
-    monitoringService: ref.watch(monitoringServiceProvider),
     selectPromptMessagesUsecase: ref.watch(selectPromptMessagesUsecaseProvider),
     apiModelRepository: ref.watch(apiModelRepositoryProvider),
     buildSkillContextMessagesUsecase: ref.watch(

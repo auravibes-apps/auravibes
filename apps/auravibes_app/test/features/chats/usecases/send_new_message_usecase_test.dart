@@ -13,7 +13,6 @@ class _SendNewMessageUsecaseFixture {
   MockWorkspaceModelSelectionRepository? _workspaceModelSelectionRepo;
   MockSendMessageUsecase? _sendMessageUsecase;
   MockGenerateTitleUsecase? _generateTitleUsecase;
-  MockMonitoringService? _monitoringService;
   SendNewMessageUsecase? _usecase;
 
   MockConversationRepository get conversationRepo =>
@@ -30,9 +29,6 @@ class _SendNewMessageUsecaseFixture {
   MockGenerateTitleUsecase get generateTitleUsecase =>
       _generateTitleUsecase ?? fail('Generate title usecase not initialized.');
 
-  MockMonitoringService get monitoringService =>
-      _monitoringService ?? fail('Monitoring service fixture not initialized.');
-
   SendNewMessageUsecase get usecase =>
       _usecase ?? fail('Usecase fixture not initialized.');
 
@@ -44,19 +40,16 @@ class _SendNewMessageUsecaseFixture {
     final workspaceModelSelectionRepo = MockWorkspaceModelSelectionRepository();
     final sendMessageUsecase = MockSendMessageUsecase();
     final generateTitleUsecase = MockGenerateTitleUsecase();
-    final monitoringService = MockMonitoringService();
 
     _conversationRepo = conversationRepo;
     _workspaceModelSelectionRepo = workspaceModelSelectionRepo;
     _sendMessageUsecase = sendMessageUsecase;
     _generateTitleUsecase = generateTitleUsecase;
-    _monitoringService = monitoringService;
     _usecase = SendNewMessageUsecase(
       conversationRepo: conversationRepo,
       sendMessageUsecase: sendMessageUsecase,
       workspaceModelSelectionRepository: workspaceModelSelectionRepo,
       generateTitleUsecase: generateTitleUsecase,
-      monitoringService: monitoringService,
     );
 
     when(
@@ -197,7 +190,7 @@ void main() {
       );
     });
 
-    test('tracks error when sendMessage fails', () async {
+    test('returns conversation when sendMessage fails', () async {
       when(
         () => fixture.sendMessageUsecase.call(
           conversationId: any(named: 'conversationId'),
@@ -212,16 +205,6 @@ void main() {
       );
 
       expect(result.id, 'conv-1');
-
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-
-      verify(
-        () => fixture.monitoringService.trackError(
-          any(),
-          error: any(named: 'error'),
-          stackTrace: any(named: 'stackTrace'),
-        ),
-      ).called(1);
     });
 
     test('creates conversation with correct workspaceId and modelId', () async {

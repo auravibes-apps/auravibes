@@ -7,7 +7,7 @@ import 'package:auravibes_app/features/chats/providers/conversation_repository_p
 import 'package:auravibes_app/features/chats/usecases/generate_title_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
-import 'package:auravibes_app/services/monitoring_service.dart';
+import 'package:auravibes_app/utils/monitoring.dart';
 import 'package:riverpod/riverpod.dart';
 
 class SendNewMessageUsecase {
@@ -17,14 +17,12 @@ class SendNewMessageUsecase {
 
     required this.workspaceModelSelectionRepository,
     required this.generateTitleUsecase,
-    required this.monitoringService,
   });
 
   final ConversationRepository conversationRepo;
   final SendMessageUsecase sendMessageUsecase;
   final WorkspaceModelSelectionRepository workspaceModelSelectionRepository;
   final GenerateTitleUsecase generateTitleUsecase;
-  final MonitoringService monitoringService;
   Future<ConversationEntity> call({
     required String workspaceId,
     required String firstMessage,
@@ -60,7 +58,7 @@ class SendNewMessageUsecase {
           content: firstMessage,
         )
         .onError((error, stackTrace) {
-          monitoringService.trackError(
+          trackError(
             'Failed to send first message',
             error: error,
             stackTrace: stackTrace,
@@ -80,7 +78,6 @@ final sendNewMessageUsecaseProvider = Provider<SendNewMessageUsecase>(
         workspaceModelSelectionRepositoryProvider,
       ),
       generateTitleUsecase: ref.watch(generateTitleUsecaseProvider),
-      monitoringService: ref.watch(monitoringServiceProvider),
     );
   },
 );
