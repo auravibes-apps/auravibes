@@ -186,46 +186,18 @@ class AuraBadge extends StatelessWidget {
     };
   }
 
+  // Each helper is reached only from its own variant branch (soft/outlined),
+  // so it ignores `variant` and returns the single value that arm produced.
   Color _getSoftBackgroundColor(AuraColorScheme colors) {
-    return switch (variant) {
-      AuraBadgeVariant.primary => colors.primary.withValues(alpha: 0.1),
-      AuraBadgeVariant.secondary => colors.secondary.withValues(alpha: 0.1),
-      AuraBadgeVariant.success => colors.success.withValues(alpha: 0.1),
-      AuraBadgeVariant.warning => colors.warning.withValues(alpha: 0.1),
-      AuraBadgeVariant.error => colors.error.withValues(alpha: 0.1),
-      AuraBadgeVariant.info => colors.info.withValues(alpha: 0.1),
-      AuraBadgeVariant.neutral => colors.onSurfaceVariant.withValues(
-        alpha: 0.1,
-      ),
-      AuraBadgeVariant.outlined => colors.surfaceVariant,
-      AuraBadgeVariant.soft => colors.primary.withValues(alpha: 0.1),
-    };
+    return colors.primary.withValues(alpha: 0.1);
   }
 
   Color _getSoftForegroundColor(AuraColorScheme colors) {
-    return switch (variant) {
-      AuraBadgeVariant.primary => colors.primaryVariant,
-      AuraBadgeVariant.secondary => colors.secondaryVariant,
-      AuraBadgeVariant.success => colors.success,
-      AuraBadgeVariant.warning => colors.warning,
-      AuraBadgeVariant.error => colors.error,
-      AuraBadgeVariant.info => colors.info,
-      AuraBadgeVariant.neutral => colors.onSurfaceVariant,
-      _ => colors.onSurfaceVariant,
-    };
+    return colors.onSurfaceVariant;
   }
 
   Color _getOutlinedForegroundColor(AuraColorScheme colors) {
-    return switch (variant) {
-      AuraBadgeVariant.primary => colors.primary,
-      AuraBadgeVariant.secondary => colors.secondary,
-      AuraBadgeVariant.success => colors.success,
-      AuraBadgeVariant.warning => colors.warning,
-      AuraBadgeVariant.error => colors.error,
-      AuraBadgeVariant.info => colors.info,
-      AuraBadgeVariant.neutral => colors.onSurfaceVariant,
-      _ => colors.onSurfaceVariant,
-    };
+    return colors.onSurfaceVariant;
   }
 }
 
