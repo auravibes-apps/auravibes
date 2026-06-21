@@ -1,5 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
+import 'package:auravibes_ui/src/atoms/aura_sized_box.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
@@ -79,17 +80,20 @@ class AuraTile extends StatelessWidget {
         children: [
           if (leading != null) ...[
             leading,
-            const SizedBox(width: DesignSpacing.sm),
+            const AuraSizedBox(width: AuraSpacing.sm),
           ],
           Flexible(
             fit: .tight,
             child: DefaultTextStyle(
-              style: _getTextStyle(auraColors),
+              style: _getTextStyle(
+                auraColors,
+                typography: context.auraTheme.typography,
+              ),
               child: child,
             ),
           ),
           if (trailing != null) ...[
-            const SizedBox(width: DesignSpacing.sm),
+            const AuraSizedBox(width: AuraSpacing.sm),
             trailing,
           ],
         ],
@@ -102,11 +106,13 @@ class AuraTile extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           child: AnimatedContainer(
-            padding: _getPadding(),
+            padding: _getPadding(spacing: context.auraTheme.spacing),
             decoration: BoxDecoration(
               color: _getBackgroundColor(auraColors),
-              borderRadius: const BorderRadius.all(
-                Radius.circular(DesignBorderRadius.lg),
+              borderRadius: BorderRadius.all(
+                Radius.circular(
+                  context.auraTheme.fromBorderRadius(AuraBorderRadius.lg),
+                ),
               ),
               boxShadow: _getBoxShadow(),
             ),
@@ -114,8 +120,10 @@ class AuraTile extends StatelessWidget {
             duration: auraTheme.animation.normal,
           ),
           onTap: enabled && !isLoading ? onTap : null,
-          borderRadius: const BorderRadius.all(
-            Radius.circular(DesignBorderRadius.lg),
+          borderRadius: BorderRadius.all(
+            Radius.circular(
+              context.auraTheme.fromBorderRadius(AuraBorderRadius.lg),
+            ),
           ),
         ),
       ),
@@ -152,17 +160,20 @@ class AuraTile extends StatelessWidget {
     };
   }
 
-  TextStyle _getTextStyle(AuraColorScheme colors) {
+  TextStyle _getTextStyle(
+    AuraColorScheme colors, {
+    required AuraTypographyScale typography,
+  }) {
     final fontSize = switch (size) {
-      AuraTileSize.small => DesignTypography.fontSizeSm,
-      AuraTileSize.medium => DesignTypography.fontSizeBase,
-      AuraTileSize.large => DesignTypography.fontSizeLg,
+      AuraTileSize.small => typography.fontSizeSm,
+      AuraTileSize.medium => typography.fontSizeBase,
+      AuraTileSize.large => typography.fontSizeLg,
     };
 
     final fontWeight = switch (size) {
-      AuraTileSize.small => DesignTypography.fontWeightMedium,
-      AuraTileSize.medium => DesignTypography.fontWeightMedium,
-      AuraTileSize.large => DesignTypography.fontWeightSemibold,
+      AuraTileSize.small => typography.fontWeightMedium,
+      AuraTileSize.medium => typography.fontWeightMedium,
+      AuraTileSize.large => typography.fontWeightSemibold,
     };
 
     final textColor = !enabled
@@ -179,23 +190,23 @@ class AuraTile extends StatelessWidget {
       color: textColor,
       fontSize: fontSize,
       fontWeight: fontWeight,
-      height: DesignTypography.lineHeightBase,
+      height: typography.lineHeightBase,
     );
   }
 
-  EdgeInsets _getPadding() {
+  EdgeInsets _getPadding({required AuraSpacingScale spacing}) {
     return switch (size) {
-      AuraTileSize.small => const EdgeInsets.symmetric(
-        vertical: DesignSpacing.sm,
-        horizontal: DesignSpacing.md,
+      AuraTileSize.small => EdgeInsets.symmetric(
+        vertical: spacing.sm,
+        horizontal: spacing.md,
       ),
-      AuraTileSize.medium => const EdgeInsets.symmetric(
-        vertical: DesignSpacing.md,
-        horizontal: DesignSpacing.lg,
+      AuraTileSize.medium => EdgeInsets.symmetric(
+        vertical: spacing.md,
+        horizontal: spacing.lg,
       ),
-      AuraTileSize.large => const EdgeInsets.symmetric(
-        vertical: DesignSpacing.lg,
-        horizontal: DesignSpacing.xl,
+      AuraTileSize.large => EdgeInsets.symmetric(
+        vertical: spacing.lg,
+        horizontal: spacing.xl,
       ),
     };
   }

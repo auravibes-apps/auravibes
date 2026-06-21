@@ -4,6 +4,7 @@
 
 import 'package:auravibes_ui/src/atoms/aura_icon.dart';
 import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
+import 'package:auravibes_ui/src/atoms/aura_sized_box.dart';
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/molecules/aura_dropdown_option.dart';
 import 'package:auravibes_ui/src/organisms/aura_field_wrapper.dart';
@@ -192,14 +193,14 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
           child: TapRegion(
             child: AuraFieldWrapper(
               child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: DesignSpacing.sm,
-                  horizontal: DesignSpacing.md,
+                padding: EdgeInsets.symmetric(
+                  vertical: context.auraTheme.fromSpacing(AuraSpacing.sm),
+                  horizontal: context.auraTheme.fromSpacing(AuraSpacing.md),
                 ),
                 child: Row(
                   children: [
                     Expanded(child: AuraText(child: displayText)),
-                    const SizedBox(width: DesignSpacing.sm),
+                    const AuraSizedBox(width: AuraSpacing.sm),
                     AuraIcon(
                       _isDropdownOpen
                           ? Icons.keyboard_arrow_up
@@ -282,8 +283,10 @@ class _DropdownMenuState<T> extends State<_DropdownMenu<T>> {
       decoration: BoxDecoration(
         color: auraColors.surface,
         border: Border.fromBorderSide(BorderSide(color: auraColors.outline)),
-        borderRadius: const BorderRadius.all(
-          Radius.circular(DesignBorderRadius.md),
+        borderRadius: BorderRadius.all(
+          Radius.circular(
+            context.auraTheme.fromBorderRadius(AuraBorderRadius.md),
+          ),
         ),
       ),
       constraints: const BoxConstraints(maxHeight: 300),
@@ -303,15 +306,19 @@ class _DropdownMenuState<T> extends State<_DropdownMenu<T>> {
                 return widget.optionBuilder?.call(context, option) ??
                     AuraPressable(
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: DesignSpacing.sm,
-                          horizontal: DesignSpacing.md,
+                        padding: EdgeInsets.symmetric(
+                          vertical: context.auraTheme.fromSpacing(
+                            AuraSpacing.sm,
+                          ),
+                          horizontal: context.auraTheme.fromSpacing(
+                            AuraSpacing.md,
+                          ),
                         ),
                         child: Row(
                           children: [
                             if (leading != null) ...[
                               leading,
-                              const SizedBox(width: DesignSpacing.sm),
+                              const AuraSizedBox(width: AuraSpacing.sm),
                             ],
                             Expanded(
                               child: AuraText(
@@ -328,10 +335,10 @@ class _DropdownMenuState<T> extends State<_DropdownMenu<T>> {
                               ),
                             ),
                             if (trailing != null) ...[
-                              const SizedBox(width: DesignSpacing.sm),
+                              const AuraSizedBox(width: AuraSpacing.sm),
                               trailing,
                             ] else if (isSelected) ...[
-                              const SizedBox(width: DesignSpacing.sm),
+                              const AuraSizedBox(width: AuraSpacing.sm),
                               const AuraIcon(
                                 Icons.check,
                                 size: AuraIconSize.small,
@@ -346,8 +353,12 @@ class _DropdownMenuState<T> extends State<_DropdownMenu<T>> {
                         color: isSelected
                             ? auraColors.primary.withValues(alpha: 0.08)
                             : Colors.transparent,
-                        borderRadius: const BorderRadius.all(
-                          Radius.circular(DesignBorderRadius.sm),
+                        borderRadius: BorderRadius.all(
+                          Radius.circular(
+                            context.auraTheme.fromBorderRadius(
+                              AuraBorderRadius.sm,
+                            ),
+                          ),
                         ),
                       ),
                       onPressed: () {

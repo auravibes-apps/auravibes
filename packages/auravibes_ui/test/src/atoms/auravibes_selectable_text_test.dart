@@ -6,6 +6,8 @@ import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+final AuraTypographyScale typography = AuraTheme.light.typography;
+
 void main() {
   group('AuraSelectableText', () {
     testWidgets('renders text correctly', (tester) async {
@@ -62,8 +64,8 @@ void main() {
       final selectableText = tester.widget<SelectableText>(
         find.byType(SelectableText),
       );
-      expect(selectableText.style?.fontSize, DesignTypography.fontSize5Xl);
-      expect(selectableText.style?.fontWeight, DesignTypography.fontWeightBold);
+      expect(selectableText.style?.fontSize, typography.fontSize5Xl);
+      expect(selectableText.style?.fontWeight, typography.fontWeightBold);
     });
 
     testWidgets('applies heading2 style', (tester) async {
@@ -84,7 +86,7 @@ void main() {
       final selectableText = tester.widget<SelectableText>(
         find.byType(SelectableText),
       );
-      expect(selectableText.style?.fontSize, DesignTypography.fontSize4Xl);
+      expect(selectableText.style?.fontSize, typography.fontSize4Xl);
     });
 
     testWidgets('applies heading3 style', (tester) async {
@@ -105,7 +107,7 @@ void main() {
       final selectableText = tester.widget<SelectableText>(
         find.byType(SelectableText),
       );
-      expect(selectableText.style?.fontSize, DesignTypography.fontSize3Xl);
+      expect(selectableText.style?.fontSize, typography.fontSize3Xl);
     });
 
     testWidgets('applies bodyLarge style', (tester) async {
@@ -126,7 +128,7 @@ void main() {
       final selectableText = tester.widget<SelectableText>(
         find.byType(SelectableText),
       );
-      expect(selectableText.style?.fontSize, DesignTypography.fontSizeLg);
+      expect(selectableText.style?.fontSize, typography.fontSizeLg);
     });
 
     testWidgets('applies bodySmall style', (tester) async {
@@ -147,7 +149,7 @@ void main() {
       final selectableText = tester.widget<SelectableText>(
         find.byType(SelectableText),
       );
-      expect(selectableText.style?.fontSize, DesignTypography.fontSizeSm);
+      expect(selectableText.style?.fontSize, typography.fontSizeSm);
     });
 
     testWidgets('applies caption style', (tester) async {
@@ -168,7 +170,7 @@ void main() {
       final selectableText = tester.widget<SelectableText>(
         find.byType(SelectableText),
       );
-      expect(selectableText.style?.fontSize, DesignTypography.fontSizeXs);
+      expect(selectableText.style?.fontSize, typography.fontSizeXs);
     });
 
     testWidgets('applies code style', (tester) async {
@@ -191,7 +193,7 @@ void main() {
       );
       expect(
         selectableText.style?.fontFamily,
-        DesignTypography.monoFontFamily,
+        typography.monoFontFamily,
       );
     });
 

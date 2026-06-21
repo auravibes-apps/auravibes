@@ -66,7 +66,10 @@ class AuraButton extends StatelessWidget {
                     ),
                   )
                 : DefaultTextStyle(
-                    style: _getTextStyle(auraColors),
+                    style: _getTextStyle(
+                      auraColors,
+                      typography: context.auraTheme.typography,
+                    ),
                     child: child,
                   ),
           ),
@@ -76,8 +79,10 @@ class AuraButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: _getBackgroundColor(auraColors),
           border: _getBorder(auraColors),
-          borderRadius: const BorderRadius.all(
-            Radius.circular(DesignBorderRadius.xl),
+          borderRadius: BorderRadius.all(
+            Radius.circular(
+              context.auraTheme.fromBorderRadius(AuraBorderRadius.xl),
+            ),
           ),
           boxShadow: _getBoxShadow(),
         ),
@@ -183,24 +188,27 @@ class AuraButton extends StatelessWidget {
     return [];
   }
 
-  TextStyle _getTextStyle(AuraColorScheme colors) {
+  TextStyle _getTextStyle(
+    AuraColorScheme colors, {
+    required AuraTypographyScale typography,
+  }) {
     final fontSize = switch (size) {
-      AuraButtonSize.small => DesignTypography.fontSizeSm,
-      AuraButtonSize.medium => DesignTypography.fontSizeBase,
-      AuraButtonSize.large => DesignTypography.fontSizeLg,
+      AuraButtonSize.small => typography.fontSizeSm,
+      AuraButtonSize.medium => typography.fontSizeBase,
+      AuraButtonSize.large => typography.fontSizeLg,
     };
 
     final fontWeight = switch (size) {
-      AuraButtonSize.small => DesignTypography.fontWeightMedium,
-      AuraButtonSize.medium => DesignTypography.fontWeightMedium,
-      AuraButtonSize.large => DesignTypography.fontWeightSemibold,
+      AuraButtonSize.small => typography.fontWeightMedium,
+      AuraButtonSize.medium => typography.fontWeightMedium,
+      AuraButtonSize.large => typography.fontWeightSemibold,
     };
 
     return TextStyle(
       color: _getForegroundColor(colors),
       fontSize: fontSize,
       fontWeight: fontWeight,
-      height: DesignTypography.lineHeightBase,
+      height: typography.lineHeightBase,
     );
   }
 }

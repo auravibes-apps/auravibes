@@ -1,5 +1,6 @@
 // Required: UI components keep related private widgets together.
 
+import 'package:auravibes_ui/src/atoms/aura_sized_box.dart';
 import 'package:auravibes_ui/src/molecules/aura_radio_option.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
@@ -84,7 +85,7 @@ class AuraRadioGroup<T> extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           label,
-          const SizedBox(height: DesignSpacing.sm),
+          const AuraSizedBox(height: AuraSpacing.sm),
           optionsWidget,
         ],
       );
@@ -116,15 +117,15 @@ class _AuraRadioOptions<T> extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           for (int i = 0; i < options.length; i++) ...[
-            _buildVerticalOption(options[i]),
+            _buildVerticalOption(context, options[i]),
             if (i < options.length - 1)
-              const SizedBox(height: DesignSpacing.sm),
+              const AuraSizedBox(height: AuraSpacing.sm),
           ],
         ],
       ),
       Axis.horizontal => Wrap(
-        spacing: DesignSpacing.md,
-        runSpacing: DesignSpacing.sm,
+        spacing: context.auraTheme.fromSpacing(AuraSpacing.md),
+        runSpacing: context.auraTheme.fromSpacing(AuraSpacing.sm),
         children: [
           for (int i = 0; i < options.length; i++)
             _buildHorizontalOption(options[i]),
@@ -133,7 +134,10 @@ class _AuraRadioOptions<T> extends StatelessWidget {
     };
   }
 
-  Widget _buildVerticalOption(AuraRadioOption<T> option) {
+  Widget _buildVerticalOption(
+    BuildContext context,
+    AuraRadioOption<T> option,
+  ) {
     final subtitle = option.subtitle;
 
     return Column(
@@ -146,8 +150,10 @@ class _AuraRadioOptions<T> extends StatelessWidget {
         ),
         if (subtitle != null)
           Padding(
-            padding: const EdgeInsets.only(
-              left: AuraRadioGroup._kRadioVisualSize + DesignSpacing.sm,
+            padding: EdgeInsets.only(
+              left:
+                  AuraRadioGroup._kRadioVisualSize +
+                  context.auraTheme.fromSpacing(AuraSpacing.sm),
             ),
             child: subtitle,
           ),
@@ -173,7 +179,7 @@ class _AuraRadioOptions<T> extends StatelessWidget {
           onChanged: onChanged,
           colorVariant: colorVariant,
         ),
-        const SizedBox(width: DesignSpacing.sm),
+        const AuraSizedBox(width: AuraSpacing.sm),
         Flexible(child: option.label),
       ],
     );

@@ -141,10 +141,10 @@ void main() {
       expect(find.text('Large Padded'), findsOneWidget);
       final paddingWidget = tester.widget<Padding>(find.byType(Padding));
       final edgeInsets = paddingWidget.padding as EdgeInsets;
-      expect(edgeInsets.left, DesignSpacing.lg);
-      expect(edgeInsets.top, DesignSpacing.lg);
-      expect(edgeInsets.right, DesignSpacing.lg);
-      expect(edgeInsets.bottom, DesignSpacing.lg);
+      expect(edgeInsets.left, 24);
+      expect(edgeInsets.top, 24);
+      expect(edgeInsets.right, 24);
+      expect(edgeInsets.bottom, 24);
     });
 
     testWidgets('applies correct padding values through context', (
@@ -164,10 +164,10 @@ void main() {
 
       final paddingWidget = tester.widget<Padding>(find.byType(Padding));
       final edgeInsets = paddingWidget.padding as EdgeInsets;
-      expect(edgeInsets.left, DesignSpacing.md);
-      expect(edgeInsets.top, DesignSpacing.md);
-      expect(edgeInsets.right, DesignSpacing.md);
-      expect(edgeInsets.bottom, DesignSpacing.md);
+      expect(edgeInsets.left, 16);
+      expect(edgeInsets.top, 16);
+      expect(edgeInsets.right, 16);
+      expect(edgeInsets.bottom, 16);
     });
   });
 }

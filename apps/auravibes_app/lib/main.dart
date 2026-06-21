@@ -124,7 +124,7 @@ ThemeData _auraMaterialTheme(AuraTheme auraTheme, Brightness brightness) {
     colorScheme: colorScheme,
     brightness: brightness,
     scaffoldBackgroundColor: colors.background,
-    fontFamily: DesignTypography.bodyFontFamily,
+    fontFamily: auraTheme.typography.bodyFontFamily,
     iconTheme: IconThemeData(color: colors.onSurfaceVariant),
     primaryTextTheme: textTheme,
     textTheme: textTheme,
@@ -133,14 +133,14 @@ ThemeData _auraMaterialTheme(AuraTheme auraTheme, Brightness brightness) {
       disabledColor: colors.outlineVariant,
       selectedColor: colors.primary,
       secondarySelectedColor: colors.secondary,
-      padding: const EdgeInsets.symmetric(
-        vertical: DesignSpacing.xs,
-        horizontal: DesignSpacing.sm,
+      padding: EdgeInsets.symmetric(
+        vertical: auraTheme.spacing.xs,
+        horizontal: auraTheme.spacing.sm,
       ),
       shape: RoundedRectangleBorder(
         side: BorderSide(color: colors.outlineVariant),
-        borderRadius: const BorderRadius.all(
-          Radius.circular(DesignBorderRadius.full),
+        borderRadius: BorderRadius.all(
+          Radius.circular(auraTheme.borderRadius.full),
         ),
       ),
       labelStyle: textTheme.labelMedium?.copyWith(color: colors.onSurface),
@@ -153,9 +153,9 @@ ThemeData _auraMaterialTheme(AuraTheme auraTheme, Brightness brightness) {
       backgroundColor: colors.surface,
       shadowColor: colors.shadow,
       surfaceTintColor: colors.surface,
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.all(
-          Radius.circular(DesignBorderRadius.xl),
+          Radius.circular(auraTheme.borderRadius.xl),
         ),
       ),
       iconColor: colors.primary,
@@ -184,9 +184,9 @@ ThemeData _auraMaterialTheme(AuraTheme auraTheme, Brightness brightness) {
       actionTextColor: colors.primary,
       disabledActionTextColor: colors.outline,
       contentTextStyle: textTheme.bodyMedium?.copyWith(color: colors.surface),
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.all(
-          Radius.circular(DesignBorderRadius.lg),
+          Radius.circular(auraTheme.borderRadius.lg),
         ),
       ),
       behavior: SnackBarBehavior.floating,
@@ -204,47 +204,65 @@ TextTheme _auraTextTheme(AuraTheme auraTheme, Brightness brightness) {
       .apply(
         bodyColor: colors.onSurface,
         displayColor: colors.onSurface,
-        fontFamily: DesignTypography.bodyFontFamily,
+        fontFamily: auraTheme.typography.bodyFontFamily,
       )
       .copyWith(
-        displayLarge: _auraTextStyle(auraTheme, DesignTypography.fontSize5Xl),
-        displayMedium: _auraTextStyle(auraTheme, DesignTypography.fontSize4Xl),
-        displaySmall: _auraTextStyle(auraTheme, DesignTypography.fontSize3Xl),
-        headlineLarge: _auraTextStyle(auraTheme, DesignTypography.fontSize3Xl),
-        headlineMedium: _auraTextStyle(auraTheme, DesignTypography.fontSize2Xl),
-        headlineSmall: _auraTextStyle(auraTheme, DesignTypography.fontSizeXl),
+        displayLarge: _auraTextStyle(
+          auraTheme,
+          auraTheme.typography.fontSize5Xl,
+        ),
+        displayMedium: _auraTextStyle(
+          auraTheme,
+          auraTheme.typography.fontSize4Xl,
+        ),
+        displaySmall: _auraTextStyle(
+          auraTheme,
+          auraTheme.typography.fontSize3Xl,
+        ),
+        headlineLarge: _auraTextStyle(
+          auraTheme,
+          auraTheme.typography.fontSize3Xl,
+        ),
+        headlineMedium: _auraTextStyle(
+          auraTheme,
+          auraTheme.typography.fontSize2Xl,
+        ),
+        headlineSmall: _auraTextStyle(
+          auraTheme,
+          auraTheme.typography.fontSizeXl,
+        ),
         titleLarge: _auraTextStyle(
           auraTheme,
-          DesignTypography.fontSizeLg,
-          fontWeight: DesignTypography.fontWeightSemibold,
+          auraTheme.typography.fontSizeLg,
+          fontWeight: auraTheme.typography.fontWeightSemibold,
         ),
         titleMedium: _auraTextStyle(
           auraTheme,
-          DesignTypography.fontSizeBase,
-          fontWeight: DesignTypography.fontWeightMedium,
+          auraTheme.typography.fontSizeBase,
+          fontWeight: auraTheme.typography.fontWeightMedium,
         ),
         titleSmall: _auraTextStyle(
           auraTheme,
-          DesignTypography.fontSizeSm,
-          fontWeight: DesignTypography.fontWeightMedium,
+          auraTheme.typography.fontSizeSm,
+          fontWeight: auraTheme.typography.fontWeightMedium,
         ),
-        bodyLarge: _auraTextStyle(auraTheme, DesignTypography.fontSizeBase),
-        bodyMedium: _auraTextStyle(auraTheme, DesignTypography.fontSizeSm),
-        bodySmall: _auraTextStyle(auraTheme, DesignTypography.fontSizeXs),
+        bodyLarge: _auraTextStyle(auraTheme, auraTheme.typography.fontSizeBase),
+        bodyMedium: _auraTextStyle(auraTheme, auraTheme.typography.fontSizeSm),
+        bodySmall: _auraTextStyle(auraTheme, auraTheme.typography.fontSizeXs),
         labelLarge: _auraTextStyle(
           auraTheme,
-          DesignTypography.fontSizeSm,
-          fontWeight: DesignTypography.fontWeightMedium,
+          auraTheme.typography.fontSizeSm,
+          fontWeight: auraTheme.typography.fontWeightMedium,
         ),
         labelMedium: _auraTextStyle(
           auraTheme,
-          DesignTypography.fontSizeXs,
-          fontWeight: DesignTypography.fontWeightMedium,
+          auraTheme.typography.fontSizeXs,
+          fontWeight: auraTheme.typography.fontWeightMedium,
         ),
         labelSmall: _auraTextStyle(
           auraTheme,
-          DesignTypography.fontSizeXs,
-          fontWeight: DesignTypography.fontWeightMedium,
+          auraTheme.typography.fontSizeXs,
+          fontWeight: auraTheme.typography.fontWeightMedium,
         ),
       );
 }
@@ -257,8 +275,8 @@ TextStyle _auraTextStyle(
   return TextStyle(
     color: auraTheme.colors.onSurface,
     fontSize: fontSize,
-    fontWeight: fontWeight ?? DesignTypography.fontWeightRegular,
-    letterSpacing: DesignTypography.letterSpacingNormal,
-    fontFamily: DesignTypography.bodyFontFamily,
+    fontWeight: fontWeight ?? auraTheme.typography.fontWeightRegular,
+    letterSpacing: auraTheme.typography.letterSpacingNormal,
+    fontFamily: auraTheme.typography.bodyFontFamily,
   );
 }

@@ -7,13 +7,20 @@ import 'package:flutter/material.dart';
 
 /// Aura theme extension that provides theme-aware design tokens.
 ///
-/// Only theme-aware tokens (colors) live here. Spacing, border radius, and
-/// typography are constant across themes, so they are accessed directly from
-/// [DesignSpacing], [DesignBorderRadius], and [DesignTypography].
+/// Colors, spacing, border radius, and typography all live here so a subtree
+/// `Theme` override can rescale them. Call sites select values via the
+/// AuraSpacing / AuraBorderRadius enums (and AuraTextStyle for type), resolved
+/// at build time through [fromSpacing] / [fromBorderRadius] / [typography].
 @immutable
 class AuraTheme extends ThemeExtension<AuraTheme> {
   /// Creates a Aura theme extension.
-  const AuraTheme({required this.colors, required this.animation});
+  const AuraTheme({
+    required this.colors,
+    required this.animation,
+    this.spacing = const AuraSpacingScale._standard(),
+    this.borderRadius = const AuraBorderRadiusScale._standard(),
+    this.typography = const AuraTypographyScale._standard(),
+  });
 
   /// Light theme variant.
   static final light = AuraTheme(
@@ -37,14 +44,29 @@ class AuraTheme extends ThemeExtension<AuraTheme> {
   /// Animation theme.
   final AuraAnimationTheme animation;
 
+  /// Theme-owned spacing scale (rethemeable, lerp-able).
+  final AuraSpacingScale spacing;
+
+  /// Theme-owned border-radius scale (rethemeable, lerp-able).
+  final AuraBorderRadiusScale borderRadius;
+
+  /// Theme-owned typography scale (rethemeable, lerp-able).
+  final AuraTypographyScale typography;
+
   @override
   AuraTheme copyWith({
     AuraColorScheme? colors,
     AuraAnimationTheme? animation,
+    AuraSpacingScale? spacing,
+    AuraBorderRadiusScale? borderRadius,
+    AuraTypographyScale? typography,
   }) {
     return AuraTheme(
       colors: colors ?? this.colors,
       animation: animation ?? this.animation,
+      spacing: spacing ?? this.spacing,
+      borderRadius: borderRadius ?? this.borderRadius,
+      typography: typography ?? this.typography,
     );
   }
 
@@ -55,23 +77,423 @@ class AuraTheme extends ThemeExtension<AuraTheme> {
     return AuraTheme(
       colors: colors.lerp(other.colors, t),
       animation: animation.lerp(other.animation, t),
+      spacing: spacing.lerp(other.spacing, t),
+      borderRadius: borderRadius.lerp(other.borderRadius, t),
+      typography: typography.lerp(other.typography, t),
     );
   }
 
   /// Resolve an [AuraSpacing] enum to its concrete pixel value.
-  double fromSpacing(AuraSpacing value) {
-    return switch (value) {
-      AuraSpacing.none => 0,
-      AuraSpacing.base => DesignSpacing.base,
-      AuraSpacing.xs => DesignSpacing.xs,
-      AuraSpacing.sm => DesignSpacing.sm,
-      AuraSpacing.md => DesignSpacing.md,
-      AuraSpacing.lg => DesignSpacing.lg,
-      AuraSpacing.xl => DesignSpacing.xl,
-      AuraSpacing.xl2 => DesignSpacing.xl2,
-      AuraSpacing.xl3 => DesignSpacing.xl3,
+  double fromSpacing(AuraSpacing value) => spacing.resolve(value);
+
+  /// Resolve an [AuraBorderRadius] enum to its concrete pixel value.
+  double fromBorderRadius(AuraBorderRadius value) =>
+      borderRadius.resolve(value);
+}
+
+/// Theme-owned spacing scale: one [double] per [AuraSpacing] step.
+///
+/// Values are absent from the [AuraSpacing] enum on purpose so a subtree
+/// `Theme` override can rescale spacing. [AuraSpacingScale._standard] carries
+/// the design-system defaults (base unit 16px).
+@immutable
+class AuraSpacingScale {
+  /// Creates a spacing scale.
+  const AuraSpacingScale({
+    this.none = 0,
+    this.base = 16,
+    this.xs = 4,
+    this.sm = 8,
+    this.md = 16,
+    this.lg = 24,
+    this.xl = 32,
+    this.xl2 = 48,
+    this.xl3 = 64,
+  });
+
+  /// Design-system standard spacing scale.
+  const AuraSpacingScale._standard()
+    : none = 0,
+      base = 16,
+      xs = 4,
+      sm = 8,
+      md = 16,
+      lg = 24,
+      xl = 32,
+      xl2 = 48,
+      xl3 = 64;
+
+  /// Value for [AuraSpacing.none].
+  final double none;
+
+  /// Value for [AuraSpacing.base].
+  final double base;
+
+  /// Value for [AuraSpacing.xs].
+  final double xs;
+
+  /// Value for [AuraSpacing.sm].
+  final double sm;
+
+  /// Value for [AuraSpacing.md].
+  final double md;
+
+  /// Value for [AuraSpacing.lg].
+  final double lg;
+
+  /// Value for [AuraSpacing.xl].
+  final double xl;
+
+  /// Value for [AuraSpacing.xl2].
+  final double xl2;
+
+  /// Value for [AuraSpacing.xl3].
+  final double xl3;
+
+  /// Resolve a spacing selector to its concrete pixel value.
+  double resolve(AuraSpacing spacing) {
+    return switch (spacing) {
+      AuraSpacing.none => none,
+      AuraSpacing.base => base,
+      AuraSpacing.xs => xs,
+      AuraSpacing.sm => sm,
+      AuraSpacing.md => md,
+      AuraSpacing.lg => lg,
+      AuraSpacing.xl => xl,
+      AuraSpacing.xl2 => xl2,
+      AuraSpacing.xl3 => xl3,
     };
   }
+
+  /// Linearly interpolate between two spacing scales.
+  AuraSpacingScale lerp(AuraSpacingScale other, double t) {
+    if (t <= 0) return this;
+    if (t >= 1) return other;
+
+    return AuraSpacingScale(
+      none: _lerpDouble(none, other.none, t),
+      base: _lerpDouble(base, other.base, t),
+      xs: _lerpDouble(xs, other.xs, t),
+      sm: _lerpDouble(sm, other.sm, t),
+      md: _lerpDouble(md, other.md, t),
+      lg: _lerpDouble(lg, other.lg, t),
+      xl: _lerpDouble(xl, other.xl, t),
+      xl2: _lerpDouble(xl2, other.xl2, t),
+      xl3: _lerpDouble(xl3, other.xl3, t),
+    );
+  }
+}
+
+/// Theme-owned border-radius scale: one [double] per [AuraBorderRadius] step.
+@immutable
+class AuraBorderRadiusScale {
+  /// Creates a border-radius scale.
+  const AuraBorderRadiusScale({
+    this.none = 0,
+    this.sm = 2,
+    this.md = 6,
+    this.lg = 8,
+    this.xl = 16,
+    this.full = 9999,
+  });
+
+  /// Design-system standard border-radius scale.
+  const AuraBorderRadiusScale._standard()
+    : none = 0,
+      sm = 2,
+      md = 6,
+      lg = 8,
+      xl = 16,
+      full = 9999;
+
+  /// Value for [AuraBorderRadius.none].
+  final double none;
+
+  /// Value for [AuraBorderRadius.sm].
+  final double sm;
+
+  /// Value for [AuraBorderRadius.md].
+  final double md;
+
+  /// Value for [AuraBorderRadius.lg].
+  final double lg;
+
+  /// Value for [AuraBorderRadius.xl].
+  final double xl;
+
+  /// Value for [AuraBorderRadius.full].
+  final double full;
+
+  /// Resolve a border-radius selector to its concrete pixel value.
+  double resolve(AuraBorderRadius radius) {
+    return switch (radius) {
+      AuraBorderRadius.none => none,
+      AuraBorderRadius.sm => sm,
+      AuraBorderRadius.md => md,
+      AuraBorderRadius.lg => lg,
+      AuraBorderRadius.xl => xl,
+      AuraBorderRadius.full => full,
+    };
+  }
+
+  /// Linearly interpolate between two border-radius scales.
+  AuraBorderRadiusScale lerp(AuraBorderRadiusScale other, double t) {
+    if (t <= 0) return this;
+    if (t >= 1) return other;
+
+    return AuraBorderRadiusScale(
+      none: _lerpDouble(none, other.none, t),
+      sm: _lerpDouble(sm, other.sm, t),
+      md: _lerpDouble(md, other.md, t),
+      lg: _lerpDouble(lg, other.lg, t),
+      xl: _lerpDouble(xl, other.xl, t),
+      full: _lerpDouble(full, other.full, t),
+    );
+  }
+}
+
+/// Theme-owned typography scale: font sizes, weights, line heights, letter
+/// spacings, and font families.
+///
+/// Font families are strings and do not interpolate; [lerp] picks the source
+/// or target family at the halfway point (mirroring [AuraAnimationTheme]).
+@immutable
+class AuraTypographyScale {
+  /// Creates a typography scale.
+  const AuraTypographyScale({
+    this.headingFontFamily = 'Inter',
+    this.bodyFontFamily = 'Inter',
+    this.monoFontFamily = 'JetBrains Mono',
+    this.fontSizeXs = 12,
+    this.fontSizeSm = 14,
+    this.fontSizeBase = 16,
+    this.fontSizeLg = 18,
+    this.fontSizeXl = 20,
+    this.fontSize2Xl = 24,
+    this.fontSize3Xl = 30,
+    this.fontSize4Xl = 36,
+    this.fontSize5Xl = 48,
+    this.fontWeightLight = FontWeight.w300,
+    this.fontWeightRegular = FontWeight.w400,
+    this.fontWeightMedium = FontWeight.w500,
+    this.fontWeightSemibold = FontWeight.w600,
+    this.fontWeightBold = FontWeight.w700,
+    this.lineHeightXs = 1.2,
+    this.lineHeightSm = 1.25,
+    this.lineHeightBase = 1.5,
+    this.lineHeightLg = 1.55,
+    this.lineHeightXl = 1.6,
+    this.lineHeight2Xl = 1.3,
+    this.lineHeight3Xl = 1.2,
+    this.lineHeight4Xl = 1.1,
+    this.lineHeight5Xl = 1,
+    this.letterSpacingTight = -0.025,
+    this.letterSpacingNormal = 0,
+    this.letterSpacingWide = 0.025,
+  });
+
+  /// Design-system standard typography scale.
+  const AuraTypographyScale._standard()
+    : headingFontFamily = 'Inter',
+      bodyFontFamily = 'Inter',
+      monoFontFamily = 'JetBrains Mono',
+      fontSizeXs = 12,
+      fontSizeSm = 14,
+      fontSizeBase = 16,
+      fontSizeLg = 18,
+      fontSizeXl = 20,
+      fontSize2Xl = 24,
+      fontSize3Xl = 30,
+      fontSize4Xl = 36,
+      fontSize5Xl = 48,
+      fontWeightLight = FontWeight.w300,
+      fontWeightRegular = FontWeight.w400,
+      fontWeightMedium = FontWeight.w500,
+      fontWeightSemibold = FontWeight.w600,
+      fontWeightBold = FontWeight.w700,
+      lineHeightXs = 1.2,
+      lineHeightSm = 1.25,
+      lineHeightBase = 1.5,
+      lineHeightLg = 1.55,
+      lineHeightXl = 1.6,
+      lineHeight2Xl = 1.3,
+      lineHeight3Xl = 1.2,
+      lineHeight4Xl = 1.1,
+      lineHeight5Xl = 1,
+      letterSpacingTight = -0.025,
+      letterSpacingNormal = 0,
+      letterSpacingWide = 0.025;
+
+  /// Font family for headings and display text.
+  final String headingFontFamily;
+
+  /// Font family for body text and content.
+  final String bodyFontFamily;
+
+  /// Monospace font family for code and technical content.
+  final String monoFontFamily;
+
+  // Font sizes (logical pixels).
+
+  /// Extra small font size (12px).
+  final double fontSizeXs;
+
+  /// Small font size (14px).
+  final double fontSizeSm;
+
+  /// Base font size (16px).
+  final double fontSizeBase;
+
+  /// Large font size (18px).
+  final double fontSizeLg;
+
+  /// Extra large font size (20px).
+  final double fontSizeXl;
+
+  /// 2X large font size (24px).
+  final double fontSize2Xl;
+
+  /// 3X large font size (30px).
+  final double fontSize3Xl;
+
+  /// 4X large font size (36px).
+  final double fontSize4Xl;
+
+  /// 5X large font size (48px).
+  final double fontSize5Xl;
+
+  // Font weights.
+
+  /// Light font weight (300).
+  final FontWeight fontWeightLight;
+
+  /// Regular font weight (400).
+  final FontWeight fontWeightRegular;
+
+  /// Medium font weight (500).
+  final FontWeight fontWeightMedium;
+
+  /// Semibold font weight (600).
+  final FontWeight fontWeightSemibold;
+
+  /// Bold font weight (700).
+  final FontWeight fontWeightBold;
+
+  // Line heights.
+
+  /// Extra small line height (1.2).
+  final double lineHeightXs;
+
+  /// Tight line height (1.25).
+  final double lineHeightSm;
+
+  /// Base line height (1.5).
+  final double lineHeightBase;
+
+  /// Large line height (1.55).
+  final double lineHeightLg;
+
+  /// Extra large line height (1.6).
+  final double lineHeightXl;
+
+  /// 2X large line height (1.3).
+  final double lineHeight2Xl;
+
+  /// 3X large line height (1.2).
+  final double lineHeight3Xl;
+
+  /// 4X large line height (1.1).
+  final double lineHeight4Xl;
+
+  /// 5X large line height (1.0).
+  final double lineHeight5Xl;
+
+  // Letter spacing.
+
+  /// Tight letter spacing (-0.025).
+  final double letterSpacingTight;
+
+  /// Normal letter spacing (0).
+  final double letterSpacingNormal;
+
+  /// Wide letter spacing (0.025).
+  final double letterSpacingWide;
+
+  /// Linearly interpolate between two typography scales.
+  AuraTypographyScale lerp(AuraTypographyScale other, double t) {
+    if (t <= 0) return this;
+    if (t >= 1) return other;
+
+    return AuraTypographyScale(
+      headingFontFamily: t < 0.5 ? headingFontFamily : other.headingFontFamily,
+      bodyFontFamily: t < 0.5 ? bodyFontFamily : other.bodyFontFamily,
+      monoFontFamily: t < 0.5 ? monoFontFamily : other.monoFontFamily,
+      fontSizeXs: _lerpDouble(fontSizeXs, other.fontSizeXs, t),
+      fontSizeSm: _lerpDouble(fontSizeSm, other.fontSizeSm, t),
+      fontSizeBase: _lerpDouble(fontSizeBase, other.fontSizeBase, t),
+      fontSizeLg: _lerpDouble(fontSizeLg, other.fontSizeLg, t),
+      fontSizeXl: _lerpDouble(fontSizeXl, other.fontSizeXl, t),
+      fontSize2Xl: _lerpDouble(fontSize2Xl, other.fontSize2Xl, t),
+      fontSize3Xl: _lerpDouble(fontSize3Xl, other.fontSize3Xl, t),
+      fontSize4Xl: _lerpDouble(fontSize4Xl, other.fontSize4Xl, t),
+      fontSize5Xl: _lerpDouble(fontSize5Xl, other.fontSize5Xl, t),
+      fontWeightLight: _lerpFontWeight(
+        fontWeightLight,
+        other.fontWeightLight,
+        t,
+      ),
+      fontWeightRegular: _lerpFontWeight(
+        fontWeightRegular,
+        other.fontWeightRegular,
+        t,
+      ),
+      fontWeightMedium: _lerpFontWeight(
+        fontWeightMedium,
+        other.fontWeightMedium,
+        t,
+      ),
+      fontWeightSemibold: _lerpFontWeight(
+        fontWeightSemibold,
+        other.fontWeightSemibold,
+        t,
+      ),
+      fontWeightBold: _lerpFontWeight(
+        fontWeightBold,
+        other.fontWeightBold,
+        t,
+      ),
+      lineHeightXs: _lerpDouble(lineHeightXs, other.lineHeightXs, t),
+      lineHeightSm: _lerpDouble(lineHeightSm, other.lineHeightSm, t),
+      lineHeightBase: _lerpDouble(lineHeightBase, other.lineHeightBase, t),
+      lineHeightLg: _lerpDouble(lineHeightLg, other.lineHeightLg, t),
+      lineHeightXl: _lerpDouble(lineHeightXl, other.lineHeightXl, t),
+      lineHeight2Xl: _lerpDouble(lineHeight2Xl, other.lineHeight2Xl, t),
+      lineHeight3Xl: _lerpDouble(lineHeight3Xl, other.lineHeight3Xl, t),
+      lineHeight4Xl: _lerpDouble(lineHeight4Xl, other.lineHeight4Xl, t),
+      lineHeight5Xl: _lerpDouble(lineHeight5Xl, other.lineHeight5Xl, t),
+      letterSpacingTight: _lerpDouble(
+        letterSpacingTight,
+        other.letterSpacingTight,
+        t,
+      ),
+      letterSpacingNormal: _lerpDouble(
+        letterSpacingNormal,
+        other.letterSpacingNormal,
+        t,
+      ),
+      letterSpacingWide: _lerpDouble(
+        letterSpacingWide,
+        other.letterSpacingWide,
+        t,
+      ),
+    );
+  }
+}
+
+double _lerpDouble(double a, double b, double t) => a + (b - a) * t;
+
+FontWeight _lerpFontWeight(FontWeight a, FontWeight b, double t) {
+  return FontWeight.lerp(a, b, t) ?? (t < 0.5 ? a : b);
 }
 
 /// Color scheme that adapts to light and dark themes.

@@ -118,18 +118,25 @@ class _AuraTypingIndicatorState extends State<AuraTypingIndicator>
     return Align(
       alignment: Alignment.centerLeft,
       child: Container(
-        padding: _getContainerPadding(),
+        padding: _getContainerPadding(spacing: context.auraTheme.spacing),
         decoration: BoxDecoration(
           color: auraColors.surfaceVariant,
-          borderRadius: const BorderRadius.all(
-            Radius.circular(DesignBorderRadius.lg),
-          ).copyWith(bottomLeft: const Radius.circular(DesignBorderRadius.sm)),
+          borderRadius:
+              BorderRadius.all(
+                Radius.circular(
+                  context.auraTheme.fromBorderRadius(AuraBorderRadius.lg),
+                ),
+              ).copyWith(
+                bottomLeft: Radius.circular(
+                  context.auraTheme.fromBorderRadius(AuraBorderRadius.sm),
+                ),
+              ),
           boxShadow: const [DesignShadows.sm],
         ),
-        margin: const EdgeInsets.only(
-          left: DesignSpacing.md,
-          right: DesignSpacing.xl,
-          bottom: DesignSpacing.sm,
+        margin: EdgeInsets.only(
+          left: context.auraTheme.fromSpacing(AuraSpacing.md),
+          right: context.auraTheme.fromSpacing(AuraSpacing.xl),
+          bottom: context.auraTheme.fromSpacing(AuraSpacing.sm),
         ),
         child: Semantics(
           child: content,
@@ -155,19 +162,19 @@ class _AuraTypingIndicatorState extends State<AuraTypingIndicator>
     };
   }
 
-  EdgeInsets _getContainerPadding() {
+  EdgeInsets _getContainerPadding({required AuraSpacingScale spacing}) {
     return switch (widget.size) {
-      AuraTypingIndicatorSize.small => const EdgeInsets.symmetric(
-        vertical: DesignSpacing.xs,
-        horizontal: DesignSpacing.sm,
+      AuraTypingIndicatorSize.small => EdgeInsets.symmetric(
+        vertical: spacing.xs,
+        horizontal: spacing.sm,
       ),
-      AuraTypingIndicatorSize.medium => const EdgeInsets.symmetric(
-        vertical: DesignSpacing.sm,
-        horizontal: DesignSpacing.md,
+      AuraTypingIndicatorSize.medium => EdgeInsets.symmetric(
+        vertical: spacing.sm,
+        horizontal: spacing.md,
       ),
-      AuraTypingIndicatorSize.large => const EdgeInsets.symmetric(
-        vertical: DesignSpacing.md,
-        horizontal: DesignSpacing.lg,
+      AuraTypingIndicatorSize.large => EdgeInsets.symmetric(
+        vertical: spacing.md,
+        horizontal: spacing.lg,
       ),
     };
   }

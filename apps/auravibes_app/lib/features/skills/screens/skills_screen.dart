@@ -330,14 +330,17 @@ class _SkillChip extends StatelessWidget {
     final chipTextStyle = auraResolveTextStyle(
       style: AuraTextStyle.caption,
       colors: auraColors,
+      typography: context.auraTheme.typography,
     ).copyWith(color: auraColors.onSurfaceVariant);
 
     return Chip(
       label: Text(label, style: chipTextStyle),
       side: BorderSide(color: auraColors.outline),
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.all(
-          Radius.circular(DesignBorderRadius.lg),
+          Radius.circular(
+            context.auraTheme.fromBorderRadius(AuraBorderRadius.lg),
+          ),
         ),
       ),
       backgroundColor: auraColors.surfaceVariant,

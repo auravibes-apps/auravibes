@@ -6,15 +6,20 @@
 library;
 
 export 'aura_theme.dart'
-    show AuraAnimationTheme, AuraColorScheme, AuraTheme, AuraThemeExtension;
+    show
+        AuraAnimationTheme,
+        AuraBorderRadiusScale,
+        AuraColorScheme,
+        AuraSpacingScale,
+        AuraTheme,
+        AuraThemeExtension,
+        AuraTypographyScale;
 export 'design_tokens.dart'
     show
+        AuraBorderRadius,
         AuraColorVariant,
         AuraSpacing,
-        DesignBorderRadius,
         DesignBreakpoints,
         DesignColors,
         DesignShadows,
-        DesignSpacing,
-        DesignTokens,
-        DesignTypography;
+        DesignTokens;

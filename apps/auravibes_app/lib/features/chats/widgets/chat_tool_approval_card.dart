@@ -107,18 +107,24 @@ class _ApprovalCardContent extends ConsumerWidget {
     );
 
     return Container(
-      padding: const EdgeInsets.all(DesignSpacing.md),
+      padding: EdgeInsets.all(
+        context.auraTheme.fromSpacing(AuraSpacing.md),
+      ),
       decoration: BoxDecoration(
         color: auraColors.warning.withValues(alpha: 0.08),
         border: Border.all(
           color: auraColors.warning.withValues(alpha: 0.3),
         ),
-        borderRadius: const BorderRadius.all(
-          Radius.circular(DesignBorderRadius.lg),
+        borderRadius: BorderRadius.all(
+          Radius.circular(
+            context.auraTheme.fromBorderRadius(AuraBorderRadius.lg),
+          ),
         ),
       ),
       width: double.infinity,
-      margin: const EdgeInsets.all(DesignSpacing.md),
+      margin: EdgeInsets.all(
+        context.auraTheme.fromSpacing(AuraSpacing.md),
+      ),
       child: AuraColumn(
         children: [
           _NavigationHeader(
@@ -173,7 +179,7 @@ class _NavigationHeader extends StatelessWidget {
           size: 16,
           color: auraColors.warning,
         ),
-        const SizedBox(width: DesignSpacing.xs),
+        const AuraSizedBox(width: AuraSpacing.xs),
         Expanded(
           child: Text(
             LocaleKeys.tool_approval_pending_count.tr(
@@ -181,7 +187,7 @@ class _NavigationHeader extends StatelessWidget {
             ),
             style: TextStyle(
               color: auraColors.onSurface,
-              fontSize: DesignTypography.fontSizeSm,
+              fontSize: context.auraTheme.typography.fontSizeSm,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -190,7 +196,7 @@ class _NavigationHeader extends StatelessWidget {
           icon: Icons.chevron_left,
           onPressed: hasPrev ? onPrev : null,
         ),
-        const SizedBox(width: DesignSpacing.xs),
+        const AuraSizedBox(width: AuraSpacing.xs),
         _NavButton(
           icon: Icons.chevron_right,
           onPressed: hasNext ? onNext : null,
@@ -259,11 +265,15 @@ class _ToolCallInfo extends StatelessWidget {
     );
 
     return Container(
-      padding: const EdgeInsets.all(DesignSpacing.sm),
+      padding: EdgeInsets.all(
+        context.auraTheme.fromSpacing(AuraSpacing.sm),
+      ),
       decoration: BoxDecoration(
         color: auraColors.surfaceVariant.withValues(alpha: 0.5),
-        borderRadius: const BorderRadius.all(
-          Radius.circular(DesignBorderRadius.sm),
+        borderRadius: BorderRadius.all(
+          Radius.circular(
+            context.auraTheme.fromBorderRadius(AuraBorderRadius.sm),
+          ),
         ),
       ),
       width: double.infinity,
@@ -274,17 +284,17 @@ class _ToolCallInfo extends StatelessWidget {
             displayName,
             style: TextStyle(
               color: auraColors.onSurface,
-              fontSize: DesignTypography.fontSizeSm,
+              fontSize: context.auraTheme.typography.fontSizeSm,
               fontWeight: FontWeight.bold,
             ),
           ),
           if (decodedArgs != null) ...[
-            const SizedBox(height: DesignSpacing.xs),
+            const AuraSizedBox(height: AuraSpacing.xs),
             Text(
               decodedArgs,
               style: TextStyle(
                 color: auraColors.onSurfaceVariant,
-                fontSize: DesignTypography.fontSizeXs,
+                fontSize: context.auraTheme.typography.fontSizeXs,
               ),
               overflow: TextOverflow.ellipsis,
               maxLines: 3,

@@ -1,3 +1,4 @@
+import 'package:auravibes_ui/src/atoms/aura_sized_box.dart';
 import 'package:auravibes_ui/src/organisms/aura_field_wrapper.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
@@ -186,7 +187,7 @@ class _AuraInputState extends State<AuraInput> {
               children: [
                 if (prefixIcon != null) ...[
                   prefixIcon,
-                  const SizedBox(width: DesignSpacing.sm),
+                  const AuraSizedBox(width: AuraSpacing.sm),
                 ],
                 Expanded(
                   child: TextFormField(
@@ -195,7 +196,10 @@ class _AuraInputState extends State<AuraInput> {
                     focusNode: _requiredFocusNode,
                     decoration: InputDecoration(
                       hint: widget.placeholder,
-                      hintStyle: _getHintStyle(auraColors),
+                      hintStyle: _getHintStyle(
+                        auraColors,
+                        typography: context.auraTheme.typography,
+                      ),
                       isDense: false,
                       contentPadding: EdgeInsets.zero,
                       border: InputBorder.none,
@@ -203,7 +207,10 @@ class _AuraInputState extends State<AuraInput> {
                     ),
                     keyboardType: widget.keyboardType,
                     textInputAction: widget.textInputAction,
-                    style: _getTextStyle(auraColors),
+                    style: _getTextStyle(
+                      auraColors,
+                      typography: context.auraTheme.typography,
+                    ),
                     autofocus: widget.autofocus,
                     readOnly: widget.readOnly,
                     obscureText: widget.obscureText,
@@ -218,7 +225,7 @@ class _AuraInputState extends State<AuraInput> {
                   ),
                 ),
                 if (suffixIcon != null) ...[
-                  const SizedBox(width: DesignSpacing.sm),
+                  const AuraSizedBox(width: AuraSpacing.sm),
                   suffixIcon,
                 ],
               ],
@@ -256,35 +263,41 @@ class _AuraInputState extends State<AuraInput> {
     };
   }
 
-  TextStyle _getTextStyle(AuraColorScheme colors) {
+  TextStyle _getTextStyle(
+    AuraColorScheme colors, {
+    required AuraTypographyScale typography,
+  }) {
     final fontSize = switch (widget.size) {
-      AuraInputSize.small => DesignTypography.fontSizeSm,
-      AuraInputSize.medium => DesignTypography.fontSizeBase,
-      AuraInputSize.large => DesignTypography.fontSizeLg,
+      AuraInputSize.small => typography.fontSizeSm,
+      AuraInputSize.medium => typography.fontSizeBase,
+      AuraInputSize.large => typography.fontSizeLg,
     };
 
     return TextStyle(
       color: widget.enabled ? colors.onSurface : colors.onSurfaceVariant,
       fontSize: fontSize,
-      fontWeight: DesignTypography.fontWeightRegular,
-      height: DesignTypography.lineHeightBase,
-      fontFamily: DesignTypography.bodyFontFamily,
+      fontWeight: typography.fontWeightRegular,
+      height: typography.lineHeightBase,
+      fontFamily: typography.bodyFontFamily,
     );
   }
 
-  TextStyle _getHintStyle(AuraColorScheme colors) {
+  TextStyle _getHintStyle(
+    AuraColorScheme colors, {
+    required AuraTypographyScale typography,
+  }) {
     final fontSize = switch (widget.size) {
-      AuraInputSize.small => DesignTypography.fontSizeSm,
-      AuraInputSize.medium => DesignTypography.fontSizeBase,
-      AuraInputSize.large => DesignTypography.fontSizeLg,
+      AuraInputSize.small => typography.fontSizeSm,
+      AuraInputSize.medium => typography.fontSizeBase,
+      AuraInputSize.large => typography.fontSizeLg,
     };
 
     return TextStyle(
       color: colors.onSurfaceVariant.withValues(alpha: 0.7),
       fontSize: fontSize,
-      fontWeight: DesignTypography.fontWeightRegular,
-      height: DesignTypography.lineHeightBase,
-      fontFamily: DesignTypography.bodyFontFamily,
+      fontWeight: typography.fontWeightRegular,
+      height: typography.lineHeightBase,
+      fontFamily: typography.bodyFontFamily,
     );
   }
 }

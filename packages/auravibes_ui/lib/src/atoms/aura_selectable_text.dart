@@ -80,7 +80,11 @@ class AuraSelectableText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
-    final baseStyle = auraResolveTextStyle(style: style, colors: auraColors);
+    final baseStyle = auraResolveTextStyle(
+      style: style,
+      colors: auraColors,
+      typography: context.auraTheme.typography,
+    );
     // Only override color when colorVariant is provided.
     final textStyle = colorVariant != null
         ? baseStyle.copyWith(color: auraColors.getColorOrNull(colorVariant))

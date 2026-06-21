@@ -1,4 +1,6 @@
+import 'package:auravibes_ui/src/atoms/aura_sized_box.dart';
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
+import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -38,8 +40,8 @@ class AuraFieldLabel extends StatelessWidget {
           child: AuraText(
             child: Semantics(
               child: DefaultTextStyle.merge(
-                style: const TextStyle(
-                  fontWeight: DesignTypography.fontWeightMedium,
+                style: TextStyle(
+                  fontWeight: context.auraTheme.typography.fontWeightMedium,
                 ),
                 child: child,
               ),
@@ -50,12 +52,12 @@ class AuraFieldLabel extends StatelessWidget {
           ),
         ),
         if (isRequired) ...[
-          const SizedBox(width: DesignSpacing.xs),
+          const AuraSizedBox(width: AuraSpacing.xs),
           AuraText(
-            child: const Text(
+            child: Text(
               '*',
               style: TextStyle(
-                fontWeight: DesignTypography.fontWeightMedium,
+                fontWeight: context.auraTheme.typography.fontWeightMedium,
               ),
               semanticsLabel: 'required',
             ),

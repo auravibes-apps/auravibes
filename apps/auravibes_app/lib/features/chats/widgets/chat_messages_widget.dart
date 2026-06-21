@@ -265,29 +265,29 @@ class _ReasoningSummary extends StatelessWidget {
             children: [
               Icon(
                 Icons.psychology_outlined,
-                size: DesignSpacing.lg,
+                size: context.auraTheme.fromSpacing(AuraSpacing.lg),
                 color: auraColors.onSurfaceVariant,
               ),
-              const SizedBox(width: DesignSpacing.xs),
+              const AuraSizedBox(width: AuraSpacing.xs),
               TextLocale(
                 LocaleKeys.chats_screens_chat_conversation_reasoning_summary,
                 style: TextStyle(
                   color: auraColors.onSurfaceVariant,
-                  fontSize: DesignTypography.fontSizeSm,
+                  fontSize: context.auraTheme.typography.fontSizeSm,
                   fontWeight: FontWeight.w600,
-                  fontFamily: DesignTypography.bodyFontFamily,
+                  fontFamily: context.auraTheme.typography.bodyFontFamily,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: DesignSpacing.xs),
+          const AuraSizedBox(height: AuraSpacing.xs),
           GptMarkdown(
             content,
             style: TextStyle(
               color: auraColors.onSurfaceVariant,
-              fontSize: DesignTypography.fontSizeSm,
-              height: DesignTypography.lineHeightBase,
-              fontFamily: DesignTypography.bodyFontFamily,
+              fontSize: context.auraTheme.typography.fontSizeSm,
+              height: context.auraTheme.typography.lineHeightBase,
+              fontFamily: context.auraTheme.typography.bodyFontFamily,
             ),
           ),
         ],
@@ -323,22 +323,22 @@ class _AiMessageContent extends StatelessWidget {
           content,
           style: TextStyle(
             color: auraColors.onSurface,
-            fontSize: DesignTypography.fontSizeBase,
-            height: DesignTypography.lineHeightBase,
-            fontFamily: DesignTypography.bodyFontFamily,
+            fontSize: context.auraTheme.typography.fontSizeBase,
+            height: context.auraTheme.typography.lineHeightBase,
+            fontFamily: context.auraTheme.typography.bodyFontFamily,
           ),
         ),
-        const SizedBox(height: DesignSpacing.xs),
+        const AuraSizedBox(height: AuraSpacing.xs),
         Text(
           const RelativeTimeFormatter().format(timestamp),
           style: TextStyle(
             color: auraColors.onSurfaceVariant,
-            fontSize: DesignTypography.fontSizeXs,
-            fontFamily: DesignTypography.bodyFontFamily,
+            fontSize: context.auraTheme.typography.fontSizeXs,
+            fontFamily: context.auraTheme.typography.bodyFontFamily,
           ),
         ),
         if (status != AuraMessageDeliveryStatus.sent) ...[
-          const SizedBox(height: DesignSpacing.xs / 2),
+          SizedBox(height: context.auraTheme.fromSpacing(AuraSpacing.xs) / 2),
           AuraMessageStatus(status: status),
         ],
       ],
@@ -400,7 +400,9 @@ class _ToolCallWidget extends ConsumerWidget {
           ),
           if (decodedResponse != null)
             Padding(
-              padding: const EdgeInsets.only(top: DesignSpacing.xs),
+              padding: EdgeInsets.only(
+                top: context.auraTheme.fromSpacing(AuraSpacing.xs),
+              ),
               child: ToolCallResponsePreview(
                 toolName: toolCall.name,
                 content: decodedResponse,
@@ -509,12 +511,12 @@ class _CompactedMessageWidget extends StatelessWidget {
                   size: 16,
                   color: auraColors.onSurfaceVariant,
                 ),
-                const SizedBox(width: DesignSpacing.xs),
+                const AuraSizedBox(width: AuraSpacing.xs),
                 Text(
                   originLabel,
                   style: TextStyle(
                     color: auraColors.onSurfaceVariant,
-                    fontSize: DesignTypography.fontSizeSm,
+                    fontSize: context.auraTheme.typography.fontSizeSm,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -526,12 +528,12 @@ class _CompactedMessageWidget extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: DesignSpacing.xs),
+            const AuraSizedBox(height: AuraSpacing.xs),
             Text(
               message.content,
               style: TextStyle(
                 color: auraColors.onSurfaceVariant,
-                fontSize: DesignTypography.fontSizeSm,
+                fontSize: context.auraTheme.typography.fontSizeSm,
               ),
               overflow: TextOverflow.ellipsis,
               maxLines: 3,
@@ -565,7 +567,7 @@ class _ErrorMessageWidget extends StatelessWidget {
             size: 16,
             color: auraColors.onError,
           ),
-          const SizedBox(width: DesignSpacing.xs),
+          const AuraSizedBox(width: AuraSpacing.xs),
           Flexible(
             child: TextLocale(content),
           ),
@@ -594,12 +596,14 @@ class _ToolCallStatusIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: DesignSpacing.xs),
+      padding: EdgeInsets.only(
+        top: context.auraTheme.fromSpacing(AuraSpacing.xs),
+      ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 14, color: color),
-          const SizedBox(width: DesignSpacing.xs),
+          const AuraSizedBox(width: AuraSpacing.xs),
           DefaultTextStyle(
             style: TextStyle(
               color: color,
@@ -631,12 +635,12 @@ class _CompactingIndicator extends StatelessWidget {
               child: AuraSpinner(),
             ),
           ),
-          const SizedBox(width: DesignSpacing.sm),
+          const AuraSizedBox(width: AuraSpacing.sm),
           Text(
             LocaleKeys.compaction_compacting_row_label.tr(),
             style: TextStyle(
               color: auraColors.onSurfaceVariant,
-              fontSize: DesignTypography.fontSizeSm,
+              fontSize: context.auraTheme.typography.fontSizeSm,
             ),
           ),
         ],

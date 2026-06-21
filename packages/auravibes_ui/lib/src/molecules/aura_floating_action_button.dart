@@ -75,7 +75,9 @@ class AuraFloatingActionButton extends StatelessWidget {
     final resolvedForeground =
         auraColors.getColorOrNull(foregroundColor) ?? auraColors.onPrimary;
     final shape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(_getBorderRadius()),
+      borderRadius: BorderRadius.circular(
+        context.auraTheme.fromBorderRadius(_getBorderRadius()),
+      ),
     );
 
     Widget fab;
@@ -96,7 +98,7 @@ class AuraFloatingActionButton extends StatelessWidget {
             labelText,
             style: TextStyle(
               color: resolvedForeground,
-              fontWeight: DesignTypography.fontWeightMedium,
+              fontWeight: context.auraTheme.typography.fontWeightMedium,
             ),
           ),
         ),
@@ -164,12 +166,12 @@ class AuraFloatingActionButton extends StatelessWidget {
     };
   }
 
-  double _getBorderRadius() {
+  AuraBorderRadius _getBorderRadius() {
     return switch (size) {
-      AuraFABSize.mini => DesignBorderRadius.lg,
-      AuraFABSize.regular => DesignBorderRadius.xl,
-      AuraFABSize.large => DesignBorderRadius.xl,
-      AuraFABSize.extended => DesignBorderRadius.xl,
+      AuraFABSize.mini => AuraBorderRadius.lg,
+      AuraFABSize.regular => AuraBorderRadius.xl,
+      AuraFABSize.large => AuraBorderRadius.xl,
+      AuraFABSize.extended => AuraBorderRadius.xl,
     };
   }
 

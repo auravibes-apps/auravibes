@@ -81,7 +81,7 @@ class ConversationGroupHeader extends StatelessWidget {
         AuraRow(
           children: [
             _GroupIcon(groupWithTools: groupWithTools),
-            const SizedBox(width: DesignSpacing.sm),
+            const AuraSizedBox(width: AuraSpacing.sm),
             Expanded(
               child: AuraColumn(
                 children: [
@@ -140,8 +140,10 @@ class _GroupIcon extends StatelessWidget {
         color: hasEnabledTools
             ? context.auraColors.primary.withValues(alpha: 0.1)
             : context.auraColors.surfaceVariant,
-        borderRadius: const BorderRadius.all(
-          Radius.circular(DesignBorderRadius.md),
+        borderRadius: BorderRadius.all(
+          Radius.circular(
+            context.auraTheme.fromBorderRadius(AuraBorderRadius.md),
+          ),
         ),
       ),
       width: 40,

@@ -39,8 +39,8 @@ class ToolItemRow extends HookConsumerWidget {
     final permissionMode = tool.permissionMode;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        vertical: DesignSpacing.xs,
+      padding: EdgeInsets.symmetric(
+        vertical: context.auraTheme.fromSpacing(AuraSpacing.xs),
       ),
       child: AuraColumn(
         children: [
@@ -51,8 +51,10 @@ class ToolItemRow extends HookConsumerWidget {
                   color: isEnabled
                       ? context.auraColors.primary.withValues(alpha: 0.1)
                       : context.auraColors.surfaceVariant,
-                  borderRadius: const BorderRadius.all(
-                    Radius.circular(DesignBorderRadius.sm),
+                  borderRadius: BorderRadius.all(
+                    Radius.circular(
+                      context.auraTheme.fromBorderRadius(AuraBorderRadius.sm),
+                    ),
                   ),
                 ),
                 width: 36,
@@ -66,7 +68,7 @@ class ToolItemRow extends HookConsumerWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: DesignSpacing.sm),
+              const AuraSizedBox(width: AuraSpacing.sm),
               Expanded(
                 child: AuraColumn(
                   children: [
@@ -112,9 +114,9 @@ class ToolItemRow extends HookConsumerWidget {
           ),
           if (isExpanded.value)
             Padding(
-              padding: const EdgeInsets.only(
-                left: 36 + DesignSpacing.sm,
-                top: DesignSpacing.sm,
+              padding: EdgeInsets.only(
+                left: 36 + context.auraTheme.fromSpacing(AuraSpacing.sm),
+                top: context.auraTheme.fromSpacing(AuraSpacing.sm),
               ),
               child: _ToolOptions(
                 tool: tool,

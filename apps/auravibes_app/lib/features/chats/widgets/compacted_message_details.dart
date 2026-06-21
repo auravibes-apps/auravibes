@@ -37,7 +37,7 @@ class CompactedMessageDetails extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: DesignSpacing.md),
+          const AuraSizedBox(height: AuraSpacing.md),
           _DetailRow(
             label: LocaleKeys.compaction_compacted_details_origin.tr(),
             value: originLabel,
@@ -64,21 +64,21 @@ class CompactedMessageDetails extends StatelessWidget {
             label: LocaleKeys.compaction_compacted_details_messages.tr(),
             value: '${metadata?.compactedMessageIds.length ?? 0}',
           ),
-          const SizedBox(height: DesignSpacing.md),
+          const AuraSizedBox(height: AuraSpacing.md),
           TextLocale(
             LocaleKeys.compaction_compacted_details_content_label,
             style: TextStyle(
               color: auraColors.onSurfaceVariant,
-              fontSize: DesignTypography.fontSizeSm,
+              fontSize: context.auraTheme.typography.fontSizeSm,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: DesignSpacing.xs),
+          const AuraSizedBox(height: AuraSpacing.xs),
           SelectableText(
             message.content,
-            style: const TextStyle(
-              fontSize: DesignTypography.fontSizeSm,
-              fontFamily: DesignTypography.monoFontFamily,
+            style: TextStyle(
+              fontSize: context.auraTheme.typography.fontSizeSm,
+              fontFamily: context.auraTheme.typography.monoFontFamily,
             ),
           ),
         ],
@@ -97,7 +97,9 @@ class _DetailRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: DesignSpacing.xs),
+      padding: EdgeInsets.only(
+        bottom: context.auraTheme.fromSpacing(AuraSpacing.xs),
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -107,7 +109,7 @@ class _DetailRow extends StatelessWidget {
               label,
               style: TextStyle(
                 color: context.auraColors.onSurfaceVariant,
-                fontSize: DesignTypography.fontSizeSm,
+                fontSize: context.auraTheme.typography.fontSizeSm,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -115,7 +117,9 @@ class _DetailRow extends StatelessWidget {
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(fontSize: DesignTypography.fontSizeSm),
+              style: TextStyle(
+                fontSize: context.auraTheme.typography.fontSizeSm,
+              ),
             ),
           ),
         ],

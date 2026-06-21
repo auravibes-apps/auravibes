@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 
 /// Design tokens for the Aura AI Assistant design system.
 ///
-/// This file contains all the design tokens extracted from the design system
-/// specification, providing a single source of truth for colors, typography,
-/// spacing, and other design properties.
+/// Color, motion, elevation, and layout raw tokens live here as static
+/// consts. Spacing, border radius, and typography values are intentionally
+/// absent: they are theme-owned (see AuraTheme in `aura_theme.dart`) so a
+/// subtree `Theme` override can rescale them. Call sites select them via the
+/// AuraSpacing / AuraBorderRadius enums (and AuraTextStyle for type).
 class DesignTokens {
   DesignTokens._();
 }
@@ -122,181 +124,6 @@ class DesignColors {
 
   /// Transparent color.
   static const Color transparent = Color(0x00000000);
-}
-
-/// Typography tokens for consistent text styling.
-///
-/// Defines font families, sizes, weights, line heights, and letter spacing
-/// for all text elements in the design system.
-class DesignTypography {
-  DesignTypography._();
-
-  // Font families.
-
-  /// Font family for headings and display text.
-  static const String headingFontFamily = 'Inter';
-
-  /// Font family for body text and content.
-  static const String bodyFontFamily = 'Inter';
-
-  /// Monospace font family for code and technical content.
-  static const String monoFontFamily = 'JetBrains Mono';
-
-  // Font sizes (in logical pixels).
-
-  /// Extra small font size (12px, 0.75rem) for captions and fine print.
-  static const double fontSizeXs = 12;
-
-  /// Small font size (14px, 0.875rem) for secondary text and labels.
-  static const double fontSizeSm = 14;
-
-  /// Base font size (16px, 1rem) for body text and content.
-  static const double fontSizeBase = 16;
-
-  /// Large font size (18px, 1.125rem) for emphasized body text.
-  static const double fontSizeLg = 18;
-
-  /// Extra large font size (20px, 1.25rem) for small headings.
-  static const double fontSizeXl = 20;
-
-  /// 2X large font size (24px, 1.5rem) for medium headings.
-  static const double fontSize2Xl = 24;
-
-  /// 3X large font size (30px, 1.875rem) for large headings.
-  static const double fontSize3Xl = 30;
-
-  /// 4X large font size (36px, 2.25rem) for display headings.
-  static const double fontSize4Xl = 36;
-
-  /// 5X large font size (48px, 3rem) for hero text and large displays.
-  static const double fontSize5Xl = 48;
-
-  // Font weights.
-
-  /// Light font weight (300) for subtle text elements.
-  static const FontWeight fontWeightLight = FontWeight.w300;
-
-  /// Regular font weight (400) for body text and standard content.
-  static const FontWeight fontWeightRegular = FontWeight.w400;
-
-  /// Medium font weight (500) for emphasized text and buttons.
-  static const FontWeight fontWeightMedium = FontWeight.w500;
-
-  /// Semibold font weight (600) for subheadings and important text.
-  static const FontWeight fontWeightSemibold = FontWeight.w600;
-
-  /// Bold font weight (700) for headings and strong emphasis.
-  static const FontWeight fontWeightBold = FontWeight.w700;
-
-  // Line heights.
-
-  /// Extra tight line height (1.2) for compact text layouts.
-  static const double lineHeightXs = 1.2;
-
-  /// Tight line height (1.25) for dense text content.
-  static const double lineHeightSm = 1.25;
-
-  /// Base line height (1.5) for comfortable reading of body text.
-  static const double lineHeightBase = 1.5;
-
-  /// Large line height (1.55) for improved readability.
-  static const double lineHeightLg = 1.55;
-
-  /// Extra large line height (1.6) for spacious text layouts.
-  static const double lineHeightXl = 1.6;
-
-  /// 2X large line height (1.3) for medium headings.
-  static const double lineHeight2Xl = 1.3;
-
-  /// 3X large line height (1.2) for large headings.
-  static const double lineHeight3Xl = 1.2;
-
-  /// 4X large line height (1.1) for display headings.
-  static const double lineHeight4Xl = 1.1;
-
-  /// 5X large line height (1.0) for hero text and tight displays.
-  static const double lineHeight5Xl = 1;
-
-  // Letter spacing.
-
-  /// Tight letter spacing (-0.025) for compact text.
-  static const double letterSpacingTight = -0.025;
-
-  /// Normal letter spacing (0) for standard text.
-  static const double letterSpacingNormal = 0;
-
-  /// Wide letter spacing (0.025) for spacious text and headings.
-  static const double letterSpacingWide = 0.025;
-}
-
-/// Spacing tokens for consistent layout and component spacing.
-///
-/// All values are in logical pixels, providing a consistent spacing scale
-/// based on the base unit of 16px (1rem).
-class DesignSpacing {
-  DesignSpacing._();
-
-  /// Base spacing unit (16px, 1rem) for consistent scaling.
-  static const double base = 16;
-
-  /// Extra small spacing (4px, 0.25rem) for tight gaps and fine adjustments.
-  static const double xs = 4;
-
-  /// Small spacing (8px, 0.5rem) for minor element separation.
-  static const double sm = 8;
-
-  /// Medium spacing (16px, 1rem) for standard element separation.
-  static const double md = 16;
-
-  /// Large spacing (24px, 1.5rem) for section separation.
-  static const double lg = 24;
-
-  /// Extra large spacing (32px, 2rem) for major layout sections.
-  static const double xl = 32;
-
-  /// 2X large spacing (48px, 3rem) for page-level separation.
-  static const double xl2 = 48;
-
-  /// 3X large spacing (64px, 4rem) for maximum separation.
-
-  static const double xl3 = 64;
-
-  // Layout spacing.
-
-  /// Content padding (24px, 1.5rem) for main content areas.
-  static const double contentPadding = 24;
-
-  /// Section spacing (64px, 4rem) for major section breaks.
-  static const double sectionSpacing = 64;
-
-  /// Component spacing (16px, 1rem) for component separation.
-  static const double componentSpacing = 16;
-}
-
-/// Border radius tokens for consistent corner rounding.
-///
-/// All values are in logical pixels, providing a scale from sharp to
-/// fully rounded.
-class DesignBorderRadius {
-  DesignBorderRadius._();
-
-  /// No border radius for sharp corners and square elements.
-  static const double none = 0;
-
-  /// Small border radius (2px, 0.125rem) for subtle rounding.
-  static const double sm = 2;
-
-  /// Medium border radius (6px, 0.375rem) for standard button rounding.
-  static const double md = 6;
-
-  /// Large border radius (8px, 0.5rem) for card and container rounding.
-  static const double lg = 8;
-
-  /// Extra large border radius (16px, 1rem) for prominent rounded elements.
-  static const double xl = 16;
-
-  /// Full border radius for perfectly circular elements.
-  static const double full = 9999;
 }
 
 /// Border width tokens for consistent border styling.
@@ -467,7 +294,11 @@ class DesignShadows {
   );
 }
 
-/// Define spacing on components.
+/// Spacing selector for layout gaps, padding, and sizing.
+///
+/// Selects a value from the theme-owned spacing scale
+/// (`AuraTheme.spacing`, resolved via `context.auraTheme.fromSpacing`), so a
+/// subtree `Theme` override can rescale spacing. Values are NOT on this enum.
 enum AuraSpacing {
   /// No spacing.
   none,
@@ -495,6 +326,31 @@ enum AuraSpacing {
 
   /// 3X extra large spacing.
   xl3,
+}
+
+/// Border radius selector for corner rounding.
+///
+/// Selects a value from the theme-owned border-radius scale
+/// (`AuraTheme.borderRadius`, resolved via `fromBorderRadius`), so a subtree
+/// `Theme` override can rescale rounding. Values are NOT on this enum.
+enum AuraBorderRadius {
+  /// No border radius for sharp corners and square elements.
+  none,
+
+  /// Small border radius for subtle rounding.
+  sm,
+
+  /// Medium border radius for standard button rounding.
+  md,
+
+  /// Large border radius for card and container rounding.
+  lg,
+
+  /// Extra large border radius for prominent rounded elements.
+  xl,
+
+  /// Full border radius for perfectly circular elements.
+  full,
 }
 
 /// Options for colors.
