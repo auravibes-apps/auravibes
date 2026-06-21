@@ -17,7 +17,6 @@ abstract class ChatResult<T> with _$ChatResult<T> {
     @Default(FinishReason.unspecified) FinishReason finishReason,
     LanguageModelUsage? usage,
     @Default(<String, dynamic>{}) Map<String, dynamic> metadata,
-    @Default([]) List<T> messages,
     String? thinking,
   }) = _ChatResult<T>;
 }
@@ -135,7 +134,6 @@ extension ChatResultConcat on ChatResult<ChatMessage> {
           : finishReason,
       usage: combinedUsage,
       metadata: {...metadata, ...delta.metadata},
-      messages: [...messages, ...delta.messages],
       thinking: _concatThinking(thinking, delta.thinking),
     );
   }
@@ -183,11 +181,6 @@ extension ChatResultEntities on ChatResult<ChatMessage> {
           if (part.reasoning case final reasoning?
               when reasoning.trim().isNotEmpty)
             reasoning,
-      for (final message in messages)
-        for (final part in message.parts)
-          if (part.reasoning case final reasoning?
-              when reasoning.trim().isNotEmpty)
-            reasoning,
     ];
 
     if (chunks.isEmpty) return null;
@@ -199,7 +192,6 @@ extension ChatResultEntities on ChatResult<ChatMessage> {
     return <String, dynamic>{
       ...metadata,
       ...output.metadata,
-      for (final message in messages) ...message.metadata,
     }..removeWhere((_, value) => value == null);
   }
 
