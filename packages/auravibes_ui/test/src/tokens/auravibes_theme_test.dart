@@ -207,6 +207,7 @@ void main() {
       expect(colors.getColor(AuraColorVariant.primary), colors.primary);
       expect(colors.getColor(AuraColorVariant.onSurface), colors.onSurface);
       expect(colors.getColor(AuraColorVariant.error), colors.error);
+      expect(colors.getColor(AuraColorVariant.onError), colors.onError);
       expect(
         colors.getColor(AuraColorVariant.onSurfaceVariant),
         colors.onSurfaceVariant,

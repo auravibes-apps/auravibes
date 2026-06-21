@@ -103,6 +103,7 @@ Color? getColor(AuraColorVariant? variant) {
     AuraColorVariant.onSurfaceVariant => onSurfaceVariant,
     AuraColorVariant.surfaceVariant => surfaceVariant,
     AuraColorVariant.error => error,
+    AuraColorVariant.onError => onError,
     AuraColorVariant.onPrimary => onPrimary,
     AuraColorVariant.secondary => secondary,
     AuraColorVariant.success => success,

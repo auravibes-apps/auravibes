@@ -252,13 +252,9 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
           padding: padding,
           decoration: BoxDecoration(color: backgroundColor, border: border),
           child: widget.isLoading
-              ? SizedBox(
-                  width: _getLoadingSize(),
-                  height: _getLoadingSize(),
-                  child: AuraLoadingCircle(
-                    colorVariant: _getLoadingColorVariant(),
-                    size: _getLoadingSize(),
-                  ),
+              ? AuraLoadingCircle(
+                  colorVariant: _getLoadingColorVariant(),
+                  size: _getLoadingSize(),
                 )
               : DefaultTextStyle(
                   style: TextStyle(

@@ -370,6 +370,9 @@ enum AuraColorVariant {
   /// Error option.
   error,
 
+  /// On error option.
+  onError,
+
   /// On primary option.
   onPrimary,
 

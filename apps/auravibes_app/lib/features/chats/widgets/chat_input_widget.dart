@@ -55,7 +55,7 @@ class ChatInputWidget extends HookConsumerWidget {
     final stop = onStop;
     final stopButton = stop == null
         ? null
-        : Tooltip(
+        : AuraTooltip(
             message: LocaleKeys.chats_screens_chat_conversation_stop_generation
                 .tr(),
             child: AuraButton(
@@ -84,7 +84,7 @@ class ChatInputWidget extends HookConsumerWidget {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Tooltip(
+                AuraTooltip(
                   message: LocaleKeys.menu_tools.tr(),
                   child: AuraButton(
                     onPressed: onToolsPress,
@@ -95,7 +95,7 @@ class ChatInputWidget extends HookConsumerWidget {
                 ),
                 if (onSkillsPress case final onSkillsPress?) ...[
                   const AuraSizedBox(width: .xs),
-                  Tooltip(
+                  AuraTooltip(
                     message: LocaleKeys.skills_selector_title.tr(),
                     child: AuraButton(
                       onPressed: onSkillsPress,
@@ -137,7 +137,7 @@ class ChatInputWidget extends HookConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (compact != null) ...[
-                  Tooltip(
+                  AuraTooltip(
                     message: LocaleKeys.compaction_manual_button_tooltip.tr(),
                     child: AuraButton(
                       onPressed: compact,
