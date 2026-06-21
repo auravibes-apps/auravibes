@@ -5,6 +5,7 @@
 import 'dart:async';
 
 import 'package:auravibes_genkit_providers/src/chat_completions_provider.dart';
+import 'package:auravibes_genkit_providers/src/openai_compat_chat_options.dart';
 import 'package:genkit/plugin.dart';
 import 'package:http/http.dart' as http;
 
@@ -56,70 +57,47 @@ class OpenAICompatReasoningPluginHandle {
   }
 }
 
-class OpenAICompatReasoningOptions with ChatCompletionsSamplingOptions {
+class OpenAICompatReasoningOptions extends OpenAICompatChatOptions {
   OpenAICompatReasoningOptions({
+    super.temperature,
+    super.topP,
+    super.maxTokens,
+    super.stop,
+    super.presencePenalty,
+    super.frequencyPenalty,
+    super.seed,
+    super.user,
     this.version,
-    this.temperature,
-    this.topP,
-    this.maxTokens,
-    this.stop,
-    this.presencePenalty,
-    this.frequencyPenalty,
-    this.seed,
-    this.user,
     this.reasoning,
   });
 
   factory OpenAICompatReasoningOptions.fromJson(Map<String, dynamic>? json) {
-    if (json == null) return OpenAICompatReasoningOptions();
+    final shared = OpenAICompatChatOptions.fromJson(json);
+    final reasoningJson = json?['reasoning'];
 
     return OpenAICompatReasoningOptions(
-      version: json['version'] as String?,
-      temperature: (json['temperature'] as num?)?.toDouble(),
-      topP: (json['topP'] as num?)?.toDouble(),
-      maxTokens: json['maxTokens'] as int?,
-      stop: (json['stop'] as List?)?.cast<String>(),
-      presencePenalty: (json['presencePenalty'] as num?)?.toDouble(),
-      frequencyPenalty: (json['frequencyPenalty'] as num?)?.toDouble(),
-      seed: json['seed'] as int?,
-      user: json['user'] as String?,
-      reasoning: json['reasoning'] is Map<String, dynamic>
-          ? OpenAICompatReasoningConfig.fromJson(
-              json['reasoning'] as Map<String, dynamic>,
-            )
+      temperature: shared.temperature,
+      topP: shared.topP,
+      maxTokens: shared.maxTokens,
+      stop: shared.stop,
+      presencePenalty: shared.presencePenalty,
+      frequencyPenalty: shared.frequencyPenalty,
+      seed: shared.seed,
+      user: shared.user,
+      version: json?['version'] as String?,
+      reasoning: reasoningJson is Map<String, dynamic>
+          ? OpenAICompatReasoningConfig.fromJson(reasoningJson)
           : null,
     );
   }
 
   final String? version;
-  @override
-  final double? temperature;
-  @override
-  final double? topP;
-  @override
-  final int? maxTokens;
-  @override
-  final List<String>? stop;
-  @override
-  final double? presencePenalty;
-  @override
-  final double? frequencyPenalty;
-  @override
-  final int? seed;
-  @override
-  final String? user;
   final OpenAICompatReasoningConfig? reasoning;
 
+  @override
   Map<String, dynamic> toJson() => {
+    ...super.toJson(),
     'version': ?version,
-    'temperature': ?temperature,
-    'topP': ?topP,
-    'maxTokens': ?maxTokens,
-    'stop': ?stop,
-    'presencePenalty': ?presencePenalty,
-    'frequencyPenalty': ?frequencyPenalty,
-    'seed': ?seed,
-    'user': ?user,
     'reasoning': ?reasoning?.toJson(),
   };
 }
