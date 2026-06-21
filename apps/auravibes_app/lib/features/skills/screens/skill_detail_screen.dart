@@ -389,7 +389,7 @@ class _SkillDetailForm extends StatelessWidget {
           ),
           if (canSave) _buildSaveButton(isCreate),
         ],
-        spacing: AuraSpacing.md,
+        spacing: .md,
         crossAxisAlignment: CrossAxisAlignment.start,
       ),
     );
@@ -445,7 +445,7 @@ class _SkillDetailForm extends StatelessWidget {
             ),
           ),
         ],
-        spacing: AuraSpacing.md,
+        spacing: .md,
       ),
     ];
   }
@@ -550,7 +550,7 @@ class _SkillToolsCard extends ConsumerWidget {
                                   color: AuraColorVariant.onSurfaceVariant,
                                 ),
                               ],
-                              spacing: AuraSpacing.xs,
+                              spacing: .xs,
                               crossAxisAlignment: CrossAxisAlignment.start,
                             ),
                             onTap: () => _openTool(context, tool.id),
@@ -587,7 +587,7 @@ class _SkillToolsCard extends ConsumerWidget {
             ),
           },
         ],
-        spacing: AuraSpacing.sm,
+        spacing: .sm,
         crossAxisAlignment: CrossAxisAlignment.start,
       ),
     );
@@ -698,14 +698,14 @@ class _AppSkillToolsCard extends StatelessWidget {
                     color: AuraColorVariant.onSurfaceVariant,
                   ),
                 ],
-                spacing: AuraSpacing.xs,
+                spacing: .xs,
                 crossAxisAlignment: CrossAxisAlignment.start,
               ),
               variant: AuraTileVariant.ghost,
               leading: const AuraIcon(Icons.code_outlined),
             ),
         ],
-        spacing: AuraSpacing.sm,
+        spacing: .sm,
         crossAxisAlignment: CrossAxisAlignment.start,
       ),
     );
@@ -796,7 +796,7 @@ class _CredentialDefinitionSelectContent extends StatelessWidget {
             color: AuraColorVariant.error,
           ),
       ],
-      spacing: AuraSpacing.xs,
+      spacing: .xs,
       crossAxisAlignment: CrossAxisAlignment.start,
     );
   }
@@ -990,7 +990,7 @@ class _ReadOnlyField extends StatelessWidget {
         ),
         AuraSelectableText(value),
       ],
-      spacing: AuraSpacing.xs,
+      spacing: .xs,
       crossAxisAlignment: CrossAxisAlignment.start,
     );
   }

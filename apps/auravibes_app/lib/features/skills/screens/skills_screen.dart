@@ -256,7 +256,7 @@ class _SkillTile extends StatelessWidget {
               ],
             ),
           ],
-          spacing: AuraSpacing.xs,
+          spacing: .xs,
           crossAxisAlignment: CrossAxisAlignment.start,
         ),
         onTap: onOpen,
@@ -339,7 +339,7 @@ class _SkillChip extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.all(
           Radius.circular(
-            context.auraTheme.fromBorderRadius(AuraBorderRadius.lg),
+            context.auraTheme.fromBorderRadius(.lg),
           ),
         ),
       ),

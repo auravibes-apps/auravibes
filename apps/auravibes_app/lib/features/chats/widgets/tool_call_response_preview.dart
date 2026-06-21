@@ -109,7 +109,7 @@ class _ToolCallResponsePreviewState extends State<ToolCallResponsePreview> {
         if (_exceedsMaxLines)
           Padding(
             padding: EdgeInsets.only(
-              top: context.auraTheme.fromSpacing(AuraSpacing.xs),
+              top: context.auraTheme.fromSpacing(.xs),
             ),
             child: AuraButton(
               onPressed: _showFullContent,
@@ -122,7 +122,7 @@ class _ToolCallResponsePreviewState extends State<ToolCallResponsePreview> {
                     color: AuraColorVariant.primary,
                   ),
                 ],
-                spacing: AuraSpacing.xs,
+                spacing: .xs,
                 mainAxisSize: MainAxisSize.min,
               ),
               variant: AuraButtonVariant.ghost,

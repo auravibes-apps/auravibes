@@ -106,7 +106,7 @@ class AuraButtonGroup<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
     final auraTheme = context.auraTheme;
-    final borderRadius = auraTheme.fromBorderRadius(AuraBorderRadius.md);
+    final borderRadius = auraTheme.fromBorderRadius(.md);
 
     final children = <Widget>[];
 

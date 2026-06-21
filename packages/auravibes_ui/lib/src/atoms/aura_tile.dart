@@ -80,7 +80,7 @@ class AuraTile extends StatelessWidget {
         children: [
           if (leading != null) ...[
             leading,
-            const AuraSizedBox(width: AuraSpacing.sm),
+            const AuraSizedBox(width: .sm),
           ],
           Flexible(
             fit: .tight,
@@ -93,7 +93,7 @@ class AuraTile extends StatelessWidget {
             ),
           ),
           if (trailing != null) ...[
-            const AuraSizedBox(width: AuraSpacing.sm),
+            const AuraSizedBox(width: .sm),
             trailing,
           ],
         ],
@@ -111,7 +111,7 @@ class AuraTile extends StatelessWidget {
               color: _getBackgroundColor(auraColors),
               borderRadius: BorderRadius.all(
                 Radius.circular(
-                  context.auraTheme.fromBorderRadius(AuraBorderRadius.lg),
+                  context.auraTheme.fromBorderRadius(.lg),
                 ),
               ),
               boxShadow: _getBoxShadow(),
@@ -122,7 +122,7 @@ class AuraTile extends StatelessWidget {
           onTap: enabled && !isLoading ? onTap : null,
           borderRadius: BorderRadius.all(
             Radius.circular(
-              context.auraTheme.fromBorderRadius(AuraBorderRadius.lg),
+              context.auraTheme.fromBorderRadius(.lg),
             ),
           ),
         ),

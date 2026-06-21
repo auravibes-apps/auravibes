@@ -85,7 +85,7 @@ class AuraRadioGroup<T> extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           label,
-          const AuraSizedBox(height: AuraSpacing.sm),
+          const AuraSizedBox(height: .sm),
           optionsWidget,
         ],
       );
@@ -118,14 +118,13 @@ class _AuraRadioOptions<T> extends StatelessWidget {
         children: [
           for (int i = 0; i < options.length; i++) ...[
             _buildVerticalOption(context, options[i]),
-            if (i < options.length - 1)
-              const AuraSizedBox(height: AuraSpacing.sm),
+            if (i < options.length - 1) const AuraSizedBox(height: .sm),
           ],
         ],
       ),
       Axis.horizontal => Wrap(
-        spacing: context.auraTheme.fromSpacing(AuraSpacing.md),
-        runSpacing: context.auraTheme.fromSpacing(AuraSpacing.sm),
+        spacing: context.auraTheme.fromSpacing(.md),
+        runSpacing: context.auraTheme.fromSpacing(.sm),
         children: [
           for (int i = 0; i < options.length; i++)
             _buildHorizontalOption(options[i]),
@@ -153,7 +152,7 @@ class _AuraRadioOptions<T> extends StatelessWidget {
             padding: EdgeInsets.only(
               left:
                   AuraRadioGroup._kRadioVisualSize +
-                  context.auraTheme.fromSpacing(AuraSpacing.sm),
+                  context.auraTheme.fromSpacing(.sm),
             ),
             child: subtitle,
           ),
@@ -179,7 +178,7 @@ class _AuraRadioOptions<T> extends StatelessWidget {
           onChanged: onChanged,
           colorVariant: colorVariant,
         ),
-        const AuraSizedBox(width: AuraSpacing.sm),
+        const AuraSizedBox(width: .sm),
         Flexible(child: option.label),
       ],
     );

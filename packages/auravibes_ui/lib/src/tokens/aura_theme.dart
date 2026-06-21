@@ -153,15 +153,15 @@ class AuraSpacingScale {
   /// Resolve a spacing selector to its concrete pixel value.
   double resolve(AuraSpacing spacing) {
     return switch (spacing) {
-      AuraSpacing.none => none,
-      AuraSpacing.base => base,
-      AuraSpacing.xs => xs,
-      AuraSpacing.sm => sm,
-      AuraSpacing.md => md,
-      AuraSpacing.lg => lg,
-      AuraSpacing.xl => xl,
-      AuraSpacing.xl2 => xl2,
-      AuraSpacing.xl3 => xl3,
+      .none => none,
+      .base => base,
+      .xs => xs,
+      .sm => sm,
+      .md => md,
+      .lg => lg,
+      .xl => xl,
+      .xl2 => xl2,
+      .xl3 => xl3,
     };
   }
 
@@ -227,12 +227,12 @@ class AuraBorderRadiusScale {
   /// Resolve a border-radius selector to its concrete pixel value.
   double resolve(AuraBorderRadius radius) {
     return switch (radius) {
-      AuraBorderRadius.none => none,
-      AuraBorderRadius.sm => sm,
-      AuraBorderRadius.md => md,
-      AuraBorderRadius.lg => lg,
-      AuraBorderRadius.xl => xl,
-      AuraBorderRadius.full => full,
+      .none => none,
+      .sm => sm,
+      .md => md,
+      .lg => lg,
+      .xl => xl,
+      .full => full,
     };
   }
 

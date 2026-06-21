@@ -94,7 +94,7 @@ class ChatInputWidget extends HookConsumerWidget {
                   ),
                 ),
                 if (onSkillsPress case final onSkillsPress?) ...[
-                  const AuraSizedBox(width: AuraSpacing.xs),
+                  const AuraSizedBox(width: .xs),
                   Tooltip(
                     message: LocaleKeys.skills_selector_title.tr(),
                     child: AuraButton(
@@ -149,7 +149,7 @@ class ChatInputWidget extends HookConsumerWidget {
                       disabled: disabled || isBusy || isCompacting,
                     ),
                   ),
-                  const AuraSizedBox(width: AuraSpacing.xs),
+                  const AuraSizedBox(width: .xs),
                 ],
                 if (stopButton != null) ...[
                   Visibility(
@@ -159,7 +159,7 @@ class ChatInputWidget extends HookConsumerWidget {
                     maintainAnimation: true,
                     maintainSize: true,
                   ),
-                  const AuraSizedBox(width: AuraSpacing.xs),
+                  const AuraSizedBox(width: .xs),
                 ],
                 AuraButton(
                   onPressed: sendMessage,

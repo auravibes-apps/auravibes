@@ -46,15 +46,15 @@ void main() {
 
     test('fromSpacing returns correct values', () {
       final theme = AuraTheme.light;
-      expect(theme.fromSpacing(AuraSpacing.none), 0);
-      expect(theme.fromSpacing(AuraSpacing.base), 16);
-      expect(theme.fromSpacing(AuraSpacing.xs), 4);
-      expect(theme.fromSpacing(AuraSpacing.sm), 8);
-      expect(theme.fromSpacing(AuraSpacing.md), 16);
-      expect(theme.fromSpacing(AuraSpacing.lg), 24);
-      expect(theme.fromSpacing(AuraSpacing.xl), 32);
-      expect(theme.fromSpacing(AuraSpacing.xl2), 48);
-      expect(theme.fromSpacing(AuraSpacing.xl3), 64);
+      expect(theme.fromSpacing(.none), 0);
+      expect(theme.fromSpacing(.base), 16);
+      expect(theme.fromSpacing(.xs), 4);
+      expect(theme.fromSpacing(.sm), 8);
+      expect(theme.fromSpacing(.md), 16);
+      expect(theme.fromSpacing(.lg), 24);
+      expect(theme.fromSpacing(.xl), 32);
+      expect(theme.fromSpacing(.xl2), 48);
+      expect(theme.fromSpacing(.xl3), 64);
     });
   });
 
@@ -74,9 +74,9 @@ void main() {
 
     test('resolve maps each AuraSpacing', () {
       final spacing = AuraTheme.light.spacing;
-      expect(spacing.resolve(AuraSpacing.none), spacing.none);
-      expect(spacing.resolve(AuraSpacing.base), spacing.base);
-      expect(spacing.resolve(AuraSpacing.xl3), spacing.xl3);
+      expect(spacing.resolve(.none), spacing.none);
+      expect(spacing.resolve(.base), spacing.base);
+      expect(spacing.resolve(.xl3), spacing.xl3);
     });
 
     test('lerp interpolates spacing values', () {
@@ -100,12 +100,12 @@ void main() {
 
     test('fromBorderRadius resolves each AuraBorderRadius', () {
       final theme = AuraTheme.light;
-      expect(theme.fromBorderRadius(AuraBorderRadius.none), 0);
-      expect(theme.fromBorderRadius(AuraBorderRadius.sm), 2);
-      expect(theme.fromBorderRadius(AuraBorderRadius.md), 6);
-      expect(theme.fromBorderRadius(AuraBorderRadius.lg), 8);
-      expect(theme.fromBorderRadius(AuraBorderRadius.xl), 16);
-      expect(theme.fromBorderRadius(AuraBorderRadius.full), 9999);
+      expect(theme.fromBorderRadius(.none), 0);
+      expect(theme.fromBorderRadius(.sm), 2);
+      expect(theme.fromBorderRadius(.md), 6);
+      expect(theme.fromBorderRadius(.lg), 8);
+      expect(theme.fromBorderRadius(.xl), 16);
+      expect(theme.fromBorderRadius(.full), 9999);
     });
 
     test('lerp interpolates radius values', () {

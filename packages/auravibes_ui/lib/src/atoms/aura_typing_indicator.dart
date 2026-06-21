@@ -124,19 +124,19 @@ class _AuraTypingIndicatorState extends State<AuraTypingIndicator>
           borderRadius:
               BorderRadius.all(
                 Radius.circular(
-                  context.auraTheme.fromBorderRadius(AuraBorderRadius.lg),
+                  context.auraTheme.fromBorderRadius(.lg),
                 ),
               ).copyWith(
                 bottomLeft: Radius.circular(
-                  context.auraTheme.fromBorderRadius(AuraBorderRadius.sm),
+                  context.auraTheme.fromBorderRadius(.sm),
                 ),
               ),
           boxShadow: const [DesignShadows.sm],
         ),
         margin: EdgeInsets.only(
-          left: context.auraTheme.fromSpacing(AuraSpacing.md),
-          right: context.auraTheme.fromSpacing(AuraSpacing.xl),
-          bottom: context.auraTheme.fromSpacing(AuraSpacing.sm),
+          left: context.auraTheme.fromSpacing(.md),
+          right: context.auraTheme.fromSpacing(.xl),
+          bottom: context.auraTheme.fromSpacing(.sm),
         ),
         child: Semantics(
           child: content,

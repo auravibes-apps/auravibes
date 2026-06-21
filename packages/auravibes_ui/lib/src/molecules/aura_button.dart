@@ -81,7 +81,7 @@ class AuraButton extends StatelessWidget {
           border: _getBorder(auraColors),
           borderRadius: BorderRadius.all(
             Radius.circular(
-              context.auraTheme.fromBorderRadius(AuraBorderRadius.xl),
+              context.auraTheme.fromBorderRadius(.xl),
             ),
           ),
           boxShadow: _getBoxShadow(),
@@ -146,23 +146,23 @@ class AuraButton extends StatelessWidget {
     // Text variant uses minimal/inline padding for dialogs and inline actions.
     if (variant == AuraButtonVariant.text) {
       return const AuraEdgeInsetsGeometry.symmetric(
-        horizontal: AuraSpacing.sm,
-        vertical: AuraSpacing.xs,
+        horizontal: .sm,
+        vertical: .xs,
       );
     }
 
     return switch (size) {
       AuraButtonSize.small => const AuraEdgeInsetsGeometry.symmetric(
-        horizontal: AuraSpacing.sm,
-        vertical: AuraSpacing.xs,
+        horizontal: .sm,
+        vertical: .xs,
       ),
       AuraButtonSize.medium => const AuraEdgeInsetsGeometry.symmetric(
-        horizontal: AuraSpacing.md,
-        vertical: AuraSpacing.sm,
+        horizontal: .md,
+        vertical: .sm,
       ),
       AuraButtonSize.large => const AuraEdgeInsetsGeometry.symmetric(
-        horizontal: AuraSpacing.lg,
-        vertical: AuraSpacing.md,
+        horizontal: .lg,
+        vertical: .md,
       ),
     };
   }

@@ -52,7 +52,7 @@ class AuraFieldLabel extends StatelessWidget {
           ),
         ),
         if (isRequired) ...[
-          const AuraSizedBox(width: AuraSpacing.xs),
+          const AuraSizedBox(width: .xs),
           AuraText(
             child: Text(
               '*',

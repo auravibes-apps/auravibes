@@ -265,10 +265,10 @@ class _ReasoningSummary extends StatelessWidget {
             children: [
               Icon(
                 Icons.psychology_outlined,
-                size: context.auraTheme.fromSpacing(AuraSpacing.lg),
+                size: context.auraTheme.fromSpacing(.lg),
                 color: auraColors.onSurfaceVariant,
               ),
-              const AuraSizedBox(width: AuraSpacing.xs),
+              const AuraSizedBox(width: .xs),
               TextLocale(
                 LocaleKeys.chats_screens_chat_conversation_reasoning_summary,
                 style: TextStyle(
@@ -280,7 +280,7 @@ class _ReasoningSummary extends StatelessWidget {
               ),
             ],
           ),
-          const AuraSizedBox(height: AuraSpacing.xs),
+          const AuraSizedBox(height: .xs),
           GptMarkdown(
             content,
             style: TextStyle(
@@ -328,7 +328,7 @@ class _AiMessageContent extends StatelessWidget {
             fontFamily: context.auraTheme.typography.bodyFontFamily,
           ),
         ),
-        const AuraSizedBox(height: AuraSpacing.xs),
+        const AuraSizedBox(height: .xs),
         Text(
           const RelativeTimeFormatter().format(timestamp),
           style: TextStyle(
@@ -338,7 +338,7 @@ class _AiMessageContent extends StatelessWidget {
           ),
         ),
         if (status != AuraMessageDeliveryStatus.sent) ...[
-          SizedBox(height: context.auraTheme.fromSpacing(AuraSpacing.xs) / 2),
+          SizedBox(height: context.auraTheme.fromSpacing(.xs) / 2),
           AuraMessageStatus(status: status),
         ],
       ],
@@ -401,7 +401,7 @@ class _ToolCallWidget extends ConsumerWidget {
           if (decodedResponse != null)
             Padding(
               padding: EdgeInsets.only(
-                top: context.auraTheme.fromSpacing(AuraSpacing.xs),
+                top: context.auraTheme.fromSpacing(.xs),
               ),
               child: ToolCallResponsePreview(
                 toolName: toolCall.name,
@@ -511,7 +511,7 @@ class _CompactedMessageWidget extends StatelessWidget {
                   size: 16,
                   color: auraColors.onSurfaceVariant,
                 ),
-                const AuraSizedBox(width: AuraSpacing.xs),
+                const AuraSizedBox(width: .xs),
                 Text(
                   originLabel,
                   style: TextStyle(
@@ -528,7 +528,7 @@ class _CompactedMessageWidget extends StatelessWidget {
                 ),
               ],
             ),
-            const AuraSizedBox(height: AuraSpacing.xs),
+            const AuraSizedBox(height: .xs),
             Text(
               message.content,
               style: TextStyle(
@@ -567,7 +567,7 @@ class _ErrorMessageWidget extends StatelessWidget {
             size: 16,
             color: auraColors.onError,
           ),
-          const AuraSizedBox(width: AuraSpacing.xs),
+          const AuraSizedBox(width: .xs),
           Flexible(
             child: TextLocale(content),
           ),
@@ -597,13 +597,13 @@ class _ToolCallStatusIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(
-        top: context.auraTheme.fromSpacing(AuraSpacing.xs),
+        top: context.auraTheme.fromSpacing(.xs),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 14, color: color),
-          const AuraSizedBox(width: AuraSpacing.xs),
+          const AuraSizedBox(width: .xs),
           DefaultTextStyle(
             style: TextStyle(
               color: color,
@@ -635,7 +635,7 @@ class _CompactingIndicator extends StatelessWidget {
               child: AuraSpinner(),
             ),
           ),
-          const AuraSizedBox(width: AuraSpacing.sm),
+          const AuraSizedBox(width: .sm),
           Text(
             LocaleKeys.compaction_compacting_row_label.tr(),
             style: TextStyle(

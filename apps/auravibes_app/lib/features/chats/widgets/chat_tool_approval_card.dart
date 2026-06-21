@@ -108,7 +108,7 @@ class _ApprovalCardContent extends ConsumerWidget {
 
     return Container(
       padding: EdgeInsets.all(
-        context.auraTheme.fromSpacing(AuraSpacing.md),
+        context.auraTheme.fromSpacing(.md),
       ),
       decoration: BoxDecoration(
         color: auraColors.warning.withValues(alpha: 0.08),
@@ -117,13 +117,13 @@ class _ApprovalCardContent extends ConsumerWidget {
         ),
         borderRadius: BorderRadius.all(
           Radius.circular(
-            context.auraTheme.fromBorderRadius(AuraBorderRadius.lg),
+            context.auraTheme.fromBorderRadius(.lg),
           ),
         ),
       ),
       width: double.infinity,
       margin: EdgeInsets.all(
-        context.auraTheme.fromSpacing(AuraSpacing.md),
+        context.auraTheme.fromSpacing(.md),
       ),
       child: AuraColumn(
         children: [
@@ -145,7 +145,7 @@ class _ApprovalCardContent extends ConsumerWidget {
             messageId: current.messageId,
           ),
         ],
-        spacing: AuraSpacing.sm,
+        spacing: .sm,
       ),
     );
   }
@@ -179,7 +179,7 @@ class _NavigationHeader extends StatelessWidget {
           size: 16,
           color: auraColors.warning,
         ),
-        const AuraSizedBox(width: AuraSpacing.xs),
+        const AuraSizedBox(width: .xs),
         Expanded(
           child: Text(
             LocaleKeys.tool_approval_pending_count.tr(
@@ -196,7 +196,7 @@ class _NavigationHeader extends StatelessWidget {
           icon: Icons.chevron_left,
           onPressed: hasPrev ? onPrev : null,
         ),
-        const AuraSizedBox(width: AuraSpacing.xs),
+        const AuraSizedBox(width: .xs),
         _NavButton(
           icon: Icons.chevron_right,
           onPressed: hasNext ? onNext : null,
@@ -266,13 +266,13 @@ class _ToolCallInfo extends StatelessWidget {
 
     return Container(
       padding: EdgeInsets.all(
-        context.auraTheme.fromSpacing(AuraSpacing.sm),
+        context.auraTheme.fromSpacing(.sm),
       ),
       decoration: BoxDecoration(
         color: auraColors.surfaceVariant.withValues(alpha: 0.5),
         borderRadius: BorderRadius.all(
           Radius.circular(
-            context.auraTheme.fromBorderRadius(AuraBorderRadius.sm),
+            context.auraTheme.fromBorderRadius(.sm),
           ),
         ),
       ),
@@ -289,7 +289,7 @@ class _ToolCallInfo extends StatelessWidget {
             ),
           ),
           if (decodedArgs != null) ...[
-            const AuraSizedBox(height: AuraSpacing.xs),
+            const AuraSizedBox(height: .xs),
             Text(
               decodedArgs,
               style: TextStyle(
@@ -462,7 +462,7 @@ class _ConfirmationButtons extends ConsumerWidget {
           ],
         ),
       ],
-      spacing: AuraSpacing.sm,
+      spacing: .sm,
     );
   }
 

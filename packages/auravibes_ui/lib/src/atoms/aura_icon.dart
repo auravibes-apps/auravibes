@@ -190,12 +190,12 @@ class AuraIconButton extends StatelessWidget {
 
   AuraBorderRadius _getBorderRadius() {
     return switch (size) {
-      AuraIconSize.extraSmall => AuraBorderRadius.sm,
-      AuraIconSize.small => AuraBorderRadius.sm,
-      AuraIconSize.medium => AuraBorderRadius.md,
-      AuraIconSize.large => AuraBorderRadius.md,
-      AuraIconSize.extraLarge => AuraBorderRadius.lg,
-      AuraIconSize.huge => AuraBorderRadius.lg,
+      AuraIconSize.extraSmall => .sm,
+      AuraIconSize.small => .sm,
+      AuraIconSize.medium => .md,
+      AuraIconSize.large => .md,
+      AuraIconSize.extraLarge => .lg,
+      AuraIconSize.huge => .lg,
     };
   }
 

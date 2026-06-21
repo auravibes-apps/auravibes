@@ -168,10 +168,10 @@ class AuraFloatingActionButton extends StatelessWidget {
 
   AuraBorderRadius _getBorderRadius() {
     return switch (size) {
-      AuraFABSize.mini => AuraBorderRadius.lg,
-      AuraFABSize.regular => AuraBorderRadius.xl,
-      AuraFABSize.large => AuraBorderRadius.xl,
-      AuraFABSize.extended => AuraBorderRadius.xl,
+      AuraFABSize.mini => .lg,
+      AuraFABSize.regular => .xl,
+      AuraFABSize.large => .xl,
+      AuraFABSize.extended => .xl,
     };
   }
 

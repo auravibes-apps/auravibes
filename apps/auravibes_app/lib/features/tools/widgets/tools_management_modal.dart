@@ -41,7 +41,7 @@ class ToolsManagementModal extends ConsumerWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.all(
           Radius.circular(
-            context.auraTheme.fromBorderRadius(AuraBorderRadius.xl),
+            context.auraTheme.fromBorderRadius(.xl),
           ),
         ),
       ),
@@ -57,7 +57,7 @@ class ToolsManagementModal extends ConsumerWidget {
             // Header with close button.
             Container(
               padding: EdgeInsets.all(
-                context.auraTheme.fromSpacing(AuraSpacing.md),
+                context.auraTheme.fromSpacing(.md),
               ),
               decoration: BoxDecoration(
                 border: Border(
@@ -105,7 +105,7 @@ class ToolsManagementModal extends ConsumerWidget {
             ),
 
             // Bottom padding.
-            const AuraSizedBox(height: AuraSpacing.md),
+            const AuraSizedBox(height: .md),
           ],
         ),
       ),
@@ -133,7 +133,7 @@ class _GroupedToolsList extends StatelessWidget {
 
     return ListView.builder(
       padding: EdgeInsets.all(
-        context.auraTheme.fromSpacing(AuraSpacing.md),
+        context.auraTheme.fromSpacing(.md),
       ),
       itemBuilder: (context, index) {
         final group = groups[index];

@@ -90,7 +90,7 @@ class AuraCard extends StatelessWidget {
         ? ClipRRect(
             borderRadius: BorderRadius.all(
               Radius.circular(
-                context.auraTheme.fromBorderRadius(AuraBorderRadius.xl),
+                context.auraTheme.fromBorderRadius(.xl),
               ),
             ),
             // ClipBehavior: Clip.hardEdge,.
@@ -110,7 +110,7 @@ class AuraCard extends StatelessWidget {
                   borderRadius: BorderRadius.all(
                     Radius.circular(
                       context.auraTheme.fromBorderRadius(
-                        AuraBorderRadius.xl,
+                        .xl,
                       ),
                     ),
                   ),
@@ -135,7 +135,7 @@ class AuraCard extends StatelessWidget {
               border: border,
               borderRadius: BorderRadius.all(
                 Radius.circular(
-                  context.auraTheme.fromBorderRadius(AuraBorderRadius.xl),
+                  context.auraTheme.fromBorderRadius(.xl),
                 ),
               ),
               boxShadow: shadows,

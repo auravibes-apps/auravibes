@@ -40,7 +40,7 @@ class ToolItemRow extends HookConsumerWidget {
 
     return Padding(
       padding: EdgeInsets.symmetric(
-        vertical: context.auraTheme.fromSpacing(AuraSpacing.xs),
+        vertical: context.auraTheme.fromSpacing(.xs),
       ),
       child: AuraColumn(
         children: [
@@ -53,7 +53,7 @@ class ToolItemRow extends HookConsumerWidget {
                       : context.auraColors.surfaceVariant,
                   borderRadius: BorderRadius.all(
                     Radius.circular(
-                      context.auraTheme.fromBorderRadius(AuraBorderRadius.sm),
+                      context.auraTheme.fromBorderRadius(.sm),
                     ),
                   ),
                 ),
@@ -68,7 +68,7 @@ class ToolItemRow extends HookConsumerWidget {
                   ),
                 ),
               ),
-              const AuraSizedBox(width: AuraSpacing.sm),
+              const AuraSizedBox(width: .sm),
               Expanded(
                 child: AuraColumn(
                   children: [
@@ -83,7 +83,7 @@ class ToolItemRow extends HookConsumerWidget {
                       color: AuraColorVariant.onSurfaceVariant,
                     ),
                   ],
-                  spacing: AuraSpacing.xs,
+                  spacing: .xs,
                   crossAxisAlignment: CrossAxisAlignment.start,
                 ),
               ),
@@ -115,8 +115,8 @@ class ToolItemRow extends HookConsumerWidget {
           if (isExpanded.value)
             Padding(
               padding: EdgeInsets.only(
-                left: 36 + context.auraTheme.fromSpacing(AuraSpacing.sm),
-                top: context.auraTheme.fromSpacing(AuraSpacing.sm),
+                left: 36 + context.auraTheme.fromSpacing(.sm),
+                top: context.auraTheme.fromSpacing(.sm),
               ),
               child: _ToolOptions(
                 tool: tool,
@@ -211,7 +211,7 @@ class _ToolOptions extends HookConsumerWidget {
             ),
           ),
       ],
-      spacing: AuraSpacing.sm,
+      spacing: .sm,
       crossAxisAlignment: CrossAxisAlignment.start,
     );
   }

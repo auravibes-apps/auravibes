@@ -50,7 +50,7 @@ class ConversationToolsGroupCard extends HookConsumerWidget {
 
     return Padding(
       padding: EdgeInsets.only(
-        bottom: context.auraTheme.fromSpacing(AuraSpacing.md),
+        bottom: context.auraTheme.fromSpacing(.md),
       ),
       child: AuraCard(
         child: AuraColumn(
@@ -151,8 +151,8 @@ class _ToolsList extends StatelessWidget {
     if (groupWithTools.tools.isEmpty) {
       return Padding(
         padding: EdgeInsets.symmetric(
-          vertical: context.auraTheme.fromSpacing(AuraSpacing.md),
-          horizontal: context.auraTheme.fromSpacing(AuraSpacing.sm),
+          vertical: context.auraTheme.fromSpacing(.md),
+          horizontal: context.auraTheme.fromSpacing(.sm),
         ),
         child: Center(
           child: AuraText(
@@ -166,7 +166,7 @@ class _ToolsList extends StatelessWidget {
 
     return Padding(
       padding: EdgeInsets.all(
-        context.auraTheme.fromSpacing(AuraSpacing.sm),
+        context.auraTheme.fromSpacing(.sm),
       ),
       child: AuraColumn(
         children: groupWithTools.tools.map((toolState) {
@@ -176,7 +176,7 @@ class _ToolsList extends StatelessWidget {
             conversationId: conversationId,
           );
         }).toList(),
-        spacing: AuraSpacing.sm,
+        spacing: .sm,
       ),
     );
   }

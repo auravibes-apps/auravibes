@@ -78,7 +78,7 @@ class ConversationToolTile extends HookConsumerWidget {
               onChanged: onPermissionChanged,
             ),
         ],
-        spacing: AuraSpacing.none,
+        spacing: .none,
         crossAxisAlignment: CrossAxisAlignment.start,
       ),
       padding: .none,
@@ -120,7 +120,7 @@ class _ToolSummaryRow extends StatelessWidget {
             isWorkspaceEnabled: isWorkspaceEnabled,
           ),
         ],
-        spacing: AuraSpacing.md,
+        spacing: .md,
       ),
       padding: .medium,
     );
@@ -147,7 +147,7 @@ class _ToolIcon extends StatelessWidget {
             : context.auraColors.surfaceVariant,
         borderRadius: BorderRadius.all(
           Radius.circular(
-            context.auraTheme.fromBorderRadius(AuraBorderRadius.md),
+            context.auraTheme.fromBorderRadius(.md),
           ),
         ),
       ),
@@ -199,7 +199,7 @@ class _ToolDescription extends StatelessWidget {
             color: AuraColorVariant.onSurfaceVariant,
           ),
       ],
-      spacing: AuraSpacing.xs,
+      spacing: .xs,
       crossAxisAlignment: CrossAxisAlignment.start,
     );
   }
@@ -260,13 +260,13 @@ class _ToolPermissionSection extends StatelessWidget {
               ),
               ToolPermissionSelector(value: value, onChanged: onChanged),
             ],
-            spacing: AuraSpacing.sm,
+            spacing: .sm,
             crossAxisAlignment: CrossAxisAlignment.start,
           ),
           padding: .medium,
         ),
       ],
-      spacing: AuraSpacing.none,
+      spacing: .none,
       crossAxisAlignment: CrossAxisAlignment.start,
     );
   }

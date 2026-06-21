@@ -119,12 +119,12 @@ class AuraLoadingOverlay extends StatelessWidget {
       color: backgroundColor ?? auraColors.scrim,
       child: Center(
         child: Container(
-          padding: EdgeInsets.all(auraTheme.fromSpacing(AuraSpacing.xl)),
+          padding: EdgeInsets.all(auraTheme.fromSpacing(.xl)),
           decoration: BoxDecoration(
             color: auraColors.surface,
             borderRadius: BorderRadius.all(
               Radius.circular(
-                auraTheme.fromBorderRadius(AuraBorderRadius.lg),
+                auraTheme.fromBorderRadius(.lg),
               ),
             ),
             boxShadow: const [DesignShadows.lg],
@@ -138,7 +138,7 @@ class AuraLoadingOverlay extends StatelessWidget {
                       size: spinnerSize,
                       color: spinnerColor,
                     ),
-                    SizedBox(height: auraTheme.fromSpacing(AuraSpacing.md)),
+                    SizedBox(height: auraTheme.fromSpacing(.md)),
                     Text(
                       message,
                       style: TextStyle(

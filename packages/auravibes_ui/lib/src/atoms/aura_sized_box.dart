@@ -10,8 +10,8 @@ import 'package:flutter/widgets.dart';
 class AuraSizedBox extends StatelessWidget {
   /// Default constructor.
   const AuraSizedBox({
-    this.width = AuraSpacing.none,
-    this.height = AuraSpacing.none,
+    this.width = .none,
+    this.height = .none,
     this.child,
     super.key,
   });
@@ -30,8 +30,8 @@ class AuraSizedBox extends StatelessWidget {
     final theme = context.auraTheme;
 
     return SizedBox(
-      width: width == AuraSpacing.none ? null : theme.fromSpacing(width),
-      height: height == AuraSpacing.none ? null : theme.fromSpacing(height),
+      width: width == .none ? null : theme.fromSpacing(width),
+      height: height == .none ? null : theme.fromSpacing(height),
       child: child,
     );
   }

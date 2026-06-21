@@ -39,7 +39,7 @@ class ToolsEmptyState extends StatelessWidget {
               color: AuraColorVariant.onSurfaceVariant,
             ),
           ],
-          spacing: AuraSpacing.md,
+          spacing: .md,
           mainAxisSize: MainAxisSize.min,
         ),
       ),

@@ -240,8 +240,8 @@ class _ChatControlsBar extends StatelessWidget {
           children: [
             Padding(
               padding: EdgeInsets.only(
-                top: context.auraTheme.fromSpacing(AuraSpacing.sm),
-                right: context.auraTheme.fromSpacing(AuraSpacing.sm),
+                top: context.auraTheme.fromSpacing(.sm),
+                right: context.auraTheme.fromSpacing(.sm),
               ),
               child: const Align(
                 alignment: Alignment.centerRight,
@@ -305,13 +305,13 @@ class _RateLimitRetryIndicatorState extends State<_RateLimitRetryIndicator> {
 
     return Padding(
       padding: EdgeInsets.symmetric(
-        vertical: context.auraTheme.fromSpacing(AuraSpacing.xs),
-        horizontal: context.auraTheme.fromSpacing(AuraSpacing.md),
+        vertical: context.auraTheme.fromSpacing(.xs),
+        horizontal: context.auraTheme.fromSpacing(.md),
       ),
       child: Row(
         children: [
           const AuraSpinner(size: AuraSpinnerSize.small),
-          const AuraSizedBox(width: AuraSpacing.sm),
+          const AuraSizedBox(width: .sm),
           Flexible(
             child: AuraText(
               child: Text(

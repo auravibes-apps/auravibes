@@ -66,7 +66,7 @@ class ToolsScreen extends ConsumerWidget {
                                   workspaceId: workspaceId,
                                 ),
                               ],
-                              spacing: AuraSpacing.xs,
+                              spacing: .xs,
                               mainAxisSize: MainAxisSize.min,
                             ),
                             variant: AuraBadgeVariant.success,
@@ -74,7 +74,7 @@ class ToolsScreen extends ConsumerWidget {
                         ],
                       ),
                     ],
-                    spacing: AuraSpacing.sm,
+                    spacing: .sm,
                     crossAxisAlignment: CrossAxisAlignment.start,
                   ),
                 ),
@@ -85,8 +85,8 @@ class ToolsScreen extends ConsumerWidget {
             ),
           ),
           Positioned(
-            right: context.auraTheme.fromSpacing(AuraSpacing.md),
-            bottom: context.auraTheme.fromSpacing(AuraSpacing.md),
+            right: context.auraTheme.fromSpacing(.md),
+            bottom: context.auraTheme.fromSpacing(.md),
             child: AuraFloatingActionButton(
               onPressed: () =>
                   AddToolModal.show(context, workspaceId: workspaceId),

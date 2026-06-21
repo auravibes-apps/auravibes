@@ -41,7 +41,7 @@ class ToolsGroupCard extends HookConsumerWidget {
 
     return Padding(
       padding: EdgeInsets.only(
-        bottom: context.auraTheme.fromSpacing(AuraSpacing.md),
+        bottom: context.auraTheme.fromSpacing(.md),
       ),
       child: AuraCard(
         child: AuraColumn(
@@ -157,8 +157,8 @@ class _ToolsList extends StatelessWidget {
     if (groupWithTools.tools.isEmpty) {
       return Padding(
         padding: EdgeInsets.symmetric(
-          vertical: context.auraTheme.fromSpacing(AuraSpacing.md),
-          horizontal: context.auraTheme.fromSpacing(AuraSpacing.sm),
+          vertical: context.auraTheme.fromSpacing(.md),
+          horizontal: context.auraTheme.fromSpacing(.sm),
         ),
         child: Center(
           child: AuraText(
@@ -172,7 +172,7 @@ class _ToolsList extends StatelessWidget {
 
     return Padding(
       padding: EdgeInsets.symmetric(
-        horizontal: context.auraTheme.fromSpacing(AuraSpacing.sm),
+        horizontal: context.auraTheme.fromSpacing(.sm),
       ),
       child: Column(
         children: groupWithTools.tools

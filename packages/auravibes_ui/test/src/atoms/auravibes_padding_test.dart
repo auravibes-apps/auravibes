@@ -8,10 +8,10 @@ void main() {
   group('AuraEdgeInsetsGeometry', () {
     test('only constructor sets individual sides', () {
       const padding = AuraEdgeInsetsGeometry.only(
-        left: AuraSpacing.sm,
-        top: AuraSpacing.md,
-        right: AuraSpacing.lg,
-        bottom: AuraSpacing.xl,
+        left: .sm,
+        top: .md,
+        right: .lg,
+        bottom: .xl,
       );
       expect(padding.left, AuraSpacing.sm);
       expect(padding.top, AuraSpacing.md);
@@ -20,7 +20,7 @@ void main() {
     });
 
     test('horizontal constructor sets left and right', () {
-      const padding = AuraEdgeInsetsGeometry.horizontal(AuraSpacing.md);
+      const padding = AuraEdgeInsetsGeometry.horizontal(.md);
       expect(padding.left, AuraSpacing.md);
       expect(padding.right, AuraSpacing.md);
       expect(padding.top, AuraSpacing.none);
@@ -28,7 +28,7 @@ void main() {
     });
 
     test('vertical constructor sets top and bottom', () {
-      const padding = AuraEdgeInsetsGeometry.vertical(AuraSpacing.md);
+      const padding = AuraEdgeInsetsGeometry.vertical(.md);
       expect(padding.top, AuraSpacing.md);
       expect(padding.bottom, AuraSpacing.md);
       expect(padding.left, AuraSpacing.none);
@@ -45,8 +45,8 @@ void main() {
 
     test('symmetric constructor sets horizontal and vertical', () {
       const padding = AuraEdgeInsetsGeometry.symmetric(
-        horizontal: AuraSpacing.sm,
-        vertical: AuraSpacing.md,
+        horizontal: .sm,
+        vertical: .md,
       );
       expect(padding.left, AuraSpacing.sm);
       expect(padding.right, AuraSpacing.sm);

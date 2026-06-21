@@ -108,7 +108,7 @@ class AddModelProviderWidget extends HookConsumerWidget {
         Flexible(
           child: SingleChildScrollView(
             padding: EdgeInsets.all(
-              context.auraTheme.fromSpacing(AuraSpacing.lg),
+              context.auraTheme.fromSpacing(.lg),
             ),
             controller: scrollController,
             child: Form(
@@ -127,13 +127,13 @@ class AddModelProviderWidget extends HookConsumerWidget {
                       workspaceId: workspaceId,
                       fieldType: ModelInputFieldType.key,
                     ),
-                    const AuraSizedBox(height: AuraSpacing.xl),
+                    const AuraSizedBox(height: .xl),
                     _ApiConfigSection(
                       workspaceId: workspaceId,
                       onSubmit: () => _submitForm(context, ref),
                     ),
                   ],
-                  const AuraSizedBox(height: AuraSpacing.xl),
+                  const AuraSizedBox(height: .xl),
                   if (codexDeviceCode.value case final deviceCode?) ...[
                     _CodexDeviceCodePanel(
                       deviceCode: deviceCode,
@@ -142,7 +142,7 @@ class AddModelProviderWidget extends HookConsumerWidget {
                         codexDeviceCode.value = null;
                       },
                     ),
-                    const AuraSizedBox(height: AuraSpacing.xl),
+                    const AuraSizedBox(height: .xl),
                   ],
                   _CreateButton(
                     workspaceId: workspaceId,
@@ -195,7 +195,7 @@ class _ModalHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.all(
-        context.auraTheme.fromSpacing(AuraSpacing.lg),
+        context.auraTheme.fromSpacing(.lg),
       ),
       child: Row(
         children: [
@@ -278,7 +278,7 @@ class _HiddenSection extends HookWidget {
             ),
           ],
         ),
-        const AuraSizedBox(height: AuraSpacing.md),
+        const AuraSizedBox(height: .md),
         Visibility(
           child: child,
           visible: visibilityState.value,
@@ -309,7 +309,7 @@ class _ErrorBanner extends ConsumerWidget {
 
     return Container(
       padding: EdgeInsets.all(
-        context.auraTheme.fromSpacing(AuraSpacing.md),
+        context.auraTheme.fromSpacing(.md),
       ),
       decoration: BoxDecoration(
         color: context.auraColors.error.withValues(alpha: 0.1),
@@ -318,7 +318,7 @@ class _ErrorBanner extends ConsumerWidget {
         ),
         borderRadius: BorderRadius.all(
           Radius.circular(
-            context.auraTheme.fromBorderRadius(AuraBorderRadius.md),
+            context.auraTheme.fromBorderRadius(.md),
           ),
         ),
       ),
@@ -329,7 +329,7 @@ class _ErrorBanner extends ConsumerWidget {
             size: 20,
             color: context.auraColors.error,
           ),
-          const AuraSizedBox(width: AuraSpacing.sm),
+          const AuraSizedBox(width: .sm),
           Expanded(
             child: Text(
               error,
@@ -401,7 +401,7 @@ class _CreateButton extends HookConsumerWidget {
             isFullWidth: true,
             disabled: disabled,
           ),
-          const AuraSizedBox(height: AuraSpacing.md),
+          const AuraSizedBox(height: .md),
         ],
         AuraButton(
           onPressed: isCodex ? onCodexDeviceSubmit : onSubmit,
@@ -441,15 +441,15 @@ class _CodexDeviceCodePanel extends StatelessWidget {
             ),
             style: AuraTextStyle.bodyLarge,
           ),
-          const AuraSizedBox(height: AuraSpacing.sm),
+          const AuraSizedBox(height: .sm),
           SelectableText(deviceCode.verificationUrl),
-          const AuraSizedBox(height: AuraSpacing.sm),
+          const AuraSizedBox(height: .sm),
           AuraText(
             child: Text(deviceCode.userCode),
             style: AuraTextStyle.heading5,
             color: AuraColorVariant.primary,
           ),
-          const AuraSizedBox(height: AuraSpacing.md),
+          const AuraSizedBox(height: .md),
           AuraButton(
             onPressed: onCancel,
             child: const TextLocale(LocaleKeys.common_cancel),
@@ -506,7 +506,7 @@ class _SelectModelProvider extends HookConsumerWidget {
             LocaleKeys.chats_screens_chat_conversation_select_model_selctor,
           ),
         ),
-        const AuraSizedBox(height: AuraSpacing.md),
+        const AuraSizedBox(height: .md),
         // Search input field.
         AuraInput(
           initialValue: searchQuery.value,
@@ -523,7 +523,7 @@ class _SelectModelProvider extends HookConsumerWidget {
             searchQuery.value = value;
           },
         ),
-        const AuraSizedBox(height: AuraSpacing.md),
+        const AuraSizedBox(height: .md),
         Expanded(
           child: filteredModels.isEmpty
               ? Center(
@@ -535,7 +535,7 @@ class _SelectModelProvider extends HookConsumerWidget {
                         size: 48,
                         color: context.auraColors.onSurfaceVariant,
                       ),
-                      const AuraSizedBox(height: AuraSpacing.sm),
+                      const AuraSizedBox(height: .sm),
                       const AuraText(
                         child: TextLocale(
                           AddModelProviderWidget.noModelsFoundKey,
@@ -629,12 +629,12 @@ class _SelectedModelHeader extends HookConsumerWidget {
               .models_screens_add_provider_back_to_selection
               .tr(),
         ),
-        const AuraSizedBox(width: AuraSpacing.md),
+        const AuraSizedBox(width: .md),
         ModelLogo(
           modelId: selectedModel?.id ?? openAICodexProviderId,
           height: 24,
         ),
-        const AuraSizedBox(width: AuraSpacing.md),
+        const AuraSizedBox(width: .md),
         Expanded(
           child: AuraText(
             child: Text(selectedModelName),

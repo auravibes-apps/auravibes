@@ -61,12 +61,12 @@ class AuraMessageBubble extends StatelessWidget {
           ),
           margin: EdgeInsets.only(
             left: context.auraTheme.fromSpacing(
-              isUser ? AuraSpacing.xl : AuraSpacing.md,
+              isUser ? .xl : .md,
             ),
             right: context.auraTheme.fromSpacing(
-              isUser ? AuraSpacing.md : AuraSpacing.xl,
+              isUser ? .md : .xl,
             ),
-            bottom: context.auraTheme.fromSpacing(AuraSpacing.sm),
+            bottom: context.auraTheme.fromSpacing(.sm),
           ),
           child: Column(
             crossAxisAlignment: isUser
@@ -80,7 +80,7 @@ class AuraMessageBubble extends StatelessWidget {
                 decoration: _getDecoration(
                   auraColors,
                   borderRadius: context.auraTheme.fromBorderRadius(
-                    AuraBorderRadius.xl,
+                    .xl,
                   ),
                 ),
                 child: Column(
@@ -94,7 +94,7 @@ class AuraMessageBubble extends StatelessWidget {
                           : auraColors.onSurface,
                     ),
                     if (timestamp != null) ...[
-                      const AuraSizedBox(height: AuraSpacing.xs),
+                      const AuraSizedBox(height: .xs),
                       _AuraMessageBubbleTimestamp(
                         timestamp: timestamp,
                         textColor: isUser
@@ -107,7 +107,7 @@ class AuraMessageBubble extends StatelessWidget {
               ),
               if (status != AuraMessageDeliveryStatus.sent) ...[
                 SizedBox(
-                  height: context.auraTheme.fromSpacing(AuraSpacing.xs) / 2,
+                  height: context.auraTheme.fromSpacing(.xs) / 2,
                 ),
                 AuraMessageStatus(
                   status: status,
@@ -202,14 +202,14 @@ class _AuraMessageBubbleContent extends StatelessWidget {
       AuraMessageContentType.image => ClipRRect(
         borderRadius: BorderRadius.all(
           Radius.circular(
-            context.auraTheme.fromBorderRadius(AuraBorderRadius.md),
+            context.auraTheme.fromBorderRadius(.md),
           ),
         ),
         child: Image.network(
           content,
           errorBuilder: (context, error, stackTrace) => Container(
             padding: EdgeInsets.all(
-              context.auraTheme.fromSpacing(AuraSpacing.md),
+              context.auraTheme.fromSpacing(.md),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -219,7 +219,7 @@ class _AuraMessageBubbleContent extends StatelessWidget {
                   size: 20,
                   color: textColor,
                 ),
-                const AuraSizedBox(width: AuraSpacing.sm),
+                const AuraSizedBox(width: .sm),
                 Text(
                   'Failed to load image',
                   style: TextStyle(color: textColor),
@@ -238,7 +238,7 @@ class _AuraMessageBubbleContent extends StatelessWidget {
             size: 20,
             color: textColor,
           ),
-          const AuraSizedBox(width: AuraSpacing.sm),
+          const AuraSizedBox(width: .sm),
           Flexible(
             child: Text(
               content,

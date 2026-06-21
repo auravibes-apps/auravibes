@@ -187,7 +187,7 @@ class _AuraInputState extends State<AuraInput> {
               children: [
                 if (prefixIcon != null) ...[
                   prefixIcon,
-                  const AuraSizedBox(width: AuraSpacing.sm),
+                  const AuraSizedBox(width: .sm),
                 ],
                 Expanded(
                   child: TextFormField(
@@ -225,7 +225,7 @@ class _AuraInputState extends State<AuraInput> {
                   ),
                 ),
                 if (suffixIcon != null) ...[
-                  const AuraSizedBox(width: AuraSpacing.sm),
+                  const AuraSizedBox(width: .sm),
                   suffixIcon,
                 ],
               ],

@@ -44,7 +44,7 @@ class ToolCallResponseModal extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.all(
           Radius.circular(
-            context.auraTheme.fromBorderRadius(AuraBorderRadius.xl),
+            context.auraTheme.fromBorderRadius(.xl),
           ),
         ),
       ),
@@ -64,7 +64,7 @@ class ToolCallResponseModal extends StatelessWidget {
             Flexible(
               child: SingleChildScrollView(
                 padding: EdgeInsets.all(
-                  context.auraTheme.fromSpacing(AuraSpacing.md),
+                  context.auraTheme.fromSpacing(.md),
                 ),
                 child: SizedBox(
                   width: double.infinity,
@@ -95,7 +95,7 @@ class _ToolCallResponseModalHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.all(
-        context.auraTheme.fromSpacing(AuraSpacing.md),
+        context.auraTheme.fromSpacing(.md),
       ),
       decoration: BoxDecoration(
         border: Border(
@@ -110,7 +110,7 @@ class _ToolCallResponseModalHeader extends StatelessWidget {
             Icons.terminal,
             color: AuraColorVariant.primary,
           ),
-          const AuraSizedBox(width: AuraSpacing.sm),
+          const AuraSizedBox(width: .sm),
           Expanded(
             child: AuraText(
               child: Text(toolName),
@@ -137,7 +137,7 @@ class _ToolCallResponseModalFooter extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.all(
-        context.auraTheme.fromSpacing(AuraSpacing.md),
+        context.auraTheme.fromSpacing(.md),
       ),
       decoration: BoxDecoration(
         border: Border(

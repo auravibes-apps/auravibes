@@ -140,9 +140,9 @@ class AuraBadge extends StatelessWidget {
 
   AuraBorderRadius _getBorderRadius() {
     return switch (size) {
-      AuraBadgeSize.small => AuraBorderRadius.sm,
-      AuraBadgeSize.medium => AuraBorderRadius.sm,
-      AuraBadgeSize.large => AuraBorderRadius.md,
+      AuraBadgeSize.small => .sm,
+      AuraBadgeSize.medium => .sm,
+      AuraBadgeSize.large => .md,
     };
   }
 

@@ -194,13 +194,13 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
             child: AuraFieldWrapper(
               child: Padding(
                 padding: EdgeInsets.symmetric(
-                  vertical: context.auraTheme.fromSpacing(AuraSpacing.sm),
-                  horizontal: context.auraTheme.fromSpacing(AuraSpacing.md),
+                  vertical: context.auraTheme.fromSpacing(.sm),
+                  horizontal: context.auraTheme.fromSpacing(.md),
                 ),
                 child: Row(
                   children: [
                     Expanded(child: AuraText(child: displayText)),
-                    const AuraSizedBox(width: AuraSpacing.sm),
+                    const AuraSizedBox(width: .sm),
                     AuraIcon(
                       _isDropdownOpen
                           ? Icons.keyboard_arrow_up
@@ -285,7 +285,7 @@ class _DropdownMenuState<T> extends State<_DropdownMenu<T>> {
         border: Border.fromBorderSide(BorderSide(color: auraColors.outline)),
         borderRadius: BorderRadius.all(
           Radius.circular(
-            context.auraTheme.fromBorderRadius(AuraBorderRadius.md),
+            context.auraTheme.fromBorderRadius(.md),
           ),
         ),
       ),
@@ -308,17 +308,17 @@ class _DropdownMenuState<T> extends State<_DropdownMenu<T>> {
                       child: Padding(
                         padding: EdgeInsets.symmetric(
                           vertical: context.auraTheme.fromSpacing(
-                            AuraSpacing.sm,
+                            .sm,
                           ),
                           horizontal: context.auraTheme.fromSpacing(
-                            AuraSpacing.md,
+                            .md,
                           ),
                         ),
                         child: Row(
                           children: [
                             if (leading != null) ...[
                               leading,
-                              const AuraSizedBox(width: AuraSpacing.sm),
+                              const AuraSizedBox(width: .sm),
                             ],
                             Expanded(
                               child: AuraText(
@@ -335,10 +335,10 @@ class _DropdownMenuState<T> extends State<_DropdownMenu<T>> {
                               ),
                             ),
                             if (trailing != null) ...[
-                              const AuraSizedBox(width: AuraSpacing.sm),
+                              const AuraSizedBox(width: .sm),
                               trailing,
                             ] else if (isSelected) ...[
-                              const AuraSizedBox(width: AuraSpacing.sm),
+                              const AuraSizedBox(width: .sm),
                               const AuraIcon(
                                 Icons.check,
                                 size: AuraIconSize.small,
@@ -356,7 +356,7 @@ class _DropdownMenuState<T> extends State<_DropdownMenu<T>> {
                         borderRadius: BorderRadius.all(
                           Radius.circular(
                             context.auraTheme.fromBorderRadius(
-                              AuraBorderRadius.sm,
+                              .sm,
                             ),
                           ),
                         ),

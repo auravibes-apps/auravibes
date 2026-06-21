@@ -31,12 +31,12 @@ class ToolsWorkspaceListWidget extends ConsumerWidget {
       AsyncLoading() => const Center(child: AuraSpinner()),
       AsyncData(value: final groups) when groups.isEmpty => ToolsEmptyState(
         padding: EdgeInsets.all(
-          context.auraTheme.fromSpacing(AuraSpacing.xl),
+          context.auraTheme.fromSpacing(.xl),
         ),
       ),
       AsyncData(value: final groups) => ListView.builder(
         padding: EdgeInsets.symmetric(
-          vertical: context.auraTheme.fromSpacing(AuraSpacing.sm),
+          vertical: context.auraTheme.fromSpacing(.sm),
         ),
         itemBuilder: (context, index) {
           return ToolsGroupCard(

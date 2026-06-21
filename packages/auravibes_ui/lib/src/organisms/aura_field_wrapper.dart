@@ -83,7 +83,7 @@ class _AuraFieldWrapperState extends State<AuraFieldWrapper> {
         children: [
           if (label != null)
             AuraFieldLabel(child: label, isRequired: widget.isRequired),
-          if (label != null) const AuraSizedBox(height: AuraSpacing.xs),
+          if (label != null) const AuraSizedBox(height: .xs),
           AuraPressable(
             child: AnimatedContainer(
               decoration: BoxDecoration(
@@ -94,7 +94,7 @@ class _AuraFieldWrapperState extends State<AuraFieldWrapper> {
                 borderRadius: BorderRadius.all(
                   Radius.circular(
                     context.auraTheme.fromBorderRadius(
-                      AuraBorderRadius.xl,
+                      .xl,
                     ),
                   ),
                 ),
@@ -109,7 +109,7 @@ class _AuraFieldWrapperState extends State<AuraFieldWrapper> {
               borderRadius: BorderRadius.all(
                 Radius.circular(
                   context.auraTheme.fromBorderRadius(
-                    AuraBorderRadius.xl,
+                    .xl,
                   ),
                 ),
               ),
@@ -118,7 +118,7 @@ class _AuraFieldWrapperState extends State<AuraFieldWrapper> {
             onPressed: widget.isEnabled ? widget.onTap : null,
           ),
           if (widget.hint != null || widget.error != null)
-            const AuraSizedBox(height: AuraSpacing.xs),
+            const AuraSizedBox(height: .xs),
           if (widget.hint != null || widget.error != null)
             AuraFieldHint(text: widget.hint, error: widget.error),
         ],

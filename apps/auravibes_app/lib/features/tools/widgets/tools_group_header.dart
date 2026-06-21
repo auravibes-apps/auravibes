@@ -57,7 +57,7 @@ class ToolsGroupHeader extends StatelessWidget {
       children: [
         // Group icon.
         _GroupIcon(groupWithTools: groupWithTools),
-        const AuraSizedBox(width: AuraSpacing.sm),
+        const AuraSizedBox(width: .sm),
 
         // Group name and status.
         Expanded(
@@ -94,7 +94,7 @@ class ToolsGroupHeader extends StatelessWidget {
                 color: AuraColorVariant.onSurfaceVariant,
               ),
             ],
-            spacing: AuraSpacing.xs,
+            spacing: .xs,
             crossAxisAlignment: CrossAxisAlignment.start,
           ),
         ),
@@ -134,7 +134,7 @@ class ToolsGroupHeader extends StatelessWidget {
               ),
             ),
           ],
-          spacing: AuraSpacing.xs,
+          spacing: .xs,
         ),
       ],
     );
@@ -159,7 +159,7 @@ class _GroupIcon extends StatelessWidget {
             : context.auraColors.surfaceVariant,
         borderRadius: BorderRadius.all(
           Radius.circular(
-            context.auraTheme.fromBorderRadius(AuraBorderRadius.md),
+            context.auraTheme.fromBorderRadius(.md),
           ),
         ),
       ),
@@ -245,7 +245,7 @@ class _ErrorBadge extends StatelessWidget {
                 ),
                 Text(LocaleKeys.tools_screen_mcp_error.tr()),
               ],
-              spacing: AuraSpacing.xs,
+              spacing: .xs,
               mainAxisSize: MainAxisSize.min,
             ),
             variant: .error,
@@ -303,7 +303,7 @@ class _DisconnectedBadge extends StatelessWidget {
             ),
           ),
       ],
-      spacing: AuraSpacing.xs,
+      spacing: .xs,
       mainAxisSize: MainAxisSize.min,
     );
   }

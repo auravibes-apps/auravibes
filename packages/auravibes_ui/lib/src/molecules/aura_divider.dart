@@ -78,7 +78,7 @@ class AuraDivider extends StatelessWidget {
     final label = this.label;
     if (label != null) {
       return Container(
-        height: height ?? context.auraTheme.fromSpacing(AuraSpacing.xl),
+        height: height ?? context.auraTheme.fromSpacing(.xl),
         margin: EdgeInsets.only(
           left: indent,
           right: endIndent,
@@ -93,7 +93,7 @@ class AuraDivider extends StatelessWidget {
             ),
             Padding(
               padding: EdgeInsets.symmetric(
-                horizontal: context.auraTheme.fromSpacing(AuraSpacing.md),
+                horizontal: context.auraTheme.fromSpacing(.md),
               ),
               child: AuraText(
                 child: label,
@@ -114,7 +114,7 @@ class AuraDivider extends StatelessWidget {
 
     if (orientation == AuraDividerOrientation.vertical) {
       return Container(
-        width: width ?? context.auraTheme.fromSpacing(AuraSpacing.md),
+        width: width ?? context.auraTheme.fromSpacing(.md),
         margin: EdgeInsets.only(
           top: indent,
           bottom: endIndent,
@@ -129,7 +129,7 @@ class AuraDivider extends StatelessWidget {
     }
 
     return Container(
-      height: height ?? context.auraTheme.fromSpacing(AuraSpacing.md),
+      height: height ?? context.auraTheme.fromSpacing(.md),
       margin: EdgeInsets.only(
         left: indent,
         right: endIndent,

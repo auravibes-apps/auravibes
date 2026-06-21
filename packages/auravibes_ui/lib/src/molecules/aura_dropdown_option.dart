@@ -60,8 +60,8 @@ class AuraDropdownOption<T> extends StatelessWidget {
     Widget result = AuraPressable(
       child: Container(
         padding: EdgeInsets.symmetric(
-          vertical: context.auraTheme.fromSpacing(AuraSpacing.sm),
-          horizontal: context.auraTheme.fromSpacing(AuraSpacing.md),
+          vertical: context.auraTheme.fromSpacing(.sm),
+          horizontal: context.auraTheme.fromSpacing(.md),
         ),
         decoration: BoxDecoration(
           color: _getBackgroundColor(auraColors),
@@ -70,7 +70,7 @@ class AuraDropdownOption<T> extends StatelessWidget {
           children: [
             if (leading != null) ...[
               leading,
-              const AuraSizedBox(width: AuraSpacing.sm),
+              const AuraSizedBox(width: .sm),
             ],
             Expanded(
               child:
@@ -87,10 +87,10 @@ class AuraDropdownOption<T> extends StatelessWidget {
                   ),
             ),
             if (trailing != null) ...[
-              const AuraSizedBox(width: AuraSpacing.sm),
+              const AuraSizedBox(width: .sm),
               trailing,
             ] else if (isSelected) ...[
-              const AuraSizedBox(width: AuraSpacing.sm),
+              const AuraSizedBox(width: .sm),
               const AuraIcon(
                 Icons.check,
                 size: AuraIconSize.small,

@@ -22,7 +22,7 @@ class ConversationContextUsagePill extends ConsumerWidget {
 
     return Padding(
       padding: EdgeInsets.only(
-        right: context.auraTheme.fromSpacing(AuraSpacing.sm),
+        right: context.auraTheme.fromSpacing(.sm),
       ),
       child: AuraTooltip(
         message: tooltip,
@@ -41,7 +41,7 @@ class ConversationContextUsagePill extends ConsumerWidget {
                     borderRadius: BorderRadius.all(
                       Radius.circular(
                         context.auraTheme.fromBorderRadius(
-                          AuraBorderRadius.full,
+                          .full,
                         ),
                       ),
                     ),
@@ -66,16 +66,16 @@ class ConversationContextUsagePill extends ConsumerWidget {
                   size: AuraBadgeSize.small,
                 ),
               ],
-              spacing: AuraSpacing.xs,
+              spacing: .xs,
               mainAxisSize: MainAxisSize.min,
             ),
             padding: const AuraEdgeInsetsGeometry.symmetric(
-              horizontal: AuraSpacing.sm,
-              vertical: AuraSpacing.xs,
+              horizontal: .sm,
+              vertical: .xs,
             ),
             backgroundColor: AuraColorVariant.surfaceVariant,
             borderRadius: context.auraTheme.fromBorderRadius(
-              AuraBorderRadius.full,
+              .full,
             ),
             border: Border.fromBorderSide(
               BorderSide(color: auraColors.outlineVariant),
