@@ -135,7 +135,16 @@ class AuraLoadingOverlay extends StatelessWidget {
                       color: spinnerColor,
                     ),
                     const SizedBox(height: DesignSpacing.md),
-                    Text(message),
+                    Text(
+                      message,
+                      style: TextStyle(
+                        color: auraColors.onSurfaceVariant,
+                        fontSize: DesignTypography.fontSizeLg,
+                        fontWeight: DesignTypography.fontWeightRegular,
+                        fontFamily: DesignTypography.bodyFontFamily,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
                   ],
                 )
               : AuraSpinner(
