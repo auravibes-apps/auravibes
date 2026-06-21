@@ -8,17 +8,16 @@ import 'package:flutter/material.dart';
 
 /// Hue color values for semantic colors.
 ///
-/// These values are the hue components (in degrees) extracted from the
-/// semantic brand colors defined in the design system. The original colors
-/// are specified as hex/ARGB values in the `designColor*` tokens below (for
-/// example, the success, error, warning, and info semantic colors), then
-/// converted to an HSL/HSB color space and the resulting hue channel is
-/// recorded here.
+/// These are the hue components (in degrees) for the success, error,
+/// warning, and info semantic colors. The semantic colors themselves are
+/// generated from these hues via OKLCH in `aura_theme.dart`
+/// (`AuraColorScheme._light`/`._dark`), so the values below are the
+/// canonical source for those colors.
 ///
-/// When updating any of the underlying semantic colors in the design system,
-/// recalculate these hue values using the same conversion process instead of
-/// choosing arbitrary numbers, to keep the token set consistent and
-/// traceable back to the source design.
+/// When updating any semantic color in the design system, recalculate the
+/// matching hue using the same HSL/HSB conversion instead of choosing an
+/// arbitrary number, to keep the token set consistent and traceable back to
+/// the source design.
 
 /// Hue value (in degrees) for the success semantic color (green range).
 const double hueSuccess = 149.04;
