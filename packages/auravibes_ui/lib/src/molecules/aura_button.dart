@@ -58,12 +58,8 @@ class AuraButton extends StatelessWidget {
         child: AuraPadding(
           child: Center(
             child: isLoading
-                ? SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: AuraLoadingCircle(
-                      colorVariant: _getLoadingColorVariant(),
-                    ),
+                ? AuraLoadingCircle.compact(
+                    colorVariant: _getLoadingColorVariant(),
                   )
                 : DefaultTextStyle(
                     style: _getTextStyle(

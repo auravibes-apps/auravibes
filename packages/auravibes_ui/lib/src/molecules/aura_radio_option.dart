@@ -131,6 +131,7 @@ class AuraRadio<T> extends StatelessWidget {
       AuraColorVariant.onSurfaceVariant => auraColors.onSurfaceVariant,
       AuraColorVariant.surfaceVariant => auraColors.surfaceVariant,
       AuraColorVariant.error => auraColors.error,
+      AuraColorVariant.onError => auraColors.onError,
       AuraColorVariant.onPrimary => auraColors.onPrimary,
       AuraColorVariant.success => auraColors.success,
       AuraColorVariant.warning => auraColors.warning,

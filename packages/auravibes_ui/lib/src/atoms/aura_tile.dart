@@ -1,5 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
+import 'package:auravibes_ui/src/atoms/aura_loading_circle.dart';
 import 'package:auravibes_ui/src/atoms/aura_sized_box.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
@@ -55,7 +56,7 @@ class AuraTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
     final auraTheme = context.auraTheme;
-    final loadingColor = _getLoadingColor(auraColors);
+    final loadingColorVariant = _getLoadingColorVariant();
     final leading = this.leading;
     final trailing = this.trailing;
     final tileChild = child;
@@ -64,13 +65,8 @@ class AuraTile extends StatelessWidget {
     final Widget content;
     if (isLoading) {
       content = Center(
-        child: SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(loadingColor),
-            strokeWidth: 2,
-          ),
+        child: AuraLoadingCircle.compact(
+          colorVariant: loadingColorVariant,
         ),
       );
     } else if (isChildEmpty && leading != null && trailing == null) {
@@ -150,13 +146,13 @@ class AuraTile extends StatelessWidget {
     return [];
   }
 
-  Color _getLoadingColor(AuraColorScheme colors) {
+  AuraColorVariant _getLoadingColorVariant() {
     return switch (variant) {
-      AuraTileVariant.primary => colors.onPrimary,
-      AuraTileVariant.surface => colors.onSurface,
-      AuraTileVariant.ghost => colors.primary,
-      AuraTileVariant.selected => colors.primary,
-      AuraTileVariant.error => colors.onError,
+      AuraTileVariant.primary => AuraColorVariant.onPrimary,
+      AuraTileVariant.surface => AuraColorVariant.onSurface,
+      AuraTileVariant.ghost => AuraColorVariant.primary,
+      AuraTileVariant.selected => AuraColorVariant.primary,
+      AuraTileVariant.error => AuraColorVariant.onError,
     };
   }
 
