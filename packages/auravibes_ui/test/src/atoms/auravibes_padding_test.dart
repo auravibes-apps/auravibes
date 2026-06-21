@@ -108,8 +108,8 @@ void main() {
     });
 
     test('hashCode includes right padding', () {
-      const a = AuraEdgeInsetsGeometry.only(right: .sm);
-      const b = AuraEdgeInsetsGeometry.only(bottom: .sm);
+      const a = AuraEdgeInsetsGeometry.only(right: AuraSpacing.sm);
+      const b = AuraEdgeInsetsGeometry.only(bottom: AuraSpacing.sm);
       expect(a.hashCode, isNot(b.hashCode));
     });
   });

@@ -91,10 +91,10 @@ void main() {
 
       final padding = tester.widget<Padding>(find.byType(Padding));
       final edgeInsets = padding.padding as EdgeInsets;
-      expect(edgeInsets.left, 16);
-      expect(edgeInsets.top, 16);
-      expect(edgeInsets.right, 16);
-      expect(edgeInsets.bottom, 16);
+      expect(edgeInsets.left, AuraTheme.light.spacing.md);
+      expect(edgeInsets.top, AuraTheme.light.spacing.md);
+      expect(edgeInsets.right, AuraTheme.light.spacing.md);
+      expect(edgeInsets.bottom, AuraTheme.light.spacing.md);
     });
   });
 
@@ -183,10 +183,10 @@ void main() {
 
       final padding = tester.widget<Padding>(find.byType(Padding));
       final edgeInsets = padding.padding as EdgeInsets;
-      expect(edgeInsets.left, 8);
-      expect(edgeInsets.top, 8);
-      expect(edgeInsets.right, 8);
-      expect(edgeInsets.bottom, 8);
+      expect(edgeInsets.left, AuraTheme.light.spacing.sm);
+      expect(edgeInsets.top, AuraTheme.light.spacing.sm);
+      expect(edgeInsets.right, AuraTheme.light.spacing.sm);
+      expect(edgeInsets.bottom, AuraTheme.light.spacing.sm);
     });
   });
 }
