@@ -69,98 +69,6 @@ class AuraSpinner extends StatelessWidget {
   }
 }
 
-/// A specialized spinner component with a label.
-///
-/// This provides a consistent way to show loading states with descriptive text.
-class AuraSpinnerWithLabel extends StatelessWidget {
-  /// Creates a Aura spinner with label.
-  const AuraSpinnerWithLabel({
-    required this.label,
-    super.key,
-    this.size = AuraSpinnerSize.medium,
-    this.color,
-    this.strokeWidth,
-    this.spacing = DesignSpacing.sm,
-    this.direction = Axis.vertical,
-    this.semanticLabel,
-  });
-
-  /// The label text to display with the spinner.
-  final String label;
-
-  /// The size of the spinner.
-  final AuraSpinnerSize size;
-
-  /// The color of the spinner. If null, uses the primary color.
-  final Color? color;
-
-  /// The width of the spinner stroke. If null, uses a default based on size.
-  final double? strokeWidth;
-
-  /// The spacing between the spinner and label.
-  final double spacing;
-
-  /// The direction to layout the spinner and label.
-  final Axis direction;
-
-  /// A semantic label for the spinner for accessibility.
-  final String? semanticLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    final auraColors = context.auraColors;
-    final spinner = AuraSpinner(
-      size: size,
-      color: color,
-      strokeWidth: strokeWidth,
-      semanticLabel: semanticLabel,
-    );
-
-    final labelWidget = Text(
-      label,
-      style: TextStyle(
-        color: auraColors.onSurfaceVariant,
-        fontSize: _getLabelFontSize(),
-        fontWeight: DesignTypography.fontWeightRegular,
-        fontFamily: DesignTypography.bodyFontFamily,
-      ),
-      textAlign: TextAlign.center,
-    );
-
-    if (direction == Axis.horizontal) {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          spinner,
-          SizedBox(width: spacing),
-          labelWidget,
-        ],
-      );
-    }
-
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        spinner,
-        SizedBox(height: spacing),
-        labelWidget,
-      ],
-    );
-  }
-
-  double _getLabelFontSize() {
-    return switch (size) {
-      AuraSpinnerSize.extraSmall => DesignTypography.fontSizeXs,
-      AuraSpinnerSize.small => DesignTypography.fontSizeSm,
-      AuraSpinnerSize.medium => DesignTypography.fontSizeBase,
-      AuraSpinnerSize.large => DesignTypography.fontSizeLg,
-      AuraSpinnerSize.extraLarge => DesignTypography.fontSizeXl,
-    };
-  }
-}
-
 /// A specialized full-screen loading overlay component.
 ///
 /// This provides a consistent way to show loading states that cover the entire
@@ -218,11 +126,26 @@ class AuraLoadingOverlay extends StatelessWidget {
             boxShadow: const [DesignShadows.lg],
           ),
           child: message != null
-              ? AuraSpinnerWithLabel(
-                  label: message,
-                  size: spinnerSize,
-                  color: spinnerColor,
-                  spacing: DesignSpacing.md,
+              ? Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AuraSpinner(
+                      size: spinnerSize,
+                      color: spinnerColor,
+                    ),
+                    const SizedBox(height: DesignSpacing.md),
+                    Text(
+                      message,
+                      style: TextStyle(
+                        color: auraColors.onSurfaceVariant,
+                        fontSize: DesignTypography.fontSizeLg,
+                        fontWeight: DesignTypography.fontWeightRegular,
+                        fontFamily: DesignTypography.bodyFontFamily,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 )
               : AuraSpinner(
                   size: spinnerSize,
