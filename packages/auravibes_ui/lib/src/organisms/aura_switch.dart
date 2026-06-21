@@ -61,50 +61,72 @@ class AuraSwitch extends StatelessWidget {
     final thumbColor = _getThumbColor(auraColors);
     final loadingColorVariant = _getLoadingColorVariant();
 
-    return GestureDetector(
-      child: MouseRegion(
-        cursor: isInteractive
+    void handleToggle() => onChanged?.call(!value);
+
+    return Semantics(
+      child: FocusableActionDetector(
+        enabled: isInteractive,
+        actions: {
+          ActivateIntent: CallbackAction<ActivateIntent>(
+            onInvoke: (_) {
+              handleToggle();
+
+              return null;
+            },
+          ),
+        },
+        mouseCursor: isInteractive
             ? SystemMouseCursors.click
             : SystemMouseCursors.basic,
-        child: AnimatedContainer(
-          padding: EdgeInsets.all(thumbPadding),
-          decoration: BoxDecoration(
-            color: trackColor,
-            borderRadius: BorderRadius.circular(trackHeight / 2),
-          ),
-          width: trackWidth,
-          height: trackHeight,
-          child: Stack(
-            children: [
-              AnimatedPositioned(
-                child: AnimatedContainer(
-                  decoration: BoxDecoration(
-                    color: thumbColor,
-                    boxShadow: disabled ? null : [DesignShadows.sm],
-                    shape: BoxShape.circle,
-                  ),
-                  width: thumbSize,
-                  height: thumbSize,
-                  child: isLoading
-                      ? AuraLoadingCircle(
-                          colorVariant: loadingColorVariant,
-                          size: thumbSize * 0.6,
-                        )
-                      : null,
-                  duration: auraTheme.animation.normal,
+        child: GestureDetector(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+            child: Center(
+              child: AnimatedContainer(
+                padding: EdgeInsets.all(thumbPadding),
+                decoration: BoxDecoration(
+                  color: trackColor,
+                  borderRadius: BorderRadius.circular(trackHeight / 2),
                 ),
-                left: thumbOffset,
-                top: 0,
-                bottom: 0,
-                curve: Curves.easeInOut,
+                width: trackWidth,
+                height: trackHeight,
+                child: Stack(
+                  children: [
+                    AnimatedPositioned(
+                      child: AnimatedContainer(
+                        decoration: BoxDecoration(
+                          color: thumbColor,
+                          boxShadow: disabled ? null : [DesignShadows.sm],
+                          shape: BoxShape.circle,
+                        ),
+                        width: thumbSize,
+                        height: thumbSize,
+                        child: isLoading
+                            ? AuraLoadingCircle(
+                                colorVariant: loadingColorVariant,
+                                size: thumbSize * 0.6,
+                              )
+                            : null,
+                        duration: auraTheme.animation.normal,
+                      ),
+                      left: thumbOffset,
+                      top: 0,
+                      bottom: 0,
+                      curve: Curves.easeInOut,
+                      duration: auraTheme.animation.normal,
+                    ),
+                  ],
+                ),
                 duration: auraTheme.animation.normal,
               ),
-            ],
+            ),
           ),
-          duration: auraTheme.animation.normal,
+          onTap: isInteractive ? handleToggle : null,
+          behavior: HitTestBehavior.opaque,
         ),
       ),
-      onTap: isInteractive ? () => onChanged(!value) : null,
+      enabled: isInteractive,
+      toggled: value,
     );
   }
 
