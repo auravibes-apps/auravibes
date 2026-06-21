@@ -42,10 +42,7 @@ final class CalculatorTool extends UserToolEntity<String, Object, String> {
 
           return evaluator.evaluate(exp).toString();
         } on Exception catch (_) {
-          const apostropheCodeUnit = 39;
-          final apostrophe = String.fromCharCode(apostropheCodeUnit);
-
-          return 'I don${apostrophe}t know how to do that.';
+          return '''I don't know how to do that.''';
         }
       }),
     );
