@@ -1101,6 +1101,121 @@ void main() {
         );
       },
     );
+    test(
+      'tracks error when acknowledging pending user message fails',
+      () async {
+        when(
+          () => conversationRepository.getConversationById('conversation-1'),
+        ).thenAnswer((_) async => _conversation);
+        when(
+          () =>
+              workspaceModelSelectionsRepository.getWorkspaceModelSelectionById(
+                'model-1',
+              ),
+        ).thenAnswer((_) async => _model);
+        when(
+          () => loadConversationToolSpecsUsecase(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+          ),
+        ).thenAnswer((_) async => const []);
+        when(() => messageRepository.createMessage(any())).thenAnswer(
+          (_) async => _unfinishedAssistantMessage,
+        );
+        when(
+          () => messageRepository.patchMessage('user-1', any()),
+        ).thenThrow(Exception('ack failed'));
+        when(
+          () => chatbotService.sendMessage(
+            _model,
+            any(),
+            tools: const [],
+            sessionId: any(named: 'sessionId'),
+          ),
+        ).thenAnswer(
+          (_) => Stream.fromIterable([
+            ChatResult(
+              output: ChatMessage.model('Working'),
+              finishReason: FinishReason.stop,
+              usage: const LanguageModelUsage(),
+            ),
+          ]),
+        );
+
+        await expectLater(
+          usecase.call(
+            conversationId: 'conversation-1',
+            context: const AgentIterationContext(
+              origin: AgentIterationOrigin.userMessage,
+              ackMessageIds: ['user-1'],
+            ),
+          ),
+          throwsA(isA<Exception>()),
+        );
+      },
+    );
+    test(
+      'tracks error when persisting completed assistant message fails',
+      () async {
+        when(
+          () => conversationRepository.getConversationById('conversation-1'),
+        ).thenAnswer((_) async => _conversation);
+        when(
+          () =>
+              workspaceModelSelectionsRepository.getWorkspaceModelSelectionById(
+                'model-1',
+              ),
+        ).thenAnswer((_) async => _model);
+        when(
+          () => loadConversationToolSpecsUsecase(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+          ),
+        ).thenAnswer((_) async => const []);
+        when(() => messageRepository.createMessage(any())).thenAnswer(
+          (_) async => _unfinishedAssistantMessage,
+        );
+        when(
+          () => messageRepository.patchMessage('user-1', any()),
+        ).thenAnswer((_) async => _userMessage);
+        when(
+          () => messageRepository.patchMessage('assistant-1', any()),
+        ).thenAnswer((invocation) async {
+          final patch = invocation.positionalArguments[1] as MessagePatch;
+          if (patch.status == MessageStatus.unfinished) {
+            return _unfinishedAssistantMessage;
+          }
+          throw Exception('persist failed');
+        });
+        when(
+          () => chatbotService.sendMessage(
+            _model,
+            any(),
+            tools: const [],
+            sessionId: any(named: 'sessionId'),
+          ),
+        ).thenAnswer(
+          (_) => Stream.fromIterable([
+            ChatResult(
+              output: ChatMessage.model('Working'),
+              finishReason: FinishReason.stop,
+              usage: const LanguageModelUsage(),
+            ),
+          ]),
+        );
+
+        await expectLater(
+          usecase.call(
+            conversationId: 'conversation-1',
+            context: const AgentIterationContext(
+              origin: AgentIterationOrigin.userMessage,
+              ackMessageIds: ['user-1'],
+            ),
+          ),
+          throwsA(isA<Exception>()),
+        );
+      },
+    );
   });
 
   group('ContinueAgentUsecase prompt selection', () {
