@@ -212,6 +212,7 @@ class _AuraTooltipState extends State<AuraTooltip> {
       AuraColorVariant.secondary => colors.onSecondary,
       AuraColorVariant.success => colors.onSuccess,
       AuraColorVariant.error => colors.onError,
+      AuraColorVariant.onError => colors.error,
       AuraColorVariant.warning => colors.onWarning,
       AuraColorVariant.info => colors.onInfo,
       AuraColorVariant.surfaceVariant => colors.onSurface,

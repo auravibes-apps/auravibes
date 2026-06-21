@@ -86,15 +86,9 @@ class AuraSwitch extends StatelessWidget {
                   width: thumbSize,
                   height: thumbSize,
                   child: isLoading
-                      ? Center(
-                          child: SizedBox(
-                            width: thumbSize * 0.6,
-                            height: thumbSize * 0.6,
-                            child: AuraLoadingCircle(
-                              colorVariant: loadingColorVariant,
-                              size: thumbSize * 0.6,
-                            ),
-                          ),
+                      ? AuraLoadingCircle(
+                          colorVariant: loadingColorVariant,
+                          size: thumbSize * 0.6,
                         )
                       : null,
                   duration: auraTheme.animation.normal,

@@ -40,6 +40,17 @@ class AuraLoadingCircle extends StatefulWidget {
     this.controller,
   });
 
+  /// Compact loading indicator for inline controls.
+  const AuraLoadingCircle.compact({
+    required this.colorVariant,
+    super.key,
+    this.duration = const Duration(milliseconds: 1200),
+    this.controller,
+  }) : size = 20.0,
+       itemSize = null,
+       itemCount = null,
+       itemBuilder = null;
+
   /// Dot color used by the default item builder.
   ///
   /// Ignored when [itemBuilder] is provided, because custom builders own their

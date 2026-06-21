@@ -141,7 +141,7 @@ void main() {
 
   group('AuraColorVariant enum', () {
     test('has all expected values', () {
-      expect(AuraColorVariant.values, hasLength(10));
+      expect(AuraColorVariant.values, hasLength(11));
       expect(AuraColorVariant.values, contains(AuraColorVariant.primary));
       expect(AuraColorVariant.values, contains(AuraColorVariant.onSurface));
       expect(
@@ -153,6 +153,7 @@ void main() {
         contains(AuraColorVariant.surfaceVariant),
       );
       expect(AuraColorVariant.values, contains(AuraColorVariant.error));
+      expect(AuraColorVariant.values, contains(AuraColorVariant.onError));
       expect(AuraColorVariant.values, contains(AuraColorVariant.onPrimary));
       expect(AuraColorVariant.values, contains(AuraColorVariant.secondary));
       expect(AuraColorVariant.values, contains(AuraColorVariant.success));

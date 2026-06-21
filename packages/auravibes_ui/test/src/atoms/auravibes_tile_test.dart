@@ -1,3 +1,4 @@
+import 'package:auravibes_ui/src/atoms/aura_loading_circle.dart';
 import 'package:auravibes_ui/src/atoms/aura_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -55,7 +56,10 @@ void main() {
         ),
       );
 
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      final loadingCircle = tester.widget<AuraLoadingCircle>(
+        find.byType(AuraLoadingCircle),
+      );
+      expect(loadingCircle.size, 20);
       expect(find.text('Test Tile'), findsNothing);
     });
 
