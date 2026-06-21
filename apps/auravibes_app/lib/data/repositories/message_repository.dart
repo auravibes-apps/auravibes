@@ -159,7 +159,7 @@ class MessageRepository {
     return _database.messageDao.deleteMessage(id);
   }
 
-  Future<bool> messageExists(String id) async {
+  Future<bool> messageExists(String id) {
     return _database.messageDao.messageExists(id);
   }
 
@@ -175,7 +175,7 @@ class MessageRepository {
     return messageTables.map(_mapToMessage).toList();
   }
 
-  Future<int> getMessageCountByConversation(String conversationId) async {
+  Future<int> getMessageCountByConversation(String conversationId) {
     return _database.messageDao.getMessageCountByConversation(conversationId);
   }
 

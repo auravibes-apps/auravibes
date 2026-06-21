@@ -320,17 +320,6 @@ void main() {
       });
     });
 
-    group('copyWorkspaceToolsToConversation', () {
-      test('completes without error', () async {
-        await fixture.repository.copyWorkspaceToolsToConversation(
-          'ws-1',
-          'conv-1',
-        );
-
-        expect(true, true);
-      });
-    });
-
     group('validateWorkspaceToolSetting', () {
       test('returns true for valid workspace and tool', () async {
         when(
@@ -348,7 +337,6 @@ void main() {
         final result = await fixture.repository.validateWorkspaceToolSetting(
           'ws-1',
           'calculator',
-          isEnabled: true,
         );
 
         expect(result, true);
@@ -363,7 +351,6 @@ void main() {
           fixture.repository.validateWorkspaceToolSetting(
             'nonexistent',
             'calculator',
-            isEnabled: true,
           ),
           throwsA(isA<WorkspaceToolsValidationException>()),
         );
@@ -386,7 +373,6 @@ void main() {
           fixture.repository.validateWorkspaceToolSetting(
             'ws-1',
             'totally_invalid_tool_type_xyz',
-            isEnabled: true,
           ),
           throwsA(isA<WorkspaceToolsValidationException>()),
         );

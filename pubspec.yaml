@@ -31,7 +31,7 @@ melos:
         sdk: ^3.12.0
   scripts:
     analyze:
-      run: dart analyze
+      run: dart analyze --fatal-infos --fatal-warnings
 
     analyze:fix:
       run: dart fix --apply

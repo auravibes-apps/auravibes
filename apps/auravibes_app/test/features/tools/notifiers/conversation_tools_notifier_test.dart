@@ -784,9 +784,8 @@ class _FakeConversationToolsRepository implements ConversationToolsRepository {
   @override
   Future<bool> validateConversationToolSetting(
     String conversationId,
-    String toolId, {
-    required bool isEnabled,
-  }) {
+    String toolId,
+  ) {
     throw UnimplementedError();
   }
 }
@@ -799,14 +798,6 @@ class _FakeWorkspaceToolsRepository implements WorkspaceToolsRepository {
     String workspaceId,
   ) async {
     return workspaceTools;
-  }
-
-  @override
-  Future<void> copyWorkspaceToolsToConversation(
-    String workspaceId,
-    String conversationId,
-  ) {
-    throw UnimplementedError();
   }
 
   @override
@@ -899,10 +890,8 @@ class _FakeWorkspaceToolsRepository implements WorkspaceToolsRepository {
   @override
   Future<bool> validateWorkspaceToolSetting(
     String workspaceId,
-    String toolType, {
-    required bool isEnabled,
-    String? config,
-  }) {
+    String toolType,
+  ) {
     throw UnimplementedError();
   }
 }

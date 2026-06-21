@@ -38,14 +38,14 @@ class ToolsGroupsRepository {
   Future<bool> setToolsGroupEnabled(
     String groupId, {
     required bool isEnabled,
-  }) async {
+  }) {
     return _database.toolsGroupsDao.setToolsGroupEnabled(
       groupId,
       isEnabled: isEnabled,
     );
   }
 
-  Future<bool> deleteToolsGroup(String id) async {
+  Future<bool> deleteToolsGroup(String id) {
     return _database.toolsGroupsDao.deleteToolsGroupById(id);
   }
 
