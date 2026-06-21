@@ -392,21 +392,21 @@ void main() {
   });
 }
 
-ChatCompletionsProvider<OpenRouterOptions> _timeoutProvider() {
-  return ChatCompletionsProvider<OpenRouterOptions>(
-    ChatCompletionsProviderConfig(
-      name: 'openrouter',
-      baseUrl: 'https://openrouter.ai/api/v1',
-      errorLabel: 'OpenRouter',
-      parseOptions: OpenRouterOptions.fromJson,
-      extraBody: (_) => const {},
-      apiKey: 'key',
-      models: const [
-        ChatCompletionsModelDefinition(name: 'anthropic/claude-sonnet-4'),
-      ],
-      httpClient: _NeverRespondingClient(),
-      requestTimeout: const Duration(milliseconds: 1),
+ChatCompletionsPlugin _timeoutProvider() {
+  return ChatCompletionsPlugin(
+    name: 'openrouter',
+    baseUrl: 'https://openrouter.ai/api/v1',
+    errorLabel: 'OpenRouter',
+    customize: (modelName, config) => (
+      model: modelName,
+      extraBody: const <String, dynamic>{},
     ),
+    apiKey: 'key',
+    models: const [
+      ChatCompletionsModelDefinition(name: 'anthropic/claude-sonnet-4'),
+    ],
+    httpClient: _NeverRespondingClient(),
+    requestTimeout: const Duration(milliseconds: 1),
   );
 }
 

@@ -25,37 +25,26 @@ class OpenAICompatReasoningPluginHandle {
     Map<String, String>? headers,
     http.Client? httpClient,
   }) {
-    return ChatCompletionsProvider<OpenAICompatReasoningOptions>(
-      ChatCompletionsProviderConfig(
-        name: name,
-        baseUrl: baseUrl,
-        errorLabel: 'OpenAI-compatible',
-        parseOptions: OpenAICompatReasoningOptions.fromJson,
-        extraBody: (options) => {
-          'temperature': ?options.temperature,
-          'top_p': ?options.topP,
-          'max_tokens': ?options.maxTokens,
-          'stop': ?options.stop,
-          'presence_penalty': ?options.presencePenalty,
-          'frequency_penalty': ?options.frequencyPenalty,
-          'seed': ?options.seed,
-          'user': ?options.user,
-          'thinking': ?options.reasoning?.toJson(),
-        },
-        resolveModel: (modelName, options) => options.version ?? modelName,
-        apiKey: apiKey,
-        apiKeyProvider: apiKeyProvider,
-        models: models
-            .map(
-              (model) => ChatCompletionsModelDefinition(
-                name: model.name,
-                info: model.info,
-              ),
-            )
-            .toList(),
-        headers: headers,
-        httpClient: httpClient,
-      ),
+    return ChatCompletionsPlugin(
+      name: name,
+      baseUrl: baseUrl,
+      errorLabel: 'OpenAI-compatible',
+      customize: (modelName, config) {
+        final options = OpenAICompatReasoningOptions.fromJson(config);
+
+        return (
+          model: options.version ?? modelName,
+          extraBody: {
+            ...options.toSamplingBody(),
+            'thinking': ?options.reasoning?.toJson(),
+          },
+        );
+      },
+      apiKey: apiKey,
+      apiKeyProvider: apiKeyProvider,
+      models: models,
+      headers: headers,
+      httpClient: httpClient,
     );
   }
 
@@ -67,7 +56,7 @@ class OpenAICompatReasoningPluginHandle {
   }
 }
 
-class OpenAICompatReasoningOptions {
+class OpenAICompatReasoningOptions with ChatCompletionsSamplingOptions {
   OpenAICompatReasoningOptions({
     this.version,
     this.temperature,
@@ -103,13 +92,21 @@ class OpenAICompatReasoningOptions {
   }
 
   final String? version;
+  @override
   final double? temperature;
+  @override
   final double? topP;
+  @override
   final int? maxTokens;
+  @override
   final List<String>? stop;
+  @override
   final double? presencePenalty;
+  @override
   final double? frequencyPenalty;
+  @override
   final int? seed;
+  @override
   final String? user;
   final OpenAICompatReasoningConfig? reasoning;
 
