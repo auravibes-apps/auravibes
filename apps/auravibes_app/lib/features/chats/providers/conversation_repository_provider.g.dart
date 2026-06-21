@@ -55,7 +55,7 @@ final class ConversationRepositoryProvider
 }
 
 String _$conversationRepositoryHash() =>
-    r'6c31068530da229269885eedc3c1925b9b22701f';
+    r'e9ed15db60dd753bb07168a151ffda1dbaea9f01';
 
 @ProviderFor(messageRepository)
 final messageRepositoryProvider = MessageRepositoryProvider._();
@@ -102,4 +102,4 @@ final class MessageRepositoryProvider
   }
 }
 
-String _$messageRepositoryHash() => r'c5783220430bd59803e20c9d782f65df426ffa66';
+String _$messageRepositoryHash() => r'cb513215a96ad088ea5338c28c5e606a209d8f76';

@@ -4,12 +4,11 @@
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:dio/dio.dart';
-import 'package:dio_smart_retry/dio_smart_retry.dart';
 
 /// Service for interacting with the models.dev API.
 ///
 /// This service handles fetching model and provider data from the external API,
-/// parsing responses, and handling network errors and retries.
+/// parsing responses, and handling network errors.
 class ModelApiService {
   ModelApiService({Dio? dio}) : _dio = dio ?? _createDefaultDio();
 
@@ -18,7 +17,7 @@ class ModelApiService {
 
   /// Creates a default Dio instance with configuration.
   static Dio _createDefaultDio() {
-    final dio = Dio(
+    return Dio(
       BaseOptions(
         connectTimeout: const Duration(seconds: 10),
         receiveTimeout: const Duration(seconds: 30),
@@ -30,20 +29,6 @@ class ModelApiService {
         },
       ),
     );
-
-    // Add retry interceptor.
-    dio.interceptors.add(
-      RetryInterceptor(
-        dio: dio,
-        retryDelays: const [
-          Duration(seconds: 1),
-          Duration(seconds: 2),
-          Duration(seconds: 3),
-        ],
-      ),
-    );
-
-    return dio;
   }
 
   /// Fetches all models and providers from the API.

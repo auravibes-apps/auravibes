@@ -3,7 +3,7 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
-import 'package:auravibes_app/domain/repositories/workspace_repository.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:drift/drift.dart';
 
 /// Implementation of the [WorkspaceRepository] interface.
@@ -11,34 +11,30 @@ import 'package:drift/drift.dart';
 /// This class provides a concrete implementation of workspace data operations
 /// using the Drift database. It handles the mapping between domain entities
 /// and database records, and provides proper error handling using exceptions.
-class WorkspaceRepositoryImpl implements WorkspaceRepository {
-  WorkspaceRepositoryImpl(this._database);
+class WorkspaceRepository {
+  WorkspaceRepository(this._database);
 
   /// The database instance for workspace operations.
   final AppDatabase _database;
 
-  @override
   Future<List<WorkspaceEntity>> getAllWorkspaces() async {
     final workspaceTables = await _database.workspaceDao.getAllWorkspaces();
 
     return workspaceTables.map(_mapToWorkspace).toList();
   }
 
-  @override
   Stream<List<WorkspaceEntity>> watchAllWorkspaces() {
     return _database.workspaceDao.watchAllWorkspaces().map(
       (tables) => tables.map(_mapToWorkspace).toList(),
     );
   }
 
-  @override
   Future<WorkspaceEntity?> getWorkspaceById(String id) async {
     final workspacesTable = await _database.workspaceDao.getWorkspaceById(id);
 
     return workspacesTable != null ? _mapToWorkspace(workspacesTable) : null;
   }
 
-  @override
   Future<List<WorkspaceEntity>> getWorkspacesByType(WorkspaceType type) async {
     final workspaceTables = await _database.workspaceDao.getWorkspacesByType(
       type,
@@ -47,7 +43,6 @@ class WorkspaceRepositoryImpl implements WorkspaceRepository {
     return workspaceTables.map(_mapToWorkspace).toList();
   }
 
-  @override
   Future<WorkspaceEntity> createWorkspace(WorkspaceToCreate workspace) async {
     // Validate workspace before creating.
     if (!await validateWorkspace(workspace)) {
@@ -62,7 +57,6 @@ class WorkspaceRepositoryImpl implements WorkspaceRepository {
     return _mapToWorkspace(createdWorkspace);
   }
 
-  @override
   Future<WorkspaceEntity> patchWorkspace(
     String id,
     WorkspacePatch workspace,
@@ -100,7 +94,6 @@ class WorkspaceRepositoryImpl implements WorkspaceRepository {
     return _mapToWorkspace(updatedWorkspace);
   }
 
-  @override
   Future<bool> deleteWorkspace(String id) async {
     // Check if workspace exists.
     if (!await workspaceExists(id)) {
@@ -111,12 +104,10 @@ class WorkspaceRepositoryImpl implements WorkspaceRepository {
     return _database.workspaceDao.deleteWorkspace(id);
   }
 
-  @override
   Future<bool> workspaceExists(String id) async {
     return _database.workspaceDao.workspaceExists(id);
   }
 
-  @override
   Future<List<WorkspaceEntity>> searchWorkspacesByName(String query) async {
     final workspaceTables = await _database.workspaceDao.searchWorkspacesByName(
       query,
@@ -125,17 +116,14 @@ class WorkspaceRepositoryImpl implements WorkspaceRepository {
     return workspaceTables.map(_mapToWorkspace).toList();
   }
 
-  @override
   Future<int> getWorkspaceCount() async {
     return _database.workspaceDao.getWorkspaceCount();
   }
 
-  @override
   Future<int> getWorkspaceCountByType(WorkspaceType type) async {
     return _database.workspaceDao.getWorkspaceCountByType(type);
   }
 
-  @override
   Future<bool> validateWorkspace(WorkspaceToCreate workspace) async {
     if (!workspace.isValid) {
       throw WorkspaceValidationException(
@@ -146,7 +134,6 @@ class WorkspaceRepositoryImpl implements WorkspaceRepository {
     return true;
   }
 
-  @override
   Future<bool> patchWorkspaceTimestamp(String id) async {
     // Check if workspace exists.
     if (!await workspaceExists(id)) {
@@ -220,4 +207,71 @@ class WorkspaceRepositoryImpl implements WorkspaceRepository {
 
     return 'Unknown validation error';
   }
+}
+
+/// Base exception for workspace-related operations.
+class WorkspaceException implements Exception {
+  /// Creates a new WorkspaceException.
+  const WorkspaceException(this.message, {this.localizationKey, this.cause});
+
+  /// Error message describing the exception.
+  /// Used as fallback when localization is unavailable.
+  final String message;
+
+  /// Localization key for user-facing error messages.
+  final String? localizationKey;
+
+  /// Optional original exception that caused this exception.
+  final Exception? cause;
+
+  @override
+  String toString() {
+    final causedBy = cause != null ? ' (Caused by: $cause)' : '';
+
+    return 'WorkspaceException: $message$causedBy';
+  }
+}
+
+/// Exception thrown when workspace validation fails.
+class WorkspaceValidationException extends WorkspaceException {
+  /// Creates a new WorkspaceValidationException.
+  const WorkspaceValidationException(
+    super.message, {
+    super.localizationKey,
+    super.cause,
+  });
+}
+
+/// Exception thrown when a workspace is not found.
+class WorkspaceNotFoundException extends WorkspaceException {
+  /// Creates a new WorkspaceNotFoundException.
+  const WorkspaceNotFoundException(this.workspaceId, {super.cause})
+    : super(
+        'Workspace with ID "$workspaceId" not found',
+        localizationKey: LocaleKeys.workspace_management_error_not_found,
+      );
+
+  /// ID of the workspace that was not found.
+  final String workspaceId;
+}
+
+/// Exception thrown when attempting to delete the last remaining workspace.
+class WorkspaceDeleteLastException extends WorkspaceException {
+  /// Creates a new WorkspaceDeleteLastException.
+  const WorkspaceDeleteLastException()
+    : super(
+        'Cannot delete the last remaining workspace.',
+        localizationKey: LocaleKeys.workspace_management_delete_last_error,
+      );
+}
+
+/// Exception thrown when attempting to delete the currently active workspace.
+class WorkspaceDeleteActiveException extends WorkspaceException {
+  /// Creates a new WorkspaceDeleteActiveException.
+  const WorkspaceDeleteActiveException()
+    : super(
+        'Cannot delete the currently active workspace. '
+        'Switch to another workspace first.',
+        localizationKey: LocaleKeys.workspace_management_delete_active_error,
+      );
 }

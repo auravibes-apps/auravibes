@@ -1,7 +1,7 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/data/repositories/app_skill_workspace_settings_repository_impl.dart';
-import 'package:auravibes_app/data/repositories/skills_repository_impl.dart';
-import 'package:auravibes_app/data/repositories/workspace_repository_impl.dart';
+import 'package:auravibes_app/data/repositories/app_skill_workspace_settings_repository.dart';
+import 'package:auravibes_app/data/repositories/skills_repository.dart';
+import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
@@ -61,14 +61,14 @@ void main() {
     );
     addTearDown(container.dispose);
 
-    final workspaceRepository = WorkspaceRepositoryImpl(database);
+    final workspaceRepository = WorkspaceRepository(database);
     final workspace = await workspaceRepository.createWorkspace(
       const WorkspaceToCreate(
         name: 'Test Workspace',
         type: WorkspaceType.local,
       ),
     );
-    final skillsRepository = SkillsRepositoryImpl(database);
+    final skillsRepository = SkillsRepository(database);
     final skill = await skillsRepository.createSkill(
       workspace.id,
       const SkillToCreate(
@@ -78,7 +78,7 @@ void main() {
         content: 'Summarize selected content.',
       ),
     );
-    final appSkillSettings = AppSkillWorkspaceSettingsRepositoryImpl(database);
+    final appSkillSettings = AppSkillWorkspaceSettingsRepository(database);
     await appSkillSettings.setAppSkillEnabled(
       workspace.id,
       'skills_manager',

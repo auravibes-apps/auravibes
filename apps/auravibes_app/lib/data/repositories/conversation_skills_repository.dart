@@ -1,15 +1,13 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/conversation_skills_dao.dart';
 import 'package:auravibes_app/domain/entities/conversation_skill_entity.dart';
-import 'package:auravibes_app/domain/repositories/conversation_skills_repository.dart';
 
-class ConversationSkillsRepositoryImpl implements ConversationSkillsRepository {
-  ConversationSkillsRepositoryImpl(AppDatabase database)
+class ConversationSkillsRepository {
+  ConversationSkillsRepository(AppDatabase database)
     : _dao = database.conversationSkillsDao;
 
   final ConversationSkillsDao _dao;
 
-  @override
   Future<List<ConversationSkillEntity>> getConversationSkills(
     String conversationId,
   ) async {
@@ -18,7 +16,6 @@ class ConversationSkillsRepositoryImpl implements ConversationSkillsRepository {
     return rows.map(_tableToEntity).toList();
   }
 
-  @override
   Future<ConversationSkillEntity> setWorkspaceSkillLoaded(
     String conversationId,
     String workspaceSkillId, {
@@ -33,7 +30,6 @@ class ConversationSkillsRepositoryImpl implements ConversationSkillsRepository {
     return _tableToEntity(table);
   }
 
-  @override
   Future<ConversationSkillEntity> setAppSkillLoaded(
     String conversationId,
     String appSkillIdentifier, {

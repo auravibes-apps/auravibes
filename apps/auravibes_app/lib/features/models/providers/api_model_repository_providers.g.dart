@@ -59,7 +59,7 @@ final class ApiModelRepositoryProvider
 }
 
 String _$apiModelRepositoryHash() =>
-    r'ce28c9a1ada0e032e779e224d152730e2fb9ad85';
+    r'08031740aca25f06a00df299980b82575e12a0b7';
 
 /// Provider for the model API service.
 

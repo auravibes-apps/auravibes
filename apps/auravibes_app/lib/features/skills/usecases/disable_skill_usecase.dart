@@ -1,6 +1,6 @@
+import 'package:auravibes_app/data/repositories/app_skill_workspace_settings_repository.dart';
+import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
-import 'package:auravibes_app/domain/repositories/app_skill_workspace_settings_repository.dart';
-import 'package:auravibes_app/domain/repositories/skills_repository.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:riverpod/riverpod.dart';
 

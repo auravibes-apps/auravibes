@@ -2,7 +2,7 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/api_model_providers_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/api_models_dao.dart';
 import 'package:auravibes_app/data/database/drift/tables/model_providers_table_type.dart';
-import 'package:auravibes_app/data/repositories/api_model_repository_impl.dart';
+import 'package:auravibes_app/data/repositories/api_model_repository.dart';
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
@@ -15,7 +15,7 @@ import '../../test_mocks.dart';
 void main() {
   setUpAll(registerTestFallbackValues);
 
-  group('ApiModelRepositoryImpl', () {
+  group('ApiModelRepository', () {
     final fixture = _ApiModelRepositoryFixture();
 
     setUp(fixture.reset);
@@ -372,7 +372,7 @@ class _ApiModelRepositoryFixture {
   MockApiModelProvidersDao? _mockProvidersDao;
   MockApiModelsDao? _mockModelsDao;
   _TestAppDatabase? _database;
-  ApiModelRepositoryImpl? _repository;
+  ApiModelRepository? _repository;
 
   MockApiModelProvidersDao get mockProvidersDao =>
       _mockProvidersDao ?? fail('Fixture not initialized');
@@ -382,7 +382,7 @@ class _ApiModelRepositoryFixture {
 
   _TestAppDatabase get database => _database ?? fail('Fixture not initialized');
 
-  ApiModelRepositoryImpl get repository =>
+  ApiModelRepository get repository =>
       _repository ?? fail('Fixture not initialized');
 
   void reset() {
@@ -392,7 +392,7 @@ class _ApiModelRepositoryFixture {
     _mockProvidersDao = providersDao;
     _mockModelsDao = modelsDao;
     _database = database;
-    _repository = ApiModelRepositoryImpl(database);
+    _repository = ApiModelRepository(database);
   }
 
   Future<void> dispose() async {

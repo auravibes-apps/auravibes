@@ -1,5 +1,5 @@
-import 'package:auravibes_app/domain/repositories/conversation_skills_repository.dart';
-import 'package:auravibes_app/domain/repositories/skills_repository.dart';
+import 'package:auravibes_app/data/repositories/conversation_skills_repository.dart';
+import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/usecases/check_skill_credential_readiness_usecase.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';

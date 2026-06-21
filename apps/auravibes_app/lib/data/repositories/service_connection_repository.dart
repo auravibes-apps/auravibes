@@ -3,13 +3,12 @@ import 'package:auravibes_app/data/database/drift/tables/service_connections.dar
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
 import 'package:auravibes_app/domain/entities/service_connection_entity.dart';
-import 'package:auravibes_app/domain/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:drift/drift.dart';
 
-class ServiceConnectionRepositoryImpl implements ServiceConnectionRepository {
-  const ServiceConnectionRepositoryImpl(
+class ServiceConnectionRepository {
+  const ServiceConnectionRepository(
     this._database,
     this._encryptionService,
   );
@@ -17,14 +16,12 @@ class ServiceConnectionRepositoryImpl implements ServiceConnectionRepository {
   final AppDatabase _database;
   final EncryptionService _encryptionService;
 
-  @override
   Future<ServiceConnectionEntity?> getById(String id) async {
     final row = await _getRowById(id);
 
     return row == null ? null : _toEntity(row);
   }
 
-  @override
   Stream<List<ServiceConnectionEntity>> watchWorkspaceConnections(
     String workspaceId,
   ) {
@@ -35,7 +32,6 @@ class ServiceConnectionRepositoryImpl implements ServiceConnectionRepository {
     );
   }
 
-  @override
   Future<ServiceConnectionSecret> readSecret(String id) async {
     final row = await _requiredRowById(id);
     final encrypted = row.encryptedAuthValue;
@@ -47,7 +43,6 @@ class ServiceConnectionRepositoryImpl implements ServiceConnectionRepository {
     return ServiceConnectionAuthCodec.decodeSecret(value);
   }
 
-  @override
   Future<String?> createMcpServiceConnection({
     required String workspaceId,
     required McpServiceConnectionProfile profile,
@@ -75,7 +70,6 @@ class ServiceConnectionRepositoryImpl implements ServiceConnectionRepository {
     }
   }
 
-  @override
   Future<void> updateOAuthToken({
     required String id,
     required OAuthTokenEntity token,
@@ -109,7 +103,6 @@ class ServiceConnectionRepositoryImpl implements ServiceConnectionRepository {
         );
   }
 
-  @override
   Future<void> markReauthRequired(String id, {String? error}) async {
     final _ =
         await (_database.update(
@@ -122,7 +115,6 @@ class ServiceConnectionRepositoryImpl implements ServiceConnectionRepository {
         );
   }
 
-  @override
   Future<void> deleteOwnedMcpCredential(String id) async {
     final _ =
         await (_database.delete(_database.serviceConnections)..where(
@@ -258,4 +250,16 @@ class ServiceConnectionRepositoryImpl implements ServiceConnectionRepository {
       lastAuthError: row.lastAuthError,
     );
   }
+}
+
+class McpServiceConnectionProfile {
+  const McpServiceConnectionProfile({
+    required this.name,
+    required this.authenticationType,
+  });
+
+  final String name;
+  final McpAuthenticationType authenticationType;
+
+  String get serviceId => 'mcp:$name';
 }

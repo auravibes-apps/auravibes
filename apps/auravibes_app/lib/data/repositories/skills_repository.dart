@@ -2,23 +2,20 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/skills_dao.dart';
 import 'package:auravibes_app/data/database/drift/tables/skills.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
-import 'package:auravibes_app/domain/repositories/skills_repository.dart';
 import 'package:auravibes_app/features/skills/usecases/generate_skill_slug_usecase.dart';
 import 'package:drift/drift.dart';
 
-class SkillsRepositoryImpl implements SkillsRepository {
-  SkillsRepositoryImpl(AppDatabase database) : _dao = database.skillsDao;
+class SkillsRepository {
+  SkillsRepository(AppDatabase database) : _dao = database.skillsDao;
 
   final SkillsDao _dao;
 
-  @override
   Future<List<SkillEntity>> getWorkspaceSkills(String workspaceId) async {
     final rows = await _dao.getWorkspaceSkills(workspaceId);
 
     return rows.map(_tableToEntity).toList();
   }
 
-  @override
   Future<SkillEntity?> getSkillById(String skillId) async {
     final row = await _dao.getSkillById(skillId);
     if (row == null) return null;
@@ -26,7 +23,6 @@ class SkillsRepositoryImpl implements SkillsRepository {
     return _tableToEntity(row);
   }
 
-  @override
   Future<SkillEntity?> getSkillBySlug(String workspaceId, String slug) async {
     final row = await _dao.getSkillBySlug(workspaceId, slug);
     if (row == null) return null;
@@ -34,7 +30,6 @@ class SkillsRepositoryImpl implements SkillsRepository {
     return _tableToEntity(row);
   }
 
-  @override
   Future<SkillEntity?> getSkillByTitle(String workspaceId, String title) async {
     final row = await _dao.getSkillByTitle(workspaceId, title.trim());
     if (row == null) return null;
@@ -42,7 +37,6 @@ class SkillsRepositoryImpl implements SkillsRepository {
     return _tableToEntity(row);
   }
 
-  @override
   Future<SkillEntity> createSkill(
     String workspaceId,
     SkillToCreate skill,
@@ -65,7 +59,6 @@ class SkillsRepositoryImpl implements SkillsRepository {
     return _tableToEntity(table);
   }
 
-  @override
   Future<SkillEntity> updateSkill(String skillId, SkillToUpdate skill) async {
     final table = await _dao.updateSkill(
       skillId,
@@ -90,7 +83,6 @@ class SkillsRepositoryImpl implements SkillsRepository {
     return _tableToEntity(table);
   }
 
-  @override
   Future<bool> deleteSkill(String skillId) => _dao.deleteSkill(skillId);
 
   SkillEntity _tableToEntity(SkillsTable table) {

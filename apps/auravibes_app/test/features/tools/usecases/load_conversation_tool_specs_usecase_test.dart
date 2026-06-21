@@ -1,11 +1,11 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
+import 'package:auravibes_app/data/repositories/app_skill_workspace_settings_repository.dart';
+import 'package:auravibes_app/data/repositories/conversation_skills_repository.dart';
+import 'package:auravibes_app/data/repositories/conversation_tools_repository.dart';
+import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/tool_spec.dart';
-import 'package:auravibes_app/domain/repositories/app_skill_workspace_settings_repository.dart';
-import 'package:auravibes_app/domain/repositories/conversation_skills_repository.dart';
-import 'package:auravibes_app/domain/repositories/conversation_tools_repository.dart';
-import 'package:auravibes_app/domain/repositories/skills_repository.dart';
 import 'package:auravibes_app/domain/usecases/tools/mcp/build_combined_tool_specs_use_case.dart';
 import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
@@ -16,7 +16,7 @@ import 'package:mocktail/mocktail.dart';
 
 import '../../../test_mocks.dart';
 
-class _FakeConversationToolsRepository extends ConversationToolsRepository {
+class _FakeConversationToolsRepository implements ConversationToolsRepository {
   _FakeConversationToolsRepository(this._tools);
   final List<WorkspaceToolEntity> _tools;
 
@@ -64,23 +64,24 @@ class _FakeBuildDynamicSkillToolSpecsUsecase
   }) async => _result;
 }
 
-class _NeverSkillsRepository extends SkillsRepository {
+class _NeverSkillsRepository implements SkillsRepository {
   @override
   Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
-class _NeverConversationSkillsRepository extends ConversationSkillsRepository {
+class _NeverConversationSkillsRepository
+    implements ConversationSkillsRepository {
   @override
   Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
 class _NeverAppSkillSettingsRepository
-    extends AppSkillWorkspaceSettingsRepository {
+    implements AppSkillWorkspaceSettingsRepository {
   @override
   Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
-class _CapturingRepo extends ConversationToolsRepository {
+class _CapturingRepo implements ConversationToolsRepository {
   _CapturingRepo({required this.onGetTools});
 
   final Future<List<WorkspaceToolEntity>> Function(String, String) onGetTools;

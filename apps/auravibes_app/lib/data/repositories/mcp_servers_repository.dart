@@ -11,13 +11,12 @@ import 'package:auravibes_app/data/database/drift/tables/tools.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools_groups.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
-import 'package:auravibes_app/domain/repositories/mcp_servers_repository.dart';
 import 'package:drift/drift.dart';
 
 /// Implementation of the McpServersRepository.
-class McpServersRepositoryImpl implements McpServersRepository {
-  /// Creates a new [McpServersRepositoryImpl] instance.
-  McpServersRepositoryImpl(this._database)
+class McpServersRepository {
+  /// Creates a new [McpServersRepository] instance.
+  McpServersRepository(this._database)
     : _mcpServersDao = _database.mcpServersDao,
       _toolsGroupsDao = _database.toolsGroupsDao,
       _workspaceToolsDao = _database.workspaceToolsDao;
@@ -27,7 +26,6 @@ class McpServersRepositoryImpl implements McpServersRepository {
   final ToolsGroupsDao _toolsGroupsDao;
   final WorkspaceToolsDao _workspaceToolsDao;
 
-  @override
   Future<McpServerEntity> addMcpServerWithTools({
     required String workspaceId,
     required McpServerToCreate serverToCreate,
@@ -88,7 +86,6 @@ class McpServersRepositoryImpl implements McpServersRepository {
     }
   }
 
-  @override
   Future<bool> deleteMcpServer(String serverId) async {
     try {
       return await _database.transaction(() async {
@@ -119,7 +116,6 @@ class McpServersRepositoryImpl implements McpServersRepository {
     }
   }
 
-  @override
   Future<void> syncMcpTools({
     required String mcpServerId,
     required List<McpToolInfo> currentTools,
@@ -186,7 +182,6 @@ class McpServersRepositoryImpl implements McpServersRepository {
     }
   }
 
-  @override
   Future<List<McpServerEntity>> getMcpServersForWorkspace(
     String workspaceId,
   ) async {
@@ -207,7 +202,6 @@ class McpServersRepositoryImpl implements McpServersRepository {
     }
   }
 
-  @override
   Future<List<McpServerEntity>> getEnabledMcpServersForWorkspace(
     String workspaceId,
   ) async {
@@ -228,7 +222,6 @@ class McpServersRepositoryImpl implements McpServersRepository {
     }
   }
 
-  @override
   Future<McpServerEntity?> getMcpServerById(String serverId) async {
     try {
       final result = await _mcpServersDao.getMcpServerById(serverId);
@@ -262,4 +255,40 @@ class McpServersRepositoryImpl implements McpServersRepository {
       isEnabled: table.isEnabled,
     );
   }
+}
+
+/// Base exception for MCP servers-related operations.
+class McpServersException implements Exception {
+  // Cause is optional because not all domain failures wrap an exception.
+  // ignore: unnecessary-nullable
+  /// Creates a new McpServersException.
+  const McpServersException(
+    this.message, [
+    this.cause,
+  ]);
+
+  /// Error message describing the exception.
+  final String message;
+
+  /// Optional original exception that caused this exception.
+  final Exception? cause;
+
+  @override
+  String toString() {
+    final causedBy = cause != null ? ' (Caused by: $cause)' : '';
+
+    return 'McpServersException: $message$causedBy';
+  }
+}
+
+/// Exception thrown when an MCP server is not found.
+class McpServerNotFoundException extends McpServersException {
+  /// Creates a new McpServerNotFoundException.
+  const McpServerNotFoundException(
+    this.serverId, [
+    Exception? cause,
+  ]) : super('MCP server "$serverId" not found', cause);
+
+  /// ID of the MCP server that was not found.
+  final String serverId;
 }

@@ -4,13 +4,12 @@ import 'package:auravibes_app/data/database/drift/daos/model_connections_dao.dar
 import 'package:auravibes_app/data/database/drift/daos/workspace_model_selection_with_connection.dart';
 import 'package:auravibes_app/data/database/drift/tables/model_providers_table_type.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
-import 'package:auravibes_app/data/repositories/model_connection_repository_impl.dart';
+import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/enums/credentials_model_type.dart';
-import 'package:auravibes_app/domain/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:auravibes_app/services/model_provider_services/model_provider.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
@@ -23,7 +22,7 @@ import '../../test_mocks.dart';
 void main() {
   setUpAll(registerTestFallbackValues);
 
-  group('ModelConnectionRepositoryImpl', () {
+  group('ModelConnectionRepository', () {
     var mockProvidersDao = MockApiModelProvidersDao();
     var mockConnectionsDao = MockModelConnectionsDao();
     var mockSelectionsDao = MockWorkspaceModelSelectionsDao();
@@ -34,7 +33,7 @@ void main() {
       MockModelConnectionsDao(),
       MockWorkspaceModelSelectionsDao(),
     );
-    var repository = ModelConnectionRepositoryImpl(
+    var repository = ModelConnectionRepository(
       database: database,
       encryptionService: mockEncryptionService,
       modelProviderServices: mockModelProviderServices,
@@ -55,7 +54,7 @@ void main() {
         mockConnectionsDao,
         mockSelectionsDao,
       );
-      repository = ModelConnectionRepositoryImpl(
+      repository = ModelConnectionRepository(
         database: database,
         encryptionService: mockEncryptionService,
         modelProviderServices: mockModelProviderServices,

@@ -53,7 +53,7 @@ final class SkillsRepositoryProvider
   }
 }
 
-String _$skillsRepositoryHash() => r'ce000dc9ae32651853b63059ed6a202cc726eb5f';
+String _$skillsRepositoryHash() => r'25b292288226234571c9fe3a383b6e5b4a3d5e27';
 
 @ProviderFor(skillTemplateToolsRepository)
 final skillTemplateToolsRepositoryProvider =
@@ -102,7 +102,7 @@ final class SkillTemplateToolsRepositoryProvider
 }
 
 String _$skillTemplateToolsRepositoryHash() =>
-    r'c0410cc8e72e7daf0a0a5f15a5248b90a32bd6ba';
+    r'3e0af71dddf7851850a7cdf8c827aeaec2387972';
 
 @ProviderFor(skillCredentialDefinitionsRepository)
 final skillCredentialDefinitionsRepositoryProvider =
@@ -153,7 +153,7 @@ final class SkillCredentialDefinitionsRepositoryProvider
 }
 
 String _$skillCredentialDefinitionsRepositoryHash() =>
-    r'5ab85683673f51f3cb5304ec881d450e73e63afd';
+    r'5c998f36eeb276c37861ff5f79fdae2f62382c67';
 
 @ProviderFor(skillCredentialsRepository)
 final skillCredentialsRepositoryProvider =
@@ -202,7 +202,7 @@ final class SkillCredentialsRepositoryProvider
 }
 
 String _$skillCredentialsRepositoryHash() =>
-    r'8609f1b6427d787cc7bdabb83f73b9b9deec4c16';
+    r'0a1f610472eb13c552714715c353da67912529c0';
 
 @ProviderFor(conversationSkillsRepository)
 final conversationSkillsRepositoryProvider =
@@ -251,7 +251,7 @@ final class ConversationSkillsRepositoryProvider
 }
 
 String _$conversationSkillsRepositoryHash() =>
-    r'10e555c1680a0849b62836f4220a56637e480c6f';
+    r'04a5139c33ced3a5df0cfaf5e542e7eba4454898';
 
 @ProviderFor(appSkillWorkspaceSettingsRepository)
 final appSkillWorkspaceSettingsRepositoryProvider =
@@ -303,7 +303,7 @@ final class AppSkillWorkspaceSettingsRepositoryProvider
 }
 
 String _$appSkillWorkspaceSettingsRepositoryHash() =>
-    r'32fbbc4aeeac2530a645b4cdce0db6de4ffd5a95';
+    r'20b3dba98f76d58e74b027128e8346d5874e7cd6';
 
 @ProviderFor(appSkillRegistry)
 final appSkillRegistryProvider = AppSkillRegistryProvider._();

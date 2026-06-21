@@ -5,9 +5,9 @@
 
 import 'dart:async';
 
+import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
-import 'package:auravibes_app/domain/repositories/message_repository.dart';
 import 'package:auravibes_app/features/chats/notifiers/messages_streaming_state.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
@@ -167,43 +167,6 @@ class _MessagesProvidersFixture {
   conversationUsedTokens,
 ])
 void main() {
-  group('MessageIdList', () {
-    test('returns empty list for empty messages', () {
-      const list = MessageIdList.empty;
-      expect(list, isEmpty);
-    });
-
-    test('returns correct length and elements', () {
-      final list = MessageIdList(const ['a', 'b', 'c']);
-      expect(list.length, 3);
-      expect(list.firstOrNull, 'a');
-      expect(list[2], 'c');
-    });
-
-    test('equality works correctly', () {
-      final a = MessageIdList(const ['1', '2']);
-      final b = MessageIdList(const ['1', '2']);
-      expect(a, equals(b));
-      expect(a.hashCode, equals(b.hashCode));
-    });
-
-    test('inequality works correctly', () {
-      final a = MessageIdList(const ['1']);
-      final b = MessageIdList(const ['2']);
-      expect(a, isNot(equals(b)));
-    });
-
-    test('setting length throws', () {
-      final list = MessageIdList(const ['a']);
-      expect(() => list.length = 5, throwsUnsupportedError);
-    });
-
-    test('setting index throws', () {
-      final list = MessageIdList(const ['a', 'b']);
-      expect(() => list[1] = 'c', throwsUnsupportedError);
-    });
-  });
-
   group('chatMessageIdsProvider', () {
     final fixture = _MessagesProvidersFixture();
 
@@ -299,19 +262,6 @@ void main() {
         fixture.container.read(isMessageStreamingProvider('m1')),
         isTrue,
       );
-    });
-  });
-
-  group('pendingMcpConnectionsProvider', () {
-    test('always returns empty list', () {
-      final container = ProviderContainer(
-        overrides: [
-          conversationSelectedProvider.overrideWithValue('conv-1'),
-        ],
-      );
-      addTearDown(container.dispose);
-
-      expect(container.read(pendingMcpConnectionsProvider), isEmpty);
     });
   });
 

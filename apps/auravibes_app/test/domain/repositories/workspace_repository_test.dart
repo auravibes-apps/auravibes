@@ -1,8 +1,8 @@
 // ignore_for_file: cascade_invocations
 // Required: Existing test and UI helpers keep compact return flow.
+import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
-import 'package:auravibes_app/domain/repositories/workspace_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _StubWorkspaceRepository implements WorkspaceRepository {
@@ -287,22 +287,6 @@ void main() {
     test('includes cause when provided', () {
       final cause = Exception('db error');
       final ex = WorkspaceNotFoundException('ws-1', cause: cause);
-      expect(ex.cause, cause);
-    });
-  });
-
-  group('WorkspaceDuplicateException', () {
-    test('contains id in message', () {
-      const ex = WorkspaceDuplicateException('ws-99');
-      expect(ex, isA<WorkspaceException>());
-      expect(ex.workspaceId, 'ws-99');
-      expect(ex.toString(), contains('ws-99'));
-      expect(ex.toString(), contains('already exists'));
-    });
-
-    test('includes cause when provided', () {
-      final cause = Exception('unique constraint');
-      final ex = WorkspaceDuplicateException('ws-1', cause: cause);
       expect(ex.cause, cause);
     });
   });

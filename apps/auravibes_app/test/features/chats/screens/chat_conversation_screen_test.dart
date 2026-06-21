@@ -4,10 +4,10 @@
 
 import 'dart:async';
 
+import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
-import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
@@ -423,7 +423,7 @@ void main() {
                       (ref) async => const <MessageEntity>[],
                     ),
                     chatMessageIdsProvider.overrideWith(
-                      (ref) => MessageIdList.empty,
+                      (ref) => const <String>[],
                     ),
                     contextUsageProvider.overrideWith(
                       (ref) => ContextUsageData.compute(
@@ -507,7 +507,7 @@ void main() {
                     (ref) async => const <MessageEntity>[],
                   ),
                   chatMessageIdsProvider.overrideWith(
-                    (ref) => MessageIdList.empty,
+                    (ref) => const <String>[],
                   ),
                   contextUsageProvider.overrideWith(
                     (ref) => ContextUsageData.compute(
@@ -605,7 +605,7 @@ void main() {
                     (ref) async => const <MessageEntity>[],
                   ),
                   chatMessageIdsProvider.overrideWith(
-                    (ref) => MessageIdList.empty,
+                    (ref) => const <String>[],
                   ),
                   contextUsageProvider.overrideWith(
                     (ref) => ContextUsageData.compute(

@@ -56,7 +56,7 @@ final class ConversationToolsRepositoryProvider
 }
 
 String _$conversationToolsRepositoryHash() =>
-    r'f01d06fe031c840ef6a9cc8ca75fd0dd30303eca';
+    r'd022d59dc4cb88659714e8031581c937e1f4a8e4';
 
 /// Provider for managing conversation tool settings
 ///

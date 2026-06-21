@@ -3,16 +3,15 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/conversation_tools_dao.dart';
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
+import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_tool_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
-import 'package:auravibes_app/domain/repositories/conversation_tools_repository.dart';
-import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/services/tools/tool_service.dart';
 
 /// Implementation of the ConversationToolsRepository.
-class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
-  ConversationToolsRepositoryImpl(
+class ConversationToolsRepository {
+  ConversationToolsRepository(
     this._database,
     this._workspaceToolsRepository,
   ) : _dao = _database.conversationToolsDao;
@@ -20,7 +19,6 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
   final WorkspaceToolsRepository _workspaceToolsRepository;
   final ConversationToolsDao _dao;
 
-  @override
   Future<List<ConversationToolEntity>> getConversationTools(
     String conversationId,
   ) async {
@@ -29,7 +27,6 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
     return results.map(_tableToEntity).toList();
   }
 
-  @override
   Future<List<ConversationToolEntity>> getEnabledConversationTools(
     String conversationId,
   ) async {
@@ -54,7 +51,6 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
         .toList();
   }
 
-  @override
   Future<ConversationToolEntity?> getConversationTool(
     String conversationId,
     String toolId,
@@ -68,7 +64,6 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
     return _tableToEntity(result);
   }
 
-  @override
   Future<bool> setConversationToolEnabled(
     String conversationId,
     String toolId, {
@@ -83,7 +78,6 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
     return true;
   }
 
-  @override
   Future<void> setConversationToolsDisabled(
     String conversationId,
     List<String> toolTypes,
@@ -91,7 +85,6 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
     return _dao.disableConversationTools(conversationId, toolTypes);
   }
 
-  @override
   Future<bool> setConversationToolPermission(
     String conversationId,
     String toolId, {
@@ -106,7 +99,6 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
     return true;
   }
 
-  @override
   Future<bool> toggleConversationTool(
     String conversationId,
     String toolId,
@@ -114,7 +106,6 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
     return _dao.toggleConversationTool(conversationId, toolId);
   }
 
-  @override
   Future<bool> isConversationToolEnabled(
     String conversationId,
     String toolId,
@@ -125,7 +116,6 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
     );
   }
 
-  @override
   Future<bool> removeConversationTool(
     String conversationId,
     String toolId,
@@ -133,12 +123,10 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
     return _dao.deleteConversationTool(conversationId, toolId);
   }
 
-  @override
   Future<int> getConversationToolsCount(String conversationId) async {
     return _dao.getConversationToolsCount(conversationId);
   }
 
-  @override
   Future<int> getEnabledConversationToolsCount(String conversationId) async {
     final conversation = await _database.conversationDao.getConversationById(
       conversationId,
@@ -156,7 +144,6 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
     return availableCount.length;
   }
 
-  @override
   Future<void> copyConversationTools(
     String sourceConversationId,
     String targetConversationId,
@@ -167,7 +154,6 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
     );
   }
 
-  @override
   Future<bool> validateConversationToolSetting(
     String conversationId,
     String toolId, {
@@ -193,7 +179,6 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
     return true;
   }
 
-  @override
   Future<bool> isToolAvailableForConversation(
     String conversationId,
     String workspaceId,
@@ -213,7 +198,6 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
     return workspaceEnabled && !conversationDisabled;
   }
 
-  @override
   Future<List<String>> getAvailableToolsForConversation(
     String conversationId,
     String workspaceId,
@@ -240,7 +224,6 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
         .toList();
   }
 
-  @override
   Future<List<WorkspaceToolEntity>> getAvailableToolEntitiesForConversation(
     String conversationId,
     String workspaceId,
@@ -291,7 +274,6 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
     };
   }
 
-  @override
   Future<ToolPermissionResult> checkToolPermission({
     required String conversationId,
     required String workspaceId,
@@ -335,4 +317,29 @@ class ConversationToolsRepositoryImpl implements ConversationToolsRepository {
 
     return ToolPermissionResult.granted;
   }
+}
+
+/// Base exception for conversation tools-related operations.
+class ConversationToolsException implements Exception {
+  /// Creates a new ConversationToolsException.
+  const ConversationToolsException(this.message, [this.cause]);
+
+  /// Error message describing the exception.
+  final String message;
+
+  /// Optional original exception that caused this exception.
+  final Exception? cause;
+
+  @override
+  String toString() {
+    final causedBy = cause != null ? ' (Caused by: $cause)' : '';
+
+    return 'ConversationToolsException: $message$causedBy';
+  }
+}
+
+/// Exception thrown when conversation tool validation fails.
+class ConversationToolsValidationException extends ConversationToolsException {
+  /// Creates a new ConversationToolsValidationException.
+  const ConversationToolsValidationException(super.message, [super.cause]);
 }

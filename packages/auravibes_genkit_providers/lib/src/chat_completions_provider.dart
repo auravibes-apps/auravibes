@@ -11,14 +11,6 @@ import 'package:genkit/plugin.dart';
 import 'package:http/http.dart' as http;
 import 'package:openai_dart/openai_dart.dart' as sdk;
 
-typedef ChatCompletionsApiKeyProvider = FutureOr<String> Function();
-typedef ChatCompletionsOptionsParser<T extends Object> =
-    T Function(Map<String, dynamic>? json);
-typedef ChatCompletionsExtraBodyBuilder<T extends Object> =
-    Map<String, dynamic> Function(T options);
-typedef ChatCompletionsModelResolver<T extends Object> =
-    String Function(String modelName, T options);
-
 class ChatCompletionsModelDefinition {
   const ChatCompletionsModelDefinition({required this.name, this.info});
 
@@ -26,46 +18,49 @@ class ChatCompletionsModelDefinition {
   final ModelInfo? info;
 }
 
-class ChatCompletionsProviderConfig<T extends Object> {
-  const ChatCompletionsProviderConfig({
+mixin ChatCompletionsSamplingOptions {
+  double? get temperature;
+  double? get topP;
+  int? get maxTokens;
+  List<String>? get stop;
+  double? get presencePenalty;
+  double? get frequencyPenalty;
+  int? get seed;
+  String? get user;
+
+  Map<String, dynamic> toSamplingBody() => {
+    'temperature': ?temperature,
+    'top_p': ?topP,
+    'max_tokens': ?maxTokens,
+    'stop': ?stop,
+    'presence_penalty': ?presencePenalty,
+    'frequency_penalty': ?frequencyPenalty,
+    'seed': ?seed,
+    'user': ?user,
+  };
+}
+
+class ChatCompletionsPlugin extends GenkitPlugin {
+  ChatCompletionsPlugin({
     required this.name,
     required this.baseUrl,
     required this.errorLabel,
-    required this.parseOptions,
-    required this.extraBody,
-    this.resolveModel,
+    required this.customize,
     this.apiKey,
     this.apiKeyProvider,
     this.models = const [],
     this.headers,
     this.httpClient,
     this.requestTimeout = const Duration(seconds: 30),
-  });
-
-  final String name;
-  final String baseUrl;
-  final String errorLabel;
-  final ChatCompletionsOptionsParser<T> parseOptions;
-  final ChatCompletionsExtraBodyBuilder<T> extraBody;
-  final ChatCompletionsModelResolver<T>? resolveModel;
-  final String? apiKey;
-  final ChatCompletionsApiKeyProvider? apiKeyProvider;
-  final List<ChatCompletionsModelDefinition> models;
-  final Map<String, String>? headers;
-  final http.Client? httpClient;
-  final Duration requestTimeout;
-}
-
-class ChatCompletionsProvider<T extends Object> extends GenkitPlugin {
-  ChatCompletionsProvider(this.config) {
-    if (config.name.isEmpty || config.name.contains('/')) {
+  }) {
+    if (name.isEmpty || name.contains('/')) {
       throw GenkitException(
         'Plugin name must be non-empty and must not contain "/". '
-        'Got: "${config.name}"',
+        'Got: "$name"',
         status: StatusCodes.INVALID_ARGUMENT,
       );
     }
-    if (config.apiKey != null && config.apiKeyProvider != null) {
+    if (apiKey != null && apiKeyProvider != null) {
       throw GenkitException(
         'Provide either apiKey or apiKeyProvider, not both.',
         status: StatusCodes.INVALID_ARGUMENT,
@@ -73,15 +68,30 @@ class ChatCompletionsProvider<T extends Object> extends GenkitPlugin {
     }
   }
 
-  final ChatCompletionsProviderConfig<T> config;
-
   @override
-  String get name => config.name;
+  final String name;
+  final String baseUrl;
+  final String errorLabel;
+
+  /// Parses provider-specific request config once into the resolved model
+  /// name and the extra body entries to merge into the request.
+  final ({String model, Map<String, dynamic> extraBody}) Function(
+    String modelName,
+    Map<String, dynamic>? config,
+  )
+  customize;
+
+  final String? apiKey;
+  final FutureOr<String> Function()? apiKeyProvider;
+  final List<ChatCompletionsModelDefinition> models;
+  final Map<String, String>? headers;
+  final http.Client? httpClient;
+  final Duration requestTimeout;
 
   @override
   Future<List<Action<dynamic, dynamic, dynamic, dynamic>>> init() async {
     return [
-      for (final model in config.models) _createModel(model.name, model.info),
+      for (final model in models) _createModel(model.name, model.info),
     ];
   }
 
@@ -97,17 +107,15 @@ class ChatCompletionsProvider<T extends Object> extends GenkitPlugin {
 
   Model<dynamic> _createModel(String modelName, ModelInfo? info) {
     return Model<dynamic>(
-      name: '${config.name}/$modelName',
+      name: '$name/$modelName',
       fn: (req, ctx) async {
         if (req == null) {
           throw ArgumentError.notNull('req');
         }
         final request = req;
-        final options = config.parseOptions(request.config);
         final body = _buildRequestBody(
           modelName: modelName,
           request: request,
-          options: options,
           stream: ctx.streamingRequested,
         );
 
@@ -145,12 +153,12 @@ class ChatCompletionsProvider<T extends Object> extends GenkitPlugin {
     void Function(ModelResponseChunk) sendChunk,
   ) async {
     final request = await _request(body);
-    final client = config.httpClient ?? http.Client();
+    final client = httpClient ?? http.Client();
     try {
       final response = await client
           .send(request)
           .timeout(
-            config.requestTimeout,
+            requestTimeout,
           );
       final accumulator = sdk.ChatStreamAccumulator();
 
@@ -191,35 +199,36 @@ class ChatCompletionsProvider<T extends Object> extends GenkitPlugin {
         raw: completion.toJson(),
       );
     } finally {
-      if (config.httpClient == null) client.close();
+      if (httpClient == null) client.close();
     }
   }
 
   Map<String, dynamic> _buildRequestBody({
     required String modelName,
     required ModelRequest request,
-    required T options,
     required bool stream,
   }) {
+    final custom = customize(modelName, request.config);
+
     return {
-      'model': config.resolveModel?.call(modelName, options) ?? modelName,
+      'model': custom.model,
       'messages': request.messages.expand(_messageToJson).toList(),
       'stream': stream,
       if (stream) 'stream_options': {'include_usage': true},
       'tools': ?request.tools?.map(_toolToJson).toList(),
-      ...config.extraBody(options),
+      ...custom.extraBody,
     };
   }
 
   Future<http.Response> _send(Map<String, dynamic> body) async {
     final request = await _request(body);
-    final client = config.httpClient ?? http.Client();
+    final client = httpClient ?? http.Client();
     try {
       return http.Response.fromStream(
-        await client.send(request).timeout(config.requestTimeout),
+        await client.send(request).timeout(requestTimeout),
       );
     } finally {
-      if (config.httpClient == null) client.close();
+      if (httpClient == null) client.close();
     }
   }
 
@@ -236,29 +245,29 @@ class ChatCompletionsProvider<T extends Object> extends GenkitPlugin {
       ..headers.addAll({
         'authorization': 'Bearer ${key.trim()}',
         'content-type': 'application/json',
-        ...?config.headers,
+        ...?headers,
       })
       ..body = jsonEncode(body);
   }
 
   Uri _chatCompletionsUri() {
-    final normalized = config.baseUrl.replaceFirst(RegExp(r'/$'), '');
+    final normalized = baseUrl.replaceFirst(RegExp(r'/$'), '');
 
     return Uri.parse('$normalized/chat/completions');
   }
 
   Future<String?> _resolveApiKey() async {
-    final provider = config.apiKeyProvider;
+    final provider = apiKeyProvider;
     if (provider != null) return provider();
 
-    return config.apiKey;
+    return apiKey;
   }
 
   void _throwIfRawError(int statusCode, String body) {
     if (statusCode >= 200 && statusCode < 300) return;
 
     throw GenkitException(
-      '${config.errorLabel} API error: $body',
+      '$errorLabel API error: $body',
       status: StatusCodes.fromHttpStatus(statusCode),
       details: body,
     );

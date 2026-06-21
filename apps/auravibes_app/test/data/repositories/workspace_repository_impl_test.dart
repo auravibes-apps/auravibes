@@ -1,25 +1,24 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/data/repositories/workspace_repository_impl.dart';
+import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
-import 'package:auravibes_app/domain/repositories/workspace_repository.dart';
 import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('WorkspaceRepositoryImpl', () {
+  group('WorkspaceRepository', () {
     var database = AppDatabase(
       connection: DatabaseConnection(NativeDatabase.memory()),
     );
-    var repository = WorkspaceRepositoryImpl(database);
+    var repository = WorkspaceRepository(database);
 
     tearDown(() async {
       await database.close();
       database = AppDatabase(
         connection: DatabaseConnection(NativeDatabase.memory()),
       );
-      repository = WorkspaceRepositoryImpl(database);
+      repository = WorkspaceRepository(database);
     });
 
     tearDownAll(() async {

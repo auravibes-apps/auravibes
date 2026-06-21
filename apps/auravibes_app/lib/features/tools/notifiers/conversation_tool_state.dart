@@ -2,9 +2,8 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
 
-import 'package:auravibes_app/data/repositories/conversation_tools_repository_impl.dart';
+import 'package:auravibes_app/data/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
-import 'package:auravibes_app/domain/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
@@ -31,7 +30,7 @@ ConversationToolsRepository conversationToolsRepository(Ref ref) {
   final appDatabase = ref.watch(appDatabaseProvider);
   final workspaceToolsRepository = ref.watch(workspaceToolsRepositoryProvider);
 
-  return ConversationToolsRepositoryImpl(appDatabase, workspaceToolsRepository);
+  return ConversationToolsRepository(appDatabase, workspaceToolsRepository);
 }
 
 /// Provider for managing conversation tool settings

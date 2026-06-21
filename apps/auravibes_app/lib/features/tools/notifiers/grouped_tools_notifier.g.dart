@@ -59,7 +59,7 @@ final class ToolsGroupsRepositoryProvider
 }
 
 String _$toolsGroupsRepositoryHash() =>
-    r'5f6c759f37826b765d3f11898e4dabb4e1e42afb';
+    r'c23429fd7af7607272ea8a05e0b9fded18f1fad7';
 
 /// Provider that groups tools by their workspaceToolsGroupId.
 ///

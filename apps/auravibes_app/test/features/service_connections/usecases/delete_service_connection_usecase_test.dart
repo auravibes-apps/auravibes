@@ -1,5 +1,5 @@
-import 'package:auravibes_app/domain/repositories/model_connection_repository.dart';
-import 'package:auravibes_app/domain/repositories/skill_credentials_repository.dart';
+import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
+import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
 import 'package:auravibes_app/features/service_connections/usecases/delete_service_connection_usecase.dart';
 import 'package:flutter_test/flutter_test.dart';
