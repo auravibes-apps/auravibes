@@ -398,12 +398,12 @@ Future<void> _stopConversation(BuildContext context, WidgetRef ref) async {
     );
     if (!context.mounted) return;
 
-    final _ = ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          LocaleKeys.chats_screens_chat_conversation_stop_error.tr(),
-        ),
+    final _ = showAuraSnackBar(
+      context: context,
+      content: Text(
+        LocaleKeys.chats_screens_chat_conversation_stop_error.tr(),
       ),
+      variant: AuraSnackBarVariant.error,
     );
   }
 }
@@ -435,12 +435,12 @@ Future<void> _sendMessage(
     );
     if (!context.mounted) return;
 
-    final _ = ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          LocaleKeys.chats_screens_chat_conversation_send_error.tr(),
-        ),
+    final _ = showAuraSnackBar(
+      context: context,
+      content: Text(
+        LocaleKeys.chats_screens_chat_conversation_send_error.tr(),
       ),
+      variant: AuraSnackBarVariant.error,
     );
   }
 }
@@ -457,18 +457,18 @@ Future<void> _manualCompact(
     );
     if (!context.mounted) return;
 
-    final _ = ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(LocaleKeys.compaction_manual_success.tr()),
-      ),
+    final _ = showAuraSnackBar(
+      context: context,
+      content: Text(LocaleKeys.compaction_manual_success.tr()),
+      variant: AuraSnackBarVariant.success,
     );
   } on CompactionException {
     if (!context.mounted) return;
 
-    final _ = ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(LocaleKeys.compaction_manual_failure.tr()),
-      ),
+    final _ = showAuraSnackBar(
+      context: context,
+      content: Text(LocaleKeys.compaction_manual_failure.tr()),
+      variant: AuraSnackBarVariant.error,
     );
   }
 }

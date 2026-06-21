@@ -44,7 +44,9 @@ class WidgetbookApp extends StatelessWidget {
         BuilderAddon(
           name: 'portal',
           builder: (context, child) {
-            return Portal(child: child);
+            return Portal(
+              child: AuraSnackBarHost(child: child),
+            );
           },
         ),
         BuilderAddon(
