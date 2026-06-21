@@ -1,3 +1,4 @@
+import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart' show ProviderScope;
@@ -26,6 +27,9 @@ class TestableApp extends StatelessWidget {
             overrides: overrides.cast(),
             child: MaterialApp(
               home: child,
+              builder: (context, child) => AuraSnackBarHost(
+                child: child ?? const SizedBox.shrink(),
+              ),
               locale: context.locale,
               localizationsDelegates: context.localizationDelegates,
               supportedLocales: context.supportedLocales,
