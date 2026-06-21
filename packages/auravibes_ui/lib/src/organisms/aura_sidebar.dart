@@ -157,19 +157,6 @@ class AuraNavigationData {
 
   /// Whether this item belongs to the footer section.
   final bool footer;
-
-  /// Copy with.
-  AuraNavigationData copyWith({
-    Widget? icon,
-    Widget? label,
-    bool? footer,
-  }) {
-    return AuraNavigationData(
-      icon: icon ?? this.icon,
-      label: label ?? this.label,
-      footer: footer ?? this.footer,
-    );
-  }
 }
 
 class _AuraSidebarItem extends StatelessWidget {
