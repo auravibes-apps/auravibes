@@ -17,34 +17,32 @@ class AppErrorWidget<T extends Object> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: AuraColumn(
-          children: [
-            const AuraIcon(
-              Icons.error_outline,
-              size: AuraIconSize.large,
-              color: AuraColorVariant.error,
+      child: AuraColumn(
+        children: [
+          const AuraIcon(
+            Icons.error_outline,
+            size: AuraIconSize.large,
+            color: AuraColorVariant.error,
+          ),
+          const AuraText(
+            child: _AppErrorText(
+              LocaleKeys.common_error_title,
             ),
-            const AuraText(
-              child: _AppErrorText(
-                LocaleKeys.common_error_title,
-              ),
-              style: AuraTextStyle.heading6,
-              textAlign: TextAlign.center,
+            style: AuraTextStyle.heading6,
+            textAlign: TextAlign.center,
+          ),
+          const AuraText(
+            child: _AppErrorText(
+              LocaleKeys.common_error_message,
             ),
-            const AuraText(
-              child: _AppErrorText(
-                LocaleKeys.common_error_message,
-              ),
-              textAlign: TextAlign.center,
-              color: AuraColorVariant.onSurfaceVariant,
-            ),
-            ?action,
-          ],
-          spacing: AuraSpacing.sm,
-          mainAxisSize: MainAxisSize.min,
-        ),
+            textAlign: TextAlign.center,
+            color: AuraColorVariant.onSurfaceVariant,
+          ),
+          ?action,
+        ],
+        spacing: AuraSpacing.sm,
+        mainAxisSize: MainAxisSize.min,
+        padding: AuraEdgeInsetsGeometry.base,
       ),
     );
   }
