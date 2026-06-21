@@ -23,13 +23,6 @@ class _FakeEncryptionService implements EncryptionService {
 
   @override
   Future<String> decrypt(String encryptedBase64) async => encryptedBase64;
-
-  @override
-  Future<String?> encryptNullable(String? plaintext) async => plaintext;
-
-  @override
-  Future<String?> decryptNullable(String? encryptedBase64) async =>
-      encryptedBase64;
 }
 
 void main() {

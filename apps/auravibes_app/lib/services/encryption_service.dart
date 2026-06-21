@@ -61,20 +61,6 @@ class EncryptionService {
 
     return utf8.decode(decrypted);
   }
-
-  /// Encrypts data, returns null if input is null.
-  Future<String?> encryptNullable(String? plaintext) async {
-    if (plaintext == null) return null;
-
-    return encrypt(plaintext);
-  }
-
-  /// Decrypts data, returns null if input is null.
-  Future<String?> decryptNullable(String? encryptedBase64) async {
-    if (encryptedBase64 == null) return null;
-
-    return decrypt(encryptedBase64);
-  }
 }
 
 final Provider<EncryptionService> encryptionServiceProvider =
