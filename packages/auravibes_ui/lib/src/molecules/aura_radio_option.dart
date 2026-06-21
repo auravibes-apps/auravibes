@@ -149,20 +149,7 @@ class _AuraRadioState<T> extends State<AuraRadio<T>> {
   Color _getActiveColor(BuildContext context) {
     final auraColors = context.auraColors;
 
-    return switch (widget.colorVariant) {
-      AuraColorVariant.primary => auraColors.primary,
-      AuraColorVariant.secondary => auraColors.secondary,
-      AuraColorVariant.onSurface => auraColors.onSurface,
-      AuraColorVariant.onSurfaceVariant => auraColors.onSurfaceVariant,
-      AuraColorVariant.surfaceVariant => auraColors.surfaceVariant,
-      AuraColorVariant.error => auraColors.error,
-      AuraColorVariant.onError => auraColors.onError,
-      AuraColorVariant.onPrimary => auraColors.onPrimary,
-      AuraColorVariant.success => auraColors.success,
-      AuraColorVariant.warning => auraColors.warning,
-      AuraColorVariant.info => auraColors.info,
-      null => auraColors.primary,
-    };
+    return auraColors.getColorOrNull(widget.colorVariant) ?? auraColors.primary;
   }
 
   Color _getBorderColor(BuildContext context, bool isDisabled) {
