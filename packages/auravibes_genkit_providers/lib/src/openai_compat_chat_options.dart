@@ -54,13 +54,13 @@ class OpenAICompatChatOptions with ChatCompletionsSamplingOptions {
   final String? user;
 
   Map<String, dynamic> toJson() => {
-        'temperature': ?temperature,
-        'topP': ?topP,
-        'maxTokens': ?maxTokens,
-        'stop': ?stop,
-        'presencePenalty': ?presencePenalty,
-        'frequencyPenalty': ?frequencyPenalty,
-        'seed': ?seed,
-        'user': ?user,
-      };
+    'temperature': ?temperature,
+    'topP': ?topP,
+    'maxTokens': ?maxTokens,
+    'stop': ?stop,
+    'presencePenalty': ?presencePenalty,
+    'frequencyPenalty': ?frequencyPenalty,
+    'seed': ?seed,
+    'user': ?user,
+  };
 }
