@@ -1,7 +1,8 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 
 /// A custom painter for drawing the radio button circles.
 ///
@@ -9,11 +10,13 @@ import 'package:flutter/material.dart';
 class _RadioPainter extends CustomPainter {
   _RadioPainter({
     required this.isSelected,
+    required this.isFocused,
     required this.color,
     required this.borderColor,
   });
 
   final bool isSelected;
+  final bool isFocused;
   final Color color;
   final Color borderColor;
 
@@ -21,6 +24,15 @@ class _RadioPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final outerRadius = size.width / 2 - 2; // Account for stroke width.
+
+    if (isFocused) {
+      final focusPaint = Paint()
+        ..color = color.withValues(alpha: 0.24)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2;
+
+      canvas.drawCircle(center, outerRadius + 1, focusPaint);
+    }
 
     // Draw outer circle with border.
     final outerPaint = Paint()
@@ -43,6 +55,7 @@ class _RadioPainter extends CustomPainter {
   @override
   bool shouldRepaint(_RadioPainter oldDelegate) {
     return isSelected != oldDelegate.isSelected ||
+        isFocused != oldDelegate.isFocused ||
         color != oldDelegate.color ||
         borderColor != oldDelegate.borderColor;
   }
@@ -57,6 +70,7 @@ class AuraRadioOption<T> {
     required this.value,
     required this.label,
     this.subtitle,
+    this.disabled = false,
   });
 
   /// The value this option represents.
@@ -67,6 +81,9 @@ class AuraRadioOption<T> {
 
   /// Optional subtitle displayed below the label.
   final Widget? subtitle;
+
+  /// Whether this option is disabled.
+  final bool disabled;
 }
 
 /// An individual radio button that communicates with its parent group.
@@ -93,7 +110,7 @@ class AuraRadioOption<T> {
 ///   colorVariant: AuraColorVariant.primary,
 /// )
 /// ```
-class AuraRadio<T> extends StatelessWidget {
+class AuraRadio<T> extends StatefulWidget {
   /// Creates an AuraRadio widget.
   const AuraRadio({
     required this.value,
@@ -121,10 +138,18 @@ class AuraRadio<T> extends StatelessWidget {
   /// Whether the radio button is disabled.
   final bool disabled;
 
+  @override
+  State<AuraRadio<T>> createState() => _AuraRadioState<T>();
+}
+
+class _AuraRadioState<T> extends State<AuraRadio<T>> {
+  bool _isFocused = false;
+  bool _isHovered = false;
+
   Color _getActiveColor(BuildContext context) {
     final auraColors = context.auraColors;
 
-    return switch (colorVariant) {
+    return switch (widget.colorVariant) {
       AuraColorVariant.primary => auraColors.primary,
       AuraColorVariant.secondary => auraColors.secondary,
       AuraColorVariant.onSurface => auraColors.onSurface,
@@ -140,15 +165,48 @@ class AuraRadio<T> extends StatelessWidget {
     };
   }
 
+  Color _getBorderColor(BuildContext context, bool isDisabled) {
+    final auraColors = context.auraColors;
+    if (isDisabled) return auraColors.outlineVariant;
+    if (widget.value == widget.groupValue || _isFocused || _isHovered) {
+      return _getActiveColor(context);
+    }
+
+    return auraColors.outline;
+  }
+
+  void _select() {
+    if (widget.disabled || widget.onChanged == null) return;
+
+    widget.onChanged?.call(widget.value);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isDisabled = disabled || onChanged == null;
-    final isSelected = value == groupValue;
+    final isDisabled = widget.disabled || widget.onChanged == null;
+    final isSelected = widget.value == widget.groupValue;
     final effectiveColor = _getActiveColor(context);
+    final borderColor = _getBorderColor(context, isDisabled);
 
     return Semantics(
-      child: MouseRegion(
-        cursor: isDisabled
+      child: FocusableActionDetector(
+        enabled: !isDisabled,
+        shortcuts: const {
+          SingleActivator(LogicalKeyboardKey.enter): ActivateIntent(),
+          SingleActivator(LogicalKeyboardKey.space): ActivateIntent(),
+        },
+        actions: {
+          ActivateIntent: CallbackAction<ActivateIntent>(
+            onInvoke: (_) {
+              _select();
+
+              return null;
+            },
+          ),
+        },
+        onShowHoverHighlight: (value) => setState(() => _isHovered = value),
+        onFocusChange: (value) => setState(() => _isFocused = value),
+        mouseCursor: isDisabled
             ? SystemMouseCursors.forbidden
             : SystemMouseCursors.click,
         child: GestureDetector(
@@ -160,18 +218,21 @@ class AuraRadio<T> extends StatelessWidget {
               child: CustomPaint(
                 painter: _RadioPainter(
                   isSelected: isSelected,
+                  isFocused: _isFocused,
                   color: effectiveColor,
-                  borderColor: effectiveColor,
+                  borderColor: borderColor,
                 ),
               ),
             ),
           ),
-          onTap: isDisabled ? null : () => onChanged?.call(value),
+          onTap: isDisabled ? null : _select,
+          behavior: HitTestBehavior.opaque,
         ),
       ),
       enabled: !isDisabled,
       checked: isSelected,
       inMutuallyExclusiveGroup: true,
+      onTap: isDisabled ? null : _select,
     );
   }
 }

@@ -1,4 +1,5 @@
 // Required: UI components keep related private widgets together.
+import 'package:auravibes_ui/src/atoms/aura_edge_insets_geometry.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/widgets.dart';
@@ -12,6 +13,7 @@ class AuraColumn extends StatelessWidget {
     this.crossAxisAlignment = CrossAxisAlignment.center,
     this.mainAxisSize = MainAxisSize.max,
     this.mainAxisAlignment = MainAxisAlignment.start,
+    this.padding,
     super.key,
   });
 
@@ -27,16 +29,29 @@ class AuraColumn extends StatelessWidget {
   /// MainAxisAlignment.
   final MainAxisAlignment mainAxisAlignment;
 
+  /// Optional tokenized padding around the column.
+  final AuraEdgeInsetsGeometry? padding;
+
   /// Enum representing different spacing options for layout components.
   final AuraSpacing spacing;
   @override
   Widget build(BuildContext context) {
-    return Column(
+    final padding = this.padding;
+    final column = Column(
       mainAxisAlignment: mainAxisAlignment,
       mainAxisSize: mainAxisSize,
       crossAxisAlignment: crossAxisAlignment,
       spacing: context.auraTheme.fromSpacing(spacing),
       children: children,
+    );
+
+    if (padding == null) {
+      return column;
+    }
+
+    return AuraPadding(
+      child: column,
+      padding: padding,
     );
   }
 }
@@ -50,6 +65,7 @@ class AuraRow extends StatelessWidget {
     this.crossAxisAlignment = CrossAxisAlignment.center,
     this.mainAxisSize = MainAxisSize.max,
     this.mainAxisAlignment = MainAxisAlignment.start,
+    this.padding,
     super.key,
   });
 
@@ -65,17 +81,30 @@ class AuraRow extends StatelessWidget {
   /// MainAxisAlignment.
   final MainAxisAlignment mainAxisAlignment;
 
+  /// Optional tokenized padding around the row.
+  final AuraEdgeInsetsGeometry? padding;
+
   /// Enum representing different spacing options for layout components.
   final AuraSpacing spacing;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    final padding = this.padding;
+    final row = Row(
       mainAxisAlignment: mainAxisAlignment,
       mainAxisSize: mainAxisSize,
       crossAxisAlignment: crossAxisAlignment,
       spacing: context.auraTheme.fromSpacing(spacing),
       children: children,
+    );
+
+    if (padding == null) {
+      return row;
+    }
+
+    return AuraPadding(
+      child: row,
+      padding: padding,
     );
   }
 }
