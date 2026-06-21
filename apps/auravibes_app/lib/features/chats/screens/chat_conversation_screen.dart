@@ -23,7 +23,6 @@ import 'package:auravibes_app/features/chats/widgets/chat_queued_messages_indica
 import 'package:auravibes_app/features/chats/widgets/chat_thinking_indicator.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_tool_approval_card.dart';
 import 'package:auravibes_app/features/chats/widgets/conversation_context_usage_pill.dart';
-import 'package:auravibes_app/features/chats/widgets/mcp_connecting_indicator.dart';
 import 'package:auravibes_app/features/models/widgets/select_workspace_model_selection_widget.dart';
 import 'package:auravibes_app/features/skills/widgets/conversation_skill_selector_modal.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_management_modal.dart';
@@ -179,7 +178,6 @@ class _ChatConversationScreen extends HookConsumerWidget {
             },
           ),
           Expanded(child: _ChatList(pendingToolCalls: pendingCalls)),
-          const McpConnectingIndicator(),
           if (busyState?.isStreaming == true) const ChatThinkingIndicator(),
           if (rateLimitRetryAt != null)
             _RateLimitRetryIndicator(retryAt: rateLimitRetryAt),
@@ -240,12 +238,12 @@ class _ChatControlsBar extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(
-                top: DesignSpacing.sm,
-                right: DesignSpacing.sm,
+                top: context.auraTheme.fromSpacing(.sm),
+                right: context.auraTheme.fromSpacing(.sm),
               ),
-              child: Align(
+              child: const Align(
                 alignment: Alignment.centerRight,
                 child: ConversationContextUsagePill(),
               ),
@@ -306,14 +304,14 @@ class _RateLimitRetryIndicatorState extends State<_RateLimitRetryIndicator> {
     final remainingSeconds = _remainingSeconds();
 
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        vertical: DesignSpacing.xs,
-        horizontal: DesignSpacing.md,
+      padding: EdgeInsets.symmetric(
+        vertical: context.auraTheme.fromSpacing(.xs),
+        horizontal: context.auraTheme.fromSpacing(.md),
       ),
       child: Row(
         children: [
           const AuraSpinner(size: AuraSpinnerSize.small),
-          SizedBox(width: context.auraTheme.spacing.sm),
+          const AuraSizedBox(width: .sm),
           Flexible(
             child: AuraText(
               child: Text(
@@ -503,7 +501,9 @@ class _ChatList extends ConsumerWidget {
     }
 
     final messages = chatMessages.value ?? const <MessageEntity>[];
-    final messageIds = MessageIdList(messages.map((message) => message.id));
+    final messageIds = List<String>.unmodifiable(
+      messages.map((message) => message.id),
+    );
     final messageEntitiesById = {
       for (final message in messages) message.id: message,
     };

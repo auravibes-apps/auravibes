@@ -23,21 +23,6 @@ class ToolService {
     return types.toList();
   }
 
-  static List<UserToolEntity<Object, Object, Object>> getTools({
-    List<UserToolType>? without,
-    List<UserToolType>? only,
-  }) {
-    Iterable<UserToolEntity<Object, Object, Object>> types = availableTools;
-    if (without != null && without.isNotEmpty) {
-      types = types.where((element) => !without.contains(element.type));
-    }
-    if (only != null) {
-      types = types.where((element) => only.contains(element.type));
-    }
-
-    return types.toList();
-  }
-
   static UserToolEntity<Object, Object, Object>? getTool(
     UserToolType toolType,
   ) {
@@ -46,10 +31,6 @@ class ToolService {
     );
   }
 
-  static UserToolType getType(UserToolEntity<Object, Object, Object> tool) =>
-      tool.type;
-  static bool hasType(UserToolType type) =>
-      availableTools.any((tool) => tool.type == type);
   static bool hasTypeString(String type) =>
       availableTools.any((tool) => tool.type.value == type);
 }

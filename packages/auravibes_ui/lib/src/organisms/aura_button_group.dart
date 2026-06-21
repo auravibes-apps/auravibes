@@ -106,7 +106,7 @@ class AuraButtonGroup<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
     final auraTheme = context.auraTheme;
-    final borderRadius = auraTheme.borderRadius.md;
+    final borderRadius = auraTheme.fromBorderRadius(.md);
 
     final children = <Widget>[];
 
@@ -264,7 +264,7 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
                   style: TextStyle(
                     color: foregroundColor,
                     fontSize: _getFontSize(),
-                    fontWeight: widget.auraTheme.typography.weights.medium,
+                    fontWeight: widget.auraTheme.typography.fontWeightMedium,
                   ),
                   child: IconTheme(
                     data: IconThemeData(
@@ -285,18 +285,20 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
   }
 
   EdgeInsets _getPadding() {
+    final spacing = widget.auraTheme.spacing;
+
     return switch (widget.size) {
-      AuraButtonGroupSize.sm => const EdgeInsets.symmetric(
-        vertical: DesignSpacing.xs,
-        horizontal: DesignSpacing.sm,
+      AuraButtonGroupSize.sm => EdgeInsets.symmetric(
+        vertical: spacing.xs,
+        horizontal: spacing.sm,
       ),
-      AuraButtonGroupSize.base => const EdgeInsets.symmetric(
-        vertical: DesignSpacing.sm,
-        horizontal: DesignSpacing.md,
+      AuraButtonGroupSize.base => EdgeInsets.symmetric(
+        vertical: spacing.sm,
+        horizontal: spacing.md,
       ),
-      AuraButtonGroupSize.lg => const EdgeInsets.symmetric(
-        vertical: DesignSpacing.md,
-        horizontal: DesignSpacing.lg,
+      AuraButtonGroupSize.lg => EdgeInsets.symmetric(
+        vertical: spacing.md,
+        horizontal: spacing.lg,
       ),
     };
   }
@@ -411,10 +413,12 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
   }
 
   double _getFontSize() {
+    final typography = widget.auraTheme.typography;
+
     return switch (widget.size) {
-      AuraButtonGroupSize.sm => widget.auraTheme.typography.sizes.sm,
-      AuraButtonGroupSize.base => widget.auraTheme.typography.sizes.base,
-      AuraButtonGroupSize.lg => widget.auraTheme.typography.sizes.lg,
+      AuraButtonGroupSize.sm => typography.fontSizeSm,
+      AuraButtonGroupSize.base => typography.fontSizeBase,
+      AuraButtonGroupSize.lg => typography.fontSizeLg,
     };
   }
 

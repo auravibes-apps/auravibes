@@ -1,5 +1,8 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
+import 'package:auravibes_app/data/repositories/conversation_repository.dart';
+import 'package:auravibes_app/data/repositories/message_repository.dart';
+import 'package:auravibes_app/data/repositories/workspace_model_selection_repository.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
@@ -9,9 +12,6 @@ import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.d
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
-import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
-import 'package:auravibes_app/domain/repositories/message_repository.dart';
-import 'package:auravibes_app/domain/repositories/workspace_model_selection_repository.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution_runtime_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/compact_conversation_usecase.dart';
@@ -21,6 +21,7 @@ import 'package:auravibes_app/providers/chatbot_service_provider.dart';
 import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:genkit/genkit.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -665,8 +666,8 @@ void main() {
             .firstOrNull;
         final toolResultMessage = captured
             .where(
-              (message) => message.toolResults.any(
-                (result) => result.result == '{"temperature":"18C"}',
+              (message) => message.parts.whereType<ToolResponsePart>().any(
+                (part) => part.toolResponse.output == '{"temperature":"18C"}',
               ),
             )
             .firstOrNull;
@@ -679,9 +680,16 @@ void main() {
           'weather_lookup',
         );
         expect(toolResultMessage?.role, ChatMessageRole.tool);
-        expect(toolResultMessage?.toolResults, hasLength(1));
         expect(
-          toolResultMessage?.toolResults.firstOrNull?.result,
+          toolResultMessage?.parts.whereType<ToolResponsePart>(),
+          hasLength(1),
+        );
+        expect(
+          toolResultMessage?.parts
+              .whereType<ToolResponsePart>()
+              .firstOrNull
+              ?.toolResponse
+              .output,
           '{"temperature":"18C"}',
         );
       },

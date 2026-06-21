@@ -8,25 +8,19 @@ library;
 export 'aura_theme.dart'
     show
         AuraAnimationTheme,
-        AuraBorderRadiusTheme,
+        AuraBorderRadiusScale,
         AuraColorScheme,
-        AuraFontSizes,
-        AuraFontWeights,
-        AuraLetterSpacings,
-        AuraLineHeights,
-        AuraSpacingTheme,
+        AuraSpacingScale,
         AuraTheme,
         AuraThemeExtension,
-        AuraTypographyTheme;
+        AuraTypographyScale;
 export 'design_tokens.dart'
     show
+        AuraBorderRadius,
         AuraColorVariant,
         AuraSpacing,
-        DesignBorderRadius,
         DesignBreakpoints,
         DesignShadows,
-        DesignSpacing,
-        DesignTypography,
         designColorAccentBase,
         designColorAccentContrast,
         designColorAccentDark,

@@ -1,4 +1,4 @@
-import 'package:auravibes_app/domain/repositories/api_model_repository.dart';
+import 'package:auravibes_app/data/repositories/api_model_repository.dart';
 import 'package:auravibes_app/services/model_api_service.dart';
 import 'package:collection/collection.dart';
 

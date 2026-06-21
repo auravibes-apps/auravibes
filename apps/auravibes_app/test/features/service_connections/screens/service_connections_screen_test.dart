@@ -1,8 +1,8 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
-import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository_impl.dart';
-import 'package:auravibes_app/data/repositories/skill_credentials_repository_impl.dart';
-import 'package:auravibes_app/data/repositories/workspace_repository_impl.dart';
+import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository.dart';
+import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
+import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
@@ -37,7 +37,7 @@ void main() {
     );
     addTearDown(database.close);
     final encryptionService = EncryptionService(_FakeSecretKeyManager());
-    final credentialsRepository = SkillCredentialsRepositoryImpl(
+    final credentialsRepository = SkillCredentialsRepository(
       database: database,
       encryptionService: encryptionService,
     );
@@ -48,14 +48,14 @@ void main() {
       ],
     );
     addTearDown(container.dispose);
-    final workspace = await WorkspaceRepositoryImpl(database).createWorkspace(
+    final workspace = await WorkspaceRepository(database).createWorkspace(
       const WorkspaceToCreate(
         name: 'Test Workspace',
         type: WorkspaceType.local,
       ),
     );
     final definition =
-        await SkillCredentialDefinitionsRepositoryImpl(
+        await SkillCredentialDefinitionsRepository(
           database,
         ).createDefinition(
           workspace.id,

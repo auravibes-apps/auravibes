@@ -27,7 +27,9 @@ class ChatQueuedMessagesIndicator extends ConsumerWidget {
     final notifier = ref.read(conversationSendQueueProvider.notifier);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: DesignSpacing.md),
+      padding: EdgeInsets.symmetric(
+        horizontal: context.auraTheme.fromSpacing(.md),
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -39,7 +41,7 @@ class ChatQueuedMessagesIndicator extends ConsumerWidget {
                 variant: AuraBadgeVariant.neutral,
                 size: AuraBadgeSize.small,
               ),
-              SizedBox(width: context.auraTheme.spacing.sm),
+              const AuraSizedBox(width: .sm),
               AuraText(
                 child: Text(
                   LocaleKeys
@@ -67,8 +69,8 @@ class ChatQueuedMessagesIndicator extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: DesignSpacing.xs,
+                  padding: EdgeInsets.symmetric(
+                    vertical: context.auraTheme.fromSpacing(.xs),
                   ),
                   child: Row(
                     children: [
@@ -82,7 +84,7 @@ class ChatQueuedMessagesIndicator extends ConsumerWidget {
                           style: AuraTextStyle.caption,
                         ),
                       ),
-                      SizedBox(width: context.auraTheme.spacing.xs),
+                      const AuraSizedBox(width: .xs),
                       IconButton(
                         padding: const EdgeInsets.all(14),
                         onPressed: () => notifier.remove(

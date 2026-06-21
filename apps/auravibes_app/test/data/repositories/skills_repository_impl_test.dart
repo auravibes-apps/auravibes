@@ -2,14 +2,14 @@ import 'dart:convert';
 
 import 'package:async/async.dart';
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/data/repositories/app_skill_workspace_settings_repository_impl.dart';
-import 'package:auravibes_app/data/repositories/conversation_repository_impl.dart';
-import 'package:auravibes_app/data/repositories/conversation_skills_repository_impl.dart';
-import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository_impl.dart';
-import 'package:auravibes_app/data/repositories/skill_credentials_repository_impl.dart';
-import 'package:auravibes_app/data/repositories/skill_template_tools_repository_impl.dart';
-import 'package:auravibes_app/data/repositories/skills_repository_impl.dart';
-import 'package:auravibes_app/data/repositories/workspace_repository_impl.dart';
+import 'package:auravibes_app/data/repositories/app_skill_workspace_settings_repository.dart';
+import 'package:auravibes_app/data/repositories/conversation_repository.dart';
+import 'package:auravibes_app/data/repositories/conversation_skills_repository.dart';
+import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository.dart';
+import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
+import 'package:auravibes_app/data/repositories/skill_template_tools_repository.dart';
+import 'package:auravibes_app/data/repositories/skills_repository.dart';
+import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
@@ -56,25 +56,25 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('SkillsRepositoryImpl', () {
+  group('SkillsRepository', () {
     final initialDatabase = AppDatabase(
       connection: DatabaseConnection(NativeDatabase.memory()),
     );
     var database = initialDatabase;
-    var workspaceRepository = WorkspaceRepositoryImpl(database);
-    var conversationRepository = ConversationRepositoryImpl(database);
-    var skillsRepository = SkillsRepositoryImpl(database);
-    var toolsRepository = SkillTemplateToolsRepositoryImpl(database);
+    var workspaceRepository = WorkspaceRepository(database);
+    var conversationRepository = ConversationRepository(database);
+    var skillsRepository = SkillsRepository(database);
+    var toolsRepository = SkillTemplateToolsRepository(database);
     var skillCredentialDefinitionsRepository =
-        SkillCredentialDefinitionsRepositoryImpl(database);
-    var skillCredentialsRepository = SkillCredentialsRepositoryImpl(
+        SkillCredentialDefinitionsRepository(database);
+    var skillCredentialsRepository = SkillCredentialsRepository(
       database: database,
       encryptionService: EncryptionService(_FakeSecretKeyManager()),
     );
-    var conversationSkillsRepository = ConversationSkillsRepositoryImpl(
+    var conversationSkillsRepository = ConversationSkillsRepository(
       database,
     );
-    var appSkillSettingsRepository = AppSkillWorkspaceSettingsRepositoryImpl(
+    var appSkillSettingsRepository = AppSkillWorkspaceSettingsRepository(
       database,
     );
     var createSkillUsecase = CreateSkillUsecase(skillsRepository);
@@ -91,18 +91,18 @@ void main() {
       database = AppDatabase(
         connection: DatabaseConnection(NativeDatabase.memory()),
       );
-      workspaceRepository = WorkspaceRepositoryImpl(database);
-      conversationRepository = ConversationRepositoryImpl(database);
-      skillsRepository = SkillsRepositoryImpl(database);
-      toolsRepository = SkillTemplateToolsRepositoryImpl(database);
+      workspaceRepository = WorkspaceRepository(database);
+      conversationRepository = ConversationRepository(database);
+      skillsRepository = SkillsRepository(database);
+      toolsRepository = SkillTemplateToolsRepository(database);
       skillCredentialDefinitionsRepository =
-          SkillCredentialDefinitionsRepositoryImpl(database);
-      skillCredentialsRepository = SkillCredentialsRepositoryImpl(
+          SkillCredentialDefinitionsRepository(database);
+      skillCredentialsRepository = SkillCredentialsRepository(
         database: database,
         encryptionService: EncryptionService(_FakeSecretKeyManager()),
       );
-      conversationSkillsRepository = ConversationSkillsRepositoryImpl(database);
-      appSkillSettingsRepository = AppSkillWorkspaceSettingsRepositoryImpl(
+      conversationSkillsRepository = ConversationSkillsRepository(database);
+      appSkillSettingsRepository = AppSkillWorkspaceSettingsRepository(
         database,
       );
       createSkillUsecase = CreateSkillUsecase(skillsRepository);
@@ -528,7 +528,6 @@ void main() {
 
       expect(messages.single.role, ChatMessageRole.user);
       expect(messages.single.metadata['kind'], skillContextMetadataKind);
-      expect(messages.single.toolResults, isEmpty);
       expect(messages.single.text, contains('<name>Example Services'));
       expect(
         messages.single.text,

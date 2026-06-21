@@ -1,8 +1,7 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/data/repositories/api_model_repository_impl.dart';
+import 'package:auravibes_app/data/repositories/api_model_repository.dart';
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
-import 'package:auravibes_app/domain/repositories/api_model_repository.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/services/model_api_service.dart';
@@ -113,7 +112,7 @@ void main() {
       addTearDown(container.dispose);
 
       final result = container.read(apiModelRepositoryProvider);
-      expect(result, isA<ApiModelRepositoryImpl>());
+      expect(result, isA<ApiModelRepository>());
     });
   });
 

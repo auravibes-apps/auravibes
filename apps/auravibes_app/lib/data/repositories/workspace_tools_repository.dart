@@ -2,18 +2,15 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_tools_dao.dart';
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
-import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/services/tools/native_tool_service.dart';
 import 'package:auravibes_app/services/tools/tool_service.dart';
 
 /// Implementation of the WorkspaceToolsRepository.
-class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
-  WorkspaceToolsRepositoryImpl(this._database)
-    : _dao = _database.workspaceToolsDao;
+class WorkspaceToolsRepository {
+  WorkspaceToolsRepository(this._database) : _dao = _database.workspaceToolsDao;
   final AppDatabase _database;
   final WorkspaceToolsDao _dao;
 
-  @override
   Future<List<WorkspaceToolEntity>> getWorkspaceTools(
     String workspaceId,
   ) async {
@@ -23,7 +20,6 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
     return results.map(_tableToEntity).toList();
   }
 
-  @override
   Future<List<WorkspaceToolEntity>> getEnabledWorkspaceTools(
     String workspaceId,
   ) async {
@@ -33,7 +29,6 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
     return results.map(_tableToEntity).toList();
   }
 
-  @override
   Future<WorkspaceToolEntity?> getWorkspaceTool(
     String workspaceId,
     String toolId,
@@ -70,7 +65,6 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
     });
   }
 
-  @override
   Future<WorkspaceToolEntity> setWorkspaceToolEnabled(
     String workspaceId,
     String toolType, {
@@ -85,7 +79,6 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
     return _tableToEntity(table);
   }
 
-  @override
   Future<WorkspaceToolEntity> setToolEnabledById(
     String id, {
     required bool isEnabled,
@@ -98,15 +91,13 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
     return _tableToEntity(table);
   }
 
-  @override
   Future<bool> isWorkspaceToolEnabled(
     String workspaceId,
     String toolType,
-  ) async {
+  ) {
     return _dao.isWorkspaceToolEnabledByToolId(workspaceId, toolType);
   }
 
-  @override
   Future<bool> removeWorkspaceTool(String workspaceId, String toolType) async {
     if (NativeToolService.hasTypeString(toolType)) {
       throw WorkspaceToolsValidationException(
@@ -117,39 +108,22 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
     return _dao.deleteWorkspaceToolByToolId(workspaceId, toolType);
   }
 
-  @override
-  Future<bool> removeWorkspaceToolById(String id) async {
+  Future<bool> removeWorkspaceToolById(String id) {
     return _dao.deleteWorkspaceToolById(id);
   }
 
-  @override
-  Future<int> getWorkspaceToolsCount(String workspaceId) async {
+  Future<int> getWorkspaceToolsCount(String workspaceId) {
     return _dao.getWorkspaceToolsCount(workspaceId);
   }
 
-  @override
-  Future<int> getEnabledWorkspaceToolsCount(String workspaceId) async {
+  Future<int> getEnabledWorkspaceToolsCount(String workspaceId) {
     return _dao.getEnabledWorkspaceToolsCount(workspaceId);
   }
 
-  @override
-  Future<void> copyWorkspaceToolsToConversation(
-    String workspaceId,
-    String conversationId,
-  ) async {
-    // This method is no longer needed since we use disabled tools approach.
-    // Copying workspace tools to conversation is handled by the conversation
-    // tools repository.
-    return;
-  }
-
-  @override
   Future<bool> validateWorkspaceToolSetting(
     String workspaceId,
-    String toolType, {
-    required bool isEnabled,
-    String? config,
-  }) async {
+    String toolType,
+  ) async {
     // Check if workspace exists.
     final workspace = await _database.workspaceDao.getWorkspaceById(
       workspaceId,
@@ -170,15 +144,13 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
     return true;
   }
 
-  @override
   Future<String?> getWorkspaceToolConfig(
     String workspaceId,
     String toolType,
-  ) async {
+  ) {
     return _dao.getWorkspaceToolConfigByToolId(workspaceId, toolType);
   }
 
-  @override
   Future<List<WorkspaceToolEntity>> patchWorkspaceToolConfig(
     String workspaceId,
     String toolType,
@@ -233,7 +205,6 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
     };
   }
 
-  @override
   Future<WorkspaceToolEntity> setToolPermissionMode(
     String id, {
     required ToolPermissionMode permissionMode,
@@ -246,7 +217,6 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
     return _tableToEntity(table);
   }
 
-  @override
   Future<WorkspaceToolEntity?> getWorkspaceToolByToolName({
     required String toolGroupId,
     required String toolName,
@@ -259,4 +229,29 @@ class WorkspaceToolsRepositoryImpl implements WorkspaceToolsRepository {
 
     return _tableToEntity(table);
   }
+}
+
+/// Base exception for workspace tools-related operations.
+class WorkspaceToolsException implements Exception {
+  /// Creates a new WorkspaceToolsException.
+  const WorkspaceToolsException(this.message, [this.cause]);
+
+  /// Error message describing the exception.
+  final String message;
+
+  /// Optional original exception that caused this exception.
+  final Exception? cause;
+
+  @override
+  String toString() {
+    final causedBy = cause != null ? ' (Caused by: $cause)' : '';
+
+    return 'WorkspaceToolsException: $message$causedBy';
+  }
+}
+
+/// Exception thrown when workspace tool validation fails.
+class WorkspaceToolsValidationException extends WorkspaceToolsException {
+  /// Creates a new WorkspaceToolsValidationException.
+  const WorkspaceToolsValidationException(super.message, [super.cause]);
 }

@@ -42,7 +42,11 @@ class ToolCallResponseModal extends StatelessWidget {
   Widget build(BuildContext context) {
     return Dialog(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(context.auraTheme.borderRadius.xl),
+        borderRadius: BorderRadius.all(
+          Radius.circular(
+            context.auraTheme.fromBorderRadius(.xl),
+          ),
+        ),
       ),
       child: Container(
         width: MediaQuery.sizeOf(context).width * 0.9,
@@ -59,7 +63,9 @@ class ToolCallResponseModal extends StatelessWidget {
             // Scrollable markdown content.
             Flexible(
               child: SingleChildScrollView(
-                padding: EdgeInsets.all(context.auraTheme.spacing.md),
+                padding: EdgeInsets.all(
+                  context.auraTheme.fromSpacing(.md),
+                ),
                 child: SizedBox(
                   width: double.infinity,
                   child: AuraText(
@@ -88,7 +94,9 @@ class _ToolCallResponseModalHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(context.auraTheme.spacing.md),
+      padding: EdgeInsets.all(
+        context.auraTheme.fromSpacing(.md),
+      ),
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
@@ -102,7 +110,7 @@ class _ToolCallResponseModalHeader extends StatelessWidget {
             Icons.terminal,
             color: AuraColorVariant.primary,
           ),
-          SizedBox(width: context.auraTheme.spacing.sm),
+          const AuraSizedBox(width: .sm),
           Expanded(
             child: AuraText(
               child: Text(toolName),
@@ -128,7 +136,9 @@ class _ToolCallResponseModalFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(context.auraTheme.spacing.md),
+      padding: EdgeInsets.all(
+        context.auraTheme.fromSpacing(.md),
+      ),
       decoration: BoxDecoration(
         border: Border(
           top: BorderSide(

@@ -2,6 +2,7 @@
 
 import 'package:auravibes_ui/src/atoms/aura_field_label.dart';
 import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
+import 'package:auravibes_ui/src/atoms/aura_sized_box.dart';
 import 'package:auravibes_ui/src/molecules/aura_field_hint.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
@@ -82,7 +83,7 @@ class _AuraFieldWrapperState extends State<AuraFieldWrapper> {
         children: [
           if (label != null)
             AuraFieldLabel(child: label, isRequired: widget.isRequired),
-          if (label != null) const SizedBox(height: DesignSpacing.xs),
+          if (label != null) const AuraSizedBox(height: .xs),
           AuraPressable(
             child: AnimatedContainer(
               decoration: BoxDecoration(
@@ -90,8 +91,12 @@ class _AuraFieldWrapperState extends State<AuraFieldWrapper> {
                 border: Border.all(
                   color: _getBorderColor(auraColors),
                 ),
-                borderRadius: const BorderRadius.all(
-                  Radius.circular(DesignBorderRadius.xl),
+                borderRadius: BorderRadius.all(
+                  Radius.circular(
+                    context.auraTheme.fromBorderRadius(
+                      .xl,
+                    ),
+                  ),
                 ),
                 boxShadow: _getBoxShadow(auraColors),
               ),
@@ -101,15 +106,19 @@ class _AuraFieldWrapperState extends State<AuraFieldWrapper> {
             color: auraColors.primary,
             decoration: BoxDecoration(
               color: _getBackgroundColor(auraColors),
-              borderRadius: const BorderRadius.all(
-                Radius.circular(DesignBorderRadius.xl),
+              borderRadius: BorderRadius.all(
+                Radius.circular(
+                  context.auraTheme.fromBorderRadius(
+                    .xl,
+                  ),
+                ),
               ),
               // Color: auraColors.primary,.
             ),
             onPressed: widget.isEnabled ? widget.onTap : null,
           ),
           if (widget.hint != null || widget.error != null)
-            const SizedBox(height: DesignSpacing.xs),
+            const AuraSizedBox(height: .xs),
           if (widget.hint != null || widget.error != null)
             AuraFieldHint(text: widget.hint, error: widget.error),
         ],

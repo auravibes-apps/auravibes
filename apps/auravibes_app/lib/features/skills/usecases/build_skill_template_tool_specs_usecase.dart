@@ -1,8 +1,8 @@
+import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
+import 'package:auravibes_app/data/repositories/skill_template_tools_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_spec.dart';
-import 'package:auravibes_app/domain/repositories/skill_credentials_repository.dart';
-import 'package:auravibes_app/domain/repositories/skill_template_tools_repository.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/models/skill_url_template.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';

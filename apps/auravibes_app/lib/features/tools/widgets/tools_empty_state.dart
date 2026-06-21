@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 class ToolsEmptyState extends StatelessWidget {
   const ToolsEmptyState({
     super.key,
-    this.padding = const EdgeInsets.all(DesignSpacing.lg),
+    this.padding = const EdgeInsets.all(24),
   });
 
   final EdgeInsetsGeometry padding;
@@ -39,7 +39,7 @@ class ToolsEmptyState extends StatelessWidget {
               color: AuraColorVariant.onSurfaceVariant,
             ),
           ],
-          spacing: AuraSpacing.md,
+          spacing: .md,
           mainAxisSize: MainAxisSize.min,
         ),
       ),

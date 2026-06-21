@@ -55,7 +55,7 @@ final class WorkspaceToolsRepositoryProvider
 }
 
 String _$workspaceToolsRepositoryHash() =>
-    r'8408a4229d3f4d6624c8b4a6521ea2b7f76b7889';
+    r'074b4080cbc7eefbbca42329f9ac71cfc4962005';
 
 @ProviderFor(workspaceToolIndexNotifier)
 final workspaceToolIndexProvider = WorkspaceToolIndexNotifierProvider._();

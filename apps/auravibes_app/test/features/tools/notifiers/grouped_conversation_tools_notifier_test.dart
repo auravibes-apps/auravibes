@@ -1,14 +1,14 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
+import 'package:auravibes_app/data/repositories/conversation_tools_repository.dart';
+import 'package:auravibes_app/data/repositories/tools_groups_repository.dart';
+import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_tool_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
 import 'package:auravibes_app/domain/models/mcp_connection_view_status.dart';
-import 'package:auravibes_app/domain/repositories/conversation_tools_repository.dart';
-import 'package:auravibes_app/domain/repositories/tools_groups_repository.dart';
-import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/features/skills/usecases/sync_skill_tool_permissions_usecase.dart';
 import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_conversation_tools_notifier.dart';
@@ -326,14 +326,6 @@ class _FakeWorkspaceToolsRepository implements WorkspaceToolsRepository {
   }
 
   @override
-  Future<void> copyWorkspaceToolsToConversation(
-    String workspaceId,
-    String conversationId,
-  ) {
-    throw UnimplementedError();
-  }
-
-  @override
   Future<List<WorkspaceToolEntity>> getEnabledWorkspaceTools(
     String workspaceId,
   ) {
@@ -423,10 +415,8 @@ class _FakeWorkspaceToolsRepository implements WorkspaceToolsRepository {
   @override
   Future<bool> validateWorkspaceToolSetting(
     String workspaceId,
-    String toolType, {
-    required bool isEnabled,
-    String? config,
-  }) {
+    String toolType,
+  ) {
     throw UnimplementedError();
   }
 }
@@ -560,9 +550,8 @@ class _FakeConversationToolsRepository implements ConversationToolsRepository {
   @override
   Future<bool> validateConversationToolSetting(
     String conversationId,
-    String toolId, {
-    required bool isEnabled,
-  }) {
+    String toolId,
+  ) {
     throw UnimplementedError();
   }
 }

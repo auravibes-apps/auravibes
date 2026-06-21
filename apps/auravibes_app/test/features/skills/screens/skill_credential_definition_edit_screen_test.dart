@@ -1,7 +1,7 @@
 // Required: Tests use numeric fixtures.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository_impl.dart';
-import 'package:auravibes_app/data/repositories/workspace_repository_impl.dart';
+import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository.dart';
+import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/skills/screens/skill_credential_definition_edit_screen.dart';
@@ -61,13 +61,13 @@ void main() {
       overrides: [appDatabaseProvider.overrideWithValue(database)],
     );
     addTearDown(container.dispose);
-    final workspace = await WorkspaceRepositoryImpl(database).createWorkspace(
+    final workspace = await WorkspaceRepository(database).createWorkspace(
       const WorkspaceToCreate(
         name: 'Test Workspace',
         type: WorkspaceType.local,
       ),
     );
-    final repository = SkillCredentialDefinitionsRepositoryImpl(database);
+    final repository = SkillCredentialDefinitionsRepository(database);
 
     await tester.pumpWidget(
       buildScreen(container: container, workspaceId: workspace.id),

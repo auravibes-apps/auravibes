@@ -1,5 +1,6 @@
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/molecules/aura_badge.dart';
+import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -118,9 +119,9 @@ void main() {
       final container = tester.widget<Container>(find.byType(Container));
       expect(
         container.padding,
-        const EdgeInsets.symmetric(
+        EdgeInsets.symmetric(
           vertical: 2,
-          horizontal: DesignSpacing.xs,
+          horizontal: AuraTheme.light.spacing.xs,
         ),
       );
     });
@@ -139,9 +140,9 @@ void main() {
       final container = tester.widget<Container>(find.byType(Container));
       expect(
         container.padding,
-        const EdgeInsets.symmetric(
-          vertical: DesignSpacing.xs,
-          horizontal: DesignSpacing.sm,
+        EdgeInsets.symmetric(
+          vertical: AuraTheme.light.spacing.xs,
+          horizontal: AuraTheme.light.spacing.sm,
         ),
       );
     });
@@ -302,147 +303,6 @@ void main() {
         expect(AuraBadgeSize.values, contains(AuraBadgeSize.small));
         expect(AuraBadgeSize.values, contains(AuraBadgeSize.medium));
         expect(AuraBadgeSize.values, contains(AuraBadgeSize.large));
-      });
-    });
-  });
-
-  group('AuraPositionedBadge', () {
-    testWidgets('renders positioned badge correctly', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraPositionedBadge(
-              child: Icon(Icons.notifications),
-              badge: AuraBadge.dot(),
-            ),
-          ),
-        ),
-      );
-
-      expect(
-        find.descendant(
-          of: find.byType(AuraPositionedBadge),
-          matching: find.byType(Stack),
-        ),
-        findsOneWidget,
-      );
-      expect(find.byType(Positioned), findsOneWidget);
-      expect(find.byIcon(Icons.notifications), findsOneWidget);
-      expect(find.byType(AuraBadge), findsOneWidget);
-    });
-
-    testWidgets('positions badge at top-right by default', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraPositionedBadge(
-              child: Icon(Icons.notifications),
-              badge: AuraBadge.dot(),
-            ),
-          ),
-        ),
-      );
-
-      final positioned = tester.widget<Positioned>(find.byType(Positioned));
-      expect(positioned.top, -8.0);
-      expect(positioned.right, -8.0);
-      expect(positioned.bottom, isNull);
-      expect(positioned.left, isNull);
-    });
-
-    testWidgets('positions badge at top-left correctly', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraPositionedBadge(
-              child: Icon(Icons.notifications),
-              badge: AuraBadge.dot(),
-              position: AuraBadgePosition.topLeft,
-            ),
-          ),
-        ),
-      );
-
-      final positioned = tester.widget<Positioned>(find.byType(Positioned));
-      expect(positioned.top, -8.0);
-      expect(positioned.left, -8.0);
-      expect(positioned.bottom, isNull);
-      expect(positioned.right, isNull);
-    });
-
-    testWidgets('positions badge at bottom-right correctly', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraPositionedBadge(
-              child: Icon(Icons.notifications),
-              badge: AuraBadge.dot(),
-              position: AuraBadgePosition.bottomRight,
-            ),
-          ),
-        ),
-      );
-
-      final positioned = tester.widget<Positioned>(find.byType(Positioned));
-      expect(positioned.bottom, -8.0);
-      expect(positioned.right, -8.0);
-      expect(positioned.top, isNull);
-      expect(positioned.left, isNull);
-    });
-
-    testWidgets('positions badge at bottom-left correctly', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraPositionedBadge(
-              child: Icon(Icons.notifications),
-              badge: AuraBadge.dot(),
-              position: AuraBadgePosition.bottomLeft,
-            ),
-          ),
-        ),
-      );
-
-      final positioned = tester.widget<Positioned>(find.byType(Positioned));
-      expect(positioned.bottom, -8.0);
-      expect(positioned.left, -8.0);
-      expect(positioned.top, isNull);
-      expect(positioned.right, isNull);
-    });
-
-    testWidgets('applies custom offset correctly', (tester) async {
-      const customOffset = Offset(5, 10);
-
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraPositionedBadge(
-              child: Icon(Icons.notifications),
-              badge: AuraBadge.dot(),
-              offset: customOffset,
-            ),
-          ),
-        ),
-      );
-
-      final positioned = tester.widget<Positioned>(find.byType(Positioned));
-      expect(positioned.top, -8.0 + customOffset.dy);
-      expect(positioned.right, -8.0 + customOffset.dx);
-    });
-
-    group('AuraBadgePosition enum', () {
-      test('has all expected values', () {
-        expect(AuraBadgePosition.values, hasLength(4));
-        expect(AuraBadgePosition.values, contains(AuraBadgePosition.topLeft));
-        expect(AuraBadgePosition.values, contains(AuraBadgePosition.topRight));
-        expect(
-          AuraBadgePosition.values,
-          contains(AuraBadgePosition.bottomLeft),
-        );
-        expect(
-          AuraBadgePosition.values,
-          contains(AuraBadgePosition.bottomRight),
-        );
       });
     });
   });

@@ -3,10 +3,9 @@ import 'package:auravibes_app/data/database/drift/daos/workspace_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_tools_dao.dart';
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools.dart';
-import 'package:auravibes_app/data/repositories/workspace_tools_repository_impl.dart';
+import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
-import 'package:auravibes_app/domain/repositories/workspace_tools_repository.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -17,7 +16,7 @@ import '../../test_mocks.dart';
 void main() {
   setUpAll(registerTestFallbackValues);
 
-  group('WorkspaceToolsRepositoryImpl', () {
+  group('WorkspaceToolsRepository', () {
     final fixture = _WorkspaceToolsRepositoryFixture();
 
     setUp(fixture.reset);
@@ -321,17 +320,6 @@ void main() {
       });
     });
 
-    group('copyWorkspaceToolsToConversation', () {
-      test('completes without error', () async {
-        await fixture.repository.copyWorkspaceToolsToConversation(
-          'ws-1',
-          'conv-1',
-        );
-
-        expect(true, true);
-      });
-    });
-
     group('validateWorkspaceToolSetting', () {
       test('returns true for valid workspace and tool', () async {
         when(
@@ -349,7 +337,6 @@ void main() {
         final result = await fixture.repository.validateWorkspaceToolSetting(
           'ws-1',
           'calculator',
-          isEnabled: true,
         );
 
         expect(result, true);
@@ -364,7 +351,6 @@ void main() {
           fixture.repository.validateWorkspaceToolSetting(
             'nonexistent',
             'calculator',
-            isEnabled: true,
           ),
           throwsA(isA<WorkspaceToolsValidationException>()),
         );
@@ -387,7 +373,6 @@ void main() {
           fixture.repository.validateWorkspaceToolSetting(
             'ws-1',
             'totally_invalid_tool_type_xyz',
-            isEnabled: true,
           ),
           throwsA(isA<WorkspaceToolsValidationException>()),
         );
@@ -595,7 +580,7 @@ class _WorkspaceToolsRepositoryFixture {
   MockWorkspaceToolsDao? _mockToolsDao;
   MockWorkspaceDao? _mockWorkspaceDao;
   _TestAppDatabase? _database;
-  WorkspaceToolsRepositoryImpl? _repository;
+  WorkspaceToolsRepository? _repository;
 
   MockWorkspaceToolsDao get mockToolsDao =>
       _mockToolsDao ?? fail('Fixture not initialized');
@@ -605,7 +590,7 @@ class _WorkspaceToolsRepositoryFixture {
 
   _TestAppDatabase get database => _database ?? fail('Fixture not initialized');
 
-  WorkspaceToolsRepositoryImpl get repository =>
+  WorkspaceToolsRepository get repository =>
       _repository ?? fail('Fixture not initialized');
 
   void reset() {
@@ -615,7 +600,7 @@ class _WorkspaceToolsRepositoryFixture {
     _mockToolsDao = toolsDao;
     _mockWorkspaceDao = workspaceDao;
     _database = database;
-    _repository = WorkspaceToolsRepositoryImpl(database);
+    _repository = WorkspaceToolsRepository(database);
 
     when(() => toolsDao.getWorkspaceTools(any())).thenAnswer((_) async => []);
     when(

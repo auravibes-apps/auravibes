@@ -1,5 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
+import 'package:auravibes_ui/src/atoms/aura_sized_box.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
@@ -79,17 +80,20 @@ class AuraTile extends StatelessWidget {
         children: [
           if (leading != null) ...[
             leading,
-            SizedBox(width: auraTheme.spacing.sm),
+            const AuraSizedBox(width: .sm),
           ],
           Flexible(
             fit: .tight,
             child: DefaultTextStyle(
-              style: _getTextStyle(auraColors, auraTheme.typography),
+              style: _getTextStyle(
+                auraColors,
+                typography: context.auraTheme.typography,
+              ),
               child: child,
             ),
           ),
           if (trailing != null) ...[
-            SizedBox(width: auraTheme.spacing.sm),
+            const AuraSizedBox(width: .sm),
             trailing,
           ],
         ],
@@ -102,18 +106,25 @@ class AuraTile extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           child: AnimatedContainer(
-            padding: _getPadding(auraTheme.spacing),
+            padding: _getPadding(spacing: context.auraTheme.spacing),
             decoration: BoxDecoration(
               color: _getBackgroundColor(auraColors),
-              border: _getBorder(auraColors),
-              borderRadius: BorderRadius.circular(auraTheme.borderRadius.lg),
+              borderRadius: BorderRadius.all(
+                Radius.circular(
+                  context.auraTheme.fromBorderRadius(.lg),
+                ),
+              ),
               boxShadow: _getBoxShadow(),
             ),
             child: content,
             duration: auraTheme.animation.normal,
           ),
           onTap: enabled && !isLoading ? onTap : null,
-          borderRadius: BorderRadius.circular(auraTheme.borderRadius.lg),
+          borderRadius: BorderRadius.all(
+            Radius.circular(
+              context.auraTheme.fromBorderRadius(.lg),
+            ),
+          ),
         ),
       ),
     );
@@ -124,26 +135,11 @@ class AuraTile extends StatelessWidget {
 
     return switch (variant) {
       AuraTileVariant.primary => colors.primary,
-      AuraTileVariant.secondary => colors.secondary,
       AuraTileVariant.surface => colors.surface,
-      AuraTileVariant.outlined => Colors.transparent,
       AuraTileVariant.ghost => Colors.transparent,
       AuraTileVariant.selected => colors.primary.withValues(alpha: 0.1),
-      AuraTileVariant.success => colors.success,
-      AuraTileVariant.warning => colors.warning,
       AuraTileVariant.error => colors.error,
-      AuraTileVariant.info => colors.info,
     };
-  }
-
-  Border? _getBorder(AuraColorScheme colors) {
-    if (variant == AuraTileVariant.outlined) {
-      return Border.all(
-        color: enabled ? colors.outline : colors.outlineVariant,
-      );
-    }
-
-    return null;
   }
 
   List<BoxShadow> _getBoxShadow() {
@@ -157,58 +153,48 @@ class AuraTile extends StatelessWidget {
   Color _getLoadingColor(AuraColorScheme colors) {
     return switch (variant) {
       AuraTileVariant.primary => colors.onPrimary,
-      AuraTileVariant.secondary => colors.onSecondary,
       AuraTileVariant.surface => colors.onSurface,
-      AuraTileVariant.outlined => colors.primary,
       AuraTileVariant.ghost => colors.primary,
       AuraTileVariant.selected => colors.primary,
-      AuraTileVariant.success => colors.onSuccess,
-      AuraTileVariant.warning => colors.onWarning,
       AuraTileVariant.error => colors.onError,
-      AuraTileVariant.info => colors.onInfo,
     };
   }
 
   TextStyle _getTextStyle(
-    AuraColorScheme colors,
-    AuraTypographyTheme typography,
-  ) {
+    AuraColorScheme colors, {
+    required AuraTypographyScale typography,
+  }) {
     final fontSize = switch (size) {
-      AuraTileSize.small => typography.sizes.sm,
-      AuraTileSize.medium => typography.sizes.base,
-      AuraTileSize.large => typography.sizes.lg,
+      AuraTileSize.small => typography.fontSizeSm,
+      AuraTileSize.medium => typography.fontSizeBase,
+      AuraTileSize.large => typography.fontSizeLg,
     };
 
     final fontWeight = switch (size) {
-      AuraTileSize.small => typography.weights.medium,
-      AuraTileSize.medium => typography.weights.medium,
-      AuraTileSize.large => typography.weights.semibold,
+      AuraTileSize.small => typography.fontWeightMedium,
+      AuraTileSize.medium => typography.fontWeightMedium,
+      AuraTileSize.large => typography.fontWeightSemibold,
     };
 
     final textColor = !enabled
         ? colors.onSurfaceVariant
         : switch (variant) {
             AuraTileVariant.primary => colors.onPrimary,
-            AuraTileVariant.secondary => colors.onSecondary,
             AuraTileVariant.surface => colors.onSurface,
-            AuraTileVariant.outlined => colors.onSurface,
             AuraTileVariant.ghost => colors.primary,
             AuraTileVariant.selected => colors.primary,
-            AuraTileVariant.success => colors.onSuccess,
-            AuraTileVariant.warning => colors.onWarning,
             AuraTileVariant.error => colors.onError,
-            AuraTileVariant.info => colors.onInfo,
           };
 
     return TextStyle(
       color: textColor,
       fontSize: fontSize,
       fontWeight: fontWeight,
-      height: typography.lineHeights.base,
+      height: typography.lineHeightBase,
     );
   }
 
-  EdgeInsets _getPadding(AuraSpacingTheme spacing) {
+  EdgeInsets _getPadding({required AuraSpacingScale spacing}) {
     return switch (size) {
       AuraTileSize.small => EdgeInsets.symmetric(
         vertical: spacing.sm,
@@ -231,14 +217,8 @@ enum AuraTileVariant {
   /// A filled tile with primary color background.
   primary,
 
-  /// A filled tile with secondary color background.
-  secondary,
-
   /// A tile with surface background and subtle shadow.
   surface,
-
-  /// A tile with transparent background and border.
-  outlined,
 
   /// A tile with transparent background and no border.
   ghost,
@@ -247,17 +227,8 @@ enum AuraTileVariant {
   /// Used for selection states in navigation lists.
   selected,
 
-  /// A tile with success color background.
-  success,
-
-  /// A tile with warning color background.
-  warning,
-
   /// A tile with error color background.
   error,
-
-  /// A tile with info color background.
-  info,
 }
 
 /// The size of a [AuraTile].

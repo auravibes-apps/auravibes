@@ -1,6 +1,6 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_compaction_settings_dao.dart';
-import 'package:auravibes_app/data/repositories/workspace_compaction_settings_repository_impl.dart';
+import 'package:auravibes_app/data/repositories/workspace_compaction_settings_repository.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -12,7 +12,7 @@ class FakeCompanion extends Fake
 
 void main() {
   var mockDao = MockDao();
-  var repo = WorkspaceCompactionSettingsRepoImpl(mockDao);
+  var repo = WorkspaceCompactionSettingsRepository(mockDao);
 
   setUpAll(() {
     registerFallbackValue(FakeCompanion());
@@ -20,7 +20,7 @@ void main() {
 
   tearDown(() {
     mockDao = MockDao();
-    repo = WorkspaceCompactionSettingsRepoImpl(mockDao);
+    repo = WorkspaceCompactionSettingsRepository(mockDao);
   });
 
   group('getEffectiveSettings', () {

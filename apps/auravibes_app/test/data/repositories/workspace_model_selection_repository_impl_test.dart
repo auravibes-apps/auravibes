@@ -2,7 +2,7 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_model_selection_with_connection.dart';
 import 'package:auravibes_app/data/database/drift/tables/model_providers_table_type.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
-import 'package:auravibes_app/data/repositories/workspace_model_selection_repository_impl.dart';
+import 'package:auravibes_app/data/repositories/workspace_model_selection_repository.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
@@ -15,16 +15,16 @@ import '../../test_mocks.dart';
 void main() {
   setUpAll(registerTestFallbackValues);
 
-  group('WorkspaceModelSelectionRepositoryImpl', () {
+  group('WorkspaceModelSelectionRepository', () {
     var mockDao = MockWorkspaceModelSelectionsDao();
     var database = _TestAppDatabase(mockDao);
-    var repository = WorkspaceModelSelectionRepositoryImpl(database);
+    var repository = WorkspaceModelSelectionRepository(database);
 
     tearDown(() async {
       await database.close();
       mockDao = MockWorkspaceModelSelectionsDao();
       database = _TestAppDatabase(mockDao);
-      repository = WorkspaceModelSelectionRepositoryImpl(database);
+      repository = WorkspaceModelSelectionRepository(database);
     });
 
     tearDownAll(() async {

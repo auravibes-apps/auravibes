@@ -288,7 +288,6 @@ void main() {
             skillContextMetadataKind,
           );
           expect(history.firstOrNull?.text, contains('<skill>'));
-          expect(history.firstOrNull?.toolResults, isEmpty);
 
           return Stream.fromIterable([
             ChatResult<ChatMessage>(

@@ -5,6 +5,7 @@
 import 'dart:async';
 
 import 'package:auravibes_genkit_providers/src/chat_completions_provider.dart';
+import 'package:auravibes_genkit_providers/src/openai_compat_chat_options.dart';
 import 'package:genkit/plugin.dart';
 import 'package:http/http.dart' as http;
 
@@ -25,36 +26,26 @@ class OpenRouterPluginHandle {
     Map<String, String>? headers,
     http.Client? httpClient,
   }) {
-    return ChatCompletionsProvider<OpenRouterOptions>(
-      ChatCompletionsProviderConfig(
-        name: name,
-        baseUrl: baseUrl,
-        errorLabel: 'OpenRouter',
-        parseOptions: OpenRouterOptions.fromJson,
-        extraBody: (options) => {
-          'temperature': ?options.temperature,
-          'top_p': ?options.topP,
-          'max_tokens': ?options.maxTokens,
-          'stop': ?options.stop,
-          'presence_penalty': ?options.presencePenalty,
-          'frequency_penalty': ?options.frequencyPenalty,
-          'seed': ?options.seed,
-          'user': ?options.user,
-          'reasoning': ?options.reasoning?.toJson(),
-        },
-        apiKey: apiKey,
-        apiKeyProvider: apiKeyProvider,
-        models: models
-            .map(
-              (model) => ChatCompletionsModelDefinition(
-                name: model.name,
-                info: model.info,
-              ),
-            )
-            .toList(),
-        headers: headers,
-        httpClient: httpClient,
-      ),
+    return ChatCompletionsPlugin(
+      name: name,
+      baseUrl: baseUrl,
+      errorLabel: 'OpenRouter',
+      customize: (modelName, config) {
+        final options = OpenRouterOptions.fromJson(config);
+
+        return (
+          model: modelName,
+          extraBody: {
+            ...options.toSamplingBody(),
+            'reasoning': ?options.reasoning?.toJson(),
+          },
+        );
+      },
+      apiKey: apiKey,
+      apiKeyProvider: apiKeyProvider,
+      models: models,
+      headers: headers,
+      httpClient: httpClient,
     );
   }
 
@@ -66,58 +57,43 @@ class OpenRouterPluginHandle {
   }
 }
 
-class OpenRouterOptions {
+class OpenRouterOptions extends OpenAICompatChatOptions {
   OpenRouterOptions({
-    this.temperature,
-    this.topP,
-    this.maxTokens,
-    this.stop,
-    this.presencePenalty,
-    this.frequencyPenalty,
-    this.seed,
-    this.user,
+    super.temperature,
+    super.topP,
+    super.maxTokens,
+    super.stop,
+    super.presencePenalty,
+    super.frequencyPenalty,
+    super.seed,
+    super.user,
     this.reasoning,
   });
 
   factory OpenRouterOptions.fromJson(Map<String, dynamic>? json) {
-    if (json == null) return OpenRouterOptions();
+    final shared = OpenAICompatChatOptions.fromJson(json);
+    final reasoningJson = json?['reasoning'];
 
     return OpenRouterOptions(
-      temperature: (json['temperature'] as num?)?.toDouble(),
-      topP: (json['topP'] as num?)?.toDouble(),
-      maxTokens: json['maxTokens'] as int?,
-      stop: (json['stop'] as List?)?.cast<String>(),
-      presencePenalty: (json['presencePenalty'] as num?)?.toDouble(),
-      frequencyPenalty: (json['frequencyPenalty'] as num?)?.toDouble(),
-      seed: json['seed'] as int?,
-      user: json['user'] as String?,
-      reasoning: json['reasoning'] is Map<String, dynamic>
-          ? OpenRouterReasoningConfig.fromJson(
-              json['reasoning'] as Map<String, dynamic>,
-            )
+      temperature: shared.temperature,
+      topP: shared.topP,
+      maxTokens: shared.maxTokens,
+      stop: shared.stop,
+      presencePenalty: shared.presencePenalty,
+      frequencyPenalty: shared.frequencyPenalty,
+      seed: shared.seed,
+      user: shared.user,
+      reasoning: reasoningJson is Map<String, dynamic>
+          ? OpenRouterReasoningConfig.fromJson(reasoningJson)
           : null,
     );
   }
 
-  final double? temperature;
-  final double? topP;
-  final int? maxTokens;
-  final List<String>? stop;
-  final double? presencePenalty;
-  final double? frequencyPenalty;
-  final int? seed;
-  final String? user;
   final OpenRouterReasoningConfig? reasoning;
 
+  @override
   Map<String, dynamic> toJson() => {
-    'temperature': ?temperature,
-    'topP': ?topP,
-    'maxTokens': ?maxTokens,
-    'stop': ?stop,
-    'presencePenalty': ?presencePenalty,
-    'frequencyPenalty': ?frequencyPenalty,
-    'seed': ?seed,
-    'user': ?user,
+    ...super.toJson(),
     'reasoning': ?reasoning?.toJson(),
   };
 }

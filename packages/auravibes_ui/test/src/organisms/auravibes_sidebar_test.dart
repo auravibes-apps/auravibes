@@ -216,18 +216,5 @@ void main() {
       expect(label.data, 'Home');
       expect(data.footer, isTrue);
     });
-
-    test('copyWith creates updated instance', () {
-      const data = AuraNavigationData(
-        icon: Icon(Icons.home),
-        label: Text('Home'),
-      );
-
-      final updated = data.copyWith(footer: true);
-      expect(updated.footer, isTrue);
-      expect(identical(updated.icon, data.icon), isTrue);
-      expect(identical(updated.label, data.label), isTrue);
-      expect(data.footer, isFalse);
-    });
   });
 }

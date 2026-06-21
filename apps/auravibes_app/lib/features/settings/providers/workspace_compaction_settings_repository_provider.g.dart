@@ -58,4 +58,4 @@ final class WorkspaceCompactionSettingsRepositoryProvider
 }
 
 String _$workspaceCompactionSettingsRepositoryHash() =>
-    r'9d71ac4ce7a67df77c38f945a620da830cf234f4';
+    r'108472580ecf609a331cf477c14807f0641afed6';

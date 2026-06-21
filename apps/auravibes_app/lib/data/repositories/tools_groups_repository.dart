@@ -1,16 +1,14 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
-import 'package:auravibes_app/domain/repositories/tools_groups_repository.dart';
 
 /// Implementation of [ToolsGroupsRepository] using Drift database.
-class ToolsGroupsRepositoryImpl implements ToolsGroupsRepository {
-  /// Creates a new [ToolsGroupsRepositoryImpl] instance.
-  ToolsGroupsRepositoryImpl(this._database);
+class ToolsGroupsRepository {
+  /// Creates a new [ToolsGroupsRepository] instance.
+  ToolsGroupsRepository(this._database);
 
   final AppDatabase _database;
 
-  @override
   Future<List<ToolsGroupEntity>> getToolsGroupsForWorkspace(
     String workspaceId,
   ) async {
@@ -21,14 +19,12 @@ class ToolsGroupsRepositoryImpl implements ToolsGroupsRepository {
     return rows.map(_tableToEntity).toList();
   }
 
-  @override
   Future<ToolsGroupEntity?> getToolsGroupById(String id) async {
     final row = await _database.toolsGroupsDao.getToolsGroupById(id);
 
     return row != null ? _tableToEntity(row) : null;
   }
 
-  @override
   Future<ToolsGroupEntity?> getToolsGroupByMcpServerId(
     String mcpServerId,
   ) async {
@@ -39,19 +35,17 @@ class ToolsGroupsRepositoryImpl implements ToolsGroupsRepository {
     return row != null ? _tableToEntity(row) : null;
   }
 
-  @override
   Future<bool> setToolsGroupEnabled(
     String groupId, {
     required bool isEnabled,
-  }) async {
+  }) {
     return _database.toolsGroupsDao.setToolsGroupEnabled(
       groupId,
       isEnabled: isEnabled,
     );
   }
 
-  @override
-  Future<bool> deleteToolsGroup(String id) async {
+  Future<bool> deleteToolsGroup(String id) {
     return _database.toolsGroupsDao.deleteToolsGroupById(id);
   }
 

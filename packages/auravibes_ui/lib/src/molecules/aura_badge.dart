@@ -90,7 +90,7 @@ class AuraBadge extends StatelessWidget {
     final auraColors = context.auraColors;
 
     Widget badge = Container(
-      padding: _getPadding(),
+      padding: _getPadding(spacing: context.auraTheme.spacing),
       decoration: BoxDecoration(
         color: _getBackgroundColor(auraColors),
         border: variant == AuraBadgeVariant.outlined
@@ -98,12 +98,14 @@ class AuraBadge extends StatelessWidget {
                 color: _getBorderColor(auraColors),
               )
             : null,
-        borderRadius: BorderRadius.circular(_getBorderRadius()),
+        borderRadius: BorderRadius.circular(
+          context.auraTheme.fromBorderRadius(_getBorderRadius()),
+        ),
       ),
       child: DefaultTextStyle(
         style: TextStyle(
           color: _getForegroundColor(auraColors),
-          fontWeight: DesignTypography.fontWeightMedium,
+          fontWeight: context.auraTheme.typography.fontWeightMedium,
         ),
         child: child,
       ),
@@ -119,28 +121,28 @@ class AuraBadge extends StatelessWidget {
     return badge;
   }
 
-  EdgeInsets _getPadding() {
+  EdgeInsets _getPadding({required AuraSpacingScale spacing}) {
     return switch (size) {
-      AuraBadgeSize.small => const EdgeInsets.symmetric(
+      AuraBadgeSize.small => EdgeInsets.symmetric(
         vertical: 2,
-        horizontal: DesignSpacing.xs,
+        horizontal: spacing.xs,
       ),
-      AuraBadgeSize.medium => const EdgeInsets.symmetric(
-        vertical: DesignSpacing.xs,
-        horizontal: DesignSpacing.sm,
+      AuraBadgeSize.medium => EdgeInsets.symmetric(
+        vertical: spacing.xs,
+        horizontal: spacing.sm,
       ),
-      AuraBadgeSize.large => const EdgeInsets.symmetric(
-        vertical: DesignSpacing.xs,
-        horizontal: DesignSpacing.sm,
+      AuraBadgeSize.large => EdgeInsets.symmetric(
+        vertical: spacing.xs,
+        horizontal: spacing.sm,
       ),
     };
   }
 
-  double _getBorderRadius() {
+  AuraBorderRadius _getBorderRadius() {
     return switch (size) {
-      AuraBadgeSize.small => DesignBorderRadius.sm,
-      AuraBadgeSize.medium => DesignBorderRadius.sm,
-      AuraBadgeSize.large => DesignBorderRadius.md,
+      AuraBadgeSize.small => .sm,
+      AuraBadgeSize.medium => .sm,
+      AuraBadgeSize.large => .md,
     };
   }
 
@@ -186,130 +188,18 @@ class AuraBadge extends StatelessWidget {
     };
   }
 
+  // Each helper is reached only from its own variant branch (soft/outlined),
+  // so it ignores `variant` and returns the single value that arm produced.
   Color _getSoftBackgroundColor(AuraColorScheme colors) {
-    return switch (variant) {
-      AuraBadgeVariant.primary => colors.primary.withValues(alpha: 0.1),
-      AuraBadgeVariant.secondary => colors.secondary.withValues(alpha: 0.1),
-      AuraBadgeVariant.success => colors.success.withValues(alpha: 0.1),
-      AuraBadgeVariant.warning => colors.warning.withValues(alpha: 0.1),
-      AuraBadgeVariant.error => colors.error.withValues(alpha: 0.1),
-      AuraBadgeVariant.info => colors.info.withValues(alpha: 0.1),
-      AuraBadgeVariant.neutral => colors.onSurfaceVariant.withValues(
-        alpha: 0.1,
-      ),
-      AuraBadgeVariant.outlined => colors.surfaceVariant,
-      AuraBadgeVariant.soft => colors.primary.withValues(alpha: 0.1),
-    };
+    return colors.primary.withValues(alpha: 0.1);
   }
 
   Color _getSoftForegroundColor(AuraColorScheme colors) {
-    return switch (variant) {
-      AuraBadgeVariant.primary => colors.primaryVariant,
-      AuraBadgeVariant.secondary => colors.secondaryVariant,
-      AuraBadgeVariant.success => colors.success,
-      AuraBadgeVariant.warning => colors.warning,
-      AuraBadgeVariant.error => colors.error,
-      AuraBadgeVariant.info => colors.info,
-      AuraBadgeVariant.neutral => colors.onSurfaceVariant,
-      _ => colors.onSurfaceVariant,
-    };
+    return colors.onSurfaceVariant;
   }
 
   Color _getOutlinedForegroundColor(AuraColorScheme colors) {
-    return switch (variant) {
-      AuraBadgeVariant.primary => colors.primary,
-      AuraBadgeVariant.secondary => colors.secondary,
-      AuraBadgeVariant.success => colors.success,
-      AuraBadgeVariant.warning => colors.warning,
-      AuraBadgeVariant.error => colors.error,
-      AuraBadgeVariant.info => colors.info,
-      AuraBadgeVariant.neutral => colors.onSurfaceVariant,
-      _ => colors.onSurfaceVariant,
-    };
-  }
-}
-
-/// A specialized badge component that can be positioned relative to another
-/// widget.
-///
-/// This is commonly used for notification badges on icons or avatars.
-class AuraPositionedBadge extends StatelessWidget {
-  /// Creates a positioned Aura badge.
-  const AuraPositionedBadge({
-    required this.child,
-    required this.badge,
-    super.key,
-    this.position = AuraBadgePosition.topRight,
-    this.offset,
-  });
-
-  /// The widget to position the badge relative to.
-  final Widget child;
-
-  /// The badge to display.
-  final AuraBadge badge;
-
-  /// The position of the badge relative to the child.
-  final AuraBadgePosition position;
-
-  /// Optional offset to fine-tune the badge position.
-  final Offset? offset;
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        child,
-        Positioned(
-          left: _getLeft(),
-          top: _getTop(),
-          right: _getRight(),
-          bottom: _getBottom(),
-          child: badge,
-        ),
-      ],
-    );
-  }
-
-  double? _getTop() {
-    final baseOffset = offset?.dy ?? 0;
-
-    return switch (position) {
-      AuraBadgePosition.topLeft ||
-      AuraBadgePosition.topRight => -8.0 + baseOffset,
-      AuraBadgePosition.bottomLeft || AuraBadgePosition.bottomRight => null,
-    };
-  }
-
-  double? _getRight() {
-    final baseOffset = offset?.dx ?? 0;
-
-    return switch (position) {
-      AuraBadgePosition.topRight ||
-      AuraBadgePosition.bottomRight => -8.0 + baseOffset,
-      AuraBadgePosition.topLeft || AuraBadgePosition.bottomLeft => null,
-    };
-  }
-
-  double? _getBottom() {
-    final baseOffset = offset?.dy ?? 0;
-
-    return switch (position) {
-      AuraBadgePosition.bottomLeft ||
-      AuraBadgePosition.bottomRight => -8.0 + baseOffset,
-      AuraBadgePosition.topLeft || AuraBadgePosition.topRight => null,
-    };
-  }
-
-  double? _getLeft() {
-    final baseOffset = offset?.dx ?? 0;
-
-    return switch (position) {
-      AuraBadgePosition.topLeft ||
-      AuraBadgePosition.bottomLeft => -8.0 + baseOffset,
-      AuraBadgePosition.topRight || AuraBadgePosition.bottomRight => null,
-    };
+    return colors.onSurfaceVariant;
   }
 }
 
@@ -353,19 +243,4 @@ enum AuraBadgeSize {
 
   /// Large badge.
   large,
-}
-
-/// The position of a [AuraPositionedBadge].
-enum AuraBadgePosition {
-  /// Top-left corner.
-  topLeft,
-
-  /// Top-right corner.
-  topRight,
-
-  /// Bottom-left corner.
-  bottomLeft,
-
-  /// Bottom-right corner.
-  bottomRight,
 }

@@ -1,8 +1,8 @@
 // ignore_for_file: cascade_invocations
 // Required: Existing test and UI helpers keep compact return flow.
+import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/enums/credentials_model_type.dart';
-import 'package:auravibes_app/domain/repositories/model_connection_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _StubModelConnectionRepository implements ModelConnectionRepository {

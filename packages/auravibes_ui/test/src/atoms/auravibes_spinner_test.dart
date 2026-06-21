@@ -167,108 +167,6 @@ void main() {
     });
   });
 
-  group('AuraSpinnerWithLabel', () {
-    testWidgets('renders spinner with label correctly', (tester) async {
-      const labelText = 'Loading data...';
-
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraSpinnerWithLabel(
-              label: labelText,
-            ),
-          ),
-        ),
-      );
-
-      expect(find.byType(AuraSpinner), findsOneWidget);
-      expect(find.text(labelText), findsOneWidget);
-      expect(find.byType(Column), findsOneWidget);
-    });
-
-    testWidgets('renders spinner with label horizontally', (tester) async {
-      const labelText = 'Loading...';
-
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraSpinnerWithLabel(
-              label: labelText,
-              direction: Axis.horizontal,
-            ),
-          ),
-        ),
-      );
-
-      expect(find.byType(AuraSpinner), findsOneWidget);
-      expect(find.text(labelText), findsOneWidget);
-      expect(find.byType(Row), findsOneWidget);
-    });
-
-    testWidgets('applies custom spacing correctly', (tester) async {
-      const customSpacing = 16.0;
-      const labelText = 'Loading...';
-
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraSpinnerWithLabel(
-              label: labelText,
-              spacing: customSpacing,
-            ),
-          ),
-        ),
-      );
-
-      final sizedBox = tester.widget<SizedBox>(
-        find
-            .descendant(
-              of: find.byType(Column),
-              matching: find.byType(SizedBox),
-            )
-            .last,
-      );
-      expect(sizedBox.height, customSpacing);
-    });
-
-    testWidgets('applies custom size to spinner', (tester) async {
-      const labelText = 'Loading...';
-
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraSpinnerWithLabel(
-              label: labelText,
-              size: AuraSpinnerSize.large,
-            ),
-          ),
-        ),
-      );
-
-      final auraSpinner = tester.widget<AuraSpinner>(find.byType(AuraSpinner));
-      expect(auraSpinner.size, AuraSpinnerSize.large);
-    });
-
-    testWidgets('applies custom color to spinner', (tester) async {
-      const customColor = Colors.green;
-      const labelText = 'Loading...';
-
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraSpinnerWithLabel(
-              label: labelText,
-              color: customColor,
-            ),
-          ),
-        ),
-      );
-
-      final auraSpinner = tester.widget<AuraSpinner>(find.byType(AuraSpinner));
-      expect(auraSpinner.color, customColor);
-    });
-  });
-
   group('AuraLoadingOverlay', () {
     testWidgets('shows overlay when isLoading is true', (tester) async {
       await tester.pumpWidget(
@@ -359,7 +257,7 @@ void main() {
         ),
       );
 
-      expect(find.byType(AuraSpinnerWithLabel), findsOneWidget);
+      expect(find.byType(AuraSpinner), findsOneWidget);
       expect(find.text(message), findsOneWidget);
     });
 

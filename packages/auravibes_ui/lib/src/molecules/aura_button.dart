@@ -51,7 +51,6 @@ class AuraButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
-    final auraTheme = context.auraTheme;
 
     return SizedBox(
       width: isFullWidth ? double.infinity : null,
@@ -67,7 +66,10 @@ class AuraButton extends StatelessWidget {
                     ),
                   )
                 : DefaultTextStyle(
-                    style: _getTextStyle(auraColors, auraTheme.typography),
+                    style: _getTextStyle(
+                      auraColors,
+                      typography: context.auraTheme.typography,
+                    ),
                     child: child,
                   ),
           ),
@@ -77,7 +79,11 @@ class AuraButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: _getBackgroundColor(auraColors),
           border: _getBorder(auraColors),
-          borderRadius: BorderRadius.circular(auraTheme.borderRadius.xl),
+          borderRadius: BorderRadius.all(
+            Radius.circular(
+              context.auraTheme.fromBorderRadius(.xl),
+            ),
+          ),
           boxShadow: _getBoxShadow(),
         ),
         onPressed: (disabled || isLoading) ? null : onPressed,
@@ -140,23 +146,23 @@ class AuraButton extends StatelessWidget {
     // Text variant uses minimal/inline padding for dialogs and inline actions.
     if (variant == AuraButtonVariant.text) {
       return const AuraEdgeInsetsGeometry.symmetric(
-        horizontal: AuraSpacing.sm,
-        vertical: AuraSpacing.xs,
+        horizontal: .sm,
+        vertical: .xs,
       );
     }
 
     return switch (size) {
       AuraButtonSize.small => const AuraEdgeInsetsGeometry.symmetric(
-        horizontal: AuraSpacing.sm,
-        vertical: AuraSpacing.xs,
+        horizontal: .sm,
+        vertical: .xs,
       ),
       AuraButtonSize.medium => const AuraEdgeInsetsGeometry.symmetric(
-        horizontal: AuraSpacing.md,
-        vertical: AuraSpacing.sm,
+        horizontal: .md,
+        vertical: .sm,
       ),
       AuraButtonSize.large => const AuraEdgeInsetsGeometry.symmetric(
-        horizontal: AuraSpacing.lg,
-        vertical: AuraSpacing.md,
+        horizontal: .lg,
+        vertical: .md,
       ),
     };
   }
@@ -183,26 +189,26 @@ class AuraButton extends StatelessWidget {
   }
 
   TextStyle _getTextStyle(
-    AuraColorScheme colors,
-    AuraTypographyTheme typography,
-  ) {
+    AuraColorScheme colors, {
+    required AuraTypographyScale typography,
+  }) {
     final fontSize = switch (size) {
-      AuraButtonSize.small => typography.sizes.sm,
-      AuraButtonSize.medium => typography.sizes.base,
-      AuraButtonSize.large => typography.sizes.lg,
+      AuraButtonSize.small => typography.fontSizeSm,
+      AuraButtonSize.medium => typography.fontSizeBase,
+      AuraButtonSize.large => typography.fontSizeLg,
     };
 
     final fontWeight = switch (size) {
-      AuraButtonSize.small => typography.weights.medium,
-      AuraButtonSize.medium => typography.weights.medium,
-      AuraButtonSize.large => typography.weights.semibold,
+      AuraButtonSize.small => typography.fontWeightMedium,
+      AuraButtonSize.medium => typography.fontWeightMedium,
+      AuraButtonSize.large => typography.fontWeightSemibold,
     };
 
     return TextStyle(
       color: _getForegroundColor(colors),
       fontSize: fontSize,
       fontWeight: fontWeight,
-      height: typography.lineHeights.base,
+      height: typography.lineHeightBase,
     );
   }
 }

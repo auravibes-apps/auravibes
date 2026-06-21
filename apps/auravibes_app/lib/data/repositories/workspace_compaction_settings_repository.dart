@@ -2,12 +2,10 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_compaction_settings_dao.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
-import 'package:auravibes_app/domain/repositories/workspace_compaction_settings_repository.dart';
 import 'package:drift/drift.dart';
 
-class WorkspaceCompactionSettingsRepoImpl
-    implements WorkspaceCompactionSettingsRepository {
-  WorkspaceCompactionSettingsRepoImpl(this._dao);
+class WorkspaceCompactionSettingsRepository {
+  WorkspaceCompactionSettingsRepository(this._dao);
 
   final WorkspaceCompactionSettingsDao _dao;
 
@@ -30,19 +28,16 @@ class WorkspaceCompactionSettingsRepoImpl
     );
   }
 
-  @override
   Stream<CompactionSettings> watchEffectiveSettings(String workspaceId) {
     return _dao.watchByWorkspaceId(workspaceId).map(_resolveEffective);
   }
 
-  @override
   Future<CompactionSettings> getEffectiveSettings(String workspaceId) async {
     final row = await _dao.getByWorkspaceId(workspaceId);
 
     return _resolveEffective(row);
   }
 
-  @override
   Future<CompactionSettings> saveOverrides(
     String workspaceId,
     CompactionSettings overrides,
@@ -57,7 +52,6 @@ class WorkspaceCompactionSettingsRepoImpl
     return _resolveEffective(row);
   }
 
-  @override
   Future<CompactionSettings> resetOverrides(String workspaceId) async {
     await _dao.deleteByWorkspaceId(workspaceId);
 

@@ -1,10 +1,10 @@
+import 'package:auravibes_app/data/repositories/app_skill_workspace_settings_repository.dart';
+import 'package:auravibes_app/data/repositories/conversation_skills_repository.dart';
+import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
+import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_skill_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
-import 'package:auravibes_app/domain/repositories/app_skill_workspace_settings_repository.dart';
-import 'package:auravibes_app/domain/repositories/conversation_skills_repository.dart';
-import 'package:auravibes_app/domain/repositories/skill_credentials_repository.dart';
-import 'package:auravibes_app/domain/repositories/skills_repository.dart';
 import 'package:auravibes_app/features/skills/usecases/check_skill_credential_readiness_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
@@ -23,25 +23,25 @@ void main() {
           workspaceId: workspaceId,
           title: 'Blocked Skill',
           slug: 'blocked_skill',
-          credentialDefinitionId: 'credential-definition-1',
           now: now,
+          credentialDefinitionId: 'credential-definition-1',
         );
         final optionalSkill = _skill(
           id: 'optional-skill',
           workspaceId: workspaceId,
           title: 'Optional Skill',
           slug: 'optional_skill',
-          credentialDefinitionId: 'credential-definition-1',
-          isCredentialOptional: true,
           now: now,
+          isCredentialOptional: true,
+          credentialDefinitionId: 'credential-definition-1',
         );
         final loadedSkill = _skill(
           id: 'loaded-skill',
           workspaceId: workspaceId,
           title: 'Loaded Skill',
           slug: 'loaded_skill',
-          credentialDefinitionId: 'credential-definition-1',
           now: now,
+          credentialDefinitionId: 'credential-definition-1',
         );
         final usecase = ListAvailableSkillsUsecase(
           _FakeSkillsRepository([blockedSkill, optionalSkill, loadedSkill]),
@@ -49,10 +49,10 @@ void main() {
             ConversationSkillEntity(
               id: 'conversation-skill-1',
               conversationId: conversationId,
-              workspaceSkillId: loadedSkill.id,
               isLoaded: true,
               createdAt: now,
               updatedAt: now,
+              workspaceSkillId: loadedSkill.id,
             ),
           ]),
           _FakeAppSkillWorkspaceSettingsRepository(),
@@ -100,9 +100,9 @@ SkillEntity _skill({
     content: '$title content',
     isEnabled: true,
     isCredentialOptional: isCredentialOptional,
-    credentialDefinitionId: credentialDefinitionId,
     createdAt: now,
     updatedAt: now,
+    credentialDefinitionId: credentialDefinitionId,
   );
 }
 

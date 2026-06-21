@@ -3,9 +3,8 @@ import 'dart:async';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/conversation_dao.dart';
-import 'package:auravibes_app/data/repositories/conversation_repository_impl.dart';
+import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
-import 'package:auravibes_app/domain/repositories/conversation_repository.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,16 +15,16 @@ import '../../test_mocks.dart';
 void main() {
   setUpAll(registerTestFallbackValues);
 
-  group('ConversationRepositoryImpl', () {
+  group('ConversationRepository', () {
     var mockDao = MockConversationDao();
     var database = _TestAppDatabase(mockDao);
-    var repository = ConversationRepositoryImpl(database);
+    var repository = ConversationRepository(database);
 
     tearDown(() async {
       await database.close();
       mockDao = MockConversationDao();
       database = _TestAppDatabase(mockDao);
-      repository = ConversationRepositoryImpl(database);
+      repository = ConversationRepository(database);
     });
 
     tearDownAll(() async {

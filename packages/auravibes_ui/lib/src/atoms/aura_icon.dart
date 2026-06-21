@@ -1,7 +1,7 @@
 // Required: UI components keep related private widgets together.
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart'
-    show AuraColorVariant, DesignBorderRadius;
+    show AuraBorderRadius, AuraColorVariant;
 import 'package:flutter/material.dart';
 
 /// A customizable icon component following the Aura design system.
@@ -142,7 +142,9 @@ class AuraIconButton extends StatelessWidget {
             side: variant == AuraIconButtonVariant.outlined
                 ? BorderSide(color: auraColors.outline)
                 : BorderSide.none,
-            borderRadius: BorderRadius.circular(_getBorderRadius()),
+            borderRadius: BorderRadius.circular(
+              context.auraTheme.fromBorderRadius(_getBorderRadius()),
+            ),
           ),
         ),
         icon: AuraIcon(
@@ -186,14 +188,14 @@ class AuraIconButton extends StatelessWidget {
     };
   }
 
-  double _getBorderRadius() {
+  AuraBorderRadius _getBorderRadius() {
     return switch (size) {
-      AuraIconSize.extraSmall => DesignBorderRadius.sm,
-      AuraIconSize.small => DesignBorderRadius.sm,
-      AuraIconSize.medium => DesignBorderRadius.md,
-      AuraIconSize.large => DesignBorderRadius.md,
-      AuraIconSize.extraLarge => DesignBorderRadius.lg,
-      AuraIconSize.huge => DesignBorderRadius.lg,
+      AuraIconSize.extraSmall => .sm,
+      AuraIconSize.small => .sm,
+      AuraIconSize.medium => .md,
+      AuraIconSize.large => .md,
+      AuraIconSize.extraLarge => .lg,
+      AuraIconSize.huge => .lg,
     };
   }
 

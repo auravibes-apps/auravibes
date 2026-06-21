@@ -2,24 +2,21 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/skill_template_tools_dao.dart';
 import 'package:auravibes_app/data/database/drift/tables/skill_template_tools.dart';
 import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
-import 'package:auravibes_app/domain/repositories/skill_template_tools_repository.dart';
 import 'package:auravibes_app/features/skills/usecases/generate_skill_slug_usecase.dart';
 import 'package:drift/drift.dart';
 
-class SkillTemplateToolsRepositoryImpl implements SkillTemplateToolsRepository {
-  SkillTemplateToolsRepositoryImpl(AppDatabase database)
+class SkillTemplateToolsRepository {
+  SkillTemplateToolsRepository(AppDatabase database)
     : _dao = database.skillTemplateToolsDao;
 
   final SkillTemplateToolsDao _dao;
 
-  @override
   Future<List<SkillTemplateToolEntity>> getSkillTools(String skillId) async {
     final rows = await _dao.getSkillTools(skillId);
 
     return rows.map(_tableToEntity).toList();
   }
 
-  @override
   Future<SkillTemplateToolEntity?> getToolById(String toolId) async {
     final row = await _dao.getToolById(toolId);
     if (row == null) return null;
@@ -27,7 +24,6 @@ class SkillTemplateToolsRepositoryImpl implements SkillTemplateToolsRepository {
     return _tableToEntity(row);
   }
 
-  @override
   Future<SkillTemplateToolEntity?> getToolBySlug(
     String skillId,
     String slug,
@@ -38,7 +34,6 @@ class SkillTemplateToolsRepositoryImpl implements SkillTemplateToolsRepository {
     return _tableToEntity(row);
   }
 
-  @override
   Future<SkillTemplateToolEntity> createTool(
     String skillId,
     SkillTemplateToolToCreate tool,
@@ -60,7 +55,6 @@ class SkillTemplateToolsRepositoryImpl implements SkillTemplateToolsRepository {
     return _tableToEntity(table);
   }
 
-  @override
   Future<SkillTemplateToolEntity> updateTool(
     String toolId,
     SkillTemplateToolToUpdate tool,
@@ -87,7 +81,6 @@ class SkillTemplateToolsRepositoryImpl implements SkillTemplateToolsRepository {
     return _tableToEntity(table);
   }
 
-  @override
   Future<bool> deleteTool(String toolId) => _dao.deleteTool(toolId);
 
   SkillTemplateToolEntity _tableToEntity(SkillTemplateToolsTable table) {

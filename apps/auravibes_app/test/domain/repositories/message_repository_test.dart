@@ -1,8 +1,8 @@
 // ignore_for_file: cascade_invocations
 // Required: Existing test and UI helpers keep compact return flow.
+import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
-import 'package:auravibes_app/domain/repositories/message_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _StubMessageRepository implements MessageRepository {
@@ -341,22 +341,6 @@ void main() {
     test('includes cause when provided', () {
       final cause = Exception('db error');
       final ex = MessageNotFoundException('m-1', cause);
-      expect(ex.cause, cause);
-    });
-  });
-
-  group('MessageDuplicateException', () {
-    test('contains id in message', () {
-      const ex = MessageDuplicateException('m-99');
-      expect(ex, isA<MessageException>());
-      expect(ex.messageId, 'm-99');
-      expect(ex.toString(), contains('m-99'));
-      expect(ex.toString(), contains('already exists'));
-    });
-
-    test('includes cause when provided', () {
-      final cause = Exception('unique constraint');
-      final ex = MessageDuplicateException('m-1', cause);
       expect(ex.cause, cause);
     });
   });

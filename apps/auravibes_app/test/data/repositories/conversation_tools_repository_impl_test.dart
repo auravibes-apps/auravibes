@@ -1,9 +1,8 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
-import 'package:auravibes_app/data/repositories/conversation_tools_repository_impl.dart';
+import 'package:auravibes_app/data/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
-import 'package:auravibes_app/domain/repositories/conversation_tools_repository.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -14,7 +13,7 @@ import '../../test_mocks.dart';
 void main() {
   setUpAll(registerTestFallbackValues);
 
-  group('ConversationToolsRepositoryImpl - checkToolPermission', () {
+  group('ConversationToolsRepository - checkToolPermission', () {
     final fixture = _ConversationToolsRepositoryFixture();
 
     const testConversationId = 'test-conversation-id';
@@ -859,7 +858,6 @@ void main() {
         () => fixture.repository.validateConversationToolSetting(
           'nonexistent',
           'calculator',
-          isEnabled: true,
         ),
         throwsA(isA<ConversationToolsValidationException>()),
       );
@@ -870,7 +868,6 @@ void main() {
         () => fixture.repository.validateConversationToolSetting(
           'nonexistent-conversation',
           'invalid_tool_type_that_does_not_exist',
-          isEnabled: true,
         ),
         throwsA(isA<ConversationToolsValidationException>()),
       );
@@ -929,13 +926,13 @@ void main() {
 
 final class _ConversationToolsRepositoryFixture {
   AppDatabase? _database;
-  ConversationToolsRepositoryImpl? _repository;
+  ConversationToolsRepository? _repository;
   MockWorkspaceToolsRepository? _mockWorkspaceToolsRepository;
 
   AppDatabase get database =>
       _database ?? fail('Expected database fixture to be initialized.');
 
-  ConversationToolsRepositoryImpl get repository =>
+  ConversationToolsRepository get repository =>
       _repository ?? fail('Expected repository fixture to be initialized.');
 
   MockWorkspaceToolsRepository get mockWorkspaceToolsRepository =>
@@ -950,7 +947,7 @@ final class _ConversationToolsRepositoryFixture {
 
     _database = database;
     _mockWorkspaceToolsRepository = mockWorkspaceToolsRepository;
-    _repository = ConversationToolsRepositoryImpl(
+    _repository = ConversationToolsRepository(
       database,
       mockWorkspaceToolsRepository,
     );
