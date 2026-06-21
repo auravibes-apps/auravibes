@@ -18,6 +18,28 @@ class ChatCompletionsModelDefinition {
   final ModelInfo? info;
 }
 
+mixin ChatCompletionsSamplingOptions {
+  double? get temperature;
+  double? get topP;
+  int? get maxTokens;
+  List<String>? get stop;
+  double? get presencePenalty;
+  double? get frequencyPenalty;
+  int? get seed;
+  String? get user;
+
+  Map<String, dynamic> toSamplingBody() => {
+    'temperature': ?temperature,
+    'top_p': ?topP,
+    'max_tokens': ?maxTokens,
+    'stop': ?stop,
+    'presence_penalty': ?presencePenalty,
+    'frequency_penalty': ?frequencyPenalty,
+    'seed': ?seed,
+    'user': ?user,
+  };
+}
+
 class ChatCompletionsPlugin extends GenkitPlugin {
   ChatCompletionsPlugin({
     required this.name,

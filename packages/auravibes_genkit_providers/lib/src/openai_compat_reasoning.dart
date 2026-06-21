@@ -35,14 +35,7 @@ class OpenAICompatReasoningPluginHandle {
         return (
           model: options.version ?? modelName,
           extraBody: {
-            'temperature': ?options.temperature,
-            'top_p': ?options.topP,
-            'max_tokens': ?options.maxTokens,
-            'stop': ?options.stop,
-            'presence_penalty': ?options.presencePenalty,
-            'frequency_penalty': ?options.frequencyPenalty,
-            'seed': ?options.seed,
-            'user': ?options.user,
+            ...options.toSamplingBody(),
             'thinking': ?options.reasoning?.toJson(),
           },
         );
@@ -63,7 +56,7 @@ class OpenAICompatReasoningPluginHandle {
   }
 }
 
-class OpenAICompatReasoningOptions {
+class OpenAICompatReasoningOptions with ChatCompletionsSamplingOptions {
   OpenAICompatReasoningOptions({
     this.version,
     this.temperature,
@@ -99,13 +92,21 @@ class OpenAICompatReasoningOptions {
   }
 
   final String? version;
+  @override
   final double? temperature;
+  @override
   final double? topP;
+  @override
   final int? maxTokens;
+  @override
   final List<String>? stop;
+  @override
   final double? presencePenalty;
+  @override
   final double? frequencyPenalty;
+  @override
   final int? seed;
+  @override
   final String? user;
   final OpenAICompatReasoningConfig? reasoning;
 

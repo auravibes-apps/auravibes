@@ -35,14 +35,7 @@ class OpenRouterPluginHandle {
         return (
           model: modelName,
           extraBody: {
-            'temperature': ?options.temperature,
-            'top_p': ?options.topP,
-            'max_tokens': ?options.maxTokens,
-            'stop': ?options.stop,
-            'presence_penalty': ?options.presencePenalty,
-            'frequency_penalty': ?options.frequencyPenalty,
-            'seed': ?options.seed,
-            'user': ?options.user,
+            ...options.toSamplingBody(),
             'reasoning': ?options.reasoning?.toJson(),
           },
         );
@@ -63,7 +56,7 @@ class OpenRouterPluginHandle {
   }
 }
 
-class OpenRouterOptions {
+class OpenRouterOptions with ChatCompletionsSamplingOptions {
   OpenRouterOptions({
     this.temperature,
     this.topP,
@@ -96,13 +89,21 @@ class OpenRouterOptions {
     );
   }
 
+  @override
   final double? temperature;
+  @override
   final double? topP;
+  @override
   final int? maxTokens;
+  @override
   final List<String>? stop;
+  @override
   final double? presencePenalty;
+  @override
   final double? frequencyPenalty;
+  @override
   final int? seed;
+  @override
   final String? user;
   final OpenRouterReasoningConfig? reasoning;
 
