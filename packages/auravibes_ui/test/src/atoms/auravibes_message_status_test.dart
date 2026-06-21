@@ -25,7 +25,7 @@ void main() {
 
       final icon = tester.widget<Icon>(find.byIcon(Icons.access_time));
       // In light theme, sending status uses onSurfaceVariant with 60% opacity.
-      final expectedColor = DesignColors.neutral700.withValues(alpha: 0.6);
+      final expectedColor = designColorNeutral700.withValues(alpha: 0.6);
       expect(icon.color, expectedColor);
     });
 
@@ -48,7 +48,7 @@ void main() {
 
       final icon = tester.widget<Icon>(find.byIcon(Icons.done));
       // In light theme, sent status uses onSurfaceVariant (neutral700).
-      expect(icon.color, DesignColors.neutral700);
+      expect(icon.color, designColorNeutral700);
     });
 
     testWidgets('renders delivered status with correct icon', (tester) async {

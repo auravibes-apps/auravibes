@@ -3,47 +3,40 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('DesignTokens', () {
-    test('class exists and is private-constructed', () {
-      // DesignTokens has a private constructor; verify it compiles.
-      expect(DesignTokens, isA<Type>());
-    });
-  });
-
   group('HueColorValues', () {
     test('has expected hue constants', () {
-      expect(HueColorValues.success, 149.04);
-      expect(HueColorValues.error, 25.33);
-      expect(HueColorValues.warning, 70.08);
-      expect(HueColorValues.info, 259.32);
+      expect(hueSuccess, 149.04);
+      expect(hueError, 25.33);
+      expect(hueWarning, 70.08);
+      expect(hueInfo, 259.32);
     });
   });
 
   group('DesignColors', () {
     test('has expected color constants', () {
-      expect(DesignColors.primaryBase, const Color(0xFF0F766E));
-      expect(DesignColors.primaryLight, const Color(0xFF5EEAD4));
-      expect(DesignColors.primaryDark, const Color(0xFF134E4A));
-      expect(DesignColors.primaryContrast, const Color(0xFFFFFFFF));
-      expect(DesignColors.secondaryBase, const Color(0xFFBE123C));
-      expect(DesignColors.secondaryLight, const Color(0xFFFDA4AF));
-      expect(DesignColors.secondaryDark, const Color(0xFF881337));
-      expect(DesignColors.accentBase, const Color(0xFFB45309));
-      expect(DesignColors.accentLight, const Color(0xFFFBBF24));
-      expect(DesignColors.accentDark, const Color(0xFF78350F));
-      expect(DesignColors.transparent, const Color(0x00000000));
+      expect(designColorPrimaryBase, const Color(0xFF0F766E));
+      expect(designColorPrimaryLight, const Color(0xFF5EEAD4));
+      expect(designColorPrimaryDark, const Color(0xFF134E4A));
+      expect(designColorPrimaryContrast, const Color(0xFFFFFFFF));
+      expect(designColorSecondaryBase, const Color(0xFFBE123C));
+      expect(designColorSecondaryLight, const Color(0xFFFDA4AF));
+      expect(designColorSecondaryDark, const Color(0xFF881337));
+      expect(designColorAccentBase, const Color(0xFFB45309));
+      expect(designColorAccentLight, const Color(0xFFFBBF24));
+      expect(designColorAccentDark, const Color(0xFF78350F));
+      expect(designColorTransparent, const Color(0x00000000));
     });
 
     test('brand colors contrast with their theme foregrounds', () {
       final colorsWithWhiteForeground = <Color>[
-        DesignColors.primaryBase,
-        DesignColors.secondaryBase,
-        DesignColors.accentBase,
+        designColorPrimaryBase,
+        designColorSecondaryBase,
+        designColorAccentBase,
       ];
       final colorsWithBlackForeground = <Color>[
-        DesignColors.primaryLight,
-        DesignColors.secondaryLight,
-        DesignColors.accentLight,
+        designColorPrimaryLight,
+        designColorSecondaryLight,
+        designColorAccentLight,
       ];
 
       for (final color in colorsWithWhiteForeground) {
@@ -64,8 +57,8 @@ void main() {
     });
 
     test('has expected neutral colors', () {
-      expect(DesignColors.neutral50, const Color(0xFFF8FAFC));
-      expect(DesignColors.neutral900, const Color(0xFF0F172A));
+      expect(designColorNeutral50, const Color(0xFFF8FAFC));
+      expect(designColorNeutral900, const Color(0xFF0F172A));
     });
   });
 

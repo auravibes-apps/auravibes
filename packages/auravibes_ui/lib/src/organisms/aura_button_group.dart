@@ -349,7 +349,7 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
     if (isActive) return colors.primary;
     if (isHovered) return colors.primary.withValues(alpha: 0.1);
 
-    return DesignColors.transparent;
+    return designColorTransparent;
   }
 
   Color _getGhostBackgroundColor(
@@ -360,7 +360,7 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
     if (isActive) return colors.primary.withValues(alpha: 0.2);
     if (isHovered) return colors.primary.withValues(alpha: 0.1);
 
-    return DesignColors.transparent;
+    return designColorTransparent;
   }
 
   Color _getForegroundColor() {

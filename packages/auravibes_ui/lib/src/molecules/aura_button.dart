@@ -73,7 +73,7 @@ class AuraButton extends StatelessWidget {
           ),
           padding: _getPadding(),
         ),
-        color: DesignColors.transparent,
+        color: designColorTransparent,
         decoration: BoxDecoration(
           color: _getBackgroundColor(auraColors),
           border: _getBorder(auraColors),
@@ -89,7 +89,7 @@ class AuraButton extends StatelessWidget {
     if (disabled) {
       if (variant == AuraButtonVariant.text) {
         // Text buttons should keep a transparent background even when disabled.
-        return DesignColors.transparent;
+        return designColorTransparent;
       }
 
       return colors.outlineVariant;
@@ -99,11 +99,11 @@ class AuraButton extends StatelessWidget {
       AuraButtonVariant.primary =>
         colors.getColorOrNull(colorVariant) ?? colors.primary,
       AuraButtonVariant.secondary => colors.secondary,
-      AuraButtonVariant.outlined => DesignColors.transparent,
-      AuraButtonVariant.ghost => DesignColors.transparent,
+      AuraButtonVariant.outlined => designColorTransparent,
+      AuraButtonVariant.ghost => designColorTransparent,
       AuraButtonVariant.elevated =>
         colors.getColorOrNull(colorVariant) ?? colors.primary,
-      AuraButtonVariant.text => DesignColors.transparent,
+      AuraButtonVariant.text => designColorTransparent,
     };
   }
 

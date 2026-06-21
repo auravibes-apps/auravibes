@@ -162,7 +162,7 @@ void main() {
                     fail('Expected container.decoration to be non-null'))
                 as BoxDecoration;
         // In light theme, onSurfaceVariant is neutral700.
-        expect(decoration.color, DesignColors.neutral700);
+        expect(decoration.color, designColorNeutral700);
       }
     });
 

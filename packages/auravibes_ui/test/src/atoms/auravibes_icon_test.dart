@@ -162,7 +162,7 @@ void main() {
       final iconButton = tester.widget<IconButton>(find.byType(IconButton));
       expect(
         iconButton.style?.backgroundColor?.resolve({}),
-        DesignColors.primaryBase,
+        designColorPrimaryBase,
       );
     });
 
@@ -206,7 +206,7 @@ void main() {
       final iconButton = tester.widget<IconButton>(find.byType(IconButton));
       expect(
         iconButton.style?.backgroundColor?.resolve({}),
-        DesignColors.primaryBase,
+        designColorPrimaryBase,
       );
       expect(iconButton.style?.elevation?.resolve({}), 2);
     });

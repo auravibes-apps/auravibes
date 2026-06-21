@@ -97,7 +97,7 @@ void main() {
       final progressIndicator = tester.widget<CircularProgressIndicator>(
         find.byType(CircularProgressIndicator),
       );
-      expect(progressIndicator.color, DesignColors.primaryBase);
+      expect(progressIndicator.color, designColorPrimaryBase);
     });
 
     testWidgets('applies custom stroke width correctly', (tester) async {

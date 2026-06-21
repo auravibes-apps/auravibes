@@ -52,14 +52,14 @@ void main() {
                             ))
                         as BoxDecoration)
                     .color ==
-                DesignColors.primaryBase,
+                designColorPrimaryBase,
       );
 
       final decoration =
           (messageContainer.decoration ??
                   fail('Expected messageContainer.decoration to be non-null'))
               as BoxDecoration;
-      expect(decoration.color, DesignColors.primaryBase);
+      expect(decoration.color, designColorPrimaryBase);
     });
 
     testWidgets('displays timestamp when provided', (tester) async {

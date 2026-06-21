@@ -39,7 +39,7 @@ void main() {
           (container.decoration ??
                   fail('Expected container.decoration to be non-null'))
               as BoxDecoration;
-      expect(decoration.color, DesignColors.primaryBase);
+      expect(decoration.color, designColorPrimaryBase);
     });
 
     testWidgets('applies secondary variant styling correctly', (tester) async {
@@ -59,7 +59,7 @@ void main() {
           (container.decoration ??
                   fail('Expected container.decoration to be non-null'))
               as BoxDecoration;
-      expect(decoration.color, DesignColors.secondaryBase);
+      expect(decoration.color, designColorSecondaryBase);
     });
 
     testWidgets('applies outlined variant styling correctly', (tester) async {
@@ -100,7 +100,7 @@ void main() {
           (container.decoration ??
                   fail('Expected container.decoration to be non-null'))
               as BoxDecoration;
-      expect(decoration.color, DesignColors.primaryBase.withValues(alpha: 0.1));
+      expect(decoration.color, designColorPrimaryBase.withValues(alpha: 0.1));
     });
 
     testWidgets('applies small size correctly', (tester) async {

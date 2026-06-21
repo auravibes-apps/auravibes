@@ -5,124 +5,116 @@ import 'package:flutter/material.dart';
 /// This file contains all the design tokens extracted from the design system
 /// specification, providing a single source of truth for colors, typography,
 /// spacing, and other design properties.
-class DesignTokens {
-  DesignTokens._();
-}
 
 /// Hue color values for semantic colors.
 ///
 /// These values are the hue components (in degrees) extracted from the
 /// semantic brand colors defined in the design system. The original colors
-/// are specified as hex/ARGB values in [DesignColors] (for example, the
-/// success, error, warning, and info semantic colors), then converted to an
-/// HSL/HSB color space and the resulting hue channel is recorded here.
+/// are specified as hex/ARGB values in the `designColor*` tokens below (for
+/// example, the success, error, warning, and info semantic colors), then
+/// converted to an HSL/HSB color space and the resulting hue channel is
+/// recorded here.
 ///
 /// When updating any of the underlying semantic colors in the design system,
 /// recalculate these hue values using the same conversion process instead of
 /// choosing arbitrary numbers, to keep the token set consistent and
 /// traceable back to the source design.
-class HueColorValues {
-  HueColorValues._();
 
-  /// Hue value (in degrees) for the success semantic color (green range).
-  static const double success = 149.04;
+/// Hue value (in degrees) for the success semantic color (green range).
+const double hueSuccess = 149.04;
 
-  /// Hue value (in degrees) for the error semantic color (red range).
-  static const double error = 25.33;
+/// Hue value (in degrees) for the error semantic color (red range).
+const double hueError = 25.33;
 
-  /// Hue value (in degrees) for the warning semantic color (yellow/orange range).
-  static const double warning = 70.08;
+/// Hue value (in degrees) for the warning semantic color (yellow/orange range).
+const double hueWarning = 70.08;
 
-  /// Hue value (in degrees) for the info semantic color (blue/purple range).
-  static const double info = 259.32;
-}
+/// Hue value (in degrees) for the info semantic color (blue/purple range).
+const double hueInfo = 259.32;
 
 /// Color tokens based on the design system specification.
 ///
 /// Provides a comprehensive color palette including primary, secondary,
 /// accent, neutral, and semantic colors for consistent UI design.
-class DesignColors {
-  DesignColors._();
 
-  // Primary colors.
+// Primary colors.
 
-  /// Main primary color for primary actions and branding.
-  static const Color primaryBase = Color(0xFF0F766E);
+/// Main primary color for primary actions and branding.
+const Color designColorPrimaryBase = Color(0xFF0F766E);
 
-  /// Lighter shade of primary color for hover states and highlights.
-  static const Color primaryLight = Color(0xFF5EEAD4);
+/// Lighter shade of primary color for hover states and highlights.
+const Color designColorPrimaryLight = Color(0xFF5EEAD4);
 
-  /// Darker shade of primary color for pressed states and emphasis.
-  static const Color primaryDark = Color(0xFF134E4A);
+/// Darker shade of primary color for pressed states and emphasis.
+const Color designColorPrimaryDark = Color(0xFF134E4A);
 
-  /// Contrast color for text and icons on primary backgrounds.
-  static const Color primaryContrast = Color(0xFFFFFFFF);
+/// Contrast color for text and icons on primary backgrounds.
+const Color designColorPrimaryContrast = Color(0xFFFFFFFF);
 
-  // Secondary colors.
+// Secondary colors.
 
-  /// Main secondary color for secondary actions and accents.
-  static const Color secondaryBase = Color(0xFFBE123C);
+/// Main secondary color for secondary actions and accents.
+const Color designColorSecondaryBase = Color(0xFFBE123C);
 
-  /// Lighter shade of secondary color for hover states.
-  static const Color secondaryLight = Color(0xFFFDA4AF);
+/// Lighter shade of secondary color for hover states.
+const Color designColorSecondaryLight = Color(0xFFFDA4AF);
 
-  /// Darker shade of secondary color for pressed states.
-  static const Color secondaryDark = Color(0xFF881337);
+/// Darker shade of secondary color for pressed states.
+const Color designColorSecondaryDark = Color(0xFF881337);
 
-  /// Contrast color for text and icons on secondary backgrounds.
-  static const Color secondaryContrast = Color(0xFFFFFFFF);
+/// Contrast color for text and icons on secondary backgrounds.
+const Color designColorSecondaryContrast = Color(0xFFFFFFFF);
 
-  // Accent colors.
+// Accent colors.
 
-  /// Main accent color for special highlights and features.
-  static const Color accentBase = Color(0xFFB45309);
+/// Main accent color for special highlights and features.
+const Color designColorAccentBase = Color(0xFFB45309);
 
-  /// Lighter shade of accent color for hover states.
-  static const Color accentLight = Color(0xFFFBBF24);
+/// Lighter shade of accent color for hover states.
+const Color designColorAccentLight = Color(0xFFFBBF24);
 
-  /// Darker shade of accent color for pressed states.
-  static const Color accentDark = Color(0xFF78350F);
+/// Darker shade of accent color for pressed states.
+const Color designColorAccentDark = Color(0xFF78350F);
 
-  /// Contrast color for text and icons on accent backgrounds.
-  static const Color accentContrast = Color(0xFFFFFFFF);
+/// Contrast color for text and icons on accent backgrounds.
+const Color designColorAccentContrast = Color(0xFFFFFFFF);
 
-  // Neutral colors.
+// Neutral colors.
 
-  /// Very light neutral color for backgrounds and subtle dividers.
-  static const Color neutral50 = Color(0xFFF8FAFC);
+/// Very light neutral color for backgrounds and subtle dividers.
+const Color designColorNeutral50 = Color(0xFFF8FAFC);
 
-  /// Light neutral color for card backgrounds and subtle borders.
-  static const Color neutral100 = Color(0xFFF1F5F9);
+/// Light neutral color for card backgrounds and subtle borders.
+const Color designColorNeutral100 = Color(0xFFF1F5F9);
 
-  /// Light-medium neutral for disabled states and subtle fills.
-  static const Color neutral200 = Color(0xFFE2E8F0);
+/// Light-medium neutral for disabled states and subtle fills.
+const Color designColorNeutral200 = Color(0xFFE2E8F0);
 
-  /// Medium-light neutral for borders and subtle text.
-  static const Color neutral300 = Color(0xFFCBD5E1);
+/// Medium-light neutral for borders and subtle text.
+const Color designColorNeutral300 = Color(0xFFCBD5E1);
 
-  /// Medium neutral for placeholder text and subtle icons.
-  static const Color neutral400 = Color(0xFF94A3B8);
+/// Medium neutral for placeholder text and subtle icons.
+const Color designColorNeutral400 = Color(0xFF94A3B8);
 
-  /// Medium-dark neutral for secondary text and icons.
-  static const Color neutral500 = Color(0xFF64748B);
+/// Medium-dark neutral for secondary text and icons.
+const Color designColorNeutral500 = Color(0xFF64748B);
 
-  /// Dark neutral for tertiary text and muted elements.
-  static const Color neutral600 = Color(0xFF475569);
+/// Dark neutral for tertiary text and muted elements.
+const Color designColorNeutral600 = Color(0xFF475569);
 
-  /// Darker neutral for inactive states and subtle backgrounds.
-  static const Color neutral700 = Color(0xFF334155);
+/// Darker neutral for inactive states and subtle backgrounds.
+const Color designColorNeutral700 = Color(0xFF334155);
 
-  /// Very dark neutral for dark mode backgrounds and heavy text.
-  static const Color neutral800 = Color(0xFF1E293B);
+/// Very dark neutral for dark mode backgrounds and heavy text.
+const Color designColorNeutral800 = Color(0xFF1E293B);
 
-  /// Darkest neutral for primary text in dark mode.
-  static const Color neutral900 = Color(0xFF0F172A);
+/// Darkest neutral for primary text in dark mode.
+const Color designColorNeutral900 = Color(0xFF0F172A);
 
-  // Semantic colors.
+// Semantic colors.
 
-  /// Transparent color.
-  static const Color transparent = Color(0x00000000);
-}
+/// Transparent color.
+const Color designColorTransparent = Color(0x00000000);
 
 /// Typography tokens for consistent text styling.
 ///
