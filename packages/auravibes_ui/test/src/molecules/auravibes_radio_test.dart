@@ -1,6 +1,7 @@
 import 'package:auravibes_ui/src/molecules/aura_radio_option.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -203,7 +204,9 @@ void main() {
       expect(find.byType(CustomPaint), findsWidgets);
     });
 
-    testWidgets('uses MouseRegion for cursor changes', (tester) async {
+    testWidgets('uses FocusableActionDetector for cursor and keyboard', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -218,8 +221,30 @@ void main() {
         ),
       );
 
-      // At least one MouseRegion should be present from our widget.
-      expect(find.byType(MouseRegion), findsWidgets);
+      expect(find.byType(FocusableActionDetector), findsOneWidget);
+    });
+
+    testWidgets('selects with keyboard activation', (tester) async {
+      String? selectedValue;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AuraRadio<String>(
+              value: 'option1',
+              groupValue: null,
+              onChanged: (value) => selectedValue = value,
+            ),
+          ),
+        ),
+      );
+
+      final _ = await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pump();
+      final _ = await tester.sendKeyEvent(LogicalKeyboardKey.space);
+      final _ = await tester.pumpAndSettle();
+
+      expect(selectedValue, 'option1');
     });
 
     testWidgets('has reduced opacity when disabled', (tester) async {
