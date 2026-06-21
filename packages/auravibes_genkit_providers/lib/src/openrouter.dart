@@ -25,36 +25,33 @@ class OpenRouterPluginHandle {
     Map<String, String>? headers,
     http.Client? httpClient,
   }) {
-    return ChatCompletionsProvider<OpenRouterOptions>(
-      ChatCompletionsProviderConfig(
-        name: name,
-        baseUrl: baseUrl,
-        errorLabel: 'OpenRouter',
-        parseOptions: OpenRouterOptions.fromJson,
-        extraBody: (options) => {
-          'temperature': ?options.temperature,
-          'top_p': ?options.topP,
-          'max_tokens': ?options.maxTokens,
-          'stop': ?options.stop,
-          'presence_penalty': ?options.presencePenalty,
-          'frequency_penalty': ?options.frequencyPenalty,
-          'seed': ?options.seed,
-          'user': ?options.user,
-          'reasoning': ?options.reasoning?.toJson(),
-        },
-        apiKey: apiKey,
-        apiKeyProvider: apiKeyProvider,
-        models: models
-            .map(
-              (model) => ChatCompletionsModelDefinition(
-                name: model.name,
-                info: model.info,
-              ),
-            )
-            .toList(),
-        headers: headers,
-        httpClient: httpClient,
-      ),
+    return ChatCompletionsPlugin(
+      name: name,
+      baseUrl: baseUrl,
+      errorLabel: 'OpenRouter',
+      customize: (modelName, config) {
+        final options = OpenRouterOptions.fromJson(config);
+
+        return (
+          model: modelName,
+          extraBody: {
+            'temperature': ?options.temperature,
+            'top_p': ?options.topP,
+            'max_tokens': ?options.maxTokens,
+            'stop': ?options.stop,
+            'presence_penalty': ?options.presencePenalty,
+            'frequency_penalty': ?options.frequencyPenalty,
+            'seed': ?options.seed,
+            'user': ?options.user,
+            'reasoning': ?options.reasoning?.toJson(),
+          },
+        );
+      },
+      apiKey: apiKey,
+      apiKeyProvider: apiKeyProvider,
+      models: models,
+      headers: headers,
+      httpClient: httpClient,
     );
   }
 
