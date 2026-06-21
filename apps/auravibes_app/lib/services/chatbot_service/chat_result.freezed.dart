@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ChatResult<T> {
 
- T get output; FinishReason get finishReason; LanguageModelUsage? get usage; Map<String, dynamic> get metadata; List<T> get messages; String? get thinking;
+ T get output; FinishReason get finishReason; LanguageModelUsage? get usage; Map<String, dynamic> get metadata; String? get thinking;
 /// Create a copy of ChatResult
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $ChatResultCopyWith<T, ChatResult<T>> get copyWith => _$ChatResultCopyWithImpl<T
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ChatResult<T>&&const DeepCollectionEquality().equals(other.output, output)&&(identical(other.finishReason, finishReason) || other.finishReason == finishReason)&&(identical(other.usage, usage) || other.usage == usage)&&const DeepCollectionEquality().equals(other.metadata, metadata)&&const DeepCollectionEquality().equals(other.messages, messages)&&(identical(other.thinking, thinking) || other.thinking == thinking));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ChatResult<T>&&const DeepCollectionEquality().equals(other.output, output)&&(identical(other.finishReason, finishReason) || other.finishReason == finishReason)&&(identical(other.usage, usage) || other.usage == usage)&&const DeepCollectionEquality().equals(other.metadata, metadata)&&(identical(other.thinking, thinking) || other.thinking == thinking));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(output),finishReason,usage,const DeepCollectionEquality().hash(metadata),const DeepCollectionEquality().hash(messages),thinking);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(output),finishReason,usage,const DeepCollectionEquality().hash(metadata),thinking);
 
 @override
 String toString() {
-  return 'ChatResult<$T>(output: $output, finishReason: $finishReason, usage: $usage, metadata: $metadata, messages: $messages, thinking: $thinking)';
+  return 'ChatResult<$T>(output: $output, finishReason: $finishReason, usage: $usage, metadata: $metadata, thinking: $thinking)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $ChatResultCopyWith<T,$Res>  {
   factory $ChatResultCopyWith(ChatResult<T> value, $Res Function(ChatResult<T>) _then) = _$ChatResultCopyWithImpl;
 @useResult
 $Res call({
- T output, FinishReason finishReason, LanguageModelUsage? usage, Map<String, dynamic> metadata, List<T> messages, String? thinking
+ T output, FinishReason finishReason, LanguageModelUsage? usage, Map<String, dynamic> metadata, String? thinking
 });
 
 
@@ -62,14 +62,13 @@ class _$ChatResultCopyWithImpl<T,$Res>
 
 /// Create a copy of ChatResult
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? output = freezed,Object? finishReason = null,Object? usage = freezed,Object? metadata = null,Object? messages = null,Object? thinking = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? output = freezed,Object? finishReason = null,Object? usage = freezed,Object? metadata = null,Object? thinking = freezed,}) {
   return _then(_self.copyWith(
 output: freezed == output ? _self.output : output // ignore: cast_nullable_to_non_nullable
 as T,finishReason: null == finishReason ? _self.finishReason : finishReason // ignore: cast_nullable_to_non_nullable
 as FinishReason,usage: freezed == usage ? _self.usage : usage // ignore: cast_nullable_to_non_nullable
 as LanguageModelUsage?,metadata: null == metadata ? _self.metadata : metadata // ignore: cast_nullable_to_non_nullable
-as Map<String, dynamic>,messages: null == messages ? _self.messages : messages // ignore: cast_nullable_to_non_nullable
-as List<T>,thinking: freezed == thinking ? _self.thinking : thinking // ignore: cast_nullable_to_non_nullable
+as Map<String, dynamic>,thinking: freezed == thinking ? _self.thinking : thinking // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -167,10 +166,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( T output,  FinishReason finishReason,  LanguageModelUsage? usage,  Map<String, dynamic> metadata,  List<T> messages,  String? thinking)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( T output,  FinishReason finishReason,  LanguageModelUsage? usage,  Map<String, dynamic> metadata,  String? thinking)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ChatResult() when $default != null:
-return $default(_that.output,_that.finishReason,_that.usage,_that.metadata,_that.messages,_that.thinking);case _:
+return $default(_that.output,_that.finishReason,_that.usage,_that.metadata,_that.thinking);case _:
   return orElse();
 
 }
@@ -188,10 +187,10 @@ return $default(_that.output,_that.finishReason,_that.usage,_that.metadata,_that
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( T output,  FinishReason finishReason,  LanguageModelUsage? usage,  Map<String, dynamic> metadata,  List<T> messages,  String? thinking)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( T output,  FinishReason finishReason,  LanguageModelUsage? usage,  Map<String, dynamic> metadata,  String? thinking)  $default,) {final _that = this;
 switch (_that) {
 case _ChatResult():
-return $default(_that.output,_that.finishReason,_that.usage,_that.metadata,_that.messages,_that.thinking);case _:
+return $default(_that.output,_that.finishReason,_that.usage,_that.metadata,_that.thinking);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -208,10 +207,10 @@ return $default(_that.output,_that.finishReason,_that.usage,_that.metadata,_that
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( T output,  FinishReason finishReason,  LanguageModelUsage? usage,  Map<String, dynamic> metadata,  List<T> messages,  String? thinking)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( T output,  FinishReason finishReason,  LanguageModelUsage? usage,  Map<String, dynamic> metadata,  String? thinking)?  $default,) {final _that = this;
 switch (_that) {
 case _ChatResult() when $default != null:
-return $default(_that.output,_that.finishReason,_that.usage,_that.metadata,_that.messages,_that.thinking);case _:
+return $default(_that.output,_that.finishReason,_that.usage,_that.metadata,_that.thinking);case _:
   return null;
 
 }
@@ -223,7 +222,7 @@ return $default(_that.output,_that.finishReason,_that.usage,_that.metadata,_that
 
 
 class _ChatResult<T> implements ChatResult<T> {
-  const _ChatResult({required this.output, this.finishReason = FinishReason.unspecified, this.usage, final  Map<String, dynamic> metadata = const <String, dynamic>{}, final  List<T> messages = const [], this.thinking}): _metadata = metadata,_messages = messages;
+  const _ChatResult({required this.output, this.finishReason = FinishReason.unspecified, this.usage, final  Map<String, dynamic> metadata = const <String, dynamic>{}, this.thinking}): _metadata = metadata;
   
 
 @override final  T output;
@@ -234,13 +233,6 @@ class _ChatResult<T> implements ChatResult<T> {
   if (_metadata is EqualUnmodifiableMapView) return _metadata;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableMapView(_metadata);
-}
-
- final  List<T> _messages;
-@override@JsonKey() List<T> get messages {
-  if (_messages is EqualUnmodifiableListView) return _messages;
-  // ignore: implicit_dynamic_type
-  return EqualUnmodifiableListView(_messages);
 }
 
 @override final  String? thinking;
@@ -255,16 +247,16 @@ _$ChatResultCopyWith<T, _ChatResult<T>> get copyWith => __$ChatResultCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ChatResult<T>&&const DeepCollectionEquality().equals(other.output, output)&&(identical(other.finishReason, finishReason) || other.finishReason == finishReason)&&(identical(other.usage, usage) || other.usage == usage)&&const DeepCollectionEquality().equals(other._metadata, _metadata)&&const DeepCollectionEquality().equals(other._messages, _messages)&&(identical(other.thinking, thinking) || other.thinking == thinking));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ChatResult<T>&&const DeepCollectionEquality().equals(other.output, output)&&(identical(other.finishReason, finishReason) || other.finishReason == finishReason)&&(identical(other.usage, usage) || other.usage == usage)&&const DeepCollectionEquality().equals(other._metadata, _metadata)&&(identical(other.thinking, thinking) || other.thinking == thinking));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(output),finishReason,usage,const DeepCollectionEquality().hash(_metadata),const DeepCollectionEquality().hash(_messages),thinking);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(output),finishReason,usage,const DeepCollectionEquality().hash(_metadata),thinking);
 
 @override
 String toString() {
-  return 'ChatResult<$T>(output: $output, finishReason: $finishReason, usage: $usage, metadata: $metadata, messages: $messages, thinking: $thinking)';
+  return 'ChatResult<$T>(output: $output, finishReason: $finishReason, usage: $usage, metadata: $metadata, thinking: $thinking)';
 }
 
 
@@ -275,7 +267,7 @@ abstract mixin class _$ChatResultCopyWith<T,$Res> implements $ChatResultCopyWith
   factory _$ChatResultCopyWith(_ChatResult<T> value, $Res Function(_ChatResult<T>) _then) = __$ChatResultCopyWithImpl;
 @override @useResult
 $Res call({
- T output, FinishReason finishReason, LanguageModelUsage? usage, Map<String, dynamic> metadata, List<T> messages, String? thinking
+ T output, FinishReason finishReason, LanguageModelUsage? usage, Map<String, dynamic> metadata, String? thinking
 });
 
 
@@ -292,14 +284,13 @@ class __$ChatResultCopyWithImpl<T,$Res>
 
 /// Create a copy of ChatResult
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? output = freezed,Object? finishReason = null,Object? usage = freezed,Object? metadata = null,Object? messages = null,Object? thinking = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? output = freezed,Object? finishReason = null,Object? usage = freezed,Object? metadata = null,Object? thinking = freezed,}) {
   return _then(_ChatResult<T>(
 output: freezed == output ? _self.output : output // ignore: cast_nullable_to_non_nullable
 as T,finishReason: null == finishReason ? _self.finishReason : finishReason // ignore: cast_nullable_to_non_nullable
 as FinishReason,usage: freezed == usage ? _self.usage : usage // ignore: cast_nullable_to_non_nullable
 as LanguageModelUsage?,metadata: null == metadata ? _self._metadata : metadata // ignore: cast_nullable_to_non_nullable
-as Map<String, dynamic>,messages: null == messages ? _self._messages : messages // ignore: cast_nullable_to_non_nullable
-as List<T>,thinking: freezed == thinking ? _self.thinking : thinking // ignore: cast_nullable_to_non_nullable
+as Map<String, dynamic>,thinking: freezed == thinking ? _self.thinking : thinking // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
