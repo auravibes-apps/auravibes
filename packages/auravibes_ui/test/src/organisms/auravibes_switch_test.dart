@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:auravibes_ui/src/atoms/aura_loading_circle.dart';
 import 'package:auravibes_ui/src/organisms/aura_switch.dart';
 import 'package:flutter/material.dart';
@@ -24,6 +26,7 @@ void main() {
 
         expect(find.byType(AuraSwitch), findsOneWidget);
         expect(find.byType(GestureDetector), findsOneWidget);
+        expect(find.byType(FocusableActionDetector), findsOneWidget);
         expect(find.byType(AnimatedContainer), findsWidgets);
       });
 
@@ -310,13 +313,13 @@ void main() {
           ),
         );
 
-        final mouseRegion = tester.widget<MouseRegion>(
+        final focusableActionDetector = tester.widget<FocusableActionDetector>(
           find.descendant(
             of: find.byType(AuraSwitch),
-            matching: find.byType(MouseRegion),
+            matching: find.byType(FocusableActionDetector),
           ),
         );
-        expect(mouseRegion.cursor, SystemMouseCursors.basic);
+        expect(focusableActionDetector.mouseCursor, SystemMouseCursors.basic);
       });
 
       testWidgets('shows click cursor when enabled', (tester) async {
@@ -333,13 +336,13 @@ void main() {
           ),
         );
 
-        final mouseRegion = tester.widget<MouseRegion>(
+        final focusableActionDetector = tester.widget<FocusableActionDetector>(
           find.descendant(
             of: find.byType(AuraSwitch),
-            matching: find.byType(MouseRegion),
+            matching: find.byType(FocusableActionDetector),
           ),
         );
-        expect(mouseRegion.cursor, SystemMouseCursors.click);
+        expect(focusableActionDetector.mouseCursor, SystemMouseCursors.click);
       });
     });
 
@@ -398,13 +401,111 @@ void main() {
           ),
         );
 
-        final mouseRegion = tester.widget<MouseRegion>(
+        final focusableActionDetector = tester.widget<FocusableActionDetector>(
           find.descendant(
             of: find.byType(AuraSwitch),
-            matching: find.byType(MouseRegion),
+            matching: find.byType(FocusableActionDetector),
           ),
         );
-        expect(mouseRegion.cursor, SystemMouseCursors.basic);
+        expect(focusableActionDetector.mouseCursor, SystemMouseCursors.basic);
+      });
+    });
+
+    group('Accessibility', () {
+      testWidgets('exposes toggled semantics state', (tester) async {
+        final semantics = tester.ensureSemantics();
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: AuraSwitch(
+                value: true,
+                onChanged: (_) {
+                  final _ = Object();
+                },
+              ),
+            ),
+          ),
+        );
+
+        final node = tester.getSemantics(find.byType(AuraSwitch));
+        final flags = node.flagsCollection;
+
+        expect(flags.isToggled, ui.Tristate.isTrue);
+        expect(flags.isEnabled, ui.Tristate.isTrue);
+
+        semantics.dispose();
+      });
+
+      testWidgets('marks loading switch as disabled for semantics', (
+        tester,
+      ) async {
+        final semantics = tester.ensureSemantics();
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: AuraSwitch(
+                value: false,
+                onChanged: (_) {
+                  final _ = Object();
+                },
+                isLoading: true,
+              ),
+            ),
+          ),
+        );
+
+        final node = tester.getSemantics(find.byType(AuraSwitch));
+        final flags = node.flagsCollection;
+
+        expect(flags.isToggled, ui.Tristate.isFalse);
+        expect(flags.isEnabled, ui.Tristate.isFalse);
+
+        semantics.dispose();
+      });
+
+      testWidgets('responds to activate intent', (tester) async {
+        bool? receivedValue;
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: AuraSwitch(
+                value: false,
+                onChanged: (value) => receivedValue = value,
+              ),
+            ),
+          ),
+        );
+
+        final _ = Actions.invoke(
+          tester.element(find.byType(GestureDetector)),
+          const ActivateIntent(),
+        );
+
+        expect(receivedValue, isTrue);
+      });
+
+      testWidgets('keeps at least a 44 pixel hit target', (tester) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: AuraSwitch(
+                value: false,
+                onChanged: (_) {
+                  final _ = Object();
+                },
+                size: AuraSwitchSize.sm,
+              ),
+            ),
+          ),
+        );
+
+        final size = tester.getSize(find.byType(AuraSwitch));
+
+        expect(size.width, greaterThanOrEqualTo(44));
+        expect(size.height, greaterThanOrEqualTo(44));
       });
     });
 
